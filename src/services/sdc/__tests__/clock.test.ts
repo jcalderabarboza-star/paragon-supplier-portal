@@ -1,5 +1,6 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import { sdcClock, SDC_SIMULATED_NOW } from '../clock';
+import { DECLARED_PRESENT, SDC_WINDOW } from '../../data/fixturePresent';
 import { declarationRecency, currentDeclarations } from '../inventory';
 import type { InventoryDeclaration, Provenance } from '../types';
 
@@ -33,9 +34,30 @@ function decl(
 afterEach(() => sdcClock.reset());
 
 describe('sdcClock — the ONE shared simulated now', () => {
-  it('defaults to SDC_SIMULATED_NOW', () => {
+  it('defaults to SDC_SIMULATED_NOW, which now DERIVES from the declared present', () => {
     expect(sdcClock.now()).toBe(SDC_SIMULATED_NOW);
-    expect(SDC_SIMULATED_NOW).toBe('2026-08-25T12:00:00.000Z');
+    // ⚠️ THE TAUTOLOGY IS RETIRED, NOT RE-PINNED. This line read
+    //   expect(SDC_SIMULATED_NOW).toBe('2026-08-25T12:00:00.000Z');
+    // which asserted a literal against itself — it could only ever fail when
+    // somebody edited the constant, which is the one moment they already knew.
+    // It was never a coherence signal, and re-pinning it to the new value would
+    // have carried the same emptiness forward with a fresher date. What is
+    // actually worth asserting is the DERIVATION: the lane no longer owns a
+    // present, it reads the one present this tree has.
+    expect(SDC_SIMULATED_NOW).toBe(`${DECLARED_PRESENT}T12:00:00.000Z`);
+    expect(SDC_SIMULATED_NOW.slice(0, 10)).toBe(DECLARED_PRESENT);
+  });
+
+  it('⚠️ the declared present sits inside THIS lane`s coherent window', () => {
+    // P was moved to meet this family rather than the family being shifted, so
+    // the window is a live constraint on `MANDATE_LEAD_DAYS` and this is where
+    // the lane says so. Re-author sa-0002 seq 6 and this fires by name.
+    const [lo, hi] = SDC_WINDOW;
+    expect(DECLARED_PRESENT >= lo).toBe(true);
+    expect(DECLARED_PRESENT <= hi).toBe(true);
+    // CONTROL both ways — the comparison is real, not vacuously true.
+    expect('2026-08-24' >= lo).toBe(false);
+    expect('2026-09-02' <= hi).toBe(false);
   });
 
   it('sits PAST the latest seed stamp (2026-08-18) and PAST the R2 deadline (2026-08-22)', () => {

@@ -1,3 +1,5 @@
+import { shiftFields } from '../services/data/fixturePresent';
+
 export type ObligationStatus =
   | 'Upcoming'
   | 'In Progress'
@@ -33,7 +35,7 @@ export interface ContractObligation {
   recurrence?: ObligationRecurrence;
 }
 
-export const mockObligations: ContractObligation[] = [
+const obligationRows: ContractObligation[] = [
   // ── ctr-001 (Halal Emulsifier Master Supply) — 5 obligations ─────────────
   {
     id: 'obl-001a',
@@ -497,3 +499,22 @@ export const mockObligations: ContractObligation[] = [
     owner: 'Buyer',
   },
 ];
+
+// ─────────────────────────────────────────────────────────────────────────────
+// THE DECLARED PRESENT — FIXTURE-PRESENT-01 (d), `obligation` family.
+//
+// ⚠️ **SHARES `SHARED_CONTRACT_ANCHOR` WITH `contract`, AND MUST.** Every row
+// carries a `contractId`, so a due date is only meaningful against the validity
+// window of the contract it hangs off — a CROSS-FAMILY comparison, which is
+// exactly the kind `P` does not cancel for. Anchoring the two separately would
+// silently re-time every obligation against its own contract.
+//
+// This is the TIGHTER of the pair: it binds BOTH edges of the intersection
+// (early `obl-007a`, late `obl-003a` / `obl-004a` / `obl-010c`), so it is the
+// family that will ask for a re-anchor first.
+// ─────────────────────────────────────────────────────────────────────────────
+export const mockObligations: ContractObligation[] = shiftFields(
+  obligationRows,
+  'obligation',
+  ['dueDate', 'completedDate'],
+);

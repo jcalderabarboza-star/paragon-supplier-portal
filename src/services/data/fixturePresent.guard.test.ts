@@ -26,7 +26,10 @@ import {
   shiftDays,
   shiftIso,
   shiftFields,
-  DEFERRED_WINDOWS,
+  SDC_WINDOW,
+  SHARED_CONTRACT_ANCHOR,
+  SHARED_ANCHOR_FAMILIES,
+  SHARED_ANCHOR_INTERSECTION,
   type FixtureFamily,
 } from './fixturePresent';
 import { BPJPH_MANDATE_DATE } from './complianceProjection';
@@ -68,6 +71,25 @@ const rawDocs = rawPairs('src/services/data/mock/fixtures/supplierDocuments.ts',
 const rawObls = rawPairs('src/data/mockObligations.ts', 'dueDate', 'obl-')
   .filter((r) => r.date && (r.status === 'Upcoming' || r.status === 'Overdue'));
 
+/**
+ * Contracts need TWO dates per row, so they get their own parser rather than a
+ * widened `rawPairs` — widening the shared one to carry an optional second key
+ * would change what it returns for documents and obligations too, and rule 2 is
+ * that a widened matcher creates false accusations as readily as a narrow one
+ * creates blind spots.
+ */
+const rawCtrs = (() => {
+  const src = readFileSync('src/data/mockContracts.ts', 'utf8');
+  const parts = src.split(/id:\s*'(?=ctr-)/);
+  parts.shift();
+  return parts.map((p) => ({
+    id: /^([^']+)'/.exec(p)?.[1] ?? '',
+    status: /status:\s*'([^']*)'/.exec(p)?.[1] ?? '',
+    startDate: /startDate:\s*'(\d{4}-\d{2}-\d{2})'/.exec(p)?.[1] ?? '',
+    endDate: /endDate:\s*'(\d{4}-\d{2}-\d{2})'/.exec(p)?.[1] ?? '',
+  }));
+})();
+
 /** `documentExpiry`'s own classification, applied to a RAW date at a candidate anchor. */
 const docStateAt = (date: string, anchor: string) => {
   const n = dU(date, anchor);
@@ -77,6 +99,34 @@ const docsCoherentAt = (anchor: string) =>
   rawDocs.every((r) => docStateAt(r.date!, anchor) === r.status);
 const oblsCoherentAt = (anchor: string) =>
   rawObls.every((r) => (dU(r.date!, anchor) >= 0 ? 'Upcoming' : 'Overdue') === r.status);
+
+/**
+ * ⚠️ **THERE IS NO SHIPPED CONTRACT CLASSIFIER, AND THE RULE BELOW SAYS SO
+ * RATHER THAN PRETENDING OTHERWISE.** `displayStates.ts` groups `contract`
+ * `Expiring` / `Expired` as `stored-in-fixtures` with ZERO non-fixture writes —
+ * nothing computes them. So unlike `documentExpiry` (which the document window
+ * calls directly) this predicate cannot BE the shipped one.
+ *
+ * It is instead the weakest rule the two SHIPPED clock-reading predicates make
+ * falsifiable, and both are named so a reader can check the provenance:
+ *   · `matchesGroup` (`BuyerContracts.tsx`) — the 'expiring' band is 0..90 days
+ *   · `expiryTone`   (`contracts/contractView.tsx`) — <0 is danger, <90 warning
+ * Only TENSE-BEARING statuses constrain the origin; `Draft` / `Renewed` /
+ * `Terminated` make no claim about now and are deliberately unconstrained.
+ *
+ * ⚠️ This SUPERSEDES the #319 window, which was derived from five authored
+ * "bands" that no shipped code implements and put the early bound at 2026-05-17.
+ * The corrected bound is 2026-03-17 (ctr-007). The shared anchor is unchanged
+ * because `obligation` binds both edges of the intersection either way.
+ */
+const ctrsCoherentAt = (anchor: string) =>
+  rawCtrs.every((r) => {
+    const n = dU(r.endDate, anchor);
+    if (r.status === 'Expired') return n < 0;
+    if (r.status === 'Expiring') return n >= 0 && n <= 90;
+    if (r.status === 'Active') return n >= 0 && dU(r.startDate, anchor) <= 0;
+    return true;
+  });
 
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -153,41 +203,101 @@ describe('⚠️ EVERY ANCHOR SITS INSIDE ITS OWN FAMILY’S COHERENT WINDOW', (
     expect(docsCoherentAt(iso(dayMs(hi) + MS))).toBe(false);
   });
 
-  it('⚠️ obligation — DEFERRED, but its window is still held against the literals', () => {
-    // The family is not anchored (it is coupled to the SDC lane through
-    // ctr-003). Its window decays exactly as fast as an anchored one's and
-    // nothing else would notice, so the gate holds it from the raw source.
-    const [lo, hi] = DEFERRED_WINDOWS.obligation;
+  it('obligation — ANCHORED now, and its window still held against the literals', () => {
+    const [lo, hi] = FAMILY_ANCHORS.obligation.window!;
     expect(oblsCoherentAt(lo)).toBe(true);
     expect(oblsCoherentAt(hi)).toBe(true);
+    expect(oblsCoherentAt(FAMILY_ANCHORS.obligation.anchor)).toBe(true);
     expect(oblsCoherentAt(iso(dayMs(lo) - MS))).toBe(false);
     expect(oblsCoherentAt(iso(dayMs(hi) + MS))).toBe(false);
   });
 
-  it('⚠️ THE INTERSECTION IS EMPTY BY FIVE DAYS — why anchors are PER-FAMILY', () => {
-    // The measurement that ruled out one global present. If this ever becomes
-    // non-empty, option (a) is back on the table and this module is over-built.
-    // Bound late by doc-005 (expires 2026-11-09, stored 'Valid' — needs > 180d)
-    // and early by obl-007a (due 2026-05-16, stored 'Overdue' — must be past).
+  it('contract — ANCHORED, window re-derived from the two shipped predicates', () => {
+    const [lo, hi] = FAMILY_ANCHORS.contract.window!;
+    expect(ctrsCoherentAt(lo)).toBe(true);
+    expect(ctrsCoherentAt(hi)).toBe(true);
+    expect(ctrsCoherentAt(FAMILY_ANCHORS.contract.anchor)).toBe(true);
+    expect(ctrsCoherentAt(iso(dayMs(lo) - MS))).toBe(false);
+    expect(ctrsCoherentAt(iso(dayMs(hi) + MS))).toBe(false);
+  });
+
+  it('⚠️ contract and obligation SHARE one anchor — they are not two numbers', () => {
+    // Obligations name contract ids, so a due date is only meaningful against
+    // its contract's window: a CROSS-family comparison, the kind P does not
+    // cancel for. Asserted as identity, not as two equal literals.
+    for (const f of SHARED_ANCHOR_FAMILIES) {
+      expect(FAMILY_ANCHORS[f].anchor, f).toBe(SHARED_CONTRACT_ANCHOR);
+    }
+    // And the shared anchor is the midpoint of the INTERSECTION, derived here
+    // rather than trusted from the constant.
+    const [lo, hi] = SHARED_ANCHOR_INTERSECTION;
+    expect(lo).toBe(iso(Math.max(dayMs(FAMILY_ANCHORS.contract.window![0]),
+                                 dayMs(FAMILY_ANCHORS.obligation.window![0]))));
+    expect(hi).toBe(iso(Math.min(dayMs(FAMILY_ANCHORS.contract.window![1]),
+                                 dayMs(FAMILY_ANCHORS.obligation.window![1]))));
+    const span = Math.round((dayMs(hi) - dayMs(lo)) / MS);
+    expect(SHARED_CONTRACT_ANCHOR).toBe(iso(dayMs(lo) + Math.floor(span / 2) * MS));
+    // BOTH families are coherent AT the shared anchor — the point of sharing.
+    expect(ctrsCoherentAt(SHARED_CONTRACT_ANCHOR)).toBe(true);
+    expect(oblsCoherentAt(SHARED_CONTRACT_ANCHOR)).toBe(true);
+  });
+
+  it('⚠️ THE INTERSECTION OF supplierDocument AND obligation IS STILL EMPTY', () => {
+    // The measurement that ruled out ONE global present, and it does not stop
+    // being true because both families are now anchored — it is exactly WHY
+    // they are anchored separately. Bound late by doc-005 (expires 2026-11-09,
+    // stored 'Valid' — needs > 180d) and early by obl-007a (due 2026-05-16,
+    // stored 'Overdue'). If this ever becomes non-empty, option (a) is back on
+    // the table and this module is over-built.
     const d = FAMILY_ANCHORS.supplierDocument.window!;
-    const o = DEFERRED_WINDOWS.obligation;
+    const o = FAMILY_ANCHORS.obligation.window!;
     expect(dayMs(d[1])).toBeLessThan(dayMs(o[0]));
     expect(Math.round((dayMs(o[0]) - dayMs(d[1])) / MS)).toBe(5);
   });
 
-  it('the stated tolerance is half the window, both directions', () => {
-    for (const f of ['supplierDocument'] as FixtureFamily[]) {
-      const [lo, hi] = FAMILY_ANCHORS[f].window!;
-      const half = Math.round((dayMs(hi) - dayMs(lo)) / MS / 2);
-      expect(FAMILY_ANCHORS[f].toleranceDays, f).toBe(half);
+  it('the stated tolerance is half the window — and half the INTERSECTION when shared', () => {
+    // ⚠️ A shared anchor is only as free as the narrower constraint the pair
+    // JOINTLY satisfies, so `contract` may not claim half of its own 80-day
+    // window. Deriving the divisor per family is what keeps that honest.
+    for (const f of Object.keys(FAMILY_ANCHORS) as FixtureFamily[]) {
+      const a = FAMILY_ANCHORS[f];
+      if (!a.window) {
+        expect(a.toleranceDays, f).toBeNull();
+        continue;
+      }
+      const [lo, hi] = (SHARED_ANCHOR_FAMILIES as readonly string[]).includes(f)
+        ? SHARED_ANCHOR_INTERSECTION
+        : a.window;
+      // ⚠️ THE NEARER EDGE, NOT HALF THE SPAN. The old rule was
+      // `round(span / 2)`, which OVERSTATES whenever the anchor is not exactly
+      // centred: supplierDocument declared 41 while its early edge is 40 days
+      // away, so the field promised one day of drift it did not have. A
+      // tolerance is the distance to the edge that breaks FIRST.
+      expect(a.toleranceDays, f).toBe(
+        Math.min(dU(a.anchor, lo), dU(hi, a.anchor)),
+      );
     }
+  });
+
+  it('⚠️ THE DECLARED PRESENT SITS INSIDE THE SDC WINDOW — P`s hostage, made checkable', () => {
+    // `sdc` is the one family coherent WITHOUT being shifted: P was moved to
+    // meet it. That makes SDC_WINDOW a live constraint on MANDATE_LEAD_DAYS,
+    // and this is the assertion that fires the day sa-0002 seq 6 is re-authored
+    // or the lead is bumped past the boundary. Anchoring `sdc` (option 1) is
+    // what would retire this test rather than re-pin it.
+    const [lo, hi] = SDC_WINDOW;
+    expect(DECLARED_PRESENT >= lo).toBe(true);
+    expect(DECLARED_PRESENT <= hi).toBe(true);
+    // CONTROL both ways — one day outside either edge is outside.
+    expect(iso(dayMs(lo) - MS) >= lo).toBe(false);
+    expect(iso(dayMs(hi) + MS) <= hi).toBe(false);
   });
 
   it('⚠️ every family in the union has an anchor, and every anchor a family', () => {
     // Bilateral, so an added family with no anchor is as red as an orphan one.
     const declared = Object.keys(FAMILY_ANCHORS).sort();
     expect(declared).toEqual(
-      ['goodsReceipt', 'inventory', 'shipment', 'supplierDocument'],
+      ['contract', 'goodsReceipt', 'inventory', 'obligation', 'shipment', 'supplierDocument'],
     );
     for (const f of declared as FixtureFamily[]) {
       expect(FAMILY_ANCHORS[f].anchor, f).toMatch(/^\d{4}-\d{2}-\d{2}$/);

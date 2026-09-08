@@ -118,7 +118,7 @@ from CP-1 onward.
 | **2e-c-6-FIND-04** *(refs @ `f2eeed8`)* | **Key-set parity proves a string EXISTS in Indonesian; it says nothing about whether it still says the same thing.** The arc's honesty claim is that a refusal NAMES its cause — `{{currencies}}` on FX_UNPINNED, `{{currencies}}` and `{{asOf}}` on FX_STALE, `{{currency}}` and `{{permitted}}` on the supplier-side currency refusal. An ID string that drops an interpolation is not a slightly-worse refusal: it is a refusal that does not say what is wrong, for half the userbase, and i18next renders it silently rather than erroring. **Added a placeholder-parity guard across ALL 38 i18n fragments** (`fragments.test.ts`), not just this arc's — EN and ID must interpolate the identical variable set for every key. **It found no existing drift**, so it lands as a LOCK rather than a fix; the value is that the next dropped placeholder fails a test instead of reaching a buyer. | **CLOSED (2e-c-6).** |
 | **SIDEPANEL-I18N-01** *(refs @ `f2eeed8`, found during the 2e-c-6 ID smoke)* | **The side-panel close button is hardcoded English.** `SidePanel.tsx:53` sets `aria-label="Close panel"` as a literal, so in Indonesian a screen-reader user hears "Close panel" on every panel in the portal — buyer sourcing, orders, shipments, everywhere the shared primitive is used. Sighted users see only an icon, which is why it survived six i18n batches: it is invisible unless you read the accessibility tree, which the 2e-c-6 ID pass did. OUT OF SCOPE here — 2e-c-6's sweep is scoped to the keys the currency arc added, and this is a shared-primitive change touching every page that renders a panel. | **OPEN.** Small and self-contained: one key pair plus a `t()` at the primitive. Right home is the next batch that touches `ui-v2` shared primitives, or a standalone a11y pass. Worth checking the other shared primitives for the same class of literal at the same time. |
 | **FX-DIALOG-SOURCE-DEFAULT-01** *(CP-0 sweep batch 1 — dispatched as a fix, **found ALREADY SATISFIED on main**)* | **The record-rate dialog's SOURCE already defaults to `MANUAL` / "Entered manually", and has since `e688e8d` (#154).** The sweep dispatched this as a change to make; the census found the behaviour correct on main and the item therefore stale. `blankPinDraft` (`BuyerSourcing.tsx:273`) seeds `source: 'MANUAL'`, there is exactly ONE construction path for the draft (`BuyerSourcing.tsx:2425`), and `FxPinSource` has no other non-test seed anywhere in `src/`. The reasoning the item was raised on still holds and is worth keeping on the record: nothing in this build is wired to SAP, so a SAP default would stamp a provenance that never happened onto the one strip that answers *"what basis ranked this"* — and a default is invisible in the UI right up until the moment it is wrong. | **VERIFIED + LOCKED (CP-0 sweep batch 1).** No production change made — editing correct code to reach a correct state would have recorded a fix that fixed nothing. Instead the behaviour is now pinned by a spec (`BuyerSourcing.test.tsx`, "SOURCE defaults to Entered manually, and the SAP rate type appears only for SAP") covering both halves: the `MANUAL` default, and the SAP rate-type field appearing only on SAP and being retired again on switching away — so a rate type can never ride along on a manually-entered rate. |
-| **FIXTURE-PRESENT-01** *(split out of `2e-c-6-FIND-01` by operator ruling on #157; **a CP-2 item, NOT a sweep item** — see the last consequence)* | **The fixture set has an implicit "now" — 2026-07-06 — that nothing owns, nothing declares, and nothing moves.** The date is REAL but DERIVED, never stated: at that instant the invoice ledger is exactly coherent (one overdue row, `inv-evo-0188`, the row whose comment claims that status), and four spec files independently pin the same instant (`invoiceProjection.test.ts`, `complianceProjection.test.ts`, the dispatcher specs, and now `demoClock.ts`) — but no fixture, type or constant in `src/` says "this is the present these seeds were written for". `demoClock.ts` declares it for TESTS only, deliberately. **THREE KNOWN CONSEQUENCES.** *(1) The app's demo present drifts from the specs' pinned now.* The read path supplies `now` from the wall clock (`MockProcurementService`), so the running portal shows five `Overdue` invoices where the fixture set intends one — the derivation working correctly on a set whose present has moved on. *(2) Demo rows cross thresholds unremarked.* `inv-msm-0224` and `inv-mus-0214` (due 2026-07-10 / 2026-07-23) went `Overdue` weeks ago with nothing to notice; the compliance registry does the same shortly (`creg-0008` 2026-08-20, `creg-0015` 2026-08-31, `creg-0003` 2026-09-15, `creg-0012` 2026-09-30 all read `Expired` inside two months), and the contract set follows. Only the rows a spec happens to assert are audible; the rest degrade the demo silently. *(3) A fixture set that must be re-anchored BY HAND is one whose contract cannot be reliably machine-generated.* This is the consequence that relocates the item: a generator or harvest script cannot emit a coherent seed without knowing the present the seed is coherent AT, and today that value exists only as an unwritten convention recoverable by inference. **OPEN QUESTION — WHO OR WHAT OWNS THE FIXTURE PRESENT, AND DOES IT MOVE?** Options, stated without recommendation: **(a) A declared frozen present** — one owned constant the read path consumes instead of `new Date()`, the shape `sdcClock` / `SDC_SIMULATED_NOW` already uses for the SDC loop. App and specs agree by construction; cost is that the portal then renders a date that is not today, which must be surfaced honestly as sample-data-as-of or it becomes the manufactured-freshness claim `BuyerRisk` and `i18n/risk.ts` already retired. **(b) A rolling present** — seed dates computed from the read clock at load. Never drifts; cost is that `2e-c-6-FIND-01` already ruled this out (a clock read inside seed data makes every spec that reads a fixture time-dependent), so choosing it means reopening that ruling. **(c) Periodic manual re-anchor** — the status quo made explicit and owned, with a cadence. Cost is exactly consequence (3): it is the one option that cannot be machine-generated. **(d) Declared intent + computed literal** — the seed carries the ANCHOR (past / future) and the coherent offset, and a build or harvest step resolves it against a declared present. Preserves the monotone/non-monotone axis in the data rather than in comments; cost is a generation step the fixtures do not have today, which is why it lands with the harvest script rather than before it. | **CLOSED (d) — PR #319.** **All four options are now resolved, which is why this closes rather than moves.** (b) died at #157 (a clock read inside seed data makes every spec that reads a fixture time-dependent — and, re-derived at #319, it fails where nothing could see it: every fixture is a module-scope `const`, so it resolves at IMPORT while `usePinnedDemoClock`’s `Date` proxy installs in `beforeEach`). (c) died by operator ruling 2026-09-07 — moving one cluster widens the gap to the others, moving all of them invents a coherent past that never existed. **(a) is superseded by (d) LANDING, not by argument:** the families’ coherent windows have no common instant — `supplierDocument` 2026-02-20..2026-05-12 against `obligation` 2026-05-17..2026-06-01, **EMPTY BY FIVE DAYS**, bound late by `doc-005` (expires 2026-11-09, stored `Valid`, needs > 180d) and early by `obl-007a` (due 2026-05-16, stored `Overdue`) — so one present would make one family permanently false to serve another. **THE DISPOSAL IS (d):** `src/services/data/fixturePresent.ts` — one declared present (`BPJPH_MANDATE_DATE − MANDATE_LEAD_DAYS`, frozen, reads no clock, bumped only by ruling), a PER-FAMILY anchor, and an ABSOLUTE class for dates that are facts about the world. `P` cancels (`daysUntil(date + (P − A), P) = date − A`), which is what makes the empty intersection a reason FOR per-family anchors rather than a blocker. Anchored: `supplierDocument` · `shipment` · `goodsReceipt` · `inventory`. Consequence (1) is gone (the app no longer drifts from the fixture present on these families); (2) is now audible (a family that leaves its window reddens the gate BY NAME); (3) is answered — the present and the anchors are declared data, so a seed CAN be generated against them. **WHAT REMAINS, MEASURED AND FILED RATHER THAN SCOPED AWAY:** `contract` and `obligation` are windowed but NOT anchored, because `services/delivery` negotiates over `ctr-003` on a calendar read by the delivery lane, which runs on `SDC_SIMULATED_NOW` — a clock #319 does not anchor. Evidence, not prediction: shifting contracts reddened `fulfillment.test.ts` in TEN places, every one a release-date-versus-arrival comparison. Their windows stay held against the raw literals by `fixturePresent.guard.test.ts`, so a deferred family decays as loudly as an anchored one. **`sdcClock` and its family move together or not at all** — that is the next batch in this lane, and it is where the two declared presents finally reconcile. |
+| **FIXTURE-PRESENT-01** *(split out of `2e-c-6-FIND-01` by operator ruling on #157; **a CP-2 item, NOT a sweep item** — see the last consequence)* | **The fixture set has an implicit "now" — 2026-07-06 — that nothing owns, nothing declares, and nothing moves.** The date is REAL but DERIVED, never stated: at that instant the invoice ledger is exactly coherent (one overdue row, `inv-evo-0188`, the row whose comment claims that status), and four spec files independently pin the same instant (`invoiceProjection.test.ts`, `complianceProjection.test.ts`, the dispatcher specs, and now `demoClock.ts`) — but no fixture, type or constant in `src/` says "this is the present these seeds were written for". `demoClock.ts` declares it for TESTS only, deliberately. **THREE KNOWN CONSEQUENCES.** *(1) The app's demo present drifts from the specs' pinned now.* The read path supplies `now` from the wall clock (`MockProcurementService`), so the running portal shows five `Overdue` invoices where the fixture set intends one — the derivation working correctly on a set whose present has moved on. *(2) Demo rows cross thresholds unremarked.* `inv-msm-0224` and `inv-mus-0214` (due 2026-07-10 / 2026-07-23) went `Overdue` weeks ago with nothing to notice; the compliance registry does the same shortly (`creg-0008` 2026-08-20, `creg-0015` 2026-08-31, `creg-0003` 2026-09-15, `creg-0012` 2026-09-30 all read `Expired` inside two months), and the contract set follows. Only the rows a spec happens to assert are audible; the rest degrade the demo silently. *(3) A fixture set that must be re-anchored BY HAND is one whose contract cannot be reliably machine-generated.* This is the consequence that relocates the item: a generator or harvest script cannot emit a coherent seed without knowing the present the seed is coherent AT, and today that value exists only as an unwritten convention recoverable by inference. **OPEN QUESTION — WHO OR WHAT OWNS THE FIXTURE PRESENT, AND DOES IT MOVE?** Options, stated without recommendation: **(a) A declared frozen present** — one owned constant the read path consumes instead of `new Date()`, the shape `sdcClock` / `SDC_SIMULATED_NOW` already uses for the SDC loop. App and specs agree by construction; cost is that the portal then renders a date that is not today, which must be surfaced honestly as sample-data-as-of or it becomes the manufactured-freshness claim `BuyerRisk` and `i18n/risk.ts` already retired. **(b) A rolling present** — seed dates computed from the read clock at load. Never drifts; cost is that `2e-c-6-FIND-01` already ruled this out (a clock read inside seed data makes every spec that reads a fixture time-dependent), so choosing it means reopening that ruling. **(c) Periodic manual re-anchor** — the status quo made explicit and owned, with a cadence. Cost is exactly consequence (3): it is the one option that cannot be machine-generated. **(d) Declared intent + computed literal** — the seed carries the ANCHOR (past / future) and the coherent offset, and a build or harvest step resolves it against a declared present. Preserves the monotone/non-monotone axis in the data rather than in comments; cost is a generation step the fixtures do not have today, which is why it lands with the harvest script rather than before it. | **CLOSED (d) — PR #319.** **All four options are now resolved, which is why this closes rather than moves.** (b) died at #157 (a clock read inside seed data makes every spec that reads a fixture time-dependent — and, re-derived at #319, it fails where nothing could see it: every fixture is a module-scope `const`, so it resolves at IMPORT while `usePinnedDemoClock`’s `Date` proxy installs in `beforeEach`). (c) died by operator ruling 2026-09-07 — moving one cluster widens the gap to the others, moving all of them invents a coherent past that never existed. **(a) is superseded by (d) LANDING, not by argument:** the families’ coherent windows have no common instant — `supplierDocument` 2026-02-20..2026-05-12 against `obligation` 2026-05-17..2026-06-01, **EMPTY BY FIVE DAYS**, bound late by `doc-005` (expires 2026-11-09, stored `Valid`, needs > 180d) and early by `obl-007a` (due 2026-05-16, stored `Overdue`) — so one present would make one family permanently false to serve another. **THE DISPOSAL IS (d):** `src/services/data/fixturePresent.ts` — one declared present (`BPJPH_MANDATE_DATE − MANDATE_LEAD_DAYS`, frozen, reads no clock, bumped only by ruling), a PER-FAMILY anchor, and an ABSOLUTE class for dates that are facts about the world. `P` cancels (`daysUntil(date + (P − A), P) = date − A`), which is what makes the empty intersection a reason FOR per-family anchors rather than a blocker. Anchored: `supplierDocument` · `shipment` · `goodsReceipt` · `inventory`. Consequence (1) is gone (the app no longer drifts from the fixture present on these families); (2) is now audible (a family that leaves its window reddens the gate BY NAME); (3) is answered — the present and the anchors are declared data, so a seed CAN be generated against them. **NOTHING REMAINS DEFERRED — `contract` and `obligation` LANDED AT #320, ANCHORED TOGETHER at `SHARED_CONTRACT_ANCHOR` 2026-05-24** (the midpoint of their re-derived intersection; shared because obligations name contract ids, which is a cross-family comparison and therefore one `P` does not cancel for). ⚠️ **AND THE REASON THIS ROW GAVE FOR DEFERRING THEM WAS MEASURED FALSE AT #320 — IT IS RETRACTED HERE RATHER THAN QUIETLY OVERWRITTEN, BECAUSE IT SHIPPED INTO TWO SOURCE FILES AND THIS ROW IS WHERE A READER WOULD COME LOOKING.** It read: *“`services/delivery` negotiates over `ctr-003` on a calendar read by the delivery lane, which runs on `SDC_SIMULATED_NOW` — a clock #319 does not anchor.”* Derived at #320: `services/delivery` imports **nothing** from `mockContracts` and **no clock at all**. Shifting contract + obligation + `START_DATE` with the clock standing still broke 2 files / 11 tests and `fixtures.integrity.test.ts` stayed GREEN — not one failure was a clock-vs-schedule collision. The two families were then shifted together and the damage was **exactly additive (19 = 11 + 8, 6 files = 2 + 4): ZERO interaction.** The real coupling was `START_DATE` being a hand-maintained DUPLICATE of `ctr-003.startDate` (it now READS the contract, so the two cannot diverge), plus ten hardcoded `eta` literals inside `fulfillment.test.ts`. **THE DEFERRAL WAS CORRECT; ITS STATED MECHANISM WAS NOT** — `FALSE-MECHANISM-MUST-NOT-BE-FILED-01` (§70) caught one turn late, which is why the retraction is quoted. The ten were REPAIRED rather than re-pinned: each literal encoded an OFFSET (*“3 days early”*, *“past grace”*), so all 21 date sites now derive from the line under test and the file is invariant under any future anchor. |
 | **SEAM-DOC-DRIFT-01** *(CP-1 · refs @ `063adca` · heads the C7/C8 seam block below)* | **Eleven doc-vs-code divergences across the C7 and C8 seams, and every one ran the SAME DIRECTION: the documents understated the implementation.** Eleven errors sharing a direction are one process gap, not eleven drafting errors. **Cause:** contract documents are generated ONCE by machine-harvest from code at a fixed commit and then **never re-harvested** while the code moves. There is no re-run trigger, and **no build step fails when a contract statement stops being true** — the documents are not on the floor, so they cannot regress a test. A frozen document describing a live implementation can only drift one way. **The asymmetry is the diagnostic:** a random drafting error overstates as often as it understates, and none of these overstated. **Consequence:** a conformance conversation held against these documents would have misreported our own position *in a peer platform's favour* — further along on wiring, further behind on ratification, than the documents said. | **CLOSED for C7/C8 (this batch).** C7 re-harvested and corrected; C8 issued as a real contract for the first time; `contracts/README.md` count corrected 6→10; `CLAUDE.md` corrected. **Process fix:** both documents now carry a re-harvest trigger — re-verified at each seam-touching batch and each CP checkpoint, and a contract statement that cannot be traced to a current `file:line` is a finding, not prose. **⚠️ C1–C5 have NOT been re-verified and must be assumed to carry the same class of drift** (flagged in `contracts/README.md`). |
 | **C7-FIND-01 / -01a** *(refs @ `063adca`)* | PR create documented as author-inert with no `CommandTarget`, and the liveness capability documented as still needing to be added with a `null` backing. | **BOTH CLOSED — and -01a resolved DIFFERENTLY than the doc prescribed.** `purchaseRequisition` is a wired `CommandTarget` (`MockCommandService.ts:547-593`, registered `:983`; closure recorded in-code at `:538`) and `t_pr_create` dispatches into a mutable store. The capability is backed **structurally** to the wired entity (`registry.ts:78`), not `null`, with **gate-2 harvest gating** holding it SIMULATED (`registry.ts:70-77`). The shipped resolution is stronger than the prescribed one: a `null` backing is a hand-authored claim that goes stale exactly the way these documents did, whereas structural backing makes unwire-to-honest automatic. What holds the pill guarded is the honest absence of a live PRODUCER (SOMO = SPEC/F2, internal Grid = G1.2), not a fiction about wiring. |
 | **C7-FIND-02** *(refs @ `063adca`)* | **The three-value quantity provenance collapses to one at the write, and the contract claimed otherwise.** C7 §2.1 asserted `wasAdjusted` is *"stored, not derived-and-discarded — the fact of human adjustment is itself the audit signal."* `purchaseRequisitionTarget.create` (`MockCommandService.ts:547-593`) reads neither `suggestedQty` nor `wasAdjusted`, `buildPrCreatePayload` (`planGridModel.ts:196-213`) does not emit them, and `PurchaseRequisition` (`types.ts:569-587`) has no field to hold either. Only `acceptedQty` survives, as `quantity`. What *does* survive is narrower and lives elsewhere: an override's reason + from/to ride the DR-10 `TransitionEvent` via `buildQtyDecision` (`planGridModel.ts:176-189`), and the reason-gate genuinely blocks an unexplained override pre-dispatch (`overrideBlocked`, `:165-172`). The audit signal exists **on the event, not on the entity**. | **OPEN — DEFECT, recorded as a defect rather than documented as intended behaviour.** Doc corrected to state both (C7 §2.1). Closing it is a code batch: either persist the two values on the entity, or restate the guarantee as event-scoped. Not bundled here — this batch is docs-only. |
@@ -22367,3 +22367,210 @@ mutation-probed.
 to `default: return 0` and the timeline marks nothing current while a GR is at
 the boundary. Cosmetic, on a different instrument from this batch's subject, and
 outside the dispatch — recorded, not fixed.
+
+---
+
+## §89 — ONE DECLARED PRESENT (#320): the SDC clock retires, `contract` + `obligation` anchor, and a deferral's stated mechanism is retracted
+
+**Ruled and built 2026-09-08.** `FIXTURE-PRESENT-01` closed at #319 with **two**
+declared presents still standing in shipped code: the fixture families read
+`DECLARED_PRESENT` (2026-09-07) while the SDC loop read its own
+`SDC_SIMULATED_NOW` (2026-08-25). Thirteen days apart, four surfaces rendering
+that gap honestly, and **nothing anywhere recording a ruling for it.** Two clocks
+that disagree by ruling are defensible; two that disagree by accident are not.
+
+### §89a — THE OPTION NOBODY DISPATCHED: MOVE `P` TO MEET THE FAMILY
+
+The dispatch named three options — anchor the SDC family under `P`; keep two
+declared presents, gated; or retire `sdcClock` with the delivery lane. Measurement
+produced a fourth that dominates all three, and it turns on one number.
+
+The SDC lane's coherent window was derived **empirically, from its own shipped
+assertions** rather than from any predicate a seat invented: `SDC_SIMULATED_NOW`
+was swept day by day across the lane's 52 spec files (662 tests).
+
+| now | result |
+|---|---|
+| 2026-08-24 | RED (4) |
+| **2026-08-25 … 2026-09-01** | **GREEN** (only the self-pin fails inside the band) |
+| 2026-09-02 … 2026-09-15 | RED (4) |
+
+**Both edges are set by ONE line** — `sa-0002` item A **seq 6**, release
+2026-09-01 — from opposite sides of `ANTICIPATION_DAYS` (7): the anticipatory
+nudge needs `0 <= daysBetween(now, releaseDate) <= 7`.
+
+⚠️ **THE FIRST MECHANISM PROPOSED FOR THE LATE EDGE WAS FALSIFIED BY PROBING IT.**
+The prediction was the grace deadline (`releaseDate + DELIVERY_GRACE_DAYS` =
+2026-09-04). 09-02 and 09-03 came back RED, so the grace rule was not what bound
+it. **The boundary was probed rather than reasoned to, which is the only reason
+the mechanism reported here is the right one** — §70's rule applied before filing
+rather than after.
+
+`BPJPH − 47 = 2026-08-31` sits inside that window. So `MANDATE_LEAD_DAYS` went
+40 → 47 and the second present retired onto the first with **no SDC fixture moved
+and no assertion re-tuned**:
+
+| option | fixture shifts | assertions to fix |
+|---|---|---|
+| anchor the SDC family under `P` | 4 files, 58 literals | **8 / 4 files** |
+| keep two presents, gated | none | ~0, but four surfaces disagree with their neighbours |
+| retire `sdcClock` with the delivery lane | — | **not buildable as specified** (see §89b) |
+| **move `P` to meet the family** | **none** | **1, and it is a tautology** |
+
+**The hostage is real and is made checkable rather than argued away.** `P` is now
+pinned by a demo fixture: re-author `sa-0002` seq 6 and the window moves. The
+gate asserts `DECLARED_PRESENT ∈ SDC_WINDOW`, so that fires **by name** instead of
+the lane quietly going false. **Option 1 is filed at the site with its route out**
+— anchor `sdc` and `P` cancels entirely, after which `MANDATE_LEAD_DAYS` is free
+again; the cost when it comes is ~20 hardcoded `'2026-08-25'` literals across 14
+spec files, which must be DERIVED, not re-pinned.
+
+### §89b — `sdcClock` IS NOT THE DELIVERY LANE'S CLOCK, WHICH IS WHY ONE OPTION WAS UNBUILDABLE
+
+It serves five consumer areas, and `deriveDeliveryChase` reads
+`DeliveryAgreementView` — so delivery views and the chase list sit on **one
+derivation chain**. Moving "the delivery lane" alone onto `DECLARED_PRESENT`
+would have split that chain across two clocks and created a *third* present
+inside one loop.
+
+⚠️ **AND ITS TEST SEAM IS ONE-SIDED — FILED, INDEPENDENT OF THIS BATCH AND
+SURVIVING IT.** `sdcClock.now()` is read by the write stamps and some selectors;
+**five app surfaces import `SDC_SIMULATED_NOW` directly.** `sdcClock.set()` moves
+the first and not the second, so a test that injects a clock leaves five surfaces
+on the frozen constant.
+
+### §89c — THE DEFERRAL'S STATED MECHANISM WAS FALSE, AND THE RETRACTION IS QUOTED
+
+`FIXTURE-PRESENT-01`'s closing note, and `fixturePresent.ts`, and
+`fixturePresent.guard.test.ts:157`, all said the same thing:
+
+> "the calendar is read by the DELIVERY lane, which runs on `SDC_SIMULATED_NOW`,
+> and that clock is not anchored in this batch. Moving the schedule while its
+> clock stands still is the SDC-4 collision the `sdcClock` module exists to
+> prevent."
+
+**Measured false.** `services/delivery` imports nothing from `mockContracts` and
+no clock at all. Shifting contract + obligation + `START_DATE` with the clock
+standing still broke **2 files / 11 tests**; `fixtures.integrity.test.ts` stayed
+GREEN; not one failure was a clock-vs-schedule collision. Shifted together, the
+damage was **exactly additive — 19 = 11 + 8, 6 files = 2 + 4, zero interaction.**
+
+The real coupling was `START_DATE` being a hand-maintained **duplicate** of
+`ctr-003.startDate`. It now READS the contract, so the two cannot diverge and the
+integrity test asserts a property instead of a copy.
+
+⚠️ **THE DEFERRAL WAS CORRECT AND ITS MECHANISM WAS NOT, WHICH IS THE EXACT SHAPE
+§70 EXISTS FOR** (`FALSE-MECHANISM-MUST-NOT-BE-FILED-01`) — *a finding whose
+mechanism is false must not be filed even when its conclusion is right, because
+nobody re-measures a blocker; a blocker is why you stopped.* It was filed anyway,
+one turn before the rule could catch it, and it shipped into two source files
+plus this register. **Quoted rather than deleted at all three sites.**
+
+### §89d — `contract` + `obligation`: ONE ANCHOR, RE-DERIVED
+
+Anchored **together** at **2026-05-24**, because obligations name contract ids.
+Windows re-derived from the raw literals:
+
+| family | window | binds |
+|---|---|---|
+| contract | 2026-03-17 … 2026-06-05 | ctr-007 (early), ctr-008 (late) |
+| obligation | 2026-05-17 … 2026-06-01 | obl-007a (early); obl-003a / obl-004a / obl-010c (late) |
+| ∩ | **2026-05-17 … 2026-06-01** | midpoint **2026-05-24** |
+
+⚠️ **THE PREVIOUSLY-DECLARED CONTRACT WINDOW WAS WRONG AT ITS EARLY EDGE** — it
+read 2026-05-17, derived at #319 from five authored "bands" that **no shipped code
+implements.** Re-derived from the two predicates that DO read `endDate` against a
+clock (`matchesGroup`'s 0..90 band, `expiryTone`), the early bound is 2026-03-17.
+The anchor is unchanged because obligation binds both edges either way — **the
+same number for a better reason**, which is the only kind of correction worth
+making to a number that was already right.
+
+**Corroboration from an independent instrument:** the retired `daysUntilExpiry`
+field back-solved 12 of 13 contract rows to **2026-05-20** — four days from the
+midpoint, comfortably inside the intersection.
+
+⚠️ **AND THE TOLERANCE RULE WAS OVERSTATING ITSELF.** It was `round(span / 2)`,
+which is only right when the anchor is exactly centred. `supplierDocument`
+declared 41 while its early edge sits **40** days away — one day of drift the
+field promised and did not have. It is now **the distance to the edge that breaks
+FIRST**, and for a shared anchor it is measured against the INTERSECTION rather
+than either own window.
+
+⚠️ **MEASURED AND REPORTED RATHER THAN SMOOTHED: the pair's tolerance is
+ASYMMETRIC (−7 / +8), and today is its LAST day of wall-clock coherence.** With
+`P` = 2026-08-31 and the real clock at 2026-09-08, a surface that reads the wall
+clock sees an effective origin of 2026-06-01 — exactly the obligation window's
+late bound. From tomorrow, `obl-003a` / `obl-004a` / `obl-010c` read `Upcoming`
+beside a past due date. **Nothing computes a contradiction** (`contractView`
+renders the raw date with no countdown, and `displayStates.ts` already groups
+obligation `Upcoming`/`Overdue` as `stored-in-fixtures` with zero non-fixture
+writes), so this is the recorded data-defect class rather than a new one. Choosing
+the FLOOR midpoint over the ceiling bought the extra day in the direction the wall
+clock actually travels. The remedies are a lead bump or retiring the stored
+obligation states; neither is taken here.
+
+### §89e — THE LATENT COUPLING WAS NOT LATENT
+
+The dispatch asked for a guard on "nothing asserts sa-0002's calendar sits inside
+ctr-013's validity window", on the reasoning that *a latent coupling found before
+it fires is the cheapest one there is*. `agreementContractWindow.guard.test.ts`
+now derives **every** exported agreement (9) and joins each to its own contract.
+
+⚠️ **IT FIRED ON `main`, BEFORE ANY DATE MOVED.** Six releases across three
+agreements already sat outside their contracts with nothing watching, because the
+only containment assertion in the tree covered `sa-0001` alone.
+
+| | out-of-window releases |
+|---|---|
+| `main`, pre-shift | **6** (sa-1004 ×4, sa-1006, sa-1007) |
+| post-shift | **2** (sa-1001, sa-1004) |
+
+The shift **repairs four and exposes one** (`ctr-010`'s start moved past
+`sa-1001`'s first release). **The split is the finding:** every survivor is a
+`demoFixturesScale` volume fixture that borrows a real contract id so the nested
+tab renders — their calendars were never authored to sit inside those contracts.
+The two DESIGNED agreements, `sa-0001` and `sa-0002`, are clean and are asserted
+clean, so the exception list can never be used to excuse the pair the model is
+actually demonstrated on. Recorded bilaterally: declared == derived as SETS, so a
+row that quietly stops violating is as red as one that starts. **It can only
+shrink truthfully.**
+
+⚠️ **AND `ctr-013` DOES NOT MOVE WITH ITS NEIGHBOURS — A MEMBERSHIP RULING, NOT AN
+EXEMPTION.** It exists only to host `sa-0002`, whose calendar is authored against
+the SDC clock, so for date purposes it belongs to the SDC family. This is the
+mirror of `START_DATE` belonging to the CONTRACT family despite living under
+`services/delivery`: **membership follows the coupling, not the directory.** Both
+are stated at their sites, and the guard is what keeps the second honest — the
+mutation that stops excluding `ctr-013` kills three tests by name.
+
+### §89f — MUTATION PROBE
+
+Six mutants, all **KILLED BY NAME**; every target restored byte-identical
+(sha256 as authority, `git hash-object` beside it — `core.autocrlf` is on).
+
+| mutant | killed by |
+|---|---|
+| `MANDATE_LEAD_DAYS` 47 → 54 (`P` leaves `SDC_WINDOW` low) | 2, both window assertions |
+| `MANDATE_LEAD_DAYS` 47 → 40 (leaves high) | 2, both window assertions |
+| shared anchor → 2026-05-16 (one day before ∩) | 3 |
+| shared anchor → 2026-06-02 (one day after ∩) | 4 |
+| stop excluding `ctr-013` from the contract shift | 3, incl. the sa-0002 containment claim |
+| `day()` offset ignored (the fulfillment repair collapses) | 3 |
+
+⚠️ **THE FIFTH PROBE ABORTED ON ITS FIRST RUN AND THAT IS RECORDED, NOT TIDIED.**
+It named `mockContracts.ts` as the home of `SDC_FAMILY_CONTRACT_IDS`, which is
+declared in `fixturePresent.ts` — §42 exactly: *name the site the claim requires.*
+It aborted **loudly** (`NOT APPLICABLE (matcher wrong)`) rather than reporting
+"not killed", which is the difference between a probe that fails safe and one
+that reports on itself.
+
+### Filed from the investigation, not touched
+
+- **`DEMO_NOW` is a THIRD declared present** (`src/test/demoClock.ts`,
+  2026-07-06), test-scope, disagreeing with both. Named so it is not
+  rediscovered as a surprise.
+- **`sdcClock`'s one-sided seam** (§89b) — survives option 4 untouched.
+- **`BuyerChase` names a simulated instant with NO honesty marker**, in either
+  locale — `chase.meta.summary` is *"· as of {{date}}"* while its three peers say
+  "sample clock" or "sample data". The only one of the four without. Same class as
+  `BuyerCompliance`'s hardcoded regulatory date that #319 retired.
