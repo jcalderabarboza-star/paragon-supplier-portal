@@ -34,7 +34,12 @@ import type {
   ContractStatus,
   ContractType,
 } from '../../data/mockContracts';
-import type { ContractObligation, ObligationStatus } from '../../data/mockObligations';
+import type { ContractObligation } from '../../data/mockObligations';
+import {
+  obligationDisplay,
+  OBLIGATION_DISPLAY_RANK,
+  OBLIGATION_DISPLAY_VARIANT,
+} from '../../services/data/obligationProjection';
 import type { Supplier } from '../../services/data/types';
 
 // ─── Display helpers (detail-only) ───────────────────────────────────────────
@@ -51,28 +56,22 @@ export const STATUS_VARIANT: Record<
   Terminated: 'neutral',
 };
 
-const OBLIGATION_VARIANT: Record<
-  ObligationStatus,
-  'success' | 'warning' | 'danger' | 'info' | 'neutral'
-> = {
-  Upcoming: 'info',
-  'In Progress': 'warning',
-  Completed: 'success',
-  Overdue: 'danger',
-};
-
-const OBLIGATION_RANK: Record<ObligationStatus, number> = {
-  Overdue: 0,
-  'In Progress': 1,
-  Upcoming: 2,
-  Completed: 3,
-};
-
-const sortObligations = (a: ContractObligation, b: ContractObligation) => {
-  const r = OBLIGATION_RANK[a.status] - OBLIGATION_RANK[b.status];
-  if (r !== 0) return r;
-  return a.dueDate.localeCompare(b.dueDate);
-};
+// ⚠️ THE OBLIGATION MAPS MOVED TO `obligationProjection` AND ARE KEYED ON THE
+// DISPLAY STATE. They used to be `Record<ObligationStatus, …>` — keyed on the
+// STORED literal, which is how a clock state authored months ago reached a pill
+// beside a day-count computed from `nowIso`. Both are now decided by the same
+// clock, so the card cannot contradict itself.
+//
+// `sortObligations` takes `nowIso` for the same reason: a sort ordered by a
+// stored rank puts a row that is Overdue TODAY below one that is not.
+const sortObligations =
+  (nowIso: string) => (a: ContractObligation, b: ContractObligation) => {
+    const r =
+      OBLIGATION_DISPLAY_RANK[obligationDisplay(a, nowIso)] -
+      OBLIGATION_DISPLAY_RANK[obligationDisplay(b, nowIso)];
+    if (r !== 0) return r;
+    return a.dueDate.localeCompare(b.dueDate);
+  };
 
 const TYPE_LABEL_KEY: Record<ContractType, string> = {
   Supply: 'contracts.type.supply',
@@ -265,8 +264,10 @@ export const ContractDetailBody: React.FC<{
   );
   const obligationsForContract = useMemo<ContractObligation[]>(
     () =>
-      obligations.filter((o) => o.contractId === contract.id).sort(sortObligations),
-    [obligations, contract.id],
+      obligations
+        .filter((o) => o.contractId === contract.id)
+        .sort(sortObligations(nowIso)),
+    [obligations, contract.id, nowIso],
   );
 
   return (
@@ -456,7 +457,15 @@ export const ContractDetailBody: React.FC<{
                       <Data>{formatDate(o.dueDate)}</Data>
                     </td>
                     <td className="px-3 py-2">
-                      <StatusPill variant={OBLIGATION_VARIANT[o.status]}>{o.status}</StatusPill>
+                      {/* COMPUTED, from the same `nowIso` as `Days until
+                          expiry` above. StatusPill localizes the canonical
+                          token itself, so all three display states keep their
+                          existing EN/ID labels with no key added. */}
+                      <StatusPill
+                        variant={OBLIGATION_DISPLAY_VARIANT[obligationDisplay(o, nowIso)]}
+                      >
+                        {obligationDisplay(o, nowIso)}
+                      </StatusPill>
                     </td>
                   </tr>
                 ))}

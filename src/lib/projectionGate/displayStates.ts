@@ -106,16 +106,63 @@ export const DISPLAY_STATES: readonly DisplayStateRow[] = [
     group: 'computed-at-read',
     producer: 'src/services/data/invoiceProjection.ts',
   },
+  // ⚠️ THESE TWO MOVED OUT OF `stored-in-fixtures` — the group did not change
+  // its mind, the TREE changed, and the gate re-derived it. They were fixture
+  // literals with zero non-fixture writes until `obligationProjection.ts`
+  // landed; the row below is what the derivation now returns, and reverting the
+  // producer reddens it without anyone editing this file.
+  //
+  // `noCommandTarget` STAYS, and the pair is the case that makes the flag worth
+  // having: nothing can WRITE an obligation (it is in `getKnownFlows()` ∖
+  // `WIRED_COMMAND_TARGETS`) and the display state is nonetheless COMPUTED. The
+  // precedent is `compliance` directly above — same combination, and the header
+  // says why the two facts are orthogonal.
+  {
+    entity: 'obligation',
+    state: 'Upcoming',
+    group: 'computed-at-read',
+    producer: 'src/services/data/obligationProjection.ts',
+    noCommandTarget: true,
+  },
+  {
+    entity: 'obligation',
+    state: 'Overdue',
+    group: 'computed-at-read',
+    producer: 'src/services/data/obligationProjection.ts',
+    noCommandTarget: true,
+  },
 
   // ── stored in fixtures — a data defect, held honestly until it is ruled ──
-  // Their disposal is filed and NOT taken here: either a `contractProjection` /
-  // `shipmentProjection` beside the two that exist, or admission as authored
-  // data labelled at the surface (§69's `approvalLevel` remedy).
+  // ⚠️ **THE THREE THAT REMAIN DO NOT SHARE ONE DISPOSAL, AND THE DIFFERENCES
+  // ARE DERIVED FROM THEIR FLOWS RATHER THAN ASSUMED FROM THE GROUP.** Obligation
+  // left this group by being computed; these three cannot follow it for three
+  // different reasons, each filed separately:
+  //
+  //   `contract`  a projection is the ONLY disposal available — all four verbs
+  //               are `surfaced: false · external-fact · owner: s4hana`, so this
+  //               portal will never own the write. BLOCKED ON A BAND RULING:
+  //               `matchesGroup` runs an 0..90 day band while the fixtures are
+  //               separable only on [22..61], so building on the shipped band
+  //               would re-label ctr-005 (83d) and ctr-006 (62d) from Active to
+  //               Expiring. `matchesGroup`'s `expired` arm has no computed half
+  //               at all. Deferred by ruling, not by cost.
+  //   `shipment`  exactly reconstructable and NOT blocked: `no actualArrival AND
+  //               daysUntil(estimatedArrival, now) < 0` selects exactly shp-018,
+  //               the one row stored `Delayed`. Its acquittal control is shp-017
+  //               — arrived a day late, stored `Delivered` — which a naive
+  //               `actual > estimated` rule convicts and the data does not.
+  //               Verbs are `external-fact · owner: tms`.
+  //   `supplierDocument`  its disposal is a DELETION, not a build: the
+  //               classifier already exists (`documentExpiry`) and every
+  //               consumer already reads it. The literal is the last thing left.
+  //
+  // §69's `approvalLevel` remedy — admission as authored data — is NOT the
+  // remedy for any of the three: that one was ruled because the value was
+  // UNCOMPUTABLE, and all three of these are computable. "Nothing writes it" and
+  // "nothing can compute it" are different findings.
   { entity: 'contract', state: 'Expiring', group: 'stored-in-fixtures', noCommandTarget: true },
   { entity: 'contract', state: 'Expired', group: 'stored-in-fixtures', noCommandTarget: true },
   { entity: 'shipment', state: 'Delayed', group: 'stored-in-fixtures', noCommandTarget: true },
-  { entity: 'obligation', state: 'Upcoming', group: 'stored-in-fixtures', noCommandTarget: true },
-  { entity: 'obligation', state: 'Overdue', group: 'stored-in-fixtures', noCommandTarget: true },
   // ⚠️ `supplierDocument` IS a wired CommandTarget and still nothing produces
   // this — so the absence of a writer is not explained by the absence of a
   // write path. That is why `noCommandTarget` is a flag and not the group.

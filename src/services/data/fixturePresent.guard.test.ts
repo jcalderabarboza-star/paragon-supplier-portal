@@ -203,7 +203,39 @@ describe('⚠️ EVERY ANCHOR SITS INSIDE ITS OWN FAMILY’S COHERENT WINDOW', (
     expect(docsCoherentAt(iso(dayMs(hi) + MS))).toBe(false);
   });
 
-  it('obligation — ANCHORED now, and its window still held against the literals', () => {
+  // ── ⚠️ THE RETRACTION THIS FILE OWED, PAID IN FULL ─────────────────────────
+  //   At #320 the operator ruled a false sentence retracted at BOTH sites it
+  //   shipped to — `fixturePresent.ts` and HERE, line 157 as it then stood —
+  //   with the instruction to QUOTE what was retired rather than delete it. It
+  //   was quoted in the module and in `docs/findings.md`, and at this site the
+  //   whole test carrying it was replaced, so the sentence vanished from the
+  //   one file a reader chasing the mechanism would open. Restored below,
+  //   verbatim, as the ruling asked. It read:
+  //
+  //       "the calendar is read by the DELIVERY lane, which runs on
+  //        `SDC_SIMULATED_NOW`, and that clock is not anchored in this batch.
+  //        Moving the schedule while its clock stands still is the SDC-4
+  //        collision the `sdcClock` module exists to prevent."
+  //
+  //   **MEASURED FALSE at #320.** `services/delivery` imports nothing from
+  //   `mockContracts` and no clock at all; shifting both families with the
+  //   clock standing still broke 2 files / 11 tests and not one failure was a
+  //   clock-vs-schedule collision. The deferral it justified was correct; its
+  //   mechanism was not — §70, one turn too late to stop it shipping.
+  //
+  // ── ⚠️ AND WHAT THESE LITERALS ARE NOW FOR, WHICH HAS CHANGED ─────────────
+  //   `obligation/Upcoming` and `obligation/Overdue` are `computed-at-read` as
+  //   of this batch: no reader sees the stored literal any more. So this
+  //   assertion is no longer "a surface is still telling the truth" — it is the
+  //   ORACLE check. The literals record what the fixture AUTHOR meant, and
+  //   `obligationProjection.test.ts` requires the classifier to reproduce them
+  //   with zero misclassifications. Holding the window here is what keeps that
+  //   oracle honest if the raw dates are ever re-authored.
+  //
+  //   `clockDrift.ts` reads the same fact from the other side and reports
+  //   obligation as `computed` rather than drift-bound — derived from
+  //   `DISPLAY_STATES`, so neither file had to be told.
+  it('obligation — ANCHORED, and its literals now serve as the projection`s ORACLE', () => {
     const [lo, hi] = FAMILY_ANCHORS.obligation.window!;
     expect(oblsCoherentAt(lo)).toBe(true);
     expect(oblsCoherentAt(hi)).toBe(true);

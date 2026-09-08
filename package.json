@@ -12,7 +12,8 @@
     "test": "vitest",
     "test:run": "vitest run",
     "test:gate": "node --test gate/*.test.js",
-    "gates": "node scripts/gates.mjs"
+    "gates": "node scripts/gates.mjs",
+    "drift": "vitest run --config vitest.drift.config.ts"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.101.2",
