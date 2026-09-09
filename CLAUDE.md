@@ -1075,6 +1075,70 @@ opposite shape and sharper: the hook reaches the document, and what is missing i
 the RIGHT-HAND SIDE of the comparison. One is a dead end; the other names what to
 build.
 
+⚠️ **AND WHEN A RE-IMPLEMENTATION DISAGREES WITH THE INSTRUMENT, THE
+RE-IMPLEMENTATION IS THE THING UNDER TEST — `REIMPLEMENTATION-CONTRADICTS-THE-
+INSTRUMENT-01`.** Rules 1–3 say a suspicious population is reporting on its
+matcher. This is the same defect with the operands swapped, and it is missed
+because it arrives wearing the clothes of a discovery: a seat re-derives by hand
+what a shipped instrument already computes, the two disagree, and **the hand
+derivation is believed because it is the newer measurement and it is the one the
+seat understands.** It is not newer evidence. It is a second instrument, written
+in an afternoon, with no probe, no bilateral control and no history of having
+fired — set against one that has all four. **The prior is not close.**
+
+**Measured, in the lane that wrote this rule.** A hand matcher for *"which
+instruments guard their population?"* returned **five with no defence at all** —
+`simUsrNamespace`, `thirdPartyIdentifiers`, `glossary.coverage`, `toastHonesty`,
+`retiredDayFields`. Every one was false. The matcher tested `toBeGreaterThan\(0\)`
+and all five guard with `(200)`, `(400)`, `(10)`, `(5)`. **The instruments were
+right and the re-implementation was wrong, and the re-implementation is what
+nearly got written down** — as a finding, in the direction §86g names as the
+dangerous one, because it *manufactured* work rather than dissolving it.
+
+**So the disposal, and it is an ORDER rather than a preference: when a hand
+derivation contradicts a shipped instrument, debug the hand derivation FIRST and
+say you did.** Only after it survives is the disagreement evidence about the
+tree. And the confirmation is cheap and specific — **fire the hand matcher at a
+member the instrument already accepts**; if it rejects that, the instrument was
+never the subject. ⚠️ **AND IT COMPOUNDS WITH `FALSE-MECHANISM-MUST-NOT-BE-FILED-
+01` (§70):** a false contradiction filed as a finding reads as *"the gate is
+weak"*, which is the reading that gets believed and the one that staffs a lane.
+
+⚠️ **AND THE RULE THAT ORDERS EVERY PROBE IN THIS SECTION, PROMOTED OUT OF ONE
+MODULE'S COMMENT BECAUSE IT GOVERNS ALL OF THEM — `PROBE-MUST-FIRE-AT-A-REAL-
+DEFECT-01`.** It was written at #326 inside `src/services/data/clockDrift.ts`,
+where it reads as local to that instrument. It is not:
+
+> **WHAT IS MISSING IS NOT A FAMILY — IT IS A PROBE THAT FIRES THE INSTRUMENT AT
+> A DEFECT THE TREE REALLY HAD.**
+
+**A synthetic subject agrees with the matcher by construction**, which is
+`EMPTY-INPUT-REPORTS-CLEAN-01`'s cousin: a subject built to be found. It is not
+worthless — a synthetic probe still separates a matcher that runs from one that
+does not — but it can never tell you the matcher is aimed at the right thing,
+because the seat that aimed it also built the target. **Only a defect the tree
+really carried was aimed by something other than the seat.**
+
+**The specimen is `dayProjection.test.ts` @ `3e0c1d2`, quoted into a comment
+there rather than deleted, and it is the model to copy rather than to redesign:**
+run the SHIPPED matcher over the LIVE population at an input that reconstructs a
+geometry the tree really occupied, and require it to return **NAMED members**.
+Never a count — a count is satisfied by the wrong match. Its retirement was
+correct and is instructive: with one side of its comparison deleted it could no
+longer fail, and *a guard that can no longer fail is worse than none.*
+
+**Where this is already honoured, so it is copied and not reinvented:**
+`chartPalette.guard.test.tsx:578` (the walk must REACH `ScoreBadge`'s `TONE`, the
+object its class was named for, with an anti-vacuity control saying so), and
+`thirdPartyIdentifiers.test.ts`, whose ISO 6346 probe fires at a dead regex this
+file really shipped — `[A-Z]{4}U` where the standard has three letters, which
+matched nothing while the guard read green.
+
+⚠️ **THE PRIORITY THIS SETS, STATED SO IT IS NOT RE-DERIVED WRONGLY: when an
+instrument is repaired, THE DEFECT IT REMOVED IS THE PROBE INPUT, and it is
+cheapest to capture on the day of the repair.** After that it survives only as
+prose, and prose is what this section exists because it does not trust.
+
 The gate itself is `src/lib/storedFieldGate/` — every stored field on a
 glossary-covered DTO has a non-fixture reader or a bilateral allowlist row with
 its reason stated. It is deliberately TEST-level, not type-level, precisely so
