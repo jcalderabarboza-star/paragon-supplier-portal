@@ -55,9 +55,23 @@
 //   carries the corpses that prove the storing half:
 //     · `buyerCompliance.ts` c-006/c-008 store `daysRemaining: 873`, a number
 //       LAST TRUE ON 2025-04-11 and 483 days stale as of 2026-08-07;
-//     · `supplierDocuments.ts` doc-001 stores `status: 'Expiring Soon'` on a
-//       certificate that expired 2026-05-15, 84 days ago.
-//   Both were true when typed and neither has been true since. Nothing here is
+//     · ⚠️ **AND A SECOND EXAMPLE STOOD HERE THAT IS ITSELF A CORPSE NOW.**
+//       ⚠️ THE QUOTE BELOW MUST STAY ON ONE LINE. `projectionGate.test.ts`
+//       uses this comment as its REAL-TREE witness that a write pattern inside
+//       a comment is acquitted, and it matches the token whole — it even says
+//       *"pick a new witness"* if it goes. Reflowing the quote deletes the
+//       witness, which is what a first draft of this correction did.
+//       RETIRED: *"`supplierDocuments.ts` doc-001 stores `status: 'Expiring Soon'` on a certificate that expired 2026-05-15, 84 days ago."* True at
+//       `256f053` (2026-09-08 08:42 +0700); false at `8c68d77` (11:34 +0700),
+//       which shifted that fixture to `DECLARED_PRESENT` and never opened this
+//       file. Read `DOCUMENTS` — the export, not `DOCUMENTS_RAW` — and doc-001
+//       has not expired; stored and computed agree on every row. Quoted rather
+//       than deleted because **it is a better illustration retired than it was
+//       standing**: a hand-written day-count decayed inside the very paragraph
+//       arguing that hand-written day-counts decay. `enforcement.ts` carries the
+//       same fact as `84 days` too, written a day apart from the widget's `116`.
+//   The `buyerCompliance.ts` corpse above is unaffected and still stands. Both
+//   were true when typed and neither has been true since. Nothing here is
 //   stored and nothing here reads a clock: `verifyHalalAtReceipt` is a pure
 //   function of `(supplierId, materialCode, registry, receiptInstant)`, and
 //   the test suite pins determinism rather than asserting it.
