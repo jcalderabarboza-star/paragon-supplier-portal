@@ -313,15 +313,44 @@ export interface FamilyAnchor {
  * and the midpoint maximises the drift the family tolerates in BOTH directions.
  */
 export const FAMILY_ANCHORS: Readonly<Record<FixtureFamily, FamilyAnchor>> = {
-  // 8 dated documents; `documentExpiry` (180d) is the real projection.
-  // The late end is bound by doc-005 (ISO 9001, expires 2026-11-09, stored
-  // 'Valid' — needs > 180 days). The early end by doc-202 (expires 2026-08-19,
-  // stored 'Expiring Soon').
+  // ⚠️ **THIS ANCHOR'S JUSTIFICATION CHANGED KIND, NOT VALUE.** The date is
+  // untouched — every document renders exactly the dates it did — but what
+  // EVIDENCES it is a different sort of claim, so the old one is quoted rather
+  // than edited:
+  //
+  //     RETIRED: 'midpoint of the window on which all 8 dated documents agree
+  //              with documentExpiry'
+  //     and with it: "The late end is bound by doc-005 (ISO 9001, expires
+  //     2026-11-09, stored 'Valid' — needs > 180 days). The early end by
+  //     doc-202 (expires 2026-08-19, stored 'Expiring Soon')."
+  //
+  // That derivation compared each row's STORED status against the clock, and
+  // the stored clock words are gone: `doc-001` and `doc-202` now hold `'Valid'`
+  // (a declared flow state) so nothing outside the machine remains. **The old
+  // evidence is not weakened — it is absent**, and an anchor evidenced by
+  // something that no longer exists is an anchor evidenced by memory.
+  //
+  // ⚠️ **THE REPLACEMENT IS A STRICTLY STRONGER PIN, MEASURED.** The old
+  // coherence test admitted **82 anchors** (2026-02-20 … 2026-05-12) — it
+  // pinned a WINDOW and took the midpoint. The new oracle asserts the full
+  // per-row map of what this anchor PRODUCES — both the shifted date and the
+  // computed state, for all 8 dated rows — and **exactly one anchor produces
+  // it.** The dates are what make it a pin: states alone are constant across
+  // all 82, so a states-only oracle would sit silent for 81 of them.
+  //
+  // ⚠️ **AND SAY PLAINLY WHAT IT NO LONGER PROVES: AUTHOR INTENT.** The old
+  // guard asserted the AUTHOR agreed with the clock — a second, independent
+  // opinion, which is what made it an oracle in `obligation`'s sense. The new
+  // one asserts the clock agrees with itself. It fails on three axes where the
+  // old one failed on one (the classifier changing, the anchor moving, or a
+  // raw date moving), and it cannot fail on the fourth: a re-authored date
+  // that is WRONG but self-consistent now passes. That trade is the operator's
+  // ruling, recorded here rather than discovered later.
   supplierDocument: {
     anchor: '2026-04-01',
     window: ['2026-02-20', '2026-05-12'],
     toleranceDays: 40,
-    why: 'midpoint of the window on which all 8 dated documents agree with documentExpiry',
+    why: 'the sole anchor producing the declared per-row map of shifted dates and computed states (documentDisplayState at DECLARED_PRESENT); the window is the 82-day band the retired stored-status coherence admitted, kept as the record of what this family once solved for',
   },
 
   // No stored clock state to solve for. The anchor is EVIDENCED rather than

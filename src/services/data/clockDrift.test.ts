@@ -166,142 +166,126 @@ describe('what the report says when there is nothing left to watch', () => {
   });
 });
 
-describe('a BOUND family — ok, warn and FALSE, each shown at its own instant', () => {
-  // `supplierDocument` is the stable probe: it is bound (its `Expiring Soon`
-  // literal is still what a reader sees), it has a real window, and its
-  // tolerance is wide enough that all three verdicts are reachable without
-  // contriving a date.
-  const F: FixtureFamily = 'supplierDocument';
-  const A = FAMILY_ANCHORS[F].anchor;
-  const [LO, HI] = FAMILY_ANCHORS[F].window!;
-  const TOL = FAMILY_ANCHORS[F].toleranceDays!;
+describe('⚠️ NO FAMILY IS MEASURABLE ANY MORE — and that is derived, not declared', () => {
+  // ── ⚠️ WHAT HAPPENED, AND WHY IT IS THE MODULE WORKING ────────────────────
+  //   `supplierDocument` was this file's stable probe: the one family with BOTH
+  //   a window and a reader-visible stored clock state, so `ok` / `warn` /
+  //   `FALSE` were all reachable from shipped data. Its two fixture rows now
+  //   store `'Valid'` — a declared flow state — so `DISPLAY_STATES` no longer
+  //   groups anything of its as `stored-in-fixtures`, and `familyDrift` returns
+  //   `computed`.
+  //
+  //   **`clockDrift.ts` was not edited.** Bound-ness is read from
+  //   `DISPLAY_STATES` at call time, which is the property the module's header
+  //   claims; this is the third family to leave that way (obligation, contract,
+  //   now supplierDocument) and the first to leave the MEASURABLE set empty.
+  //
+  //   ⚠️ **BOUND AND MEASURABLE ARE DIFFERENT SETS, AND ONLY ONE IS EMPTY.**
+  //   `shipment/Delayed` is still `stored-in-fixtures`, so a reader still sees a
+  //   stored clock state and the instrument still has something to watch — the
+  //   WAITING footer stays unreachable. What shipment lacks is a WINDOW, so its
+  //   verdict is `no-window-declared` and no headroom can be computed for it.
+  //   An instrument with nothing MEASURABLE is not an instrument with nothing to
+  //   watch, and conflating the two is what the `no-window-declared` rename
+  //   already had to fix once.
+  //
+  //   RETIRED, quoted rather than deleted — the family-driven arms, which can no
+  //   longer run because no family reaches them:
+  //
+  //     describe('a BOUND family — ok, warn and FALSE, each shown at its own
+  //              instant', … const F: FixtureFamily = 'supplierDocument' …)
+  //       it('KNOWN-GOOD FIRST: at `P` itself the family is `ok` with full
+  //           headroom')
+  //       it('inside the declared tolerance it stays `ok`, in BOTH directions')
+  //       it('⚠️ its warn band is ONE-SIDED, because the anchor is not centred')
+  //       it('⚠️ WHO CAN WARN IS DERIVED — `contract` left the set,
+  //           `supplierDocument` holds it')   // swept: ['supplierDocument @ 41d']
+  //       it('⚠️ past its OWN window it is FALSE — a reader is seeing a wrong
+  //           state')
+  //       it('the EARLY edge falsifies too — drift is signed, not a magnitude')
+  //
+  //   ⚠️ **THE ONE WORTH MOURNING IS THE SWEEP**, which derived warn-membership
+  //   across every family's own window in both directions and returned exactly
+  //   `['supplierDocument @ 41d']` — a real instrument over a real population.
+  //   Its successor cannot be a sweep: swept today it returns `[]`, and a sweep
+  //   that can only return `[]` is `EMPTY-INPUT-REPORTS-CLEAN-01` with better
+  //   manners. So the arms move to `driftVerdict` (extracted for exactly this)
+  //   and the sweep is replaced by an assertion that the population IS empty —
+  //   which goes RED the day a family rejoins, and that is the point.
 
-  it('KNOWN-GOOD FIRST: at `P` itself the family is `ok` with full headroom', () => {
-    const d = familyDrift(F, DECLARED_PRESENT);
-    expect(d.verdict).toBe('ok');
-    expect(d.driftDays).toBe(0);
-    expect(d.headroomDays).toBe(TOL); // the anchor sits `tolerance` from its nearer edge
-    expect(d.readerVisibleStates.length).toBeGreaterThan(0);
+  it('KNOWN-GOOD FIRST: the report is non-empty and every family is judged', () => {
+    // Without this the emptiness below could be a report about a broken report.
+    const rows = driftReport(DECLARED_PRESENT);
+    expect(rows.length).toBe(Object.keys(FAMILY_ANCHORS).length);
+    expect(rows.length).toBeGreaterThan(0);
   });
 
-  it('inside the declared tolerance it stays `ok`, in BOTH directions', () => {
-    expect(familyDrift(F, plus(DECLARED_PRESENT, TOL)).verdict).toBe('ok');
-    expect(familyDrift(F, plus(DECLARED_PRESENT, -TOL)).verdict).toBe('ok');
-  });
-
-  it('⚠️ its warn band is ONE-SIDED, because the anchor is not centred', () => {
-    // `supplierDocument` does not share its anchor, so `toleranceDays` is the
-    // distance to its NEARER edge — 40, the early one — while the late edge is
-    // 41 away. So the warn band is exactly ONE day forwards and ZERO days
-    // backwards, and the family goes straight from `ok` to `FALSE` in the
-    // direction that breaks first.
-    //
-    // ⚠️ THIS IS THE ASSERTION I EXPECTED TO WRITE AS "the warn band is empty",
-    // and the probe said otherwise. Recorded as measured rather than smoothed:
-    // an off-centre anchor makes the two directions different, which is the
-    // whole reason `toleranceDays` became "the nearer edge" at #320 instead of
-    // `round(span / 2)`.
-    expect(familyDrift(F, DECLARED_PRESENT).headroomDays).toBe(TOL);
-    const lateRoom = (dayMs(HI) - dayMs(A)) / MS;
-    const earlyRoom = (dayMs(A) - dayMs(LO)) / MS;
-    expect(Math.min(lateRoom, earlyRoom)).toBe(TOL);
-
-    // forwards: one day of warn, then false
-    expect(familyDrift(F, plus(DECLARED_PRESENT, TOL)).verdict).toBe('ok');
-    expect(familyDrift(F, plus(DECLARED_PRESENT, lateRoom)).verdict).toBe(
-      lateRoom > TOL ? 'warn' : 'ok',
+  it('⚠️ the MEASURABLE set is empty — derived from upstream, never from familyDrift', () => {
+    // §86: the population is derived from `FAMILY_ANCHORS` and `DISPLAY_STATES`,
+    // both upstream of the module under test. Deriving it by asking
+    // `familyDrift` would move the population and the assertion together, and
+    // could not tell a kill from an empty run.
+    const measurable = (Object.keys(FAMILY_ANCHORS) as FixtureFamily[]).filter(
+      (f) =>
+        FAMILY_ANCHORS[f].window !== null &&
+        DISPLAY_STATES.some((r) => r.entity === f && r.group === 'stored-in-fixtures'),
     );
-    expect(familyDrift(F, plus(DECLARED_PRESENT, lateRoom + 1)).verdict).toBe('FALSE');
-    // backwards: the nearer edge, so no warn band at all
-    expect(familyDrift(F, plus(DECLARED_PRESENT, -earlyRoom)).verdict).toBe('ok');
-    expect(familyDrift(F, plus(DECLARED_PRESENT, -(earlyRoom + 1))).verdict).toBe(
-      'FALSE',
-    );
+    expect(measurable).toEqual([]);
+    // …and the module agrees, from the other side: no row carries a headroom.
+    expect(
+      driftReport(DECLARED_PRESENT).filter((d) => d.headroomDays !== null),
+    ).toEqual([]);
   });
 
-  it('⚠️ WHO CAN WARN IS DERIVED — `contract` left the set, `supplierDocument` holds it', () => {
-    // This test used to read *"WARN IS REACHABLE, and only on a SHARED anchor
-    // — `contract` shows it"*, and probed `contract` directly: it declared 7
-    // (measured against the contract ∩ obligation intersection, because the
-    // pair holds one anchor) while its own window left 12, and those five days
-    // were the warn band. `contract` became `computed` on 2026-09-08 and left
-    // the bound population — `clockDrift`'s design working, not a regression:
-    // bound-ness is derived upstream from `DISPLAY_STATES`, so a family that
-    // gains a projection leaves with nobody editing this file.
-    //
-    // ⚠️ **AND THE REPLACEMENT I FIRST WROTE CLAIMED `warn` HAD BECOME
-    // UNREACHABLE. THE SWEEP SAID OTHERWISE AND IT IS RECORDED AS MEASURED
-    // RATHER THAN SMOOTHED.** `supplierDocument` still warns, for the other
-    // reason entirely: its anchor is OFF-CENTRE (40 days from the early edge,
-    // 41 from the late one), so there is exactly one forward day past its
-    // declared tolerance and still inside its window. Two different mechanisms
-    // produce a warn band — a shared anchor and an off-centre one — and losing
-    // the first did not remove the second.
-    //
-    // So the membership is SWEPT rather than listed: every family across its
-    // own full window, both directions.
-    const warners: string[] = [];
-    for (const family of Object.keys(FAMILY_ANCHORS) as FixtureFamily[]) {
-      const a = FAMILY_ANCHORS[family];
-      if (a.window === null || a.toleranceDays === null) continue;
-      const span = (dayMs(a.window[1]) - dayMs(a.window[0])) / MS;
-      for (let k = -span - 2; k <= span + 2; k += 1) {
-        if (familyDrift(family, plus(DECLARED_PRESENT, k)).verdict === 'warn') {
-          warners.push(`${family} @ ${k}d`);
-        }
-      }
-    }
-    // Exactly one day, on exactly one family — the late edge of the off-centre
-    // anchor. `contract` is absent, and its absence is the ruling landing.
-    expect(warners).toEqual(['supplierDocument @ 41d']);
-    expect(warners.some((w) => w.startsWith('contract'))).toBe(false);
-    expect(familyDrift('contract', DECLARED_PRESENT).verdict).toBe('computed');
-
-    // CONTROL, both ways — the sweep is a real instrument: over the same range
-    // it also finds `ok` and `FALSE`, so neither the single hit nor the
-    // `contract` absence is a loop that never ran.
-    const seen = new Set<string>();
-    for (const family of Object.keys(FAMILY_ANCHORS) as FixtureFamily[]) {
-      const a = FAMILY_ANCHORS[family];
-      if (a.window === null) continue;
-      const span = (dayMs(a.window[1]) - dayMs(a.window[0])) / MS;
-      for (let k = -span - 2; k <= span + 2; k += 1) {
-        seen.add(familyDrift(family, plus(DECLARED_PRESENT, k)).verdict);
-      }
-    }
-    expect([...seen].sort()).toEqual(['FALSE', 'computed', 'ok', 'warn']);
+  it('⚠️ but the BOUND set is NOT empty — shipment keeps the instrument watching', () => {
+    // The distinction the WAITING footer turns on. Named, because "nothing is
+    // measurable" and "there is nothing to watch" are one word apart and mean
+    // opposite things for whether this module should still exist.
+    const bound = DISPLAY_STATES.filter((r) => r.group === 'stored-in-fixtures');
+    expect(bound.map((r) => `${r.entity}/${r.state}`)).toEqual(['shipment/Delayed']);
+    expect(storedStateFamilies(DECLARED_PRESENT)).toContain('shipment');
+    expect(formatDriftReport(DECLARED_PRESENT)).not.toContain('WAITING');
   });
-  it('⚠️ the verdict RULE still has a warn arm, probed directly', () => {
-    // The branch no family can currently reach, measured at the rule instead
-    // of through data that cannot exercise it — `EMPTY-INPUT-REPORTS-CLEAN-01`
-    // is what an assertion over an unreachable population would be worth.
-    expect(driftVerdict(5, 3, 7)).toBe('ok'); //  inside tolerance
-    expect(driftVerdict(5, 7, 7)).toBe('ok'); //  exactly at it
+
+  it('⚠️ supplierDocument is `computed` — it left with nobody editing clockDrift', () => {
+    const d = familyDrift('supplierDocument', DECLARED_PRESENT);
+    expect(d.verdict).toBe('computed');
+    expect(d.readerVisibleStates).toEqual([]);
+    expect(d.headroomDays).toBeNull();
+    // …and it still HAS a window, which is what separates `computed` from
+    // `no-window-declared` and proves the departure was about the states.
+    expect(FAMILY_ANCHORS.supplierDocument.window).not.toBeNull();
+  });
+
+  it('⚠️ the verdict RULE still has every arm, probed directly', () => {
+    // The arms no family can now reach, measured at the rule instead of through
+    // data that cannot exercise them. This is the whole reason `driftVerdict`
+    // was extracted, and the reason has now arrived for `ok` and `FALSE` too —
+    // not only for `warn`.
+    expect(driftVerdict(5, 3, 7)).toBe('ok'); //   inside tolerance
+    expect(driftVerdict(5, 7, 7)).toBe('ok'); //   exactly at it
     expect(driftVerdict(5, 8, 7)).toBe('warn'); // past tolerance, inside window
     expect(driftVerdict(5, -8, 7)).toBe('warn'); // signed, not a magnitude
     expect(driftVerdict(-1, 8, 7)).toBe('FALSE'); // past the window wins
+    expect(driftVerdict(0, 8, 7)).toBe('warn'); //  the window boundary is inclusive
     expect(driftVerdict(5, 999, null)).toBe('ok'); // no declared tolerance
-  });
-  it('⚠️ past its OWN window it is FALSE — a reader is seeing a wrong state', () => {
-    // The late edge: the origin `anchor + drift` leaves the window.
-    const overLate = plus(DECLARED_PRESENT, (dayMs(HI) - dayMs(A)) / MS + 1);
-    const d = familyDrift(F, overLate);
-    expect(d.verdict).toBe('FALSE');
-    expect(d.headroomDays).toBeLessThan(0);
-    expect(falsifiedFamilies(overLate).map((x) => x.family)).toContain(F);
-    // …and the day BEFORE that is not FALSE. The boundary is a boundary.
-    const lastGood = plus(DECLARED_PRESENT, (dayMs(HI) - dayMs(A)) / MS);
-    expect(familyDrift(F, lastGood).verdict).not.toBe('FALSE');
-    expect(falsifiedFamilies(lastGood).map((x) => x.family)).not.toContain(F);
+    // CONTROL: all three arms are genuinely distinct, so the six lines above
+    // are not one answer six times.
+    expect(new Set(['ok', 'warn', 'FALSE']).size).toBe(3);
   });
 
-  it('the EARLY edge falsifies too — drift is signed, not a magnitude', () => {
-    const overEarly = plus(DECLARED_PRESENT, -((dayMs(A) - dayMs(LO)) / MS + 1));
-    expect(familyDrift(F, overEarly).verdict).toBe('FALSE');
-    expect(
-      familyDrift(F, plus(DECLARED_PRESENT, -((dayMs(A) - dayMs(LO)) / MS)))
-        .verdict,
-    ).not.toBe('FALSE');
+  it('⚠️ and the arms are reachable — on a family shaped like the one that left', () => {
+    // A SYNTHETIC probe standing in for the retired sweep: `familyDrift` cannot
+    // be pointed at a family that does not exist, so the geometry is exercised
+    // through the rule with the numbers the retired tests used. `supplierDocument`
+    // sat 40 days from its early edge and 41 from its late one — an off-centre
+    // anchor — which is why it warned for exactly one day forwards and none
+    // backwards. That asymmetry is a property of the RULE, and it survives the
+    // family that demonstrated it.
+    const TOL = 40;
+    expect(driftVerdict(41 - 40, TOL, TOL)).toBe('ok'); //   at tolerance
+    expect(driftVerdict(41 - 41, TOL + 1, TOL)).toBe('warn'); // one day past, still inside
+    expect(driftVerdict(-1, TOL + 2, TOL)).toBe('FALSE'); //  past the window
   });
 });
 

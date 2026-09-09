@@ -1,6 +1,17 @@
 // ────────────────────────────────────────────────────────────────────────────
 // Supplier documents fixtures.
 //
+// ⚠️ **`doc-001` AND `doc-202` STORED `'Expiring Soon'` UNTIL THIS BATCH, AND
+// THE REASON THEY NO LONGER DO IS NOT THAT IT WAS WRONG.** It was correct —
+// both rows compute `expiring` at the declared present, and they still do; the
+// rendered state does not move. What was wrong is that `'Expiring Soon'` is a
+// CLOCK word and `status` is the DISPATCHER'S STATE CURSOR
+// (`supplierDocumentTarget.readState`), so those two rows sat in a state
+// `getFlow('supplierDocument').states` does not declare. `'Valid'` IS a
+// declared state, so a renewal verb declaring `from: ['Valid']` now reaches
+// them. That is the latent exclusion closing, and it is this batch's
+// deliverable — not a data correction.
+//
 // Relocated from src/pages-v2/SupplierDocuments.tsx in Phase 1B Batch 2.
 // Every row carries supplierId so applySupplierScope can enforce identity
 // boundaries structurally.
@@ -17,7 +28,7 @@ import type { SupplierDocument } from '../../types';
 import { shiftFields } from '../../fixturePresent';
 
 const DOCUMENTS_RAW: SupplierDocument[] = [
-  { id: 'doc-001', supplierId: 'sup-007', name: 'Halal Certificate — MUI No. 01011234561020', category: 'Halal Compliance', status: 'Expiring Soon', issuedBy: 'MUI (Majelis Ulama Indonesia)', issuedDate: '2023-09-01', expiryDate: '2026-05-15', fileType: 'PDF', fileSize: '1.2 MB', version: 'v3', linkedTo: 'PK-PETB-8801, PK-PETB-8810', notes: 'BPJPH mandatory renewal required by October 2026' },
+  { id: 'doc-001', supplierId: 'sup-007', name: 'Halal Certificate — MUI No. 01011234561020', category: 'Halal Compliance', status: 'Valid', issuedBy: 'MUI (Majelis Ulama Indonesia)', issuedDate: '2023-09-01', expiryDate: '2026-05-15', fileType: 'PDF', fileSize: '1.2 MB', version: 'v3', linkedTo: 'PK-PETB-8801, PK-PETB-8810', notes: 'BPJPH mandatory renewal required by October 2026' },
   { id: 'doc-002', supplierId: 'sup-007', name: 'BPOM Notification — SAMPLE-BPOM-0007A', category: 'BPOM Regulatory', status: 'Valid', issuedBy: 'BPOM (Badan Pengawas Obat dan Makanan)', issuedDate: '2022-09-15', expiryDate: '2027-09-14', fileType: 'PDF', fileSize: '860 KB', version: 'v1', linkedTo: 'PK-PETB-8801' },
   { id: 'doc-003', supplierId: 'sup-007', name: 'NPWP Certificate — SAMPLE-NPWP-0007', category: 'Tax & Legal', status: 'Valid', issuedBy: 'Dirjen Pajak — DJP Indonesia', issuedDate: '2010-03-12', expiryDate: null, fileType: 'PDF', fileSize: '420 KB', version: 'v1', linkedTo: 'All POs' },
   { id: 'doc-004', supplierId: 'sup-007', name: 'PKP Registration — Pengusaha Kena Pajak', category: 'Tax & Legal', status: 'Valid', issuedBy: 'KPP Pratama Tangerang', issuedDate: '2010-05-20', expiryDate: null, fileType: 'PDF', fileSize: '310 KB', version: 'v1', linkedTo: 'All Invoices' },
@@ -73,7 +84,7 @@ const DOCUMENTS_RAW: SupplierDocument[] = [
 
   // sup-005 — Sample Personal Care Emulsifiers
   { id: 'doc-201', supplierId: 'sup-005', name: 'BPOM Notification — SAMPLE-BPOM-0005A', category: 'BPOM Regulatory', status: 'Valid', issuedBy: 'BPOM (Badan Pengawas Obat dan Makanan)', issuedDate: '2023-10-05', expiryDate: '2028-10-04', fileType: 'PDF', fileSize: '910 KB', version: 'v1', linkedTo: 'PO-2025-00131' },
-  { id: 'doc-202', supplierId: 'sup-005', name: 'REACH Compliance / Safety Data Sheet — Sample Blend PF-20', category: 'Quality', status: 'Expiring Soon', issuedBy: 'Sample Personal Care Regulatory Affairs', issuedDate: '2023-08-20', expiryDate: '2026-08-19', fileType: 'PDF', fileSize: '3.4 MB', version: 'v5', linkedTo: 'All emulsifier grades' },
+  { id: 'doc-202', supplierId: 'sup-005', name: 'REACH Compliance / Safety Data Sheet — Sample Blend PF-20', category: 'Quality', status: 'Valid', issuedBy: 'Sample Personal Care Regulatory Affairs', issuedDate: '2023-08-20', expiryDate: '2026-08-19', fileType: 'PDF', fileSize: '3.4 MB', version: 'v5', linkedTo: 'All emulsifier grades' },
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
