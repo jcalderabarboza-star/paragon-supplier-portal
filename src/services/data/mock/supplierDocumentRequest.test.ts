@@ -454,11 +454,19 @@ describe('THE LOOP CLOSES — buyer asks · supplier answers · buyer reviews', 
     expect(supplierDocumentStore.get(volunteered.entityId!)!.status).toBe('Under Review');
   });
 
-  it('a minted row cannot land in the undeclared `Expiring Soon` shape', async () => {
-    // ⚠️ Two SEEDED rows carry a status outside the machine (`doc-001`,
-    // `doc-202`) and would refuse every transition on an illegal from-state.
-    // They are filed, not fixed. What this asserts is that Wave E does not add
-    // to them: a creation takes `transition.to`, which is a declared state.
+  it('⚠️ NO row is outside the machine any more — minted OR seeded', async () => {
+    // ⚠️ **THIS TEST'S OWN CONTROL IS WHAT FIRED ON THE FIX, AND THAT IS THE
+    // BEST WITNESS THIS BATCH HAS.** It read:
+    //
+    //     "Two SEEDED rows carry a status outside the machine (doc-001,
+    //      doc-202) and would refuse every transition on an illegal
+    //      from-state. They are filed, not fixed."
+    //     … expect(strays).toContain('doc-001');
+    //     … expect(strays).toContain('doc-202');
+    //
+    // Wave E could only promise not to ADD to that set. The set is now empty:
+    // both rows store `'Valid'`, a state the flow declares, so the assertion
+    // inverts rather than retires — same population, opposite expectation.
     const res = await request(complianceSeat, {
       supplierId: 'sup-007',
       category: 'Halal Compliance',
@@ -467,13 +475,17 @@ describe('THE LOOP CLOSES — buyer asks · supplier answers · buyer reviews', 
     const declared = ['Awaiting Upload', 'Under Review', 'Valid', 'Rejected'];
     expect(declared).toContain(supplierDocumentStore.get(res.entityId!)!.status);
 
-    // The control that keeps this from passing over an empty premise: the two
-    // out-of-machine rows really are there.
+    // POPULATION CONTROL FIRST — the store is non-empty and holds the two rows
+    // the retired assertion named, so the emptiness below is a measurement and
+    // not a report about an empty store (`EMPTY-INPUT-REPORTS-CLEAN-01`).
+    const ids = supplierDocumentStore.all().map((d) => d.id);
+    expect(ids).toContain('doc-001');
+    expect(ids).toContain('doc-202');
+
     const strays = supplierDocumentStore
       .all()
       .filter((d) => !declared.includes(d.status))
       .map((d) => d.id);
-    expect(strays).toContain('doc-001');
-    expect(strays).toContain('doc-202');
+    expect(strays).toEqual([]);
   });
 });

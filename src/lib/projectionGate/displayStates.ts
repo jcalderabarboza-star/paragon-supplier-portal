@@ -211,10 +211,6 @@ export const DISPLAY_STATES: readonly DisplayStateRow[] = [
   // UNCOMPUTABLE, and all three of these are computable. "Nothing writes it" and
   // "nothing can compute it" are different findings.
   { entity: 'shipment', state: 'Delayed', group: 'stored-in-fixtures', noCommandTarget: true },
-  // ⚠️ `supplierDocument` IS a wired CommandTarget and still nothing produces
-  // this — so the absence of a writer is not explained by the absence of a
-  // write path. That is why `noCommandTarget` is a flag and not the group.
-  { entity: 'supplierDocument', state: 'Expiring Soon', group: 'stored-in-fixtures' },
 
   // ── produced by nothing ─────────────────────────────────────────────────
   // ⚠️ **THIS GROUP IS DELIBERATELY EMPTY, AND THE EMPTINESS IS THE RESULT
@@ -239,6 +235,30 @@ export const DISPLAY_STATES: readonly DisplayStateRow[] = [
   // so `projectionGate.test.ts` proves this arm reachable by firing
   // `producedBy` at a SYNTHETIC state with no writes, and pins the declared
   // groups as a SUBSET of the three rather than equal to them.
+  //
+  // ⚠️ **AND IT IS NOT EMPTY ANY MORE — THE SENTENCE ABOVE PREDICTED THIS
+  // EXACT ARRIVAL AND IT IS WORTH SAYING THAT IT DID.** *"the next state to
+  // lose its producer belongs here"* — written when the group held nothing,
+  // and `supplierDocument/Expiring Soon` is that state. Its two fixture rows
+  // now store `'Valid'`, so nothing in the tree writes the literal and
+  // `producedBy` returns `produced-by-nothing` on its own.
+  //
+  // ⚠️ **IT IS A DIFFERENT DEPARTURE FROM `Expired`'S, AND THE TWO MUST NOT BE
+  // READ AS ONE.** `Expired`'s ROW WAS DELETED because it had never been
+  // produced at all — a member the type could render and nothing could reach,
+  // the fabrication shape. This one WAS produced, by the fixture, and read by
+  // three surfaces until #324 put them on a computed classifier. **The row
+  // stays so the transition is legible**: deleting it would erase the fact
+  // that this state once had a source, and the group exists precisely to
+  // record states that lost one.
+  //
+  // ⚠️ **THE ROW IS WHAT MAKES A PARTIAL LANDING RED BY CONSTRUCTION**, in
+  // both directions, and `fixturePresent.guard.test.ts` probes both: retire
+  // the fixture literals without moving this row and the derived group
+  // (`produced-by-nothing`) contradicts the declared one; move this row
+  // without retiring the literals and it contradicts the other way. Neither
+  // half can ship alone.
+  { entity: 'supplierDocument', state: 'Expiring Soon', group: 'produced-by-nothing' },
 ];
 
 /** The entities this grouping speaks for — derived, never listed. */

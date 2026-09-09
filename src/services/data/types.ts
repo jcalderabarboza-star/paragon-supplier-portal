@@ -294,9 +294,32 @@ export interface POSummary {
 // can enforce scoping structurally once fixtures are relocated (Batch 2).
 
 /**
- * ⚠️ **THIS IS THE READ VOCABULARY, NOT THE FLOW'S `states`, AND THE GAP IS
- * DELIBERATE AND PRE-EXISTING.** `Expiring Soon` lives HERE ONLY, because it is
- * a clock projection and law 0.5 keeps it out of every transition table.
+ * ⚠️ **THE GAP IS CLOSED: THIS UNION AND `getFlow('supplierDocument').states`
+ * NOW HOLD THE SAME FOUR MEMBERS.** Every value here is a state the machine
+ * declares, so `status` is only ever the dispatcher's cursor
+ * (`supplierDocumentTarget.readState`) — never a clock word.
+ *
+ * ── ⚠️ `'Expiring Soon'` IS RETIRED FROM THIS UNION, AND NOT BECAUSE IT WAS
+ *    WRONG ──────────────────────────────────────────────────────────────────
+ *    RETIRED, quoted rather than deleted: *"THIS IS THE READ VOCABULARY, NOT
+ *    THE FLOW'S `states`, AND THE GAP IS DELIBERATE AND PRE-EXISTING.
+ *    `Expiring Soon` lives HERE ONLY, because it is a clock projection and law
+ *    0.5 keeps it out of every transition table."*
+ *
+ *    Every clause of that was TRUE. What it did not say is what the gap COST:
+ *    `status` is what `readState` reads, so the two fixture rows holding a
+ *    clock word sat in a state no transition declares — **reachable by no
+ *    verb, and silently excluded from any future one that says
+ *    `from: ['Valid']`.** Measured before acting, with a working control:
+ *    `doc-006` (`Awaiting Upload`) dispatched `done` while both `'Expiring
+ *    Soon'` rows and an in-flow `'Valid'` row all refused
+ *    `ILLEGAL_TRANSITION` — so there was no PRESENT harm, only a dated one.
+ *    A clock word in a cursor is a legality answer waiting to be given by
+ *    accident.
+ *
+ *    ⚠️ **THE RENDERED STATE DID NOT MOVE.** Both rows still compute
+ *    `expiring` — `documentDisplayState` reads the clock, and the clock did
+ *    not change. What went is the second opinion, not the answer.
  *
  * ── ⚠️ `'Expired'` IS RETIRED FROM THIS UNION (operator ruling) ─────────────
  *   The paragraph above used to name `Expiring Soon` **and `Expired`** together
@@ -317,9 +340,11 @@ export interface POSummary {
  *   `SupplierDocuments.tsx` derives its expired KPI, its alert banner and its
  *   per-row "expired N days ago" from `daysUntil(expiryDate)` — never from
  *   `status`. The status member was not the source of the expiry story on the
- *   one surface that tells it. (`SupplierCertsExpiringWidget` reads `status`
- *   instead, so the widget and the page disagree about what "expiring" means —
- *   filed, not this batch's.)
+ *   one surface that tells it. (The parenthetical here read *"`SupplierCerts
+ *   ExpiringWidget` reads `status` instead, so the widget and the page
+ *   disagree about what 'expiring' means — filed, not this batch's."* Closed
+ *   at #317 and again at #324: all three surfaces read
+ *   `documentDisplayState`, asserted by SITE.)
  *
  * ⚠️ **`Rejected` IS HERE FOR A THIRD REASON, WHICH MUST NOT BE CONFLATED WITH
  * EITHER.** `Expiring Soon` is absent from the flow because it is derived;
@@ -348,7 +373,6 @@ export interface POSummary {
  */
 export type SupplierDocumentStatus =
   | 'Valid'
-  | 'Expiring Soon'
   | 'Awaiting Upload'
   | 'Under Review'
   | 'Rejected';

@@ -37,6 +37,7 @@ import {
 import { BPJPH_MANDATE_DATE } from './complianceProjection';
 import { DOCUMENTS } from './mock/fixtures/supplierDocuments';
 import { documentExpiry } from './dayProjection';
+import { documentDisplayState } from './documentDisplayState';
 import { mockInventory } from '../../data/mockInventory';
 
 /**
@@ -236,14 +237,108 @@ describe('⚠️ THE ABSOLUTE CLASS — dates that must not move', () => {
 });
 
 describe('⚠️ EVERY ANCHOR SITS INSIDE ITS OWN FAMILY’S COHERENT WINDOW', () => {
-  it('supplierDocument — declared window and anchor agree with the raw literals', () => {
-    const [lo, hi] = FAMILY_ANCHORS.supplierDocument.window!;
-    expect(docsCoherentAt(lo)).toBe(true);
-    expect(docsCoherentAt(hi)).toBe(true);
-    expect(docsCoherentAt(FAMILY_ANCHORS.supplierDocument.anchor)).toBe(true);
-    // ⚠️ THE BOUNDARY IS REAL — one day outside, either side, and it breaks.
-    expect(docsCoherentAt(iso(dayMs(lo) - MS))).toBe(false);
-    expect(docsCoherentAt(iso(dayMs(hi) + MS))).toBe(false);
+  // ── ⚠️ THE SUPPLIERDOCUMENT ORACLE WAS REPLACED, NOT LOST ────────────────
+  //   RETIRED, quoted rather than deleted:
+  //
+  //       it('supplierDocument — declared window and anchor agree with the raw
+  //           literals', … docsCoherentAt(lo) … docsCoherentAt(hi) …
+  //           docsCoherentAt(anchor) … one day outside, either side, breaks)
+  //
+  //   It compared each row's STORED status to the clock. Both stored clock
+  //   words are gone — `doc-001` and `doc-202` hold `'Valid'` — so that
+  //   comparison has nothing on its left-hand side. **It did not get weaker;
+  //   its evidence stopped existing.**
+  //
+  //   ⚠️ **AND IT ONLY EVER PINNED A WINDOW. MEASURED: 82 ANCHORS SATISFIED
+  //   IT** (2026-02-20 … 2026-05-12); the anchor was that band's midpoint by
+  //   construction, not by evidence. The replacement below asserts what the
+  //   anchor PRODUCES — the shifted date AND the computed state for every
+  //   dated row — and **exactly one anchor produces that map.** The DATES are
+  //   what make it a pin: the states are identical across all 82, so a
+  //   states-only oracle would sit silent for 81 of them, and the
+  //   move-the-anchor-one-day probe would not fire.
+  //
+  //   ⚠️ **WHAT IT NO LONGER PROVES: AUTHOR INTENT.** The old guard asserted
+  //   the AUTHOR agreed with the clock — two independent opinions, which is
+  //   what `obligation` means by ORACLE two tests down. This one asserts the
+  //   clock agrees with itself. Three axes can break it (the classifier, the
+  //   anchor, a raw date) where the old broke on one; and a raw date
+  //   re-authored WRONGLY but self-consistently now passes, where the old
+  //   would have caught it. That is the trade the operator ruled.
+  it('supplierDocument — the anchor is pinned by what it PRODUCES, per row', () => {
+    const P = `${DECLARED_PRESENT}T00:00:00.000Z`;
+    // The full per-row map, written out rather than counted: a count cannot
+    // tell a right answer from a compensating pair of wrong ones.
+    const EXPECTED: Record<string, [string, string]> = {
+      'doc-001': ['2026-10-14', 'expiring'],
+      'doc-002': ['2028-02-13', 'valid'],
+      'doc-005': ['2027-04-10', 'valid'],
+      'doc-008': ['2027-06-15', 'valid'],
+      'doc-101': ['2027-07-02', 'valid'],
+      'doc-102': ['2027-11-08', 'valid'],
+      'doc-201': ['2029-03-05', 'valid'],
+      'doc-202': ['2027-01-18', 'expiring'],
+    };
+    // POPULATION CONTROL: the map names every dated document and no other, so
+    // the loop below cannot pass by iterating a set that has quietly shrunk.
+    const dated = DOCUMENTS.filter((d) => d.expiryDate).map((d) => d.id).sort();
+    expect(dated).toEqual(Object.keys(EXPECTED).sort());
+
+    for (const [id, [date, state]] of Object.entries(EXPECTED)) {
+      const d = DOCUMENTS.find((x) => x.id === id)!;
+      expect(d.expiryDate, `${id} shifted date`).toBe(date);
+      expect(documentDisplayState(d, P), `${id} computed state`).toBe(state);
+    }
+
+    // ⚠️ AND THE TWO ROWS THIS BATCH RETIRED THE LITERAL FROM STILL COMPUTE
+    // `expiring`. The literal went; the rendered state did not move. Named,
+    // because they are the rows the whole sequence was about.
+    expect(documentDisplayState(DOCUMENTS.find((d) => d.id === 'doc-001')!, P)).toBe('expiring');
+    expect(documentDisplayState(DOCUMENTS.find((d) => d.id === 'doc-202')!, P)).toBe('expiring');
+    // …and they are no longer outside the machine: `'Valid'` is a declared
+    // state, which is the exclusion closing.
+    for (const id of ['doc-001', 'doc-202']) {
+      expect(DOCUMENTS.find((d) => d.id === id)!.status, id).toBe('Valid');
+    }
+  });
+
+  it('⚠️ ONE DAY EITHER SIDE AND THE ORACLE BREAKS — the pin is a pin', () => {
+    // The retired guard could NOT make this assertion: 82 anchors satisfied it,
+    // so anchor±1 was still coherent. Re-derived from the RAW literals, so the
+    // claim is measured rather than asserted.
+    const A = FAMILY_ANCHORS.supplierDocument.anchor;
+    const producedAt = (anchor: string) => {
+      const shift = dU(DECLARED_PRESENT, anchor);
+      return rawDocs
+        .map((r) => `${r.id}=${iso(dayMs(r.date!) + shift * MS)}`)
+        .join(',');
+    };
+    const shipped = rawDocs
+      .map((r) => `${r.id}=${DOCUMENTS.find((d) => d.id === r.id)!.expiryDate}`)
+      .join(',');
+    // KNOWN-GOOD FIRST: the declared anchor reproduces the shipped dates. Without
+    // this the two `not.toBe`s below could pass over a broken `producedAt`.
+    expect(producedAt(A)).toBe(shipped);
+
+    // ⚠️ **THIS TEST PROVES INJECTIVITY, NOT THE ANCHOR'S VALUE — AND THE
+    // DISTINCTION WAS MEASURED, NOT REASONED.** Every term here reads `A` from
+    // `FAMILY_ANCHORS`, and `DOCUMENTS`' dates are themselves produced from it,
+    // so moving the anchor moves BOTH sides together and this test stays green
+    // (probed: 2026-04-01 -> 2026-04-02 does not redden it). §86 — a guard
+    // deriving its subject through the thing under test.
+    //
+    // A draft of this batch added a line here that re-derived the anchor by
+    // inverting the shift, believing it closed that. It did not: the inverted
+    // shift is computed from a shipped date that already moved, so it returns
+    // the mutated anchor and the assertion is true by construction — **a guard
+    // that cannot fail, which is the shape this very batch retired two of.**
+    // It was deleted rather than shipped.
+    //
+    // What pins the VALUE is the per-row map above, whose dates are LITERALS
+    // and therefore outside the anchor's reach. That test is the pin; this one
+    // says the mapping is one-to-one, which is what makes a pin possible.
+    expect(producedAt(iso(dayMs(A) + MS))).not.toBe(shipped);
+    expect(producedAt(iso(dayMs(A) - MS))).not.toBe(shipped);
   });
 
   // ── ⚠️ THE RETRACTION THIS FILE OWED, PAID IN FULL ─────────────────────────
@@ -382,30 +477,44 @@ describe('⚠️ EVERY ANCHOR SITS INSIDE ITS OWN FAMILY’S COHERENT WINDOW', (
 });
 
 describe('⚠️ THE PAYOFF — stored states are TRUE at the declared present', () => {
-  it('every dated document’s stored status now matches documentExpiry AT the present', () => {
-    const dated = DOCUMENTS.filter(
-      (d) => d.expiryDate && (d.status === 'Valid' || d.status === 'Expiring Soon'),
-    );
-    expect(dated.length).toBe(8);
-    for (const d of dated) {
-      const projected = documentExpiry(d, `${DECLARED_PRESENT}T00:00:00.000Z`);
-      const asStored = d.status === 'Expiring Soon' ? 'expiring' : 'current';
-      expect(projected, `${d.id} (${d.expiryDate}) stored '${d.status}'`).toBe(asStored);
-    }
-  });
-
-  it('⚠️ THE #317 DIVERGENCE IS CLOSED — it was five documents, by name', () => {
-    // dayProjection.test.ts pinned the divergence at 2026-09-08: doc-001, doc-005,
-    // doc-008, doc-101, doc-202 all disagreed with their stored status. The
-    // fixture set was never wrong — it had MOVED — and anchoring is what says so.
-    const diverging = DOCUMENTS.filter(
-      (d) =>
-        d.expiryDate &&
-        (d.status === 'Expiring Soon') !==
-          (documentExpiry(d, `${DECLARED_PRESENT}T00:00:00.000Z`) === 'expiring'),
-    ).map((d) => d.id);
-    expect(diverging).toEqual([]);
-  });
+  // ── ⚠️ TWO GUARDS RETIRED HERE, AND NEITHER WENT VACUOUS — THEY WENT FALSE,
+  //    WHICH IS A DIFFERENT DISPOSAL ────────────────────────────────────────
+  //   The expectation was that they would become trivially true once nothing
+  //   stored a clock word. Measured: they go RED, and the failures name why —
+  //   *doc-001 (2026-10-14) stored 'Valid': expected 'expiring' to be
+  //   'current'* and *expected ['doc-001','doc-202'] to deeply equal []*. Both
+  //   asserted STORED === COMPUTED, and this batch deliberately severs that:
+  //   `'Valid'` is now a LIFECYCLE fact, not a clock claim, so a row can be
+  //   `'Valid'` and computed `expiring` at once. A guard cannot survive the
+  //   retirement of its own premise.
+  //
+  //   RETIRED, quoted rather than deleted:
+  //
+  //     it('every dated document’s stored status now matches documentExpiry AT
+  //         the present', … asStored = d.status === 'Expiring Soon' ?
+  //         'expiring' : 'current' … expect(projected).toBe(asStored))
+  //
+  //     it('⚠️ THE #317 DIVERGENCE IS CLOSED — it was five documents, by
+  //         name', … diverging = DOCUMENTS.filter(d => (d.status ===
+  //         'Expiring Soon') !== (documentExpiry(d, P) === 'expiring')) …
+  //         expect(diverging).toEqual([]))
+  //         // with its note: "dayProjection.test.ts pinned the divergence at
+  //         // 2026-09-08: doc-001, doc-005, doc-008, doc-101, doc-202 all
+  //         // disagreed with their stored status. The fixture set was never
+  //         // wrong — it had MOVED — and anchoring is what says so."
+  //
+  //   ⚠️ **THE SECOND CANNOT BE RE-EXPRESSED, AND THAT IS THE HONEST ANSWER
+  //   RATHER THAN A GAP.** It compared two independent opinions — the author's
+  //   and the clock's. One of them no longer exists, so there is nothing left
+  //   to disagree: rewritten against the computed states it would read
+  //   `computed === computed`, **a guard that cannot fail, which is worse than
+  //   none.** Its successor is the per-row oracle above, which asserts what
+  //   the anchor PRODUCES; that is a weaker claim honestly made rather than a
+  //   strong one made vacuously.
+  //
+  //   The five documents it named are not forgotten: `documentDisplayState`'s
+  //   spec asserts doc-001 and doc-202 compute `expiring` BY NAME, and the
+  //   oracle above pins all eight.
 
   it('⚠️ inventory moved a YEAR and is now current — the largest shift in the tree', () => {
     expect(shiftDays('inventory')).toBeGreaterThan(500);

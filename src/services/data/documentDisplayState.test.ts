@@ -29,14 +29,24 @@ const doc = (status: string, expiryDate: string | null) =>
   ({ status, expiryDate }) as Parameters<typeof documentDisplayState>[0];
 
 describe('the population this batch is about', () => {
-  it('CONTROL FIRST: doc-001 and doc-202 exist and are the two stored `Expiring Soon` rows', () => {
+  it('CONTROL FIRST: doc-001 and doc-202 exist, store a DECLARED state, and compute expiring', () => {
     // Every assertion below is about documents that must exist to be
     // classified. Named, so a fixture rename cannot leave these passing over
     // nothing (`EMPTY-INPUT-REPORTS-CLEAN-01`).
-    const stored = DOCUMENTS.filter((d) => d.status === 'Expiring Soon').map((d) => d.id);
-    expect(stored).toContain('doc-001');
-    expect(stored).toContain('doc-202');
-    expect(DOCUMENTS.find((d) => d.id === 'doc-001')).toBeDefined();
+    //
+    // ⚠️ THIS CONTROL USED TO SELECT THEM BY `status === 'Expiring Soon'`.
+    // That literal is retired: both rows now store `'Valid'`, which is a state
+    // `getFlow('supplierDocument')` declares — so they are reachable by a verb
+    // instead of sitting outside the machine. The rendered state did not move,
+    // and that is asserted rather than assumed.
+    for (const id of ['doc-001', 'doc-202']) {
+      const d = DOCUMENTS.find((x) => x.id === id);
+      expect(d, id).toBeDefined();
+      expect(d!.status, id).toBe('Valid');
+      expect(documentDisplayState(d!, P), id).toBe('expiring');
+    }
+    // …and nothing anywhere still stores the retired literal.
+    expect(DOCUMENTS.map((d) => String(d.status))).not.toContain('Expiring Soon');
   });
 });
 
@@ -82,10 +92,12 @@ describe('the classifier — the clock decides the clock half, and only that hal
     expect(documentDisplayState(doc('Valid', null), P)).toBe('valid');
   });
 
-  it('the stored `Expiring Soon` is IGNORED as a source, in both directions', () => {
-    // The row says expiring; the clock says otherwise. The clock wins — which
-    // is the whole claim, and it is asserted on a row the fixture does not have
-    // so it cannot pass by coincidence.
+  it('⚠️ a row still carrying the RETIRED literal is classified by the clock, not by it', () => {
+    // `'Expiring Soon'` has left `SupplierDocumentStatus`, so this can only be
+    // built through the cast helper — which is the point: a stale row arriving
+    // from a future backend must not be able to assert its own display state.
+    // It falls through the lifecycle passthrough to the clock, in BOTH
+    // directions, on dates the fixture does not have.
     expect(documentDisplayState(doc('Expiring Soon', '2030-01-01'), P)).toBe('valid');
     expect(documentDisplayState(doc('Expiring Soon', '2020-01-01'), P)).toBe('expired');
   });
@@ -227,14 +239,15 @@ describe('⚠️ the three surfaces agree BECAUSE they share a source, at any in
     }
   });
 
-  it('doc-001 and doc-202 both compute `expiring` at the present — stored and computed AGREE', () => {
-    // ⚠️ Stated as the CORRECTED premise, not the retired one. #323 established
-    // that they agree; this batch is justified by the stored field being the
-    // dispatcher's cursor, not by the badge being wrong.
+  it('doc-001 and doc-202 compute `expiring` from a row that no longer says so', () => {
+    // ⚠️ THE SECOND ASSERTION INVERTED, AND THE INVERSION IS THE BATCH.
+    // It read `expect(d.status).toBe('Expiring Soon')` — the row agreeing with
+    // the clock. The row no longer has an opinion: it stores the LIFECYCLE
+    // fact, and the clock alone decides what a reader sees.
     for (const id of ['doc-001', 'doc-202']) {
       const d = DOCUMENTS.find((x) => x.id === id)!;
       expect(documentDisplayState(d, P), id).toBe('expiring');
-      expect(d.status, id).toBe('Expiring Soon');
+      expect(d.status, id).toBe('Valid');
     }
   });
 });
