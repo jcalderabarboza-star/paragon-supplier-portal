@@ -200,11 +200,62 @@ describe('the retired day counts, recomputed at the declared present', () => {
     expect(late).toEqual(['shp-018']);
   });
 
+  it('⚠️ NOT-YET-DEPARTED IS `null`, NOT A NEGATIVE COUNT — the #331 regression', () => {
+    // THE PROBE FIRES AT A DEFECT THE TREE REALLY SHIPPED
+    // (`PROBE-MUST-FIRE-AT-A-REAL-DEFECT-01`). #331 returned the raw negative
+    // and `BuyerShipments`' timeline guards on TRUTHINESS, so the panel
+    // rendered `-2 hari` — browser-verified before this fix. The stored field
+    // it replaced was `undefined` on these rows, which is falsy, so nothing
+    // rendered at all. Named rows, not a count.
+    const notDeparted = mockShipments.filter(
+      (s) => !s.actualArrival && (daysUntil(s.shipDate, NOW) as number) > 0,
+    );
+    expect(notDeparted.map((s) => s.id)).toEqual(['shp-001', 'shp-002', 'shp-003']);
+    for (const s of notDeparted) {
+      expect(daysInTransit(s, NOW), s.id).toBeNull();
+    }
+  });
+
+  it('…and each of those three DOES report transit once its ship date passes', () => {
+    // The complement, so the guard cannot be satisfied by returning `null`
+    // always — which is the one-sided-probe failure rule 4 exists for.
+    for (const id of ['shp-001', 'shp-002', 'shp-003']) {
+      const s = byId(id)!;
+      const after = `${s.shipDate}T00:00:00.000Z`;
+      expect(daysInTransit(s, after), id).toBe(0);
+      const later = new Date(Date.parse(after) + 3 * 86_400_000).toISOString();
+      expect(daysInTransit(s, later), id).toBe(3);
+    }
+  });
+
+  it('⚠️ BOTH FIELDS MOVE TOGETHER when the instant moves — one clock, asserted', () => {
+    const s = byId('shp-018')!;
+    const a = { late: daysLate(s, NOW)!, transit: daysInTransit(s, NOW)! };
+    const laterIso = '2026-09-30T00:00:00.000Z';
+    const b = { late: daysLate(s, laterIso)!, transit: daysInTransit(s, laterIso)! };
+    const dLate = b.late - a.late;
+    const dTransit = b.transit - a.transit;
+    // The SAME delta, because both are differences against the same argument.
+    // A producer that read a clock of its own would break this and nothing
+    // else here would notice.
+    expect(dLate).toBe(dTransit);
+    expect(dLate).toBeGreaterThan(0);
+  });
   it('⚠️ THE COUNT AND THE STATE CANNOT DISAGREE — the point of the batch', () => {
     // The page used to hold two independent answers to `is this late?`. There
     // is now one, and this is the assertion that keeps it that way.
     for (const s of mockShipments) {
-      expect(daysLate(s, NOW) !== null, s.id).toBe(isDelayed(s, NOW));
+      const late = daysLate(s, NOW);
+      expect(late !== null, s.id).toBe(isDelayed(s, NOW));
+      // ⚠️ AND THE MAGNITUDE AGREES WITH THE STATE, NOT ONLY ITS PRESENCE.
+      // `Delayed` with 0 days, or a positive count on a row that is not
+      // Delayed, is the contradiction this batch exists to make impossible —
+      // and a presence-only check cannot see either.
+      if (isDelayed(s, NOW)) expect(late, s.id).toBeGreaterThan(0);
+      else expect(late, s.id).toBeNull();
     }
+    // NON-VACUITY: the loop must have taken both branches.
+    expect(mockShipments.some((s) => isDelayed(s, NOW))).toBe(true);
+    expect(mockShipments.some((s) => !isDelayed(s, NOW))).toBe(true);
   });
 });

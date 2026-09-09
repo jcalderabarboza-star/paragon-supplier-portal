@@ -174,12 +174,28 @@ export type ShipmentTransitInput = Pick<Shipment, 'shipDate' | 'actualArrival'>;
 /**
  * Days in transit at `nowIso`.
  *
- * ⚠️ **ONE FIELD, TWO MEANINGS — AND THE DATA SAYS SO RATHER THAN THE COMMENT.**
- * An ARRIVED shipment's transit time is a closed, clock-free fact
- * (`actualArrival − shipDate`); an IN-FLIGHT one's is elapsed-so-far and moves
- * every day. That is why the stored field had to go: for ten rows it was a
- * fact and for five it was a frozen clock read, and one `number` cannot say
- * which it is. The endpoint is chosen HERE, where the difference is visible.
+ * ⚠️ **ONE MEANING — ELAPSED TRANSIT — WITH THE ENDPOINT CHOSEN HERE.** Arrival
+ * if it happened, `now` if it has not. The "two meanings" this comment used to
+ * claim was the STORED field's problem, not the computation's: for ten rows the
+ * literal was a closed fact and for five it was a frozen clock read, and one
+ * `number` could not say which. One classifier with one clock dissolves that —
+ * `documentExpiry`'s shape. What survives as a real property, and is asserted:
+ * an ARRIVED row's value is a difference between two STORED dates, so it does
+ * not move at any horizon; an in-flight row's does.
+ *
+ * ⚠️ **`null` BEFORE DEPARTURE, AND THIS IS A REGRESSION THIS FUNCTION SHIPPED
+ * AT #331 RATHER THAN A REFINEMENT.** Three rows (`shp-001` · `shp-002` ·
+ * `shp-003`) have a `shipDate` in the FUTURE at the declared present — they are
+ * `Pending ASN` and have not departed. The first version returned the negative
+ * elapsed value, and `BuyerShipments`' timeline guards on TRUTHINESS
+ * (`transitDays ? …`), for which `-2` qualifies. **Browser-verified before the
+ * fix: the panel rendered `-2 hari`** where the stored field had rendered
+ * nothing, because `undefined` is falsy and a negative number is not.
+ *
+ * **A shipment that has not shipped has not been in transit — that is `null`,
+ * not a negative count**, and `null` is also the honest answer for an arrival
+ * that precedes its own ship date. The guard is the SIGN rather than a
+ * status-word so it cannot drift from the dates it reads.
  */
 export function daysInTransit(
   s: ShipmentTransitInput,
@@ -188,5 +204,14 @@ export function daysInTransit(
   const end = s.actualArrival ?? nowIso;
   const d = daysUntil(s.shipDate, end);
   if (d === null) return null;
-  return -d;
+  // `0 - d`, NOT `-d`: negating a zero yields `-0`, which `Object.is` and
+  // therefore `toBe` treat as distinct from `0`. A day count that is sometimes
+  // negative zero is a value nobody would think to assert against, and it was
+  // caught by the departure-day probe below rather than by review.
+  const elapsed = 0 - d;
+  // Not yet departed (or an arrival before its own ship date). No transit to
+  // count, and inventing a negative one is the clock answering a question the
+  // data never asked — `shipmentDisplayState`'s own rule, one function up.
+  if (elapsed < 0) return null;
+  return elapsed;
 }
