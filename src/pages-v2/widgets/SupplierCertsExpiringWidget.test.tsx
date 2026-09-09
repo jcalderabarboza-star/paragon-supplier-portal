@@ -80,7 +80,15 @@ describe('SupplierCertsExpiringWidget — the clock is the source, not `status`'
     expect(code).toContain('SupplierCertsExpiringWidget');
     // CONTROL: the projection IS what it reads, so the assertion above is not
     // passing because the file is empty or the matcher is broken.
-    expect(code).toContain('documentExpiry');
+    //
+    // ⚠️ THE NAME MOVED FROM `documentExpiry` TO `documentDisplayState`, AND
+    // THAT IS A STRENGTHENING RATHER THAN A RENAME. `documentExpiry` answers
+    // a pure CLOCK question and is blind to the lifecycle half — it would
+    // call a `Rejected` certificate `expiring` if its date were near. The
+    // shared classifier is what the documents page and the dashboard also
+    // read, so this control now asserts the widget is on the SAME source as
+    // the other two rather than merely on A projection.
+    expect(code).toContain('documentDisplayState');
   });
 
   it('the two CURRENT documents are correctly absent — they are not expiring any more', async () => {

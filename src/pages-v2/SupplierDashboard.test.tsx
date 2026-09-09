@@ -30,7 +30,16 @@ describe('SupplierDashboard — four honest states', () => {
   it('data: documents section is driven by the scoped useDocuments read', async () => {
     renderWithProviders(<SupplierDashboard />, { identity: SUPPLIER });
     // A real sup-007 compliance document proves the wired list (not hardcoded).
-    expect(await screen.findByText(/Halal Certificate/)).toBeInTheDocument();
+    //
+    // ⚠️ `findAllByText`, NOT `findByText`, AND THE PLURAL IS THE FINDING.
+    // The briefing's certificate card is derived now, so it NAMES the same
+    // document — two mentions of one certificate on one page, which is what
+    // a briefing that reads real data looks like. The singular query broke,
+    // and that break was the first evidence the card had stopped being
+    // fiction: the authored card it replaced named a certificate (`ISO 9001`)
+    // that was not expiring at all.
+    const mentions = await screen.findAllByText(/Halal Certificate/);
+    expect(mentions.length).toBeGreaterThanOrEqual(1);
   });
 
   it('data: the placeholder briefing is honestly flagged as sample data', async () => {

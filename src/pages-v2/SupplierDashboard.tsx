@@ -49,7 +49,13 @@ import {
   useSupplierInvoices,
   useDocuments,
 } from '../services/query/hooks';
-import type { SupplierDocumentStatus } from '../services/data/types';
+import {
+  documentDisplayState,
+  DISPLAY_STATE_LABEL_KEY,
+  DISPLAY_STATE_TONE,
+  DISPLAY_STATE_ACTION_KEY,
+} from '../services/data/documentDisplayState';
+import { daysUntil } from '../services/data/dayProjection';
 
 type Grade = 'A' | 'B' | 'C' | 'D' | 'F';
 
@@ -127,30 +133,28 @@ const BRIEF_DOT: Record<ActionItem['badgeVariant'], string> = {
 };
 
 
-const DOC_STATUS_TONE: Record<
-  SupplierDocumentStatus,
-  'success' | 'warning' | 'danger' | 'neutral'
-> = {
-  Valid: 'success',
-  'Expiring Soon': 'warning',
-  'Awaiting Upload': 'danger',
-  'Under Review': 'neutral',
-  Rejected: 'danger',
-};
+// ⚠️ **`DOC_STATUS_TONE` AND `DOC_STATUS_ACTION_KEY` ARE BOTH GONE, AND THE
+// ACTION MAP IS THE ONE THAT MATTERED.** A badge that computes beside a label
+// that does not is the same split one field over: this page would have shown
+// a computed state next to a stored verb, and the verb is the half a supplier
+// acts on. Both now come from `documentDisplayState`'s maps.
+//
+// ⚠️ **ONE TONE CHANGED, DELIBERATELY, AND IT IS NOT A DP-2 DECISION.**
+// `'Awaiting Upload'` was `danger` here and `neutral` on
+// `/supplier/documents` — the same state, two colours, one persona. The
+// shared map cannot hold both, so the page's reading wins: a document nobody
+// has supplied yet is not a failure, and `Rejected` is what red is for on
+// this surface.
+//
+// ⚠️ **AND IT IS LATENT, NOT VISIBLE — A FIRST DRAFT OF THIS NOTE CLAIMED
+// THE A/B WOULD SHOW IT, AND THE BROWSER PASS SAID OTHERWISE.** The tile
+// below slices to the first four documents and the only `Awaiting Upload`
+// row in the fixture is the sixth, so the changed tone renders nowhere
+// today. It becomes visible the moment the slice, the ordering or the
+// fixture moves. Recorded as latent because a colour change nobody can see
+// is still a colour change, and the next person to widen that slice should
+// not discover it as a surprise.
 
-// Per-status document action maps to an i18n key; resolved with t() in render.
-const DOC_STATUS_ACTION_KEY: Record<SupplierDocumentStatus, string> = {
-  Valid: 'supplierDashboard.docs.action.view',
-  'Expiring Soon': 'supplierDashboard.docs.action.renew',
-  'Awaiting Upload': 'supplierDashboard.docs.action.upload',
-  'Under Review': 'supplierDashboard.docs.action.view',
-  // ⚠️ **`view`, NOT `upload`** — and the widget is exactly where that would
-  // have gone wrong quietly. A refused document obviously *wants* a resubmit
-  // affordance, but `supplierdoc:upload` is unauthored, so an Upload label here
-  // would name a verb the platform does not have. The refusal and its reason
-  // live on `/supplier/documents`; this tile sends the reader there.
-  Rejected: 'supplierDashboard.docs.action.view',
-};
 
 const GradeBadge: React.FC<{ grade: Grade; size?: 'sm' | 'md' }> = ({
   grade,
@@ -203,10 +207,35 @@ const SupplierDashboard: React.FC = () => {
     [invoicesQuery.data],
   );
 
+  // The instant every clock read on this page reckons against — the
+  // convention `SupplierDocuments` and the certs widget already use, so all
+  // three answer as of the same moment rather than three `Date.now()` calls.
+  const nowIso = useMemo(() => new Date().toISOString(), []);
+
   const documents = useMemo(
     () => (documentsQuery.data?.items ?? []).slice(0, 4),
     [documentsQuery.data],
   );
+
+  /**
+   * The one certificate the briefing should be shouting about — the SOONEST
+   * of those that actually compute `expiring` or `expired`, or none.
+   *
+   * ⚠️ Read from `documentsQuery` and NOT from `documents`, which is sliced
+   * to the first four for the tile below. A briefing that only noticed an
+   * expiry when it happened to fall in the first four rows would be a
+   * population bug wearing a layout decision.
+   */
+  const expiringDoc = useMemo(() => {
+    const due = (documentsQuery.data?.items ?? [])
+      .map((doc) => ({ doc, days: daysUntil(doc.expiryDate, nowIso) ?? 0 }))
+      .filter(({ doc }) => {
+        const st = documentDisplayState(doc, nowIso);
+        return st === 'expiring' || st === 'expired';
+      })
+      .sort((x, y) => x.days - y.days);
+    return due[0] ?? null;
+  }, [documentsQuery.data, nowIso]);
 
   const dismiss = (id: string) =>
     setDismissedActions((prev) => [...prev, id]);
@@ -314,19 +343,62 @@ const SupplierDashboard: React.FC = () => {
       btnLabel: 'Confirm now',
       time: '~2 min',
     },
-    {
-      id: 'iso-upload',
-      Icon: Clock,
-      iconClass: 'text-warning-hover',
-      iconBg: 'bg-warning-soft',
-      title: 'Upload ISO 9001:2015 certificate',
-      badge: '45 days left',
-      badgeVariant: 'warning',
-      desc: 'Cert expires 24 May 2026 — upload renewal to avoid disruption to active POs',
-      primary: true,
-      btnLabel: 'Upload certificate',
-      time: '~5 min',
-    },
+    // ⚠️ **THE CERTIFICATE CARD IS DERIVED NOW, AND WHAT IT REPLACED WAS NOT
+    // MERELY UNTRANSLATED — IT CONTRADICTED THE PAGE IT SAT ON.** Retired,
+    // quoted rather than deleted:
+    //
+    //     title: 'Upload ISO 9001:2015 certificate'
+    //     badge: '45 days left'
+    //     desc:  'Cert expires 24 May 2026 — upload renewal to avoid
+    //             disruption to active POs'
+    //
+    // Three claims, and the fixture answers all three. The ISO 9001 cert is a
+    // REAL row (`doc-005`) — so this was never authored-because-uncomputable,
+    // it was authored beside its own subject. That row is not expiring: it
+    // computes `valid`, and this card was urging a renewal on a certificate
+    // with most of a year left, in a slot two cards down from `asn-*` entries
+    // that have always computed their own day-counts.
+    //
+    // ⚠️ **AND `45 days left` DISAGREED WITH `expires 24 May 2026` ON THE SAME
+    // CARD** — one implies a future date, the other names a past one. A
+    // hand-written day-count decays; a hand-written PAIR of them decays out of
+    // step, which is how one card ends up arguing with itself. No count is
+    // written below: both come from `daysUntil` at the page's own instant.
+    //
+    // ⚠️ **IT IS TRANSLATED, WHICH THE `i18n-defer` ABOVE NO LONGER COVERS.**
+    // That note acquits these entries as *fixture narratives, kept EN by
+    // design*. This one is no longer a narrative — it reads a real document —
+    // so the exemption lapses with the authorship. The remaining authored
+    // cards are untouched and the note still covers them.
+    ...expiringDoc
+      ? [
+          {
+            id: `cert-renew-${expiringDoc.doc.id}`,
+            Icon: Clock,
+            iconClass: 'text-warning-hover',
+            iconBg: 'bg-warning-soft',
+            title: t('supplierDashboard.briefing.cert.title', {
+              name: expiringDoc.doc.name,
+            }),
+            // The expired arm is reachable by the clock alone — no fixture
+            // reaches it today, and the day one does the card must not still
+            // say `days left`.
+            badge:
+              expiringDoc.days <= 0
+                ? t('supplierDashboard.briefing.cert.badgeExpired')
+                : t('supplierDashboard.briefing.cert.badge', {
+                    count: expiringDoc.days,
+                  }),
+            badgeVariant: expiringDoc.days <= 0 ? ('danger' as const) : ('warning' as const),
+            desc: t('supplierDashboard.briefing.cert.desc', {
+              date: fmtDate(expiringDoc.doc.expiryDate ?? ''),
+            }),
+            primary: true,
+            btnLabel: t('supplierDashboard.briefing.cert.cta'),
+            time: '~5 min',
+          },
+        ]
+      : [],
     ...asnDueOrders.map((po) => {
       const days = Math.ceil(
         (new Date(po.requestedDeliveryDate).getTime() - new Date().getTime()) /
@@ -707,7 +779,8 @@ const SupplierDashboard: React.FC = () => {
             </h2>
             <div className="flex flex-col">
               {documents.map((doc, idx) => {
-                const action = t(DOC_STATUS_ACTION_KEY[doc.status]);
+                const display = documentDisplayState(doc, nowIso);
+                const action = t(DISPLAY_STATE_ACTION_KEY[display]);
                 return (
                   <div
                     key={doc.id}
@@ -725,8 +798,8 @@ const SupplierDashboard: React.FC = () => {
                         </span>
                       </div>
                       <div className="flex items-center gap-2 flex-wrap">
-                        <StatusPill variant={DOC_STATUS_TONE[doc.status]}>
-                          {doc.status}
+                        <StatusPill variant={DISPLAY_STATE_TONE[display]}>
+                          {t(DISPLAY_STATE_LABEL_KEY[display])}
                         </StatusPill>
                         <span className="text-xs text-text-tertiary">
                           {doc.expiryDate

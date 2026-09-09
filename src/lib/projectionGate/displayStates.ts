@@ -184,9 +184,27 @@ export const DISPLAY_STATES: readonly DisplayStateRow[] = [
   //               — arrived a day late, stored `Delivered` — which a naive
   //               `actual > estimated` rule convicts and the data does not.
   //               Verbs are `external-fact · owner: tms`.
-  //   `supplierDocument`  its disposal is a DELETION, not a build: the
-  //               classifier already exists (`documentExpiry`) and every
-  //               consumer already reads it. The literal is the last thing left.
+  //   `supplierDocument`  ⚠️ **THE SENTENCE HERE WAS FALSE WHEN WRITTEN, AND
+  //               IT IS QUOTED RATHER THAN OVERWRITTEN BECAUSE IT IS WHY THE
+  //               DELETION KEPT LOOKING CHEAP.** It read: *"its disposal is a
+  //               DELETION, not a build: the classifier already exists
+  //               (`documentExpiry`) and every consumer already reads it. The
+  //               literal is the last thing left."* The first half was true;
+  //               **every consumer already reads it** was not. Derived at the
+  //               time: `SupplierDocuments`' per-row badge and its `Valid`
+  //               count, and `SupplierDashboard`'s badge AND action label,
+  //               all read the stored field — four sites across two files, on
+  //               a page whose KPI counters had computed for weeks. The badge
+  //               and the counter three inches above it answered to two
+  //               sources and happened to agree.
+  //
+  //               It is TRUE NOW: the classifier is
+  //               `services/data/documentDisplayState.ts` and all three
+  //               surfaces read it, asserted BY SITE in its spec. So the
+  //               deletion really is what remains — **but it was a build
+  //               first**, and a member of this group reading that sentence
+  //               should derive its own consumers rather than believe a
+  //               neighbour's.
   //
   // §69's `approvalLevel` remedy — admission as authored data — is NOT the
   // remedy for any of them: that one was ruled because the value was
