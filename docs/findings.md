@@ -23358,3 +23358,162 @@ touches `CLAUDE.md`, `docs/findings.md`, one `*.test.tsx`, and `scripts/floor.js
 Recorded in the PR body: **all 13 built assets identical** between a build of
 `main` and a build of this branch, filenames included; vite content-hashes asset
 filenames, so identical names are themselves the content assertion.
+
+---
+
+## §97 — `shipment/Delayed` BECOMES COMPUTED, AND THE SILENCE IT WAS CAUSING WAS NOT HONESTY (2026-09-09)
+
+**Section number derived as `max(sections) + 1` over `^## §N` — §96 → §97.**
+
+**Dispatch:** compute the delay; do not anchor anything (that batch was cancelled
+on measurement — `BuyerShipments` renders byte-identical at three horizons nine
+hundred days apart). The rendered state must not move.
+
+### 97a · THE LATENT EXCLUSION, AND WHAT IT WAS ACTUALLY COSTING
+
+`'Delayed'` was the ninth member of `ShipmentStatus` against a flow declaring
+eight states. `shipment.flow.ts` has said so since F0.4 in its own header —
+*"a read-time PROJECTION (law 0.5, census G1), NOT a transition-state — it is
+deliberately absent from `states`"* — so the union carried a member the machine
+could not reach. **That is `supplierDocument`'s exclusion (§325) in a second
+entity**, and the union now equals `getFlow('shipment').states` exactly, asserted
+bilaterally.
+
+⚠️ **AND THE COST WAS NOT COSMETIC. A SHIPPED COMMENT CALLED THE SYMPTOM
+HONESTY.** `BuyerShipments` read:
+
+> *"a delayed shipment resolves `silent` and this line renders nothing for it.
+> That silence is honest — the machine has no edge to report — and its
+> LEGIBILITY is the measurement this batch reports rather than repairs."*
+
+Derived over every state:
+
+```
+nextActFor('shipment', 'Delayed')           -> silent / no-exit
+nextActFor('shipment', 'Customs Clearance') -> external, owners:['tms']
+```
+
+**The first clause was right and the conclusion did not follow.** The machine had
+an edge; it could not be ASKED, because the cursor stored the projection instead
+of the state. `shp-018` now stores `Customs Clearance` — its own
+`customsStatus: 'Held'` is the evidence — and the panel renders **`NEXT ·
+Awaiting TMS`**, verified in the browser. **A line that could not render before,
+and the one rendered change this batch makes on purpose.**
+
+⚠️ **THE CLASS IS THE READING, NOT THE MISS.** A silence produced by an
+unaskable question is indistinguishable at the surface from a silence produced by
+a machine with nothing to say, and the comment chose the flattering reading. Same
+shape as #328's widget header: a claim true-looking enough to survive review, and
+false on a one-command derivation.
+
+### 97b · THE BOUNDARY IS READ, NOT RE-RULED — AND THE ROW IS THE RULING
+
+`days < 0`, and **`dayProjection.ts` decides the zero boundary once**; this lane
+reads it. That file already records `days <= 0` as the **MINORITY convention, 1
+of 3** and states why the other two are not converted — *"each conversion CHANGES
+WHAT A LIVE SURFACE SAYS."* This lane is that test applied **before** a surface
+existed rather than after:
+
+```
+shp-006   stored 'In Transit'   ETA == DECLARED_PRESENT   daysUntil = 0
+```
+
+Under `<= 0` a shipment whose ETA is today is already late and shp-006 would be
+convicted. The table in `dayProjection.ts` gains its fourth row; `<= 0` is now 1
+of 4. **The boundary row and the ruling are the same fact seen twice**, and
+shp-006 is pinned by name so a future "unification" goes red rather than quiet.
+
+### 97c · THREE ROWS, AND WHY THEY BEAT ONE CONVICTION — DEMONSTRATED
+
+`shipment` is target-less (absent from `WIRED_COMMAND_TARGETS`; every transition
+`surfaced: false, because: 'external-fact', owner: 'tms'`), so **no verb can grow
+a fourth row.** One conviction is thin and is named as thin. What makes the set
+worth more is that the two acquittals fail for DIFFERENT reasons — and the
+mutations prove it rather than asserting it:
+
+| mutation | shp-018 convicts | shp-017 acquits | shp-006 boundary |
+|---|---|---|---|
+| classifier never convicts | **RED** | green | **RED** |
+| the NAIVE rule (`actual > estimated`) | green | **RED** | green |
+| corpus replaced #319-style | **RED** | **RED** | **RED** |
+
+**Remove either arm of the rule and a different named row flips.** A single-axis
+probe could not say that, and a single row could not either.
+
+⚠️ **AND #328's RULE APPLIED TO THIS BATCH'S OWN ASSERTIONS.** Under a corpus
+replacement with ids and row count intact and every date moved, the **id-only
+control stayed green** (*"the corpus is real and the subjects are present"*) while
+**every value pin fired.** That is `DATA-POPULATION-INSTRUMENT-SURVIVES-ITS-
+CORPUS-01` demonstrated on the batch that came after it.
+
+Restores byte-identical — `shipmentDisplayState.ts` sha256 `aa2ec58ba1e12cad…`
+blob `282f2c5dc0b3d881e3cf8338422052d827982386`; `mockShipments.ts` sha256
+`cddf71e9aac74601…` blob `67f143d1e0affef9f6196b435e1ef69fd7dcdb1b`. Each probe
+asserted the file's hash CHANGED first, and each target was newline-normalised
+before matching — **the CRLF trap fired on the first attempt** (the file is 104
+CRLF / 0 bare LF), which is exactly the silent-no-op the memory warns about.
+
+### 97d · THE GATE TAUGHT THE PRODUCER ITS SHAPE, TWICE
+
+`projectionGate` derived `produced-by-nothing` for the new module on the first
+run — correctly, twice over:
+
+1. **`shipmentDisplayState` was outside `OWNED_BY.shipment`**, and a producer
+   outside the scanned scope reads as no producer at all. Joined by name, exactly
+   as `contractExpiry` and `obligationProjection` already had to.
+2. **The write was a ternary.** The matcher recognises `status: 'X'`,
+   `return 'X'` and `= 'X'`; `return days < 0 ? 'Delayed' : …` is none of them.
+   **The producer was rewritten into the shape the gate recognises rather than
+   the gate widened to chase it** — a gate that chases its subjects stops being
+   one.
+
+### 97e · THE BOUND SET IS EMPTY, AND `clockDrift` REACHES ITS OWN FOOTER
+
+`shipment/Delayed` was the LAST `stored-in-fixtures` row. The group is now empty,
+`storedStateFamilies()` returns `[]`, and **`waitingFooter` is reachable from
+shipped data for the first time** — the footer the module wrote for a day it
+could not yet reach.
+
+**`clockDrift.ts` was not edited to make that happen.** Bound-ness is read from
+`DISPLAY_STATES` at call time, which is the property its header claims, now
+demonstrated in the direction that costs something. **WAITING, NOT RETIRED** —
+(c)'s answer survives an empty set exactly, because the set repopulates the day a
+fixture writes a display state nothing computes, with nobody editing either file.
+
+⚠️ **AND TWO GUARDS ANCHORED ON THE OLD STATE WERE RETIRED BY THE FILE'S OWN
+RULING, NOT BY CONVENIENCE.** `projectionGate.test.ts` demanded
+`stored-in-fixtures` hold a member; twenty lines above sits its own sentence —
+*"a guard that reddens when its subject improves is anchored on the defect it is
+watching"* — written when `produced-by-nothing` emptied the same way. The arm
+stays DEFENDED: three-arm reachability is proved synthetically against input the
+tree cannot repair away. **The parenthetical that named `stored-in-fixtures` as
+exempt is corrected at the site**, not left standing beside its own
+counter-example.
+
+### 97f · WHAT IS DELIBERATELY NOT DONE
+
+**`delayDays` and `daysInTransit` stay STORED** (`dayCounts.ts`, 2 of its 4
+`stored-in-fixtures` rows). `delayDays` renders at three sites — the browser shows
+`+6d late` on shp-018 beside a computed `Delayed`. **Computing the state while
+leaving the count stored is a real divergence and it is FILED, not hidden**: the
+count is a second ruling (it equals `−daysUntil` only while nothing has arrived)
+and this batch was scoped to the state.
+
+### 97g · GATES · BROWSER QA
+
+Four green: **4565 / 320 / 7**, floor 4556/319 → 4565/320. The diff ADDS
+assertions and stops none running.
+
+**Browser QA, both locales, through the app's own language menu, on
+`vite preview`. Chunk `index-Bmca6WHX.js`, read off the page.** The partition is
+identical before and after and across locales:
+
+| | All | Pending | In Transit | At Dock | Delivered | **Delayed** |
+|---|---|---|---|---|---|---|
+| EN | 18 | 3 | 8 | 4 | 2 | **1** |
+| ID | 18 | 3 | Dalam Perjalanan 8 | Di Dok 4 | Terkirim 2 | **Terlambat 1** |
+
+Zero English `Delayed` leaked into the ID render. Rows: shp-018 **Delayed /
+Terlambat**, shp-006 **In Transit / Dalam Perjalanan** (ETA rendered `31 Aug
+2026` — the declared present, the boundary visible), shp-017 **Delivered /
+Terkirim**. **The stored literal is gone and the rendered state did not move.**

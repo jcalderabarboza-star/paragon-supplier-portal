@@ -56,12 +56,27 @@
 //   derivation does not run through the thing it describes:
 //
 //     MEASURABLE (a window AND reader-visible stored states) : none
-//     BOUND AT ALL (a stored-in-fixtures row)                : shipment/Delayed
+//     BOUND AT ALL (a stored-in-fixtures row)                : none  (#329)
+//
+//   ⚠️ **`shipment/Delayed` LEFT AT #329 AND THE BOUND SET IS NOW EMPTY.** It
+//   became `computed-at-read` (`shipmentDisplayState.ts`), so this instrument
+//   watches nothing and `waitingFooter` is REACHABLE FROM SHIPPED DATA for the
+//   first time. **This module was not edited to make that happen** — bound-ness
+//   is read from `DISPLAY_STATES` at call time, which is the property claimed
+//   two paragraphs down, now demonstrated in the direction that costs something.
+//   WAITING, NOT RETIRED: the set repopulates the day a fixture writes a display
+//   state nothing computes, with nobody editing this file.
 //
 //   `ok` / `warn` / `FALSE` are therefore unreachable from shipped data.
 //   `clockDrift.test.ts` exercises them through `driftVerdict` — extracted for
 //   exactly this — and asserts the emptiness itself, so the day a family
 //   rejoins the claim goes red with nobody editing either file.
+//
+//   ⚠️ **THE EXPOSURE BELOW IS QUOTED AS WRITTEN AND ITS FIRST HALF IS SPENT.**
+//   `shipment` no longer keeps the BOUND set non-empty; a reader sees `Delayed`
+//   still, but computed, so the instrument has NO subject and the WAITING footer
+//   is reachable. The CROSS-CHECK half stands unchanged and is now the whole
+//   exposure. As written:
 //
 //   ⚠️ **AND HERE IS THE EXPOSURE, WHICH IS NOT THE EMPTINESS.** `shipment`
 //   keeps the BOUND set non-empty (a reader really does see `Delayed`), so the

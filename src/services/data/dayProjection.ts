@@ -83,6 +83,15 @@ export function daysUntil(
 //     documentExpiry        (below)                  days <= 0     TODAY IS PAST
 //     computeStatus         complianceProjection.ts  remaining < 0 TODAY IS NOT PAST
 //     isOverdue             invoiceProjection.ts     dueDate < day(now)  ditto
+//     shipmentDisplayState  shipmentDisplayState.ts  days < 0      ditto   (#329)
+//
+//   ⚠️ THE FOURTH ROW JOINED THE MAJORITY, AND ON THIS TABLE'S OWN REASONING.
+//   `shipment` was ruled `< 0` because `shp-006` stores `In Transit` with an ETA
+//   EXACTLY at `DECLARED_PRESENT`: under `<= 0` a shipment whose ETA is today is
+//   already late, and that row would be convicted. That is the same test this
+//   table applies below to the two it declines to convert — *"each conversion
+//   CHANGES WHAT A LIVE SURFACE SAYS"* — applied before a surface existed rather
+//   than after. `days <= 0` is now 1 of 4.
 //
 //   Re-derived from the SIGNATURE instead — every exported function taking an
 //   injected `now` — with a known-true control (`documentExpiry` found) and a

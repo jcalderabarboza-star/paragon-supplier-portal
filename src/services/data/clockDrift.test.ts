@@ -102,14 +102,22 @@ describe('⚠️ a verdict must name the condition its own branch tested', () =>
   // stored states — so the name was about a condition the code does not
   // examine. Renamed to `no-window-declared`; these are the assertions that
   // keep it named after its own test.
-  it('⚠️ `shipment` HAS a reader-visible stored clock state AND no window', () => {
+  it('⚠️ `shipment` has NO window — and the verdict survived its states leaving', () => {
+    // ⚠️ **THIS TEST READ "HAS a reader-visible stored clock state AND no
+    // window" AND ASSERTED `readerVisibleStates.length > 0`.** `shipment/Delayed`
+    // is computed now (`shipmentDisplayState.ts`), so that row is gone and the
+    // population control it used would fail. **The test is STRONGER for it, not
+    // weaker, and that is why it is rewritten rather than retired.**
+    //
+    // The rename it defends said: a verdict must name the condition its own
+    // branch tested. `no-window-declared` tests `window === null` and nothing
+    // else — so the honest proof is that the verdict is UNCHANGED while the
+    // states went from one to none. Before, the two conditions coincided and the
+    // test could not tell which one the branch read. Now they are separated.
     const d = familyDrift('shipment', DECLARED_PRESENT);
-    // POPULATION CONTROL FIRST. If this row ever stopped carrying a stored
-    // state, every assertion below would pass over the wrong subject —
-    // `EMPTY-INPUT-REPORTS-CLEAN-01`. Derived from the ANCHOR and from
-    // DISPLAY_STATES, both upstream of the function under test (§86).
+    // POPULATION CONTROL, from upstream of the function under test (§86).
     expect(FAMILY_ANCHORS.shipment.window).toBeNull();
-    expect(d.readerVisibleStates.length).toBeGreaterThan(0);
+    expect(d.readerVisibleStates).toEqual([]);
 
     expect(d.verdict).toBe('no-window-declared');
     // …and the retired name, asserted as a shape rather than as one string:
@@ -145,11 +153,23 @@ describe('what the report says when there is nothing left to watch', () => {
   // The bound population is DERIVED from DISPLAY_STATES, so it can empty
   // without an edit here — and an all-`—` table with no footer is
   // indistinguishable from an instrument that broke. The footer says which.
-  it('KNOWN-GOOD FIRST: the population is NOT empty today, so no footer', () => {
+  it('⚠️ THE POPULATION IS EMPTY NOW, AND THE FOOTER IS REACHABLE FROM SHIPPED DATA', () => {
+    // ⚠️ **THIS ASSERTED THE OPPOSITE AND IT WAS TRUE UNTIL `shipment/Delayed`
+    // BECAME COMPUTED. QUOTED, NOT DELETED:**
+    //
+    //   it('KNOWN-GOOD FIRST: the population is NOT empty today, so no footer',
+    //     expect(bound.length).toBeGreaterThan(0)
+    //     expect(bound).toContain('shipment')
+    //     expect(formatDriftReport(DECLARED_PRESENT)).not.toContain('WAITING'))
+    //
+    // **`clockDrift.ts` was not edited to make this happen** — bound-ness is read
+    // from `DISPLAY_STATES` at call time, so the last family left on its own,
+    // exactly as obligation, contract and supplierDocument did. The footer the
+    // module wrote for a day it could not yet reach is now reachable, which is
+    // the design arriving rather than the instrument breaking.
     const bound = storedStateFamilies(DECLARED_PRESENT);
-    expect(bound.length).toBeGreaterThan(0);
-    expect(bound).toContain('shipment');
-    expect(formatDriftReport(DECLARED_PRESENT)).not.toContain('WAITING');
+    expect(bound).toEqual([]);
+    expect(formatDriftReport(DECLARED_PRESENT)).toContain('WAITING');
   });
 
   it('over an EMPTY population it says WAITING, not retired', () => {
@@ -237,14 +257,26 @@ describe('⚠️ NO FAMILY IS MEASURABLE ANY MORE — and that is derived, not d
     ).toEqual([]);
   });
 
-  it('⚠️ but the BOUND set is NOT empty — shipment keeps the instrument watching', () => {
-    // The distinction the WAITING footer turns on. Named, because "nothing is
-    // measurable" and "there is nothing to watch" are one word apart and mean
-    // opposite things for whether this module should still exist.
+  it('⚠️ AND THE BOUND SET IS EMPTY TOO — the instrument is WAITING, not retired', () => {
+    // ⚠️ **THE RETIRED ASSERTION, QUOTED:** *"but the BOUND set is NOT empty —
+    // shipment keeps the instrument watching"*, pinning
+    // `['shipment/Delayed']`. `shipment/Delayed` is `computed-at-read` now, so
+    // the group is empty and BOTH halves of the distinction this file draws —
+    // "nothing is measurable" and "there is nothing to watch" — are true at once
+    // for the first time.
+    //
+    // **THAT IS NOT THE END OF THE INSTRUMENT AND THE FOOTER IS WHY.** It comes
+    // back by itself: the day any fixture writes a display state nothing
+    // computes, `DISPLAY_STATES` re-derives, this set repopulates, and the
+    // footer disappears — with nobody editing `clockDrift.ts` or this file.
     const bound = DISPLAY_STATES.filter((r) => r.group === 'stored-in-fixtures');
-    expect(bound.map((r) => `${r.entity}/${r.state}`)).toEqual(['shipment/Delayed']);
-    expect(storedStateFamilies(DECLARED_PRESENT)).toContain('shipment');
-    expect(formatDriftReport(DECLARED_PRESENT)).not.toContain('WAITING');
+    expect(bound).toEqual([]);
+    expect(storedStateFamilies(DECLARED_PRESENT)).toEqual([]);
+    expect(formatDriftReport(DECLARED_PRESENT)).toContain('WAITING');
+    // CONTROL, the other direction — the footer is not simply always on. Given a
+    // non-empty population the same function stays silent, so the line above is
+    // about the population and not about the formatter.
+    expect(waitingFooter(['shipment'])).toEqual([]);
   });
 
   it('⚠️ supplierDocument is `computed` — it left with nobody editing clockDrift', () => {

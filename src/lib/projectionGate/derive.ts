@@ -142,7 +142,13 @@ const OWNED_BY: Record<string, RegExp> = {
   // would import a second entity's vocabulary under contract's name.
   contract: /mockContracts|contractStore|contractExpiry|\/contracts\//,
   supplierDocument: /supplierDocuments|supplierDocumentStore|SupplierDocuments/,
-  shipment: /mockShipments|shipmentStore|Shipments/,
+  // `shipmentDisplayState` joins for the reason stated on `obligation` below and
+  // on `contract` above: a producer outside the scanned scope reads as NO
+  // producer at all, and the gate would then call a computed state stored. Named
+  // precisely rather than by directory glob, for the same reason as the others —
+  // `dayProjection` is where its `daysUntil` lives and it serves several
+  // entities, so scoping to it would import another entity's vocabulary here.
+  shipment: /mockShipments|shipmentStore|Shipments|shipmentDisplayState/,
   // `obligationProjection` joins for the same reason `complianceProjection` and
   // `invoiceProjection` are in their entities' patterns: the producer must be in
   // the scanned scope or the gate reads a computed state as a stored one. The

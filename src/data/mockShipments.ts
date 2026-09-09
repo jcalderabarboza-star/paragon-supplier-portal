@@ -15,8 +15,13 @@ export type ShipmentStatus =
   | 'Customs Clearance'
   | 'At Dock'
   | 'Unloading'
-  | 'Delivered'
-  | 'Delayed';
+  | 'Delivered';
+// ⚠️ `'Delayed'` LEFT THIS UNION — it is COMPUTED
+// (`services/data/shipmentDisplayState.ts`). It was the ninth member of a
+// union whose flow declares eight states, and `shipment.flow.ts` has said so
+// since F0.4: a read-time PROJECTION, deliberately absent from `states`. The
+// union now equals `getFlow('shipment').states` exactly, which
+// `shipmentDisplayState.test.ts` asserts bilaterally.
 
 export type ShipmentMode = 'Sea' | 'Air' | 'Road';
 
@@ -511,7 +516,11 @@ const mockShipmentsRaw: Shipment[] = [
     poNumber: 'PO-2025-00118',
     supplierId: 'sup-006',
     supplierName: 'Sample Specialty Chemicals France',
-    status: 'Delayed',
+    // ⚠️ WAS `'Delayed'` — a display literal in the state cursor. Its own
+    // `customsStatus: 'Held'` is what the row actually is; the delay is
+    // computed from the ETA at read (`shipmentDisplayState`). This is the
+    // same repair `doc-001` took at #325.
+    status: 'Customs Clearance',
     carrier: 'Sample Air Freight (illustrative)',
     trackingNumber: 'SMPL-AFR-9981-D',
     mode: 'Air',
