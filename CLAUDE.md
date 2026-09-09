@@ -1139,6 +1139,75 @@ instrument is repaired, THE DEFECT IT REMOVED IS THE PROBE INPUT, and it is
 cheapest to capture on the day of the repair.** After that it survives only as
 prose, and prose is what this section exists because it does not trust.
 
+⚠️ **AND THE FIFTH SILENCING MODE, WHICH NONE OF THE FOUR ABOVE REACHES —
+`DATA-POPULATION-INSTRUMENT-SURVIVES-ITS-CORPUS-01`. AN INSTRUMENT WHOSE
+POPULATION IS *DATA* MUST PIN A NAMED MEMBER OR A NAMED VALUE. A ROW COUNT OR AN
+ID IS NOT A PIN.** The four modes ask whether the instrument still RUNS. This
+asks whether it is still looking at the same THING — and the answer can be no
+while every one of the four says yes.
+
+**THE MECHANISM IN ONE LINE: A REPLACEMENT KEEPS IDS AND CHANGES VALUES, SO AN
+ID-ONLY CONTROL IS EXACTLY THE CONTROL A REPLACEMENT WALKS THROUGH.** A
+count-based control is worse still — a replacement usually preserves the count by
+construction.
+
+**Measured in this tree's own history, not hypothesised.** #319 wrapped four
+corpora in `shiftFields(...)`:
+
+```
+-export const DOCUMENTS: SupplierDocument[] = [ …      -export const mockShipments: Shipment[] = [ …
++const DOCUMENTS_RAW: SupplierDocument[] = [ …         +const mockShipmentsRaw: Shipment[] = [ …
+```
+
+**Same export name, same rows, same ids — every date different, computed rather
+than authored.** Nine data-population instruments read a replaced corpus, none
+was touched, and all stayed green. ⚠️ **AND IT IS INVISIBLE TO THE OBVIOUS
+CHECK:** no date literal was *removed* from those files, because the literals did
+not move — the read did. A diff hunting for changed values comes back empty on a
+corpus that was entirely replaced.
+
+**Then #325 changed `doc-001`'s stored `status` and the mode produced a live
+falsehood.** `SupplierCertsExpiringWidget.test.tsx` had *traded away* a
+behavioural probe, stating in its header that the projection and the stored
+status *"now agree on every row, so no rendered assertion can separate them any
+more."* #325 made them disagree again. The file was last touched at #324, its
+population control checks that doc-001/005/008 still **exist**, and the suite
+stayed green while the header stayed wrong. **A weaker assertion was being held
+on a premise measurement had already falsified.**
+
+**THE SPECIMEN IS ALREADY IN THE TREE AND IS §71's SHAPE APPLIED TO DATA** —
+`supplierDocumentRefusal.test.ts`:
+
+```ts
+const refused = DOCUMENTS.filter((d) => d.status === 'Rejected');
+expect(refused.map((d) => d.id)).toEqual(['doc-012']);
+```
+
+A NAMED MEMBER, reached through a VALUE. Replace the corpus and it goes red.
+
+⚠️ **AND THE COUNTER-RULE IS PART OF THE RULE, NOT A CAVEAT TO IT: DO NOT PIN
+VALUES ON AN INSTRUMENT THAT IS *CORRECTLY* INSENSITIVE TO A SHIFT.** Most
+data-population instruments assert over ids, codes and relationships and are
+right to survive a re-anchor untouched. Pinning values there reddens the tree on
+every legitimate `shiftFields` re-anchor — which is
+`ANCHOR-POPULATION-GUARD-OFF-BATCH`, an improving tree turned red, and it is the
+failure this rule is most likely to cause if it is read as a sweep. **The test is
+not "does this spec read a corpus?" but "does this spec's CLAIM depend on a value
+in it?"** If the claim is about the value, pin the value; if it is about identity
+or shape, an id control is the correct instrument and adding a value pin makes it
+worse. **Never sweep this rule across a corpus of instruments.**
+
+⚠️ **AND THE FLOOR IS NOT THE ANSWER HERE, WHICH IS WORTH STATING BECAUSE IT IS
+THE ANSWER TO MODES 1–3.** `it.each(POPULATION)` binds population size to
+collected test count, and the floor watches that at zero headroom — but only
+because CODE volume grows deliberately and under review. **DATA volume grows when
+the product works**: arc 1's operator-editable certificate registry makes
+`COMPLIANCE_REGISTRY` grow by design, and binding it to the floor would make every
+legitimate row a floor bump — CP-3a's *"trains people to edit the number"*
+failure, imported into the one place the floor cannot defend. Three of the 42
+data-population instruments bind this way today and **the binding must not be
+extended** (operator ruling).
+
 The gate itself is `src/lib/storedFieldGate/` — every stored field on a
 glossary-covered DTO has a non-fixture reader or a bilateral allowlist row with
 its reason stated. It is deliberately TEST-level, not type-level, precisely so

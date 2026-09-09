@@ -23218,6 +23218,35 @@ of the four covers. **If fixture corpora count as "the tree", 67 is low**, and t
 derivation to run is the same three properties with `import`ed fixture arrays
 added as a source. Not run here; the dispatch asked for the boundary, not the set.
 
+⚠️ **CORRECTED AT #328 — THE DERIVATION WAS RUN, AND 67 IS LOW BY 26. THE TOTAL
+INSTRUMENT CORPUS IS 93.** The sentence above is left standing because it was
+honest about its own limit, but a later reader taking **67** as *the* instrument
+corpus would be reading a figure that was never the corpus — which is
+`FLOOR-IN-PROSE-01` arriving as a scope rather than as a count. Both properties,
+named, so either can be re-derived or rejected:
+
+| family | population | property | n |
+|---|---|---|---|
+| code | source text, or a registry derived from it | `fs`/glob/`ts.createProgram`, or a registry enumerator iterated | **67** |
+| data | rows of an imported fixture corpus | a corpus export imported as a VALUE and quantified over universally | **42** |
+| | | overlap (an instrument with both) | 16 |
+| | | **total corpus** | **93** |
+
+⚠️ **AND A WIDENING ARTIFACT IS DISCLOSED RATHER THAN ABSORBED: the first data
+matcher returned 47 because it counted `.find(` as iteration.** `.find` selects
+ONE row — that is indexing, not a census — and five members were false on that
+basis (`SupplierDocuments`, `NoSupplierIdentity`, `requirementResponseQtyAgreement`,
+`fixtures.integrity`, `submission.spine`). **42 is the set after re-deriving; 47
+is not reconciled to it** (§40k).
+
+**FILED, NOT BUILT — the four data-population instruments with no row control at
+all:** `identityTenancy`, `SupplierDocuments`, `intakeReviewModel`,
+`requirementResponseQtyAgreement`. File-level measure, carrying the same
+`IMPORTER-PRESENCE-IS-NOT-VERB-COVERAGE-01` caveat as §95c's 67/67 — *a file
+containing a control* is not *the population being controlled*. **Not a sweep: a
+named set for whoever next touches each file**, and the counter-rule in
+`DATA-POPULATION-INSTRUMENT-SURVIVES-ITS-CORPUS-01` governs what to add there.
+
 ### 95i · GATES · BROWSER QA
 
 Four green. Floor moved **up** with the suite — the diff ADDS assertions and adds
@@ -23231,3 +23260,101 @@ excluded from the bundle by `tsconfig.json`; a comment carries no emitted bytes.
 The A/B is recorded in the PR body: **identical `dist/` asset hashes** across a
 build of `main` and a build of this branch — every pair resolved, hashes read off
 the built output.
+
+---
+
+## §96 — THE FIFTH MODE GETS A RULE AND ONE REPAIR, AND THE MODE IS PROBED (2026-09-09)
+
+**Section number derived as `max(sections) + 1` over `^## §N` — §95 → §96.**
+
+**Dispatch:** the data-population rule, the one repair, the 93 correction. **No
+sweep**, no extension of the `it.each` floor binding to data corpora (operator
+ruling: the floor watches CODE volume, where growth is reviewed; data volume
+grows when the product works).
+
+### 96a · THE MODE, MADE CHECKABLE
+
+`DATA-POPULATION-INSTRUMENT-SURVIVES-ITS-CORPUS-01` is filed in `CLAUDE.md` under
+*"PROBE THE GUARD BOTH WAYS"*, beside #327's two. **The mutation is the whole
+argument and it reproduces #319's shape exactly** — `supplierDocuments.ts`'s
+export re-derived so that ids and row count are untouched and every date moves:
+
+| assertion in `SupplierCertsExpiringWidget.test.tsx` | under a #319-style replacement |
+|---|---|
+| *"the fixture still holds the subjects of this test"* — **id-only control** | **green** — walks straight through |
+| *"the widget never reads `doc.status`"* — structural | **green** — correctly insensitive |
+| *"NO ROW STORES AN EXPIRING STATUS"* | **green** — statuses untouched |
+| *"NOTHING is expired at the declared present"* | **green** |
+| **the new value pin** — *"the disagreement is real and it is exactly one row"* | **RED** |
+| **the new rendered probe** — *"the widget lists the halal cert anyway"* | **RED** |
+| the pre-existing *"doc-001 is listed"* | **RED** |
+
+**THE ID-ONLY CONTROL IS GREEN AND THE VALUE PINS ARE RED. That is the rule, in
+one run.** Restored byte-identical — `supplierDocuments.ts` sha256
+`9cabfa1f50185106…`, blob `b11785eba56e28d7fc9eea5981cd941cf04035ef`; the probe
+asserted the file's hash CHANGED before running.
+
+⚠️ **AND THE HONEST QUALIFIER, WHICH MAKES THE FINDING SMALLER AND TRUER: the
+file was NOT defenceless — one pre-existing rendered assertion is value-sensitive
+and does fire under a DATE replacement.** It did not fire at #325 because #325
+replaced a **status**, not a date, and left doc-001 inside the expiring window.
+**So the hole is not "no assertion is value-sensitive"; it is "no assertion was
+sensitive to the value that actually moved."** A rule that only said *pin a
+value* would have been satisfied here and the header would still have gone stale.
+
+### 96b · THE REPAIR — the probe returns, and the retired header is quoted
+
+`SupplierCertsExpiringWidget.test.tsx` traded a behavioural probe for a
+structural one at #319, stating the reason in its header: the projection and the
+stored status *"now agree on every row, so no rendered assertion can separate
+them any more."* **#325 falsified that and nothing went red.**
+
+**The old header is QUOTED IN FULL rather than deleted** — the record that a
+probe was weakened on a premise, and that the premise was later falsified
+silently, is the finding, and deleting it would leave only the repair.
+
+**The discrimination is DERIVED before it is asserted**, at `DECLARED_PRESENT`
+(2026-08-31), over all 12 sup-007 rows:
+
+```
+doc-001  stored=Valid  display=expiring   <<< THE ONLY DISAGREEMENT
+doc-002/003/004/005/007/008/009  stored=Valid  display=valid
+doc-006 Awaiting Upload · doc-010/011 Under Review · doc-012 Rejected  (passthrough)
+rows whose STORED status is 'Expiring Soon': 0
+```
+
+**So the widget's entire rendered list is `doc-001`, and only the projection puts
+it there — a status-reading widget renders its EMPTY state.** The probe is not a
+label on one row; the whole list turns on which source is read. Non-vacuity is
+asserted, not assumed: exactly one row disagrees, and more than eight agree.
+
+⚠️ **WRITTEN TO SURVIVE THE CLOCK, WHICH THE OBVIOUS VERSION WOULD NOT.** The
+widget reads `new Date()`, not the declared present, so a probe pinned to
+`expiring` decays the day doc-001's expiry passes. The widget lists `expired` AND
+`expiring`, and both are projection-only outcomes for a row stored `'Valid'` — so
+the rendered half asserts **presence**, which no passage of time falsifies, and
+the state-specific half is pinned at `DECLARED_PRESENT` where it is stable.
+
+**A second stale claim was corrected at the site rather than left standing:** the
+pre-existing test title read *"labelled from the PROJECTION, which now agrees
+with the fixture."* It does not agree. Repairing one stale premise while leaving
+its neighbour is how the next reader concludes the file was reviewed.
+
+### 96c · THE 93 CORRECTION
+
+§95h said *"if fixture corpora count, 67 is low."* It is low by 26 — corrected in
+place, with both properties named so either can be rejected: **code-population
+67, data-population 42, overlap 16, total 93.** The `.find`-only widening
+artifact (47 → 42) is disclosed there and not reconciled.
+
+### 96d · GATES · BROWSER QA
+
+Four green. Floor moved **up** with the suite; the diff ADDS assertions and stops
+none running.
+
+**Browser QA: derived as not applicable and PROVED, not asserted.** The diff
+touches `CLAUDE.md`, `docs/findings.md`, one `*.test.tsx`, and `scripts/floor.json`
+— **no shipped component**. Specs are excluded from the bundle by `tsconfig.json`.
+Recorded in the PR body: **all 13 built assets identical** between a build of
+`main` and a build of this branch, filenames included; vite content-hashes asset
+filenames, so identical names are themselves the content assertion.
