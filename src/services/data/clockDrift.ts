@@ -49,6 +49,53 @@
 //   half of `gates.yml` that exists precisely to catch a break with no commit
 //   involved.
 //
+// ── ⚠️ WHAT THIS INSTRUMENT NOW RESTS ON — ONE POINT OF TRUST, MEASURED ─────
+//   **As of #325 no family is MEASURABLE, and this module is proven only by its
+//   own synthetic probes.** Derived, at the time of writing, from
+//   `FAMILY_ANCHORS` x `DISPLAY_STATES` — both upstream of here, so the
+//   derivation does not run through the thing it describes:
+//
+//     MEASURABLE (a window AND reader-visible stored states) : none
+//     BOUND AT ALL (a stored-in-fixtures row)                : shipment/Delayed
+//
+//   `ok` / `warn` / `FALSE` are therefore unreachable from shipped data.
+//   `clockDrift.test.ts` exercises them through `driftVerdict` — extracted for
+//   exactly this — and asserts the emptiness itself, so the day a family
+//   rejoins the claim goes red with nobody editing either file.
+//
+//   ⚠️ **AND HERE IS THE EXPOSURE, WHICH IS NOT THE EMPTINESS.** `shipment`
+//   keeps the BOUND set non-empty (a reader really does see `Delayed`), so the
+//   instrument still has a subject and the WAITING footer stays unreachable —
+//   that half is fine. What is thin is the CROSS-CHECK: **if `shipment` ever
+//   gains a window, this module goes live again against exactly one family,
+//   with no second family to disagree with it.** Every arm it takes on that
+//   day will have been verified only by probes this repository wrote for
+//   itself. A wrong headroom would render as a number nobody could contradict.
+//
+//   The remedy is NOT obvious and is deliberately not taken here. A PERMANENT
+//   SYNTHETIC FAMILY — a fixture family existing only to keep the arms
+//   reachable — was considered and measured against this tree's own rulings:
+//
+//     · `FAMILY_ANCHORS`' header states that **each anchor is derived from its
+//       own family and no family is bent to another.** A family with no
+//       fixtures has no own-ness to derive from; its window would be authored,
+//       which is the shape §69 ruled on for `approvalLevel` — authored data
+//       admitted as authored, never dressed as computed.
+//     · It would make `driftReport` name an entity no surface renders, and
+//       `FixtureFamily` is consumed by `shiftFields`, so the synthetic member
+//       would be offered at every shift call site as a real choice.
+//     · And it would not buy the cross-check it is meant to buy: a family
+//       written to exercise the arms agrees with the arms by construction.
+//       `EMPTY-INPUT-REPORTS-CLEAN-01`'s cousin — a subject built to be found.
+//
+//   So the honest reading is that a synthetic family is a FIXTURE INVENTING A
+//   SUBJECT, and the current shape — real subject, synthetic probes, the
+//   emptiness asserted — is better than that. **What is missing is not a
+//   family; it is a probe that fires this instrument at a defect the tree
+//   really had.** That kind existed once (`dayProjection.test.ts`'s
+//   pre-anchor-geometry probe, retired with its subject at #325) and the tree
+//   currently holds none. Filed, not fixed here.
+//
 // ── ⚠️ BOUND-NESS IS DERIVED UPSTREAM OF THIS MODULE, NOT DECLARED IN IT ────
 //   A family is drift-bound iff a reader can still SEE one of its stored
 //   clock-states — which is exactly what `projectionGate/displayStates.ts`
