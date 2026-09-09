@@ -11,12 +11,21 @@
 // number that silently stops being true.
 //
 // So this file asserts the ABSENCE, which is the only claim that cannot rot:
-// re-add either field and it goes red by name.
+// re-add any of them and it goes red by name.
+//
+// ⚠️ **AND IT IS NO LONGER TWO OF THE FIVE — `Shipment.daysInTransit` AND
+// `Shipment.delayDays` JOINED THEM.** They were left behind at #318 because
+// computing them would have published fixture age as lateness; #319/#320's
+// anchoring removed that, and the computed values reproduce all 16 authored
+// literals exactly at `DECLARED_PRESENT`. **Their VALUES are not lost** — they
+// are per-row pins in `shipmentDisplayState.test.ts`, which is where the claim
+// they support now lives. Here, only the absence.
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { mockContracts } from '../../data/mockContracts';
+import { mockShipments } from '../../data/mockShipments';
 import { COMPLIANCE_DATA } from './mock/fixtures/buyerRisk';
 import { daysUntil } from './dayProjection';
 
@@ -100,5 +109,48 @@ describe('⚠️ WHAT THE STORED NUMBERS SAID vs WHAT THE CLOCK SAYS', () => {
     expect(gulf, 'Gulf Logistics row is this test’s subject').toBeDefined();
     expect(gulf!.expires).toBe('2026-09-01');
     expect(daysUntil(gulf!.expires, EARLY)).toBe(-7);
+  });
+});
+
+describe('⚠️ Shipment.daysInTransit and Shipment.delayDays are RETIRED', () => {
+  it('no shipment row carries either field', () => {
+    for (const s of mockShipments) {
+      expect(s, s.id).not.toHaveProperty('daysInTransit');
+      expect(s, s.id).not.toHaveProperty('delayDays');
+    }
+    // CONTROL: the rows are real and the properties they ARE derived from
+    // survive — without this the loop above passes over anything at all.
+    expect(mockShipments.length).toBeGreaterThan(10);
+    expect(mockShipments.every((s) => typeof s.shipDate === 'string')).toBe(true);
+    expect(mockShipments.every((s) => typeof s.estimatedArrival === 'string')).toBe(true);
+  });
+
+  it('the fixture SOURCE declares neither — a runtime delete would not satisfy this', () => {
+    const src = readFileSync('src/data/mockShipments.ts', 'utf8');
+    for (const f of ['daysInTransit', 'delayDays']) {
+      expect(new RegExp(`^\\s*${f}\\??:\\s*number\\s*;`, 'm').test(src), f).toBe(false);
+      expect(new RegExp(`^\\s*${f}\\s*:\\s*-?[0-9]+,`, 'm').test(src), f).toBe(false);
+    }
+    // CONTROL: the dates they were derived FROM are still declared.
+    expect(/^\s*shipDate\s*:\s*string\s*;/m.test(src)).toBe(true);
+    expect(/^\s*estimatedArrival\s*:\s*string\s*;/m.test(src)).toBe(true);
+  });
+
+  it('⚠️ the page no longer holds a SECOND late-predicate', () => {
+    // The defect was not a wrong number — it was two independent answers to
+    // `is this late?` on one page, agreeing because a single row of eighteen
+    // carried the stored field. This asserts the stored one is gone from the
+    // surface, which no type can express.
+    const page = readFileSync('src/pages-v2/BuyerShipments.tsx', 'utf8');
+    const code = page
+      .split('\n')
+      .map((l) => l.replace('\r', ''))
+      .filter((l) => !/^\s*(\/\/|\*|\/\*)/.test(l))
+      .join('\n');
+    expect(/delayDays/.test(code)).toBe(false);
+    expect(/s\.daysInTransit/.test(code)).toBe(false);
+    // CONTROL: the computed replacements really are called there.
+    expect(/daysLate\(/.test(code)).toBe(true);
+    expect(/daysInTransit\(/.test(code)).toBe(true);
   });
 });

@@ -25,7 +25,12 @@
 
 import { describe, it, expect } from 'vitest';
 import { mockShipments, type ShipmentStatus } from '../../data/mockShipments';
-import { shipmentDisplayState, isDelayed } from './shipmentDisplayState';
+import {
+  shipmentDisplayState,
+  isDelayed,
+  daysLate,
+  daysInTransit,
+} from './shipmentDisplayState';
 import { daysUntil } from './dayProjection';
 import { DECLARED_PRESENT } from './fixturePresent';
 import { getFlow } from '../transitions/index';
@@ -116,5 +121,90 @@ describe('the union now equals the machine', () => {
 
   it('no fixture row stores the computed literal', () => {
     expect(mockShipments.map((s) => String(s.status))).not.toContain('Delayed');
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// THE DAY COUNTS — THE AUTHORED LITERALS, MOVED HERE RATHER THAN DELETED.
+//
+// `Shipment.delayDays` and `Shipment.daysInTransit` were stored differences
+// against the read instant and are retired (law 0.5, the #318 rule). Their
+// AUTHORED VALUES are the evidence of what the fixtures MEANT, so they become
+// per-row pins here — `DATA-POPULATION-INSTRUMENT-SURVIVES-ITS-CORPUS-01`'s
+// shape: a NAMED member reached through a VALUE, never a row count.
+//
+// ⚠️ **HALF OF THIS AGREEMENT IS CIRCULAR AND IT IS DISCLOSED, NOT BURIED.**
+// `FAMILY_ANCHORS.shipment.why` names *"the retired `daysInTransit`
+// back-solve"* as one of the four instruments that CHOSE 2026-05-20. So the
+// five IN-FLIGHT rows agreeing is true by construction and is evidence of
+// nothing. Two things here are independent of the anchor and they are the
+// reason this file can make a claim at all:
+//
+//   · the ten ARRIVED rows equal `actualArrival − shipDate` — a difference
+//     between two STORED dates, invariant under any shift whatsoever;
+//   · `delayDays` is NOT named in that `why`, so shp-018 is one genuinely
+//     independent confirmation. One row, and it is stated as one row.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** The authored literals, read off `mockShipments.ts` before they were deleted. */
+const AUTHORED_TRANSIT: Record<string, number> = {
+  'shp-004': 5, 'shp-005': 28, 'shp-006': 1, 'shp-007': 3, 'shp-008': 7,
+  'shp-009': 7, 'shp-010': 33, 'shp-011': 1, 'shp-012': 1, 'shp-013': 1,
+  'shp-014': 9, 'shp-015': 1, 'shp-016': 10, 'shp-017': 11, 'shp-018': 12,
+};
+const AUTHORED_DELAY: Record<string, number> = { 'shp-018': 6 };
+
+describe('the retired day counts, recomputed at the declared present', () => {
+  it('POPULATION CONTROL — every pinned id is still a row', () => {
+    for (const id of [...Object.keys(AUTHORED_TRANSIT), ...Object.keys(AUTHORED_DELAY)]) {
+      expect(byId(id), `${id} is gone — the pins below would be vacuous`).toBeDefined();
+    }
+    expect(Object.keys(AUTHORED_TRANSIT).length).toBeGreaterThan(10);
+  });
+
+  it('⚠️ `daysInTransit` reproduces EVERY authored literal, by name', () => {
+    for (const [id, authored] of Object.entries(AUTHORED_TRANSIT)) {
+      expect(daysInTransit(byId(id)!, NOW), id).toBe(authored);
+    }
+  });
+
+  it('⚠️ THE INDEPENDENT HALF — arrived rows equal `actualArrival − shipDate`', () => {
+    // Invariant under ANY anchor, so this survives a re-anchor that would make
+    // the in-flight half meaningless. It is the only part of the transit
+    // agreement that is evidence rather than construction.
+    const arrived = mockShipments.filter((s) => s.actualArrival);
+    expect(arrived.length).toBeGreaterThan(8);
+    for (const s of arrived) {
+      const span = -(daysUntil(s.shipDate, `${s.actualArrival}T00:00:00.000Z`) as number);
+      expect(daysInTransit(s, NOW), s.id).toBe(span);
+      // …and it does not move when the clock does, which is what makes it a fact.
+      expect(daysInTransit(s, '2027-06-01T00:00:00.000Z'), s.id).toBe(span);
+    }
+  });
+
+  it('⚠️ an IN-FLIGHT row DOES move with the clock — the other meaning', () => {
+    const s = byId('shp-018')!;
+    expect(s.actualArrival).toBeUndefined();
+    const at = daysInTransit(s, NOW)!;
+    const later = daysInTransit(s, '2026-09-30T00:00:00.000Z')!;
+    expect(later).toBeGreaterThan(at);
+    // One field, two meanings — asserted rather than described. This is why a
+    // stored `number` could not say which it was.
+  });
+
+  it('⚠️ `daysLate` reproduces the one authored literal, and is null otherwise', () => {
+    for (const [id, authored] of Object.entries(AUTHORED_DELAY)) {
+      expect(daysLate(byId(id)!, NOW), id).toBe(authored);
+    }
+    const late = mockShipments.filter((s) => daysLate(s, NOW) !== null).map((s) => s.id);
+    expect(late).toEqual(['shp-018']);
+  });
+
+  it('⚠️ THE COUNT AND THE STATE CANNOT DISAGREE — the point of the batch', () => {
+    // The page used to hold two independent answers to `is this late?`. There
+    // is now one, and this is the assertion that keeps it that way.
+    for (const s of mockShipments) {
+      expect(daysLate(s, NOW) !== null, s.id).toBe(isDelayed(s, NOW));
+    }
   });
 });

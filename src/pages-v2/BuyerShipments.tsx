@@ -49,6 +49,8 @@ import { useShipments, useSuppliers } from '../services/query/hooks';
 import { DECLARED_PRESENT } from '../services/data/fixturePresent';
 import {
   shipmentDisplayState,
+  daysLate,
+  daysInTransit,
   type ShipmentDisplayState,
 } from '../services/data/shipmentDisplayState';
 
@@ -255,6 +257,10 @@ const BuyerShipments: React.FC = () => {
   const nextAct = useNextAct('shipment', selected?.status);
 
   const buildTimeline = (s: Shipment): TimelineEvent[] => {
+    // COMPUTED at `TODAY`, the same instant the pill and the tabs read. The
+    // stored `daysInTransit` this replaces was a FACT for arrived rows and a
+    // frozen clock read for in-flight ones, with nothing to tell them apart.
+    const transitDays = daysInTransit(s, TODAY);
     const completed = (statusOrder: number): 'completed' | 'current' | 'pending' => {
       const current = statusOrderFor(s);
       if (statusOrder < current) return 'completed';
@@ -287,10 +293,10 @@ const BuyerShipments: React.FC = () => {
       {
         id: 'e4',
         title: t('shipments.timeline.inTransit'),
-        timestamp: s.daysInTransit
-          ? s.daysInTransit === 1
-            ? t('shipments.timeline.daysInTransit.one', { count: s.daysInTransit })
-            : t('shipments.timeline.daysInTransit.other', { count: s.daysInTransit })
+        timestamp: transitDays
+          ? transitDays === 1
+            ? t('shipments.timeline.daysInTransit.one', { count: transitDays })
+            : t('shipments.timeline.daysInTransit.other', { count: transitDays })
           : undefined,
         status: s.status === 'In Transit' ? 'current' : completed(3),
       },
@@ -642,7 +648,13 @@ const BuyerShipments: React.FC = () => {
             {filtered.map((s) => {
               const sup = supplierById.get(s.supplierId);
               const Icon = MODE_ICON[s.mode];
-              const overdue = (s.delayDays ?? 0) > 0;
+              // ⚠️ THE PAGE'S SECOND `is it late?` PREDICATE IS GONE. This read
+              // `(s.delayDays ?? 0) > 0` — a stored field answering the same
+              // question the pill answers from the classifier. It agreed only
+              // because ONE row of eighteen carried the field; every other row
+              // was acquitted by `?? 0` rather than by a measurement.
+              const late = displayOf(s) === 'Delayed';
+              const lateBy = daysLate(s, TODAY);
               return (
                 <TableRow
                   key={s.id}
@@ -690,13 +702,13 @@ const BuyerShipments: React.FC = () => {
                   <TableCell>
                     <Data
                       as="div"
-                      className={`text-sm ${overdue ? 'text-danger font-semibold' : 'text-text-primary'}`}
+                      className={`text-sm ${late ? 'text-danger font-semibold' : 'text-text-primary'}`}
                     >
                       {formatDate(s.estimatedArrival)}
                     </Data>
-                    {overdue && (
+                    {late && lateBy !== null && (
                       <div className="text-xs text-danger">
-                        {t('shipments.table.daysLate', { days: s.delayDays })}
+                        {t('shipments.table.daysLate', { days: lateBy })}
                       </div>
                     )}
                   </TableCell>
@@ -886,7 +898,7 @@ const BuyerShipments: React.FC = () => {
                   <Data
                     as="div"
                     className={
-                      (selected.delayDays ?? 0) > 0
+                      displayOf(selected) === 'Delayed'
                         ? 'text-danger font-semibold'
                         : 'text-text-primary'
                     }

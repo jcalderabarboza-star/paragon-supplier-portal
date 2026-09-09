@@ -25,6 +25,19 @@ export type ShipmentStatus =
 
 export type ShipmentMode = 'Sea' | 'Air' | 'Road';
 
+// ⚠️ **`daysInTransit` AND `delayDays` ARE RETIRED (law 0.5), AND THEIR VALUES
+// ARE NOT LOST — THEY MOVED INTO THE SPEC AS PER-ROW PINS.** Both were stored
+// differences against the read instant, which is the rule `daysUntilExpiry` and
+// `daysLeft` were retired on at #318. They were LEFT BEHIND then because
+// computing them would have published fixture age as lateness; #319/#320's
+// anchoring ended that, and the computed values reproduce all 16 authored
+// literals exactly at `DECLARED_PRESENT`. The producers are `daysLate` and
+// `daysInTransit` in `services/data/shipmentDisplayState.ts`, beside the
+// classifier so a state and its number cannot disagree.
+//
+// ⚠️ **DO NOT RE-ADD EITHER AS A FIELD.** `retiredDayFields.test.ts` asserts
+// their absence at the type AND in these bytes, and `dayCounts.ts`'s bilateral
+// gate goes red if a `…: number;` declaration comes back unclassified.
 export interface Shipment {
   id: string;
   asnNumber: string;
@@ -46,8 +59,6 @@ export interface Shipment {
   containerNumber?: string;
   dockAssignment?: string;
   dockTime?: string;
-  daysInTransit?: number;
-  delayDays?: number;
   customsStatus?: 'Pending' | 'Cleared' | 'Held';
   lineItems: ShipmentLineItem[];
 }
@@ -139,7 +150,6 @@ const mockShipmentsRaw: Shipment[] = [
     packageCount: 24,
     totalWeight: 18000,
     containerNumber: 'SMPL-ISL-4456712',
-    daysInTransit: 5,
     customsStatus: 'Pending',
     lineItems: [
       { materialCode: 'RM-EMUL-9410', description: 'Glyceryl Stearate SE (Halal Emulsifier)', qty: 8000, uom: 'KG' },
@@ -164,7 +174,6 @@ const mockShipmentsRaw: Shipment[] = [
     packageCount: 18,
     totalWeight: 9500,
     containerNumber: 'SMPL-OCN-3219874',
-    daysInTransit: 28,
     customsStatus: 'Pending',
     lineItems: [
       { materialCode: 'RM-EMUL-3320', description: 'Cetearyl Alcohol — Vegetable Origin', qty: 9000, uom: 'KG' },
@@ -187,7 +196,6 @@ const mockShipmentsRaw: Shipment[] = [
     estimatedArrival: '2026-05-20',
     packageCount: 12,
     totalWeight: 2400,
-    daysInTransit: 1,
     lineItems: [
       { materialCode: 'FR-WARD-4410', description: 'Wardah Signature Floral Compound', qty: 1200, uom: 'KG' },
     ],
@@ -209,7 +217,6 @@ const mockShipmentsRaw: Shipment[] = [
     estimatedArrival: '2026-05-21',
     packageCount: 6,
     totalWeight: 850,
-    daysInTransit: 3,
     customsStatus: 'Pending',
     lineItems: [
       { materialCode: 'AI-PEPTIDE-8801', description: 'Peptide Complex Anti-Aging', qty: 250, uom: 'KG' },
@@ -233,7 +240,6 @@ const mockShipmentsRaw: Shipment[] = [
     packageCount: 9,
     totalWeight: 1800,
     containerNumber: 'SMPL-CST-7790012',
-    daysInTransit: 7,
     customsStatus: 'Pending',
     lineItems: [
       { materialCode: 'FR-EMIN-4420', description: 'Emina Fresh Citrus Accord', qty: 900, uom: 'KG' },
@@ -260,7 +266,6 @@ const mockShipmentsRaw: Shipment[] = [
     packageCount: 36,
     totalWeight: 14200,
     containerNumber: 'SMPL-SEA-1187204',
-    daysInTransit: 7,
     customsStatus: 'Pending',
     lineItems: [
       { materialCode: 'PK-CART-9901', description: 'Mono-Carton Box 70x40x180mm — Wardah Moisturizing Lotion', qty: 200000, uom: 'PCS' },
@@ -285,7 +290,6 @@ const mockShipmentsRaw: Shipment[] = [
     packageCount: 22,
     totalWeight: 11500,
     containerNumber: 'SMPL-CTN-8821007',
-    daysInTransit: 33,
     customsStatus: 'Held',
     lineItems: [
       { materialCode: 'RM-EMUL-3320', description: 'Cetearyl Alcohol — Vegetable Origin', qty: 11000, uom: 'KG' },
@@ -309,7 +313,6 @@ const mockShipmentsRaw: Shipment[] = [
     actualArrival: '2026-05-20',
     packageCount: 14,
     totalWeight: 3500,
-    daysInTransit: 1,
     customsStatus: 'Cleared',
     lineItems: [
       { materialCode: 'RM-EMUL-9430', description: 'Polysorbate 80 — Halal, Food & Cosmetic Grade', qty: 3000, uom: 'KG' },
@@ -337,7 +340,6 @@ const mockShipmentsRaw: Shipment[] = [
     totalWeight: 5400,
     dockAssignment: 'Dock B-3',
     dockTime: '14:00',
-    daysInTransit: 1,
     customsStatus: 'Cleared',
     lineItems: [
       { materialCode: 'PK-PETB-8801', description: 'PET Bottle 200ml Frosted — Wardah Series', qty: 120000, uom: 'PCS' },
@@ -363,7 +365,6 @@ const mockShipmentsRaw: Shipment[] = [
     totalWeight: 4800,
     dockAssignment: 'Dock A-2',
     dockTime: '11:00',
-    daysInTransit: 1,
     customsStatus: 'Cleared',
     lineItems: [
       { materialCode: 'PK-PETB-8802', description: 'PET Bottle 100ml Clear — Emina Series', qty: 95000, uom: 'PCS' },
@@ -419,7 +420,6 @@ const mockShipmentsRaw: Shipment[] = [
     containerNumber: 'SMPL-ISL-4456701',
     dockAssignment: 'Dock C-1',
     dockTime: '09:00',
-    daysInTransit: 9,
     customsStatus: 'Cleared',
     lineItems: [
       { materialCode: 'RM-COCO-8200', description: 'Coconut Fatty Acid Distillate (CFAD)', qty: 25000, uom: 'KG' },
@@ -445,7 +445,6 @@ const mockShipmentsRaw: Shipment[] = [
     totalWeight: 1600,
     dockAssignment: 'Dock B-1',
     dockTime: '10:00',
-    daysInTransit: 1,
     customsStatus: 'Cleared',
     lineItems: [
       { materialCode: 'FR-WARD-4410', description: 'Wardah Signature Floral Compound', qty: 800, uom: 'KG' },
@@ -474,7 +473,6 @@ const mockShipmentsRaw: Shipment[] = [
     containerNumber: 'SMPL-ISL-4456688',
     dockAssignment: 'Dock A-1',
     dockTime: '08:00',
-    daysInTransit: 10,
     customsStatus: 'Cleared',
     lineItems: [
       { materialCode: 'RM-STEAR-7300', description: 'Stearic Acid — Double Pressed (Halal)', qty: 8000, uom: 'KG' },
@@ -501,7 +499,6 @@ const mockShipmentsRaw: Shipment[] = [
     containerNumber: 'SMPL-SEA-1187118',
     dockAssignment: 'Dock B-2',
     dockTime: '13:00',
-    daysInTransit: 11,
     customsStatus: 'Cleared',
     lineItems: [
       { materialCode: 'PK-CART-9901', description: 'Mono-Carton Box 70x40x180mm — Wardah Moisturizing Lotion', qty: 240000, uom: 'PCS' },
@@ -530,8 +527,6 @@ const mockShipmentsRaw: Shipment[] = [
     estimatedArrival: '2026-05-14',
     packageCount: 4,
     totalWeight: 480,
-    daysInTransit: 12,
-    delayDays: 6,
     customsStatus: 'Held',
     lineItems: [
       { materialCode: 'AI-PEPTIDE-8801', description: 'Peptide Complex Anti-Aging', qty: 180, uom: 'KG' },

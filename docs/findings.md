@@ -23691,3 +23691,158 @@ than a bump.
 resolved pair-by-pair against a build of `main`, filenames included — vite
 content-hashes asset filenames, so identical names are themselves the content
 assertion — plus the chunk hash read off the running page.
+
+---
+
+## §99 — THE SHIPMENT DAY COUNTS ARE COMPUTED, AND THE DIVERGENCE THAT MOTIVATED IT DID NOT EXIST (2026-09-09)
+
+**Section number derived as `max(sections) + 1` over `^## §N` — §98 → §99.**
+
+**Dispatch:** the `+6d late` beside a computed `Delayed` — *"two numbers about the
+same lateness, from different clocks, on one row."* ⚠️ **MEASURED FIRST, AND THE
+PREMISE INVERTED: THERE IS ONE CLOCK, AND THE TWO NUMBERS AGREED.** The batch
+went ahead for a different and better reason, which is recorded here rather than
+allowed to look like the dispatched one.
+
+### 99a · THE DIVERGENCE, RE-DERIVED THROUGH `shiftFields`
+
+```
+  shp-018   shipDate 2026-08-19   estimatedArrival 2026-08-25   actualArrival —
+            delayDays STORED               6
+            computed lateness @ P          6      <- DECLARED_PRESENT 2026-08-31
+            computed lateness @ wall      15      <- 2026-09-09, read by nothing
+```
+
+**`BuyerShipments.tsx:59` pins `const TODAY = DECLARED_PRESENT`.** The classifier
+and the stored literal were never read from different clocks, and at the only
+instant any surface asks, **they agreed exactly**. My #329 report called it *"a
+real divergence"*; the shipped comment was more careful but the finding as filed
+was overstated. **The `+6d` on screen was correct, and it is still `+6d` after
+this batch** — browser-verified in both locales.
+
+⚠️ **SO WHAT WAS ACTUALLY WRONG WAS NOT A NUMBER — IT WAS THAT THE AGREEMENT WAS
+A COINCIDENCE OF THE ANCHOR RATHER THAN A PROPERTY, AND NOTHING WOULD HAVE SAID
+SO IF IT STOPPED.** That is a weaker finding than the one dispatched and a real
+one, and it is the honest ground for the change.
+
+### 99b · THE #318 REASONING DIED AT #319/#320, AND NOBODY CAME BACK
+
+`dayCounts.ts` held both fields as `stored-in-fixtures` under a stated reason,
+quoted at the site rather than deleted:
+
+> ⚠️ THE FOUR THAT REMAIN ARE DELIBERATE. Each back-solves to the SAME authoring
+> date as the fixture around it … so computing them at read would publish FIXTURE
+> AGE as operational lateness — a shipment "in transit 116 days", a PO "496 days
+> late". The disposal is the DATA, and the fixture refresh is its own batch.
+
+**The fixture refresh it was waiting for happened.** `shiftFields` re-times the
+shipment family to `DECLARED_PRESENT`, so *"in transit 116 days"* is unreachable:
+measured before retiring anything, **the computed values reproduce all 16 authored
+literals exactly.** The precondition was satisfied by a batch that had no reason
+to look at this table — which is why the quote stays. **A deferral whose
+precondition is met elsewhere does not announce itself.**
+
+⚠️ **AND THE TWO PO ROWS DO NOT RIDE, DERIVED RATHER THAN SCOPED AWAY:**
+`purchaseOrder` **has no entry in `FAMILY_ANCHORS`**, so its dates are still raw
+literals and the quoted reasoning still binds them exactly. *"496 days late"*
+remains live for a PO. **Anchor that family first; the fields are downstream of
+the anchoring, never the other way round.**
+
+### 99c · ⚠️ THE REAL DEFECT WAS A SECOND PREDICATE, NOT A SECOND CLOCK
+
+`BuyerShipments` held **two independent answers to *is this shipment late?***
+
+```
+  the pill / tabs / count : isDelayed(s, TODAY)          — the classifier
+  the red text / ETA cell : (s.delayDays ?? 0) > 0       — a stored field
+```
+
+Derived over all 18 rows: **they agree on every one.** ⚠️ **And the reason is not
+that the data is coherent — it is that EXACTLY ONE ROW OF EIGHTEEN CARRIES
+`delayDays` AT ALL.** Every other row was acquitted by `?? 0`, not by a
+measurement. A second row with a stale count, or one delayed row without the
+field, and the badge and the number would have disagreed with nothing to catch
+it. The stored predicate is gone; `retiredDayFields.test.ts` asserts it stays
+gone at the surface, which no type can express.
+
+### 99d · ⚠️ MY OWN CENSUS MISSED A SITE — THE FOURTH ONE — AND `tsc` CAUGHT IT
+
+The dispatch warned *"my census has missed a site twice."* It missed a third
+time, on the seat doing the measuring. A `grep delayDays` returns three page
+sites; the fourth consumes the **derived local**:
+
+```
+  :645  const overdue = (s.delayDays ?? 0) > 0;     <- grep finds the field
+  :704  className={`… ${overdue ? 'text-danger' …   <- grep finds NOTHING here
+```
+
+**A field census must follow the BINDING, not only the field name.** It was found
+by `tsc` (`TS2304: Cannot find name 'overdue'`) after the definition was replaced
+— by the type-checker, not by any matcher I aimed. Rule 1's shape with the
+instrument one layer out: the population was right and the *reads* of it were
+not.
+
+### 99e · `daysInTransit` RIDES, AND THE DATA SETTLES THE "TWO MEANINGS" ARGUMENT
+
+```
+  10 ARRIVED rows   stored == actualArrival − shipDate     10 of 10
+   5 IN-FLIGHT rows stored == elapsed at DECLARED_PRESENT   5 of 5
+```
+
+One formula — `actualArrival ?? now` as the endpoint — reproduces all 15. **The
+"one field with two meanings" argument survives and is now expressed in code:**
+for an arrived row the count is a closed, clock-free fact that does not move at
+any horizon; for an in-flight row it is elapsed-so-far and moves every day. A
+stored `number` could not say which it was, and both properties are asserted.
+
+⚠️ **HALF THIS AGREEMENT IS CIRCULAR AND IT IS DISCLOSED AT THE SITE.**
+`FAMILY_ANCHORS.shipment.why` names *"the retired `daysInTransit` back-solve"* as
+one of the four instruments that CHOSE 2026-05-20 — so the five in-flight rows
+agreeing is guaranteed by construction and **proves nothing**. Independent of the
+anchor: the ten arrived rows (a difference between two stored dates, invariant
+under any shift), and `delayDays`, which that `why` does not name — **one row,
+stated as one row.**
+
+### 99f · THE ORACLE MOVED, IT WAS NOT LOST
+
+The 16 authored literals were the record of what the fixtures MEANT. Deleting the
+fields would have deleted that evidence, so it became **per-row pins by name** in
+`shipmentDisplayState.test.ts` — #325's disposal applied to numbers instead of a
+state word.
+
+**The mutation matrix, restores byte-identical:**
+
+| mutant | what went RED, by name | id-only control |
+|---|---|---|
+| `daysLate` off by one | the `delayDays` value pin | **green** |
+| `daysInTransit` ignores `actualArrival` | the value pin **and** the independent-half assertion | **green** |
+| corpus replaced #319-style (ids intact, every date +11d) | **6 named value pins** | **green** |
+
+**The id-only population control stays green under a total corpus replacement
+while every value pin fires** — `DATA-POPULATION-INSTRUMENT-SURVIVES-ITS-CORPUS-01`
+demonstrated on the batch that retired the corpus it was watching. Two assertions
+deliberately survive all three (`an IN-FLIGHT row DOES move with the clock`, `THE
+COUNT AND THE STATE CANNOT DISAGREE`): they are structural, not value claims, and
+pinning values there would be the counter-rule's failure.
+
+`shipmentDisplayState.ts` sha256 `74dbbb4fd117e36b…` blob
+`3b3cbb7ec09b3cf28c6203053f7f1d1eb517a39b`; `mockShipments.ts` sha256
+`0148fc2b625f2b4e…` blob `bc131930fffcc3a5814136df944636420135d16c`. Each mutant
+asserted the file hash CHANGED before running.
+
+### 99g · GATES · BROWSER QA
+
+Four green. Floor **4565 → 4574 / 320**, the suite grown by real assertions.
+
+**Both locales, through the app's own language menu, chunk `index-DTRAmLJq.js`
+read off the page:**
+
+| | All | Pending ASN | In Transit | At Dock | Delivered | **Delayed** |
+|---|---|---|---|---|---|---|
+| EN | 18 | 3 | 8 | 4 | 2 | **1** |
+| ID | Semua 18 | Menunggu ASN 3 | Dalam Perjalanan 8 | Di Dok 4 | Terkirim 2 | **Terlambat 1** |
+
+`shp-018` — EN `19 Aug 2026 · 25 Aug 2026 · +6d late · Delayed`; ID `+6h
+terlambat · Terlambat`; timeline `12 days`. **Zero cross-locale leak in either
+direction. One Delayed in, one Delayed out, and every number identical to the
+literal it replaced.**
