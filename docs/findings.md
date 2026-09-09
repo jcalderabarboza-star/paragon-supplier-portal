@@ -23021,3 +23021,213 @@ collision. §89 remains the only real one and it was renumbered at #321. **Nothi
 still derives the next section number** — §94 was derived here
 (`max(sections) + 1`) rather than assumed, but the derivation lives in a
 scratchpad and not in a gate. Filed, not built, per the dispatch.
+
+---
+
+## §95 — LANE (3) IS KILLED ON ITS OWN MEASUREMENT, AND THE TWO PROBES IT LEFT BEHIND (2026-09-09)
+
+**Section number derived as `max(sections) + 1` over `^## §N` — §94 → §95.** The
+derivation still lives in a scratchpad rather than a gate; that residue is §94's,
+unchanged and not adopted here.
+
+**Dispatch:** measure whether this tree's instruments can go silent without
+anything going red; build only what the measurement supports. It supported two
+matcher probes and two canon additions. **It did not support the lane, and the
+lane is closed.** Recording that is the point of this section: *a lane opened and
+closed on measurement is worth more written down than one quietly not started* —
+otherwise the same thesis is re-proposed in six weeks with nothing to measure it
+against.
+
+### 95a · THE THESIS, AND EXACTLY WHICH HALF SURVIVED
+
+Promoted from Seat 2's sentence at #326: *every gate asserts a FACT ABOUT THE
+TREE; almost none asserts THAT THE ASSERTING STILL HAPPENS.*
+
+| half of the thesis | verdict | evidence |
+|---|---|---|
+| the §71 specimen is gone | **TRUE** | retired at `3e0c1d2`, quoted into a comment in `dayProjection.test.ts` |
+| it lived in one module's comment | **TRUE** | `clockDrift.ts`, added #326; moved to `CLAUDE.md` by this batch |
+| *"nothing replaced it"* | **FALSE** | `chartPalette.guard.test.tsx:578` is a live §71 implementation, citing the class by name |
+| the tree is broadly exposed | **FALSE** | three of four silencing modes at 67/67; the fourth at 62/67 |
+
+### 95b · THE INSTRUMENT POPULATION — 67, BY PROPERTY, NOT BY NAME
+
+A name scan (`*guard*`, `*gate*`, `*census*`) returns 26 files and is the
+inherited-list shape rule 1 forbids. **Property used, stated so it can be
+rejected: an instrument is a spec whose assertion is universally quantified over
+a population derived at read time from the tree.** Three derivation sources:
+
+| family | population source | n |
+|---|---|---|
+| A | own `fs` walk / `import.meta.glob` over **source** | 51 |
+| B | imported derivation lib (`*/derive.ts`, `ts.createProgram`) | 7 |
+| C | registry enumerator **iterated** into an assertion | 19 |
+| | union, less 3 fixture-workbook readers | **67** |
+
+Bilateral controls: `storedFieldGate`, `moduleScopeLiteralGate`, `businessRoles`,
+`toastHonesty` present; `NotFound.test.tsx` absent.
+
+⚠️ **FAMILY B EXISTS BECAUSE THE FIRST MATCHER MISSED IT, AND THE MISS IS THE
+INSTRUCTIVE PART.** `storedFieldGate` and `moduleScopeLiteralGate` — two of the
+most load-bearing instruments in the tree — touch no `fs` API at all; their
+walking is `ts.createProgram` inside an imported lib. **A spec-only matcher scores
+them as behaviour tests.** Rule 2, on the instrument that measures instruments.
+
+⚠️ **AND THE FIGURE IS NOT COMPARABLE TO THE INHERITED "26 whole-file plus 4
+embedded".** `grep` returns that census nowhere in this register, so its property
+cannot be reproduced and the gap cannot be explained — `COUNT-RESTATED-ACROSS-
+INSTRUMENTS-01` (§40k). **Not reconciled. Re-run, do not reconcile.**
+
+### 95c · THE FOUR SILENCING MODES, MEASURED
+
+| mode | caught? | by what |
+|---|---|---|
+| file deleted | **YES** | `vitest.files` floor, at **zero headroom** |
+| describe skipped | **YES, twice** | `gates.mjs:201` refuses `numPendingTests > 0`; and the tests floor at zero headroom |
+| population emptied | **YES — 67/67** | every member carries a population-scale guard; 9 additionally bind population size to collected test count via `it.each(POPULATION)` |
+| matcher matches nothing | **62/67** | bilateral positive+negative assertions |
+
+⚠️ **THE FLOOR AT ZERO HEADROOM IS DOING MORE WORK THAN THE FRAMING CREDITED**
+(4543/319 observed against 4543/319 recorded, at `1aa849b`). Modes 1 and 2 are
+not "uncovered"; they are covered by a mechanism nobody thought of as a liveness
+probe. **Residual, named: delete-one-add-one nets to 319 and passes.**
+
+⚠️ **AND `it.each(POPULATION)` IS A STRUCTURAL LIVENESS DEVICE WORTH COPYING.** It
+converts population size into collected test count, which the floor watches — so
+an emptied population becomes a floor breach with nobody asserting anything about
+population size. `toastHonesty` states the principle at the site: *"derives a
+non-empty population — a guard over nothing guards nothing."*
+
+### 95d · `REIMPLEMENTATION-CONTRADICTS-THE-INSTRUMENT-01` — the new class, and it fired on this seat
+
+**The first pass reported five instruments with no defence at all.** All five were
+false: the hand matcher tested `toBeGreaterThan\(0\)` and every one of the five
+guards with `(200)`, `(400)`, `(10)` or `(5)`.
+
+**THE GENERAL FORM: a hand derivation that contradicts a shipped instrument is
+evidence about the hand derivation.** It is the matcher-reporting-on-itself defect
+with the operands swapped, and it is missed because it arrives as a *discovery* —
+the newer measurement, the one the seat understands, set against an instrument
+with probes, bilateral controls and a history of firing. **The prior is not
+close.** Filed to `CLAUDE.md` with its disposal: debug the hand derivation first
+and say you did; confirm by firing it at a member the instrument already accepts.
+
+⚠️ **AND IT FAILED TOWARD MANUFACTURING WORK, WHICH IS WHY IT BELONGS BESIDE
+§86g.** Five false positives read as *"your gates are weak"* — the humble-sounding
+answer, and the one that would have staffed this lane instead of closing it.
+
+### 95e · THE TWO PROBES — and the mutation evidence that makes the finding checkable
+
+The exposure was **real and it was two files**: assertions of the form
+`expect(offenders).toEqual([])` over a population separately proved non-empty.
+That pair closes `EMPTY-INPUT-REPORTS-CLEAN-01` and is **silent about a dead
+matcher** — the population is intact; the filter is what stopped matching.
+
+Three mutations, each restored byte-identical (sha256 authority, `git
+hash-object` beside it, and the file confirmed changed before the run):
+
+| mutation | existing assertions | new probe |
+|---|---|---|
+| `EMAIL_RE` → `/(?!)/g` | **all 4 PASS**, incl. the domain assertion it serves | 1 RED, by name |
+| `isThin` → `() => false` | **all 7 PASS**, incl. *"every term carries real prose in BOTH locales"* | 1 RED, by name |
+| ISO 6346 → the retired `[A-Z]{4}U` | **all 4 PASS** | 2 RED, by name |
+
+**The hole was not smaller than measured.** Not one existing assertion fired under
+any of the three breaks.
+
+**Restore authorities, both reported because `core.autocrlf` is on in this repo
+and a bare working-copy sha256 is not reproducible across platforms.** Each probe
+also asserted the file's hash CHANGED before running — a probe that silently never
+mutates reports green and means nothing:
+
+| file | sha256 (working-copy bytes) | `git hash-object` (normalized) |
+|---|---|---|
+| `thirdPartyIdentifiers.test.ts` | `3391a77da5596eaf…` | `284bd41ef5a468f938e95a5e8ff6d0b601bd3e66` |
+| `glossary.coverage.test.ts` | `117e098b0230b672…` | `729f7e00e5d70da5f62fa826c85f4c7f9340eef8` |
+
+⚠️ **MUTATION B WAS RE-RUN AGAINST THE FINAL BYTES, AND THE RE-RUN IS THE ONE
+REPORTED.** The spec-surface gate rejected the first version of
+`registryIsBroken`'s probe rows — `Registry`'s `sourceFile` / `sourceType` are
+CLOSED literal unions of the registries that exist, so *"a registry pointing at a
+file that is gone"* is a state the type forbids naming. The predicate is now typed
+on `string`. **The first mutation run therefore measured a file that no longer
+exists**, which is `CLEAN-AFTER-THE-FIX-REPORTS-THE-FIX-01` pointed at a probe
+instead of a gate: evidence taken against a tree that has since moved is evidence
+about the old tree.
+
+⚠️ **THE THIRD MUTATION IS NOT SYNTHETIC — IT REPRODUCES A DEFECT THIS FILE REALLY
+SHIPPED**, and the file's own comment records the episode: `[A-Z]{4}U` requires
+five letters where ISO 6346 has three plus a category letter, so it matched
+nothing, and *"re-inserting a real owner code left this test GREEN."* It was
+caught once by a hand-run probe nobody was obliged to run. **It is now standing.**
+
+⚠️ **`chipCoverage` IS NOT A MEMBER, AND IS RECORDED SO A THIRD PROBE IS NOT
+CHASED.** It looks exposed by the same shape and is not: its sibling filters
+assert `halal.length > 0` and `toastBound.length > 0`, which prove the predicate
+machinery runs. **A `.toEqual([])` beside a `> 0` on the same derivation is
+already bilateral.**
+
+⚠️ **AND `remedyRoute` HAS NO PROBE, DELIBERATELY.** It is
+`t.remedyRoute !== undefined` — a property-presence check with no matcher to
+break. Stated at the site rather than left as an omission a later reader closes.
+
+### 95f · `PROBE-MUST-FIRE-AT-A-REAL-DEFECT-01` — promoted out of one module's comment
+
+The rule was written at #326 inside `clockDrift.ts` and reads there as local to
+that instrument. **It governs all 67.** Moved to `CLAUDE.md` under *"PROBE THE
+GUARD BOTH WAYS"*, with a pointer left at `clockDrift` and the local half kept.
+
+⚠️ **AND HALF OF THE ORIGINAL SENTENCE WAS MEASURED FALSE IN THE PROMOTION.** It
+said the tree *"currently holds none"* of that probe kind. `chartPalette.guard.
+test.tsx:578` holds one — weaker than the specimen (a *reachability* anchor: the
+walk must REACH `ScoreBadge`'s `TONE`, rather than flag a defect) but live, and
+citing §71 by name. The corrected claim is narrower and sharper: **the tree's
+liveness probes are anchored on synthetic or reachability subjects; the one
+anchored on a defect the tree really carried was retired with its subject.**
+
+### 95g · `PROBE-HARNESS-CANON-HAS-NO-CONTRACT-01` — FILED, NOT FIXED
+
+**The discipline this project most depends on lives in exactly two places, and
+neither is a contract.** Derived: `CLAUDE.md` **12** occurrences, `docs/findings.md`
+**97**. No `docs/contracts/` entry, no `scripts/` harness, no `src/test/` module —
+`src/test/` holds `demoClock.ts`, `setup.ts`, `test-utils.tsx` and nothing else.
+
+**That is `REGISTER-OUTGREW-THE-SURFACES-01`'s signature applied to the practice
+rather than to a feature.** §39's kill table — the running count of one-sided
+probes — is *in the register*, where nothing can fail on it. A seat learns to
+probe both ways by reading, and this tree has already ruled that canon nobody
+reads has been wrong at five sites.
+
+⚠️ **FILED, NOT FIXED, BY RULING.** Moving the canon is a lane, and the operator
+declined to open one on the day one was closed. Recorded here so the next seat
+inherits the measurement rather than re-taking it.
+
+### 95h · THE FAMILY-D BOUNDARY — REPORTED, NOT BUILT
+
+`src/services/data/mock/fixtures/asnRefIntegrity.test.ts` is a real census and
+**none of the three properties above reaches it**: it iterates a FIXTURE CORPUS,
+not the source tree and not a registry.
+
+**THE HONEST BOUNDARY, and the property matters more than the number: the 67 count
+instruments whose population is CODE — source text, or a registry derived from
+it. An instrument whose population is DATA is a fourth family and is not
+counted.** The distinction is real rather than bookkeeping — a code-population
+instrument goes silent when a matcher dies, a data-population instrument also goes
+silent when the fixture corpus is emptied or replaced, which is a fifth mode none
+of the four covers. **If fixture corpora count as "the tree", 67 is low**, and the
+derivation to run is the same three properties with `import`ed fixture arrays
+added as a source. Not run here; the dispatch asked for the boundary, not the set.
+
+### 95i · GATES · BROWSER QA
+
+Four green. Floor moved **up** with the suite — the diff ADDS assertions and adds
+no `describe` that stops running, which is the mechanical discriminator between a
+growth and a regression.
+
+**Browser QA: derived as not applicable, and proved rather than asserted.** The
+diff touches `CLAUDE.md`, `docs/findings.md`, two `*.test.ts` files, one
+module-scope COMMENT in `clockDrift.ts`, and `scripts/floor.json`. Specs are
+excluded from the bundle by `tsconfig.json`; a comment carries no emitted bytes.
+The A/B is recorded in the PR body: **identical `dist/` asset hashes** across a
+build of `main` and a build of this branch — every pair resolved, hashes read off
+the built output.

@@ -90,11 +90,22 @@
 //
 //   So the honest reading is that a synthetic family is a FIXTURE INVENTING A
 //   SUBJECT, and the current shape — real subject, synthetic probes, the
-//   emptiness asserted — is better than that. **What is missing is not a
-//   family; it is a probe that fires this instrument at a defect the tree
-//   really had.** That kind existed once (`dayProjection.test.ts`'s
-//   pre-anchor-geometry probe, retired with its subject at #325) and the tree
-//   currently holds none. Filed, not fixed here.
+//   emptiness asserted — is better than that. What is missing here is a probe
+//   that fires this instrument at a defect the tree really had; that kind
+//   existed once (`dayProjection.test.ts`'s pre-anchor-geometry probe, retired
+//   with its subject at #325). Still filed, still not fixed here.
+//
+//   ⚠️ **THE GENERAL RULE HAS LEFT THIS COMMENT AND NOW GOVERNS EVERY
+//   INSTRUMENT IN THE TREE: `PROBE-MUST-FIRE-AT-A-REAL-DEFECT-01`, in
+//   `CLAUDE.md` under "PROBE THE GUARD BOTH WAYS".** It was stated here first
+//   and read as local to this module, which it never was — the sentence
+//   applies to all 67 derived instruments, and a rule that governs 67 things
+//   from inside one of them is a rule most of its subjects will never see.
+//   What stays here is the part that IS local: this module has no real-defect
+//   probe available to it, because its subject was retired rather than fixed.
+//   ⚠️ AND THE TREE DOES NOT HOLD NONE — that half of the sentence was
+//   measured false when the rule was promoted. `chartPalette.guard.test.tsx`
+//   and `thirdPartyIdentifiers.test.ts` both carry one.
 //
 // ── ⚠️ BOUND-NESS IS DERIVED UPSTREAM OF THIS MODULE, NOT DECLARED IN IT ────
 //   A family is drift-bound iff a reader can still SEE one of its stored
