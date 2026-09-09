@@ -28,20 +28,38 @@ import { documentExpiry } from '../../services/data/dayProjection';
 //
 // ── ⚠️ THE DIVERGENCE IS CLOSED, AND THE CLOCK WON ──────────────────────────
 //   This widget used to ask the STATUS field what "expiring" means while
-//   `SupplierDocuments.tsx` asked the CLOCK. They disagreed on 5 of 16
-//   documents, in BOTH directions and on the same screen:
-//
-//     · doc-001 (MUI halal cert) stored 'Expiring Soon', expired 2026-05-15
-//     · doc-202 stored 'Expiring Soon', expired 2026-08-19
-//     · doc-005 / doc-008 / doc-101 stored 'Valid' while genuinely inside the
-//       180-day window — so the widget OMITTED the three that needed renewing
-//       and advertised two that were already dead.
-//
-//   `status` lost because it is the stored clock literal law 0.5 forbids: it was
-//   typed once and has been decaying ever since. Both surfaces now read
+//   `SupplierDocuments.tsx` asked the CLOCK. Both surfaces now read
 //   `documentExpiry(doc, now)`, so they cannot drift apart again — and
 //   `critical` becomes reachable HONESTLY, by a count the projection can
 //   actually produce, rather than by the union member #316 retired.
+//
+// ── ⚠️ THE EVIDENCE THIS BLOCK USED TO CITE IS RETIRED — QUOTED, NOT DELETED
+//   RETIRED: *"They disagreed on 5 of 16 documents, in BOTH directions and on
+//   the same screen: · doc-001 (MUI halal cert) stored 'Expiring Soon', expired
+//   2026-05-15 · doc-202 stored 'Expiring Soon', expired 2026-08-19 · doc-005 /
+//   doc-008 / doc-101 stored 'Valid' while genuinely inside the 180-day window
+//   — so the widget OMITTED the three that needed renewing and advertised two
+//   that were already dead."* And with it: *"`status` lost because it is the
+//   stored clock literal law 0.5 forbids: it was typed once and has been
+//   decaying ever since."*
+//
+//   ⚠️ **IT WAS TRUE WHEN TYPED AND FALSE THREE HOURS LATER, BY A COMMIT THAT
+//   NEVER OPENED THIS FILE.** Written at `256f053` (2026-09-08 08:42 +0700);
+//   falsified at `8c68d77` (11:34 +0700, FIXTURE-PRESENT-01 (d)), which shifted
+//   the fixture to `DECLARED_PRESENT` at module load. The five ids and the
+//   count of three still reproduce EXACTLY — off `DOCUMENTS_RAW`, the authored
+//   literals, which no consumer reads. Against `DOCUMENTS`, the shifted export
+//   this widget imports, **no row disagrees with the projection**. Derive it,
+//   do not read it here: `fixturePresent.guard.test.ts` runs that comparison
+//   every suite. No count is restated in this comment on purpose.
+//
+//   ⚠️ **AND THE FIX WAS STILL RIGHT — ITS REASON IS JUST WEAKER NOW.** Two
+//   surfaces reading two different sources is a divergence WAITING to happen,
+//   whether or not the fixture currently exhibits it; that is why this widget
+//   reads the clock. What can no longer be claimed is that it RESCUED five
+//   lying rows. `SupplierDocuments`' per-row badge and `SupplierDashboard`'s
+//   badge and action label still read the stored literal, so the divergence is
+//   closed for THIS widget and open on the tree.
 //
 //   ⚠️ **WHAT IS DELIBERATELY NOT CHANGED:** the stored `'Expiring Soon'`
 //   literal stays in the fixture and in `SupplierDocumentStatus`. Retiring it is
@@ -102,8 +120,12 @@ const SupplierCertsExpiringWidget: React.FC = () => {
               </TableCell>
               <TableCell>
                 {/* The PROJECTED state, never `doc.status`. Rendering the stored
-                    literal here is what let the widget label a certificate that
-                    expired 116 days ago as merely "Expiring Soon". */}
+                    literal here is what let the widget label an already-expired
+                    certificate as merely "Expiring Soon" — a hazard of the
+                    SOURCE, not a count. The number that stood in this comment
+                    (`116 days ago`) is retired: it was measured off the authored
+                    fixture literals before `8c68d77` shifted them, and a sibling
+                    comment written a day earlier said `84` for the same fact. */}
                 {documentExpiry(doc, nowIso) === 'expired' ? (
                   <StatusPill variant="danger">
                     {t('widget.certsExpiring.state.expired')}

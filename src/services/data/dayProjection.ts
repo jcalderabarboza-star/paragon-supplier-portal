@@ -129,15 +129,63 @@ export const DOCUMENT_EXPIRING_WINDOW_DAYS = 180;
  *
  * ⚠️ **THIS IS THE SOURCE, AND `SupplierDocument.status` IS NOT.** The stored
  * status carries `'Expiring Soon'` as a literal — the exact clock state law 0.5
- * forbids storing — and it is measurably wrong: `doc-001` (the MUI halal
- * certificate) and `doc-202` both store `'Expiring Soon'` on certificates that
- * expired months ago, while three documents genuinely inside the window store
- * `'Valid'`. Every surface that renders expiry reads THIS function, so the page
- * and the dashboard widget cannot disagree — the DR-7 payoff, applied to a
- * clock instead of to a persona.
+ * forbids storing. Every surface that renders expiry should read THIS function,
+ * so the page and the dashboard widget cannot disagree — the DR-7 payoff,
+ * applied to a clock instead of to a persona.
  *
- * The stored literal is left in place: retiring it is the stored-states
- * disposal, which is filed and deliberately not touched here.
+ * ── ⚠️ THE REASON THAT STOOD HERE WAS TRUE FOR THREE HOURS. IT IS QUOTED,
+ *    NOT DELETED, BECAUSE THE RECORD OF ITS FALSIFICATION IS WORTH MORE THAN
+ *    A CLEAN COMMENT. ─────────────────────────────────────────────────────
+ *
+ *    RETIRED: *"it is measurably wrong: `doc-001` (the MUI halal certificate)
+ *    and `doc-202` both store `'Expiring Soon'` on certificates that expired
+ *    months ago, while three documents genuinely inside the window store
+ *    `'Valid'`."*
+ *
+ *    Written at `256f053` (2026-09-08 08:42 +0700) and TRUE when written.
+ *    Falsified at `8c68d77` (2026-09-08 11:34 +0700, FIXTURE-PRESENT-01 (d)),
+ *    **which touched none of the five files that carry the claim** — it put
+ *    `shiftFields(…, 'supplierDocument', …)` on the fixture, so `DOCUMENTS_RAW`
+ *    stopped being what any consumer reads. `git merge-base --is-ancestor
+ *    256f053 8c68d77` exits 0, which is the order stated as a command rather
+ *    than as a memory.
+ *
+ *    ⚠️ **THE CLAIM STILL REPRODUCES EXACTLY — AT THE WRONG SITE.** Read the
+ *    authored literals in `DOCUMENTS_RAW` against the wall clock and both ids
+ *    and the count of three come back. Read `DOCUMENTS`, the shifted export
+ *    every consumer imports, and **no row disagrees with this function**, at
+ *    `DECLARED_PRESENT` or at today. That is `§42` in one artefact: the scan
+ *    matched the AUTHORING site and the claim required the EXPORT site.
+ *    Re-derive rather than trusting this paragraph — filter `DOCUMENTS` on
+ *    `(d.status === 'Expiring Soon') !== (documentExpiry(d, now) ===
+ *    'expiring')`, which is what `fixturePresent.guard.test.ts` already runs
+ *    every suite. **No count is written here**; a count in prose is how this
+ *    comment came to hold `84` and `116` for one fact a day apart.
+ *
+ * ── ⚠️ AND THE TRUE STATEMENT IS WEAKER. SAY SO RATHER THAN INHERIT THE OLD
+ *    ONE'S FORCE. ────────────────────────────────────────────────────────────
+ *
+ *    Stored and computed AGREE today. "The literal is WRONG" was a reason to
+ *    delete it on sight; "the literal is REDUNDANT" is a reason to retire it
+ *    in an orderly way, and they do not license the same batch. A deletion
+ *    justified by the retired sentence would have been justified by nothing.
+ *
+ *    The reason that survives measurement is LATENT and it is not about
+ *    correctness at all: `SupplierDocument.status` is BOTH the display field
+ *    AND the dispatcher's state cursor —
+ *    `supplierDocumentTarget.readState` reads it and `applyTransition` writes
+ *    `status: toState` (`mock/MockCommandService.ts`). `'Expiring Soon'` is
+ *    not among `supplierDocument.flow`'s declared `states`, so the rows
+ *    carrying it sit in a state the machine does not declare. **Probed with a
+ *    working control: no present harm** — an out-of-flow `'Expiring Soon'`
+ *    refuses identically to an in-flow `'Valid'`, while `doc-006`
+ *    (`Awaiting Upload`) dispatches `done`. The exposure is dated rather than
+ *    current: the day a renewal verb declares `from: ['Valid']`, those rows
+ *    are silently excluded by a DISPLAY literal.
+ *
+ * The stored literal is left in place: retiring it needs the two render sites
+ * that still read it (`SupplierDocuments`' badge and `'Valid'` count,
+ * `SupplierDashboard`'s badge and action label) to read this function first.
  */
 export type DocumentExpiry = 'no-expiry' | 'expired' | 'expiring' | 'current';
 

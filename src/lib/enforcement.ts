@@ -116,8 +116,18 @@
 //   evaluated against cannot be read from the ambient clock inside a function
 //   whose job is to answer *as of the moment a command was dispatched*. Main
 //   carries the corpses that prove the storing half (`buyerCompliance.ts`
-//   `daysRemaining: 873`, 483 days stale; `supplierDocuments.ts` doc-001
-//   `'Expiring Soon'` on a certificate 84 days expired). Nothing here is stored
+//   `daysRemaining: 873`, 483 days stale; and one more, RETIRED below).
+//
+//   ⚠️ RETIRED: *"`supplierDocuments.ts` doc-001 `'Expiring Soon'` on a
+//   certificate 84 days expired"*. True at `256f053` (2026-09-08 08:42 +0700),
+//   falsified at `8c68d77` (11:34 +0700), which shifted that fixture to
+//   `DECLARED_PRESENT` without opening this file. Against the shifted export
+//   doc-001 has not expired and every stored status agrees with
+//   `documentExpiry`. It is quoted rather than deleted because the paragraph's
+//   POINT survives it exactly: a hand-written day-count in a comment about
+//   hand-written day-counts went stale in three hours, and the same fact was
+//   written as `84` here and `116` in the certs widget a day apart. The
+//   `buyerCompliance.ts` corpse is unaffected. Nothing here is stored
 //   and nothing here reads a clock; the suite PINS determinism rather than
 //   asserting it, and the pin is only possible BECAUSE the instant is an
 //   argument.

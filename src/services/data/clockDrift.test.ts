@@ -17,6 +17,8 @@ import {
   falsifiedFamilies,
   formatDriftReport,
   driftVerdict,
+  storedStateFamilies,
+  waitingFooter,
 } from './clockDrift';
 import { DECLARED_PRESENT, FAMILY_ANCHORS, type FixtureFamily } from './fixturePresent';
 import { DISPLAY_STATES } from '../../lib/projectionGate/displayStates';
@@ -49,12 +51,22 @@ describe('the population, and the join this module depends on', () => {
   });
 });
 
-describe('the unbound answers are distinct, and each says why', () => {
-  it('a family with no coherent window is `no-stored-clock-state`', () => {
-    // shipment/goodsReceipt/inventory store no clock-derived state to decay —
-    // their anchors are EVIDENCED, not solved for, so `window` is null.
+describe('the two non-numeric answers are distinct, and each says why', () => {
+  it('a family with no coherent window is `no-window-declared`', () => {
+    // ⚠️ THE COMMENT THAT STOOD HERE READ *"shipment/goodsReceipt/inventory
+    // store no clock-derived state to decay"* AND WAS FALSE OF `shipment`,
+    // which is the same error the verdict name carried. `goodsReceipt` and
+    // `inventory` really do store none; `shipment` stores `Delayed` and is
+    // asserted separately below. What all three share is the WINDOW being
+    // null — their anchors are EVIDENCED, not solved for — and that is the
+    // only property this verdict is entitled to name.
     const d = familyDrift('inventory', plus(DECLARED_PRESENT, 900));
-    expect(d.verdict).toBe('no-stored-clock-state');
+    expect(d.verdict).toBe('no-window-declared');
+    // KNOWN-GOOD CONTROL for the branch ORDER: `inventory` has no window AND
+    // no stored states, so it is the one family both early returns could
+    // claim. The window branch is FIRST and must win — swap the two and this
+    // line reads `computed`.
+    expect(d.readerVisibleStates).toEqual([]);
     expect(d.headroomDays).toBeNull();
     // …even 900 days out. An unbound family cannot be falsified by the clock.
     expect(falsifiedFamilies(plus(DECLARED_PRESENT, 900)).map((x) => x.family))
@@ -74,9 +86,83 @@ describe('the unbound answers are distinct, and each says why', () => {
 
   it('the two unbound reasons are not interchangeable', () => {
     expect(familyDrift('inventory', DECLARED_PRESENT).verdict).toBe(
-      'no-stored-clock-state',
+      'no-window-declared',
     );
     expect(familyDrift('obligation', DECLARED_PRESENT).verdict).toBe('computed');
+  });
+});
+
+describe('⚠️ a verdict must name the condition its own branch tested', () => {
+  // Ruled 2026-09-09, from a row `npm run drift` had been printing every run:
+  //
+  //     shipment   9   —   —   no-stored-clock-state   Delayed
+  //
+  // The verdict denied, in one column, the thing the next column listed. The
+  // branch returning it tests `window === null` and has never tested for
+  // stored states — so the name was about a condition the code does not
+  // examine. Renamed to `no-window-declared`; these are the assertions that
+  // keep it named after its own test.
+  it('⚠️ `shipment` HAS a reader-visible stored clock state AND no window', () => {
+    const d = familyDrift('shipment', DECLARED_PRESENT);
+    // POPULATION CONTROL FIRST. If this row ever stopped carrying a stored
+    // state, every assertion below would pass over the wrong subject —
+    // `EMPTY-INPUT-REPORTS-CLEAN-01`. Derived from the ANCHOR and from
+    // DISPLAY_STATES, both upstream of the function under test (§86).
+    expect(FAMILY_ANCHORS.shipment.window).toBeNull();
+    expect(d.readerVisibleStates.length).toBeGreaterThan(0);
+
+    expect(d.verdict).toBe('no-window-declared');
+    // …and the retired name, asserted as a shape rather than as one string:
+    // ANY future verdict claiming the absence of a stored state on a row that
+    // lists one is the same defect wearing a different word.
+    expect(d.verdict).not.toMatch(/stored/);
+  });
+
+  it('every family: the verdict is the one its own inputs entail', () => {
+    // ⚠️ THE CONDITIONS ARE DERIVED FROM `FAMILY_ANCHORS` AND `DISPLAY_STATES`,
+    // NEVER FROM `familyDrift` — §86. A predicate that derived "has a window?"
+    // by asking the module under test would move the population and the
+    // assertion together, and could not tell a kill from an empty run.
+    const seen = new Set<string>();
+    for (const d of driftReport(DECLARED_PRESENT)) {
+      const hasWindow = FAMILY_ANCHORS[d.family].window !== null;
+      const hasStored = DISPLAY_STATES.some(
+        (r) => r.entity === d.family && r.group === 'stored-in-fixtures',
+      );
+      if (!hasWindow) expect(d.verdict, d.family).toBe('no-window-declared');
+      else if (!hasStored) expect(d.verdict, d.family).toBe('computed');
+      else expect(['ok', 'warn', 'FALSE'], d.family).toContain(d.verdict);
+      seen.add(d.verdict);
+    }
+    // Both branches were actually exercised — otherwise this loop asserts a
+    // rule nothing met.
+    expect(seen).toContain('no-window-declared');
+    expect(seen).toContain('computed');
+  });
+});
+
+describe('what the report says when there is nothing left to watch', () => {
+  // The bound population is DERIVED from DISPLAY_STATES, so it can empty
+  // without an edit here — and an all-`—` table with no footer is
+  // indistinguishable from an instrument that broke. The footer says which.
+  it('KNOWN-GOOD FIRST: the population is NOT empty today, so no footer', () => {
+    const bound = storedStateFamilies(DECLARED_PRESENT);
+    expect(bound.length).toBeGreaterThan(0);
+    expect(bound).toContain('shipment');
+    expect(formatDriftReport(DECLARED_PRESENT)).not.toContain('WAITING');
+  });
+
+  it('over an EMPTY population it says WAITING, not retired', () => {
+    // Probed through the extracted function rather than by emptying
+    // DISPLAY_STATES: the shipped data cannot reach this branch, and a branch
+    // asserted through data that cannot reach it is asserted over nothing.
+    const lines = waitingFooter([]);
+    expect(lines.join(' ')).toContain('WAITING, not retired');
+    expect(lines.join(' ')).toContain('DISPLAY_STATES');
+  });
+
+  it('and says nothing at all while one family is still bound', () => {
+    expect(waitingFooter(['shipment'])).toEqual([]);
   });
 });
 
@@ -222,7 +308,7 @@ describe('a BOUND family — ok, warn and FALSE, each shown at its own instant',
 describe('`toleranceDays` now has a reader, and the report says so', () => {
   it('the declared tolerance decides the warn line for every bound family', () => {
     for (const d of driftReport(DECLARED_PRESENT)) {
-      if (d.verdict === 'no-stored-clock-state' || d.verdict === 'computed') continue;
+      if (d.verdict === 'no-window-declared' || d.verdict === 'computed') continue;
       expect(d.toleranceDays, d.family).not.toBeNull();
       const over = familyDrift(d.family, plus(DECLARED_PRESENT, d.toleranceDays! + 1));
       expect(['warn', 'FALSE'], d.family).toContain(over.verdict);
@@ -234,6 +320,6 @@ describe('`toleranceDays` now has a reader, and the report says so', () => {
     expect(out).toContain(DECLARED_PRESENT);
     for (const f of Object.keys(FAMILY_ANCHORS)) expect(out).toContain(f);
     // A report that renders a verdict nobody can read is not a reader.
-    expect(out).toMatch(/ok|warn|FALSE|computed|no-stored-clock-state/);
+    expect(out).toMatch(/ok|warn|FALSE|computed|no-window-declared/);
   });
 });

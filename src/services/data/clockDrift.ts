@@ -2,8 +2,30 @@
 // THE DRIFT READER — the instrument that gives `toleranceDays` a consumer.
 //
 // ⚠️ **THE DEFECT THIS CLOSES: A DECLARED NUMBER WITH NO READER.**
-// `FAMILY_ANCHORS[f].toleranceDays` says how far the wall clock may drift from
-// `DECLARED_PRESENT` before a stored clock-state a READER SEES goes false.
+// `FAMILY_ANCHORS[f].toleranceDays` is the DECLARED WARNING THRESHOLD for how
+// far the wall clock may drift from `DECLARED_PRESENT`.
+//
+// ── ⚠️ TOLERANCE IS NOT THE NUMBER THAT DECIDES FALSITY. HEADROOM IS. ──────
+//   The sentence that stood here read *"`toleranceDays` says how far the wall
+//   clock may drift … before a stored clock-state a READER SEES goes false"*,
+//   and it is retired rather than deleted because it is the misreading itself:
+//   an operator took the tip date off it on 2026-09-09 and got the wrong day.
+//
+//   Read `driftVerdict` — the two numbers enter it separately and only one is
+//   about truth. **`headroomDays` < 0 is what returns `FALSE`**: it is the
+//   distance from `anchor + drift` to the NEARER EDGE of the family's coherent
+//   window, so it is the instant a reader actually sees a false state.
+//   **`toleranceDays` only ever returns `warn`.** They are different numbers,
+//   they are not derived from each other, and **headroom is the smaller of the
+//   two on this tree today** — a family can be inside its declared tolerance and
+//   already out of window, which is the direction that costs a reader.
+//
+//   So the honest reading of a row is: **`tol` is when this instrument starts
+//   complaining; `headroom` is when the fixture starts lying.** Do not subtract
+//   `drift` from `tol` to get a tip date — that arithmetic is not what the
+//   module computes. Run `npm run drift` and read `headroom`; no count is
+//   written into this comment, because a count in prose is the class this
+//   repository files as `FLOOR-IN-PROSE-01`.
 // Until this module, nothing in the tree compared `DECLARED_PRESENT` to a real
 // clock at all — `fixturePresent.guard.test.ts` holds every family against its
 // own ANCHOR, which is clock-independent by construction and therefore green on
@@ -51,15 +73,34 @@ const diffDays = (a: string, b: string): number =>
   Math.round((dayMs(a) - dayMs(b)) / MS_PER_DAY);
 
 /**
- * Why a family is or is not exposed to wall-clock drift.
+ * Why a family is or is not MEASURABLE against wall-clock drift.
  *
- * The two `unbound` answers are deliberately DISTINCT rather than one "n/a":
- * they become bound again for different reasons, and collapsing them would hide
- * which. `no-stored-clock-state` returns if a clock literal is ever authored
- * into the family; `computed` returns if its projection is deleted.
+ * The two non-numeric answers are deliberately DISTINCT rather than one "n/a":
+ * a family leaves them for different reasons, and collapsing them would hide
+ * which. `no-window-declared` is left when a coherent window is derived for the
+ * family; `computed` is left when a clock literal is authored back into it.
+ *
+ * ⚠️ **`no-window-declared` WAS CALLED `no-stored-clock-state`, AND THAT NAME
+ * WAS FALSE ON A ROW THE REPORT PRINTED EVERY RUN.** The branch that returns it
+ * tests `window === null` — it has never tested for stored states, and it is
+ * checked BEFORE the stored-state branch. `shipment` declares no window AND
+ * carries a reader-visible stored clock state (`Delayed`,
+ * `projectionGate/displayStates.ts`), so `npm run drift` printed:
+ *
+ * ```
+ *   shipment   9   —   —   no-stored-clock-state   Delayed
+ * ```
+ *
+ * — a verdict denying, in one column, the thing the next column lists. **A
+ * verdict must name the condition its own branch tested**, and this one now
+ * does. Note what the rename does NOT claim: `shipment` is still drift-BOUND
+ * (a reader sees a stored clock state), it is simply not MEASURABLE here,
+ * because headroom is a distance to a window edge and it has no window.
+ * `unmeasurable` and `unbound` are different facts and the old name conflated
+ * them.
  */
 export type DriftVerdict =
-  | 'no-stored-clock-state'
+  | 'no-window-declared'
   | 'computed'
   | 'ok'
   | 'warn'
@@ -136,13 +177,16 @@ export function familyDrift(
   const driftDays = diffDays(todayIso, DECLARED_PRESENT);
   const states = readerVisibleStoredStates(family);
 
+  // ⚠️ **THIS BRANCH IS FIRST AND TESTS THE WINDOW, NOT THE STATES** — which is
+  // why its verdict may not mention states. A family reaching here can still be
+  // carrying `states`; `shipment` does. See `DriftVerdict`.
   if (a.window === null) {
     return {
       family,
       driftDays,
       toleranceDays: a.toleranceDays,
       headroomDays: null,
-      verdict: 'no-stored-clock-state',
+      verdict: 'no-window-declared',
       readerVisibleStates: states,
     };
   }
@@ -209,18 +253,71 @@ export function falsifiedFamilies(
   return driftReport(todayIso).filter((d) => d.verdict === 'FALSE');
 }
 
+/**
+ * The families a reader still sees a STORED clock-state on — the drift
+ * population, derived rather than declared.
+ *
+ * ⚠️ **WHAT THIS INSTRUMENT BECOMES WHEN THIS GOES EMPTY, STATED BEFORE
+ * IT DOES.** The report says nothing today about its own end state, and a
+ * reader arriving at an all-`—` table cannot tell a finished instrument from
+ * a broken one. It is **WAITING, NOT RETIRED**, and that is DERIVED rather
+ * than chosen: bound-ness is read from `DISPLAY_STATES` at call time, so a
+ * family REJOINS the population the moment a `stored-in-fixtures` row is
+ * authored, **with nobody editing this file**. A retired instrument is one
+ * that cannot come back; this one comes back by itself. That is the same
+ * property the header claims for departures, asserted in the other direction.
+ *
+ * ⚠️ **AND IT IS NOT EMPTY TODAY, WHICH IS WHY THIS IS WRITTEN NOW
+ * RATHER THAN THEN.** `shipment` keeps the population non-empty on its own
+ * (`displayStates.ts`), so the footer below is unreachable from the shipped
+ * data and is probed directly instead — the same reason `driftVerdict` was
+ * extracted as a function. **No membership is written here**: `driftReport`
+ * derives it every run, and `clockDrift.test.ts` asserts the WAITING line
+ * appears over an empty population and never over a non-empty one.
+ */
+export function storedStateFamilies(
+  todayIso: string,
+): readonly FixtureFamily[] {
+  return driftReport(todayIso)
+    .filter((d) => d.readerVisibleStates.length > 0)
+    .map((d) => d.family);
+}
+
+/**
+ * The footer a report prints when nothing is left to watch. Separated from
+ * `formatDriftReport` so it can be probed without an empty population.
+ */
+export function waitingFooter(
+  boundFamilies: readonly FixtureFamily[],
+): readonly string[] {
+  if (boundFamilies.length > 0) return [];
+  return [
+    '',
+    '  No family carries a reader-visible stored clock state.',
+    '  This instrument is WAITING, not retired: the population is derived',
+    '  from DISPLAY_STATES at read time, so a family rejoins the moment a',
+    '  `stored-in-fixtures` row is authored — with no edit to clockDrift.',
+  ];
+}
+
 /** A fixed-width table for a terminal. One row per family, verdict last. */
 export function formatDriftReport(todayIso: string): string {
   const rows = driftReport(todayIso);
+  // ⚠️ DERIVED, NEVER A LITERAL. The verdict column was `padEnd(9)` against
+  // a union whose longest member has never been 9 characters, so the last
+  // column ran ragged on exactly the rows a reader most needs to line up.
+  // Widening it to a fresh number would be the same defect with a fresher
+  // value; this reads the rows it is about to print.
+  const vw = Math.max(...rows.map((d) => d.verdict.length));
   const head =
     `  ${'family'.padEnd(17)}${'drift'.padStart(6)}${'tol'.padStart(6)}` +
-    `${'headroom'.padStart(10)}  verdict   reader-visible stored states`;
+    `${'headroom'.padStart(10)}  ${'verdict'.padEnd(vw)}  reader-visible stored states`;
   const body = rows.map((d) => {
     const tol = d.toleranceDays === null ? '—' : String(d.toleranceDays);
     const head = d.headroomDays === null ? '—' : String(d.headroomDays);
     return (
       `  ${d.family.padEnd(17)}${String(d.driftDays).padStart(6)}` +
-      `${tol.padStart(6)}${head.padStart(10)}  ${d.verdict.padEnd(9)} ` +
+      `${tol.padStart(6)}${head.padStart(10)}  ${d.verdict.padEnd(vw)}  ` +
       (d.readerVisibleStates.join(', ') || '—')
     );
   });
@@ -230,5 +327,6 @@ export function formatDriftReport(todayIso: string): string {
     head,
     '  ' + '─'.repeat(head.length - 2),
     ...body,
+    ...waitingFooter(storedStateFamilies(todayIso)),
   ].join('\n');
 }

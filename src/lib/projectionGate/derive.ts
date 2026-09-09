@@ -50,10 +50,20 @@
 //   the batch measured it, rather than reading one here. (The first draft of
 //   this paragraph carried the number and it was wrong by 29 on the next run
 //   — `FLOOR-IN-PROSE-01`, inside the correction to a different defect.) The
-//   one comment in the tree that matches a write pattern —
-//   `halalVerification.ts:58`, quoting `status: 'Expiring Soon'` — was
-//   acquitted only because it sits outside `supplierDocument`'s file scope.
-//   **Luck, in the exact place the header claimed design.**
+//   one comment in the tree that matches a write pattern — the
+//   `status: 'Expiring Soon'` quoted inside `halalVerification.ts`'s
+//   corpse list — was acquitted only because it sits outside
+//   `supplierDocument`'s file scope. **Luck, in the exact place the header
+//   claimed design.** (The line number that stood here, `:58`, is dropped
+//   rather than refreshed: a pointer with a number decays exactly like a
+//   count with one, and this file's own paragraph above is about that. Find
+//   it by grepping the pattern, which is also how the gate finds it.)
+//
+//   ⚠️ **AND THE FACT THAT COMMENT ASSERTS IS NOW ITSELF RETIRED — the
+//   certificate it calls expired is not, since `8c68d77` shifted the fixture
+//   to `DECLARED_PRESENT`. The quote survives there, marked. Nothing about
+//   THIS finding changes: the acquittal was about FILE SCOPE, never about
+//   whether the quoted sentence was true.**
 //
 //   ⚠️ **AND THE SHAPE IS WORTH MORE THAN THE BUG: THE COMMENT NAMED THE ONE
 //   CASE THAT WOULD HAVE FALSIFIED IT.** A header that cites its hardest
