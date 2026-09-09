@@ -23846,3 +23846,139 @@ read off the page:**
 terlambat · Terlambat`; timeline `12 days`. **Zero cross-locale leak in either
 direction. One Delayed in, one Delayed out, and every number identical to the
 literal it replaced.**
+
+---
+
+## §100 — THE COMPLETE PER-ROW MAP FINDS A REGRESSION #331 SHIPPED (2026-09-09)
+
+**Section number derived as `max(sections) + 1` over `^## §N` — §99 → §100.**
+
+**Dispatch:** compute `delayDays` and `daysInTransit`. ⚠️ **BOTH LANDED AT #331,
+which was already on `main` when this was dispatched** (`d11c339`; the cited
+baseline `e63d94a` does not resolve, and neither did it last time). What this
+batch actually delivers is the item that had NOT been done: **(2)'s complete
+per-row map for all 18 rows** — and running it found a defect #331 introduced.
+
+### 100a · ⚠️ THE DEFECT: THREE ROWS THAT HAD NOT DEPARTED CLAIMED NEGATIVE TRANSIT
+
+`daysInTransit` returned the raw elapsed value, and `BuyerShipments`' timeline
+guards on **truthiness**:
+
+```tsx
+timestamp: transitDays ? … : undefined      // -2 is truthy; undefined is not
+```
+
+Three rows — `shp-001` · `shp-002` · `shp-003` — carry a `shipDate` in the FUTURE
+at the declared present (`Pending ASN`, not yet departed) and **had no stored
+`daysInTransit` at all**, so at #330 the guard saw `undefined` and rendered
+nothing. #331 replaced that with `-2` / `-3` / `-5`.
+
+**Browser-verified before the fix, not inferred:** the panel rendered
+**`-2 hari`** on `ASN-2026-001`, ship date `02 Sept 2026`. Fixed by returning
+`null` when the elapsed span is negative — the guard is the SIGN, not a
+status-word, so it cannot drift from the dates it reads.
+
+⚠️ **HOW IT GOT PAST #331, WHICH IS THE PART WORTH KEEPING.** That batch derived
+the map for the **15 rows that carried a stored literal** and matched all 15. The
+three rows with NO literal were outside the population by construction — the
+oracle was the stored field, and a row without one contributed no assertion to
+fail. **A migration validated against the values it replaces cannot see the rows
+that had none**, and the honest instrument is the FULL population with the
+migrated field's own domain as the axis, not the old field's presence.
+
+### 100b · THE PER-ROW MAP, ALL 18, BEFORE AND AFTER
+
+```
+  id       arrived  storedT  computedT@P   id       arrived  storedT  computedT@P
+  shp-001  no        —       null*         shp-010  yes      33       33
+  shp-002  no        —       null*         shp-011  yes       1        1
+  shp-003  no        —       null*         shp-012  yes       1        1
+  shp-004  no        5        5            shp-013  yes       1        1
+  shp-005  no       28       28            shp-014  yes       9        9
+  shp-006  no        1        1            shp-015  yes       1        1
+  shp-007  no        3        3            shp-016  yes      10       10
+  shp-008  no        7        7            shp-017  yes      11       11
+  shp-009  yes       7        7            shp-018  no       12       12
+                                           * was -2 / -3 / -5 at #331
+```
+
+**ARRIVED ROWS WHOSE VALUE MOVED: NONE — the stop condition, and it does not
+fire.** All 9 are invariant across a 300-day horizon as well, which is the
+property that makes them a fact rather than a clock read.
+
+### 100c · THE "1 DAY" CLAIM, HUNTED AT EVERY INSTANT IT COULD COME FROM
+
+```
+  shp-018   daysLate @ DECLARED_PRESENT (what the page reads)   6
+            daysLate @ wall clock                              15
+            an instant that WOULD yield 1                2026-08-26
+            shifted ETA 2026-08-25   (raw literal 2026-05-14)
+```
+
+**No instant in this tree yields 1.** The rendered number was `+6d late` at #330
+and is `+6d late` now — browser-verified in both locales at both ends. The
+dispatched *"6 → 1"* is not a change this batch made or could make.
+
+⚠️ **AND THE ARTEFACT WAS NEVER IN THE WALL CLOCK EITHER.** No shipment surface
+reads it: `BuyerShipments.tsx:59` pins `TODAY = DECLARED_PRESENT`, and
+`SupplierShipments` has zero wall-clock reads (measured at #329). The wall-clock
+value of 15 is real and **unreachable**.
+
+### 100d · THE PAIR INVARIANT IS ASSERTED, AND IT IS HONESTLY REDUNDANT TODAY
+
+The dispatch asked for the pair-agreement mutation — *set the state without the
+number* — and predicted **"neither value probe reaches it."** Measured:
+
+| mutant | pair invariant | value pins RED | id-only control |
+|---|---|---|---|
+| **A** · pre-departure guard removed (the #331 defect) | green | **0 of 3** | green |
+| **B** · a Delayed row handed count `0` | **RED** | 1 of 3 | green |
+| **E** · a NOT-delayed row handed count `3` | **RED** | 1 of 3 | green |
+| **C** · `daysInTransit` reads its own clock | green | 1 of 3 | green |
+| **D** · corpus replaced #319-style (ids intact, dates +11d) | **RED** | 2 of 3 | green |
+
+⚠️ **THE PREDICTION IS FALSE, AND SAYING SO IS THE POINT.** Every pair break also
+trips the `daysLate` pin, because that pin was written BILATERALLY — *reproduces
+the literal* **and** *is null otherwise* — and the second half is exactly a pair
+check over the whole corpus. **The invariant is real, fires, and is redundant on
+this corpus**; it stops being redundant the moment a second row is delayed, since
+the value pin names one row and the invariant quantifies over all. Recorded as
+redundant-today rather than claimed as load-bearing —
+`PROBE-MUST-FIRE-AT-A-REAL-DEFECT-01` applied to an assertion I had just written.
+
+⚠️ **AND MUTANT A IS THE ONE THAT MATTERS: the new departure probe is the ONLY
+assertion in the file that catches the defect the tree really shipped.** Value
+pins 0 of 3, pair invariant green, id control green. That is the rule's shape
+exactly — a probe aimed by a real defect rather than by the seat that wrote it.
+
+### 100e · TWO PROCESS FAILURES IN THIS BATCH, BOTH MINE
+
+1. ⚠️ **`git checkout --` DESTROYED UNSTAGED WORK DURING A PROBE RECOVERY.** The
+   cp1252 print trap (§85) fired again — `⚠️` cannot encode to the console
+   codepage — and the exception aborted the probe **before its restore**, leaving
+   the producer mutated. The recovery reflex was `git checkout -- <file>`, which
+   restores from the INDEX; nothing was staged, so it discarded the batch's real
+   edits along with the mutation. **A mutation probe must STAGE its subject
+   before mutating**, so the recovery path and the probe's own restore agree, and
+   the restore must sit in a `finally`. Both are now done.
+2. **The cp1252 trap is the third instance in this register and it is not fixed
+   by knowing about it.** `PYTHONIOENCODING=utf-8` was set for the harness that
+   READS vitest output and not for the one that PRINTS the result. Encode
+   defensively at the print site as well.
+
+### 100f · GATES · BROWSER QA
+
+Four green. Floor **4574 → 4577 / 320**.
+
+**Both locales, through the app's own menu, chunk `index-Dw5GsoK6.js` read off
+the page:**
+
+| | All | Pending ASN | In Transit | At Dock | Delivered | **Delayed** |
+|---|---|---|---|---|---|---|
+| EN | 18 | 3 | 8 | 4 | 2 | **1** |
+| ID | Semua 18 | Menunggu ASN 3 | Dalam Perjalanan 8 | Di Dok 4 | Terkirim 2 | **Terlambat 1** |
+
+- `shp-018` — EN `+6d late · Delayed`, ID `+6h terlambat · Terlambat`. **6, not
+  1, and unchanged from #330.**
+- `shp-001` panel — **no negative, no transit line at all**, in both locales,
+  which is what it rendered before #331. Zero cross-locale leak either way.
