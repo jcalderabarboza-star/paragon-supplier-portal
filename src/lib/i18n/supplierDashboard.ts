@@ -49,6 +49,16 @@ export const supplierDashboardEn: Record<string, string> = {
   'supplierDashboard.briefing.allClear': 'All clear',
   'supplierDashboard.briefing.done.title': 'All done for today',
   'supplierDashboard.briefing.done.body': 'No pending actions. Check back tomorrow.',
+  // ⚠️ THE ONE BRIEFING CARD THAT IS NOT A FIXTURE NARRATIVE. It reads a real
+  // document through `documentDisplayState`, so the `i18n-defer` covering the
+  // authored cards does not cover it — a derived string that renders EN to an
+  // ID reader is a defect, not a deferral.
+  'supplierDashboard.briefing.cert.title': 'Renew {{name}}',
+  'supplierDashboard.briefing.cert.badge': '{{count}} days left',
+  'supplierDashboard.briefing.cert.badgeExpired': 'Expired',
+  'supplierDashboard.briefing.cert.desc':
+    'Certificate expires {{date}} — submit the renewal to avoid disruption to active POs',
+  'supplierDashboard.briefing.cert.cta': 'Renew certificate',
   // — Recent purchase orders —
   'supplierDashboard.orders.title': 'My recent purchase orders',
   'supplierDashboard.orders.col.po': 'PO #',
@@ -127,6 +137,12 @@ export const supplierDashboardId: Record<string, string> = {
   'supplierDashboard.briefing.allClear': 'Semua beres',
   'supplierDashboard.briefing.done.title': 'Semua selesai untuk hari ini',
   'supplierDashboard.briefing.done.body': 'Tidak ada tindakan tertunda. Periksa kembali besok.',
+  'supplierDashboard.briefing.cert.title': 'Perbarui {{name}}',
+  'supplierDashboard.briefing.cert.badge': 'Sisa {{count}} hari',
+  'supplierDashboard.briefing.cert.badgeExpired': 'Kedaluwarsa',
+  'supplierDashboard.briefing.cert.desc':
+    'Sertifikat kedaluwarsa {{date}} — ajukan perpanjangan agar PO aktif tidak terganggu',
+  'supplierDashboard.briefing.cert.cta': 'Perbarui sertifikat',
   // — Recent purchase orders —
   'supplierDashboard.orders.title': 'Pesanan pembelian terbaru saya',
   'supplierDashboard.orders.col.po': 'No. PO',

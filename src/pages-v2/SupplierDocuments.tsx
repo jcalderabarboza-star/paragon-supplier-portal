@@ -42,11 +42,19 @@ import EmptyState from '../components/ui-v2/EmptyState';
 import type {
   CertType,
   SupplierDocument,
-  SupplierDocumentStatus as DocStatus,
   SupplierDocumentCategory as DocCategory,
 } from '../services/data/types';
 import { useDocuments } from '../services/query/hooks';
-import { daysUntil, documentExpiry } from '../services/data/dayProjection';
+import {
+  daysUntil,
+  documentExpiry,
+  DOCUMENT_EXPIRING_WINDOW_DAYS,
+} from '../services/data/dayProjection';
+import {
+  documentDisplayState,
+  DISPLAY_STATE_LABEL_KEY,
+  DISPLAY_STATE_TONE,
+} from '../services/data/documentDisplayState';
 import {
   useSupplierDocumentDeclare,
   useSupplierDocumentSubmit,
@@ -112,13 +120,12 @@ function declarationComplete(f: DeclarationForm): boolean {
   );
 }
 
-const STATUS_VARIANT: Record<DocStatus, 'success' | 'warning' | 'danger' | 'neutral'> = {
-  Valid: 'success',
-  'Expiring Soon': 'warning',
-  'Awaiting Upload': 'neutral',
-  'Under Review': 'neutral',
-  Rejected: 'danger',
-};
+// ⚠️ **`STATUS_VARIANT` IS DELETED RATHER THAN LEFT UNUSED**, and so is the
+// `DocStatus` alias that existed only to type it. `tsc` would not have said
+// a word — `noUnusedLocals` is off — so a stored-keyed tone map would have
+// sat here indefinitely, one import away from being wired back by a future
+// edit that saw a map and assumed it was the one to use. `DISPLAY_STATE_TONE`
+// is now the only tone map this page can reach.
 
 /**
  * ⚠️ **THE REFUSAL BLOCK — REASON, TIMESTAMP, AND THE LINE THAT SAYS NOBODY CAN
@@ -295,9 +302,17 @@ const SupplierDocuments: React.FC = () => {
   // The stored state, not a projection — a refusal is an act that was recorded,
   // so unlike expiry it is never derived from the clock.
   const refused = useMemo(() => docs.filter((d) => d.status === 'Rejected'), [docs]);
+  // ⚠️ **COMPUTED, AND IT IS THE THIRD KPI IN THIS BLOCK RATHER THAN THE
+  // FIRST.** `expiringSoon` and `expired` above have read the clock since the
+  // projection landed; this one still asked the STORED field, so the same
+  // row could in principle be counted Valid here and expiring three lines up.
+  // It never was — the fixture agrees — but two counters over one population
+  // answering to two sources is the divergence, not the disagreement it has
+  // not yet produced. `awaitingUpload` and `refused` below stay STORED on
+  // purpose: those are lifecycle facts and no clock has an opinion on them.
   const validCount = useMemo(
-    () => docs.filter((d) => d.status === 'Valid').length,
-    [docs],
+    () => docs.filter((d) => documentDisplayState(d, nowIso) === 'valid').length,
+    [docs, nowIso],
   );
 
   // Same instant as every expiry figure above — a page that says "as of <date>"
@@ -580,6 +595,11 @@ const SupplierDocuments: React.FC = () => {
           <tbody>
             {filtered.map((doc) => {
               const days = daysUntil(doc.expiryDate, nowIso);
+              // ONE decision per row, read by the badge below. Every surface
+              // that renders this document calls the SAME function with the
+              // same instant, which is what stops the page and the dashboard
+              // disagreeing about a certificate the way they could before.
+              const display = documentDisplayState(doc, nowIso);
               const expiryColor =
                 days === null
                   ? 'text-text-tertiary'
@@ -645,14 +665,21 @@ const SupplierDocuments: React.FC = () => {
                     )}
                   </TableCell>
                   <TableCell>
-                    <StatusPill variant={STATUS_VARIANT[doc.status]}>
-                      {doc.status === 'Under Review' ? (
+                    {/* ⚠️ **THE BADGE IS COMPUTED AND THE LABEL COMES FROM A
+                        KEY, NOT FROM THE ROW.** It rendered `doc.status`
+                        verbatim and leaned on `StatusPill` to localize the
+                        canonical token; that still works, and is exactly why
+                        the stored read was invisible — EN output was
+                        identical either way. Resolving `t(…)` here says
+                        WHICH state was decided, and by what. */}
+                    <StatusPill variant={DISPLAY_STATE_TONE[display]}>
+                      {display === 'under-review' ? (
                         <span className="inline-flex items-center gap-1">
                           <RefreshCw size={10} />
-                          {doc.status}
+                          {t(DISPLAY_STATE_LABEL_KEY[display])}
                         </span>
                       ) : (
-                        doc.status
+                        t(DISPLAY_STATE_LABEL_KEY[display])
                       )}
                     </StatusPill>
                   </TableCell>
@@ -694,7 +721,11 @@ const SupplierDocuments: React.FC = () => {
                           {t('supplierDocuments.action.view')}
                         </Button>
                       )}
-                      {doc.expiryDate && days !== null && days <= 180 && (
+                      {/* ⚠️ `180` STOOD HERE AS A LITERAL, a fourth clock
+                          opinion on one page. Same window, one declaration. */}
+                      {doc.expiryDate &&
+                        days !== null &&
+                        days <= DOCUMENT_EXPIRING_WINDOW_DAYS && (
                         <Button
                           variant="secondary"
                           onClick={() => setLessonOpen(true)}

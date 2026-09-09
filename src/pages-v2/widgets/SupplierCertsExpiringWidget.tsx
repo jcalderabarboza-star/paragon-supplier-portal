@@ -13,7 +13,7 @@ import Data from '../../components/ui-v2/Data';
 import StatusPill from '../../components/ui-v2/StatusPill';
 import { formatDate } from '../../lib/format';
 import { useDocuments } from '../../services/query/hooks';
-import { documentExpiry } from '../../services/data/dayProjection';
+import { documentDisplayState } from '../../services/data/documentDisplayState';
 
 // Capability "supplierDocuments": backed by the supplierDocument flow, which is
 // registered but author-unwired (F0.4 inert — no CommandTarget) → the
@@ -77,8 +77,15 @@ const SupplierCertsExpiringWidget: React.FC = () => {
   const { expired, expiring } = useMemo(() => {
     const items = query.data?.items ?? [];
     return {
-      expired: items.filter((d) => documentExpiry(d, nowIso) === 'expired'),
-      expiring: items.filter((d) => documentExpiry(d, nowIso) === 'expiring'),
+      // ⚠️ ONTO THE SHARED CLASSIFIER, WHICH IS NOT A NO-OP EVEN THOUGH THIS
+      // WIDGET WAS ALREADY COMPUTING. `documentExpiry` answers a pure clock
+      // question and would call a REJECTED certificate `expiring` if its date
+      // were near — the lifecycle half is invisible to it. This widget escaped
+      // that only because nothing refused has a date today. Reading the same
+      // function the other two surfaces read is what makes "all three agree"
+      // a property rather than a coincidence.
+      expired: items.filter((d) => documentDisplayState(d, nowIso) === 'expired'),
+      expiring: items.filter((d) => documentDisplayState(d, nowIso) === 'expiring'),
     };
   }, [query.data, nowIso]);
 
@@ -126,7 +133,7 @@ const SupplierCertsExpiringWidget: React.FC = () => {
                     (`116 days ago`) is retired: it was measured off the authored
                     fixture literals before `8c68d77` shifted them, and a sibling
                     comment written a day earlier said `84` for the same fact. */}
-                {documentExpiry(doc, nowIso) === 'expired' ? (
+                {documentDisplayState(doc, nowIso) === 'expired' ? (
                   <StatusPill variant="danger">
                     {t('widget.certsExpiring.state.expired')}
                   </StatusPill>
