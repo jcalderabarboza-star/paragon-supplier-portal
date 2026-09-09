@@ -210,7 +210,27 @@ export const DISPLAY_STATES: readonly DisplayStateRow[] = [
   // remedy for any of them: that one was ruled because the value was
   // UNCOMPUTABLE, and all three of these are computable. "Nothing writes it" and
   // "nothing can compute it" are different findings.
-  { entity: 'shipment', state: 'Delayed', group: 'stored-in-fixtures', noCommandTarget: true },
+  // ⚠️ **THIS ROW LEFT `stored-in-fixtures`, AND IT WAS THE LAST ONE.** The
+  // group is now EMPTY. It did not change its mind — the tree changed and the
+  // derivation re-read it, exactly as the two obligation rows above did when
+  // `obligationProjection.ts` landed. `shipmentDisplayState.ts` computes it from
+  // `estimatedArrival` + `actualArrival` against an injected `now`, and
+  // `mockShipments` no longer declares `'Delayed'` in `ShipmentStatus` at all.
+  //
+  // ⚠️ AND THE CONSEQUENCE IS ONE MODULE OVER: `clockDrift`'s BOUND set is
+  // derived from `group === 'stored-in-fixtures'` at call time, so it goes empty
+  // with this row, and `waitingFooter` becomes REACHABLE from shipped data for
+  // the first time. That is the instrument's designed end state — WAITING, not
+  // retired — and it comes back by itself the day a new stored row is authored.
+  {
+    entity: 'shipment',
+    state: 'Delayed',
+    group: 'computed-at-read',
+    producer: 'src/services/data/shipmentDisplayState.ts',
+    // Orthogonal to the group, and still true: `shipment` has no CommandTarget,
+    // so nothing could write this state even if anything wanted to.
+    noCommandTarget: true,
+  },
 
   // ── produced by nothing ─────────────────────────────────────────────────
   // ⚠️ **THIS GROUP IS DELIBERATELY EMPTY, AND THE EMPTINESS IS THE RESULT

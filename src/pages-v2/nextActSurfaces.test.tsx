@@ -135,19 +135,47 @@ describe('S2a · BuyerShipments — the line names the carrier, and goes quiet o
     await expectLine('next-act-buyer-shipment', 'external', /Awaiting TMS/i);
   });
 
-  it('⚠️ a DELAYED shipment says NOTHING — `Delayed` is a clock projection, not a machine state', async () => {
-    // Law 0.5: `Delayed` is computed at read time and no transition names it,
-    // so the machine has no edge to report and the line is ABSENT rather than
-    // guessing. The panel is open — the assertion is about the line, not the
-    // walk. Whether that silence is LEGIBLE TO A READER is measured and
-    // reported in this batch, not repaired here.
+  it('⚠️ THE DELAYED SHIPMENT NOW NAMES TMS — the silence was the exclusion, not honesty', async () => {
+    // ⚠️ **THIS TEST ASSERTED THE OPPOSITE AND ITS PREMISE WAS FALSE. QUOTED
+    // RATHER THAN DELETED**, because the record of a guard pinning a defect it
+    // mistook for a design is the finding:
+    //
+    //   it('⚠️ a DELAYED shipment says NOTHING — `Delayed` is a clock
+    //       projection, not a machine state', …
+    //     "Law 0.5: `Delayed` is computed at read time and no transition names
+    //      it, so the machine has no edge to report and the line is ABSENT
+    //      rather than guessing. […] Whether that silence is LEGIBLE TO A
+    //      READER is measured and reported in this batch, not repaired here."
+    //     expect(screen.queryByTestId('next-act-buyer-shipment')).toBeNull())
+    //
+    // The first clause was right — `Delayed` IS a projection and no transition
+    // names it. **The conclusion did not follow.** The machine had an edge all
+    // along; it could not be ASKED, because `shp-018`'s cursor stored the
+    // projection instead of its state. Derived at the time:
+    //
+    //     nextActFor('shipment', 'Delayed')           -> silent / no-exit
+    //     nextActFor('shipment', 'Customs Clearance') -> external, ['tms']
+    //
+    // `shp-018` now stores `Customs Clearance` — its own `customsStatus: 'Held'`
+    // is the evidence — and the delay is computed. So the line reports what was
+    // always true and unaskable: the TMS owns the next move.
     renderWithProviders(<BuyerShipments />);
     fireEvent.click(await screen.findByText('ASN-2026-018'));
-    // POSITIVE CONTROL — a panel-ONLY label proves the walk happened. Without
-    // it the `toBeNull` below would pass identically on a page that never
-    // opened anything, which is the one-sided probe rule 4 refuses.
+    // POSITIVE CONTROL, kept from the retired version: a panel-ONLY label proves
+    // the walk happened, so the assertion below is about the line and not about
+    // a page that never opened.
     expect(await screen.findByText('Key facts')).toBeInTheDocument();
-    expect(screen.queryByTestId('next-act-buyer-shipment')).toBeNull();
+    await expectLine('next-act-buyer-shipment', 'external', /Awaiting TMS/i);
+  });
+
+  it('⚠️ …and that row still READS as delayed — the badge is computed, the cursor is not', async () => {
+    // The other half, and the reason the row is not simply "in customs" now:
+    // what a reader sees is `shipmentDisplayState`, which overrides the stored
+    // state from the clock. Two different questions, two different answers, on
+    // one row — which is the whole point of separating them.
+    renderWithProviders(<BuyerShipments />);
+    expect(await screen.findByText('ASN-2026-018')).toBeInTheDocument();
+    expect(screen.getAllByText('Delayed').length).toBeGreaterThan(0);
   });
 });
 

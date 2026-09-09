@@ -266,8 +266,20 @@ describe('THE REASON TOKENS CARRY MECHANICAL OBLIGATIONS', () => {
   });
 
   it('`stored-in-fixtures` means a fixture writes it and NOTHING else does', () => {
+    // ⚠️ **THE `toBeGreaterThan(0)` IS RETIRED HERE, FOR THE REASON THIS FILE
+    // ALREADY RULED ON ONE ARM OVER.** `shipment/Delayed` was the last member,
+    // and it left because `shipmentDisplayState.ts` now computes it — the tree
+    // getting more honest. Demanding a member would make this red for that, and
+    // *"a guard that reddens when its subject improves is anchored on the defect
+    // it is watching"* is the sentence twenty lines above, written when
+    // `produced-by-nothing` emptied the same way.
+    //
+    // The arm stays DEFENDED, not merely un-asserted: its reachability is proved
+    // synthetically below (`THE CLASSIFIER CAN STILL REACH ALL THREE ARMS`),
+    // against input the tree cannot repair away. What remains here is the
+    // OBLIGATION on any member the group acquires — and it acquires one the day
+    // a fixture writes a state nothing computes, with nobody editing this file.
     const rows = DISPLAY_STATES.filter((r) => r.group === 'stored-in-fixtures');
-    expect(rows.length).toBeGreaterThan(0);
     for (const row of rows) {
       const sites = writeSites(row.state, filesForEntity(row.entity, FILES));
       expect(sites.filter((s) => s.fixture).length, `${row.entity}/${row.state}: no fixture write`).toBeGreaterThan(0);
@@ -283,9 +295,10 @@ describe('THE REASON TOKENS CARRY MECHANICAL OBLIGATIONS', () => {
     // which made retiring the tree's one fabricated union member turn this red.
     // The arm's REACHABILITY is proved synthetically above; this loop is the
     // obligation on any member the group acquires, and an empty group has no
-    // obligation to fail. (The `computed-at-read` and `stored-in-fixtures`
-    // checks keep their non-empty assertions — those arms describe states that
-    // exist, so an empty one really would mean the population collapsed.)
+    // obligation to fail. (`computed-at-read` keeps its non-empty assertion —
+    // that arm describes states that exist. ⚠️ THIS PARENTHETICAL NAMED
+    // `stored-in-fixtures` TOO AND IS CORRECTED: that arm emptied legitimately
+    // when `shipment/Delayed` became computed, so it now follows this one.)
     const rows = DISPLAY_STATES.filter((r) => r.group === 'produced-by-nothing');
     for (const row of rows) {
       const sites = writeSites(row.state, filesForEntity(row.entity, FILES));

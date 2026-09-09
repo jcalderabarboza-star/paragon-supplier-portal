@@ -47,6 +47,10 @@ import ErrorState from '../components/ui-v2/ErrorState';
 import EmptyState from '../components/ui-v2/EmptyState';
 import { useShipments, useSuppliers } from '../services/query/hooks';
 import { DECLARED_PRESENT } from '../services/data/fixturePresent';
+import {
+  shipmentDisplayState,
+  type ShipmentDisplayState,
+} from '../services/data/shipmentDisplayState';
 
 // ⚠️ THE FOURTH PIN, RETIRED — see BuyerGoodsReceipt for the full note. All
 // three surviving pins read 2026-05-20, which is what evidences the `shipment`
@@ -72,8 +76,10 @@ const COUNTRY_FLAG: Record<string, string> = {
   IN: 'IN',
 };
 
+// Keyed by the DISPLAY state — `Delayed` is still a tone a reader sees, it is
+// simply no longer a value anything stores.
 const STATUS_VARIANT: Record<
-  ShipmentStatus,
+  ShipmentDisplayState,
   'success' | 'warning' | 'danger' | 'info' | 'neutral'
 > = {
   'Pending ASN': 'neutral',
@@ -117,11 +123,15 @@ const formatDate = (iso?: string): string => {
 
 const isToday = (iso?: string): boolean => iso === TODAY;
 
-const matchesGroup = (s: ShipmentStatus, g: GroupTab): boolean => {
+// ⚠️ TAKES THE DISPLAY STATE, NOT THE STORED ONE. A row the clock calls
+// `Delayed` must leave its stored group rather than appear in both — that is
+// what keeps the five tab counts a PARTITION of the 18 rows, and it is why
+// the rendered totals do not move when the literal is deleted.
+const matchesGroup = (s: ShipmentDisplayState, g: GroupTab): boolean => {
   if (g === 'all') return true;
-  if (g === 'pending') return PENDING_STATUSES.includes(s);
-  if (g === 'in-transit') return IN_TRANSIT_STATUSES.includes(s);
-  if (g === 'at-dock') return AT_DOCK_STATUSES.includes(s);
+  if (g === 'pending') return PENDING_STATUSES.includes(s as ShipmentStatus);
+  if (g === 'in-transit') return IN_TRANSIT_STATUSES.includes(s as ShipmentStatus);
+  if (g === 'at-dock') return AT_DOCK_STATUSES.includes(s as ShipmentStatus);
   if (g === 'delivered') return s === 'Delivered';
   if (g === 'delayed') return s === 'Delayed';
   return true;
@@ -153,6 +163,17 @@ const BuyerShipments: React.FC = () => {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showSchedule, setShowSchedule] = useState(true);
 
+  // ⚠️ ONE CLASSIFICATION, CAPTURED ONCE, HANDED TO EVERY SITE. `TODAY` is
+  // `DECLARED_PRESENT`, so this page renders identically at horizons nine
+  // hundred days apart — asserted, not assumed. A second `shipmentDisplayState`
+  // call with a different instant would be a second clock on one page, which is
+  // the defect `GRInspectionWizard`'s `inspectionInstant` note names.
+  const displayOf = useMemo(() => {
+    const m = new Map<string, ShipmentDisplayState>();
+    for (const s of shipments) m.set(s.id, shipmentDisplayState(s, TODAY));
+    return (s: Shipment): ShipmentDisplayState => m.get(s.id) ?? s.status;
+  }, [shipments]);
+
   const counts = useMemo(() => {
     let pending = 0;
     let transit = 0;
@@ -160,11 +181,12 @@ const BuyerShipments: React.FC = () => {
     let delivered = 0;
     let delayed = 0;
     for (const s of shipments) {
-      if (PENDING_STATUSES.includes(s.status)) pending++;
-      if (IN_TRANSIT_STATUSES.includes(s.status)) transit++;
-      if (AT_DOCK_STATUSES.includes(s.status)) dock++;
-      if (s.status === 'Delivered') delivered++;
-      if (s.status === 'Delayed') delayed++;
+      const d = displayOf(s);
+      if (PENDING_STATUSES.includes(d as ShipmentStatus)) pending++;
+      if (IN_TRANSIT_STATUSES.includes(d as ShipmentStatus)) transit++;
+      if (AT_DOCK_STATUSES.includes(d as ShipmentStatus)) dock++;
+      if (d === 'Delivered') delivered++;
+      if (d === 'Delayed') delayed++;
     }
     return {
       all: shipments.length,
@@ -174,7 +196,7 @@ const BuyerShipments: React.FC = () => {
       delivered,
       delayed,
     };
-  }, [shipments]);
+  }, [shipments, displayOf]);
 
   const arrivingToday = useMemo(
     () => shipments.filter((s) => isToday(s.estimatedArrival)).length,
@@ -183,7 +205,7 @@ const BuyerShipments: React.FC = () => {
 
   const filtered = useMemo(() => {
     return shipments.filter((s) => {
-      if (!matchesGroup(s.status, tab)) return false;
+      if (!matchesGroup(displayOf(s), tab)) return false;
       if (selectedModes.length > 0 && !selectedModes.includes(s.mode))
         return false;
       if (search.trim()) {
@@ -213,11 +235,23 @@ const BuyerShipments: React.FC = () => {
     ? supplierById.get(selected.supplierId)
     : undefined;
 
-  // WHO ACTS NEXT (S2a). ⚠️ `ShipmentStatus` carries ONE clock projection
-  // (`Delayed`, law 0.5) that no transition names, so a delayed shipment
-  // resolves `silent` and this line renders nothing for it. That silence is
-  // honest — the machine has no edge to report — and its LEGIBILITY is the
-  // measurement this batch reports rather than repairs.
+  // WHO ACTS NEXT (S2a) — asked of the STORED state, deliberately, because it
+  // is a question about the MACHINE and `Delayed` is not a state the machine
+  // has. Handing it `displayOf(selected)` would re-create the defect below.
+  //
+  // ⚠️ **THE COMMENT THAT STOOD HERE IS RETIRED, AND ITS SECOND SENTENCE WAS
+  // FALSE.** It read: *"a delayed shipment resolves `silent` and this line
+  // renders nothing for it. That silence is honest — the machine has no edge to
+  // report — and its LEGIBILITY is the measurement this batch reports rather
+  // than repairs."* Derived over every state:
+  //
+  //     nextActFor('shipment', 'Delayed')           -> silent / no-exit
+  //     nextActFor('shipment', 'Customs Clearance') -> external, owners:['tms']
+  //
+  // The machine HAD an edge; it could not be asked, because the cursor held a
+  // display literal. `shp-018` now stores `Customs Clearance` and this line
+  // reports that the TMS owns its next move — **a line that did not render
+  // before, and the one rendered change this batch makes on purpose.**
   const nextAct = useNextAct('shipment', selected?.status);
 
   const buildTimeline = (s: Shipment): TimelineEvent[] => {
@@ -309,7 +343,7 @@ const BuyerShipments: React.FC = () => {
   };
 
   const statusOrderFor = (s: Shipment): number => {
-    switch (s.status) {
+    switch (displayOf(s)) {
       case 'Pending ASN':
         return 1;
       case 'ASN Received':
@@ -373,7 +407,7 @@ const BuyerShipments: React.FC = () => {
   };
 
   const footerForStatus = (s: Shipment): React.ReactNode => {
-    switch (s.status) {
+    switch (displayOf(s)) {
       case 'Pending ASN':
         return (
           <Button
@@ -680,8 +714,8 @@ const BuyerShipments: React.FC = () => {
                     </span>
                   </TableCell>
                   <TableCell>
-                    <StatusPill variant={STATUS_VARIANT[s.status]}>
-                      {s.status}
+                    <StatusPill variant={STATUS_VARIANT[displayOf(s)]}>
+                      {displayOf(s)}
                     </StatusPill>
                   </TableCell>
                   <TableCell className="text-right">
