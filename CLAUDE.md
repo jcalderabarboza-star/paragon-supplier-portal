@@ -1170,6 +1170,65 @@ edit the number, and a floor that gets edited routinely is not a floor.
 **The trade, recorded: a suite that shrinks but still clears the floor is
 invisible to this gate** (the skipped/todo refusal covers the common shape).
 **Bump `scripts/floor.json` when the note asks.**
+
+#### ⚠️ A RETIREMENT BATCH MAY LOWER THE FLOOR, AND LOWERING IT IS THEN THE
+#### HONEST ACT — WRITING TESTS TO CLEAR IT IS NOT
+
+**The floor records what the suite PROVES. It is not a number to defend.** If a
+batch retires tests — a guard whose premise died, a probe that can no longer
+fail — the suite legitimately shrinks, and the floor moves down with it. That is
+the floor doing its job, not failing at it.
+
+⚠️ **THE DISCRIMINATOR IS MECHANICAL, AND IT IS THE LOAD-BEARING HALF: THE TWO
+CASES ARE TOLD APART BY WHETHER THE DIFF *DELETES ASSERTIONS* OR MERELY *STOPS
+RUNNING THEM*.** A rule with a test beats a rule with a judgement. Deleting an
+`expect` is a retirement and the floor follows it down; a suite that collects
+fewer tests while every assertion is still on disk is the REGRESSION the floor
+exists to catch — a spec silently skipped, a file dropped from collection, a
+`describe` commented out. Same arithmetic, opposite meanings, and only the diff
+separates them.
+
+**Then the number is bumped back UP the moment the suite grows again** — the
+floor tracks the suite in both directions or it is not a floor.
+
+⚠️ **THE FAILURE MODE THIS EXISTS TO PREVENT IS WRITING TESTS TO CLEAR A FLOOR
+YOU JUST LOWERED HONESTLY.** #325 retired five guards whose premise this project
+had deliberately removed, and the suite landed at 4538 against a floor of 4541.
+The batch had a commissioned spec to hand, so it wrote that and cleared the
+floor legitimately — but the sequencing was disclosed at the time precisely
+because *"I added tests to clear a floor"* is the shape that must never become
+routine. **Without a commissioned spec, the correct move was to ship at 4538 and
+lower the floor.** A batch that pads is buying a green number with tests nobody
+asked for, which is how a floor stops recording anything.
+
+⚠️ **AND THIS RULE IS NOT CHECKABLE. SAID PLAINLY RATHER THAN LEFT OPEN, BECAUSE
+CANON NOBODY READS HAS BEEN WRONG AT FIVE SITES IN THIS TREE.** Three
+measurements, not an impression:
+
+1. **`scripts/gates.mjs` never invokes git** — derived: its four `git` substring
+   hits are inside the words *legitimate* and *digits*. It sees a WORKING TREE,
+   never a diff, so the discriminator above is structurally out of its reach.
+   `.github/workflows/gates.yml` uses `actions/checkout@v5` with no
+   `fetch-depth`, so CI has no history to diff against either.
+2. **The existing pointer gate would NOT protect this paragraph.** It asserts
+   only that `CLAUDE.md` CONTAINS the string `scripts/floor.json`, and that
+   string occurs at several sites outside this section — so deleting this
+   section leaves the gate green. **No count is written here**: the first draft
+   of this line said *"THREE times"* and was wrong before it was saved, because
+   the paragraph itself adds one. `FLOOR-IN-PROSE-01`, inside the rule about
+   the floor. Derive it: `grep -c 'scripts/floor.json' CLAUDE.md`, and check
+   that more than one match sits outside this section.
+3. **The tree has already ruled on gating prose, and the ruling stands.**
+   `gates.mjs` says it at the README: *"THE README'S CLAIMS ARE DELIBERATELY NOT
+   ASSERTED. Prose stays prose. A gate that tried to check what the paragraph
+   MEANS would fire on the block quoting the retired lines."* This paragraph
+   quotes its own counter-example (4538 against 4541), so a digit-hunting gate
+   would fire on it — the exact trap that ruling names.
+
+So this is canon enforced by reading, and it is worth knowing which of the two
+kinds it is. What IS gated is unchanged and narrow: the floor's counts, and the
+pointer at the file that holds them.
+
 It is not a fourth gate and adds no new notion of green; it is the same three
 plus the assertion that they ran. **CI runs this exact command** and nothing
 else (`.github/workflows/gates.yml`) — on every PR to `main`, on every push to
