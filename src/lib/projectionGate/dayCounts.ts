@@ -98,27 +98,34 @@ export const DAY_COUNTS: readonly DayCountRow[] = [
   //   job, not a gap. Re-declare either as `…: number` on a DTO and this gate
   //   goes red until somebody classifies it again.
   //
-  // ── stored clock differences — the convicted class ────────────────────────
-  //   ⚠️ THE FOUR THAT REMAIN ARE DELIBERATE. Each back-solves to the SAME
-  //   authoring date as the fixture around it (shipments 2026-05-20, POs their
-  //   own), so computing them at read would publish FIXTURE AGE as operational
-  //   lateness — a shipment "in transit 116 days", a PO "496 days late". The
-  //   disposal is the DATA, and the fixture refresh is its own batch; retiring
-  //   the field first would ship a true number about a false world.
-  {
-    owner: 'Shipment',
-    field: 'daysInTransit',
-    group: 'stored-in-fixtures',
-    against: 'shipDate',
-    factWhenPresent: 'actualArrival',
-  },
-  {
-    owner: 'Shipment',
-    field: 'delayDays',
-    group: 'stored-in-fixtures',
-    against: 'estimatedArrival',
-    factWhenPresent: 'actualArrival',
-  },
+  // ── ⚠️ TWO MORE ROWS LEFT BY BEING RETIRED, AND THE REASON THEY STAYED IS ─
+  // ── QUOTED RATHER THAN DELETED, BECAUSE IT WAS TRUE WHEN IT WAS WRITTEN ───
+  //   `Shipment.daysInTransit` and `Shipment.delayDays` sat here as
+  //   `stored-in-fixtures` under this reasoning:
+  //
+  //     > ⚠️ THE FOUR THAT REMAIN ARE DELIBERATE. Each back-solves to the SAME
+  //     > authoring date as the fixture around it (shipments 2026-05-20, POs
+  //     > their own), so computing them at read would publish FIXTURE AGE as
+  //     > operational lateness — a shipment "in transit 116 days", a PO "496
+  //     > days late". The disposal is the DATA, and the fixture refresh is its
+  //     > own batch; retiring the field first would ship a true number about a
+  //     > false world.
+  //
+  //   ⚠️ **THE FIXTURE REFRESH IT WAS WAITING FOR HAPPENED — #319/#320 — AND
+  //   NOBODY CAME BACK HERE.** `shiftFields` re-times the shipment family to
+  //   `DECLARED_PRESENT`, so "in transit 116 days" is no longer reachable:
+  //   measured before retiring them, the computed values reproduce all 16
+  //   authored literals EXACTLY at the declared present. The condition was met
+  //   by a batch that had no reason to look at this table, which is why the
+  //   quote stays — a deferral whose precondition is satisfied elsewhere does
+  //   not announce itself.
+  //
+  //   ⚠️ **THE TWO PO ROWS BELOW ARE NOT RIDING, AND THE DIFFERENCE IS DERIVED
+  //   RATHER THAN SCOPED AWAY:** `purchaseOrder` HAS NO ENTRY IN
+  //   `FAMILY_ANCHORS`, so its dates are still the raw literals and the quoted
+  //   reasoning still binds them exactly. "496 days late" remains the live risk
+  //   for a PO and is no longer one for a shipment. **Anchor that family first;
+  //   the fields are downstream of the anchoring, never the other way round.**
   {
     owner: 'PurchaseOrder',
     field: 'daysOverdue',

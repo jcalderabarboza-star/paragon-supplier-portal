@@ -52,13 +52,44 @@
 //   ARRIVED is not delayed; it is delivered, late. Lateness after the fact is a
 //   performance fact and belongs to a scorecard, not to a transit badge.
 //
-// ── WHAT IS DELIBERATELY NOT COMPUTED HERE ──────────────────────────────────
-//   `delayDays` and `daysInTransit` remain STORED (`dayCounts.ts` registers both
-//   as `stored-in-fixtures`, 2 of its 4 such rows). `delayDays` is rendered at
-//   three sites in `BuyerShipments`. Computing the STATE while leaving the COUNT
-//   stored is a real divergence and it is FILED, not fixed: the count is a
-//   second ruling (it is `−daysUntil` only while nothing has arrived) and this
-//   batch was scoped to the state. Named rather than left for a reader to find.
+// ── ⚠️ THE COUNTS NOW COME FROM HERE TOO, AND THE PARAGRAPH THAT DEFERRED ──
+// ── THEM IS QUOTED RATHER THAN DELETED, BECAUSE ITS CLAIM WAS OVERSTATED ───
+//   It read:
+//
+//     > `delayDays` and `daysInTransit` remain STORED (`dayCounts.ts` registers
+//     > both as `stored-in-fixtures`, 2 of its 4 such rows). `delayDays` is
+//     > rendered at three sites in `BuyerShipments`. Computing the STATE while
+//     > leaving the COUNT stored is a real divergence and it is FILED, not
+//     > fixed.
+//
+//   ⚠️ **"A REAL DIVERGENCE" WAS FALSE AT THE RENDERED INSTANT, AND MEASURING
+//   IT IS WHAT DISSOLVED THE FINDING.** `BuyerShipments` pins `TODAY =
+//   DECLARED_PRESENT` (`:59`), so the state and the stored number were never
+//   read from different clocks. Derived over the corpus: the ONE row carrying
+//   `delayDays` stored **6** and the classifier computed **6** at the same
+//   instant. They agreed. The defect was not a wrong number on screen — it was
+//   that the agreement was a COINCIDENCE OF THE ANCHOR rather than a property,
+//   and nothing would have said so if it stopped.
+//
+//   So these are computed for the reason #318 gave and not for the one this
+//   batch was dispatched with: **a stored value must not be a function of the
+//   read instant.** Both were. `daysUntilExpiry` and `daysLeft` were retired on
+//   that rule and these two were left behind because computing them then would
+//   have published FIXTURE AGE as lateness — *"a shipment in transit 116
+//   days"*. ⚠️ **THAT REASONING DIED AT #319/#320, NOT HERE:** once the family
+//   was anchored, `shiftFields` re-times every date to the declared present, so
+//   the computed values ARE the authored ones. Measured before building — 16 of
+//   16 rows reproduce their stored literal exactly at `DECLARED_PRESENT`.
+//
+//   ⚠️ **AND HALF THAT AGREEMENT IS CIRCULAR — SAID PLAINLY, BECAUSE THE OTHER
+//   HALF IS THE EVIDENCE.** `FAMILY_ANCHORS.shipment.why` names *"the retired
+//   `daysInTransit` back-solve"* as one of the four instruments that CHOSE
+//   2026-05-20, so the five IN-FLIGHT rows agreeing is guaranteed by
+//   construction and proves nothing. What is independent: the ten ARRIVED rows
+//   match `actualArrival − shipDate`, a difference between two stored dates and
+//   therefore invariant under ANY shift (10 of 10); and `delayDays` is not
+//   named in that `why` at all, so `shp-018` agreeing is one genuinely
+//   independent confirmation of the anchor. Stated as one row, not as a set.
 // ────────────────────────────────────────────────────────────────────────────
 
 import type { Shipment, ShipmentStatus } from '../../data/mockShipments';
@@ -116,4 +147,46 @@ export function shipmentDisplayState(
 /** Is this row delayed at `nowIso`? The predicate, for counts and filters. */
 export function isDelayed(s: ShipmentDelayInput, nowIso: string): boolean {
   return shipmentDisplayState(s, nowIso) === 'Delayed';
+}
+
+/**
+ * How many days LATE, at `nowIso` — `null` when the shipment is not `Delayed`.
+ *
+ * ⚠️ **IT LIVES BESIDE THE CLASSIFIER SO THE STATE AND ITS NUMBER CANNOT
+ * DISAGREE.** They are the same comparison read two ways: `Delayed` is the
+ * SIGN of `daysUntil(estimatedArrival, now)` and this is its MAGNITUDE. Putting
+ * the count in another module would let one move without the other, which is
+ * the shape this batch exists to remove — the page used to hold two independent
+ * answers to *is this shipment late?* and they agreed only because exactly one
+ * row of eighteen carried the stored field.
+ */
+export function daysLate(s: ShipmentDelayInput, nowIso: string): number | null {
+  if (!isDelayed(s, nowIso)) return null;
+  // Non-null by construction: `isDelayed` is true only when `daysUntil`
+  // returned a number, so this re-read cannot be `null`. Asserted rather than
+  // defaulted — a `?? 0` here would invent a zero for an unreadable date.
+  return -(daysUntil(s.estimatedArrival, nowIso) as number);
+}
+
+/** The fields the transit count reads. */
+export type ShipmentTransitInput = Pick<Shipment, 'shipDate' | 'actualArrival'>;
+
+/**
+ * Days in transit at `nowIso`.
+ *
+ * ⚠️ **ONE FIELD, TWO MEANINGS — AND THE DATA SAYS SO RATHER THAN THE COMMENT.**
+ * An ARRIVED shipment's transit time is a closed, clock-free fact
+ * (`actualArrival − shipDate`); an IN-FLIGHT one's is elapsed-so-far and moves
+ * every day. That is why the stored field had to go: for ten rows it was a
+ * fact and for five it was a frozen clock read, and one `number` cannot say
+ * which it is. The endpoint is chosen HERE, where the difference is visible.
+ */
+export function daysInTransit(
+  s: ShipmentTransitInput,
+  nowIso: string,
+): number | null {
+  const end = s.actualArrival ?? nowIso;
+  const d = daysUntil(s.shipDate, end);
+  if (d === null) return null;
+  return -d;
 }
