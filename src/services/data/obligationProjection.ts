@@ -41,16 +41,87 @@
 //   field exists — inventing one is a data change dressed as a predicate. So
 //   the seven rows re-label to `Upcoming`.
 //
-//   **THE ROUTE BACK, because a removal without one is a dead end:**
-//   `In Progress` returns the day `obligation` gets a `CommandTarget` and
-//   `t_obligation_track` can fire — at which point the machine state is written
-//   by a verb rather than authored, and a surface can honestly show the
-//   difference between "tracked" and "not yet". That wiring is FILED, not built
-//   here, and it is the half this projection deliberately does not wait on:
-//   both its verbs are `surfaceable: { surfaced: true }`, which is what makes
-//   obligation different from `contract` and `shipment` (whose verbs are
-//   `external-fact`, owned by s4hana and the TMS — those will never be ours to
-//   write, so a projection is the ONLY disposal available to them).
+//   ⚠️ **THE ROUTE BACK WAS FALSE WHEN IT WAS WRITTEN. IT IS QUOTED RATHER
+//   THAN DELETED, BECAUSE THE RECORD THAT A ROUTE WAS PROMISED AND DID NOT
+//   EXIST IS THE FINDING** (`FALSE-MECHANISM-MUST-NOT-BE-FILED-01`, §70 —
+//   caught two batches late, which is the cost this rule predicts: nobody
+//   re-measures a route back, because a route back is why you stopped). The
+//   sentence that stood here read:
+//
+//     > **THE ROUTE BACK, because a removal without one is a dead end:**
+//     > `In Progress` returns the day `obligation` gets a `CommandTarget` and
+//     > `t_obligation_track` can fire — at which point the machine state is
+//     > written by a verb rather than authored, and a surface can honestly
+//     > show the difference between "tracked" and "not yet". That wiring is
+//     > FILED, not built here, and it is the half this projection deliberately
+//     > does not wait on: both its verbs are `surfaceable: { surfaced: true }`,
+//     > which is what makes obligation different from `contract` and
+//     > `shipment` (whose verbs are `external-fact`, owned by s4hana and the
+//     > TMS — those will never be ours to write, so a projection is the ONLY
+//     > disposal available to them).
+//
+//   **ITS LAST CLAUSE IS STILL TRUE AND IS THE ONLY PART THAT IS.** Both verbs
+//   really are `surfaced: true`, and `obligation.flow.ts` really carries no
+//   `owner` and no `external-fact`. **Do not restate how many flow files do**
+//   — derive it (`grep -rln external-fact flows/`); the first draft of this
+//   sentence said *"one of the thirteen"* against a directory holding twenty,
+//   which is `FLOOR-IN-PROSE-01` inside the paragraph correcting a false
+//   claim. The five that DO declare it are named because the list is the
+//   evidence: `advanceShipNotice` · `contract` · `invoice` · `purchaseOrder` ·
+//   `shipment`. **What does not follow is the route.**
+//
+//   ── WHY A `CommandTarget` RESTORES NOTHING, DERIVED ───────────────────────
+//   `getFlow('obligation').states` is `['In Progress', 'Completed']` — TWO
+//   members — so `In Progress` means *exists and is not completed*: the exact
+//   complement of `Completed`, which is what this file already computes and
+//   then splits by the clock into `Upcoming` | `Overdue`. Measured over the
+//   fixture at `DECLARED_PRESENT`:
+//
+//     completedDate present   16     -> the machine's `Completed`
+//     completedDate absent    24     -> the machine's `In Progress`, ALL of them
+//
+//   So wiring the target makes **24** rows `In Progress`, not the seven this
+//   projection re-labelled. Restoring it as a DISPLAY state would either
+//   collapse `Upcoming` and `Overdue` into it — a strict loss of the day-count
+//   this file was built to compute — or add a state **no row can exclusively
+//   hold**, because every `In Progress` row is also one of the other two.
+//
+//   ⚠️ **AND THE VERB DOES NOT RECORD THE MISSING FACT.** `t_obligation_track`
+//   is `from: [], to: 'In Progress', trigger: 'creation'` — it records that an
+//   obligation EXISTS, never that work BEGAN. The stored field named as
+//   missing eight lines above is still missing after the wiring, so the target
+//   was never what stood between this projection and the distinction.
+//
+//   **WHAT THE DISTINCTION ACTUALLY NEEDS IS A THIRD STATE** — a `Tracked`
+//   that `t_obligation_track` lands in, and a verb somebody fires when work
+//   starts. That is a FLOW AMENDMENT with a new transition, a new atom and a
+//   surface to fire it; it is not a wiring batch, and naming it as one is how
+//   this sentence stayed plausible for two batches. The i18n reads as cheap
+//   and is not: `statusLabel.ts` already carries `'In Progress': 'Sedang
+//   Berlangsung'` and `statusTone.ts` maps it to `warning`, so the LABEL is
+//   free and the MACHINE is the whole cost.
+//
+//   ── ⚠️ THREE MECHANISMS OFFERED FOR THIS STATE AND MEASURED FALSE, ────────
+//   ── RECORDED SO THE NEXT READER DOES NOT RE-DERIVE THEM ───────────────────
+//   §70 withholds a measured-false mechanism from being FILED as a finding; it
+//   does not withhold the measurement. Each was checked at the site:
+//
+//     "`t_obligation_track` goes OUT of `In Progress`, never into it"
+//        -> `from: []`, `to: 'In Progress'`. It is the state's SOLE producer.
+//     "`t_obligation_create` was its only producer; #234 retired it"
+//        -> `git log --all -S t_obligation_create` returns NOTHING. The
+//           identifier has never existed in any commit. #234 (`662edc7`) is
+//           the mutation-counter batch (§52).
+//     "`In Progress` is unreachable by construction"
+//        -> it is `initial`, with `in=[t_obligation_track]` and
+//           `out=[t_obligation_complete]` — the ONE state in this flow holding
+//           both edges. Nothing in `obligation` is unreachable.
+//
+//   ⚠️ **AND THE STATE IS NOT RETIRABLE EVEN IF IT WERE UNREACHABLE.** Retiring
+//   it would delete `t_obligation_track` (its only `to`) and leave
+//   `t_obligation_complete` with a `from` naming `Upcoming` / `Overdue` —
+//   COMPUTED DISPLAY STATES with no `readState` behind them and no store to
+//   hold them. The verb is not repairable by narrowing.
 //
 // ── ⚠️ THE STORED LITERAL IS LEFT IN PLACE, AND IT HAS A JOB ────────────────
 //   `documentExpiry`'s precedent exactly. `ContractObligation.status` keeps its

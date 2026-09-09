@@ -22663,10 +22663,15 @@ and reads no clock (16/16 completed rows carry one, 0 of 24 non-completed do).
 **The ruled cost, asserted rather than absorbed:** the seven `In Progress` rows
 re-label to `Upcoming`. `In Progress` is the flow's `initial` MACHINE state;
 preserving it needs a stored field recording that work began, and none exists.
-**The route back is named at the site:** it returns when `obligation` gets a
-`CommandTarget` and `t_obligation_track` can fire — which is why obligation is
-not `contract` or `shipment`, whose verbs are `external-fact` (s4hana, tms) and
-will never be ours to write.
+⚠️ **THE ROUTE BACK NAMED HERE WAS FALSE WHEN IT WAS WRITTEN — SEE §98, WHICH
+CORRECTS IT RATHER THAN OVERWRITING IT.** The sentence read: *"The route back is
+named at the site: it returns when `obligation` gets a `CommandTarget` and
+`t_obligation_track` can fire — which is why obligation is not `contract` or
+`shipment`, whose verbs are `external-fact` (s4hana, tms) and will never be ours
+to write."* Its second clause is true and its FIRST is not: the flow has two
+states, `In Progress` is the complement of `Completed`, and a `CommandTarget`
+makes **24** rows `In Progress` rather than restoring the seven. What the
+distinction needs is a THIRD state, not a target.
 
 ### §93d — WHAT A READER WAS BEING SHOWN
 
@@ -23517,3 +23522,172 @@ Zero English `Delayed` leaked into the ID render. Rows: shp-018 **Delayed /
 Terlambat**, shp-006 **In Transit / Dalam Perjalanan** (ETA rendered `31 Aug
 2026` — the declared present, the boundary visible), shp-017 **Delivered /
 Terkirim**. **The stored literal is gone and the rendered state did not move.**
+
+---
+
+## §98 — A ROUTE BACK THAT NEVER EXISTED, CORRECTED AT BOTH ITS SITES (2026-09-09)
+
+**Section number derived as `max(sections) + 1` over `^## §N` — §97 → §98.**
+
+**Dispatch:** correct the route, comment-only, nothing else. ⚠️ **AND THE
+CORRECTION IS NOT THE ONE DISPATCHED** — three of the mechanisms it specified
+were measured false at the site, and §70 forbids filing a mechanism measured
+false even when it arrives attached to a conclusion. The conclusion — *the
+sentence was wrong* — is upheld. Its mechanism is replaced with the measured one.
+
+### 98a · THE FALSE SENTENCE, AND WHERE IT ACTUALLY LIVED
+
+`obligationProjection.ts` (header) and this register at §93c. **Not
+`displayStates.ts:203-206`**, which the dispatch named: that file contains
+**zero** occurrences of `In Progress`, and lines 203–206 are the tail of the
+`supplierDocument` retraction paragraph. Its two obligation rows say the
+opposite of an external lane — `noCommandTarget: true`, with `compliance` named
+as the precedent.
+
+> **THE ROUTE BACK, because a removal without one is a dead end:** `In Progress`
+> returns the day `obligation` gets a `CommandTarget` and `t_obligation_track`
+> can fire.
+
+**Quoted, not deleted, at both sites.** The record that a route was promised and
+did not exist is the finding; deleting it would leave only the repair.
+
+### 98b · WHY IT IS FALSE — AND OBLIGATION'S FLOW IS FULLY REACHABLE
+
+Derived from `getFlow('obligation')`:
+
+```
+  obligation/In Progress   initial=true   terminal=false  in=[t_obligation_track]     out=[t_obligation_complete]
+  obligation/Completed     initial=false  terminal=true   in=[t_obligation_complete]  out=[]
+```
+
+**`In Progress` is the ONE state in this flow holding both edges.** It is not
+unreachable; it is the initial state, and `t_obligation_track` (`from: []`,
+`to: 'In Progress'`, `trigger: 'creation'`) is its sole producer.
+
+The flow declares **two** states, so `In Progress` means *exists and is not
+completed* — the complement of `Completed`, which `obligationProjection.ts`
+already computes and splits by the clock. Measured over the 40 fixture rows at
+`DECLARED_PRESENT`:
+
+```
+  stored status         Upcoming 12 · In Progress 7 · Completed 16 · Overdue 5
+  display @ P           Upcoming 19 · Overdue 5 · Completed 16
+  completedDate present 16   absent 24     -> the machine's two states, exactly
+```
+
+**A `CommandTarget` makes 24 rows `In Progress`, not seven.** Restoring it as a
+display state either collapses `Upcoming` and `Overdue` — a strict loss of the
+day-count §93 built — or adds a state **no row can exclusively hold**.
+
+⚠️ **AND THE VERB DOES NOT RECORD THE MISSING FACT.** `t_obligation_track` is a
+CREATION verb: it records that an obligation EXISTS, never that work BEGAN. The
+stored field §93c named as missing is still missing after the wiring. **What the
+distinction needs is a THIRD state** — a `Tracked` for the creation verb to land
+in, and a verb somebody fires when work starts. A flow amendment, not a wiring
+batch, and mistaking one for the other is how the sentence survived two batches.
+
+### 98c · THREE MECHANISMS MEASURED FALSE, RECORDED RATHER THAN FILED
+
+§70 withholds a measured-false mechanism from being FILED as a finding. It does
+not withhold the measurement, and recording it is what stops the next batch
+re-deriving it:
+
+| offered | measured |
+|---|---|
+| *"`t_obligation_track` goes OUT of `In Progress`, never into it"* | `from: []`, `to: 'In Progress'` — it goes IN, and is the sole producer |
+| *"`t_obligation_create` was its only producer; #234 retired it as a fabrication"* | `git log --all -S t_obligation_create` returns **nothing** — the identifier has never existed in any commit. #234 (`662edc7`) is the mutation-counter batch (§52) |
+| *"obligation is TMS-owned — `owners: ['tms']` and `external-fact` since #311, both verbs `surfaced: false`"* | both verbs are `{"surfaced":true}`; **no `owner` key exists on either**; #311 (`891e6bd`) touched `advanceShipNotice` · `contract` · `invoice` · `purchaseOrder` · `shipment` and **not** `obligation.flow.ts`, last modified at #232 |
+
+Derived across the flow layer, and NAMED rather than counted — the list is the
+evidence and a bare cardinality is the thing this register keeps getting wrong:
+the files declaring `external-fact` are `advanceShipNotice` · `contract` ·
+`invoice` · `purchaseOrder` · `shipment`, and every `owner: 'tms'` in the tree
+sits in the first and the last of those. **Zero files anywhere in the repo
+associate `obligation` with `tms`, `s4hana` or `external-fact`** —
+`grep -rn obligation --include=*.ts --include=*.md . | grep -i 'tms|external-fact|s4hana'`
+returns empty, and `git log --all -S t_obligation_create` returns empty over
+the whole history.
+
+⚠️ **`t_obligation_create` joins the §64a list** — an artifact named as existing
+code and measured absent, arriving as the load-bearing mechanism of a ruling.
+**THE LIST IS THE COUNT; it is deliberately not written as a number here.**
+
+⚠️ **AND THE STATE IS NOT RETIRABLE EVEN IF IT WERE UNREACHABLE.** Retiring it
+deletes `t_obligation_track` (its only `to`) and leaves `t_obligation_complete`
+with a `from` naming `Upcoming` / `Overdue` — **COMPUTED DISPLAY STATES with no
+`readState` behind them and no store to hold them.** The verb is not repairable
+by narrowing. That reasoning is preserved from the dispatch because it is sound;
+only its premise moved.
+
+### 98d · THE INBOUND-EDGE PROPERTY IS CHECKABLE, UNCHECKED — AND AN INSTRUMENT WOULD SHIP WITH NOTHING TO FIRE AT
+
+**The gap is real:** nothing in this tree asserts *"every non-initial state has
+an inbound edge."* Derived by hand across all 18 flows, states with an outbound
+edge and no inbound one:
+
+```
+  goodsReceiptLine/Pending     initial  — correct by construction
+  invoiceMatch/Pending         initial  — correct by construction
+  invoice/Payment Released     NOT initial
+```
+
+⚠️ **AND THE THIRD IS AN ARTIFACT OF THE MATCHER, NOT A DEFECT.** `Payment
+Released` is reached by `t_invoice_release_payment`'s **`settlesTo`**, which a
+`to`-only matcher cannot see — §83's rule (*resolve every non-literal producer
+before reporting*) and §48g's fold, arriving on a fresh instrument that had not
+been told about them.
+
+**So the true population is EMPTY: the property currently HOLDS everywhere.**
+Which is the honest reason not to open the lane on a comment batch, and it is
+sharper than cost: an instrument built today would be validated only against a
+tree that satisfies it — `PROBE-MUST-FIRE-AT-A-REAL-DEFECT-01`, whose whole
+point is that **only a defect the tree really carried was aimed by something
+other than the seat that aimed the matcher.** There is no such defect here to
+aim it at, and a synthetic subject agrees with the matcher by construction.
+**FILED WITH THAT REASONING**, so the next reader knows the gap is real AND that
+closing it needs a defect first, not merely a decision.
+
+### 98e · THE TWO DANGLING-EDGE CASES ARE NOT ONE SHAPE — MEASURED
+
+Ruled separate by the operator, and the measurement agrees for a reason worth
+recording, because they are not merely different in size — **they are opposite
+in direction**:
+
+```
+  obligation/In Progress        in=[t_obligation_track]   out=[t_obligation_complete]   <- both edges
+  goodsReceiptLine/Quarantined  in=[t_grline_quarantine]  out=[]                        <- inbound, NO outbound
+```
+
+`Quarantined` is a non-terminal **sink** on a WIRED entity, targeted by a
+dispatched verb, read at five sites. `In Progress` is a fully-connected initial
+state on a target-less one. **Neither is "an outbound edge with no inbound
+edge", and pairing them under a shared label would have ruled one thing twice.**
+Neither is opened.
+
+### 98f · FILED — A GRANTED VERB NOBODY CAN FIRE, AND WHOSE LANE IT IS
+
+`obligation:track` and `obligation:complete` are held by **`procurement`**,
+`buyer_all` and `admin` — **not `compliance`**, which holds eight atoms and none
+of them an obligation atom. The default buyer seat holds `procurement`, so a
+seat can authorise both verbs today and **neither can fire**, because
+`obligation` has no `CommandTarget` (`getKnownFlows()` ∖ `WIRED_COMMAND_TARGETS`
+= `compliance contract goodsReceiptLine invoiceMatch obligation shipment`).
+
+**That is the same class as a declared route with no producer, one layer up:** an
+authorisation whose grant is real and whose exercise is impossible. It is filed,
+not opened — the operator's standing ruling is no `CommandTarget` for this
+entity.
+
+### 98g · GATES · THE BUNDLE IS THE PROBE
+
+**Comment-only and register-only. There is nothing to mutate**, and saying so is
+the instruction rather than probing something adjacent. The diff touches one
+comment block in `obligationProjection.ts`, one paragraph in this register, and
+this section. **No assertion is added, none is deleted, and none stops running**
+— so the floor is UNCHANGED at 4565/320/7, which is the honest arithmetic rather
+than a bump.
+
+**The bundle A/B is the probe.** Recorded in the PR body: every built asset
+resolved pair-by-pair against a build of `main`, filenames included — vite
+content-hashes asset filenames, so identical names are themselves the content
+assertion — plus the chunk hash read off the running page.
