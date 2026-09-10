@@ -56,6 +56,21 @@ import {
   DISPLAY_STATE_ACTION_KEY,
 } from '../services/data/documentDisplayState';
 import { daysUntil } from '../services/data/dayProjection';
+import { DECLARED_PRESENT } from '../services/data/fixturePresent';
+
+// ⚠️ ANCHORED — this surface rendered values derived from anchored
+// fixture data against the WALL CLOCK, so what a reader saw moved every day
+// with no commit involved. Module-scope `DECLARED_PRESENT`, the shipped
+// pattern from `BuyerShipments` / `BuyerGoodsReceipt`, and behaviour-
+// preserving for the same reason they are: this surface's families shift by
+// `DECLARED_PRESENT - anchor` and so does this pin, so every rendered
+// day-count is answered at the instant the fixtures were authored for.
+//
+// ⚠️ SESSION-WRITTEN STATE KEEPS THE WALL CLOCK. This constant is for READ
+// projections only. A timestamp stamped onto something the user just did is a
+// fact about this session, not about the fixture set, and anchoring one would
+// tell the reader their own action happened weeks ago.
+const TODAY = DECLARED_PRESENT;
 
 type Grade = 'A' | 'B' | 'C' | 'D' | 'F';
 
@@ -210,7 +225,7 @@ const SupplierDashboard: React.FC = () => {
   // The instant every clock read on this page reckons against — the
   // convention `SupplierDocuments` and the certs widget already use, so all
   // three answer as of the same moment rather than three `Date.now()` calls.
-  const nowIso = useMemo(() => new Date().toISOString(), []);
+  const nowIso = TODAY;
 
   const documents = useMemo(
     () => (documentsQuery.data?.items ?? []).slice(0, 4),
@@ -267,7 +282,7 @@ const SupplierDashboard: React.FC = () => {
       MY_POS.filter((po) => {
         if (po.status !== POStatus.CONFIRMED) return false;
         const delivery = new Date(po.requestedDeliveryDate);
-        const today = new Date();
+        const today = new Date(TODAY);
         const daysLeft = Math.ceil(
           (delivery.getTime() - today.getTime()) / 86_400_000,
         );
@@ -401,7 +416,7 @@ const SupplierDashboard: React.FC = () => {
       : [],
     ...asnDueOrders.map((po) => {
       const days = Math.ceil(
-        (new Date(po.requestedDeliveryDate).getTime() - new Date().getTime()) /
+        (new Date(po.requestedDeliveryDate).getTime() - new Date(TODAY).getTime()) /
           86_400_000,
       );
       return {
@@ -438,6 +453,15 @@ const SupplierDashboard: React.FC = () => {
   );
   const remaining = activeActions.length;
 
+  // ⚠️ **WALL CLOCK BY RULING, NOT BY OVERSIGHT (operator, 2026-09-10).**
+  // This is the briefing greeting — a rendered DATE, so anchoring it does not
+  // reconcile two numbers, it changes what the reader is told today is. That
+  // puts it with `SupplierWhatsApp`'s `sessionOpened` and the wizard's
+  // `inspectionInstant`: a fact about THIS reading, not a projection over
+  // fixture data. The clock-derived BADGES on this page stay anchored above —
+  // that is the read/write split this batch is built on, not a half-anchor.
+  // `anchoredSurfaces.guard.test.tsx` asserts BOTH halves, so re-anchoring
+  // this line goes red by name rather than passing quietly.
   const today = new Date().toLocaleDateString('en-GB', {
     weekday: 'long',
     day: '2-digit',

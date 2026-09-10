@@ -123,6 +123,21 @@ import type { Supplier } from '../services/data/types';
 // GL-1 - the glossary destination for this surface's refusals.
 import GlossaryTermChip from '../components/ui-v2/GlossaryTermChip';
 import { useRefusalText } from '../hooks/useRefusalText';
+import { DECLARED_PRESENT } from '../services/data/fixturePresent';
+
+// ⚠️ ANCHORED — this surface rendered values derived from anchored
+// fixture data against the WALL CLOCK, so what a reader saw moved every day
+// with no commit involved. Module-scope `DECLARED_PRESENT`, the shipped
+// pattern from `BuyerShipments` / `BuyerGoodsReceipt`, and behaviour-
+// preserving for the same reason they are: this surface's families shift by
+// `DECLARED_PRESENT - anchor` and so does this pin, so every rendered
+// day-count is answered at the instant the fixtures were authored for.
+//
+// ⚠️ SESSION-WRITTEN STATE KEEPS THE WALL CLOCK. This constant is for READ
+// projections only. A timestamp stamped onto something the user just did is a
+// fact about this session, not about the fixture set, and anchoring one would
+// tell the reader their own action happened weeks ago.
+const TODAY = DECLARED_PRESENT;
 
 type GroupTab = 'all' | 'open' | 'pending' | 'awarded' | 'closed';
 
@@ -1235,7 +1250,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
   const rfqs = baseRfqs;
   // ONE clock read for the board, captured once and injected into every
   // day-count below — the replacement for the deleted `REFERENCE_TODAY` pin.
-  const nowIso = useMemo(() => new Date().toISOString(), []);
+  const nowIso = TODAY;
 
   // ⚠️ **THE ONE ENTRY POINT, AND IT TAKES THE PREFILL AS AN ARGUMENT.** The
   // page's own "New RFQ" button calls it with nothing; the in-wizard requisition

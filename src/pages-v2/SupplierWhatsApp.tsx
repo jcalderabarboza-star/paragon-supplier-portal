@@ -1246,6 +1246,16 @@ const SupplierWhatsApp: React.FC = () => {
   const { supplierId, supplierName } = identity;
   const [channel, setChannel] = useState<Channel>('whatsapp');
 
+  // ⚠️ **WALL CLOCK ON PURPOSE — DO NOT ANCHOR THIS.** It renders
+  // `supplierWhatsApp.meta.sessionOpened`, which is a fact about THIS SESSION
+  // and not about the fixture set: pinning it to `DECLARED_PRESENT` would tell
+  // a reader their own simulator session opened weeks ago. It is the reason
+  // this page is absent from `anchoredSurfaces.guard.test.tsx` — an instrument
+  // sweeping for clock drift WILL flag this line, and the answer is that the
+  // value is supposed to move. (`EmailPanel`'s "Sent:" date is a different
+  // case: a simulated DOCUMENT date, anchorable, but it renders only on the
+  // email channel and this page cannot hold two clocks, so it rides with the
+  // batch that anchors the surface as a whole.)
   const lastUpdated = useMemo(
     () =>
       new Date().toLocaleString('en-GB', {

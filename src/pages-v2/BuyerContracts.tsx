@@ -62,6 +62,21 @@ import {
 } from './contracts/contractCreateModel';
 // GL-1 - the glossary destination for this surface's refusals.
 import GlossaryTermChip from '../components/ui-v2/GlossaryTermChip';
+import { DECLARED_PRESENT } from '../services/data/fixturePresent';
+
+// ⚠️ ANCHORED — this surface rendered values derived from anchored
+// fixture data against the WALL CLOCK, so what a reader saw moved every day
+// with no commit involved. Module-scope `DECLARED_PRESENT`, the shipped
+// pattern from `BuyerShipments` / `BuyerGoodsReceipt`, and behaviour-
+// preserving for the same reason they are: this surface's families shift by
+// `DECLARED_PRESENT - anchor` and so does this pin, so every rendered
+// day-count is answered at the instant the fixtures were authored for.
+//
+// ⚠️ SESSION-WRITTEN STATE KEEPS THE WALL CLOCK. This constant is for READ
+// projections only. A timestamp stamped onto something the user just did is a
+// fact about this session, not about the fixture set, and anchoring one would
+// tell the reader their own action happened weeks ago.
+const TODAY = DECLARED_PRESENT;
 
 type GroupTab =
   | 'all'
@@ -379,7 +394,7 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
   // screen is answered against the SAME instant. ⚠️ It sits at the TOP of the
   // body on purpose: this component has no early return today, but a hook below
   // one is a conditional hook, and that is what took 44 specs down in #317.
-  const nowIso = useMemo(() => new Date().toISOString(), []);
+  const nowIso = TODAY;
   /** This contract's days-to-expiry at that instant. `-Infinity`-free: a row
    *  with no readable end date sorts as "no expiry" rather than as overdue. */
   const expiryDays = (c: Contract): number => daysUntil(c.endDate, nowIso) ?? 0;
