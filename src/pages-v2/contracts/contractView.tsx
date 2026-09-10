@@ -46,6 +46,21 @@ import {
   OBLIGATION_DISPLAY_VARIANT,
 } from '../../services/data/obligationProjection';
 import type { Supplier } from '../../services/data/types';
+import { DECLARED_PRESENT } from '../../services/data/fixturePresent';
+
+// ⚠️ ANCHORED — this surface rendered values derived from anchored
+// fixture data against the WALL CLOCK, so what a reader saw moved every day
+// with no commit involved. Module-scope `DECLARED_PRESENT`, the shipped
+// pattern from `BuyerShipments` / `BuyerGoodsReceipt`, and behaviour-
+// preserving for the same reason they are: this surface's families shift by
+// `DECLARED_PRESENT - anchor` and so does this pin, so every rendered
+// day-count is answered at the instant the fixtures were authored for.
+//
+// ⚠️ SESSION-WRITTEN STATE KEEPS THE WALL CLOCK. This constant is for READ
+// projections only. A timestamp stamped onto something the user just did is a
+// fact about this session, not about the fixture set, and anchoring one would
+// tell the reader their own action happened weeks ago.
+const TODAY = DECLARED_PRESENT;
 
 // ─── Display helpers (detail-only) ───────────────────────────────────────────
 
@@ -263,7 +278,7 @@ export const ContractDetailBody: React.FC<{
   const { t } = useTranslation();
   // One clock read for the panel — the same shape the list uses, so a row and
   // the drawer opened from it cannot disagree about the same contract.
-  const nowIso = useMemo(() => new Date().toISOString(), []);
+  const nowIso = TODAY;
   const daysToExpiry = daysUntil(contract.endDate, nowIso);
   // ONE evaluation, read by the pill, the expiry figure's tone, the timeline
   // and `useNextAct` below — the same shape the list page uses.

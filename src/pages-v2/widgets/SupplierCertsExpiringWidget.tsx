@@ -14,6 +14,21 @@ import StatusPill from '../../components/ui-v2/StatusPill';
 import { formatDate } from '../../lib/format';
 import { useDocuments } from '../../services/query/hooks';
 import { documentDisplayState } from '../../services/data/documentDisplayState';
+import { DECLARED_PRESENT } from '../../services/data/fixturePresent';
+
+// ⚠️ ANCHORED — this surface rendered values derived from anchored
+// fixture data against the WALL CLOCK, so what a reader saw moved every day
+// with no commit involved. Module-scope `DECLARED_PRESENT`, the shipped
+// pattern from `BuyerShipments` / `BuyerGoodsReceipt`, and behaviour-
+// preserving for the same reason they are: this surface's families shift by
+// `DECLARED_PRESENT - anchor` and so does this pin, so every rendered
+// day-count is answered at the instant the fixtures were authored for.
+//
+// ⚠️ SESSION-WRITTEN STATE KEEPS THE WALL CLOCK. This constant is for READ
+// projections only. A timestamp stamped onto something the user just did is a
+// fact about this session, not about the fixture set, and anchoring one would
+// tell the reader their own action happened weeks ago.
+const TODAY = DECLARED_PRESENT;
 
 // Capability "supplierDocuments": backed by the supplierDocument flow, which is
 // registered but author-unwired (F0.4 inert — no CommandTarget) → the
@@ -72,7 +87,7 @@ const SupplierCertsExpiringWidget: React.FC = () => {
   const query = useDocuments();
   // One clock read, captured once — the same shape the documents page uses, so
   // the two surfaces reckon against the same instant.
-  const nowIso = useMemo(() => new Date().toISOString(), []);
+  const nowIso = TODAY;
 
   const { expired, expiring } = useMemo(() => {
     const items = query.data?.items ?? [];

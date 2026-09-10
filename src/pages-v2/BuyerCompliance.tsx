@@ -61,6 +61,21 @@ import type {
 } from '../services/data/types';
 import { DataError } from '../services/data/types';
 import { useRefusalText, useDataErrorText } from '../hooks/useRefusalText';
+import { DECLARED_PRESENT } from '../services/data/fixturePresent';
+
+// ⚠️ ANCHORED — this surface rendered values derived from anchored
+// fixture data against the WALL CLOCK, so what a reader saw moved every day
+// with no commit involved. Module-scope `DECLARED_PRESENT`, the shipped
+// pattern from `BuyerShipments` / `BuyerGoodsReceipt`, and behaviour-
+// preserving for the same reason they are: this surface's families shift by
+// `DECLARED_PRESENT - anchor` and so does this pin, so every rendered
+// day-count is answered at the instant the fixtures were authored for.
+//
+// ⚠️ SESSION-WRITTEN STATE KEEPS THE WALL CLOCK. This constant is for READ
+// projections only. A timestamp stamped onto something the user just did is a
+// fact about this session, not about the fixture set, and anchoring one would
+// tell the reader their own action happened weeks ago.
+const TODAY = DECLARED_PRESENT;
 
 type CategoryFilter = 'All' | CertCategory;
 type StatusFilter = 'All' | ComplianceDisplayStatus;
@@ -134,7 +149,7 @@ const BuyerCompliance: React.FC = () => {
 
   // Now injected once per mount — the projection is pure & deterministic (no
   // clock read inside pure code); rows recompute only if the read changes.
-  const now = useMemo(() => new Date().toISOString(), []);
+  const now = TODAY;
   const query = useComplianceRegistry();
   // §82 — the review queue. A BUYER scope gets the cross-supplier superset from
   // `applySupplierScope`, which is what makes a compliance officer able to see
@@ -353,13 +368,13 @@ const BuyerCompliance: React.FC = () => {
     // would NOT have moved with it. A date that must not move is as much a
     // declaration as one that must, and it belongs to its owner.
     const target = new Date(BPJPH_MANDATE_DATE);
-    const today = new Date();
+    const today = new Date(TODAY);
     const daysLeft = Math.ceil((target.getTime() - today.getTime()) / 86_400_000);
     const pct = Math.max(0, Math.min(100, (daysLeft / 365) * 100));
     return { daysLeft, pct };
   }, []);
 
-  const today = formatDate(new Date());
+  const today = formatDate(TODAY);
 
   return (
     <AppShellV2>

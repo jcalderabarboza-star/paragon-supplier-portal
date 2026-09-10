@@ -65,6 +65,21 @@ import type {
   ScenarioFeasibility as Feasibility,
 } from '../services/data/types';
 import { daysUntil } from '../services/data/dayProjection';
+import { DECLARED_PRESENT } from '../services/data/fixturePresent';
+
+// ⚠️ ANCHORED — this surface rendered values derived from anchored
+// fixture data against the WALL CLOCK, so what a reader saw moved every day
+// with no commit involved. Module-scope `DECLARED_PRESENT`, the shipped
+// pattern from `BuyerShipments` / `BuyerGoodsReceipt`, and behaviour-
+// preserving for the same reason they are: this surface's families shift by
+// `DECLARED_PRESENT - anchor` and so does this pin, so every rendered
+// day-count is answered at the instant the fixtures were authored for.
+//
+// ⚠️ SESSION-WRITTEN STATE KEEPS THE WALL CLOCK. This constant is for READ
+// projections only. A timestamp stamped onto something the user just did is a
+// fact about this session, not about the fixture set, and anchoring one would
+// tell the reader their own action happened weeks ago.
+const TODAY = DECLARED_PRESENT;
 
 // ────────────────────────────────────────────────────────────────────────────
 // SEAM NOTE — /buyer/risk is a REAL-LATER capability (source of record).
@@ -669,7 +684,7 @@ const ComplianceRisksTab: React.FC<{ compliance: ComplianceRow[] }> = ({
   // ⚠️ ONE clock read for the tab, at the TOP of the body. Derived before
   // writing: this component has no early return, so the hook is unconditional —
   // the check that #317 skipped and paid 44 specs for.
-  const nowIso = useMemo(() => new Date().toISOString(), []);
+  const nowIso = TODAY;
   /** Days to expiry for a compliance row, from its own `expires` date.
    *  `daysLeft` was a STORED difference against now and every row of it was
    *  153 days stale — it back-solved to a single authoring date, 2026-04-08. */
