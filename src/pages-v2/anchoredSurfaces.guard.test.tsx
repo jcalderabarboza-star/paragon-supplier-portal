@@ -37,6 +37,10 @@ import { act } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { renderWithProviders, BUYER, SUPPLIER } from '../test/test-utils';
 import { usePinnedDemoClock, DEMO_NOW } from '../test/demoClock';
+import { DECLARED_PRESENT } from '../services/data/fixturePresent';
+import { formatDate } from '../lib/format';
+import BuyerShipments from './BuyerShipments';
+import BuyerGoodsReceipt from './BuyerGoodsReceipt';
 
 import BuyerCompliance from './BuyerCompliance';
 import BuyerContractDetail from './BuyerContractDetail';
@@ -137,6 +141,71 @@ describe('anchored surfaces — clock-independent by construction', () => {
     const b = await textAt(probe, Date.now() + FAR_B);
     expect(a).not.toBe(b);
     expect(a).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  });
+
+  // ── THE KNOWN-GOOD CONTROL. The other half of the pair: the control above
+  //    proves the harness MOVES the clock, this proves it does not move an
+  //    ALREADY-ANCHORED surface. Without it, a harness that corrupted
+  //    `DECLARED_PRESENT` would convict every anchored surface in the tree and
+  //    read exactly like a successful sweep.
+  //
+  // ⚠️ **WHAT THIS CONTROL CATCHES AND WHAT IT DOES NOT — MEASURED, NOT
+  //    ASSUMED.** Three mutations were run against it; only one killed it, and
+  //    saying so is the point:
+  //
+  //      · proxy forwards EVERY construct as zero-arg (so `DECLARED_PRESENT`
+  //        moves with the horizon) ................................... KILLED.
+  //        The suite goes red and convicts *anchored* surfaces — which is
+  //        exactly the symptom a corrupted harness produces, and the reason
+  //        this control exists.
+  //      · `const TODAY = new Date()...` at MODULE SCOPE ....... NOT killed.
+  //      · the anchor text taken off every render site ......... NOT killed.
+  //
+  //    The module-scope miss is not a hole to patch, it is a property of every
+  //    render-diff instrument: a module-scope const resolves at IMPORT, once,
+  //    BEFORE any `beforeEach` installs the proxy — the same mechanism
+  //    `fixturePresent.ts` cites when it rules out a clock read inside seed
+  //    data ("it fails WHERE NOTHING COULD SEE IT"). A surface whose clock read
+  //    is at module scope is invisible here and needs a source-level check.
+  //
+  //    So `toContain` below is NECESSARY, not SUFFICIENT: it proves the anchor
+  //    reaches the screen, but it survived the off-screen mutation because the
+  //    same date also appears in this page's fixture rows. The teeth of this
+  //    control are the equality, under mutation 1.
+  it('CONTROL — an ALREADY-anchored surface is unmoved, and its anchor is on screen', async () => {
+    const anchorText = formatDate(DECLARED_PRESENT);
+    for (const [el, route] of [
+      [<BuyerShipments />, '/buyer/shipments'],
+      [<BuyerGoodsReceipt />, '/buyer/goods-receipt'],
+    ] as Array<[React.ReactNode, string]>) {
+      const a = await textAt({ el, route }, Date.now() + FAR_A);
+      const b = await textAt({ el, route }, Date.now() + FAR_B);
+      expect(a).toContain(anchorText); // non-vacuity: the anchor really renders
+      expect(b).toBe(a);
+    }
+  });
+
+  // ⚠️ **THE PROPERTY THE WHOLE HARNESS RESTS ON, ASSERTED RATHER THAN
+  //    ASSUMED.** `DECLARED_PRESENT` is built with `new Date(<number>)` — ONE
+  //    argument — and the proxy above forwards every construct with arguments
+  //    untouched, so the declared present is immune to the offset. If that ever
+  //    stopped being true the proxy would drag every anchored surface along
+  //    with the horizon and this file would convict the entire tree while
+  //    looking like a working sweep. The control is the zero-arg read beside it.
+  it('CONTROL — the proxy cannot move DECLARED_PRESENT (only zero-arg reads move)', async () => {
+    const before = DECLARED_PRESENT;
+    const restore = installClock(Date.now() + FAR_B);
+    try {
+      expect(DECLARED_PRESENT).toBe(before);
+      expect(
+        new Date(Date.parse(`${before}T00:00:00.000Z`)).toISOString().slice(0, 10),
+      ).toBe(before);
+      // the zero-arg read MUST have moved, or the two equalities above are vacuous
+      expect(new Date().toISOString().slice(0, 10)).not.toBe(before);
+    } finally {
+      restore();
+    }
+    expect(DECLARED_PRESENT).toBe(before);
   });
 
   it('BuyerCompliance is anchored', async () => {

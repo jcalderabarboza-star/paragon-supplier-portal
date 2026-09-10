@@ -684,6 +684,13 @@ const ComplianceRisksTab: React.FC<{ compliance: ComplianceRow[] }> = ({
   // ⚠️ ONE clock read for the tab, at the TOP of the body. Derived before
   // writing: this component has no early return, so the hook is unconditional —
   // the check that #317 skipped and paid 44 specs for.
+  // ⚠️ **A DEFAULT-RENDER SWEEP CLEARS THIS PAGE, AND THAT READING IS FALSE.**
+  // This hook lives in `ComplianceRisksTab` and the default tab is `geo`, so a
+  // census that renders the page and diffs its text finds NO clock-derived
+  // value and reports `BuyerRisk` as inert — which is exactly what happened
+  // before this was anchored. The day-counts below are one click away, not
+  // absent. `anchoredSurfaces.guard.test.tsx` opens the tab for that reason;
+  // without the click its assertion passes whether or not this line is pinned.
   const nowIso = TODAY;
   /** Days to expiry for a compliance row, from its own `expires` date.
    *  `daysLeft` was a STORED difference against now and every row of it was
