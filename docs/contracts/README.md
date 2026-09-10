@@ -134,3 +134,34 @@ Generated FORK-3 (machine-harvest from code-truth + thin connecting prose). Ever
 traces to a `file:line` in the shipped tree. The backend is greenfield: zero server code, zero
 datastore clients — data is in-memory fixtures behind `mockDataService` (`src/main.tsx`), tenant
 scoping enforced client-side. `httpDataService` is the designed swap (see C5).
+
+---
+
+## ⚠️ Which contracts have an instrument, and which are read by trust
+
+**A contract with a pin goes red when the tree moves under it. A contract without one is
+correct until somebody notices it is not.** That difference is not visible from the page, so it
+is stated here.
+
+| Contract | Instrument |
+|---|---|
+| C1 · C3 · C5 · C7 · C8 · C9 · C11 · C12 | **pinned** — a spec reads the document and asserts it against code-truth |
+| **C2 · C4 · C6 · C10** | **no instrument** |
+
+⚠️ **AND THE FOUR ARE NOT UNPINNED FOR THE SAME REASON, WHICH DECIDES WHETHER IT IS WORTH
+FIXING.**
+
+- **C4 (Snowflake) and C10 (identity)** describe systems that **do not exist in code**. A pin
+  needs two populations; these have one. C10 is the sharper case: its central types
+  `SubjectBinding` and `AssignmentAct` have **zero occurrences in `src/`** — it is a ratified
+  design for a system nobody has built, and that is what it is *for*. **Pinning them is not
+  deferred work; it is not possible until the code exists.**
+- **C2 (schemas) and C6 (planning)** describe things the tree **does** carry. They are unpinned
+  because nobody has written the instrument. **That is deferred work, and it is the honest place
+  to spend the next contract batch.**
+
+The distinction was measured when C3 was pinned (H3): C3 had been recorded as *"prose against
+prose, not pinnable"*, and the pin found **three undocumented fields** on the interface the whole
+page is about. **A "not pinnable" verdict ages**, because the tree grows halves that did not
+exist when the verdict was taken. C2 and C6 deserve the same re-measurement before anyone
+repeats it about them.
