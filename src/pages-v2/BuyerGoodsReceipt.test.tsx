@@ -129,6 +129,11 @@ describe('BuyerGoodsReceipt — GR from a live store ASN (UI path)', () => {
   //                            it absorbs is a budget already crossed
   //   budget         = 13120 ms
   //
+  // The probe that validated this number then observed **7080 ms** — longer
+  // than anything in the derivation set, and 54% of the budget. That is the
+  // margin doing the job it was chosen for, and the reason it is stated as a
+  // multiplier rather than trimmed to the worst case then known.
+  //
   // ⚠️ THE SUBJECT IS WHY THIS WAIT DIFFERS FROM THE ELEVEN OTHERS IN THIS FILE,
   // AND THEY ARE DELIBERATELY LEFT ON THE DEFAULT. Each of them awaits ONE
   // render. This test walks the whole GR chain in a single body: the page behind
