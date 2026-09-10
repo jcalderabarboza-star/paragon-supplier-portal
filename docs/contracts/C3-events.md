@@ -18,9 +18,30 @@ interface TransitionEvent {
   readonly correlationId: string;  // correlates this event with its command result / status
   readonly causationId?: string;   // set ONLY on a cascaded transition (see grouping below)
   readonly outcome: CommandOutcome;// 'done' | 'submitted' | 'failed'
+  readonly reason?: string;        // the refusal, on `outcome === 'failed'`
   readonly ts: string;             // ISO timestamp — SUPPLIED by the caller (no clock in pure code)
+  readonly decision?: CommandDecision;      // governed-decision provenance (C6-LOCK), opaque
+  readonly attribution?: ActorAttribution;  // WHICH HUMAN (C10 §6.4) — orthogonal to `actor`
 }
 ```
+
+⚠️ **THREE OF THOSE FIELDS WERE ADDED AFTER THIS PAGE WAS FIRST WRITTEN AND WENT
+UNDOCUMENTED UNTIL THE PIN CAUGHT THEM.** `reason`, `decision` and `attribution`
+were live in `events.ts` while this block still showed seven fields. They are
+described at their declarations and only summarised here, so the two cannot
+drift into two different stories:
+
+- **`reason`** — the refusal, carried on a `failed` outcome so the audit trail
+  says *why* and not merely *that*.
+- **`decision`** — forwarded VERBATIM from `CommandInput.decision`, never
+  interpreted, exactly as `causationId` is. It is how the ledger records a human
+  override alongside the actor and timestamp it already carried.
+- **`attribution`** — **WHICH HUMAN**, a second and orthogonal field beside
+  `actor`, which answers *which seat*. Set only when
+  `transition.trigger === 'user'`; **absent means a MACHINE act and is never
+  dressed as `UNATTRIBUTED`**, because `UNATTRIBUTED` is a claim that a human
+  acted and could not be resolved — a failure somebody can go and fix — and
+  flooding it with machine acts destroys the only pressure to fix one.
 
 **Every outcome is an event.** A successful apply (`done`), a SAP-boundary submit (`submitted`),
 and a domain rejection (`failed`, with its reason on the `CommandResult`) all emit — so the audit
@@ -90,7 +111,25 @@ the truthful `matchStatus` and honestly no-ops) and GR-reject/partial → ASN-di
 
 ## Contract guarantee for the SE-Team
 
-The event taxonomy is **frozen at one shape**. When the durable sink lands (RESERVED → LIVE) and
-when the remaining flows wire their CommandTargets (FORK-2), **no new event type is introduced** —
-they emit the same `TransitionEvent`. Analytics, audit, and observability build once against this
-shape. The only forward-add is durability of the sink, not a change to what is emitted.
+The event taxonomy is **frozen at one TYPE**. When the durable sink lands
+(RESERVED → LIVE) and when the remaining flows wire their CommandTargets (FORK-2), **no new event
+type is introduced** — they emit the same `TransitionEvent`. Analytics, audit, and observability
+build once against this shape.
+
+⚠️ **"FROZEN AT ONE TYPE" IS NOT "THE FIELD LIST NEVER CHANGES", AND THE DIFFERENCE IS A DATE.**
+This paragraph read *"frozen at one shape"*, and three fields were added under it. Both halves are
+true and they are not the same claim:
+
+- **The TYPE is frozen now.** There will not be a second event interface.
+- **The FIELD SET may still grow, additively, only while the sink is IN-MEMORY.** That window is
+  the whole reason `attribution` could be added at all: DR-10 has no retrofit — *the sink interface
+  IS the contract* — so once the sink is durable, every event ever written has a fixed shape and a
+  ledger that cannot name a decider is not repairable by a migration.
+
+**So the forward-adds are two, not one:** durability of the sink, and any field that must exist
+before durability closes the window. **Read a field added after this page as intentional, not as
+drift** — but the moment the sink is durable, this list is final.
+
+⚠️ **AND THIS PAGE IS NOW PINNED** (`c3Events.contract.test.ts`): the interfaces above are asserted
+field-for-field against `events.ts`, so a field added to the tree and not to this page fails the
+build. That is how the three above were found.
