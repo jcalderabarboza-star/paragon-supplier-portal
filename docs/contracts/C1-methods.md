@@ -193,13 +193,24 @@ One dispatcher for every command (`dispatcher.ts`). It validates in order, then 
    `NOT_FOUND` (DR-6 amended). Creation derives the owner from the payload's parent.
 3. **`requiredRole ∈` the scope's roles** — resolved from the seat's `businessRoles` (§64); there
    is no persona fallback, and a command scope without `businessRoles` is refused.
-4. **State precondition (1c)** — when `CommandInput.expectedState` is supplied it must equal the
+4. **Ingress replay (H2a)** — when `CommandInput.idempotencyKey` is supplied and that key has
+   already raised an act **under the same tenancy**, the dispatcher returns the FIRST result
+   (same `correlationId`, same `entityId`) and raises nothing. It is a RESULT and not a
+   refusal: a refusal is `status: 'failed'`, and an at-least-once transport's correct response
+   to a failure is to redeliver — so refusing a replay would turn one duplicate into an
+   unbounded retry loop. `COMMAND_REFUSALS` therefore gains no member. It sits AFTER the role
+   gate (a caller without the atom learns nothing about which keys have been seen) and BEFORE
+   the state precondition, which is the half that cannot move: the first command changed the
+   state, so a replay reaching `expectedState` first would always be refused `STALE_STATE`.
+   Optional: omitted, nothing changes. Only outcomes that RAISED an act are recorded, so a
+   redelivery after a failure is free to try again. C7-FIND-05.
+5. **State precondition (1c)** — when `CommandInput.expectedState` is supplied it must equal the
    entity's current state, else `STALE_STATE`. Optional: omitted, nothing changes. It sits AFTER
    the role gate (a caller without the atom learns nothing about the document) and BEFORE
    legality (a stale caller is told *why*, not merely that the act is illegal).
-5. **Transition legality** — `currentState ∈ transition.from` (creation skips: empty `from`).
-6. **`requiredFields`** present & non-empty in the payload.
-7. **`policyHooks`** (resolved by registered name — never closures) all pass.
+6. **Transition legality** — `currentState ∈ transition.from` (creation skips: empty `from`).
+7. **`requiredFields`** present & non-empty in the payload.
+8. **`policyHooks`** (resolved by registered name — never closures) all pass.
 
 Then it applies the store mutation and **emits ONE event** (C3). `sapBoundary` transitions
 resolve `submitted` and settle later. **Hard authorization failures throw `DataError`** (same
@@ -209,7 +220,7 @@ roles, targets, hooks, sink, id/clock are **injected**, so the mock and the Phas
 share it unchanged.
 
 **Command types** (`types.ts`): `CommandInput` (`transitionId` / `entity` / `entityId?` /
-`payload?` / `expectedState?` / `decision?`), `CommandResult` (`correlationId` / `transitionId` /
+`payload?` / `expectedState?` / `idempotencyKey?` / `decision?`), `CommandResult` (`correlationId` / `transitionId` /
 `status` / `reason?` / `entityId?`), `CommandStatus` (`correlationId` / `transitionId` / `status`
 / `ts`), `CommandOutcome = 'done' | 'submitted' | 'failed'`.
 
