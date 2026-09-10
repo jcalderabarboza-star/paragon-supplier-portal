@@ -166,11 +166,22 @@ describe('THE NUMBER — derived from the directory, not chosen', () => {
     expect(ns).toContain(10);
   });
 
-  it('the occupied set is contiguous from C1, and C11 is its maximum', () => {
+  // ⚠️ **THIS ASSERTED `max === 11` AND C12 FIRED IT ON THE DAY C12 LANDED.**
+  // The assertion was right about the tree and wrong about the CLAIM: C11 does
+  // not claim to be the highest contract forever, it claims its number was the
+  // successor of the occupied set AT ISSUE. Maximality decays the moment a
+  // twelfth contract is added, which is a thing this corpus is supposed to make
+  // easy; contiguity does not. Pinning the decaying half turned a correct
+  // document red for a correct reason — `FLOOR-IN-PROSE-01` wearing an
+  // assertion's clothes, since a hardcoded 11 is a number in prose that happens
+  // to compile.
+  //
+  // What survives is the property that actually matters: the numbering has no
+  // gaps, and this document's own number is in the set. A gap means somebody
+  // deleted or skipped a contract, which is the defect worth catching.
+  it('the occupied set is contiguous from C1, and C11 is a member of it', () => {
     const ns = occupiedContractNumbers();
     expect(ns).toEqual(ns.map((_, i) => i + 1));
-    // This document IS C11, so it is now the max. A twelfth contract makes the
-    // opening claim wrong, and this is the assertion that says so.
-    expect(Math.max(...ns)).toBe(11);
+    expect(ns).toContain(11);
   });
 });

@@ -9,8 +9,15 @@ off `docs/contracts/` itself — filenames `C1`…`C10`, contiguous, max `10`. N
 prose anywhere in the repo reserved `C11` (`grep -c '\bC11\b'` over `docs/`,
 `src/` and `CLAUDE.md` returned **0**; the same instrument returns **181** for
 `C10`, which is the control that says it can see a taken number). The
-derivation is re-runnable and is asserted by the pin: **a twelfth contract file
-makes this document's own number wrong, and the pin says so.**
+derivation is re-runnable and the pin asserts what remains TRUE after it: the
+numbering is CONTIGUOUS and `11` is a member of it.
+
+⚠️ **THE PIN ORIGINALLY ASSERTED `11` WAS THE MAXIMUM, AND C12 FIRED IT ON THE
+DAY C12 LANDED.** That was a claim about the corpus staying this size, not about
+this document — and it turned a correct file red for a correct reason. A
+next-free-number derivation is true at issue and false the moment the corpus
+grows, which is a thing this corpus exists to make easy. Contiguity is the half
+that does not decay, and a gap in it means a contract was skipped or deleted.
 
 ---
 
