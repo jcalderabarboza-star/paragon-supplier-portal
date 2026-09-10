@@ -23982,3 +23982,141 @@ the page:**
   1, and unchanged from #330.**
 - `shp-001` panel — **no negative, no transit line at all**, in both locales,
   which is what it rendered before #331. Zero cross-locale leak either way.
+
+---
+
+## §101 — A TIMEOUT TOO SMALL FOR ITS OWN SUBJECT, AND THE CI-REPEAT LANE GETS ITS TRIGGER (2026-09-10)
+
+`BuyerGoodsReceipt.test.tsx`'s source-selector spec failed **one full-suite run
+in five** on `main` after #336, with CI green on the same commit. The mechanism
+is measured and the remedy is one number; what follows is the part worth keeping
+after the number is forgotten.
+
+### 101a · THE FLOOR HAS NO HEADROOM INSTRUMENT, AND THAT IS THE FINDING
+
+The suite runs against vitest's default `testTimeout` of **5,000 ms** and RTL's
+default `asyncUtilTimeout` of **1,000 ms**. Derived: **957 default-timeout async
+waits (733 `findBy*` + 224 `waitFor`) across 100 spec files**; **no file anywhere
+in `src/` sets `asyncUtilTimeout`**, and four mention an explicit `timeout:`.
+
+⚠️ **NOTHING MEASURES THE DISTANCE BETWEEN THE SUITE AND ITS OWN CEILING.** In a
+green full-suite run at default parallelism the slowest test reached **4,159 ms —
+83% of the budget** — and `npm run gates` reported that run as clean, because
+clean is all it can report. The first notice of the gap was a red run whose
+reason had been filtered away.
+
+### 101b · THE BUDGET THAT BINDS IS THE TEST'S, NOT THE `waitFor`'S
+
+Every observed failure of this spec reads `Error: Test timed out in 5000ms.`,
+never `Unable to find …`. **A `waitFor` option cannot lift the test's own
+ceiling**, and the counter-example is already in this tree:
+`BuyerInvoices.test.tsx`'s *release → Releasing Payment → settle → Payment
+Released* raised its `waitFor` to `{ timeout: 2500 }`, carries no per-test
+timeout, and still died at 5,000 ms under load. The converse specimen is
+`settleNullIsNotSuccess.test.tsx`, which holds the **slowest test in the suite**
+and six per-test `}, 20000)` timeouts, and did not fail in any measured run.
+
+**Both directions, in the tree, without a new instrument.**
+
+### 101c · (e) IS FILED WITH ITS COST, AND THE TRIGGER IS RECORDED SO THE DECISION IS ALREADY MADE
+
+A repeated-run gate in CI is **NOT built**, and the reason is arithmetic: the CI
+gates run takes 4 m 6 s, so a second pass costs roughly that again on **every
+PR**, and one measured flake with a known mechanism does not buy it.
+
+⚠️ **THE TRIGGER, RULED IN ADVANCE: a SECOND flake with a DIFFERENT mechanism.**
+Not a second instance of this one — a timeout recurrence is answered by the
+headroom question below, not by repetition. When a flake appears whose reason is
+not a budget crossing, the repeat lane is authorised without re-arguing it.
+
+The other options were costed and are recorded rather than adopted: raising the
+global `testTimeout` (zero runtime, but it writes a number for 4,662 subjects
+nobody measured); a headroom assertion inside `scripts/gates.mjs` (~zero runtime
+— the JSON report is already parsed there and carries every test's `duration` —
+but at today's 83% peak it has no threshold to sit at until the global budget
+moves); an isolation sweep (**measured: 11.6 s per cold single-file run × 325
+files ≈ 63 minutes**); and `--retry=1`, which is named here only so it is refused
+rather than proposed later — it makes the floor report something other than the
+tree, automatically.
+
+### 101d · THREE INSTRUMENTS IN THIS BATCH REPORTED ON THEMSELVES, AND ALL THREE WERE CAUGHT BY A CONTROL RATHER THAN BY READING THE RESULT
+
+⚠️ **THE FAMILY IS §39/§42/§71's, ARRIVING THROUGH THE PROBE HARNESS INSTEAD OF
+THE GATE.** Each looked like a working measurement.
+
+1. **THE CONTENTION PROBE WAS MEASURING ITS OWN LEAK.** CPU hogs were started
+   per iteration and killed with `kill $!` on a `node -e` child — which **does not
+   reach the Windows process under Git Bash**. Every iteration ran at 24 more
+   hogs than the last, so a rising ramp was read as a fixed load and its one
+   failure as a rate. Rebuilt with a teardown that **asserts the hog count is 0
+   before and after each iteration and records both**; at a genuinely fixed 24
+   hogs the subject sat at 682–1,680 ms, and at 96 hogs at ~1.1 s. **CPU
+   starvation never reproduced the defect at all** — the dilation comes from
+   sustained *worker* contention over a 325-file queue, which is why the probe
+   ended up on the real suite.
+2. **TWO PROBE LOOPS WROTE TO ONE FILE.** `TaskStop` reported success on a
+   background loop that kept running; a second arm then appended to the same
+   `.tsv` under the same tag, and the interleaved rows were briefly readable as
+   one arm's rate. Caught because the two writers emitted **different column
+   counts**. Discarded, re-run under a unique tag, and the survivors verified
+   dead by a growth test on the output file rather than by the stop's own report.
+3. **A KILL MATCHED ITSELF.** A PowerShell sweep for processes whose command line
+   contained `vitest` matched **its own `powershell.exe`** and terminated it —
+   exit 255, no output, three times, read at first as a quoting fault. An
+   instrument's own command line is part of the population it scans.
+
+### 101e · VITEST'S FILE ORDER IS NOT STABLE, AND A RE-RUN IS NOT A CONTROLLED REPETITION
+
+`BaseSequencer.sort` orders files by the **previous run's cached duration
+(longest first)** and runs **failed files first**; the cache is real
+(`node_modules/.vite/vitest/…/results.json`). `npm ci` wipes it, and
+`gates.yml` caches npm only — so **CI and a local machine run the same commit in
+different orders**, which is how CI stayed green while a local run went red.
+
+⚠️ **AND "I RE-RAN IT AND IT PASSED" IS THEREFORE NOT A REPEAT OF THE SAME
+EXPERIMENT** — the failed file has moved to the front and every other file's
+position has shifted with the durations that just changed.
+
+**A seeded shuffle is a legitimate instrument, not new noise, and it has already
+paid:** `--sequence.shuffle --sequence.seed=20260910` produced **6 failures,
+identical across two runs** — deterministic, load-independent, genuine intra-file
+order dependencies (`SupplierRFQs.test.tsx` × 5, `Unable to find … RFQ-2026-010`;
+`requisitionSeed.test.ts` × 1, `Cannot read properties of undefined (reading
+'approvedBy')`). They are **latent, not active** — without shuffle, order within
+a file is source order — so they are not causing this flake. Enabling shuffle
+today reddens two files, and that is the work, not the instrument's fault.
+
+⚠️ **A RELATED SHAPE, MEASURED AND WORTH THE WARNING: A TIMED-OUT TEST FRAMES AN
+INNOCENT ONE.** Under amplification `BuyerInvoices`' release test timed out at
+5,025 ms and the **next** test in that file then failed
+`expected 'Payment Released' to be 'Approved'` — despite calling
+`invoiceStore.reset()` itself. The abandoned test left in-flight async work
+behind (the page schedules its settle on a real `window.setTimeout(…, 1200)`)
+which wrote **after** the next test's reset. The vehicle is a strong candidate
+rather than proven; **the consequence is proven, and it means a failure list can
+name a test that is fine.**
+
+### 101f · THE PROBE — THREE ARMS, AND THE MIDDLE ONE IS WHY THE SITE MOVED
+
+Ten full-suite runs per arm at `--maxWorkers=32` (2x cores), the condition under
+which the subject dilates. **The durations are the drift-proof half**: arm B's
+runs are as slow as arm C's and pass anyway.
+
+| arm | change under test | failures | reason |
+|---|---|---|---|
+| **C** | none — vitest's default 5,000 ms | **6 / 10** | `Test timed out in 5000ms.` |
+| **A** | the `waitFor` option raised to 13,120 ms, per-test timeout removed | **4 / 6** | `Test timed out in 5000ms.` |
+| **B** | the per-test timeout, as shipped | **0 / 10** | — |
+
+- arm C durations 4,457–6,560 ms · arm A 4,026–5,861 ms · arm B 3,622–**7,080** ms
+- ⚠️ **six of arm B's ten runs EXCEEDED the old 5,000 ms budget** — the same
+  6-in-10 rate at which arm C failed, with the opposite outcome
+- restored byte-identical, both authorities: `sha256
+  b76ab354745c69c41f758c96d6c3221b7b7aa04853fb19d520f89e77bbc683af` and blob
+  `3a619efd24a86d15f0a43476b9cfcf96873adc99`; subject staged before mutating,
+  restore in a trap; the mutation refused its first anchor because the fragment
+  matched **both** `waitFor` blocks in the file, and was re-cut on a unique one
+
+**Arm A is the measurement that moved the site.** A `waitFor` option cannot lift
+the test's own ceiling — vitest aborts at `testTimeout` whatever the inner wait
+is willing to keep waiting for.

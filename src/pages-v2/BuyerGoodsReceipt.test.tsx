@@ -116,6 +116,44 @@ const answerRegulatoryChecks = () => {
 };
 
 describe('BuyerGoodsReceipt — GR from a live store ASN (UI path)', () => {
+  // ⚠️ THIS ONE TEST CARRIES ITS OWN TIMEOUT, AND THE NUMBER IS DERIVED. Both
+  // halves are written here because a timeout nobody can justify is the next
+  // flake's cause — which is exactly what the default was.
+  //
+  //   worst observed = 6560 ms  · the slowest this test has been measured at,
+  //                            over 18 runs of the whole suite (fastest
+  //                            2004 ms)
+  //   margin         = x2      · the spread between the fastest and slowest
+  //                            observation of THIS test on THIS commit is
+  //                            3.27x, so a margin narrower than the variance
+  //                            it absorbs is a budget already crossed
+  //   budget         = 13120 ms
+  //
+  // The probe that validated this number then observed **7080 ms** — longer
+  // than anything in the derivation set, and 54% of the budget. That is the
+  // margin doing the job it was chosen for, and the reason it is stated as a
+  // multiplier rather than trimmed to the worst case then known.
+  //
+  // ⚠️ THE SUBJECT IS WHY THIS WAIT DIFFERS FROM THE ELEVEN OTHERS IN THIS FILE,
+  // AND THEY ARE DELIBERATELY LEFT ON THE DEFAULT. Each of them awaits ONE
+  // render. This test walks the whole GR chain in a single body: the page behind
+  // six concurrent scoped reads, the wizard opened, a live store ASN resolved
+  // through the source selector, three wizard screens stepped with both
+  // regulatory checks answered, and one commit firing t_gr_create ->
+  // t_gr_start_inspection -> t_gr_post -> settle. Three awaits sit on that
+  // chain — the two `findByText`s and the closing `waitFor` in the body below
+  // — and each waits on everything before it. Writing a number for the other
+  // eleven would be writing numbers for subjects nobody measured, which is how
+  // the one being replaced got here.
+  //
+  // ⚠️ AND THE BUDGET THAT BINDS IS THE TEST'S, NOT THE `waitFor`'S — MEASURED,
+  // NOT ASSUMED. Every observed failure of this test reads `Error: Test timed
+  // out in 5000ms.` (vitest `testTimeout`), never `Unable to find ...` (RTL
+  // `asyncUtilTimeout`, 1000 ms). The counter-example is in this tree:
+  // `BuyerInvoices.test.tsx`'s 'release -> Releasing Payment (no ref) -> settle
+  // -> Payment Released (real ref)' raised its `waitFor` option to 2500 ms and
+  // still died at the 5000 ms test ceiling under the same load. A `waitFor`
+  // option cannot lift that ceiling; only the third argument to `it` can.
   it('receives a GR from a store ASN via the source selector, not fixtures only', async () => {
     goodsReceiptStore.reset();
     asnStore.reset();
@@ -146,7 +184,7 @@ describe('BuyerGoodsReceipt — GR from a live store ASN (UI path)', () => {
       expect(gr!.supplierName).not.toBe('—');
       expect(gr!.supplierName.length).toBeGreaterThan(0);
     });
-  });
+  }, 13120);
 
   it('mixed quantities → derived Partially Approved → posted → ASN discrepancy cascade', async () => {
     goodsReceiptStore.reset();
