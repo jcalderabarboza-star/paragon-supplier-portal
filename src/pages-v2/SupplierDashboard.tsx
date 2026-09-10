@@ -453,7 +453,16 @@ const SupplierDashboard: React.FC = () => {
   );
   const remaining = activeActions.length;
 
-  const today = new Date(TODAY).toLocaleDateString('en-GB', {
+  // ⚠️ **WALL CLOCK BY RULING, NOT BY OVERSIGHT (operator, 2026-09-10).**
+  // This is the briefing greeting — a rendered DATE, so anchoring it does not
+  // reconcile two numbers, it changes what the reader is told today is. That
+  // puts it with `SupplierWhatsApp`'s `sessionOpened` and the wizard's
+  // `inspectionInstant`: a fact about THIS reading, not a projection over
+  // fixture data. The clock-derived BADGES on this page stay anchored above —
+  // that is the read/write split this batch is built on, not a half-anchor.
+  // `anchoredSurfaces.guard.test.tsx` asserts BOTH halves, so re-anchoring
+  // this line goes red by name rather than passing quietly.
+  const today = new Date().toLocaleDateString('en-GB', {
     weekday: 'long',
     day: '2-digit',
     month: 'long',

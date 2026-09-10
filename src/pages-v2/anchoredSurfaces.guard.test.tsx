@@ -172,6 +172,18 @@ describe('anchored surfaces — clock-independent by construction', () => {
   //    reaches the screen, but it survived the off-screen mutation because the
   //    same date also appears in this page's fixture rows. The teeth of this
   //    control are the equality, under mutation 1.
+  //
+  // ⚠️ **AND THE SECOND LIMIT, FILED RATHER THAN LEFT AS A CAVEAT: A SURFACE
+  //    READING BOTH CLOCKS CAN COME BACK GREEN IF ITS ANCHORED HALF DOMINATES
+  //    THE DIFF.** A whole-text equality is a single bit; one moving value among
+  //    many stable ones still flips it, but one moving value that renders
+  //    IDENTICALLY at the two sampled instants does not. The remedy is not a
+  //    better diff, it is to assert the halves SEPARATELY where a surface is
+  //    known to hold two clocks by ruling — which is what the two
+  //    `SupplierDashboard` tests below do. **Measured, not assumed: when the
+  //    greeting was withheld from anchoring, this instrument DID convict
+  //    `SupplierDashboard` (1 failed / 13 passed), so the greeting dominates its
+  //    own diff and this limit gained no new instance there.**
   it('CONTROL — an ALREADY-anchored surface is unmoved, and its anchor is on screen', async () => {
     const anchorText = formatDate(DECLARED_PRESENT);
     for (const [el, route] of [
@@ -240,12 +252,38 @@ describe('anchored surfaces — clock-independent by construction', () => {
     await expectAnchored({ el: <BuyerSourcing />, route: '/buyer/sourcing' });
   });
 
-  it('SupplierDashboard is anchored', async () => {
-    await expectAnchored({
-      el: <SupplierDashboard />,
-      route: '/supplier/dashboard',
-      supplier: true,
-    });
+  // ⚠️ **SUPPLIERDASHBOARD IS ASSERTED IN TWO HALVES, BY RULING.** Its badges
+  //    reconcile numbers against anchored fixtures and ARE anchored; its
+  //    briefing greeting renders a DATE to the reader, and anchoring that would
+  //    change what the reader is told today is rather than reconciling anything.
+  //    The operator withheld it (2026-09-10). Both halves are asserted here so
+  //    the withheld read cannot be quietly anchored later, and the anchored ones
+  //    cannot quietly regress.
+  const GREETING = /(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday), \d{2} \w+ \d{4}/;
+  const supplierDash: Surface = {
+    el: <SupplierDashboard />,
+    route: '/supplier/dashboard',
+    supplier: true,
+  };
+
+  it('SupplierDashboard — its clock-derived BADGES are anchored', async () => {
+    const a = await textAt(supplierDash, Date.now() + FAR_A);
+    const b = await textAt(supplierDash, Date.now() + FAR_B);
+    expect(a.length).toBeGreaterThan(200);
+    // strip ONLY the deliberately-unanchored greeting; everything else must match
+    expect(b.replace(GREETING, '<greeting>')).toBe(a.replace(GREETING, '<greeting>'));
+  });
+
+  it('SupplierDashboard — the briefing GREETING is deliberately NOT anchored (ruling)', async () => {
+    const a = await textAt(supplierDash, Date.now() + FAR_A);
+    const b = await textAt(supplierDash, Date.now() + FAR_B);
+    const ga = a.match(GREETING)?.[0];
+    const gb = b.match(GREETING)?.[0];
+    // non-vacuity: the greeting must actually be on screen in both renders
+    expect(ga).toBeTruthy();
+    expect(gb).toBeTruthy();
+    // and it must MOVE — anchoring this line is the regression this catches
+    expect(gb).not.toBe(ga);
   });
 
   it('SupplierDocuments is anchored', async () => {
