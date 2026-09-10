@@ -255,6 +255,29 @@ export function createDispatcher(deps: DispatcherDeps): Dispatcher {
   // for the life of the dispatcher, which is a module singleton in the mock).
   const owners = new Map<string, QueryScope>();
 
+  // ── THE INGRESS REPLAY LEDGER (H2a) ────────────────────────────────────────
+  // `<tenant>::<idempotencyKey>` → the result of the command that key RAISED.
+  //
+  // ⚠️ **TENANT-NAMESPACED, AND THAT IS WHY THERE IS NO CROSS-TENANT COMPARISON
+  // HERE.** Two producers may legitimately mint the same key; keying by the
+  // scope's tenancy makes them different entries rather than a collision, so a
+  // supplier presenting another tenant's key finds nothing and raises its own
+  // act. The alternative — one flat namespace plus an owner check — would make
+  // the REFUSAL KIND an existence oracle across the boundary, which is the
+  // defect `ownerlessScope.test.ts` exists to keep closed (C11 V2).
+  //
+  // ⚠️ **ONLY OUTCOMES THAT RAISED AN ACT ARE RECORDED.** A `failed` command
+  // changed nothing, so a redelivery of its event must be free to try again —
+  // an at-least-once transport retrying a transient failure is the transport
+  // working, and caching the failure would turn a recoverable event into a
+  // permanent one. A poison message is the transport's dead-letter problem,
+  // not ours to absorb by pretending the act happened.
+  const raised = new Map<string, CommandResult>();
+
+  /** The replay ledger's key. Tenancy first, so the namespace cannot cross. */
+  const replayKey = (scope: QueryScope, key: string): string =>
+    `${scope.personaType}:${scope.supplierId ?? ''}::${key}`;
+
   /**
    * May `scope` reach the command recorded under `correlationId`?
    *
@@ -392,8 +415,25 @@ export function createDispatcher(deps: DispatcherDeps): Dispatcher {
       outcome: CommandOutcome,
       reason?: string,
       entityId?: string,
-    ): CommandResult =>
-      finish(s, tid, outcome, reason, entityId, causationId, input.decision, attributionFor());
+    ): CommandResult => {
+      const result = finish(
+        s,
+        tid,
+        outcome,
+        reason,
+        entityId,
+        causationId,
+        input.decision,
+        attributionFor(),
+      );
+      // Record AFTER the act, and only when there was one. `finish` is the
+      // single mint point, so every outcome passes here exactly once.
+      const key = input.idempotencyKey;
+      if (key !== undefined && key !== '' && outcome !== 'failed') {
+        raised.set(replayKey(s, key), result);
+      }
+      return result;
+    };
 
     const transition = getTransition(input.transitionId);
     if (!transition) return fin(scope, input.transitionId, 'failed', refusal('UNKNOWN_TRANSITION'));
@@ -469,6 +509,31 @@ export function createDispatcher(deps: DispatcherDeps): Dispatcher {
     // (3) requiredRole ∈ scope roles.
     if (!deps.resolveRoles(scope).includes(transition.requiredRole)) {
       return fin(scope, transition.id, 'failed', refusal('ROLE_NOT_PERMITTED', transition.requiredRole));
+    }
+
+    // ── (3b) THE INGRESS REPLAY CHECK (H2a) — return the prior result ─────────
+    //
+    // ⚠️ **THIS RETURNS A RESULT AND IS NOT A REFUSAL, AND THE REASON IS
+    // MECHANICAL RATHER THAN AESTHETIC.** A refusal is `status: 'failed'`, and
+    // the correct response of an at-least-once transport to a failure is TO
+    // REDELIVER. Refusing a replay would therefore convert one duplicate into
+    // an unbounded retry loop — the gate causing the traffic it exists to
+    // absorb. Returning the first result reports what is true: the act
+    // happened, exactly once, and here is its `correlationId` so the caller can
+    // still `settle` it. `COMMAND_REFUSALS` gains no member, which also leaves
+    // its ORDER-pin (C11 V6) untouched — a new member would have forced a
+    // precedence answer that nothing in the tree implies.
+    //
+    // ⚠️ **THE PLACEMENT IS DERIVED, NOT CHOSEN.** After the ROLE gate, so a
+    // caller without the atom learns nothing about which keys have been seen —
+    // the `expectedState` reasoning verbatim. And BEFORE the state comparison,
+    // which is the half that cannot move: the FIRST command changed the state,
+    // so a replay reaching `expectedState` first would always be refused
+    // `STALE_STATE` and the replay check would be dead code behind it.
+    const replay = input.idempotencyKey;
+    if (replay !== undefined && replay !== '') {
+      const prior = raised.get(replayKey(scope, replay));
+      if (prior !== undefined) return prior;
     }
 
     // ── (4) THE STATE PRECONDITION (1c) — compare-and-set, opt-in ────────────

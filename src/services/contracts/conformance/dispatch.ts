@@ -327,4 +327,68 @@ export function describeDispatchConformance(
       expect(res.reason ?? '').not.toMatch(/^STALE_STATE/);
     });
   });
+
+  // ── H2a · THE INGRESS REPLAY KEY ───────────────────────────────────────────
+  //
+  // ⚠️ **THIS BELONGS IN THE FACTORY AND NOT IN A GATE, AND THE REASON IS THE
+  // WHOLE ARGUMENT OF C11's (c) COLUMN.** A gate over our tree keeps passing
+  // when `httpDataService` lands, because it reads our files. This property is
+  // an INGRESS guarantee — it is about what happens when a transport redelivers
+  // an event to a REAL backend — so a check that cannot cross the seam proves
+  // nothing about the only implementation where redelivery actually occurs.
+  //
+  // The assertions are deliberately paired. One implementation could satisfy
+  // "a replay raises no second act" by refusing everything, so the second
+  // assertion requires two DIFFERENT keys to raise TWO acts.
+  describe(`${label} — dispatch contract: an ingress replay raises no second act`, () => {
+    /** A key unique to this run, so no prior ledger entry can satisfy a spec. */
+    let seq = 0;
+    const freshKey = () => `conformance-${Date.now().toString(36)}-${++seq}`;
+
+    const create = (idempotencyKey?: string) => ({
+      transitionId: 't_rfq_create',
+      entity: 'rfq',
+      payload: { title: 'Conformance probe', materialCategory: 'Packaging', totalQty: 100 },
+      ...(idempotencyKey === undefined ? {} : { idempotencyKey }),
+    });
+
+    it('CONTROL — the probe verb really raises an act, so the pair below is not vacuous', async () => {
+      const res = await svc.commands.dispatch(fullBuyer, create());
+      expect(res.status).not.toBe('failed');
+      expect(res.entityId).toBeTruthy();
+    });
+
+    it('the SAME idempotencyKey twice returns the first result — one act, not two', async () => {
+      const key = freshKey();
+      const first = await svc.commands.dispatch(fullBuyer, create(key));
+      const second = await svc.commands.dispatch(fullBuyer, create(key));
+      expect(first.status).not.toBe('failed');
+      expect(second.correlationId).toBe(first.correlationId);
+      expect(second.entityId).toBe(first.entityId);
+    });
+
+    it('and the known-GOOD half: two DIFFERENT keys raise TWO acts', async () => {
+      const a = await svc.commands.dispatch(fullBuyer, create(freshKey()));
+      const b = await svc.commands.dispatch(fullBuyer, create(freshKey()));
+      expect(a.status).not.toBe('failed');
+      expect(b.status).not.toBe('failed');
+      expect(b.correlationId).not.toBe(a.correlationId);
+      expect(b.entityId).not.toBe(a.entityId);
+    });
+
+    it('a replay is a RESULT, not a refusal — a retrying transport must not be told to retry', async () => {
+      const key = freshKey();
+      await svc.commands.dispatch(fullBuyer, create(key));
+      const replay = await svc.commands.dispatch(fullBuyer, create(key));
+      expect(replay.status).not.toBe('failed');
+      expect(replay.reason).toBeUndefined();
+    });
+
+    it('OMITTING the key changes nothing — the dedupe is opt-in', async () => {
+      const a = await svc.commands.dispatch(fullBuyer, create());
+      const b = await svc.commands.dispatch(fullBuyer, create());
+      expect(a.correlationId).not.toBe(b.correlationId);
+      expect(a.entityId).not.toBe(b.entityId);
+    });
+  });
 }

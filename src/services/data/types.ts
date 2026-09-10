@@ -1517,6 +1517,45 @@ export interface CommandInput {
    */
   expectedState?: string;
   /**
+   * THE INGRESS REPLAY KEY (H2a) — the external event's OWN identity, carried
+   * through so the same event cannot raise a second act.
+   *
+   * ⚠️ **THIS IS NOT `correlationId`, AND THE DIFFERENCE DECIDES WHY IT HAD TO
+   * BE A NEW FIELD.** `correlationId` is minted by the dispatcher
+   * (`deps.nextCorrelationId()`, called at exactly one site) and every existing
+   * lookup — `statuses`, `pending`, `owners` — is keyed by it. All of them
+   * answer *"what happened to a command WE issued?"*, which is idempotency for
+   * a RESPONSE (`settle` resolves a SAP callback to the command it settles).
+   * What was absent is idempotency for an EVENT THEY RECEIVE and turn into a
+   * command we never issued: there is no key the CALLER controls, so a
+   * redelivered event had nothing to collide with. C7-FIND-05.
+   *
+   * ⚠️ **THE KEY IS THEIRS, NOT OURS, AND THAT IS A CONTRACT — "CARRY IT
+   * THROUGH", NEVER "DERIVE ONE".** A transport that is at-least-once
+   * redelivers THE SAME MESSAGE; redelivery is only a meaningful word because
+   * the message has an identity, and that identity is the key. A backend that
+   * minted its own would have to derive it from payload content, and two
+   * genuinely distinct events with equal content would then collapse into one
+   * — a lost act, silently. If a producer supplies no identity, the honest
+   * answer is that this boundary cannot be made idempotent, not that we invent
+   * one for it.
+   *
+   * OPTIONAL, and the optionality is the `expectedState` precedent verbatim:
+   * absent, the command is evaluated exactly as before, which is why every
+   * existing caller is untouched and none changes behaviour. Absent ⇒ NO
+   * dedupe — never a silent default.
+   *
+   * ⚠️ **IT IS NOT A GENERAL DEDUPE OVER USER ACTIONS.** A person pressing
+   * approve twice is a different problem with an answer this platform already
+   * gives: `expectedState` refuses `STALE_STATE`, the machine refuses
+   * `ILLEGAL_TRANSITION`, and the delivery verbs refuse `ALREADY_CONFIRMED` /
+   * `ALREADY_RELEASED`. Those are REFUSALS on purpose — a person who clicked
+   * twice must be told the second click did nothing. This field answers the
+   * opposite case, where the caller is a transport that never intended a
+   * second act, and `idempotencyKey.test.ts` asserts no user surface passes it.
+   */
+  idempotencyKey?: string;
+  /**
    * The governed-decision provenance (C6-LOCK). Present only when this dispatch
    * carries a human override — the dispatcher forwards it verbatim to the audit
    * event; it participates in NO validation (opaque).
