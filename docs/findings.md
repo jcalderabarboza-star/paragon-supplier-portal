@@ -24354,3 +24354,165 @@ class under-counts by construction:
 FALSE ONCE** — *"ctr-013 must read 15"*. It reads **0**. A criterion that names
 a number the tree cannot produce cannot be met by building; it can only be met
 by writing one.
+
+
+## §103 — `CTR-FABRICATION-01` IS CLOSED AT THE TERMINAL ACT, AND THE DECLARATION FINALLY HAS ITS SURFACE
+
+#311 re-declared all four contract verbs `surfaced: false · because: 'external-fact'
+· owner: 's4hana'` and said in its own header that this was *"the DECLARATION half
+only."* The surface never followed. `BuyerContracts` kept offering **New contract**,
+kept minting `id: ctr-new-${Date.now()}` **and** the business number
+`CTR-<yr>-<n>`, and kept prepending the result to the list — where it fed the tab
+counts, the header count and the renewal pipeline, styled identically to the twelve
+real rows.
+
+**Measured before and after, in the browser, both locales, chunk hash off the page:**
+
+| | before (`index-B8jwzrkq.js`) | after (`index-B8GFHli_.js`) |
+|---|---|---|
+| finish the wizard | a row appears: `CTR-2026-014 · QA Fabrication Probe` | **no row appears** |
+| list | **14** rows · *"14 kontrak"* · Draft tab **2** | **13** rows · *"13 kontrak"* · Draft tab **1** |
+| before the act | nothing, in four steps | *"Nothing here creates a contract — an outline agreement is raised in S/4HANA and arrives in Paragon as a fact."* |
+| after the act | a toast, honest, gone in seconds | a panel: **"No contract was created"** + who owns it + what was collected |
+
+### §103a — ⚠️ THE DECLARATION-WITHOUT-A-SURFACE CLASS, NAMED
+
+The operator's framing, and it holds: **a declaration that changed without its
+surface following is a defect of the same shape as Arc C's notice**, one lane over.
+Both halves are true individually and the tree contradicts itself between them —
+the machine says S/4HANA owns the act and the page offers the act.
+
+⚠️ **AND THE SURFACE HAD PARTLY FOLLOWED, WHICH IS WHY THE REMAINDER SURVIVED.**
+Three of four contract surfaces were already honest before this batch: the detail
+panel's `NextActLine` renders *"Awaiting S/4HANA"* derived from the same
+declaration; `/buyer/process-flows` renders the external-fact owner per transition;
+the Docs tab's manufactured "BPJPH Halal Certificate · Valid" was already deleted.
+**A lane that is three-quarters honest reads as honest**, and the create path was
+the quarter nobody re-derived.
+
+⚠️ **THE HONEST MARKING HAD ALSO LANDED ON THE WRONG SURFACE.** The created-toast
+was fully honest in both locales — *"Portal-local only — no contract was created in
+SAP"* — and it is **transient**. The **row** was the durable claim and carried no
+marking at all. A marking batch that fixes the sentence a reader sees for four
+seconds and leaves the object they see all session has fixed the cheaper half.
+
+### §103b — WHAT THE REFUSAL IS, AND THE THREE THINGS IT IS NOT
+
+**It reads the owner from the flow.** `contractDraftOwner()`
+(`services/transitions/contractDraftOwner.ts`) resolves `t_contract_draft`'s
+`surfaceable` through the discriminated union and returns `null` for every arm that
+names no owner. The locale strings interpolate `{{owner}}`; neither spells
+`S/4HANA`, and a test asserts that in both locales. Re-rule the owner and both
+sentences change; re-surface the verb and both disappear.
+
+⚠️ **IT IS NOT A HANDOFF NOTICE, AND BOTH GRAMMARS NOW SHIP ON ONE PAGE.** The seat
+HOLDS `contract:draft`; the LANE does not support the act. Naming a role-owner
+there would say a colleague is the obstacle when the obstacle is another system —
+Wave D's distinction, stated at `SupplierForecastsAdvance.test.tsx:455` and carried
+here. The contrast is deliberate and visible: the **entry point** renders a real
+`HandoffNotice` when a seat lacks the atom (a ROLE obstacle, correctly named), and
+the **terminal panel** never renders one (a LANE obstacle, correctly not). Probed
+in both directions — an "is not a handoff" test alone would pass against a tree
+that had deleted `HandoffNotice` outright.
+
+⚠️ **IT IS NOT A DECLINE.** *"You cannot do this"* leaves a buyer nowhere. The panel
+states where an outline agreement IS raised — the declaration's own `why`, rendered
+rather than contradicted.
+
+⚠️ **AND IT IS NOT A REQUEST-TO-SAP FORM.** That was the other candidate and it was
+refused: **nothing in this tree sends anything**, so a "Request in SAP" button would
+be `FORWARD-PROMISE-HAS-NO-HANDLER-01` — the exact promise `/register`'s own copy was
+corrected for. The complete label is `Finish` / `Selesai`, which promises only what
+it does.
+
+### §103c — THE ORPHANED OBLIGATIONS ARE NOT RETIRED, AND THAT IS THE RULING
+
+`draft.obligations` had no consumer outside the wizard's own steps once
+`obligationCount` was retired at #341. The dispatch's own instruction decides it:
+*"Do not trim a fabrication's output as a way of fixing it."*
+
+**They now have a consumer.** The terminal panel renders the SAME summary the review
+step renders — one `collectedSummary(editable)`, read twice — obligations included.
+So the collection step gathers data that reaches a reader, which is what it was
+always shaped to do. Retiring them would have removed a step from a wizard whose
+collection surface the SE Team needs.
+
+### §103d — `contract:draft` NOW GATES SOMETHING, AND WHAT IT GATES IS NAMED
+
+Derived before wiring: the atom appeared in exactly two places — as `requiredRole`
+on a `surfaced: false` transition, and in the `procurement` lane bundle. **It gated
+nothing on any surface**, which is the shape retired at `obligation`.
+
+It is kept and given the one job honestly its: **who may PREPARE a contract
+request.** The ACT stays S/4HANA's and the terminal panel says so; the atom decides
+only who may open the form. That is also what makes the two grammars co-visible —
+without it there would be no role obstacle on this page to contrast the lane
+obstacle against.
+
+### §103e — ⚠️ A CENSUS READ A MENTION AS A DISPATCH, AND THE MODULE MOVED RATHER THAN THE GATE
+
+`surfaceable.test.ts` went red on the first build of this batch:
+
+```
+t_contract_draft — declared NOT surfaced (external-fact) yet an operator can fire it
+```
+
+**Nothing dispatches it.** `operatorFirableIds` marks a transition operator-firable
+when a file under `pages-v2/` or `components/` CONTAINS its quoted id. It PREFERS a
+`transitionId: '<id>'` site in its sort and does **not require** one — so a module
+that merely NAMES a verb, in order to read who owns it, is indistinguishable from
+one that fires it. **§83's class exactly: the scan matched a mention and the
+conclusion needed a dispatch.**
+
+⚠️ **THE GATE IS NOT WIDENED, DELIBERATELY.** Requiring a dispatch shape would
+NARROW a census whose value is that it errs toward catching a path nobody intended,
+and a blind spot bought to silence one true-negative is a bad trade (heuristic rule
+2). **The module moved instead** — asking the registry who owns a verb is a
+transitions question and now lives in `services/transitions/`. The false positive is
+**filed, not fixed**: the next module that names a verb id from a surface file will
+trip it again, and should move rather than widen. The reason is written at the site,
+so the next reader does not re-derive it as a gate defect.
+
+### §103f — TWO DEFECTS, TWO MUTANTS, DELIBERATELY NOT ONE
+
+The MINT and the PREPEND regress independently, and one probe covering both would go
+red on either while saying nothing about which half came back. Five mutants, each
+killed by a NAMED test; every file restored byte-identical.
+
+| mutant | named test that went red |
+|---|---|
+| restore the client-minted contract id | *"the page mints no contract id"* |
+| restore the prepend into the rendered list | *"there is no fabricated-row state and no merge into the rendered list"* |
+| re-rule the owner in the flow to `tms` | *"the refusal names S/4HANA"* |
+| put a handoff notice inside the panel | *"the terminal panel renders no handoff notice"* |
+| copy the EN headline into the ID key | *"THE ID REFUSAL IS FULLY TRANSLATED"* |
+
+⚠️ **AND THE SPEC'S FIRST RUN CAUGHT ITS OWN AUTHOR.** Two absence assertions failed
+against the retirement COMMENTS, which name what they retired (`ctr-new-`,
+`extraContracts`). A mention is not a mint — the same trap #341 hit one batch
+earlier on the wizard-mint assertion. The spec now strips line comments before every
+absence check, **with a control asserting that `CODE` and `PAGE` genuinely differ**,
+so a stripper that returned `''` cannot pass every absence at once.
+
+### §103g — ⚠️ THE BASELINE IN THE DISPATCH WAS FALSE, AS IT HAS BEEN IN EVERY DISPATCH THIS ARC
+
+`main 2ea3a35` is not a valid object in this repository; main was
+`c5fc2f2e0f0dcae01fa428d223e04fd425131c78`. The floor was `4691/326`, not
+`4708/329`. Recorded, not for its own sake, but because **the figure the dispatch
+gave for the floor is the figure the suite reached AFTER this batch** — `4709/327`
+— which is close enough to a real number to be believed by the next reader.
+
+### §103h — WHAT IS STILL OPEN ON THIS PAGE, NAMED AND NOT TOUCHED
+
+- **`DEAD-AFFORDANCE-01`, in the same header.** `Export` and `Templates` are passed
+  to `BulkActionsBar` with **no `onClick` at all**. The bar is now one live control
+  and two inert ones. Not fixed here: the fix is a type change across 16 call sites.
+- **`ProvenanceMarker`'s verb axis renders NOTHING when a capability does not
+  dispatch** (`{dispatches && …}`). A page whose buttons work says so; a page whose
+  buttons are theatre is silent, and a reader cannot tell that from a page with no
+  buttons. The population of pages in that shape is **not derived here** — the
+  selector would be *capability where `dispatchesCommands` is false × surface
+  offering a write-shaped control*, and it needs the rule-2 care a naive CTA matcher
+  will not survive.
+- **A wizard-created contract had no detail page** — moot now that none is created,
+  but the mechanism stands: `BuyerContractDetail` reads `contractsQuery` only.

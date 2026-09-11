@@ -17,6 +17,9 @@ import AppShellV2 from '../components/layout-v2/AppShellV2';
 import PageHeader from '../components/ui-v2/PageHeader';
 import PageMetaLine from '../components/ui-v2/PageMetaLine';
 import ProvenanceMarker from '../components/ui-v2/ProvenanceMarker';
+import { RaisedElsewhereNote, RaisedElsewherePanel } from './contracts/RaisedElsewhere';
+import { HandoffNotice } from '../components/ui-v2/HandoffNotice';
+import { useVerbAvailability } from '../hooks/useVerbAvailability';
 import KpiCard from '../components/ui-v2/KpiCard';
 import BulkActionsBar from '../components/ui-v2/BulkActionsBar';
 import SubTabs from '../components/ui-v2/SubTabs';
@@ -182,20 +185,25 @@ const formatMonth = (iso: string): string => {
 const ReviewSection: React.FC<{
   label: string;
   rows: [string, React.ReactNode][];
-  onEdit: () => void;
+  /** Absent on the terminal panel: there is nothing left to edit once the
+   *  walkthrough has stopped, and an Edit link there would offer a way back
+   *  into a form whose act has already been refused. */
+  onEdit?: () => void;
 }> = ({ label, rows, onEdit }) => {
   const { t } = useTranslation();
   return (
   <section className="border border-border-subtle rounded-md">
     <header className="flex items-center justify-between px-4 py-2 bg-bg-hover">
       <span className="text-label text-text-tertiary uppercase">{label}</span>
-      <button
-        type="button"
-        onClick={onEdit}
-        className="text-xs font-medium text-teal hover:text-teal-hover"
-      >
-        {t('contracts.wizard.review.edit')}
-      </button>
+      {onEdit && (
+        <button
+          type="button"
+          onClick={onEdit}
+          className="text-xs font-medium text-teal hover:text-teal-hover"
+        >
+          {t('contracts.wizard.review.edit')}
+        </button>
+      )}
     </header>
     <dl className="px-4 py-3 divide-y divide-border-subtle">
       {rows.map(([k, v]) => (
@@ -405,10 +413,35 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
   const [group, setGroup] = useState<GroupTab>('all');
   const [selectedTypes, setSelectedTypes] = useState<ContractType[]>([]);
   const [search, setSearch] = useState('');
-  const [extraContracts, setExtraContracts] = useState<Contract[]>([]);
+  /**
+   * ⚠️ THE WALKTHROUGH'S TERMINAL STATE, AND IT REPLACES `extraContracts`.
+   *
+   * What stood here was `useState<Contract[]>([])` — the fabricated rows
+   * `CTR-FABRICATION-01` names. The wizard minted a `Contract`, prepended it,
+   * and the row then fed the tab counts, the header count and the renewal
+   * pipeline, styled identically to the twelve real ones. Nothing distinguished
+   * it, and its detail route 404'd.
+   *
+   * It now holds the COLLECTED DRAFT instead: the wizard still collects, the
+   * terminal step states who owns the act, and no row is created anywhere.
+   * `null` is "the walkthrough has not stopped".
+   */
+  const [stoppedDraft, setStoppedDraft] = useState<DraftContract | null>(null);
   const [wizardOpen, setWizardOpen] = useState(false);
   const [wizardStep, setWizardStep] = useState(0);
   const [draft, setDraft] = useState<DraftContract>(EMPTY_DRAFT);
+
+  /**
+   * ⚠️ WHAT `contract:draft` GATES, NOW THAT THE ACT IS S/4HANA'S.
+   *
+   * Derived before wiring: the atom appeared in exactly two places — as
+   * `requiredRole` on a `surfaced: false` transition, and in the `procurement`
+   * lane bundle. **It gated nothing on any surface.** An atom gating nothing is
+   * the shape retired at `obligation`, so it is given the one job left that is
+   * honestly its: who may PREPARE a contract request. The ACT stays S/4HANA's
+   * and the terminal panel says so; this decides only who may open the form.
+   */
+  const draftAvailability = useVerbAvailability('contract:draft');
   const [supplierSearch, setSupplierSearch] = useState('');
   const [customObligationTitle, setCustomObligationTitle] = useState('');
   const { toast } = useToast();
@@ -419,10 +452,9 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
   // the Delivery Agreements tab lives. Replaces the old in-page SidePanel drawer.
   const openContract = (c: Contract) => navigate(`/buyer/contracts/${c.id}`);
 
-  const contracts = useMemo(
-    () => [...extraContracts, ...baseContracts],
-    [extraContracts, baseContracts],
-  );
+  // ⚠️ ONE SOURCE. This used to be `[...extraContracts, ...baseContracts]`,
+  // which is how a client-minted row reached every count on the page.
+  const contracts = baseContracts;
 
   const updateDraft = <K extends keyof DraftContract>(
     key: K,
@@ -561,81 +593,133 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
       });
       return;
     }
-    const numbers = contractNumbers.value;
-    const yr = new Date().getFullYear();
-    const nextNum = baseContracts.length + extraContracts.length + 1;
-    // ⚠️ THE MINT IS GONE WITH THE FIELD. This computed `daysUntilExpiry` from
-    // `new Date()` and wrote it onto the new contract, so every contract a buyer
-    // created was born correct for exactly one day. `endDate` is stored; the
-    // difference is derived at read.
-    const newContract: Contract = {
-      id: `ctr-new-${Date.now()}`,
-      contractNumber: `CTR-${yr}-${String(nextNum).padStart(3, '0')}`,
-      supplierId: draft.supplierId,
-      title: draft.title.trim(),
-      type: draft.type as ContractType,
-      status: 'Draft',
-      startDate: draft.startDate,
-      endDate: draft.endDate,
-      autoRenewal: draft.autoRenewal,
-      // PRESERVED VERBATIM, deliberately: the notice period is written whether
-      // or not auto-renewal is on, so a contract created with auto-renewal OFF
-      // still carries the untouched 90-day default nobody saw. That is
-      // CTR-HIDDEN-SEED-01 — filed, not fixed here. It cannot be decided by a
-      // parse change: the fixtures carry `autoRenewal: false` WITH a real notice
-      // period (mockContracts ctr-002), so "don't write it" would be wrong, and
-      // what a hidden field should contribute to the terms is the operator's
-      // call. What changes here is only that the number is READ honestly.
-      noticeRequiredDays: numbers.noticeRequiredDays,
-      value: numbers.value,
-      currency: 'IDR',
-      paymentTerms: draft.paymentTerms,
-      incoterms: draft.incoterms,
-      signedByBuyer: '—',
-      signedBySupplier: '—',
-      signedDate: '',
-      // ⚠️ THE SECOND MINT IS GONE WITH ITS FIELDS. This wrote
-      // `obligationCount: draft.obligations.length` and `obligationsMet: 0`
-      // onto the new contract.
-      //
-      // ⚠️ **AND THE NUMBER WAS NOT WRONG WHEN IT WAS WRITTEN — DO NOT READ
-      // THE COMPUTED COUNT AS EVIDENCE THAT THIS CODE WAS.** At the instant of
-      // creation `draft.obligations.length` was exactly the number of
-      // obligations the buyer had picked, so the snapshot was TRUE of the
-      // draft. Two things were missing under it, and naming them is the whole
-      // correction:
-      //
-      //   1. **The obligations themselves were never persisted.** There is no
-      //      `extraObligations`; `setExtraContracts` writes a `Contract` and
-      //      nothing else. So the count was true of the DRAFT and never true of
-      //      the STORE, which is the only thing any surface reads.
-      //   2. **There was no producer at UPDATE.** `obligation` holds no
-      //      `CommandTarget` (`getKnownFlows()` ∖ `WIRED_COMMAND_TARGETS`), so
-      //      `t_obligation_track` cannot fire and no path exists for adding an
-      //      obligation to a contract that already exists. A snapshot with no
-      //      mechanism to stay current goes stale on its first change — and
-      //      here the first change never even had to happen.
-      //
-      // ⚠️ **THE SHIPPED FIXTURE VALUES DID NOT COME FROM HERE AT ALL** — all
-      // thirteen were hand-authored (see `mockContracts.ts`). The defect this
-      // page carried and the defect the fixtures carried were different defects
-      // that happened to share two field names. `draft.obligations` itself
-      // stays: the wizard's own review step reads it, and that read is honest. The counters are computed
-      // from the obligation store at read.
-      category: draft.category,
-      brands: draft.brands,
-      performanceScore: 0,
-    };
-    setExtraContracts((prev) => [newContract, ...prev]);
+    // ── ⚠️ THE TERMINAL ACT REFUSES, AND IT NAMES THE SYSTEM THAT OWNS IT ─
+    //
+    // What stood here MINTED TWO IDENTITIES CLIENT-SIDE —
+    // `id: ctr-new-<Date.now()>` and `contractNumber: CTR-<yr>-<n>` — built a
+    // whole `Contract`, prepended it with `setExtraContracts`, and toasted. SAP
+    // owns contract identity; the business number is the one the SE Team reads
+    // as spec, and it was being generated in a browser tab.
+    // `CTR-FABRICATION-01`, and #311 had already declared the act S/4HANA's.
+    //
+    // ⚠️ **THE REFUSAL IS NOT A DECLINE.** "You cannot do this" leaves a buyer
+    // with nowhere to go. The panel states WHERE an outline agreement is raised
+    // and that it arrives here as a fact — which is the declaration's own
+    // `why`, rendered instead of contradicted.
+    //
+    // ⚠️ **AND IT IS NOT A HANDOFF NOTICE.** This seat HOLDS `contract:draft`;
+    // the LANE does not support the act. Naming a role-owner would say a
+    // colleague is the obstacle when the obstacle is another system — Wave D's
+    // distinction, argued in `contracts/contractRaisedElsewhere.ts` and probed
+    // both ways in its spec.
+    //
+    // The parse above still runs and still refuses: a walkthrough must not
+    // present a coerced reading back to the buyer as what they entered.
+    setStoppedDraft(draft);
     setWizardOpen(false);
-    toast({
-      variant: 'success',
-      title: t('contracts.toast.created.title', {
-        number: newContract.contractNumber,
-      }),
-      description: t('contracts.toast.created.desc'),
-    });
   };
+
+  /**
+   * WHAT THE BUYER ENTERED, rendered once and read twice — by the review step
+   * and by the terminal panel.
+   *
+   * ⚠️ **ONE RENDERER, BECAUSE THE PANEL'S WHOLE CLAIM IS THAT IT SHOWS WHAT
+   * WAS COLLECTED.** A second, shorter summary written for the stop screen
+   * would be a second source for the same fact, free to drift from the one the
+   * buyer just checked — and the row it dropped would be the row nobody
+   * noticed. `editable` is the only difference: there is nothing to edit once
+   * the act has been refused.
+   *
+   * ⚠️ **AND IT IS WHERE THE ORPHANED OBLIGATIONS LAND.** `draft.obligations`
+   * had no consumer outside this wizard's own steps once `obligationCount` was
+   * retired at #341. The terminal panel reads them, so the collection step is
+   * no longer gathering data that reaches nothing — which is why they are NOT
+   * retired here: trimming a fabrication's output is not how a fabrication gets
+   * fixed.
+   */
+  const collectedSummary = (editable: boolean) => (
+    <div className="space-y-5 text-sm">
+      <ReviewSection
+        label={t('contracts.wizard.review.section.basics')}
+        onEdit={editable ? () => setWizardStep(0) : undefined}
+        rows={[
+          [t('contracts.wizard.review.row.title'), draft.title || '—'],
+          [
+            t('contracts.wizard.review.row.type'),
+            draft.type ? typeLabel(t, draft.type) : '—',
+          ],
+          [
+            t('contracts.wizard.review.row.supplier'),
+            draft.supplierId
+              ? (supplierById.get(draft.supplierId)?.name ??
+                draft.supplierId)
+              : '—',
+          ],
+          [
+            t('contracts.wizard.review.row.category'),
+            draft.category ? catLabel(t, draft.category) : '—',
+          ],
+          [t('contracts.wizard.review.row.brands'), draft.brands.join(', ') || '—'],
+        ]}
+      />
+      <ReviewSection
+        label={t('contracts.wizard.review.section.terms')}
+        onEdit={editable ? () => setWizardStep(1) : undefined}
+        rows={[
+          [t('contracts.wizard.review.row.startDate'), draft.startDate || '—'],
+          [t('contracts.wizard.review.row.endDate'), draft.endDate || '—'],
+          [
+            t('contracts.wizard.review.row.autoRenewal'),
+            draft.autoRenewal ? t('contracts.common.yes') : t('contracts.common.no'),
+          ],
+          // Both rows read the ONE parse. A refusal renders an em dash rather
+          // than a number: the review step is the last place a buyer checks
+          // what they are about to commit to, so it must never be the place
+          // that shows a coerced reading the gate would not accept.
+          ...(draft.autoRenewal
+            ? ([
+                [
+                  t('contracts.wizard.review.row.noticeRequired'),
+                  noticeRead.ok
+                    ? t(
+                        noticeRead.value === 1
+                          ? 'contracts.panel.noticeDays.one'
+                          : 'contracts.panel.noticeDays.other',
+                        { count: noticeRead.value },
+                      )
+                    : '—',
+                ],
+              ] as [string, React.ReactNode][])
+            : []),
+          [
+            t('contracts.wizard.review.row.value'),
+            valueRead.ok ? formatIDR(valueRead.value) : '—',
+          ],
+          [t('contracts.wizard.review.row.paymentTerms'), draft.paymentTerms],
+          [t('contracts.wizard.review.row.incoterms'), draft.incoterms],
+        ]}
+      />
+      <ReviewSection
+        label={t('contracts.wizard.review.section.obligations')}
+        onEdit={editable ? () => setWizardStep(2) : undefined}
+        rows={[
+          [
+            t('contracts.wizard.review.row.count'),
+            t(
+              draft.obligations.length === 1
+                ? 'contracts.wizard.review.oblCount.one'
+                : 'contracts.wizard.review.oblCount.other',
+              { count: draft.obligations.length },
+            ),
+          ],
+          [
+            t('contracts.wizard.review.row.titles'),
+            draft.obligations.map((o) => o.title).join(', ') || '—',
+          ],
+        ]}
+      />
+    </div>
+  );
 
   const wizardSteps: WizardStep[] = [
     {
@@ -1105,85 +1189,11 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
       description: t('contracts.wizard.step.review.desc'),
       content: (
         <div className="space-y-5 text-sm">
-          <ReviewSection
-            label={t('contracts.wizard.review.section.basics')}
-            onEdit={() => setWizardStep(0)}
-            rows={[
-              [t('contracts.wizard.review.row.title'), draft.title || '—'],
-              [
-                t('contracts.wizard.review.row.type'),
-                draft.type ? typeLabel(t, draft.type) : '—',
-              ],
-              [
-                t('contracts.wizard.review.row.supplier'),
-                draft.supplierId
-                  ? (supplierById.get(draft.supplierId)?.name ??
-                    draft.supplierId)
-                  : '—',
-              ],
-              [
-                t('contracts.wizard.review.row.category'),
-                draft.category ? catLabel(t, draft.category) : '—',
-              ],
-              [t('contracts.wizard.review.row.brands'), draft.brands.join(', ') || '—'],
-            ]}
-          />
-          <ReviewSection
-            label={t('contracts.wizard.review.section.terms')}
-            onEdit={() => setWizardStep(1)}
-            rows={[
-              [t('contracts.wizard.review.row.startDate'), draft.startDate || '—'],
-              [t('contracts.wizard.review.row.endDate'), draft.endDate || '—'],
-              [
-                t('contracts.wizard.review.row.autoRenewal'),
-                draft.autoRenewal ? t('contracts.common.yes') : t('contracts.common.no'),
-              ],
-              // Both rows read the ONE parse. A refusal renders an em dash rather
-              // than a number: the review step is the last place a buyer checks
-              // what they are about to commit to, so it must never be the place
-              // that shows a coerced reading the gate would not accept.
-              ...(draft.autoRenewal
-                ? ([
-                    [
-                      t('contracts.wizard.review.row.noticeRequired'),
-                      noticeRead.ok
-                        ? t(
-                            noticeRead.value === 1
-                              ? 'contracts.panel.noticeDays.one'
-                              : 'contracts.panel.noticeDays.other',
-                            { count: noticeRead.value },
-                          )
-                        : '—',
-                    ],
-                  ] as [string, React.ReactNode][])
-                : []),
-              [
-                t('contracts.wizard.review.row.value'),
-                valueRead.ok ? formatIDR(valueRead.value) : '—',
-              ],
-              [t('contracts.wizard.review.row.paymentTerms'), draft.paymentTerms],
-              [t('contracts.wizard.review.row.incoterms'), draft.incoterms],
-            ]}
-          />
-          <ReviewSection
-            label={t('contracts.wizard.review.section.obligations')}
-            onEdit={() => setWizardStep(2)}
-            rows={[
-              [
-                t('contracts.wizard.review.row.count'),
-                t(
-                  draft.obligations.length === 1
-                    ? 'contracts.wizard.review.oblCount.one'
-                    : 'contracts.wizard.review.oblCount.other',
-                  { count: draft.obligations.length },
-                ),
-              ],
-              [
-                t('contracts.wizard.review.row.titles'),
-                draft.obligations.map((o) => o.title).join(', ') || '—',
-              ],
-            ]}
-          />
+          {/* ⚠️ THE PRE-ACT LINE. Before this batch NOTHING in four wizard steps
+              said where a contract is raised; the only honest sentence arrived
+              in a toast, after the act, and was gone in seconds. */}
+          <RaisedElsewhereNote />
+          {collectedSummary(true)}
         </div>
       ),
     },
@@ -1305,13 +1315,31 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
         title={t('contracts.header.title')}
         subtitle={t('contracts.header.subtitle')}
         actions={
+          <div className="flex flex-col items-end gap-1">
           <BulkActionsBar
             actions={[
               { label: t('contracts.action.export'), icon: FileSpreadsheet },
               { label: t('contracts.action.templates'), icon: ScrollText },
             ]}
-            primary={{ label: t('contracts.action.newContract'), icon: Plus, onClick: openWizard }}
+            primary={
+              draftAvailability.kind === 'held'
+                ? { label: t('contracts.action.newContract'), icon: Plus, onClick: openWizard }
+                : undefined
+            }
           />
+          {/* ⚠️ THE OTHER GRAMMAR, ON THE SAME SURFACE, AND THE CONTRAST IS
+              DELIBERATE. Here a ROLE is the obstacle — a seat without
+              `contract:draft` may not even collect — so the owner named is a
+              role and `HandoffNotice` is exactly right. At the END of the
+              walkthrough the seat HOLDS the atom and the act still cannot
+              happen, because the LANE does not support it; that refusal names a
+              SYSTEM and is never a handoff. Wave D's distinction, both halves
+              visible on one page. */}
+          <HandoffNotice
+            availability={draftAvailability}
+            testId="handoff-contract-draft"
+          />
+          </div>
         }
       />
 
@@ -1574,6 +1602,22 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
         )}
       </section>
 
+      {/* ⚠️ THE WALKTHROUGH ENDS SOMEWHERE. `stoppedDraft` is what the buyer
+          entered; the panel states who owns the act and shows it back to them.
+          It deliberately reuses the wizard's own overlay — a flow that vanished
+          on its last step is the failure mode this batch was told to stop for. */}
+      {stoppedDraft && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[rgba(13,27,42,0.4)]">
+          <RaisedElsewherePanel
+            summary={collectedSummary(false)}
+            onRestart={() => {
+              setStoppedDraft(null);
+              openWizard();
+            }}
+            onClose={() => setStoppedDraft(null)}
+          />
+        </div>
+      )}
       {wizardOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[rgba(13,27,42,0.4)]">
           <Wizard
