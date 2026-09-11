@@ -130,6 +130,7 @@ export const TRANSITION_PURPOSE: FlowAnnotations = Object.freeze({
   t_grline_accept: { purposeKey: 'processFlows.purpose.t_grline_accept' },
   t_grline_reject: { purposeKey: 'processFlows.purpose.t_grline_reject' },
   t_grline_quarantine: { purposeKey: 'processFlows.purpose.t_grline_quarantine' },
+  t_grline_release: { purposeKey: 'processFlows.purpose.t_grline_release' },
   t_grline_return: { purposeKey: 'processFlows.purpose.t_grline_return' },
 
   // ── invoice ────────────────────────────────────────────────────────────────

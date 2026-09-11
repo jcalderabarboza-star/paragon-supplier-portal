@@ -1,6 +1,6 @@
 # C1 — Method Surface
 
-Three distinct axes. **63** (service surface) · **97** (transition catalog) · **14** (wired
+Three distinct axes. **63** (service surface) · **98** (transition catalog) · **14** (wired
 targets). They measure different things; this file keeps them separate.
 
 > ⚠️ **THIS DOCUMENT IS PINNED TO THE TREE, AND THE PIN IS WHY THE NUMBERS ABOVE ARE ALLOWED TO
@@ -87,7 +87,7 @@ the string, because those are different claims and only the first is the contrac
 
 ---
 
-## Axis 2 — the 97-transition catalog (20 flows)
+## Axis 2 — the 98-transition catalog (20 flows)
 
 Every authored state-machine edge across the registered flows (`id: 't_<entity>_<verb>'`). Derived
 from `getKnownFlows()` — the seeded registry — never from a grep over the flow files, because a
@@ -99,7 +99,7 @@ transition id can be assembled at a call site rather than written as a literal (
 | `purchaseOrder.flow.ts` | `purchaseOrder` | 7 | `t_po_issue`, `t_po_view`, `t_po_acknowledge`, `t_po_confirm`, `t_po_partial_deliver`, `t_po_deliver`, `t_po_close` | **wired** |
 | `advanceShipNotice.flow.ts` | `advanceShipNotice` | 6 | `t_asn_create`, `t_asn_submit`, `t_asn_in_transit`, `t_asn_deliver`, `t_asn_discrepancy`, `t_asn_resolve_discrepancy` | **wired** |
 | `goodsReceipt.flow.ts` | `goodsReceipt` | 8 | `t_gr_create`, `t_gr_start_inspection`, `t_gr_hold`, `t_gr_request_retest`, `t_gr_approve`, `t_gr_partial_approve`, `t_gr_reject`, `t_gr_post` | **wired** |
-| `goodsReceiptLine.flow.ts` | `goodsReceiptLine` | 5 | `t_grline_inspect`, `t_grline_accept`, `t_grline_reject`, `t_grline_quarantine`, `t_grline_return` | sub-flow (rollup) |
+| `goodsReceiptLine.flow.ts` | `goodsReceiptLine` | 6 | `t_grline_inspect`, `t_grline_accept`, `t_grline_reject`, `t_grline_quarantine`, `t_grline_release`, `t_grline_return` | sub-flow (rollup) |
 | `invoice.flow.ts` | `invoice` | 8 | `t_invoice_create`, `t_invoice_submit`, `t_invoice_match`, `t_invoice_approve`, `t_invoice_release_payment`, `t_invoice_remit`, `t_invoice_dispute`, `t_invoice_resolve` | **wired** |
 | `invoiceMatch.flow.ts` | `invoiceMatch` | 4 | `t_invmatch_await_gr`, `t_invmatch_matched`, `t_invmatch_qty_variance`, `t_invmatch_price_variance` | sub-flow (rollup) |
 | `rfq.flow.ts` | `rfq` | 7 | `t_rfq_create`, `t_rfq_publish`, `t_rfq_close`, `t_rfq_award`, `t_rfq_fx_pin`, `t_rfq_cancel`, `t_rfq_reopen` | **wired** |
@@ -116,7 +116,7 @@ transition id can be assembled at a call site rather than written as a literal (
 | `enforcement.flow.ts` | `enforcement` | 1 | `t_enforcement_set` | **wired** |
 | `role.flow.ts` | `role` | 1 | `t_role_grant` | **wired** |
 | `supplierApplication.flow.ts` | `supplierApplication` | 4 | `t_application_submit`, `t_application_start_review`, `t_application_approve`, `t_application_reject` | **wired** |
-| **TOTAL** | | **97** | | |
+| **TOTAL** | | **98** | | |
 
 **Flow shape** (`schema.ts`, `FlowDefinition` / `TransitionDef`): each transition declares
 `from[]` / `to` / `trigger` / `requiredRole` / `requiredFields[]` / `policyHooks[]` /

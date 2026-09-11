@@ -99,6 +99,8 @@ export const processFlowPurposeEn: Record<string, string> = {
     'This item is not fit for use, with a reason attached. One such item is enough to stop a delivery being cleared whole.',
   'processFlows.purpose.t_grline_quarantine':
     'The item is set aside until somebody decides — not usable yet, not refused either. It keeps doubtful stock out of production.',
+  'processFlows.purpose.t_grline_release':
+    'The second look settled the doubt in its favour, so the item stops being held and joins the stock the plant may draw on.',
   'processFlows.purpose.t_grline_return':
     'The item goes back to the supplier rather than being scrapped or kept, so ownership of the problem goes back with it.',
 
@@ -378,6 +380,8 @@ export const processFlowPurposeId: Record<string, string> = {
     'Barang ini tidak layak pakai, disertai alasannya. Satu barang seperti ini sudah cukup membuat kirimannya tidak bisa diloloskan seluruhnya.',
   'processFlows.purpose.t_grline_quarantine':
     'Barangnya disisihkan sampai ada yang memutuskan — belum boleh dipakai, belum juga ditolak. Ini menjaga stok yang meragukan tetap jauh dari produksi.',
+  'processFlows.purpose.t_grline_release':
+    'Pemeriksaan kedua menyelesaikan keraguan itu dengan hasil yang menguntungkan, sehingga barangnya berhenti ditahan dan bergabung dengan stok yang boleh dipakai pabrik.',
   'processFlows.purpose.t_grline_return':
     'Barangnya dikembalikan ke pemasok alih-alih dibuang atau disimpan, sehingga tanggung jawab atas masalahnya ikut kembali.',
 
