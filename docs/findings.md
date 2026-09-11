@@ -24516,3 +24516,137 @@ gave for the floor is the figure the suite reached AFTER this batch** — `4709/
   will not survive.
 - **A wizard-created contract had no detail page** — moot now that none is created,
   but the mechanism stands: `BuyerContractDetail` reads `contractsQuery` only.
+
+
+## §104 — `DISPATCH-FIGURE-IS-A-CLAIM-01`: EVERY FIGURE A DISPATCH CARRIED IN ONE SESSION WAS FALSE, EVERY ONE WAS REPORTED FALSE ON ARRIVAL, AND THE NEXT DISPATCH CARRIED IT AGAIN
+
+Filed as a measurement, not an apology. The work landed correctly throughout —
+**the builder resolved by BRANCH AND CONTENT, never by the number given** — so
+what this records is a defect in the account, of exactly the kind §59c already
+warned about one object earlier.
+
+### §104a — THE MEASUREMENT
+
+**Every SHA cited in a dispatch header this session is absent from the object
+store.** Not "on another ref", not "at the remote only" — absent, across all 977
+commits and every remote ref:
+
+| cited | `git cat-file -t` |
+|---|---|
+| `f3af9c0` (baseline, ×2 dispatches) | **ABSENT** |
+| `2ea3a35` (baseline, ×3 dispatches) | **ABSENT** |
+| `6e3f04a8d5c72b91e1ac7fd8e3b06e5c4f9a2d17` (merge head) | **ABSENT** |
+| `59cba1c` (baseline, earlier) | **ABSENT** |
+| controls `3b062aa` · `c5fc2f2` · `3787659` | commit · commit · commit |
+
+**Every floor figure cited is absent too — from EVERY ref, not merely from
+`main`:**
+
+| cited | measured |
+|---|---|
+| 4664 · 4671 · 4681 · 4695 · 4699 · 4708 | **never, on any ref** |
+
+The real sequence over the same hours: **4662** (#337) → **4674** (draft #339) →
+**4676** (draft #340) → **4691** (#341) → **4709** (#343).
+
+**PR numbers: cited `#344`, `#345`, `#346`; the highest that has ever existed is
+`#343`** — an offset of +1 to +3 above the ledger's head. `#339` and `#340` were
+twice reported merged; both are **open**, `merged=false`, created 2026-09-11 at
+02:44Z and 04:06Z.
+
+⚠️ **AND ONE OF THESE CORRECTIONS IS MINE, NOT THE DISPATCH'S.** One turn before
+this batch I wrote that *"4671 and 4681 are the floors the two open branches
+carry."* **They carry 4674 and 4676.** I proposed a mechanism for the drift and
+did not measure it before stating it —
+`REIMPLEMENTATION-CONTRADICTS-THE-INSTRUMENT-01` on the seat that had just
+finished invoking it, inside a report whose entire subject was unverified
+figures. It is recorded here rather than quietly fixed, because a register that
+carries a known-wrong claim is worse than one with a visible gap, and because
+this instance is the strongest available evidence that the class does not respect
+which seat you are sitting in.
+
+### §104b — ⚠️ DETECTION WAS NEVER THE FAILURE, AND THAT IS THE FINDING
+
+The obvious reading — *"the figures were not checked"* — is false, and it is
+worth killing before it becomes the remedy. **Every one of them was derived and
+reported false on the turn it arrived:**
+
+| dispatch | header said | reported back, same turn |
+|---|---|---|
+| investigate `obligationCount` | `f3af9c0` · 4699/328 | *"not a valid object; floor is 4676/326"* |
+| build `obligationCount` | `f3af9c0` · 4699/328 | same, again |
+| merge `#346` | head `6e3f04a8…` | **refused** — decoy set, 977 commits, 359 refs |
+| investigate contract lane | `2ea3a35` · 4708/329 | *"not a valid object; floor is 4691/326"* |
+| build contract lane | `2ea3a35` · 4708/329 | same, again |
+
+**The correction was published five times and the sixth dispatch carried the same
+header.** So *"check harder"* cannot be the remedy — the check ran, passed,
+reported, and changed nothing. **What was missing is that the number never lost
+its authority.** A figure stated in a header keeps being treated as the subject's
+identity even after the subject has been resolved without it.
+
+### §104c — ⚠️ WHY THE COUNTS SURVIVE AND THE SHAS DO NOT: A SHA HAS NO NEIGHBOURHOOD
+
+`4708` against a real `4709` is **indistinguishable from a legitimate reading** —
+it is the shape of a number somebody actually measured, one bump behind. A
+40-character content address has no plausible near-miss: it either resolves or it
+does not, and the instrument answers in one command with no interpretation.
+
+**So the two classes fail in opposite directions.** A wrong SHA is caught on
+contact and costs one line of a report. **A wrong count is carried**, and it is
+carried precisely because it is nearly right — which is `FLOOR-IN-PROSE-01`'s own
+mechanism arriving from outside the tree instead of from inside a paragraph.
+Its remedy is unchanged and is the whole answer here: **derive it, do not check
+it.** A derived figure cannot be nearly right.
+
+### §104d — THE RULE THAT SURVIVES, AND WHERE IT LIVES
+
+`CLAUDE.md`'s merge doctrine gains **HALF THREE**: *a merge is authorised by a
+branch and its head, verified at the remote in the same turn — never by a number
+the strategist states.* Halves one and two both read the SEAT's claim (one when
+the seat has not made it, the other when it has); **neither reaches the figures
+the dispatch itself carries.** §59c named the header as the cheapest place to put
+a wrong object without drawing the conclusion that the header is therefore a
+claim. It is.
+
+### §104e — THE TWO OPEN DRAFTS ARE STALE, NOT WRONG
+
+Derived rather than assumed, because *"now wrong"* would outrank the
+record-keeping:
+
+| | #339 `feat/invoice-approval-separable` @ `05f4cb2` | #340 `feat/invoice-match-pairing` @ `06908af` |
+|---|---|---|
+| opened | 2026-09-11 **02:44Z** | 2026-09-11 **04:06Z** |
+| size | 10 files, +458/−56 | 4 files, +357/−5 |
+| merge-base | `3b062aa` (#338) | `3b062aa` (#338) |
+| main has moved | 6 commits | 6 commits |
+| **files both the branch and main touched** | **`scripts/floor.json` — and nothing else** | **`scripts/floor.json` — and nothing else** |
+
+**Not six days old: twelve and eleven hours.** And the only overlap with
+everything that has landed since is the floor number, which is a re-derive rather
+than a merge. Neither draft's subject matter moved underneath it: `invoice.flow.
+ts`, `invoiceActionModel.ts`, `BuyerInvoices.tsx`, `surfaceable.test.ts`,
+`MockCommandService.ts` and `invoiceRollup.ts` are all **untouched on main since
+the branch point**.
+
+⚠️ **ONE INTERACTION WAS CHECKED SPECIFICALLY AND IS CLEAN.** #339 edits
+`surfaceable.test.ts` — the same census #343 tripped (§103e) — but it changes only
+the EXPECTATIONS, moving `t_invoice_approve` from the not-firable control to the
+firable one because `useInvoiceApprove` gained a consumer. **It does not touch the
+matcher**, so #343's module placement and #339's expectation edit compose rather
+than collide.
+
+**Disposition: rebase, re-gate, merge — not close.** Neither contains work that is
+now wrong; both contain work nothing else has done. The floor conflict resolves by
+re-running the suite, which is what the floor is for.
+
+### §104f — WHAT IS NOT AFFECTED BY ANY OF THIS
+
+Both findings from the contract batch are mechanisms and stand independently.
+Confirmed present in the register **and** at the site, which is where the next
+reader meets them:
+
+| finding | register | at the site |
+|---|---|---|
+| a census read a MENTION as a DISPATCH (§83's class), resolved by MOVING the module rather than widening the gate | §103e | `services/transitions/contractDraftOwner.ts` header |
+| a spec's absence assertions matched the author's own retirement comments — the #341 trap one batch later — resolved by stripping comments **with a control proving `CODE` and `PAGE` differ** | §103f | `contractRaisedElsewhere.test.tsx` header |

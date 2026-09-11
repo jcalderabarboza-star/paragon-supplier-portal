@@ -76,6 +76,34 @@ a SHA in a dispatch HEADER, arriving in the position that reads as context
 rather than as claim, which is exactly what makes it the cheaper place to put a
 wrong object.
 
+**HALF THREE — AND THE STRATEGIST'S OWN FIGURE IS A CLAIM TOO (ratified
+2026-09-11).**
+
+⚠️ **A MERGE IS AUTHORISED BY A BRANCH AND ITS HEAD, VERIFIED AT THE REMOTE IN
+THE SAME TURN — NEVER BY A NUMBER THE STRATEGIST STATES.** Halves one and two
+both read the SEAT's claim: one when the seat has not made it, the other when it
+has. **Neither says anything about the figures the dispatch itself carries**, and
+those arrive in the header, in the position that reads as context rather than as
+claim — which `DISPATCH-HEADER-CITES-A-NONEXISTENT-OBJECT-01` already named as
+the cheapest place to put a wrong object, without drawing the conclusion that the
+header is a claim.
+
+⚠️ **AND THE CORRECTION DOES NOT PROPAGATE BY ITSELF, WHICH IS THE HALF THAT
+MAKES THIS DOCTRINE RATHER THAN A HABIT.** Measured across one session
+(`docs/findings.md` §104): every wrong figure was derived and reported false ON
+THE TURN IT ARRIVED, and the next dispatch's header carried it again. **Detection
+was never the failure.** So the remedy is not "check harder" — it is that the
+number never had authority in the first place: resolve the subject by BRANCH AND
+CONTENT, state the branch head you verified, and treat a PR number or a floor in
+a dispatch as a label on the work, not as its identity.
+
+⚠️ **A WRONG NUMBER NEAR A RIGHT ONE IS THE DANGEROUS SHAPE, AND A SHA HAS NO
+NEIGHBOURHOOD.** A floor of `4708` against a real `4709` is indistinguishable
+from a legitimate reading; a 40-character content address is caught on contact
+because it has no plausible near-miss. **The counts are where this class hides**,
+and `FLOOR-IN-PROSE-01`'s remedy is already the answer: derive it, do not check
+it.
+
 ### ⚠️ A MECHANISM WHOSE SUCCESS SIGNAL IS SILENT ABOUT THE DAMAGE IT DOES
 
 Ruled 2026-08-27, from **four members measured in one session** — the drain of
