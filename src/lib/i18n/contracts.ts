@@ -141,9 +141,6 @@ export const contractsEn: Record<string, string> = {
   // Removing the minting is the DEMOTION to a request-to-SAP form, which is a
   // behavior batch and is split out per the operator ruling. What marking can fix
   // today is the CLAIM: this draft exists only in this browser tab.
-  'contracts.toast.created.title': 'Draft {{number}} saved in this session',
-  'contracts.toast.created.desc':
-    'Portal-local only — no contract was created in SAP, and the number above is a placeholder this page generated, not a SAP contract number. It is lost on reload.',
   // 2f-b — the create refuses rather than storing a coerced number. The step
   // gate already prevents reaching this, so it is the honest floor, not a path.
   'contracts.toast.numberRefused.title': 'Contract not created',
@@ -166,7 +163,25 @@ export const contractsEn: Record<string, string> = {
   'contracts.timeline.terminated': 'Terminated',
   'contracts.timeline.expiryRenewal': 'Expiry / Renewal',
   // — Wizard: chrome —
-  'contracts.wizard.complete': 'Create Contract',
+  // ⚠️ THE LABEL NO LONGER PROMISES A CREATE. It read 'Create Contract'
+  // above a handler that minted `ctr-new-${Date.now()}` and a client-side
+  // `CTR-<yr>-<n>`. The act belongs to S/4HANA (#311), so the button completes
+  // the WALKTHROUGH and the panel behind it says where the act lives. Not
+  // 'Request in SAP' either: nothing in this tree sends anything, and that is
+  // `FORWARD-PROMISE-HAS-NO-HANDLER-01`.
+  'contracts.wizard.complete': 'Finish',
+  // ── The refusal. The OWNER token is interpolated from the flow, never
+  // spelled here — see `contracts/RaisedElsewhere.tsx`.
+  'contracts.wizard.raisedElsewhere.note':
+    'Nothing here creates a contract — an outline agreement is raised in {{owner}} and arrives in Paragon as a fact.',
+  'contracts.wizard.raisedElsewhere.headline': 'No contract was created',
+  'contracts.wizard.raisedElsewhere.ownedBy':
+    '{{owner}} owns the contract document. An outline agreement is raised there; Paragon receives it and collaborates around it.',
+  'contracts.wizard.raisedElsewhere.body':
+    'What you entered was not recorded, nothing was sent, and nobody has been notified. This walkthrough shows what Paragon asks for when a contract is set up.',
+  'contracts.wizard.raisedElsewhere.collected': 'What you entered',
+  'contracts.wizard.raisedElsewhere.restart': 'Start again',
+  'contracts.wizard.raisedElsewhere.close': 'Close',
   'contracts.wizard.step.basics.title': 'Basics',
   'contracts.wizard.step.basics.desc': 'Set the contract type, supplier, and brand scope.',
   'contracts.wizard.step.terms.title': 'Terms & Duration',
@@ -387,9 +402,6 @@ export const contractsId: Record<string, string> = {
   // — Toasts —
   'contracts.toast.pdfQueued.title': 'Ekspor PDF dalam antrean',
   'contracts.toast.pdfQueued.desc': 'Ekspor PDF hadir pada Fase 2A.',
-  'contracts.toast.created.title': 'Draf {{number}} disimpan di sesi ini',
-  'contracts.toast.created.desc':
-    'Hanya lokal di portal — tidak ada kontrak yang dibuat di SAP, dan nomor di atas adalah placeholder yang dibuat halaman ini, bukan nomor kontrak SAP. Hilang saat halaman dimuat ulang.',
   'contracts.toast.numberRefused.title': 'Kontrak tidak dibuat',
   // — Side-panel footer primary label —
   'contracts.footer.initiateRenewal': 'Mulai pembaruan',
@@ -410,7 +422,17 @@ export const contractsId: Record<string, string> = {
   'contracts.timeline.terminated': 'Dihentikan',
   'contracts.timeline.expiryRenewal': 'Kedaluwarsa / Pembaruan',
   // — Wizard: chrome —
-  'contracts.wizard.complete': 'Buat Kontrak',
+  'contracts.wizard.complete': 'Selesai',
+  'contracts.wizard.raisedElsewhere.note':
+    'Tidak ada kontrak yang dibuat di sini — perjanjian induk dibuat di {{owner}} dan masuk ke Paragon sebagai fakta.',
+  'contracts.wizard.raisedElsewhere.headline': 'Tidak ada kontrak yang dibuat',
+  'contracts.wizard.raisedElsewhere.ownedBy':
+    '{{owner}} memiliki dokumen kontrak. Perjanjian induk dibuat di sana; Paragon menerimanya dan berkolaborasi di sekitarnya.',
+  'contracts.wizard.raisedElsewhere.body':
+    'Apa yang Anda isi tidak dicatat, tidak ada yang dikirim, dan tidak ada seorang pun yang diberi tahu. Panduan ini memperlihatkan apa yang ditanyakan Paragon saat sebuah kontrak disiapkan.',
+  'contracts.wizard.raisedElsewhere.collected': 'Apa yang Anda isi',
+  'contracts.wizard.raisedElsewhere.restart': 'Mulai lagi',
+  'contracts.wizard.raisedElsewhere.close': 'Tutup',
   'contracts.wizard.step.basics.title': 'Dasar',
   'contracts.wizard.step.basics.desc': 'Tetapkan jenis kontrak, pemasok, dan cakupan merek.',
   'contracts.wizard.step.terms.title': 'Syarat & Durasi',
