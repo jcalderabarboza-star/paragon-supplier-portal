@@ -163,6 +163,28 @@ export type ObligationDisplayState =
  * the field and the stored literal agree perfectly and either could decide it.
  * `completedDate` is chosen because it is the FACT and the literal is the claim.
  */
+/**
+ * Is this obligation COMPLETE? The one site that decides it, for both readers.
+ *
+ * ⚠️ **EXTRACTED SO THERE IS ONE RULE AND NOT TWO.** `obligationRollup.ts`'s
+ * `met` is the count of complete obligations, and a second copy of
+ * `Boolean(completedDate)` over there would be a duplicate source -- the exact
+ * shape `Contract.obligationsMet` was, one layer up. The rollup calls this, and
+ * `obligationRollup.test.ts` asserts the two agree row for row, so a change here
+ * cannot move one and leave the other.
+ *
+ * ⚠️ **IT TAKES NO CLOCK, AND THAT IS THE TYPE MAKING THE CLAIM.** `Completed`
+ * is a machine fact -- 16 of 16 completed rows carry a `completedDate`, 0 of 24
+ * non-completed rows do -- so a `nowIso` parameter here would suggest a
+ * dependency the predicate does not have, and `obligationRollup` would inherit
+ * it. See that file's header for why the absence is load-bearing.
+ */
+export function isObligationComplete(
+  obl: Pick<ContractObligation, 'completedDate'>,
+): boolean {
+  return Boolean(obl.completedDate);
+}
+
 export function obligationDisplay(
   obl: Pick<ContractObligation, 'dueDate' | 'completedDate'>,
   nowIso: string,
@@ -173,7 +195,7 @@ export function obligationDisplay(
   // conditional expression. A ternary here would leave both states reading
   // `stored-in-fixtures` in the gate while this file computed them, which is a
   // true producer hidden from the instrument that exists to find producers.
-  if (obl.completedDate) return 'Completed';
+  if (isObligationComplete(obl)) return 'Completed';
   if (isPast(daysUntil(obl.dueDate, nowIso))) return 'Overdue';
   return 'Upcoming';
 }

@@ -14,6 +14,25 @@
 //   that cannot see half of law 0.5's subject. The vocabulary below is the same
 //   (`computed-at-read` / `stored-in-fixtures`), because the LAW is the same.
 //
+// ── ⚠️ AND THE DISCRIMINATOR BELOW IS NARROWER THAN THE LAW IT SERVES ──────────────────────────────
+//   `STORED-VALUE-DERIVABLE-FROM-STORED-DATA-01` (`docs/findings.md` §102d).
+//   *"A stored value must not be a function of the READ INSTANT"* names ONE
+//   independent variable. **Another STORED COLLECTION is another, and it fails
+//   the same way** — two sources, nothing making them meet.
+//   `Contract.obligationCount` / `obligationsMet` were exactly that shape and
+//   were retired at §102 onto `services/data/obligationRollup.ts`; this gate
+//   could never have seen them, and not only because of the `days` matcher —
+//   **the discriminator below would have ACQUITTED them**, since neither reads
+//   a clock.
+//
+//   ⚠️ **THAT ARM IS NAMED, NOT GATED, AND DELIBERATELY SO** (operator ruling:
+//   no instrument lane on a two-field batch). Its open members are listed at
+//   §102d — `PurchaseOrder.totalValue` is the consequential one, 7 of 21
+//   disagreeing with its own lines and READ at 26 sites, pinned as an exact set
+//   in `asnRefIntegrity.test.ts`. **Do not widen the matcher here to reach
+//   them**; widening creates false accusations as readily as narrowing creates
+//   blind spots, and this file already carries four scars from one widening.
+//
 // ── ⚠️ THE DISCRIMINATOR, AND IT IS NOT "NUMBER VS STATE" ───────────────────
 //   **A stored value must not be a function of the READ instant.** A difference
 //   between two STORED dates is a durable fact and may be stored; a difference

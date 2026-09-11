@@ -594,8 +594,15 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
       signedByBuyer: '—',
       signedBySupplier: '—',
       signedDate: '',
-      obligationCount: draft.obligations.length,
-      obligationsMet: 0,
+      // ⚠️ THE SECOND MINT IS GONE WITH ITS FIELDS. This wrote
+      // `obligationCount: draft.obligations.length` and `obligationsMet: 0`
+      // onto the new contract — and NOTHING PERSISTED `draft.obligations`, so
+      // the number described a collection the store never received. Derived
+      // before deleting: there is no obligation write path of any kind (no
+      // `extraObligations`, and `obligation` holds no `CommandTarget`, so
+      // `t_obligation_track` cannot fire), which is what makes the count a
+      // snapshot of an intention rather than a fact. The counters are computed
+      // from the obligation store at read.
       category: draft.category,
       brands: draft.brands,
       performanceScore: 0,

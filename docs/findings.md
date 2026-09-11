@@ -24120,3 +24120,186 @@ runs are as slow as arm C's and pass anyway.
 **Arm A is the measurement that moved the site.** A `waitFor` option cannot lift
 the test's own ceiling — vitest aborts at `testTimeout` whatever the inner wait
 is willing to keep waiting for.
+
+
+## §102 — THE OBLIGATION COUNTERS ARE COMPUTED, AND THE LAW THEY BREAK IS ONE STEP WIDER THAN THE ONE THAT WAS WRITTEN
+
+`Contract.obligationCount` and `Contract.obligationsMet` are retired. Both are
+now folded from `mockObligations` at read by `services/data/obligationRollup.ts`,
+and `contractView`'s obligations panel renders `met / total` beside the table it
+folds — the first surface in this tree to show the second counter at all.
+
+### §102a — ⚠️ THREE OF THE DISPATCH'S LOAD-BEARING CLAIMS WERE MEASURED FALSE, AND THE BUILD DID NOT REST ON ANY OF THEM
+
+Recorded because `§64a`'s class **under-counts by construction** — a false
+premise refused in conversation leaves no trace — and because this one arrived
+as a *correction of a prior measurement*, which is the position that gets the
+least scrutiny.
+
+| the dispatch said | measured | instrument |
+|---|---|---|
+| *"Two components render `obligationCount`… **ContractCard** shows '3 obligations' for ctr-001 while the drawer beneath it lists zero"* | **`ContractCard` has never existed.** Zero hits across **977 commits**, all refs and remotes, whole tree. And still **zero** read sites of either field. | `git log --all --remotes -S ContractCard` → empty; control `-S ContractDetailBody` → `9302bbb`. Read census: `.performanceScore` 7 sites, both counters 0, same matcher, same run. |
+| *"ctr-013 stores **8** where the store holds **15**"* | `ctr-013` stores `obligationCount: 3, obligationsMet: 2`; the store holds **0** rows for it. | `mockContracts.ts:403` (pre-retirement) · `grep -c "contractId: 'ctr-013'"` = 0 |
+| *"No fixture gap explains a stored number **LOWER** than reality"* | **No row in this tree is lower than reality.** Stored `met` ≥ true on all 13; `obligationCount` ≥ true on all 13. The premise's own evidence runs the other way. | the exact map, pinned in `obligationRollup.test.ts` |
+
+⚠️ **THE ACCEPTANCE CRITERION WAS THEREFORE UNMEETABLE AND WAS NOT MET.** The
+dispatch required browser QA to show *"ctr-013's count must read 15."* After
+computing it reads **0**, because the store holds nothing for that contract.
+**Building to that number would have meant shipping one.**
+
+⚠️ **AND THE CONCLUSION SURVIVED ANYWAY, WHICH IS `§64a`'s SHAPE EXACTLY** — a
+misdescribed mechanism attached to a correct ruling. *Retire them and compute*
+is right, and it is what the prior investigation recommended on independent
+grounds: 8 of 13 rows carried a wrong number, nothing read it, and a live wizard
+kept writing more. **Grep the artifact, keep the property.**
+
+⚠️ **ONE CORRECTION IS MINE.** The prior report gave main's floor as `4676/326`.
+That is `feat/invoice-match-pairing`'s floor — an unmerged branch one commit
+ahead. **Main's floor was `4662/325`**, and I read a count off one branch and
+reported it as another's: `COUNT-RESTATED-ACROSS-INSTRUMENTS-01`, on a number I
+had myself been sent to derive.
+
+### §102b — THE MEASUREMENT, PINNED RATHER THAN SUMMARISED
+
+Both maps live in `obligationRollup.test.ts` as literals, the retired one as
+`STORED_BEFORE` — `asnRefIntegrity.test.ts`'s shape, so the correction is a fact
+in the file and not a note in a PR body.
+
+`obligationsMet` disagreed on **8 of 13**, `obligationCount` on **1**. It was
+never right: 7 of the original 12 were wrong at `dfb09f3` (2026-05-20), the day
+both fixtures were authored.
+
+⚠️ **`ctr-008` IS THE ROW THAT DECIDED THE DIRECTION.** It stored
+`obligationCount: 4, obligationsMet: 4` — *every obligation met* — while its own
+four obligations were `Completed · Completed · In Progress · **Overdue**`. A
+thin fixture shorts the COUNT; the count agreed on 12 of 13. **What was wrong
+was the header, not the lines**, and the header is now a fold over the lines.
+
+`ctr-013` is the one row where the retired field was the only record of an
+intention — 3 claimed, 0 held. It computes to **0**, pinned by name, so
+authoring those three obligation rows later is a deliberate act that turns a
+test red rather than a silent edit.
+
+### §102c — ⚠️ THE LAW IS EXTENDED, AND THE EXTENSION IS STATED AT THE SITE
+
+#318 retired `Contract.daysUntilExpiry` and `ComplianceRow.daysLeft`; #331
+retired `Shipment.daysInTransit` and `Shipment.delayDays`. One rule:
+
+> **A STORED VALUE MUST NOT BE A FUNCTION OF THE READ INSTANT.**
+
+**The rule names its independent variable, and the variable was never the point
+of it.** All four were differences against `now`, so the rule was written in the
+only vocabulary those four needed — and `dayCounts.ts` inherited the narrowness
+twice over, in its matcher (`\w*[Dd]ays\w*`) and in its stated discriminator.
+The general form, argued in `obligationRollup.ts`'s header:
+
+> ⚠️ **A STORED VALUE MUST NOT BE A FUNCTION OF DATA THE TREE ALSO HOLDS
+> SEPARATELY.** The read instant is ONE such variable. Another stored collection
+> is another, and it fails the same way for the same reason: the two sources
+> drift, and nothing makes them meet.
+
+⚠️ **THE TWO ARMS ARE NOT THE SAME BATCH, AND A SEAT THAT TREATS THEM AS ONE
+WILL EXPECT THE WRONG EVIDENCE.** A clock field's computed replacement
+*reproduces* the authored literal once the fixtures are anchored — that is
+exactly what #331 measured before retiring, all 16 shipment literals exact at
+`DECLARED_PRESENT`. Here the computed value **contradicts** the authored one on
+8 of 13 rows. **A clock retirement is a no-op on the data; this one is a
+correction to it.**
+
+### §102d — ⚠️ THE GAP, NAMED WITH ITS MEMBERS — `STORED-VALUE-DERIVABLE-FROM-STORED-DATA-01`
+
+Named, **not** fixed: no instrument is opened here (operator ruling). Three
+gates exist and none can see this arm, each for a structural reason:
+
+| gate | population | why the arm is invisible |
+|---|---|---|
+| `projectionGate/displayStates.ts` | members of closed string unions | a number has no union — the file says so itself |
+| `projectionGate/dayCounts.ts` | `/^\s*(?:readonly\s+)?(\w*[Dd]ays\w*)\??:\s*number/` in `STORAGE_SCOPE` | the name carries no `days` — **and deeper: the gate's own discriminator is the read instant, so widening the matcher would push it past its stated axis** (rule 2) |
+| `lib/storedFieldGate/` | glossary registries → covered DTOs → their fields | two independent misses: `: number` names no union, **and** the registered vocabulary is 17 source types (`CertType`, `QtyRefusalReason`, `GovernedVerdict`, …), **none contract-side — so no field of `Contract` or `ContractObligation` is in the population at all** |
+
+**ARM (i) — function of the READ INSTANT.** Retired: `Contract.daysUntilExpiry`,
+`ComplianceRow.daysLeft` (#318); `Shipment.daysInTransit`, `Shipment.delayDays`
+(#331). **Still stored, classified and blocked:** `PurchaseOrder.daysOverdue`
+and `POSummary.daysOverdue`, held as `stored-in-fixtures` because
+`purchaseOrder` has no `FAMILY_ANCHORS` entry — *"496 days late"* is still a
+live risk for a PO. **Anchor that family first.**
+
+**ARM (ii) — function of ANOTHER STORED COLLECTION.** Derived from every
+`…: number;` declaration in `STORAGE_SCOPE` (97 today), narrowed to the 14
+aggregate-shaped names, then adjudicated one by one against whether the tree
+holds the collection they fold:
+
+| member | folds | disagreement | status |
+|---|---|---|---|
+| `Contract.obligationCount` | `mockObligations` by `contractId` | 1 of 13 | **RETIRED, this batch** |
+| `Contract.obligationsMet` | the same, by `completedDate` | 8 of 13 | **RETIRED, this batch** |
+| `PurchaseOrder.totalValue` | its OWN `lineItems` | **7 of 21** | **OPEN.** Pinned as an exact set at `asnRefIntegrity.test.ts` (`HEADER-DISAGREES-WITH-LINES-01`) — and unlike the two above **it is READ, at 26 sites.** The consequential member of this class. |
+| `Quotation.totalPrice` | `unitPrice × RFQ.totalQty` | 4 of 25 (`qt-009a/b`, `qt-012b`, `qt-013b`) | ⚠️ **CANDIDATE, MEASURED BUT NOT ADJUDICATED.** 21 of 25 satisfy the relation, which is what makes it look like a law; a partial bid against `minOrderQty` would break it legitimately and those four were not checked against theirs. Filed with its uncertainty (§70's bound), **not** asserted. |
+
+**Acquitted on measurement — no in-tree source, so they are primary data, not
+folds:** `RFQ.totalQty` (RFQ carries `materialIds`, no per-material quantity),
+`Shipment.packageCount` / `totalWeight` (`ShipmentLineItem` is
+`materialCode · description · qty · uom`), `AsnShipmentDetails.totalCartons`,
+`QualificationItem.stageTotal`, `POSummary.totalValue` (a DTO with no producer
+anywhere outside `types.ts`), `Page.total` (the list envelope, computed), and
+the four per-line quantities (`POLineItem.confirmedQty`,
+`AsnLineItem.orderedQty` / `shippedQty`, `PrIntakeLine.suggestedQty` /
+`acceptedQty` — a line's own datum, not an aggregate).
+
+⚠️ **THE MEMBERSHIP IS A DERIVATION, NOT A LIST, AND THE SELECTOR IS NAMED SO
+THE NEXT SCOPE IS VISIBLE** (`SCOPE-DERIVATION-IS-RECURSIVE-01`): the population
+is `…: number;` declarations in `STORAGE_SCOPE`; **the aggregate narrowing is a
+NAME regex** (`Count|Total|Met|Qty|Items|Lines|Records|Num[A-Z]`) and that regex
+is a hand-pick one level up. A fold named without one of those words — `spend`,
+`balance`, `headroom` — is invisible to it. Stated rather than implied.
+
+### §102e — THE PROBES
+
+Five mutants, each killed by a NAMED test; every file restored byte-identical
+with `sha256` as the authority and `git hash-object` beside it (`core.autocrlf`
+is on here, so a bare digest is not reproducible across platforms):
+
+| mutant | named test that went red |
+|---|---|
+| drop the `contractId` filter | *"ctr-013 is the largest disagreement, and it reads ZERO"* |
+| count every obligation as met | *"ctr-008 claimed every obligation met while one of its own was Overdue"* |
+| restore a stored `obligationCount` VALUE | *"the fixture SOURCE declares neither"* |
+| restore the `obligationsMet` DECLARATION | *"the fixture SOURCE declares neither"* |
+| restore the wizard mint | *"the wizard no longer MINTS either"* |
+
+⚠️ **THE FOURTH ONE CORRECTED THE PROBE, NOT THE GATE.** It was written expecting
+*"no contract row carries either property"* to fire. It did not, and it was
+right not to: **a TypeScript interface member is erased at runtime**, so
+restoring a declaration adds no property to any row. The BYTES assertion is the
+only one that can see a declaration — which is why the spec reads the file at
+all. `REIMPLEMENTATION-CONTRADICTS-THE-INSTRUMENT-01` in miniature: the hand
+expectation was debugged first and the instrument was right.
+
+`src/services/data/obligationRollup.ts` restored to
+`sha256 f8190ba7f7b7a126eb50bea81a57e850223cc0be0a090ebabd524e7c5e0fdb30` /
+`blob 7c10a52321bbb0f895c178b3914e80159062a04a`;
+`src/data/mockContracts.ts` to
+`sha256 d8a8859b2ce8aa206c0d837d015369b3cc6a69d240bbf64d95692618e83b8cd6` /
+`blob a94b544d5c7c8a8142dc090feb7a5c2e9764ab89`;
+`src/pages-v2/BuyerContracts.tsx` to
+`sha256 0f39b2c4af87ed9e0a33b3d5b15f4cb0d944dda67037f17269aa0d6f168441fe` /
+`blob af25d32cd0821cad363ae8ed065e489fa9d7a1ed`.
+Hashed bytes: the working-copy file as it sits on disk, CRLF.
+
+### §102f — WHAT THIS BATCH DELIBERATELY DID NOT DO
+
+- **The wizard does NOT author obligations in the same act** — derived before
+  deleting, because if it did the count would have a legitimate producer and the
+  disposal would change. `draft.obligations` is never persisted: there is no
+  `extraObligations`, `setExtraContracts` writes a `Contract` and nothing else,
+  and `obligation` holds no `CommandTarget` (`getKnownFlows()` ∖
+  `WIRED_COMMAND_TARGETS`), so `t_obligation_track` cannot fire. The stop
+  condition was checked and not met.
+- **`obligation`'s `CommandTarget` is still unwired**, so `completedDate` is
+  fixture-only. The counters are honest about the store; the store is still not
+  writable. Filed, unchanged.
+- **A wizard-created contract still has no detail page.** `ContractDetailBody`
+  is rendered only by `BuyerContractDetail`, which reads `contractsQuery`, while
+  wizard contracts live in `ContractsWorkspace`'s local `extraContracts` — so
+  the row is clickable and lands on a real 404. Observed in browser QA, filed,
+  not fixed here.

@@ -117,6 +117,10 @@ export const contractsEn: Record<string, string> = {
   'contracts.panel.noticeDays.one': '{{count}} day',
   'contracts.panel.noticeDays.other': '{{count}} days',
   'contracts.panel.obligations': 'Obligations ({{count}})',
+  // The COMPUTED counters, beside the table they are folded from. `met` is
+  // `completedDate` present; `total` is the contract's obligations. Neither is
+  // stored any more — see `services/data/obligationRollup.ts`.
+  'contracts.panel.obligationsMet': '{{met}} of {{total}} met',
   'contracts.panel.noObligations': 'No obligations defined for this contract.',
   'contracts.panel.obl.col.title': 'Title',
   'contracts.panel.obl.col.owner': 'Owner',
@@ -368,6 +372,7 @@ export const contractsId: Record<string, string> = {
   'contracts.panel.noticeDays.one': '{{count}} hari',
   'contracts.panel.noticeDays.other': '{{count}} hari',
   'contracts.panel.obligations': 'Kewajiban ({{count}})',
+  'contracts.panel.obligationsMet': '{{met}} dari {{total}} selesai',
   'contracts.panel.noObligations': 'Tidak ada kewajiban yang ditetapkan untuk kontrak ini.',
   'contracts.panel.obl.col.title': 'Judul',
   'contracts.panel.obl.col.owner': 'Pemilik',
