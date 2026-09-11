@@ -21,8 +21,11 @@ export const goodsReceiptLineFlow: FlowDefinition = {
   version: 1,
   states: ['Pending', 'Inspected', 'Accepted', 'Rejected', 'Quarantined', 'Returned'],
   initial: 'Pending',
-  /** PF-0 · D-2 — 'Quarantined' is deliberately absent: quarantine is a holding
-   *  state awaiting a release/return edge, not an ending (censused). */
+  /** PF-0 · D-2 — 'Quarantined' is deliberately absent: quarantine is a HOLDING
+   *  state, not an ending. It now HAS its outbound edges (`t_grline_release`
+   *  and the widened `t_grline_reject`), so it is a fork rather than a trap —
+   *  but a hold is still not a place a line may come to rest, which is why it
+   *  stays out of this list. */
   terminals: ['Accepted', 'Rejected', 'Returned'],
   transitions: [
     {
@@ -48,8 +51,16 @@ export const goodsReceiptLineFlow: FlowDefinition = {
       version: 1,
     },
     {
+      // ⚠️ `Quarantined` IS A FROM-STATE HERE, AND THAT IS THE HALF THAT MAKES
+      // THE HOLD HONEST. A quarantined line is one awaiting a re-examination,
+      // and a re-examination has TWO outcomes. An exit that could only clear
+      // the line would leave the failing outcome with nowhere to go — the same
+      // trap one state along, wearing a fix's clothes. Widening this verb was
+      // preferred to authoring a second one: the act is identical (this item is
+      // not fit for use, with a reason attached) and only its origin differs,
+      // so a separate id would have split one domain fact across two verbs.
       id: 't_grline_reject',
-      from: ['Inspected'],
+      from: ['Inspected', 'Quarantined'],
       to: 'Rejected',
       trigger: 'user',
       requiredRole: 'gr:disposition',
@@ -65,6 +76,47 @@ export const goodsReceiptLineFlow: FlowDefinition = {
       trigger: 'user',
       requiredRole: 'gr:inspect',
       requiredFields: ['holdReason'],
+      policyHooks: [],
+      surfaceable: { surfaced: true },
+      version: 1,
+    },
+    {
+      // ⚠️ THE RESUME EDGE — the line-grain mirror of `t_gr_request_retest`,
+      // and it exists for the reason that verb's own comment records one grain
+      // up: a state that can be ENTERED and never LEFT is closer to a defect
+      // than to a gap. `Quarantined` was declared, targeted, and inescapable.
+      //
+      // → the cleared terminal, NOT back to re-inspection. The header's resume
+      // edge lands on `Under Inspection` because the header's disposition verbs
+      // all fire from there and a retest must land where a decision can be
+      // taken. THE LINE GRAIN IS THE OPPOSITE SHAPE: the decision has already
+      // been taken — the retest IS the re-examination — so landing anywhere but
+      // a disposition would re-ask a question that was just answered.
+      //
+      // ⚠️ `gr:disposition`, NEVER `gr:inspect`, AND THE CHOICE IS A GATE
+      // RATHER THAN A PREFERENCE. Every verb in this flow that lands on a
+      // disposition terminal carries `gr:disposition`; quarantining carries
+      // `gr:inspect`. Giving this edge the quarantining atom would open a
+      // second route to the cleared terminal for a seat that holds no
+      // disposition atom — the hold would become a back door around the very
+      // gate its own outcome is meant to pass. The two atoms sit in ONE lane by
+      // default (`receiving`), so out of the box this is one seat; a seat that
+      // inspects but may not dispose is a narrowing the role model already
+      // expresses, and `buyerAnchor.test.ts` already demonstrates that exact
+      // pair. One seat by default, separable by configuration — the invoice
+      // approve/release ruling, arrived at independently from this flow's own
+      // atoms rather than imported.
+      //
+      // PAYLOAD-FREE, on the `t_gr_request_retest` precedent: the hold is the
+      // act that needed explaining and it already recorded a `holdReason`.
+      // Inventing a required field for the resume would force a surface to
+      // fabricate a value, which is how a required field becomes a lie.
+      id: 't_grline_release',
+      from: ['Quarantined'],
+      to: 'Accepted',
+      trigger: 'user',
+      requiredRole: 'gr:disposition',
+      requiredFields: [],
       policyHooks: [],
       surfaceable: { surfaced: true },
       version: 1,
