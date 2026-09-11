@@ -18,6 +18,30 @@
 //   obligations was `Overdue` and one `In Progress`. That is a header
 //   contradicting its own lines, not a gap in the lines.
 //
+// ── ⚠️ TWO DEFECTS, NOT ONE — AND THE WIZARD WAS NOT WRONG ───────────
+//   The thirteen fixture values and the wizard's mint shared two field names
+//   and nothing else, and a reader who finds a computed count here must not
+//   conclude the wizard was the source of the drift:
+//
+//     **the fixtures**  hand-authored literals that NEVER ran through the
+//                       wizard. `obligationsMet` was wrong on 8 of 13 the day
+//                       they were typed (`dfb09f3`, 2026-05-20).
+//     **the wizard**    `obligationCount: draft.obligations.length` was TRUE of
+//                       the draft at the instant it was written. What it lacked
+//                       was (1) any persistence for the obligations themselves,
+//                       so the number was never true of the STORE, and (2) any
+//                       producer at UPDATE — `obligation` has no
+//                       `CommandTarget`, so nothing can add an obligation to a
+//                       contract that already exists.
+//
+//   ⚠️ **(2) IS THE GENERAL SHAPE AND IT IS WORTH MORE THAN THIS BATCH.** A
+//   value computed correctly at creation and never recomputed is not a
+//   fabrication — it is a snapshot with no mechanism to stay current, which is
+//   indistinguishable from a fabrication the moment the world moves and is
+//   harder to spot because it was once right. **The absence of the update path
+//   is filed and NOT opened**: `obligation` is target-less, and whether it
+//   should be is a lane ruling, not this file's.
+//
 // ── ⚠️ THE LAW, AND THE EXTENSION THIS FILE IS ──────────────────────────────
 //   #318 retired `Contract.daysUntilExpiry` and `ComplianceRow.daysLeft`, and
 //   #331 retired `Shipment.daysInTransit` and `Shipment.delayDays`, on one rule:

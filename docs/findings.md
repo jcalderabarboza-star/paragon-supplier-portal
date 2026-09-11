@@ -24303,3 +24303,54 @@ Hashed bytes: the working-copy file as it sits on disk, CRLF.
   wizard contracts live in `ContractsWorkspace`'s local `extraContracts` — so
   the row is clickable and lands on a real 404. Observed in browser QA, filed,
   not fixed here.
+
+
+### §102g — ⚠️ THE MECHANISM IS CORRECTED AT THE SITE: TWO DEFECTS SHARING TWO FIELD NAMES
+
+§102 landed with an account that was true and incomplete, and the incompleteness
+was the kind that misdirects: it said the wizard's count "described a collection
+the store never received", which is accurate and reads as *the wizard was
+wrong*. **It was not.** Corrected at all three sites (`mockContracts.ts`,
+`BuyerContracts.tsx`, `obligationRollup.ts`), because a reader who finds a
+computed count and concludes the mint was a fabrication will look for the defect
+in the wrong file.
+
+| | what it was | when it went wrong |
+|---|---|---|
+| **the 13 fixture values** | hand-authored literals that **never ran through the wizard** | wrong on 8 of 13 **the day they were typed** (`dfb09f3`, 2026-05-20) |
+| **the wizard's mint** | `obligationCount: draft.obligations.length` — **TRUE of the draft at the instant it was written** | never true of the STORE, because nothing persisted the obligations; and never updatable, because nothing can add one later |
+
+⚠️ **THE SECOND ROW IS THE GENERAL SHAPE AND IT OUTLIVES THIS BATCH: A VALUE
+COMPUTED CORRECTLY AT CREATION AND NEVER RECOMPUTED IS NOT A FABRICATION — IT IS
+A SNAPSHOT WITH NO MECHANISM TO STAY CURRENT.** It is indistinguishable from a
+fabrication the moment the world moves, and *harder* to spot, because it was
+once right and its author can point at the moment it was.
+
+**FILED, NOT OPENED: no write path exists for adding an obligation to a contract
+that already exists.** `obligation` holds no `CommandTarget`
+(`getKnownFlows()` ∖ `WIRED_COMMAND_TARGETS`), so `t_obligation_track` cannot
+fire. Whether that absence is *correct* is a lane ruling — the flow's verbs are
+`surfaced: true` and carry no `external-fact` owner, so it is not TMS-owned the
+way `shipment` is; **derive that before acting on it.**
+
+### §102h — ⚠️ THE SECOND DISPATCH'S PREMISES, RE-DERIVED
+
+The re-dispatch arrived after §102 merged (`c66e8e1`), describing the work as
+unbuilt and correcting §102a's account. **One half of the correction is right
+and is adopted above.** The rest measured false, and is recorded because the
+class under-counts by construction:
+
+| claimed | measured | instrument |
+|---|---|---|
+| *"**submitContractDraft** builds the array and derives both counts from it at **:373**"* | **`submitContractDraft` has never existed** in any commit; the handler is `submitWizard` at `:549`. `BuyerContracts.tsx:373` is inside `matchesGroup`, a display-status predicate. | `git log --all --remotes -S submitContractDraft` → empty; `grep -n "const submitWizard"` → `:549` |
+| *"the wizard DOES author obligations in the same act"* | It builds `DraftObligation[]` in **React state** and writes a `Contract`. **No obligation reaches any store** — no `extraObligations`, and `setExtraContracts` writes a `Contract` and nothing else. **The same dispatch's own bullet (ii) says so**: *"the shipped data came from a path that produced none of it."* | every `draft.obligations` use enumerated at `:472–:1164`; all are wizard-local UI |
+| *"**10 of 13** disagree"* | **8 of 13** — named, pinned, and asserted as an exact list | `obligationRollup.test.ts`, *"disagreed on exactly eight contracts, named"* |
+| *"ctr-001's card reads **3** above a drawer listing zero"* | no card exists; ctr-001's panel read `OBLIGATIONS (5)` before and reads `(5) · 1 of 5 met` after. `ContractCard`: 0 hits in 977 commits. | browser QA, both locales, chunk hash off the page |
+| *"ctr-013 stores **8** where the store holds **15**"* | stored `3 / 2`; store holds `0` | `grep -c "contractId: 'ctr-013'"` = 0 |
+| *"delayDays and daysInTransit retired at **#332**"* | **#331** (`e1c6a05`, 2026-09-09). #332 is the per-row-map batch. | `git log --merges` |
+| baseline *"main f3af9c0 · floor 4699/328"* | `f3af9c0` is not a valid object here; main's floor was `4662/325`, now `4691/326` | `git cat-file -t` · `git show main:scripts/floor.json` |
+
+⚠️ **AND THE ACCEPTANCE CRITERION WAS RESTATED UNCHANGED AFTER BEING MEASURED
+FALSE ONCE** — *"ctr-013 must read 15"*. It reads **0**. A criterion that names
+a number the tree cannot produce cannot be met by building; it can only be met
+by writing one.

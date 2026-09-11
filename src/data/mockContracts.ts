@@ -42,6 +42,14 @@ export interface Contract {
   // surfaces compute them from `mockObligations` at read via
   // `services/data/obligationRollup`. Same law as `daysUntilExpiry` below with
   // a different independent variable; the extension is argued in that file.
+  //
+  // ⚠️ **AND THE THIRTEEN VALUES THAT STOOD HERE WERE AUTHORED LITERALS —
+  // NONE OF THEM CAME FROM THE WIZARD.** Worth stating because the wizard was
+  // the only non-fixture writer, so it reads as the source of the defect and it
+  // is not: it never ran against this file. `obligationsMet` was wrong on 8 of
+  // these rows from the day they were typed (`dfb09f3`, 2026-05-20), which is a
+  // hand-authoring defect, and the wizard's own count was a different defect
+  // with a different cause — see `BuyerContracts.tsx`'s note at the mint site.
   // ⚠️ `daysUntilExpiry` IS RETIRED (law 0.5). It was a difference against
   // NOW stored beside `endDate`, so it was wrong the day after it was typed:
   // all 13 rows back-solved to an authoring date and 12 of them to 2026-05-20.
