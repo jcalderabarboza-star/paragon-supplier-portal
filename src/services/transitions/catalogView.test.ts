@@ -169,15 +169,41 @@ describe('PF-1 — step kind is DERIVED from TWO fields, never authored', () => 
       },
     } as const;
     expect(stepKind(ruled)).toBe('unsurfaced-act');
-    // The shipped witnesses, BY NAME — both are `trigger: 'user'`.
+    // The shipped witnesses, BY NAME — every one `trigger: 'user'`.
+    //
+    // ⚠️ **`t_invoice_approve` WAS ONE OF THESE AND IS NOT ANY MORE.** It was
+    // surfaced when its `ruled-unsurfaced` ground was retired, so it is now an
+    // `operator-action` and asserting otherwise here would pin a decision the
+    // tree has reversed. The witnesses are DERIVED from the registry rather
+    // than re-listed, so the next verb to leave (or join) the class moves this
+    // population with nobody editing the line — and the membership control
+    // below is what stops that derivation from silently going empty.
     const byId = new Map(
       getKnownFlows().flatMap((f) => f.transitions.map((t) => [t.id, t] as const)),
     );
-    for (const id of ['t_invoice_approve', 't_enforcement_set']) {
-      const def = byId.get(id)!;
-      expect(def.trigger).toBe('user');
+    // ⚠️ **THE `trigger: 'user'` FILTER IS PART OF THE POPULATION, NOT A CHECK
+    // ON IT — AND WIDENING WITHOUT IT PRODUCED TWO FALSE ACCUSATIONS.** The
+    // first cut of this derivation took every `ruled-unsurfaced` verb and then
+    // asserted `trigger === 'user'` over them; `t_compliance_verify` and
+    // `t_compliance_reject` are `trigger: 'system'`, so a correct widening
+    // reddened on verbs that were never this test's subject. The claim here is
+    // about a REFUSED HUMAN act, so humanity belongs in the filter.
+    const ruledUnsurfacedHuman = [...byId.values()].filter(
+      (t) =>
+        t.trigger === 'user' &&
+        t.surfaceable.surfaced === false &&
+        t.surfaceable.because === 'ruled-unsurfaced',
+    );
+    // Anti-vacuity: a derivation that returned [] would make the loop below
+    // pass on nothing, which is `EMPTY-INPUT-REPORTS-CLEAN-01` exactly.
+    expect(ruledUnsurfacedHuman.map((t) => t.id)).toContain('t_enforcement_set');
+    expect(ruledUnsurfacedHuman.map((t) => t.id)).not.toContain('t_invoice_approve');
+    for (const def of ruledUnsurfacedHuman) {
       expect(stepKind(def)).toBe('unsurfaced-act');
     }
+    // And the verb that LEFT the class is an operator action now — the other
+    // direction, on the same instrument, so this cannot pass by looking away.
+    expect(stepKind(byId.get('t_invoice_approve')!)).toBe('operator-action');
   });
 
   it('⚠️ `t_gr_post` is an OPERATOR ACTION — the contradiction PF-1 published', () => {

@@ -93,6 +93,48 @@ export const invoiceFlow: FlowDefinition = {
       version: 1,
     },
     {
+      // ── ⚠️ SURFACED. THE GROUND THAT HELD IT BACK IS RETIRED, AND THE
+      //    RETIRED WORDS ARE QUOTED HERE SO THE NEXT READER CANNOT RE-DERIVE
+      //    THEM FROM THE STRING THAT IS NO LONGER PRESENT. It read:
+      //
+      //      surfaced: false, because: 'ruled-unsurfaced', why:
+      //      'C10 §2.4 — approval is an attributable act and the platform
+      //       cannot name a person (ENF-NO-PERSON-IN-IDENTITY-01), so an
+      //       anonymous approval is refused rather than offered. Lifting that
+      //       ruling, not building a screen, is what changes this value.'
+      //
+      // ⚠️ **IT WAS ONE VERB'S PROSE APPLIED TO ONE VERB, NOT A RULE**
+      // (operator ruling). Measured against the whole approve-shaped
+      // population rather than against itself: FOUR of the FIVE verbs whose id
+      // contains `approve` are surfaced — `t_pr_approve`,
+      // `t_gr_approve`, `t_gr_partial_approve`, `t_application_approve` — and
+      // this was the only one held back. `t_pr_approve` does not merely
+      // proceed without a person: it SHIPS `approvedBy` and writes
+      // `UNATTRIBUTED: NO_PERSON_IN_SESSION` into it, and `types.ts` calls
+      // that *"an honest absence and it is the point — it names a failure
+      // somebody can go and fix."* The same fact, two opposite dispositions;
+      // only one of them can be the rule, and the tree had already chosen the
+      // other one four times.
+      //
+      // ⚠️ **NO ATTRIBUTION MECHANISM IS INVENTED HERE, AND NONE IS NEEDED.**
+      // `dispatcher.ts`'s `attributionFor()` stamps `scope.actor` onto the
+      // emitted event for EVERY `trigger: 'user'` transition and omits it for
+      // machine acts (C10 §6.4). This verb is `trigger: 'user'`, so surfacing
+      // it is the whole change: the approval records `UNATTRIBUTED` in the
+      // ledger by the same route every other human act already does, and F1
+      // fills it when an IdP can answer. A policy hook here would have been a
+      // SECOND account of a decision the dispatcher already makes.
+      //
+      // ⚠️ **SEGREGATION IS NOT EXPRESSED BY WITHHOLDING THIS VERB**, and the
+      // batch that surfaced it measured why: `finance` holds `invoice:approve`
+      // AND `invoice:pay`, and so do `buyer_all` (39 atoms) and `admin` (57) —
+      // both DERIVED unions over the lane bundles, so a lane split would be
+      // re-merged in the same commit. One seat by default, SEPARABLE BY
+      // CONFIGURATION (operator ruling): a firm wanting four-eyes constructs
+      // two custom roles over the `buyer` anchor holding one atom each, which
+      // `invoiceSeparability.test.ts` asserts is constructible and effective.
+      // True four-eyes is a per-DOCUMENT property and needs an attributed
+      // actor; that is F1, not a bundle edit.
       id: 't_invoice_approve',
       from: ['Matched'],
       to: 'Approved',
@@ -100,15 +142,7 @@ export const invoiceFlow: FlowDefinition = {
       requiredRole: 'invoice:approve',
       requiredFields: [],
       policyHooks: [],
-      surfaceable: {
-        surfaced: false,
-        because: 'ruled-unsurfaced',
-        why:
-          'C10 §2.4 — approval is an attributable act and the platform cannot ' +
-          'name a person (ENF-NO-PERSON-IN-IDENTITY-01), so an anonymous ' +
-          'approval is refused rather than offered. Lifting that ruling, not ' +
-          'building a screen, is what changes this value.',
-      },
+      surfaceable: { surfaced: true },
       version: 1,
     },
     {

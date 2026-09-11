@@ -53,6 +53,7 @@ import { useTranslation } from 'react-i18next';
 import { statusLabelKey } from '../lib/statusLabel';
 import { useBuyerInvoices } from '../services/query/hooks';
 import {
+  useInvoiceApprove,
   useInvoiceReleasePayment,
   useInvoiceSettlePayment,
   useInvoiceDispute,
@@ -219,6 +220,12 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
   const { t } = useTranslation();
   const refusalText = useRefusalText();
   const crumb = [t('buyerInvoices.crumb.transact'), t('buyerInvoices.crumb.invoices')];
+  // ⚠️ **THE HOOK WAS COMPLETE AND CONSUMERLESS FOR THE WHOLE LIFE OF THIS
+  // PAGE.** `useInvoiceApprove` shipped with the same `useMutation` shape as
+  // every sibling and exactly one reference in the tree — its own definition —
+  // because the verb it dispatches was `surfaced: false`. This line is the
+  // consumer; nothing in the hook changed.
+  const approveMutation = useInvoiceApprove();
   const releaseMutation = useInvoiceReleasePayment();
   const settleMutation = useInvoiceSettlePayment();
   const disputeMutation = useInvoiceDispute();
@@ -388,8 +395,22 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
   const handleFooterAction = () => {
     if (!selected) return;
     const actions = invoiceActionsFor(selected.lifecycleState);
-    if (actions.some((a) => a.reservedCommit)) {
+    // ⚠️ **THIS USED TO READ `actions.some((a) => a.reservedCommit)` AND SEND
+    // EVERY RESERVED COMMIT TO THE `confirming` PANEL — WHICH WAS CORRECT ONLY
+    // WHILE RELEASE WAS THE ONLY ONE.** That panel is the RELEASE's confirm: it
+    // renders `buyerInvoices.action.confirmRelease` with the amount and its
+    // button dispatches `handleReleasePayment`. Routing the approval there
+    // would have put the release's words and the release's dispatch behind an
+    // approve — a working-looking button firing the wrong verb, on the money
+    // path. So the branch reads the commit's OWN `confirm` flag, which is what
+    // that field was for and what nothing had needed to read until now.
+    const commit = invoiceCommitAction(selected.lifecycleState);
+    if (commit?.confirm) {
       setPanelMode('confirming');
+      return;
+    }
+    if (commit?.transitionId === 't_invoice_approve') {
+      handleApprove();
       return;
     }
     if (actions.some((a) => a.transitionId === 't_invoice_resolve')) {
@@ -424,6 +445,43 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
       });
       return;
     }
+  };
+
+  // ⚠️ **THE APPROVAL. `Matched` → `Approved`, and it is the one act that was
+  // missing between the 3-way match and the money.** The refusal is RETURNED,
+  // never absorbed: a seat without `invoice:approve` that reaches this handler
+  // gets the dispatcher's `ROLE_NOT_PERMITTED` rendered through `refusalText`,
+  // the same shape `handleReleasePayment` uses one function down. The surface
+  // should not normally let that happen — `HandoffNotice` stands in the
+  // primary slot for a withheld seat — but a handler that trusted the surface
+  // to have filtered correctly is the shape `SupplierOrders` shipped a live
+  // commit behind (§84), so it is guarded here too.
+  const handleApprove = () => {
+    if (!selected) return;
+    const inv = selected;
+    approveMutation.mutate(
+      { invoiceId: inv.id },
+      {
+        onSuccess: (res) => {
+          if (res.status === 'failed') {
+            toast({
+              variant: 'warning',
+              title: t('invoice.approve.failed.title', { invoiceNumber: inv.invoiceNumber }),
+              description:
+                refusalText(res.reason) ??
+                t('invoice.approve.failed.desc', { reason: res.reason ?? '' }),
+            });
+            return;
+          }
+          setPanelMode('detail');
+          toast({
+            variant: 'success',
+            title: t('invoice.approve.done.title', { invoiceNumber: inv.invoiceNumber }),
+            description: t('invoice.approve.done.desc'),
+          });
+        },
+      },
+    );
   };
 
   // Option B (canonical SAP-boundary pattern): release resolves `submitted` and
@@ -1048,7 +1106,10 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
                   ) : (
                     <Button
                       variant="outline"
-                      disabled={releaseMutation.isPending}
+                      // Both commits gate this slot now. Leaving it on the
+                      // release alone would leave the approve button live while
+                      // its own dispatch was in flight.
+                      disabled={releaseMutation.isPending || approveMutation.isPending}
                       onClick={handleFooterAction}
                     >
                       {t(commitAction ? commitAction.labelKey : FOOTER_ACTION_KEY[selected.status])}
