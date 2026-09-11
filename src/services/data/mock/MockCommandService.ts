@@ -67,6 +67,7 @@ import {
   POLICY_HOOKS,
   cascadesFor,
   deriveMatchVerdict,
+  invoicesForReceipt,
   type CommandTarget,
   type CascadeCommand,
   type CascadeContext,
@@ -1885,8 +1886,15 @@ const resolveCascades = (ctx: CascadeContext): CascadeCommand[] => {
       );
       const grHasRejects = gr.inspectionResults.some((r) => r.qtyRejected > 0);
       const cmds: CascadeCommand[] = [];
-      for (const inv of invoiceStore.all()) {
-        if (inv.poNumber !== gr.poNumber || inv.status !== 'Submitted') continue;
+      // ⚠️ **THE PAIRING, NAMED.** This was an inline `continue` clause reading
+      // `inv.poNumber !== gr.poNumber || inv.status !== 'Submitted'`. It IS the
+      // PO×state relation between a receipt and an invoice, and while it lived
+      // here it could only be asked in this one direction — which is why an
+      // invoice arriving AFTER its receipt is matched by nothing. Same predicate,
+      // same rows, now named in `invoiceRollup.ts` so the mirror is askable and
+      // testable. `invoiceMatchPairing.test.ts` pins that this direction is
+      // byte-for-byte the behaviour it replaced.
+      for (const inv of invoicesForReceipt(gr, invoiceStore.all())) {
         const verdict = deriveMatchVerdict(expectedValue, inv.amount, grHasRejects);
         invoiceStore.update(inv.id, (i) => ({ ...i, matchStatus: verdict }));
         if (verdict === 'Matched') {
