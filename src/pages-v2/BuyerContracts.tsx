@@ -596,12 +596,31 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
       signedDate: '',
       // ⚠️ THE SECOND MINT IS GONE WITH ITS FIELDS. This wrote
       // `obligationCount: draft.obligations.length` and `obligationsMet: 0`
-      // onto the new contract — and NOTHING PERSISTED `draft.obligations`, so
-      // the number described a collection the store never received. Derived
-      // before deleting: there is no obligation write path of any kind (no
-      // `extraObligations`, and `obligation` holds no `CommandTarget`, so
-      // `t_obligation_track` cannot fire), which is what makes the count a
-      // snapshot of an intention rather than a fact. The counters are computed
+      // onto the new contract.
+      //
+      // ⚠️ **AND THE NUMBER WAS NOT WRONG WHEN IT WAS WRITTEN — DO NOT READ
+      // THE COMPUTED COUNT AS EVIDENCE THAT THIS CODE WAS.** At the instant of
+      // creation `draft.obligations.length` was exactly the number of
+      // obligations the buyer had picked, so the snapshot was TRUE of the
+      // draft. Two things were missing under it, and naming them is the whole
+      // correction:
+      //
+      //   1. **The obligations themselves were never persisted.** There is no
+      //      `extraObligations`; `setExtraContracts` writes a `Contract` and
+      //      nothing else. So the count was true of the DRAFT and never true of
+      //      the STORE, which is the only thing any surface reads.
+      //   2. **There was no producer at UPDATE.** `obligation` holds no
+      //      `CommandTarget` (`getKnownFlows()` ∖ `WIRED_COMMAND_TARGETS`), so
+      //      `t_obligation_track` cannot fire and no path exists for adding an
+      //      obligation to a contract that already exists. A snapshot with no
+      //      mechanism to stay current goes stale on its first change — and
+      //      here the first change never even had to happen.
+      //
+      // ⚠️ **THE SHIPPED FIXTURE VALUES DID NOT COME FROM HERE AT ALL** — all
+      // thirteen were hand-authored (see `mockContracts.ts`). The defect this
+      // page carried and the defect the fixtures carried were different defects
+      // that happened to share two field names. `draft.obligations` itself
+      // stays: the wizard's own review step reads it, and that read is honest. The counters are computed
       // from the obligation store at read.
       category: draft.category,
       brands: draft.brands,
