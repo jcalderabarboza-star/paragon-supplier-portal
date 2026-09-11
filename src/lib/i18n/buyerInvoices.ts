@@ -108,6 +108,10 @@ export const buyerInvoicesEn: Record<string, string> = {
     'Settlement was refused. Asking again will not change the answer — the invoice stays here until the refusal is resolved.',
   // — Footer action by status —
   'buyerInvoices.footer.reviewMatch': 'Review match',
+  // The primary slot on a `Matched` invoice. It names the CONSEQUENCE
+  // ("for payment") rather than the bare verb, because the seat pressing it is
+  // authorising money and the next act is the release.
+  'buyerInvoices.footer.approve': 'Approve for payment',
   'buyerInvoices.footer.releasePayment': 'Release payment',
   'buyerInvoices.footer.resolveDispute': 'Resolve dispute',
   'buyerInvoices.footer.sendRemittance': 'Send remittance',
@@ -271,6 +275,7 @@ export const buyerInvoicesId: Record<string, string> = {
     'Penyelesaian ditolak. Mengulang permintaan tidak akan mengubah jawabannya — faktur tetap di sini sampai penolakan itu diselesaikan.',
   // — Footer action by status —
   'buyerInvoices.footer.reviewMatch': 'Tinjau pencocokan',
+  'buyerInvoices.footer.approve': 'Setujui untuk pembayaran',
   'buyerInvoices.footer.releasePayment': 'Rilis pembayaran',
   'buyerInvoices.footer.resolveDispute': 'Selesaikan sengketa',
   'buyerInvoices.footer.sendRemittance': 'Kirim bukti pembayaran',

@@ -513,6 +513,14 @@ export const resources = {
       'invoice.resolve.failed.desc': 'Resolution was rejected ({{reason}}).',
       'invoice.pay.action': 'Release payment',
       // Honest: NO "paid" claim before settlement mints the FI document (law 0.6).
+      // The approval — `Matched` → `Approved`, the act that authorises the
+      // payment the release then makes. It records `UNATTRIBUTED` against the
+      // session (C10 §6.4), so the copy says what happened and never names a
+      // person the platform cannot resolve.
+      'invoice.approve.done.title': '{{invoiceNumber}} — approved for payment',
+      'invoice.approve.done.desc': 'Recorded without a named approver — no person is resolved in this session. Payment can now be released.',
+      'invoice.approve.failed.title': 'Could not approve {{invoiceNumber}}',
+      'invoice.approve.failed.desc': 'Approval was rejected ({{reason}}).',
       'invoice.pay.releasing.title': '{{invoiceNumber}} — releasing payment',
       'invoice.pay.releasing.desc': 'Submitted to SAP for payment — awaiting the FI-document callback. No payment posted yet.',
       'invoice.pay.released.title': '{{invoiceNumber}} — payment released',
@@ -921,6 +929,13 @@ export const resources = {
       'invoice.resolve.failed.title': 'Tidak dapat menyelesaikan {{invoiceNumber}}',
       'invoice.resolve.failed.desc': 'Penyelesaian ditolak ({{reason}}).',
       'invoice.pay.action': 'Rilis pembayaran',
+      // Persetujuan — `Matched` → `Approved`, tindakan yang mengesahkan
+      // pembayaran. Dicatat sebagai `UNATTRIBUTED` terhadap sesi (C10 §6.4),
+      // jadi teksnya tidak pernah menyebut orang yang tidak dapat dikenali.
+      'invoice.approve.done.title': '{{invoiceNumber}} — disetujui untuk pembayaran',
+      'invoice.approve.done.desc': 'Dicatat tanpa nama penyetuju — tidak ada orang yang dikenali dalam sesi ini. Pembayaran kini dapat dirilis.',
+      'invoice.approve.failed.title': 'Tidak dapat menyetujui {{invoiceNumber}}',
+      'invoice.approve.failed.desc': 'Persetujuan ditolak ({{reason}}).',
       'invoice.pay.releasing.title': '{{invoiceNumber}} — merilis pembayaran',
       'invoice.pay.releasing.desc': 'Dikirim ke SAP untuk pembayaran — menunggu callback dokumen FI. Belum ada pembayaran.',
       'invoice.pay.released.title': '{{invoiceNumber}} — pembayaran dirilis',
