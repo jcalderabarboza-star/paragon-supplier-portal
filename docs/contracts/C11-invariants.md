@@ -75,6 +75,7 @@ this document** rather than leaving a promise nobody keeps.
 | **V16** | **Authentication is bought; authorisation is ours.** An identity provider supplies a `SubjectBinding` and nothing else — it never mints a `personId`, and it never becomes a second authorisation path. ⚠️ **THIS IS NOT ENFORCED.** It constrains a system that does not exist yet, so there is nothing to gate. **What would enforce it:** nothing, until an IdP lands; at that point a gate asserting `personId` is portal-minted and never equal to a subject becomes buildable. Stated in C10 §3.2 / §5.1 / §7.1 and deliberately restated here, because a reader of this table must not infer it is checked. | `NOT ENFORCED` | — | — |
 | **V17** | **A refusal is a first-class result, not an exception.** A business refusal is a value the caller can branch on; exceptions are reserved for programmer error and transport failure. ⚠️ **THIS IS NOT ENFORCED** as a principle — the factories above assert individual refusals COME BACK as results, which is the behaviour, but nothing asserts that no business path throws. **What would enforce it:** a gate over the dispatcher's own source refusing a `throw` outside the argument-validation prologue. Cheap, and unbuilt. | `NOT ENFORCED` | — | — |
 | **V18** | **An ingress replay raises no second act.** A command carrying an `idempotencyKey` already seen under the same tenancy returns the FIRST result — same `correlationId`, same `entityId` — rather than raising again. It is a RESULT and not a refusal, because a refusal is `status: 'failed'` and an at-least-once transport's correct response to a failure is to redeliver: refusing a replay would convert one duplicate into an unbounded retry loop. Absent, nothing changes. | `FACTORY` | `src/services/contracts/conformance/dispatch.ts` | `the SAME idempotencyKey twice returns the first result — one act, not two` |
+| **V19** | **A pinned contract states its pin’s reach.** Every AUTHORED document a spec asserts over carries a `## Pin reach` block naming what the pin guards AND stating, explicitly, that everything else on the page is not guarded — and the guarded list is asserted EQUAL to the pin’s own assertions, in both directions. A GENERATED rendering is excluded, derived from its own `DO NOT EDIT BY HAND` marker rather than listed — nobody has a hand to write one. ⚠️ **THE SECOND HALF IS THE INVARIANT.** A list of guarded things reads as completeness; twice in this corpus a reader assumed a pin covered a clause it never reached, and in both cases the gate was working exactly as specified. What was missing was any way to see where the guarding stopped. | `GATE` | `src/services/contracts/__tests__/pinReach.contract.test.ts` | `with both halves stated, and the self-pin named` |
 
 ---
 
@@ -151,3 +152,52 @@ a prose summary rather than from the module.
 enforces plus what a backend could violate, and both halves grow. A property
 with no enforcer and no `NOT ENFORCED` marking is a defect in this document, and
 the pin refuses it.
+
+---
+
+## Pin reach
+
+**Pinned by** `src/services/contracts/__tests__/c11Invariants.contract.test.ts` and `src/services/contracts/__tests__/c12BackendSpec.contract.test.ts`.
+
+**GUARDED — these assertions, and nothing else on this page:**
+
+- POPULATION + PARSER CONTROLS — before any row is believed
+- THE CLASSES — every row declares one, and every class is populated
+- FORWARD — a retired enforcer reddens the document
+- REVERSE — an invariant with no enforcer must SAY so, in its own cell
+- THE NUMBER — derived from the directory, not chosen
+- POPULATION CONTROLS — before any comparison is believed
+- §2.1 — the never-originate table IS the derived intersection
+- §2.3 — the SAP-boundary verbs are the ones the flows declare
+- §5 — the seam-code gap is the union against C5, both directions
+- §3 — the inherited list IS C11’s non-FACTORY set
+- ⚠️ EVERY ARTEFACT C12 NAMES EXISTS
+- §6.2 — the fallback rewrite is real, and the document describes it
+- §6.3 — the edge gate the document says a static host cannot run
+- §6.4 — the publish-after-gates requirement states a real absence
+
+
+⚠️ **THIS INSTRUMENT IS SHARED, AND THE REACH BELOW IS THE INSTRUMENT'S RATHER THAN THIS
+PAGE'S.** It also asserts over `C12-backend-spec.md`, `C5-seams.md`, so entries naming another document are its assertions about
+that sibling. They are listed here rather than filtered because **the thing a reader needs is
+what the instrument checks**, and a filtered list would quietly re-introduce the judgement this
+block exists to remove.
+
+⚠️ **NOT GUARDED — EVERYTHING ELSE ON THIS PAGE, AND THAT HALF IS WHY THIS BLOCK EXISTS.**
+A list of guarded things reads as completeness. It is not: **a reader who assumes the pin
+covers a clause it does not reach is the failure this block is built against**, and it has
+happened in this corpus — a DTO field whose MEANING was assumed pinned by a method-surface
+pin, and a repaired defect still asserted as current in a document whose pin passed because
+it only checks that an unenforced row SAYS it is unenforced.
+
+Most of what is not guarded **cannot be**, and that is a property of a contract rather than
+a backlog: a clause describing a system outside this repository has nothing here to compare
+against, and a clause stating WHY a boundary exists has no truth-value to decay. See C12
+for the statement of that property.
+
+⚠️ **THIS BLOCK IS SELF-PINNED** (`src/services/contracts/__tests__/pinReach.contract.test.ts`).
+The GUARDED list is asserted EQUAL to the pin’s own `describe` titles, **both directions**:
+widen the pin without listing the new assertion and it reddens; drop a line here without
+narrowing the pin and it reddens too. A reach statement that can drift is the overclaim one
+layer up.
+

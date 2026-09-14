@@ -134,6 +134,7 @@ drift from the document that classifies them.
 | **V15** | never mint a document identity | a source gate over identifier construction. Ours does not exist; §2.1 records the violation |
 | **V16** | authentication bought, authorisation ours | assert an IdP supplies a binding and never a second authorisation path |
 | **V17** | a refusal is a result, not an exception | **checkable only on your side.** We have no transport. Over HTTP it is one line: a business refusal is a 200 carrying a refusal body, never a 4xx/5xx |
+| **V19** | a pinned contract states its pin’s reach | **nothing, if you keep our shape.** The block is generated from the pin’s own assertions and asserted equal to them, so it cannot drift; what it costs you is the discipline of writing one when you add a pin of your own |
 
 ---
 
@@ -356,7 +357,38 @@ distinction matters in both directions: do not treat today's hosting as a
 residency decision, and do not treat a residency-compliant host as discharging
 UU PDP — the obligations attach when real people's data does.
 
-### 6.6 · What nothing answers
+### 6.6 · A pinned contract is not a checked contract
+
+⚠️ **YOU WILL READ A DOCUMENT THAT SAYS IT IS PINNED AND ASSUME THE PIN COVERS WHAT YOU ARE
+READING. IT DOES NOT, AND THAT IS A PROPERTY OF WHAT A CONTRACT IS RATHER THAN A BACKLOG.**
+
+Most clauses in this corpus **cannot** be checked here, and they fall into three groups that are
+worth telling apart because only one of them is ever fixable:
+
+| Why it cannot be checked | Example |
+|---|---|
+| **It describes a system outside this repository** | §1’s third column, C5’s seam boundaries, every measurement of a counterparty’s tree. There is nothing here to compare against, by construction |
+| **It states a REASON, not a fact** | §2’s *"why a good team builds it anyway"*, C11’s *"what would enforce it"*. Prose asserting why a boundary exists has no truth-value to decay |
+| **Its subject does not exist yet** | C11 V16’s identity provider, C10’s four ledgers, C4’s warehouse. No referent |
+
+⚠️ **THE FOURTH GROUP IS THE SMALL ONE AND IT IS THE ONLY ONE THAT HAS EVER BITTEN: A CLAUSE
+ASSERTING THIS TREE’S CURRENT STATE.** That IS decidable, and when it goes stale nothing notices —
+a repaired defect can sit in a contract as a live confession, read by everyone and re-measured by
+nobody, because a confession looks like diligence. **If you write one, give it an instrument or
+give it a date.**
+
+**What every pinned document now carries is a `## Pin reach` block** naming what its pin guards and
+stating that everything else is not guarded. It is generated from the pin’s own assertions and
+asserted equal to them in both directions (C11 V19), so the statement cannot drift from the
+instrument it describes. **Read it before you rely on a clause.**
+
+⚠️ **AND A THIRD FAILURE EXISTS THAT NEITHER COVERAGE QUESTION REACHES: A DOCUMENT NAMING AN
+INSTRUMENT THAT IS NOT THERE.** Three contracts cited a guard file the tree has never held — two
+named a scoping test under a name it does not have, and one placed a reason-gate in a component
+that has never existed. The claims were RIGHT and the citations were wrong, which is the shape
+that survives review. **Every source file any contract names is now asserted to exist.**
+
+### 6.7 · What nothing answers
 
 | Question | The state of it |
 |---|---|
@@ -365,7 +397,7 @@ UU PDP — the obligations attach when real people's data does.
 | **Is publication ordered after the gates?** | **Not by anything here** (§6.4). One workflow, no publish step |
 | **Who owns the repository's integrations?** | **Undetermined from inside the repository**, and §6.7 is the one case where that has a visible consequence |
 
-### 6.7 · A passing check that this repository cannot account for
+### 6.8 · A passing check that this repository cannot account for
 
 Every pull request in this repository carries status contexts named **`Vercel`**
 and **`Vercel Preview Comments`**, and they **report success**.
@@ -437,3 +469,47 @@ C11 adopted: **they state REASONS, not NUMBERS.** Prose asserting why a boundary
 exists has no truth-value to decay. Prose asserting how many things are on one
 side of it has been wrong at six sites in this tree, which is why no such
 sentence appears above.
+
+---
+
+## Pin reach
+
+**Pinned by** `src/services/contracts/__tests__/c12BackendSpec.contract.test.ts`.
+
+**GUARDED — these assertions, and nothing else on this page:**
+
+- POPULATION CONTROLS — before any comparison is believed
+- §2.1 — the never-originate table IS the derived intersection
+- §2.3 — the SAP-boundary verbs are the ones the flows declare
+- §5 — the seam-code gap is the union against C5, both directions
+- §3 — the inherited list IS C11’s non-FACTORY set
+- ⚠️ EVERY ARTEFACT C12 NAMES EXISTS
+- §6.2 — the fallback rewrite is real, and the document describes it
+- §6.3 — the edge gate the document says a static host cannot run
+- §6.4 — the publish-after-gates requirement states a real absence
+
+
+⚠️ **THIS INSTRUMENT IS SHARED, AND THE REACH BELOW IS THE INSTRUMENT'S RATHER THAN THIS
+PAGE'S.** It also asserts over `C11-invariants.md`, `C5-seams.md`, so entries naming another document are its assertions about
+that sibling. They are listed here rather than filtered because **the thing a reader needs is
+what the instrument checks**, and a filtered list would quietly re-introduce the judgement this
+block exists to remove.
+
+⚠️ **NOT GUARDED — EVERYTHING ELSE ON THIS PAGE, AND THAT HALF IS WHY THIS BLOCK EXISTS.**
+A list of guarded things reads as completeness. It is not: **a reader who assumes the pin
+covers a clause it does not reach is the failure this block is built against**, and it has
+happened in this corpus — a DTO field whose MEANING was assumed pinned by a method-surface
+pin, and a repaired defect still asserted as current in a document whose pin passed because
+it only checks that an unenforced row SAYS it is unenforced.
+
+Most of what is not guarded **cannot be**, and that is a property of a contract rather than
+a backlog: a clause describing a system outside this repository has nothing here to compare
+against, and a clause stating WHY a boundary exists has no truth-value to decay. See C12
+for the statement of that property.
+
+⚠️ **THIS BLOCK IS SELF-PINNED** (`src/services/contracts/__tests__/pinReach.contract.test.ts`).
+The GUARDED list is asserted EQUAL to the pin’s own `describe` titles, **both directions**:
+widen the pin without listing the new assertion and it reddens; drop a line here without
+narrowing the pin and it reddens too. A reach statement that can drift is the overclaim one
+layer up.
+

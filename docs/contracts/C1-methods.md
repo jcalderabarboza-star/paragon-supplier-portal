@@ -256,3 +256,47 @@ header states its blindness, so that no reader mistakes a green floor for a corr
 
 **If you are checking an implementation against this page, you have checked the shape. You have
 not yet checked the behaviour.**
+
+---
+
+## Pin reach
+
+**Pinned by** `src/services/contracts/__tests__/c1MethodSurface.contract.test.ts`.
+
+**GUARDED — these assertions, and nothing else on this page:**
+
+- C1 — the instruments examined something, both ways
+- C1 Axis 1 — the composition of IDataService
+- C1 Axis 1 — every method, per sub-service, both directions
+- C1 Axis 1 — the removals are recorded, not silently dropped
+- C1 Axis 2 — the transition catalog
+- C1 Axis 3 — the wired CommandTargets
+- C1 — the command types are documented field for field
+- C5 — the figures C5 borrows from C1 agree with C1’s derivation
+- C1 — `httpDataService` is RESERVED, and that is a claim about an IMPLEMENTATION
+
+
+⚠️ **THIS INSTRUMENT IS SHARED, AND THE REACH BELOW IS THE INSTRUMENT'S RATHER THAN THIS
+PAGE'S.** It also asserts over `C5-seams.md`, so entries naming another document are its assertions about
+that sibling. They are listed here rather than filtered because **the thing a reader needs is
+what the instrument checks**, and a filtered list would quietly re-introduce the judgement this
+block exists to remove.
+
+⚠️ **NOT GUARDED — EVERYTHING ELSE ON THIS PAGE, AND THAT HALF IS WHY THIS BLOCK EXISTS.**
+A list of guarded things reads as completeness. It is not: **a reader who assumes the pin
+covers a clause it does not reach is the failure this block is built against**, and it has
+happened in this corpus — a DTO field whose MEANING was assumed pinned by a method-surface
+pin, and a repaired defect still asserted as current in a document whose pin passed because
+it only checks that an unenforced row SAYS it is unenforced.
+
+Most of what is not guarded **cannot be**, and that is a property of a contract rather than
+a backlog: a clause describing a system outside this repository has nothing here to compare
+against, and a clause stating WHY a boundary exists has no truth-value to decay. See C12
+for the statement of that property.
+
+⚠️ **THIS BLOCK IS SELF-PINNED** (`src/services/contracts/__tests__/pinReach.contract.test.ts`).
+The GUARDED list is asserted EQUAL to the pin’s own `describe` titles, **both directions**:
+widen the pin without listing the new assertion and it reddens; drop a line here without
+narrowing the pin and it reddens too. A reach statement that can drift is the overclaim one
+layer up.
+

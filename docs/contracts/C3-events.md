@@ -157,3 +157,37 @@ drift** — but the moment the sink is durable, this list is final.
 ⚠️ **AND THIS PAGE IS NOW PINNED** (`c3Events.contract.test.ts`): the interfaces above are asserted
 field-for-field against `events.ts`, so a field added to the tree and not to this page fails the
 build. That is how the three above were found.
+
+---
+
+## Pin reach
+
+**Pinned by** `src/services/contracts/__tests__/c3Events.contract.test.ts`.
+
+**GUARDED — these assertions, and nothing else on this page:**
+
+- POPULATION + PARSER CONTROLS — before any comparison is believed
+- ⚠️ TransitionEvent is documented FIELD FOR FIELD, both directions
+- AuditSink — the seam the whole contract rests on
+- ⚠️ THE #307 CLASS — a signature restated in prose
+- the artefacts and transitions C3 names all exist
+- ⚠️ the instant is INJECTED, and the shared spine holds no clock
+
+⚠️ **NOT GUARDED — EVERYTHING ELSE ON THIS PAGE, AND THAT HALF IS WHY THIS BLOCK EXISTS.**
+A list of guarded things reads as completeness. It is not: **a reader who assumes the pin
+covers a clause it does not reach is the failure this block is built against**, and it has
+happened in this corpus — a DTO field whose MEANING was assumed pinned by a method-surface
+pin, and a repaired defect still asserted as current in a document whose pin passed because
+it only checks that an unenforced row SAYS it is unenforced.
+
+Most of what is not guarded **cannot be**, and that is a property of a contract rather than
+a backlog: a clause describing a system outside this repository has nothing here to compare
+against, and a clause stating WHY a boundary exists has no truth-value to decay. See C12
+for the statement of that property.
+
+⚠️ **THIS BLOCK IS SELF-PINNED** (`src/services/contracts/__tests__/pinReach.contract.test.ts`).
+The GUARDED list is asserted EQUAL to the pin’s own `describe` titles, **both directions**:
+widen the pin without listing the new assertion and it reddens; drop a line here without
+narrowing the pin and it reddens too. A reach statement that can drift is the overclaim one
+layer up.
+
