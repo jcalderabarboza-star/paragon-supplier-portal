@@ -29,7 +29,7 @@
 //   `buildRepoProgram`. Mutating `events.ts` cannot shrink the document's claim
 //   set, so the pin can always tell "I caught it" from "I have nothing to read".
 // ─────────────────────────────────────────────────────────────────────────────
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
@@ -172,3 +172,110 @@ describe('the artefacts and transitions C3 names all exist', () => {
 // and id C3 prints is the one the tree has.** That is the class that went stale
 // at #307, and it is the class a document can be wrong about silently.
 // ─────────────────────────────────────────────────────────────────────────────
+
+// -----------------------------------------------------------------------------
+// ⚠️ THE INSTANT — C3's DEV HALF, MADE CHECKABLE.
+//
+// C3 already carries the clause: *"`ts` is caller-supplied, never read inside
+// the pure dispatcher … In the mock it is `() => new Date().toISOString()`; the
+// real adapter supplies its own clock."* **That sentence was PROSE and nothing
+// checked it.** It is the shape this corpus keeps finding — a contract clause a
+// pin cannot see, which is how one gets contradicted by shipped code while
+// everything reads green.
+//
+// ⚠️ **IT IS PINNED RATHER THAN RESTATED BECAUSE IT IS DECIDABLE.** A clock read
+// is a CALL SHAPE, not a meaning: the spine either reads one or it does not.
+// Most semantic clauses in this corpus cannot be checked at all; this one can,
+// so it gets a guard instead of another paragraph.
+//
+// ⚠️ **THE DISCRIMINATION THE MATCHER MUST GET RIGHT.** `new Date()` reads the
+// clock. `new Date(asOf)` PARSES A SUPPLIED STRING and is not a clock read at
+// all — `policies.ts` does exactly that, validating an FX pin's `asOf`. A
+// matcher that cannot tell them apart accuses the spine of the very thing this
+// assertion exists to deny, which is heuristic rule 2 widening into a false
+// accusation. Both directions are controlled below, and the known-GOOD control
+// runs FIRST (rule 4): the matcher must find clock reads where they really are
+// before its silence over the spine means anything.
+// -----------------------------------------------------------------------------
+const SPINE_DIR = join(ROOT, 'src', 'services', 'transitions');
+const MOCK_COMMAND = join(ROOT, 'src', 'services', 'data', 'mock', 'MockCommandService.ts');
+
+/**
+ * Comments blanked LENGTH-PRESERVINGLY, so a clock read QUOTED in a comment
+ * cannot count. `contractDraftOwner.ts` quotes `Date.now()` while describing a
+ * retired defect, and an unstripped matcher would convict the spine on it.
+ *
+ * The fifth private stripper in this tree — the absence of a shared helper is
+ * filed, not fixed here.
+ */
+const codeOnly = (s: string): string =>
+  s
+    .replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, ' '))
+    .replace(/(^|[^:])(\/\/[^\n]*)/g, (_m, p: string, c: string) => p + c.replace(/[^\n]/g, ' '));
+
+/** Zero-argument `new Date()` and `Date.now()` — clock READS, never parses. */
+const CLOCK_READ = /\bDate\.now\s*\(|\bnew\s+Date\s*\(\s*\)/g;
+
+function spineFiles(): string[] {
+  const found: string[] = [];
+  const walk = (d: string): void => {
+    for (const e of readdirSync(d, { withFileTypes: true })) {
+      const p = join(d, e.name);
+      if (e.isDirectory()) walk(p);
+      else if (/\.ts$/.test(e.name) && !/\.test\.ts$/.test(e.name)) found.push(p);
+    }
+  };
+  walk(SPINE_DIR);
+  return found;
+}
+
+const clockReadsIn = (file: string): number =>
+  (codeOnly(readFileSync(file, 'utf8')).match(CLOCK_READ) ?? []).length;
+
+/** C3's prose, whitespace-flattened — the clause wraps across lines. */
+const FLAT = CONTRACT.replace(/\s+/g, ' ');
+
+describe('⚠️ the instant is INJECTED, and the shared spine holds no clock', () => {
+  const files = spineFiles();
+
+  it('CONTROL — the spine was really read', () => {
+    expect(files.length).toBeGreaterThan(10);
+    expect(files.some((f) => f.endsWith('dispatcher.ts'))).toBe(true);
+  });
+
+  it('⚠️ KNOWN-GOOD FIRST — the matcher FINDS clock reads where they really are', () => {
+    // The mock service reads the wall clock many times over. A zero here means
+    // the matcher is broken and every assertion below is vacuous.
+    expect(clockReadsIn(MOCK_COMMAND)).toBeGreaterThan(5);
+  });
+
+  it('⚠️ and it does NOT count a PARSE — `new Date(asOf)` is not a clock read', () => {
+    expect('const t = new Date(asOf).getTime();'.match(CLOCK_READ)).toBeNull();
+    expect('const t = new Date().toISOString();'.match(CLOCK_READ)).not.toBeNull();
+  });
+
+  it('a clock read quoted inside a COMMENT does not count', () => {
+    expect(codeOnly('// it minted ctr-new plus Date.now() and toasted').match(CLOCK_READ)).toBeNull();
+  });
+
+  it('THE CLAIM — no file in the shared spine reads a clock', () => {
+    const offenders = files
+      .filter((f) => clockReadsIn(f) > 0)
+      .map((f) => f.slice(ROOT.length + 1).replace(/\\/g, '/'));
+    expect(offenders).toEqual([]);
+  });
+
+  it('the dispatcher DECLARES the instant as a dependency', () => {
+    expect(readFileSync(join(SPINE_DIR, 'dispatcher.ts'), 'utf8')).toMatch(/now:\s*\(\)\s*=>\s*string/);
+  });
+
+  it('⚠️ the DEV supplier is the one C3 documents, at the one wiring site', () => {
+    expect(readFileSync(MOCK_COMMAND, 'utf8')).toContain('now: () => new Date().toISOString()');
+    expect(FLAT).toContain('() => new Date().toISOString()');
+  });
+
+  it('and C3 states the PRODUCTION origin beside it — both halves, or it is not a DEV half', () => {
+    expect(FLAT).toContain('caller-supplied');
+    expect(FLAT).toContain('the real adapter supplies its own clock');
+  });
+});
