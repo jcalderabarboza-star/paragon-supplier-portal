@@ -52,6 +52,30 @@ mirrors the query-layer `scopeKey` format.
 read-projection clock injection (C2). In the mock it is `() => new Date().toISOString()`; the real
 adapter supplies its own clock.
 
+⚠️ **AND THAT CLAUSE IS NOW PINNED** (`c3Events.contract.test.ts`). It was prose, and
+prose is how a contract clause gets contradicted by shipped code with every gate green. This one is
+**decidable** — a clock read is a call shape, not a meaning — so the guard asserts what the sentence
+claims: **no file under `src/services/transitions/` reads a clock at all**, the dispatcher declares
+`now` as a dependency, and the one production wiring site supplies exactly the value named above.
+The matcher separates `new Date()` (a clock read) from `new Date(asOf)` (a parse of a supplied
+string, which `policies.ts` really does), and it is controlled in both directions before its silence
+over the spine is believed.
+
+⚠️ **IT IS THE WALL CLOCK AND NOT THE DECLARED PRESENT, DELIBERATELY — WHICH IS THE
+OPPOSITE OF THE RULE THE FIXTURES FOLLOW, AND THE REASON IS WORTH CARRYING.**
+`services/data/fixturePresent.ts` shifts every dated fixture family onto a frozen
+`DECLARED_PRESENT`, so a question asked of seeded data reads as though today were that family's own
+anchor. **An event is not seeded data.** `ts` records when an act HAPPENED, and in a session the act
+happens now; stamping a live act with a frozen past date would make every event in every session
+claim the same day, and would destroy time-ordering for whoever reads the ledger.
+
+**Measured rather than argued.** `npm run drift` reports each family's exposure to the wall clock,
+and it reports that **no family carries a reader-visible stored clock state** — every clock-derived
+state is computed at read (law 0.5 / C11 V9), so there is no seeded value for a wall-clock event
+stamp to disagree with. **The two clocks answer two different questions and the tree keeps them
+apart on purpose.** A backend inherits the same split: supply `now` from the server's clock at the
+one injection point, and leave the spine as it is.
+
 ---
 
 ## The sink seam — `AuditSink` · **LIVE (in-memory) / durable RESERVED**
