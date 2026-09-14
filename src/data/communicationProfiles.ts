@@ -202,7 +202,7 @@ export const MESSAGE_TEMPLATES = {
     zh: (supplier: string, poNum: string, dueDate: string) =>
       `尊敬的${supplier}，采购订单${poNum}的交货日期为${dueDate}。请在发货前提交预先发货通知(ASN)。谢谢。`,
     de: (supplier: string, poNum: string, dueDate: string) =>
-      `Sehr geehrte Damen und Herren, die Lieferung für Bestellung ${poNum} ist für ${dueDate} geplant. Bitte übermitteln Sie die Lieferankündigung (ASN) vor dem Versand.`,
+      `Sehr geehrte Damen und Herren von ${supplier}, die Lieferung für Bestellung ${poNum} ist für ${dueDate} geplant. Bitte übermitteln Sie die Lieferankündigung (ASN) vor dem Versand.`,
     ar: (supplier: string, poNum: string, dueDate: string) =>
       `عزيزي ${supplier}، موعد تسليم الطلب ${poNum} هو ${dueDate}. يرجى إرسال إشعار الشحن المسبق قبل الإرسال.`,
     fr: (supplier: string, poNum: string, dueDate: string) =>
