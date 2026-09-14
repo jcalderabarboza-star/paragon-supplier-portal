@@ -12,8 +12,57 @@
     "noEmit": true,
     "jsx": "react-jsx",
     "strict": true,
+    // `noUnusedLocals` STAYS OFF, and that is a separate decision with its own
+    // population: forcing it on reports 28 sites, 27 of them dead imports
+    // (`React`, lucide icons, unused hooks) and one real dead const
+    // (`shouldCostBacktest.ts` · `SERIES_BY_ROOT`). Zero false positives, but 28
+    // edits — a cleanup, not this batch. Turn it on when somebody does them.
     "noUnusedLocals": false,
-    "noUnusedParameters": false,
+    // ── `noUnusedParameters` — ON, and here is what it is for. ───────────────
+    //
+    // It catches A PARAMETER WHOSE SIGNATURE ASSERTS A USE THE BODY DOES NOT
+    // MAKE. On adoption it found exactly one site tree-wide, and the site was a
+    // real defect: `data/communicationProfiles.ts`'s GERMAN `asn_reminder` took
+    // `supplier` and never interpolated it, addressing an unnamed recipient
+    // while holding the name. Nine sibling locales used it, and so did the
+    // German `po_issued` template TWENTY LINES ABOVE IT — so the fix was the
+    // file's own convention (`Sehr geehrte Damen und Herren von ${supplier}`),
+    // not a translation decision.
+    //
+    // ⚠️ **THE SPECIMEN CHECK, AND IT CAME BACK NEGATIVE — RECORDED RATHER THAN
+    // OMITTED.** This flag was dispatched as the guard that would have caught
+    // #341. It would NOT have. Measured, not reasoned: a worktree at `3b062aa`
+    // (#341's parent, where `obligationCount: number` / `obligationsMet: number`
+    // still stood unread) reports ONE error under this flag — the same German
+    // template — and says nothing about either field. **TS6133 cannot reach an
+    // interface member**, so a stored field with no reader is outside this
+    // flag's reach by construction, in both directions.
+    //
+    // The instrument for THAT class already exists and is already gated: C11
+    // **V11** / `src/lib/storedFieldGate/`. ⚠️ It did not catch #341 either, and
+    // the reason is worth knowing before anyone leans on it: its population is
+    // derived from `GLOSSARY_REGISTRIES`' source types — 25 CLOSED STRING-LITERAL
+    // UNIONS, not entity DTOs — so a field typed `number` on a DTO exposing none
+    // of them was never in its population. Filed; not this batch.
+    //
+    // THE ESCAPE HATCH IS `_`-PREFIX. Seven parameters use it today and ALL SEVEN
+    // WERE AUDITED ON ADOPTION — because a parameter renamed to `_x` to silence a
+    // check is this defect wearing the fix's clothes, and an unaudited hatch is
+    // where it would live. They fall in two kinds, neither of them that:
+    //   · FIVE are INTERFACE OBLIGATIONS — the signature is someone else's.
+    //     `_toState` ×3 (`CommandTarget.create` / `.applyTransition`), `_svc` ×2
+    //     (the scoped-hook callback shape).
+    //   · TWO are DELIBERATE SINGLE-SEAT SEAMS whose reason is stated AT THE SITE,
+    //     which is what separates them from the German template above — that one
+    //     stated nothing and contradicted its own file. `docCount(_c: Contract)`
+    //     returns 0 "by construction: the portal links no documents to a contract
+    //     today", kept as a function so a real relation has one seat to land in;
+    //     `FOOTER_VARIANT(_r: RFQ)` returns `'outline'` because §68 retired the
+    //     solid register, and it is PINNED — `BuyerSourcing.footer.test.ts` holds
+    //     nine assertions against it, so the seam cannot quietly rot.
+    // The discriminator, for the next one: a hatch is honest when the signature is
+    // owed to a caller or the emptiness is stated and pinned. Silence is not.
+    "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true
