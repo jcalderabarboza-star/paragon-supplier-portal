@@ -11,10 +11,30 @@
 //   IF an affordance's handler performs NO REAL ACT, its toast MUST ADMIT that.
 //
 //   Both halves derive; neither is a list:
-//     · THE POPULATION derives from the page sources — every `toast(` inside an
-//       affordance handler that contains no dispatch, no mutation, no navigation
-//       and no download. Add an unbacked affordance tomorrow and it is IN,
+//     · THE POPULATION derives from the page sources — every `toast(` whose
+//       affordance handler's OWN BODY TEXT contains none of the call shapes in
+//       `PERFORMS_REAL_ACT`. Add an unbacked affordance tomorrow and it is IN,
 //       without anybody editing this file (`CENSUS-MUST-DERIVE-01`).
+//
+//       ⚠️ **THAT SENTENCE USED TO SAY "contains no dispatch, no mutation, no
+//       navigation and no download", AND THE DIFFERENCE IS THIS GUARD'S WHOLE
+//       REACH.** It reads TEXT, in ONE body, and follows nothing:
+//         · no call is followed. A handler that dispatches THROUGH A HELPER is
+//           invisible to the acquittal and lands in the population.
+//         · the body is bounded at 8000 chars by `balancedEnd`.
+//         · a React state setter counts as an act — the under-reach argued on
+//           `PERFORMS_REAL_ACT` below.
+//       **THE RESIDUE IS MEASURED, NOT GUESSED: five members call a local
+//       helper** — `SupplierDashboard.dismiss` (×1), `SupplierOrders.
+//       openOrderPanel` (×4).
+//
+//       ⚠️ **AND FOLLOWING THEM WOULD MAKE THIS GUARD WORSE, WHICH IS WHY IT DOES
+//       NOT.** Both helpers are PURE STATE SETTERS — `dismiss` calls
+//       `setDismissedActions`; `openOrderPanel` calls seven setters and nothing
+//       else. A setter already counts as an act, so a one-hop resolver would
+//       ACQUIT all five and silently delete five CORRECT members. The reach is
+//       one body deep BY RULING, and the claim above now says so rather than
+//       implying a dispatch analysis this file does not perform.
 //     · THE VERDICT derives from the SHIPPED i18n bundle (`resources`), not from
 //       a regex over the fragment files — the guard judges the string a user
 //       actually sees, in BOTH locales.
@@ -54,6 +74,60 @@ const PAGES_DIR = __dirname;
  * dismissing itself while announcing "workflow initiated" — is a HUMAN review
  * question, and that one was found and fixed by hand at R1, not by this rule.
  */
+/**
+ * ⚠️ **COMMENTS ARE BLANKED BEFORE ANYTHING IS READ, AND UNTIL THIS EXISTED A
+ * COMMENT COULD REMOVE A MEMBER FROM THE POPULATION.** Every claim below is made
+ * about CODE. Two independent mechanisms turned prose into evidence, and the
+ * second is the one that actually fired:
+ *
+ *   1. `PERFORMS_REAL_ACT` ran against raw text, so a comment MENTIONING a call
+ *      shape acquitted the handler.
+ *   2. `balancedEnd` counts brackets, and **a comment's brackets counted too** —
+ *      so `// TODO: dispatch(t_alt_activate)` opened and closed a paren, ended
+ *      the body at the comment, and the `body.includes('toast')` guard dropped
+ *      the member before the acquittal test was ever reached.
+ *
+ * **MEASURED, NOT ARGUED, AND THE FIRST FIX WAS WRONG.** Stripping only before
+ * the acquittal test left (2) live: adding that one line inside
+ * `BuyerRisk.tsx:612`'s `onClick` still moved the population 56 → 55, dropped
+ * that member, and **the suite stayed GREEN** (114 → 112 collected). `it.each`
+ * had one fewer case, and 112 still clears the floor, so neither this guard nor
+ * `scripts/floor.json` could see it. Stripping at READ closes both.
+ *
+ * ⚠️ **IT IS LENGTH-PRESERVING ON PURPOSE.** A comment becomes the SAME NUMBER
+ * of spaces and every newline survives, so byte offsets and LINE NUMBERS are
+ * unchanged — `balancedEnd` slices the same span, and each member keeps the
+ * `file:line` name it is reported under. A collapsing stripper would silently
+ * rename all 56.
+ *
+ * **ZERO MEMBERS WERE BEING ACQUITTED THIS WAY WHEN IT WAS FIXED** — the
+ * population is the same 56 before and after — so this bought no member back. It
+ * closed a latent hole, and the probe is the evidence it was real, because a
+ * clean reading taken at the moment of the fix proves nothing on its own
+ * (`CLEAN-AFTER-THE-FIX-REPORTS-THE-FIX-01`).
+ *
+ * ⚠️ **THIRD INSTRUMENT IN THIS TREE TO NEED THIS, FIFTH TO WRITE ITS OWN
+ * STRIPPER.** `chaosAmbience.test.ts` states the class exactly — *"a mutant that
+ * had DELETED the gate and kept the comment: the assertion was satisfied by prose
+ * describing the mechanism rather than by the mechanism"* — and `fixturePresent`,
+ * `registrationHonesty`, `contractRaisedElsewhere` and
+ * `SupplierCertsExpiringWidget` each carry a private copy. **There is no shared
+ * helper and no convention that a code claim is made against stripped source**,
+ * which is why each instrument re-learns this by being burned. Filed, not fixed
+ * here: unifying them is a sweep and needs a ruling.
+ *
+ * The block form runs first; the line form is guarded with `(^|[^:])` so it
+ * cannot eat the `//` in a `https://` URL — `chaosAmbience`'s refinement, copied
+ * rather than re-derived. `SupplierCertsExpiringWidget` records why the
+ * line-PREFIX form is wrong: it misses a JSX comment and produces a FALSE
+ * ACCUSATION, which is rule 2 in the other direction.
+ */
+const blanks = (m: string): string => m.replace(/[^\n]/g, ' ');
+const codeOnly = (s: string): string =>
+  s
+    .replace(/\/\*[\s\S]*?\*\//g, blanks)
+    .replace(/(^|[^:])(\/\/[^\n]*)/g, (_m, p1: string, c: string) => p1 + blanks(c));
+
 const PERFORMS_REAL_ACT =
   /\b(?:\w*[Mm]utation\.mutate|\w*[Mm]utateAsync|dispatch|navigate|window\.open|createObjectURL|setSearchParams|location\.assign|fetch|set[A-Z]\w*|refetch|invalidateQueries)\s*\(/;
 
@@ -136,7 +210,7 @@ function deriveUnbackedSites(): Site[] {
     (f) => f.endsWith('.tsx') && !f.includes('.test.'),
   );
   for (const file of files) {
-    const src = readFileSync(join(PAGES_DIR, file), 'utf8');
+    const src = codeOnly(readFileSync(join(PAGES_DIR, file), 'utf8'));
     for (const m of src.matchAll(/\btoast\s*\(\s*\{/g)) {
       const idx = m.index ?? 0;
       const pre = src.slice(0, idx);
