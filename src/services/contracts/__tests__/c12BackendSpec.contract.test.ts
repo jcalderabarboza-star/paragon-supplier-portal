@@ -20,15 +20,23 @@
 // and two empty sets are equal (`EMPTY-INPUT-REPORTS-CLEAN-01`). The first
 // describe proves both halves are populated before any comparison is believed.
 // ─────────────────────────────────────────────────────────────────────────────
+import { readFileSync, readdirSync } from 'node:fs';
+import { join } from 'node:path';
+
 import { describe, expect, it } from 'vitest';
 
 import {
   C12_PATH,
+  ROOT,
   backticked,
   c11NonFactoryRows,
   c12InheritedRows,
   citedArtefacts,
+  citedFileExists,
   creationExternalFacts,
+  declaredRoutePaths,
+  fallbackRewrites,
+  htmlEntries,
   knownTransitionIds,
   ownersInUse,
   ownersWithSeamCode,
@@ -184,5 +192,101 @@ describe('⚠️ EVERY ARTEFACT C12 NAMES EXISTS', () => {
   it('and it ACCEPTS the field that really shipped — the other half of the control', () => {
     expect(srcText().includes('idempotencyKey')).toBe(true);
     expect(DOC).toContain('`CommandInput.idempotencyKey`');
+  });
+
+  it('every cited FILE resolves to something on disk', () => {
+    const ghosts = cited
+      .filter((c) => c.kind === 'file')
+      .filter((c) => !citedFileExists(c.token))
+      .map((c) => c.token);
+    expect(ghosts).toEqual([]);
+  });
+
+  it('CONTROL — §6 put real file claims in front of that assertion', () => {
+    const files = cited.filter((c) => c.kind === 'file').map((c) => c.token);
+    expect(files.length).toBeGreaterThan(3);
+    expect(files, 'the edge gate must be cited by name').toContain('middleware.js');
+  });
+
+  it('⚠️ KNOWN-BAD CONTROL — a file path the tree does not hold is REJECTED', () => {
+    expect(citedFileExists('src/services/data/documentUpload.ts')).toBe(false);
+    expect(citedFileExists('no-such-config.json')).toBe(false);
+  });
+
+  it('KNOWN-GOOD CONTROL — both citation forms resolve', () => {
+    expect(citedFileExists('vercel.json'), 'a root path').toBe(true);
+    expect(citedFileExists('BuyerContracts.tsx'), 'a bare basename').toBe(true);
+  });
+
+  it('a GLOB is not read as a file claim — `*.mock.test.ts` names no single file', () => {
+    expect(DOC).toContain('*.mock.test.ts');
+    expect(cited.map((c) => c.token)).not.toContain('*.mock.test.ts');
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// §6 — THE PUBLISH CONSTRAINTS, WHICH ARE THE DECIDABLE HALF OF THAT SECTION.
+//
+// ⚠️ Most of §6 is irreducibly prose and §7 says so. These two are not: a
+// fallback rewrite and a single HTML entry are properties of shipped config,
+// so the one paragraph a host most needs to get right is guarded rather than
+// asserted.
+// ─────────────────────────────────────────────────────────────────────────────
+describe('§6.2 — the fallback rewrite is real, and the document describes it', () => {
+  it('CONTROL — the router declares routes, so a fallback has subjects', () => {
+    expect(declaredRoutePaths().length).toBeGreaterThan(10);
+  });
+
+  it('the shipped host config sends every path to the single HTML entry', () => {
+    const rules = fallbackRewrites();
+    expect(rules.length).toBeGreaterThan(0);
+    expect(rules.some((r) => r.source === '/(.*)')).toBe(true);
+  });
+
+  it('⚠️ there is exactly ONE HTML entry — the premise the fallback rests on', () => {
+    expect(htmlEntries()).toEqual(['index.html']);
+  });
+
+  it('§6.2 states the HashRouter reason rather than the obvious wrong one', () => {
+    const md = section(DOC, /The fallback rewrite/);
+    expect(md.length).toBeGreaterThan(200);
+    expect(md).toContain('HashRouter');
+  });
+});
+
+describe('§6.3 — the edge gate the document says a static host cannot run', () => {
+  it('CONTROL — the section parsed', () => {
+    expect(section(DOC, /The access gate is an EDGE component/).length).toBeGreaterThan(200);
+  });
+
+  it('the middleware and the framework-agnostic core both exist', () => {
+    expect(citedFileExists('middleware.js')).toBe(true);
+    expect(citedFileExists('gate/handler.js')).toBe(true);
+    expect(citedFileExists('gate/session.js')).toBe(true);
+  });
+
+  it('⚠️ the gate really does run before the rewrite — it matches EVERY path', () => {
+    const mw = readFileSync(join(ROOT, 'middleware.js'), 'utf8');
+    expect(mw).toContain("matcher: '/(.*)'");
+  });
+
+  it('the three credentials named are the three the gate reads', () => {
+    const mw = readFileSync(join(ROOT, 'middleware.js'), 'utf8');
+    for (const k of ['GATE_USER', 'GATE_PASSWORD', 'GATE_SECRET']) {
+      expect(mw, `${k} is not read by the middleware`).toContain(k);
+      expect(DOC, `${k} is not named in C12`).toContain(k);
+    }
+  });
+});
+
+describe('§6.4 — the publish-after-gates requirement states a real absence', () => {
+  it('⚠️ no workflow in this repository publishes anything', () => {
+    const dir = join(ROOT, '.github', 'workflows');
+    const files = readdirSync(dir);
+    expect(files.length).toBeGreaterThan(0);
+    const publishing = files.filter((f) =>
+      /deploy|publish|pages|release/i.test(readFileSync(join(dir, f), 'utf8')),
+    );
+    expect(publishing, 'a publish step landed — §6.4 and §6.6 must be rewritten').toEqual([]);
   });
 });

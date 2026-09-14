@@ -225,7 +225,178 @@ seam, that ambiguity has nowhere to be resolved.
 
 ---
 
-## 6 · What holds this document
+## 6 · Build and publish
+
+**This section exists because nothing else in this corpus says how the artefact
+you are inheriting is produced or where it goes.** Every other section describes
+a seam in the running system. This one describes the thing that carries it, and
+it was written after a measurement nobody had taken: **no batch in this
+project's history has ever ended at a URL.** The merge was treated as the
+delivery.
+
+⚠️ **NO HOST IS NAMED HERE, DELIBERATELY.** Hosting is yours to define
+— on-premise or a cloud region — and a recommendation written into a handover
+document reads as a constraint. What follows is what the artefact REQUIRES of a
+host, derived from the tree. Anything a host must provide is stated as a
+requirement; anything the tree merely happens to use today is named as such.
+
+### 6.1 · What the build produces
+
+`npm run build` is `tsc && vite build`. The Vite root is `app/`, the output
+directory is `dist/`, and the source entry is `app/index.html` — which is
+**never edited directly**; the bundler writes the shipped copy.
+
+Measured on a clean build of this tree: **thirteen files, 2.8 MB, and exactly one
+HTML entry.** The rest is hashed JS and CSS chunks under `assets/`, plus
+`favicon.ico` and `robots.txt`. No file is committed — there are no build
+artefacts in this repository, and `dist/` is produced from source every time.
+
+**The application itself is a STATIC BUNDLE and needs no server to render.** The
+backend is greenfield: zero server code, zero datastore clients, every store an
+in-memory fixture behind `mockDataService`. That is the whole of the app's
+runtime requirement, and it is the reason §6.3 is the only paragraph here with
+real consequences.
+
+### 6.2 · The fallback rewrite — a requirement, and a narrower one than it looks
+
+One HTML entry serves every client route. The tree today expresses the fallback
+as a rewrite of every path to `/index.html`.
+
+⚠️ **AND THE REASON IS NOT THE OBVIOUS ONE, WHICH IS WHY IT IS WRITTEN
+OUT RATHER THAN ASSUMED.** Routing here is a **HashRouter**, not a BrowserRouter:
+a client route lives after the `#`, so **the host only ever receives `/` for
+in-app navigation.** A team told *"you need SPA fallback or every route breaks"*
+would be inheriting a false reason for a true requirement, and would then
+mis-scope the fix when routing changes.
+
+What the fallback actually buys today: a stray path — a typo, a stale bookmark,
+a link written before hash routing landed — returns the shell instead of a host
+404. **What makes it load-bearing tomorrow: the day routing moves off the hash,
+every declared route becomes a real path and the fallback becomes the difference
+between a working portal and a wall of 404s.** The route paths are declared in
+one place (`src/router/AppRouter.tsx`) and are derived by the pin rather than
+counted here.
+
+### 6.3 · The access gate is an EDGE component, and a static bucket cannot run it
+
+⚠️ **THIS IS THE MOST CONSEQUENTIAL HOSTING FACT IN THIS DOCUMENT, AND IT
+IS THE ONE MOST EASILY LOST.** SEC-GATE-01 is not a plan. It is built, it ships,
+and **it is not static.**
+
+- `middleware.js` at the repository root is routing middleware that runs on the
+  edge **BEFORE** the fallback rewrite, so it gates the app shell **and every
+  `/assets/*` chunk**. The bundle is never served to an unauthenticated client.
+- It validates an HMAC-SHA256 signed, HttpOnly, 7-day session cookie.
+- Its credentials are **server-side, NON-`VITE_` environment variables**
+  (`GATE_USER` / `GATE_PASSWORD` / `GATE_SECRET`), read at the edge and never
+  bundled into the client. **Unprovisioned, the gate fails CLOSED with a 503.**
+
+**THE REQUIREMENT, STATED AS A REQUIREMENT: a host that serves `dist/` as plain
+objects and nothing else DROPS THIS GATE SILENTLY** — the pages still render,
+the app still works, and the whole bundle is public. There is no error and no
+log. A host must therefore provide a request-interception layer of some kind
+(edge function, reverse proxy, load-balancer auth), or the gate must be
+re-expressed in that host's own terms.
+
+**That re-expression is cheap BY DESIGN, and the design is the useful half.**
+The decision core lives in `gate/` (`gate/handler.js`, `gate/render.js`,
+`gate/session.js`) and is **framework-agnostic** — it is driven both by the
+shipped middleware and by a local Node harness, so what the browser tests
+exercise is exactly what ships. What is host-specific is the thin adapter, not
+the gate.
+
+⚠️ **AND WHAT IT IS NOT, BECAUSE THE NAME INVITES THE WRONG INFERENCE.**
+This is a **prototype access gate** over the whole deployment. It is **not** the
+product's authorisation model — that is the atom/scope system described in C10
+and enforced by the dispatcher, and it is untouched by this gate. Do not carry
+the edge credential forward as a user identity; it authenticates nobody.
+
+### 6.4 · Publish only what the gates have cleared
+
+`npm run gates` runs the four — `npm run build`, the spec-surface typecheck,
+`npx vitest run`, `npm run test:gate` — **and then asserts each one did
+something**, against the floor in `scripts/floor.json`. CI runs that exact
+command and nothing else, on every PR to `main`, on every push to `main`, and
+daily on `main` with no commit involved.
+
+**THE REQUIREMENT: a publish must carry a commit on which those four
+CONCLUDED green.** Not started, not queued — concluded.
+
+⚠️ **THIS IS WRITTEN AS A REQUIREMENT RATHER THAN AS A DESCRIPTION
+BECAUSE NOTHING IN THIS REPOSITORY SEQUENCES THEM.** `.github/workflows/` holds
+one workflow, `gates.yml`, and it contains no publish step of any kind. Whatever
+publishes this artefact is therefore **not ordered against the gate run by
+anything expressible here** — the two are independent, and a commit whose gates
+fail can be published by a mechanism this repository does not control. That is a
+gap, not a design, and it is named again in §6.6.
+
+### 6.5 · UU PDP — the constraint, and what it currently attaches to
+
+**Both halves, because only one of them is usually carried forward.**
+
+**The constraint is real and this platform's own plan already names it.**
+Indonesia's UU PDP governs personal data; the forward plan specifies **AWS
+`ap-southeast-3` Jakarta** for the backend's data residency; the halal control
+design describes the platform as Jakarta-resident and UU PDP-clean; and C10's
+**D-ID-7** is a ruling made under UU PDP — the ledger stamp carries `personId`
+only, with `displayName` resolved at read and never copied into a permanent
+record. A DPO appointment and supplier consent are named as prerequisites before
+real supplier data, on a roughly ten-week clock.
+
+⚠️ **AND THE OTHER HALF, STATED PLAINLY SO IT IS NOT MISTAKEN FOR
+COMPLIANCE ALREADY ACHIEVED: THIS TREE HOLDS NO PERSONAL DATA AT ALL.** There is
+no datastore. Every store is an in-memory fixture, every supplier is a
+`Sample … (illustrative)` row, and the resolved actor is
+`UNATTRIBUTED: NO_PERSON_IN_SESSION` **platform-wide** — C10 §6.2's tripwire
+fires the moment shipped code constructs a `RESOLVED` actor.
+
+**So residency binds the F1 datastore and the systems that feed it. It does not
+bind this bundle**, which contains nothing a data subject has rights over. The
+distinction matters in both directions: do not treat today's hosting as a
+residency decision, and do not treat a residency-compliant host as discharging
+UU PDP — the obligations attach when real people's data does.
+
+### 6.6 · What nothing answers
+
+| Question | The state of it |
+|---|---|
+| **Where is this published?** | **Nothing in this repository knows.** No host, endpoint, alias or domain is recorded in any file here |
+| **Is a publish verified?** | **No.** Nothing compares what a host serves against the commit it was built from — and a hash-routed SPA behind a CDN is precisely the shape where a stale shell is invisible |
+| **Is publication ordered after the gates?** | **Not by anything here** (§6.4). One workflow, no publish step |
+| **Who owns the repository's integrations?** | **Undetermined from inside the repository**, and §6.7 is the one case where that has a visible consequence |
+
+### 6.7 · A passing check that this repository cannot account for
+
+Every pull request in this repository carries status contexts named **`Vercel`**
+and **`Vercel Preview Comments`**, and they **report success**.
+
+**What is determinable from inside the repository, and it is all that is claimed
+here:**
+
+- `vercel.json` exists and configures a build command, an output directory and
+  the fallback rewrite.
+- `@vercel/functions` is a declared dependency, imported by `middleware.js`.
+- `.github/workflows/` holds **only** `gates.yml`, and it contains **no** deploy
+  step, token or project reference.
+- **No credential, token or project identifier for any host is stored in this
+  repository.**
+
+**What is NOT determinable from inside the repository: what posts those status
+contexts.** They originate outside it. This document does not speculate about
+what is installed at the account or organisation level, because that cannot be
+read from here and a handover that guesses is worse than one that stops.
+
+⚠️ **THE CONSEQUENCE, WHICH IS THE REASON THIS IS A ROW AND NOT A
+FOOTNOTE: A GREEN CHECK NAMED AFTER A HOST IS READ AS "IT DEPLOYED."** It is the
+same mechanism as `CLEAN` in the merge doctrine — an aggregate that cannot
+distinguish *"everything passed"* from *"nothing was asked"*. Whoever inherits
+this repository's settings inherits this check, and **nothing in the repository
+substantiates what it means.** Resolve it at the account level before treating
+it as evidence of anything.
+
+---
+
+## 7 · What holds this document
 
 **Four sections are pinned bilaterally** and go red when the tree moves:
 
@@ -240,6 +411,23 @@ seam, that ambiguity has nowhere to be resolved.
   **neither**. A handover document naming a field that does not exist is a
   forward promise with no handler, and it is the failure this corpus keeps
   repeating.
+
+  ⚠️ **AND UNTIL §6 LANDED THAT SENTENCE WAS TRUE OF FIELDS AND ONLY
+  ACCIDENTALLY TRUE OF FILES.** A backticked `BuyerContracts.tsx` satisfied the
+  FIELD pattern, so the check asked whether `src/` contains the string `tsx` —
+  which it always does. **Three citations were passing on their own file
+  extension.** A file is now its own kind, resolved on disk, with both controls:
+  a path the tree does not hold is rejected, and a glob (`*.mock.test.ts`) is
+  not read as a file claim at all.
+
+- **§6.2's and §6.3's load-bearing half is pinned, and the rest of §6 is not.**
+  The fallback rewrite, the single HTML entry, the middleware's every-path
+  matcher and the three credential names are properties of shipped config, so
+  they are asserted rather than described — the one paragraph a host most needs
+  to get right is the one an instrument holds. **§6.4's absence is pinned in the
+  direction that decays:** no workflow in this repository publishes anything,
+  and the day one does, that assertion goes red and §6.4 and §6.6 must be
+  rewritten rather than quietly outgrown.
 
 **The rest is irreducibly prose, and that is said plainly rather than left to be
 discovered.** §1's three columns, §2's reasons, §3's "what it would take", and
