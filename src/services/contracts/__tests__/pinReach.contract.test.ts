@@ -34,7 +34,7 @@
 //   in a contract cannot change which specs exist, so this file can always tell
 //   "I caught it" from "I have nothing to look at".
 // -----------------------------------------------------------------------------
-import { readFileSync, readdirSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
@@ -252,4 +252,87 @@ describe('⚠️ THE BLOCK EQUALS THE PIN — both directions, per contract', ()
       expect(listed.filter((t) => !derived.includes(t)), 'in the BLOCK, absent from the pin').toEqual([]);
     });
   }
+});
+
+// -----------------------------------------------------------------------------
+// ⚠️ THE THIRD CASE — A CONTRACT NAMING A GUARD THAT DOES NOT EXIST.
+//
+// Two directions had been swept: a clause with no guard (a pin reaching LESS
+// than a reader assumes), and a pin reaching MORE than its header claims.
+// **Neither looks for a document citing an instrument that is not there**, and
+// that is the worst of the three: the other two mislead about COVERAGE, this one
+// points a reader at a file to go and read, and the file does not exist.
+//
+// **Measured, three instances, all real:**
+//   · `C2-schemas.md` named `scoping.contract.test.ts` as the guard for
+//     buyer-superset / per-supplier-isolation / SCOPE_DENIED. **No such file.**
+//     The property IS guarded — by `scoping.ts` and `scoping.mock.test.ts` — so
+//     the citation was wrong while the claim was right, which is the shape that
+//     survives review.
+//   · `README.md` carried the same token.
+//   · `C6-planning.md` said the reason-gate is headless-provable at
+//     `plan-grid/IntakePushPanel.tsx`. **That component has never existed**; the
+//     gate lives in `IntakeAdjustDrawer.tsx`. C6 has no pin of its own, so
+//     nothing could ever have caught it.
+//
+// ⚠️ `C12`'s pin already asserted this FOR C12 ALONE. Generalising it is the
+// whole fix: the check was written once, proved itself once, and was scoped to
+// one document while twelve others cited files unchecked.
+//
+// ⚠️ **A GLOB IS NOT A PATH** (`*.mock.test.ts` names a shape), and a BASENAME
+// citation resolves anywhere in the tree — contracts use both forms.
+// -----------------------------------------------------------------------------
+const CITED_FILE = /`([A-Za-z0-9_./-]+\.(?:tsx?|mjs|json|js|html|yml))`/g;
+
+function repoBasenames(): Set<string> {
+  const names = new Set<string>();
+  const skip = new Set(['node_modules', 'dist', '.git', 'coverage', '.vercel']);
+  const walk = (dir: string): void => {
+    for (const e of readdirSync(dir, { withFileTypes: true })) {
+      if (skip.has(e.name)) continue;
+      if (e.isDirectory()) walk(join(dir, e.name));
+      else names.add(e.name);
+    }
+  };
+  walk(ROOT);
+  return names;
+}
+
+const BASENAMES = repoBasenames();
+
+const citedFilesIn = (md: string): string[] =>
+  [...md.matchAll(CITED_FILE)].map((m) => m[1]).filter((t) => !t.includes('*'));
+
+const fileExists = (token: string): boolean =>
+  existsSync(join(ROOT, token)) || BASENAMES.has(token.split('/').pop() as string);
+
+describe('⚠️ EVERY SOURCE FILE A CONTRACT CITES EXISTS', () => {
+  const everyDoc = readdirSync(CDIR).filter((f) => f.endsWith('.md'));
+
+  it('CONTROL — the matcher finds real citations, in quantity', () => {
+    const all = everyDoc.flatMap((d) => citedFilesIn(readFileSync(join(CDIR, d), 'utf8')));
+    expect(all.length).toBeGreaterThan(50);
+  });
+
+  it('⚠️ KNOWN-BAD — the two tokens this sweep retired do NOT resolve', () => {
+    // If either passes, the matcher has stopped discriminating and the
+    // assertion below proves nothing.
+    expect(fileExists('scoping.contract.test.ts')).toBe(false);
+    expect(fileExists('plan-grid/IntakePushPanel.tsx')).toBe(false);
+  });
+
+  it('KNOWN-GOOD — both citation forms resolve', () => {
+    expect(fileExists('scoping.mock.test.ts'), 'a bare basename').toBe(true);
+    expect(fileExists('src/services/transitions/dispatcher.ts'), 'a full path').toBe(true);
+  });
+
+  it('THE CLAIM — no contract names a file the tree does not hold', () => {
+    const ghosts: string[] = [];
+    for (const d of everyDoc) {
+      for (const tok of new Set(citedFilesIn(readFileSync(join(CDIR, d), 'utf8')))) {
+        if (!fileExists(tok)) ghosts.push(`${d} -> ${tok}`);
+      }
+    }
+    expect(ghosts).toEqual([]);
+  });
 });

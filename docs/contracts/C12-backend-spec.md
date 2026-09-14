@@ -382,6 +382,12 @@ stating that everything else is not guarded. It is generated from the pin’s ow
 asserted equal to them in both directions (C11 V19), so the statement cannot drift from the
 instrument it describes. **Read it before you rely on a clause.**
 
+⚠️ **AND A THIRD FAILURE EXISTS THAT NEITHER COVERAGE QUESTION REACHES: A DOCUMENT NAMING AN
+INSTRUMENT THAT IS NOT THERE.** Three contracts cited a guard file the tree has never held — two
+named a scoping test under a name it does not have, and one placed a reason-gate in a component
+that has never existed. The claims were RIGHT and the citations were wrong, which is the shape
+that survives review. **Every source file any contract names is now asserted to exist.**
+
 ### 6.7 · What nothing answers
 
 | Question | The state of it |

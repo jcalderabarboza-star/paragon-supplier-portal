@@ -62,7 +62,8 @@ interface QueryScope {
 ```
 
 Scoping is enforced **client-side today** (greenfield backend). The 3-tenant service scoping
-contract (`scoping.contract.test.ts`) guards buyer-superset / per-supplier-isolation /
+contract (`scoping.ts`, run against the mock by `scoping.mock.test.ts`) guards
+buyer-superset / per-supplier-isolation /
 `SCOPE_DENIED` in-floor (`types.ts:113–118`).
 
 ---
