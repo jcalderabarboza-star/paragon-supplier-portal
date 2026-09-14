@@ -12,12 +12,75 @@
     "noEmit": true,
     "jsx": "react-jsx",
     "strict": true,
-    // `noUnusedLocals` STAYS OFF, and that is a separate decision with its own
-    // population: forcing it on reports 28 sites, 27 of them dead imports
-    // (`React`, lucide icons, unused hooks) and one real dead const
-    // (`shouldCostBacktest.ts` · `SERIES_BY_ROOT`). Zero false positives, but 28
-    // edits — a cleanup, not this batch. Turn it on when somebody does them.
-    "noUnusedLocals": false,
+    // ── `noUnusedLocals` — ON. IT CATCHES A DECLARATION NOTHING READS. ─────────
+    //
+    // ⚠️ **THE SENTENCE THAT STOOD HERE CARRIED A WRONG BREAKDOWN, AND IT IS
+    // CORRECTED RATHER THAN REPEATED.** It read *"28 sites, 27 of them dead
+    // imports … and one real dead const"*. The 28 was right; the split was not.
+    // Derived at adoption, on the surface `tsconfig.json` covers:
+    //   · 19 unused IMPORT specifiers (`React` ×3, lucide icons, `useEffect` /
+    //     `useState` / `useMemo`, four type-only imports)
+    //   ·  4 local TYPE ALIASES  (`BuyerDiscovery`: Region/Category/SortKey/ToggleId)
+    //   ·  3 module-scope CONSTS (`SERIES_BY_ROOT`, `TOKEN_WARNING`, `TOKEN_DANGER`)
+    //   ·  1 destructured BINDING (`CommHubInbound` · `supplierName`)
+    //   ·  1 FUNCTION declaration (`supplierApplicationStore` · `clone`)
+    // The SPEC surface adds 11 more (`tsconfig.vitest.json` inherits this flag —
+    // it is set ONCE, here, and a second copy there would be a figure that can
+    // drift). 39 in total, and a fixpoint: removing them cascaded once, onto
+    // `fixturePresent.guard.test.ts` · `docStateAt`, whose only reader was one of
+    // the 39.
+    //
+    // ⚠️ **NOT ONE OF THE 39 WAS A LIVE DEFECT, AND THAT WAS CHECKED RATHER THAN
+    // ASSUMED** — a dead declaration can be the visible end of a half-removed
+    // feature, so each was resolved against something other than its own file.
+    // The three that came closest, and what settled them:
+    //   · `clone` (the application store) — read as "this store leaks internal
+    //     rows by reference". Derived against ALL TWELVE sibling stores: `clone`
+    //     is used at exactly two sites in each, seeding `rows` from a fixture and
+    //     re-seeding in `reset()`, and at NO read path anywhere. This store seeds
+    //     `[]` by ruling, so both call sites never existed. Nothing diverges.
+    //   · `sourceableRequisitions` (BuyerSourcing) — a FILTER imported and never
+    //     called reads as a page showing rows it should have narrowed. The
+    //     narrowing moved to the seam, and the seam demonstrably applies it:
+    //     `MockProcurementService.getRequisitions` filters on `filter.status`,
+    //     which the page supplies from the machine's own from-states.
+    //   · `docsCoherentAt` (fixturePresent.guard) — defined, never asserted, while
+    //     its twin `oblsCoherentAt` carries five assertions. Its retirement is
+    //     QUOTED into that file with the reason, the measurement (82 anchors
+    //     satisfied it) and the trade. The helper outlived the quotation.
+    // Two more left a comment that deletion would have stranded, so the comment
+    // went with the code: `meaningWideOf`'s doc promised results *"MEASURED and
+    // reported below"* that nothing computed, and the R-B gate said a declined
+    // field is *"DECLINED AND REPORTED"* when only the decline was real.
+    //
+    // ⚠️ **THE SPECIMEN CHECK CAME BACK NEGATIVE — THE SECOND CONSECUTIVE ONE,
+    // AND THE TWO FAIL FOR THE SAME REASON.** This flag was dispatched as the
+    // guard for #333's class: bindings that survived a locale/anchor branch and
+    // had to be deleted by hand. Measured at THREE commits — `77bd9ab` (#333's
+    // parent), `270a06b` (#333) and `63a49cc` (#334) — the flag reports **28
+    // errors at each, the same 28 members as today, and names NOTHING in any of
+    // the nine surfaces #333 touched.** The reason is structural: the bindings
+    // #333 deleted were READ — `nowIso` had four readers in `SupplierDashboard`
+    // and seven in `BuyerContracts` — they were live and WRONG, not dead.
+    // Together with #346's negative result on #341, the shape is now stated
+    // rather than rediscovered: **TS6133/TS6196 answer "is this declaration
+    // reached?", never "is what it computes correct?"** A wrong value with a
+    // reader is outside this family's reach in both directions.
+    //
+    // ⚠️ **AND THERE IS NO ESCAPE HATCH. MEASURED, BECAUSE `noUnusedParameters`
+    // HAS ONE AND THE SYMMETRY IS FALSE.** A probe declaring `_underscoreLocal`,
+    // `_innerUnderscore` and `type _UnusedTypeAlias` under this flag reports an
+    // error on ALL THREE: an underscore prefix silences an unused PARAMETER and
+    // does nothing for a local. The one real exemption is narrower and is not
+    // about the name — an unused binding in an OBJECT DESTRUCTURE THAT HAS A REST
+    // ELEMENT is allowed (the omit-a-property idiom), which is why the probe's
+    // `const { a, ...rest }` passed while `const { supplierId, supplierName }`
+    // above did not. **So a deliberately dead local cannot be kept with a stated
+    // reason the way `docCount(_c: Contract)` is kept above.** If one is ever
+    // genuinely wanted, it costs a real reference or an amendment here — not a
+    // rename. That is a stricter flag than its sibling, and the strictness is
+    // recorded so the next seat does not reach for a hatch that is not there.
+    "noUnusedLocals": true,
     // ── `noUnusedParameters` — ON, and here is what it is for. ───────────────
     //
     // It catches A PARAMETER WHOSE SIGNATURE ASSERTS A USE THE BODY DOES NOT

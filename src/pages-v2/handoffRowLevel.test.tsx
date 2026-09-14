@@ -5,7 +5,6 @@ import i18n from '../lib/i18n';
 import { rolesHolding } from '../services/transitions/businessRoles';
 import BuyerChannelTriage from './BuyerChannelTriage';
 import BuyerCollaboration from './BuyerCollaboration';
-import BuyerSourcing from './BuyerSourcing';
 import BuyerGoodsReceipt from './BuyerGoodsReceipt';
 import IntakeReview from './IntakeReview';
 
@@ -23,8 +22,6 @@ import IntakeReview from './IntakeReview';
 const PLANNING: CurrentIdentity = { ...BUYER, businessRoles: ['planning'] };
 const REQUISITIONER: CurrentIdentity = { ...BUYER, businessRoles: ['requisitioner'] };
 const FINANCE: CurrentIdentity = { ...BUYER, businessRoles: ['finance'] };
-const PROCUREMENT: CurrentIdentity = { ...BUYER, businessRoles: ['procurement'] };
-const RECEIVING: CurrentIdentity = { ...BUYER, businessRoles: ['receiving'] };
 const RECEIVING_ONLY: CurrentIdentity = { ...BUYER, businessRoles: ['receiving'] };
 
 // ⚠️ THE CONFIRM CONTROL IS NOT ON THE PAGE UNTIL A MESSAGE IS PARSED, SO A

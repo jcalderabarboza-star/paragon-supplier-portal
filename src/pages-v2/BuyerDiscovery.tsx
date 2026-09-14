@@ -1,9 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import type { TFunction } from 'i18next';
 import {
-  Users,
   ClipboardCheck,
   CheckCircle2,
   AlertTriangle,
@@ -13,8 +11,6 @@ import {
   TrendingUp,
   TrendingDown,
   Minus,
-  Mail,
-  Bot,
   ChevronRight,
 } from 'lucide-react';
 import AppShellV2 from '../components/layout-v2/AppShellV2';
@@ -77,10 +73,6 @@ const QUAL_VARIANT: Record<QualificationItem['status'], 'neutral' | 'warning' | 
 // fabrication, it asked to be trusted with it.
 
 type TabKey = 'gaps' | 'qualification' | 'intelligence' | 'search';
-type Region = 'All' | 'Asia Pacific' | 'Europe' | 'Americas' | 'Middle East';
-type Category = 'All' | 'Fragrance' | 'Active Ingredient' | 'Raw Material' | 'Packaging' | 'Vitamin' | 'Emollient';
-type SortKey = 'relevance' | 'grade' | 'otif' | 'compliance';
-type ToggleId = 'halal';
 
 // Filter/sort option labels are built from t() inside the component so they
 // re-render on locale change. The `id` values stay enum literals for logic.

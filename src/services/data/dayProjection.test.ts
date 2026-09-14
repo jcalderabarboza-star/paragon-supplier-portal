@@ -16,7 +16,7 @@ import {
 } from './dayProjection';
 import { DOCUMENTS } from './mock/fixtures/supplierDocuments';
 import type { SupplierDocument } from './types';
-import { DECLARED_PRESENT, shiftDays } from './fixturePresent';
+import { DECLARED_PRESENT } from './fixturePresent';
 
 const EARLY = '2026-09-08T00:00:00.000Z';
 const LATER = '2027-03-08T00:00:00.000Z';

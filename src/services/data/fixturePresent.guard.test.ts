@@ -36,7 +36,6 @@ import {
 } from './fixturePresent';
 import { BPJPH_MANDATE_DATE } from './complianceProjection';
 import { DOCUMENTS } from './mock/fixtures/supplierDocuments';
-import { documentExpiry } from './dayProjection';
 import { documentDisplayState } from './documentDisplayState';
 import { mockInventory } from '../../data/mockInventory';
 
@@ -117,13 +116,13 @@ const rawCtrs = (() => {
   });
 })();
 
-/** `documentExpiry`'s own classification, applied to a RAW date at a candidate anchor. */
-const docStateAt = (date: string, anchor: string) => {
-  const n = dU(date, anchor);
-  return n <= 0 ? 'Expired' : n <= 180 ? 'Expiring Soon' : 'Valid';
-};
-const docsCoherentAt = (anchor: string) =>
-  rawDocs.every((r) => docStateAt(r.date!, anchor) === r.status);
+/* ⚠️ `docStateAt` AND `docsCoherentAt` STOOD HERE AND NOTHING CALLED EITHER.
+ *  They were the supplierDocument oracle retired below — the retirement note
+ *  quotes the test verbatim and gives the reason, the measurement (82 anchors
+ *  satisfied it) and the trade. The two helpers outlived the quotation by
+ *  being left on disk, and `documentExpiry`'s import with them: `docStateAt`
+ *  RE-IMPLEMENTED that classifier and was its only reader here. Deleted when
+ *  `noUnusedLocals` named them; the retired test stays quoted where it is. */
 const oblsCoherentAt = (anchor: string) =>
   rawObls.every((r) => (dU(r.date!, anchor) >= 0 ? 'Upcoming' : 'Overdue') === r.status);
 
@@ -243,6 +242,9 @@ describe('⚠️ EVERY ANCHOR SITS INSIDE ITS OWN FAMILY’S COHERENT WINDOW', (
   //       it('supplierDocument — declared window and anchor agree with the raw
   //           literals', … docsCoherentAt(lo) … docsCoherentAt(hi) …
   //           docsCoherentAt(anchor) … one day outside, either side, breaks)
+  //
+  //   (`docsCoherentAt` and `docStateAt` are themselves gone now — see the
+  //   note where they stood. The quotation above is the record, not a call.)
   //
   //   It compared each row's STORED status to the clock. Both stored clock
   //   words are gone — `doc-001` and `doc-202` hold `'Valid'` — so that

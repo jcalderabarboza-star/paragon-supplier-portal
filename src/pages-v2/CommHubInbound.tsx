@@ -123,7 +123,7 @@ const CommHubInbound: React.FC = () => {
   const refusalText = useRefusalText();
   const { toast } = useToast();
   const { identity } = useCurrentIdentity();
-  const { supplierId, supplierName } = identity;
+  const { supplierId } = identity;
 
   const materialsQuery = useOwnCollaboratedMaterials();
   const materials = useMemo(() => materialsQuery.data ?? [], [materialsQuery.data]);

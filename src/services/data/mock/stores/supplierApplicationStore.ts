@@ -30,10 +30,6 @@
 
 import type { SupplierApplication } from '../../types';
 
-function clone(a: SupplierApplication): SupplierApplication {
-  return { ...a, declarations: a.declarations.map((d) => ({ ...d })) };
-}
-
 let rows: SupplierApplication[] = [];
 let seq = 0;
 

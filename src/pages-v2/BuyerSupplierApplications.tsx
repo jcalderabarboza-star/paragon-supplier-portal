@@ -59,7 +59,7 @@
 // ────────────────────────────────────────────────────────────────────────────
 
 import React, { useMemo, useState } from 'react';
-import { UserPlus, Clock, Eye, CheckCircle2, FilePlus2 } from 'lucide-react';
+import { Clock, Eye, CheckCircle2, FilePlus2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import AppShellV2 from '../components/layout-v2/AppShellV2';

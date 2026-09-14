@@ -52,7 +52,6 @@ import {
   useCommodities,
 } from '../services/query/hooks';
 import type {
-  RiskSeverity as Severity,
   RiskAlertLevel as AlertLevel,
   RiskAlert,
   GeoRisk,
@@ -61,7 +60,6 @@ import type {
   ComplianceState,
   Commodity,
   Scenario,
-  ScenarioAlt,
   ScenarioFeasibility as Feasibility,
 } from '../services/data/types';
 import { daysUntil } from '../services/data/dayProjection';
