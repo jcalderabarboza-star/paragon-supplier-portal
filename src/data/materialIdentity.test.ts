@@ -175,12 +175,13 @@ const siblingMatching = (o: Record<string, unknown>, re: RegExp): string | null 
 
 const meaningOf = (o: Record<string, unknown>) => siblingMatching(o, /description/i);
 
-/** ⚠️ `MEANING-SCOPE-IS-A-HAND-PICK-01`. The SAME rule with ONE more key name.
- *  Its results are MEASURED and reported below; they never feed the identity
- *  property, because widening what counts as a meaning is a declaration and
- *  2B-1's R-3 put declarations with the operator. */
-const meaningWideOf = (o: Record<string, unknown>) =>
-  siblingMatching(o, /description|^material$/i);
+/* ⚠️ `meaningWideOf` STOOD HERE, AND ITS DOC PROMISED A REPORT NOTHING MADE.
+ *  It was the hand-picked wide meaning scope (`MEANING-SCOPE-IS-A-HAND-PICK-01`),
+ *  SUPERSEDED at 2B-5a by the seeded closure below, which DERIVES the meaning
+ *  fields rather than naming one more key. The helper outlived its last call
+ *  site and the doc went on saying its results were "MEASURED and reported
+ *  below" when nothing computed them. Deleted WITH the claim, so the claim is
+ *  not left standing over an absence. */
 
 const collect = (root: unknown, module: string, out: Cell[]) => {
   // Per-module `seen`, not shared: a module that re-exports another's fixture
@@ -338,8 +339,15 @@ const derive = (seed: readonly string[], universe = VALUES_BY_FIELD, containment
       }
       // GATE 2 — authority (R-B). Every value this field would ADD must live in
       // a DECLARED space. A field that would carry the census into a module no
-      // declaration names is DECLINED AND REPORTED — the operator declares, the
-      // closure does not.
+      // declaration names is DECLINED — the operator declares, the closure does
+      // not.
+      // ⚠️ THE WORD "REPORTED" STOOD HERE AND WAS FALSE. `undeclaredFields` was
+      // bound to a const that nothing asserted, unlike its sibling
+      // `impureFields`, which is pinned by name below. It is still RETURNED, and
+      // the DECLINE itself is pinned bilaterally: a field wrongly declined
+      // leaves `fields`, so `CODE_FIELDS` stops equalling its four-member
+      // `toEqual` and the suite reddens. The map was diagnostic detail, never
+      // the guard — which is why deleting the unread binding costs no coverage.
       const unnamed = [...values].filter((v) => !known.has(v) && !inDeclaredSpace(v)).sort();
       if (unnamed.length > 0) {
         undeclared.set(field, unnamed);
@@ -363,7 +371,6 @@ const derive = (seed: readonly string[], universe = VALUES_BY_FIELD, containment
 const CODE_DERIVATION = derive(Object.keys(MATERIAL_MASTER));
 const CODE_FIELDS = CODE_DERIVATION.fields;
 const DISQUALIFIED_FIELDS = CODE_DERIVATION.impureFields;
-const UNDECLARED_FIELDS = CODE_DERIVATION.undeclaredFields;
 
 // ─── ⚠️ THE MEANING SCOPE DERIVES (2B-5a, closing MEANING-SCOPE-IS-A-HAND-PICK-01)
 //

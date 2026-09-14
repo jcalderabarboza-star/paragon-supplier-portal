@@ -24,7 +24,7 @@
 import type { PersonaType } from '../../context/CurrentIdentityContext';
 import type { QueryScope, CapabilitySet } from '../data/types';
 import { getKnownFlows } from './registry';
-import { SYSTEM_ROLES, PERSONA_SYSTEM_ROLES, atomsFor } from './businessRoles';
+import { PERSONA_SYSTEM_ROLES, atomsFor } from './businessRoles';
 import { atomsForSeat } from './customRoles';
 
 /**

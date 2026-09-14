@@ -13,7 +13,6 @@ import './plan-grid/planGrid.css';
 import './bulkStockGrid.css';
 import { useTranslation } from 'react-i18next';
 import Button from '../components/ui-v2/Button';
-import Data from '../components/ui-v2/Data';
 import FullScreenSection from './plan-grid/FullScreenSection';
 import { useToast } from '../hooks/useToast';
 import { useInventoryDeclare, type CollaboratedMaterialView } from '../services/query/sdcSupplierHooks';

@@ -63,7 +63,7 @@ import { readMoq, type MoqRefusalReason } from './rfqs/quotationMoq';
 import { daysUntil } from '../services/data/dayProjection';
 import type { RFQ, Quotation, Supplier } from '../services/data/types';
 import { CHART_SERIES } from '../lib/chartPalette';
-import { formatIDR, formatDate, formatMoney, formatNumber } from '../lib/format';
+import { formatDate, formatMoney, formatNumber } from '../lib/format';
 import { useRefusalText } from '../hooks/useRefusalText';
 
 interface OpenRFQ {

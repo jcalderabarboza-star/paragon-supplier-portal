@@ -157,8 +157,6 @@ const fmtCompact = (n: number): string => formatIDR(n, { compact: true });
 // DP2-PALETTE-01: chart/UI colour sourced from the central palette (SSoT),
 // not page-local hex. Values unchanged — pure de-dup.
 const TOKEN_SUCCESS = CHART_SEMANTIC.success;
-const TOKEN_WARNING = CHART_SEMANTIC.warning;
-const TOKEN_DANGER = CHART_SEMANTIC.danger;
 const TOKEN_TEAL = CHART_SERIES[0];
 const TOKEN_MUTED = CHART_SEMANTIC.neutral;
 
