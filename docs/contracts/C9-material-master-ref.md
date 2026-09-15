@@ -1211,3 +1211,56 @@ types: `src/services/sdc/materialMasterRef.types.ts` (inert, zero rows). Pinned 
 [C7](./C7-pr-intake.md) (PR intake), [C8](./C8-forecast-publication.md) (forecast publication —
 §4.0 master declaration, §4.1 the external clock, §4.3 adoption-not-discovery, §4.4 D-1, §4.6 the
 reciprocal prefix hazard). Batch record: `docs/findings.md`, CP-2 · Batch 2 census and Batch 2a.
+
+---
+
+## Pin reach
+
+**Pinned by** `src/services/contracts/__tests__/ledgerTruth.test.ts` and `src/services/sdc/__tests__/materialMasterRef.contract.test.ts`.
+
+**GUARDED — these assertions, and nothing else on this page:**
+
+- C9 §7 — the ledger is well-formed, and its shape is derived not assumed
+- C9 §7.1 — ZERO CONSUMERS: the types module is imported only by its own pins
+- C9 §7.2 — NO POLICY ENGINE: MaterialRefJoinPolicy has no runtime consumer
+- C9 §7.3 — DISCHARGED IN CODE, STALE IN THE DOCUMENT
+- C9 §7.4 — RESERVED, NOT BUILT: substanceRef is absent from MaterialMasterEntry
+- C7-FIND-03 — RESERVED AND NOT RESERVED: shortfall is absent from PrIntakeLine
+- C8-FIND-03 — KNOWINGLY HELD: the VOID commitmentClass mapping is still in code
+- docs/contracts/README.md — the C9 §7 summary matches the ledger it summarises
+- C9 — the contract document exists and is reachable from the code
+- C9 — every closed vocabulary appears in the document
+- C9 — the honesty invariants are stated in BOTH places
+- C9 — AMENDMENT 1 (A-1): spaceId retirement is stated PER PARTY
+- C9 — AMENDMENT 2 (A-2): an unresolved row carries its ROUTE TO RESOLUTION
+- C9 — AMENDMENT 2 (A-4): ADJUDICATED_UNRESOLVED is distinct from ABSENCE
+- C9 — AMENDMENT 2 (A-5/A-6): retirement is AUTHORSHIP, not a count
+- C9 — AMENDMENT 2 (A-7/A-8): SOMO’s shape as MEASURED, not as generalised
+- C9 — AMENDMENT 2 (A-9): the required-field list is DERIVED from the module
+- C9 — the crosswalk is EMPTY at freeze, by ruling
+
+
+⚠️ **THIS INSTRUMENT IS SHARED, AND THE REACH BELOW IS THE INSTRUMENT'S RATHER THAN THIS
+PAGE'S.** It also asserts over `C7-pr-intake.md`, `C8-forecast-publication.md`, `C9-required-fields.md`, so entries naming another document are its assertions about
+that sibling. They are listed here rather than filtered because **the thing a reader needs is
+what the instrument checks**, and a filtered list would quietly re-introduce the judgement this
+block exists to remove.
+
+⚠️ **NOT GUARDED — EVERYTHING ELSE ON THIS PAGE, AND THAT HALF IS WHY THIS BLOCK EXISTS.**
+A list of guarded things reads as completeness. It is not: **a reader who assumes the pin
+covers a clause it does not reach is the failure this block is built against**, and it has
+happened in this corpus — a DTO field whose MEANING was assumed pinned by a method-surface
+pin, and a repaired defect still asserted as current in a document whose pin passed because
+it only checks that an unenforced row SAYS it is unenforced.
+
+Most of what is not guarded **cannot be**, and that is a property of a contract rather than
+a backlog: a clause describing a system outside this repository has nothing here to compare
+against, and a clause stating WHY a boundary exists has no truth-value to decay. See C12
+for the statement of that property.
+
+⚠️ **THIS BLOCK IS SELF-PINNED** (`src/services/contracts/__tests__/pinReach.contract.test.ts`).
+The GUARDED list is asserted EQUAL to the pin’s own `describe` titles, **both directions**:
+widen the pin without listing the new assertion and it reddens; drop a line here without
+narrowing the pin and it reddens too. A reach statement that can drift is the overclaim one
+layer up.
+

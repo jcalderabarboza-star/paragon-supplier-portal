@@ -72,9 +72,6 @@ export const FEU_PAYLOAD_KG = 25000;
  *  the FX value cancels). SNAPSHOT-marked; the real IDR history is FX_HISTORY. */
 const REFERENCE_FX: FxRate = { idrPerUsd: 15500, liveness: 'SNAPSHOT', asOf: '2023-06-30' };
 
-const SERIES_BY_ROOT: Record<string, HistoricalSeries> = Object.fromEntries(
-  COMMODITY_HISTORY.map((s) => [s.rootId, s]),
-);
 const MATERIAL_BY_ID: Record<string, Material> = Object.fromEntries(
   CI15_MATERIALS.map((m) => [m.id, m]),
 );

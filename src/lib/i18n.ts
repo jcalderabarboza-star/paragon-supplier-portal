@@ -532,7 +532,8 @@ export const resources = {
       'invoice.settle.retried.title': 'Settlement completed on retry',
       'invoice.settle.retried.desc': 'SAP assigned the FI document. The invoice is now released.',
       'invoice.match.deferred.title': 'Awaiting 3-way match',
-      'invoice.match.deferred.desc': 'Match completes on goods-receipt posting in SAP.',
+      'invoice.match.deferred.desc':
+        'Nothing was changed here. The 3-way match completes when the goods receipt is posted in SAP.',
       'invoice.remittance.generated.title': 'Remittance advice generated',
       'invoice.remittance.generated.desc': 'Available to the supplier via {{channel}}.',
       'invoice.denied.title': 'Not authorized',
@@ -947,7 +948,8 @@ export const resources = {
       'invoice.settle.retried.title': 'Penyelesaian tuntas saat dicoba ulang',
       'invoice.settle.retried.desc': 'SAP menetapkan dokumen FI. Faktur kini dirilis.',
       'invoice.match.deferred.title': 'Menunggu pencocokan 3 arah',
-      'invoice.match.deferred.desc': 'Pencocokan selesai saat penerimaan barang diposting di SAP.',
+      'invoice.match.deferred.desc':
+        'Tidak ada yang berubah di sini. Pencocokan 3 arah selesai saat penerimaan barang diposting di SAP.',
       'invoice.remittance.generated.title': 'Bukti pembayaran dibuat',
       'invoice.remittance.generated.desc': 'Tersedia bagi pemasok melalui {{channel}}.',
       'invoice.denied.title': 'Tidak berwenang',

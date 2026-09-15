@@ -1,4 +1,3 @@
-import React from 'react';
 import { Calendar } from 'lucide-react';
 
 export interface TimeRangeOption<T extends string> {

@@ -46,7 +46,7 @@ import {
 import { formatIDR, formatNumber, formatDate } from '../lib/format';
 import { useCategoryLabel } from '../hooks/useCategoryLabel';
 import { useChannelLabel } from '../hooks/useChannelLabel';
-import { SupplierStatus, SupplierTier } from '../types/supplier.types';
+import { SupplierTier } from '../types/supplier.types';
 import type { ProfileCertStatus, PurchaseOrder } from '../services/data/types';
 
 const DAY_MS = 24 * 60 * 60 * 1000;

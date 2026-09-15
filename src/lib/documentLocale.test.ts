@@ -15,7 +15,7 @@
 // switch means the assertion can only pass if the binding actually WROTE.
 // ────────────────────────────────────────────────────────────────────────────
 
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, afterAll } from 'vitest';
 import i18n, { resources } from './i18n';
 import { applyDocumentLocale, syncDocumentLocale } from './documentLocale';
 

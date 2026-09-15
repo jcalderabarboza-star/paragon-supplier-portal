@@ -23,7 +23,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { screen, fireEvent, waitFor, within } from '@testing-library/react';
 
 import BuyerSupplierApplications from './BuyerSupplierApplications';
-import { renderWithProviders, BUYER, SUPPLIER } from '../test/test-utils';
+import { renderWithProviders, SUPPLIER } from '../test/test-utils';
 import { supplierApplicationStore } from '../services/data/mock/stores/supplierApplicationStore';
 import { mockSuppliers } from '../data/mockSuppliers';
 import { seedSupplierApplications } from '../services/data/mock/applicationSeed';

@@ -30,7 +30,7 @@
 // ────────────────────────────────────────────────────────────────────────────
 
 import { describe, it, expect, beforeEach, afterAll } from 'vitest';
-import { screen, fireEvent, waitFor } from '@testing-library/react';
+import { screen, fireEvent } from '@testing-library/react';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { renderWithProviders, BUYER } from '../test/test-utils';

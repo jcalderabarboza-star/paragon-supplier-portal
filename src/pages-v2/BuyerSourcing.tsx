@@ -49,7 +49,6 @@ import {
   RFQ_UOM_OPTIONS,
   prefillFromRequisition,
   requisitionSourcingStates,
-  sourceableRequisitions,
   type RequisitionPrefill,
 } from './sourcing/requisitionPrefill';
 import { useToast } from '../hooks/useToast';

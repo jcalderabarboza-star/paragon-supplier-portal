@@ -134,6 +134,7 @@ drift from the document that classifies them.
 | **V15** | never mint a document identity | a source gate over identifier construction. Ours does not exist; §2.1 records the violation |
 | **V16** | authentication bought, authorisation ours | assert an IdP supplies a binding and never a second authorisation path |
 | **V17** | a refusal is a result, not an exception | **checkable only on your side.** We have no transport. Over HTTP it is one line: a business refusal is a 200 carrying a refusal body, never a 4xx/5xx |
+| **V19** | a pinned contract states its pin’s reach | **nothing, if you keep our shape.** The block is generated from the pin’s own assertions and asserted equal to them, so it cannot drift; what it costs you is the discipline of writing one when you add a pin of your own |
 
 ---
 
@@ -225,7 +226,209 @@ seam, that ambiguity has nowhere to be resolved.
 
 ---
 
-## 6 · What holds this document
+## 6 · Build and publish
+
+**This section exists because nothing else in this corpus says how the artefact
+you are inheriting is produced or where it goes.** Every other section describes
+a seam in the running system. This one describes the thing that carries it, and
+it was written after a measurement nobody had taken: **no batch in this
+project's history has ever ended at a URL.** The merge was treated as the
+delivery.
+
+⚠️ **NO HOST IS NAMED HERE, DELIBERATELY.** Hosting is yours to define
+— on-premise or a cloud region — and a recommendation written into a handover
+document reads as a constraint. What follows is what the artefact REQUIRES of a
+host, derived from the tree. Anything a host must provide is stated as a
+requirement; anything the tree merely happens to use today is named as such.
+
+### 6.1 · What the build produces
+
+`npm run build` is `tsc && vite build`. The Vite root is `app/`, the output
+directory is `dist/`, and the source entry is `app/index.html` — which is
+**never edited directly**; the bundler writes the shipped copy.
+
+Measured on a clean build of this tree: **thirteen files, 2.8 MB, and exactly one
+HTML entry.** The rest is hashed JS and CSS chunks under `assets/`, plus
+`favicon.ico` and `robots.txt`. No file is committed — there are no build
+artefacts in this repository, and `dist/` is produced from source every time.
+
+**The application itself is a STATIC BUNDLE and needs no server to render.** The
+backend is greenfield: zero server code, zero datastore clients, every store an
+in-memory fixture behind `mockDataService`. That is the whole of the app's
+runtime requirement, and it is the reason §6.3 is the only paragraph here with
+real consequences.
+
+### 6.2 · The fallback rewrite — a requirement, and a narrower one than it looks
+
+One HTML entry serves every client route. The tree today expresses the fallback
+as a rewrite of every path to `/index.html`.
+
+⚠️ **AND THE REASON IS NOT THE OBVIOUS ONE, WHICH IS WHY IT IS WRITTEN
+OUT RATHER THAN ASSUMED.** Routing here is a **HashRouter**, not a BrowserRouter:
+a client route lives after the `#`, so **the host only ever receives `/` for
+in-app navigation.** A team told *"you need SPA fallback or every route breaks"*
+would be inheriting a false reason for a true requirement, and would then
+mis-scope the fix when routing changes.
+
+What the fallback actually buys today: a stray path — a typo, a stale bookmark,
+a link written before hash routing landed — returns the shell instead of a host
+404. **What makes it load-bearing tomorrow: the day routing moves off the hash,
+every declared route becomes a real path and the fallback becomes the difference
+between a working portal and a wall of 404s.** The route paths are declared in
+one place (`src/router/AppRouter.tsx`) and are derived by the pin rather than
+counted here.
+
+### 6.3 · The access gate is an EDGE component, and a static bucket cannot run it
+
+⚠️ **THIS IS THE MOST CONSEQUENTIAL HOSTING FACT IN THIS DOCUMENT, AND IT
+IS THE ONE MOST EASILY LOST.** SEC-GATE-01 is not a plan. It is built, it ships,
+and **it is not static.**
+
+- `middleware.js` at the repository root is routing middleware that runs on the
+  edge **BEFORE** the fallback rewrite, so it gates the app shell **and every
+  `/assets/*` chunk**. The bundle is never served to an unauthenticated client.
+- It validates an HMAC-SHA256 signed, HttpOnly, 7-day session cookie.
+- Its credentials are **server-side, NON-`VITE_` environment variables**
+  (`GATE_USER` / `GATE_PASSWORD` / `GATE_SECRET`), read at the edge and never
+  bundled into the client. **Unprovisioned, the gate fails CLOSED with a 503.**
+
+**THE REQUIREMENT, STATED AS A REQUIREMENT: a host that serves `dist/` as plain
+objects and nothing else DROPS THIS GATE SILENTLY** — the pages still render,
+the app still works, and the whole bundle is public. There is no error and no
+log. A host must therefore provide a request-interception layer of some kind
+(edge function, reverse proxy, load-balancer auth), or the gate must be
+re-expressed in that host's own terms.
+
+**That re-expression is cheap BY DESIGN, and the design is the useful half.**
+The decision core lives in `gate/` (`gate/handler.js`, `gate/render.js`,
+`gate/session.js`) and is **framework-agnostic** — it is driven both by the
+shipped middleware and by a local Node harness, so what the browser tests
+exercise is exactly what ships. What is host-specific is the thin adapter, not
+the gate.
+
+⚠️ **AND WHAT IT IS NOT, BECAUSE THE NAME INVITES THE WRONG INFERENCE.**
+This is a **prototype access gate** over the whole deployment. It is **not** the
+product's authorisation model — that is the atom/scope system described in C10
+and enforced by the dispatcher, and it is untouched by this gate. Do not carry
+the edge credential forward as a user identity; it authenticates nobody.
+
+### 6.4 · Publish only what the gates have cleared
+
+`npm run gates` runs the four — `npm run build`, the spec-surface typecheck,
+`npx vitest run`, `npm run test:gate` — **and then asserts each one did
+something**, against the floor in `scripts/floor.json`. CI runs that exact
+command and nothing else, on every PR to `main`, on every push to `main`, and
+daily on `main` with no commit involved.
+
+**THE REQUIREMENT: a publish must carry a commit on which those four
+CONCLUDED green.** Not started, not queued — concluded.
+
+⚠️ **THIS IS WRITTEN AS A REQUIREMENT RATHER THAN AS A DESCRIPTION
+BECAUSE NOTHING IN THIS REPOSITORY SEQUENCES THEM.** `.github/workflows/` holds
+one workflow, `gates.yml`, and it contains no publish step of any kind. Whatever
+publishes this artefact is therefore **not ordered against the gate run by
+anything expressible here** — the two are independent, and a commit whose gates
+fail can be published by a mechanism this repository does not control. That is a
+gap, not a design, and it is named again in §6.6.
+
+### 6.5 · UU PDP — the constraint, and what it currently attaches to
+
+**Both halves, because only one of them is usually carried forward.**
+
+**The constraint is real and this platform's own plan already names it.**
+Indonesia's UU PDP governs personal data; the forward plan specifies **AWS
+`ap-southeast-3` Jakarta** for the backend's data residency; the halal control
+design describes the platform as Jakarta-resident and UU PDP-clean; and C10's
+**D-ID-7** is a ruling made under UU PDP — the ledger stamp carries `personId`
+only, with `displayName` resolved at read and never copied into a permanent
+record. A DPO appointment and supplier consent are named as prerequisites before
+real supplier data, on a roughly ten-week clock.
+
+⚠️ **AND THE OTHER HALF, STATED PLAINLY SO IT IS NOT MISTAKEN FOR
+COMPLIANCE ALREADY ACHIEVED: THIS TREE HOLDS NO PERSONAL DATA AT ALL.** There is
+no datastore. Every store is an in-memory fixture, every supplier is a
+`Sample … (illustrative)` row, and the resolved actor is
+`UNATTRIBUTED: NO_PERSON_IN_SESSION` **platform-wide** — C10 §6.2's tripwire
+fires the moment shipped code constructs a `RESOLVED` actor.
+
+**So residency binds the F1 datastore and the systems that feed it. It does not
+bind this bundle**, which contains nothing a data subject has rights over. The
+distinction matters in both directions: do not treat today's hosting as a
+residency decision, and do not treat a residency-compliant host as discharging
+UU PDP — the obligations attach when real people's data does.
+
+### 6.6 · A pinned contract is not a checked contract
+
+⚠️ **YOU WILL READ A DOCUMENT THAT SAYS IT IS PINNED AND ASSUME THE PIN COVERS WHAT YOU ARE
+READING. IT DOES NOT, AND THAT IS A PROPERTY OF WHAT A CONTRACT IS RATHER THAN A BACKLOG.**
+
+Most clauses in this corpus **cannot** be checked here, and they fall into three groups that are
+worth telling apart because only one of them is ever fixable:
+
+| Why it cannot be checked | Example |
+|---|---|
+| **It describes a system outside this repository** | §1’s third column, C5’s seam boundaries, every measurement of a counterparty’s tree. There is nothing here to compare against, by construction |
+| **It states a REASON, not a fact** | §2’s *"why a good team builds it anyway"*, C11’s *"what would enforce it"*. Prose asserting why a boundary exists has no truth-value to decay |
+| **Its subject does not exist yet** | C11 V16’s identity provider, C10’s four ledgers, C4’s warehouse. No referent |
+
+⚠️ **THE FOURTH GROUP IS THE SMALL ONE AND IT IS THE ONLY ONE THAT HAS EVER BITTEN: A CLAUSE
+ASSERTING THIS TREE’S CURRENT STATE.** That IS decidable, and when it goes stale nothing notices —
+a repaired defect can sit in a contract as a live confession, read by everyone and re-measured by
+nobody, because a confession looks like diligence. **If you write one, give it an instrument or
+give it a date.**
+
+**What every pinned document now carries is a `## Pin reach` block** naming what its pin guards and
+stating that everything else is not guarded. It is generated from the pin’s own assertions and
+asserted equal to them in both directions (C11 V19), so the statement cannot drift from the
+instrument it describes. **Read it before you rely on a clause.**
+
+⚠️ **AND A THIRD FAILURE EXISTS THAT NEITHER COVERAGE QUESTION REACHES: A DOCUMENT NAMING AN
+INSTRUMENT THAT IS NOT THERE.** Three contracts cited a guard file the tree has never held — two
+named a scoping test under a name it does not have, and one placed a reason-gate in a component
+that has never existed. The claims were RIGHT and the citations were wrong, which is the shape
+that survives review. **Every source file any contract names is now asserted to exist.**
+
+### 6.7 · What nothing answers
+
+| Question | The state of it |
+|---|---|
+| **Where is this published?** | **Nothing in this repository knows.** No host, endpoint, alias or domain is recorded in any file here |
+| **Is a publish verified?** | **No.** Nothing compares what a host serves against the commit it was built from — and a hash-routed SPA behind a CDN is precisely the shape where a stale shell is invisible |
+| **Is publication ordered after the gates?** | **Not by anything here** (§6.4). One workflow, no publish step |
+| **Who owns the repository's integrations?** | **Undetermined from inside the repository**, and §6.7 is the one case where that has a visible consequence |
+
+### 6.8 · A passing check that this repository cannot account for
+
+Every pull request in this repository carries status contexts named **`Vercel`**
+and **`Vercel Preview Comments`**, and they **report success**.
+
+**What is determinable from inside the repository, and it is all that is claimed
+here:**
+
+- `vercel.json` exists and configures a build command, an output directory and
+  the fallback rewrite.
+- `@vercel/functions` is a declared dependency, imported by `middleware.js`.
+- `.github/workflows/` holds **only** `gates.yml`, and it contains **no** deploy
+  step, token or project reference.
+- **No credential, token or project identifier for any host is stored in this
+  repository.**
+
+**What is NOT determinable from inside the repository: what posts those status
+contexts.** They originate outside it. This document does not speculate about
+what is installed at the account or organisation level, because that cannot be
+read from here and a handover that guesses is worse than one that stops.
+
+⚠️ **THE CONSEQUENCE, WHICH IS THE REASON THIS IS A ROW AND NOT A
+FOOTNOTE: A GREEN CHECK NAMED AFTER A HOST IS READ AS "IT DEPLOYED."** It is the
+same mechanism as `CLEAN` in the merge doctrine — an aggregate that cannot
+distinguish *"everything passed"* from *"nothing was asked"*. Whoever inherits
+this repository's settings inherits this check, and **nothing in the repository
+substantiates what it means.** Resolve it at the account level before treating
+it as evidence of anything.
+
+---
+
+## 7 · What holds this document
 
 **Four sections are pinned bilaterally** and go red when the tree moves:
 
@@ -241,6 +444,23 @@ seam, that ambiguity has nowhere to be resolved.
   forward promise with no handler, and it is the failure this corpus keeps
   repeating.
 
+  ⚠️ **AND UNTIL §6 LANDED THAT SENTENCE WAS TRUE OF FIELDS AND ONLY
+  ACCIDENTALLY TRUE OF FILES.** A backticked `BuyerContracts.tsx` satisfied the
+  FIELD pattern, so the check asked whether `src/` contains the string `tsx` —
+  which it always does. **Three citations were passing on their own file
+  extension.** A file is now its own kind, resolved on disk, with both controls:
+  a path the tree does not hold is rejected, and a glob (`*.mock.test.ts`) is
+  not read as a file claim at all.
+
+- **§6.2's and §6.3's load-bearing half is pinned, and the rest of §6 is not.**
+  The fallback rewrite, the single HTML entry, the middleware's every-path
+  matcher and the three credential names are properties of shipped config, so
+  they are asserted rather than described — the one paragraph a host most needs
+  to get right is the one an instrument holds. **§6.4's absence is pinned in the
+  direction that decays:** no workflow in this repository publishes anything,
+  and the day one does, that assertion goes red and §6.4 and §6.6 must be
+  rewritten rather than quietly outgrown.
+
 **The rest is irreducibly prose, and that is said plainly rather than left to be
 discovered.** §1's three columns, §2's reasons, §3's "what it would take", and
 §4's open ruling cannot be checked by any instrument in this repository — several
@@ -249,3 +469,47 @@ C11 adopted: **they state REASONS, not NUMBERS.** Prose asserting why a boundary
 exists has no truth-value to decay. Prose asserting how many things are on one
 side of it has been wrong at six sites in this tree, which is why no such
 sentence appears above.
+
+---
+
+## Pin reach
+
+**Pinned by** `src/services/contracts/__tests__/c12BackendSpec.contract.test.ts`.
+
+**GUARDED — these assertions, and nothing else on this page:**
+
+- POPULATION CONTROLS — before any comparison is believed
+- §2.1 — the never-originate table IS the derived intersection
+- §2.3 — the SAP-boundary verbs are the ones the flows declare
+- §5 — the seam-code gap is the union against C5, both directions
+- §3 — the inherited list IS C11’s non-FACTORY set
+- ⚠️ EVERY ARTEFACT C12 NAMES EXISTS
+- §6.2 — the fallback rewrite is real, and the document describes it
+- §6.3 — the edge gate the document says a static host cannot run
+- §6.4 — the publish-after-gates requirement states a real absence
+
+
+⚠️ **THIS INSTRUMENT IS SHARED, AND THE REACH BELOW IS THE INSTRUMENT'S RATHER THAN THIS
+PAGE'S.** It also asserts over `C11-invariants.md`, `C5-seams.md`, so entries naming another document are its assertions about
+that sibling. They are listed here rather than filtered because **the thing a reader needs is
+what the instrument checks**, and a filtered list would quietly re-introduce the judgement this
+block exists to remove.
+
+⚠️ **NOT GUARDED — EVERYTHING ELSE ON THIS PAGE, AND THAT HALF IS WHY THIS BLOCK EXISTS.**
+A list of guarded things reads as completeness. It is not: **a reader who assumes the pin
+covers a clause it does not reach is the failure this block is built against**, and it has
+happened in this corpus — a DTO field whose MEANING was assumed pinned by a method-surface
+pin, and a repaired defect still asserted as current in a document whose pin passed because
+it only checks that an unenforced row SAYS it is unenforced.
+
+Most of what is not guarded **cannot be**, and that is a property of a contract rather than
+a backlog: a clause describing a system outside this repository has nothing here to compare
+against, and a clause stating WHY a boundary exists has no truth-value to decay. See C12
+for the statement of that property.
+
+⚠️ **THIS BLOCK IS SELF-PINNED** (`src/services/contracts/__tests__/pinReach.contract.test.ts`).
+The GUARDED list is asserted EQUAL to the pin’s own `describe` titles, **both directions**:
+widen the pin without listing the new assertion and it reddens; drop a line here without
+narrowing the pin and it reddens too. A reach statement that can drift is the overclaim one
+layer up.
+
