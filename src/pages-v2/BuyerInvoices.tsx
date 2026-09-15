@@ -415,8 +415,17 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
       return;
     }
     if (selected.status === 'Overdue') {
+      // Honest: NOTHING IS ESCALATED HERE. No dispatch, no mutation, no channel
+      // send — the Communication Hub lane that would carry an escalation is not
+      // built, and wiring one is an operator ruling, not this branch's business.
+      // The copy used to read "{{invoiceNumber}} escalated / Routed to Finance
+      // Controller for urgent action", which is a claim about an act that does
+      // not occur; it now says the act is unavailable and that nothing was
+      // routed. `info`, not `warning`, matches the `Pending Match` branch three
+      // clauses above: the notice is about a MISSING CAPABILITY, not about this
+      // invoice needing attention.
       toast({
-        variant: 'warning',
+        variant: 'info',
         title: t('buyerInvoices.toast.escalate.title', { invoiceNumber: selected.invoiceNumber }),
         description: t('buyerInvoices.toast.escalate.desc'),
       });
