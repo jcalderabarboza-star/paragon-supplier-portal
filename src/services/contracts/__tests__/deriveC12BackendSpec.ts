@@ -21,7 +21,7 @@
 //   document's row set, so the pin can always tell "I caught it" from "I have
 //   nothing to look at".
 // ─────────────────────────────────────────────────────────────────────────────
-import { readFileSync, readdirSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { getKnownFlows } from '../../transitions';
@@ -129,16 +129,95 @@ export function c12InheritedRows(): string[] {
  * backticked token would create false accusations, which is heuristic rule 2 and
  * is how a gate gets muted.
  */
-export function citedArtefacts(): { token: string; kind: 'transition' | 'identifier' }[] {
+export type CitedKind = 'transition' | 'identifier' | 'file';
+
+/** Extensions a backticked token may carry and still be a FILE claim. */
+const FILE_EXT = /\.(json|jsonc|js|mjs|cjs|ts|tsx|html|css|ico|txt|yml|yaml|md|lock)$/;
+
+/**
+ * ⚠️ **A FILE IS A THIRD KIND, AND ADDING IT CLOSED A VACUITY RATHER THAN
+ * A GAP — WHICH IS WHY IT IS WORTH THE COMMENT.**
+ *
+ * `BuyerContracts.tsx`, `CLAUDE.md` and `findings.md` already satisfied the
+ * IDENTIFIER pattern (`Word.lowercase`), so each was being checked as a field
+ * name: the assertion asked whether `src/` contains the string `tsx` or `md`,
+ * which it always does. **Three members were passing on their own file
+ * extension.** The document's §7 claims *"every artefact this document names in
+ * backticks is asserted to exist"*; for files that claim was true only by
+ * accident, and §6 adds more of them.
+ *
+ * Classified BEFORE the identifier branch, so a file can never fall through to
+ * the weaker test.
+ */
+export function citedArtefacts(): { token: string; kind: CitedKind }[] {
   const md = readDoc(C12_PATH);
-  const seen = new Map<string, 'transition' | 'identifier'>();
+  const seen = new Map<string, CitedKind>();
   for (const raw of backticked(md)) {
     const tok = raw.trim();
+    // A glob is a SHAPE, not a path — `*.mock.test.ts` names no single file.
+    if (tok.includes('*')) continue;
     if (/^t_[a-z0-9_]+$/.test(tok)) seen.set(tok, 'transition');
+    else if (FILE_EXT.test(tok) && !/\s/.test(tok)) seen.set(tok, 'file');
     // `CommandInput.idempotencyKey` and bare camelCase field names
     else if (/^[A-Za-z][A-Za-z0-9]*\.[a-z][A-Za-z0-9]*$/.test(tok)) seen.set(tok, 'identifier');
   }
   return [...seen].map(([token, kind]) => ({ token, kind })).sort((a, b) => a.token.localeCompare(b.token));
+}
+
+/**
+ * Does a cited file token name something real? A token is accepted if it
+ * resolves from the repository root, or if its BASENAME exists somewhere in the
+ * tree — C12 cites both (`src/services/.../c12BackendSpec.contract.test.ts` and
+ * bare `BuyerContracts.tsx`).
+ *
+ * ⚠️ `node_modules`, `dist` and `.git` are excluded: a dependency's file is
+ * not this repository's artefact, and `dist/` is a BUILD OUTPUT that does not
+ * exist on a clean checkout — accepting it would make the check pass or fail
+ * depending on whether somebody had run a build.
+ */
+let repoFilesCache: Set<string> | null = null;
+function repoBasenames(): Set<string> {
+  if (repoFilesCache !== null) return repoFilesCache;
+  const names = new Set<string>();
+  const skip = new Set(['node_modules', 'dist', '.git', 'coverage', '.vercel']);
+  const walk = (dir: string): void => {
+    for (const e of readdirSync(dir, { withFileTypes: true })) {
+      if (skip.has(e.name)) continue;
+      if (e.isDirectory()) walk(join(dir, e.name));
+      else names.add(e.name);
+    }
+  };
+  walk(ROOT);
+  repoFilesCache = names;
+  return names;
+}
+
+export function citedFileExists(token: string): boolean {
+  if (existsSync(join(ROOT, token))) return true;
+  const base = token.split('/').pop() as string;
+  return repoBasenames().has(base);
+}
+
+/**
+ * The fallback rewrite, read from the host config the tree actually ships.
+ * Returns every rule that sends a path to the single HTML entry.
+ */
+export function fallbackRewrites(): { source: string; destination: string }[] {
+  const cfg = JSON.parse(readFileSync(join(ROOT, 'vercel.json'), 'utf8')) as {
+    rewrites?: { source: string; destination: string }[];
+  };
+  return (cfg.rewrites ?? []).filter((r) => /index\.html$/.test(r.destination));
+}
+
+/** The HTML entries under the Vite root — the build's entry points. */
+export function htmlEntries(): string[] {
+  return readdirSync(join(ROOT, 'app')).filter((n) => n.endsWith('.html'));
+}
+
+/** Client route paths declared by the router — derived, never counted here. */
+export function declaredRoutePaths(): string[] {
+  const src = readFileSync(join(ROOT, 'src', 'router', 'AppRouter.tsx'), 'utf8');
+  return [...new Set([...src.matchAll(/path="([^"]*)"/g)].map((m) => m[1]))];
 }
 
 /** Every transition id the registry knows — the authority for a `t_…` claim. */

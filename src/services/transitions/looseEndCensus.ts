@@ -107,15 +107,6 @@ export const LOOSE_END_CENSUS: readonly CensusEntry[] = Object.freeze([
       'and never instantiated on its own; it is documented substrate, and the analyzer seeds its ' +
       'reachability from `initial` so this is reported ONCE instead of smeared over six states.',
   },
-  {
-    entity: 'goodsReceiptLine',
-    kind: 'exit-less-state',
-    subject: 'Quarantined',
-    reason: 'deferred-edge',
-    note:
-      'Quarantine is a HOLDING state — the release-or-return edge is what makes it one — and it has ' +
-      'neither. Same shape as the GR header\'s Quality Hold, one grain down.',
-  },
 
   // ── invoiceMatch ───────────────────────────────────────────────────────────
   {

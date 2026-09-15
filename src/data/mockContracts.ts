@@ -34,8 +34,22 @@ export interface Contract {
   signedByBuyer: string;
   signedBySupplier: string;
   signedDate: string;
-  obligationCount: number;
-  obligationsMet: number;
+  // ⚠️ `obligationCount` AND `obligationsMet` ARE RETIRED. Both were counts
+  // over the OBLIGATION store held on the contract row, so the two sources
+  // drifted: `obligationsMet` disagreed on 8 of 13 rows and `obligationCount`
+  // on 1 (`ctr-013` claimed 3 against a store holding 0), and nothing ever read
+  // either — no read site exists in any commit of this repository. The
+  // surfaces compute them from `mockObligations` at read via
+  // `services/data/obligationRollup`. Same law as `daysUntilExpiry` below with
+  // a different independent variable; the extension is argued in that file.
+  //
+  // ⚠️ **AND THE THIRTEEN VALUES THAT STOOD HERE WERE AUTHORED LITERALS —
+  // NONE OF THEM CAME FROM THE WIZARD.** Worth stating because the wizard was
+  // the only non-fixture writer, so it reads as the source of the defect and it
+  // is not: it never ran against this file. `obligationsMet` was wrong on 8 of
+  // these rows from the day they were typed (`dfb09f3`, 2026-05-20), which is a
+  // hand-authoring defect, and the wizard's own count was a different defect
+  // with a different cause — see `BuyerContracts.tsx`'s note at the mint site.
   // ⚠️ `daysUntilExpiry` IS RETIRED (law 0.5). It was a difference against
   // NOW stored beside `endDate`, so it was wrong the day after it was typed:
   // all 13 rows back-solved to an authoring date and 12 of them to 2026-05-20.
@@ -65,8 +79,6 @@ const contractRows: Contract[] = [
     signedByBuyer: 'VP Procurement',
     signedBySupplier: 'CEO',
     signedDate: '2025-12-15',
-    obligationCount: 5,
-    obligationsMet: 3,
     category: 'Raw Material',
     brands: ['Wardah', 'Emina', 'Make Over'],
     performanceScore: 92,
@@ -89,8 +101,6 @@ const contractRows: Contract[] = [
     signedByBuyer: 'CPO',
     signedBySupplier: 'Regional Director APAC',
     signedDate: '2026-01-08',
-    obligationCount: 4,
-    obligationsMet: 2,
     category: 'Fragrance',
     brands: ['Wardah', 'Make Over'],
     performanceScore: 95,
@@ -115,8 +125,6 @@ const contractRows: Contract[] = [
     signedByBuyer: 'Director of Procurement',
     signedBySupplier: 'COO',
     signedDate: '2025-09-22',
-    obligationCount: 3,
-    obligationsMet: 2,
     category: 'Packaging',
     brands: ['Wardah'],
     performanceScore: 88,
@@ -139,8 +147,6 @@ const contractRows: Contract[] = [
     signedByBuyer: 'VP Procurement',
     signedBySupplier: 'Global Account Manager',
     signedDate: '2025-10-18',
-    obligationCount: 4,
-    obligationsMet: 3,
     category: 'Active Ingredient',
     brands: ['Wardah', 'Kahf'],
     performanceScore: 90,
@@ -165,8 +171,6 @@ const contractRows: Contract[] = [
     signedByBuyer: 'Head of Quality',
     signedBySupplier: 'QA Director',
     signedDate: '2025-08-01',
-    obligationCount: 5,
-    obligationsMet: 3,
     category: 'Fragrance',
     brands: ['Wardah', 'Emina'],
     performanceScore: 86,
@@ -189,8 +193,6 @@ const contractRows: Contract[] = [
     signedByBuyer: 'Senior Manager Packaging',
     signedBySupplier: 'Sales Director',
     signedDate: '2025-07-10',
-    obligationCount: 3,
-    obligationsMet: 2,
     category: 'Packaging',
     brands: ['Emina', 'Instaperfect'],
     performanceScore: 80,
@@ -229,8 +231,6 @@ const contractRows: Contract[] = [
     signedByBuyer: 'Legal Counsel',
     signedBySupplier: 'Legal Counsel',
     signedDate: '2025-06-05',
-    obligationCount: 2,
-    obligationsMet: 1,
     category: 'Active Ingredient',
     brands: ['Wardah'],
     performanceScore: 78,
@@ -253,8 +253,6 @@ const contractRows: Contract[] = [
     signedByBuyer: 'Procurement Manager',
     signedBySupplier: 'Account Director',
     signedDate: '2025-05-25',
-    obligationCount: 4,
-    obligationsMet: 4,
     category: 'Active Ingredient',
     brands: ['Wardah', 'Kahf'],
     performanceScore: 84,
@@ -290,8 +288,6 @@ const contractRows: Contract[] = [
     signedByBuyer: 'VP Procurement',
     signedBySupplier: 'Commercial Director',
     signedDate: '2024-02-15',
-    obligationCount: 3,
-    obligationsMet: 3,
     category: 'Raw Material',
     brands: ['Wardah', 'Emina'],
     performanceScore: 89,
@@ -316,8 +312,6 @@ const contractRows: Contract[] = [
     signedByBuyer: 'Director of Procurement',
     signedBySupplier: 'CEO',
     signedDate: '2025-12-01',
-    obligationCount: 4,
-    obligationsMet: 2,
     category: 'Raw Material',
     brands: ['Wardah'],
     performanceScore: 91,
@@ -342,8 +336,6 @@ const contractRows: Contract[] = [
     signedByBuyer: '—',
     signedBySupplier: '—',
     signedDate: '',
-    obligationCount: 0,
-    obligationsMet: 0,
     category: 'Active Ingredient',
     brands: ['Wardah', 'Kahf'],
     performanceScore: 0,
@@ -368,8 +360,6 @@ const contractRows: Contract[] = [
     signedByBuyer: 'Procurement Manager',
     signedBySupplier: 'Managing Director',
     signedDate: '2024-04-20',
-    obligationCount: 3,
-    obligationsMet: 1,
     category: 'Packaging',
     brands: ['Wardah'],
     performanceScore: 52,
@@ -400,8 +390,6 @@ const contractRows: Contract[] = [
     signedByBuyer: 'Director of Procurement',
     signedBySupplier: 'COO',
     signedDate: '2026-02-18',
-    obligationCount: 3,
-    obligationsMet: 2,
     category: 'Packaging',
     brands: ['Wardah', 'Emina'],
     performanceScore: 88,

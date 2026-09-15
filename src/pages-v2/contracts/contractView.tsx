@@ -40,6 +40,7 @@ import type {
   ContractType,
 } from '../../data/mockContracts';
 import type { ContractObligation } from '../../data/mockObligations';
+import { obligationRollup } from '../../services/data/obligationRollup';
 import {
   obligationDisplay,
   OBLIGATION_DISPLAY_RANK,
@@ -300,6 +301,13 @@ export const ContractDetailBody: React.FC<{
         .sort(sortObligations(nowIso)),
     [obligations, contract.id, nowIso],
   );
+  /** ⚠️ COMPUTED, NEVER STORED. Over the SAME filtered set the table
+   *  renders, so the figure and the rows are one derivation. Takes no clock:
+   *  `met` is decided by `completedDate`, which is a machine fact. */
+  const rollup = useMemo(
+    () => obligationRollup(contract.id, obligationsForContract),
+    [contract.id, obligationsForContract],
+  );
 
   return (
     <div className="space-y-6">
@@ -447,9 +455,25 @@ export const ContractDetailBody: React.FC<{
       </section>
 
       <section>
-        <h3 className="text-label text-text-tertiary uppercase mb-3">
-          {t('contracts.panel.obligations', { count: obligationsForContract.length })}
-        </h3>
+        {/* ⚠️ THE COUNTERS ARE COMPUTED FROM THE ROWS BELOW THEM, WHICH IS THE
+            WHOLE POINT. `Contract.obligationCount` / `obligationsMet` were
+            stored on the contract row and disagreed with this table on 8 of 13
+            contracts — `ctr-008` stored "4 met" above a table listing one
+            `Overdue` and one `In Progress`. A header and the lines under it
+            cannot disagree when the header is a fold over the lines. */}
+        <div className="flex items-baseline justify-between gap-3 mb-3">
+          <h3 className="text-label text-text-tertiary uppercase">
+            {t('contracts.panel.obligations', { count: rollup.total })}
+          </h3>
+          {rollup.total > 0 && (
+            <span className="text-xs text-text-tertiary" data-testid="obligation-rollup">
+              {t('contracts.panel.obligationsMet', {
+                met: rollup.met,
+                total: rollup.total,
+              })}
+            </span>
+          )}
+        </div>
         {obligationsForContract.length === 0 ? (
           <p className="text-sm text-text-tertiary p-4 border border-border-subtle rounded-md text-center">
             {t('contracts.panel.noObligations')}

@@ -35,7 +35,7 @@
 //   F  liveness: Tier only on the agreement header (SIMULATED for all Batch-1 seed).
 // ─────────────────────────────────────────────────────────────────────────────
 
-import type { CommitmentClass, Uom } from '../sdc/types';
+import type { Uom } from '../sdc/types';
 // The honest-render liveness tier (F0.6 registry) — TYPE-ONLY import, so this
 // module takes NO runtime dependency on the registry and does not touch it. All
 // seed data is SIMULATED; the flip to LIVE rides a real SAP feed (Pattern B), not

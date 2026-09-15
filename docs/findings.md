@@ -24120,3 +24120,533 @@ runs are as slow as arm C's and pass anyway.
 **Arm A is the measurement that moved the site.** A `waitFor` option cannot lift
 the test's own ceiling — vitest aborts at `testTimeout` whatever the inner wait
 is willing to keep waiting for.
+
+
+## §102 — THE OBLIGATION COUNTERS ARE COMPUTED, AND THE LAW THEY BREAK IS ONE STEP WIDER THAN THE ONE THAT WAS WRITTEN
+
+`Contract.obligationCount` and `Contract.obligationsMet` are retired. Both are
+now folded from `mockObligations` at read by `services/data/obligationRollup.ts`,
+and `contractView`'s obligations panel renders `met / total` beside the table it
+folds — the first surface in this tree to show the second counter at all.
+
+### §102a — ⚠️ THREE OF THE DISPATCH'S LOAD-BEARING CLAIMS WERE MEASURED FALSE, AND THE BUILD DID NOT REST ON ANY OF THEM
+
+Recorded because `§64a`'s class **under-counts by construction** — a false
+premise refused in conversation leaves no trace — and because this one arrived
+as a *correction of a prior measurement*, which is the position that gets the
+least scrutiny.
+
+| the dispatch said | measured | instrument |
+|---|---|---|
+| *"Two components render `obligationCount`… **ContractCard** shows '3 obligations' for ctr-001 while the drawer beneath it lists zero"* | **`ContractCard` has never existed.** Zero hits across **977 commits**, all refs and remotes, whole tree. And still **zero** read sites of either field. | `git log --all --remotes -S ContractCard` → empty; control `-S ContractDetailBody` → `9302bbb`. Read census: `.performanceScore` 7 sites, both counters 0, same matcher, same run. |
+| *"ctr-013 stores **8** where the store holds **15**"* | `ctr-013` stores `obligationCount: 3, obligationsMet: 2`; the store holds **0** rows for it. | `mockContracts.ts:403` (pre-retirement) · `grep -c "contractId: 'ctr-013'"` = 0 |
+| *"No fixture gap explains a stored number **LOWER** than reality"* | **No row in this tree is lower than reality.** Stored `met` ≥ true on all 13; `obligationCount` ≥ true on all 13. The premise's own evidence runs the other way. | the exact map, pinned in `obligationRollup.test.ts` |
+
+⚠️ **THE ACCEPTANCE CRITERION WAS THEREFORE UNMEETABLE AND WAS NOT MET.** The
+dispatch required browser QA to show *"ctr-013's count must read 15."* After
+computing it reads **0**, because the store holds nothing for that contract.
+**Building to that number would have meant shipping one.**
+
+⚠️ **AND THE CONCLUSION SURVIVED ANYWAY, WHICH IS `§64a`'s SHAPE EXACTLY** — a
+misdescribed mechanism attached to a correct ruling. *Retire them and compute*
+is right, and it is what the prior investigation recommended on independent
+grounds: 8 of 13 rows carried a wrong number, nothing read it, and a live wizard
+kept writing more. **Grep the artifact, keep the property.**
+
+⚠️ **ONE CORRECTION IS MINE.** The prior report gave main's floor as `4676/326`.
+That is `feat/invoice-match-pairing`'s floor — an unmerged branch one commit
+ahead. **Main's floor was `4662/325`**, and I read a count off one branch and
+reported it as another's: `COUNT-RESTATED-ACROSS-INSTRUMENTS-01`, on a number I
+had myself been sent to derive.
+
+### §102b — THE MEASUREMENT, PINNED RATHER THAN SUMMARISED
+
+Both maps live in `obligationRollup.test.ts` as literals, the retired one as
+`STORED_BEFORE` — `asnRefIntegrity.test.ts`'s shape, so the correction is a fact
+in the file and not a note in a PR body.
+
+`obligationsMet` disagreed on **8 of 13**, `obligationCount` on **1**. It was
+never right: 7 of the original 12 were wrong at `dfb09f3` (2026-05-20), the day
+both fixtures were authored.
+
+⚠️ **`ctr-008` IS THE ROW THAT DECIDED THE DIRECTION.** It stored
+`obligationCount: 4, obligationsMet: 4` — *every obligation met* — while its own
+four obligations were `Completed · Completed · In Progress · **Overdue**`. A
+thin fixture shorts the COUNT; the count agreed on 12 of 13. **What was wrong
+was the header, not the lines**, and the header is now a fold over the lines.
+
+`ctr-013` is the one row where the retired field was the only record of an
+intention — 3 claimed, 0 held. It computes to **0**, pinned by name, so
+authoring those three obligation rows later is a deliberate act that turns a
+test red rather than a silent edit.
+
+### §102c — ⚠️ THE LAW IS EXTENDED, AND THE EXTENSION IS STATED AT THE SITE
+
+#318 retired `Contract.daysUntilExpiry` and `ComplianceRow.daysLeft`; #331
+retired `Shipment.daysInTransit` and `Shipment.delayDays`. One rule:
+
+> **A STORED VALUE MUST NOT BE A FUNCTION OF THE READ INSTANT.**
+
+**The rule names its independent variable, and the variable was never the point
+of it.** All four were differences against `now`, so the rule was written in the
+only vocabulary those four needed — and `dayCounts.ts` inherited the narrowness
+twice over, in its matcher (`\w*[Dd]ays\w*`) and in its stated discriminator.
+The general form, argued in `obligationRollup.ts`'s header:
+
+> ⚠️ **A STORED VALUE MUST NOT BE A FUNCTION OF DATA THE TREE ALSO HOLDS
+> SEPARATELY.** The read instant is ONE such variable. Another stored collection
+> is another, and it fails the same way for the same reason: the two sources
+> drift, and nothing makes them meet.
+
+⚠️ **THE TWO ARMS ARE NOT THE SAME BATCH, AND A SEAT THAT TREATS THEM AS ONE
+WILL EXPECT THE WRONG EVIDENCE.** A clock field's computed replacement
+*reproduces* the authored literal once the fixtures are anchored — that is
+exactly what #331 measured before retiring, all 16 shipment literals exact at
+`DECLARED_PRESENT`. Here the computed value **contradicts** the authored one on
+8 of 13 rows. **A clock retirement is a no-op on the data; this one is a
+correction to it.**
+
+### §102d — ⚠️ THE GAP, NAMED WITH ITS MEMBERS — `STORED-VALUE-DERIVABLE-FROM-STORED-DATA-01`
+
+Named, **not** fixed: no instrument is opened here (operator ruling). Three
+gates exist and none can see this arm, each for a structural reason:
+
+| gate | population | why the arm is invisible |
+|---|---|---|
+| `projectionGate/displayStates.ts` | members of closed string unions | a number has no union — the file says so itself |
+| `projectionGate/dayCounts.ts` | `/^\s*(?:readonly\s+)?(\w*[Dd]ays\w*)\??:\s*number/` in `STORAGE_SCOPE` | the name carries no `days` — **and deeper: the gate's own discriminator is the read instant, so widening the matcher would push it past its stated axis** (rule 2) |
+| `lib/storedFieldGate/` | glossary registries → covered DTOs → their fields | two independent misses: `: number` names no union, **and** the registered vocabulary is 17 source types (`CertType`, `QtyRefusalReason`, `GovernedVerdict`, …), **none contract-side — so no field of `Contract` or `ContractObligation` is in the population at all** |
+
+**ARM (i) — function of the READ INSTANT.** Retired: `Contract.daysUntilExpiry`,
+`ComplianceRow.daysLeft` (#318); `Shipment.daysInTransit`, `Shipment.delayDays`
+(#331). **Still stored, classified and blocked:** `PurchaseOrder.daysOverdue`
+and `POSummary.daysOverdue`, held as `stored-in-fixtures` because
+`purchaseOrder` has no `FAMILY_ANCHORS` entry — *"496 days late"* is still a
+live risk for a PO. **Anchor that family first.**
+
+**ARM (ii) — function of ANOTHER STORED COLLECTION.** Derived from every
+`…: number;` declaration in `STORAGE_SCOPE` (97 today), narrowed to the 14
+aggregate-shaped names, then adjudicated one by one against whether the tree
+holds the collection they fold:
+
+| member | folds | disagreement | status |
+|---|---|---|---|
+| `Contract.obligationCount` | `mockObligations` by `contractId` | 1 of 13 | **RETIRED, this batch** |
+| `Contract.obligationsMet` | the same, by `completedDate` | 8 of 13 | **RETIRED, this batch** |
+| `PurchaseOrder.totalValue` | its OWN `lineItems` | **7 of 21** | **OPEN.** Pinned as an exact set at `asnRefIntegrity.test.ts` (`HEADER-DISAGREES-WITH-LINES-01`) — and unlike the two above **it is READ, at 26 sites.** The consequential member of this class. |
+| `Quotation.totalPrice` | `unitPrice × RFQ.totalQty` | 4 of 25 (`qt-009a/b`, `qt-012b`, `qt-013b`) | ⚠️ **CANDIDATE, MEASURED BUT NOT ADJUDICATED.** 21 of 25 satisfy the relation, which is what makes it look like a law; a partial bid against `minOrderQty` would break it legitimately and those four were not checked against theirs. Filed with its uncertainty (§70's bound), **not** asserted. |
+
+**Acquitted on measurement — no in-tree source, so they are primary data, not
+folds:** `RFQ.totalQty` (RFQ carries `materialIds`, no per-material quantity),
+`Shipment.packageCount` / `totalWeight` (`ShipmentLineItem` is
+`materialCode · description · qty · uom`), `AsnShipmentDetails.totalCartons`,
+`QualificationItem.stageTotal`, `POSummary.totalValue` (a DTO with no producer
+anywhere outside `types.ts`), `Page.total` (the list envelope, computed), and
+the four per-line quantities (`POLineItem.confirmedQty`,
+`AsnLineItem.orderedQty` / `shippedQty`, `PrIntakeLine.suggestedQty` /
+`acceptedQty` — a line's own datum, not an aggregate).
+
+⚠️ **THE MEMBERSHIP IS A DERIVATION, NOT A LIST, AND THE SELECTOR IS NAMED SO
+THE NEXT SCOPE IS VISIBLE** (`SCOPE-DERIVATION-IS-RECURSIVE-01`): the population
+is `…: number;` declarations in `STORAGE_SCOPE`; **the aggregate narrowing is a
+NAME regex** (`Count|Total|Met|Qty|Items|Lines|Records|Num[A-Z]`) and that regex
+is a hand-pick one level up. A fold named without one of those words — `spend`,
+`balance`, `headroom` — is invisible to it. Stated rather than implied.
+
+### §102e — THE PROBES
+
+Five mutants, each killed by a NAMED test; every file restored byte-identical
+with `sha256` as the authority and `git hash-object` beside it (`core.autocrlf`
+is on here, so a bare digest is not reproducible across platforms):
+
+| mutant | named test that went red |
+|---|---|
+| drop the `contractId` filter | *"ctr-013 is the largest disagreement, and it reads ZERO"* |
+| count every obligation as met | *"ctr-008 claimed every obligation met while one of its own was Overdue"* |
+| restore a stored `obligationCount` VALUE | *"the fixture SOURCE declares neither"* |
+| restore the `obligationsMet` DECLARATION | *"the fixture SOURCE declares neither"* |
+| restore the wizard mint | *"the wizard no longer MINTS either"* |
+
+⚠️ **THE FOURTH ONE CORRECTED THE PROBE, NOT THE GATE.** It was written expecting
+*"no contract row carries either property"* to fire. It did not, and it was
+right not to: **a TypeScript interface member is erased at runtime**, so
+restoring a declaration adds no property to any row. The BYTES assertion is the
+only one that can see a declaration — which is why the spec reads the file at
+all. `REIMPLEMENTATION-CONTRADICTS-THE-INSTRUMENT-01` in miniature: the hand
+expectation was debugged first and the instrument was right.
+
+`src/services/data/obligationRollup.ts` restored to
+`sha256 f8190ba7f7b7a126eb50bea81a57e850223cc0be0a090ebabd524e7c5e0fdb30` /
+`blob 7c10a52321bbb0f895c178b3914e80159062a04a`;
+`src/data/mockContracts.ts` to
+`sha256 d8a8859b2ce8aa206c0d837d015369b3cc6a69d240bbf64d95692618e83b8cd6` /
+`blob a94b544d5c7c8a8142dc090feb7a5c2e9764ab89`;
+`src/pages-v2/BuyerContracts.tsx` to
+`sha256 0f39b2c4af87ed9e0a33b3d5b15f4cb0d944dda67037f17269aa0d6f168441fe` /
+`blob af25d32cd0821cad363ae8ed065e489fa9d7a1ed`.
+Hashed bytes: the working-copy file as it sits on disk, CRLF.
+
+### §102f — WHAT THIS BATCH DELIBERATELY DID NOT DO
+
+- **The wizard does NOT author obligations in the same act** — derived before
+  deleting, because if it did the count would have a legitimate producer and the
+  disposal would change. `draft.obligations` is never persisted: there is no
+  `extraObligations`, `setExtraContracts` writes a `Contract` and nothing else,
+  and `obligation` holds no `CommandTarget` (`getKnownFlows()` ∖
+  `WIRED_COMMAND_TARGETS`), so `t_obligation_track` cannot fire. The stop
+  condition was checked and not met.
+- **`obligation`'s `CommandTarget` is still unwired**, so `completedDate` is
+  fixture-only. The counters are honest about the store; the store is still not
+  writable. Filed, unchanged.
+- **A wizard-created contract still has no detail page.** `ContractDetailBody`
+  is rendered only by `BuyerContractDetail`, which reads `contractsQuery`, while
+  wizard contracts live in `ContractsWorkspace`'s local `extraContracts` — so
+  the row is clickable and lands on a real 404. Observed in browser QA, filed,
+  not fixed here.
+
+
+### §102g — ⚠️ THE MECHANISM IS CORRECTED AT THE SITE: TWO DEFECTS SHARING TWO FIELD NAMES
+
+§102 landed with an account that was true and incomplete, and the incompleteness
+was the kind that misdirects: it said the wizard's count "described a collection
+the store never received", which is accurate and reads as *the wizard was
+wrong*. **It was not.** Corrected at all three sites (`mockContracts.ts`,
+`BuyerContracts.tsx`, `obligationRollup.ts`), because a reader who finds a
+computed count and concludes the mint was a fabrication will look for the defect
+in the wrong file.
+
+| | what it was | when it went wrong |
+|---|---|---|
+| **the 13 fixture values** | hand-authored literals that **never ran through the wizard** | wrong on 8 of 13 **the day they were typed** (`dfb09f3`, 2026-05-20) |
+| **the wizard's mint** | `obligationCount: draft.obligations.length` — **TRUE of the draft at the instant it was written** | never true of the STORE, because nothing persisted the obligations; and never updatable, because nothing can add one later |
+
+⚠️ **THE SECOND ROW IS THE GENERAL SHAPE AND IT OUTLIVES THIS BATCH: A VALUE
+COMPUTED CORRECTLY AT CREATION AND NEVER RECOMPUTED IS NOT A FABRICATION — IT IS
+A SNAPSHOT WITH NO MECHANISM TO STAY CURRENT.** It is indistinguishable from a
+fabrication the moment the world moves, and *harder* to spot, because it was
+once right and its author can point at the moment it was.
+
+**FILED, NOT OPENED: no write path exists for adding an obligation to a contract
+that already exists.** `obligation` holds no `CommandTarget`
+(`getKnownFlows()` ∖ `WIRED_COMMAND_TARGETS`), so `t_obligation_track` cannot
+fire. Whether that absence is *correct* is a lane ruling — the flow's verbs are
+`surfaced: true` and carry no `external-fact` owner, so it is not TMS-owned the
+way `shipment` is; **derive that before acting on it.**
+
+### §102h — ⚠️ THE SECOND DISPATCH'S PREMISES, RE-DERIVED
+
+The re-dispatch arrived after §102 merged (`c66e8e1`), describing the work as
+unbuilt and correcting §102a's account. **One half of the correction is right
+and is adopted above.** The rest measured false, and is recorded because the
+class under-counts by construction:
+
+| claimed | measured | instrument |
+|---|---|---|
+| *"**submitContractDraft** builds the array and derives both counts from it at **:373**"* | **`submitContractDraft` has never existed** in any commit; the handler is `submitWizard` at `:549`. `BuyerContracts.tsx:373` is inside `matchesGroup`, a display-status predicate. | `git log --all --remotes -S submitContractDraft` → empty; `grep -n "const submitWizard"` → `:549` |
+| *"the wizard DOES author obligations in the same act"* | It builds `DraftObligation[]` in **React state** and writes a `Contract`. **No obligation reaches any store** — no `extraObligations`, and `setExtraContracts` writes a `Contract` and nothing else. **The same dispatch's own bullet (ii) says so**: *"the shipped data came from a path that produced none of it."* | every `draft.obligations` use enumerated at `:472–:1164`; all are wizard-local UI |
+| *"**10 of 13** disagree"* | **8 of 13** — named, pinned, and asserted as an exact list | `obligationRollup.test.ts`, *"disagreed on exactly eight contracts, named"* |
+| *"ctr-001's card reads **3** above a drawer listing zero"* | no card exists; ctr-001's panel read `OBLIGATIONS (5)` before and reads `(5) · 1 of 5 met` after. `ContractCard`: 0 hits in 977 commits. | browser QA, both locales, chunk hash off the page |
+| *"ctr-013 stores **8** where the store holds **15**"* | stored `3 / 2`; store holds `0` | `grep -c "contractId: 'ctr-013'"` = 0 |
+| *"delayDays and daysInTransit retired at **#332**"* | **#331** (`e1c6a05`, 2026-09-09). #332 is the per-row-map batch. | `git log --merges` |
+| baseline *"main f3af9c0 · floor 4699/328"* | `f3af9c0` is not a valid object here; main's floor was `4662/325`, now `4691/326` | `git cat-file -t` · `git show main:scripts/floor.json` |
+
+⚠️ **AND THE ACCEPTANCE CRITERION WAS RESTATED UNCHANGED AFTER BEING MEASURED
+FALSE ONCE** — *"ctr-013 must read 15"*. It reads **0**. A criterion that names
+a number the tree cannot produce cannot be met by building; it can only be met
+by writing one.
+
+
+## §103 — `CTR-FABRICATION-01` IS CLOSED AT THE TERMINAL ACT, AND THE DECLARATION FINALLY HAS ITS SURFACE
+
+#311 re-declared all four contract verbs `surfaced: false · because: 'external-fact'
+· owner: 's4hana'` and said in its own header that this was *"the DECLARATION half
+only."* The surface never followed. `BuyerContracts` kept offering **New contract**,
+kept minting `id: ctr-new-${Date.now()}` **and** the business number
+`CTR-<yr>-<n>`, and kept prepending the result to the list — where it fed the tab
+counts, the header count and the renewal pipeline, styled identically to the twelve
+real rows.
+
+**Measured before and after, in the browser, both locales, chunk hash off the page:**
+
+| | before (`index-B8jwzrkq.js`) | after (`index-B8GFHli_.js`) |
+|---|---|---|
+| finish the wizard | a row appears: `CTR-2026-014 · QA Fabrication Probe` | **no row appears** |
+| list | **14** rows · *"14 kontrak"* · Draft tab **2** | **13** rows · *"13 kontrak"* · Draft tab **1** |
+| before the act | nothing, in four steps | *"Nothing here creates a contract — an outline agreement is raised in S/4HANA and arrives in Paragon as a fact."* |
+| after the act | a toast, honest, gone in seconds | a panel: **"No contract was created"** + who owns it + what was collected |
+
+### §103a — ⚠️ THE DECLARATION-WITHOUT-A-SURFACE CLASS, NAMED
+
+The operator's framing, and it holds: **a declaration that changed without its
+surface following is a defect of the same shape as Arc C's notice**, one lane over.
+Both halves are true individually and the tree contradicts itself between them —
+the machine says S/4HANA owns the act and the page offers the act.
+
+⚠️ **AND THE SURFACE HAD PARTLY FOLLOWED, WHICH IS WHY THE REMAINDER SURVIVED.**
+Three of four contract surfaces were already honest before this batch: the detail
+panel's `NextActLine` renders *"Awaiting S/4HANA"* derived from the same
+declaration; `/buyer/process-flows` renders the external-fact owner per transition;
+the Docs tab's manufactured "BPJPH Halal Certificate · Valid" was already deleted.
+**A lane that is three-quarters honest reads as honest**, and the create path was
+the quarter nobody re-derived.
+
+⚠️ **THE HONEST MARKING HAD ALSO LANDED ON THE WRONG SURFACE.** The created-toast
+was fully honest in both locales — *"Portal-local only — no contract was created in
+SAP"* — and it is **transient**. The **row** was the durable claim and carried no
+marking at all. A marking batch that fixes the sentence a reader sees for four
+seconds and leaves the object they see all session has fixed the cheaper half.
+
+### §103b — WHAT THE REFUSAL IS, AND THE THREE THINGS IT IS NOT
+
+**It reads the owner from the flow.** `contractDraftOwner()`
+(`services/transitions/contractDraftOwner.ts`) resolves `t_contract_draft`'s
+`surfaceable` through the discriminated union and returns `null` for every arm that
+names no owner. The locale strings interpolate `{{owner}}`; neither spells
+`S/4HANA`, and a test asserts that in both locales. Re-rule the owner and both
+sentences change; re-surface the verb and both disappear.
+
+⚠️ **IT IS NOT A HANDOFF NOTICE, AND BOTH GRAMMARS NOW SHIP ON ONE PAGE.** The seat
+HOLDS `contract:draft`; the LANE does not support the act. Naming a role-owner
+there would say a colleague is the obstacle when the obstacle is another system —
+Wave D's distinction, stated at `SupplierForecastsAdvance.test.tsx:455` and carried
+here. The contrast is deliberate and visible: the **entry point** renders a real
+`HandoffNotice` when a seat lacks the atom (a ROLE obstacle, correctly named), and
+the **terminal panel** never renders one (a LANE obstacle, correctly not). Probed
+in both directions — an "is not a handoff" test alone would pass against a tree
+that had deleted `HandoffNotice` outright.
+
+⚠️ **IT IS NOT A DECLINE.** *"You cannot do this"* leaves a buyer nowhere. The panel
+states where an outline agreement IS raised — the declaration's own `why`, rendered
+rather than contradicted.
+
+⚠️ **AND IT IS NOT A REQUEST-TO-SAP FORM.** That was the other candidate and it was
+refused: **nothing in this tree sends anything**, so a "Request in SAP" button would
+be `FORWARD-PROMISE-HAS-NO-HANDLER-01` — the exact promise `/register`'s own copy was
+corrected for. The complete label is `Finish` / `Selesai`, which promises only what
+it does.
+
+### §103c — THE ORPHANED OBLIGATIONS ARE NOT RETIRED, AND THAT IS THE RULING
+
+`draft.obligations` had no consumer outside the wizard's own steps once
+`obligationCount` was retired at #341. The dispatch's own instruction decides it:
+*"Do not trim a fabrication's output as a way of fixing it."*
+
+**They now have a consumer.** The terminal panel renders the SAME summary the review
+step renders — one `collectedSummary(editable)`, read twice — obligations included.
+So the collection step gathers data that reaches a reader, which is what it was
+always shaped to do. Retiring them would have removed a step from a wizard whose
+collection surface the SE Team needs.
+
+### §103d — `contract:draft` NOW GATES SOMETHING, AND WHAT IT GATES IS NAMED
+
+Derived before wiring: the atom appeared in exactly two places — as `requiredRole`
+on a `surfaced: false` transition, and in the `procurement` lane bundle. **It gated
+nothing on any surface**, which is the shape retired at `obligation`.
+
+It is kept and given the one job honestly its: **who may PREPARE a contract
+request.** The ACT stays S/4HANA's and the terminal panel says so; the atom decides
+only who may open the form. That is also what makes the two grammars co-visible —
+without it there would be no role obstacle on this page to contrast the lane
+obstacle against.
+
+### §103e — ⚠️ A CENSUS READ A MENTION AS A DISPATCH, AND THE MODULE MOVED RATHER THAN THE GATE
+
+`surfaceable.test.ts` went red on the first build of this batch:
+
+```
+t_contract_draft — declared NOT surfaced (external-fact) yet an operator can fire it
+```
+
+**Nothing dispatches it.** `operatorFirableIds` marks a transition operator-firable
+when a file under `pages-v2/` or `components/` CONTAINS its quoted id. It PREFERS a
+`transitionId: '<id>'` site in its sort and does **not require** one — so a module
+that merely NAMES a verb, in order to read who owns it, is indistinguishable from
+one that fires it. **§83's class exactly: the scan matched a mention and the
+conclusion needed a dispatch.**
+
+⚠️ **THE GATE IS NOT WIDENED, DELIBERATELY.** Requiring a dispatch shape would
+NARROW a census whose value is that it errs toward catching a path nobody intended,
+and a blind spot bought to silence one true-negative is a bad trade (heuristic rule
+2). **The module moved instead** — asking the registry who owns a verb is a
+transitions question and now lives in `services/transitions/`. The false positive is
+**filed, not fixed**: the next module that names a verb id from a surface file will
+trip it again, and should move rather than widen. The reason is written at the site,
+so the next reader does not re-derive it as a gate defect.
+
+### §103f — TWO DEFECTS, TWO MUTANTS, DELIBERATELY NOT ONE
+
+The MINT and the PREPEND regress independently, and one probe covering both would go
+red on either while saying nothing about which half came back. Five mutants, each
+killed by a NAMED test; every file restored byte-identical.
+
+| mutant | named test that went red |
+|---|---|
+| restore the client-minted contract id | *"the page mints no contract id"* |
+| restore the prepend into the rendered list | *"there is no fabricated-row state and no merge into the rendered list"* |
+| re-rule the owner in the flow to `tms` | *"the refusal names S/4HANA"* |
+| put a handoff notice inside the panel | *"the terminal panel renders no handoff notice"* |
+| copy the EN headline into the ID key | *"THE ID REFUSAL IS FULLY TRANSLATED"* |
+
+⚠️ **AND THE SPEC'S FIRST RUN CAUGHT ITS OWN AUTHOR.** Two absence assertions failed
+against the retirement COMMENTS, which name what they retired (`ctr-new-`,
+`extraContracts`). A mention is not a mint — the same trap #341 hit one batch
+earlier on the wizard-mint assertion. The spec now strips line comments before every
+absence check, **with a control asserting that `CODE` and `PAGE` genuinely differ**,
+so a stripper that returned `''` cannot pass every absence at once.
+
+### §103g — ⚠️ THE BASELINE IN THE DISPATCH WAS FALSE, AS IT HAS BEEN IN EVERY DISPATCH THIS ARC
+
+`main 2ea3a35` is not a valid object in this repository; main was
+`c5fc2f2e0f0dcae01fa428d223e04fd425131c78`. The floor was `4691/326`, not
+`4708/329`. Recorded, not for its own sake, but because **the figure the dispatch
+gave for the floor is the figure the suite reached AFTER this batch** — `4709/327`
+— which is close enough to a real number to be believed by the next reader.
+
+### §103h — WHAT IS STILL OPEN ON THIS PAGE, NAMED AND NOT TOUCHED
+
+- **`DEAD-AFFORDANCE-01`, in the same header.** `Export` and `Templates` are passed
+  to `BulkActionsBar` with **no `onClick` at all**. The bar is now one live control
+  and two inert ones. Not fixed here: the fix is a type change across 16 call sites.
+- **`ProvenanceMarker`'s verb axis renders NOTHING when a capability does not
+  dispatch** (`{dispatches && …}`). A page whose buttons work says so; a page whose
+  buttons are theatre is silent, and a reader cannot tell that from a page with no
+  buttons. The population of pages in that shape is **not derived here** — the
+  selector would be *capability where `dispatchesCommands` is false × surface
+  offering a write-shaped control*, and it needs the rule-2 care a naive CTA matcher
+  will not survive.
+- **A wizard-created contract had no detail page** — moot now that none is created,
+  but the mechanism stands: `BuyerContractDetail` reads `contractsQuery` only.
+
+
+## §104 — `DISPATCH-FIGURE-IS-A-CLAIM-01`: EVERY FIGURE A DISPATCH CARRIED IN ONE SESSION WAS FALSE, EVERY ONE WAS REPORTED FALSE ON ARRIVAL, AND THE NEXT DISPATCH CARRIED IT AGAIN
+
+Filed as a measurement, not an apology. The work landed correctly throughout —
+**the builder resolved by BRANCH AND CONTENT, never by the number given** — so
+what this records is a defect in the account, of exactly the kind §59c already
+warned about one object earlier.
+
+### §104a — THE MEASUREMENT
+
+**Every SHA cited in a dispatch header this session is absent from the object
+store.** Not "on another ref", not "at the remote only" — absent, across all 977
+commits and every remote ref:
+
+| cited | `git cat-file -t` |
+|---|---|
+| `f3af9c0` (baseline, ×2 dispatches) | **ABSENT** |
+| `2ea3a35` (baseline, ×3 dispatches) | **ABSENT** |
+| `6e3f04a8d5c72b91e1ac7fd8e3b06e5c4f9a2d17` (merge head) | **ABSENT** |
+| `59cba1c` (baseline, earlier) | **ABSENT** |
+| controls `3b062aa` · `c5fc2f2` · `3787659` | commit · commit · commit |
+
+**Every floor figure cited is absent too — from EVERY ref, not merely from
+`main`:**
+
+| cited | measured |
+|---|---|
+| 4664 · 4671 · 4681 · 4695 · 4699 · 4708 | **never, on any ref** |
+
+The real sequence over the same hours: **4662** (#337) → **4674** (draft #339) →
+**4676** (draft #340) → **4691** (#341) → **4709** (#343).
+
+**PR numbers: cited `#344`, `#345`, `#346`; the highest that has ever existed is
+`#343`** — an offset of +1 to +3 above the ledger's head. `#339` and `#340` were
+twice reported merged; both are **open**, `merged=false`, created 2026-09-11 at
+02:44Z and 04:06Z.
+
+⚠️ **AND ONE OF THESE CORRECTIONS IS MINE, NOT THE DISPATCH'S.** One turn before
+this batch I wrote that *"4671 and 4681 are the floors the two open branches
+carry."* **They carry 4674 and 4676.** I proposed a mechanism for the drift and
+did not measure it before stating it —
+`REIMPLEMENTATION-CONTRADICTS-THE-INSTRUMENT-01` on the seat that had just
+finished invoking it, inside a report whose entire subject was unverified
+figures. It is recorded here rather than quietly fixed, because a register that
+carries a known-wrong claim is worse than one with a visible gap, and because
+this instance is the strongest available evidence that the class does not respect
+which seat you are sitting in.
+
+### §104b — ⚠️ DETECTION WAS NEVER THE FAILURE, AND THAT IS THE FINDING
+
+The obvious reading — *"the figures were not checked"* — is false, and it is
+worth killing before it becomes the remedy. **Every one of them was derived and
+reported false on the turn it arrived:**
+
+| dispatch | header said | reported back, same turn |
+|---|---|---|
+| investigate `obligationCount` | `f3af9c0` · 4699/328 | *"not a valid object; floor is 4676/326"* |
+| build `obligationCount` | `f3af9c0` · 4699/328 | same, again |
+| merge `#346` | head `6e3f04a8…` | **refused** — decoy set, 977 commits, 359 refs |
+| investigate contract lane | `2ea3a35` · 4708/329 | *"not a valid object; floor is 4691/326"* |
+| build contract lane | `2ea3a35` · 4708/329 | same, again |
+
+**The correction was published five times and the sixth dispatch carried the same
+header.** So *"check harder"* cannot be the remedy — the check ran, passed,
+reported, and changed nothing. **What was missing is that the number never lost
+its authority.** A figure stated in a header keeps being treated as the subject's
+identity even after the subject has been resolved without it.
+
+### §104c — ⚠️ WHY THE COUNTS SURVIVE AND THE SHAS DO NOT: A SHA HAS NO NEIGHBOURHOOD
+
+`4708` against a real `4709` is **indistinguishable from a legitimate reading** —
+it is the shape of a number somebody actually measured, one bump behind. A
+40-character content address has no plausible near-miss: it either resolves or it
+does not, and the instrument answers in one command with no interpretation.
+
+**So the two classes fail in opposite directions.** A wrong SHA is caught on
+contact and costs one line of a report. **A wrong count is carried**, and it is
+carried precisely because it is nearly right — which is `FLOOR-IN-PROSE-01`'s own
+mechanism arriving from outside the tree instead of from inside a paragraph.
+Its remedy is unchanged and is the whole answer here: **derive it, do not check
+it.** A derived figure cannot be nearly right.
+
+### §104d — THE RULE THAT SURVIVES, AND WHERE IT LIVES
+
+`CLAUDE.md`'s merge doctrine gains **HALF THREE**: *a merge is authorised by a
+branch and its head, verified at the remote in the same turn — never by a number
+the strategist states.* Halves one and two both read the SEAT's claim (one when
+the seat has not made it, the other when it has); **neither reaches the figures
+the dispatch itself carries.** §59c named the header as the cheapest place to put
+a wrong object without drawing the conclusion that the header is therefore a
+claim. It is.
+
+### §104e — THE TWO OPEN DRAFTS ARE STALE, NOT WRONG
+
+Derived rather than assumed, because *"now wrong"* would outrank the
+record-keeping:
+
+| | #339 `feat/invoice-approval-separable` @ `05f4cb2` | #340 `feat/invoice-match-pairing` @ `06908af` |
+|---|---|---|
+| opened | 2026-09-11 **02:44Z** | 2026-09-11 **04:06Z** |
+| size | 10 files, +458/−56 | 4 files, +357/−5 |
+| merge-base | `3b062aa` (#338) | `3b062aa` (#338) |
+| main has moved | 6 commits | 6 commits |
+| **files both the branch and main touched** | **`scripts/floor.json` — and nothing else** | **`scripts/floor.json` — and nothing else** |
+
+**Not six days old: twelve and eleven hours.** And the only overlap with
+everything that has landed since is the floor number, which is a re-derive rather
+than a merge. Neither draft's subject matter moved underneath it: `invoice.flow.
+ts`, `invoiceActionModel.ts`, `BuyerInvoices.tsx`, `surfaceable.test.ts`,
+`MockCommandService.ts` and `invoiceRollup.ts` are all **untouched on main since
+the branch point**.
+
+⚠️ **ONE INTERACTION WAS CHECKED SPECIFICALLY AND IS CLEAN.** #339 edits
+`surfaceable.test.ts` — the same census #343 tripped (§103e) — but it changes only
+the EXPECTATIONS, moving `t_invoice_approve` from the not-firable control to the
+firable one because `useInvoiceApprove` gained a consumer. **It does not touch the
+matcher**, so #343's module placement and #339's expectation edit compose rather
+than collide.
+
+**Disposition: rebase, re-gate, merge — not close.** Neither contains work that is
+now wrong; both contain work nothing else has done. The floor conflict resolves by
+re-running the suite, which is what the floor is for.
+
+### §104f — WHAT IS NOT AFFECTED BY ANY OF THIS
+
+Both findings from the contract batch are mechanisms and stand independently.
+Confirmed present in the register **and** at the site, which is where the next
+reader meets them:
+
+| finding | register | at the site |
+|---|---|---|
+| a census read a MENTION as a DISPATCH (§83's class), resolved by MOVING the module rather than widening the gate | §103e | `services/transitions/contractDraftOwner.ts` header |
+| a spec's absence assertions matched the author's own retirement comments — the #341 trap one batch later — resolved by stripping comments **with a control proving `CODE` and `PAGE` differ** | §103f | `contractRaisedElsewhere.test.tsx` header |

@@ -1,5 +1,3 @@
-import React from 'react';
-
 export interface FilterChipOption<T extends string> {
   id: T;
   label: string;
