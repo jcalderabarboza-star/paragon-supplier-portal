@@ -169,9 +169,10 @@ export const buyerInvoicesEn: Record<string, string> = {
   'buyerInvoices.toast.downloadPdf.title': 'Downloading remittance PDF',
   'buyerInvoices.toast.downloadPdf.desc': 'File will be available in a moment.',
   // — Escalate toast —
-  'buyerInvoices.toast.escalate.title': '{{invoiceNumber}} escalated',
+  'buyerInvoices.toast.escalate.title':
+    '{{invoiceNumber}} — escalation not available yet',
   'buyerInvoices.toast.escalate.desc':
-    'Routed to Finance Controller for urgent action.',
+    'Nothing was routed. Escalation to Finance is not wired to a real channel.',
   // — Wrapper empty state —
   'buyerInvoices.empty.title': 'No invoices',
   'buyerInvoices.empty.subtitle':
@@ -329,9 +330,10 @@ export const buyerInvoicesId: Record<string, string> = {
   'buyerInvoices.toast.downloadPdf.title': 'Mengunduh PDF bukti pembayaran',
   'buyerInvoices.toast.downloadPdf.desc': 'File akan tersedia sebentar lagi.',
   // — Escalate toast —
-  'buyerInvoices.toast.escalate.title': '{{invoiceNumber}} dieskalasi',
+  'buyerInvoices.toast.escalate.title':
+    '{{invoiceNumber}} — eskalasi belum tersedia',
   'buyerInvoices.toast.escalate.desc':
-    'Diteruskan ke Pengawas Keuangan untuk tindakan mendesak.',
+    'Tidak ada yang diteruskan. Eskalasi ke Keuangan belum tersambung ke kanal nyata.',
   // — Wrapper empty state —
   'buyerInvoices.empty.title': 'Belum ada faktur',
   'buyerInvoices.empty.subtitle':
