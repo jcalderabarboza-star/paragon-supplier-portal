@@ -22,13 +22,36 @@
 // so the eight green equalities below it mean "anchored" rather than "the clock
 // never moved". Without it this file is nine tests that cannot fail.
 //
-// ⚠️ **WHAT IS DELIBERATELY NOT HERE.** `BuyerDashboard` (and the two widgets
-// rendered only on it) and `BuyerInvoices` are NOT anchored and are NOT guarded:
-// their day-counts are projected in `MockProcurementService`, and the invoice
-// fixtures are coherent at `DEMO_NOW` (2026-07-06), not at `DECLARED_PRESENT` —
-// see `invoiceRead.test.ts`, which pins that instant and says so. Anchoring that
-// read to `P` would freeze 13 overdue rows where the fixture intends one. They
-// ride when `invoice` becomes a real anchored family.
+// ⚠️ **`BuyerInvoices` HAS JOINED THIS POPULATION, AND THE NOTE THAT EXCLUDED IT
+// IS QUOTED RATHER THAN DELETED — IT NAMED BOTH OF ITS OWN PRECONDITIONS, ONE
+// OF WHICH IT DID NOT KNOW IT HAD.** Before #354 it read:
+//
+//     "…the invoice fixtures are coherent at `DEMO_NOW` (2026-07-06), not at
+//      `DECLARED_PRESENT` … Anchoring that read to `P` would freeze 13 overdue
+//      rows where the fixture intends one. They ride when `invoice` becomes a
+//      real anchored family."
+//
+// and after #354, when the family WAS anchored and the surface still did not
+// qualify, it read:
+//
+//     "Anchoring a fixture family does not confer [clock-independence] on a
+//      wall-clock read; it RE-CENTRES the read on `P` without removing the clock
+//      from it. … What would make them belong is the READ taking its `now` from
+//      `DECLARED_PRESENT`, which is a change to `MockProcurementService` and is
+//      not this batch's. **The precondition named above has been met; a second
+//      one, never stated, has not.**"
+//
+// Both are now met: the family is anchored, and `MockProcurementService` reads
+// `INVOICE_NOW` rather than `new Date()`. The surface is asserted below like any
+// other, at the same two instants ~5 years apart.
+//
+// ⚠️ **WHAT IS STILL DELIBERATELY NOT HERE: `BuyerDashboard` and the two widgets
+// rendered only on it.** Their day-counts come from PO and RFQ derivations that
+// take a `now` off the wall clock (`BuyerDashboard.tsx:144`,
+// `widgets/BuyerAlertsBar.tsx:48`), and those families — `purchaseOrder`, `rfq` —
+// are not anchored at all. **The invoice half of that exclusion is spent; the PO
+// and RFQ half stands**, and collapsing the two into one sentence is what let
+// the invoice half sit unexamined through two batches.
 // ─────────────────────────────────────────────────────────────────────────────
 import React from 'react';
 import { describe, it, expect, afterEach } from 'vitest';
@@ -41,6 +64,7 @@ import { DECLARED_PRESENT } from '../services/data/fixturePresent';
 import { formatDate } from '../lib/format';
 import BuyerShipments from './BuyerShipments';
 import BuyerGoodsReceipt from './BuyerGoodsReceipt';
+import BuyerInvoices from './BuyerInvoices';
 
 import BuyerCompliance from './BuyerCompliance';
 import BuyerContractDetail from './BuyerContractDetail';
@@ -220,6 +244,13 @@ describe('anchored surfaces — clock-independent by construction', () => {
     expect(DECLARED_PRESENT).toBe(before);
   });
 
+  // ⚠️ THE ONE THIS FILE WAITED TWO BATCHES FOR. Its labels are projected at the
+  // SERVICE seam, not on the page, which is why the `const TODAY =
+  // DECLARED_PRESENT` convention every surface below uses never reached it —
+  // `MockProcurementService` now supplies `INVOICE_NOW` instead.
+  it('BuyerInvoices is anchored', async () => {
+    await expectAnchored({ el: <BuyerInvoices />, route: '/buyer/invoices' });
+  });
   it('BuyerCompliance is anchored', async () => {
     await expectAnchored({ el: <BuyerCompliance />, route: '/buyer/compliance' });
   });

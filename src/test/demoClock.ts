@@ -35,11 +35,37 @@
 
 import { beforeEach, afterEach } from 'vitest';
 
+import { DECLARED_PRESENT } from '../services/data/fixturePresent';
+
 /**
- * The instant the fixture set was authored for. Held identical to the `now` the
- * projection and dispatcher specs already pin, so all four agree by construction.
+ * The instant the fixture set is coherent at.
+ *
+ * ⚠️ **RETIRED ONTO `DECLARED_PRESENT` — IT USED TO BE A SECOND PRESENT, AND
+ * THAT IS WHAT MADE IT A LIABILITY RATHER THAN A PIN.** It read the literal
+ * `'2026-07-06T00:00:00.000Z'`, the day the invoice corpus was authored for.
+ * That was accurate and it was load-bearing: the whole point above is that a
+ * clock-derived label must be asserted at a declared instant, not at the wall
+ * clock. What it could not do was keep the SHIPPED demo honest — the pin lives
+ * in the specs, the browser does not import it, and the invoice fixtures went on
+ * ageing past the running app until five of the six open rows computed `Overdue`
+ * and three of the five buyer labels had no reachable member. **The suite stayed
+ * green throughout, because the suite was the one thing pinned.**
+ *
+ * `invoice` is now a real anchored family (`fixturePresent.ts`), so the corpus is
+ * shifted to `DECLARED_PRESENT` at module load and is coherent THERE. Two
+ * declared presents would now disagree by 56 days, and the tree has already
+ * ruled on that shape: `SDC_SIMULATED_NOW` and the three page-local `TODAY` pins
+ * were retired onto `P` for exactly this reason — **there is ONE declared
+ * present.** The authored instant is not lost; it survives as this family's
+ * corroborating evidence in `FAMILY_ANCHORS.invoice`, which records that it
+ * lands inside the independently-swept window.
+ *
+ * ⚠️ **THE PROPERTY THE SPECS RELY ON IS UNCHANGED:** this is still a frozen
+ * instant that reads no wall clock, so nothing here can begin failing on a day
+ * nobody committed. What changed is WHICH frozen instant, and that it is now the
+ * same one the fixtures are shifted to.
  */
-export const DEMO_NOW = '2026-07-06T00:00:00.000Z';
+export const DEMO_NOW = `${DECLARED_PRESENT}T00:00:00.000Z`;
 
 /**
  * Pin `Date` to the demo present for the surrounding suite.

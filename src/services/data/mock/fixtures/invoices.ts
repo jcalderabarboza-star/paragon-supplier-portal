@@ -20,8 +20,9 @@
 // ────────────────────────────────────────────────────────────────────────────
 
 import type { Invoice } from '../../types';
+import { shiftFields } from '../../fixturePresent';
 
-export const INVOICES: Invoice[] = [
+const INVOICES_RAW: Invoice[] = [
   // ── PT Sample Packaging (sup-007) — the reconciled rows. si-001/binv-005
   //    disagreed; the substantiated truth (a real paymentDate + FI doc) wins. ──
   {
@@ -157,4 +158,76 @@ export const INVOICES: Invoice[] = [
     bankAccount: 'Deutsche Bank 550-114-0099', channel: 'Email', approver: 'Finance Controller',
     paymentTerms: 'Net 30', buyerContact: 'Finance Controller', remittanceNote: null,
   },
+  // ── Sample Aromatics (sup-004) — THE THREE-WAY MATCH IS REACHABLE FROM HERE ──
+  //
+  // ⚠️ **WHY THIS ROW EXISTS, SAID PLAINLY: WITHOUT IT NO CLICK PATH IN THIS
+  // PORTAL REACHES `Matched`, AND `Matched` IS THE ONLY FROM-STATE OF
+  // `t_invoice_approve`.** The cascade that produces it is
+  // `t_gr_post → t_invoice_match` (`cascades.ts`), and it fires the header verb
+  // only when `deriveMatchVerdict` returns a genuine `Matched` — which needs a
+  // receipt this portal can still POST (`from: ['Approved','Partially
+  // Approved']`), on a PO that an awaiting invoice names, whose invoiced amount
+  // is within `MATCH_TOLERANCE` of Σ(confirmedQty × unitPrice).
+  //
+  // Derived across the shipped corpus, every pair, before this row was written:
+  // FIFTEEN (Submitted invoice × postable receipt) combinations existed and not
+  // one returned `Matched`. The single exact-value pair in the tree —
+  // `inv-mus-0214` ↔ `PO-2025-00102` at 875,000,000 — is unreachable because
+  // that PO's only receipt, `GR-2026-014`, has already POSTED, and `t_gr_post`
+  // is illegal from `Posted to SAP`. Moving it back would empty the only
+  // positive case `receiptsForInvoice` has (`invoiceMatchPairing.test.ts`), so
+  // the receipt side is where this must NOT be fixed.
+  //
+  // `PO-2025-00104` is the honest opposite: 200 KG × 2,700,000 = 540,000,000
+  // confirmed, `GR-2026-012` received clean and sitting in `Approved` awaiting
+  // its post, and NO invoice against it at all. This row is that invoice. It is
+  // the ordinary mid-flow document the corpus was missing, not a contrivance —
+  // and it MINTS NOTHING S/4 OWNS: `sapFiDoc` and `paymentRef` are null because
+  // they are minted on payment settle (the invoiceStore invariant, F-1), and
+  // `sapGrDoc` is null because the receipt has not posted yet.
+  //
+  // Its dates are authored in this family's own frame like every other row:
+  // `dueDate` sits AFTER `inv-msm-0224`'s so it does not become the window's new
+  // late edge, which `fixturePresent.guard.test.ts` re-derives every run.
+  {
+    id: 'inv-fir-0325', invoiceNumber: 'INV-2026-FIR-0325', supplierId: 'sup-004',
+    supplierName: 'Sample Aromatics Sdn. Bhd.', poNumber: 'PO-2025-00104', poId: 'po-004',
+    amount: 540_000_000, currency: 'IDR', status: 'Submitted', matchStatus: 'Pending GR',
+    submittedDate: '2026-06-16', dueDate: '2026-07-16', paymentDate: null,
+    paymentRef: null, sapFiDoc: null, sapGrDoc: null,
+    bankAccount: 'Maybank MY-1234-5678', channel: 'Web', approver: 'Procurement Officer',
+    paymentTerms: 'Net 30', buyerContact: 'Procurement Officer', remittanceNote: null,
+  },
 ];
+
+// ─────────────────────────────────────────────────────────────────────────────
+// THE DECLARED PRESENT — FIXTURE-PRESENT-01 (d).
+//
+// The literals above are the AUTHORED set, left exactly as written so the
+// authoring intent stays readable. They are shifted to the declared present at
+// module load by this family's own anchor (invoice); the shift is
+// `DECLARED_PRESENT - anchor` and it moves every row by the same whole number of
+// days, so the set's internal spacing — which is the part that was never wrong —
+// is preserved exactly.
+//
+// ⚠️ **THE FIELD LIST IS DERIVED, NOT REMEMBERED: it is every key on this type
+// whose value is date-shaped on at least one row** — `submittedDate`, `dueDate`,
+// `paymentDate`. Nothing else here holds a date: `paymentRef`, `sapFiDoc` and
+// `sapGrDoc` carry a YEAR inside a document number and are not dates, which is
+// exactly why `shiftIso` anchors on `^\d{4}-\d{2}-\d{2}` and returns a non-match
+// untouched. `paymentDate` is null on eight rows and stays null — absence is a
+// real answer (an unpaid invoice has no payment date) and must not become one.
+//
+// ⚠️ **WHAT THIS FIXES, BECAUSE THE DECAY HAD ALREADY HAPPENED.** Read at the
+// declared present with the raw literals, FIVE of the six open rows computed
+// `Overdue` and the buyer surface showed `Pending Match 0` and `Approved 0` —
+// three of the five buyer labels had no member a buyer could reach, and the one
+// row the corpus INTENDS to be overdue was indistinguishable from four that had
+// merely aged. Nothing was wrong with the fixtures; the present had walked away
+// from them, which is FIXTURE-PRESENT-01 in one family.
+// ─────────────────────────────────────────────────────────────────────────────
+export const INVOICES: Invoice[] = shiftFields(
+  INVOICES_RAW,
+  'invoice',
+  ['submittedDate', 'dueDate', 'paymentDate'],
+);

@@ -212,7 +212,8 @@ export type FixtureFamily =
   | 'goodsReceipt'
   | 'inventory'
   | 'contract'
-  | 'obligation';
+  | 'obligation'
+  | 'invoice';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ⚠️ `contract` AND `obligation` ARE NOW ANCHORED, AND THEY SHARE ONE ANCHOR.
@@ -403,6 +404,42 @@ export const FAMILY_ANCHORS: Readonly<Record<FixtureFamily, FamilyAnchor>> = {
     window: ['2026-05-17', '2026-06-01'],
     toleranceDays: 7,
     why: 'the same shared anchor; this family BINDS both edges of the intersection',
+  },
+  // ⚠️ **THE WINDOW IS AN AUTHORED ORACLE, NOT A STORED STATE — THIS FAMILY
+  // STORES NO CLOCK WORD AT ALL (law 0.5).** `Overdue` is computed at read
+  // (`invoiceProjection.isOverdue`) and `DISPLAY_STATES` classes it
+  // `computed-at-read`, so there is nothing here to compare a clock against in
+  // `supplierDocument`'s sense. What the family DOES carry is the author's own
+  // second opinion, stated twice in `fixtures/invoices.ts`: the header — *"only
+  // the invoices intended to be past-due carry a past `dueDate`; everything else
+  // is future-due or already paid"* — and one row's own comment, *"Intended
+  // OVERDUE demo row"*, on `inv-evo-0188`. That is `obligation`'s kind of
+  // oracle: an opinion formed independently of the clock, which is what makes
+  // disagreement with the clock evidence about the anchor.
+  //
+  // The window is the band of presents at which that intent holds, swept day by
+  // day over the SHIPPED projection: the overdue set is exactly
+  // `{inv-evo-0188}` AND no `paymentDate` is still to happen. Both edges are one
+  // row each — early, `inv-evo-0188` itself (due 2026-06-04, so 06-05 is the
+  // first day it reads overdue); late, `inv-msm-0224` (due 2026-07-10, the next
+  // row to fall in).
+  //
+  // ⚠️ **AND THE BAND IS CORROBORATED BY AN INSTRUMENT THAT PREDATES IT.**
+  // `test/demoClock.ts` declared 2026-07-06 as *"the instant the fixture set was
+  // authored for"* and four spec families have pinned it since. It lands inside
+  // the swept window without having been used to derive it — two instruments,
+  // one neighbourhood, exactly how `contract` and `obligation` were corroborated.
+  //
+  // ⚠️ **THE ANCHOR IS THE MIDPOINT AND IS DELIBERATELY *NOT* 2026-07-06.** The
+  // declared instant sits 4 days from the late edge; the midpoint sits 17 from
+  // the nearer of the two. Taking the declared instant would buy a demo that
+  // goes false within a week of the next `P` bump, and the whole reason this
+  // family is being anchored is that it had gone false already.
+  invoice: {
+    anchor: '2026-06-23',
+    window: ['2026-06-05', '2026-07-10'],
+    toleranceDays: 17,
+    why: 'midpoint of the band where the corpus’ own authored intent holds — exactly one overdue row (inv-evo-0188, per its comment) and no unrealised paymentDate; early edge inv-evo-0188, late edge inv-msm-0224, swept against the shipped isOverdue',
   },
 };
 

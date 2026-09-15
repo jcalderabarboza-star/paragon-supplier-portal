@@ -11,10 +11,20 @@
 //
 // ⚠️ **THE BREADTH IS NAMED RATHER THAN IMPLIED, BECAUSE IT IS ONE ROW.** Over
 // the shipped corpus exactly ONE invoice pairs to a landed receipt —
-// `inv-mus-0214` ↔ `GR-2026-014` — and TWELVE pair to nothing. A file that read
-// as though it were guarding a population would be claiming twelve rows it
-// cannot reach. The negative path is the common path here, by 12 to 1, and it is
-// asserted hardest for exactly that reason.
+// `inv-mus-0214` ↔ `GR-2026-014` — and EVERY OTHER ROW pairs to nothing. A file
+// that read as though it were guarding a population would be claiming rows it
+// cannot reach. The negative path is the common path here by a wide margin, and
+// it is asserted hardest for exactly that reason.
+//
+// ⚠️ **THE MINORITY FIGURE IS NO LONGER WRITTEN HERE, AND THE REASON IS THAT IT
+// WENT STALE THE FIRST TIME THE CORPUS GREW.** It read *"TWELVE pair to nothing"*
+// and *"by 12 to 1"*; anchoring `invoice` as a fixture family added one row and
+// both became wrong, with no assertion in this file able to notice — the
+// partition below is derived, so it stayed green while the prose above it did
+// not. `FLOOR-IN-PROSE-01`, in a header about deriving populations. The remedy
+// is the ratified one: delete the number in favour of the derivation, never
+// write a fresher one. The POSITIVE side stays named, because it is one row and
+// naming it is what makes the negatives mean anything.
 //
 // ⚠️ **RULE 4 THROUGHOUT.** Every "pairs nothing" is paired with a "pairs this,
 // by name" on the SAME instrument, because a pairing function that returned `[]`
