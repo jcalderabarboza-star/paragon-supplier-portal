@@ -6,6 +6,8 @@ import { withChaos } from '../services/data/mock/withChaos';
 import { invoiceStore } from '../services/data/mock/stores/invoiceStore';
 import { usePinnedDemoClock } from '../test/demoClock';
 import { INVOICES } from '../services/data/mock/fixtures/invoices';
+import { daysOutstanding } from '../services/data/invoiceProjection';
+import { DECLARED_PRESENT } from '../services/data/fixturePresent';
 import { DataError, type IDataService } from '../services/data/types';
 import { useToast } from '../hooks/useToast';
 import BuyerInvoices from './BuyerInvoices';
@@ -87,31 +89,36 @@ describe('BuyerInvoices — release payment is Option B (no fabrication)', () =>
 // ─────────────────────────────────────────────────────────────────────────────
 // THE RELEASE ACTION SURFACE — the affordance, and the settle's failure branch.
 //
-// ⚠️ WHY THIS BLOCK PINS A *LATER* CLOCK THAN THE ONE ABOVE. The suite's demo
-// present is the instant the fixtures are coherent at, and every existing spec
-// pins it so a clock-derived label stays stable. That pin is also what HID this
-// defect for the life of the surface: at the demo present `inv-giv-0892` labels
-// `Approved` and the release button is there. One day past its due date
-// `toBuyerLabel` returns the computed `Overdue`, the old footer map answered
-// `Escalate`, and the release affordance was gone — in production, permanently,
-// with the suite still green. So these specs pin the day AFTER the due date,
-// where the defect lived.
+// ⚠️ **`AFTER_DUE` IS RETIRED, AND THE REASON IS THE SAME ONE THAT MADE IT
+// DERIVED ONE COMMIT AGO: A PROBE THAT CANNOT FIRE IS WORSE THAN NONE.**
 //
-// ⚠️ **IT IS DERIVED FROM THE ROW, NOT WRITTEN AS A LITERAL — AND THAT IS A
-// REPAIR, NOT A TIDY-UP.** It read `'2026-09-01T00:00:00.000Z'`, chosen because
-// `inv-giv-0892` was then due 2026-08-01. Anchoring `invoice` as a fixture
-// family moved that due date to 2026-10-09, which put the literal BEFORE it —
-// so this block would have gone on passing while rendering an invoice that is
-// not past due at all, testing nothing and saying so nowhere. A probe that can
-// no longer fire is worse than none (`PROBE-MUST-FIRE-AT-A-REAL-DEFECT-01`), and
-// the only reason it was caught is that the shift was measured row by row rather
-// than trusted because the suite stayed green. Read off the fixture it names, it
-// cannot drift away from its subject again.
-const AFTER_DUE = `${new Date(Date.parse(`${
-  INVOICES.find((i) => i.id === 'inv-giv-0892')!.dueDate
-}T00:00:00.000Z`) + 86_400_000)
-  .toISOString()
-  .slice(0, 10)}T00:00:00.000Z`;
+// Its history in two moves, quoted rather than summarised, because the shape
+// repeated and the repetition is the lesson:
+//
+//   1. It was the literal `'2026-09-01T00:00:00.000Z'`, chosen when
+//      `inv-giv-0892` was due 2026-08-01. Anchoring `invoice` as a fixture
+//      family moved that due date to 2026-10-09, putting the literal BEFORE it.
+//   2. So it was re-derived from the row — `dueDate + 1 day` — which fixed the
+//      drift and was correct for exactly as long as the surface still READ a
+//      clock.
+//
+// It no longer does. `MockProcurementService` supplies `INVOICE_NOW`, so
+// `usePinnedDemoClock(AFTER_DUE)` moves the harness calendar and the invoice
+// labels do not move with it. **Measured, not assumed:** rendered at that pin,
+// `inv-giv-0892` comes back `Approved` with `daysOutstanding = 0`, while this
+// block's own title claims a PAST-DUE invoice. The whole suite stayed green.
+//
+// ⚠️ **THE REPAIR IS A SUBJECT THAT IS PAST DUE BY CONSTRUCTION, NOT A CLOCK
+// THAT IS MOVED TO MAKE ONE.** `inv-evo-0188` is the corpus' own intended
+// overdue row — its comment says so — and it is canonically `Approved`. At the
+// declared present it renders `Overdue` with 19 days outstanding while the
+// machine still calls it `Approved`, which IS the geometry this block exists to
+// guard, permanently and with no clock to move. That is
+// `PROBE-MUST-FIRE-AT-A-REAL-DEFECT-01`'s preference exactly: fire the
+// instrument at a defect the tree really carries, rather than at one the harness
+// simulates.
+const OVERDUE_APPROVED_ID = 'inv-evo-0188';
+const OVERDUE_APPROVED_NUMBER = 'INV-2025-EVO-0188';
 
 /** Surfaces the toast queue into the DOM — ToastProvider renders only children,
  *  so without this a toast is invisible to a spec and "the handler fired" would
@@ -145,24 +152,44 @@ const openApprovedInvoice = async () => {
   fireEvent.click(await screen.findByText('INV-2025-GIV-0892'));
 };
 
+/** The row that is past due AT the declared present and canonically Approved. */
+const openOverdueApprovedInvoice = async () => {
+  fireEvent.click(await screen.findByText(OVERDUE_APPROVED_NUMBER));
+};
+
 const releaseIt = async () => {
   fireEvent.click(await screen.findByRole('button', { name: 'Release payment' }));
   fireEvent.click(await screen.findByRole('button', { name: /Confirm release/ }));
 };
 
 describe('BuyerInvoices — the release affordance survives the clock', () => {
-  usePinnedDemoClock(AFTER_DUE);
+  usePinnedDemoClock();
 
   it('⚠️ THE REGRESSION: a PAST-DUE Approved invoice still offers Release payment', async () => {
     invoiceStore.reset();
     renderWithProviders(<BuyerInvoices />);
     await screen.findByText('Invoices & Payment');
-    await openApprovedInvoice();
+    await openOverdueApprovedInvoice();
 
-    // The invoice IS canonically Approved while the surface labels it Overdue —
-    // the display is not being suppressed, the legality question just stopped
+    // ⚠️ THE PREMISE IS ASSERTED, NOT ASSUMED. This block passed for one commit
+    // while its subject was not past due at all, so the two halves of its own
+    // title are now checked on screen before the affordance is: the MACHINE says
+    // Approved, the SURFACE says past due, and that gap is the whole subject.
+    //
+    // The aging TEXT is the pin rather than the word `Overdue`, which appears on
+    // the KPI eyebrow, the filter chip, the row pill and the panel pill alike —
+    // four matches, none of them specific to this row. The day count is unique to
+    // it, and it is DERIVED from the shipped projection at the declared present
+    // rather than written here, so a re-anchor moves the expectation with the
+    // surface instead of reddening this line.
+    const subject = INVOICES.find((i) => i.id === OVERDUE_APPROVED_ID)!;
+    const days = daysOutstanding(subject, `${DECLARED_PRESENT}T00:00:00.000Z`);
+    expect(days, 'the subject must really be past due at the declared present').toBeGreaterThan(0);
+    expect(invoiceStore.get(OVERDUE_APPROVED_ID)!.status).toBe('Approved');
+    expect(await screen.findByText(`${days}d overdue`)).toBeInTheDocument();
+
+    // The display is not being suppressed; the legality question just stopped
     // being asked of the label.
-    expect(invoiceStore.get('inv-giv-0892')!.status).toBe('Approved');
     expect(await screen.findByRole('button', { name: 'Release payment' })).toBeInTheDocument();
     // And the verb the lossy map used to answer with is NOT the primary action.
     expect(screen.queryByRole('button', { name: 'Escalate' })).not.toBeInTheDocument();
@@ -172,13 +199,13 @@ describe('BuyerInvoices — the release affordance survives the clock', () => {
     invoiceStore.reset();
     renderWithProviders(<BuyerInvoices />);
     await screen.findByText('Invoices & Payment');
-    await openApprovedInvoice();
+    await openOverdueApprovedInvoice();
     expect(await screen.findByRole('button', { name: 'Dispute' })).toBeInTheDocument();
   });
 });
 
 describe('BuyerInvoices — the settle failure branch', () => {
-  usePinnedDemoClock(AFTER_DUE);
+  usePinnedDemoClock();
 
   // ⚠️ RULE 4, AND THE ORDER IS LOAD-BEARING. A catch that never fires and a
   // catch that fires and records nothing are indistinguishable from a green

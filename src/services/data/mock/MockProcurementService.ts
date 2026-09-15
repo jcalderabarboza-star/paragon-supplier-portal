@@ -10,6 +10,7 @@ import { asnStore } from './stores/asnStore';
 import { goodsReceiptStore } from './stores/goodsReceiptStore';
 import { invoiceStore } from './stores/invoiceStore';
 import { toBuyerInvoice, toSupplierInvoice } from '../invoiceProjection';
+import { DECLARED_PRESENT } from '../fixturePresent';
 import { PRODUCTION_LINES, SUPPLIER_HEALTH } from './fixtures/buyerDashboard';
 import { supplierDocumentStore } from './stores/supplierDocumentStore';
 import { SUPPLIER_SCORECARDS } from './fixtures/buyerScorecard';
@@ -170,6 +171,55 @@ function trendForScope(scope: QueryScope): PerformancePoint[] {
   return [];
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// THE INVOICE READ CLOCK — `INVOICE_NOW`, and why it is not `new Date()`.
+//
+// ⚠️ **THIS WAS THE LAST CLOCK-PROJECTED LABEL IN THE TREE STILL READING THE
+// WALL CLOCK, AND THE REASON IS STRUCTURAL RATHER THAN AN OVERSIGHT.** Every
+// other anchored family projects its clock-derived state ON A PAGE, and nine
+// pages already carry `const TODAY = DECLARED_PRESENT` (`BuyerShipments`,
+// `BuyerGoodsReceipt`, `BuyerContracts`, `BuyerCompliance`, `BuyerRisk`,
+// `BuyerSourcing`, `SupplierDashboard`, `SupplierDocuments`,
+// `SupplierStorefront`, plus `BuyerInventory`'s own `formatRelativeTime`).
+// The invoice labels are projected HERE, at the service seam, one layer BELOW
+// where that convention reached — so the fixtures were anchored at #354 while
+// the thing that reads them was not, and the convention had nowhere to land.
+//
+// ── WHAT IT COSTS TO LEAVE IT ───────────────────────────────────────────────
+//   Measured on the shifted corpus by executing THIS seam day by day: the
+//   corpus' authored intent (exactly one overdue row) breaks 18 days after `P`,
+//   and 40 days after `P` BOTH `Pending Match` and `Approved` render ZERO —
+//   which is precisely the state #354 was built to repair, returning on a
+//   calendar day with no commit involved. **And nothing would have said so:**
+//   `clockDrift` binds to families a reader can still see a STORED clock-state
+//   on, and `invoice` stores none (law 0.5 — `Overdue` is computed at read), so
+//   `familyDrift` returns `computed` and the scheduled drift gate is silent for
+//   this family at every date.
+//
+// ── WHY A CONSTANT AND NOT AN INJECTED CLOCK ────────────────────────────────
+//   `sdcClock` is the injectable shape, and it says in its own header that it
+//   is **the SDC loop's clock alone** — *"Non-SDC command stamps (invoice / PO /
+//   RFQ / quotation) keep their own clocks."* Reusing it here would make this
+//   read a member of a lane it is not in. The page convention is the precedent
+//   that actually fits, and it is a plain constant; a second injectable clock
+//   would be a wider abstraction than this read path needs.
+//
+// ── ⚠️ THE WRITE SIDE IS DELIBERATELY NOT MOVED, AND IT IS MEASURED ─────────
+//   Commands still stamp the wall clock: `submittedDate` (and `dueDate`, as
+//   `submittedDate + 30d`) at invoice creation, and `paymentDate` on the payment
+//   settle. Walked end to end against this seam, BOTH clocks produce the SAME
+//   label at every step — a fresh row's `dueDate` is `wall + 30d`, which can
+//   never fall before `P` while the wall clock is at or after it, so a fresh row
+//   can never read `Overdue` here; and `paymentDate` is only ever written onto
+//   `Payment Released`, which is not `OVERDUE_ELIGIBLE` and therefore cannot
+//   reach a label at all. **What DOES differ is a rendered date** — a payment
+//   minted today reads 15 days after the declared present. That is a display
+//   honesty question about write stamps, not a wrong label, and moving the
+//   write clock would change `t_invoice_create`'s semantics. It is named here
+//   rather than fixed silently.
+// ─────────────────────────────────────────────────────────────────────────────
+const INVOICE_NOW = `${DECLARED_PRESENT}T00:00:00.000Z`;
+
 export class MockProcurementService implements IProcurementService {
   // ─── Purchase orders ──────────────────────────────────────────────────────
 
@@ -306,7 +356,7 @@ export class MockProcurementService implements IProcurementService {
     scope: QueryScope,
     filter?: InvoiceFilter,
   ): Promise<Page<BuyerInvoice>> {
-    const now = new Date().toISOString();
+    const now = INVOICE_NOW;
     let rows = applySupplierScope(
       scope,
       invoiceStore
@@ -326,7 +376,7 @@ export class MockProcurementService implements IProcurementService {
     scope: QueryScope,
     filter?: InvoiceFilter,
   ): Promise<Page<SupplierInvoice>> {
-    const now = new Date().toISOString();
+    const now = INVOICE_NOW;
     let rows = applySupplierScope(
       scope,
       invoiceStore.all().map((inv) => toSupplierInvoice(inv, now)),
