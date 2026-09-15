@@ -24650,3 +24650,65 @@ reader meets them:
 |---|---|---|
 | a census read a MENTION as a DISPATCH (§83's class), resolved by MOVING the module rather than widening the gate | §103e | `services/transitions/contractDraftOwner.ts` header |
 | a spec's absence assertions matched the author's own retirement comments — the #341 trap one batch later — resolved by stripping comments **with a control proving `CODE` and `PAGE` differ** | §103f | `contractRaisedElsewhere.test.tsx` header |
+
+## §105 · `C10-BLOCKED-CAPABILITY-TABLE-OUTLIVED-ITS-BLOCK-01` — a contract's list of what identity blocks, one row of which stopped being blocked (2026-09-15)
+
+**Filed rather than fixed, and it is §88's shape a second time in the same contract.**
+
+`docs/contracts/C10-identity.md:2.4`, the table *"What waits on this"*, carries this row:
+
+> | **Invoice approval** | `t_invoice_approve` — `flows/invoice.flow.ts:84` | Same shape:
+> **dispatchable, UI-unreachable** — grep-confirmed, zero component sites |
+
+At **#339** the verb's `surfaceable` value goes from
+`{ surfaced: false, because: 'ruled-unsurfaced', why: 'C10 §2.4 — approval is an
+attributable act and the platform cannot name a person …' }` to
+`{ surfaced: true }`, and `BuyerInvoices` acquires the consumer the hook never
+had. The row's predicate — *zero component sites* — stops holding the moment that
+lands.
+
+**THE CONTRACT IS NOT WRONG AND MUST NOT BE AMENDED.** Two reasons, and the
+first is the one that matters:
+
+1. ⚠️ **THE ROW IS ACCURATE ABOUT THE TREE IT WAS WRITTEN AGAINST.** It is a
+   MEASUREMENT with a date, not a rule with a scope — the table's own header says
+   the subset is *"VERIFIED, by us, in this tree"*. A measurement does not become
+   false when the thing it measured changes; it becomes **historical**. The
+   distinction §88 drew between a contract gone STALE and one gone INAPPLICABLE
+   applies unchanged, and this is the second kind.
+2. C10 is **byte-identical to `dc8e774`** — blob
+   `8cab8a1effa1e40766733099276a9a24ebaa37da`, verified this batch at `main`, at
+   #339's head and in the integrated tree, and it is the same blob §88 recorded.
+   Its citation block makes any amendment a new SHA and a new ratification with
+   SOMO. Editing it is an outward-facing act with a counterparty.
+
+⚠️ **AND THE ROW ABOVE IT HAD ALREADY STOPPED DESCRIBING THE TREE, WHICH IS WHY
+THIS IS A CLASS AND NOT AN INCIDENT.** The same table says of **PR approval**:
+*"`t_pr_approve` … Authored and dispatchable. **No `.tsx` in the tree names
+it.**"* Measured at `main` today: `BuyerRequisitions.tsx:243` holds
+`useRequisitionApprove()` and `:435` calls `approvePr.mutateAsync({ prId })` — a
+real dispatch behind a real affordance. **That row has been out of date for some
+time and nobody filed it**, so #339 is not the first verb to leave this table,
+only the first whose departure was noticed. Both of the table's code anchors have
+rotted as well: it cites `flows/invoice.flow.ts:84` against an actual `96`, and
+`flows/purchaseRequisition.flow.ts:50` against an actual `87`.
+
+⚠️ **WHY THIS IS FILED AT ALL, RATHER THAN LEFT UNSAID.** The next seat to read
+C10 §2.4 will read a live blocker — *invoice approval waits on identity* — and
+stop, which is the most expensive way for a stale line to be read.
+`FALSE-MECHANISM-MUST-NOT-BE-FILED-01` names the asymmetry: **nobody re-measures
+a blocker, because a blocker is why you stopped.** The contract cannot carry the
+note, so the register is the honest home for it.
+
+**The practical effect, stated so a reader does not have to derive it:** what
+identity still blocks is unchanged and is NOT this verb. The approval records
+`UNATTRIBUTED: NO_PERSON_IN_SESSION` through `dispatcher.ts`'s `attributionFor()`
+like every other `trigger: 'user'` act, which is the same disposition
+`types.ts` already documents for `approvedBy` — *"That is an honest absence and
+it is the point — it names a failure somebody can go and fix."* What identity
+still blocks is **four-eyes on a single document**, which needs an attributed
+actor and is F1. Segregation of approval from release is a separate and weaker
+property, and #339 asserts it is constructible today
+(`invoiceSeparability.test.ts`) while naming its own limit: a seat narrowed to a
+custom role re-widens on reload, because `rolesFromStorage` keeps only ids
+passing `isSystemRole` (§66k).
