@@ -24,11 +24,34 @@
 //
 // ⚠️ **WHAT IS DELIBERATELY NOT HERE.** `BuyerDashboard` (and the two widgets
 // rendered only on it) and `BuyerInvoices` are NOT anchored and are NOT guarded:
-// their day-counts are projected in `MockProcurementService`, and the invoice
-// fixtures are coherent at `DEMO_NOW` (2026-07-06), not at `DECLARED_PRESENT` —
-// see `invoiceRead.test.ts`, which pins that instant and says so. Anchoring that
-// read to `P` would freeze 13 overdue rows where the fixture intends one. They
-// ride when `invoice` becomes a real anchored family.
+// their day-counts are projected in `MockProcurementService` from a `now` it
+// takes off the WALL CLOCK.
+//
+// ⚠️ **THE REASON THIS PARAGRAPH USED TO GIVE IS SPENT, AND IT IS QUOTED RATHER
+// THAN EDITED BECAUSE IT NAMED ITS OWN SUCCESSOR.** It read:
+//
+//     "…and the invoice fixtures are coherent at `DEMO_NOW` (2026-07-06), not at
+//      `DECLARED_PRESENT` — see `invoiceRead.test.ts`, which pins that instant
+//      and says so. Anchoring that read to `P` would freeze 13 overdue rows
+//      where the fixture intends one. They ride when `invoice` becomes a real
+//      anchored family."
+//
+// `invoice` IS a real anchored family now (`FAMILY_ANCHORS.invoice`), the corpus
+// is shifted to `DECLARED_PRESENT` at module load, and `DEMO_NOW` has been
+// retired onto `P` — so the half about two disagreeing presents is simply gone,
+// and the "13 overdue rows" it warned of is exactly what anchoring removed.
+//
+// ⚠️ **AND YET THE SURFACES STILL DO NOT BELONG HERE, FOR A DIFFERENT REASON
+// THAT THE OLD ONE WAS HIDING.** This file's property is clock-INDEPENDENCE —
+// the same text at two instants years apart. Anchoring a fixture family does not
+// confer that on a wall-clock read; it RE-CENTRES the read on `P` without
+// removing the clock from it, so at +400d and +2,200d these surfaces still
+// render different `daysOutstanding` and a different overdue set, correctly.
+// What would make them belong is the READ taking its `now` from
+// `DECLARED_PRESENT`, which is a change to `MockProcurementService` and is not
+// this batch's. **The precondition named above has been met; a second one, never
+// stated, has not.** `invoicePresentAnchor.test.ts` is where the invoice
+// family's own property is asserted meanwhile — at `P`, reading no wall clock.
 // ─────────────────────────────────────────────────────────────────────────────
 import React from 'react';
 import { describe, it, expect, afterEach } from 'vitest';

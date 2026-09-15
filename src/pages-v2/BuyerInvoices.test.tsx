@@ -5,6 +5,7 @@ import { mockDataService } from '../services/data/mock/mockDataService';
 import { withChaos } from '../services/data/mock/withChaos';
 import { invoiceStore } from '../services/data/mock/stores/invoiceStore';
 import { usePinnedDemoClock } from '../test/demoClock';
+import { INVOICES } from '../services/data/mock/fixtures/invoices';
 import { DataError, type IDataService } from '../services/data/types';
 import { useToast } from '../hooks/useToast';
 import BuyerInvoices from './BuyerInvoices';
@@ -87,15 +88,30 @@ describe('BuyerInvoices — release payment is Option B (no fabrication)', () =>
 // THE RELEASE ACTION SURFACE — the affordance, and the settle's failure branch.
 //
 // ⚠️ WHY THIS BLOCK PINS A *LATER* CLOCK THAN THE ONE ABOVE. The suite's demo
-// present (2026-07-06) is the instant the fixtures are coherent at, and every
-// existing spec pins it so a clock-derived label stays stable. That pin is also
-// what HID this defect for the life of the surface: `inv-giv-0892` is due
-// 2026-08-01, so at the demo present it labels `Approved` and the release button
-// is there. One day later `toBuyerLabel` returns the computed `Overdue`, the old
-// footer map answered `Escalate`, and the release affordance was gone — in
-// production, permanently, with the suite still green. So these specs pin
-// 2026-09-01: PAST the due date, where the defect lived.
-const AFTER_DUE = '2026-09-01T00:00:00.000Z';
+// present is the instant the fixtures are coherent at, and every existing spec
+// pins it so a clock-derived label stays stable. That pin is also what HID this
+// defect for the life of the surface: at the demo present `inv-giv-0892` labels
+// `Approved` and the release button is there. One day past its due date
+// `toBuyerLabel` returns the computed `Overdue`, the old footer map answered
+// `Escalate`, and the release affordance was gone — in production, permanently,
+// with the suite still green. So these specs pin the day AFTER the due date,
+// where the defect lived.
+//
+// ⚠️ **IT IS DERIVED FROM THE ROW, NOT WRITTEN AS A LITERAL — AND THAT IS A
+// REPAIR, NOT A TIDY-UP.** It read `'2026-09-01T00:00:00.000Z'`, chosen because
+// `inv-giv-0892` was then due 2026-08-01. Anchoring `invoice` as a fixture
+// family moved that due date to 2026-10-09, which put the literal BEFORE it —
+// so this block would have gone on passing while rendering an invoice that is
+// not past due at all, testing nothing and saying so nowhere. A probe that can
+// no longer fire is worse than none (`PROBE-MUST-FIRE-AT-A-REAL-DEFECT-01`), and
+// the only reason it was caught is that the shift was measured row by row rather
+// than trusted because the suite stayed green. Read off the fixture it names, it
+// cannot drift away from its subject again.
+const AFTER_DUE = `${new Date(Date.parse(`${
+  INVOICES.find((i) => i.id === 'inv-giv-0892')!.dueDate
+}T00:00:00.000Z`) + 86_400_000)
+  .toISOString()
+  .slice(0, 10)}T00:00:00.000Z`;
 
 /** Surfaces the toast queue into the DOM — ToastProvider renders only children,
  *  so without this a toast is invisible to a spec and "the handler fired" would
