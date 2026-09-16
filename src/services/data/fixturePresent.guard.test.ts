@@ -469,7 +469,7 @@ describe('⚠️ EVERY ANCHOR SITS INSIDE ITS OWN FAMILY’S COHERENT WINDOW', (
     // Bilateral, so an added family with no anchor is as red as an orphan one.
     const declared = Object.keys(FAMILY_ANCHORS).sort();
     expect(declared).toEqual(
-      ['contract', 'goodsReceipt', 'inventory', 'obligation', 'shipment', 'supplierDocument'],
+      ['contract', 'goodsReceipt', 'inventory', 'invoice', 'obligation', 'shipment', 'supplierDocument'],
     );
     for (const f of declared as FixtureFamily[]) {
       expect(FAMILY_ANCHORS[f].anchor, f).toMatch(/^\d{4}-\d{2}-\d{2}$/);
