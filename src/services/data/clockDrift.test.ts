@@ -1,13 +1,30 @@
 // ────────────────────────────────────────────────────────────────────────────
 // The drift reader, asserted at PINNED instants — never at the wall clock.
 //
-// This file can never decay: every `today` below is a literal. The real-clock
-// evaluation is `clockDrift.live.test.ts`, excluded from the default run.
+// This file can never decay: every `today` below is a literal, and every
+// reading instant is supplied explicitly. The real-clock evaluation is
+// `clockDrift.live.test.ts`, excluded from the default run; the REAL reading
+// instants are derived and pinned in `lib/readingInstantGate/readingInstant.
+// test.ts`, which is where a claim about how this tree reads belongs.
 //
 // ⚠️ **RULE 4 — PROBE IT BOTH WAYS.** Every verdict is asserted with a
 // known-GOOD input as well as a known-BAD one. A drift guard that only ever
 // says FALSE is as useless as one that never does, and the failure mode of an
 // instrument nobody has seen ACCEPT is that it gets believed when it fires.
+//
+// ── ⚠️ WHAT THE REBIND BOUGHT THIS FILE, STATED BECAUSE IT IS A GAIN ────────
+//   The version that stood here could not reach `ok` / `warn` / `FALSE`
+//   THROUGH `familyDrift` at all. Every family short-circuited on an empty
+//   stored-state population, so the arms were probed only through the
+//   extracted `driftVerdict`, and its own header said so:
+//
+//     '`ok` / `warn` / `FALSE` are therefore unreachable from shipped data.'
+//
+//   The instant is now an INPUT, so the arms are reachable end to end by
+//   handing `familyDrift` a `WALL` instant. `driftVerdict`'s direct probes are
+//   KEPT unchanged beside them — a rule probed at two levels is not a
+//   duplicated assertion, it is the difference between "the rule is right" and
+//   "the function applies the rule".
 // ────────────────────────────────────────────────────────────────────────────
 
 import { describe, it, expect } from 'vitest';
@@ -15,285 +32,162 @@ import {
   familyDrift,
   driftReport,
   falsifiedFamilies,
+  unresolvedFamilies,
   formatDriftReport,
   driftVerdict,
-  storedStateFamilies,
+  wallReadFamilies,
   waitingFooter,
+  type ReadingInstants,
 } from './clockDrift';
 import { DECLARED_PRESENT, FAMILY_ANCHORS, type FixtureFamily } from './fixturePresent';
-import { DISPLAY_STATES } from '../../lib/projectionGate/displayStates';
+import type { FamilyInstant } from '../../lib/readingInstantGate/derive';
 
 const MS = 86_400_000;
 const dayMs = (v: string) => Date.parse(`${v}T00:00:00.000Z`);
 const plus = (d: string, n: number) =>
   new Date(dayMs(d) + n * MS).toISOString().slice(0, 10);
 
-describe('the population, and the join this module depends on', () => {
+const FAMILIES = Object.keys(FAMILY_ANCHORS) as FixtureFamily[];
+
+/** Every family at one instant — the shape `driftReport` consumes. */
+const all = (i: FamilyInstant): ReadingInstants =>
+  Object.fromEntries(FAMILIES.map((f) => [f, i])) as ReadingInstants;
+
+/** A family that really has a window, derived — never named as a literal. */
+const WINDOWED = FAMILIES.filter((f) => FAMILY_ANCHORS[f].window !== null);
+const UNWINDOWED = FAMILIES.filter((f) => FAMILY_ANCHORS[f].window === null);
+
+describe('the population this module reports on', () => {
+  it('POPULATION CONTROL — both shapes exist, so no claim below is vacuous', () => {
+    // §42b / EMPTY-INPUT-REPORTS-CLEAN-01. Every test in this file reasons
+    // about a windowed family or an unwindowed one; over an empty either they
+    // would all pass having examined nothing.
+    expect(WINDOWED.length).toBeGreaterThan(0);
+    expect(UNWINDOWED.length).toBeGreaterThan(0);
+  });
+
   it('every family appears exactly once in the report', () => {
-    const families = Object.keys(FAMILY_ANCHORS) as FixtureFamily[];
-    expect(families.length).toBeGreaterThan(0);
-    const reported = driftReport(DECLARED_PRESENT).map((d) => d.family);
-    expect([...reported].sort()).toEqual([...families].sort());
-  });
-
-  it('⚠️ the family key and the DISPLAY_STATES entity key are the SAME strings', () => {
-    // The join is by identity. If either vocabulary is ever renamed, this
-    // module would silently report every family as `computed` — a guard that
-    // has quietly stopped looking. Asserted as an INTERSECTION being non-empty
-    // rather than as an equality: `compliance` and `invoice` are display-state
-    // entities with no fixture family, which is legitimate.
-    const families = new Set(Object.keys(FAMILY_ANCHORS));
-    const entities = new Set(DISPLAY_STATES.map((r) => r.entity));
-    const shared = [...families].filter((f) => entities.has(f));
-    expect(shared).toContain('contract');
-    expect(shared).toContain('supplierDocument');
-    expect(shared.length).toBeGreaterThan(1);
+    const reported = driftReport(DECLARED_PRESENT, all('P')).map((d) => d.family);
+    expect([...reported].sort()).toEqual([...FAMILIES].sort());
   });
 });
 
-describe('the two non-numeric answers are distinct, and each says why', () => {
-  it('a family with no coherent window is `no-window-declared`', () => {
-    // ⚠️ THE COMMENT THAT STOOD HERE READ *"shipment/goodsReceipt/inventory
-    // store no clock-derived state to decay"* AND WAS FALSE OF `shipment`,
-    // which is the same error the verdict name carried. `goodsReceipt` and
-    // `inventory` really do store none; `shipment` stores `Delayed` and is
-    // asserted separately below. What all three share is the WINDOW being
-    // null — their anchors are EVIDENCED, not solved for — and that is the
-    // only property this verdict is entitled to name.
-    const d = familyDrift('inventory', plus(DECLARED_PRESENT, 900));
-    expect(d.verdict).toBe('no-window-declared');
-    // KNOWN-GOOD CONTROL for the branch ORDER: `inventory` has no window AND
-    // no stored states, so it is the one family both early returns could
-    // claim. The window branch is FIRST and must win — swap the two and this
-    // line reads `computed`.
-    expect(d.readerVisibleStates).toEqual([]);
-    expect(d.headroomDays).toBeNull();
-    // …even 900 days out. An unbound family cannot be falsified by the clock.
-    expect(falsifiedFamilies(plus(DECLARED_PRESENT, 900)).map((x) => x.family))
-      .not.toContain('inventory');
-  });
-
-  it('⚠️ obligation is `computed` — it LEFT the bound set by being projected', () => {
-    // The property this module exists to have: bound-ness is derived from
-    // DISPLAY_STATES, so the batch that computed obligation's display states
-    // removed it from the drift population with no edit here.
-    const d = familyDrift('obligation', plus(DECLARED_PRESENT, 400));
-    expect(d.verdict).toBe('computed');
-    expect(d.readerVisibleStates).toEqual([]);
-    // …and it has a window, which is what separates this from the answer above.
-    expect(FAMILY_ANCHORS.obligation.window).not.toBeNull();
-  });
-
-  it('the two unbound reasons are not interchangeable', () => {
-    expect(familyDrift('inventory', DECLARED_PRESENT).verdict).toBe(
-      'no-window-declared',
-    );
-    expect(familyDrift('obligation', DECLARED_PRESENT).verdict).toBe('computed');
-  });
-});
-
-describe('⚠️ a verdict must name the condition its own branch tested', () => {
-  // Ruled 2026-09-09, from a row `npm run drift` had been printing every run:
-  //
-  //     shipment   9   —   —   no-stored-clock-state   Delayed
-  //
-  // The verdict denied, in one column, the thing the next column listed. The
-  // branch returning it tests `window === null` and has never tested for
-  // stored states — so the name was about a condition the code does not
-  // examine. Renamed to `no-window-declared`; these are the assertions that
-  // keep it named after its own test.
-  it('⚠️ `shipment` has NO window — and the verdict survived its states leaving', () => {
-    // ⚠️ **THIS TEST READ "HAS a reader-visible stored clock state AND no
-    // window" AND ASSERTED `readerVisibleStates.length > 0`.** `shipment/Delayed`
-    // is computed now (`shipmentDisplayState.ts`), so that row is gone and the
-    // population control it used would fail. **The test is STRONGER for it, not
-    // weaker, and that is why it is rewritten rather than retired.**
-    //
-    // The rename it defends said: a verdict must name the condition its own
-    // branch tested. `no-window-declared` tests `window === null` and nothing
-    // else — so the honest proof is that the verdict is UNCHANGED while the
-    // states went from one to none. Before, the two conditions coincided and the
-    // test could not tell which one the branch read. Now they are separated.
-    const d = familyDrift('shipment', DECLARED_PRESENT);
-    // POPULATION CONTROL, from upstream of the function under test (§86).
-    expect(FAMILY_ANCHORS.shipment.window).toBeNull();
-    expect(d.readerVisibleStates).toEqual([]);
-
-    expect(d.verdict).toBe('no-window-declared');
-    // …and the retired name, asserted as a shape rather than as one string:
-    // ANY future verdict claiming the absence of a stored state on a row that
-    // lists one is the same defect wearing a different word.
-    expect(d.verdict).not.toMatch(/stored/);
-  });
-
-  it('every family: the verdict is the one its own inputs entail', () => {
-    // ⚠️ THE CONDITIONS ARE DERIVED FROM `FAMILY_ANCHORS` AND `DISPLAY_STATES`,
-    // NEVER FROM `familyDrift` — §86. A predicate that derived "has a window?"
-    // by asking the module under test would move the population and the
-    // assertion together, and could not tell a kill from an empty run.
-    const seen = new Set<string>();
-    for (const d of driftReport(DECLARED_PRESENT)) {
-      const hasWindow = FAMILY_ANCHORS[d.family].window !== null;
-      const hasStored = DISPLAY_STATES.some(
-        (r) => r.entity === d.family && r.group === 'stored-in-fixtures',
-      );
-      if (!hasWindow) expect(d.verdict, d.family).toBe('no-window-declared');
-      else if (!hasStored) expect(d.verdict, d.family).toBe('computed');
-      else expect(['ok', 'warn', 'FALSE'], d.family).toContain(d.verdict);
-      seen.add(d.verdict);
+describe('the non-numeric answers are distinct, and each names its own branch', () => {
+  it('⚠️ no window wins over EVERY instant — the branch order, probed', () => {
+    // The window branch is FIRST. Handing an unwindowed family the instant
+    // most likely to unseat it (WALL, the one that produces arithmetic) must
+    // still return `no-window-declared`: headroom is a distance to a window
+    // edge and there is no edge, whatever clock the family is read at.
+    for (const f of UNWINDOWED) {
+      for (const i of ['WALL', 'P', 'UNRESOLVED', 'NO-CALL-SITES'] as FamilyInstant[]) {
+        const d = familyDrift(f, plus(DECLARED_PRESENT, 900), i);
+        expect(d.verdict, `${f} @ ${i}`).toBe('no-window-declared');
+        expect(d.headroomDays, `${f} @ ${i}`).toBeNull();
+      }
     }
-    // Both branches were actually exercised — otherwise this loop asserts a
-    // rule nothing met.
-    expect(seen).toContain('no-window-declared');
-    expect(seen).toContain('computed');
-  });
-});
-
-describe('what the report says when there is nothing left to watch', () => {
-  // The bound population is DERIVED from DISPLAY_STATES, so it can empty
-  // without an edit here — and an all-`—` table with no footer is
-  // indistinguishable from an instrument that broke. The footer says which.
-  it('⚠️ THE POPULATION IS EMPTY NOW, AND THE FOOTER IS REACHABLE FROM SHIPPED DATA', () => {
-    // ⚠️ **THIS ASSERTED THE OPPOSITE AND IT WAS TRUE UNTIL `shipment/Delayed`
-    // BECAME COMPUTED. QUOTED, NOT DELETED:**
-    //
-    //   it('KNOWN-GOOD FIRST: the population is NOT empty today, so no footer',
-    //     expect(bound.length).toBeGreaterThan(0)
-    //     expect(bound).toContain('shipment')
-    //     expect(formatDriftReport(DECLARED_PRESENT)).not.toContain('WAITING'))
-    //
-    // **`clockDrift.ts` was not edited to make this happen** — bound-ness is read
-    // from `DISPLAY_STATES` at call time, so the last family left on its own,
-    // exactly as obligation, contract and supplierDocument did. The footer the
-    // module wrote for a day it could not yet reach is now reachable, which is
-    // the design arriving rather than the instrument breaking.
-    const bound = storedStateFamilies(DECLARED_PRESENT);
-    expect(bound).toEqual([]);
-    expect(formatDriftReport(DECLARED_PRESENT)).toContain('WAITING');
   });
 
-  it('over an EMPTY population it says WAITING, not retired', () => {
-    // Probed through the extracted function rather than by emptying
-    // DISPLAY_STATES: the shipped data cannot reach this branch, and a branch
-    // asserted through data that cannot reach it is asserted over nothing.
-    const lines = waitingFooter([]);
-    expect(lines.join(' ')).toContain('WAITING, not retired');
-    expect(lines.join(' ')).toContain('DISPLAY_STATES');
+  it('⚠️ a family read at P is `read-at-present` and can NEVER be FALSE', () => {
+    // THE CENTRAL CLAIM OF THE REBIND. A family whose labels are computed
+    // against DECLARED_PRESENT renders the same thing on every calendar day,
+    // so no distance from the wall clock can falsify it. Swept across a wide
+    // range in BOTH directions rather than asserted at one date — the old
+    // arithmetic produced spurious NEGATIVE headroom for exactly these
+    // families (measured: contract −4, obligation −7 on 2026-09-15).
+    for (const f of WINDOWED) {
+      for (const n of [-1219, -40, -1, 0, 1, 18, 40, 400, 1219]) {
+        const d = familyDrift(f, plus(DECLARED_PRESENT, n), 'P');
+        expect(d.verdict, `${f} @ P${n}`).toBe('read-at-present');
+        expect(d.headroomDays, `${f} @ P${n}`).toBeNull();
+        expect(d.verdict, `${f} @ P${n}`).not.toBe('FALSE');
+      }
+    }
+    expect(falsifiedFamilies(plus(DECLARED_PRESENT, 1219), all('P'))).toEqual([]);
   });
 
-  it('and says nothing at all while one family is still bound', () => {
-    expect(waitingFooter(['shipment'])).toEqual([]);
-  });
-});
-
-describe('⚠️ NO FAMILY IS MEASURABLE ANY MORE — and that is derived, not declared', () => {
-  // ── ⚠️ WHAT HAPPENED, AND WHY IT IS THE MODULE WORKING ────────────────────
-  //   `supplierDocument` was this file's stable probe: the one family with BOTH
-  //   a window and a reader-visible stored clock state, so `ok` / `warn` /
-  //   `FALSE` were all reachable from shipped data. Its two fixture rows now
-  //   store `'Valid'` — a declared flow state — so `DISPLAY_STATES` no longer
-  //   groups anything of its as `stored-in-fixtures`, and `familyDrift` returns
-  //   `computed`.
-  //
-  //   **`clockDrift.ts` was not edited.** Bound-ness is read from
-  //   `DISPLAY_STATES` at call time, which is the property the module's header
-  //   claims; this is the third family to leave that way (obligation, contract,
-  //   now supplierDocument) and the first to leave the MEASURABLE set empty.
-  //
-  //   ⚠️ **BOUND AND MEASURABLE ARE DIFFERENT SETS, AND ONLY ONE IS EMPTY.**
-  //   `shipment/Delayed` is still `stored-in-fixtures`, so a reader still sees a
-  //   stored clock state and the instrument still has something to watch — the
-  //   WAITING footer stays unreachable. What shipment lacks is a WINDOW, so its
-  //   verdict is `no-window-declared` and no headroom can be computed for it.
-  //   An instrument with nothing MEASURABLE is not an instrument with nothing to
-  //   watch, and conflating the two is what the `no-window-declared` rename
-  //   already had to fix once.
-  //
-  //   RETIRED, quoted rather than deleted — the family-driven arms, which can no
-  //   longer run because no family reaches them:
-  //
-  //     describe('a BOUND family — ok, warn and FALSE, each shown at its own
-  //              instant', … const F: FixtureFamily = 'supplierDocument' …)
-  //       it('KNOWN-GOOD FIRST: at `P` itself the family is `ok` with full
-  //           headroom')
-  //       it('inside the declared tolerance it stays `ok`, in BOTH directions')
-  //       it('⚠️ its warn band is ONE-SIDED, because the anchor is not centred')
-  //       it('⚠️ WHO CAN WARN IS DERIVED — `contract` left the set,
-  //           `supplierDocument` holds it')   // swept: ['supplierDocument @ 41d']
-  //       it('⚠️ past its OWN window it is FALSE — a reader is seeing a wrong
-  //           state')
-  //       it('the EARLY edge falsifies too — drift is signed, not a magnitude')
-  //
-  //   ⚠️ **THE ONE WORTH MOURNING IS THE SWEEP**, which derived warn-membership
-  //   across every family's own window in both directions and returned exactly
-  //   `['supplierDocument @ 41d']` — a real instrument over a real population.
-  //   Its successor cannot be a sweep: swept today it returns `[]`, and a sweep
-  //   that can only return `[]` is `EMPTY-INPUT-REPORTS-CLEAN-01` with better
-  //   manners. So the arms move to `driftVerdict` (extracted for exactly this)
-  //   and the sweep is replaced by an assertion that the population IS empty —
-  //   which goes RED the day a family rejoins, and that is the point.
-
-  it('KNOWN-GOOD FIRST: the report is non-empty and every family is judged', () => {
-    // Without this the emptiness below could be a report about a broken report.
-    const rows = driftReport(DECLARED_PRESENT);
-    expect(rows.length).toBe(Object.keys(FAMILY_ANCHORS).length);
-    expect(rows.length).toBeGreaterThan(0);
-  });
-
-  it('⚠️ the MEASURABLE set is empty — derived from upstream, never from familyDrift', () => {
-    // §86: the population is derived from `FAMILY_ANCHORS` and `DISPLAY_STATES`,
-    // both upstream of the module under test. Deriving it by asking
-    // `familyDrift` would move the population and the assertion together, and
-    // could not tell a kill from an empty run.
-    const measurable = (Object.keys(FAMILY_ANCHORS) as FixtureFamily[]).filter(
-      (f) =>
-        FAMILY_ANCHORS[f].window !== null &&
-        DISPLAY_STATES.some((r) => r.entity === f && r.group === 'stored-in-fixtures'),
+  it('a family nothing projects is `not-projected`, not `read-at-present`', () => {
+    // Different facts: one says the read happens at P, the other says there is
+    // no read. Collapsing them would report a family as deliberately anchored
+    // when in truth nothing looks at it.
+    const f = WINDOWED[0];
+    expect(familyDrift(f, DECLARED_PRESENT, 'NO-CALL-SITES').verdict).toBe(
+      'not-projected',
     );
-    expect(measurable).toEqual([]);
-    // …and the module agrees, from the other side: no row carries a headroom.
+    expect(familyDrift(f, DECLARED_PRESENT, 'P').verdict).toBe('read-at-present');
+  });
+
+  it('⚠️ an instant the instrument could not follow is NOT a pass', () => {
+    // The direction that matters: `unresolved-instant` must never be reported
+    // as one of the safe verdicts. An unclassified read is a read that might
+    // be drifting.
+    const f = WINDOWED[0];
+    const d = familyDrift(f, DECLARED_PRESENT, 'UNRESOLVED');
+    expect(d.verdict).toBe('unresolved-instant');
+    expect(['ok', 'read-at-present', 'not-projected']).not.toContain(d.verdict);
+    expect(unresolvedFamilies(DECLARED_PRESENT, all('UNRESOLVED')).map((x) => x.family))
+      .toEqual(WINDOWED);
+    // CONTROL, the other direction: over a resolved tree it names nobody.
+    expect(unresolvedFamilies(DECLARED_PRESENT, all('P'))).toEqual([]);
+  });
+
+  it('the four non-numeric verdicts are pairwise distinct', () => {
+    const f = WINDOWED[0];
+    const got = [
+      familyDrift(UNWINDOWED[0], DECLARED_PRESENT, 'P').verdict,
+      familyDrift(f, DECLARED_PRESENT, 'P').verdict,
+      familyDrift(f, DECLARED_PRESENT, 'NO-CALL-SITES').verdict,
+      familyDrift(f, DECLARED_PRESENT, 'UNRESOLVED').verdict,
+    ];
+    expect(new Set(got).size).toBe(4);
+  });
+});
+
+describe('⚠️ a WALL-read family keeps the arithmetic — and the arms are reachable', () => {
+  // What the previous version of this file could not do. `familyDrift` is now
+  // exercised end to end on every arm, not only through `driftVerdict`.
+  const f = WINDOWED[0];
+  const tol = FAMILY_ANCHORS[f].toleranceDays;
+
+  it('KNOWN-GOOD FIRST — at P itself a wall-read family is `ok` with headroom', () => {
+    const d = familyDrift(f, DECLARED_PRESENT, 'WALL');
+    expect(d.verdict).toBe('ok');
+    expect(d.headroomDays).not.toBeNull();
+    expect(d.headroomDays!).toBeGreaterThanOrEqual(0);
+  });
+
+  it('⚠️ far enough out it goes FALSE — and `falsifiedFamilies` names it', () => {
+    // Derived, not a literal date: walk forward until the family's own window
+    // is left. A hardcoded day would decay the moment an anchor moved.
+    let day = 0;
+    while (day < 5000 && familyDrift(f, plus(DECLARED_PRESENT, day), 'WALL').verdict !== 'FALSE') day++;
+    expect(day, 'a wall-read family must become FALSE at some finite date').toBeLessThan(5000);
+    const bad = falsifiedFamilies(plus(DECLARED_PRESENT, day), { ...all('P'), [f]: 'WALL' });
+    expect(bad.map((x) => x.family)).toContain(f);
+    // …and the SAME family at the SAME date, read at P, is not falsified.
     expect(
-      driftReport(DECLARED_PRESENT).filter((d) => d.headroomDays !== null),
-    ).toEqual([]);
+      falsifiedFamilies(plus(DECLARED_PRESENT, day), all('P')).map((x) => x.family),
+    ).not.toContain(f);
   });
 
-  it('⚠️ AND THE BOUND SET IS EMPTY TOO — the instrument is WAITING, not retired', () => {
-    // ⚠️ **THE RETIRED ASSERTION, QUOTED:** *"but the BOUND set is NOT empty —
-    // shipment keeps the instrument watching"*, pinning
-    // `['shipment/Delayed']`. `shipment/Delayed` is `computed-at-read` now, so
-    // the group is empty and BOTH halves of the distinction this file draws —
-    // "nothing is measurable" and "there is nothing to watch" — are true at once
-    // for the first time.
-    //
-    // **THAT IS NOT THE END OF THE INSTRUMENT AND THE FOOTER IS WHY.** It comes
-    // back by itself: the day any fixture writes a display state nothing
-    // computes, `DISPLAY_STATES` re-derives, this set repopulates, and the
-    // footer disappears — with nobody editing `clockDrift.ts` or this file.
-    const bound = DISPLAY_STATES.filter((r) => r.group === 'stored-in-fixtures');
-    expect(bound).toEqual([]);
-    expect(storedStateFamilies(DECLARED_PRESENT)).toEqual([]);
-    expect(formatDriftReport(DECLARED_PRESENT)).toContain('WAITING');
-    // CONTROL, the other direction — the footer is not simply always on. Given a
-    // non-empty population the same function stays silent, so the line above is
-    // about the population and not about the formatter.
-    expect(waitingFooter(['shipment'])).toEqual([]);
+  it('MIXED counts as wall-read — one drifting surface is enough', () => {
+    let day = 0;
+    while (day < 5000 && familyDrift(f, plus(DECLARED_PRESENT, day), 'WALL').verdict !== 'FALSE') day++;
+    expect(familyDrift(f, plus(DECLARED_PRESENT, day), 'MIXED').verdict).toBe('FALSE');
   });
 
-  it('⚠️ supplierDocument is `computed` — it left with nobody editing clockDrift', () => {
-    const d = familyDrift('supplierDocument', DECLARED_PRESENT);
-    expect(d.verdict).toBe('computed');
-    expect(d.readerVisibleStates).toEqual([]);
-    expect(d.headroomDays).toBeNull();
-    // …and it still HAS a window, which is what separates `computed` from
-    // `no-window-declared` and proves the departure was about the states.
-    expect(FAMILY_ANCHORS.supplierDocument.window).not.toBeNull();
+  it('the declared tolerance still decides the warn line', () => {
+    if (tol === null) return;
+    const over = familyDrift(f, plus(DECLARED_PRESENT, tol + 1), 'WALL');
+    expect(['warn', 'FALSE']).toContain(over.verdict);
+    const under = familyDrift(f, plus(DECLARED_PRESENT, tol), 'WALL');
+    expect(under.verdict).toBe('ok');
   });
+});
 
-  it('⚠️ the verdict RULE still has every arm, probed directly', () => {
-    // The arms no family can now reach, measured at the rule instead of through
-    // data that cannot exercise them. This is the whole reason `driftVerdict`
-    // was extracted, and the reason has now arrived for `ok` and `FALSE` too —
-    // not only for `warn`.
+describe('⚠️ the verdict RULE still has every arm, probed directly', () => {
+  it('each arm, at its own boundary', () => {
+    // UNCHANGED from before the rebind: `driftVerdict` was not touched, and
+    // these are the assertions that say so.
     expect(driftVerdict(5, 3, 7)).toBe('ok'); //   inside tolerance
     expect(driftVerdict(5, 7, 7)).toBe('ok'); //   exactly at it
     expect(driftVerdict(5, 8, 7)).toBe('warn'); // past tolerance, inside window
@@ -301,41 +195,98 @@ describe('⚠️ NO FAMILY IS MEASURABLE ANY MORE — and that is derived, not d
     expect(driftVerdict(-1, 8, 7)).toBe('FALSE'); // past the window wins
     expect(driftVerdict(0, 8, 7)).toBe('warn'); //  the window boundary is inclusive
     expect(driftVerdict(5, 999, null)).toBe('ok'); // no declared tolerance
-    // CONTROL: all three arms are genuinely distinct, so the six lines above
-    // are not one answer six times.
     expect(new Set(['ok', 'warn', 'FALSE']).size).toBe(3);
   });
 
-  it('⚠️ and the arms are reachable — on a family shaped like the one that left', () => {
-    // A SYNTHETIC probe standing in for the retired sweep: `familyDrift` cannot
-    // be pointed at a family that does not exist, so the geometry is exercised
-    // through the rule with the numbers the retired tests used. `supplierDocument`
-    // sat 40 days from its early edge and 41 from its late one — an off-centre
-    // anchor — which is why it warned for exactly one day forwards and none
-    // backwards. That asymmetry is a property of the RULE, and it survives the
-    // family that demonstrated it.
+  it('⚠️ the off-centre asymmetry, kept from the family that demonstrated it', () => {
+    // `supplierDocument` sat 40 days from its early edge and 41 from its late
+    // one, so it warned for exactly one day forwards and none backwards. That
+    // asymmetry is a property of the RULE and survives the family.
     const TOL = 40;
-    expect(driftVerdict(41 - 40, TOL, TOL)).toBe('ok'); //   at tolerance
-    expect(driftVerdict(41 - 41, TOL + 1, TOL)).toBe('warn'); // one day past, still inside
-    expect(driftVerdict(-1, TOL + 2, TOL)).toBe('FALSE'); //  past the window
+    expect(driftVerdict(41 - 40, TOL, TOL)).toBe('ok');
+    expect(driftVerdict(41 - 41, TOL + 1, TOL)).toBe('warn');
+    expect(driftVerdict(-1, TOL + 2, TOL)).toBe('FALSE');
   });
 });
 
-describe('`toleranceDays` now has a reader, and the report says so', () => {
-  it('the declared tolerance decides the warn line for every bound family', () => {
-    for (const d of driftReport(DECLARED_PRESENT)) {
-      if (d.verdict === 'no-window-declared' || d.verdict === 'computed') continue;
-      expect(d.toleranceDays, d.family).not.toBeNull();
-      const over = familyDrift(d.family, plus(DECLARED_PRESENT, d.toleranceDays! + 1));
-      expect(['warn', 'FALSE'], d.family).toContain(over.verdict);
+describe('⚠️ the verdict is the one its own inputs entail — derived, never asked', () => {
+  it('for every family and every instant, independently derived', () => {
+    // §86: the expectation is computed from `FAMILY_ANCHORS` (upstream) and the
+    // instant (an INPUT), never by asking `familyDrift`. A predicate that read
+    // the module under test would move the population and the assertion
+    // together and could not tell a kill from an empty run.
+    const seen = new Set<string>();
+    for (const i of ['P', 'WALL', 'UNRESOLVED', 'NO-CALL-SITES'] as FamilyInstant[]) {
+      for (const d of driftReport(DECLARED_PRESENT, all(i))) {
+        const hasWindow = FAMILY_ANCHORS[d.family].window !== null;
+        if (!hasWindow) expect(d.verdict, `${d.family}@${i}`).toBe('no-window-declared');
+        else if (i === 'UNRESOLVED') expect(d.verdict, `${d.family}@${i}`).toBe('unresolved-instant');
+        else if (i === 'NO-CALL-SITES') expect(d.verdict, `${d.family}@${i}`).toBe('not-projected');
+        else if (i === 'P') expect(d.verdict, `${d.family}@${i}`).toBe('read-at-present');
+        else expect(['ok', 'warn', 'FALSE'], `${d.family}@${i}`).toContain(d.verdict);
+        seen.add(d.verdict);
+      }
+    }
+    // Every branch was actually exercised — otherwise the loop asserts a rule
+    // nothing met.
+    for (const v of ['no-window-declared', 'read-at-present', 'not-projected', 'unresolved-instant', 'ok']) {
+      expect(seen, v).toContain(v);
     }
   });
+});
 
-  it('formatDriftReport names every family and the present it measured against', () => {
-    const out = formatDriftReport(DECLARED_PRESENT);
+describe('what the report says when there is nothing to watch', () => {
+  it('⚠️ WAITING, not retired — and it names what it now waits FOR', () => {
+    // The old footer waited on a `stored-in-fixtures` display row, which law
+    // 0.5 forbids anyone to author — a wait that could never end. The new one
+    // waits on a wall-clock read, which a page can acquire in one line.
+    const lines = waitingFooter([]);
+    expect(lines.join(' ')).toContain('WAITING, not retired');
+    expect(lines.join(' ')).toContain('readingInstantGate');
+    expect(lines.join(' ')).toContain('new Date()');
+    // …and it must NOT still be describing the retired question.
+    expect(lines.join(' ')).not.toContain('DISPLAY_STATES');
+    expect(lines.join(' ')).not.toContain('stored-in-fixtures');
+  });
+
+  it('and says nothing at all while one family is wall-read', () => {
+    expect(waitingFooter([WINDOWED[0]])).toEqual([]);
+  });
+
+  it('the footer tracks the POPULATION, not the formatter', () => {
+    expect(formatDriftReport(DECLARED_PRESENT, all('P'))).toContain('WAITING');
+    expect(
+      formatDriftReport(DECLARED_PRESENT, { ...all('P'), [WINDOWED[0]]: 'WALL' }),
+    ).not.toContain('WAITING');
+  });
+
+  it('wallReadFamilies is derived from the instants it is given', () => {
+    expect(wallReadFamilies(DECLARED_PRESENT, all('P'))).toEqual([]);
+    expect(
+      wallReadFamilies(DECLARED_PRESENT, { ...all('P'), [WINDOWED[0]]: 'WALL' }),
+    ).toEqual([WINDOWED[0]]);
+    // MIXED is in the population too.
+    expect(
+      wallReadFamilies(DECLARED_PRESENT, { ...all('P'), [WINDOWED[0]]: 'MIXED' }),
+    ).toEqual([WINDOWED[0]]);
+  });
+});
+
+describe('the report a person reads', () => {
+  it('names every family, the present it measured against, and the instant', () => {
+    const out = formatDriftReport(DECLARED_PRESENT, all('P'));
     expect(out).toContain(DECLARED_PRESENT);
-    for (const f of Object.keys(FAMILY_ANCHORS)) expect(out).toContain(f);
-    // A report that renders a verdict nobody can read is not a reader.
-    expect(out).toMatch(/ok|warn|FALSE|computed|no-window-declared/);
+    for (const f of FAMILIES) expect(out).toContain(f);
+    expect(out).toContain('reading instant');
+    expect(out).toMatch(/read-at-present|no-window-declared/);
+  });
+
+  it('⚠️ a FALSE row is legible as such', () => {
+    const f = WINDOWED[0];
+    let day = 0;
+    while (day < 5000 && familyDrift(f, plus(DECLARED_PRESENT, day), 'WALL').verdict !== 'FALSE') day++;
+    const out = formatDriftReport(plus(DECLARED_PRESENT, day), { ...all('P'), [f]: 'WALL' });
+    expect(out).toContain('FALSE');
+    expect(out).toContain('WALL');
   });
 });
