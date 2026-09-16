@@ -314,6 +314,113 @@ const PERFORMS_REAL_ACT =
   /\b(?:\w*[Mm]utation\.mutate|\w*[Mm]utateAsync|dispatch|navigate|window\.open|createObjectURL|setSearchParams|location\.assign|fetch|set[A-Z]\w*|refetch|invalidateQueries)\s*\(/;
 
 /**
+ * The act shapes that are NEVER a self-dismissal. `PERFORMS_REAL_ACT` minus its
+ * `set[A-Z]\w*` alternative — `setSearchParams` stays HERE and is matched first,
+ * so a URL write is never mistaken for a component's own visibility flag.
+ */
+const NON_SETTER_ACT =
+  /\b(?:\w*[Mm]utation\.mutate|\w*[Mm]utateAsync|dispatch|navigate|window\.open|createObjectURL|setSearchParams|location\.assign|fetch|refetch|invalidateQueries)\s*\(/;
+
+/**
+ * ⚠️ **C2 · A SETTER THAT ONLY CLOSES THE THING THE BUTTON IS SITTING IN IS NOT
+ * AN ACT, AND UNTIL THIS EXISTED IT ACQUITTED THE ONE BRANCH THAT NEEDED ASKING
+ * ABOUT MOST.** `PERFORMS_REAL_ACT` counts any `setX(…)` as a real act, and the
+ * header argues for that deliberately: for a UI affordance a state write usually
+ * IS the act — expanding a dock panel, loading parsed rows into a grid. The
+ * residue it was knowingly buying is a handler that does something SMALLER than
+ * it claims.
+ *
+ * **MEASURED: `SupplierMyStorefront`'s Save button.** Its handler is
+ * `setEditProfile(false); toast({ variant: 'success', … })`, and the copy it
+ * fires says *"Profile changes not saved — storefront editing is not wired to a
+ * real store."* The setter is real, and what it does is **put the editor away**.
+ * Nothing is saved; the only state that moved is the flag deciding whether the
+ * form the button lives in is on screen at all.
+ *
+ * **THE PROPERTY, NOT A LIST: a setter is a SELF-DISMISSAL when its state
+ * variable gates the very surface that renders the handler.** Both halves are
+ * derived from the file:
+ *   · the variable must actually BE state — `const [x, setX] = useState(…)`
+ *     somewhere in this source. A prop or a local that merely looks like one
+ *     does not qualify, which stops the predicate matching on a name alone;
+ *   · and walking UP from the handler, some ancestor must SELECT this handler on
+ *     a condition that READS `x` — a ternary arm, the right side of `&&` / `||`
+ *     / `??`, or an `if`. That is the same "conditionally-executed region"
+ *     property `conditionalRegions` uses, asked about rendering instead of about
+ *     execution.
+ *
+ * **THE NARROWING IS ONE-SIDED AND STAYS THAT WAY: a branch is acquitted if ANY
+ * of its setters is not a self-dismissal.** A handler that saves a draft AND
+ * closes the drawer still performs an act. Only a branch whose ENTIRE act is to
+ * hide itself falls through to the admission test.
+ *
+ * ⚠️ **WHAT IT DOES NOT REACH, STATED SO NOBODY INHERITS A STRONGER CLAIM:** a
+ * setter that dismisses a DIFFERENT surface, one routed through a helper (no
+ * call is followed here — see the header), and a gate written as a computed
+ * value (`const open = mode === 'edit'`) rather than reading the state variable
+ * directly. Each of those is acquitted, which is the direction that stays quiet
+ * rather than the direction that accuses.
+ */
+const stateNameOf = (capitalised: string): string =>
+  capitalised.charAt(0).toLowerCase() + capitalised.slice(1);
+
+/** Does `name` appear in a condition that decides whether `pos` renders at all? */
+function gatesTheSurface(sf: ts.SourceFile, name: string, pos: number): boolean {
+  let cur: ts.Node | undefined = nodeAt(sf, pos);
+  while (cur) {
+    const p: ts.Node | undefined = cur.parent;
+    if (p) {
+      if (
+        ts.isConditionalExpression(p) &&
+        cur !== p.condition &&
+        identifiersOf(p.condition).has(name)
+      )
+        return true;
+      if (
+        ts.isBinaryExpression(p) &&
+        (p.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken ||
+          p.operatorToken.kind === ts.SyntaxKind.BarBarToken ||
+          p.operatorToken.kind === ts.SyntaxKind.QuestionQuestionToken) &&
+        cur === p.right &&
+        identifiersOf(p.left).has(name)
+      )
+        return true;
+      if (ts.isIfStatement(p) && cur !== p.expression && identifiersOf(p.expression).has(name))
+        return true;
+    }
+    cur = p;
+  }
+  return false;
+}
+
+/**
+ * THE ACQUITTAL. `PERFORMS_REAL_ACT` with the setter alternative narrowed by the
+ * self-dismissal property above. `stateVars` is the file's `useState` names.
+ */
+function branchPerformsRealAct(
+  sf: ts.SourceFile,
+  branch: string,
+  hStart: number,
+  stateVars: ReadonlySet<string>,
+): boolean {
+  if (NON_SETTER_ACT.test(branch)) return true;
+  const setters = [...branch.matchAll(/\bset([A-Z]\w*)\s*\(/g)].map((m) => stateNameOf(m[1]));
+  if (setters.length === 0) return false;
+  return setters.some((n) => !(stateVars.has(n) && gatesTheSurface(sf, n, hStart)));
+}
+
+/** Every `const [x, setX] = useState(…)` name declared in this source. */
+const stateVarsOf = (src: string): Set<string> =>
+  new Set(
+    [...src.matchAll(/\bconst\s*\[\s*(\w+)\s*,\s*set[A-Z]\w*\s*\]\s*=\s*useState/g)].map(
+      (m) => m[1],
+    ),
+  );
+
+/** Sites whose branch WAS acquitted — the anti-vacuity control for the narrowing. */
+const ACQUITTED: string[] = [];
+
+/**
  * Affordance handlers. `on<Something>` — but NEVER a react-query lifecycle
  * callback: a toast inside `onSuccess` is fired BY a real dispatch and is
  * backed by construction. Treating `onSuccess` as an affordance mis-attributes
@@ -628,6 +735,7 @@ function deriveUnbackedSites(): Site[] {
     const raw = readFileSync(join(PAGES_DIR, file), 'utf8');
     const src = codeOnly(raw);
     const sf = ts.createSourceFile(file, raw, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+    const stateVars = stateVarsOf(src);
     for (const m of src.matchAll(/\btoast\s*\(\s*\{/g)) {
       const idx = m.index ?? 0;
       const pre = src.slice(0, idx);
@@ -679,7 +787,10 @@ function deriveUnbackedSites(): Site[] {
       // THE UNIT: the branch, not the body. A real act in a SIBLING clause of
       // the same handler no longer acquits the claim made here.
       const branch = coExecutingRegion(sf, body, hStart, idx);
-      if (PERFORMS_REAL_ACT.test(branch)) continue; // backed — not this guard's business
+      if (branchPerformsRealAct(sf, branch, hStart, stateVars)) {
+        ACQUITTED.push(`${file}:${line0}`);
+        continue; // backed — not this guard's business
+      }
       if (out.some((s) => s.file === file && s.line === line0)) continue;
       // THE ONE EXCLUSION: a guard clause in front of the handler's own act
       // claims no act, so the admission test asks it the wrong question.
@@ -743,6 +854,20 @@ describe('unbacked-toast honesty guard (R1)', () => {
       CAP_TRUNCATED,
       `balancedEnd's cap truncated a handler body, so these toasts left the population silently rather than because they sit outside one: ${CAP_TRUNCATED.join(', ')}`,
     ).toEqual([]);
+  });
+
+  /**
+   * ⚠️ **THE NARROWING'S ANTI-VACUITY HALF.** If `branchPerformsRealAct` started
+   * returning false for everything, every backed handler in the tree would join
+   * the population and the admission tests would go red in a hundred places —
+   * loudly. The dangerous direction is the other one: if it returned TRUE for
+   * everything the population would empty and the suite would read GREEN over
+   * nothing (`EMPTY-INPUT-REPORTS-CLEAN-01`). So both ends are pinned by
+   * MEMBERSHIP: something was acquitted, and something was not.
+   */
+  it('the act predicate discriminates — it acquitted some branches and kept others', () => {
+    expect(ACQUITTED.length, 'nothing was acquitted — the act predicate stopped matching').toBeGreaterThan(0);
+    expect(SITES.length, 'nothing survived — the act predicate now acquits everything').toBeGreaterThan(10);
   });
 
   it('the refusal class excluded something, and can say why', () => {
@@ -843,5 +968,75 @@ describe('the branch unit, fired at the defect it was built for (#352)', () => {
     // refusals it was derived from, so a null above means "not a refusal"
     // rather than "this function never returns anything".
     expect(EXCLUSIONS.length, 'refusalOf must be capable of excluding').toBeGreaterThan(0);
+  });
+});
+
+/**
+ * ⚠️ **C2 · THE SELF-DISMISSAL PREDICATE, PROBED IN BOTH DIRECTIONS.** A guard is
+ * habitually probed one way — *"does it catch the bad thing?"* — so a predicate
+ * that is wrong about what it should ACCEPT ships looking like a working one. The
+ * good input is asserted FIRST, and both run against the SAME synthetic program,
+ * so neither reading can be believed alone.
+ *
+ * The two sources differ in exactly one property: whether the state the setter
+ * writes is the state the surrounding JSX tests to decide the button exists.
+ */
+describe('the self-dismissal narrowing, probed both ways', () => {
+  const build = (gate: string) => `
+    const Page = () => {
+      const [editing, setEditing] = useState(false);
+      const [rows, setRows] = useState([]);
+      return <div>{${gate} ? (
+        <button onClick={() => { setEditing(false); toast({ variant: 'success', title: 'x' }); }} />
+      ) : null}</div>;
+    };
+  `;
+
+  const verdict = (src: string) => {
+    const sf = ts.createSourceFile('probe.tsx', src, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+    const code = codeOnly(src);
+    const h = [...code.matchAll(AFFORDANCE)][0];
+    expect(h, 'the probe source must contain an affordance handler').toBeTruthy();
+    const hStart = h?.index ?? 0;
+    const bodyEnd = balancedEnd(code, hStart + (h?.[0].length ?? 0));
+    const idx = code.indexOf('toast', hStart);
+    const branch = coExecutingRegion(sf, code.slice(hStart, bodyEnd), hStart, idx);
+    return branchPerformsRealAct(sf, branch, hStart, stateVarsOf(code));
+  };
+
+  it('ACCEPTS a setter whose state does NOT gate the surface (the known-good)', () => {
+    // identical handler; the JSX is gated on `rows.length`, so closing `editing`
+    // is a write to something else and the branch is a real act.
+    expect(verdict(build('rows.length > 0'))).toBe(true);
+  });
+
+  it('REJECTS a setter whose state gates the very surface it sits in', () => {
+    expect(verdict(build('editing'))).toBe(false);
+  });
+
+  it('a second, non-dismissing setter re-acquits the same branch', () => {
+    const src = `
+      const Page = () => {
+        const [editing, setEditing] = useState(false);
+        const [rows, setRows] = useState([]);
+        return <div>{editing ? (
+          <button onClick={() => { setRows([]); setEditing(false); toast({ variant: 'success', title: 'x' }); }} />
+        ) : null}</div>;
+      };
+    `;
+    expect(verdict(src)).toBe(true);
+  });
+
+  it('the useState requirement is load-bearing — a same-named non-state gate acquits', () => {
+    // `editing` here is a prop, not state: the predicate must not convict on the
+    // NAME alone, which is what stops it firing on an unrelated identifier.
+    const src = `
+      const Page = ({ editing }) => {
+        return <div>{editing ? (
+          <button onClick={() => { setEditing(false); toast({ variant: 'success', title: 'x' }); }} />
+        ) : null}</div>;
+      };
+    `;
+    expect(verdict(src)).toBe(true);
   });
 });
