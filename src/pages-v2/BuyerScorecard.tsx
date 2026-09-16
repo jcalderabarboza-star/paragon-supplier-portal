@@ -519,7 +519,7 @@ const BuyerScorecard: React.FC = () => {
             icon={Mail}
             onClick={() =>
               toast({
-                variant: 'success',
+                variant: 'info',
                 title: t('buyerScorecard.imp.toast.title', { name: supp.name }),
                 description: t('buyerScorecard.imp.toast.desc'),
               })

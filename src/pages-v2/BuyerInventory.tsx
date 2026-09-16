@@ -284,7 +284,7 @@ const BuyerInventory: React.FC = () => {
 
   const handleSync = () => {
     toast({
-      variant: 'success',
+      variant: 'info',
       title: t('buyerInventory.toast.syncQueued.title'),
       description: t('buyerInventory.toast.syncQueued.desc', {
         time: new Date().toLocaleTimeString('en-GB', {

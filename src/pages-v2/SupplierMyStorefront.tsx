@@ -365,7 +365,7 @@ const StorefrontEditor: React.FC<StorefrontEditorProps> = ({
                   onClick={() => {
                     setEditProfile(false);
                     toast({
-                      variant: 'success',
+                      variant: 'info',
                       title: t('supplierMyStorefront.toast.profileUpdated'),
                     });
                   }}
@@ -757,7 +757,7 @@ const StorefrontEditor: React.FC<StorefrontEditorProps> = ({
               variant="outline"
               onClick={() =>
                 toast({
-                  variant: 'success',
+                  variant: 'info',
                   title: t('supplierMyStorefront.toast.channelUpdated'),
                 })
               }
@@ -819,7 +819,7 @@ const StorefrontEditor: React.FC<StorefrontEditorProps> = ({
               variant="outline"
               onClick={() =>
                 toast({
-                  variant: 'success',
+                  variant: 'info',
                   title: t('supplierMyStorefront.toast.hoursUpdated'),
                 })
               }

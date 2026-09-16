@@ -472,6 +472,7 @@ interface Site {
   readonly line: number;
   readonly keys: readonly string[];
   readonly literals: readonly string[];
+  readonly variants: Variants;
 }
 
 /** Balance ( { [ from `from`, returning the end index of the expression. */
@@ -672,10 +673,89 @@ function refusalOf(
   return shared.length ? shared : null;
 }
 
+/**
+ * ⚠️ **C3 · A TOAST VARIANT IS ITSELF A CLAIM, AND `success` CLAIMS AN ACT
+ * COMPLETED.** The admission rule judges the COPY. Nothing judged the icon and
+ * the accent beside it, so a branch could say *"Nothing was synced"* in words
+ * and draw a green tick — and pass, because both halves were separately honest
+ * about different things.
+ *
+ * **THE RULE: a branch in this guard's population must not have `'success'`
+ * among its possible variants.** It is ONE-DIRECTIONAL by ruling. The reverse —
+ * a branch that DOES act and renders `info` — is not judged here: `info` is the
+ * right variant for an in-flight SAP submission (`invoice.pay.releasing`,
+ * `gr.post.posting`), and a rule that forbade it would accuse those of lying.
+ * `#352` is the precedent for the replacement: `info`, not `warning`, because
+ * the notice is about a MISSING CAPABILITY and not about the document needing
+ * attention.
+ *
+ * ⚠️ **THE REFUSAL CLASS IS IN SCOPE HERE THOUGH IT IS OUT OF SCOPE FOR THE
+ * ADMISSION RULE, AND THE ASYMMETRY IS THE POINT.** A validation refusal claims
+ * no act, so asking its copy for an ADMISSION asks the wrong question — that is
+ * why the class exists. But it terminates BEFORE the handler's act by
+ * construction, so `success` is a lie there in every case, with no copy to read
+ * and no judgement to make. The one question the exclusion cannot buy silence
+ * on is the one this rule asks.
+ *
+ * **THE VARIANT IS RESOLVED STATICALLY, AND AN UNRESOLVED ONE IS A FAILURE
+ * RATHER THAN AN ACQUITTAL.** A guard that shrugs at what it cannot read is a
+ * guard with a hole shaped like every future clever expression. Resolved today:
+ * a string literal; a literal behind `as const` or parentheses; **a ternary,
+ * resolved to the UNION of its arms** — which is what `BuyerRisk`'s
+ * `row.status === 'expired' ? 'warning' : 'info'` needs, and a union is the
+ * honest reading because either arm can render; `??` and `||`, likewise; and an
+ * ABSENT `variant`, which resolves to `{'info'}` from `useToast`'s own default
+ * (`input.variant ?? 'info'`). Anything else — a spread that could carry one, an
+ * identifier, a call — returns null and the site is NAMED. Measured when this
+ * landed: **0 sites are unresolved**, so no allowlist exists and none is needed.
+ */
+type Variants = ReadonlySet<string> | null;
+
+const union = (a: Variants, b: Variants): Variants =>
+  a === null || b === null ? null : new Set([...a, ...b]);
+
+/** Resolve an expression to the set of variant strings it can evaluate to. */
+function variantsOfExpression(n: ts.Node): Variants {
+  let e: ts.Node = n;
+  while (ts.isAsExpression(e) || ts.isParenthesizedExpression(e)) e = e.expression;
+  if (ts.isStringLiteral(e) || ts.isNoSubstitutionTemplateLiteral(e)) return new Set([e.text]);
+  if (ts.isConditionalExpression(e))
+    return union(variantsOfExpression(e.whenTrue), variantsOfExpression(e.whenFalse));
+  if (
+    ts.isBinaryExpression(e) &&
+    (e.operatorToken.kind === ts.SyntaxKind.QuestionQuestionToken ||
+      e.operatorToken.kind === ts.SyntaxKind.BarBarToken)
+  )
+    return union(variantsOfExpression(e.left), variantsOfExpression(e.right));
+  return null;
+}
+
+/** The variants the `toast(` call at `pos` can render. */
+function variantsAt(sf: ts.SourceFile, pos: number): Variants {
+  let n: ts.Node | undefined = nodeAt(sf, pos);
+  while (n && !ts.isCallExpression(n)) n = n.parent;
+  if (!n || !ts.isCallExpression(n)) return null;
+  const arg = n.arguments[0];
+  if (!arg || !ts.isObjectLiteralExpression(arg)) return null;
+  // a spread could carry a variant this reader cannot see
+  if (arg.properties.some((x) => ts.isSpreadAssignment(x))) return null;
+  const prop = arg.properties.find(
+    (x) => x.name !== undefined && ts.isIdentifier(x.name) && x.name.text === 'variant',
+  );
+  // absent: useToast's own default
+  if (!prop) return new Set(['info']);
+  if (!ts.isPropertyAssignment(prop)) return null;
+  return variantsOfExpression(prop.initializer);
+}
+
+/** Does this site claim a completed act by its variant? */
+const claimsSuccess = (v: Variants): boolean => v !== null && v.has('success');
+
 interface Excluded {
   readonly file: string;
   readonly line: number;
   readonly shared: readonly string[];
+  readonly variants: Variants;
 }
 
 const EXCLUSIONS: Excluded[] = [];
@@ -796,14 +876,14 @@ function deriveUnbackedSites(): Site[] {
       // claims no act, so the admission test asks it the wrong question.
       const shared = refusalOf(sf, src, hStart, bodyEnd, idx);
       if (shared) {
-        EXCLUSIONS.push({ file, line: line0, shared });
+        EXCLUSIONS.push({ file, line: line0, shared, variants: variantsAt(sf, idx) });
         continue;
       }
       const keys = [...branch.matchAll(/t\('([^']+)'/g)].map((k) => k[1]);
       const literals = [
         ...branch.matchAll(/(?:title|description):\s*[`'"]([^`'"]{4,})[`'"]/g),
       ].map((k) => k[1]);
-      out.push({ file, line: line0, keys, literals });
+      out.push({ file, line: line0, keys, literals, variants: variantsAt(sf, idx) });
     }
   }
   return out;
@@ -906,6 +986,44 @@ describe('unbacked-toast honesty guard (R1)', () => {
       ).toBe(true);
     },
   );
+
+  /**
+   * ⚠️ **C3 · THE VARIANT RULE.** The population and the refusal class together:
+   * every branch that performs no act, and every branch that refuses before one.
+   * Neither may render the variant that claims an act completed.
+   */
+  it.each(
+    [...SITES, ...EXCLUSIONS].map((s) => [`${s.file}:${s.line}`, s] as const),
+  )('a branch with no real act does not claim success — %s', (at, site) => {
+    expect(
+      site.variants,
+      `${at}: the variant cannot be resolved statically, so this guard cannot say whether it claims an act. Make it a literal (or a ternary of literals) rather than leaving the question unanswerable.`,
+    ).not.toBeNull();
+    expect(
+      claimsSuccess(site.variants),
+      `${at} renders variant 'success' on a branch that performs no act. 'success' claims the act completed; the honest variant for a notice about a missing capability is 'info' (#352).`,
+    ).toBe(false);
+  });
+
+  /**
+   * ⚠️ **AN UNRESOLVED VARIANT MUST FAIL, NOT ACQUIT — AND THE READER HAS TO BE
+   * ABLE TO RESOLVE THE SHAPES THE TREE ACTUALLY USES, OR THE RULE IS A WALL OF
+   * FALSE ACCUSATIONS.** Both halves in one place: nothing is unresolved today,
+   * AND the reader was exercised on more than the trivial case — at least one
+   * member's variant came from somewhere other than a bare string literal
+   * (an absent `variant` defaulting to `info`, or a ternary resolved to a union).
+   */
+  it('every variant in the population resolves statically, by more than one shape', () => {
+    const unresolved = [...SITES, ...EXCLUSIONS]
+      .filter((s) => s.variants === null)
+      .map((s) => `${s.file}:${s.line}`);
+    expect(unresolved, `unresolved variants: ${unresolved.join(', ')}`).toEqual([]);
+    const multi = [...SITES, ...EXCLUSIONS].filter((s) => (s.variants?.size ?? 0) > 1);
+    expect(
+      multi.length,
+      'no site resolved to more than one variant — the union arm of the reader never ran',
+    ).toBeGreaterThan(0);
+  });
 
   it('every user-visible toast string is externalised (no hardcoded copy)', () => {
     const hardcoded = SITES.filter((s) =>
@@ -1040,3 +1158,113 @@ describe('the self-dismissal narrowing, probed both ways', () => {
     expect(verdict(src)).toBe(true);
   });
 });
+
+/**
+ * ⚠️ **C3 · THE STANDING SPECIMEN, AND IT IS THE SAME DEFECT #352 REPAIRED SEEN
+ * FROM THE OTHER SIDE** (`PROBE-MUST-FIRE-AT-A-REAL-DEFECT-01`). The copy is
+ * #352's retired `Overdue` claim, re-injected into its own branch shape with the
+ * variant this batch forbids. It is an in-test constant: no shipped file carries
+ * it at rest, and it convicts on every run.
+ *
+ * ⚠️ **IT ASSERTS BOTH HALVES SEPARATELY, BECAUSE A COMBINED PASS CANNOT SAY
+ * WHICH RULE FIRED.** The retired copy admits nothing (the admission rule's
+ * subject) AND renders `success` (this rule's subject); if only one assertion
+ * existed, deleting the variant rule would leave the specimen convicting anyway
+ * on the admission half and the deletion would read green.
+ */
+describe('the variant rule, fired at #352 with the variant it now forbids', () => {
+  const RETIRED_EN = 'Routed to Finance Controller for urgent action.';
+  const SPECIMEN = `
+    const Page = () => {
+      const handleFooterAction = () => {
+        if (selected.status === 'Overdue') {
+          toast({
+            variant: 'success',
+            title: t('buyerInvoices.toast.escalate.title'),
+            description: 'Routed to Finance Controller for urgent action.',
+          });
+          return;
+        }
+      };
+      return <button onClick={handleFooterAction} />;
+    };
+  `;
+
+  const read = (src: string) => {
+    const sf = ts.createSourceFile('specimen.tsx', src, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+    const code = codeOnly(src);
+    const idx = code.indexOf('toast');
+    expect(idx, 'the specimen must still contain a toast').toBeGreaterThan(0);
+    return variantsAt(sf, idx);
+  };
+
+  it('the retired claim admits nothing — the admission half', () => {
+    expect(admits(RETIRED_EN)).toBe(false);
+  });
+
+  it('and it claims success by its VARIANT — the half this batch adds', () => {
+    const v = read(SPECIMEN);
+    expect(v, 'the specimen variant must resolve').not.toBeNull();
+    expect(claimsSuccess(v), 'the specimen must be convicted by the variant rule').toBe(true);
+  });
+
+  it('the same specimen with the honest variant is acquitted — the known-good', () => {
+    // Rule 4: assert a known-GOOD input passes before believing a known-BAD one
+    // failed. This is #352's actual repair, and the rule must not convict it.
+    const v = read(SPECIMEN.replace("variant: 'success'", "variant: 'info'"));
+    expect(claimsSuccess(v)).toBe(false);
+  });
+
+  it('an unresolvable variant is NOT acquitted — it resolves to null', () => {
+    const v = read(SPECIMEN.replace("variant: 'success'", 'variant: chooseVariant(row)'));
+    expect(v, 'a call-valued variant must be unresolved, never quietly acquitted').toBeNull();
+    expect(claimsSuccess(v), 'and an unresolved variant must not read as "no success"').toBe(false);
+  });
+});
+
+/*
+ * ═══ PIN REACH — C1 / C2 / C3 ══════════════════════════════════════════════
+ * The header's block covers the admission rule. These three add rules, and each
+ * adds its own silence.
+ *
+ * **GUARDED, and nothing else:**
+ *   · a toast is attributed only to a handler whose body contains it (C1)
+ *   · what cannot be attributed is recorded with a reason, and a body truncated
+ *     by the 8000-char cap is a hard failure (C1)
+ *   · a setter whose state gates the surface rendering the handler does not
+ *     acquit the branch on its own (C2)
+ *   · no branch in the population, and no refusal, has 'success' among the
+ *     variants it can render (C3)
+ *   · a variant this file cannot resolve statically FAILS, naming the site (C3)
+ *
+ * ⚠️ **NOT GUARDED — and this half is why the block exists.**
+ *   · **A VARIANT CHOSEN AT RUNTIME FROM SOMETHING THIS READER CANNOT SEE** is
+ *     not acquitted, but neither is it judged: the site fails and a human
+ *     decides. That is the honest disposition, not a verdict about the site.
+ *   · **FILES OUTSIDE `PAGES_DIR`.** `readdirSync` is not recursive, so
+ *     `pages-v2/roles/` is out, and `components/`, `hooks/` and `services/`
+ *     were never in. Derived when this landed: `roles/CreateRolePanel.tsx`,
+ *     `components/v2-features/GRInspectionWizard.tsx` and
+ *     `services/query/commandHooks.ts` carry toasts this guard never reads. All
+ *     are dispatch-backed today; none is a member by property. **That is a
+ *     measurement, not a guarantee, and it decays the day one of them stops
+ *     dispatching.**
+ *   · **WORDING VERSUS VARIANT, BEYOND 'success'.** The rule is one-directional.
+ *     A branch that DOES act and renders 'info' is untouched — correctly, since
+ *     'info' is right for an in-flight SAP submission — and so is a branch whose
+ *     copy admits nothing happened while its variant says 'warning'. Only the
+ *     completion claim is gated.
+ *   · **A TOAST OUTSIDE EVERY AFFORDANCE HANDLER BODY IS NOT JUDGED AT ALL.**
+ *     Its existence is asserted (`UNATTRIBUTED`); its honesty is not. The
+ *     population this guard reads is toasts inside handlers `AFFORDANCE` names,
+ *     and a handler called `submitQuote` or `acknowledgeOrder` is not one.
+ *   · **THE SELF-DISMISSAL PREDICATE'S OWN LIMITS**, stated at its definition: a
+ *     setter that dismisses a DIFFERENT surface, one reached through a helper,
+ *     and a gate written as a computed value rather than reading the state
+ *     variable. Each is acquitted — the quiet direction, not the accusing one.
+ *   · **THE #3 NARROWING IS NOT THE WHOLE OF `PERFORMS_REAL_ACT`'s UNDER-REACH.**
+ *     A handler that does something SMALLER than it claims is still acquitted;
+ *     that residue is a human review question and the header already says so.
+ *   · **THIS BLOCK IS PROSE AND IS NOT ITSELF ASSERTED.**
+ * ═══════════════════════════════════════════════════════════════════════════
+ */

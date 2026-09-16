@@ -532,7 +532,7 @@ const BuyerDiscovery: React.FC = () => {
                   }
                   onInviteRfq={() =>
                     toast({
-                      variant: 'success',
+                      variant: 'info',
                       title: t('discovery.toast.rfqInvited.title', { name: s.name }),
                       description: t('discovery.toast.rfqInvited.desc'),
                     })
@@ -556,7 +556,7 @@ const BuyerDiscovery: React.FC = () => {
                 item={q}
                 onUpdate={() =>
                   toast({
-                    variant: 'success',
+                    variant: 'info',
                     title: t('discovery.toast.statusUpdated.title', { name: q.supplier }),
                   })
                 }

@@ -420,7 +420,7 @@ const BuyerShipments: React.FC = () => {
             variant="outline"
             onClick={() =>
               toast({
-                variant: 'success',
+                variant: 'info',
                 title: t('shipments.toast.reminder.title'),
                 description: t('shipments.toast.reminder.desc', {
                   supplier: s.supplierName,
