@@ -152,6 +152,12 @@ export const sourcingEn: Record<string, string> = {
   'sourcing.fx.refused.FUTURE_VINTAGE':
     'A rate cannot be true in the future. Enter the date it applied.',
   // — toasts —
+  // Names the act, says no file exists, says what is missing. `info`, never
+  // `success` — nothing was produced. Same register as `risk.toast.
+  // exportStarting` and `buyerInventory.toast.exportStarted.*`.
+  'sourcing.toast.exportComparison.title': 'Comparison export not available yet',
+  'sourcing.toast.exportComparison.desc':
+    'No file was generated — quote comparison export is not wired to a real system.',
   'sourcing.toast.fxPinned.title': '{{currency}} rate recorded',
   'sourcing.toast.fxPinned.desc': 'The comparison now ranks against it.',
   'sourcing.toast.fxSuperseded.title': 'New {{currency}} rate recorded',
@@ -215,12 +221,9 @@ export const sourcingEn: Record<string, string> = {
   'sourcing.cancel.submitting': 'Cancelling…',
   'sourcing.reopen.submit': 'Reopen RFQ',
   'sourcing.reopen.submitting': 'Reopening…',
-  // — Side-panel footer primary label (state-driven) —
-  'sourcing.footer.awardRfq': 'Award RFQ',
-  'sourcing.footer.sendReminder': 'Send reminder',
-  'sourcing.footer.viewAward': 'View award details',
-  'sourcing.footer.viewReport': 'View final report',
-  'sourcing.footer.continueDraft': 'Continue draft',
+  // The five `sourcing.footer.*` labels were deleted with the handler-less
+  // side-panel button that rendered them. Four named acts this tree has no
+  // verb for; the fifth duplicated the live Award control in the same panel.
   // — Lifecycle timeline —
   'sourcing.timeline.drafted': 'RFQ Drafted',
   'sourcing.timeline.sentTo.one': 'Sent to {{count}} supplier',
@@ -501,6 +504,9 @@ export const sourcingId: Record<string, string> = {
   'sourcing.fx.refused.FUTURE_VINTAGE':
     'Kurs tidak bisa berlaku di masa depan. Masukkan tanggal kurs itu berlaku.',
   // — toast —
+  'sourcing.toast.exportComparison.title': 'Ekspor perbandingan belum tersedia',
+  'sourcing.toast.exportComparison.desc':
+    'Tidak ada berkas yang dibuat — ekspor perbandingan penawaran belum tersambung ke sistem nyata.',
   'sourcing.toast.fxPinned.title': 'Kurs {{currency}} tercatat',
   'sourcing.toast.fxPinned.desc': 'Perbandingan kini diperingkat berdasarkan kurs itu.',
   'sourcing.toast.fxSuperseded.title': 'Kurs {{currency}} baru tercatat',
@@ -557,12 +563,8 @@ export const sourcingId: Record<string, string> = {
   'sourcing.cancel.submitting': 'Membatalkan…',
   'sourcing.reopen.submit': 'Buka kembali RFQ',
   'sourcing.reopen.submitting': 'Membuka kembali…',
-  // — Side-panel footer primary label —
-  'sourcing.footer.awardRfq': 'Menangkan RFQ',
-  'sourcing.footer.sendReminder': 'Kirim pengingat',
-  'sourcing.footer.viewAward': 'Lihat detail pemenangan',
-  'sourcing.footer.viewReport': 'Lihat laporan akhir',
-  'sourcing.footer.continueDraft': 'Lanjutkan draf',
+  // The five `sourcing.footer.*` labels were deleted with the handler-less
+  // side-panel button that rendered them (see the EN bundle).
   // — Lifecycle timeline —
   'sourcing.timeline.drafted': 'RFQ Dibuat',
   'sourcing.timeline.sentTo.one': 'Dikirim ke {{count}} pemasok',

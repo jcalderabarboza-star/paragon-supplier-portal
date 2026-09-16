@@ -576,29 +576,24 @@ const buildTimeline = (r: RFQ, t: TFunction): TimelineEvent[] => {
   ];
 };
 
-export const FOOTER_LABEL = (r: RFQ, t: TFunction): string => {
-  if (r.status === 'Open') {
-    return isAllResponded(r)
-      ? t('sourcing.footer.awardRfq')
-      : t('sourcing.footer.sendReminder');
-  }
-  if (r.status === 'Awarded') return t('sourcing.footer.viewAward');
-  if (r.status === 'Closed' || r.status === 'Cancelled')
-    return t('sourcing.footer.viewReport');
-  return t('sourcing.footer.continueDraft');
-};
-
-// ⚠️ §68 — THIS USED TO RETURN `'primary'` FOR THE AWARD STATE. DP2-BUTTON-01
-// reserved solid action-blue for the irreversible commit and Award was the one
-// verb on this surface that qualified. The reserved-solid register is retired
-// portal-wide (operator ruling), so every state — Award included — is the calm
-// action-blue OUTLINE CTA.
+// ⚠️ `FOOTER_LABEL` AND `FOOTER_VARIANT` WERE RETIRED HERE WITH THE BUTTON THEY
+// PAINTED, AND THE REASON IS WORTH KEEPING BECAUSE §68 ARGUED THE OPPOSITE.
 //
-// The FUNCTION survives rather than being inlined, and deliberately: it is the
-// single place this surface's footer register is decided, so a future state
-// that wants a different one has an obvious seat, and the spec that used to
-// pin "Award is solid" now pins "nothing is" against the same seam.
-export const FOOTER_VARIANT = (_r: RFQ): 'outline' => 'outline';
+// `FOOTER_VARIANT` carried a comment saying the FUNCTION should survive rather
+// than be inlined — *"it is the single place this surface's footer register is
+// decided, so a future state that wants a different one has an obvious seat"* —
+// and at §68 that was right: it had a caller. It no longer does. A seat for a
+// decision nobody makes is dead state, and `BuyerSourcing.footer.test.ts` was
+// pinning it: five specs asserting that a helper with no call site still
+// returns what it always returned. That is a guard that cannot fail for any
+// reason a reader would care about.
+//
+// The §68 CLAIM those specs defended — that no solid action-blue survives on
+// this surface — is unaffected and is still enforced, by `Button`'s `Variant`
+// union (no `'primary'` member, so every route back is a `tsc` failure) and by
+// `solidButtonRetired.guard.test.ts`, which derives its population from the
+// FILESYSTEM and never imported either helper. Nothing about §68 rests on the
+// two functions deleted here.
 
 const ReviewSection: React.FC<{
   label: string;
@@ -1182,6 +1177,21 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
   const closePanel = () => {
     setSelectedRfqId(null);
     setSelectedQuoteId(null);
+  };
+
+  // `Export comparison` held no handler at all, so a press produced nothing —
+  // indistinguishable from a control that works. There is no export primitive
+  // in this tree to wire it to (no `createObjectURL`, no `new Blob(`, no
+  // `download=` anywhere in `src/`, and no workbook-WRITE dependency; the one
+  // xlsx path is the READ side, `services/sdc/parseWorkbook`), so the honest
+  // response is to say so rather than to mint a file nobody generated. `info`,
+  // never `success`: no act occurred, and the variant is a claim (#359).
+  const handleExportComparison = () => {
+    toast({
+      variant: 'info',
+      title: t('sourcing.toast.exportComparison.title'),
+      description: t('sourcing.toast.exportComparison.desc'),
+    });
   };
 
   const quotesForSelected = useMemo(() => {
@@ -2511,21 +2521,29 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
         }
         footerActions={
           selectedRfq && (
-            <>
-              <Button variant="secondary" icon={Download}>
-                {t('sourcing.panel.exportComparison')}
-              </Button>
-              <Button
-                variant={FOOTER_VARIANT(selectedRfq)}
-                disabled={
-                  selectedRfq.status === 'Open' &&
-                  isAllResponded(selectedRfq) &&
-                  !selectedQuoteId
-                }
-              >
-                {FOOTER_LABEL(selectedRfq, t)}
-              </Button>
-            </>
+            // ⚠️ THE POLYMORPHIC FOOTER BUTTON WAS REMOVED HERE, NOT REPAIRED.
+            // It rendered `FOOTER_LABEL(rfq, t)` — five labels across the RFQ
+            // states — with NO `onClick` at all, on every RFQ and every seat.
+            // Four of the five named acts that do not exist in this tree: there
+            // is no reminder verb anywhere in `services/transitions`, no report
+            // surface, the `Awarded` summary it offered to "view" is already
+            // rendered in this same panel, and `Continue draft` would need an
+            // RFQ edit verb (`openWizard` takes a REQUISITION prefill, and the
+            // wizard's exit is `t_rfq_create`).
+            //
+            // ⚠️ THE FIFTH IS WHY THIS IS A REMOVAL RATHER THAN A NOTICE. In
+            // the Award state it read "Award RFQ", sat beside the LIVE award
+            // control, and — measured — became ENABLED at exactly the moment a
+            // quote was selected, painted in the same action-blue outline. It
+            // holds no atom, so `HandoffNotice` can never reach it: under a
+            // seat WITHHELD from `rfq:award` the live button is correctly
+            // replaced by `handoff-rfq-award` ("Awaiting Procurement") while
+            // this one stayed rendered and pressable in the same drawer. A dead
+            // control that contradicts the governance surface beside it is not
+            // covered by adding a third thing to the drawer.
+            <Button variant="secondary" icon={Download} onClick={handleExportComparison}>
+              {t('sourcing.panel.exportComparison')}
+            </Button>
           )
         }
       >
