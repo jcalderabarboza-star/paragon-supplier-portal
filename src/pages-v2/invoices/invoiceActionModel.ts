@@ -66,9 +66,30 @@ export interface InvoiceVerbDeferral {
  * quietly stops appearing.
  */
 export const INVOICE_VERB_SURFACE: Readonly<Record<string, InvoiceVerbSurface>> = Object.freeze({
+  // ⚠️ **`reservedCommit` IS PER-STATE, NOT PER-PAGE — AND THIS ENTRY IS WHY
+  // THAT DISTINCTION NOW MATTERS.** `invoiceCommitAction` is
+  // `invoiceActionsFor(state).find((a) => a.reservedCommit)`, so the rule it
+  // enforces is *at most one per STATE*. Approve is legal only from `Matched`
+  // and release only from `Approved`, so the two never co-occur and both can
+  // hold the primary slot on their own state. `invoiceActionModel.test.ts`
+  // asserts the per-state uniqueness over EVERY declared state rather than
+  // trusting that sentence.
+  t_invoice_approve: {
+    labelKey: 'buyerInvoices.footer.approve',
+    // The reserved commit for `Matched`: it authorises the payment.
+    reservedCommit: true,
+    // ⚠️ **DELIBERATELY NO CONFIRM STEP, AND THE REASON IS THAT THE EXISTING
+    // ONE IS NOT GENERIC.** `panelMode === 'confirming'` renders
+    // `buyerInvoices.action.confirmRelease` with the amount and dispatches
+    // `handleReleasePayment` — it is the RELEASE's confirm, not a confirm. A
+    // second, approve-shaped confirm panel is a surface this batch was not
+    // asked for, and reusing the release's would put the wrong words and the
+    // wrong dispatch behind an approval. Filed rather than improvised.
+    confirm: false,
+  },
   t_invoice_release_payment: {
     labelKey: 'buyerInvoices.footer.releasePayment',
-    // The ONE reserved commit on this page: Option-B, mints an FI document.
+    // The reserved commit for `Approved`: Option-B, mints an FI document.
     reservedCommit: true,
     confirm: true,
   },
@@ -96,14 +117,25 @@ export const INVOICE_VERB_DEFERRED: Readonly<Record<string, InvoiceVerbDeferral>
       'Supplier-owned. The buyer surface never submits an invoice on a supplier’s behalf — ' +
       'SupplierInvoices.tsx wires it via useInvoiceSubmit. Not a gap; a different persona.',
   },
-  t_invoice_approve: {
-    why:
-      'RULED UNREACHABLE, NOT MISSING. C10 §2.4 lists invoice approval among the capabilities ' +
-      'identity blocks: with one tenant-wide approver an approval is a rubber stamp with a state ' +
-      'machine attached. It waits on D-ID-2 / ENF-NO-PERSON-IN-IDENTITY-01, the same fence that ' +
-      'keeps the GR Override-hold affordance a toast. Wiring it here would write an anonymous ' +
-      'approval into a permanent trail.',
-  },
+  // ⚠️ **`t_invoice_approve` LEFT THIS MAP AND THE ROW IT LEFT IS QUOTED, NOT
+  // DELETED** — a deferral that simply vanishes leaves the next reader to
+  // re-derive the decision from the absence. It read:
+  //
+  //   'RULED UNREACHABLE, NOT MISSING. C10 §2.4 lists invoice approval among
+  //    the capabilities identity blocks: with one tenant-wide approver an
+  //    approval is a rubber stamp with a state machine attached. It waits on
+  //    D-ID-2 / ENF-NO-PERSON-IN-IDENTITY-01, the same fence that keeps the GR
+  //    Override-hold affordance a toast. Wiring it here would write an
+  //    anonymous approval into a permanent trail.'
+  //
+  // It is now in `INVOICE_VERB_SURFACE` above. The ground is retired at the
+  // machine (`invoice.flow.ts` carries the full argument and the same quote):
+  // four of the five approve-shaped verbs were already surfaced, and
+  // `t_pr_approve` writes `UNATTRIBUTED` into a shipped `approvedBy` rather
+  // than refusing to act. **The last sentence of the retired row is the one
+  // that was actually wrong** — an anonymous approval is not written into a
+  // permanent trail as a false claim; `UNATTRIBUTED` names a failure somebody
+  // can fix, which is what the requisition lane concluded four verbs ago.
 });
 
 /** One offerable action, already resolved to what the footer needs. */

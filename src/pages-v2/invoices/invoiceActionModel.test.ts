@@ -136,27 +136,33 @@ describe('invoiceActionsFor — derived from the canonical state', () => {
     expect(declared.from.length).toBeGreaterThan(1);
   });
 
-  it('a verb RULED unsurfaced is refused at the seam now, not only at the surface', () => {
-    // ⚠️ THIS ASSERTION INVERTED AT §51 AND THE INVERSION IS THE POINT. It used
-    // to read `toContain`: `t_invoice_approve` is legal from `Matched`, so the
-    // seam offered it and `INVOICE_VERB_DEFERRED` was the only thing keeping it
-    // off the screen. Now `surfaceable: { surfaced: false, because:
-    // 'ruled-unsurfaced' }` (C10 §2.4 — approval is attributable and the
-    // platform cannot name a person) refuses it one layer earlier, so the
-    // deferral row is a SECOND account of the same decision rather than the
-    // only one. The rendered surface did not move: this verb was never in
-    // INVOICE_VERB_SURFACE.
+  it('THE CUT IS CLOSED — `Matched` offers the approval, at the seam and on the surface', () => {
+    // ⚠️ **THIS ASSERTION HAS NOW INVERTED TWICE AND BOTH INVERSIONS ARE THE
+    // POINT.** It read `toContain` originally; §51 flipped it to `not.toContain`
+    // when `surfaceable: { surfaced: false, because: 'ruled-unsurfaced' }`
+    // (C10 §2.4 — *"approval is attributable and the platform cannot name a
+    // person"*) refused the verb one layer before the surface. That ground is
+    // RETIRED — four of the five approve-shaped verbs were surfaced throughout
+    // and `t_pr_approve` writes `UNATTRIBUTED` into a shipped `approvedBy` —
+    // so it reads `toContain` again, for the original reason.
+    //
+    // **What this test now defends is the money path itself:** `Matched →
+    // Approved` was the ONLY cut in the invoice spine, and with it closed
+    // `Approved`, `Releasing Payment`, `Payment Released` and `Remittance
+    // Received` stop being reachable from fixture seed alone.
     expect(getFlow('invoice')!.transitions.find((t) => t.id === 't_invoice_approve')!.from).toContain(
       'Matched',
     );
-    expect(userVerbsFrom('invoice', 'Matched').map((t) => t.id)).not.toContain('t_invoice_approve');
-    expect(invoiceActionsFor('Matched').map((a) => a.transitionId)).not.toContain(
-      't_invoice_approve',
-    );
-    // Paired membership, three times over: the state is not simply empty, the
-    // seam still answers, and the deferral row still accounts for the verb.
+    expect(userVerbsFrom('invoice', 'Matched').map((t) => t.id)).toContain('t_invoice_approve');
+    expect(invoiceActionsFor('Matched').map((a) => a.transitionId)).toContain('t_invoice_approve');
+    // It holds the primary slot on this state — the act that authorises the
+    // money is not a secondary control beside Dispute.
+    expect(invoiceCommitAction('Matched')?.transitionId).toBe('t_invoice_approve');
+    // Paired membership: the state is not simply full, the lateral verb is
+    // still there, and the deferral map no longer accounts for this verb —
+    // the bilateral gate above is what proves it moved rather than vanished.
     expect(invoiceActionsFor('Matched').map((a) => a.transitionId)).toContain('t_invoice_dispute');
-    expect(userVerbsFrom('invoice', 'Matched').length).toBeGreaterThan(0);
-    expect(Object.keys(INVOICE_VERB_DEFERRED)).toContain('t_invoice_approve');
+    expect(Object.keys(INVOICE_VERB_DEFERRED)).not.toContain('t_invoice_approve');
+    expect(Object.keys(INVOICE_VERB_SURFACE)).toContain('t_invoice_approve');
   });
 });

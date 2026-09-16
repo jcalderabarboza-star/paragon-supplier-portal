@@ -106,9 +106,11 @@ describe('THE INVARIANT THE VERB-LEVEL FORM RESTS ON', () => {
 // ── THE DERIVATION: WHICH ACTS CAN A PERSON ACTUALLY FIRE?
 //    Both halves are required, and the gate's first run proved why. Naming a
 //    transition id is NOT firing it: `cascades.ts` registers fan-out targets,
-//    `enforcementSeed.ts` seeds governance, the mock adapter names cascade ids
-//    in its own plumbing, and `useInvoiceApprove` exists with no consumer. Every
-//    one of those named an id, none of them is an operator.
+//    `enforcementSeed.ts` seeds governance, and the mock adapter names cascade
+//    ids in its own plumbing. Every one of those names an id; none is an
+//    operator. (The fourth example here was `useInvoiceApprove`, *"exists with
+//    no consumer"* — it HAS one now, so it is a witness for HALF 2 being
+//    satisfied rather than for a hook that names an id and fires nothing.)
 //      HALF 1 — a non-documentation module hands the id to the dispatcher.
 //      HALF 2 — the EXPORTED HOOK enclosing that site is called from a surface,
 //               or the site IS a surface.
@@ -194,10 +196,19 @@ describe('DISPATCHED ⇒ SURFACEABLE — the one direction this gate asserts', (
     expect(firable.has('t_po_confirm')).toBe(true);
     // And a known-FALSE: an act named only by its flow is not "dispatched".
     expect(firable.has('t_shipment_dock')).toBe(false);
-    // …and the three shapes that NAME an id without anybody being able to fire it:
-    expect(firable.has('t_invoice_approve')).toBe(false); // a hook with no consumer
+    // …and the shapes that NAME an id without anybody being able to fire it:
     expect(firable.has('t_enforcement_set')).toBe(false); // a seed, not an operator
     expect(firable.has('t_quotation_award')).toBe(false); // the adapter's cascade plumbing
+    // ⚠️ **`t_invoice_approve` WAS THE THIRD OF THOSE — *"a hook with no
+    // consumer"* — AND IT IS NOW THE OPPOSITE, WHICH IS WHY IT MOVED SIDES
+    // RATHER THAN BEING DELETED.** `useInvoiceApprove` shipped complete with
+    // exactly one reference in the tree (its own definition) for the whole life
+    // of the page; `BuyerInvoices` is now its consumer, so HALF 2 of this
+    // derivation is satisfied and the walk must find it. Asserting it on the
+    // FIRABLE side is what makes this line a control rather than a leftover: if
+    // the wiring is ever removed, this goes red here instead of silently
+    // rejoining the list above.
+    expect(firable.has('t_invoice_approve')).toBe(true); // wired at BuyerInvoices
   });
 
   it('nothing a PERSON can fire is declared unsurfaceable', () => {
@@ -348,13 +359,19 @@ describe('THE CENSUS — acts a screen is meant to offer that no screen offers',
     expect(census).toContain('t_po_view');
   });
 
-  it('and only THEN: the two verbs RULED unsurfaced are absent — they are decisions, not gaps', () => {
-    // This is what `surfaceable === true` buys over a bare field swap. Both are
-    // `trigger: 'user'`, so a swap-free census keyed on `trigger` flags them;
-    // both are refused by the SAME identity ruling (C10 ·
-    // ENF-NO-PERSON-IN-IDENTITY-01), so flagging them would file a decision as
-    // a defect.
-    expect(census).not.toContain('t_invoice_approve');
+  it('and only THEN: a verb RULED unsurfaced is absent — it is a decision, not a gap', () => {
+    // This is what `surfaceable === true` buys over a bare field swap. It is
+    // `trigger: 'user'`, so a swap-free census keyed on `trigger` would flag it.
+    //
+    // ⚠️ **`t_invoice_approve` USED TO BE ASSERTED HERE AND THE ASSERTION WOULD
+    // STILL PASS — WHICH IS EXACTLY WHY IT HAD TO GO.** The pair was justified
+    // as *"both refused by the SAME identity ruling (C10 ·
+    // ENF-NO-PERSON-IN-IDENTITY-01)"*. That ruling is retired for the invoice
+    // verb, which is now surfaced AND offered — so it is absent from this
+    // census for the OPPOSITE reason (no gap to report), and leaving it here
+    // would be a green line whose stated rationale is false.
+    // `CLEAN-AFTER-THE-FIX-REPORTS-THE-FIX-01`: an assertion that survives a
+    // reversal of its own premise is not evidence, it is a coincidence.
     expect(census).not.toContain('t_enforcement_set');
   });
 
