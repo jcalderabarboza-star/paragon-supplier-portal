@@ -73,6 +73,38 @@
 // so a sibling branch whose copy DID admit satisfied `claims.some(admits)` for a
 // branch whose copy did not. One unit now decides both.
 //
+// ── AND A BRANCH IS ONLY A BRANCH OF THE HANDLER IT IS ACTUALLY INSIDE ─────
+//
+// ⚠️ **THE DERIVATION ATTRIBUTED A TOAST TO THE LAST `AFFORDANCE` MATCH BEFORE
+// IT AND NEVER CHECKED THAT THE TOAST LAY INSIDE THAT HANDLER'S BODY.** So a
+// toast in a react-query `onSuccess`, or in a helper this matcher does not name,
+// was handed the branch text of whatever affordance happened to be declared
+// above it — a different function entirely.
+//
+// **MEASURED THE DAY THE PRECONDITION LANDED: 11 of 58 members were outside the
+// body they were attributed to.** Nine of them read their claims off the wrong
+// branch and passed the admission test VACUOUSLY through `claims.length === 0`
+// — an `it.each` case per locale that asserted nothing. **The other two were
+// fully backed real acts**: `SupplierOrders`' acknowledge-success, fired from
+// `acknowledgeMutation.mutate`'s `onSuccess`, and `SupplierRFQs`' quote-submit
+// success, fired after `await submitMutation.mutateAsync(…)` resolved. Both say
+// so truthfully and both render `variant: 'success'` correctly; a variant rule
+// laid over the old population would have CONVICTED them and flipped two
+// completed acts to `info`, on the supplier's two primary write paths.
+//
+// **THE PRECONDITION: `hStart ≤ idx < bodyEnd`, using this file's own
+// `balancedEnd`.** The walk goes back to the nearest ENCLOSING handler rather
+// than stopping at the nearest PRECEDING one. Derived today, the two agree on
+// every site in this tree — and saying so is the point: they stop agreeing the
+// first time one affordance handler is nested inside another, and the walk is
+// the one that is still right then.
+//
+// ⚠️ **WHAT IS NOT ATTRIBUTED IS RECORDED, NOT DROPPED — `UNATTRIBUTED` BELOW.**
+// A `continue` is invisible; a set that is derived, given a reason per member and
+// asserted is not. The reach limit it names is honest (this guard has nothing to
+// say about a toast outside every affordance handler body) but the FACT of it is
+// not something the guard gets to be quiet about.
+//
 // ── THE ONE EXCLUSION: THE REFUSAL CLASS, AND IT IS STRUCTURAL ──────────────
 //
 // **A BRANCH IS A REFUSAL WHEN IT IS A GUARD CLAUSE STANDING IN FRONT OF THE
@@ -541,6 +573,51 @@ interface Excluded {
 
 const EXCLUSIONS: Excluded[] = [];
 
+/**
+ * A toast this guard cannot place inside ANY affordance handler's body.
+ *
+ * ⚠️ **IT IS RECORDED RATHER THAN DROPPED, BECAUSE A DROP IS INVISIBLE AND A
+ * RECORD IS NOT.** The derivation used to attribute a toast to the LAST
+ * `AFFORDANCE` match before it and never check that the toast lay inside that
+ * handler's body. Measured on this tree the day the precondition landed: **11 of
+ * 58 members sat outside the body they were attributed to**, so their branch
+ * text — and therefore their `keys` and `literals` — belonged to a DIFFERENT
+ * handler. Two were fully backed real acts the population had no business
+ * holding (`SupplierOrders`' acknowledge-success, `SupplierRFQs`' quote-submit
+ * success, both truthfully `variant: 'success'`); the other nine read their
+ * claims off the wrong branch and passed the admission test VACUOUSLY, through
+ * `claims.length === 0`. The figures are named as the measurement that motivated
+ * the change, never as a standing tally — the assertion below derives them.
+ *
+ * ⚠️ **THIS GUARD SAYS NOTHING ABOUT AN UNATTRIBUTED TOAST, AND THAT IS A REACH
+ * LIMIT RATHER THAN A VERDICT.** Such a toast lives in a react-query lifecycle
+ * callback (excluded by `AFFORDANCE` on purpose — it is fired BY a dispatch), in
+ * a helper whose name is not `handle*`, or in a nested closure. Silence about it
+ * is honest; silence about the FACT of it is not, which is why the set is
+ * materialised and asserted rather than `continue`d away.
+ */
+interface Unattributed {
+  readonly file: string;
+  readonly line: number;
+  readonly reason: string;
+}
+
+const UNATTRIBUTED: Unattributed[] = [];
+
+/**
+ * ⚠️ **THE ONE UNATTRIBUTED SHAPE THAT IS A GUARD DEFECT RATHER THAN A REACH
+ * LIMIT, SEPARATED SO IT CANNOT HIDE AMONG THE OTHERS.** `balancedEnd` caps a
+ * body at 8000 chars. A toast genuinely INSIDE a handler whose body was
+ * TRUNCATED by that cap is indistinguishable from one genuinely outside — and it
+ * would leave the population silently, which is the failure this guard exists to
+ * refuse. So the cap is detected at the site and asserted empty. It is empty
+ * today, and a zero taken on the day of a repair is a report about the repair
+ * (`CLEAN-AFTER-THE-FIX-REPORTS-THE-FIX-01`), so the assertion is mutation-probed
+ * by LOWERING the cap until a real handler in this tree is truncated — never by
+ * trusting the zero.
+ */
+const CAP_TRUNCATED: string[] = [];
+
 /** DERIVE every unbacked toast site across the shipped pages. */
 function deriveUnbackedSites(): Site[] {
   const out: Site[] = [];
@@ -554,18 +631,55 @@ function deriveUnbackedSites(): Site[] {
     for (const m of src.matchAll(/\btoast\s*\(\s*\{/g)) {
       const idx = m.index ?? 0;
       const pre = src.slice(0, idx);
+      const line0 = pre.split('\n').length;
       const handlers = [...pre.matchAll(AFFORDANCE)];
-      const h = handlers[handlers.length - 1];
-      if (!h) continue;
+      const ends = handlers.map((x) => balancedEnd(src, (x.index ?? 0) + x[0].length));
+      // THE ATTRIBUTION PRECONDITION. A handler owns this toast only if the
+      // toast lies INSIDE its body. The walk goes back to the nearest ENCLOSING
+      // handler rather than taking the nearest PRECEDING one: measured on this
+      // tree the two agree on every site, and they stop agreeing the moment one
+      // affordance handler is nested inside another.
+      let k = -1;
+      for (let j = handlers.length - 1; j >= 0; j--) {
+        if (idx < ends[j]) {
+          k = j;
+          break;
+        }
+      }
+      if (k < 0) {
+        if (handlers.length === 0) {
+          UNATTRIBUTED.push({
+            file,
+            line: line0,
+            reason: 'no preceding affordance handler',
+          });
+        } else {
+          const j = handlers.length - 1;
+          const from = (handlers[j].index ?? 0) + handlers[j][0].length;
+          const capped =
+            ends[j] === Math.min(src.length, from + 8000) && from + 8000 < src.length;
+          if (capped) CAP_TRUNCATED.push(`${file}:${line0}`);
+          UNATTRIBUTED.push({
+            file,
+            line: line0,
+            reason: capped
+              ? "nearest preceding handler's body hit the 8000-char cap"
+              : `nearest preceding handler ends at line ${
+                  src.slice(0, ends[j]).split('\n').length
+                }`,
+          });
+        }
+        continue;
+      }
+      const h = handlers[k];
       const hStart = h.index ?? 0;
-      const bodyEnd = balancedEnd(src, hStart + h[0].length);
+      const bodyEnd = ends[k];
       const body = src.slice(hStart, bodyEnd);
       if (!body.includes('toast')) continue;
       // THE UNIT: the branch, not the body. A real act in a SIBLING clause of
       // the same handler no longer acquits the claim made here.
       const branch = coExecutingRegion(sf, body, hStart, idx);
       if (PERFORMS_REAL_ACT.test(branch)) continue; // backed — not this guard's business
-      const line0 = pre.split('\n').length;
       if (out.some((s) => s.file === file && s.line === line0)) continue;
       // THE ONE EXCLUSION: a guard clause in front of the handler's own act
       // claims no act, so the admission test asks it the wrong question.
@@ -602,6 +716,35 @@ describe('unbacked-toast honesty guard (R1)', () => {
    * the anti-vacuity half; the specimen control below is the other direction.
    * It asserts MEMBERSHIP with the reason attached, never a count.
    */
+  /**
+   * ⚠️ **C1 · A TOAST THIS GUARD CANNOT ATTRIBUTE MUST BE REPORTED, NEVER
+   * SILENTLY DROPPED.** Two directions in one test, because one of them is a
+   * reach limit and the other is a defect and they arrive looking identical:
+   *   · the limit is REAL — the set is non-empty, so a future refactor that
+   *     accidentally attributes everything cannot read green here;
+   *   · every member SAYS WHY it is out, in one of the two honest shapes. A
+   *     member that cannot say why is indistinguishable from a skip.
+   *   · and `CAP_TRUNCATED` must be EMPTY: a body cut short by `balancedEnd`'s
+   *     8000-char cap would push a toast that IS inside a handler out of the
+   *     population, which is the silent drop this whole test refuses.
+   */
+  it('a toast outside every affordance handler body is reported, not dropped', () => {
+    expect(
+      UNATTRIBUTED.length,
+      'no toast is unattributed — either the tree changed shape or the walk stopped walking',
+    ).toBeGreaterThan(0);
+    for (const u of UNATTRIBUTED) {
+      expect(
+        u.reason,
+        `${u.file}:${u.line} left the population without naming a reason`,
+      ).toMatch(/^(no preceding affordance handler|nearest preceding handler ends at line \d+)$/);
+    }
+    expect(
+      CAP_TRUNCATED,
+      `balancedEnd's cap truncated a handler body, so these toasts left the population silently rather than because they sit outside one: ${CAP_TRUNCATED.join(', ')}`,
+    ).toEqual([]);
+  });
+
   it('the refusal class excluded something, and can say why', () => {
     expect(EXCLUSIONS.length).toBeGreaterThan(0);
     for (const e of EXCLUSIONS) {
