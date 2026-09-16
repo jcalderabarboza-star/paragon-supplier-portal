@@ -122,18 +122,50 @@
 //   measured false when the rule was promoted. `chartPalette.guard.test.tsx`
 //   and `thirdPartyIdentifiers.test.ts` both carry one.
 //
-// ── ⚠️ BOUND-NESS IS DERIVED UPSTREAM OF THIS MODULE, NOT DECLARED IN IT ────
-//   A family is drift-bound iff a reader can still SEE one of its stored
-//   clock-states — which is exactly what `projectionGate/displayStates.ts`
-//   already declares, bilaterally and mutation-probed, as `stored-in-fixtures`.
-//   Reading it from there rather than restating it here means **obligation left
-//   the bound set the moment its rows became `computed-at-read`, with nobody
-//   editing this file**, and a family whose projection is deleted rejoins the
-//   same way. §86: derive the population from something the change cannot
-//   reach, never from the thing under test.
+// ── ⚠️ THE POPULATION QUESTION CHANGED, AND THE OLD ONE IS QUOTED ───────────
+//   What stood here, ratified and correct about its own mechanism:
+//
+//     'BOUND-NESS IS DERIVED UPSTREAM OF THIS MODULE, NOT DECLARED IN IT.
+//      A family is drift-bound iff a reader can still SEE one of its stored
+//      clock-states — which is exactly what `projectionGate/displayStates.ts`
+//      already declares, bilaterally and mutation-probed, as
+//      `stored-in-fixtures`. Reading it from there rather than restating it
+//      here means obligation left the bound set the moment its rows became
+//      `computed-at-read`, with nobody editing this file.'
+//
+//   ⚠️ **THAT QUESTION IS UNANSWERABLE BY CONSTRUCTION, AND THE EMPTINESS IT
+//   PRODUCED WAS BLIND RATHER THAN HONEST.** Law 0.5 says no clock state is
+//   stored. So `stored-in-fixtures` is empty tree-wide, every family short-
+//   circuited before the arithmetic, and `falsifiedFamilies` returned `[]` at
+//   EVERY date — measured out to P+1219, with the scheduled gate green for 43
+//   consecutive runs. A detector that cannot fire is not a detector; it is a
+//   green light wired to nothing. The old note called this WAITING, and the
+//   waiting was real — but it waited on a row that law 0.5 forbids anyone to
+//   author, which is waiting for a thing that cannot arrive.
+//
+//   ⚠️ **THE QUESTION THAT CAN BE ANSWERED YES: IS THIS FAMILY'S LABEL
+//   COMPUTED AGAINST THE WALL CLOCK?** Only a wall-read family can drift. A
+//   family read at `DECLARED_PRESENT` renders the same label on every calendar
+//   day — its headroom is not "large", it is NOT APPLICABLE, and reporting a
+//   negative number for it is the arithmetic of a read that does not happen.
+//   (Measured on 2026-09-15, before this rebind: `contract` −4 and `obligation`
+//   −7, both spurious, both against pages that read at `P`. The same
+//   arithmetic predicted invoice's REAL decay to the day, 2026-09-18, while
+//   invoice was still wall-read — the geometry is right, it was simply being
+//   applied to families the wall clock no longer reaches.)
+//
+//   ⚠️ **AND THE INSTANT IS STILL DERIVED UPSTREAM, WHICH IS THE PROPERTY THE
+//   OLD PARAGRAPH WAS RIGHT TO INSIST ON.** It is not declared in this file and
+//   not passed as a literal by hand: `lib/readingInstantGate/derive.ts` walks
+//   every projection call site through the TypeScript checker and resolves each
+//   `now` argument to `P`, `WALL` or neither. A page that re-points its `TODAY`
+//   at `new Date()` rejoins the population with nobody editing this module —
+//   the same self-repopulating property, asked of a question that can be
+//   answered. §86: the population comes from the compiler's symbol table, which
+//   no edit to this file can reach.
 // ────────────────────────────────────────────────────────────────────────────
 
-import { DISPLAY_STATES } from '../../lib/projectionGate/displayStates';
+import type { FamilyInstant } from '../../lib/readingInstantGate/derive';
 import {
   DECLARED_PRESENT,
   FAMILY_ANCHORS,
@@ -173,8 +205,23 @@ const diffDays = (a: string, b: string): number =>
  * them.
  */
 export type DriftVerdict =
+  /** No coherent window, so headroom is not MEASURABLE (unchanged, still first). */
   | 'no-window-declared'
-  | 'computed'
+  /**
+   * Read at `DECLARED_PRESENT`. The family's labels are identical on every
+   * calendar day, so it cannot drift — headroom is not applicable rather than
+   * large, and this verdict can never be `FALSE`.
+   */
+  | 'read-at-present'
+  /** Nothing projects this family at all: no call site establishes an instant. */
+  | 'not-projected'
+  /**
+   * The instrument could not follow this family's `now` to either the declared
+   * present or the wall clock. ⚠️ **NOT A PASS.** The live gate treats it as a
+   * failure: an unclassified read is a read that might be drifting, and
+   * reporting it as safe is the blindness this rebind exists to remove.
+   */
+  | 'unresolved-instant'
   | 'ok'
   | 'warn'
   | 'FALSE';
@@ -200,20 +247,18 @@ export interface FamilyDrift {
    */
   readonly headroomDays: number | null;
   readonly verdict: DriftVerdict;
-  /** The display states that make this family bound. Empty when it is not. */
-  readonly readerVisibleStates: readonly string[];
-}
-
-/**
- * Which of this family's display states a reader still sees as a STORED
- * literal. Derived from `DISPLAY_STATES`; the entity key and the family key are
- * the same string by construction, which `clockDrift.test.ts` asserts rather
- * than assumes.
- */
-function readerVisibleStoredStates(family: FixtureFamily): string[] {
-  return DISPLAY_STATES.filter(
-    (r) => r.entity === family && r.group === 'stored-in-fixtures',
-  ).map((r) => r.state);
+  /**
+   * How this family's labels obtain their instant, as derived by
+   * `readingInstantGate`. This is the field that decides membership.
+   *
+   * ⚠️ It REPLACES `readerVisibleStates`, which listed the family's
+   * `stored-in-fixtures` display states. That field was the old population and
+   * was empty for every family at every date; what it was wired to —
+   * `DISPLAY_STATES` — is untouched and still guards its own question in
+   * `projectionGate`. Nothing outside this module and its two tests ever read
+   * it, so it is removed rather than left as a column nobody consults.
+   */
+  readonly instant: FamilyInstant;
 }
 
 /**
@@ -241,38 +286,38 @@ export function driftVerdict(
   return 'ok';
 }
 
-/** One family's exposure to the wall clock at `todayIso` (`YYYY-MM-DD`). */
+/**
+ * One family's exposure to the wall clock at `todayIso` (`YYYY-MM-DD`).
+ *
+ * `instant` is REQUIRED and has no default. A default would be the wildcard
+ * with better manners: every caller would silently inherit one seat's guess
+ * about how the tree reads, which is the whole defect this rebind removes.
+ */
 export function familyDrift(
   family: FixtureFamily,
   todayIso: string,
+  instant: FamilyInstant,
 ): FamilyDrift {
   const a = FAMILY_ANCHORS[family];
   const driftDays = diffDays(todayIso, DECLARED_PRESENT);
-  const states = readerVisibleStoredStates(family);
+  const base = {
+    family,
+    driftDays,
+    toleranceDays: a.toleranceDays,
+    headroomDays: null,
+    instant,
+  } as const;
 
-  // ⚠️ **THIS BRANCH IS FIRST AND TESTS THE WINDOW, NOT THE STATES** — which is
-  // why its verdict may not mention states. A family reaching here can still be
-  // carrying `states`; `shipment` does. See `DriftVerdict`.
-  if (a.window === null) {
-    return {
-      family,
-      driftDays,
-      toleranceDays: a.toleranceDays,
-      headroomDays: null,
-      verdict: 'no-window-declared',
-      readerVisibleStates: states,
-    };
-  }
-  if (states.length === 0) {
-    return {
-      family,
-      driftDays,
-      toleranceDays: a.toleranceDays,
-      headroomDays: null,
-      verdict: 'computed',
-      readerVisibleStates: states,
-    };
-  }
+  // ⚠️ **THIS BRANCH IS STILL FIRST AND STILL TESTS THE WINDOW.** Headroom is a
+  // distance to a window edge; with no window it is not measurable, whatever
+  // instant the family is read at. A family reaching here may well be wall-read.
+  if (a.window === null) return { ...base, verdict: 'no-window-declared' };
+
+  // ⚠️ ORDER: unresolved BEFORE the safe verdicts, so an instant the instrument
+  // could not follow can never be reported as "cannot drift".
+  if (instant === 'UNRESOLVED') return { ...base, verdict: 'unresolved-instant' };
+  if (instant === 'NO-CALL-SITES') return { ...base, verdict: 'not-projected' };
+  if (instant === 'P') return { ...base, verdict: 'read-at-present' };
 
   // The family reads as though today were `anchor + drift`: its dates were
   // shifted by `P − anchor` once, at module load, and the clock has moved on
@@ -297,6 +342,10 @@ export function familyDrift(
     diffDays(hi, origin), // room before the LATE edge (drift going forwards)
   );
 
+  // WALL or MIXED: the family really is read against the moving clock, so the
+  // existing arithmetic and the FALSE rule apply UNCHANGED. MIXED counts as
+  // wall-read on purpose — one wall-read surface is enough to show a reader a
+  // false label, and averaging it away would be the optimistic direction.
   const verdict = driftVerdict(headroomDays, driftDays, a.toleranceDays);
 
   return {
@@ -305,14 +354,20 @@ export function familyDrift(
     toleranceDays: a.toleranceDays,
     headroomDays,
     verdict,
-    readerVisibleStates: states,
+    instant,
   };
 }
 
+/** The instant each family is read at, as the instrument derived it. */
+export type ReadingInstants = Readonly<Record<FixtureFamily, FamilyInstant>>;
+
 /** Every family, at `todayIso`. The order is `FAMILY_ANCHORS`' own. */
-export function driftReport(todayIso: string): readonly FamilyDrift[] {
+export function driftReport(
+  todayIso: string,
+  instants: ReadingInstants,
+): readonly FamilyDrift[] {
   return (Object.keys(FAMILY_ANCHORS) as FixtureFamily[]).map((f) =>
-    familyDrift(f, todayIso),
+    familyDrift(f, todayIso, instants[f]),
   );
 }
 
@@ -322,37 +377,56 @@ export function driftReport(todayIso: string): readonly FamilyDrift[] {
  */
 export function falsifiedFamilies(
   todayIso: string,
+  instants: ReadingInstants,
 ): readonly FamilyDrift[] {
-  return driftReport(todayIso).filter((d) => d.verdict === 'FALSE');
+  return driftReport(todayIso, instants).filter((d) => d.verdict === 'FALSE');
 }
 
 /**
- * The families a reader still sees a STORED clock-state on — the drift
- * population, derived rather than declared.
+ * Families whose instant the instrument could not follow.
  *
- * ⚠️ **WHAT THIS INSTRUMENT BECOMES WHEN THIS GOES EMPTY, STATED BEFORE
- * IT DOES.** The report says nothing today about its own end state, and a
- * reader arriving at an all-`—` table cannot tell a finished instrument from
- * a broken one. It is **WAITING, NOT RETIRED**, and that is DERIVED rather
- * than chosen: bound-ness is read from `DISPLAY_STATES` at call time, so a
- * family REJOINS the population the moment a `stored-in-fixtures` row is
- * authored, **with nobody editing this file**. A retired instrument is one
- * that cannot come back; this one comes back by itself. That is the same
- * property the header claims for departures, asserted in the other direction.
- *
- * ⚠️ **AND IT IS NOT EMPTY TODAY, WHICH IS WHY THIS IS WRITTEN NOW
- * RATHER THAN THEN.** `shipment` keeps the population non-empty on its own
- * (`displayStates.ts`), so the footer below is unreachable from the shipped
- * data and is probed directly instead — the same reason `driftVerdict` was
- * extracted as a function. **No membership is written here**: `driftReport`
- * derives it every run, and `clockDrift.test.ts` asserts the WAITING line
- * appears over an empty population and never over a non-empty one.
+ * ⚠️ Separate from `falsifiedFamilies` because they are different failures and
+ * a reader must be able to tell them apart: one says *a surface is lying
+ * today*, the other says *this instrument does not know whether it is*. The
+ * live gate refuses both, and conflating them would let the second hide inside
+ * the first's message.
  */
-export function storedStateFamilies(
+export function unresolvedFamilies(
   todayIso: string,
+  instants: ReadingInstants,
+): readonly FamilyDrift[] {
+  return driftReport(todayIso, instants).filter(
+    (d) => d.verdict === 'unresolved-instant',
+  );
+}
+
+/**
+ * The families this instrument actually watches — those read against the WALL
+ * CLOCK, derived rather than declared.
+ *
+ * ⚠️ **WHAT THIS INSTRUMENT IS WHEN THIS IS EMPTY, STATED WHILE IT IS.** A
+ * reader arriving at a table of `read-at-present` rows cannot otherwise tell a
+ * finished instrument from a broken one. It is **WAITING, NOT RETIRED**, and
+ * that is DERIVED rather than chosen: the instant comes from
+ * `readingInstantGate` at call time, so a family REJOINS the population the
+ * moment one of its projection call sites takes `new Date()`, **with nobody
+ * editing this file**. A retired instrument is one that cannot come back.
+ *
+ * ⚠️ **AND THE THING IT WAITS FOR IS NOW REACHABLE, WHICH IS THE WHOLE POINT
+ * OF THE REBIND.** The old population waited on a `stored-in-fixtures` display
+ * row — which law 0.5 forbids anyone to author, so the wait could never end and
+ * the empty report meant nothing. A wall-clock read is an ordinary thing a page
+ * can acquire in one line, and eight such reads exist in the tree today
+ * (outside the anchored families, on PO and RFQ). The emptiness below is now a
+ * FACT ABOUT THE TREE — every anchored family is read at `P` — rather than a
+ * fact about the question.
+ */
+export function wallReadFamilies(
+  todayIso: string,
+  instants: ReadingInstants,
 ): readonly FixtureFamily[] {
-  return driftReport(todayIso)
-    .filter((d) => d.readerVisibleStates.length > 0)
+  return driftReport(todayIso, instants)
+    .filter((d) => d.instant === 'WALL' || d.instant === 'MIXED')
     .map((d) => d.family);
 }
 
@@ -361,21 +435,24 @@ export function storedStateFamilies(
  * `formatDriftReport` so it can be probed without an empty population.
  */
 export function waitingFooter(
-  boundFamilies: readonly FixtureFamily[],
+  wallFamilies: readonly FixtureFamily[],
 ): readonly string[] {
-  if (boundFamilies.length > 0) return [];
+  if (wallFamilies.length > 0) return [];
   return [
     '',
-    '  No family carries a reader-visible stored clock state.',
-    '  This instrument is WAITING, not retired: the population is derived',
-    '  from DISPLAY_STATES at read time, so a family rejoins the moment a',
-    '  `stored-in-fixtures` row is authored — with no edit to clockDrift.',
+    '  No anchored family is read against the wall clock.',
+    '  This instrument is WAITING, not retired: the instant is derived by',
+    '  readingInstantGate at read time, so a family rejoins the moment one of',
+    '  its projection call sites takes `new Date()` — with no edit to clockDrift.',
   ];
 }
 
 /** A fixed-width table for a terminal. One row per family, verdict last. */
-export function formatDriftReport(todayIso: string): string {
-  const rows = driftReport(todayIso);
+export function formatDriftReport(
+  todayIso: string,
+  instants: ReadingInstants,
+): string {
+  const rows = driftReport(todayIso, instants);
   // ⚠️ DERIVED, NEVER A LITERAL. The verdict column was `padEnd(9)` against
   // a union whose longest member has never been 9 characters, so the last
   // column ran ragged on exactly the rows a reader most needs to line up.
@@ -384,14 +461,14 @@ export function formatDriftReport(todayIso: string): string {
   const vw = Math.max(...rows.map((d) => d.verdict.length));
   const head =
     `  ${'family'.padEnd(17)}${'drift'.padStart(6)}${'tol'.padStart(6)}` +
-    `${'headroom'.padStart(10)}  ${'verdict'.padEnd(vw)}  reader-visible stored states`;
+    `${'headroom'.padStart(10)}  ${'verdict'.padEnd(vw)}  reading instant`;
   const body = rows.map((d) => {
     const tol = d.toleranceDays === null ? '—' : String(d.toleranceDays);
     const head = d.headroomDays === null ? '—' : String(d.headroomDays);
     return (
       `  ${d.family.padEnd(17)}${String(d.driftDays).padStart(6)}` +
       `${tol.padStart(6)}${head.padStart(10)}  ${d.verdict.padEnd(vw)}  ` +
-      (d.readerVisibleStates.join(', ') || '—')
+      d.instant
     );
   });
   return [
@@ -400,6 +477,6 @@ export function formatDriftReport(todayIso: string): string {
     head,
     '  ' + '─'.repeat(head.length - 2),
     ...body,
-    ...waitingFooter(storedStateFamilies(todayIso)),
+    ...waitingFooter(wallReadFamilies(todayIso, instants)),
   ].join('\n');
 }
