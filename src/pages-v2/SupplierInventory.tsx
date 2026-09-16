@@ -210,7 +210,7 @@ const SupplierInventory: React.FC = () => {
                 icon: Download,
                 onClick: () =>
                   toast({
-                    variant: 'success',
+                    variant: 'info',
                     title: t('supplierInventory.toast.exportPreparing.title'),
                     description: t(
                       'supplierInventory.toast.exportPreparing.desc',

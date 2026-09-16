@@ -598,7 +598,7 @@ const SupplierPerformance: React.FC = () => {
                   icon={CheckCircle2}
                   onClick={() =>
                     toast({
-                      variant: 'success',
+                      variant: 'info',
                       title: t('supplierPerformance.toast.actionSubmitted.title', {
                         kpi: item.kpi,
                       }),
