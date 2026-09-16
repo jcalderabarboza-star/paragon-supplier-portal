@@ -36,11 +36,26 @@
 //   types, the store or any gate CONTRACTS it. A future fixture authored in `Z`
 //   form would flip to "session" silently, with nobody touching this file, and
 //   the disclosure would become a lie. A heuristic is not a derivation.
-// · **A comparison against `DECLARED_PRESENT`.** MEASURED FALSE rather than
-//   reasoned away: `doc-012`'s seeded `rejectedAt` shifts to `2027-01-17`,
-//   which is 139 days AFTER `P`. A `later than P ⇒ session` test classifies the
-//   seeded value as a session one. Both kinds sit after `P` and the comparison
-//   separates nothing.
+// · **A comparison against `DECLARED_PRESENT`.** REJECTED, and the reason is
+//   structural rather than circumstantial: such a test separates the two kinds
+//   only by an ACCIDENT of where the wall clock and the seeded literals happen
+//   to sit relative to `P`. Both operands move independently of provenance — a
+//   fixture may legitimately carry a date after `P` (every certificate expiry on
+//   these surfaces does), and where the wall clock falls relative to `P` is a
+//   fact about the calendar, not about who wrote the value. **A discriminator
+//   whose correctness depends on the wall clock's relation to `P` is not a
+//   provenance test**; it is a coincidence that has been holding.
+//
+//   ⚠️ **AND IT WAS MEASURED FAILING, WHICH IS WHY THIS BULLET IS PHRASED AS A
+//   RULE AND NOT AS A PREFERENCE.** On the corpus as it stood when this module
+//   was written, a SEEDED refusal sat after `P` — so a `later than P ⇒ session`
+//   test called a seeded value a session one, on the one row the disclosure
+//   exists for. That literal has since been repaired and no seeded act instant
+//   sits after `P` any more (`actInstantCoherence.test.ts` is the gate that
+//   keeps it that way), so the comparison would happen to succeed today. **The
+//   repair removed the counter-example, not the objection** — equality against
+//   the seeded corpus is what follows the VALUE, and it is what this module
+//   ships.
 // · **A stored provenance field**, the shape `FxPin.liveness` uses. It is the
 //   right long-term answer and it is a change to the store, the verbs and a
 //   certificate field — out of scope by ruling, and it would have to be

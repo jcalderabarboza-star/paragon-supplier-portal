@@ -44,7 +44,8 @@ export const widgetEn: Record<string, string> = {
   // render — never a literal, so the sentence cannot carry an older present.
   //
   // ⚠️ IT CLAIMS NOTHING ABOUT THE CERTIFICATE and nothing about the OTHER dates
-  // on the page: a seeded row can render well past `P` (doc-012 → 17 Jan 2027),
+  // on the page: a seeded row can render past `P` — a certificate `expiryDate`
+  // is a HORIZON and several on that surface do, `doc-002`'s furthest of them —
   // so "the rest of the portal is dated {{date}}" would be false where it shows.
   'widget.honesty.sessionStamp': 'Recorded this session',
   'widget.honesty.sessionStampNote':

@@ -236,6 +236,17 @@ describe('the declared present in the copy is DERIVED, not typed', () => {
     expect(marker).toHaveTextContent(formatDate(DECLARED_PRESENT));
   });
 
+  // ⚠️ **DO NOT TRIM THIS AS A DUPLICATE OF THE EN TEST ABOVE. IT IS THE ONLY
+  // ASSERTION IN THIS FILE THAT CAN CONVICT A LITERAL DATE PUT WHERE THE
+  // DERIVATION BELONGS**, and the reason is that the EN test cannot: its
+  // expected value is `formatDate(DECLARED_PRESENT)` evaluated in EN, which is
+  // byte-for-byte what an EN literal typed into the copy would render. Replace
+  // the derivation with that literal and the EN test stays green.
+  //
+  // The ID run is what separates them. `formatDate` localises the month, so the
+  // same constant renders differently in the two locales; an EN literal frozen
+  // into the string therefore FAILS here and only here. The two tests read as
+  // one test run twice. They are not.
   it('and the ID form of the SAME constant in ID — a token that genuinely differs', async () => {
     const id = await declareOne();
     await i18n.changeLanguage('id');

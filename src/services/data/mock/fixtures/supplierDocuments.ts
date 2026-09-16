@@ -64,7 +64,18 @@ const DOCUMENTS_RAW: SupplierDocument[] = [
     category: 'Halal Compliance',
     status: 'Rejected',
     issuedBy: 'MUI LP POM',
-    issuedDate: '2026-08-05',
+    // ⚠️ AUTHORED AGAINST THE FAMILY ANCHOR, NOT AGAINST THE DAY THIS ROW WAS
+    // WRITTEN — which is the defect these two literals repair. The row landed
+    // before the family had an anchor at all, so its dates were written
+    // relative to their own authoring day; the shift then carried both PAST the
+    // declared present, and a supplier read a certificate issued in the future
+    // and a refusal that had not happened yet.
+    //
+    // THE RELATIONSHIP THIS LITERAL MUST HOLD AT THE DECLARED PRESENT: the
+    // certificate was ISSUED BEFORE it, recently enough that the refusal below
+    // is still the supplier's current business. No date and no day count is
+    // written in this comment — derive both from the anchor and the shift.
+    issuedDate: '2026-03-11',
     expiryDate: null,
     fileType: 'PDF',
     fileSize: '740 KB',
@@ -74,7 +85,19 @@ const DOCUMENTS_RAW: SupplierDocument[] = [
       'Certificate scope does not cover PK-PETB-8810. The annex lists ' +
       'PK-PETB-8801 only, so this material is not carried by the ' +
       'certificate — resubmit with the amended scope annex from MUI LP POM.',
-    rejectedAt: '2026-08-18T09:24:00+07:00',
+    // THE RELATIONSHIP THIS LITERAL MUST HOLD AT THE DECLARED PRESENT: the
+    // refusal ALREADY HAPPENED — it is before the present — and it happened
+    // AFTER the issue date above, because a scope annex is refused on review
+    // and not before it exists. The interval between the two is the authored
+    // one and is preserved exactly; it is not restated here.
+    //
+    // ⚠️ AND THIS IS THE ONE FIELD ON THIS ROW A SHIPPED VERB ALSO MINTS —
+    // `t_supplierdoc_reject` writes it from the clock at the instant of the act
+    // — which is why a seeded value after the present was not merely an odd
+    // date: it put the seeded refusal and every runtime one on opposite sides
+    // of the present. `actInstantCoherence.test.ts` is the gate that now says
+    // so, and it derives this field rather than naming it.
+    rejectedAt: '2026-03-24T09:24:00+07:00',
     rejectedBy: { kind: 'UNATTRIBUTED', reason: 'NO_PERSON_IN_SESSION' },
   },
 

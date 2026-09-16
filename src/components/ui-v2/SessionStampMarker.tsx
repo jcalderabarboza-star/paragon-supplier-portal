@@ -44,10 +44,19 @@ import { formatDate } from '../../lib/format';
 //
 // ⚠️ **WHAT THE COPY DOES NOT SAY, AND WHY THE OBVIOUS WORDING WAS REFUSED.**
 // It does not say *"the rest of the portal is dated to the declared present"*.
-// Measured: `doc-012`'s seeded `rejectedAt` renders `17 Jan 2027`, 139 days
-// after `P`, because its authored literals sit outside its family's window and
-// the +152-day shift carries them past the present. A sentence about the other
-// rows on the page would therefore be FALSE on the very surface it appears on.
+// Measured, and by a property rather than by a remembered row: several seeded
+// certificates on this very surface carry an `expiryDate` that lands AFTER the
+// declared present — `doc-002`'s is the furthest of them — because an expiry is
+// a HORIZON and belongs in the future. A sentence about the other rows on the
+// page would therefore be FALSE on the very surface it appears on.
+//
+// ⚠️ **THE SPECIMEN MOVED ONCE ALREADY, WHICH IS WHY IT IS NAMED BY ITS
+// PROPERTY.** This paragraph used to cite `doc-012`'s seeded refusal, an ACT
+// INSTANT that had been carried past the present by its family's shift. That
+// was a defect and it was repaired; the conclusion here survived it untouched,
+// because horizon dates after `P` are the normal case and were the real reason
+// all along. Re-derive the specimen (`expiryDate` later than `DECLARED_PRESENT`,
+// on a row this page renders) rather than trusting this sentence.
 // This claims only what it can vouch for: what THIS value is, and that the
 // portal declares a fixed demonstration present. It makes no claim about the
 // certificate — not validity, not scheme, not verification.
