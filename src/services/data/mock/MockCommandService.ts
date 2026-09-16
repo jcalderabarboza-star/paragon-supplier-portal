@@ -10,6 +10,7 @@
 // ────────────────────────────────────────────────────────────────────────────
 
 import { POStatus } from '../types';
+import { DECLARED_PRESENT } from '../fixturePresent';
 import type {
   ICommandService,
   QueryScope,
@@ -360,13 +361,30 @@ const invoiceTarget: CommandTarget = {
     const po = findPoByNumber(String(payload.poReference));
     const invoiceNumber = invoiceStore.nextNumber();
     // Honest dates by construction: a creation that omits the dates (the form
-    // carries only PO + amount) defaults submittedDate to today and dueDate to
-    // Net-30 — so the invoice is never BORN overdue and aging is a real number,
-    // not NaN on an empty date (F-2). An explicit payload date still wins.
+    // carries only PO + amount) defaults submittedDate to the declared present
+    // and dueDate to Net-30 — so the invoice is never BORN overdue and aging is
+    // a real number, not NaN on an empty date (F-2). An explicit payload date
+    // still wins; only the DEFAULT moved.
+    //
+    // ⚠️ **`DECLARED_PRESENT`, NOT THE WALL CLOCK — AND THE REASON IS THAT THIS
+    // ROW IS RENDERED BESIDE ANCHORED ONES.** The invoice fixtures are shifted
+    // onto `P` (`fixtures/invoices.ts` — `shiftFields(…, 'invoice', […])`) and
+    // the read clock is already `P` (`MockProcurementService`'s `INVOICE_NOW`),
+    // so a wall-clock default put a fresh row's rendered date N days past a
+    // corpus whose newest member sits at `P − 7` — and N grows by one every day,
+    // with no commit involved. The LABEL was never wrong (a `wall + 30d` dueDate
+    // cannot precede `P` while wall ≥ P); the DATE and the sort position were.
+    // Measured before the change at wall `P + 16`: `receivedDate` rendered
+    // `+16d`, sort position 1 of 14, and `BuyerInvoices`' `lastUpdated` read the
+    // runtime row rather than the corpus.
+    //
+    // It is the page convention (`const TODAY = DECLARED_PRESENT`) landing one
+    // layer lower, NOT a new clock: no module, no injection, no second present.
+    // `sdcClock` stays the SDC loop's alone, exactly as its header requires.
     const submittedDate =
       typeof payload.submittedDate === 'string' && payload.submittedDate
         ? payload.submittedDate
-        : new Date().toISOString().slice(0, 10);
+        : DECLARED_PRESENT;
     const dueDate =
       typeof payload.dueDate === 'string' && payload.dueDate
         ? payload.dueDate
@@ -2005,7 +2023,13 @@ const settleFinalize = (ctx: SettleContext): void => {
       status: 'Payment Released',
       sapFiDoc: inv.sapFiDoc ?? invoiceStore.nextFiDoc(),
       paymentRef: inv.paymentRef ?? invoiceStore.nextPaymentRef(),
-      paymentDate: inv.paymentDate ?? new Date().toISOString().slice(0, 10),
+      // `DECLARED_PRESENT`, for the same reason as `submittedDate` above: this
+      // date is RENDERED (`BuyerInvoices` / `SupplierInvoices` payment cells) and
+      // sorted against an anchored corpus whose newest payment sits at `P − 26`.
+      // Measured before the change at wall `P + 16`: a payment released today
+      // read 42 days after the newest fixture payment. The label was unaffected
+      // then and is unaffected now — `Payment Released` is not OVERDUE_ELIGIBLE.
+      paymentDate: inv.paymentDate ?? DECLARED_PRESENT,
     }));
   }
 };
