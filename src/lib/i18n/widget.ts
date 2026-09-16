@@ -37,6 +37,18 @@ export const widgetEn: Record<string, string> = {
   // in-memory ledger that does not survive a reload and never reaches SAP.
   // Deliberately NOT "Live" and deliberately not green — the feed is still fixture.
   'widget.honesty.commandsDispatch': 'Commands dispatch — in-memory ledger',
+  // The PER-VALUE axis (`SessionStampMarker`), distinct from the feed axis above:
+  // one rendered timestamp was minted by the store from the wall clock when the
+  // act was dispatched, while the surrounding fixtures are shifted onto the
+  // declared present. `{{date}}` is `formatDate(DECLARED_PRESENT)`, derived at
+  // render — never a literal, so the sentence cannot carry an older present.
+  //
+  // ⚠️ IT CLAIMS NOTHING ABOUT THE CERTIFICATE and nothing about the OTHER dates
+  // on the page: a seeded row can render well past `P` (doc-012 → 17 Jan 2027),
+  // so "the rest of the portal is dated {{date}}" would be false where it shows.
+  'widget.honesty.sessionStamp': 'Recorded this session',
+  'widget.honesty.sessionStampNote':
+    "Written from this device's clock at the moment the action was recorded, not from this portal's fixed demonstration present of {{date}}.",
   'widget.allClear': 'All clear',
   'widget.aria.expand': 'Expand {{title}}',
   'widget.aria.show': 'Show {{title}}',
@@ -127,6 +139,9 @@ export const widgetId: Record<string, string> = {
   'widget.honesty.awaitingSupplierFeed': 'Sampel — menunggu feed pemasok live',
   'widget.honesty.awaitingDiscoveryFeed': 'Sampel — menunggu feed penemuan pemasok',
   'widget.honesty.commandsDispatch': 'Perintah dijalankan — buku besar in-memory',
+  'widget.honesty.sessionStamp': 'Dicatat pada sesi ini',
+  'widget.honesty.sessionStampNote':
+    'Ditulis dari jam perangkat ini pada saat tindakan dicatat, bukan dari waktu kini tetap portal ini, yaitu {{date}}.',
   'widget.allClear': 'Semua beres',
   'widget.aria.expand': 'Perluas {{title}}',
   'widget.aria.show': 'Tampilkan {{title}}',
