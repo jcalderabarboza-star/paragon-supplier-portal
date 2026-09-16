@@ -24,6 +24,7 @@ import SidePanel from '../components/ui-v2/SidePanel';
 import FilterChipsBar from '../components/ui-v2/FilterChipsBar';
 import StatusPill from '../components/ui-v2/StatusPill';
 import LivenessPill from '../components/ui-v2/LivenessPill';
+import SessionStampMarker from '../components/ui-v2/SessionStampMarker';
 import { isLive, readinessNote } from '../services/liveness';
 import { formatDate } from '../lib/format';
 import Table from '../components/ui-v2/Table';
@@ -545,7 +546,23 @@ const BuyerCompliance: React.FC = () => {
                             {t('compliance.queue.field.declared')}{' '}
                           </dt>
                           <dd className="inline text-text-secondary">
-                            <Data>{formatDate(doc.declaration.declaredAt)}</Data>
+                            <Data>{formatDate(doc.declaration.declaredAt)}</Data>{' '}
+                            {/* ⚠️ **THE ONE STAMP ON THIS PANEL THAT ANSWERS TO
+                                THE WALL CLOCK.** `declaredAt` is minted by the
+                                store at dispatch (anti-backdating, ruled), while
+                                every neighbouring date here is a fixture literal
+                                shifted onto the declared present. The marker
+                                derives that per VALUE and renders nothing when
+                                the value is a seeded one — so it cannot claim a
+                                clock it did not read. No fixture seeds a
+                                declaration today, which is exactly why the test
+                                for the seeded arm is written against a value and
+                                not against this site. */}
+                            <SessionStampMarker
+                              documentId={doc.id}
+                              field="declaredAt"
+                              value={doc.declaration.declaredAt}
+                            />
                             {' · '}
                             {doc.declaration.declaredBy.kind === 'UNATTRIBUTED'
                               ? t('compliance.queue.declaredBy.unattributed')

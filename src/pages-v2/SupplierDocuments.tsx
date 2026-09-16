@@ -16,6 +16,7 @@ import AppShellV2 from '../components/layout-v2/AppShellV2';
 import PageHeader from '../components/ui-v2/PageHeader';
 import PageMetaLine from '../components/ui-v2/PageMetaLine';
 import ProvenanceMarker from '../components/ui-v2/ProvenanceMarker';
+import SessionStampMarker from '../components/ui-v2/SessionStampMarker';
 import KpiCard from '../components/ui-v2/KpiCard';
 import BulkActionsBar from '../components/ui-v2/BulkActionsBar';
 import FilterChipsBar from '../components/ui-v2/FilterChipsBar';
@@ -194,7 +195,19 @@ const RefusalBlock: React.FC<{ doc: SupplierDocument }> = ({ doc }) => {
         <span className="text-danger">{t('supplierDocuments.refusal.label')}</span>{' '}
         <Data className="text-text-tertiary normal-case">
           {formatDate(doc.rejectedAt)}
-        </Data>
+        </Data>{' '}
+        {/* ⚠️ **PER VALUE, NOT PER ROW — AND THIS SURFACE IS WHY.** `doc-012` is
+            SEEDED with a refusal and can be refused AGAIN (`t_supplierdoc_submit`
+            takes `Rejected` as a `from`), so the same id renders a shifted
+            fixture literal one minute and a wall-clock instant the next. Anything
+            keyed on the id would keep saying "seeded" after the second refusal,
+            which is precisely the row this disclosure exists for. The marker asks
+            about the STRING and renders nothing when it is the seeded one. */}
+        <SessionStampMarker
+          documentId={doc.id}
+          field="rejectedAt"
+          value={doc.rejectedAt}
+        />
       </div>
       {/* i18n-defer: mock/sample data (fixture refusal text) */}
       <div className="text-xs text-text-secondary">
