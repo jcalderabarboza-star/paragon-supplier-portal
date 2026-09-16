@@ -16,6 +16,7 @@ import { DataError } from '../types';
 import type { QueryScope } from '../types';
 import { PERSONA_SYSTEM_ROLES, AUTOMATION_ROLE } from '../../../services/transitions/businessRoles';
 import { NO_PERSON } from '../../../context/noPerson';
+import { DEMO_NOW } from '../../../test/demoClock';
 
 const buyer: QueryScope = { personaType: 'buyer', supplierId: null, businessRoles: PERSONA_SYSTEM_ROLES.buyer };
 const sup007: QueryScope = { personaType: 'supplier', supplierId: 'sup-007', businessRoles: PERSONA_SYSTEM_ROLES.supplier };
@@ -71,8 +72,9 @@ describe('Invoice command integration — supplier creation-shape', () => {
 
   it('defaults honest dates so a freshly-created invoice is never born overdue (F-2)', async () => {
     // Creation WITHOUT a dueDate — the form only carries PO + amount. The command
-    // layer must default the dates (submittedDate today, dueDate = Net-30) so the
-    // invoice is not computed Overdue on submit and aging is a real number, not NaN.
+    // layer must default the dates (submittedDate = the declared present, dueDate
+    // = Net-30) so the invoice is not computed Overdue on submit and aging is a
+    // real number, not NaN.
     const id = (
       await svc.dispatch(sup007, {
         transitionId: 't_invoice_create',
@@ -83,7 +85,20 @@ describe('Invoice command integration — supplier creation-shape', () => {
     await fire(sup007, 't_invoice_submit', id, { amount: 250_000_000 });
 
     const inv = invoiceStore.get(id)!;
-    const now = new Date().toISOString();
+    // ⚠️ **PINNED, AND IT USED TO BE `new Date().toISOString()`.** That read the
+    // WALL clock to judge a clock-derived label — the one shape `demoClock.ts`'s
+    // header names as the defect every other clock-aware spec in this repo
+    // already avoids. It survived only because the stamp was ALSO the wall clock,
+    // so the two moved together and the comparison was true by construction. Now
+    // that `t_invoice_create` defaults to the declared present, the stamp is
+    // frozen and the wall is not: measured, this line began failing at wall
+    // `P + 30` and after — `+20d` and `+40d` both went red on
+    // `expected true to be false`, with no commit involved.
+    //
+    // The assertions below are UNCHANGED; only the instant they are asked at is
+    // now declared. Reading the same present the write side stamps is what makes
+    // the question ("is a fresh invoice born overdue?") answerable at all.
+    const now = DEMO_NOW;
     expect(inv.status).toBe('Submitted'); // overdue-eligible — the failing case
     expect(inv.submittedDate).not.toBe('');
     expect(inv.dueDate).not.toBe('');

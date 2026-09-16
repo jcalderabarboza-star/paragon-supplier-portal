@@ -204,19 +204,42 @@ function trendForScope(scope: QueryScope): PerformancePoint[] {
 //   that actually fits, and it is a plain constant; a second injectable clock
 //   would be a wider abstraction than this read path needs.
 //
-// ── ⚠️ THE WRITE SIDE IS DELIBERATELY NOT MOVED, AND IT IS MEASURED ─────────
-//   Commands still stamp the wall clock: `submittedDate` (and `dueDate`, as
-//   `submittedDate + 30d`) at invoice creation, and `paymentDate` on the payment
-//   settle. Walked end to end against this seam, BOTH clocks produce the SAME
-//   label at every step — a fresh row's `dueDate` is `wall + 30d`, which can
-//   never fall before `P` while the wall clock is at or after it, so a fresh row
-//   can never read `Overdue` here; and `paymentDate` is only ever written onto
-//   `Payment Released`, which is not `OVERDUE_ELIGIBLE` and therefore cannot
-//   reach a label at all. **What DOES differ is a rendered date** — a payment
-//   minted today reads 15 days after the declared present. That is a display
-//   honesty question about write stamps, not a wrong label, and moving the
-//   write clock would change `t_invoice_create`'s semantics. It is named here
-//   rather than fixed silently.
+// ── ⚠️ THE WRITE SIDE IS NOW MOVED TOO — THE INVOICE DATE STAMPS ONLY ───────
+//   `t_invoice_create`'s `submittedDate` DEFAULT, the `dueDate` derived from it,
+//   and `settleFinalize`'s `paymentDate` all read `DECLARED_PRESENT`
+//   (`MockCommandService`). An explicit payload date still wins on both create
+//   fields — only the DEFAULT moved — so no caller's semantics changed.
+//
+//   **THE LABEL WAS NEVER THE PROBLEM, AND SAYING SO IS THE POINT.** Walked end
+//   to end against this seam under both clocks, they produce the SAME label at
+//   every step: a fresh row's `dueDate` is `submitted + 30d`, which cannot fall
+//   before `P` when `submitted` is `P`, so a fresh row can never read `Overdue`
+//   here; and `paymentDate` is only ever written onto `Payment Released`, which
+//   is not `OVERDUE_ELIGIBLE` and cannot reach a label at all. What was wrong was
+//   the **rendered date and the sort position** — and the size of that is
+//   deliberately NOT written here, because it was a number in prose that grew by
+//   one every day with nobody touching the file (`FLOOR-IN-PROSE-01`, the variant
+//   with a clock attached; the sentence really did stand at "15 days" and was
+//   measured at 16). **Derive it: `wall − DECLARED_PRESENT`, which is now zero
+//   for these three fields at every wall clock.**
+//
+// ── ⚠️ WHAT DELIBERATELY STAYS ON THE WALL CLOCK, AND WHY ───────────────────
+//   This moved the DAY-GRANULAR ENTITY DATES of one anchored family. It did NOT
+//   move, and must not be read as licence to move:
+//     · the C3 audit `ts` (`MockCommandService`'s `now:` dependency) — C3 is
+//       FROZEN and mandates the wall clock BY NAME, because an event records when
+//       an act HAPPENED and a frozen stamp would destroy ledger ordering;
+//     · the STORE-MINTED millisecond timestamps — `pinnedAt`, `setAt`,
+//       `grantedAt`, `declaredAt`, `rejectedAt`, `reviewStartedAt`, `decidedAt`,
+//       `openedAt`. These are anti-backdating stamps ("store-assigned, never
+//       payload-supplied"); they are audit facts by the same argument as `ts`;
+//     · the UNANCHORED families' date stamps — `RFQ.createdAt`,
+//       `PurchaseRequisition.createdDate`, `Quotation.submittedAt`. A `P` stamp
+//       there would still land far from a corpus that is not shifted onto `P`
+//       (PR fixtures top out ~5 months before it), so moving them buys nothing
+//       until their families are anchored. **Do not derive the count of these
+//       from this comment** — derive it as the wall-clock reads remaining in
+//       `MockCommandService.ts` that write a stored field.
 // ─────────────────────────────────────────────────────────────────────────────
 const INVOICE_NOW = `${DECLARED_PRESENT}T00:00:00.000Z`;
 
