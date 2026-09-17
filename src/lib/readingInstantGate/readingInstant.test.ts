@@ -41,6 +41,7 @@
 //      parameter, is invisible to it.
 // ────────────────────────────────────────────────────────────────────────────
 
+import ts from 'typescript';
 import { describe, it, expect } from 'vitest';
 import {
   buildRepoProgram,
@@ -51,6 +52,10 @@ import {
   type FamilyInstant,
 } from './derive';
 import { FAMILY_ANCHORS, type FixtureFamily } from '../../services/data/fixturePresent';
+
+/** Windows paths reach `ts` with backslashes; `derive.ts`'s `inSrc` matches on
+ *  `/src/`, so the synthetic file keys must be normalised the same way. */
+const norm = (f: string): string => f.replace(/\\/g, '/');
 
 const program = buildRepoProgram(process.cwd());
 const families = Object.keys(FAMILY_ANCHORS) as FixtureFamily[];
@@ -138,28 +143,99 @@ describe('⚠️ the derived reading instants, pinned bilaterally', () => {
 });
 
 describe('⚠️ ANTI-VACUITY — a classifier that returns P for everything must fail', () => {
-  it('known WALL sites OUTSIDE the anchored families are classified WALL', () => {
-    // ⚠️ **THE CONTROL THAT MAKES THE TABLE ABOVE MEAN SOMETHING.** Every
-    // anchored family is `P` today, so a classifier hard-wired to return `P`
-    // would reproduce the pin exactly and this gate would be green while
-    // examining nothing — `EMPTY-INPUT-REPORTS-CLEAN-01` in the shape that is
-    // hardest to see, because the answer is right.
-    //
-    // These sites are real, they are wall-read, and they are NOT in any
-    // anchored family: `buyerDerivations`' PO and RFQ tiers take `now: Date`
-    // straight from `new Date()`. A `P`-returning classifier fails here.
-    const wall = deriveAllCallSites(program).filter((s) => s.provenance === 'WALL');
-    expect(wall.length).toBeGreaterThan(0);
-    const files = new Set(wall.map((s) => s.file));
-    expect([...files].some((f) => f.includes('BuyerDashboard'))).toBe(true);
-    expect([...files].some((f) => f.includes('widgets/'))).toBe(true);
-    // …and by name, so a wall set that drifts to some other file is not
-    // silently accepted as "still non-empty".
-    expect(wall.map((s) => s.fn)).toContain('unacknowledgedOver48h');
+  // ⚠️ **THE CONTROL THAT MAKES THE TABLE ABOVE MEAN SOMETHING.** Every anchored
+  // family is `P` today, so a classifier hard-wired to return `P` would reproduce
+  // the pin exactly and this gate would be green while examining nothing —
+  // `EMPTY-INPUT-REPORTS-CLEAN-01` in the shape that is hardest to see, because
+  // the answer is right.
+  //
+  // ⚠️ **IT USED TO READ THE SHIPPED TREE, AND THE TREE STOPPED CARRYING THE
+  // DEFECT.** Until #363 the control named real sites: `BuyerDashboard.tsx:144`
+  // and three dashboard widgets called `buyerDerivations`' PO and RFQ tiers with
+  // `new Date()`. That batch removed every one of them — the dashboard reads the
+  // declared present and renders no clock-relative figure over an unanchored
+  // family at all — so `deriveAllCallSites` over `src/` now returns **zero** WALL
+  // sites, and the control could no longer fire.
+  //
+  // ⚠️ **A CONTROL THAT CAN NO LONGER FIRE IS WORSE THAN NONE, SO IT IS
+  // RE-POINTED RATHER THAN DELETED OR WEAKENED.** The probe below reconstructs
+  // the EXACT geometry the tree occupied — an exported arrow with a `now`
+  // parameter, called with a bare `new Date()` — and requires the SHIPPED
+  // classifier to return WALL and to NAME the function
+  // (`PROBE-MUST-FIRE-AT-A-REAL-DEFECT-01`; §71's *fire it at the defect the fix
+  // removed*). It is deliberately NOT a count.
+  //
+  // ⚠️ **AND THE SYNTHETIC FILES SIT UNDER `/src/`, WHICH IS LOAD-BEARING.**
+  // `deriveAllCallSites` skips anything outside `src/`; a harness that put them
+  // elsewhere would derive an EMPTY population and read as "yes, it catches the
+  // bad thing — there is nothing bad here" (§40e, the stored-field gate's own
+  // first run). The known-GOOD half below is what says the probe examined
+  // something at all.
+  const SYNTHETIC_ROOT = `${norm(process.cwd())}/src/__reading-instant-probe__`;
 
-    // THE OTHER DIRECTION: no wall-read site belongs to an anchored family.
+  const probeProgram = (): ts.Program => {
+    const files: Record<string, string> = {
+      // The exported arrow with a now-ish parameter — `buyerDerivations`'
+      // shape, which is the one an earlier draft of `derive.ts` could not see
+      // at all (it walked only `FunctionDeclaration`), and a plain declaration
+      // beside it so both matcher branches are exercised.
+      [`${SYNTHETIC_ROOT}/derivations.ts`]: [
+        'export const unacknowledgedOver48h = (rows: readonly string[], now: Date) =>',
+        '  rows.filter(() => now.getTime() > 0);',
+        'export function projectAt(row: string, nowIso: string): string {',
+        '  return row + nowIso;',
+        '}',
+      ].join('\n'),
+      // THE DEFECT, verbatim in shape: `BuyerDashboard.tsx:144` until #363.
+      [`${SYNTHETIC_ROOT}/wallCaller.ts`]: [
+        "import { unacknowledgedOver48h } from './derivations';",
+        'export const late = unacknowledgedOver48h([], new Date());',
+      ].join('\n'),
+      // THE KNOWN-GOOD TWIN, in the same program: a caller pinned to the
+      // declared present, which must NOT classify WALL.
+      [`${SYNTHETIC_ROOT}/pinnedCaller.ts`]: [
+        "import { projectAt } from './derivations';",
+        "export const DECLARED_PRESENT = '2026-08-31';",
+        "export const pinned = projectAt('x', `${DECLARED_PRESENT}T00:00:00.000Z`);",
+      ].join('\n'),
+    };
+    const host = ts.createCompilerHost({}, true);
+    const readFile = host.readFile.bind(host);
+    const fileExists = host.fileExists.bind(host);
+    host.readFile = (f) => files[norm(f)] ?? readFile(f);
+    host.fileExists = (f) => norm(f) in files || fileExists(f);
+    return ts.createProgram(Object.keys(files), { noEmit: true, strict: true }, host);
+  };
+
+  it('the shipped classifier returns WALL for the shape this tree shipped until #363', () => {
+    const sites = deriveAllCallSites(probeProgram());
+
+    // KNOWN-GOOD FIRST: the probe examined a real population. Without this the
+    // WALL assertion below could pass over nothing and read as a working guard.
+    expect(sites.map((s) => s.fn).sort()).toEqual(['projectAt', 'unacknowledgedOver48h']);
+
+    const wall = sites.filter((s) => s.provenance === 'WALL');
+    expect(wall.map((s) => s.fn)).toEqual(['unacknowledgedOver48h']);
+
+    // KNOWN-BAD: the pinned caller in the SAME program must NOT be WALL, so a
+    // classifier that answered WALL for everything fails here too.
+    expect(sites.find((s) => s.fn === 'projectAt')?.provenance).toBe('P');
+  });
+
+  it('the shipped tree now has NO wall-read projection call site, and that is the claim', () => {
+    // The other half of the batch that retired the control's old subject: this
+    // asserts the removal rather than assuming it, so a wall-clock read that
+    // creeps back into any projection call site turns this red.
+    const wall = deriveAllCallSites(program).filter((s) => s.provenance === 'WALL');
+    expect(wall.map((s) => `${s.file}:${s.line} ${s.fn}`)).toEqual([]);
+  });
+
+  it('no wall-read site belongs to an anchored family', () => {
     // If one ever does, that family leaves `P` and `clockDrift` starts judging
-    // it — which is the design, and this line is where it is noticed.
+    // it — which is the design, and this line is where it is noticed. Vacuous
+    // today by construction (the set above is empty); it is kept because it is
+    // the assertion that must survive the day a WALL site returns.
+    const wall = deriveAllCallSites(program).filter((s) => s.provenance === 'WALL');
     const familySites = new Set(
       readings.flatMap((r) => r.sites.map((s) => `${s.file}:${s.line}`)),
     );
@@ -168,11 +244,14 @@ describe('⚠️ ANTI-VACUITY — a classifier that returns P for everything mus
     }
   });
 
-  it('the three provenances are all actually produced by the shipped tree', () => {
-    // A classifier that can only ever emit one label is not classifying.
+  it('the classifier actually produces more than one label over the shipped tree', () => {
+    // A classifier that can only ever emit one label is not classifying. WALL is
+    // no longer among them in `src/` — the probe above is what proves it is
+    // still reachable — so this asserts the labels the tree DOES produce.
     const provs = new Set(deriveAllCallSites(program).map((s) => s.provenance));
     expect(provs).toContain('P');
-    expect(provs).toContain('WALL');
     expect(provs).toContain('FORWARDED');
+    expect(provs).toContain('UNRESOLVED');
+    expect(provs.size).toBeGreaterThan(1);
   });
 });

@@ -9,50 +9,70 @@ import TableRow from '../../components/ui-v2/TableRow';
 import TableCell from '../../components/ui-v2/TableCell';
 import Data from '../../components/ui-v2/Data';
 import StatusPill from '../../components/ui-v2/StatusPill';
+import RecordRowLink from './RecordRowLink';
 import { statusTone } from '../../lib/statusTone';
 import { formatDate } from '../../lib/format';
 import { usePurchaseOrders } from '../../services/query/hooks';
-import {
-  openPurchaseOrders,
-  unacknowledgedOver48h,
-  poTier,
-} from './buyerDerivations';
+import { openPurchaseOrders } from './buyerDerivations';
+import { NOT_ACKNOWLEDGED_PO_STATUSES } from '../dashboard/buyerDashboardDerivations';
 
-// Buyer PO board — LIVE from the PO store. Count is open POs; the urgency flag is
-// the honest exception: orders still unacknowledged more than 48h after placing.
+// ─────────────────────────────────────────────────────────────────────────────
+// Buyer PO board — LIVE from the PO store. The count is open POs.
+//
+// ── ⚠️ "NOT YET ACKNOWLEDGED", NOT "UNACKNOWLEDGED >48h" ────────────────────
+// The old flag asked how long ago the order was placed, against the wall clock,
+// over a family (`purchaseOrder`) that is NOT anchored — so the answer moved
+// with the calendar rather than with the supplier. The honest question the same
+// data can answer is a STATE one: has this order left the not-acknowledged
+// prefix of its own lifecycle? That is clock-free and true at any instant.
+//
+// The set comes from `NOT_ACKNOWLEDGED_PO_STATUSES`, which the dashboard's
+// KPI tile also reads — one definition, so the tile and this window cannot
+// disagree about what "acknowledged" means. It is DERIVED from `POStatus`'s own
+// declaration order, never hand-listed here.
+// ─────────────────────────────────────────────────────────────────────────────
 const BuyerOpenPoWidget: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const query = usePurchaseOrders();
 
-  const now = new Date();
   const items = query.data?.items ?? [];
   const open = useMemo(() => openPurchaseOrders(items), [query.data]);
-  const unackIds = useMemo(
-    () => new Set(unacknowledgedOver48h(items, now).map((p) => p.id)),
-    [query.data],
+  const notAckIds = useMemo(
+    () =>
+      new Set(
+        open.filter((p) => NOT_ACKNOWLEDGED_PO_STATUSES.includes(p.status)).map((p) => p.id),
+      ),
+    [open],
   );
   const count = open.length;
-  const unack = unackIds.size;
+  const notAck = notAckIds.size;
 
   const expandedRows =
     count === 0 ? (
-      <div className="text-sm text-text-tertiary">No open purchase orders.</div>
+      <div className="text-sm text-text-tertiary">{t('widget.openPo.empty')}</div>
     ) : (
       <Table>
         <TableHeader>
-          <TableHeaderCell>PO #</TableHeaderCell>
-          <TableHeaderCell>Supplier</TableHeaderCell>
-          <TableHeaderCell>Order date</TableHeaderCell>
-          <TableHeaderCell>Status</TableHeaderCell>
+          <TableHeaderCell>{t('widget.openPo.col.po')}</TableHeaderCell>
+          <TableHeaderCell>{t('widget.openPo.col.supplier')}</TableHeaderCell>
+          <TableHeaderCell>{t('widget.openPo.col.orderDate')}</TableHeaderCell>
+          <TableHeaderCell>{t('widget.openPo.col.status')}</TableHeaderCell>
         </TableHeader>
         <tbody>
           {open.map((po) => (
-            <TableRow key={po.id}>
+            <TableRow key={po.id} className="relative">
               <TableCell>
-                <Data className="text-xs font-bold text-text-primary">
-                  {po.poNumber}
-                </Data>
+                <RecordRowLink
+                  path="/buyer/orders"
+                  id={po.id}
+                  name={po.poNumber}
+                  label={
+                    <Data className="text-xs font-bold text-text-primary">
+                      {po.poNumber}
+                    </Data>
+                  }
+                />
               </TableCell>
               <TableCell className="text-text-secondary">
                 {po.supplierName}
@@ -61,14 +81,11 @@ const BuyerOpenPoWidget: React.FC = () => {
                 <Data>{formatDate(po.orderDate)}</Data>
               </TableCell>
               <TableCell>
-                <div className="flex items-center gap-2">
-                  <StatusPill variant={statusTone(po.status)}>
-                    {po.status}
-                  </StatusPill>
-                  {unackIds.has(po.id) ? (
-                    <StatusPill variant="danger">&gt;48h</StatusPill>
-                  ) : null}
-                </div>
+                {/* The status pill already SAYS Sent or Viewed. A second chip
+                    repeating "not acknowledged" beside it would be the same
+                    fact twice, and the retired one ('>48h') was a different,
+                    clock-bound claim that no longer exists. */}
+                <StatusPill variant={statusTone(po.status)}>{po.status}</StatusPill>
               </TableCell>
             </TableRow>
           ))}
@@ -82,8 +99,11 @@ const BuyerOpenPoWidget: React.FC = () => {
       icon={ShoppingCart}
       count={count}
       capability="purchaseOrders"
-      flagSeverity={poTier(items, now)}
-      flagLabel={unack > 0 ? t('widget.openPo.flag', { count: unack }) : undefined}
+      // CLOCK-FREE severity: an order still sitting in the not-acknowledged
+      // prefix is worth a reader's attention; how long it has sat there is a
+      // question this family cannot answer yet.
+      flagSeverity={notAck > 0 ? 'info' : 'none'}
+      flagLabel={notAck > 0 ? t('widget.openPo.flag', { count: notAck }) : undefined}
       actionLabel={count > 0 ? t('widget.openPo.action') : undefined}
       onAction={count > 0 ? () => navigate('/buyer/orders') : undefined}
       expandedRows={expandedRows}

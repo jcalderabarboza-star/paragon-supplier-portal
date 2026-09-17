@@ -8,6 +8,7 @@ import TableHeader, { TableHeaderCell } from '../../components/ui-v2/TableHeader
 import TableRow from '../../components/ui-v2/TableRow';
 import TableCell from '../../components/ui-v2/TableCell';
 import Data from '../../components/ui-v2/Data';
+import RecordRowLink from './RecordRowLink';
 import StatusPill from '../../components/ui-v2/StatusPill';
 import { statusTone } from '../../lib/statusTone';
 import { formatDate } from '../../lib/format';
@@ -29,24 +30,31 @@ const BuyerGoodsReceiptWidget: React.FC = () => {
   const expandedRows =
     count === 0 ? (
       <div className="text-sm text-text-tertiary">
-        No goods receipts need action.
+        {t('widget.goodsReceipt.empty')}
       </div>
     ) : (
       <Table>
         <TableHeader>
-          <TableHeaderCell>GR #</TableHeaderCell>
-          <TableHeaderCell>PO #</TableHeaderCell>
-          <TableHeaderCell>Supplier</TableHeaderCell>
-          <TableHeaderCell>Received</TableHeaderCell>
-          <TableHeaderCell>Status</TableHeaderCell>
+          <TableHeaderCell>{t('widget.goodsReceipt.col.gr')}</TableHeaderCell>
+          <TableHeaderCell>{t('widget.goodsReceipt.col.po')}</TableHeaderCell>
+          <TableHeaderCell>{t('widget.goodsReceipt.col.supplier')}</TableHeaderCell>
+          <TableHeaderCell>{t('widget.goodsReceipt.col.received')}</TableHeaderCell>
+          <TableHeaderCell>{t('widget.goodsReceipt.col.status')}</TableHeaderCell>
         </TableHeader>
         <tbody>
           {needing.map((gr) => (
-            <TableRow key={gr.id}>
+            <TableRow key={gr.id} className="relative">
               <TableCell>
-                <Data className="text-xs font-bold text-text-primary">
-                  {gr.grNumber}
-                </Data>
+                <RecordRowLink
+                  path="/buyer/goods-receipt"
+                  id={gr.id}
+                  name={gr.grNumber}
+                  label={
+                    <Data className="text-xs font-bold text-text-primary">
+                      {gr.grNumber}
+                    </Data>
+                  }
+                />
               </TableCell>
               <TableCell>
                 <Data className="text-text-secondary">{gr.poNumber}</Data>

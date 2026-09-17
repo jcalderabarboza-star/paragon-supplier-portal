@@ -9,6 +9,7 @@ import TableRow from '../../components/ui-v2/TableRow';
 import TableCell from '../../components/ui-v2/TableCell';
 import Data from '../../components/ui-v2/Data';
 import StatusPill from '../../components/ui-v2/StatusPill';
+import RecordRowLink from './RecordRowLink';
 import { statusTone } from '../../lib/statusTone';
 import { formatIDR } from '../../lib/format';
 import { useBuyerInvoices } from '../../services/query/hooks';
@@ -16,6 +17,8 @@ import { overdueInvoices, maxDaysOutstanding, invoiceTier } from './buyerDerivat
 
 // Buyer AP aging — LIVE: overdue is computed at read (invoiceProjection: an open,
 // unpaid invoice past its due date), so nothing here fabricates a payment state.
+// `invoice` is an ANCHORED family read at the declared present at the service
+// seam, so the day-count here is honest at any wall-clock instant.
 const BuyerInvoiceAgingWidget: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -30,23 +33,34 @@ const BuyerInvoiceAgingWidget: React.FC = () => {
 
   const expandedRows =
     count === 0 ? (
-      <div className="text-sm text-text-tertiary">No overdue invoices.</div>
+      <div className="text-sm text-text-tertiary">{t('widget.invoiceAging.empty')}</div>
     ) : (
       <Table>
         <TableHeader>
-          <TableHeaderCell>Invoice #</TableHeaderCell>
-          <TableHeaderCell>Supplier</TableHeaderCell>
-          <TableHeaderCell className="text-right">Amount</TableHeaderCell>
-          <TableHeaderCell className="text-right">Days past due</TableHeaderCell>
-          <TableHeaderCell>Match</TableHeaderCell>
+          <TableHeaderCell>{t('widget.invoiceAging.col.invoice')}</TableHeaderCell>
+          <TableHeaderCell>{t('widget.invoiceAging.col.supplier')}</TableHeaderCell>
+          <TableHeaderCell className="text-right">
+            {t('widget.invoiceAging.col.amount')}
+          </TableHeaderCell>
+          <TableHeaderCell className="text-right">
+            {t('widget.invoiceAging.col.daysPastDue')}
+          </TableHeaderCell>
+          <TableHeaderCell>{t('widget.invoiceAging.col.match')}</TableHeaderCell>
         </TableHeader>
         <tbody>
           {overdue.map((inv) => (
-            <TableRow key={inv.id}>
+            <TableRow key={inv.id} className="relative">
               <TableCell>
-                <Data className="text-xs font-bold text-text-primary">
-                  {inv.invoiceNumber}
-                </Data>
+                <RecordRowLink
+                  path="/buyer/invoices"
+                  id={inv.id}
+                  name={inv.invoiceNumber}
+                  label={
+                    <Data className="text-xs font-bold text-text-primary">
+                      {inv.invoiceNumber}
+                    </Data>
+                  }
+                />
               </TableCell>
               <TableCell className="text-text-secondary">
                 {inv.supplierName}

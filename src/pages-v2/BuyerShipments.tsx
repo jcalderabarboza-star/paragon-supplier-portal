@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useModeLabel } from '../hooks/useModeLabel';
@@ -43,6 +43,7 @@ import type {
   ShipmentMode,
 } from '../data/mockShipments';
 import LoadingState from '../components/ui-v2/LoadingState';
+import { useDeepLinkedSelection } from '../lib/recordDeepLink';
 import ErrorState from '../components/ui-v2/ErrorState';
 import EmptyState from '../components/ui-v2/EmptyState';
 import { useShipments, useSuppliers } from '../services/query/hooks';
@@ -163,6 +164,22 @@ const BuyerShipments: React.FC = () => {
   const [search, setSearch] = useState('');
   const [selectedModes, setSelectedModes] = useState<ShipmentMode[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  // ── DEEP LINK (?id=) ──────────────────────────────────────────────────────
+  // A dashboard window's row links here. The filters are WIDENED first: landing
+  // on a filtered list that excludes the very record the reader clicked is the
+  // shape of a broken link (`Glossary.tsx`'s rule). An unknown id opens nothing
+  // and says nothing — the list is still the right answer.
+  // Matched on the ASN number as well as the id: a shipment is identified by
+  // both on this board, and the parameter names "the record on this page".
+  useDeepLinkedSelection(
+    shipments,
+    (s, id) => s.id === id || s.asnNumber === id,
+    useCallback((s: Shipment) => {
+      setSelectedModes([]);
+      setSelectedId(s.id);
+    }, []),
+  );
+
   const [showSchedule, setShowSchedule] = useState(true);
 
   // ⚠️ ONE CLASSIFICATION, CAPTURED ONCE, HANDED TO EVERY SITE. `TODAY` is

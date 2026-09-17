@@ -10,6 +10,7 @@ import TableHeader, { TableHeaderCell } from '../../components/ui-v2/TableHeader
 import TableRow from '../../components/ui-v2/TableRow';
 import TableCell from '../../components/ui-v2/TableCell';
 import Data from '../../components/ui-v2/Data';
+import RecordRowLink from './RecordRowLink';
 import StatusPill from '../../components/ui-v2/StatusPill';
 import { statusTone } from '../../lib/statusTone';
 import { useInventory } from '../../services/query/hooks';
@@ -43,23 +44,34 @@ const BuyerInventoryWidget: React.FC = () => {
 
   const expandedRows =
     count === 0 ? (
-      <div className="text-sm text-text-tertiary">No low or blocked stock.</div>
+      <div className="text-sm text-text-tertiary">{t('widget.inventory.empty')}</div>
     ) : (
       <Table>
         <TableHeader>
-          <TableHeaderCell>Material</TableHeaderCell>
-          <TableHeaderCell>Description</TableHeaderCell>
-          <TableHeaderCell className="text-right">On hand</TableHeaderCell>
-          <TableHeaderCell className="text-right">Days supply</TableHeaderCell>
-          <TableHeaderCell>Status</TableHeaderCell>
+          <TableHeaderCell>{t('widget.inventory.col.material')}</TableHeaderCell>
+          <TableHeaderCell>{t('widget.inventory.col.description')}</TableHeaderCell>
+          <TableHeaderCell className="text-right">
+            {t('widget.inventory.col.onHand')}
+          </TableHeaderCell>
+          <TableHeaderCell className="text-right">
+            {t('widget.inventory.col.daysSupply')}
+          </TableHeaderCell>
+          <TableHeaderCell>{t('widget.inventory.col.status')}</TableHeaderCell>
         </TableHeader>
         <tbody>
           {low.map((r) => (
-            <TableRow key={r.id}>
+            <TableRow key={r.id} className="relative">
               <TableCell>
-                <Data className="text-xs font-bold text-text-primary">
-                  {r.materialCode}
-                </Data>
+                <RecordRowLink
+                  path="/buyer/inventory"
+                  id={r.id}
+                  name={r.materialCode}
+                  label={
+                    <Data className="text-xs font-bold text-text-primary">
+                      {r.materialCode}
+                    </Data>
+                  }
+                />
               </TableCell>
               <TableCell className="text-text-secondary">
                 {r.materialDescription}

@@ -9,26 +9,39 @@ import TableRow from '../../components/ui-v2/TableRow';
 import TableCell from '../../components/ui-v2/TableCell';
 import Data from '../../components/ui-v2/Data';
 import StatusPill from '../../components/ui-v2/StatusPill';
+import RecordRowLink from './RecordRowLink';
 import { statusTone } from '../../lib/statusTone';
 import { formatDate } from '../../lib/format';
 import { useRFQs, useQuotations } from '../../services/query/hooks';
-import {
-  pendingAwardRfqs,
-  awardOverdue,
-  quoteCountByRfq,
-  rfqAwardTier,
-} from './buyerDerivations';
+import { pendingAwardRfqs, quoteCountByRfq } from './buyerDerivations';
 
+// ─────────────────────────────────────────────────────────────────────────────
 // Buyer sourcing — LIVE: RFQs with quotations in but not yet Awarded, read from
-// the RFQ + quotation stores (award verb, PR #41). The award is a decision, so
-// the action routes to the sourcing board rather than auto-awarding.
+// the RFQ + quotation stores. The award is a decision, so the action routes to
+// the sourcing board rather than auto-awarding.
+//
+// ── ⚠️ THE POPULATION IS `Open` OR `Closed`, AND THAT IS THE FLOW'S OWN RULE ─
+// `t_rfq_award.from` is `['Open', 'Closed']` in `rfq.flow.ts`, so a CLOSED RFQ
+// with quotations really is awaiting an award decision — closing the response
+// window is not awarding it. Derived and pinned in `buyerWindows.test.tsx`
+// against the registered flow, in both directions: nothing in this list is
+// award-illegal from its state, and nothing award-legal-with-quotes is missing.
+//
+// ── ⚠️ NO DEADLINE JUDGEMENT. THE FIGURE WAS SATURATED, NOT MERELY STALE ────
+// This window used to show `awardOverdue(pending, new Date())` as *"N past
+// deadline"*. `rfq` is NOT an anchored family, so every RFQ's award deadline
+// sits behind the wall clock: measured, the count was **9 of 9** — the sentence
+// was true of every row and therefore said nothing about any of them. The
+// "Award by" DATE stays, because a date is a fact about the document; what is
+// withheld is the judgement of that date against a clock the fixtures are not
+// anchored to. The header says so, and it is a note rather than a control.
+// ─────────────────────────────────────────────────────────────────────────────
 const BuyerRfqAwaitingAwardWidget: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const rfqQuery = useRFQs();
   const quoteQuery = useQuotations();
 
-  const now = new Date();
   const pending = useMemo(
     () => pendingAwardRfqs(rfqQuery.data?.items ?? [], quoteQuery.data?.items ?? []),
     [rfqQuery.data, quoteQuery.data],
@@ -38,29 +51,35 @@ const BuyerRfqAwaitingAwardWidget: React.FC = () => {
     [quoteQuery.data],
   );
   const count = pending.length;
-  const overdue = awardOverdue(pending, now).length;
 
   const expandedRows =
     count === 0 ? (
-      <div className="text-sm text-text-tertiary">
-        No RFQs are awaiting an award decision.
-      </div>
+      <div className="text-sm text-text-tertiary">{t('widget.rfqAward.empty')}</div>
     ) : (
       <Table>
         <TableHeader>
-          <TableHeaderCell>RFQ #</TableHeaderCell>
-          <TableHeaderCell>Title</TableHeaderCell>
-          <TableHeaderCell className="text-right">Quotes</TableHeaderCell>
-          <TableHeaderCell>Award by</TableHeaderCell>
-          <TableHeaderCell>Status</TableHeaderCell>
+          <TableHeaderCell>{t('widget.rfqAward.col.rfq')}</TableHeaderCell>
+          <TableHeaderCell>{t('widget.rfqAward.col.title')}</TableHeaderCell>
+          <TableHeaderCell className="text-right">
+            {t('widget.rfqAward.col.quotes')}
+          </TableHeaderCell>
+          <TableHeaderCell>{t('widget.rfqAward.col.awardBy')}</TableHeaderCell>
+          <TableHeaderCell>{t('widget.rfqAward.col.status')}</TableHeaderCell>
         </TableHeader>
         <tbody>
           {pending.map((rfq) => (
-            <TableRow key={rfq.id}>
+            <TableRow key={rfq.id} className="relative">
               <TableCell>
-                <Data className="text-xs font-bold text-text-primary">
-                  {rfq.rfqNumber}
-                </Data>
+                <RecordRowLink
+                  path="/buyer/sourcing"
+                  id={rfq.id}
+                  name={rfq.rfqNumber}
+                  label={
+                    <Data className="text-xs font-bold text-text-primary">
+                      {rfq.rfqNumber}
+                    </Data>
+                  }
+                />
               </TableCell>
               <TableCell className="text-text-secondary">{rfq.title}</TableCell>
               <TableCell className="text-right text-text-secondary">
@@ -86,16 +105,13 @@ const BuyerRfqAwaitingAwardWidget: React.FC = () => {
       icon={Gavel}
       count={count}
       capability="rfqs"
-      flagSeverity={rfqAwardTier(
-        rfqQuery.data?.items ?? [],
-        quoteQuery.data?.items ?? [],
-        now,
-      )}
+      // CLOCK-FREE severity: there are RFQs waiting on a person, or there are
+      // not. The old ladder raised this to `warning` on the overdue count,
+      // which was every row.
+      flagSeverity={count > 0 ? 'info' : 'none'}
       flagLabel={
         count > 0
-          ? overdue > 0
-            ? t('widget.rfqAward.flag.withOverdue', { count, overdue })
-            : t('widget.rfqAward.flag.toAward', { count })
+          ? `${t('widget.rfqAward.flag.toAward', { count })} · ${t('widget.rfqAward.held')}`
           : undefined
       }
       actionLabel={count > 0 ? t('widget.rfqAward.action') : undefined}

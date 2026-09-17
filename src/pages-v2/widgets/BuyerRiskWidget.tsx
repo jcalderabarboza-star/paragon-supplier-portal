@@ -10,6 +10,7 @@ import TableHeader, { TableHeaderCell } from '../../components/ui-v2/TableHeader
 import TableRow from '../../components/ui-v2/TableRow';
 import TableCell from '../../components/ui-v2/TableCell';
 import StatusPill from '../../components/ui-v2/StatusPill';
+import RecordRowLink from './RecordRowLink';
 import { useRiskAlerts } from '../../services/query/hooks';
 import type { RiskAlert, RiskAlertLevel } from '../../services/data/types';
 
@@ -44,22 +45,27 @@ const BuyerRiskWidget: React.FC = () => {
 
   const expandedRows =
     count === 0 ? (
-      <div className="text-sm text-text-tertiary">No active risk alerts.</div>
+      <div className="text-sm text-text-tertiary">{t('widget.risk.empty')}</div>
     ) : (
       <Table>
         <TableHeader>
-          <TableHeaderCell>Level</TableHeaderCell>
-          <TableHeaderCell>Alert</TableHeaderCell>
-          <TableHeaderCell>Detail</TableHeaderCell>
+          <TableHeaderCell>{t('widget.risk.col.level')}</TableHeaderCell>
+          <TableHeaderCell>{t('widget.risk.col.alert')}</TableHeaderCell>
+          <TableHeaderCell>{t('widget.risk.col.detail')}</TableHeaderCell>
         </TableHeader>
         <tbody>
           {active.map((a) => (
-            <TableRow key={a.id}>
+            <TableRow key={a.id} className="relative">
               <TableCell>
                 <StatusPill variant={LEVEL_TONE[a.level]}>{a.level}</StatusPill>
               </TableCell>
               <TableCell className="font-medium text-text-primary">
-                {a.title}
+                {/* /buyer/risk has NO per-alert detail panel, so this link does
+                    what the tree's one existing URL-selection site does: it
+                    lands on the row itself, scrolled to and highlighted
+                    (`Glossary.tsx`'s `?term=` chip). No panel is invented and
+                    the page is not redesigned. */}
+                <RecordRowLink path="/buyer/risk" id={a.id} label={a.title} />
               </TableCell>
               <TableCell className="text-text-secondary">{a.body}</TableCell>
             </TableRow>

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   BarChart,
   Bar,
@@ -41,6 +41,7 @@ import Button from '../components/ui-v2/Button';
 import SidePanel from '../components/ui-v2/SidePanel';
 import { useToast } from '../hooks/useToast';
 import LoadingState from '../components/ui-v2/LoadingState';
+import { useDeepLinkedSelection } from '../lib/recordDeepLink';
 import ErrorState from '../components/ui-v2/ErrorState';
 import EmptyState from '../components/ui-v2/EmptyState';
 import Data from '../components/ui-v2/Data';
@@ -232,6 +233,21 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [disputeReason, setDisputeReason] = useState('');
+  // ── DEEP LINK (?id=) ──────────────────────────────────────────────────────
+  // A dashboard window's row links here. The filters are WIDENED first: landing
+  // on a filtered list that excludes the very record the reader clicked is the
+  // shape of a broken link (`Glossary.tsx`'s rule). An unknown id opens nothing
+  // and says nothing — the list is still the right answer.
+  useDeepLinkedSelection(
+    invoices,
+    (inv, id) => inv.id === id || inv.invoiceNumber === id,
+    useCallback((inv: BuyerInvoice) => {
+      setTab('queue');
+      setStatusFilter('all');
+      setSelectedId(inv.id);
+    }, []),
+  );
+
   const selected = useMemo(
     () => invoices.find((i) => i.id === selectedId) ?? null,
     [invoices, selectedId],

@@ -155,6 +155,10 @@ export const useIntakeReview = () =>
     svc.procurement.getPrIntake(scope),
   );
 
+// ⚠️ **RESTORED (operator direction).** These were retired when the widget grid
+// was, and the operator's review kept both sections: Production Line Risk and
+// the Supplier Health Index are SAMPLE data, marked as such, and they model
+// domains no other buyer surface covers.
 export const useProductionLines = () =>
   useServiceQuery(['procurement', 'productionLines'], (svc, scope) =>
     svc.procurement.getProductionLines(scope),
