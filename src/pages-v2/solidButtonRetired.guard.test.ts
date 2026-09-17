@@ -33,6 +33,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
+import { stripSourceComments } from '../lib/sourceScan/stripComments';
 
 const SRC = join(process.cwd(), 'src');
 
@@ -57,8 +58,7 @@ function shippedTsx(dir: string, out: string[] = []): string[] {
  * prose from code, and a rule whose own explanation trips it is a rule people
  * stop explaining.
  */
-const withoutProse = (source: string): string =>
-  source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
+const withoutProse = (source: string): string => stripSourceComments(source, 'delete');
 
 /** The matcher under test: does this source render a solid action-blue button? */
 const rendersSolid = (source: string): boolean =>

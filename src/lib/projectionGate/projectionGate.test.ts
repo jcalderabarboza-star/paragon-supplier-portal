@@ -74,7 +74,9 @@ describe('POPULATION + MATCHER CONTROLS — before any row is believed', () => {
 
   it('a nonexistent state matches nothing', () => {
     expect(writeSites('__no_such_state__', FILES)).toHaveLength(0);
-  });
+    // The shared source scan is a PARSER, not a regex, and this walks every
+    // file in `src/`. Same population, same assertion — only the budget moves.
+  }, 30000);
 
   // ───────────────────────────────────────────────────────────────────────────
   // ⚠️ CRLF: THE LINE ENDING IS AN INPUT TO THIS INSTRUMENT, SO IT IS TESTED

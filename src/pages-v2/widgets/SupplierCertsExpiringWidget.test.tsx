@@ -74,6 +74,7 @@ import { readFileSync } from 'node:fs';
 import { documentExpiry } from '../../services/data/dayProjection';
 import { documentDisplayState } from '../../services/data/documentDisplayState';
 import { DECLARED_PRESENT } from '../../services/data/fixturePresent';
+import { stripSourceComments } from '../../lib/sourceScan/stripComments';
 
 const HALAL = 'Halal Certificate — MUI No. 01011234561020';
 
@@ -119,9 +120,7 @@ describe('SupplierCertsExpiringWidget — the clock is the source, not `status`'
     // gate accuse the widget of exactly the thing the comment says it does not
     // do. A widened matcher creates false accusations as readily as a narrow
     // one creates blind spots, so both directions are controlled below.
-    const code = src
-      .replace(/\/\*[\s\S]*?\*\//g, ' ')
-      .replace(/\/\/[^\n]*/g, ' ');
+    const code = stripSourceComments(src, 'space');
     expect(code).not.toMatch(/\b(d|doc)\.status\b/);
     // CONTROL, the other direction: the stripper must not have eaten the file.
     expect(code).toContain('SupplierCertsExpiringWidget');

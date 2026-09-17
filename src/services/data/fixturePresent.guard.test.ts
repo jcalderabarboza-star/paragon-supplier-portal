@@ -38,6 +38,7 @@ import { BPJPH_MANDATE_DATE } from './complianceProjection';
 import { DOCUMENTS } from './mock/fixtures/supplierDocuments';
 import { documentDisplayState } from './documentDisplayState';
 import { mockInventory } from '../../data/mockInventory';
+import { stripSourceComments } from '../../lib/sourceScan/stripComments';
 
 /**
  * Strip comments PROPERLY rather than by line prefix.
@@ -49,8 +50,7 @@ import { mockInventory } from '../../data/mockInventory';
  * a widened matcher creates false accusations as readily as a narrow one
  * creates blind spots. Every use below carries a both-directions control.
  */
-const codeOnly = (src: string): string =>
-  src.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/\/\/[^\n]*/g, ' ');
+const codeOnly = (src: string): string => stripSourceComments(src, 'space');
 
 const MS = 86_400_000;
 const dayMs = (v: string) => Date.parse(`${v.slice(0, 10)}T00:00:00.000Z`);

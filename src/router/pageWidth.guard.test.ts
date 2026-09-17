@@ -31,6 +31,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync, existsSync } from 'node:fs';
 import { join, dirname, normalize } from 'node:path';
+import { stripSourceComments } from '../lib/sourceScan/stripComments';
 
 const ROUTER = join(process.cwd(), 'src', 'router', 'AppRouter.tsx');
 const routerSrc = readFileSync(ROUTER, 'utf-8');
@@ -38,8 +39,13 @@ const routerSrc = readFileSync(ROUTER, 'utf-8');
 /** Comments stripped — a rule stated in the file it governs reads as a violation
  *  of itself (§68's gate tripped on its own explanation twice, and the note this
  *  batch added to `RolesCatalogue` names the very classes it removed). */
-const withoutProse = (s: string): string =>
-  s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '').replace(/\{\/\*[\s\S]*?\*\/\}/g, '');
+// ⚠️ The trailing `.replace(/\{\/\*…\*\/\}/g, '')` that stood here is GONE,
+// and it was inert in BOTH forms: it ran after a strip that had already removed
+// every `/* … */`, so the `{/*` it needs could only survive inside a STRING —
+// which is the defect class this batch exists to remove, not an extra net. Its
+// only match in the whole tree was a string in this very file, which this
+// instrument never reads. The equivalence is asserted, not asserted-to-be-obvious.
+const withoutProse = (s: string): string => stripSourceComments(s, 'delete');
 
 /** Route path → component name, DERIVED from the router source (§65a: the
  *  coverage guard that asserted its own table's length never read the router). */

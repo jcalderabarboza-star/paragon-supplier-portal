@@ -19,6 +19,7 @@ import {
 } from './businessRoles';
 import { CASCADES } from './cascades';
 import { getTransition } from './registry';
+import { stripSourceComments } from '../../lib/sourceScan/stripComments';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // THE POPULATION GUARD RUNS FIRST AND ASSERTS MEMBERSHIP, NEVER A COUNT
@@ -397,11 +398,10 @@ describe('⚠️ WHO MAY RESOLVE THROUGH THE SYSTEM-ONLY `atomsFor`', () => {
    * shares the prefix, so an unmasked match would name every seat call site.
    */
   const code = (file: string): string =>
-    fs
-      .readFileSync(file, 'utf8')
-      .replace(/\/\*[\s\S]*?\*\//g, ' ')
-      .replace(/^[ \t]*\/\/.*$/gm, ' ')
-      .replace(/atomsForSeat\s*\(/g, 'X(');
+    stripSourceComments(fs.readFileSync(file, 'utf8'), 'space').replace(
+      /atomsForSeat\s*\(/g,
+      'X(',
+    );
 
   /** Files that call `atomsFor(` — NOT `atomsForSeat(`, which shares the prefix. */
   function callers(): string[] {
@@ -412,13 +412,16 @@ describe('⚠️ WHO MAY RESOLVE THROUGH THE SYSTEM-ONLY `atomsFor`', () => {
   }
 
   it('the derivation sees the tree — a known caller and a known non-caller', () => {
+    // The shared source scan is a PARSER, not two regexes, and this `it`
+    // walks every file in `src/`. Same population, same assertions — only
+    // the time budget moves.
     // §42b / rule 1: an empty population answers every question cleanly. A
     // matcher that could not cross this file's own newline would report zero.
     const found = callers();
     expect(found).toContain('src/services/transitions/roles.ts');
     expect(found).not.toContain('src/pages-v2/BuyerOrders.tsx');
     expect(found.length).toBeGreaterThan(0);
-  });
+  }, 30000);
 
   it('every caller of the system-only resolver is allowlisted with a reason', () => {
     const unlisted = callers().filter((f) => !(f in ALLOWED));

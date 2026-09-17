@@ -23,6 +23,7 @@ import {
 import { DOCUMENTS } from './mock/fixtures/supplierDocuments';
 import { DECLARED_PRESENT } from './fixturePresent';
 import { statusResourcesEn, statusResourcesId } from '../../lib/statusLabel';
+import { stripSourceComments } from '../../lib/sourceScan/stripComments';
 
 const P = `${DECLARED_PRESENT}T00:00:00.000Z`;
 const doc = (status: string, expiryDate: string | null) =>
@@ -149,10 +150,7 @@ describe('the maps are total, and every label already existed', () => {
 });
 
 describe('⚠️ THE WIRING, BY SITE — a working classifier proves nothing about a badge', () => {
-  const read = (f: string) =>
-    readFileSync(f, 'utf8')
-      .replace(/\/\*[\s\S]*?\*\//g, ' ')
-      .replace(/\/\/[^\n]*/g, ' ');
+  const read = (f: string) => stripSourceComments(readFileSync(f, 'utf8'), 'space');
 
   const DOCS_PAGE = 'src/pages-v2/SupplierDocuments.tsx';
   const DASHBOARD = 'src/pages-v2/SupplierDashboard.tsx';
