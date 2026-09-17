@@ -161,9 +161,12 @@ const CAPABILITY_BACKING: Record<Capability, string | null> = {
   // array through `mockDataService`; none is the read-model of a lifecycle
   // entity. Backing one to a merely-adjacent wired entity is the exact defect
   // this batch files as INVENTORY-REFERENT-01 (`inventory` is backed to
-  // `inventoryDeclaration` while BuyerInventoryWidget renders `mockInventory` —
-  // so the pill's referent is not the data on screen, and unwire-flips-the-pill
-  // stops meaning anything). Null is the honest backing for a fixture read: it
+  // `inventoryDeclaration` while `BuyerInventory` renders `mockInventory` — so
+  // the pill's referent is not the data on screen, and unwire-flips-the-pill
+  // stops meaning anything). ⚠️ The example used to name `BuyerInventoryWidget`,
+  // which was retired with the buyer dashboard's widget grid; the DEFECT is
+  // unchanged and still lives on the `/buyer/inventory` page, so the sentence is
+  // re-pointed rather than deleted. Null is the honest backing for a fixture read: it
   // derives SIMULATED, and it flips only when a real read-model actually lands.
   suppliers: null,
   supplierDiscovery: null,

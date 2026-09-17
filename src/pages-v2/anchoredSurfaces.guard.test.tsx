@@ -45,13 +45,16 @@
 // `INVOICE_NOW` rather than `new Date()`. The surface is asserted below like any
 // other, at the same two instants ~5 years apart.
 //
-// ⚠️ **WHAT IS STILL DELIBERATELY NOT HERE: `BuyerDashboard` and the two widgets
-// rendered only on it.** Their day-counts come from PO and RFQ derivations that
-// take a `now` off the wall clock (`BuyerDashboard.tsx:144`,
-// `widgets/BuyerAlertsBar.tsx:48`), and those families — `purchaseOrder`, `rfq` —
-// are not anchored at all. **The invoice half of that exclusion is spent; the PO
-// and RFQ half stands**, and collapsing the two into one sentence is what let
-// the invoice half sit unexamined through two batches.
+// ⚠️ **AND `BuyerDashboard` HAS NOW JOINED TOO — THE EXCLUSION IS FULLY
+// SPENT.** It read: *their day-counts come from PO and RFQ derivations that take
+// a `now` off the wall clock (`BuyerDashboard.tsx:144`,
+// `widgets/BuyerAlertsBar.tsx:48`), and those families are not anchored at all.*
+// Both halves are gone. The dashboard was rebuilt on derived data at the
+// declared present; the two widgets that held the other wall-clock reads were
+// retired with the widget grid; and no clock-relative figure over an unanchored
+// family is rendered there any more — the procurement queue row states that it
+// is HELD rather than showing a saturated count. The surface is asserted below
+// like any other, at the same two instants ~5 years apart.
 // ─────────────────────────────────────────────────────────────────────────────
 import React from 'react';
 import { describe, it, expect, afterEach } from 'vitest';
@@ -67,6 +70,7 @@ import BuyerGoodsReceipt from './BuyerGoodsReceipt';
 import BuyerInvoices from './BuyerInvoices';
 
 import BuyerCompliance from './BuyerCompliance';
+import BuyerDashboard from './BuyerDashboard';
 import BuyerContractDetail from './BuyerContractDetail';
 import BuyerContracts from './BuyerContracts';
 import BuyerRisk from './BuyerRisk';
@@ -253,6 +257,13 @@ describe('anchored surfaces — clock-independent by construction', () => {
   });
   it('BuyerCompliance is anchored', async () => {
     await expectAnchored({ el: <BuyerCompliance />, route: '/buyer/compliance' });
+  });
+
+  // ⚠️ THE ONE THE NOTE AT THE TOP OF THIS FILE EXCLUDED BY NAME UNTIL #363.
+  // Every figure it renders comes from `dashboard/buyerDashboardDerivations.ts`
+  // at `PRESENT_ISO`; the page itself constructs no `Date` at all.
+  it('BuyerDashboard is anchored', async () => {
+    await expectAnchored({ el: <BuyerDashboard />, route: '/buyer/dashboard' });
   });
 
   it('BuyerContracts is anchored', async () => {

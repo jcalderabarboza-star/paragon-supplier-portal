@@ -155,15 +155,20 @@ export const useIntakeReview = () =>
     svc.procurement.getPrIntake(scope),
   );
 
-export const useProductionLines = () =>
-  useServiceQuery(['procurement', 'productionLines'], (svc, scope) =>
-    svc.procurement.getProductionLines(scope),
-  );
-
-export const useSupplierHealth = () =>
-  useServiceQuery(['procurement', 'supplierHealth'], (svc, scope) =>
-    svc.procurement.getSupplierHealth(scope),
-  );
+// ⚠️ `useProductionLines` / `useSupplierHealth` WERE HERE AND ARE RETIRED.
+// Their only caller was the buyer dashboard's Production Line Risk table and
+// Supplier Health Index chart, both of which were AUTHORED rows rendered under
+// an unmarked KPI strip — the chart's supplier names were never joined to a
+// supplier id, so the bars named companies the portal could not resolve.
+//
+// ⚠️ **WHAT IS DELIBERATELY *NOT* RETIRED WITH THEM:**
+// `IDataService.getProductionLines` / `getSupplierHealth` and their mock
+// implementations stay. They are CONTRACT surface — the interface
+// `httpDataService` is designed to satisfy — and retiring a contract row is a
+// different act, with a different authority, from dropping a page's read.
+// `SUPPLIER_HEALTH` also still backs `data/supplierIdentity.test.ts`, which
+// checks its names against the supplier master; deleting the fixture would
+// delete that check with it.
 
 // ─── Risk ─────────────────────────────────────────────────────────────────
 

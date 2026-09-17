@@ -109,3 +109,23 @@ export function formatDate(value?: string | number | Date | null): string {
     year: 'numeric',
   }).format(d);
 }
+
+/**
+ * A MONTH BUCKET's label — "Aug 2026" (EN) / "Agu 2026" (ID), Asia/Jakarta.
+ *
+ * Takes a `YYYY-MM` bucket key rather than a date, because that is what a
+ * monthly aggregation actually holds: passing a day would invite the caller to
+ * pick one, and "the first of the month" is a fact about the formatter's input
+ * rather than about the data. Anything that is not `YYYY-MM` → "—".
+ */
+export function formatMonth(bucket?: string | null): string {
+  if (bucket == null || !/^\d{4}-\d{2}$/.test(bucket)) return EMPTY;
+  // Midday UTC so the Jakarta (UTC+7) rendering cannot slip to the prior month.
+  const d = new Date(`${bucket}-01T12:00:00.000Z`);
+  if (Number.isNaN(d.getTime())) return EMPTY;
+  return new Intl.DateTimeFormat(isID() ? 'id-ID' : 'en-GB', {
+    timeZone: JAKARTA,
+    month: 'short',
+    year: 'numeric',
+  }).format(d);
+}

@@ -75,9 +75,20 @@ describe('Batch 6 — tail-sweep bilingual render (no header EN leak)', () => {
   it('BuyerDashboard: ID shell header, English gone', async () => {
     await setLang('id');
     renderWithProviders(<BuyerDashboard />, { route: '/buyer/dashboard' });
-    expect(await screen.findByText('Pusat Komando Pengadaan')).toBeInTheDocument();
+    // ⚠️ RE-POINTED, NOT WEAKENED. The dashboard's headline is no longer the
+    // page name — it is the greeting the approved layout puts there — so the
+    // ID string to look for changed with it. Both directions are kept: the ID
+    // headline AND the ID sub-line must render, and the English of each must be
+    // absent.
     expect(
-      screen.queryByText('Procurement Command Center'),
+      await screen.findByText('Selamat pagi — ini yang memerlukan Anda hari ini'),
+    ).toBeInTheDocument();
+    expect(screen.getByText('Pembeli · Pusat Komando Pengadaan')).toBeInTheDocument();
+    expect(
+      screen.queryByText('Good morning — here is what needs you today'),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText('Buyer · Procurement Command Center'),
     ).not.toBeInTheDocument();
   });
 
