@@ -212,7 +212,6 @@ export const sourcingEn: Record<string, string> = {
   'sourcing.award.selectPrompt': 'Select a quote above to enable the award action.',
   'sourcing.award.submit': 'Award to selected',
   'sourcing.award.submitting': 'Awarding…',
-  'sourcing.award.rejectAll': 'Reject all & resource',
   // — Lifecycle actions (cancel / reopen) —
   'sourcing.lifecycle.actions': 'Lifecycle actions',
   'sourcing.publish.submit': 'Publish RFQ',
@@ -554,7 +553,6 @@ export const sourcingId: Record<string, string> = {
   'sourcing.award.selectPrompt': 'Pilih penawaran di atas untuk mengaktifkan tindakan pemenangan.',
   'sourcing.award.submit': 'Menangkan yang dipilih',
   'sourcing.award.submitting': 'Memenangkan…',
-  'sourcing.award.rejectAll': 'Tolak semua & sumber ulang',
   // — Lifecycle actions (batal / buka kembali) —
   'sourcing.lifecycle.actions': 'Tindakan siklus hidup',
   'sourcing.publish.submit': 'Terbitkan RFQ',

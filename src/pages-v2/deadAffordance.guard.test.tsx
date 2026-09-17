@@ -489,13 +489,6 @@ const RESIDUE: ReadonlyArray<{ id: string; ruling: string }> = [
   { id: 'src/pages-v2/BuyerSuppliers.tsx::buyerSuppliers.actions.export', ruling: 'UNRULED' },
   { id: 'src/pages-v2/BuyerSuppliers.tsx::buyerSuppliers.actions.invite', ruling: 'UNRULED' },
 
-  // — `BuyerSourcing`'s award section. §76e ruled it LEFT ALONE deliberately:
-  //   it holds no atom, so a handoff notice is the wrong repair, and whether a
-  //   buyer may reject a quote set at all is a PRODUCT question. `t_quotation_
-  //   reject` exists but is `trigger: 'cascade'` and says in the flow that
-  //   losing quotes are not rejected one by one.
-  { id: 'src/pages-v2/BuyerSourcing.tsx::sourcing.award.rejectAll', ruling: '§76e (product ruling pending)' },
-
   // — `BuyerOrders`' side-panel footer: the SAME SHAPE as the button this batch
   //   removed from `BuyerSourcing` — a per-status label lookup with no handler.
   { id: 'src/pages-v2/BuyerOrders.tsx::buyerOrders.footer.viewFullDetails', ruling: 'UNRULED' },
@@ -539,8 +532,16 @@ describe('DEAD-AFFORDANCE-01 — the census, ratcheted', () => {
 
   // ── BILATERAL CONTROLS on the instrument, both directions, same run ──────
   it('CONTROL+ a known-DEAD control is FOUND and convicted', () => {
-    const known = DEAD.find((s) => idOf(s) === 'src/pages-v2/BuyerSourcing.tsx::sourcing.award.rejectAll');
-    expect(known, '`Reject all & resource` has no onClick (§76e) and must be convicted').toBeDefined();
+    // ⚠️ **RE-POINTED, AND THE REASON TRAVELS WITH IT.** This control named
+    //    `sourcing.award.rejectAll` until the operator ruled the bulk reject OUT:
+    //    a buyer reviews and rejects quotations ONE BY ONE, each with a stated
+    //    justification, so a single control that rejects a whole set is the wrong
+    //    affordance to carry — it was removed, not wired and not noticed. A
+    //    control whose subject no longer exists proves nothing, so this names
+    //    another missing-handler member on the SAME surface. If §103h retires the
+    //    `BulkActionsBar` descriptors too, re-point it again rather than delete it.
+    const known = DEAD.find((s) => idOf(s) === 'src/pages-v2/BuyerSourcing.tsx::sourcing.action.export');
+    expect(known, '`Export` has no onClick (§103h) and must be convicted').toBeDefined();
   });
 
   it('CONTROL- a known-LIVE control is FOUND and ACQUITTED', () => {
