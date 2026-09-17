@@ -239,35 +239,43 @@ describe('⚠️ THE PAGE MAKES NO CLAIM IT CANNOT BACK', () => {
     // absent, which was true only because the page had no windows. The windows
     // are back by operator direction, and five of them read WIRED command
     // targets — their green pill is the registry's answer, not a claim the page
-    // makes. The honest invariant is therefore: as many "Live" pills as there
-    // are live capabilities on the page, and not one more.
+    // makes.
+    //
+    // ⚠️ **AND THE EXPECTATION IS A PIN, NOT A SECOND CALL TO `isLive`.** The
+    // first draft computed the expected count with the very predicate under
+    // test, so a mutation moved BOTH sides together and survived — measured, on
+    // `isLive('inventory') => true` (§86: a gate must not derive its population
+    // through the code it is probing). The pin below is hand-written and
+    // asserted EQUAL to the registry in its own step, so a capability that
+    // flips liveness turns THAT step red rather than silently re-basing this
+    // one. Per-widget pill assertions live in `widgets/sampleWidgets.test.tsx`.
+    const EXPECTED_LIVE: Capability[] = [
+      'invoices',
+      'rfqs',
+      'purchaseOrders',
+      'goodsReceipts',
+      'advanceShipNotices',
+    ];
+    const EXPECTED_SAMPLE: Capability[] = ['inventory', 'risk', 'compliance'];
+
+    // Direction 1 — the pin still describes the registry.
+    for (const c of EXPECTED_LIVE) expect(isLive(c), c).toBe(true);
+    for (const c of EXPECTED_SAMPLE) expect(isLive(c), c).toBe(false);
+    // Non-vacuity: the page really holds both kinds.
+    expect(EXPECTED_LIVE.length).toBeGreaterThan(0);
+    expect(EXPECTED_SAMPLE.length).toBeGreaterThan(0);
+
     renderWithProviders(<BuyerDashboard />);
     await screen.findByText('Good morning — here is what needs you today');
 
     // The page-level claim this batch retired stays retired.
     expect(screen.queryByText(/Live operational view/)).not.toBeInTheDocument();
 
-    const onPage: Capability[] = [
-      'invoices',
-      'rfqs',
-      'purchaseOrders',
-      'goodsReceipts',
-      'advanceShipNotices',
-      'inventory',
-      'risk',
-      'compliance',
-    ];
-    const liveCount = onPage.filter((c) => isLive(c)).length;
-    const sampleCount = onPage.length - liveCount;
-    // Non-vacuity: the page really holds BOTH kinds, so neither half of the
-    // assertion below is satisfied by an empty set.
-    expect(liveCount).toBeGreaterThan(0);
-    expect(sampleCount).toBeGreaterThan(0);
-
-    expect(await screen.findAllByText('Live')).toHaveLength(liveCount);
-    // `Sample` also names the page-level provenance marker, so the window
-    // pills are the remainder above it.
-    expect(screen.getAllByText(/^Sample/).length).toBeGreaterThanOrEqual(sampleCount);
+    // Direction 2 — the screen matches the pin.
+    expect(await screen.findAllByText('Live')).toHaveLength(EXPECTED_LIVE.length);
+    expect(screen.getAllByText(/^Sample/).length).toBeGreaterThanOrEqual(
+      EXPECTED_SAMPLE.length,
+    );
   });
 
   it('states the reading instant and the sample provenance', async () => {
