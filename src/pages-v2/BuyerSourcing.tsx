@@ -3211,9 +3211,6 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                     ) : (
                       <HandoffNotice availability={rfqVerbs.award} testId="handoff-rfq-award" />
                     )}
-                    <Button variant="secondary">
-                      {t('sourcing.award.rejectAll')}
-                    </Button>
                   </div>
                 </section>
               )}
