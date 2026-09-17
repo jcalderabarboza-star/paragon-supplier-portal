@@ -37,6 +37,7 @@ import { describe, expect, it } from 'vitest';
 import { buildRepoProgram } from '../../../lib/storedFieldGate/derive';
 import { deriveInterfaceMembers } from './deriveC1Surface';
 import { getKnownFlows } from '../../transitions';
+import { stripSourceComments } from '../../../lib/sourceScan/stripComments';
 
 const ROOT = process.cwd();
 const CONTRACT = readFileSync(join(ROOT, 'docs', 'contracts', 'C3-events.md'), 'utf8');
@@ -208,10 +209,7 @@ const MOCK_COMMAND = join(ROOT, 'src', 'services', 'data', 'mock', 'MockCommandS
  * The fifth private stripper in this tree — the absence of a shared helper is
  * filed, not fixed here.
  */
-const codeOnly = (s: string): string =>
-  s
-    .replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, ' '))
-    .replace(/(^|[^:])(\/\/[^\n]*)/g, (_m, p: string, c: string) => p + c.replace(/[^\n]/g, ' '));
+const codeOnly = (s: string): string => stripSourceComments(s, 'blank');
 
 /** Zero-argument `new Date()` and `Date.now()` — clock READS, never parses. */
 const CLOCK_READ = /\bDate\.now\s*\(|\bnew\s+Date\s*\(\s*\)/g;

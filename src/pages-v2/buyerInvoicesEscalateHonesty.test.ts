@@ -33,15 +33,12 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { resources } from '../lib/i18n';
+import { stripSourceComments } from '../lib/sourceScan/stripComments';
 
 const SRC = join(process.cwd(), 'src', 'pages-v2', 'BuyerInvoices.tsx');
 
 /** Length-preserving comment blank — line numbers and offsets survive. */
-const blanks = (m: string): string => m.replace(/[^\n]/g, ' ');
-const codeOnly = (s: string): string =>
-  s
-    .replace(/\/\*[\s\S]*?\*\//g, blanks)
-    .replace(/(^|[^:])(\/\/[^\n]*)/g, (_m, p1: string, c: string) => p1 + blanks(c));
+const codeOnly = (s: string): string => stripSourceComments(s, 'blank');
 
 /**
  * The `Overdue` branch of `handleFooterAction`, comments removed.

@@ -73,6 +73,7 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import ts from 'typescript';
+import { stripSourceComments } from '../lib/sourceScan/stripComments';
 
 const SRC = join(__dirname, '..');
 
@@ -111,37 +112,7 @@ const SRC = join(__dirname, '..');
  * the one production file in the tree that trips it today, so this is recorded
  * where the next reader of a stripper will see it.
  */
-const codeOnly = (s: string): string => {
-  const out = s.split('');
-  let i = 0;
-  const blank = (from: number, to: number): void => {
-    for (let k = from; k < to && k < out.length; k++) if (out[k] !== '\n') out[k] = ' ';
-  };
-  while (i < s.length) {
-    const c = s[i];
-    const d = s[i + 1];
-    if (c === '/' && d === '/') {
-      const end = s.indexOf('\n', i);
-      blank(i, end === -1 ? s.length : end);
-      i = end === -1 ? s.length : end;
-    } else if (c === '/' && d === '*') {
-      const end = s.indexOf('*/', i + 2);
-      const stop = end === -1 ? s.length : end + 2;
-      blank(i, stop);
-      i = stop;
-    } else if (c === '"' || c === "'" || c === '`') {
-      i++;
-      while (i < s.length && s[i] !== c) {
-        if (s[i] === '\\') i++;
-        i++;
-      }
-      i++;
-    } else {
-      i++;
-    }
-  }
-  return out.join('');
-};
+const codeOnly = (s: string): string => stripSourceComments(s, 'blank');
 
 /** Lifted verbatim from `toastHonesty.guard.test.tsx`. */
 const NON_SETTER_ACT =

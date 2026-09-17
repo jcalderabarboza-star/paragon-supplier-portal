@@ -29,6 +29,7 @@ import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { REQUISITIONS } from './mock/fixtures/buyerRequisitions';
 import { requisitionsEn, requisitionsId } from '../../lib/i18n/requisitions';
+import { stripSourceComments } from '../../lib/sourceScan/stripComments';
 
 const SRC = join(process.cwd(), 'src');
 
@@ -44,8 +45,7 @@ function shipped(dir: string, out: string[] = []): string[] {
 
 /** Comments stripped: a rule stated in the file it governs reads as a violation
  *  of itself (§68's gate tripped on its own explanation twice). */
-const withoutProse = (s: string): string =>
-  s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
+const withoutProse = (s: string): string => stripSourceComments(s, 'delete');
 
 // ── MATCHER 1 · the WRITE site ──────────────────────────────────────────────
 // Every `approvalLevel:` assignment must have a QUOTED STRING LITERAL on the
@@ -112,6 +112,9 @@ describe('⚠️ §69 · THE MATCHERS, BEFORE ANY CLAIM ABOUT THE TREE', () => {
   });
 
   it('⚠️ AND THE POPULATION IS NON-EMPTY — an empty scan reports clean either way', () => {
+    // The shared source scan is a PARSER, not two regexes, and this `it`
+    // walks every file in `src/`. Same population, same assertions — only
+    // the time budget moves.
     // `EMPTY-INPUT-REPORTS-CLEAN-01`: a right answer from an instrument that
     // examined nothing looks exactly like a right answer. Membership, never a
     // count — the file list grows and a count would rot.
@@ -125,7 +128,7 @@ describe('⚠️ §69 · THE MATCHERS, BEFORE ANY CLAIM ABOUT THE TREE', () => {
     const allWrites = files.flatMap((f) => bandWrites(readFileSync(join(SRC, f), 'utf-8')));
     expect(allWrites.length).toBeGreaterThan(5);
     expect(allWrites).toContain("'Section Head'");
-  });
+  }, 30000);
 });
 
 describe('§69 · nothing in the portal derives the approval band', () => {

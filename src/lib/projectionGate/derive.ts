@@ -91,6 +91,7 @@
 
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
+import { stripSourceComments } from '../sourceScan/stripComments';
 
 /** How a display state comes to exist, derived from its write sites. */
 export type ProducedBy = 'computed-at-read' | 'stored-in-fixtures' | 'produced-by-nothing';
@@ -196,10 +197,10 @@ export function writeSites(state: string, files: string[]): WriteSite[] {
   const compare = new RegExp(`[=!]==?\\s*'${q}'`);
   const hits: WriteSite[] = [];
   for (const f of files) {
-    readFileSync(f, 'utf8')
+    stripSourceComments(readFileSync(f, 'utf8'), 'blank')
       .split(/\r?\n/)
       .forEach((raw, i) => {
-        const code = raw.replace(/\/\/.*$/, '').trim();
+        const code = raw.trim();
         if (!code || compare.test(code) || !write.test(code)) return;
         hits.push({ file: f, line: i + 1, text: code.slice(0, 100), fixture: isFixture(f) });
       });

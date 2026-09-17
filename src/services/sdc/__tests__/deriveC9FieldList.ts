@@ -1,3 +1,5 @@
+import { stripSourceComments } from '../../../lib/sourceScan/stripComments';
+
 // ─────────────────────────────────────────────────────────────────────────────
 // C9 · A-9 — THE DERIVED REQUIRED-FIELD LIST.
 //
@@ -38,8 +40,7 @@ interface DerivedVocabulary {
 
 /** Comments are prose. Everything below reads SHAPE, so prose is removed first —
  *  otherwise a docblock quoting a field declaration would enter the list. */
-const stripComments = (src: string): string =>
-  src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+const stripComments = (src: string): string => stripSourceComments(src, 'delete');
 
 export const deriveInterfaces = (typesSrc: string): readonly DerivedInterface[] => {
   const src = stripComments(typesSrc);

@@ -28,6 +28,7 @@
 import { describe, it, expect } from 'vitest';
 import { mockDataService } from './mockDataService';
 import { withChaos } from './withChaos';
+import { stripSourceComments } from '../../../lib/sourceScan/stripComments';
 
 /**
  * Raw source of every module in the tree.
@@ -60,10 +61,7 @@ const isSpec = (path: string): boolean => /\.test\.tsx?$/.test(path);
  * That is the same defect class this gate exists to catch, one level up, so
  * every claim about code below is made against `codeOnly()`.
  */
-const codeOnly = (src: string): string =>
-  (src ?? '')
-    .replace(/\/\*[\s\S]*?\*\//g, ' ')
-    .replace(/(^|[^:])\/\/[^\n]*/g, '$1 ');
+const codeOnly = (src: string): string => stripSourceComments(src ?? '', 'space');
 
 /** A file APPLIES the injector iff its CODE imports the module by specifier. */
 const importsWithChaos = (path: string): boolean =>

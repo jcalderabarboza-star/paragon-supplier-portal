@@ -175,6 +175,9 @@ describe('⚠️ mintedAtWrite — the clock value COMPUTED AND THEN STORED', ()
   });
 
   it('⚠️ DERIVED both ways — no NON-FIXTURE file writes a stored day-count undeclared', () => {
+    // The shared source scan is a PARSER, not two regexes, and this `it`
+    // walks every file in `src/`. Same population, same assertions — only
+    // the time budget moves.
     // The half that cannot go vacuous. It scans every non-fixture source file
     // for a write of any `stored-in-fixtures` day-count, and pins the result
     // EQUAL to the declared `mintedAtWrite` set. A new mint anywhere in the tree
@@ -199,7 +202,7 @@ describe('⚠️ mintedAtWrite — the clock value COMPUTED AND THEN STORED', ()
       (r) => `${r.mintedAtWrite}:${r.field}`,
     );
     expect(found.sort()).toEqual(declared.sort());
-  });
+  }, 30000);
 
   it('the shorthand half of the write matcher works — it is what finds the one real site', () => {
     // `BuyerContracts` mints this with ES6 shorthand (`daysUntilExpiry,`), so a

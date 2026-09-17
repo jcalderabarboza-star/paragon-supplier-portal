@@ -244,6 +244,7 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import ts from 'typescript';
 import { resources } from '../lib/i18n';
+import { stripSourceComments } from '../lib/sourceScan/stripComments';
 
 const PAGES_DIR = __dirname;
 
@@ -304,11 +305,7 @@ const PAGES_DIR = __dirname;
  * line-PREFIX form is wrong: it misses a JSX comment and produces a FALSE
  * ACCUSATION, which is rule 2 in the other direction.
  */
-const blanks = (m: string): string => m.replace(/[^\n]/g, ' ');
-const codeOnly = (s: string): string =>
-  s
-    .replace(/\/\*[\s\S]*?\*\//g, blanks)
-    .replace(/(^|[^:])(\/\/[^\n]*)/g, (_m, p1: string, c: string) => p1 + blanks(c));
+const codeOnly = (s: string): string => stripSourceComments(s, 'blank');
 
 const PERFORMS_REAL_ACT =
   /\b(?:\w*[Mm]utation\.mutate|\w*[Mm]utateAsync|dispatch|navigate|window\.open|createObjectURL|setSearchParams|location\.assign|fetch|set[A-Z]\w*|refetch|invalidateQueries)\s*\(/;

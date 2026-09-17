@@ -26,6 +26,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 import { registrationEn, registrationId } from '../lib/i18n/registration';
+import { stripSourceComments } from '../lib/sourceScan/stripComments';
 
 const RAW = readFileSync(resolve(__dirname, 'SupplierRegistration.tsx'), 'utf-8');
 
@@ -55,20 +56,7 @@ const RAW = readFileSync(resolve(__dirname, 'SupplierRegistration.tsx'), 'utf-8'
  * file were GREEN on that version — a clean reading from an instrument with a
  * hole in it. Only the synthetic probe went red.
  */
-const stripComments = (src: string): string =>
-  src
-    .replace(/\/\*[\s\S]*?\*\//g, '')
-    .split('\n')
-    .map((line) => {
-      if (line.trim().startsWith('//')) return '';
-      const at = line.indexOf('//');
-      if (at < 0) return line;
-      const before = line.slice(0, at);
-      // A quote or a colon before the marker means it could be inside a string
-      // or a URL. Leave the whole line rather than guess.
-      return /['"`:]/.test(before) ? line : before;
-    })
-    .join('\n');
+const stripComments = (src: string): string => stripSourceComments(src, 'delete');
 
 const SOURCE = stripComments(RAW);
 
@@ -101,12 +89,13 @@ describe('POPULATION CONTROL — nothing below means anything without this', () 
     // that broke the first version of this stripper.
     expect(stripped).toContain("const keep = 's4Vendor';");
     expect(stripped).toContain('https://host.example//path');
-    // ⚠️ AND THE COST OF BEING CONSERVATIVE, ASSERTED RATHER THAN ASSUMED: a
-    // trailing comment on a line that holds a string is LEFT BEHIND. That is a
-    // false accusation waiting to happen, and it is the direction chosen — it
-    // fails loudly on a line somebody can read, instead of silently deleting
-    // one from the population.
-    expect(stripped).toContain('trailing s4Vendor');
+    // ⚠️ AND THE COST OF BEING CONSERVATIVE IS GONE — ASSERTED, NOT ASSUMED.
+    // This read `toContain` until the shared scan landed: the retired heuristic
+    // could not tell a trailing comment from a `//` inside a URL, so it left the
+    // WHOLE line behind and said so — "a false accusation waiting to happen".
+    // A parser separates the two, so the comment goes and the URL stays, and
+    // both halves are asserted rather than one being traded for the other.
+    expect(stripped).not.toContain('trailing s4Vendor');
   });
 
   it('the source really was read, and the locale maps really are populated', () => {

@@ -52,6 +52,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { readFileSync } from 'node:fs';
+import { stripSourceComments } from '../sourceScan/stripComments';
 
 /** Where a stored day-count sits on the law-0.5 axis. */
 export type DayCountGroup =
@@ -274,10 +275,7 @@ export function writesField(
   const head = `(?:^\\s*|[{,]\\s*)`;
   const assign = new RegExp(`${head}${field}\\s*:\\s*(?!number\\b)\\S`);
   const shorthand = new RegExp(`${head}${field}\\s*,`);
-  return read(file)
+  return stripSourceComments(read(file), 'blank')
     .split(/\r?\n/)
-    .some((raw) => {
-      const code = raw.replace(/\/\/.*$/, '');
-      return assign.test(code) || shorthand.test(code);
-    });
+    .some((code) => assign.test(code) || shorthand.test(code));
 }
