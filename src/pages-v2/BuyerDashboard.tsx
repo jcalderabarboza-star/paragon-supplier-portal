@@ -12,6 +12,14 @@ import {
   Cell,
 } from 'recharts';
 import AppShellV2 from '../components/layout-v2/AppShellV2';
+import BuyerInvoiceAgingWidget from './widgets/BuyerInvoiceAgingWidget';
+import BuyerRfqAwaitingAwardWidget from './widgets/BuyerRfqAwaitingAwardWidget';
+import BuyerOpenPoWidget from './widgets/BuyerOpenPoWidget';
+import BuyerGoodsReceiptWidget from './widgets/BuyerGoodsReceiptWidget';
+import BuyerAsnInboundWidget from './widgets/BuyerAsnInboundWidget';
+import BuyerInventoryWidget from './widgets/BuyerInventoryWidget';
+import BuyerRiskWidget from './widgets/BuyerRiskWidget';
+import BuyerComplianceWidget from './widgets/BuyerComplianceWidget';
 import PageHeader from '../components/ui-v2/PageHeader';
 import PageMetaLine from '../components/ui-v2/PageMetaLine';
 import ProvenanceMarker from '../components/ui-v2/ProvenanceMarker';
@@ -25,15 +33,23 @@ import LoadingState from '../components/ui-v2/LoadingState';
 import ErrorState from '../components/ui-v2/ErrorState';
 import EmptyState from '../components/ui-v2/EmptyState';
 import Data from '../components/ui-v2/Data';
+import StatusPill from '../components/ui-v2/StatusPill';
+import IllustrativeRegion from '../components/ui-v2/IllustrativeRegion';
 import { formatDate, formatIDR, formatMonth } from '../lib/format';
 import {
   CHART_AXIS,
   CHART_CURSOR,
   CHART_GRID,
   CHART_SERIES,
+  SEMANTIC_STATE,
 } from '../lib/chartPalette';
 import { useCurrentIdentity } from '../context/CurrentIdentityContext';
 import type { SystemRoleId } from '../services/transitions/businessRoles';
+import type {
+  ProductionLineRow,
+  SupplierHealthRow,
+} from '../services/data/types';
+import { useCategoryLabel } from '../hooks/useCategoryLabel';
 import {
   useASNs,
   useBuyerInvoices,
@@ -43,7 +59,9 @@ import {
   useGoodsReceipts,
   useObligations,
   usePurchaseOrders,
+  useProductionLines,
   useRFQs,
+  useSupplierHealth,
 } from '../services/query/hooks';
 import { useOwnRequirementResponses } from '../services/query/sdcSupplierHooks';
 import {
@@ -108,6 +126,35 @@ const MONTH_FILL: Record<MonthRelation, string> = {
   future: CHART_SERIES[0],
 };
 
+// Grade IS health state (A healthy -> D at-risk), so it stays semantic - but
+// sourced from the centralized good->bad ramp, not ad-hoc hex.
+const GRADE_COLOR: Record<SupplierHealthRow['grade'], string> = {
+  A: SEMANTIC_STATE.good,
+  B: SEMANTIC_STATE.fair,
+  C: SEMANTIC_STATE.caution,
+  D: SEMANTIC_STATE.poor,
+};
+
+const RISK_VARIANT: Record<ProductionLineRow['risk'], 'success' | 'warning' | 'danger'> = {
+  low: 'success',
+  medium: 'warning',
+  high: 'danger',
+};
+
+/**
+ * The risk levels a line is "AT RISK" at.
+ *
+ * ⚠️ **DERIVED FROM THE TONE MAP ABOVE, AND THE PILL COUNTS THE ROWS.** The
+ * retired pill read a hard-coded *"2 lines at risk"* — measured against the
+ * shipped rows that was wrong under every reading (one line is `high`, three
+ * are `high` or `medium`). "At risk" is every level this page does NOT paint
+ * with the success tone, so a level added to `RISK_VARIANT` tomorrow joins or
+ * stays out by the colour it is already given, with nobody editing a list.
+ */
+const AT_RISK_LEVELS = (
+  Object.keys(RISK_VARIANT) as ProductionLineRow['risk'][]
+).filter((level) => RISK_VARIANT[level] !== 'success');
+
 const CARD = 'bg-bg-surface rounded-lg shadow-sm border border-border-subtle p-6';
 const PLACEHOLDER =
   'rounded-lg border border-dashed border-border-subtle p-6 bg-bg-surface/40';
@@ -116,6 +163,7 @@ const BADGE =
 
 const BuyerDashboard: React.FC = () => {
   const { t } = useTranslation();
+  const cl = useCategoryLabel();
   const { identity } = useCurrentIdentity();
   const [lane, setLane] = useState<SystemRoleId | null>(null);
 
@@ -134,6 +182,10 @@ const BuyerDashboard: React.FC = () => {
   const documentsQ = useDocuments();
   const registryQ = useComplianceRegistry();
   const responsesQ = useOwnRequirementResponses();
+  // The two SAMPLE sections the operator's review kept. They model domains no
+  // other buyer surface covers, and both are marked as sample where they render.
+  const linesQ = useProductionLines();
+  const healthQ = useSupplierHealth();
 
   const queries = [
     invoicesQ,
@@ -146,6 +198,8 @@ const BuyerDashboard: React.FC = () => {
     documentsQ,
     registryQ,
     responsesQ,
+    linesQ,
+    healthQ,
   ];
 
   if (queries.some((q) => q.isPending)) return <LoadingState breadcrumb={DASH_CRUMB} />;
@@ -174,7 +228,9 @@ const BuyerDashboard: React.FC = () => {
     !obligationsQ.data ||
     !documentsQ.data ||
     !registryQ.data ||
-    !responsesQ.data
+    !responsesQ.data ||
+    !linesQ.data ||
+    !healthQ.data
   )
     return <LoadingState breadcrumb={DASH_CRUMB} />;
 
@@ -188,6 +244,9 @@ const BuyerDashboard: React.FC = () => {
   const documents = documentsQ.data.items;
   const registry = registryQ.data.items;
   const responses = responsesQ.data;
+  const productionLines = linesQ.data.items;
+  const supplierHealth = healthQ.data.items;
+  const linesAtRisk = productionLines.filter((l) => AT_RISK_LEVELS.includes(l.risk)).length;
 
   if (invoices.length === 0 && obligations.length === 0 && registry.length === 0)
     return (
@@ -455,6 +514,26 @@ const BuyerDashboard: React.FC = () => {
         />
       </div>
 
+      {/* ── THE WINDOWS ────────────────────────────────────────────────────────
+          The expandable module grid (operator direction). Each window states
+          its own count, its own Live/Sample marker and its own CTA, and its
+          expanded table's rows link to the record they name. The retired chip
+          bar (`BuyerAlertsBar`) does NOT come back with them: the alerts strip
+          above says the same thing with more of it. */}
+      <h2 className="text-section text-text-primary mb-3">
+        {t('buyerDashboard.windows.title')}
+      </h2>
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5 mb-8">
+        <BuyerInvoiceAgingWidget />
+        <BuyerRfqAwaitingAwardWidget />
+        <BuyerOpenPoWidget />
+        <BuyerGoodsReceiptWidget />
+        <BuyerAsnInboundWidget />
+        <BuyerInventoryWidget />
+        <BuyerRiskWidget />
+        <BuyerComplianceWidget />
+      </div>
+
       {/* ── E · CHART CARDS ────────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-8">
         <section className={CARD}>
@@ -661,6 +740,130 @@ const BuyerDashboard: React.FC = () => {
           </tbody>
         </Table>
       </section>
+
+      {/* ── PRODUCTION LINE RISK + SUPPLIER HEALTH (SAMPLE) ────────────────────
+          Kept by operator direction. Both are authored fixtures with no live
+          source, so both sit inside an `IllustrativeRegion` and neither offers
+          a click: there is no production-line page to open, and a health row
+          carries no supplier id to open one with (derived: 0 of 6 names match a
+          supplier master record). A row that looked clickable and went nowhere
+          would be the dead affordance the ratchet exists to stop. */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-8">
+        <section className={CARD}>
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <div className="text-eyebrow text-text-tertiary uppercase">
+                {t('buyerDashboard.lines.eyebrow')}
+              </div>
+              <h2 className="text-section text-text-primary mt-1">
+                {t('buyerDashboard.lines.title')}
+              </h2>
+            </div>
+            {/* DERIVED from the rows, never typed. */}
+            <StatusPill variant={linesAtRisk > 0 ? 'warning' : 'success'}>
+              {linesAtRisk > 0
+                ? t('buyerDashboard.lines.atRisk', { count: linesAtRisk })
+                : t('buyerDashboard.lines.allClear')}
+            </StatusPill>
+          </div>
+          <IllustrativeRegion
+            capability="dashboard"
+            label={t('buyerDashboard.lines.title')}
+          >
+            <Table>
+              <TableHeader>
+                <TableHeaderCell>{t('buyerDashboard.lines.col.line')}</TableHeaderCell>
+                <TableHeaderCell>{t('buyerDashboard.lines.col.category')}</TableHeaderCell>
+                <TableHeaderCell>{t('buyerDashboard.lines.col.cover')}</TableHeaderCell>
+                <TableHeaderCell>{t('buyerDashboard.lines.col.risk')}</TableHeaderCell>
+              </TableHeader>
+              <tbody>
+                {productionLines.map((row) => (
+                  <TableRow key={row.line}>
+                    <TableCell>
+                      <div className="font-medium text-text-primary">{row.line}</div>
+                      {row.blockedSkus > 0 ? (
+                        <div className="text-meta text-text-tertiary">
+                          {t(
+                            row.blockedSkus === 1
+                              ? 'buyerDashboard.lines.blockedSku.one'
+                              : 'buyerDashboard.lines.blockedSku.other',
+                            { count: row.blockedSkus },
+                          )}
+                        </div>
+                      ) : null}
+                    </TableCell>
+                    <TableCell className="text-text-secondary">{cl(row.category)}</TableCell>
+                    <TableCell className="text-text-primary">
+                      <Data>{row.coverDays}d</Data>
+                    </TableCell>
+                    <TableCell>
+                      <StatusPill variant={RISK_VARIANT[row.risk]}>{row.riskLabel}</StatusPill>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </tbody>
+            </Table>
+          </IllustrativeRegion>
+        </section>
+
+        <section className={CARD}>
+          <div className="text-eyebrow text-text-tertiary uppercase">
+            {t('buyerDashboard.health.eyebrow')}
+          </div>
+          <h2 className="text-section text-text-primary mt-1">
+            {t('buyerDashboard.health.title')}
+          </h2>
+          <p className="text-meta text-text-tertiary mt-1">
+            {t('buyerDashboard.health.note')}
+          </p>
+          <div className="flex items-center gap-4 mt-3 mb-4 text-meta text-text-tertiary">
+            {(['A', 'B', 'C', 'D'] as const).map((g) => (
+              <div key={g} className="flex items-center gap-1.5">
+                <span
+                  className="inline-block w-2.5 h-2.5 rounded-sm"
+                  style={{ backgroundColor: GRADE_COLOR[g] }}
+                />
+                <span className="font-semibold">{g}</span>
+              </div>
+            ))}
+          </div>
+          <IllustrativeRegion
+            capability="dashboard"
+            label={t('buyerDashboard.health.title')}
+          >
+            <div className="h-72">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={supplierHealth} margin={{ top: 8, right: 12, left: -16, bottom: 8 }}>
+                  <CartesianGrid stroke={CHART_GRID} vertical={false} />
+                  <XAxis
+                    dataKey="name"
+                    tick={{ fontSize: 11, fill: CHART_AXIS }}
+                    interval={0}
+                    angle={-20}
+                    textAnchor="end"
+                    height={60}
+                  />
+                  <YAxis domain={[0, 100]} tick={{ fontSize: 11, fill: CHART_AXIS }} />
+                  <Tooltip
+                    cursor={{ fill: CHART_CURSOR }}
+                    contentStyle={{
+                      border: `1px solid ${CHART_GRID}`,
+                      borderRadius: 10,
+                      fontSize: 12,
+                    }}
+                  />
+                  <Bar dataKey="score" radius={[6, 6, 0, 0]}>
+                    {supplierHealth.map((row) => (
+                      <Cell key={row.name} fill={GRADE_COLOR[row.grade]} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </IllustrativeRegion>
+        </section>
+      </div>
 
       {/* ── H · PHASE C STRIP ──────────────────────────────────────────────── */}
       <section className={PLACEHOLDER} data-testid="phase-c">

@@ -117,6 +117,24 @@ export const buyerDashboardEn: Record<string, string> = {
   'buyerDashboard.phaseC.badge': 'PHASE C',
   'buyerDashboard.phaseC.body':
     'Not shown until the data can prove them: OTIF · award lead time · PR → PO cycle time · acknowledgement time · supplier risk distribution · spend by material category.',
+  // -- Windows grid --
+  'buyerDashboard.windows.title': 'Modules',
+  // -- Production Line Risk panel (RESTORED, operator direction) --
+  'buyerDashboard.lines.eyebrow': 'Operations',
+  'buyerDashboard.lines.title': 'Production Line Risk',
+  'buyerDashboard.lines.col.line': 'Line',
+  'buyerDashboard.lines.col.category': 'Category',
+  'buyerDashboard.lines.col.cover': 'Cover (days)',
+  'buyerDashboard.lines.col.risk': 'Risk',
+  'buyerDashboard.lines.blockedSku.one': '{{count}} blocked SKU',
+  'buyerDashboard.lines.blockedSku.other': '{{count}} blocked SKUs',
+  'buyerDashboard.lines.atRisk': '{{count}} lines at risk',
+  'buyerDashboard.lines.allClear': 'No lines at risk',
+  // -- Supplier Health Index panel (RESTORED, operator direction) --
+  'buyerDashboard.health.eyebrow': 'Intelligence',
+  'buyerDashboard.health.title': 'Supplier Health Index',
+  'buyerDashboard.health.note':
+    'Scores are illustrative until a scoring engine exists; the names here do not resolve to supplier records.',
   // — Empty state —
   'buyerDashboard.empty.title': 'No command-center data',
   'buyerDashboard.empty.subtitle':
@@ -216,6 +234,24 @@ export const buyerDashboardId: Record<string, string> = {
   'buyerDashboard.phaseC.badge': 'FASE C',
   'buyerDashboard.phaseC.body':
     'Belum ditampilkan sampai datanya dapat membuktikan: OTIF · waktu tempuh penetapan · waktu siklus PR → PO · waktu pengakuan · sebaran risiko pemasok · belanja per kategori material.',
+  // -- Windows grid --
+  'buyerDashboard.windows.title': 'Modul',
+  // -- Production Line Risk panel (RESTORED, operator direction) --
+  'buyerDashboard.lines.eyebrow': 'Operasi',
+  'buyerDashboard.lines.title': 'Risiko Lini Produksi',
+  'buyerDashboard.lines.col.line': 'Lini',
+  'buyerDashboard.lines.col.category': 'Kategori',
+  'buyerDashboard.lines.col.cover': 'Cakupan (hari)',
+  'buyerDashboard.lines.col.risk': 'Risiko',
+  'buyerDashboard.lines.blockedSku.one': '{{count}} SKU diblokir',
+  'buyerDashboard.lines.blockedSku.other': '{{count}} SKU diblokir',
+  'buyerDashboard.lines.atRisk': '{{count}} lini berisiko',
+  'buyerDashboard.lines.allClear': 'Tidak ada lini berisiko',
+  // -- Supplier Health Index panel (RESTORED, operator direction) --
+  'buyerDashboard.health.eyebrow': 'Intelijen',
+  'buyerDashboard.health.title': 'Indeks Kesehatan Pemasok',
+  'buyerDashboard.health.note':
+    'Skor bersifat ilustratif sampai ada mesin penilaian; nama di sini tidak terhubung ke catatan pemasok.',
   // — Empty state —
   'buyerDashboard.empty.title': 'Tidak ada data pusat komando',
   'buyerDashboard.empty.subtitle':

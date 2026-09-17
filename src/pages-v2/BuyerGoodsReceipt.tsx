@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   ClipboardCheck,
   AlertTriangle,
@@ -38,6 +38,7 @@ import {
   useAdvanceShipNoticeResolveDiscrepancy,
 } from '../services/query/commandHooks';
 import LoadingState from '../components/ui-v2/LoadingState';
+import { useDeepLinkedSelection } from '../lib/recordDeepLink';
 import ErrorState from '../components/ui-v2/ErrorState';
 import EmptyState from '../components/ui-v2/EmptyState';
 import { HandoffNotice } from '../components/ui-v2/HandoffNotice';
@@ -214,6 +215,26 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [wizardOpen, setWizardOpen] = useState(false);
   const [wizardAsnId, setWizardAsnId] = useState<string | undefined>(undefined);
+
+  // ── DEEP LINK (?id=) ──────────────────────────────────────────────────────
+  // A dashboard window's row links here. The filters are WIDENED first: landing
+  // on a filtered list that excludes the very record the reader clicked is the
+  // shape of a broken link (`Glossary.tsx`'s rule). An unknown id opens nothing
+  // and says nothing — the list is still the right answer.
+  //
+  // It lives in the WORKSPACE, not in the page shell above: the selection state
+  // and the detail panel are both here, and a hook in the shell would be
+  // setting a `selectedId` that does not exist in its scope.
+  useDeepLinkedSelection(
+    goodsReceipts,
+    (gr, id) => gr.id === id || gr.grNumber === id,
+    useCallback((gr: (typeof goodsReceipts)[number]) => {
+      setTab('all');
+      setSearch('');
+      setDateFilter('all');
+      setSelectedId(gr.id);
+    }, []),
+  );
 
   // ── §91e · THE SETTLE WATCH ────────────────────────────────────────────────
   // Mirrors `BuyerInvoices`' watch verb for verb — one SAP boundary, two
@@ -1320,6 +1341,7 @@ const BuyerGoodsReceipt: React.FC = () => {
     );
 
   const goodsReceipts = grQuery.data?.items ?? [];
+
   if (goodsReceipts.length === 0)
     return (
       <EmptyState

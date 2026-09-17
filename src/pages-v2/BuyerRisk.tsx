@@ -26,6 +26,10 @@ import PageHeader from '../components/ui-v2/PageHeader';
 import PageMetaLine from '../components/ui-v2/PageMetaLine';
 import LivenessPill from '../components/ui-v2/LivenessPill';
 import IllustrativeRegion from '../components/ui-v2/IllustrativeRegion';
+import {
+  recordAnchorId,
+  useDeepLinkedHighlight,
+} from '../lib/recordDeepLink';
 import KpiCard from '../components/ui-v2/KpiCard';
 import BulkActionsBar from '../components/ui-v2/BulkActionsBar';
 import SubTabs from '../components/ui-v2/SubTabs';
@@ -162,16 +166,25 @@ const ALERT_VARIANT: Record<AlertLevel, { bg: string; border: string; text: stri
   info: { bg: 'bg-info-soft', border: 'border-info', text: 'text-info', Icon: Info },
 };
 
-const AlertBanner: React.FC<{ alert: RiskAlert; onDismiss: () => void }> = ({
-  alert,
-  onDismiss,
-}) => {
+const AlertBanner: React.FC<{
+  alert: RiskAlert;
+  onDismiss: () => void;
+  /** True when a dashboard window deep-linked to THIS alert. */
+  highlighted?: boolean;
+}> = ({ alert, onDismiss, highlighted = false }) => {
   const { t } = useTranslation();
   const v = ALERT_VARIANT[alert.level];
   const Icon = v.Icon;
   return (
+    // ⚠️ THE ANCHOR AND THE RING ARE THE WHOLE DEEP-LINK AFFORDANCE HERE.
+    // This page has no per-alert detail panel and inventing one would be a
+    // redesign, so a linked row lands ON ITSELF — scrolled into view and
+    // ringed — exactly as a glossary term chip does (operator ruling).
     <div
-      className={`${v.bg} border-l-2 ${v.border} rounded px-4 py-3 mb-2 flex items-start gap-3`}
+      id={recordAnchorId(alert.id)}
+      className={`${v.bg} border-l-2 ${v.border} rounded px-4 py-3 mb-2 flex items-start gap-3 ${
+        highlighted ? 'ring-2 ring-action ring-offset-2' : ''
+      }`}
     >
       <Icon size={16} className={`shrink-0 mt-0.5 ${v.text}`} />
       <div className="flex-1 min-w-0">
@@ -1021,6 +1034,11 @@ const BuyerRisk: React.FC = () => {
     commodities.length === 0;
 
   const visibleAlerts = alerts.filter((a) => !dismissedAlerts.includes(a.id));
+  // ── DEEP LINK (?id=) ──────────────────────────────────────────────────────
+  // `ready` is the loaded list: scrolling before the rows exist would find
+  // nothing and mark the id handled. An unknown id highlights nothing and says
+  // nothing.
+  const deepLinkedAlertId = useDeepLinkedHighlight(alerts.length > 0);
 
   if (anyPending) return <LoadingState breadcrumb={RISK_CRUMB} />;
   if (anyError)
@@ -1092,6 +1110,7 @@ const BuyerRisk: React.FC = () => {
             <AlertBanner
               key={a.id}
               alert={a}
+              highlighted={a.id === deepLinkedAlertId}
               onDismiss={() =>
                 setDismissedAlerts((prev) => [...prev, a.id])
               }

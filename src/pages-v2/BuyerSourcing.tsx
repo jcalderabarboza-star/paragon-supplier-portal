@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   FileText,
   Clock,
@@ -56,6 +56,7 @@ import LoadingState from '../components/ui-v2/LoadingState';
 import ErrorState from '../components/ui-v2/ErrorState';
 import EmptyState from '../components/ui-v2/EmptyState';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useDeepLinkedSelection } from '../lib/recordDeepLink';
 import { useRFQs, useQuotations, useSuppliers, useRequisitions } from '../services/query/hooks';
 import {
   useRfqCreate,
@@ -867,6 +868,24 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
   // act, so it is confirm-before-commit like every other one on this surface.
   const [pinDraft, setPinDraft] = useState<PinDraft | null>(null);
   const [wizardOpen, setWizardOpen] = useState(false);
+
+  // ── DEEP LINK (?id=) ──────────────────────────────────────────────────────
+  // The dashboard's "RFQs awaiting award" window links a row here. The group
+  // tab, the category chips and the search box are all WIDENED first: landing
+  // on a filtered board that excludes the very RFQ the reader clicked is the
+  // shape of a broken link (`Glossary.tsx`'s rule). An unknown id opens nothing
+  // and says nothing.
+  useDeepLinkedSelection(
+    baseRfqs,
+    (r, id) => r.id === id || r.rfqNumber === id,
+    useCallback((r: (typeof baseRfqs)[number]) => {
+      setGroup('all');
+      setSelectedCats([]);
+      setSearch('');
+      setSelectedRfqId(r.id);
+    }, []),
+  );
+
 
   // §73 — the seat's authority over `t_rfq_create` (atom `rfq:create`,
   // held by `procurement`). One verb, one notice, one placement.

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   AlertTriangle,
@@ -21,6 +21,10 @@ import PageMetaLine from '../components/ui-v2/PageMetaLine';
 import KpiCard from '../components/ui-v2/KpiCard';
 import BulkActionsBar from '../components/ui-v2/BulkActionsBar';
 import SidePanel from '../components/ui-v2/SidePanel';
+import {
+  recordAnchorId,
+  useDeepLinkedHighlight,
+} from '../lib/recordDeepLink';
 import FilterChipsBar from '../components/ui-v2/FilterChipsBar';
 import StatusPill from '../components/ui-v2/StatusPill';
 import LivenessPill from '../components/ui-v2/LivenessPill';
@@ -317,6 +321,16 @@ const BuyerCompliance: React.FC = () => {
   };
 
   const items = query.data?.items ?? [];
+
+  // ── DEEP LINK (?id=) ──────────────────────────────────────────────────────
+  // The dashboard's compliance window links a row here. The status filter is
+  // WIDENED so the linked certificate cannot be filtered out from under the
+  // reader (`Glossary.tsx`'s rule); an unknown id highlights nothing and says
+  // nothing.
+  const deepLinkedCertId = useDeepLinkedHighlight(items.length > 0);
+  useEffect(() => {
+    if (deepLinkedCertId) setStatusFilter('All');
+  }, [deepLinkedCertId]);
 
   const rows: Row[] = useMemo(
     () =>
@@ -824,7 +838,18 @@ const BuyerCompliance: React.FC = () => {
           </TableHeader>
           <tbody>
             {filtered.map(({ entry, status, days, category, remind }) => (
-              <TableRow key={entry.id}>
+              // ⚠️ THE ANCHOR AND THE RING ARE THE DEEP-LINK AFFORDANCE HERE.
+              // This page has no per-certificate detail panel — its only
+              // SidePanel is the document-REQUEST flow — so a linked row lands
+              // ON ITSELF, scrolled into view and ringed, the way a glossary
+              // term chip does (operator ruling). No panel is invented.
+              <TableRow
+                key={entry.id}
+                id={recordAnchorId(entry.id)}
+                className={
+                  entry.id === deepLinkedCertId ? 'ring-2 ring-action ring-inset' : ''
+                }
+              >
                 <TableCell>
                   <div className="font-semibold text-text-primary">
                     {entry.supplierName}

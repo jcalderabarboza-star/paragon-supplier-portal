@@ -26,6 +26,8 @@ import { formatIDR } from '../lib/format';
 import type { CurrentIdentity } from '../context/CurrentIdentityContext';
 import type { IDataService, QueryScope } from '../services/data/types';
 import BuyerDashboard from './BuyerDashboard';
+import { isLive } from '../services/liveness/registry';
+import type { Capability } from '../services/liveness/registry';
 import {
   PRESENT_ISO,
   accountsPayableOpen,
@@ -232,11 +234,40 @@ describe('⚠️ EVERY FIGURE EQUALS ITS DERIVATION', () => {
 });
 
 describe('⚠️ THE PAGE MAKES NO CLAIM IT CANNOT BACK', () => {
-  it('says nothing is "Live"', async () => {
+  it('⚠️ EVERY "Live" ON THE PAGE IS ONE THE REGISTRY GRANTS — and the retired subtitle is gone', async () => {
+    // ⚠️ RE-POINTED, NOT LOOSENED. This asserted `queryByText('Live')` is
+    // absent, which was true only because the page had no windows. The windows
+    // are back by operator direction, and five of them read WIRED command
+    // targets — their green pill is the registry's answer, not a claim the page
+    // makes. The honest invariant is therefore: as many "Live" pills as there
+    // are live capabilities on the page, and not one more.
     renderWithProviders(<BuyerDashboard />);
     await screen.findByText('Good morning — here is what needs you today');
+
+    // The page-level claim this batch retired stays retired.
     expect(screen.queryByText(/Live operational view/)).not.toBeInTheDocument();
-    expect(screen.queryByText('Live')).not.toBeInTheDocument();
+
+    const onPage: Capability[] = [
+      'invoices',
+      'rfqs',
+      'purchaseOrders',
+      'goodsReceipts',
+      'advanceShipNotices',
+      'inventory',
+      'risk',
+      'compliance',
+    ];
+    const liveCount = onPage.filter((c) => isLive(c)).length;
+    const sampleCount = onPage.length - liveCount;
+    // Non-vacuity: the page really holds BOTH kinds, so neither half of the
+    // assertion below is satisfied by an empty set.
+    expect(liveCount).toBeGreaterThan(0);
+    expect(sampleCount).toBeGreaterThan(0);
+
+    expect(await screen.findAllByText('Live')).toHaveLength(liveCount);
+    // `Sample` also names the page-level provenance marker, so the window
+    // pills are the remainder above it.
+    expect(screen.getAllByText(/^Sample/).length).toBeGreaterThanOrEqual(sampleCount);
   });
 
   it('states the reading instant and the sample provenance', async () => {
@@ -255,6 +286,47 @@ describe('⚠️ THE PAGE MAKES NO CLAIM IT CANNOT BACK', () => {
     await screen.findByText('Good morning — here is what needs you today');
     for (const gone of ['Rp 14.0B', '75%', '2 lines at risk', 'Today', 'This week', 'This month']) {
       expect(screen.queryByText(gone), gone).not.toBeInTheDocument();
+    }
+  });
+});
+
+describe('⚠️ THE TWO SAMPLE SECTIONS THE OPERATOR KEPT', () => {
+  it('the production-line pill equals its derivation, and is not a literal', async () => {
+    const lines = (await proc.getProductionLines(SCOPE)).items;
+    // "At risk" is every level the page does not paint with the success tone.
+    // Derived here by the same rule the page states, not copied from it.
+    const atRisk = lines.filter((l) => l.risk !== 'low').length;
+    expect(lines.length).toBeGreaterThan(0);
+    expect(atRisk).toBeGreaterThan(0);
+
+    renderWithProviders(<BuyerDashboard />);
+    await screen.findByText('Good morning — here is what needs you today');
+    expect(await screen.findByText(`${atRisk} lines at risk`)).toBeInTheDocument();
+    // ⚠️ The retired literal said TWO. Measured against the shipped rows that
+    // was wrong under every reading — one line is `high`, three are `high` or
+    // `medium` — so this asserts the old number is NOT what renders.
+    expect(atRisk).not.toBe(2);
+    expect(screen.queryByText('2 lines at risk')).not.toBeInTheDocument();
+  });
+
+  it('the supplier-health chart says its scores are illustrative', async () => {
+    renderWithProviders(<BuyerDashboard />);
+    await screen.findByText('Good morning — here is what needs you today');
+    expect(
+      await screen.findByText(/Scores are illustrative until a scoring engine exists/),
+    ).toBeInTheDocument();
+  });
+
+  it('⚠️ NEITHER SECTION OFFERS A CLICK IT CANNOT HONOUR', async () => {
+    // No production-line page exists, and a health row carries no supplier id
+    // (measured: 0 of 6 names match a supplier master record), so neither may
+    // render a link. This asserts the absence where a reader would expect one.
+    const lines = (await proc.getProductionLines(SCOPE)).items;
+    renderWithProviders(<BuyerDashboard />);
+    await screen.findByText('Good morning — here is what needs you today');
+    for (const l of lines) {
+      const cell = await screen.findByText(l.line);
+      expect(cell.closest('a'), l.line).toBeNull();
     }
   });
 });

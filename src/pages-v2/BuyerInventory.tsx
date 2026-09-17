@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Package,
@@ -34,6 +34,7 @@ import TableCell from '../components/ui-v2/TableCell';
 import SidePanel from '../components/ui-v2/SidePanel';
 import Timeline, { TimelineEvent } from '../components/ui-v2/Timeline';
 import LoadingState from '../components/ui-v2/LoadingState';
+import { useDeepLinkedSelection } from '../lib/recordDeepLink';
 import ErrorState from '../components/ui-v2/ErrorState';
 import EmptyState from '../components/ui-v2/EmptyState';
 import Data from '../components/ui-v2/Data';
@@ -158,6 +159,20 @@ const BuyerInventory: React.FC = () => {
 
   const inventory = inventoryQuery.data?.items ?? [];
   const purchaseOrders = posQuery.data?.items ?? [];
+  // ── DEEP LINK (?id=) ──────────────────────────────────────────────────────
+  // A dashboard window's row links here. The filters are WIDENED first: landing
+  // on a filtered list that excludes the very record the reader clicked is the
+  // shape of a broken link (`Glossary.tsx`'s rule). An unknown id opens nothing
+  // and says nothing — the list is still the right answer.
+  useDeepLinkedSelection(
+    inventory,
+    (r, id) => r.id === id || r.materialCode === id,
+    useCallback((r: InventoryRecord) => {
+      setSelectedBrands([]);
+      setSelectedId(r.id);
+    }, []),
+  );
+
   // Category / country / OTIF are cross-supplier joins — best-effort off the
   // suppliers list (empty for a supplier persona; the page still renders).
   const supplierById = useMemo(
