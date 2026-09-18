@@ -276,25 +276,33 @@ describe('⚠️ THE ACQUITTALS — nothing that is not in force grants anything
 
 // ─────────────────────────────────────────────────────────────────────────────
 describe('⚠️ RULING 5 — UNDECIDABLE blocks the EXEMPTION, never the event', () => {
-  it('a wizard-shaped payload (material NAMES) is undecidable, naming the codes', () => {
-    // The live shape of the queued MATERIAL_CATALOG defect: the wizard writes
-    // display prose into `materialIds`.
-    const e = pslExemptionFor(['sup-005'], ['Niacinamide USP'], P);
+  it('an ARBITRARY unmapped value is undecidable, naming what it could not resolve', () => {
+    // ⚠️ **THE SUBJECT OF THIS BLOCK CHANGED, AND THE LITERAL CHANGED WITH
+    // IT.** It used to read `'Niacinamide USP'` and call itself *"the live
+    // shape of the queued MATERIAL_CATALOG defect"* — the wizard really did
+    // write display prose into `materialIds`. That defect is gone: the
+    // catalog carries master codes, and the code-less entries contribute
+    // NOTHING rather than a name. So the literal is now deliberately
+    // SYNTHETIC, because naming a real catalog entry would tie this spec to
+    // a picker it no longer describes. What it pins survives the fix: an
+    // unresolvable value reaching the gate from ANY source is undecidable
+    // and says which value it was.
+    const e = pslExemptionFor(['sup-005'], ['ZZ-NOT-A-CODE-0000'], P);
     expect(e).toEqual({
       kind: 'UNDECIDABLE',
       because: 'UNMAPPED_MATERIAL',
-      codes: ['Niacinamide USP'],
+      codes: ['ZZ-NOT-A-CODE-0000'],
     });
   });
 
   it('⚠️ IT NEVER GRANTS — the same supplier who WOULD exempt on the real code does not', () => {
     expect(pslExemptionFor(['sup-005'], ['AI-NIAC-6601'], P).kind).toBe('EXEMPT');
-    expect(pslExemptionFor(['sup-005'], ['Niacinamide USP'], P).kind).toBe('UNDECIDABLE');
+    expect(pslExemptionFor(['sup-005'], ['ZZ-NOT-A-CODE-0000'], P).kind).toBe('UNDECIDABLE');
   });
 
   it('⚠️ AND IT NEVER REFUSES ON ITS OWN — three invitees still SATISFY', () => {
     const d = decideSourcing(
-      { invitedSupplierIds: ['sup-005', 'sup-006', 'sup-009'], materialIds: ['Niacinamide USP'] },
+      { invitedSupplierIds: ['sup-005', 'sup-006', 'sup-009'], materialIds: ['ZZ-NOT-A-CODE-0000'] },
       P,
       rosterStatusOf,
     );

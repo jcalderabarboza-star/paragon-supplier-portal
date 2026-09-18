@@ -10,19 +10,26 @@
 // valid set; disabling the control they need in order to comply is the false
 // affordance this lane exists to avoid.
 //
-// ⚠️ **AND WHY THE EXEMPTION SENTENCE IS TESTED ON THE PANEL AND NOT IN THE
-// WIZARD.** The wizard writes material NAMES into `materialIds`
-// (`MATERIAL_CATALOG` is display prose and its intersection with the code
-// vocabulary is EMPTY — measured, and queued as its own fix), so every draft a
-// buyer builds is UNDECIDABLE and no wizard path can produce an exemption
-// today. The code path is correct and reachable — `rfqSourcingGate.test.ts`
-// drives it directly — but the only place it can be SEEN against live data is a
-// seeded event, so that is where it is asserted.
+// ⚠️ **WHY THE EXEMPTION SENTENCE IS TESTED ON THE PANEL AND NOT IN THE WIZARD
+// — AND THE REASON THAT USED TO STAND HERE IS RETIRED, NOT EDITED.** It read
+// that the wizard *"writes material NAMES into `materialIds`"* so that *"every
+// draft a buyer builds is UNDECIDABLE and no wizard path can produce an
+// exemption today"*. That was true and is no longer: the catalog carries master
+// codes on 9 of 23 entries, and a wizard draft on one of those reaches the gate
+// with a real code.
+//
+// The sentence is still asserted on the panel, for a NARROWER reason that
+// survives: **no catalog entry's code holds an in-force designation that
+// suspends bidding** — derived, not assumed — so `NOT_REQUIRED` still cannot be
+// produced from the wizard, while every other verdict now can. A seeded event
+// remains the only place that one sentence can be seen against live data.
 // ─────────────────────────────────────────────────────────────────────────────
-import { screen, fireEvent, within } from '@testing-library/react';
+import { screen, fireEvent, within, cleanup } from '@testing-library/react';
 import { renderWithProviders } from '../test/test-utils';
 import i18n from '../lib/i18n';
-import BuyerSourcing from './BuyerSourcing';
+import BuyerSourcing, { MATERIAL_CATALOG } from './BuyerSourcing';
+import { rfqStore } from '../services/data/mock/stores/rfqStore';
+import { MATERIAL_MASTER } from '../services/sdc/fixtures';
 import { mockSuppliers } from '../data/mockSuppliers';
 import { mockRfqs } from '../data/mockRfqs';
 import { SupplierStatus } from '../types/supplier.types';
@@ -51,8 +58,11 @@ let newRfqLabel = 'New RFQ';
 let qtyLabel: RegExp = /Total quantity/i;
 let nextLabel: RegExp = /^Next$/i;
 
-/** Open the wizard and reach the invite step for a category + one material. */
-const openInviteStep = async (
+/** Open the wizard and FILL step 0, stopping while the picker is still on
+ *  screen. Split out of `openInviteStep` because the code-less note lives IN
+ *  the picker — it is said while the buyer can still change the pick, so a
+ *  helper that walks past step 0 can never see it. */
+const openMaterialStep = async (
   category = 'Packaging',
   material = 'PET Bottle 100ml',
 ): Promise<void> => {
@@ -73,6 +83,14 @@ const openInviteStep = async (
   });
   fireEvent.click(await screen.findByText(material));
   fireEvent.change(await screen.findByLabelText(qtyLabel), { target: { value: '2400' } });
+};
+
+/** Open the wizard and reach the invite step for a category + one material. */
+const openInviteStep = async (
+  category = 'Packaging',
+  material = 'PET Bottle 100ml',
+): Promise<void> => {
+  await openMaterialStep(category, material);
   fireEvent.click(screen.getByRole('button', { name: nextLabel }));
 };
 
@@ -190,15 +208,42 @@ describe('⚠️ THE STEP-1 MIRROR (EN) — the step refuses, the controls do no
     expect(nextButton().disabled).toBe(false);
   });
 
-  it('⚠️ THE WIZARD REPORTS THE STANDING AS UNCHECKABLE — honestly, and without refusing', async () => {
-    // The live face of the queued MATERIAL_CATALOG defect: a wizard draft
-    // carries material NAMES, so the exemption question cannot be asked. The
-    // event is NOT refused for it — two invitees still pass.
-    await openInviteStep();
+  it('⚠️ A CODE-LESS MATERIAL IS NAMED AS SUCH — honestly, and without refusing', async () => {
+    // ⚠️ **THIS ASSERTION WAS INVERTED RATHER THAN DELETED, per the 2B-2
+    // convention.** It used to demand `psl-gate-undecidable` naming
+    // `'PET Bottle 100ml'`, because the wizard shipped that STRING as a
+    // material code and the gate could not resolve it. The catalog fix removed
+    // the string from the payload, so the gate now has nothing unresolvable to
+    // report — `pslExemptionFor` returns UNDECIDABLE only when it HELD codes it
+    // could not resolve, and a code-less pick hands it none.
+    //
+    // **The honesty did not move, it changed hands.** What the buyer must be
+    // told is that this material has no master code, and that is now said at
+    // the PICKER, where they can still act on it, rather than at a gate that
+    // has correctly stopped having an opinion.
+    await openMaterialStep();
+    const codeless = await screen.findByTestId('catalog-codeless-note');
+    expect(codeless.textContent).toContain('PET Bottle 100ml');
+    fireEvent.click(screen.getByRole('button', { name: nextLabel }));
     await invite(PACKAGING_OK[0]);
     await invite(PACKAGING_OK[1]);
-    const note = await screen.findByTestId('psl-gate-undecidable');
-    expect(note.textContent).toContain('PET Bottle 100ml');
+    // Nothing unresolvable reached the gate, so it says nothing about codes…
+    expect(screen.queryByTestId('psl-gate-undecidable')).toBeNull();
+    // …and the event is NOT refused for it — two invitees still pass.
+    expect(nextButton().disabled).toBe(false);
+  });
+
+  it('⚠️ AND A CODED MATERIAL REACHES THE GATE WITH A REAL CODE — no note at all', async () => {
+    // The other half, and the one that could not exist before this batch: an
+    // ordinary buyer-raised draft whose material IS in the master. The gate has
+    // a real code to judge, finds no in-force designation, and says nothing —
+    // which is the correct silence rather than an absent instrument.
+    await openMaterialStep('Active Ingredients', 'Sodium Hyaluronate HMW');
+    expect(screen.queryByTestId('catalog-codeless-note')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: nextLabel }));
+    for (const n of ACTIVE_ING_OK.slice(0, 3)) await invite(n);
+    expect(screen.queryByTestId('psl-gate-undecidable')).toBeNull();
+    expect(screen.queryByTestId('psl-gate-under-floor')).toBeNull();
     expect(nextButton().disabled).toBe(false);
   });
 });
@@ -286,5 +331,112 @@ describe('⚠️ THE GATE SPEAKS INDONESIAN', () => {
     // C9 §3 — a material code is contractually opaque DATA and renders verbatim.
     expect(note.textContent).toContain('AI-NIAC-6601');
     expect(note.textContent).not.toMatch(/not required/i);
+  });
+
+  it('⚠️ THE CODE-LESS SENTENCE RENDERS IN ID, AND THE LABEL DOES NOT TRANSLATE', async () => {
+    await toId();
+    await openMaterialStep();
+    const note = await screen.findByTestId('catalog-codeless-note');
+    expect(note.textContent).toMatch(/Tidak ada di master material/i);
+    expect(note.textContent).not.toMatch(/Not in the material master/i);
+    // A catalog label is authored data, not a translatable string — the same
+    // rule a material code renders under, and the reason the picker can be
+    // driven by one helper in either locale.
+    expect(note.textContent).toContain('PET Bottle 100ml');
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+describe('⚠️ THE PICKER RENDERS THE SAME 23 LABELS IN BOTH LOCALES', () => {
+  afterEach(async () => {
+    await i18n.changeLanguage('en');
+    newRfqLabel = 'New RFQ';
+    qtyLabel = /Total quantity/i;
+    nextLabel = /^Next$/i;
+  });
+
+  /** Every chip face in the open picker, in render order. */
+  const chipFaces = (): string[] =>
+    [
+      ...screen.queryAllByTestId('catalog-chip-coded'),
+      ...screen.queryAllByTestId('catalog-chip-codeless'),
+    ].map((b) => b.textContent ?? '');
+
+  const openPicker = async (category: string) => {
+    renderWithProviders(<BuyerSourcing />);
+    fireEvent.click(await screen.findByText(newRfqLabel));
+    const selects = await screen.findAllByRole('combobox');
+    const select = selects.find((el) =>
+      Array.from((el as HTMLSelectElement).options).some((o) => o.value === category),
+    )!;
+    fireEvent.change(select, { target: { value: category } });
+  };
+
+  // ⚠️ DERIVED FROM THE SHIPPED CATALOG, NEVER TYPED OUT — `materialCatalog.
+  // test.ts` is where the label set is PINNED as a value. Typing them again here
+  // would be a second copy that can disagree, and the thing under test is that
+  // the RENDER matches the data, in both locales.
+  for (const category of Object.keys(MATERIAL_CATALOG)) {
+    it(`${category}: EN and ID render the catalog's own labels, byte for byte`, async () => {
+      const expected = MATERIAL_CATALOG[category as keyof typeof MATERIAL_CATALOG].map(
+        (e) => e.label,
+      );
+      expect(expected.length).toBeGreaterThan(0); // anti-vacuity
+
+      await openPicker(category);
+      expect(chipFaces().sort()).toEqual([...expected].sort());
+      cleanup();
+
+      await i18n.changeLanguage('id');
+      newRfqLabel = 'RFQ Baru';
+      await openPicker(category);
+      expect(chipFaces().sort()).toEqual([...expected].sort());
+    });
+  }
+
+  it('CONTROL — the chip harness can FAIL: a fabricated label is never rendered', async () => {
+    await openPicker('Emulsifiers');
+    expect(chipFaces()).not.toContain('Zzz Not A Real Material');
+    expect(chipFaces().length).toBe(MATERIAL_CATALOG.Emulsifiers.length);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+describe('⚠️ END TO END — WHAT THE WIZARD ACTUALLY MINTS', () => {
+  beforeEach(() => rfqStore.reset());
+
+  /** Walk the whole wizard: scope -> suppliers -> terms -> review -> save.
+   *  The two deadlines are found by INPUT TYPE, not by label: their labels are
+   *  translated and this helper has to work in either locale. */
+  const raise = async (category: string, material: string, invitees: string[]) => {
+    await openInviteStep(category, material);
+    for (const n of invitees) await invite(n);
+    fireEvent.click(screen.getByRole('button', { name: nextLabel })); // -> terms
+    const dates = Array.from(
+      document.querySelectorAll('input[type="date"]'),
+    ) as HTMLInputElement[];
+    expect(dates.length).toBeGreaterThanOrEqual(2); // anti-vacuity on the walk
+    fireEvent.change(dates[0], { target: { value: '2026-10-01' } });
+    fireEvent.change(dates[1], { target: { value: '2026-10-15' } });
+    fireEvent.click(screen.getByRole('button', { name: nextLabel })); // -> review
+    fireEvent.click(await screen.findByRole('button', { name: /Save RFQ draft/i }));
+  };
+
+  it('⚠️ A CODED PICK MINTS A MASTER CODE — the defect, inverted', async () => {
+    await raise('Active Ingredients', 'Sodium Hyaluronate HMW', ACTIVE_ING_OK.slice(0, 3));
+    const minted = rfqStore.all().find((r) => r.title === 'PSL P2 mirror smoke')!;
+    expect(minted).toBeDefined();
+    expect(minted.materialIds).toEqual(['AI-HYALU-6610']);
+    // The assertion that would have failed before this batch, stated as such.
+    expect(minted.materialIds.every((c) => c in MATERIAL_MASTER)).toBe(true);
+    expect(JSON.stringify(minted.materialIds)).not.toContain('Sodium Hyaluronate HMW');
+  });
+
+  it('⚠️ A CODE-LESS PICK MINTS NOTHING — not the label, not a placeholder', async () => {
+    await raise('Packaging', 'PET Bottle 100ml', PACKAGING_OK.slice(0, 2));
+    const minted = rfqStore.all().find((r) => r.title === 'PSL P2 mirror smoke')!;
+    expect(minted).toBeDefined();
+    expect(minted.materialIds).toEqual([]);
+    expect(JSON.stringify(minted)).not.toContain('PET Bottle 100ml');
   });
 });
