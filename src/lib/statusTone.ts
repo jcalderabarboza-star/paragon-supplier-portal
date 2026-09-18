@@ -111,6 +111,31 @@ const STATUS_TONE: Record<string, StatusTone> = {
   Accepted: 'success',
   Manual: 'neutral',
   Outbound: 'neutral',
+
+  // ── PSL (P1) · THE PREFERRED SUPPLIER LIST ────────────────────────────────
+  // ⚠️ **THE AXIS IS HOW MUCH COMPETITION THE DESIGNATION REMOVES, NOT HOW
+  // GOOD THE SUPPLIER IS.** These chips exist to tell a buyer whether they may
+  // run a competitive event. DP-2's rule decides the rest: *if a chip's colour
+  // doesn't inform a decision, it goes neutral.*
+  //
+  //   Sole Source — `danger`. The ONLY designation that asserts NO ALTERNATIVE
+  //     EXISTS. That is a concentration exposure this tree already grades
+  //     Critical/High in its own single-source risk table, and it is the one
+  //     PSL state where a disruption has no fallback. Red informs a decision.
+  //   Mandatory — `warning`. Bidding is suspended too, but by STRATEGY, and an
+  //     alternative exists. Act differently; nothing is exposed.
+  //   Validated — `neutral`, deliberately. It is the ORDINARY case: pre-qualified
+  //     AND STILL COMPETING, which is what the process assumes by default.
+  //     Colouring the default would make the two exceptions harder to see, and
+  //     `Validated` changes nothing about what a buyer does next.
+  //   Scheduled / Not Listed — `neutral`. Nothing to act on, and an absence must
+  //     never read as an alarm (`Expired` is the one that does, and it is
+  //     already `danger` above — which is exactly why these two are not).
+  'Sole Source': 'danger',
+  Mandatory: 'warning',
+  Validated: 'neutral',
+  Scheduled: 'neutral',
+  'Not Listed': 'neutral',
 };
 
 // The canonical status vocabulary, in declaration order. Consumed by the

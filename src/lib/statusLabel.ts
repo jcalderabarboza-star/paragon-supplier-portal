@@ -98,6 +98,15 @@ const STATUS_ID: Record<string, string> = {
   Accepted: 'Diterima',
   Manual: 'Manual',
   Outbound: 'Keluar',
+  // ── PSL (P1). Terms from the Odyssey procurement term-base; `Sumber Tunggal`
+  //    is the spelling already shipped on the risk surface
+  //    (`risk.kpi.singleSource.eyebrow` = "Sumber Tunggal Kritis"), reused so
+  //    one concept is not named two ways across two pages.
+  'Sole Source': 'Sumber Tunggal',
+  Mandatory: 'Wajib',
+  Validated: 'Tervalidasi',
+  Scheduled: 'Terjadwal',
+  'Not Listed': 'Tidak Terdaftar',
 };
 
 /** Slug a canonical status into its i18n key: "Payment Released" → "status.payment_released". */

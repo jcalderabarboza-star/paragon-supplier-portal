@@ -41,6 +41,8 @@ import { learnEn, learnId } from './i18n/learn';
 // — Batch 6 (tail sweep) —
 import { buyerSuppliersEn, buyerSuppliersId } from './i18n/buyerSuppliers';
 import { buyerSupplierProfileEn, buyerSupplierProfileId } from './i18n/buyerSupplierProfile';
+// — PSL P1 (Preferred Supplier List) —
+import { pslEn, pslId } from './i18n/psl';
 import { buyerAnalyticsEn, buyerAnalyticsId } from './i18n/buyerAnalytics';
 import { buyerScorecardEn, buyerScorecardId } from './i18n/buyerScorecard';
 import { buyerInventoryEn, buyerInventoryId } from './i18n/buyerInventory';
@@ -129,6 +131,7 @@ export const resources = {
       // — Batch 6 (tail sweep) —
       ...buyerSuppliersEn,
       ...buyerSupplierProfileEn,
+      ...pslEn,
       ...buyerAnalyticsEn,
       ...buyerScorecardEn,
       ...buyerInventoryEn,
@@ -570,6 +573,7 @@ export const resources = {
       // — Batch 6 (tail sweep) —
       ...buyerSuppliersId,
       ...buyerSupplierProfileId,
+      ...pslId,
       ...buyerAnalyticsId,
       ...buyerScorecardId,
       ...buyerInventoryId,

@@ -57,6 +57,7 @@ import ErrorState from '../components/ui-v2/ErrorState';
 import EmptyState from '../components/ui-v2/EmptyState';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useDeepLinkedSelection } from '../lib/recordDeepLink';
+import PslStatusCell, { pslStandingOf } from '../components/v2-features/PslStatusCell';
 import { useRFQs, useQuotations, useSuppliers, useRequisitions } from '../services/query/hooks';
 import {
   useRfqCreate,
@@ -1808,6 +1809,9 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                   <th className="px-3 py-2 text-left font-semibold">
                     {t('sourcing.wizard.col.country')}
                   </th>
+                  <th className="px-3 py-2 text-left font-semibold">
+                    {t('psl.col.header')}
+                  </th>
                   <th className="px-3 py-2 text-right font-semibold">
                     {t('sourcing.wizard.col.otif')}
                   </th>
@@ -1837,6 +1841,20 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                       <td className="px-3 py-2 text-text-secondary">
                         {s.country}
                       </td>
+                      {/* ⚠️ READ ONLY. P1 SHOWS THE STANDING AND GATES NOTHING.
+                          Every supplier this table lists stays invitable —
+                          including a Suspended one and one whose PSL listing
+                          has lapsed. The gate belongs on `t_rfq_publish` /
+                          `t_rfq_award`'s policy hooks (P2), never on a page:
+                          a page-level gate is invisible to every other caller
+                          of the same verb, which is how this tree's false
+                          affordances got there in the first place. */}
+                      <td className="px-3 py-2">
+                        <PslStatusCell
+                          standing={pslStandingOf(s.id, TODAY)}
+                          compact
+                        />
+                      </td>
                       <td className="px-3 py-2 text-right text-text-secondary">
                         {s.otif}%
                       </td>
@@ -1846,7 +1864,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                 {supplierTableFiltered.length === 0 && (
                   <tr>
                     <td
-                      colSpan={4}
+                      colSpan={5}
                       className="text-center text-sm text-text-tertiary py-6"
                     >
                       {draft.category
@@ -1868,6 +1886,12 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                 { count: draft.invitedSupplierIds.length },
               )}
             </span>
+            {/* Said to the reader, not only in a comment: the column informs,
+                it does not restrict. A status chip beside a checkbox reads as a
+                constraint unless the surface says otherwise. */}
+            <p className="text-xs text-text-tertiary mt-2" data-testid="psl-invite-hint">
+              {t('psl.invite.hint')}
+            </p>
           </div>
         </div>
       ),

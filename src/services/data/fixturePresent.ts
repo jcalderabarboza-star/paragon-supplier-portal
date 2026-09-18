@@ -213,7 +213,8 @@ export type FixtureFamily =
   | 'inventory'
   | 'contract'
   | 'obligation'
-  | 'invoice';
+  | 'invoice'
+  | 'psl';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ⚠️ `contract` AND `obligation` ARE NOW ANCHORED, AND THEY SHARE ONE ANCHOR.
@@ -440,6 +441,39 @@ export const FAMILY_ANCHORS: Readonly<Record<FixtureFamily, FamilyAnchor>> = {
     window: ['2026-06-05', '2026-07-10'],
     toleranceDays: 17,
     why: 'midpoint of the band where the corpus’ own authored intent holds — exactly one overdue row (inv-evo-0188, per its comment) and no unrealised paymentDate; early edge inv-evo-0188, late edge inv-msm-0224, swept against the shipped isOverdue',
+  },
+  // ⚠️ **`psl` TAKES THE CONTRACT ANCHOR'S VALUE BY REFERENCE AND IS NOT A
+  // MEMBER OF `SHARED_ANCHOR_FAMILIES`, AND THE DISTINCTION IS THE POINT.**
+  // That set means "constrained by a shared INTERSECTION" — `contract` and
+  // `obligation` are in it because obligations name contract ids, so their
+  // dates are compared and neither may claim half of its own window. A PSL
+  // listing is compared against NO other family's dates in P1: the one such
+  // comparison the design wanted — a listing's cap against a signed contract's
+  // term — was ruled NOT BUILDABLE (a contract carries no material codes), so
+  // there is nothing to intersect with. What remains is only the reason
+  // `SHARED_CONTRACT_ANCHOR` was named at all: a second literal equal to the
+  // first is a second literal that will one day differ. So the constant is
+  // reused and the window below is `psl`'s OWN.
+  //
+  // Derived by sweeping candidate anchors through the SHIPPED classifier
+  // (`pslDisplayStatus`) against the corpus' per-row authored intent — the
+  // `contract` treatment, which is the strongest form available: a real
+  // classifier makes a stronger claim than any rule read off a `status` field,
+  // and this corpus has no such field to read (law 0.5).
+  //   early edge  psl-005 — one day sooner it has not STARTED (reads Scheduled)
+  //   late  edge  psl-004 — one day later it reads Expiring; it must read Listed
+  // ⚠️ **THE EARLY EDGE MOVED WHEN `Scheduled` WAS ADDED, AND IT IS RECORDED
+  // RATHER THAN QUIETLY RE-FITTED.** It was psl-003's END (the row must read
+  // Expired) until the projection gained a START boundary; the binding
+  // constraint is now psl-005's `validFrom`, which is LATER. A validity has two
+  // ends and the window is bound by whichever comes first.
+  // `pslListings.fixture.test.ts` re-derives both edges every run and asserts
+  // WHICH rows stray, so a silent re-fit is not available.
+  psl: {
+    anchor: SHARED_CONTRACT_ANCHOR,
+    window: ['2026-05-04', '2026-06-22'],
+    toleranceDays: 20,
+    why: 'the band where the corpus’ own authored intent holds under the shipped pslDisplayStatus — early edge psl-005 (must have STARTED, not Scheduled), late edge psl-004 (must read Listed, not Expiring); reuses SHARED_CONTRACT_ANCHOR by reference so no second literal exists, but is NOT intersection-constrained because P1 compares a listing date against no other family',
   },
 };
 

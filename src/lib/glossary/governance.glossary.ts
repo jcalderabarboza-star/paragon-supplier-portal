@@ -16,6 +16,8 @@ import type {
 } from '../enforcement';
 import type { CertType, ComplianceDisplayStatus } from '../../services/data/types';
 import type { HalalApplicability, BpomApplicability } from '../../services/sdc/types';
+import type { PslLifecycle, PslStatus } from '../../services/data/pslListing';
+import type { PslCapSource } from '../../services/data/pslProjection';
 
 /** How hard a governed check bites when it comes back adverse. */
 export const ENFORCEMENT_MODE_GLOSSARY = {
@@ -211,3 +213,69 @@ export const BPOM_APPLICABILITY_GLOSSARY = {
     id: 'Belum ada yang memutuskan. Dipisahkan dari "tidak berlaku" dengan alasan yang sama seperti pasangan halalnya.',
   },
 } satisfies GlossaryOf<BpomApplicability>;
+
+// ─── PSL (Preferred Supplier List) — P1 ──────────────────────────────────────
+
+/**
+ * THE THREE DESIGNATIONS. ⚠️ Every definition below is written around ONE
+ * question — *may a buyer run a competitive event?* — because that is what the
+ * designation decides and it is the thing a procurement reviewer will correct
+ * if we have it wrong.
+ */
+export const PSL_STATUS_GLOSSARY = {
+  'Sole Source': {
+    en: 'No suitable alternative supplier exists for this scope, so competitive bidding does not apply. Requires a signed-off justification — monopoly, certification, exclusivity or state enterprise.',
+    id: 'Tidak ada pemasok alternatif yang sesuai untuk cakupan ini, sehingga penawaran kompetitif tidak berlaku. Memerlukan justifikasi yang disetujui — monopoli, sertifikasi, eksklusivitas, atau badan usaha milik negara.',
+  },
+  Mandatory: {
+    en: 'This supplier must be used over others for this scope, so competitive bidding does not apply. Requires an approved sourcing strategy and pre-qualification — an alternative may exist; the strategy directs the spend anyway.',
+    id: 'Pemasok ini wajib digunakan di atas yang lain untuk cakupan ini, sehingga penawaran kompetitif tidak berlaku. Memerlukan strategi pengadaan yang disetujui dan prakualifikasi — alternatif mungkin ada; strategi tetap mengarahkan belanja.',
+  },
+  Validated: {
+    en: 'A trusted, pre-qualified source that STILL COMPETES. Being validated removes the qualification step, never the bidding.',
+    id: 'Sumber tepercaya yang telah diprakualifikasi dan TETAP BERSAING. Validasi menghapus langkah kualifikasi, bukan penawarannya.',
+  },
+} satisfies GlossaryOf<PslStatus>;
+
+/**
+ * THE STORED LIFECYCLE. ⚠️ `Expired` is deliberately ABSENT — it is computed at
+ * read from the validity and the clock (law 0.5), never a state a person enters.
+ */
+export const PSL_LIFECYCLE_GLOSSARY = {
+  Proposed: {
+    en: 'Raised and awaiting a decision. It grants nothing, even inside its stated validity.',
+    id: 'Diajukan dan menunggu keputusan. Tidak memberikan apa pun, bahkan di dalam masa berlakunya.',
+  },
+  Listed: {
+    en: 'Decided and on the list. Whether it is IN FORCE today is a separate question the clock answers.',
+    id: 'Telah diputuskan dan tercatat. Apakah berlaku hari ini adalah pertanyaan terpisah yang dijawab oleh waktu.',
+  },
+  Withdrawn: {
+    en: 'Taken off the list by a decision. It did not run out — it was stopped, which is a different fact from expiry and is kept separate from it.',
+    id: 'Dikeluarkan dari daftar melalui keputusan. Bukan habis masa berlakunya — dihentikan, yang merupakan fakta berbeda dari kedaluwarsa dan dipisahkan darinya.',
+  },
+  Rejected: {
+    en: 'Refused at the proposal. Distinct from Withdrawn: this one was never listed.',
+    id: 'Ditolak pada tahap pengajuan. Berbeda dari Ditarik: yang ini tidak pernah tercatat.',
+  },
+} satisfies GlossaryOf<PslLifecycle>;
+
+/**
+ * WHY THE CAP IN FORCE IS THE CAP IN FORCE. The `EnforcementModeSource`
+ * discipline: every member names a different reason and none overstates.
+ */
+export const PSL_CAP_SOURCE_GLOSSARY = {
+  LISTING_OVERRIDE: {
+    en: 'This listing carries its own validity cap, with a recorded justification and decider.',
+    id: 'Pencatatan ini memiliki batas masa berlakunya sendiri, dengan justifikasi dan pemutus yang tercatat.',
+  },
+  NO_SETTING_RECORDED: {
+    en: 'The portal default applies because nothing has been decided for this listing — which is a different sentence from "somebody chose this length".',
+    id: 'Bawaan portal berlaku karena belum ada keputusan untuk pencatatan ini — kalimat yang berbeda dari "seseorang memilih durasi ini".',
+  },
+  CEILING_BOUNDED: {
+    en: 'An override was recorded and it exceeds the platform ceiling, so the ceiling applies. Named separately so "bounded" is never read as "chosen".',
+    id: 'Pengesampingan tercatat dan melebihi plafon platform, sehingga plafon yang berlaku. Dinamai terpisah agar "dibatasi" tidak pernah dibaca sebagai "dipilih".',
+  },
+} satisfies GlossaryOf<PslCapSource>;
+
