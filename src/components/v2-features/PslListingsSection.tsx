@@ -2,6 +2,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 
 import StatusPill from '../ui-v2/StatusPill';
+import { statusLabelKey } from '../../lib/statusLabel';
 import Data from '../ui-v2/Data';
 import { statusTone } from '../../lib/statusTone';
 import { formatDate } from '../../lib/format';
@@ -138,7 +139,20 @@ const PslListingCard: React.FC<{ listing: PslListing; nowIso: string; highlighte
         <ol className="mt-1 space-y-1">
           {listing.statusHistory.map((h, i) => (
             <li key={`${listing.id}-h${i}`} className="text-sm text-text-secondary">
-              <Data className="text-xs">{formatDate(h.at)}</Data> · {h.lifecycle} — {h.reason}
+              {/* ⚠️ THE SAME KEY THE PILL ABOVE RESOLVES — ONE WORD, ONE KEY.
+                  This line used to render `{h.lifecycle}` RAW, outside any
+                  `StatusPill`, so it had no key at all: `StatusPill` is what
+                  reads the central map, and text that never passes through one
+                  is never localised. Registering the lifecycle words fixed the
+                  PILL and would have left this line in English — two sites
+                  disagreeing about one word, which is worse than both being
+                  wrong. `statusLabelKey` is the map's own resolver, so the pill
+                  and this line cannot drift.
+                  The `?? h.lifecycle` arm is the honest render for an
+                  unregistered word (never a blank); `statusLabel.test.ts` is
+                  what makes it unreachable. */}
+              <Data className="text-xs">{formatDate(h.at)}</Data> ·{' '}
+              {t(statusLabelKey(h.lifecycle) ?? '', { defaultValue: h.lifecycle })} — {h.reason}
             </li>
           ))}
         </ol>

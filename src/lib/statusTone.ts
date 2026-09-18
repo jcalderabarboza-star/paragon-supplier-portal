@@ -136,6 +136,30 @@ const STATUS_TONE: Record<string, StatusTone> = {
   Validated: 'neutral',
   Scheduled: 'neutral',
   'Not Listed': 'neutral',
+  //
+  // ── ⚠️ THE PSL *LIFECYCLE* WORDS, WHICH WERE MISSING AND SHIPPED IN ENGLISH
+  // The three designations above were registered; the lifecycle beside them was
+  // not, so `Proposed` / `Listed` / `Withdrawn` resolved to NO KEY and
+  // `StatusPill` rendered them verbatim in both locales. `Rejected` looked fine
+  // only because it was already here for other lanes — which is exactly what
+  // made the gap read as a translation miss rather than a missing vocabulary.
+  //
+  // ⚠️ AND `statusLabel.test.ts` COULD NOT SEE IT: its population is
+  // `CANONICAL_STATUSES`, i.e. the keys of THIS map, so a word never registered
+  // here is absent from the very population that checks registration. The guard
+  // added in that file pins the PSL unions ⊆ this map, which is the only
+  // direction that can catch a vocabulary nobody entered.
+  //
+  // Tones follow this table's own precedents rather than being invented:
+  //   Proposed  — `info`, the shape `Submitted` already has: raised, awaiting a
+  //               decision, informational rather than actionable.
+  //   Listed    — `success`, the in-force end of the validity ramp this second
+  //               pill renders (Listed -> Expiring -> Expired).
+  //   Withdrawn — `neutral`, exactly `Terminated`: stopped by a decision, not a
+  //               failure, and never an alarm.
+  Proposed: 'info',
+  Listed: 'success',
+  Withdrawn: 'neutral',
 };
 
 // The canonical status vocabulary, in declaration order. Consumed by the
