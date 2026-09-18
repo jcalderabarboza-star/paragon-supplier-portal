@@ -37,6 +37,16 @@ const PSL_SOURCES = [
   'src/services/data/pslListing.ts',
   'src/services/data/pslProjection.ts',
   'src/services/data/pslSourcingSeam.ts',
+  // ⚠️ PSL P2 — the gate's decision module AND the hook file that supplies its
+  // instant. `policies.ts` is the one place in the transitions layer that names
+  // `DECLARED_PRESENT`, so it is the one place a `new Date()` could be
+  // substituted for it; leaving it out would have made the "no PSL module reads
+  // the ambient clock" claim true of everything except the file where it
+  // matters most. The matcher convicts only a ZERO-ARGUMENT `new Date()`, so
+  // this file's `new Date(asOf)` — which parses a caller's argument — is
+  // correctly acquitted, and the bilateral control below says so.
+  'src/services/data/rfqSourcingGate.ts',
+  'src/services/transitions/policies.ts',
   'src/services/data/mock/fixtures/pslListings.ts',
   'src/components/v2-features/PslStatusCell.tsx',
   'src/components/v2-features/PslListingsSection.tsx',
