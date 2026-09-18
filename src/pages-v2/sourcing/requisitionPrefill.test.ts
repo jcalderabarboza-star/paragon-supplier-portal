@@ -55,9 +55,13 @@ describe('C.2 · what the prefill carries', () => {
   });
 
   it('⚠️ NEVER carries material into materialIds — the shape has no such field', () => {
-    // C7 GG-4: `material` is a display string, `materialIds` are S/4 codes. The
-    // guarantee is structural — there is no field to put it in — so this asserts
-    // the SHAPE rather than a value, which is what makes it hold for every input.
+    // C7 GG-4: `material` is a display string; `materialIds` is declared as S/4
+    // codes and, until the catalog carried real ones, received display prose
+    // from the wizard's own picker. THAT is why this refusal is worth keeping
+    // and why it was never sufficient on its own — it closed one door into the
+    // field while the picker beside it stood open. The guarantee here is
+    // structural — there is no field to put it in — so this asserts the SHAPE
+    // rather than a value, which is what makes it hold for every input.
     const p = prefillFromRequisition(pr({ material: 'Halal Glycerin 99.5%' }));
     expect(Object.keys(p).sort()).toEqual(
       ['category', 'sourceRequisitionId', 'title', 'totalQty', 'uncarried', 'uom'].sort(),
