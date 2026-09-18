@@ -18,6 +18,7 @@ import type { SettleFault } from '../../services/transitions/settleFaults';
 import type { FxRefusalReason } from '../fxPin';
 import type { QtyRefusalReason } from '../localeNumber';
 import type { HalalNotSatisfiedReason } from '../../services/data/halalVerification';
+import type { SourcingRefusalReason } from '../../services/data/rfqSourcingGate';
 import type { HalalRefusalReason } from '../../services/sdc/halal';
 import type { BpomRefusalReason } from '../../services/sdc/bpom';
 import type { DataErrorCode } from '../../services/data/types';
@@ -216,3 +217,31 @@ export const HALAL_NOT_SATISFIED_GLOSSARY = {
     id: 'Sertifikat telah diajukan dan belum ada penetapan. Dilaporkan terakhir: hanya inilah dari keempatnya yang dapat selesai tanpa siapa pun mengajukan sesuatu yang baru.',
   },
 } satisfies GlossaryOf<HalalNotSatisfiedReason>;
+
+/**
+ * A SOURCING EVENT WAS REFUSED AT PUBLISH OR AT AWARD (PSL P2).
+ *
+ * ⚠️ **THERE IS NO MEMBER FOR "EXACTLY TWO INVITEES", AND THERE MUST NOT BE.**
+ * Two is ALLOWED with a note that three is the standard (operator ruling); a
+ * refusal definition for it would describe a refusal this platform never gives.
+ * Nor is there a member for an unreadable material — that blocks the exemption,
+ * not the event.
+ */
+export const SOURCING_REFUSAL_GLOSSARY = {
+  INVITEE_NOT_ELIGIBLE: {
+    en: 'One of the invited suppliers may not be invited to a sourcing event at all, because of the state their account is in rather than anything about their bid. Remove them from the invitation; the event can then be published with whoever remains.',
+    id: 'Salah satu pemasok yang diundang sama sekali tidak boleh diundang ke acara pengadaan, karena keadaan akun mereka dan bukan karena penawarannya. Keluarkan mereka dari undangan; acara kemudian dapat diterbitkan dengan pemasok yang tersisa.',
+  },
+  COMPETITION_UNDER_FLOOR: {
+    en: 'A competitive event needs at least two eligible suppliers invited, and this one has fewer. An invitee who may not be invited is not counted, so removing nobody and adding one more supplier is the usual remedy.',
+    id: 'Acara kompetitif memerlukan setidaknya dua pemasok yang memenuhi syarat, dan acara ini memiliki kurang dari itu. Pemasok yang tidak boleh diundang tidak dihitung, sehingga menambah satu pemasok lagi biasanya adalah jalan keluarnya.',
+  },
+  AWARDEE_NOT_INVITED: {
+    en: 'The supplier named as the winner was never invited to this event, so the award would give the business to someone who was never asked to compete for it. Nothing was recorded.',
+    id: 'Pemasok yang disebut sebagai pemenang tidak pernah diundang ke acara ini, sehingga penghargaan akan memberikan bisnis kepada pihak yang tidak pernah diminta bersaing untuk itu. Tidak ada yang dicatat.',
+  },
+  AWARDEE_NOT_THE_QUOTING_SUPPLIER: {
+    en: 'The winning supplier and the winning quotation name different suppliers, so the award does not say who actually won. This is refused rather than resolved in either direction: the two fields are recorded independently, and guessing which one is right would put an unverifiable award on the record.',
+    id: 'Pemasok pemenang dan penawaran pemenang menyebut pemasok yang berbeda, sehingga penghargaan tidak menyatakan siapa yang sebenarnya menang. Ini ditolak alih-alih diselesaikan ke salah satu arah: kedua kolom dicatat secara terpisah, dan menebak mana yang benar akan mencatatkan penghargaan yang tidak dapat diverifikasi.',
+  },
+} satisfies GlossaryOf<SourcingRefusalReason>;

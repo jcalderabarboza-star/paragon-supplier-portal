@@ -1,5 +1,14 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// THE RFQ INVITE STEP — PSL SHOWN, NOTHING GATED.
+// THE RFQ INVITE STEP — PSL SHOWN, AND AT P2 THE *STEP* IS MIRRORED WHILE THE
+// CONTROLS STAY LIVE.
+//
+// ⚠️ **P2 CHANGED WHAT THIS FILE PROVES AND NOT ONE OF ITS NEGATIVE ASSERTIONS
+// MOVED.** The gate went onto `t_rfq_publish` / `t_rfq_award`, exactly where
+// the header below said it belonged. What the wizard gained is a MIRROR of that
+// gate — the step refuses, so the buyer meets the refusal while the draft is
+// still editable — and a mirror is not a page gate: every candidate checkbox is
+// still enabled and still toggles, which the three assertions at the foot of
+// this file continue to assert verbatim.
 //
 // ⚠️ **THE MOST IMPORTANT ASSERTIONS IN THIS FILE ARE THE NEGATIVE ONES.** P1
 // puts a status chip beside a checkbox, and a chip beside a checkbox is exactly
@@ -105,6 +114,12 @@ describe('BuyerSourcing — the invite step shows PSL (EN)', () => {
     await openInviteStep();
     const hint = await screen.findByTestId('psl-invite-hint');
     expect(hint.textContent).toMatch(/does not restrict who you may invite/i);
+    // ⚠️ P2 — AND THE SECOND HALF, WHICH IS THE NEW FACT. The old copy ended
+    // at the clause above and would still satisfy it, so without this the
+    // change from "PSL informs" to "PSL decides whether you must compete"
+    // would be unguarded. The first clause is KEPT because it is still true:
+    // a chip beside a checkbox reads as a constraint unless the page denies it.
+    expect(hint.textContent).toMatch(/decides whether this event needs competitive bidding/i);
   });
 });
 
@@ -166,7 +181,10 @@ describe('BuyerSourcing — the invite step shows PSL (ID)', () => {
 
     const hint = await screen.findByTestId('psl-invite-hint');
     expect(hint.textContent).toMatch(/tidak membatasi siapa yang dapat Anda undang/i);
+    // The P2 second clause, in Indonesian — and no EN literal survives either.
+    expect(hint.textContent).toMatch(/menentukan apakah acara ini memerlukan tender kompetitif/i);
     expect(hint.textContent).not.toMatch(/does not restrict/i);
+    expect(hint.textContent).not.toMatch(/competitive bidding/i);
 
     const cells = await screen.findAllByTestId(/^psl-cell-/);
     const text = cells.map((c) => c.textContent).join(' | ');

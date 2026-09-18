@@ -6,6 +6,15 @@
 // ────────────────────────────────────────────────────────────────────────────
 
 import type { PurchaseOrder, Invoice } from '../data/types';
+import type { RFQ } from '../../data/mockRfqs';
+import { DECLARED_PRESENT } from '../data/fixturePresent';
+import {
+  awardIntegrity,
+  decideSourcing,
+  quotationOwnerOf,
+  rosterStatusOf,
+  COMPETITION_FLOOR_INVITEES,
+} from '../data/rfqSourcingGate';
 import type { GoodsReceipt } from '../../data/mockGoodsReceipts';
 import type { PolicyHookFn } from './dispatcher';
 import { POLICY_HOOKS } from './policyHooks';
@@ -614,4 +623,113 @@ bindPolicyHook(POLICY_HOOKS.APPLICATION_DECLARATIONS_WELL_FORMED, ({ payload }) 
     };
   }
   return { ok: true };
+});
+
+// ── PSL P2 · THE SOURCING GATE ──────────────────────────────────────────────
+//
+// ⚠️ **THE INSTANT IS `DECLARED_PRESENT`, IMPORTED HERE, AND THIS IS THE FIRST
+// DIRECT FIXTURE-CLOCK IMPORT IN THE TRANSITIONS LAYER. IT IS NAMED RATHER THAN
+// SLIPPED IN.** Derived before it was written: `PolicyHookFn`'s ctx carries six
+// members and NONE is an instant; `dispatcher.ts` contains no `new Date` or
+// `Date.now` at all; and before this batch no module under
+// `services/transitions/` imported `fixturePresent`. So a hook that must judge
+// whether a listing is in force has exactly three places to get "now" from, and
+// two of them are wrong:
+//   · the WALL CLOCK — wrong, because the listings are anchored at `P` and a
+//     projection read at any other instant is answering a different question;
+//   · the PAYLOAD — refused. A caller-supplied instant is C10 §6.2's
+//     attribution-by-assertion shape one axis over: a buyer could backdate
+//     their way past an expiry, and the gate would have no way to know.
+//   · the DECLARED PRESENT — the only one that is a fact about the fixture
+//     corpus rather than about the machine or the caller.
+//
+// Everything below passes it DOWN as a parameter; nothing in
+// `rfqSourcingGate.ts` reads a clock, and `pslReadIsClockIndependent.test.ts`
+// covers both files by source scan and by behaviour.
+//
+// ⚠️ **AND THE CORPUS NEVER REACHES THIS FILE.** The roster and the quotation
+// store are read through `rosterStatusOf` / `quotationOwnerOf`, which live in
+// `services/data` where synchronous fixture reads belong. That is the whole
+// reason `pslSourcingSeam` was built as a seam in P1: the transitions layer
+// learns an ANSWER, never a corpus.
+
+/** The RFQ a publish/award hook is judging, or `null` if the entity is gone. */
+function readRfq(target: { readEntity(id: string): unknown }, entityId: string): RFQ | null {
+  const entity = target.readEntity(entityId);
+  return entity && typeof entity === 'object' ? (entity as RFQ) : null;
+}
+
+// — Publish (1 of 2): every invitee may be invited at all ————————————————————
+//
+// RUNS FIRST. `t_rfq_publish.policyHooks` lists this before the competition
+// hook and the dispatcher evaluates them in array order, so an ineligible
+// invitee is refused BEFORE any count is taken — which is what makes "a refused
+// invitee is not counted toward the floor" a fact about the machine rather than
+// a convention two hooks have to keep. `rfqSourcingGate.test.ts` pins the order
+// in the flow definition itself, so re-ordering the array reddens.
+bindPolicyHook(POLICY_HOOKS.RFQ_PUBLISH_INVITEES_ELIGIBLE, ({ entityId, target }) => {
+  const rfq = readRfq(target, entityId);
+  if (rfq === null) return { ok: true }; // existence is the dispatcher's answer, not this hook's
+  const { eligibility } = decideSourcing(rfq, DECLARED_PRESENT, rosterStatusOf);
+  if (eligibility.kind === 'ALL_ELIGIBLE') return { ok: true };
+  // Names WHO and WHY. A refusal that said only "an invitee is not eligible"
+  // would send the buyer back to a list of suppliers to guess between.
+  const named = eligibility.offenders.map((o) => `${o.supplierId} (${o.status})`).join(', ');
+  return {
+    ok: false,
+    reason: `INVITEE_NOT_ELIGIBLE: ${named} may not be invited to a sourcing event`,
+  };
+});
+
+// — Publish (2 of 2): the event is competitive, or does not need to be ————————
+//
+// THE FLOOR ONLY. `AT_FLOOR` is an ALLOWANCE and returns `ok: true` — the note
+// that three is the standard is rendered by the wizard from the same call,
+// because `PolicyDecision` has no channel for it.
+//
+// ⚠️ An UNDECIDABLE material question does NOT refuse here. It blocks the
+// EXEMPTION and nothing else (operator ruling): the event then runs under the
+// ordinary competition rule, and the surface says the standing could not be
+// checked. The type makes that structural — `SourcingRefusalReason` has no
+// undecidable member for this to map onto.
+bindPolicyHook(POLICY_HOOKS.RFQ_PUBLISH_COMPETITION, ({ entityId, target }) => {
+  const rfq = readRfq(target, entityId);
+  if (rfq === null) return { ok: true };
+  const { competition } = decideSourcing(rfq, DECLARED_PRESENT, rosterStatusOf);
+  if (competition.kind !== 'UNDER_FLOOR') return { ok: true };
+  return {
+    ok: false,
+    reason:
+      `COMPETITION_UNDER_FLOOR: ${competition.eligible} eligible supplier(s) invited, ` +
+      `a competitive event needs at least ${COMPETITION_FLOOR_INVITEES}`,
+  };
+});
+
+// — Award: the awardee owns the awarded quotation, and was invited ————————————
+//
+// Reads the PAYLOAD for both award fields, because that is where they arrive
+// and where they disagree. The quotation's own supplier comes from the STORE,
+// so a quotation raised at runtime is checkable too.
+bindPolicyHook(POLICY_HOOKS.RFQ_AWARD_AWARDEE_INTEGRITY, ({ entityId, payload, target }) => {
+  const rfq = readRfq(target, entityId);
+  if (rfq === null) return { ok: true };
+  const awardedSupplierId = typeof payload.awardedSupplierId === 'string' ? payload.awardedSupplierId : '';
+  const awardedQuotationId = typeof payload.awardedQuotationId === 'string' ? payload.awardedQuotationId : '';
+  const verdict = awardIntegrity(
+    { invitedSupplierIds: rfq.invitedSupplierIds, awardedSupplierId, awardedQuotationId },
+    quotationOwnerOf,
+  );
+  if (verdict.kind === 'OK') return { ok: true };
+  if (verdict.kind === 'AWARDEE_NOT_INVITED') {
+    return {
+      ok: false,
+      reason: `AWARDEE_NOT_INVITED: ${verdict.supplierId} was not invited to this event`,
+    };
+  }
+  return {
+    ok: false,
+    reason:
+      `AWARDEE_NOT_THE_QUOTING_SUPPLIER: the award names ${verdict.supplierId}, but ` +
+      `${verdict.quotationId} was submitted by ${verdict.quotingSupplierId || '(no such quotation)'}`,
+  };
 });

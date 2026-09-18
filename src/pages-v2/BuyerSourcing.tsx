@@ -125,6 +125,10 @@ import type { Supplier } from '../services/data/types';
 import GlossaryTermChip from '../components/ui-v2/GlossaryTermChip';
 import { useRefusalText } from '../hooks/useRefusalText';
 import { DECLARED_PRESENT } from '../services/data/fixturePresent';
+import PslGateNotice from '../components/v2-features/PslGateNotice';
+import { decideSourcing, rosterStatusOf } from '../services/data/rfqSourcingGate';
+import { refusedByPolicy } from '../services/transitions/refusalMessage';
+import { POLICY_HOOKS } from '../services/transitions/policyHooks';
 
 // ⚠️ ANCHORED — this surface rendered values derived from anchored
 // fixture data against the WALL CLOCK, so what a reader saw moved every day
@@ -207,6 +211,21 @@ const MATERIAL_CATALOG: Record<RFQCategory, string[]> = {
   ],
   Other: ['Custom material — specify in notes'],
 };
+
+/**
+ * Which PSL-P2 publish hook refused, as an i18n key — or `null` for anything
+ * else, so every existing fallback survives byte-for-byte (`describeRefusal`'s
+ * own rule: a translator may only ever ADD a sentence it can defend).
+ */
+function pslPublishRemedy(reason: string | undefined): string | null {
+  if (refusedByPolicy(reason, POLICY_HOOKS.RFQ_PUBLISH_INVITEES_ELIGIBLE)) {
+    return 'psl.toast.publishIneligible';
+  }
+  if (refusedByPolicy(reason, POLICY_HOOKS.RFQ_PUBLISH_COMPETITION)) {
+    return 'psl.toast.publishUnderFloor';
+  }
+  return null;
+}
 
 const UOM_OPTIONS = RFQ_UOM_OPTIONS; // C.2 — shared with the prefill membership check
 const INCOTERMS_OPTIONS = ['FOB', 'CIF', 'EXW', 'DDP', 'FCA'];
@@ -1019,8 +1038,11 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
             toast({
               variant: 'error',
               title: t('sourcing.toast.awardFailed.title'),
-              description:
-                refusalText(result.reason) ?? result.reason ?? t('sourcing.toast.awardFailed.default'),
+              description: refusedByPolicy(result.reason, POLICY_HOOKS.RFQ_AWARD_AWARDEE_INTEGRITY)
+                ? t('psl.toast.awardIntegrity')
+                : (refusalText(result.reason) ??
+                   result.reason ??
+                   t('sourcing.toast.awardFailed.default')),
             });
             return;
           }
@@ -1095,8 +1117,17 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
             toast({
               variant: 'error',
               title: t('sourcing.toast.publishFailed.title'),
-              description:
-                refusalText(result.reason) ?? result.reason ?? t('sourcing.toast.publishFailed.default'),
+              // ⚠️ PSL P2 — the HOOK, not the code inside its reason. A
+              // dispatcher policy reason reads `POLICY_REJECTED:<hook>:<text>`,
+              // so `startsWith('COMPETITION_UNDER_FLOOR')` would be
+              // structurally unsatisfiable — the exact defect two shipped
+              // surfaces carried until `refusedByPolicy` was built. The prefix
+              // is assembled FROM the hook constant, never retyped.
+              description: pslPublishRemedy(result.reason)
+                ? t(pslPublishRemedy(result.reason)!)
+                : (refusalText(result.reason) ??
+                   result.reason ??
+                   t('sourcing.toast.publishFailed.default')),
             });
             return;
           }
@@ -1396,6 +1427,27 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
   }, [draft.sourceRequisitionId, sourceablePrs]);
 
   const qtyRead = useMemo(() => readRfqTotalQty(draft.totalQty), [draft.totalQty]);
+
+  // ⚠️ PSL P2 — THE ONE CALL THE STEP-1 MIRROR AND THE INVITE-STEP NOTICE BOTH
+  // READ, and the SAME function the policy hooks on `t_rfq_publish` call. The
+  // mirror is not a second rule: it is this decision, rendered early, while the
+  // draft is still editable. Nothing can add an invitee to an RFQ that already
+  // exists (`invitedSupplierIds` is written once, at creation), so a floor
+  // refusal that first appeared at publish would leave the buyer with cancel
+  // and retype as their only move.
+  //
+  // `TODAY` is `DECLARED_PRESENT`, the same instant the hook passes down — a
+  // mirror computed at a different instant from the gate would eventually
+  // disagree with it, silently and only on some days.
+  const draftDecision = useMemo(
+    () =>
+      decideSourcing(
+        { invitedSupplierIds: draft.invitedSupplierIds, materialIds: draft.materials },
+        TODAY,
+        rosterStatusOf,
+      ),
+    [draft.invitedSupplierIds, draft.materials],
+  );
   const budgetRead = useMemo(() => readRfqBudget(draft.budget), [draft.budget]);
 
   const isStepValid = (step: number): boolean => {
@@ -1415,7 +1467,23 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
         rfqNumbers.value.totalQty > 0
       );
     }
-    if (step === 1) return draft.invitedSupplierIds.length > 0;
+    // ⚠️ PSL P2 · THE STEP-1 MIRROR. The old gate was `length > 0`, which let a
+    // buyer build a one-invitee draft that `t_rfq_publish` would refuse — and
+    // then offered no way to fix it, because no verb adds an invitee to an
+    // existing RFQ. The two conditions are EXACTLY the two the hooks refuse on;
+    // an exempt event needs no floor, so `NOT_REQUIRED` passes with one
+    // invitee, which `length > 0` could never express.
+    //
+    // ⚠️ THE CONTROLS THEMSELVES STAY LIVE. This refuses the STEP, never a
+    // checkbox: the buyer must be able to select and deselect freely to reach a
+    // valid set, and a disabled checkbox beside a PSL chip is the false
+    // affordance this lane exists to avoid.
+    if (step === 1) {
+      return (
+        draftDecision.eligibility.kind === 'ALL_ELIGIBLE' &&
+        draftDecision.competition.kind !== 'UNDER_FLOOR'
+      );
+    }
     if (step === 2) {
       if (!draft.responseDeadline || !draft.awardDeadline) return false;
       return new Date(draft.awardDeadline) > new Date(draft.responseDeadline);
@@ -1892,6 +1960,16 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
             <p className="text-xs text-text-tertiary mt-2" data-testid="psl-invite-hint">
               {t('psl.invite.hint')}
             </p>
+            {/* ⚠️ THE MIRROR, SAID OUT LOUD. `Next` is refused on exactly these
+                verdicts, so the reader is told WHY rather than left with a
+                control that does nothing — a disabled button with no stated
+                reason is the same dead end as a refusal with no remedy. */}
+            <div className="mt-2">
+              <PslGateNotice
+                decision={draftDecision}
+                nameOf={(id) => supplierNameById.get(id) ?? id}
+              />
+            </div>
           </div>
         </div>
       ),
@@ -2645,6 +2723,21 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                 </dl>
               </section>
             )}
+
+            {/* ⚠️ PSL P2 — THE VERDICT ON A REAL EVENT, WHICH IS WHERE AN
+                EXEMPTION IS ACTUALLY REACHABLE. The wizard cannot produce one
+                today: it writes MATERIAL NAMES into `materialIds`
+                (`MATERIAL_CATALOG` holds display prose, and its intersection
+                with the code vocabulary is EMPTY — queued as its own fix), so
+                every draft a buyer builds reads as unmapped. A seeded event
+                carries real codes, so this is the only place the
+                `NOT_REQUIRED` sentence can be seen against live data. */}
+            <section data-testid="psl-gate-panel">
+              <PslGateNotice
+                decision={decideSourcing(selectedRfq, TODAY, rosterStatusOf)}
+                nameOf={(id) => supplierNameById.get(id) ?? id}
+              />
+            </section>
 
             <section>
               <h3 className="text-label text-text-tertiary uppercase mb-3">
