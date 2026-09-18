@@ -469,7 +469,9 @@ describe('⚠️ EVERY ANCHOR SITS INSIDE ITS OWN FAMILY’S COHERENT WINDOW', (
     // Bilateral, so an added family with no anchor is as red as an orphan one.
     const declared = Object.keys(FAMILY_ANCHORS).sort();
     expect(declared).toEqual(
-      ['contract', 'goodsReceipt', 'inventory', 'invoice', 'obligation', 'shipment', 'supplierDocument'],
+      // `psl` joined at the PSL P1 batch — a new anchored family, so this
+      // bilateral list grows with it. That is the gate working, not a hole.
+      ['contract', 'goodsReceipt', 'inventory', 'invoice', 'obligation', 'psl', 'shipment', 'supplierDocument'],
     );
     for (const f of declared as FixtureFamily[]) {
       expect(FAMILY_ANCHORS[f].anchor, f).toMatch(/^\d{4}-\d{2}-\d{2}$/);

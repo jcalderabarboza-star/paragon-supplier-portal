@@ -372,6 +372,12 @@ describe('⚠️ THE TWO-REGEX COMMENT STRIP IS EXTINCT — derived, not listed'
         'services/data/approvalBandAuthored.guard.test.ts',
         'services/data/documentDisplayState.test.ts',
         'services/data/fixturePresent.guard.test.ts',
+        // PSL P1 — both walk source to make a claim about REACHABILITY, so both
+        // must be blind to a module named in prose. This file names every PSL
+        // module in its own header.
+        'services/data/pslListings.fixture.test.ts',
+        'services/data/pslNoSupplierRead.test.ts',
+        'services/data/pslReadIsClockIndependent.test.ts',
         'services/data/mock/chaosAmbience.test.ts',
         'services/sdc/__tests__/deriveC9FieldList.ts',
         'services/transitions/businessRoles.test.ts',

@@ -98,6 +98,22 @@ const STATUS_ID: Record<string, string> = {
   Accepted: 'Diterima',
   Manual: 'Manual',
   Outbound: 'Keluar',
+  // ── PSL (P1). Terms from the Odyssey procurement term-base; `Sumber Tunggal`
+  //    is the spelling already shipped on the risk surface
+  //    (`risk.kpi.singleSource.eyebrow` = "Sumber Tunggal Kritis"), reused so
+  //    one concept is not named two ways across two pages.
+  'Sole Source': 'Sumber Tunggal',
+  Mandatory: 'Wajib',
+  Validated: 'Tervalidasi',
+  Scheduled: 'Terjadwal',
+  'Not Listed': 'Tidak Terdaftar',
+  // PSL lifecycle. `Terdaftar` is chosen so the profile's in-force pill and the
+  // Directory's `Tidak Terdaftar` are the same word negated, rather than two
+  // unrelated terms for one axis; `Ditarik` and `Diajukan` are the words the PSL
+  // glossary entries already use in their own ID prose.
+  Proposed: 'Diajukan',
+  Listed: 'Terdaftar',
+  Withdrawn: 'Ditarik',
 };
 
 /** Slug a canonical status into its i18n key: "Payment Released" → "status.payment_released". */

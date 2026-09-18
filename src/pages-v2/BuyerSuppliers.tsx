@@ -1,5 +1,4 @@
 import React, { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   Upload,
@@ -27,6 +26,12 @@ import LoadingState from '../components/ui-v2/LoadingState';
 import ErrorState from '../components/ui-v2/ErrorState';
 import EmptyState from '../components/ui-v2/EmptyState';
 import { useSuppliers } from '../services/query/hooks';
+import RecordRowLink from './widgets/RecordRowLink';
+import PslStatusCell, {
+  pslStandingOf,
+  type PslFilter,
+} from '../components/v2-features/PslStatusCell';
+import { DECLARED_PRESENT } from '../services/data/fixturePresent';
 import { useCategoryLabel } from '../hooks/useCategoryLabel';
 import {
   SupplierStatus,
@@ -49,8 +54,16 @@ const formatDate = (iso: string): string => {
 type GroupTab = 'suppliers' | 'invitations';
 type StatusFilter = 'active' | 'inactive' | 'all';
 
+// ⚠️ **THE PSL COLUMN READS AT `DECLARED_PRESENT`, NOT `new Date()`.**
+// `BuyerContracts` established the pin and states the reason: the fixtures are
+// anchored onto this instant, so a page that read the wall clock would render
+// labels that decay on a calendar day with no commit involved — and CI runs
+// this suite daily at 00:17 UTC with nothing changed, which is exactly the run
+// that would catch it going false. The listing corpus is an anchored family
+// (`FAMILY_ANCHORS.psl`), so it is pinned the same way.
+const TODAY = DECLARED_PRESENT;
+
 const BuyerSuppliers: React.FC = () => {
-  const navigate = useNavigate();
   const { t } = useTranslation();
   const cl = useCategoryLabel();
   const suppliersQuery = useSuppliers();
@@ -58,6 +71,7 @@ const BuyerSuppliers: React.FC = () => {
   const [group, setGroup] = useState<GroupTab>('suppliers');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [search, setSearch] = useState('');
+  const [pslFilter, setPslFilter] = useState<PslFilter>('any');
 
   const SUPPLIERS_CRUMB = [
     t('buyerSuppliers.crumb.acquire'),
@@ -87,11 +101,35 @@ const BuyerSuppliers: React.FC = () => {
     return { active, inactive, total: suppliers.length };
   }, [suppliers]);
 
+  // One standing per supplier, computed once. `pslStandingOf` is the pure seam
+  // (`pslSourcingSeam.ts`) — no hook, no query, no store — so the Directory and
+  // a future policy gate answer through the SAME function rather than two that
+  // agree today.
+  const pslBySupplier = useMemo(
+    () => new Map(suppliers.map((s) => [s.id, pslStandingOf(s.id, TODAY)])),
+    [suppliers],
+  );
+
+  const pslCounts = useMemo(() => {
+    let inForce = 0;
+    let lapsed = 0;
+    let none = 0;
+    for (const s of suppliers) {
+      const kind = pslBySupplier.get(s.id)?.kind;
+      if (kind === 'IN_FORCE') inForce += 1;
+      else if (kind === 'LAPSED') lapsed += 1;
+      else none += 1;
+    }
+    return { inForce, lapsed, none };
+  }, [suppliers, pslBySupplier]);
+
   const filtered = useMemo(() => {
     return suppliers.filter((s) => {
       if (statusFilter === 'active' && s.status !== SupplierStatus.ACTIVE)
         return false;
       if (statusFilter === 'inactive' && s.status === SupplierStatus.ACTIVE)
+        return false;
+      if (pslFilter !== 'any' && pslBySupplier.get(s.id)?.kind !== pslFilter)
         return false;
       if (search) {
         const q = search.toLowerCase();
@@ -101,7 +139,7 @@ const BuyerSuppliers: React.FC = () => {
       }
       return true;
     });
-  }, [suppliers, statusFilter, search]);
+  }, [suppliers, statusFilter, search, pslFilter, pslBySupplier]);
 
   if (suppliersQuery.isPending)
     return <LoadingState breadcrumb={SUPPLIERS_CRUMB} />;
@@ -188,6 +226,20 @@ const BuyerSuppliers: React.FC = () => {
           value={statusFilter}
           onChange={setStatusFilter}
         />
+        {/* A SECOND chip bar rather than more options on the first: the two
+            narrow on DIFFERENT axes (roster status vs PSL standing) and one
+            radiogroup would make them mutually exclusive, which is not what
+            either means. */}
+        <FilterChipsBar
+          options={[
+            { id: 'any', label: t('psl.filter.any'), count: counts.total },
+            { id: 'IN_FORCE', label: t('psl.filter.inForce'), count: pslCounts.inForce },
+            { id: 'LAPSED', label: t('psl.filter.lapsed'), count: pslCounts.lapsed },
+            { id: 'NOT_LISTED', label: t('psl.filter.none'), count: pslCounts.none },
+          ]}
+          value={pslFilter}
+          onChange={setPslFilter}
+        />
       </div>
 
       <div className="mb-4">
@@ -206,6 +258,7 @@ const BuyerSuppliers: React.FC = () => {
             <TableHeaderCell>{t('buyerSuppliers.col.tier')}</TableHeaderCell>
             <TableHeaderCell>{t('buyerSuppliers.col.category')}</TableHeaderCell>
             <TableHeaderCell>{t('buyerSuppliers.col.compliance')}</TableHeaderCell>
+            <TableHeaderCell>{t('psl.col.header')}</TableHeaderCell>
             <TableHeaderCell className="text-right">
               {t('buyerSuppliers.col.otif')}
             </TableHeaderCell>
@@ -216,14 +269,22 @@ const BuyerSuppliers: React.FC = () => {
           </TableHeader>
           <tbody>
             {filtered.map((s) => (
-              <TableRow
-                key={s.id}
-                className="cursor-pointer"
-                onClick={() => navigate(`/buyer/suppliers/${s.id}`)}
-              >
+              <TableRow key={s.id} className="relative cursor-pointer">
                 <TableCell>
+                  {/* ⚠️ A REAL ANCHOR, NOT A `<tr onClick>`. This row carried
+                      `onClick={() => navigate(...)}`, which is invisible to the
+                      keyboard, to "open in a new tab" and to a screen reader's
+                      link list — `RecordRowLink`'s own header names that defect
+                      and the Directory was still carrying it. `TableRow` gains
+                      `relative` because the anchor stretches over the row; that
+                      is the component's one stated obligation on its caller. */}
                   <div className="font-semibold text-text-primary">
-                    {s.name}
+                    <RecordRowLink
+                      path="/buyer/suppliers"
+                      href={`/buyer/suppliers/${s.id}`}
+                      id={s.id}
+                      label={s.name}
+                    />
                   </div>
                   <Data as="div" className="text-xs text-text-tertiary mt-0.5">
                     {s.sapBpNumber}
@@ -257,6 +318,14 @@ const BuyerSuppliers: React.FC = () => {
                     )}
                   </div>
                 </TableCell>
+                {/* ⚠️ THE PSL CELL READS LISTING DATA, NEVER `s.halalCertified`.
+                    The boolean beside it is a SECOND, coarser compliance
+                    vocabulary (one flag per supplier for a supplier × material ×
+                    clock fact); reading it here would hand the PSL column a
+                    third one. Ruling 6: retire nothing, and do not join to it. */}
+                <TableCell>
+                  <PslStatusCell standing={pslBySupplier.get(s.id)!} />
+                </TableCell>
                 <TableCell className="text-right font-semibold text-text-primary">
                   <Data>{s.otif}%</Data>
                 </TableCell>
@@ -276,7 +345,7 @@ const BuyerSuppliers: React.FC = () => {
             {filtered.length === 0 && (
               <tr>
                 <td
-                  colSpan={8}
+                  colSpan={9}
                   className="text-center text-sm text-text-tertiary py-10"
                 >
                   {t('buyerSuppliers.table.noMatch')}

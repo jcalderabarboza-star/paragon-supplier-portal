@@ -75,6 +75,12 @@ const EXPECTED: Readonly<Record<FixtureFamily, FamilyInstant>> = {
   contract: 'P',
   obligation: 'P',
   invoice: 'P',
+  // PSL (P1). `pslDisplayStatus` / `bestPslStatus` / `pslStatusFor` are called
+  // from `BuyerSuppliers`, `BuyerSupplierProfile` and `BuyerSourcing`, all of
+  // which pin `DECLARED_PRESENT` at module scope for the reason
+  // `BuyerContracts` states — the corpus is anchored, so a wall-clock read
+  // would decay on a calendar day with no commit involved.
+  psl: 'P',
 };
 
 describe('POPULATION GUARD — the instrument is looking at the shipped tree', () => {
@@ -198,6 +204,20 @@ describe('⚠️ ANTI-VACUITY — a classifier that returns P for everything mus
         "export const DECLARED_PRESENT = '2026-08-31';",
         "export const pinned = projectAt('x', `${DECLARED_PRESENT}T00:00:00.000Z`);",
       ].join('\n'),
+      // ⚠️ THE DESTRUCTURED-PARAMETER SHAPE — a React component receiving its
+      // instant as a prop, which is the ordinary way a component gets one and
+      // which the classifier could NOT see until the PSL batch. `nowIso` is
+      // declared as a `BindingElement`, not a `Parameter`, so it fell through
+      // to `UNRESOLVED` — and ONE unresolved site poisons its whole family.
+      // Beside it, a site that must STAY `UNRESOLVED`, so the new arm is shown
+      // to be narrow rather than a blanket "call it forwarded".
+      [`${SYNTHETIC_ROOT}/destructuredCaller.ts`]: [
+        "import { projectAt } from './derivations';",
+        'export const Card = ({ nowIso }: { nowIso: string }) =>',
+        "  projectAt('x', nowIso);",
+        'declare const opaque: { now: string };',
+        "export const murky = projectAt('y', opaque.now);",
+      ].join('\n'),
     };
     const host = ts.createCompilerHost({}, true);
     const readFile = host.readFile.bind(host);
@@ -212,14 +232,42 @@ describe('⚠️ ANTI-VACUITY — a classifier that returns P for everything mus
 
     // KNOWN-GOOD FIRST: the probe examined a real population. Without this the
     // WALL assertion below could pass over nothing and read as a working guard.
-    expect(sites.map((s) => s.fn).sort()).toEqual(['projectAt', 'unacknowledgedOver48h']);
+    // ⚠️ THE LIST GREW WHEN THE DESTRUCTURED-PARAMETER FILE JOINED THIS
+    // PROGRAM, and it is UPDATED rather than loosened to a `toContain`: three
+    // `projectAt` sites (pinned, destructured, opaque) and one
+    // `unacknowledgedOver48h`. An exhaustive list is what makes the WALL
+    // assertion below mean "exactly one of these is WALL".
+    expect(sites.map((s) => s.fn).sort()).toEqual([
+      'projectAt',
+      'projectAt',
+      'projectAt',
+      'unacknowledgedOver48h',
+    ]);
 
     const wall = sites.filter((s) => s.provenance === 'WALL');
     expect(wall.map((s) => s.fn)).toEqual(['unacknowledgedOver48h']);
 
     // KNOWN-BAD: the pinned caller in the SAME program must NOT be WALL, so a
     // classifier that answered WALL for everything fails here too.
-    expect(sites.find((s) => s.fn === 'projectAt')?.provenance).toBe('P');
+    expect(
+      sites.find((s) => norm(s.file).includes('pinnedCaller'))?.provenance,
+    ).toBe('P');
+  });
+
+  it('⚠️ A DESTRUCTURED PARAMETER IS FORWARDED, AND THE ARM IS NARROW', () => {
+    // BOTH DIRECTIONS, IN ONE PROGRAM (rule 4 — probe the guard both ways).
+    // The FORWARDED half is the reclassification the PSL batch needed: a
+    // component taking `nowIso` as a prop establishes no instant, exactly as a
+    // plain parameter does not. The UNRESOLVED half is what says the new arm is
+    // NARROW — if it were a blanket, both sites below would read FORWARDED and
+    // every family in the tree would silently become unfalsifiable.
+    const sites = deriveAllCallSites(probeProgram()).filter((s) =>
+      norm(s.file).includes('destructuredCaller'),
+    );
+    // KNOWN-GOOD: the probe examined this file at all (§40e — a population of
+    // zero reads as 'nothing bad here').
+    expect(sites.length).toBe(2);
+    expect(sites.map((s) => s.provenance).sort()).toEqual(['FORWARDED', 'UNRESOLVED']);
   });
 
   it('the shipped tree now has NO wall-read projection call site, and that is the claim', () => {

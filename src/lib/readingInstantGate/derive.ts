@@ -241,6 +241,30 @@ function classifyNow(node: ts.Node, checker: ts.TypeChecker, depth = 0): NowProv
     // A parameter: the instant arrives from the caller, so this site
     // establishes none. Reported, never aggregated.
     if (decl && ts.isParameter(decl)) return 'FORWARDED';
+    // ⚠️ **AND A DESTRUCTURED PARAMETER IS A PARAMETER.** `({ nowIso }) => …`
+    // declares `nowIso` as a `BindingElement`, NOT a `Parameter`, so the check
+    // above misses it and the site fell through to `UNRESOLVED` — which
+    // POISONS THE WHOLE FAMILY, because one unresolved site outvotes every
+    // resolved one in the aggregation below.
+    //
+    // It surfaced the day a React component took its instant as a prop
+    // (`PslListingsSection`), which is the ordinary way a component receives
+    // one; nothing before it had. **The direction is safe and it is asserted
+    // rather than assumed:** this arm can only fire where `classifyNow`
+    // previously returned `UNRESOLVED`, and `readingInstant.test.ts` pins that
+    // NO family is unresolved — so on the tree as it stood there was nothing
+    // for it to reclassify. Its control is in that file: a destructured
+    // forwarded instant must read `FORWARDED`, and a destructured `WALL` read
+    // must still read `WALL`.
+    //
+    // ⚠️ A DEFAULT IS DELIBERATELY NOT FOLLOWED. `({ now = DECLARED_PRESENT })`
+    // establishes `P` only when NO caller passes one, and this instrument
+    // cannot know that — so the conservative answer is the honest one: the
+    // caller decides, and the family must earn its verdict from a real call
+    // site. Following the default would let a helper's signature outvote the
+    // read that actually happens, which is the thing `FORWARDED` exists to
+    // prevent one line up.
+    if (decl && ts.isBindingElement(decl)) return 'FORWARDED';
     return 'UNRESOLVED';
   }
 

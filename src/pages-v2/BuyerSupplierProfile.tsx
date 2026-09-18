@@ -20,6 +20,7 @@ import {
   AlertTriangle,
   XCircle,
   LucideIcon,
+  ListChecks,
 } from 'lucide-react';
 import AppShellV2 from '../components/layout-v2/AppShellV2';
 import PageHeader from '../components/ui-v2/PageHeader';
@@ -28,6 +29,11 @@ import ProvenanceMarker from '../components/ui-v2/ProvenanceMarker';
 import KpiCard from '../components/ui-v2/KpiCard';
 import StatusPill from '../components/ui-v2/StatusPill';
 import { statusTone } from '../lib/statusTone';
+import PslListingsSection from '../components/v2-features/PslListingsSection';
+import { PSL_LISTINGS } from '../services/data/mock/fixtures/pslListings';
+import { listingsForSupplier } from '../services/data/pslProjection';
+import { DECLARED_PRESENT } from '../services/data/fixturePresent';
+import { useDeepLinkedRecordId } from '../lib/recordDeepLink';
 import Tabs from '../components/ui-v2/Tabs';
 import Table from '../components/ui-v2/Table';
 import TableHeader, { TableHeaderCell } from '../components/ui-v2/TableHeader';
@@ -102,6 +108,7 @@ const COMPLIANCE_LABEL: Record<ProfileCertStatus, string> = {
 type TabId =
   | 'overview'
   | 'comm'
+  | 'psl'
   | 'compliance'
   | 'catalog'
   | 'performance'
@@ -114,6 +121,26 @@ const BuyerSupplierProfile: React.FC = () => {
   const cl = useCategoryLabel();
   const chl = useChannelLabel();
   const [activeTab, setActiveTab] = useState<TabId>('overview');
+
+  // ⚠️ THE LISTING PROJECTION READS AT `DECLARED_PRESENT`, NOT THE WALL CLOCK —
+  // the `BuyerContracts` pin, for the reason stated there: the corpus is an
+  // anchored family, so a page reading `new Date()` would decay on a calendar
+  // day with no commit involved.
+  const PSL_TODAY = DECLARED_PRESENT;
+
+  // ⚠️ THE DEEP LINK NAMES A *LISTING*, NOT THE SUPPLIER. The supplier is
+  // already the route segment (`/buyer/suppliers/:id`), so `?id=` is free to
+  // carry the record INSIDE the page — which is exactly what `recordDeepLink`'s
+  // parameter means everywhere else. Arriving with one opens the PSL tab and
+  // highlights the row. An UNKNOWN id is NOT an error (that module's rule): the
+  // tab still opens and nothing is highlighted, because a stale link is not a
+  // failure the reader caused or can fix.
+  const deepLinkedListingId = useDeepLinkedRecordId();
+  const [pslDeepLinkHandled, setPslDeepLinkHandled] = useState(false);
+  if (deepLinkedListingId && !pslDeepLinkHandled) {
+    setPslDeepLinkHandled(true);
+    setActiveTab('psl');
+  }
 
   const PROFILE_CRUMB = [
     t('buyerSupplierProfile.crumb.acquire'),
@@ -131,6 +158,13 @@ const BuyerSupplierProfile: React.FC = () => {
   const TABS: { id: TabId; label: string; icon: LucideIcon }[] = [
     { id: 'overview', label: t('buyerSupplierProfile.tab.overview'), icon: ShieldCheck },
     { id: 'comm', label: t('buyerSupplierProfile.tab.comm'), icon: Settings },
+    // ⚠️ A TAB, NOT A SECTION ON `overview`. A listing carries a justification,
+    // a cap with its own justification and decider, evidence references and an
+    // append-only ledger — several hundred words on a multi-listing supplier.
+    // Folded into `overview` it would bury the identity card the tab exists to
+    // show first; the `compliance` tab beside it is the precedent for a
+    // governed, document-shaped read getting its own surface.
+    { id: 'psl', label: t('psl.tab'), icon: ListChecks },
     { id: 'compliance', label: t('buyerSupplierProfile.tab.compliance'), icon: ShieldCheck },
     { id: 'catalog', label: t('buyerSupplierProfile.tab.catalog'), icon: Package },
     { id: 'performance', label: t('buyerSupplierProfile.tab.performance'), icon: BarChart3 },
@@ -464,6 +498,14 @@ const BuyerSupplierProfile: React.FC = () => {
             </tbody>
           </Table>
         </section>
+      )}
+
+      {activeTab === 'psl' && (
+        <PslListingsSection
+          listings={listingsForSupplier(PSL_LISTINGS, supp.id, PSL_TODAY)}
+          nowIso={PSL_TODAY}
+          highlightId={deepLinkedListingId}
+        />
       )}
 
       {activeTab === 'catalog' && (

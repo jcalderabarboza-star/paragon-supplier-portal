@@ -31,13 +31,28 @@ const RecordRowLink: React.FC<{
   label: React.ReactNode;
   /** The record name for the accessible label, when `label` is not a string. */
   name?: string;
+  /**
+   * ⚠️ **AN EXPLICIT DESTINATION, FOR A RECORD THAT HAS ITS OWN ROUTE.**
+   *
+   * `recordHref` builds `path?id=…` because this component was written for list
+   * pages that select a row into a panel they already own. A few records are
+   * not like that: a supplier has its OWN PAGE at `/buyer/suppliers/:id`, so
+   * the query parameter would name a record the destination never reads.
+   *
+   * The accessibility contract — a real anchor, stretched over the row, named
+   * after the record — is the SAME in both cases and is the whole reason this
+   * component exists. So the destination is what varies, not the component: a
+   * second row-link component would be two places for one rule about keyboards
+   * and screen readers. `id` is still required and still names the link.
+   */
+  href?: string;
   className?: string;
-}> = ({ path, id, label, name, className = '' }) => {
+}> = ({ path, id, label, name, href, className = '' }) => {
   const { t } = useTranslation();
   const record = name ?? (typeof label === 'string' ? label : id);
   return (
     <Link
-      to={recordHref(path, id)}
+      to={href ?? recordHref(path, id)}
       aria-label={t('widget.row.open', { record })}
       className={`after:absolute after:inset-0 hover:underline focus-visible:underline ${className}`}
     >
