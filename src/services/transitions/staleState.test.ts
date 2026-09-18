@@ -262,7 +262,17 @@ describe('POPULATION — what a STATE precondition can and cannot see, derived',
 // ─────────────────────────────────────────────────────────────────────────────
 describe('THE PRECONDITION — walked to the state where the refusal is produced', () => {
   /** The canonical race: read Draft, someone publishes, cancel is STILL legal. */
-  const draftRfq = () => rfqStore.all().find((r) => r.status === 'Draft')!;
+  // ⚠️ **A PUBLISHABLE DRAFT, NOT MERELY THE FIRST ONE.** PSL P2 put a
+  // competition floor on `t_rfq_publish`, and `rfq-008` is a deliberate
+  // specimen of a draft with NO invitees that therefore CANNOT be published
+  // (operator ruling). Selecting "the first Draft" would have made this walk
+  // depend on fixture array order for its subject — order this spec never
+  // stated and never meant. The requirement is named here instead: this spec
+  // needs a draft it can publish, so it asks for one. **NO ASSERTION BELOW
+  // CHANGED**; only what the walk is pointed at is now stated rather than
+  // inherited from a position in an array.
+  const draftRfq = () =>
+    rfqStore.all().find((r) => r.status === 'Draft' && r.invitedSupplierIds.length > 1)!;
 
   it('CONTROL — the walk really reaches the racing state, and both verbs are legal there', async () => {
     const rfq = draftRfq();
@@ -376,7 +386,9 @@ describe('ZERO CALLERS CHANGE — the half a "refuse unless declared" fix would 
   // `expectedState` was ABSENT would satisfy every spec above and break every
   // caller in the tree, because at 1c every caller omits the field.
   it('a non-creation command with NO expectedState behaves exactly as before', async () => {
-    const id = rfqStore.all().find((r) => r.status === 'Draft')!.id;
+    // A PUBLISHABLE draft — see `draftRfq()` above for why the property is
+    // stated rather than left to fixture array order. No assertion changed.
+    const id = rfqStore.all().find((r) => r.status === 'Draft' && r.invitedSupplierIds.length > 1)!.id;
     const res = await svc.dispatch(procurement, {
       transitionId: 't_rfq_publish', entity: 'rfq', entityId: id,
     });

@@ -437,4 +437,64 @@ export const mockRfqs: RFQ[] = [
       },
     ],
   },
+  {
+    // ── PSL P2 · THE MIXED-MATERIAL ROW. IT EXISTS TO PROBE RULING 1. ─────────
+    //
+    // ⚠️ **WITHOUT THIS ROW THE ANY-SUFFICES RULE SHIPS UNPROBED**, because no
+    // seeded RFQ could tell the two candidate rules apart. Derived before it was
+    // written: the three multi-material RFQs in this file (`rfq-003`, `rfq-004`,
+    // `rfq-005`) carry NO PSL listing on EITHER of their codes, so
+    // any-suffices and all-must-be-covered return the same verdict on every one
+    // of them — a test over those rows would have been green under either rule.
+    //
+    // Every field is chosen to make the two rules DISAGREE, and only that:
+    //   · `AI-NIAC-6601` is covered by `psl-004` — sup-005, **Mandatory**, in
+    //     force at the declared present. This is the material that exempts.
+    //   · `RM-EMUL-3310` is a real `MATERIAL_MASTER` code that **no PSL listing
+    //     names**. This is the material that does not.
+    //
+    //     ⚠️ **AND THE CHOICE OF *WHICH* UNLISTED CODE IS FORCED, NOT FREE.**
+    //     The first draft of this row used `AI-CENT-6900` and broke
+    //     `materialMasterAuthoring.test.ts` — that code is sourced ONLY by this
+    //     file, which is the definition of 2B-3's `AUTHORED` set, and its
+    //     master LABEL was DERIVED from being the single head of the single RFQ
+    //     naming it. A second RFQ head would have made one code state two
+    //     meanings. `RM-EMUL-3310` is named by the delivery fixtures too (that
+    //     spec says so in its own prose), so it is not RFQ-only, no label hangs
+    //     on this title, and the ONE CODE / ONE MEANING rule is untouched.
+    //   · `sup-005` is invited, so the exempting listing is reachable; `sup-006`
+    //     and `sup-009` are invited and **Active**, so eligibility passes and
+    //     the count is 3 — which is what makes the disagreement sharp: under
+    //     any-suffices the verdict is NOT_REQUIRED, under all-must-be-covered it
+    //     is SATISFIED. Two different answers, neither of them a refusal, so the
+    //     counterfactual cannot be mistaken for a floor effect.
+    //   · `Draft`, because `t_rfq_publish.from` is `['Draft']` and a rule about
+    //     publishing has to be reachable by publishing. It is also the only
+    //     PUBLISHABLE draft in this file — `rfq-008` deliberately has none
+    //     (operator ruling: it is an honest specimen of a draft that cannot be
+    //     published, and the step-1 mirror exists to stop a buyer creating
+    //     another one).
+    //   · `respondedSupplierIds` is empty: a Draft has been shown to nobody, so
+    //     anybody having responded to it would be a contradiction in the data.
+    //   · dates follow this file's own literal convention (RFQ is not a
+    //     `FixtureFamily` — no anchor, no shift).
+    id: 'rfq-014',
+    rfqNumber: 'RFQ-2026-014',
+    title: 'Niacinamide USP with Glycerin base — combined Q4 active buy',
+    materialCategory: 'Active Ingredients',
+    materialIds: ['AI-NIAC-6601', 'RM-EMUL-3310'],
+    buyerId: 'buyer-001',
+    status: 'Draft',
+    createdAt: '2026-05-18',
+    responseDeadline: '2026-06-05',
+    awardDeadline: '2026-06-12',
+    invitedSupplierIds: ['sup-005', 'sup-006', 'sup-009'],
+    respondedSupplierIds: [],
+    totalQty: 3_200,
+    uom: 'KG',
+    estimatedValue: 720_000_000,
+    currency: 'IDR',
+    incoterms: 'CIF Jakarta',
+    paymentTerms: 'Net 45',
+  },
 ];

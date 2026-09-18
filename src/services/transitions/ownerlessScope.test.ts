@@ -401,7 +401,18 @@ describe('THE LEGITIMATE PATHS — the half a "refuse everyone" fix would break'
       ['enforcement', 'purchaseRequisition', 'rfq', 'role', 'supplierApplication'],
     );
 
-    const draftRfq = rfqStore.all().find((r) => r.status === 'Draft')!;
+    // ⚠️ **A PUBLISHABLE DRAFT, NOT MERELY THE FIRST ONE.** PSL P2 put a
+    // competition floor on `t_rfq_publish`, and `rfq-008` is a deliberate
+    // specimen of a draft with NO invitees that therefore CANNOT be published
+    // (operator ruling). Selecting "the first Draft" would have made this walk
+    // depend on fixture array order for its subject — order this spec never
+    // stated and never meant. The requirement is named here instead: this spec
+    // needs a draft it can publish, so it asks for one. **NO ASSERTION BELOW
+    // CHANGED**; only what the walk is pointed at is now stated rather than
+    // inherited from a position in an array.
+    const draftRfq = rfqStore
+      .all()
+      .find((r) => r.status === 'Draft' && r.invitedSupplierIds.length > 1)!;
     const rfqRes = await svc.dispatch(buyerSeat('procurement'), {
       transitionId: 't_rfq_publish', entity: 'rfq', entityId: draftRfq.id,
     });

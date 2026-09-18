@@ -303,6 +303,48 @@ export const POLICY_HOOKS = {
    * declarations key that is present and malformed is not.
    */
   APPLICATION_DECLARATIONS_WELL_FORMED: 'application_declarations_well_formed',
+
+  // ── PSL P2 · THE SOURCING GATE — three hooks, and the SPLIT IS THE DESIGN ──
+  //
+  // ⚠️ **ELIGIBILITY AND COMPETITION ARE TWO HOOKS ON ONE VERB, NOT ONE HOOK
+  // WITH TWO BRANCHES** (operator ruling). They are different rules with
+  // different remedies — *"this supplier may not be invited at all"* versus
+  // *"this event does not have enough competition"* — and a buyer who reads one
+  // refusal for two causes cannot act on it. Splitting them also settles a
+  // question a merged hook would have had to answer in prose: whether an
+  // ineligible invitee counts toward the floor. It does not, and the ORDER is
+  // what says so — eligibility is listed FIRST in `t_rfq_publish.policyHooks`
+  // and the dispatcher runs them in array order, so the count is only ever
+  // taken over invitees eligibility already accepted.
+  /**
+   * RFQ publish: no invited supplier may be in a state that forbids invitation.
+   * The refusable set is DERIVED from `SupplierStatus`
+   * (`services/data/rfqSourcingGate.ts`), never hand-listed here.
+   */
+  RFQ_PUBLISH_INVITEES_ELIGIBLE: 'rfq_publish_invitees_eligible',
+  /**
+   * RFQ publish: a competitive event needs at least `COMPETITION_FLOOR_INVITEES`
+   * ELIGIBLE invitees — unless an in-force Mandatory or Sole Source listing
+   * removes the need to compete at all.
+   *
+   * ⚠️ **THE FLOOR ONLY. EXACTLY TWO IS ALLOWED.** Three is the standard and the
+   * surface says so; a hook that refused at two would be refusing the ruling,
+   * and `PolicyDecision` has no channel for an allowance note, which is why the
+   * note is rendered by the wizard off the same pure call.
+   */
+  RFQ_PUBLISH_COMPETITION: 'rfq_publish_competition',
+  /**
+   * RFQ award: the awardee must OWN the awarded quotation and have been invited.
+   *
+   * ⚠️ **THE STRONGER OF THE TWO CHECKS, BECAUSE THE WEAKER ONE IS VACUOUS.**
+   * `awardedSupplierId` and `awardedQuotationId` are written independently from
+   * the payload with no cross-check, so a dispatch can record supplier A as the
+   * awardee of supplier B's quotation. "Was the awardee invited?" alone cannot
+   * catch that, and cannot be reached from the corpus at all — no seeded
+   * quotation belongs to an uninvited supplier, and the quotation target's own
+   * `creationOwner` makes one impossible to raise.
+   */
+  RFQ_AWARD_AWARDEE_INTEGRITY: 'rfq_award_awardee_integrity',
 } as const;
 
 for (const name of Object.values(POLICY_HOOKS)) registerPolicyHook(name);

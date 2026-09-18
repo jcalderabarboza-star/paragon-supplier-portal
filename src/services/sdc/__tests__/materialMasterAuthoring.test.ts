@@ -264,6 +264,13 @@ describe('2B-3 — the unit is the RFQ HEADER, and the header is WEAKER evidence
       'RFQ-2026-003',
       'RFQ-2026-004',
       'RFQ-2026-005',
+      // PSL P2 — the mixed-material row that makes the any-suffices ruling
+      // probeable. It JOINS this population legitimately and the pin is doing
+      // its job by making a human acknowledge it: `RFQ.uom` has arity one and
+      // this row names two codes, so its header unit is attributable to
+      // neither, which is the very property this list exists to record. Its
+      // codes are deliberately NOT in `AUTHORED` — see the row's own comment.
+      'RFQ-2026-014',
     ]);
     // …and NOT ONE of the five rides that route. The mapping is unambiguous for
     // THESE ROWS, which is a property of the rows and not of the field. A sixth

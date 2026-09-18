@@ -74,7 +74,38 @@ export const pslEn: Record<string, string> = {
   'psl.actor.unattributed': 'Recorded without an identified person',
 
   // — Sourcing invite step —
-  'psl.invite.hint': 'PSL status is shown for information. It does not restrict who you may invite.',
+  //
+  // ⚠️ **THE HINT CHANGED AT P2 AND THE OLD ONE WAS A LIE THE MOMENT THE GATE
+  // LANDED.** It read *"It does not restrict who you may invite."* — whose
+  // first clause is still true and whose second became false: PSL standing now
+  // decides whether the event needs competitive bidding at all. The first
+  // clause is KEPT, because a status chip beside a checkbox reads as a
+  // constraint unless the surface says otherwise, and it still is not one.
+  'psl.invite.hint':
+    'PSL status does not restrict who you may invite. It decides whether this event needs competitive bidding.',
+
+  // — The sourcing gate (P2) —
+  'psl.gate.notRequired':
+    'Competitive bidding is not required: {{supplier}} holds a {{status}} listing for {{code}}.',
+  'psl.gate.atFloor':
+    'Two eligible suppliers invited. Three is the standard for a competitive event.',
+  'psl.gate.underFloor':
+    'A competitive event needs at least {{floor}} eligible suppliers invited. This one has {{count}}.',
+  'psl.gate.ineligible':
+    '{{supplier}} is {{status}} and may not be invited to a sourcing event. Remove them to continue.',
+  'psl.gate.undecidable':
+    'Preferred-supplier standing could not be checked for this event: {{codes}}. It will be competed as usual.',
+
+  // — Refusal toasts, keyed to the HOOK that refused (never to the code inside
+  //   its reason: the hook is what the dispatcher names and what a type can
+  //   check). Each names a REMEDY — a refusal that only says no is the dead end
+  //   `HALAL-REFUSAL-DEAD-ENDS-01` is filed about.
+  'psl.toast.publishIneligible':
+    'An invited supplier may not be invited to a sourcing event. Remove them from the invitation and publish again.',
+  'psl.toast.publishUnderFloor':
+    'This event does not have enough eligible suppliers to be competitive. It cannot be published as it stands.',
+  'psl.toast.awardIntegrity':
+    'The award does not name the supplier who submitted the winning quotation, or names one who was never invited. Nothing was recorded.',
 };
 
 export const pslId: Record<string, string> = {
@@ -131,5 +162,25 @@ export const pslId: Record<string, string> = {
 
   // — Langkah undangan pengadaan —
   'psl.invite.hint':
-    'Status PSL ditampilkan sebagai informasi. Ini tidak membatasi siapa yang dapat Anda undang.',
+    'Status PSL tidak membatasi siapa yang dapat Anda undang. Status ini menentukan apakah acara ini memerlukan tender kompetitif.',
+
+  // — Gerbang pengadaan (P2) —
+  'psl.gate.notRequired':
+    'Tender kompetitif tidak diperlukan: {{supplier}} memiliki daftar {{status}} untuk {{code}}.',
+  'psl.gate.atFloor':
+    'Dua pemasok yang memenuhi syarat diundang. Tiga adalah standar untuk acara kompetitif.',
+  'psl.gate.underFloor':
+    'Acara kompetitif memerlukan setidaknya {{floor}} pemasok yang memenuhi syarat. Acara ini memiliki {{count}}.',
+  'psl.gate.ineligible':
+    '{{supplier}} berstatus {{status}} dan tidak boleh diundang ke acara pengadaan. Keluarkan mereka untuk melanjutkan.',
+  'psl.gate.undecidable':
+    'Status pemasok pilihan tidak dapat diperiksa untuk acara ini: {{codes}}. Acara akan ditenderkan seperti biasa.',
+
+  // — Toast penolakan, dikunci ke HOOK yang menolak —
+  'psl.toast.publishIneligible':
+    'Salah satu pemasok yang diundang tidak boleh diundang ke acara pengadaan. Keluarkan mereka dari undangan lalu terbitkan lagi.',
+  'psl.toast.publishUnderFloor':
+    'Acara ini tidak memiliki cukup pemasok yang memenuhi syarat untuk bersaing. Acara tidak dapat diterbitkan seperti sekarang.',
+  'psl.toast.awardIntegrity':
+    'Penghargaan tidak menyebut pemasok yang mengajukan penawaran pemenang, atau menyebut pemasok yang tidak pernah diundang. Tidak ada yang dicatat.',
 };

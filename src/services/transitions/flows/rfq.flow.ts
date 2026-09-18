@@ -73,13 +73,24 @@ export const rfqFlow: FlowDefinition = {
       // getRFQs`), so publication is the act that exposes the event to the
       // invited list rather than a status relabel. Unfireable from the day it
       // was authored until D-1 moved creation to `Draft`.
+      //
+      // ⚠️ PSL P2 — TWO HOOKS, AND **THE ORDER IS SEMANTIC, NOT COSMETIC.**
+      // The dispatcher evaluates `policyHooks` in array order, so eligibility
+      // is decided BEFORE any count is taken. That is what makes the operator's
+      // ruling — *a refused invitee is not counted toward the competition
+      // floor* — a property of the machine rather than a convention the two
+      // hooks have to keep. `rfqSourcingGate.test.ts` pins this array position
+      // for position; swapping the two reddens.
       id: 't_rfq_publish',
       from: ['Draft'],
       to: 'Open',
       trigger: 'user',
       requiredRole: 'rfq:publish',
       requiredFields: [],
-      policyHooks: [],
+      policyHooks: [
+        POLICY_HOOKS.RFQ_PUBLISH_INVITEES_ELIGIBLE,
+        POLICY_HOOKS.RFQ_PUBLISH_COMPETITION,
+      ],
       surfaceable: { surfaced: true },
       version: 1,
     },
@@ -115,7 +126,11 @@ export const rfqFlow: FlowDefinition = {
       trigger: 'user',
       requiredRole: 'rfq:award',
       requiredFields: ['awardedQuotationId', 'awardedSupplierId'],
-      policyHooks: [],
+      // ⚠️ PSL P2 — the two award fields are written INDEPENDENTLY from the
+      // payload by the target, so nothing stopped a dispatch recording one
+      // supplier as the awardee of another supplier's quotation. This hook is
+      // the cross-check `requiredFields` cannot make: presence is not agreement.
+      policyHooks: [POLICY_HOOKS.RFQ_AWARD_AWARDEE_INTEGRITY],
       surfaceable: { surfaced: true },
       version: 1,
     },

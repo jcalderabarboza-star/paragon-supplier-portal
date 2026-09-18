@@ -42,6 +42,7 @@ export {
   HALAL_REFUSAL_GLOSSARY,
   BPOM_REFUSAL_GLOSSARY,
   HALAL_NOT_SATISFIED_GLOSSARY,
+  SOURCING_REFUSAL_GLOSSARY,
 } from './refusals.glossary';
 
 export {
@@ -66,6 +67,7 @@ import {
   HALAL_REFUSAL_GLOSSARY,
   BPOM_REFUSAL_GLOSSARY,
   HALAL_NOT_SATISFIED_GLOSSARY,
+  SOURCING_REFUSAL_GLOSSARY,
 } from './refusals.glossary';
 import {
   ENFORCEMENT_MODE_GLOSSARY,
@@ -111,6 +113,7 @@ const REGISTRIES = [
   { sourceType: 'HalalRefusalReason', sourceFile: 'src/services/sdc/halal.ts', entries: HALAL_REFUSAL_GLOSSARY },
   { sourceType: 'BpomRefusalReason', sourceFile: 'src/services/sdc/bpom.ts', entries: BPOM_REFUSAL_GLOSSARY },
   { sourceType: 'HalalNotSatisfiedReason', sourceFile: 'src/services/data/halalVerification.ts', entries: HALAL_NOT_SATISFIED_GLOSSARY },
+  { sourceType: 'SourcingRefusalReason', sourceFile: 'src/services/data/rfqSourcingGate.ts', entries: SOURCING_REFUSAL_GLOSSARY },
   { sourceType: 'EnforcementMode', sourceFile: 'src/lib/enforcement.ts', entries: ENFORCEMENT_MODE_GLOSSARY },
   { sourceType: 'GovernedCheckId', sourceFile: 'src/lib/enforcement.ts', entries: GOVERNED_CHECK_GLOSSARY },
   { sourceType: 'GovernedVerdict', sourceFile: 'src/lib/enforcement.ts', entries: GOVERNED_VERDICT_GLOSSARY },

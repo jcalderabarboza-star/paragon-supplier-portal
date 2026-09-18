@@ -24,12 +24,18 @@
 //   `t_rfq_publish`). If a supplier surface ever reaches it, that is the same
 //   leak wearing a different name, so it is in the forbidden set with the rest.
 // ─────────────────────────────────────────────────────────────────────────────
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { readFileSync, existsSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 
 import { stripSourceComments } from '../../lib/sourceScan/stripComments';
 import { MockSupplierService } from './mock/MockSupplierService';
+import { MockCommandService } from './mock/MockCommandService';
+import { rfqStore } from './mock/stores/rfqStore';
+import { rfqFlow } from '../transitions/flows/rfq.flow';
+import { POLICY_HOOKS } from '../transitions/policyHooks';
+import { PERSONA_SYSTEM_ROLES } from '../transitions/businessRoles';
+import { NO_PERSON } from '../../context/noPerson';
 import { PSL_LISTINGS } from './mock/fixtures/pslListings';
 import type { QueryScope } from './types';
 
@@ -40,6 +46,7 @@ const PSL_MODULES = [
   'src/services/data/pslListing.ts',
   'src/services/data/pslProjection.ts',
   'src/services/data/pslSourcingSeam.ts',
+  'src/services/data/rfqSourcingGate.ts',
   'src/services/data/mock/fixtures/pslListings.ts',
   'src/components/v2-features/PslStatusCell.tsx',
   'src/components/v2-features/PslListingsSection.tsx',
@@ -100,14 +107,51 @@ function importsOf(file: string): string[] {
   return out;
 }
 
-/** The transitive closure of files reachable from `entry`, by import. */
-function closure(entry: string): Set<string> {
+/**
+ * ⚠️ **THE ONE BOUNDARY THE WALK DOES NOT CROSS, AND IT IS NAMED RATHER THAN
+ * PATTERNED — PSL P2 (operator ruling pending).**
+ *
+ * P2 puts the sourcing gate on `t_rfq_publish` / `t_rfq_award` as policy hooks.
+ * `policies.ts` is the tree's ONE hook-binding registry: every hook in the
+ * platform binds there at import time, and the dispatcher resolves them by name
+ * at dispatch time. There is no buyer-only composition point — one dispatcher
+ * serves both personas — so **a PSL-reading policy hook and an absolute
+ * import-closure claim are mutually exclusive by construction.** Measured, not
+ * predicted: wiring the hooks put 12 supplier surfaces × 4 PSL modules = 48
+ * edges into this guard's population, every one of them through this file.
+ *
+ * ⚠️ **WHAT IS LOST AND WHAT REPLACES IT, STATED PLAINLY.** What is lost is the
+ * claim that PSL BYTES never enter a supplier surface's module graph. That
+ * claim was never the guard's own stated purpose — its header says the leak it
+ * exists to catch is *"a supplier PAGE importing the corpus directly"* — and it
+ * was never true of the bundle either: this platform ships every fixture to
+ * every client and scopes tenancy client-side (CLAUDE.md). What replaces it is
+ * STRONGER in the dimension that matters and is asserted below: **no supplier
+ * seat can reach either verb at all**, so the hooks that read the PSL can never
+ * run for one, and nothing they return carries a listing.
+ *
+ * The boundary is ONE ABSOLUTE PATH, not a directory or a regex. A second
+ * module wanting the same exemption has to be added here by hand, which is the
+ * point: an exemption nobody notices is how a guard dies.
+ */
+const POLICY_BINDINGS = resolve(process.cwd(), 'src/services/transitions/policies.ts');
+
+/**
+ * The transitive closure of files reachable from `entry`, by import.
+ *
+ * `stopAt` is the boundary set: a member is RECORDED as reached (so a probe can
+ * prove the boundary really sits on the path) but is not TRAVERSED THROUGH.
+ * Defaulted, so the probe below can run the same walker with the boundary
+ * removed and watch this guard fire.
+ */
+function closure(entry: string, stopAt: ReadonlySet<string> = new Set([POLICY_BINDINGS])): Set<string> {
   const seen = new Set<string>();
   const stack = [entry];
   while (stack.length > 0) {
     const f = stack.pop()!;
     if (seen.has(f)) continue;
     seen.add(f);
+    if (stopAt.has(f)) continue;
     for (const spec of importsOf(f)) {
       const r = resolveImport(f, spec);
       if (r && !seen.has(r)) stack.push(r);
@@ -216,6 +260,121 @@ describe('⚠️ NO SUPPLIER SURFACE REACHES ANY PSL MODULE', () => {
       }
     }
     expect(offenders).toEqual([]);
+  });
+
+  it('⚠️ THE BOUNDARY IS LOAD-BEARING — remove it and this guard FIRES', () => {
+    // ⚠️ **THE HALF THAT STOPS THE EXEMPTION BEING A HOLE.** An exemption is
+    // only honest if you can show what it is holding back. Run the SAME walker
+    // over the SAME population with no boundary and the offenders reappear —
+    // so the boundary is a decision about one named edge, not a walker that
+    // quietly stopped finding things.
+    const unbounded: string[] = [];
+    for (const surface of surfaces) {
+      const reach = closure(surface, new Set());
+      for (const m of PSL_MODULES) if (reach.has(m)) unbounded.push(surface);
+    }
+    expect(unbounded.length).toBeGreaterThan(0);
+  });
+
+  it('⚠️ AND THE BOUNDARY REALLY SITS ON THE PATH — it is not a no-op', () => {
+    // The other direction. If no supplier surface reached `policies.ts` at all,
+    // the boundary would be decoration and the clean result above would be
+    // reporting on a walk that never met it — `CLEAN-AFTER-THE-FIX-REPORTS-THE-
+    // FIX-01` with a boundary instead of a repair.
+    const reaching = surfaces.filter((f) => closure(f).has(POLICY_BINDINGS));
+    expect(reaching.length).toBeGreaterThan(0);
+    // …and a DIRECT PSL import by a supplier surface would still be caught,
+    // because the boundary excludes exactly one file and nothing downstream of
+    // the surfaces themselves. Proven on the buyer control, which imports the
+    // cell directly rather than through any policy: it is still convicted.
+    const buyer = closure(resolve(SRC, 'pages-v2/BuyerSuppliers.tsx'));
+    expect(PSL_MODULES.filter((m) => buyer.has(m)).length).toBeGreaterThan(0);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ⚠️ THE CLAIM THAT REPLACES THE ONE THE BOUNDARY GAVE UP — AND IT IS ABOUT
+// REACHABILITY BY A SEAT, WHICH IS WHAT "NO SUPPLIER-FACING READ" ALWAYS MEANT.
+//
+// The PSL is read inside three policy hooks on `t_rfq_publish` and
+// `t_rfq_award`. If a supplier seat cannot reach those verbs, it cannot reach
+// the hooks, and the module edge the boundary excludes carries no read.
+// ─────────────────────────────────────────────────────────────────────────────
+describe('⚠️ NO SUPPLIER SEAT CAN REACH THE VERBS WHOSE HOOKS READ THE PSL', () => {
+  const svcCmd = new MockCommandService();
+  const supplier: QueryScope = {
+    personaType: 'supplier',
+    supplierId: 'sup-002',
+    businessRoles: PERSONA_SYSTEM_ROLES.supplier,
+    actor: NO_PERSON,
+  };
+  const buyerSeat: QueryScope = {
+    personaType: 'buyer',
+    supplierId: null,
+    businessRoles: PERSONA_SYSTEM_ROLES.buyer,
+    actor: NO_PERSON,
+  };
+
+  beforeEach(() => {
+    rfqStore.reset();
+  });
+
+  it('the two gated verbs carry the PSL hooks — without this the claim is vacuous', () => {
+    const publish = rfqFlow.transitions.find((t) => t.id === 't_rfq_publish')!;
+    const award = rfqFlow.transitions.find((t) => t.id === 't_rfq_award')!;
+    expect(publish.policyHooks).toContain(POLICY_HOOKS.RFQ_PUBLISH_COMPETITION);
+    expect(award.policyHooks).toContain(POLICY_HOOKS.RFQ_AWARD_AWARDEE_INTEGRITY);
+  });
+
+  it('⚠️ a supplier is refused at SCOPE on publish — before any hook runs', async () => {
+    const draft = rfqStore.all().find((r) => r.status === 'Draft' && r.invitedSupplierIds.length > 1)!;
+    // THROWN, not returned: `rfqTarget.readScopeOwner` is null, which denies
+    // every supplier scope at the dispatcher's step 2 — ahead of the role gate
+    // and far ahead of the policy gate.
+    await expect(
+      svcCmd.dispatch(supplier, { transitionId: 't_rfq_publish', entity: 'rfq', entityId: draft.id }),
+    ).rejects.toThrow(/denied for scope/);
+    expect(rfqStore.get(draft.id)!.status).toBe('Draft');
+  });
+
+  it('⚠️ a supplier is refused at SCOPE on award too', async () => {
+    const open = rfqStore.all().find((r) => r.status === 'Open')!;
+    await expect(
+      svcCmd.dispatch(supplier, {
+        transitionId: 't_rfq_award',
+        entity: 'rfq',
+        entityId: open.id,
+        payload: { awardedQuotationId: 'qt-003a', awardedSupplierId: 'sup-002' },
+      }),
+    ).rejects.toThrow(/denied for scope/);
+  });
+
+  it('⚠️ KNOWN-GOOD CONTROL — a BUYER seat does reach the hook, and is judged by it', async () => {
+    // Without this, the two refusals above are equally consistent with a verb
+    // nobody can fire, and "no supplier can reach it" would prove nothing about
+    // the gate (rule 4 — assert a known-GOOD input passes first).
+    const draft = rfqStore.all().find((r) => r.status === 'Draft' && r.invitedSupplierIds.length > 1)!;
+    const res = await svcCmd.dispatch(buyerSeat, {
+      transitionId: 't_rfq_publish',
+      entity: 'rfq',
+      entityId: draft.id,
+    });
+    expect(res.status, res.reason).toBe('done');
+  });
+
+  it('⚠️ AND A HOOK REFUSAL NAMES NO LISTING — the refusal is not a read either', async () => {
+    // The last door: a supplier cannot reach these verbs, but the refusal TEXT
+    // of a gate that reads the PSL must still not carry PSL data, or the day a
+    // supplier-facing verb acquires one of these hooks the leak arrives with it.
+    const zero = rfqStore.all().find((r) => r.invitedSupplierIds.length === 0 && r.status === 'Draft')!;
+    const res = await svcCmd.dispatch(buyerSeat, {
+      transitionId: 't_rfq_publish',
+      entity: 'rfq',
+      entityId: zero.id,
+    });
+    expect(res.status).toBe('failed');
+    expect(res.reason).toContain('COMPETITION_UNDER_FLOOR');
+    for (const l of PSL_LISTINGS) expect(res.reason!.includes(l.id), l.id).toBe(false);
   });
 });
 
