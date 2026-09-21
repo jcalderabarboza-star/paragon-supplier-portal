@@ -75,6 +75,13 @@ import {
   readRfqTotalQty,
   type RfqDraftRefusal,
 } from './sourcing/rfqCreateModel';
+import {
+  codeLessOfKeys,
+  codesOfKeys,
+  entryKey,
+  labelsOfKeys,
+  type CatalogEntry,
+} from './sourcing/materialCatalog';
 import type { QtyRefusalReason } from '../lib/localeNumber';
 // 2e-b-3 (COS-04) — the canonical formatters, replacing this file's own copies.
 import { formatDate, formatIDR, formatMoney, formatNumber } from '../lib/format';
@@ -176,40 +183,101 @@ const CATEGORY_TO_SUPPLIER_CATEGORY: Record<RFQCategory, string[]> = {
   Other: ['Raw Material', 'Active Ingredient', 'Packaging', 'Fragrance'],
 };
 
-const MATERIAL_CATALOG: Record<RFQCategory, string[]> = {
+/**
+ * THE PICKABLE MATERIALS, PER RFQ CATEGORY — 9 carrying a master code, 14
+ * declaring they have none. `materialCatalog.ts` carries the argument for the
+ * shape; what belongs HERE is the authority for each row.
+ *
+ * ⚠️ **THE MAPPING IS A RULING, NOT A DERIVATION** — the Technical Lead's, on
+ * the operator's delegation, and the standing note that shaped it is that
+ * **these codes are placeholders which SAP's real material master will
+ * replace**. So nothing here was invented to fill a gap: a row either names an
+ * existing `MATERIAL_MASTER` key or says out loud that the master has no row
+ * for it. Two loose string rules were run to PROPOSE candidates and neither was
+ * allowed to decide one.
+ *
+ * ⚠️ **AND THE 14 GAPS ARE THE DELIVERABLE AS MUCH AS THE 9 CODES ARE.** A
+ * catalog that mapped everything would have had to mint codes, and a minted
+ * code is indistinguishable from a real one at every join — measured: a
+ * `TEMP-…` value and a code that simply does not exist return byte-identical
+ * results at the master lookup, the should-cost spread and the search filter.
+ * An honest gap is the only version of this a later reader can act on.
+ */
+export const MATERIAL_CATALOG: Record<RFQCategory, readonly CatalogEntry[]> = {
   Fragrance: [
-    'Wardah Floral Accord',
-    'Sample Citrus Compound',
-    'Make Over Oud Base',
-    'Emina Fresh Accord',
+    // The master's nearest row is `FR-WARD-4410` "Wardah Signature Floral
+    // Compound". A compound is not an accord, and this is the single most
+    // believable wrong answer in the table — which is why it is refused.
+    { kind: 'CODE_LESS', reason: 'NO_MASTER_TARGET', label: 'Wardah Floral Accord' },
+    // The master's only citrus row is FR-EMIN-4420, claimed below by the entry
+    // that actually names Emina.
+    { kind: 'CODE_LESS', reason: 'NO_MASTER_TARGET', label: 'Sample Citrus Compound' },
+    // `FR-MKOV-5510` is a base with the wrong note; `FR-MKOV-5520` is the right
+    // note but an accord. Each is wrong on exactly one axis, so neither is it.
+    { kind: 'CODE_LESS', reason: 'NO_MASTER_TARGET', label: 'Make Over Oud Base' },
+    { kind: 'CODED', code: 'FR-EMIN-4420', label: 'Emina Fresh Accord' },
   ],
   'Active Ingredients': [
-    'Niacinamide USP',
-    'Sodium Hyaluronate HMW',
-    'Vitamin C Derivative',
-    'Retinyl Palmitate',
-    'Salicylic Acid',
+    // `AI-NIAC-6605` is explicitly FEED grade and `AI-NIAC-6601` states no
+    // grade. USP is a pharmacopoeial claim the master does not make anywhere.
+    { kind: 'CODE_LESS', reason: 'NO_MASTER_TARGET', label: 'Niacinamide USP' },
+    // ⚠️ RULED BY THE TECHNICAL LEAD, NOT BY A MATCHER, AND RECORDED AS ONE.
+    // Neither loose rule proposed this: "HMW" and the master's "High MW,
+    // 1.5-2.0 MDa" are the same material and no string rule sees it. Promoting
+    // it by widening a rule AFTER seeing the answer was refused — a matcher
+    // retuned to fit a known answer reports on itself. A human decided.
+    { kind: 'CODED', code: 'AI-HYALU-6610', label: 'Sodium Hyaluronate HMW' },
+    { kind: 'CODED', code: 'AI-VITC-6720', label: 'Vitamin C Derivative' },
+    { kind: 'CODED', code: 'AI-RETA-6750', label: 'Retinyl Palmitate' },
+    { kind: 'CODED', code: 'AI-SALI-6800', label: 'Salicylic Acid' },
   ],
   Packaging: [
-    'PET Bottle 100ml',
-    'PET Bottle 200ml',
-    'Airless Pump 15ml',
-    'Folding Carton 150gsm',
-    'Shipper Box 12-pack',
+    // ⚠️ TWO MASTER ROWS FIT AND THE LABEL SEPARATES NEITHER: `PK-PETB-8802`
+    // ("100ml Clear — Emina Series") and `PK-PETB-8803` ("100ml Airless Pump")
+    // differ by CLOSURE and BRAND SERIES, and this label mentions neither.
+    // Naming one under-describes it; splitting the entry would change a
+    // rendered label, which this batch may not do. The ambiguity is in the
+    // LABEL, not in the master — so it is a gap, not a choice.
+    { kind: 'CODE_LESS', reason: 'AMBIGUOUS_IN_MASTER', label: 'PET Bottle 100ml' },
+    // `PK-PETB-8801` ("200ml Frosted — Wardah Series") was proposed by both
+    // loose rules and confirmed by neither a human nor an exact label. An
+    // unconfirmed match is not a match.
+    { kind: 'CODE_LESS', reason: 'UNCONFIRMED_LOOSE_MATCH', label: 'PET Bottle 200ml' },
+    // The master's nearest row, `PK-PETB-8803`, is a BOTTLE that has an airless
+    // pump — not a standalone 15ml pump component.
+    { kind: 'CODE_LESS', reason: 'NO_MASTER_TARGET', label: 'Airless Pump 15ml' },
+    // No master row carries a gsm.
+    { kind: 'CODE_LESS', reason: 'NO_MASTER_TARGET', label: 'Folding Carton 150gsm' },
+    // ⚠️ REFUSED RATHER THAN MAPPED. `PK-CART-9910` is "Shipper Box — Emina
+    // Bright Stuff Range (12-pack)": one specific product range. A generic
+    // 12-pack shipper mapped onto it would narrow the meaning SILENTLY, which
+    // is the failure a loose rule is most likely to produce and least likely to
+    // announce.
+    { kind: 'CODE_LESS', reason: 'NARROWS_THE_MEANING', label: 'Shipper Box 12-pack' },
   ],
   Emulsifiers: [
-    'Glyceryl Stearate SE',
-    'Polysorbate 80',
-    'Cetearyl Alcohol',
-    'Lecithin (Soy)',
+    { kind: 'CODED', code: 'RM-EMUL-9410', label: 'Glyceryl Stearate SE' },
+    { kind: 'CODED', code: 'RM-EMUL-9430', label: 'Polysorbate 80' },
+    // The one EXACT label equality in the whole catalog.
+    { kind: 'CODED', code: 'RM-EMUL-3320', label: 'Cetearyl Alcohol' },
+    // No lecithin exists anywhere in the master.
+    { kind: 'CODE_LESS', reason: 'NO_MASTER_TARGET', label: 'Lecithin (Soy)' },
   ],
   Botanical: [
-    'Centella Asiatica Extract',
-    'Green Tea Extract',
-    'Rice Bran Extract',
-    'Mulberry Extract',
+    { kind: 'CODED', code: 'AI-CENT-6900', label: 'Centella Asiatica Extract' },
+    // ⚠️ MG-06 (Botanical) holds EXACTLY ONE master row, claimed above. Three of
+    // this category's four entries cannot be mapped at all, and that is a fact
+    // about the master's coverage rather than about these three labels.
+    { kind: 'CODE_LESS', reason: 'NO_MASTER_TARGET', label: 'Green Tea Extract' },
+    { kind: 'CODE_LESS', reason: 'NO_MASTER_TARGET', label: 'Rice Bran Extract' },
+    { kind: 'CODE_LESS', reason: 'NO_MASTER_TARGET', label: 'Mulberry Extract' },
   ],
-  Other: ['Custom material — specify in notes'],
+  // Not a material at all — the buyer is describing something in free text.
+  // ⚠️ It is the ONE row that will never acquire a code, so it is distinguished
+  // from the other 13 by REASON rather than left to look like the same wait.
+  Other: [
+    { kind: 'CODE_LESS', reason: 'NOT_A_MATERIAL', label: 'Custom material — specify in notes' },
+  ],
 };
 
 /**
@@ -785,6 +853,16 @@ const matchesGroup = (r: RFQ, group: GroupTab): boolean => {
 interface DraftRfq {
   title: string;
   category: RFQCategory | '';
+  /**
+   * CATALOG SELECTION KEYS — `entryKey`, so a coded entry is held by its CODE
+   * and a code-less one by its label.
+   *
+   * ⚠️ **THIS IS NOT WHAT GOES ON THE PAYLOAD.** `materialIds` is derived from
+   * it by `codesOfKeys`, which is a FILTER: a code-less selection contributes
+   * nothing. Holding the selection and the payload in one array is exactly how
+   * display prose used to reach `materialIds` — the wizard wrote what the
+   * buyer clicked straight into a field every consumer joins on as a code.
+   */
   materials: string[];
   totalQty: string;
   uom: (typeof UOM_OPTIONS)[number];
@@ -817,8 +895,10 @@ const applyPrefill = (base: DraftRfq, p: RequisitionPrefill): DraftRfq => ({
   category: p.category,
   ...(p.uom ? { uom: p.uom } : {}),
   // ⚠️ `materials` IS DELIBERATELY NOT CARRIED. The PR's material is a display
-  // string, not an S/4 code (C7 GG-4); `materialIds` are codes the buyer picks
-  // from MATERIAL_CATALOG once a category is chosen. See `requisitionPrefill.ts`.
+  // string, not an S/4 code (C7 GG-4); the wizard's `materials` holds CATALOG
+  // SELECTION KEYS, which reach `materialIds` as master codes — or, for a
+  // code-less entry, as nothing at all. A PR's free text is neither, and there
+  // is no rule that could turn one into the other. See `requisitionPrefill.ts`.
   materials: [],
   sourceRequisitionId: p.sourceRequisitionId,
 });
@@ -1439,14 +1519,32 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
   // `TODAY` is `DECLARED_PRESENT`, the same instant the hook passes down — a
   // mirror computed at a different instant from the gate would eventually
   // disagree with it, silently and only on some days.
+  // The catalog rows for the category being drafted, and the CODES that
+  // selection puts on the payload. Both derived in one place so the mirror
+  // below, the payload at `handleCreate`, and the picker cannot disagree about
+  // what a selection means.
+  const draftEntries: readonly CatalogEntry[] = draft.category
+    ? MATERIAL_CATALOG[draft.category]
+    : [];
+  const draftCodes = useMemo(
+    () => codesOfKeys(draftEntries, draft.materials),
+    [draftEntries, draft.materials],
+  );
+  const draftCodeLess = useMemo(
+    () => codeLessOfKeys(draftEntries, draft.materials),
+    [draftEntries, draft.materials],
+  );
   const draftDecision = useMemo(
     () =>
       decideSourcing(
-        { invitedSupplierIds: draft.invitedSupplierIds, materialIds: draft.materials },
+        // ⚠️ CODES, not selection keys. The gate is untouched by this batch and
+        // is simply being handed the thing it always documented itself as
+        // reading.
+        { invitedSupplierIds: draft.invitedSupplierIds, materialIds: draftCodes },
         TODAY,
         rosterStatusOf,
       ),
-    [draft.invitedSupplierIds, draft.materials],
+    [draft.invitedSupplierIds, draftCodes],
   );
   const budgetRead = useMemo(() => readRfqBudget(draft.budget), [draft.budget]);
 
@@ -1516,7 +1614,13 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
     createMutation.mutate(
       // The SAME parsed values the gate above judged — the builder can no longer
       // re-read the strings and reach a different number (CP-0 §4).
-      { payload: buildRfqCreatePayload(draft, rfqNumbers.value) },
+      //
+      // ⚠️ **AND `materials` IS SWAPPED FOR THE CODES HERE, WHICH IS THE WHOLE
+      // FIX IN ONE LINE.** `draft.materials` holds selection keys; passing it
+      // straight through is what put display prose into `materialIds` on every
+      // buyer-raised RFQ. `draftCodes` is the same value the mirror above judged,
+      // so what the buyer was shown is definitionally what is minted.
+      { payload: buildRfqCreatePayload({ ...draft, materials: draftCodes }, rfqNumbers.value) },
       {
         onSuccess: (result) => {
           if (result.status === 'failed') {
@@ -1713,13 +1817,21 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
             </label>
             {draft.category ? (
               <div className="flex flex-wrap gap-2">
-                {MATERIAL_CATALOG[draft.category as RFQCategory].map((m) => {
-                  const selected = draft.materials.includes(m);
+                {MATERIAL_CATALOG[draft.category as RFQCategory].map((e) => {
+                  // ⚠️ THE KEY IS THE ENTRY'S IDENTITY, THE FACE IS ITS LABEL.
+                  // A coded entry is keyed by its code so the selection survives
+                  // a label edit; a code-less one has only its label.
+                  const k = entryKey(e);
+                  const m = e.label;
+                  const selected = draft.materials.includes(k);
                   return (
                     <button
-                      key={m}
+                      key={k}
                       type="button"
-                      onClick={() => toggleMaterial(m)}
+                      data-testid={
+                        e.kind === 'CODED' ? 'catalog-chip-coded' : 'catalog-chip-codeless'
+                      }
+                      onClick={() => toggleMaterial(k)}
                       className={`px-3 py-1.5 rounded-full text-sm transition-colors ${
                         selected
                           ? 'bg-action text-white border border-action'
@@ -1730,6 +1842,23 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                     </button>
                   );
                 })}
+                {/* ⚠️ THE RFQ SAYS SO WHILE THE BUYER CAN STILL ACT ON IT.
+                    A code-less selection puts NOTHING on `materialIds`, and
+                    silence about that would be the defect this batch removes,
+                    wearing better manners: the buyer would believe they had
+                    named a material the platform could act on. Said at the
+                    picker rather than at publish, because nothing in this
+                    platform can edit an RFQ's materials after creation. */}
+                {draftCodeLess.length > 0 && (
+                  <p
+                    className="w-full text-xs text-text-tertiary"
+                    data-testid="catalog-codeless-note"
+                  >
+                    {t('sourcing.wizard.materials.noMasterCode', {
+                      materials: draftCodeLess.map((e) => e.label).join(', '),
+                    })}
+                  </p>
+                )}
               </div>
             ) : (
               <p className="text-sm text-text-tertiary">
@@ -2127,7 +2256,12 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
               ],
               [
                 t('sourcing.wizard.review.row.materials'),
-                draft.materials.join(', ') || '—',
+                // ⚠️ LABELS, resolved back from the selection keys — the review
+                // shows the buyer what they clicked, byte for byte, not the
+                // codes the payload will carry. A review that rendered codes
+                // would be a rendered-label change, and this batch may not make
+                // one.
+                labelsOfKeys(draftEntries, draft.materials).join(', ') || '—',
               ],
               // 2e-b-4a — the review reads the SAME parsed numbers the payload
               // ships, so what the buyer confirms here is definitionally what
@@ -2724,14 +2858,16 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
               </section>
             )}
 
-            {/* ⚠️ PSL P2 — THE VERDICT ON A REAL EVENT, WHICH IS WHERE AN
-                EXEMPTION IS ACTUALLY REACHABLE. The wizard cannot produce one
-                today: it writes MATERIAL NAMES into `materialIds`
-                (`MATERIAL_CATALOG` holds display prose, and its intersection
-                with the code vocabulary is EMPTY — queued as its own fix), so
-                every draft a buyer builds reads as unmapped. A seeded event
-                carries real codes, so this is the only place the
-                `NOT_REQUIRED` sentence can be seen against live data. */}
+            {/* ⚠️ PSL P2 — THE VERDICT ON A REAL EVENT.
+                ⚠️ **THE SENTENCE THAT STOOD HERE IS RETIRED BECAUSE THIS BATCH
+                FALSIFIED IT.** It read that the wizard *"writes MATERIAL NAMES
+                into `materialIds`"* and that a buyer-raised event could
+                therefore never reach an exemption. The catalog now carries
+                master codes on 9 of its 23 entries, so a buyer-raised RFQ on a
+                coded material reaches this panel with a real code and can reach
+                any verdict a seeded event can. What is still true, and is R6's
+                open gap: 14 entries carry NO code, and those events read as
+                undecidable or simply compete. */}
             <section data-testid="psl-gate-panel">
               <PslGateNotice
                 decision={decideSourcing(selectedRfq, TODAY, rosterStatusOf)}

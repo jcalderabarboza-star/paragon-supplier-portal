@@ -77,11 +77,20 @@ export interface RequisitionPrefill {
 /**
  * ⚠️ **`materialIds` IS ABSENT FROM THIS TYPE ON PURPOSE, AND IT IS THE ONE
  * OMISSION WORTH STATING.** A requisition's `material` is a DISPLAY STRING
- * ("Halal Glycerin 99.5%"), not an S/4 material code (C7 GG-4). The RFQ's
- * `materialIds` are codes, chosen from `MATERIAL_CATALOG` once a category is
- * picked. Carrying the display string into `materialIds` would mint an RFQ
- * naming a material master that does not exist — `CTR-FABRICATION-01` in the
- * field that decides who can quote. The buyer supplies the codes.
+ * ("Halal Glycerin 99.5%"), not an S/4 material code (C7 GG-4). Carrying it
+ * into `materialIds` would mint an RFQ naming a material master that does not
+ * exist — `CTR-FABRICATION-01` in the field that decides who can quote. The
+ * buyer supplies the codes, by picking from `MATERIAL_CATALOG`.
+ *
+ * ⚠️ **THE PREMISE OF THAT LAST SENTENCE WAS FALSE FOR THE LIFE OF THIS FILE,
+ * AND SAYING SO IS THE POINT OF THIS PARAGRAPH RATHER THAN A FOOTNOTE TO IT.**
+ * `MATERIAL_CATALOG` held 23 display strings whose intersection with the master's
+ * key space was EMPTY, and the picker wrote them straight into `materialIds` —
+ * so this guard described a closed door while standing beside an open one, and
+ * the mechanism it names was running two files away. The catalog now carries
+ * real master codes (9 of 23) and declares the rest CODE-LESS, which contribute
+ * nothing rather than a name. **The guard below is unchanged and was always
+ * right**; only its account of what happened next was wrong.
  */
 export function prefillFromRequisition(pr: PurchaseRequisition): RequisitionPrefill {
   const category = isRfqCategory(pr.category) ? pr.category : '';

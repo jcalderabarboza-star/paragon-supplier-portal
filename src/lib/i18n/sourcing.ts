@@ -267,6 +267,11 @@ export const sourcingEn: Record<string, string> = {
   'sourcing.wizard.placeholder.budget': 'Optional',
   'sourcing.wizard.field.materials': 'Specific material(s)',
   'sourcing.wizard.materials.selectFirst': 'Select a category first to see available materials.',
+  // ⚠️ SAID WHILE THE DRAFT IS STILL EDITABLE. A code-less material puts
+  // nothing on `materialIds`, and the buyer is the only one who can still
+  // change that — no verb edits an RFQ's materials after creation.
+  'sourcing.wizard.materials.noMasterCode':
+    'Not in the material master: {{materials}}. The event will go ahead and will require competitive bidding — a preferred-supplier exemption cannot be checked without a master code.',
   'sourcing.wizard.field.totalQty': 'Total quantity',
   // 2e-b-4a — was "0". A placeholder must never model a value the field treats
   // specially: this one modelled the exact number a blank must NOT become.
@@ -601,6 +606,8 @@ export const sourcingId: Record<string, string> = {
   'sourcing.wizard.placeholder.budget': 'Opsional',
   'sourcing.wizard.field.materials': 'Material spesifik',
   'sourcing.wizard.materials.selectFirst': 'Pilih kategori terlebih dahulu untuk melihat material yang tersedia.',
+  'sourcing.wizard.materials.noMasterCode':
+    'Tidak ada di master material: {{materials}}. Acara tetap berjalan dan akan memerlukan tender kompetitif — pengecualian pemasok terdaftar tidak dapat diperiksa tanpa kode master.',
   'sourcing.wizard.field.totalQty': 'Total kuantitas',
   'sourcing.wizard.placeholder.qty': 'mis. 2400',
   // — Wizard: penolakan numerik (CP-0 · W1 · 2e-b-4a) —
