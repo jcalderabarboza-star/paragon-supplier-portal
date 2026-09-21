@@ -35,7 +35,7 @@
 // NO SELECTED DOCUMENT and lives in the page header, so it is invisible to any
 // derivation that walks the panel's verbs.
 //
-// ⚠️ **AND THE GATE IS ON THE MODE, NOT THE DOOR (§84).** The raise panel's
+// ⚠️ **AND THE GATE IS ON THE MODE, NOT THE DOOR (ENTRANCE-IS-THE-UNIT-01).** The raise panel's
 // body is gated as well as the button that opens it — a seat narrowed WHILE
 // the panel stands open is reachable, not a dead branch.
 //
@@ -613,7 +613,7 @@ const BuyerSupplierApplications: React.FC = () => {
         onClose={closeRaise}
         title={t('applications.raise.panel.title')}
       >
-        {/* ⚠️ THE MODE IS GATED, NOT ONLY THE DOOR (§84). `SupplierOrders`
+        {/* ⚠️ THE MODE IS GATED, NOT ONLY THE DOOR (ENTRANCE-IS-THE-UNIT-01). `SupplierOrders`
             shipped a live commit behind a comment asserting the one entrance
             was guarded, and the comment was false. A seat narrowed while this
             panel stands open is reachable — so the body checks the atom too,

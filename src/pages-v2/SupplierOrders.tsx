@@ -387,7 +387,7 @@ const SupplierOrders: React.FC = () => {
 
   const panelTitle = selected ? t('supplierOrders.panel.title', { poNumber: selected.poNumber }) : '';
   // ⚠️ **THE LABEL IS SEAT-DERIVED, BECAUSE THE ACT BEHIND IT ALREADY WAS.**
-  // §84 made the ACT honest — `effectivePanelMode` collapses `editing` to
+  // ENTRANCE-IS-THE-UNIT-01 made the ACT honest — `effectivePanelMode` collapses `editing` to
   // `detail` for a seat that does not hold `po:confirm`, so pressing this on an
   // actionable PO opens the order and renders the handoff notice. It did NOT
   // make the LABEL honest: the button still read "Confirm" / "Konfirmasi" and

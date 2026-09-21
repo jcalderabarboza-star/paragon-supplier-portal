@@ -478,7 +478,7 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
   // should not normally let that happen — `HandoffNotice` stands in the
   // primary slot for a withheld seat — but a handler that trusted the surface
   // to have filtered correctly is the shape `SupplierOrders` shipped a live
-  // commit behind (§84), so it is guarded here too.
+  // commit behind (ENTRANCE-IS-THE-UNIT-01), so it is guarded here too.
   const handleApprove = () => {
     if (!selected) return;
     const inv = selected;

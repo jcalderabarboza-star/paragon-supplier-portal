@@ -118,7 +118,7 @@ const REVIEW_ONLY_SEAT: CurrentIdentity = {
 };
 
 /**
- * ⚠️ **THE §84 INSTRUMENT, AND IT USES THE PLATFORM'S OWN API RATHER THAN
+ * ⚠️ **THE ENTRANCE-IS-THE-UNIT-01 INSTRUMENT, AND IT USES THE PLATFORM'S OWN API RATHER THAN
  * REACHING AROUND IT.** `CurrentIdentityProvider` reads its source ONCE (a lazy
  * `useState` initialiser), so re-rendering with a different source proves
  * nothing — but it publishes `setIdentity` on the context, which is exactly how
@@ -221,7 +221,7 @@ describe('the collection renders', () => {
     await screen.findByText(supplierApplicationStore.all()[0].applicationNumber);
     expect(screen.queryByTestId('application-raise-open')).toBeNull();
     expect(screen.getByTestId('handoff-application-submit')).toBeInTheDocument();
-    // And the form is nowhere on the page — §84: the MODE is gated, not just
+    // And the form is nowhere on the page — ENTRANCE-IS-THE-UNIT-01: the MODE is gated, not just
     // the button that opens it, so a seat narrowed while the panel stands open
     // has no reachable commit either.
     expect(screen.queryByTestId('application-raise-form')).toBeNull();
@@ -620,6 +620,11 @@ describe('B3 · the door', () => {
 
     expect(await screen.findByTestId(`application-row-${number}`)).toBeInTheDocument();
   });
+  // ⚠️ THE `§84` IN THE NAME BELOW IS A POINTER AT A REGISTER SECTION THAT WAS
+  // NEVER FILED (`docs/findings.md` §86i). Every COMMENT citation in this tree
+  // was repointed to `ENTRANCE-IS-THE-UNIT-01` on 2026-09-21; a test NAME is a
+  // string literal, so editing it is a code change and the docs batch that did
+  // the rest was comment-only by mandate. Left deliberately, recorded here.
   it('⚠️ §84 — THE MODE IS GATED, SO A SEAT NARROWED MID-PANEL LOSES THE COMMIT', async () => {
     renderWithProviders(
       <>

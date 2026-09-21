@@ -100,6 +100,11 @@ describe('⚠️ THE RAISE VERB IS GATED SEPARATELY — it acts on no selected r
     expect(screen.queryByTestId('material-request-raise-open')).not.toBeInTheDocument();
   });
 
+  // ⚠️ THE `§84` IN THE NAME BELOW IS A POINTER AT A REGISTER SECTION THAT WAS
+  // NEVER FILED (`docs/findings.md` §86i). Every COMMENT citation in this tree
+  // was repointed to `ENTRANCE-IS-THE-UNIT-01` on 2026-09-21; a test NAME is a
+  // string literal, so editing it is a code change and the docs batch that did
+  // the rest was comment-only by mandate. Left deliberately, recorded here.
   it('⚠️ THE MODE IS GATED, NOT THE DOOR (§84) — A SEAT NARROWED MID-PANEL LOSES THE COMMIT', async () => {
     // ⚠️ **THIS TEST'S FIRST DRAFT PASSED FOR THE WRONG REASON AND A MUTATION
     // PROBE IS WHAT FOUND IT — recorded because it is the exact failure this

@@ -1486,7 +1486,7 @@ export interface MaterialRequestSubmitVars {
  * Raise a material request (`materialrequest:submit`, the `procurement` lane).
  *
  * ⚠️ **BOTH ENTRANCES COME THROUGH HERE, AND NEITHER BUILDS ITS OWN PAYLOAD.**
- * `buildMaterialRequestPayload` is the one builder (§84 — the ENTRANCE is the
+ * `buildMaterialRequestPayload` is the one builder (ENTRANCE-IS-THE-UNIT-01 — the ENTRANCE is the
  * unit, not the surface and not the verb), and
  * `materialRequestEntrances.test.ts` derives the calling components from source
  * and asserts every one routes through it, with a known-FALSE control.

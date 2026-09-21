@@ -48,7 +48,7 @@
 //   operator-firable when a file under `pages-v2/` or `components/` CONTAINS
 //   its quoted id; it PREFERS a `transitionId: '<id>'` site in its sort, but
 //   does not REQUIRE one — so a module that merely NAMES a verb, in order to
-//   read who owns it, is indistinguishable from one that fires it. §83's class
+//   read who owns it, is indistinguishable from one that fires it. RESOLVE-NON-LITERAL-IDS-01's class
 //   exactly: a scan matched a mention and the conclusion needed a dispatch.
 //
 //   ⚠️ **THE GATE IS NOT WIDENED TO ACCOMMODATE THIS, DELIBERATELY.** Requiring

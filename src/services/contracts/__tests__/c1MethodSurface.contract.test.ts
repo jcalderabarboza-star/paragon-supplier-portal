@@ -34,7 +34,7 @@
 //   AST at all — the transition catalog comes from `getKnownFlows()` and the
 //   wired targets from `WIRED_COMMAND_TARGETS`, both RUNTIME reads, because a
 //   grep over the flow files cannot see a transition id assembled at a call
-//   site (§83).
+//   site (RESOLVE-NON-LITERAL-IDS-01).
 //
 // ── ⚠️ WHAT THIS PIN CANNOT SEE ─────────────────────────────────────────────
 //   Stated here in the form 1c's header states its blindness, because a gate

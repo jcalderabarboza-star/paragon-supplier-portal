@@ -19299,6 +19299,18 @@ not guessed at.
   handoff question, and removing a control is a design act this batch was not asked for. Recorded
   here so the next sweep does not "cover" it with a notice, which would be the wrong repair for a
   control that has no verb.
+
+  ⚠️ **CORRECTED 2026-09-21 — THE CONTROL IS GONE, AND THE BULLET ABOVE IS PRESERVED RATHER THAN
+  EDITED.** It was measured true when written and is a MEASUREMENT with a date, not a rule with a
+  scope (§105's distinction). **PR #362 — *"Remove the bulk `Reject all & resource` control from
+  BuyerSourcing"*, merged `63c054a`, 2026-09-17T03:32:39Z** — deleted it, touching
+  `src/pages-v2/BuyerSourcing.tsx`, `src/lib/i18n/sourcing.ts` and
+  `src/pages-v2/deadAffordance.guard.test.tsx`. Re-derived today: `grep -inE 'reject.*all|rejectAll'
+  src/pages-v2/BuyerSourcing.tsx` returns **nothing**, and `sourcing.award.rejectAll` is absent from
+  `src/lib/i18n/sourcing.ts` while the same file still holds 71 lines matching `award` — the
+  bilateral control, so the empty result is about the key and not about a grep that reached nothing.
+  **The §76e disposition (*"left alone deliberately … removing a control is a design act this batch
+  was not asked for"*) was correct for §76e and was superseded by a batch that WAS asked for it.**
 - **`rfq:fx-pin`** — already per-verb (`handoff-rfq-fxpin`) since §74 and untouched. Its opener
   (`FxBasisPanel` → the record-basis link) is ungated, so a withheld seat can open the dialog and
   meets the notice where the commit button would be. That is the `WIZARD-ADMITS-A-SEAT-IT-WILL-
@@ -24712,3 +24724,366 @@ property, and #339 asserts it is constructible today
 (`invoiceSeparability.test.ts`) while naming its own limit: a seat narrowed to a
 custom role re-widens on reload, because `rolesFromStorage` keeps only ids
 passing `isSystemRole` (§66k).
+
+## §106 · THE DOCS TRUE-UP — FIVE FALSE CLAIMS IN WHAT SEATS READ FIRST, AND SEVEN FINDINGS THAT WERE NEVER FILED (2026-09-21)
+
+**A documentation-and-comments batch. No product behaviour changed; every source
+edit is proven comment-only by token-stream comparison against `main`.** It exists
+because `CLAUDE.md` and this register are read FIRST by every seat, so a false
+sentence in either is a wrong premise on every dispatch built on it — and at least
+one of the five below was ORDERING REAL WORK.
+
+⚠️ **THE DISPATCH THAT COMMISSIONED THIS BATCH CARRIED SEVENTEEN CLAIMS AND
+INSTRUCTED THAT EACH BE RE-MEASURED RATHER THAN INHERITED. FOUR DID NOT SURVIVE
+MEASUREMENT** — §104's `DISPATCH-FIGURE-IS-A-CLAIM-01` again, and again detected on
+arrival. They are named in §106h with what was true instead.
+
+### §106a · `EMPTY-INTERSECTION-BLOCKER-OUTLIVED-ITS-FIXTURE-01` — a blocker that four sites still state, against a tree that retired it
+
+**THE CLAIM, at four sites:** `COMPLIANCE_REGISTRY` holds `RM-SAMPLE-…` placeholder
+material codes; `MATERIAL_MASTER` holds real ones; **the intersection is EMPTY BY
+CONSTRUCTION**, so wiring `verifyHalalAtReceipt` *"would refuse 100% of real
+receipts."*
+
+**MEASURED 2026-09-21, with a bilateral control in the same run:**
+
+| | measured |
+|---|---|
+| `COMPLIANCE_REGISTRY` rows | **16** |
+| distinct `materialCodes` | **14** |
+| of those, `RM-SAMPLE-*` | **0** |
+| `MATERIAL_MASTER` codes | 42 |
+| **intersection** | **14 / 14** |
+| CONTROL `master.has('RM-SAMPLE-TST-01')` | `false` |
+| CONTROL `master.has(codes[0])` | `true` |
+| the 14 supplier×material pairs, at today's instant | **5 `SATISFIED` · 9 `NOT_SATISFIED`** |
+
+The placeholders were retired **deliberately, at the seam batch**, and
+`complianceRegistry.ts`'s own header records the ruling and its reason: the two
+lanes share ONE vocabulary, because *"a surface that cannot be wrong because it
+cannot be reached is not honest; it is unfalsifiable."* The fabrication moved
+rather than left — the certificate HOLDINGS are still synthetic, and that is now
+the only fiction in the file.
+
+⚠️ **THE POINT OF FILING IT: `FALSE-MECHANISM-MUST-NOT-BE-FILED-01` (§70), BUT THE
+FALSE MECHANISM WAS IN THE CANON RATHER THAN THE REGISTER, WHERE NO RULE REACHED
+IT.** §70 governs what a batch may FILE. Nothing governed what a header may go on
+SAYING after the tree moved underneath it. *"The intersection is empty by
+construction"* is a blocker, and **nobody re-measures a blocker — a blocker is why
+you stopped.** This one sat in front of the module's own wire and in front of arc
+1's ordering, and it had already been falsified by the batch that changed the
+fixture. That batch corrected the FIXTURE header and left the three sites that
+quote it.
+
+**Corrected at:** `CLAUDE.md` (arc 1, deliverables 1 and 3) ·
+`services/data/halalVerification.ts` (header) ·
+`services/data/halalVerification.test.ts` (header, and claim 6). Superseded text is
+QUOTED at each site, never deleted.
+
+### §106b · `HEADLESS-BY-RULING-OUTLIVED-THE-WIRE-01` — the census inverted at H4 and the prose did not
+
+**THE CLAIM:** `verifyHalalAtReceipt` is *"HEADLESS BY RULING"* — *"not read by the
+GR wizard, by any page, by any hook, or by the dispatcher"*, wiring gated on
+`D-COMP-HALAL-4`.
+
+**MEASURED:** it has **exactly one product consumer**, and it is the GR wizard —
+`src/components/v2-features/GRInspectionWizard.tsx:848`, wired at **H4**.
+`halalVerification.test.ts`'s census (*"`verifyHalalAtReceipt` has EXACTLY ONE
+product consumer, and it is named"*) asserts that list by name and **had already
+been inverted at H4**, its own comment stating *"IT DID ITS JOB: the ruling came
+first and this went red second."*
+
+⚠️ **SO THE INSTRUMENT WAS RIGHT AND FOUR PROSE SITES WERE WRONG, WHICH IS THE
+WHOLE ARGUMENT FOR DERIVING RATHER THAN READING.** The gate caught the wire on the
+day it arrived. Nothing caught the four sentences that went on denying it.
+
+⚠️ **AND THE CORRECTION MUST NOT BE OVER-READ, SO IT IS STATED AS A DISTINCTION
+RATHER THAN A FLAG:** what was wired is a **NOTICE that tells**, not a gate that
+stops. `halal.certificate` is still deliberately unseeded, still derives `BLOCK /
+NO_SETTING_RECORDED`, and every mode below `BLOCK` remains unrecordable while the
+portal can name no person (`ENF-NO-PERSON-IN-IDENTITY-01`, §63). **The GOVERNED
+CHECK is unwired; the FUNCTION is not.** Three further sites conflated the two by
+naming the function while ruling on the check, and each is corrected in those
+terms: `lib/enforcement.ts` · `services/data/mock/enforcementSeed.ts` ·
+`enforcementSeed.test.ts`.
+
+⚠️ **CONSEQUENCE FOR ARC 1, AND IT IS THE REASON THIS ITEM IS NOT COSMETIC: THE
+SEQUENCING RATIONALE IS VOID.** `CLAUDE.md` said *"(1) is what makes (3) safe to
+wire — that is the whole reason the arc is ordered this way."* (1) is the
+operator-editable registry and is NOT built; (3) is the receipt wire and IS built.
+The stated ground for the order no longer holds. **THE ORDER IS NOT CHANGED HERE —
+re-ordering arc 1 is the operator's ruling and this batch was explicitly forbidden
+to pre-empt it.** What is recorded is that whatever order stands now needs a reason
+that survives measurement.
+
+### §106c · `CITATION-AT-A-SECTION-NEVER-FILED-01` — §86i's residue, closed on the citation side
+
+§86i recorded that `CLAUDE.md` and twelve source files cite `§83`, `§84` and `§85`,
+and that the register has never held any of the three. Re-derived today, because
+§86i's own supporting sentence has since gone stale:
+
+- §86i says *"`docs/findings.md` ends at §82."* **It does not.** Top-level `## §N`
+  headings run **18 → 105**, with **44, 58, 59, 60, 83, 84 and 85 absent**. The
+  sentence was true on 2026-08-26 and the register grew past it — `FLOOR-IN-PROSE-01`
+  inside the entry that exists to catch a stale pointer.
+- **What §86i actually claimed still holds exactly:** there is no §83, no §84 and no
+  §85, in any heading form. Bilateral control: §82 and §86 are both findable by the
+  same grep in the same run.
+- The citing population is **20 sites in 14 files** for §84 (§86i said *"twelve
+  source files"*), plus two §83 and one §85.
+
+**THE DISPOSAL, AND IT IS THE ONE §86i NAMED RATHER THAN A NEW ONE.** §86i offered
+two: renumber the citations, or back-fill the three sections — and said back-filling
+*"would be writing history to match a citation, which is the opposite remedy."* This
+batch takes the first, in the form that removes the class rather than moving it:
+**the rule is given a NAME at the place it actually lives**, so a citation points at
+something that exists and cannot go stale when the register renumbers.
+
+| was | is | the rule lives at |
+|---|---|---|
+| §84 | `ENTRANCE-IS-THE-UNIT-01` | `CLAUDE.md`, current-state block |
+| §83 | `RESOLVE-NON-LITERAL-IDS-01` | `CLAUDE.md`, derivation rule 3 |
+| §85 | `DECODE-INSTRUMENT-OUTPUT-AS-BYTES-01` | `CLAUDE.md`, probe-the-guard rules |
+
+**Seventeen of the twenty §84 citations were comments and were repointed. THREE WERE
+NOT, AND THE REASON IS RECORDED AT EACH SITE RATHER THAN HERE ONLY:** they sit inside
+`it(...)` / `describe(...)` **test-name string literals**
+(`BuyerMaterialRequests.test.tsx`, `BuyerSupplierApplications.test.tsx`,
+`supplierLaneSurfaces.test.tsx`), where an edit is a TOKEN change and this batch was
+comment-only by mandate. **They are the batch's declared residue, not an oversight.**
+
+⚠️ **AND THE CLASSIFIER THAT DECIDED WHICH WAS WHICH GOT IT WRONG TWICE FIRST —
+`REIMPLEMENTATION-CONTRADICTS-THE-INSTRUMENT-01`, live.** A hand-rolled
+comment-detector was written for the job, in two versions. The first, walking
+`getLeadingCommentRanges` over `forEachChild`, called two JSX comments
+(`{/* … */}` with no expression) CODE, because an empty `JsxExpression` has no child
+to hang trivia on. The second, a raw `ts.createScanner`, called three plain `//` line
+comments CODE, because a standalone scanner has no parser driving its JSX and regex
+context — **the exact class `src/lib/sourceScan/stripComments.ts`'s header says a
+non-parser scan gets wrong, in the module this tree already ships for this purpose.**
+The two re-implementations disagreed with each other, which is the only reason either
+was doubted. **Disposal: the shipped, tested `commentRanges` was used, and it is what
+the numbers above come from.**
+
+### §106d · THE MATERIAL-IDENTITY CENSUS IS BLIND TO RUNTIME STORES — `CENSUS-READS-SOURCE-NOT-STATE-01`
+
+`src/data/materialIdentity.test.ts` builds its `CELLS` population from
+`import.meta.glob('/src/**/*.ts')` and then, for each non-spec module,
+`for (const value of Object.values(mod)) collect(value, file, CELLS)`.
+
+**The population is MODULE EXPORTS — a census of source literals.** A record a buyer
+creates at runtime lives in a store, not in an export, so **no material instrument in
+this tree can see it**, and this one least of all: its walk cannot reach state that
+does not exist until the app runs.
+
+⚠️ **THIS IS WHY THE `MATERIAL_CATALOG` DEFECT WAS INVISIBLE TO IT, AND IT IS NOT A
+BUG IN THE MATCHER.** Derivation rules 1–3 all ask whether a matcher sees the tree
+correctly. This matcher sees the tree perfectly. **It is looking at the wrong
+universe** — and a gate that examines source cannot be widened into one that examines
+state, so the remedy is never "widen the glob". The instrument that convicts for the
+request lane is `services/data/materialRequestIsolation.test.ts`, which exercises the
+STORE.
+
+**Filed as a REACH LIMIT, not a defect.** Nothing here is wrong; what is missing is
+the sentence saying what it cannot reach, so the next seat does not read its green as
+coverage of a lane it has never looked at.
+
+### §106e · `t_pr_create` PAYLOAD DIVERGENCE — two entrances, two shapes, and the absences become silent defaults
+
+**MEASURED, NOT FIXED. Recording it is the whole deliverable.**
+
+- `PrCreateVars.payload` is `Record<string, unknown>`
+  (`services/query/commandHooks.ts:902-904`) — **no shape, so no compiler can compare
+  the two entrances.**
+- The plan-grid entrance goes through the one builder, `buildPrCreatePayload`
+  (`pages-v2/plan-grid/planGridModel.ts:198-212`), which emits
+  `material · quantity · uom · estimatedValue · requiredDate · source` (+ `reason`
+  when the quantity was adjusted).
+- `BuyerRequisitions` **builds its own, inline** (`BuyerRequisitions.tsx:377-385`):
+  `material · quantity · uom · requiredDate · costCenter · priority · justification`.
+- The flow requires only two: `requiredFields: ['material', 'quantity']`
+  (`flows/purchaseRequisition.flow.ts:40`).
+
+**So the divergence is invisible at every layer that could catch it, and the target
+turns the absences into values.** `MockCommandService.ts:744` reads
+`estimatedValue: num('estimatedValue')`, and `num` (`:724`) returns **0** for an
+absent field — so **a PR raised from `BuyerRequisitions` is stored with
+`estimatedValue: 0`**, a figure nobody entered. The reverse holds too: `costCenter`,
+`priority` and `justification` are absent from the plan-grid payload and default
+through `str()` to `''`.
+
+⚠️ **THE TREE ALREADY KNOWS THIS IS THE WRONG SHAPE AND SAYS SO TWO HUNDRED LINES
+AWAY.** The RFQ target's `estimatedValue` is deliberately conditional
+(`MockCommandService.ts:542-544`) with the reason stated at the site: *"that helper
+returns 0 for an absent field, which would mint 'this event is budgeted at Rp 0' out
+of a buyer who specified nothing. Absence stays absence."* **The PR target does
+exactly what that comment refuses**, on the same field name, in the same file.
+Filed; not fixed — a fix is a behaviour change and out of scope here.
+
+### §106f · `t_pr_convert` IS UNFIREABLE — and "cascade-only" is the wrong word for it
+
+`flows/purchaseRequisition.flow.ts:180` declares `t_pr_convert` with
+`trigger: 'cascade'`. **`services/transitions/cascades.ts` contains ZERO links
+targeting it.** Its sibling is the control: `t_pr_source` IS a cascade target
+(`cascades.ts:55`), by the same derivation in the same run.
+
+A `cascade` verb is fired by the dispatcher through a link. **No link, no firing —
+this is not "cascade-only", it is UNREACHABLE**, which is `RESOLVE-NON-LITERAL-IDS-01`'s
+third answer (live / dead / *has a caller but nothing produces its from-state*)
+arriving one layer up: this verb has neither.
+
+**What is NOT new, and is why this is filed as a naming correction rather than a
+discovery:** the tree already asserts the fact in three places —
+`remainingFlows.test.ts:187` (*"carries cascade metadata but NO cascade link
+(declaration, not emission)"*), `cascadeIntegrity.test.ts:256` and
+`flowGraph.test.ts:225`, each with a known-false control. `looseEndCensus.ts:157`
+carries it as a subject and `i18n/requisitions.ts:115` records the ruling
+(*"unauthored BY RULING until F2's event seam"*). **It has never been in this
+register**, and a reader of the register alone would not find it.
+
+### §106g · FOUR SMALLER MEASUREMENTS, EACH FILED WITH ITS OWN CLASSIFICATION
+
+**1 · `SINGLE_SOURCE` IS NOT JOINABLE TO THE ROSTER.**
+`services/data/mock/fixtures/buyerDiscovery.ts:61-82` keys each row by
+`currentSupplier`, a **display NAME string**. There is no `supplierId` field on the
+type. Derived against the 12-row roster: **0 of 5 rows match by name, 0 by id**
+(control: `roster.includes(roster[0])` is `true` in the same run), and one row's
+`currentSupplier` is the sentinel **`'Not yet sourced'`** — a value that is not a
+supplier at all. The page renders it as one. Filed; the repair is a data-shape change.
+
+**2 · THREE UOM VOCABULARIES, NO MAPPER — AND IT IS *MEASURED NOT A DEFECT*.**
+`{KG,PCS,L,MT}` (`RFQ['uom']`, `RFQ_UOM_OPTIONS`, `RFQ_UOMS`, `QuoteUom`) ·
+`{KG,PCS,L,ROLL}` (`Uom`, the type of `MATERIAL_MASTER.canonicalUom`) ·
+`{KG,L,PCS,MT,BOX}` (`BuyerRequisitions`). Nothing maps between them. **LATENT:** all
+42 master rows are `KG` (31) or `PCS` (11), so the set inexpressible in `RFQ['uom']`
+is EMPTY today, and `ROLL` / `MT` / `BOX` are each declared once and held by no master
+row. ⚠️ **ALREADY ADJUDICATED AT THE SITE** and in these exact terms —
+`services/data/types.ts:2123-2136`, on `MaterialRequest.expectedUom`, where it is
+*"recorded here as the REASON this field is text, never as a finding."* **Re-filed
+here only because it was absent from the register**, with that disposition carried
+across intact rather than re-opened.
+
+**3 · `psl` IS PAST ITS DRIFT WINDOW — AND IT IS NOT THE FIRST.** `npm run drift` at
+`DECLARED_PRESENT = 2026-08-31`, today 2026-09-21, drift **21**: `psl` tol 20 ·
+`invoice` tol 17 · `contract` tol 7 · `obligation` tol 7 are **all four past their
+windows**; only `supplierDocument` (tol 40) is inside. **INERT:** every family's
+reading instant is `P`, and the instrument prints its own verdict — *"No anchored
+family is read against the wall clock."* Recorded as an observation with its horizon,
+not as a defect.
+
+**4 · `stampOrigin`'s EQUALITY COLLISION.** `services/data/stampProvenance.ts:102`
+answers `SEEDED` vs `SESSION` by `value === seededValue(...)`, so a runtime stamp that
+is byte-equal to a seeded one is reported `SEEDED`. ⚠️ **Already stated at
+`actInstantCoherence.test.ts:74-76`** (*"Unreachable today and not structurally
+excluded; nothing here would notice"*), and absent from this register until now.
+
+### §106h · ⚠️ THE DISPATCH CLAIMS THAT DID NOT SURVIVE MEASUREMENT
+
+`DISPATCH-FIGURE-IS-A-CLAIM-01` (§104) again. **Every one was reported false on the
+turn it arrived, which §104b already named as the pattern: detection was never the
+failure.**
+
+| claimed | measured |
+|---|---|
+| `docs/findings.md` *"ends its numbered sections at §82"* | ends at **§105**; what is true is the GAP at 83/84/85 (and 44, 58–60) |
+| §84 is cited in *"about twelve source files"* | **20 sites in 14 files** |
+| `chaosAmbience.test.ts` *"fails in COLLECT"* | it fails on a **5000 ms test TIMEOUT**, not in collect — see §106i |
+| *"`psl` … the first family past its own window"* | **four** families are past theirs; `psl` merely has the largest tolerance among them |
+| BuyerDashboard day-counts *"derived from unanchored families"* — **DROPPED** | `coverDays` is an AUTHORED fixture literal (`fixtures/buyerDashboard.ts:15-18`) and is explicitly adjudicated `not-a-clock-difference` in `lib/projectionGate/dayCounts.ts:181-186` — *"Stock ÷ consumption rate. Decays because stock does, never because the clock moves."* It is one of that gate's deliberate CONTROLS. **Nothing to file; the claim is unsubstantiated and is dropped rather than softened.** |
+
+Two carried claims DID survive and are filed above or at their sites: the
+`stampOrigin` collision (§106g·4), and the **P3 refusal-class reach limit**, which is
+real and already written out at `pages-v2/toastHonesty.guard.test.tsx:198-209` —
+*"AN EXCLUDED REFUSAL IS NOT CHECKED AT ALL — ITS COPY IS UNGUARDED … It is probed in
+exactly that direction (P3) and the probe's finding is this bullet … so it is a
+STATED REACH LIMIT, not an oversight."* Nothing to add; it is complete where it stands.
+
+### §106i · ⚠️ THE LOCAL SUITE IS RED ON `main`, AND ONE OF THE THREE IS A REAL CROSS-FILE RACE — `GUARD-WRITES-INTO-THE-SOURCE-TREE-01`
+
+**Measured on `main` @ `70b8abe4`, tree clean, BEFORE this branch existed:**
+`npm run gates` fails — **3 files, 6 tests** — while **CI on the same SHA is green**
+(run `35562758654`, job `build · floor · test:gate`, `success`). So it is environment-
+and load-bound, exactly as the dispatch's item 12 said. **The mechanism it named was
+wrong, and the true one is worth more than the report.**
+
+- **4 failures in `materialRequestEntrances.test.ts`**, all
+  `ENOENT: … src/pages-v2/dashboard/__clock-probe__.ts`.
+- **2 timeouts at 5000 ms** — `solidButtonRetired.guard.test.ts` and
+  `chaosAmbience.test.ts`. These are load (both are whole-tree source scans running
+  under a saturated pool), and they are the dispatch's item 12.
+
+⚠️ **THE `ENOENT` IS NOT LOAD. IT IS A GUARD WRITING A REAL FILE INTO `src/` WHILE
+ANOTHER GUARD IS WALKING `src/`.**
+
+- `pages-v2/dashboard/buyerDashboardNoLiterals.guard.test.ts:274-293` does
+  `fs.writeFileSync(…/__clock-probe__.ts)`, asserts, then `fs.unlinkSync` in a
+  `finally`. It is a **known-good/known-bad bilateral probe and it is right to
+  exist** — its own comment says *"a scanner nobody fired is not a scanner."*
+- `pages-v2/materialRequestEntrances.test.ts:41-55` walks all of `src/` recursively at
+  MODULE SCOPE (`const FILES = sourceFiles()`), admitting any `.ts` that is not
+  `.test.` or `.smoke.` — **which admits `__clock-probe__.ts` exactly** — and then
+  `readFileSync`s each member at `:79`, `:104`, `:181`.
+
+Between the `readdirSync` that admits the probe file and the `readFileSync` that opens
+it, the other spec's `finally` deletes it. **Neither guard is wrong about its own
+subject; the defect is that one of them uses the SHARED, SCANNED source tree as its
+scratch space.**
+
+⚠️ **AND IT IS INVISIBLE TO THE OBVIOUS CHECKS, WHICH IS WHY IT HAS SURVIVED.** The
+tree is clean afterwards (the `finally` runs), the file exists nowhere on disk, CI is
+green, and running the two specs together **passes** — the window is only open under
+full-suite concurrency. A seat that reproduces the report by running the named file
+alone will conclude there is nothing there.
+
+**Filed, not fixed — it is a behaviour change to a guard and out of this batch's
+scope.** The repair when someone takes it: write the probe to a temp directory outside
+`src/`, or have the walker exclude a reserved prefix. **The first is correct and the
+second only moves the hazard**, because the next guard to need a scratch file will not
+know the convention exists.
+
+⚠️ **THE CONSEQUENCE FOR THIS BATCH, STATED SO NO ONE READS IT AS A REGRESSION: the
+same three files fail on this branch, for the same reasons, and the branch changes
+only comments.** The baseline was taken on `main` FIRST, deliberately — **a red
+reading after a change is worthless unless the same reading was taken before it**,
+which is item 16's rule arriving on the gate instead of on a protected set.
+
+### §106j · WHAT SHIPPED
+
+- `CLAUDE.md` — arc 1 deliverables 1 and 3 corrected (§106a, §106b), with the
+  sequencing rationale declared void and the order left alone; the §84/§83/§85 rules
+  NAMED (§106c); four working rules added (§106k).
+- `services/data/halalVerification.ts` · `.test.ts` — the headless and
+  empty-intersection blocks retracted, superseded text quoted.
+- `lib/enforcement.ts` · `mock/enforcementSeed.ts` · `mock/enforcementSeed.test.ts` —
+  function-vs-check conflation corrected; the rulings themselves untouched.
+- `services/transitions/businessRoles.ts` — *"The SIX system roles"* above a union of
+  **13** deleted in favour of the derivation. `FLOOR-IN-PROSE-01` in the doc comment of
+  the declaration it miscounts, which is the one place `tsc` can never reach.
+- Seventeen §84/§83/§85 comment citations repointed across 16 files; three test-name
+  strings left with a note at each site.
+- `docs/findings.md` — §76e given a dated correction (PR #362 removed
+  `Reject all & resource` on 2026-09-17); this entry.
+
+### §106k · THE FOUR WORKING RULES ADDED TO `CLAUDE.md`
+
+Recorded here with their provenance, because a rule in canon with no measurement
+behind it is the thing this register exists to distrust.
+
+1. **BROWSER-QA CLOCK HYGIENE.** Assert `Date.name` and that `Date` is native before
+   reading any baseline. A `ShiftedDate` override survived from one session into the
+   next and made a "baseline" that was already shifted. **It is the `EMPTY-INPUT-
+   REPORTS-CLEAN-01` family applied to the clock: the instrument ran, and it ran on
+   the wrong world.**
+2. **A CLEAN P+40 ON A SURFACE THAT READS `DECLARED_PRESENT` PROVES CLOCK-INDEPENDENCE
+   BY CONSTRUCTION, NOT BY MEASUREMENT.** Measured in this batch: `npm run drift`
+   prints *"No anchored family is read against the wall clock"* and every reading
+   instant is `P`. A shifted-clock pass over such a surface is a TAUTOLOGY and must be
+   disclosed as one — it is `CLEAN-AFTER-THE-FIX-REPORTS-THE-FIX-01`'s cousin, where
+   the clean reading reports on the ARCHITECTURE rather than on the run.
+3. **A PROTECTED-SET COMPARISON RUNS A KNOWN-CHANGED CONTROL FIRST.** A comparison of
+   `main` against an uncommitted `HEAD` reported *45 SAME* and meant nothing. Rule 4's
+   bilateral reflex, on the instrument that proves a set was NOT touched — where the
+   flattering answer is the one you wanted.
+4. **EVERY BATCH THAT CHANGES A RENDERED SURFACE CARRIES BROWSER QA WHOSE OUTPUT
+   REACHES THE STRATEGIST** (operator standing rule), *"even when the dispatch omits
+   it — the omission is the finding."*

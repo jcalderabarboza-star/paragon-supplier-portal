@@ -220,7 +220,7 @@ const DisputeExchange: React.FC<{ entries: readonly DisputeEntry[] }> = ({ entri
  * guard, or the availability gate below.
  *
  * ⚠️ **THE COMMIT IS GATED ON AVAILABILITY, NOT ONLY THE CTA THAT OPENED IT
- * (§84).** A panel is component state and component state OUTLIVES THE SEAT: a
+ * (ENTRANCE-IS-THE-UNIT-01).** A panel is component state and component state OUTLIVES THE SEAT: a
  * seat narrowed while this is open still has a live commit button under the old
  * render. Gating only the entrance would be guarding one door of a mode reached
  * more than one way.
