@@ -49,10 +49,18 @@
 import type { TransitionRole } from './schema';
 
 /**
- * The SIX system roles, derived from the catalog's 41 human-owned buyer verbs,
- * plus the supplier side — NOT imported from a market vocabulary. C10 §5.4's
- * twelve-role Ariba list (D-ID-6) stays PROVISIONAL and unbuilt: a bundle that
- * no atom backs is the thing §3.4 calls a checkable defect.
+ * The system roles — derived from the catalog's human-owned buyer verbs plus the
+ * supplier side, NOT imported from a market vocabulary. C10 §5.4's twelve-role
+ * Ariba list (D-ID-6) stays PROVISIONAL and unbuilt: a bundle that no atom backs
+ * is the thing §3.4 calls a checkable defect.
+ *
+ * ⚠️ **THIS SAID "The SIX system roles" UNTIL 2026-09-21, ABOVE A UNION OF 13.**
+ * `FLOOR-IN-PROSE-01`, in the doc comment of the declaration it miscounts — the
+ * number and the thing it counts were adjacent and still drifted, because a doc
+ * comment is the one place a `tsc` failure can never reach. The remedy is the
+ * ratified one: **DELETE the figure, do not refresh it.** Count the union below,
+ * or `catalogRoles()` × `SYSTEM_ROLES`; `businessRoles.test.ts` gates both
+ * directions. The verb figure went the same way and for the same reason.
  */
 export type SystemRoleId =
   | 'procurement'

@@ -99,7 +99,7 @@ export function deriveMatchVerdict(
 //      introduces, and it must be ruled before a SECOND writer exists.
 //   3. **THE SECOND ENTRANCE.** `t_invoice_resolve` (`Disputed → Submitted`) is
 //      a second door into the state a match verdict is written for, and any
-//      trigger hung on `t_invoice_submit` alone would miss it (§84 — the
+//      trigger hung on `t_invoice_submit` alone would miss it (ENTRANCE-IS-THE-UNIT-01 — the
 //      entrance is the unit, on the machine side).
 //
 // ⚠️ **AND A CASCADE REGISTRY ENTRY WAS CONSIDERED AND IS NOT WHAT IS MISSING.**

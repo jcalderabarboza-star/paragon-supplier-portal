@@ -22,8 +22,14 @@
 //   the seed list; the tree says otherwise.
 //
 //   ⚠️ **`halal.certificate` IS DELIBERATELY NOT SEEDED.** It is authored at H3
-//   (`verifyHalalAtReceipt`) and WIRED NOWHERE — it runs nowhere and blocks
-//   nothing, so it has no shipped behaviour to open at. A row at `BLOCK` for it
+//   (`verifyHalalAtReceipt`) and, AS A GOVERNED CHECK, consulted by nothing that
+//   can refuse — it blocks nothing, so it has no shipped behaviour to open at.
+//   ⚠️ **THE PHRASE "AND WIRED NOWHERE" STOOD HERE UNTIL 2026-09-21 AND IS NOW
+//   FALSE OF THE FUNCTION IT NAMES.** `verifyHalalAtReceipt` was wired at H4
+//   (`GRInspectionWizard.tsx:848`). What it feeds is a NOTICE; `qualityValid`
+//   never consults it. **The ruling below is unaffected** — it is about the
+//   CHECK, and the check is still unwired — but the sentence that carried it
+//   named the function, and a reader would have inherited a false premise. A row at `BLOCK` for it
 //   would PUT A DECISION ON THE RECORD THAT NOBODY TOOK, which is precisely
 //   what E2 refused to do and precisely why it refused. Its empty entry already
 //   derives `BLOCK / NO_SETTING_RECORDED`, which is the TRUE state: maximum

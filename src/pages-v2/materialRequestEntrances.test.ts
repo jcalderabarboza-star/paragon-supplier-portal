@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// R8 · §84 — THE ENTRANCE IS THE UNIT, NOT (SURFACE × VERB).
+// R8 · ENTRANCE-IS-THE-UNIT-01 — THE ENTRANCE IS THE UNIT, NOT (SURFACE × VERB).
 //
 // Two entrances by operator ruling: the RFQ wizard and the standalone page.
 // Coverage is derived as **(surface × verb × ENTRANCE)**, and the question this
@@ -166,7 +166,7 @@ describe('⚠️ THE TWO ENTRANCES, DERIVED — and both route through the ONE b
   });
 
   it('⚠️ AND NEITHER ENTRANCE CONSTRUCTS A PAYLOAD LITERAL OF ITS OWN', () => {
-    // §84's real question: not "does it import the builder?" but "is there a
+    // ENTRANCE-IS-THE-UNIT-01's real question: not "does it import the builder?" but "is there a
     // second door?" A surface can import the builder AND still hand the hook an
     // object literal on some other path — which is precisely how
     // `SupplierOrders` shipped a live commit beside a rendered guard.

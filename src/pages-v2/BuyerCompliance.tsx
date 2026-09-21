@@ -981,7 +981,7 @@ const BuyerCompliance: React.FC = () => {
       </div>
       {/* ── §WAVE E · THE REQUEST PANEL ────────────────────────────────────
           ⚠️ **THE PANEL IS MOUNTED ONLY WHEN THE SEAT HOLDS THE ATOM, AND THAT
-          IS THE MODE BEING GATED RATHER THAN THE DOOR (§84).** `SupplierOrders`
+          IS THE MODE BEING GATED RATHER THAN THE DOOR (ENTRANCE-IS-THE-UNIT-01).** `SupplierOrders`
           shipped a live commit because a notice guarded ONE entrance to a mode
           three ways reachable, and a comment asserting the other doors were
           unreachable was the only thing holding it up — it was false. Here the

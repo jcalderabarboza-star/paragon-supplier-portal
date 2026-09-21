@@ -58,9 +58,14 @@ describe('E4 seed — ⚠️ TWO ROWS, and the third was a miscount in the rulin
     // The ruling listed three rows and the third — "the unanswered-required
     // clause" — is not a check at all; it is the SHARED SHAPE of the two
     // clauses at `qualityValid`. `halal.certificate` is authored at H3
-    // (`verifyHalalAtReceipt`) and wired nowhere, so a `BLOCK` row for it would
-    // put a decision on the record that nobody took — the exact thing E2
-    // refused to do. Its empty entry already says the true thing.
+    // (`verifyHalalAtReceipt`) and is consulted by nothing that can refuse, so a
+    // `BLOCK` row for it would put a decision on the record that nobody took —
+    // the exact thing E2 refused to do. Its empty entry already says the true
+    // thing.
+    //
+    // ⚠️ **THIS SAID "and wired nowhere" UNTIL 2026-09-21.** False of the
+    // FUNCTION since H4 (`GRInspectionWizard.tsx:848`), true of the CHECK. The
+    // assertions below are about the CHECK and are unchanged.
     await seedEnforcementLedger();
     expect(GOVERNED_CHECK_IDS).toContain('halal.certificate');
     expect(SEEDED_CHECKS).not.toContain('halal.certificate');

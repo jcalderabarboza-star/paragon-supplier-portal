@@ -269,7 +269,12 @@ export const GOVERNED_CHECK_IDS = Object.freeze([
   /** Fact 2 — an inspector looked at the physical seal and ticked it (H2). */
   'halal.seal',
   /** Fact 3 — a halal-class certificate backs the claim at the receipt instant
-   *  (`verifyHalalAtReceipt`, H3 — headless until H4). */
+   *  (`verifyHalalAtReceipt`, H3). ⚠️ **This read "headless until H4" until
+   *  2026-09-21. H4 LANDED: the FUNCTION has a consumer
+   *  (`GRInspectionWizard.tsx:848`). THIS CHECK STILL HAS NONE** — what was
+   *  wired is a notice that tells, never a clause that refuses, so
+   *  `halal.certificate` remains unseeded at `BLOCK / NO_SETTING_RECORDED`.
+   *  The two are different objects and the old phrasing conflated them. */
   'halal.certificate',
   /** The BPOM lot check on a received line (`bpomOf`, wired at 2B-4b). */
   'bpom.lot',

@@ -97,7 +97,7 @@ export function isAbsent(cell: string): boolean {
 /**
  * THE TREE HALF — does the cited file exist, and does it contain the cited
  * assertion? Read as BYTES→utf8 with an explicit encoding, never through the
- * ambient codepage (§85: a decode that throws loses every match and reads as
+ * ambient codepage (DECODE-INSTRUMENT-OUTPUT-AS-BYTES-01: a decode that throws loses every match and reads as
  * "your gate is weak").
  */
 export function resolveEnforcer(

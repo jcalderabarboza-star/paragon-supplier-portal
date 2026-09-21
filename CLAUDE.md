@@ -241,7 +241,7 @@ mechanisms whose success signals said nothing about the damage they did.
 > `HandoffNotice` + `useVerbAvailability`) — wired across the BUYER surfaces at §72–§76, and it is **ONE NOTICE PER VERB, IN THAT VERB'S OWN SLOT** (§76 retired §74's per-group collapse: the RFQ side panel is a WORKSPACE, not a control, and the two verbs one group notice spoke for are not co-reachable on any RFQ in the tree).
 > ⚠️ **DO NOT RESTATE HOW MANY SURFACES CARRY IT** — the sentence that stood here was a prose count and it was wrong TWICE, once per batch, which is `FLOOR-IN-PROSE-01` in the paragraph about handoffs. Derive it as **(surface × verb)** from the `testId="handoff-…"` sites against BOTH dispatch families. **THE SUPPLIER SIDE IS COVERED TOO, AND THE SENTENCE THAT SAID OTHERWISE IS DELETED RATHER THAN CORRECTED.** It read *"every supplier-side surface (a supplier seat is exactly `['supplier']` — no proper subset to narrow to, so every notice is dead branch)"*. That reason died at #263, which seeded `commercial` · `fulfilment` · `back_office`; **six supplier surfaces already carried notices while it still stood**, so it was describing the tree it was filed against, not the tree. Derived today: **no supplier atom is held by all three lanes** — the intersection is EMPTY — so "every lane holds it" is never the reason on this side. What is deliberately NOT covered: every control that holds **no atom** (toasts and reads are ungoverned, not withheld — §75e), and **`GRInspectionWizard`'s interior** (`WIZARD-ADMITS-A-SEAT-IT-WILL-REFUSE-01`, OPEN — closed at both known entrances, unprobed within).
 >
-> ⚠️ **AND A NOTICE ON THE SURFACE IS NOT COVERAGE OF THE VERB — THE ENTRANCE IS THE UNIT (§84).** `SupplierOrders` imported the guard, rendered it, and still shipped a live commit: `po:confirm`'s notice gated the `detail` footer, while `handleRowAction` opened the panel *directly* in `editing` mode, where the commit sat ungated behind a comment asserting it was "unreachable behind this one." **That comment was the only thing holding the claim up, and it was false.** Derive coverage as **(surface × verb × ENTRANCE)**, never (surface × verb): a mode reached three ways is guarded when the MODE is gated, not when one door is. And gate the mode rather than the door for a second reason — **component state outlives the seat**: a seat narrowed WHILE a panel or tab stands open is reachable, not a dead branch (`SupplierShipments` says so in its own comment and is the precedent to copy).
+> ⚠️ **AND A NOTICE ON THE SURFACE IS NOT COVERAGE OF THE VERB — THE ENTRANCE IS THE UNIT (`ENTRANCE-IS-THE-UNIT-01`).** ⚠️ **THIS RULE WAS CITED AS `§84` HERE AND IN 13 SOURCE FILES UNTIL 2026-09-21, AND THE REGISTER HAS NEVER HELD A §84.** Derived: `docs/findings.md`'s top-level `## §N` headings run 18–105 with 83, 84 and 85 ABSENT (bilateral control: §82 and §86 are both findable by the same grep in the same run), and the absence is itself filed, at **§86i**. Back-filling the three would be writing history to match a citation — §86i says so and this batch agrees — so the remedy is the other one it offers: **the rule is NAMED here, where it actually lives, and the citations point at the name.** Seventeen comment citations were repointed; three sit inside `it(...)` / `describe(...)` test names, where an edit is a token change, and each carries a note at its site saying why it was left. `SupplierOrders` imported the guard, rendered it, and still shipped a live commit: `po:confirm`'s notice gated the `detail` footer, while `handleRowAction` opened the panel *directly* in `editing` mode, where the commit sat ungated behind a comment asserting it was "unreachable behind this one." **That comment was the only thing holding the claim up, and it was false.** Derive coverage as **(surface × verb × ENTRANCE)**, never (surface × verb): a mode reached three ways is guarded when the MODE is gated, not when one door is. And gate the mode rather than the door for a second reason — **component state outlives the seat**: a seat narrowed WHILE a panel or tab stands open is reachable, not a dead branch (`SupplierShipments` says so in its own comment and is the precedent to copy).
 > ⚠️ **AND THE SEGREGATION THE BUNDLES EXPRESS IS CROSSED BY ONE SURFACE (`SEGREGATION-CROSSED-IN-ONE-DRAWER-01`, §76d, OPEN).** `BuyerRequisitions`' drawer offers `pr:revise` → `pr:submit` → `pr:approve` on the same document to the same seat, and the DEFAULT buyer seat holds all six role bundles — so adjust-then-approve-what-you-adjusted is the out-of-box state, not a misconfiguration. A per-transition dispatcher cannot catch it: segregation is a property of the SEQUENCE. **Do not "fix" it with a notice or a role gate without the ruling** — §76d names the two candidate readings and measures that the actor-level one is unbuildable until an IdP answers (`actor` is always `UNATTRIBUTED: NO_PERSON_IN_SESSION`).
 > 
 > ⚠️ **AND IMPORTER PRESENCE IS NOT VERB COVERAGE (`IMPORTER-PRESENCE-IS-NOT-VERB-COVERAGE-01`, §72a).** `BuyerRequisitions` imported the guard, rendered four of them, and still shipped a live **New PR** button to a seat holding no `pr:create` — because all four guarded verbs act on a document already selected and the CREATE verb lives in the page header. Derive the exposure as **(surface × verb) → guarded?**, never as **surface → imports the guard?**, and derive the surfaces from BOTH dispatch families (`commandHooks` AND the `sdc*Hooks` that call `svc.commands.dispatch` directly — a `commandHooks`-only matcher misses seven verbs).
@@ -515,26 +515,66 @@ Three arcs, in order. Nothing else is queued.
 - **ARC 1 · TRACK R — the halal lane made operable.** Three deliverables, and
   every one of them is a SURFACE or a WRITE PATH, never a register entry:
   1. **An operator-editable certificate registry.** Today `COMPLIANCE_REGISTRY`
-     (`src/services/data/mock/fixtures/complianceRegistry.ts`) is **16 frozen
-     rows** — `readonly … = [ … ]`, every supplier `"Sample … (illustrative)"`,
-     every cert number a `SAMPLE-…` token, every material `RM-SAMPLE-…`. Derived:
-     `compliance` is one of the **seven flows with no `CommandTarget`**
-     (`getKnownFlows()` ∖ `WIRED_COMMAND_TARGETS`), so `t_compliance_submit` /
-     `_verify` / `_reject` **cannot fire**. There is no write path of any kind:
-     nobody — operator, buyer or supplier — can add, edit or expire a
-     certificate. **That is arc 1's first deliverable.**
+     (`src/services/data/mock/fixtures/complianceRegistry.ts`) is a **frozen
+     `readonly` array** — derive the row count from the fixture, never from this
+     sentence. Every cert number is still a `SAMPLE-…` token and every issuer
+     still says `(illustrative)`: **the certificate HOLDINGS are the fiction that
+     remains, and that part of this paragraph stands.** Derived:
+     `compliance` has no `CommandTarget` (`getKnownFlows()` ∖
+     `WIRED_COMMAND_TARGETS` — derive the set, do not restate its size, which was
+     written here as *"seven"* and measured **six** on 2026-09-21 when
+     `supplierDocument` and others were wired without anyone touching this line),
+     so `t_compliance_submit` / `_verify` / `_reject` **cannot fire**. There is no
+     write path of any kind: nobody — operator, buyer or supplier — can add, edit
+     or expire a certificate. **That is arc 1's first deliverable.**
+
+     ⚠️ **AND THE TWO CLAIMS THAT MADE THIS PARAGRAPH A BLOCKER ARE FALSE AS OF
+     THE SEAM BATCH — CORRECTED 2026-09-21, NOT SOFTENED.** *"every supplier
+     `"Sample … (illustrative)"`"* and *"every material `RM-SAMPLE-…`"* are both
+     measured false today: the registry takes `supplierId` + `supplierName` from
+     `mockSuppliers.ts` verbatim and its material codes are **real
+     `MATERIAL_MASTER` codes**. Measured on 2026-09-21: **16 rows, 14 distinct
+     material codes, 14/14 present in `MATERIAL_MASTER`, ZERO `RM-SAMPLE-*`**
+     (bilateral control: `master.has('RM-SAMPLE-TST-01')` is `false` in the same
+     run). The fixture's own header records the placeholders as **deliberately
+     retired**, and says why: *"a surface that cannot be wrong because it cannot
+     be reached is not honest; it is unfalsifiable."*
   2. **The expiry projection on real dates.** `complianceProjection.ts` already
      computes display status and scheme validity from `expiryDate` + issuer
      (clock-states never stored, law 0.5). It has never once run against a date a
      person entered.
-  3. **The receipt gate reading it.** `verifyHalalAtReceipt`
-     (`src/services/data/halalVerification.ts`) is authored, tested, and
+  3. **The receipt gate reading it.** ⚠️ **BUILT. THIS DELIVERABLE IS DONE, AND
+     THE SENTENCE THAT SAID OTHERWISE IS RETRACTED RATHER THAN EDITED
+     (2026-09-21).** It read: *"`verifyHalalAtReceipt` … is authored, tested, and
      **HEADLESS BY RULING** — its own header forbids acquiring a consumer there,
      because `COMPLIANCE_REGISTRY`'s codes are `RM-SAMPLE-…` and
-     `MATERIAL_MASTER`'s are not, so **the intersection is empty by construction**
-     and a wire today would refuse 100% of real receipts. **(1) is what makes (3)
-     safe to wire** — that is the whole reason the arc is ordered this way, and
-     H4 / `D-COMP-HALAL-4` is the gate it opens.
+     `MATERIAL_MASTER`'s are not, so the intersection is empty by construction
+     and a wire today would refuse 100% of real receipts."* **Every clause of
+     that is now false.** Measured: `verifyHalalAtReceipt` has exactly ONE
+     product consumer — `GRInspectionWizard.tsx:848`, wired at **H4** — and
+     `halalVerification.test.ts` pins that census by name, so the wire cannot
+     arrive or depart quietly. The intersection is not empty; it is total
+     (14/14). Of the registry's 14 supplier×material pairs, **5 answer
+     `SATISFIED` and 9 `NOT_SATISFIED`** at today's instant — a gate that
+     discriminates, not one that refuses everything.
+
+     ⚠️ **WHAT THE WIRE IS, STATED SO IT IS NOT OVER-READ: IT TELLS, IT DOES NOT
+     STOP.** The wizard renders a certificate NOTICE. `halal.certificate` is
+     still **unseeded and consulted by nothing that can refuse** — its empty
+     entry derives `BLOCK / NO_SETTING_RECORDED`, and every mode below `BLOCK` is
+     unrecordable while no person can be named (`ENF-NO-PERSON-IN-IDENTITY-01`,
+     `docs/findings.md` §63). So the GOVERNED check remains unwired; the
+     FUNCTION does not.
+
+     ⚠️ **AND THE CONSEQUENCE FOR THE ARC, WHICH IS THE PART THAT ORDERS REAL
+     WORK: ARC 1'S SEQUENCING RATIONALE IS VOID.** *"(1) is what makes (3) safe
+     to wire — that is the whole reason the arc is ordered this way"* rested
+     entirely on the empty intersection, and (3) was wired without (1). **The
+     ORDER IS NOT CHANGED HERE: re-ordering arc 1 is the operator's ruling and
+     this batch does not pre-empt it.** What is recorded is that the stated
+     ground no longer holds, so whatever order the operator keeps needs a reason
+     that survives measurement. H4 / `D-COMP-HALAL-4` is already open, not
+     pending.
 
 - **ARC 2 · THE REQUISITION LANE.** ⚠️ **The dispatched premise inverted twice,
   and the lane is in WORSE shape than "unreachable", not better.** Derived:
@@ -819,7 +859,7 @@ prose, in the section that forbids restating cardinalities in prose. §27 /
    defect as `COUNT-RESTATED-ACROSS-INSTRUMENTS-01` (§40k) with a location
    standing in for a number.
 
-   ⚠️ **§83 · AND THE SHARPEST INSTANCE OF IT, BECAUSE THE INSTRUMENT RETURNS
+   ⚠️ **`RESOLVE-NON-LITERAL-IDS-01` · AND THE SHARPEST INSTANCE OF IT, BECAUSE THE INSTRUMENT RETURNS
    THE SAME ANSWER FOR A LIVE VERB AND A DEAD ONE.** A census of *"which verbs
    are dispatched?"* run as `grep "transitionId: '<id>'"` returns **0 for
    `t_gr_approve`, which fires on every goods receipt the wizard commits, and 0
@@ -985,7 +1025,7 @@ predicate, so the population is identical under the shipped code and under both
 mutants.
 
 ⚠️ **AND ONE LAYER OUT, THE RULE THAT ORDERS ALL OF THESE — `SILENT-PESSIMISM-
-TERMINATES-THE-INVESTIGATION-01` (§86g).** §85's note said an instrument that
+TERMINATES-THE-INVESTIGATION-01` (§86g).** `DECODE-INSTRUMENT-OUTPUT-AS-BYTES-01`'s note said an instrument that
 errs toward pessimism is the dangerous one. Measured across five instances, that
 is not quite the axis. **The dangerous direction is whichever one TERMINATES THE
 INVESTIGATION.** A weak-looking gate gets strengthened; a strong-looking one gets
@@ -1023,7 +1063,7 @@ that under-reports them is accepted as modesty and the gate gets rewritten to fi
 a hole it does not have. **STRIP THE FORMATTING BEFORE PARSING AN INSTRUMENT'S
 OUTPUT, AND CONFIRM ONE KILL BY NAME BEFORE TRUSTING A COUNT.**
 
-⚠️ **§85 · AND IT FAILED A THIRD TIME TODAY, ON A THIRD MECHANISM, IN THE SAME
+⚠️ **`DECODE-INSTRUMENT-OUTPUT-AS-BYTES-01` · AND IT FAILED A THIRD TIME TODAY, ON A THIRD MECHANISM, IN THE SAME
 DIRECTION — WHICH IS THE POINT OF FILING IT RATHER THAN FIXING IT QUIETLY.** The
 module-scope-literal probe captured vitest's output with Python's
 `subprocess(text=True)`, which decodes using the CONSOLE CODEPAGE (`cp1252`
@@ -1257,6 +1297,48 @@ UNVERIFIED, buying a stated reason and a visible diff, never enforcement.**
 `grandfathered.ts` carries the consts that predate the gate as a bilateral set
 that can only shrink; it is the S2 worklist, not an exemption.
 
+### And the four rules that govern the INSTRUMENT'S WORLD rather than its matcher
+
+Everything above asks whether an instrument looks at the right population through
+the right matcher, and whether it was probed both ways. **These four ask a question
+none of them reaches: was the WORLD the instrument ran against the world it was
+supposed to run against?** A matcher can be perfect, a probe bilateral, a population
+derived — and the reading still worthless because the clock, the baseline or the
+architecture made the answer inevitable. Filed at `docs/findings.md` §106k with the
+measurement behind each.
+
+1. ⚠️ **BROWSER-QA CLOCK HYGIENE — ASSERT `Date.name` AND THAT `Date` IS NATIVE
+   BEFORE READING ANY BASELINE.** A `ShiftedDate` override **survived from one
+   session into the next**, so a "baseline" was taken against an already-shifted
+   clock and every delta measured from it was measured from nothing. This is
+   `EMPTY-INPUT-REPORTS-CLEAN-01`'s family with the input intact: the instrument
+   ran, and it ran **on the wrong world**, which no population check and no
+   bilateral probe can see. The assertion is one line and it goes FIRST, before the
+   baseline, not after the surprise.
+
+2. ⚠️ **A CLEAN P+40 ON A SURFACE THAT READS `DECLARED_PRESENT` PROVES
+   CLOCK-INDEPENDENCE BY CONSTRUCTION, NOT BY MEASUREMENT — DISCLOSE IT AS SUCH.**
+   Measured: `npm run drift` prints *"No anchored family is read against the wall
+   clock"* and every family's reading instant is `P`. Against a surface of that
+   shape a shifted-clock pass is a **TAUTOLOGY** — it could not have come back any
+   other way — and reporting it as evidence of clock-safety is
+   `CLEAN-AFTER-THE-FIX-REPORTS-THE-FIX-01`'s cousin: the clean reading is about the
+   ARCHITECTURE, not about the run. **It is still worth running** (it catches the day
+   a surface starts reading the wall clock), and it is worth exactly that much. Say
+   which of the two you have.
+
+3. ⚠️ **A PROTECTED-SET COMPARISON RUNS A KNOWN-CHANGED CONTROL FIRST, AND THE
+   CONTROL MUST SAY "CHANGED".** A comparison of `main` against an **uncommitted
+   `HEAD`** reported *45 SAME* and meant nothing whatsoever — the two sides were the
+   same object. This is rule 4's bilateral reflex aimed at the one instrument whose
+   success signal is an ABSENCE of difference, which is also **the answer the seat
+   was hoping for**. An all-SAME reading is believed instantly and is exactly the
+   shape a broken comparator produces. Pair it with a wrong-path control that must
+   say MISSING, so neither the equality nor the lookup can be taken on trust.
+
+4. **EVERY BATCH THAT CHANGES A RENDERED SURFACE CARRIES BROWSER QA WHOSE OUTPUT
+   REACHES THE STRATEGIST** (operator standing rule). ⚠️ **RUN IT EVEN WHEN THE
+   DISPATCH OMITS IT — THE OMISSION IS THE FINDING**, not a permission.
 ### And the rule beside all of them: A REGISTER ENTRY IS NOT A DELIVERABLE
 
 ⚠️ **NO BATCH MAY BE DISPATCHED WHOSE DELIVERABLE IS A REGISTER ENTRY, UNLESS

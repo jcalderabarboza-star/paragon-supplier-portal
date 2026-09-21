@@ -184,7 +184,7 @@ describe('WAVE E · the act is reachable, and withheld as a notice', () => {
     // too until somebody opens it. It would go green under a mutation that
     // removed the authority guard entirely. Measured: it did.
     //
-    // §84's unit is the ENTRANCE, not the surface and not the verb.
+    // ENTRANCE-IS-THE-UNIT-01's unit is the ENTRANCE, not the surface and not the verb.
     // `SupplierOrders` imported the guard, rendered it, and still shipped a
     // live commit, because `handleRowAction` opened the same mode by a second
     // door — and a comment asserting that door was unreachable was the only

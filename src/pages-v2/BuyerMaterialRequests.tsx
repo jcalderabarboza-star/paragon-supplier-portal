@@ -30,7 +30,7 @@
 // (`IMPORTER-PRESENCE-IS-NOT-VERB-COVERAGE-01`). It gets its own availability,
 // never the review gate's.
 //
-// ── ⚠️ THE MODE IS GATED, NOT THE DOOR (§84) ────────────────────────────────
+// ── ⚠️ THE MODE IS GATED, NOT THE DOOR (ENTRANCE-IS-THE-UNIT-01) ────────────
 //
 // Both the raise panel's BODY and the button that opens it check the atom, and
 // both decision commits check theirs. `SupplierOrders` imported the guard,
@@ -554,7 +554,7 @@ const BuyerMaterialRequests: React.FC = () => {
         onClose={closeRaise}
         title={t('materialRequests.raise.title')}
       >
-        {/* ⚠️ THE MODE IS GATED, NOT ONLY THE DOOR (§84). A seat narrowed while
+        {/* ⚠️ THE MODE IS GATED, NOT ONLY THE DOOR (ENTRANCE-IS-THE-UNIT-01). A seat narrowed while
             this panel stands open is reachable, so the BODY checks the atom too,
             and the notice is what it falls back to rather than a blank. */}
         {submitAvailability.kind !== 'held' ? (

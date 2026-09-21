@@ -1,5 +1,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// CP-3 · H3 — CERTIFICATE VERIFICATION: THE THIRD FACT, HEADLESS.
+// CP-3 · H3 — CERTIFICATE VERIFICATION: THE THIRD FACT.
+//   (The title read "… THE THIRD FACT, HEADLESS." until 2026-09-21. It is not
+//   headless; see the retraction below.)
 //
 // Seat 3's ratified three-fact split, held apart because the three have
 // different answerers and different clocks:
@@ -12,41 +14,72 @@
 //      inspection draft. Wired at H2.
 //   3. CERTIFICATE VERIFICATION — is there a certificate that actually backs
 //      the halal claim for THIS supplier × THIS material AT THE INSTANT THE
-//      LOT WAS RECEIVED? A lookup plus a projection. ⚠️ **PERFORMED NOWHERE
-//      TODAY.** This module is it, and it is the third fact ALONE.
+//      LOT WAS RECEIVED? A lookup plus a projection. This module is it, and it
+//      is the third fact ALONE. ⚠️ **IT SAID "PERFORMED NOWHERE TODAY" UNTIL
+//      2026-09-21; it is performed at `GRInspectionWizard.tsx:848` (H4), as a
+//      NOTICE that tells rather than a gate that stops.**
 //
-// ── ⚠️ HEADLESS. THIS MODULE HAS NO CONSUMER AND MUST NOT ACQUIRE ONE HERE ──
-//   `verifyHalalAtReceipt` is not read by the GR wizard, by any page, by any
-//   hook, or by the dispatcher. Wiring it is **H4, GATED ON `D-COMP-HALAL-4`**
-//   — the same gate that held H1 back from the receiving surface, for the same
-//   reason, stated in `sdc/halal.ts` and worth restating where the enforcement
-//   would happen: enforcing a certificate check against a certificate corpus
-//   that does not exist yet is the *outage wearing compliance clothes*. R0.1
-//   (the Track-R harvest) is NOT STARTED. `halalVerification.test.ts` pins the
-//   headlessness by census, so a wire cannot arrive quietly.
+// ── ⚠️ NO LONGER HEADLESS — WIRED AT H4. THE BLOCK BELOW IS RETRACTED ──────
+//   **CORRECTED 2026-09-21. THE SUPERSEDED TEXT IS QUOTED, NOT DELETED, BECAUSE
+//   IT IS THE PREMISE A WHOLE ARC WAS ORDERED ON.** It read:
 //
-// ── ⚠️ TESTED AGAINST SYNTHETIC ROWS, AND THE INTERSECTION IS EMPTY ─────────
-//   `COMPLIANCE_REGISTRY` names 17 material codes and every one of them is an
-//   `RM-SAMPLE-…` placeholder; `MATERIAL_MASTER` names 42 real codes and none
-//   of them is. **THE INTERSECTION IS EMPTY BY CONSTRUCTION** — the fixture's
-//   own header mandates the placeholders AS AN HONESTY DEVICE, so that nothing
-//   in the tree reads as real certificate tracking before the harvest.
+//     *"HEADLESS. THIS MODULE HAS NO CONSUMER AND MUST NOT ACQUIRE ONE HERE.
+//     `verifyHalalAtReceipt` is not read by the GR wizard, by any page, by any
+//     hook, or by the dispatcher. Wiring it is H4, GATED ON `D-COMP-HALAL-4` …
+//     `halalVerification.test.ts` pins the headlessness by census, so a wire
+//     cannot arrive quietly."*
 //
-//   ⚠️ **THAT EMPTINESS IS NOT A BUG AND HAS NO HONEST TECHNICAL MITIGATION.**
-//   Seeding `RM-SAMPLE-…` aliases for real codes, adding real-looking registry
-//   rows, or matching supplier-to-certificate by NAME would each "fix" it, and
-//   each is disqualified: the first two break the honesty header, the third
-//   breaks C9 §3 (materialCode is contractually opaque — no prefix, no
-//   substring, no name rule decides anything). The bridge is REAL CERTIFICATE
-//   DATA arriving at R0.1, which is the operator's schedule and not a gate's.
+//   ⚠️ **THE CENSUS DID ITS JOB, AND THAT IS WHY THIS PARAGRAPH IS WRONG.** The
+//   gate went red when the consumer arrived, the ruling came first, and the pin
+//   was INVERTED rather than deleted — it is now a census of exactly one product
+//   consumer, named:
 //
-//   It is also no obstacle whatsoever to testing a PURE PROJECTION — the
-//   registry rows exercise every lifecycle, clock and scheme case on their own
-//   codes, exactly as `complianceProjection.test.ts` already demonstrates.
-//   ⚠️ But it does mean `verifyHalalAtReceipt(realSupplier, realCode, …)`
-//   returns `NO_CERT` for **every real material in the tree today**, and that
-//   is the honest answer, not a defect to code around. It is also precisely why
-//   H4 is gated: a wire today would refuse 100% of real receipts.
+//     `src/components/v2-features/GRInspectionWizard.tsx:848`
+//
+//   (plus this module itself). A SECOND surface reading certificates at a
+//   different instant or under a different scope is still a thing somebody must
+//   decide to do, and `halalVerification.test.ts` still turns red if one
+//   appears. **`D-COMP-HALAL-4` IS RULED, NOT PENDING.**
+//
+//   ⚠️ **AND WHAT WAS WIRED IS A NOTICE, NOT A GATE — the distinction decides
+//   what the next reader may build on.** The wizard TELLS the clerk; it does not
+//   STOP the dock. `halal.certificate` is deliberately UNSEEDED, so
+//   `effectiveEnforcement` derives `BLOCK / NO_SETTING_RECORDED`, and every mode
+//   below `BLOCK` is unrecordable while the portal can name no person
+//   (`ENF-NO-PERSON-IN-IDENTITY-01`; `docs/findings.md` §63). The GOVERNED check
+//   is still unwired. **The function is not.**
+//
+// ── ⚠️ THE INTERSECTION IS NOT EMPTY. IT IS TOTAL. ────────────────────
+//   **CORRECTED 2026-09-21.** The superseded text read: *"`COMPLIANCE_REGISTRY`
+//   names 17 material codes and every one of them is an `RM-SAMPLE-…`
+//   placeholder; `MATERIAL_MASTER` names 42 real codes and none of them is. THE
+//   INTERSECTION IS EMPTY BY CONSTRUCTION"* — and it went on to conclude that
+//   *"a wire today would refuse 100% of real receipts."*
+//
+//   **Measured 2026-09-21, with a bilateral control in the same run:**
+//     · `COMPLIANCE_REGISTRY` — 16 rows, **14 distinct material codes**
+//     · `RM-SAMPLE-*` among them — **ZERO**
+//     · `MATERIAL_MASTER` — 42 codes; **14 of 14 registry codes are present**
+//     · CONTROL — `master.has('RM-SAMPLE-TST-01')` is `false`, and
+//       `master.has(codes[0])` is `true`, by the same instrument in the same run
+//     · the 14 supplier×material pairs answer **5 SATISFIED / 9 NOT_SATISFIED**
+//
+//   The placeholders were **deliberately retired at the seam batch**, and the
+//   fixture header states the ruling and its reason: the two lanes share ONE
+//   vocabulary, because *"a surface that cannot be wrong because it cannot be
+//   reached is not honest; it is unfalsifiable."* The honesty moved rather than
+//   left — the certificate HOLDINGS are still fabricated and still marked three
+//   ways, and that is now the only fiction here.
+//
+//   ⚠️ **WHY THIS CORRECTION IS WORTH ITS SPACE:
+//   `FALSE-MECHANISM-MUST-NOT-BE-FILED-01` (§70) IN A MODULE HEADER.** *"The
+//   intersection is empty by construction"* is a BLOCKER, and nobody re-measures
+//   a blocker — a blocker is why you stopped. It sat in front of arc 1's ordering
+//   and in front of this module's own wire, and the tree had already falsified it.
+//
+//   The claim that survives unchanged: the registry rows exercise every
+//   lifecycle, clock and scheme case, exactly as `complianceProjection.test.ts`
+//   demonstrates — the pure projection was always testable and still is.
 //
 // ── LAW 0.5 — WHY `receiptInstant` IS AN ARGUMENT AND NEVER A CLOCK READ ────
 //   The verdict is clock-derived, so it CANNOT be stored, and the instant it

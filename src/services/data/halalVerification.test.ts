@@ -2,14 +2,31 @@
 // CP-3 · H3 — CERTIFICATE VERIFICATION, TESTED AGAINST SYNTHETIC ROWS.
 //
 // ⚠️ **EVERY REGISTRY CASE BELOW IS SYNTHETIC AND SAYS SO.** `COMPLIANCE_REGISTRY`
-// is the honestly-synthetic fixture: placeholder suppliers, `SAMPLE-…` cert
+// is the honestly-synthetic fixture: real roster suppliers, `SAMPLE-…` cert
 // numbers, REAL master material codes (the seam batch — see the fixture header),
-// and never a real certifying body. The
-// 17 codes it names and the 42 codes `MATERIAL_MASTER` names DO NOT INTERSECT,
-// by construction — the placeholders are an honesty device, not an oversight,
-// and a test that "fixed" the emptiness by seeding aliases would be deleting the
-// device. `THE EMPTY INTERSECTION IS ITSELF ASSERTED BELOW`, so it is a measured
-// property of the tree rather than a claim in a header.
+// and never a real certifying body.
+//
+// ⚠️ **THE FOUR LINES THAT STOOD HERE WERE A CORPSE OF THE PRE-SEAM TREE, AND
+// THEY ARE RETRACTED RATHER THAN EDITED (2026-09-21).** They read: *"The 17 codes
+// it names and the 42 codes `MATERIAL_MASTER` names DO NOT INTERSECT, by
+// construction — the placeholders are an honesty device, not an oversight, and a
+// test that 'fixed' the emptiness by seeding aliases would be deleting the
+// device. THE EMPTY INTERSECTION IS ITSELF ASSERTED BELOW, so it is a measured
+// property of the tree rather than a claim in a header."*
+//
+// **Every clause is false today, and the last one is the instructive one: the
+// emptiness is NOT asserted below any more — the opposite is.** Measured
+// 2026-09-21: 16 rows, **14 distinct material codes, 14/14 present in
+// `MATERIAL_MASTER`, zero `RM-SAMPLE-*`**. The spec that pins it is *"⚠️ THE GATE
+// NOW SEES REAL CERTIFICATES — the receivable lines, by name"*, and it names
+// three of them through VALUES rather than ids. The placeholders were retired by
+// ruling at the seam batch, for the reason the fixture header gives: a surface
+// that cannot be wrong because it cannot be reached is unfalsifiable, not honest.
+//
+// ⚠️ **THIS IS WHY A HEADER IS NOT EVIDENCE.** The sentence claimed its own
+// assertion as its warrant (*"asserted below"*), that assertion had been inverted
+// by the batch that inverted the fixture, and the header went on saying the old
+// thing because nothing reads a header.
 //
 // That is no obstacle to testing a PURE PROJECTION, exactly as
 // `complianceProjection.test.ts` already demonstrates: the rows exercise every
@@ -27,7 +44,11 @@
 //      accident.
 //   5. `receiptInstant` IS THE ANSWER'S AXIS — the same (supplier, material)
 //      flips SATISFIED → EXPIRED purely by moving the instant.
-//   6. NOTHING IS WIRED, and no clock is read. Both by census over the source.
+//   6. THE WIRE IS A CENSUS OF EXACTLY ONE PRODUCT CONSUMER — named, and it is
+//      `GRInspectionWizard.tsx` (H4) — and no clock is read. Both by census
+//      over the source. ⚠️ **This read "NOTHING IS WIRED" until 2026-09-21;
+//      the census below had already been INVERTED at H4 and was naming the
+//      consumer while this line still denied there was one.**
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { describe, expect, it } from 'vitest';

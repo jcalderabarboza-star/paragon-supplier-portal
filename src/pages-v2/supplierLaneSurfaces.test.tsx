@@ -192,7 +192,7 @@ describe('⚠️ THE PANEL CAN NOW EXPRESS THE SPLIT — and the always-on notic
 });
 
 // ──────────────────────────────────────────────────────────────────────────────
-// ⚠️ §84 — THE ENTRANCE IS THE UNIT, NOT (SURFACE × VERB).
+// ⚠️ ENTRANCE-IS-THE-UNIT-01 — THE ENTRANCE IS THE UNIT, NOT (SURFACE × VERB).
 //
 // The describe above opens the panel by clicking the ROW, which lands in
 // `detail` — the one door the notice guarded. **The row's ACTION BUTTON was a
@@ -205,6 +205,11 @@ describe('⚠️ THE PANEL CAN NOW EXPRESS THE SPLIT — and the always-on notic
 // Both directions, always: a guard proved only against the seat it withholds
 // from is indistinguishable from a control that is simply broken.
 // ──────────────────────────────────────────────────────────────────────────────
+// ⚠️ THE `§84` IN THE NAME BELOW IS A POINTER AT A REGISTER SECTION THAT WAS
+// NEVER FILED (`docs/findings.md` §86i). Every COMMENT citation in this tree
+// was repointed to `ENTRANCE-IS-THE-UNIT-01` on 2026-09-21; a test NAME is a
+// string literal, so editing it is a code change and the docs batch that did
+// the rest was comment-only by mandate. Left deliberately, recorded here.
 describe('⚠️ §84 SupplierOrders — the ROW-ACTION entrance, which bypassed the notice', () => {
   // ⚠️ **THE DOOR IS THE SAME BUTTON; ITS LABEL IS NOT.** The row action now
   // NAMES what pressing it does — a seat that cannot confirm reads "View", not

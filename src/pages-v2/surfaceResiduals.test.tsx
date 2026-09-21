@@ -11,7 +11,7 @@ import { useCurrentIdentity } from '../context/CurrentIdentityContext';
 import type { CurrentIdentity } from '../context/CurrentIdentityContext';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// TWO SURFACE RESIDUALS §84's ARC LEFT BEHIND — THE SAME MISTAKE ON EITHER SIDE
+// TWO SURFACE RESIDUALS THAT ARC LEFT BEHIND (ENTRANCE-IS-THE-UNIT-01) — SAME MISTAKE, EITHER SIDE
 // OF ONE CONTROL:
 //
 //   · `SupplierOrders` — the ACT became honest (`effectivePanelMode` collapses
