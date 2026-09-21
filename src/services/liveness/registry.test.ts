@@ -53,6 +53,11 @@ describe('LivenessRegistry — derived from the wiring census (cannot drift)', (
         // what made that visible. Its gate-2 entry lands in the SAME commit,
         // which is the only safe order — see the note below.
         'supplierApplications',
+        // R8 — the materialRequest target is wired in the same commit as its
+        // flow, so gate-1 is LIVE from birth. Its gate-2 entry lands in the
+        // SAME commit, which is the only safe order: a capability that reached
+        // gate-1 without a gate-2 entry would have gone green on a seed.
+        'materialRequests',
         // §82 — the supplierDocument target is wired (gate-1 LIVE) and gate-2
         // holds it SIMULATED on F1 supplier identities. It joins this list in
         // the same commit that adds its harvest gate, which is the ONLY safe
@@ -188,6 +193,13 @@ describe('LivenessRegistry — harvest gate (LIVENESS-DATASOURCE-01, gate-2)', (
       // ruling, not by a missing wire. Wiring, a seed and a working door must
       // never render green.
       'supplierApplications',
+      // R8 — the same shape again, and the temptation is SHARPEST here: the
+      // rows are dispatched, BOTH doors work, and the lane's own subject is
+      // master data. It is still false, and this entry names WHY in a way
+      // wiring cannot: what the lane waits for is a material master coming
+      // BACK from S/4, which this platform does not observe at all. Green
+      // could never mean "the material now exists".
+      'materialRequests',
     ]);
     for (const cap of ALL_CAPABILITIES) {
       if (gated.has(cap)) continue;

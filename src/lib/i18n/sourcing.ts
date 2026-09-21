@@ -272,6 +272,52 @@ export const sourcingEn: Record<string, string> = {
   // change that — no verb edits an RFQ's materials after creation.
   'sourcing.wizard.materials.noMasterCode':
     'Not in the material master: {{materials}}. The event will go ahead and will require competitive bidding — a preferred-supplier exemption cannot be checked without a master code.',
+  // ── R8 · THE WIZARD'S MATERIAL-REQUEST OFFER ───────────────────────────────
+  //
+  // ⚠️ **IT IS OFFERED WHERE THE GAP IS DISCOVERED AND DISPATCHED AFTER THE RFQ
+  // EXISTS.** Marking is wizard-local state — a half-filled intent is not a fact
+  // about the world, which is the no-`Draft` ruling applied to an offer — and the
+  // request is sent in `createMutation`'s `onSuccess`, where `result.entityId` is
+  // a real RFQ id the target can RESOLVE rather than echo.
+  //
+  // ⚠️ **AND EVERY STRING HERE SAYS THE EVENT IS UNCHANGED**, because a request
+  // can never make a code-less pick resolve: `codesOfKeys` is a filter and no
+  // verb edits an RFQ's materials after creation.
+  'sourcing.wizard.materials.requestOffer': 'Ask for these to be created in the material master',
+  'sourcing.wizard.materials.requestOffer.marked':
+    'A material request will be raised for: {{materials}}. This does not change the event — the RFQ goes ahead and will still require competitive bidding.',
+  'sourcing.wizard.materials.requestOffer.undo': 'Do not raise a request',
+  'sourcing.wizard.materials.requestNeed': 'Why these are needed (for master data)',
+  'sourcing.wizard.materials.requestNeed.hint':
+    'Master data decides whether these already exist under another name. This is what they read.',
+  // ⚠️ THE FAILURE PATH, NAMED. If `t_rfq_create` refuses, the marked request
+  // NEVER DISPATCHES and nothing was recorded — so the buyer must not be told a
+  // request exists. This string is what the surface says instead, and it points
+  // at the door that still works.
+  'sourcing.toast.requestNotRaised.title': 'No material request was raised',
+  'sourcing.toast.requestNotRaised.desc':
+    'The sourcing event was not created, so nothing was recorded. You can raise the request on its own from Material requests.',
+  // The request went through but the RFQ had already been created, so the event
+  // stands and only the request failed. Both facts, in that order.
+  'sourcing.toast.requestFailed.title': '{{rfqNumber}} raised — material request was not',
+  'sourcing.toast.requestFailed.desc':
+    'The event is live and unchanged. Nothing was recorded for the material request; raise it from Material requests.',
+  // ⚠️ NO REQUEST NUMBER HERE, AND THAT IS THE PRECEDENT RATHER THAN A GAP.
+  // The `MR-2026-…` number is minted inside the store and `CommandResult`
+  // carries only `entityId`, so naming it would mean either a refetch that has
+  // not landed at this instant or a SECOND COPY of `numberFor` on the surface —
+  // a number computed on a screen, which is the exact defect deleted from
+  // `/register`. Browser QA caught the first draft rendering the internal id
+  // ("request mr-0003"). `applications.toast.raised.title` names the company
+  // rather than the number for the same reason; this names the event.
+  'sourcing.toast.requestRaised.title': '{{rfqNumber}} raised — material request recorded',
+  'sourcing.toast.requestRaised.desc':
+    'Master data will review it under Material requests. The material does not exist yet, and the event is unchanged.',
+  // ── R8 · THE RFQ DETAIL LINE ───────────────────────────────────────────────
+  'sourcing.detail.materialRequest.pending':
+    'A material request is pending for: {{materials}}. This event is unchanged and will still require competitive bidding.',
+  'sourcing.detail.materialRequest.decided':
+    'A material request for {{materials}} was decided ({{status}}). This event is unchanged either way — an RFQ’s materials cannot be edited after it is created.',
   'sourcing.wizard.field.totalQty': 'Total quantity',
   // 2e-b-4a — was "0". A placeholder must never model a value the field treats
   // specially: this one modelled the exact number a blank must NOT become.
@@ -608,6 +654,29 @@ export const sourcingId: Record<string, string> = {
   'sourcing.wizard.materials.selectFirst': 'Pilih kategori terlebih dahulu untuk melihat material yang tersedia.',
   'sourcing.wizard.materials.noMasterCode':
     'Tidak ada di master material: {{materials}}. Acara tetap berjalan dan akan memerlukan tender kompetitif — pengecualian pemasok terdaftar tidak dapat diperiksa tanpa kode master.',
+  // — R8 · penawaran permintaan material di wizard —
+  'sourcing.wizard.materials.requestOffer': 'Minta ini dibuatkan di master material',
+  'sourcing.wizard.materials.requestOffer.marked':
+    'Permintaan material akan diajukan untuk: {{materials}}. Ini tidak mengubah acara — RFQ tetap berjalan dan akan tetap memerlukan tender kompetitif.',
+  'sourcing.wizard.materials.requestOffer.undo': 'Jangan ajukan permintaan',
+  'sourcing.wizard.materials.requestNeed': 'Mengapa ini dibutuhkan (untuk master data)',
+  'sourcing.wizard.materials.requestNeed.hint':
+    'Master data menilai apakah ini sudah ada dengan nama lain. Inilah yang mereka baca.',
+  'sourcing.toast.requestNotRaised.title': 'Tidak ada permintaan material yang diajukan',
+  'sourcing.toast.requestNotRaised.desc':
+    'Acara sourcing tidak dibuat, jadi tidak ada yang tercatat. Anda dapat mengajukan permintaan itu sendiri dari Permintaan material.',
+  'sourcing.toast.requestFailed.title':
+    '{{rfqNumber}} diajukan — permintaan material tidak',
+  'sourcing.toast.requestFailed.desc':
+    'Acara aktif dan tidak berubah. Tidak ada yang tercatat untuk permintaan material; ajukan dari Permintaan material.',
+  'sourcing.toast.requestRaised.title':
+    '{{rfqNumber}} diajukan — permintaan material tercatat',
+  'sourcing.toast.requestRaised.desc':
+    'Master data akan meninjaunya di Permintaan material. Material belum ada, dan acara tidak berubah.',
+  'sourcing.detail.materialRequest.pending':
+    'Permintaan material tertunda untuk: {{materials}}. Acara ini tidak berubah dan akan tetap memerlukan tender kompetitif.',
+  'sourcing.detail.materialRequest.decided':
+    'Permintaan material untuk {{materials}} telah diputuskan ({{status}}). Acara ini tidak berubah dalam kedua kasus — material sebuah RFQ tidak dapat diubah setelah dibuat.',
   'sourcing.wizard.field.totalQty': 'Total kuantitas',
   'sourcing.wizard.placeholder.qty': 'mis. 2400',
   // — Wizard: penolakan numerik (CP-0 · W1 · 2e-b-4a) —

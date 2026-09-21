@@ -263,6 +263,21 @@ export const TRANSITION_PURPOSE: FlowAnnotations = Object.freeze({
   },
   t_application_approve: { purposeKey: 'processFlows.purpose.t_application_approve' },
   t_application_reject: { purposeKey: 'processFlows.purpose.t_application_reject' },
+
+  // ── materialRequest (R8) ───────────────────────────────────────────────────
+  // ⚠️ THESE FOUR ROWS WERE ADDED BECAUSE THE BILATERAL PIN DEMANDED THEM, not
+  // because anybody remembered. `annotations.test.ts` went red naming
+  // `t_materialrequest_submit` and the other three the moment the flow
+  // registered — which is the gate doing exactly what its header says: *"A
+  // verb cannot ship unexplained; somebody has to say what it is for."*
+  t_materialrequest_submit: { purposeKey: 'processFlows.purpose.t_materialrequest_submit' },
+  t_materialrequest_start_review: {
+    purposeKey: 'processFlows.purpose.t_materialrequest_start_review',
+  },
+  t_materialrequest_approve: {
+    purposeKey: 'processFlows.purpose.t_materialrequest_approve',
+  },
+  t_materialrequest_reject: { purposeKey: 'processFlows.purpose.t_materialrequest_reject' },
 });
 
 /**
@@ -294,6 +309,7 @@ export const ENTITY_PURPOSE: FlowAnnotations = Object.freeze({
   enforcement: { purposeKey: 'processFlows.purpose.entity.enforcement' },
   role: { purposeKey: 'processFlows.purpose.entity.role' },
   supplierApplication: { purposeKey: 'processFlows.purpose.entity.supplierApplication' },
+  materialRequest: { purposeKey: 'processFlows.purpose.entity.materialRequest' },
 });
 
 /**

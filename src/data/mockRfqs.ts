@@ -15,6 +15,37 @@ export type RFQCategory =
   | 'Botanical'
   | 'Other';
 
+/**
+ * The same six as DATA, in wizard order — the runtime authority a VERB can read.
+ *
+ * ⚠️ **IT SITS BESIDE THE TYPE, AND THAT IS A LAYERING FACT RATHER THAN A
+ * PREFERENCE.** The list used to live only in `pages-v2/sourcing/
+ * requisitionPrefill.ts`, which is the right home for the wizard's `<select>`
+ * and the wrong one for a membership check a POLICY HOOK has to run: **nothing
+ * under `src/services/` imports from `src/pages-v2/`** (derived — every
+ * apparent hit is a `// Relocated from src/pages-v2/…` comment, not an import).
+ * `MATERIALREQUEST_CATEGORY_KNOWN` needs this at dispatch time, so the
+ * authority moved to the layer both sides already reach and
+ * `RFQ_CATEGORY_OPTIONS` became a re-export of it — **one list, two names, and
+ * the `<select>` and the verb still cannot drift apart.**
+ *
+ * ⚠️ **AND THE LIST IS NOT A SECOND DECLARATION OF THE UNION.**
+ * `requisitionPrefill.test.ts` pins it EQUAL to the type's members, so a
+ * seventh category added above without a row here is red.
+ */
+export const RFQ_CATEGORIES: readonly RFQCategory[] = [
+  'Fragrance',
+  'Active Ingredients',
+  'Packaging',
+  'Emulsifiers',
+  'Botanical',
+  'Other',
+];
+
+/** Exact membership — never a coercion, never a nearest match. */
+export const isRfqCategoryMember = (v: unknown): v is RFQCategory =>
+  typeof v === 'string' && (RFQ_CATEGORIES as readonly string[]).includes(v);
+
 export interface RFQ {
   id: string;
   rfqNumber: string;

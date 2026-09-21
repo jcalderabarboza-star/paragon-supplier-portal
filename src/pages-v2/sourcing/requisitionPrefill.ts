@@ -22,7 +22,7 @@
 // ────────────────────────────────────────────────────────────────────────────
 
 import type { PurchaseRequisition, PRStatus } from '../../services/data/types';
-import type { RFQCategory } from '../../data/mockRfqs';
+import { RFQ_CATEGORIES, type RFQCategory } from '../../data/mockRfqs';
 import { getKnownFlows } from '../../services/transitions';
 
 /** The requisition state a raised sourcing event lands the document in. */
@@ -32,15 +32,17 @@ export const SOURCING_EVENT_STATE = 'Sourcing Event';
  * The RFQ category vocabulary, in wizard order. Lives here rather than in the
  * page so the membership test and the `<select>` cannot drift apart: one
  * constant, two consumers.
+ *
+ * ⚠️ **NOW A RE-EXPORT, AND THE AUTHORITY MOVED BESIDE THE TYPE (R8).** The
+ * six literals are in `data/mockRfqs.ts` as `RFQ_CATEGORIES`, because
+ * `MATERIALREQUEST_CATEGORY_KNOWN` is a POLICY HOOK and **nothing under
+ * `src/services/` imports from `src/pages-v2/`**. The export name here is
+ * unchanged, so every existing consumer — this file's own predicate, the
+ * wizard's `CATEGORY_OPTIONS`, the prefill specs — is untouched. **One list,
+ * two names.** Re-declaring the six here as well is the copy that drifts, and
+ * it is exactly what the material-request lane exists partly to avoid.
  */
-export const RFQ_CATEGORY_OPTIONS: readonly RFQCategory[] = [
-  'Fragrance',
-  'Active Ingredients',
-  'Packaging',
-  'Emulsifiers',
-  'Botanical',
-  'Other',
-];
+export const RFQ_CATEGORY_OPTIONS: readonly RFQCategory[] = RFQ_CATEGORIES;
 
 /** The RFQ unit vocabulary. Same one-constant-two-consumers reason. */
 export const RFQ_UOM_OPTIONS = ['KG', 'PCS', 'L', 'MT'] as const;

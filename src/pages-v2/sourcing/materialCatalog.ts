@@ -47,27 +47,24 @@
 //   the 14 seeded RFQs, so a buyer could not re-raise events the seed contains.
 // ─────────────────────────────────────────────────────────────────────────────
 
-/**
- * WHY an entry carries no master code. Recorded per entry rather than as one
- * flag, because the four reasons have different futures: a `NO_MASTER_TARGET`
- * is waiting on master data, an `AMBIGUOUS_IN_MASTER` is waiting on a human to
- * choose, and `NOT_A_MATERIAL` will never acquire a code at all.
- */
-export type CodeLessReason =
-  /** Two or more master rows fit the label and nothing in the label separates
-   *  them. Naming one would under-describe it; splitting the entry would change
-   *  a rendered label. */
-  | 'AMBIGUOUS_IN_MASTER'
-  /** A single master row was proposed by a loose rule and no human has
-   *  confirmed it. An unconfirmed match is not a match. */
-  | 'UNCONFIRMED_LOOSE_MATCH'
-  /** The only candidate row means something NARROWER than the entry — mapping
-   *  to it would silently shrink what the buyer asked for. */
-  | 'NARROWS_THE_MEANING'
-  /** No master row fits at all. The common case, and the honest one. */
-  | 'NO_MASTER_TARGET'
-  /** Not a material. The buyer is describing something in free text. */
-  | 'NOT_A_MATERIAL';
+// ── ⚠️ `CodeLessReason` NOW LIVES IN `src/data/`, AND ONLY THE TYPE MOVED ────
+//   R8 needs it on the `MaterialRequest` DTO, and **nothing under
+//   `src/services/` imports from `src/pages-v2/`** — derived before the move,
+//   with every apparent hit turning out to be a `// Relocated from
+//   src/pages-v2/…` comment rather than an import. So the union went to the
+//   neutral layer both sides already reach, and it is RE-EXPORTED here so this
+//   module stays the one place the catalog's shape is read from. The DATA
+//   (`MATERIAL_CATALOG`, in `BuyerSourcing.tsx`) and every const in this file
+//   are untouched: moving a module-scope const would retire its `path::NAME`
+//   key in `moduleScopeLiteralGate` and fire a dead-key failure, which is
+//   exactly why only the type moved.
+export type { CodeLessReason } from '../../data/materialCatalogReason';
+export {
+  CODE_LESS_REASONS,
+  isCodeLessReason,
+} from '../../data/materialCatalogReason';
+
+import type { CodeLessReason } from '../../data/materialCatalogReason';
 
 /** One pickable row in the wizard's material step. */
 export type CatalogEntry =

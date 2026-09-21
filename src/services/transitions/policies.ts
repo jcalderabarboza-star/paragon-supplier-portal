@@ -6,7 +6,8 @@
 // ────────────────────────────────────────────────────────────────────────────
 
 import type { PurchaseOrder, Invoice } from '../data/types';
-import type { RFQ } from '../../data/mockRfqs';
+import { RFQ_CATEGORIES, isRfqCategoryMember, type RFQ } from '../../data/mockRfqs';
+import { CODE_LESS_REASONS, isCodeLessReason } from '../../data/materialCatalogReason';
 import { DECLARED_PRESENT } from '../data/fixturePresent';
 import {
   awardIntegrity,
@@ -34,6 +35,7 @@ import {
   isReviewDay,
   rigour,
   settingInForce,
+  type ActorAttribution,
   type EnforcementSetting,
 } from '../../lib/enforcement';
 
@@ -624,6 +626,190 @@ bindPolicyHook(POLICY_HOOKS.APPLICATION_DECLARATIONS_WELL_FORMED, ({ payload }) 
   }
   return { ok: true };
 });
+
+// ── R8 · THE MATERIAL-REQUEST HOOKS ─────────────────────────────────────────
+
+// The category is one of the wizard's own six, and an unknown token is refused
+// BY NAME. `requiredFields` proves presence; nothing else proves membership, so
+// without this a hand-crafted dispatch stores a category the picker cannot
+// render and no filter can find.
+//
+// ⚠️ **AND IT PROVES `catalogReason` IN THE SAME HOOK RATHER THAN IN A SIXTH.**
+// The two are one question — *"are the closed-union fields on this payload
+// actually members?"* — and `catalogReason` is OPTIONAL, so it cannot be a
+// `requiredField` and would otherwise be proven nowhere. Splitting it would add
+// a hook whose refusal a reader could not tell from this one's.
+bindPolicyHook(POLICY_HOOKS.MATERIALREQUEST_CATEGORY_KNOWN, ({ payload }) => {
+  const category = payload.category;
+  if (!isRfqCategoryMember(category)) {
+    return {
+      ok: false,
+      reason:
+        `category ${JSON.stringify(category)} is not one of ` +
+        `${RFQ_CATEGORIES.join(' | ')} — a category the picker cannot render ` +
+        'would file the request where nobody looking for it can find it',
+    };
+  }
+  // Absent is legal: a standalone request picked nothing from the catalog, so
+  // there is no reason to carry. PRESENT and off-list is not.
+  const reason = payload.catalogReason;
+  if (reason !== undefined && reason !== null && !isCodeLessReason(reason)) {
+    return {
+      ok: false,
+      reason:
+        `catalogReason ${JSON.stringify(reason)} is not one of ` +
+        `${CODE_LESS_REASONS.join(' | ')} — the reason is the reviewer's triage ` +
+        '(waiting on master data, waiting on a human, or never getting a code), and an ' +
+        'unrecognised one triages nothing',
+    };
+  }
+  return { ok: true };
+});
+
+// The one field a master-data person acts on. Fifth instance of the
+// substance-not-presence guard, and the reader has the least else to go on:
+// deciding whether a label already exists under another name, they have the
+// requested label — which is exactly the string the catalog already failed to
+// resolve — and this text.
+bindPolicyHook(POLICY_HOOKS.MATERIALREQUEST_NEED_AUTHORED, ({ payload }) => {
+  const value = payload.need;
+  if (typeof value !== 'string') {
+    return { ok: false, reason: `need must be text, got ${typeof value}` };
+  }
+  if (value.trim() === '') {
+    return {
+      ok: false,
+      reason:
+        'need is blank — a master-data reviewer decides whether this material already exists ' +
+        'under another name, and the requested label is the string the catalog already failed ' +
+        'to resolve, so a blank need leaves them nothing they did not already have',
+    };
+  }
+  return { ok: true };
+});
+
+// ── THE RFQ RESOLUTION, MADE BINDING ────────────────────────────────────────
+//
+// ⚠️ **THE RESOLVER IS THE TARGET'S `creationOwner`, READ THROUGH `ctx.target`
+// — THERE IS EXACTLY ONE OF IT, AND THIS HOOK DOES NOT CONTAIN A SECOND.** A
+// hook that re-implemented the store lookup would be the copy that drifts, and
+// it would put the RFQ store inside the transitions layer, which knows about no
+// data at all. `APPLICATION_INTERNAL_VENDOR_RESOLVED`'s shape exactly.
+//
+// ⚠️ **WHY THIS IS NOT `requireCreationOwner: true`, MEASURED.** That flag is
+// per-TARGET: the dispatcher refuses ANY buyer creation whose owner resolves
+// null. A STANDALONE request names no RFQ by definition, so its owner is
+// legitimately null and the flag would refuse the entire page entrance. The flag
+// cannot say "required when", and this is the layer that can.
+//
+// ⚠️ **THE LIMIT, STATED.** It proves the named event EXISTS. It cannot prove
+// the request was discovered on that event, or that the buyer meant that one —
+// no value-level guard can.
+bindPolicyHook(POLICY_HOOKS.MATERIALREQUEST_RFQ_RESOLVED, ({ payload, target }) => {
+  const stated = payload.raisedFromRfqId;
+  if (stated === undefined || stated === null || stated === '') return { ok: true };
+  if (!target.creationOwner) {
+    return {
+      ok: false,
+      reason:
+        'the target implements no creationOwner, so the named sourcing event cannot be ' +
+        'resolved against anything — a request claiming it came from an RFQ must be checked, ' +
+        'never taken on the payload’s word',
+    };
+  }
+  if (target.creationOwner(payload) === null) {
+    return {
+      ok: false,
+      reason:
+        `raisedFromRfqId ${JSON.stringify(stated)} resolves to no sourcing event this platform ` +
+        'holds — a request whose provenance names nothing leaves a reviewer unable to see what ' +
+        'the buyer was trying to buy',
+    };
+  }
+  return { ok: true };
+});
+
+// The refusal a buyer will read themselves. Sixth instance, and kept separate
+// from MATERIALREQUEST_NEED_AUTHORED because the two read different payload
+// fields: a shared hook would have to branch on `toState` to know which, after
+// which reading the guard no longer tells you what it guards.
+bindPolicyHook(POLICY_HOOKS.MATERIALREQUEST_REFUSAL_AUTHORED, ({ payload }) => {
+  const value = payload.justification;
+  if (typeof value !== 'string') {
+    return { ok: false, reason: `justification must be text, got ${typeof value}` };
+  }
+  if (value.trim() === '') {
+    return {
+      ok: false,
+      reason:
+        'justification is blank — a declined request is the one record telling the buyer ' +
+        'whether to re-request with a better description or stop asking, and an empty one ' +
+        'answers neither',
+    };
+  }
+  return { ok: true };
+});
+
+// ── FOUR-EYES: BUILT, TYPED FOR, AND UNABLE TO FIRE TODAY ───────────────────
+//
+// ⚠️ **THIS HOOK ADMITS EVERY ACT IN THIS TREE, AND SAYING SO HERE IS THE POINT
+// — ITS GREEN MUST NEVER BE READ AS A WORKING CHECK.** `CurrentIdentity.actor`
+// is `UNATTRIBUTED: NO_PERSON_IN_SESSION` on both personas, so `isAttributed`
+// is false on both sides, the comparison never happens, and the hook returns
+// ok. That direction is correct — **an unattributed act is not evidence of
+// self-approval** — and refusing instead would make the lane unusable to
+// demonstrate a rule nobody can yet break.
+//
+// It is `pslListing`'s ruling executed rather than restated: *"Four-eyes
+// (proposer ≠ decider) is UNBUILDABLE today for exactly that reason: every
+// actor in this tree is `UNATTRIBUTED: NO_PERSON_IN_SESSION`, so there are no
+// two values to compare. Typing these as `string` now would make the check a
+// migration later instead of a one-line predicate."* The predicate below IS
+// that one line, in place and waiting, so F1 costs no edit here.
+//
+// ⚠️ **THE DOCUMENT IS READ THROUGH `ctx.target.readEntity`, WHICH IS
+// DOCUMENTED FOR EXACTLY THIS** — *"Full entity for policy hooks to inspect"* —
+// and four shipped hooks already do it. The belief that a hook cannot reach the
+// entity is false and has stopped a batch before.
+//
+// ⚠️ **AND IT IS THE PER-DOCUMENT HALF, WHICH THE ATOM SPLIT DOES NOT COVER.**
+// `materialrequest:submit` is `procurement`'s and `:review`/`:decide` are
+// `planning`'s, so the two authorities CAN be separated — but the default buyer
+// seat holds all six lane bundles, so today one seat holds both. Lane
+// segregation makes narrowing possible; only an attributed actor makes
+// self-decision refusable.
+//
+// ⚠️ **PROBED BOTH WAYS, BECAUSE A ONE-SIDED PROBE OVER A POPULATION WHERE IT
+// CANNOT FIRE PROVES NOTHING** (rule 4, and `CLEAN-AFTER-THE-FIX-REPORTS-THE-
+// FIX-01`'s neighbour): `materialRequestCommand.test.ts` fires it at a
+// SYNTHETIC RESOLVED pair and requires a refusal BY NAME, beside the real-tree
+// run requiring an admit.
+bindPolicyHook(
+  POLICY_HOOKS.MATERIALREQUEST_DECIDER_NOT_REQUESTER,
+  ({ entityId, target, scope }) => {
+    const row = target.readEntity?.(entityId) as
+      | { submittedBy?: ActorAttribution }
+      | null
+      | undefined;
+    const requester = row?.submittedBy;
+    const decider = scope.actor;
+    if (
+      requester &&
+      decider &&
+      isAttributed(requester) &&
+      isAttributed(decider) &&
+      requester.person.personId === decider.person.personId
+    ) {
+      return {
+        ok: false,
+        reason:
+          `the requester (${requester.person.displayName}) may not also decide this request — ` +
+          'raising a material request and ruling on it are two authorities',
+      };
+    }
+    return { ok: true };
+  },
+);
 
 // ── PSL P2 · THE SOURCING GATE ──────────────────────────────────────────────
 //

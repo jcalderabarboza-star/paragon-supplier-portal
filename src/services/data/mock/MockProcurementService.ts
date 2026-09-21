@@ -16,6 +16,7 @@ import { supplierDocumentStore } from './stores/supplierDocumentStore';
 import { SUPPLIER_SCORECARDS } from './fixtures/buyerScorecard';
 import { purchaseRequisitionStore } from './stores/purchaseRequisitionStore';
 import { supplierApplicationStore } from './stores/supplierApplicationStore';
+import { materialRequestStore } from './stores/materialRequestStore';
 import {
   INITIAL_CATALOG,
   INITIAL_CERTS,
@@ -67,6 +68,7 @@ import type {
   PRFilter,
   PrIntakeLine,
   SupplierApplication,
+  MaterialRequest,
 } from '../types';
 import { PR_INTAKE_LINES } from './fixtures/prIntake';
 
@@ -543,6 +545,15 @@ export class MockProcurementService implements IProcurementService {
   async getSupplierApplications(scope: QueryScope): Promise<Page<SupplierApplication>> {
     if (scope.personaType !== 'buyer') return { items: [] };
     return { items: [...supplierApplicationStore.all()] };
+  }
+
+  // R8 — the material-request queue. Same persona gate, same reason: a
+  // supplier scope reads empty rather than being refused, because a refusal
+  // discloses that the collection exists. The store seeds `[]`, so an empty
+  // page is also the honest cold-start answer rather than a degenerate one.
+  async getMaterialRequests(scope: QueryScope): Promise<Page<MaterialRequest>> {
+    if (scope.personaType !== 'buyer') return { items: [] };
+    return { items: [...materialRequestStore.all()] };
   }
 
   // ─── Buyer command-center aggregates (buyer-only) ─────────────────────────

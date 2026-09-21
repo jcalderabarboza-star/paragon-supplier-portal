@@ -310,6 +310,18 @@ export const processFlowPurposeEn: Record<string, string> = {
     'Somebody takes the file off the pile and puts their name to it, so the queue can tell the applications nobody has opened yet from the ones already being worked.',
   'processFlows.purpose.t_application_approve':
     'Paragon accepts the applicant. What this records is the decision and nothing else — the vendor master record is raised in S/4HANA, which owns supplier identity.',
+  // ── materialRequest (R8) ─────────────────────────────────────────────
+  'processFlows.purpose.entity.materialRequest':
+    'The record that a buyer needs a material Paragon does not yet have a code for, who is looking at it, and what was decided. Fourteen of the materials the RFQ wizard offers have no code in the master; without this there was nowhere to ask for one, so the gap stayed open with nobody able to say it had been raised.',
+  'processFlows.purpose.t_materialrequest_submit':
+    'A buyer writes down which material is missing, why it matters, and — when it came up while raising a sourcing event — which event that was. The sourcing event itself is untouched and still goes out to competitive bidding; this is a separate request to the people who keep the material master.',
+  'processFlows.purpose.t_materialrequest_start_review':
+    'Somebody in master data takes the request off the pile and puts their name to it, so the queue can tell the requests nobody has opened yet from the ones already being worked.',
+  'processFlows.purpose.t_materialrequest_approve':
+    'Master data accepts the request. What this records is the decision and nothing else — the material itself is created in S/4HANA, which owns material identity, and this portal never issues a code. The catalog gains the material when SAP has one.',
+  'processFlows.purpose.t_materialrequest_reject':
+    'Master data declines the request and writes down why. The reason is the whole account the buyer gets, and it is what tells them whether to ask again with a better description or stop asking.',
+
   'processFlows.purpose.t_application_reject':
     'Paragon declines, and must say why in words somebody can repeat to the applicant. The applicant holds no seat here, so that text is the only account of the decision that will ever exist.',
 };
@@ -587,6 +599,18 @@ export const processFlowPurposeId: Record<string, string> = {
     'Seseorang mengambil berkas dari tumpukan dan mencantumkan namanya, sehingga antrean dapat membedakan permohonan yang belum dibuka siapa pun dari yang sudah dikerjakan.',
   'processFlows.purpose.t_application_approve':
     'Paragon menerima pemohon. Yang dicatat hanyalah keputusannya — catatan induk vendor diterbitkan di S/4HANA, tempat identitas pemasok berada.',
+  // ── materialRequest (R8) ─────────────────────────────────────────────
+  'processFlows.purpose.entity.materialRequest':
+    'Catatan bahwa seorang pembeli membutuhkan material yang belum memiliki kode di Paragon, siapa yang menanganinya, dan apa keputusannya. Empat belas material yang ditawarkan wizard RFQ tidak memiliki kode di master; tanpa ini tidak ada tempat untuk memintanya, sehingga celah itu tetap terbuka tanpa ada yang bisa menyatakan bahwa hal itu sudah diajukan.',
+  'processFlows.purpose.t_materialrequest_submit':
+    'Seorang pembeli mencatat material apa yang dibutuhkan, mengapa, dan — jika muncul saat mengajukan acara sourcing — acara mana itu. Acara sourcing itu sendiri tidak berubah dan tetap berjalan dengan tender kompetitif; ini adalah permintaan terpisah kepada pengelola master material.',
+  'processFlows.purpose.t_materialrequest_start_review':
+    'Seseorang di master data mengambil permintaan dari tumpukan dan mencantumkan namanya, sehingga antrean dapat membedakan permintaan yang belum dibuka siapa pun dari yang sudah dikerjakan.',
+  'processFlows.purpose.t_materialrequest_approve':
+    'Master data menyetujui permintaan. Yang dicatat hanyalah keputusannya — materialnya sendiri dibuat di S/4HANA, tempat identitas material berada, dan portal ini tidak pernah menerbitkan kode. Katalog akan memuat material tersebut setelah SAP memilikinya.',
+  'processFlows.purpose.t_materialrequest_reject':
+    'Master data menolak permintaan dan mencatat alasannya. Alasan itu adalah seluruh keterangan yang diterima pembeli, dan itulah yang memberi tahu mereka apakah perlu mengajukan lagi dengan deskripsi yang lebih baik atau berhenti meminta.',
+
   'processFlows.purpose.t_application_reject':
     'Paragon menolak, dan wajib menyatakan alasannya dengan kata-kata yang bisa diteruskan kepada pemohon. Pemohon tidak punya kursi di sini, sehingga teks itulah satu-satunya keterangan atas keputusan tersebut yang akan pernah ada.',
 };

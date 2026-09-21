@@ -26,6 +26,7 @@ import {
   Handshake,
   LucideIcon,
   UserPlus,
+  PackagePlus,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useCurrentIdentity } from '../../context/CurrentIdentityContext';
@@ -58,6 +59,10 @@ const BUYER_NAV: NavGroup[] = [
       { labelKey: 'nav.buyer.suppliers', icon: Users, path: '/buyer/suppliers' },
       { labelKey: 'nav.buyer.supplierApplications', icon: UserPlus, path: '/buyer/supplier-applications' },
       { labelKey: 'nav.buyer.sourcing', icon: FileText, path: '/buyer/sourcing' },
+      // R8 — next to Sourcing, because the gap is discovered there: a buyer
+      // picking a material with no master code is offered the request in the
+      // RFQ wizard, and this is where it is then tracked.
+      { labelKey: 'nav.buyer.materialRequests', icon: PackagePlus, path: '/buyer/material-requests' },
       // Phase A/1 — review precedes the plan-grid push in the sourcing flow.
       { labelKey: 'nav.buyer.intakeReview', icon: Inbox, path: '/buyer/intake-review' },
       { labelKey: 'nav.buyer.planGrid', icon: Table2, path: '/buyer/plan-grid' },

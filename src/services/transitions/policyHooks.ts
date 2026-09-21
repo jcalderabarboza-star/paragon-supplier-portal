@@ -304,6 +304,91 @@ export const POLICY_HOOKS = {
    */
   APPLICATION_DECLARATIONS_WELL_FORMED: 'application_declarations_well_formed',
 
+  // ── R8 · MATERIAL REQUEST — four hooks on the lane that asks for a material
+  //    the master does not carry ───────────────────────────────────────────
+  /**
+   * Material-request submit: `category` must be one of the wizard's own closed
+   * `RFQCategory` members. `requiredFields` proves PRESENCE, so without this an
+   * off-list token reaches `create` and is stored as a category the picker
+   * cannot render and no filter can find — `APPLICATION_REQUEST_TYPE_KNOWN`'s
+   * shape, on the union that decides which catalog page a reader is even on.
+   *
+   * ⚠️ It also proves `catalogReason` WHEN PRESENT, against the same
+   * `CodeLessReason` union the catalog discriminates on. Absent is legal — a
+   * standalone request picked nothing — which is why this is a membership check
+   * on an optional field rather than a second required one.
+   */
+  MATERIALREQUEST_CATEGORY_KNOWN: 'materialrequest_category_known',
+  /**
+   * Material-request submit: `need` must be SUBSTANCE, not presence — the fifth
+   * deliberate instance of this two-line guard, and the one whose reader has the
+   * least else to go on. A master-data person deciding whether a label already
+   * exists under another name has the requested label and this text; a blank
+   * one leaves them the label alone, which is the case the catalog already
+   * failed to resolve.
+   */
+  MATERIALREQUEST_NEED_AUTHORED: 'materialrequest_need_authored',
+  /**
+   * Material-request submit: if the payload names an originating RFQ, it must
+   * name one the store actually holds.
+   *
+   * ⚠️ **A PAYLOAD ECHO IS NOT A RESOLUTION**, and this is
+   * `APPLICATION_INTERNAL_VENDOR_RESOLVED`'s shape for
+   * `APPLICATION_INTERNAL_VENDOR_RESOLVED`'s measured reason: the C4b
+   * `requireCreationOwner` flag is per-TARGET and all-or-nothing, so setting it
+   * would refuse every STANDALONE request — the page entrance in its entirety —
+   * because those legitimately name no RFQ. The flag cannot say *"required
+   * when"*; this layer can.
+   *
+   * The resolver is the target's own `creationOwner`, read through `ctx.target`,
+   * so the RFQ store stays in the layer that owns it and there is exactly ONE
+   * resolver rather than a second copy to drift.
+   *
+   * ⚠️ **THE LIMIT, STATED.** It proves the event EXISTS. It cannot prove the
+   * request was discovered on that event, or that the buyer meant that one.
+   */
+  MATERIALREQUEST_RFQ_RESOLVED: 'materialrequest_rfq_resolved',
+  /**
+   * Material-request reject: the justification must be SUBSTANCE, not presence.
+   * Sixth instance, and kept separate from `MATERIALREQUEST_NEED_AUTHORED` for
+   * `PR_REJECT_REASON_AUTHORED`'s reason — the two read different payload
+   * fields, and a shared hook would have to branch on `toState` to know which,
+   * after which reading the guard no longer tells you what it guards.
+   */
+  MATERIALREQUEST_REFUSAL_AUTHORED: 'materialrequest_refusal_authored',
+  /**
+   * Material-request review/approve/reject: **the requester must not be the
+   * decider.**
+   *
+   * ⚠️ **THIS HOOK IS BUILT AND CANNOT FIRE TODAY, AND THAT IS STATED HERE SO
+   * ITS GREEN IS NEVER READ AS A WORKING CHECK.** Every actor in this tree is
+   * `UNATTRIBUTED: NO_PERSON_IN_SESSION` (`CurrentIdentity.actor`, both
+   * personas), so `isAttributed` is false on both sides of the comparison, the
+   * predicate is false, and **the hook ADMITS**. That is the correct direction —
+   * an unattributed act is not evidence of self-approval — and it is the whole
+   * reason this is written down rather than left to a reader to notice.
+   *
+   * It is the `pslListing` ruling executed: *"Four-eyes (proposer ≠ decider) is
+   * UNBUILDABLE today … there are no two values to compare. Typing these as
+   * `string` now would make the check a migration later instead of a one-line
+   * predicate."* `submittedBy` / `decidedBy` are `ActorAttribution`, so the day
+   * an IdP answers this hook starts refusing with no edit to its own body.
+   *
+   * ⚠️ **AND IT READS THE DOCUMENT THROUGH `ctx.target.readEntity`, WHICH IS
+   * DOCUMENTED FOR EXACTLY THIS.** The belief that a policy hook cannot see the
+   * entity is false and has stopped a batch before: `CommandTarget.readEntity`
+   * is *"Full entity for policy hooks to inspect"* and four shipped hooks
+   * already use it. What was missing for a threshold was the RIGHT-HAND SIDE of
+   * the comparison; what is missing here is a `personId`, which is F1.
+   *
+   * ⚠️ **IT IS NOT A SUBSTITUTE FOR THE ATOM SPLIT, AND NOT SATISFIED BY IT.**
+   * The atoms live in different lanes (`procurement` raises, `planning`
+   * decides), which makes narrowing POSSIBLE; the default buyer seat holds all
+   * six bundles, so lane segregation does not bind the out-of-box seat. This
+   * hook is the per-DOCUMENT half, and it is the half that is unbuildable.
+   */
+  MATERIALREQUEST_DECIDER_NOT_REQUESTER: 'materialrequest_decider_not_requester',
+
   // ── PSL P2 · THE SOURCING GATE — three hooks, and the SPLIT IS THE DESIGN ──
   //
   // ⚠️ **ELIGIBILITY AND COMPETITION ARE TWO HOOKS ON ONE VERB, NOT ONE HOOK

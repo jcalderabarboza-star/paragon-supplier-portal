@@ -42,6 +42,7 @@ export { incomingShipmentFlow } from './flows/incomingShipment.flow';
 export { enforcementFlow } from './flows/enforcement.flow';
 export { roleFlow } from './flows/role.flow';
 export { supplierApplicationFlow } from './flows/supplierApplication.flow';
+export { materialRequestFlow } from './flows/materialRequest.flow';
 export * from './customRoles';
 
 import { flowRegistry } from './registry';
@@ -65,6 +66,7 @@ import { incomingShipmentFlow } from './flows/incomingShipment.flow';
 import { enforcementFlow } from './flows/enforcement.flow';
 import { roleFlow } from './flows/role.flow';
 import { supplierApplicationFlow } from './flows/supplierApplication.flow';
+import { materialRequestFlow } from './flows/materialRequest.flow';
 
 // Seed the shipped flows onto the singleton.
 flowRegistry.register(purchaseOrderFlow); // Step 3.1 — PO
@@ -109,3 +111,9 @@ flowRegistry.register(enforcementFlow); // CP-3 · E2 — Enforcement
 // the platform with no audit record (D3).
 flowRegistry.register(roleFlow); // Duplicate-and-narrow — Role
 flowRegistry.register(supplierApplicationFlow); // B1 — Supplier onboarding
+// R8 — the lane that asks for a material the master does not carry. WIRED in
+// the same commit as its flow, so the entity never joins the target-less set
+// (`getKnownFlows()` ∖ `WIRED_COMMAND_TARGETS`) — not even for one merge, which
+// would put a machine on `/buyer/process-flows` that LOOKS built and refuses
+// everything.
+flowRegistry.register(materialRequestFlow); // R8 — Material request
