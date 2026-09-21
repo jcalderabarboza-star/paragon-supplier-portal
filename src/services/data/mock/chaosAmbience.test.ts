@@ -63,9 +63,32 @@ const isSpec = (path: string): boolean => /\.test\.tsx?$/.test(path);
  */
 const codeOnly = (src: string): string => stripSourceComments(src ?? '', 'space');
 
-/** A file APPLIES the injector iff its CODE imports the module by specifier. */
-const importsWithChaos = (path: string): boolean =>
-  /from\s+'[^']*withChaos'/.test(codeOnly(SRC[path] ?? ''));
+/**
+ * A file APPLIES the injector iff its CODE imports the module by specifier.
+ *
+ * ⚠️ **THE `includes` IS A NECESSARY CONDITION, NOT AN OPTIMISATION DRESSED AS
+ * ONE, AND ITS SOUNDNESS RESTS ON `'space'` MODE.** `codeOnly` BLANKS comment
+ * bytes; it never inserts one. So a file whose RAW text does not contain
+ * `withChaos` cannot contain it after stripping either, and skipping the parse
+ * for such a file cannot change this predicate's answer on any input.
+ * (`'delete'` mode would NOT license this: deleting a comment can JOIN two
+ * fragments — `with/* x *\/Chaos` — and manufacture the token. The distinction
+ * is why the mode is named here rather than left to the helper.)
+ * `codeOnly() actually strips` below pins the blanking directly.
+ *
+ * ⚠️ **WITHOUT IT THIS SPEC IS THE SUITE'S MOST RELIABLE FLAKE.** The filter
+ * below runs this predicate over EVERY non-spec file under `/src/**`, and
+ * `codeOnly` is a full TypeScript parse each time. Measured on 2026-09-21:
+ * **1257 ms alone**, and it TIMED OUT at 5000 ms in two of three full-suite
+ * runs on `main` — the per-test budget is spent competing with a saturated
+ * worker pool, not on anything this test is about. The parse is now paid only
+ * for the handful of files that mention the specifier at all.
+ */
+const importsWithChaos = (path: string): boolean => {
+  const raw = SRC[path] ?? '';
+  if (!raw.includes('withChaos')) return false;
+  return /from\s+'[^']*withChaos'/.test(codeOnly(raw));
+};
 
 describe('CHAOS-AMBIENCE-01 — injection is never ambient', () => {
   // ── 1 · POPULATION GUARD, FIRST, BY MEMBERSHIP ────────────────────────────

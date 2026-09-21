@@ -179,7 +179,22 @@ describe('⚠️ ANTI-VACUITY — a classifier that returns P for everything mus
   // something at all.
   const SYNTHETIC_ROOT = `${norm(process.cwd())}/src/__reading-instant-probe__`;
 
+  /**
+   * ⚠️ **MEMOISED, BECAUSE TWO TESTS ASKED FOR THE SAME PROGRAM AND GOT TWO.**
+   * `ts.createProgram` loads the full default library on every call, and it is
+   * the single heaviest operation in this suite. The inputs here are constants,
+   * so the second build could only ever have reproduced the first. Measured
+   * 2026-09-21: **1332 ms alone** for the first of the two tests, and it TIMED
+   * OUT at 5000 ms in a full-suite run on `main` — the budget went to worker
+   * contention, not to anything this test is about.
+   */
+  let probeProgramMemo: ts.Program | null = null;
   const probeProgram = (): ts.Program => {
+    if (probeProgramMemo) return probeProgramMemo;
+    return (probeProgramMemo = buildProbeProgram());
+  };
+
+  const buildProbeProgram = (): ts.Program => {
     const files: Record<string, string> = {
       // The exported arrow with a now-ish parameter — `buyerDerivations`'
       // shape, which is the one an earlier draft of `derive.ts` could not see
@@ -252,7 +267,15 @@ describe('⚠️ ANTI-VACUITY — a classifier that returns P for everything mus
     expect(
       sites.find((s) => norm(s.file).includes('pinnedCaller'))?.provenance,
     ).toBe('P');
-  });
+  // ⚠️ **30 s, AND THE NUMBER IS A MEASUREMENT.** This test builds a real
+  // `ts.Program`; that is the work, not an accident of how it is written, so
+  // there is no cause left to remove after the memo above. Alone it takes
+  // ~1.3 s; under a saturated worker pool it crossed the 5000 ms DEFAULT and
+  // failed a full-suite run on `main` (`docs/findings.md` §106i). A PER-TEST
+  // budget is the tree's existing answer for whole-tree scans — `stripComments`,
+  // `projectionGate`, `dayCounts` and `moduleScopeLiteralGate` all carry one.
+  // ⚠️ A GLOBAL `testTimeout` WOULD HIDE EVERY FUTURE SLOW TEST and is refused.
+  }, 30000);
 
   it('⚠️ A DESTRUCTURED PARAMETER IS FORWARDED, AND THE ARM IS NARROW', () => {
     // BOTH DIRECTIONS, IN ONE PROGRAM (rule 4 — probe the guard both ways).
@@ -268,7 +291,7 @@ describe('⚠️ ANTI-VACUITY — a classifier that returns P for everything mus
     // zero reads as 'nothing bad here').
     expect(sites.length).toBe(2);
     expect(sites.map((s) => s.provenance).sort()).toEqual(['FORWARDED', 'UNRESOLVED']);
-  });
+  }, 30000);
 
   it('the shipped tree now has NO wall-read projection call site, and that is the claim', () => {
     // The other half of the batch that retired the control's old subject: this

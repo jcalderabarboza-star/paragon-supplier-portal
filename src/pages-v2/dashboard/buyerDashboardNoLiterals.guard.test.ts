@@ -30,6 +30,7 @@
 
 import * as fs from 'node:fs';
 import * as path from 'node:path';
+import * as os from 'node:os';
 import ts from 'typescript';
 import { describe, it, expect } from 'vitest';
 
@@ -273,9 +274,33 @@ describe('the dashboard derivations construct no clock of their own', () => {
 
   it('⚠️ BILATERAL — the scanner finds a clock read when there is one', () => {
     // Known-BAD and known-GOOD on the SAME scanner, so neither reading can be
-    // believed alone. The known-bad is written to a temp file rather than
+    // believed alone. The known-bad is written to a real file rather than
     // asserted in prose, because a scanner nobody fired is not a scanner.
-    const probeFile = path.join(process.cwd(), 'src', 'pages-v2', 'dashboard', '__clock-probe__.ts');
+    //
+    // ⚠️ **THE PROBE USED TO BE WRITTEN INTO `src/`, AND THAT WAS A SHARED-STATE
+    // DEFECT THAT COST FOUR FAILURES IN ONE RUN.** It sat at
+    // `src/pages-v2/dashboard/__clock-probe__.ts` and was removed in a
+    // `finally` — correct-looking, and still wrong: **TWELVE other specs walk
+    // `src/` at COLLECT time** and read every member they find. Between one of
+    // those `readdirSync` calls (which admitted this file) and its matching
+    // `readFileSync` (which opened it), this `finally` deleted it, and the
+    // reader got `ENOENT` on a path that exists nowhere on disk. The tree was
+    // clean afterwards, CI was green, and the two specs PASSED when run
+    // together — the window only opens under full-suite concurrency, which is
+    // why it survived so long. Filed at `docs/findings.md` §106i.
+    //
+    // ⚠️ **NOTHING ABOUT THE PROBE NEEDED `src/`, WHICH IS WHAT MAKES THIS A
+    // MOVE AND NOT A COMPROMISE.** `clockReads` takes a PATH, reads it, and
+    // parses it with an EXPLICIT `ts.ScriptKind.TS` — so the filename is a
+    // label and nothing more. What the probe proves is unchanged, byte for
+    // byte; only where it lives has moved. The precedent is the tree's own:
+    // `projectionGate.test.ts` builds its synthetic sources under
+    // `mkdtempSync(join(tmpdir(), '…'))` for exactly this reason.
+    //
+    // `src/lib/treeMutationGate/` is what stops the class coming back — it
+    // refuses ANY spec that writes into a tracked path, derived not listed.
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'clock-probe-'));
+    const probeFile = path.join(dir, 'clockProbe.ts');
     fs.writeFileSync(
       probeFile,
       [
@@ -289,7 +314,7 @@ describe('the dashboard derivations construct no clock of their own', () => {
     try {
       expect(clockReads(probeFile)).toHaveLength(2);
     } finally {
-      fs.unlinkSync(probeFile);
+      fs.rmSync(dir, { recursive: true, force: true });
     }
   });
 

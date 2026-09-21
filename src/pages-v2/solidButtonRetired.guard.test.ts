@@ -58,10 +58,41 @@ function shippedTsx(dir: string, out: string[] = []): string[] {
  * prose from code, and a rule whose own explanation trips it is a rule people
  * stop explaining.
  */
-const withoutProse = (source: string): string => stripSourceComments(source, 'delete');
+const withoutProse = (source: string): string => stripSourceComments(source, 'space');
 
-/** The matcher under test: does this source render a solid action-blue button? */
+/**
+ * The matcher under test: does this source render a solid action-blue button?
+ *
+ * ⚠️ **TWO CHANGES HERE ARE ONE CHANGE, AND THE ORDER OF THE ARGUMENT MATTERS.**
+ * `QUOTED_PRIMARY` is a NECESSARY CONDITION for the regex below — both of its
+ * alternatives require `primary` between quote characters — and it is sound only
+ * because the strip now BLANKS (`'space'`) instead of DELETING.
+ * Blanking cannot join two fragments; deleting can — `pri/* x *\/mary` collapses
+ * to `primary` under `'delete'` — so under the old mode a raw-text pre-filter
+ * could have skipped a file the full matcher would convict. That is a FALSE
+ * NEGATIVE, the direction that terminates an investigation, so the mode was
+ * changed rather than the pre-filter weakened.
+ *
+ * ⚠️ **AND BLANKING WEAKENS NOTHING THIS FILE ASSERTS.** Every use below is a
+ * regex over contiguous tokens; `'space'` preserves offsets and removes exactly
+ * the same comment bytes. The pinned control two tests down asserts the
+ * joining property directly rather than trusting this paragraph.
+ *
+ * The cost this removes: `withoutProse` is a full TypeScript parse, run over
+ * every shipped `.tsx`. Measured 2026-09-21 — **829 ms alone**, and it timed
+ * out at 5000 ms under full-suite load during the batch that filed §106i.
+ *
+ * ⚠️ **THE OBVIOUS PRE-FILTER — `source.includes('primary')` — WAS WRITTEN
+ * FIRST AND MEASURED SLOWER (829 ms → 1205 ms), WHICH IS WHY THE QUOTES ARE IN
+ * IT.** This portal's DP-2 palette puts `text-primary` in almost every file, so
+ * the bare substring is true nearly everywhere and the parse was still paid —
+ * plus the cost of asking. A pre-filter is only a pre-filter if it is SELECTIVE;
+ * an unmeasured one is just another line of code claiming to help.
+ */
+const QUOTED_PRIMARY = /['"]primary['"]/;
+
 const rendersSolid = (source: string): boolean =>
+  QUOTED_PRIMARY.test(source) &&
   /variant\s*=\s*(["']primary["']|\{[^}]*['"]primary['"][^}]*\})/.test(withoutProse(source));
 
 describe('⚠️ §68 · THE MATCHER ITSELF, BEFORE ANY CLAIM ABOUT THE TREE', () => {
@@ -82,6 +113,17 @@ describe('⚠️ §68 · THE MATCHER ITSELF, BEFORE ANY CLAIM ABOUT THE TREE', (
     // gate made on its own first run, pinned so the strip cannot be dropped.
     expect(rendersSolid('// the variant="primary" scan came back incomplete')).toBe(false);
     expect(rendersSolid('/* variant="primary" was here and is gone */')).toBe(false);
+  });
+
+  it('⚠️ BLANKING NEVER JOINS TWO FRAGMENTS — what the raw-text pre-filter rests on', () => {
+    // `rendersSolid` skips the parse when the RAW source lacks `primary`. That
+    // is sound only if stripping cannot CREATE the token. Asserted on the exact
+    // shape that would break it, and on the twin that shows the check is real:
+    // under `'delete'` the first line below yields `primary`, under `'space'`
+    // it cannot. If this ever goes red, the pre-filter is unsound and must go,
+    // not the assertion.
+    expect(withoutProse('const pri/* x */mary = 1;')).not.toContain('primary');
+    expect(withoutProse('const primary = 1;')).toContain('primary');
   });
 
   it('⚠️ AND THE POPULATION IS NON-EMPTY — an empty scan reports clean either way', () => {
