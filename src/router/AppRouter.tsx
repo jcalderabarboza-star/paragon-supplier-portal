@@ -23,6 +23,7 @@ import BuyerGoodsReceipt from '../pages-v2/BuyerGoodsReceipt';
 import BuyerDiscovery from '../pages-v2/BuyerDiscovery';
 import BuyerRequisitions from '../pages-v2/BuyerRequisitions';
 import BuyerSupplierApplications from '../pages-v2/BuyerSupplierApplications';
+import BuyerMaterialRequests from '../pages-v2/BuyerMaterialRequests';
 import IntakeReview from '../pages-v2/IntakeReview';
 import BuyerInvoices from '../pages-v2/BuyerInvoices';
 import BuyerScorecard from '../pages-v2/BuyerScorecard';
@@ -113,6 +114,7 @@ const AppRouter: React.FC = () => {
           <Route path="/buyer/discovery" element={<BuyerDiscovery />} />
           <Route path="/buyer/purchase-requisition" element={<BuyerRequisitions />} />
           <Route path="/buyer/supplier-applications" element={<BuyerSupplierApplications />} />
+          <Route path="/buyer/material-requests" element={<BuyerMaterialRequests />} />
           <Route path="/buyer/invoices" element={<BuyerInvoices />} />
           <Route path="/buyer/scorecard" element={<BuyerScorecard />} />
           <Route path="/buyer/analytics" element={<BuyerAnalytics />} />

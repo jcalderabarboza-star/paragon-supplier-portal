@@ -10,6 +10,7 @@ import { mockDataService } from './services/data/mock/mockDataService';
 import { seedEnforcementLedger } from './services/data/mock/enforcementSeed';
 import { seedSourceableRequisition } from './services/data/mock/requisitionSeed';
 import { seedSupplierApplications } from './services/data/mock/applicationSeed';
+import { seedMaterialRequests } from './services/data/mock/materialRequestSeed';
 import { withChaos, chaosConfigFromEnv } from './services/data/mock/withChaos';
 import { queryClient } from './services/query/queryClient';
 import type { IDataService } from './services/data/types';
@@ -89,5 +90,20 @@ seedEnforcementLedger()
   })
   .catch((err) => {
     console.error('[B2] the supplier-application seed threw:', err);
+  })
+  // ⚠️ R8 — THE MASTER-DATA QUEUE, GROWN THROUGH THE MACHINE. Same contract
+  // again, with one addition: it raises its OWN sourcing event first, with a
+  // code-less material selected, so the wizard-provenance row points at an
+  // event whose materials genuinely do not resolve. Pointing at a seeded RFQ
+  // instead would have been a fixture quietly contradicting the reason the
+  // wizard entrance exists (operator ruling).
+  .then(() => seedMaterialRequests())
+  .then((outcome) => {
+    if (outcome.status === 'refused') {
+      console.error('[R8] the material-request seed did not land:', outcome);
+    }
+  })
+  .catch((err) => {
+    console.error('[R8] the material-request seed threw:', err);
   })
   .then(renderApp);

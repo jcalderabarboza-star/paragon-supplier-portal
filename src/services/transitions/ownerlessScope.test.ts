@@ -92,6 +92,7 @@ import { incomingShipmentStore } from '../data/mock/stores/incomingShipmentStore
 import { enforcementSettingStore } from '../data/mock/stores/enforcementSettingStore';
 import { supplierDocumentStore } from '../data/mock/stores/supplierDocumentStore';
 import { supplierApplicationStore } from '../data/mock/stores/supplierApplicationStore';
+import { materialRequestStore } from '../data/mock/stores/materialRequestStore';
 import { customRoleStore } from './customRoles';
 
 const svc = new MockCommandService();
@@ -149,6 +150,18 @@ async function realIds(): Promise<Record<string, string | null>> {
     entity: 'supplierApplication',
     payload: { requestType: 'External SR', companyName: 'PT Sample Applicant' },
   });
+  // R8 — the material-request lane is a WIRED owner-less target, so it joins
+  // this supply or the CONTROL above reports it silently skipped. Raised through
+  // the real verb for the same reason every other id here is real.
+  const requested = await svc.dispatch(buyerSeat('procurement'), {
+    transitionId: 't_materialrequest_submit',
+    entity: 'materialRequest',
+    payload: {
+      requestedLabel: 'Sample Probe Material',
+      category: 'Packaging',
+      need: 'an ownerless-scope probe',
+    },
+  });
   return {
     purchaseOrder: purchaseOrderStore.all()[0]?.id ?? null,
     advanceShipNotice: asnStore.all()[0]?.asnNumber ?? null,
@@ -164,6 +177,7 @@ async function realIds(): Promise<Record<string, string | null>> {
     role: 'receiving',
     supplierDocument: supplierDocumentStore.all()[0]?.id ?? null,
     supplierApplication: raised.entityId ?? null,
+    materialRequest: requested.entityId ?? null,
   };
 }
 
@@ -260,6 +274,7 @@ const resetAll = () => {
   purchaseRequisitionStore.reset();
   enforcementSettingStore.reset();
   supplierApplicationStore.reset();
+  materialRequestStore.reset();
   customRoleStore.reset();
 };
 
@@ -299,6 +314,11 @@ describe('POPULATION — nothing below means anything without this', () => {
     // Known owner-less members present; known owner-ful members absent.
     expect(ownerless).toContain('purchaseRequisition');
     expect(ownerless).toContain('supplierApplication');
+    // R8 — a REQUESTER is a buyer seat, not a tenant, so this target is
+    // owner-less for a different reason than the application lane's (there an
+    // APPLICANT has no tenancy). Same classification, and it must land here
+    // rather than in `unprobeable`: the lane declares three non-creation verbs.
+    expect(ownerless).toContain('materialRequest');
     expect(ownerless).toContain('rfq');
     expect(ownerless).not.toContain('purchaseOrder');
     expect(ownerless).not.toContain('invoice');
@@ -398,7 +418,14 @@ describe('THE LEGITIMATE PATHS — the half a "refuse everyone" fix would break'
     // refuses everybody; these cannot.
     const { ownerless } = await derive();
     expect(ownerless.sort()).toEqual(
-      ['enforcement', 'purchaseRequisition', 'rfq', 'role', 'supplierApplication'],
+      [
+        'enforcement',
+        'materialRequest',
+        'purchaseRequisition',
+        'rfq',
+        'role',
+        'supplierApplication',
+      ],
     );
 
     // ⚠️ **A PUBLISHABLE DRAFT, NOT MERELY THE FIRST ONE.** PSL P2 put a
@@ -457,5 +484,25 @@ describe('THE LEGITIMATE PATHS — the half a "refuse everyone" fix would break'
     });
     expect(reviewed.status, reviewed.reason).toBe('done');
     expect(supplierApplicationStore.get(raised.entityId!)!.status).toBe('Under Review');
+
+    // R8 — the material-request lane, walked the same way: raised by
+    // `procurement` and picked up by `planning`, which is the segregation the
+    // lane's atoms express. A derived assertion can pass over a lane that
+    // refuses everybody; this cannot.
+    const requested = await svc.dispatch(buyerSeat('procurement'), {
+      transitionId: 't_materialrequest_submit', entity: 'materialRequest',
+      payload: {
+        requestedLabel: 'Sample Probe Material',
+        category: 'Packaging',
+        need: 'an ownerless-scope probe',
+      },
+    });
+    expect(requested.status, requested.reason).toBe('done');
+    const picked = await svc.dispatch(buyerSeat('planning'), {
+      transitionId: 't_materialrequest_start_review', entity: 'materialRequest',
+      entityId: requested.entityId!,
+    });
+    expect(picked.status, picked.reason).toBe('done');
+    expect(materialRequestStore.get(requested.entityId!)!.status).toBe('Under Review');
   });
 });

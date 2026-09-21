@@ -164,6 +164,25 @@ const LANE_BUNDLES = Object.freeze({
       // sequence a single seat can walk end to end, and this batch does not add
       // a second instance of it.
       'application:submit',
+      // ── R8 · ASKING FOR A MATERIAL THE MASTER DOES NOT CARRY ─────────────
+      // The wizard entrance sits INSIDE the RFQ material step, which is only
+      // reachable to a seat holding `rfq:create` — already this lane's. So the
+      // atom that raises a request belongs where the act that discovers the gap
+      // already is.
+      //
+      // ⚠️ **AND THE DECIDING HALF IS DELIBERATELY ELSEWHERE — `planning`'s.**
+      // Operator ruling: a material request is a MASTER-DATA question, and the
+      // decider must be somebody who knows whether the label already exists in
+      // the master under another name. `compliance` is the tidier
+      // review-and-decide precedent but owns certificates and documents, not
+      // material identity. So no lane holds both the raising and the deciding
+      // of the same request — `application:submit`'s shape, one entity over.
+      //
+      // ⚠️ **NOT `requisitioner`, FOR `application:submit`'S OWN REASON.** That
+      // lane exists to express ONE segregation — raising a requisition is split
+      // from approving one — and reusing it for a third document would blur the
+      // only distinction it makes.
+      'materialrequest:submit',
       // ⚠️ RULED TO MOVE TO `compliance`, AND DELIBERATELY NOT MOVED IN THIS
       // BATCH. The operator's ruling stands and is booked: if procurement can
       // set the halal enforcement mode, procurement can lower the bar it is
@@ -227,6 +246,29 @@ const LANE_BUNDLES = Object.freeze({
       'requirementresponse:review', 'requirementresponse:accept',
       'requirementresponse:dispute',
       'inventorydeclaration:record',
+      // ── R8 · DECIDING A MATERIAL REQUEST — THE MASTER-DATA QUESTION ───────
+      // Operator ruling. This lane already reviews, accepts and disputes
+      // supplier statements ABOUT MATERIALS; deciding whether the master should
+      // carry a new one is the same subject matter one step upstream. The
+      // decider has to know whether the requested label already exists under
+      // another name, which is a master-data judgement and not a compliance
+      // one — `compliance` owns certificates and documents.
+      //
+      // ⚠️ **`:review` AND `:decide` TOGETHER IS NOT THE SEGREGATION PROBLEM
+      // `:submit` AVOIDS.** Picking a request up and ruling on it are ONE
+      // authority split across two states so the queue can answer "has anybody
+      // started?"; raising the request and ruling on it are TWO authorities,
+      // and those are in different lanes. `supplierdoc:verify`/`:reject` and
+      // `application:review`/`:decide` sit together on the same argument.
+      //
+      // ⚠️ **AND THE LIMIT, STATED HERE RATHER THAN LEFT TO BE INFERRED: THE
+      // DEFAULT BUYER SEAT HOLDS ALL SIX BUNDLES**, so today one seat can raise
+      // a request and decide it. Two lanes make narrowing POSSIBLE; they do not
+      // make segregation true. `SEGREGATION-CROSSED-IN-ONE-DRAWER-01` is the
+      // OPEN finding about exactly that, and the per-DOCUMENT half —
+      // `MATERIALREQUEST_DECIDER_NOT_REQUESTER` — is built, typed for, and
+      // unable to fire until an actor is attributed (F1).
+      'materialrequest:review', 'materialrequest:decide',
     ]),
     // Raising and revising a requisition — split from approving one, which is
     // the segregation `pr:approve` living in `procurement` expresses.

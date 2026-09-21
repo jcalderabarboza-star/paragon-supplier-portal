@@ -150,6 +150,14 @@ export const useSupplierApplications = () =>
     svc.procurement.getSupplierApplications(scope),
   );
 
+// R8 — the material-request queue. Buyer-side only, one collection, no
+// per-supplier shard: the persona gate in the service is the whole tenancy
+// answer, so `scopeKey` has nothing to narrow on here.
+export const useMaterialRequests = () =>
+  useServiceQuery(['procurement', 'materialRequests'], (svc, scope) =>
+    svc.procurement.getMaterialRequests(scope),
+  );
+
 export const useIntakeReview = () =>
   useServiceQuery(['procurement', 'prIntake'], (svc, scope) =>
     svc.procurement.getPrIntake(scope),

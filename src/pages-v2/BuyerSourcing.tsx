@@ -58,9 +58,16 @@ import EmptyState from '../components/ui-v2/EmptyState';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useDeepLinkedSelection } from '../lib/recordDeepLink';
 import PslStatusCell, { pslStandingOf } from '../components/v2-features/PslStatusCell';
-import { useRFQs, useQuotations, useSuppliers, useRequisitions } from '../services/query/hooks';
+import {
+  useRFQs,
+  useQuotations,
+  useSuppliers,
+  useRequisitions,
+  useMaterialRequests,
+} from '../services/query/hooks';
 import {
   useRfqCreate,
+  useMaterialRequestSubmit,
   useRfqAward,
   useRfqFxPin,
   useRfqCancel,
@@ -82,6 +89,10 @@ import {
   labelsOfKeys,
   type CatalogEntry,
 } from './sourcing/materialCatalog';
+// R8 — the ONE material-request payload builder. This entrance does NOT build
+// its own payload; see that file's header for the `t_pr_create` divergence it
+// exists to refuse.
+import { buildMaterialRequestPayload } from './sourcing/materialRequest';
 import type { QtyRefusalReason } from '../lib/localeNumber';
 // 2e-b-3 (COS-04) — the canonical formatters, replacing this file's own copies.
 import { formatDate, formatIDR, formatMoney, formatNumber } from '../lib/format';
@@ -960,6 +971,24 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
     [baseRfqs, selectedRfqId],
   );
 
+  // ── R8 · THE REQUESTS RAISED FROM THE OPEN EVENT ──────────────────────────
+  //
+  // ⚠️ **A READ, AND NOTHING MORE.** No control on this page acts on a material
+  // request, and the RFQ does not change because one exists — `materialIds` was
+  // fixed at creation by `codesOfKeys` and no verb edits it afterwards. The line
+  // this feeds exists so a buyer who comes back to the event can see that the
+  // gap was raised, NOT so the event can be re-read as resolved.
+  const materialRequestsQuery = useMaterialRequests();
+  const requestsForSelected = useMemo(
+    () =>
+      selectedRfq === null
+        ? []
+        : (materialRequestsQuery.data?.items ?? []).filter(
+            (r) => r.raisedFromRfqId === selectedRfq.id,
+          ),
+    [materialRequestsQuery.data, selectedRfq],
+  );
+
   // WHO ACTS NEXT (S2a). `RFQStatus` matches the machine exactly — no
   // projection member — so `status` is the canonical state on this surface.
   const nextAct = useNextAct('rfq', selectedRfq?.status);
@@ -1534,6 +1563,36 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
     () => codeLessOfKeys(draftEntries, draft.materials),
     [draftEntries, draft.materials],
   );
+
+  // ── R8 · THE MATERIAL-REQUEST OFFER ───────────────────────────────────────
+  //
+  // ⚠️ **MARKING IS WIZARD-LOCAL STATE AND IS NOT A FACT ABOUT THE WORLD.**
+  // That is the no-`Draft` ruling applied to an offer: a buyer who ticks this
+  // and abandons the wizard has asked for nothing, and a row in a store saying
+  // otherwise would be a request nobody submitted, sitting on a master-data
+  // queue beside rows a real dispatch produced.
+  //
+  // ⚠️ **AND THE DISPATCH IS DELIBERATELY AFTER `t_rfq_create` RETURNS.** The
+  // request's `raisedFromRfqId` must be RESOLVED against the store, never
+  // echoed (`creationOwner`'s rule) — and at the picker the RFQ is a `draft`
+  // object with no id, so there is nothing to resolve. `result.entityId` in
+  // `onSuccess` is the first moment a real id exists. The alternative measured
+  // and rejected: dispatch at the picker with `raisedFromRfqId: null`, which
+  // discards the provenance that is the field's only purpose.
+  //
+  // ⚠️ **THE FAILURE PATH, NAMED HERE RATHER THAN LEFT TO A READER.** If
+  // `t_rfq_create` REFUSES, this request never dispatches and NOTHING was
+  // recorded — so the buyer must not be told a request exists. The toast says
+  // exactly that and points at `/buyer/material-requests`, which still works.
+  const [requestMarked, setRequestMarked] = useState(false);
+  const [requestNeed, setRequestNeed] = useState('');
+  const materialRequestSubmit = useMaterialRequestSubmit();
+  const requestAvailability = useVerbAvailability('materialrequest:submit');
+  // A marked request is only sendable while there is something code-less to
+  // ask about: clearing the picks retires the offer rather than leaving a
+  // stale tick that would send a request naming nothing.
+  const requestSendable =
+    requestMarked && draftCodeLess.length > 0 && requestNeed.trim() !== '';
   const draftDecision = useMemo(
     () =>
       decideSourcing(
@@ -1629,6 +1688,18 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
               title: t('sourcing.toast.createFailed.title'),
               description: refusalText(result.reason) ?? result.reason ?? t('sourcing.toast.createFailed.default'),
             });
+            // ⚠️ R8 · THE FAILURE PATH, SAID PLAINLY. The RFQ was refused, so
+            // the marked request NEVER DISPATCHED and nothing was recorded.
+            // The buyer must not be left believing a request exists — and the
+            // honest thing is also the useful thing, so this points at the door
+            // that still works.
+            if (requestSendable) {
+              toast({
+                variant: 'info',
+                title: t('sourcing.toast.requestNotRaised.title'),
+                description: t('sourcing.toast.requestNotRaised.desc'),
+              });
+            }
             return;
           }
           setWizardOpen(false);
@@ -1642,6 +1713,80 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
               { count: invitedCount },
             ),
           });
+          // ── R8 · THE MARKED REQUEST DISPATCHES HERE, AND ONLY HERE ────────
+          //
+          // ⚠️ **IT CANNOT INTERRUPT THE EVENT, AND THAT IS STRUCTURAL RATHER
+          // THAN CAREFUL.** The RFQ is already created, the wizard is already
+          // closed and the success toast has already fired. This is a SEPARATE
+          // dispatch on a SEPARATE entity: `t_rfq_create` neither waits on it
+          // nor reads its result, so a refusal here leaves the event live and
+          // unchanged. The plan grid's ruling in the other direction —
+          // *"a failure via EITHER channel leaves the row PLANNED"* — is the
+          // shape being copied; here BOTH channels leave the RFQ raised.
+          //
+          // ⚠️ `raisedFromRfqId` IS THE ID THE DISPATCHER JUST MINTED, so
+          // `creationOwner` RESOLVES it against the store rather than echoing a
+          // value the wizard invented.
+          if (requestSendable) {
+            const codeLessNow = draftCodeLess;
+            const category = draft.category;
+            void (async () => {
+              // ONE request per code-less pick: each names a different material
+              // and a master-data reviewer decides them one at a time. The
+              // reason travels per entry, because the four reasons have
+              // different futures and that IS the reviewer's triage.
+              // The ids minted, used ONLY to tell "nothing landed" from "some
+              // landed" — never rendered. See the toast below.
+              const minted: string[] = [];
+              let refused = false;
+              for (const entry of codeLessNow) {
+                try {
+                  const out = await materialRequestSubmit.mutateAsync({
+                    // ⚠️ THE ONE BUILDER — the standalone page calls the same
+                    // function with `catalogReason` and `raisedFromRfqId`
+                    // absent. Neither entrance decides the payload's shape.
+                    payload: buildMaterialRequestPayload({
+                      requestedLabel: entry.label,
+                      category: category as RFQCategory,
+                      need: requestNeed,
+                      catalogReason: entry.reason,
+                      raisedFromRfqId: result.entityId ?? null,
+                    }),
+                  });
+                  if (out.status === 'failed' || !out.entityId) refused = true;
+                  else minted.push(out.entityId);
+                } catch {
+                  refused = true;
+                }
+              }
+              if (refused || minted.length === 0) {
+                toast({
+                  variant: 'error',
+                  title: t('sourcing.toast.requestFailed.title', {
+                    rfqNumber: result.entityId,
+                  }),
+                  description: t('sourcing.toast.requestFailed.desc'),
+                });
+                return;
+              }
+              // ⚠️ THE TOAST NAMES THE EVENT, NEVER THE REQUEST NUMBER.
+              // `numbers` holds `entityId`s (`mr-0003`), not the store-minted
+              // `MR-2026-0003` references — and browser QA caught the first
+              // draft printing the internal id to a buyer. Deriving the
+              // reference here would be a second copy of `numberFor` on a
+              // surface, which is the defect B3 deleted from `/register`. The
+              // queue carries the real one.
+              toast({
+                variant: 'success',
+                title: t('sourcing.toast.requestRaised.title', {
+                  rfqNumber: result.entityId,
+                }),
+                description: t('sourcing.toast.requestRaised.desc'),
+              });
+            })();
+            setRequestMarked(false);
+            setRequestNeed('');
+          }
         },
         onError: () =>
           toast({
@@ -1859,6 +2004,69 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                     })}
                   </p>
                 )}
+                {/* ── R8 · THE OFFER, WHERE THE GAP IS DISCOVERED ───────────
+                    ⚠️ IT SITS UNDER THE HONEST NOTE AND DOES NOT REPLACE IT.
+                    The note says the event goes ahead and will require
+                    competitive bidding; this adds a way to ask for the material
+                    without retracting any of that. Every string here repeats
+                    that the event is unchanged, because it is: `codesOfKeys` is
+                    a filter and no verb edits an RFQ's materials afterwards.
+
+                    ⚠️ AND THE GATE IS THE ATOM, PER VERB. `materialrequest:
+                    submit` is `procurement`'s, the same lane as `rfq:create`,
+                    so a seat inside this wizard normally holds it — but "
+                    normally" is not a gate, and a narrowed seat gets the notice
+                    rather than a control the dispatcher would refuse. */}
+                {draftCodeLess.length > 0 &&
+                  (requestAvailability.kind !== 'held' ? (
+                    <div className="w-full">
+                      <HandoffNotice
+                        availability={requestAvailability}
+                        testId="handoff-materialrequest-submit-wizard"
+                      />
+                    </div>
+                  ) : !requestMarked ? (
+                    <Button
+                      variant="secondary"
+                      onClick={() => setRequestMarked(true)}
+                      data-testid="material-request-offer"
+                    >
+                      {t('sourcing.wizard.materials.requestOffer')}
+                    </Button>
+                  ) : (
+                    <div className="w-full space-y-2" data-testid="material-request-marked">
+                      <p className="text-xs text-text-secondary">
+                        {t('sourcing.wizard.materials.requestOffer.marked', {
+                          materials: draftCodeLess.map((e) => e.label).join(', '),
+                        })}
+                      </p>
+                      <label className="block">
+                        <span className="text-label text-text-tertiary uppercase block mb-1.5">
+                          {t('sourcing.wizard.materials.requestNeed')}
+                        </span>
+                        <textarea
+                          value={requestNeed}
+                          onChange={(e) => setRequestNeed(e.target.value)}
+                          rows={2}
+                          className="w-full border border-border-input rounded px-3 py-2 text-sm"
+                          data-testid="material-request-need-wizard"
+                        />
+                        <span className="text-xs text-text-tertiary mt-1 block">
+                          {t('sourcing.wizard.materials.requestNeed.hint')}
+                        </span>
+                      </label>
+                      <Button
+                        variant="secondary"
+                        onClick={() => {
+                          setRequestMarked(false);
+                          setRequestNeed('');
+                        }}
+                        data-testid="material-request-offer-undo"
+                      >
+                        {t('sourcing.wizard.materials.requestOffer.undo')}
+                      </Button>
+                    </div>
+                  ))}
               </div>
             ) : (
               <p className="text-sm text-text-tertiary">
@@ -2804,6 +3012,34 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
       >
         {selectedRfq && (
           <div className="space-y-6">
+            {/* ── R8 · MATERIAL REQUESTS RAISED FROM THIS EVENT ──────────────
+                ⚠️ **IT REPORTS, AND IT PROMISES NOTHING ABOUT THIS EVENT.**
+                Both strings say the event is unchanged, and the decided one
+                says it explicitly for BOTH endings, because an approved request
+                is the reading most likely to be taken as "the material resolved
+                now". It cannot have: `materialIds` was fixed at creation by
+                `codesOfKeys`, and no verb in this platform edits an RFQ's
+                materials afterwards. */}
+            {requestsForSelected.length > 0 && (
+              <section
+                className="text-xs text-text-tertiary border border-border-subtle rounded-md p-3"
+                data-testid="rfq-material-request-line"
+              >
+                {requestsForSelected.some((r) => r.status === 'Submitted' || r.status === 'Under Review')
+                  ? t('sourcing.detail.materialRequest.pending', {
+                      materials: requestsForSelected
+                        .filter((r) => r.status === 'Submitted' || r.status === 'Under Review')
+                        .map((r) => r.requestedLabel)
+                        .join(', '),
+                    })
+                  : t('sourcing.detail.materialRequest.decided', {
+                      materials: requestsForSelected.map((r) => r.requestedLabel).join(', '),
+                      status: requestsForSelected
+                        .map((r) => t(`materialRequests.status.${r.status}`))
+                        .join(', '),
+                    })}
+              </section>
+            )}
             {selectedRfq.status === 'Awarded' && (
               <section className="bg-success-soft border border-success/30 rounded-md p-4">
                 <div className="flex items-center gap-2 mb-3">

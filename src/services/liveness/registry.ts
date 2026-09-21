@@ -65,6 +65,10 @@ export type Capability =
   // target (gate-1 LIVE) and harvest-gated below, for the reason every other
   // demo-submission lane is: a form nobody real has filled in is not a source.
   | 'supplierApplications'
+  // R8 — the material-request lane. Backed by the WIRED materialRequest target
+  // (gate-1 LIVE) and harvest-gated below: the corpus is a seed plus whatever
+  // a demo operator raises, and a request nobody real has made is not a source.
+  | 'materialRequests'
   | 'commodityIntel'
   | 'forecastPublications'
   | 'deliveryAgreements'
@@ -135,6 +139,12 @@ const CAPABILITY_BACKING: Record<Capability, string | null> = {
   // supplierDocuments, and named against the same F1 prerequisite so the two
   // cannot drift apart.
   supplierApplications: 'supplierApplication',
+  // R8 — the materialRequest CommandTarget is WIRED (flow and target in one
+  // commit), so gate-1 derives LIVE and a decision genuinely dispatches.
+  // Gate-2 below stays SHUT: every row is grown by the seed or by a demo
+  // submission, so the pill keeps reading Sample and green stays structurally
+  // unreachable. Same two-edit flip shape as supplierApplications.
+  materialRequests: 'materialRequest',
   // CI-0 — the Market Intelligence tab reads invented category trend stats with NO
   // lifecycle entity behind them. Null backing → derives SIMULATED → the shared
   // LivenessPill renders amber "Sample"; green is structurally unreachable. When a
@@ -238,6 +248,16 @@ const HARVEST_GATED: Partial<Record<Capability, HarvestGate>> = {
   supplierApplications: {
     readinessNoteKey: 'widget.honesty.awaitingSupplierIdentities',
     source: 'F1 identities',
+  },
+  // R8 — a wired target, a seed and two live buyer doors still add up to zero
+  // material requests anybody outside this demo has made, AND to zero master
+  // data arriving back. The second half is the one this entry names: the lane
+  // records a DECISION and the material is created in S/4, which this platform
+  // does not observe — so green cannot mean "the material now exists", and the
+  // note says what is actually being waited for.
+  materialRequests: {
+    readinessNoteKey: 'widget.honesty.awaitingMasterData',
+    source: 'S/4 material master',
   },
   // SDC-1 — the forecast publications the planner consolidates are SIMULATED
   // fixtures on the C8 grain; the real producer is the SOMO C8 feed (deferred

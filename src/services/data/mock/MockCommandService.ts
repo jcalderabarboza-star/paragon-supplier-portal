@@ -30,6 +30,7 @@ import type {
   SupplierDocumentCategory,
   SupplierDocumentStatus,
   SupplierApplicationStatus,
+  MaterialRequestStatus,
   SupplierApplicationDeclaration,
 } from '../types';
 import type {
@@ -40,9 +41,11 @@ import type {
 } from '../../../data/mockGoodsReceipts';
 import { supplierDocumentStore } from './stores/supplierDocumentStore';
 import { supplierApplicationStore } from './stores/supplierApplicationStore';
+import { materialRequestStore } from './stores/materialRequestStore';
 import { VENDOR_BEARING_REQUEST_TYPE } from '../../transitions/flows/supplierApplication.flow';
 import { NO_PERSON } from '../../../context/noPerson';
 import type { RFQ, RFQStatus, RFQCategory } from '../../../data/mockRfqs';
+import type { CodeLessReason } from '../../../data/materialCatalogReason';
 import type { Quotation, QuotationStatus } from '../../../data/mockQuotations';
 import { BASE_CURRENCY, type BidCurrency } from '../../../lib/currencyPolicy';
 import type { FxPinSource } from '../../../lib/fxPin';
@@ -1813,6 +1816,141 @@ const supplierApplicationTarget: CommandTarget = {
   },
 };
 
+// ────────────────────────────────────────────────────────────────────────────
+// R8 · MATERIAL REQUEST — the record behind asking for a material that does
+// not exist.
+//
+// ⚠️ **THIS TARGET SHIPS IN THE SAME COMMIT AS ITS FLOW, BY RULING.** The
+// target-less set (`getKnownFlows()` ∖ `WIRED_COMMAND_TARGETS`) is a real
+// population and every member is a machine whose verbs cannot fire. One more —
+// even for one merge — would be a lane that LOOKS built on
+// `/buyer/process-flows` and refuses everything.
+// ────────────────────────────────────────────────────────────────────────────
+const materialRequestTarget: CommandTarget = {
+  readState: (id) => materialRequestStore.get(id)?.status ?? null,
+  // ⚠️ **NULL ALWAYS — AND IT MEANS "NO SUPPLIER MAY ACT ON THIS", NOT
+  // "NOTHING TO COMPARE".** The `purchaseRequisitionTarget` /
+  // `supplierApplicationTarget` shape: a buyer-side collection every buyer seat
+  // reads as one queue. A material request has no tenant — a REQUESTER is a
+  // buyer seat, not a supplier — and `raisedFromRfqId` is deliberately NOT
+  // returned here: it says which EVENT the request came from, and returning it
+  // would be comparing an RFQ id against `scope.supplierId`, which is not a
+  // tenancy statement at all.
+  readScopeOwner: () => null,
+  readEntity: (id) => materialRequestStore.get(id) ?? null,
+  // ⚠️ **`toState` IS THE ONLY DISCRIMINATOR AVAILABLE — `applyTransition`
+  // RECEIVES NO transitionId — AND ON THIS FLOW IT IS SUFFICIENT, WHICH IS A
+  // FACT ABOUT THE MACHINE AND NOT A CONVENTION.** Each of the three states
+  // written below has exactly ONE inbound edge (`Under Review` ←
+  // t_materialrequest_start_review, `Approved` ← t_materialrequest_approve,
+  // `Rejected` ← t_materialrequest_reject); `Submitted` is reached only through
+  // `create`. **Derive it from `materialRequest.flow.ts` before adding a
+  // fourth**: a state that gains a second inbound edge makes one of these
+  // writes fire on the wrong verb, silently. `materialRequest.flow.test.ts`
+  // asserts the one-inbound-edge property so this comment cannot go stale
+  // without a spec going red.
+  applyTransition: (id, toState, payload, scope) => {
+    materialRequestStore.update(id, (r) => ({
+      ...r,
+      status: toState as MaterialRequestStatus,
+      // Picking it up is a fact with a time. `null` until then, never a guessed
+      // date — the queue's whole question is who has not started.
+      ...(toState === 'Under Review' ? { reviewStartedAt: new Date().toISOString() } : {}),
+      // ⚠️ **WHO DECIDED, FROM THE SESSION AND NEVER FROM `payload`** (C10
+      // §6.2, the shape `PR_APPROVAL_ATTRIBUTED` established). Today it is
+      // always `UNATTRIBUTED: NO_PERSON_IN_SESSION`, which is the honest
+      // absence a name-shaped payload field could never be — and it is what
+      // `MATERIALREQUEST_DECIDER_NOT_REQUESTER` will compare the day F1 lands.
+      ...(toState === 'Approved'
+        ? { decidedAt: new Date().toISOString(), decidedBy: scope.actor ?? NO_PERSON }
+        : {}),
+      // The refusal trio, written together or not at all. `justification` is a
+      // `requiredField` AND is proven non-blank by
+      // `MATERIALREQUEST_REFUSAL_AUTHORED` before this runs — so no re-check and
+      // no fallback: a fallback here would be the write admitting it does not
+      // trust the guard standing in front of it.
+      ...(toState === 'Rejected'
+        ? {
+            decidedAt: new Date().toISOString(),
+            decidedBy: scope.actor ?? NO_PERSON,
+            justification: String(payload.justification).trim(),
+          }
+        : {}),
+    }));
+  },
+  // ── ⚠️ THE RFQ RESOLUTION. A PAYLOAD ECHO IS NOT A RESOLUTION ─────────────
+  //
+  // `raisedFromRfqId` is matched against the RFQ store, and an unknown one
+  // resolves to `null`. This is the ONE resolver — the policy hook
+  // `MATERIALREQUEST_RFQ_RESOLVED` calls THIS function through `ctx.target`
+  // rather than re-implementing the lookup, so there is no second copy to drift
+  // and the store stays in the layer that owns it.
+  //
+  // ⚠️ **`requireCreationOwner` IS DELIBERATELY NOT SET, AND THAT IS MEASURED
+  // RATHER THAN PREFERRED.** The flag is per-TARGET and all-or-nothing: the
+  // dispatcher refuses ANY buyer creation whose owner is null. A STANDALONE
+  // request names no RFQ BY DEFINITION, so its owner is legitimately null — the
+  // flag would refuse the entire page entrance, which is one of the two doors
+  // the operator ruled for. What the flag exists to prevent is preserved at the
+  // hook instead, where a conditional obligation can be expressed; what would
+  // be LOST by setting it is half the lane.
+  //
+  // ⚠️ **AND IT IS NOT A TENANCY OWNER.** `readScopeOwner` returns null
+  // regardless; this value is written to `resolvedRfqId` and read by nothing
+  // that scopes. Conflating the two is how a request would become visible to a
+  // supplier invited to the event it came from, which is not a thing this
+  // models.
+  creationOwner: (payload) => {
+    const stated =
+      typeof payload.raisedFromRfqId === 'string' ? payload.raisedFromRfqId.trim() : '';
+    if (stated === '') return null;
+    const match = rfqStore.all().find((r) => r.id === stated || r.rfqNumber === stated);
+    return match ? match.id : null;
+  },
+  create: (payload, toState, scope) => {
+    const id = materialRequestStore.nextId();
+    const str = (k: string) => (typeof payload[k] === 'string' ? (payload[k] as string) : '');
+    const orNull = (k: string) => {
+      const v = str(k).trim();
+      return v === '' ? null : v;
+    };
+    // Proven a permitted member by `MATERIALREQUEST_CATEGORY_KNOWN` before this
+    // runs, so it is read rather than re-validated.
+    materialRequestStore.add({
+      id,
+      requestNumber: materialRequestStore.numberFor(id),
+      status: toState as MaterialRequestStatus,
+      // The literal `null` the type demands. See `types.ts`: this row exists
+      // BECAUSE there is no code, and the literal is what makes assigning one a
+      // `tsc` failure rather than a review comment.
+      materialCode: null,
+      requestedLabel: str('requestedLabel').trim(),
+      category: str('category') as RFQCategory,
+      need: str('need').trim(),
+      // Proven a member WHEN PRESENT by the same hook. Absent is legal — a
+      // standalone request picked nothing from the catalog.
+      catalogReason: (orNull('catalogReason') as CodeLessReason | null),
+      // Resolved, never echoed — the same function the hook proved non-null for
+      // a request that named an event, so the two cannot disagree.
+      raisedFromRfqId: materialRequestTarget.creationOwner?.(payload) ?? null,
+      // `null` rather than `''` when absent: an empty string reads as "they
+      // typed nothing", and for a standalone request nobody was ever asked.
+      specification: orNull('specification'),
+      // ⚠️ UNVALIDATED BY DESIGN (operator ruling) — the requester's claim, in
+      // their words. There is no single UOM union in this tree to validate
+      // against; see the field's own doc comment for the measurement.
+      expectedUom: orNull('expectedUom'),
+      submittedAt: new Date().toISOString(),
+      submittedBy: scope.actor ?? NO_PERSON,
+      reviewStartedAt: null,
+      decidedAt: null,
+      decidedBy: null,
+      justification: null,
+    });
+    return { entityId: id };
+  },
+};
+
 const TARGETS: Record<string, CommandTarget> = {
   purchaseOrder: purchaseOrderTarget,
   advanceShipNotice: advanceShipNoticeTarget,
@@ -1837,6 +1975,10 @@ const TARGETS: Record<string, CommandTarget> = {
   // B1 — the onboarding lane's write path. Ships in the same commit as its
   // flow so the entity never joins the target-less set, not even for one merge.
   supplierApplication: supplierApplicationTarget,
+  // R8 — the material-request lane's write path. Ships in the same commit as
+  // its flow so the entity never joins the target-less set, not even for one
+  // merge. It mints no code, writes to no catalog, and touches no RFQ.
+  materialRequest: materialRequestTarget,
 };
 
 // The behavior-wiring census (was the contract package's "6"; 7 with the G1.1

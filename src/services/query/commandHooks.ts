@@ -17,6 +17,8 @@ import { useCurrentIdentity } from '../../context/CurrentIdentityContext';
 import { scopeKey } from './useServiceQuery';
 import type { BidCurrency } from '../../lib/currencyPolicy';
 import type { FxPinSource } from '../../lib/fxPin';
+import type { RFQCategory } from '../../data/mockRfqs';
+import type { CodeLessReason } from '../../data/materialCatalogReason';
 import type {
   CommandResult,
   CommandStatus,
@@ -1396,6 +1398,183 @@ export function useApplicationReject() {
         entity: 'supplierApplication',
         entityId: applicationId,
         payload: { rejectionReason },
+      }),
+    onSuccess: (result) => {
+      if (result.status !== 'failed') invalidate(scope);
+    },
+  });
+}
+
+// ── R8 · THE MATERIAL-REQUEST LANE ──────────────────────────────────────────
+//
+// Four verbs, four hooks, one per act — the `useApplication*` shape, because
+// the lane is that lane one document over: a buyer-side collection whose acts
+// are gated per atom and whose refusals reach the operator through the
+// dispatcher's own channel rather than an invented message.
+//
+// ── ⚠️ THE PAYLOAD IS TYPED HERE, AND THE APPLICATION LANE'S REASON FOR NOT
+//    TYPING ITS OWN IS ANSWERED RATHER THAN IGNORED ─────────────────────────
+//
+// `ApplicationSubmitVars.payload` is `Record<string, unknown>` on an express
+// ground, quoted so it is argued with rather than contradicted:
+//
+//     "a narrower type here would be a SECOND statement of what the verb
+//      requires, sitting one layer above `APPLICATION_BIRTH_FIELDS` and the
+//      three policy hooks, free to drift from them and impossible to falsify
+//      from either side."
+//
+// **That reason is sound for a ONE-ENTRANCE verb and it does not hold here.**
+// The difference is measurable, not stylistic:
+//
+//   · `useApplicationSubmit` has ONE call site (derived:
+//     `BuyerSupplierApplications.tsx`). With one entrance there is nothing for
+//     a field set to drift BETWEEN, so a type buys nothing and costs what the
+//     quote says.
+//   · `t_materialrequest_submit` has TWO entrances by operator ruling — the RFQ
+//     wizard and the standalone page.
+//   · **`usePurchaseRequisitionCreate` is what two-plus entrances on an untyped
+//     payload actually look like, measured in this tree today**: four call
+//     sites, `PrCreateVars.payload: Record<string, unknown>`, and
+//     `t_pr_create`'s `requiredFields` is only `['material','quantity']` — so
+//     the plan grid sends `{material, quantity, uom, estimatedValue,
+//     requiredDate, source}` while `BuyerRequisitions` sends `{material,
+//     quantity, uom, requiredDate, costCenter, priority, justification}`, the
+//     target reads the UNION of eleven keys, and **each entrance's absences
+//     become silent defaults** (`str()` → `''`, `num()` → `0`). A
+//     `BuyerRequisitions`-raised PR carries `estimatedValue: 0`, which is
+//     `RFQ.estimatedValue`'s retired defect — *"a budget of nothing is a
+//     different claim from no budget at all"* — living one entity over.
+//
+// ⚠️ **AND THE "SECOND STATEMENT THAT CAN DRIFT" OBJECTION IS CLOSED, NOT
+// ACCEPTED AS A COST.** `materialRequestPayload.test.ts` pins this interface's
+// REQUIRED keys EQUAL to `MATERIAL_REQUEST_BIRTH_FIELDS`, derived from the flow
+// by the TypeScript compiler API — so the type and the verb cannot drift in
+// either direction, and the thing the quote calls "impossible to falsify from
+// either side" is falsifiable from both.
+
+/**
+ * The `t_materialrequest_submit` payload, TYPED — so an entrance that omits a
+ * field is a `tsc` failure rather than a silent default.
+ *
+ * ⚠️ **OPTIONALITY HERE MIRRORS THE FLOW EXACTLY AND IS NOT A JUDGEMENT.** The
+ * three required keys are `MATERIAL_REQUEST_BIRTH_FIELDS`; the four optional
+ * ones are the fields a STANDALONE request legitimately lacks, which is why
+ * they are not `requiredFields` (that list is flat and cannot say "required
+ * when"). `raisedFromRfqId`'s conditional obligation lives in
+ * `MATERIALREQUEST_RFQ_RESOLVED`.
+ */
+export interface MaterialRequestSubmitPayload {
+  readonly requestedLabel: string;
+  readonly category: RFQCategory;
+  readonly need: string;
+  /** The catalog entry's own reason, when the request came from a pick. */
+  readonly catalogReason?: CodeLessReason;
+  /** The sourcing event it was discovered on. RESOLVED by the target, never
+   *  echoed — so a wrong id is refused rather than stored. */
+  readonly raisedFromRfqId?: string;
+  readonly specification?: string;
+  /** The requester's claim, unvalidated by ruling — there is no single UOM
+   *  union in this tree to validate against. */
+  readonly expectedUom?: string;
+}
+
+export interface MaterialRequestSubmitVars {
+  payload: MaterialRequestSubmitPayload;
+}
+
+/**
+ * Raise a material request (`materialrequest:submit`, the `procurement` lane).
+ *
+ * ⚠️ **BOTH ENTRANCES COME THROUGH HERE, AND NEITHER BUILDS ITS OWN PAYLOAD.**
+ * `buildMaterialRequestPayload` is the one builder (§84 — the ENTRANCE is the
+ * unit, not the surface and not the verb), and
+ * `materialRequestEntrances.test.ts` derives the calling components from source
+ * and asserts every one routes through it, with a known-FALSE control.
+ */
+export function useMaterialRequestSubmit() {
+  const svc = useDataService();
+  const scope = useScope();
+  const invalidate = useInvalidateProcurement();
+
+  return useMutation<CommandResult, Error, MaterialRequestSubmitVars>({
+    mutationFn: ({ payload }) =>
+      svc.commands.dispatch(scope, {
+        transitionId: 't_materialrequest_submit',
+        entity: 'materialRequest',
+        payload: { ...payload },
+      }),
+    onSuccess: (result) => {
+      if (result.status !== 'failed') invalidate(scope);
+    },
+  });
+}
+
+/** Pick a request off the master-data queue (`materialrequest:review`). */
+export function useMaterialRequestStartReview() {
+  const svc = useDataService();
+  const scope = useScope();
+  const invalidate = useInvalidateProcurement();
+
+  return useMutation<CommandResult, Error, { requestId: string }>({
+    mutationFn: ({ requestId }) =>
+      svc.commands.dispatch(scope, {
+        transitionId: 't_materialrequest_start_review',
+        entity: 'materialRequest',
+        entityId: requestId,
+        payload: {},
+      }),
+    onSuccess: (result) => {
+      if (result.status !== 'failed') invalidate(scope);
+    },
+  });
+}
+
+/**
+ * Accept the request for creation (`materialrequest:decide`).
+ *
+ * ⚠️ **THIS MINTS NOTHING.** No payload, no code, no catalog write, no cascade.
+ * It records that the request was accepted, and the decision's attribution
+ * comes from the SESSION inside the target (C10 §6.2) — a caller-supplied
+ * decider would be attribution by assertion.
+ */
+export function useMaterialRequestApprove() {
+  const svc = useDataService();
+  const scope = useScope();
+  const invalidate = useInvalidateProcurement();
+
+  return useMutation<CommandResult, Error, { requestId: string }>({
+    mutationFn: ({ requestId }) =>
+      svc.commands.dispatch(scope, {
+        transitionId: 't_materialrequest_approve',
+        entity: 'materialRequest',
+        entityId: requestId,
+        payload: {},
+      }),
+    onSuccess: (result) => {
+      if (result.status !== 'failed') invalidate(scope);
+    },
+  });
+}
+
+/**
+ * Decline the request (`materialrequest:decide`).
+ *
+ * `justification` is a `requiredField` AND is proven non-blank by
+ * `MATERIALREQUEST_REFUSAL_AUTHORED`, so the surface's disabled button is a
+ * COURTESY MIRROR of the policy rather than the policy.
+ */
+export function useMaterialRequestReject() {
+  const svc = useDataService();
+  const scope = useScope();
+  const invalidate = useInvalidateProcurement();
+
+  return useMutation<CommandResult, Error, { requestId: string; justification: string }>({
+    mutationFn: ({ requestId, justification }) =>
+      svc.commands.dispatch(scope, {
+        transitionId: 't_materialrequest_reject',
+        entity: 'materialRequest',
+        entityId: requestId,
+        payload: { justification },
       }),
     onSuccess: (result) => {
       if (result.status !== 'failed') invalidate(scope);

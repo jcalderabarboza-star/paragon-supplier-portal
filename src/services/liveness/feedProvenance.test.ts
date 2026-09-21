@@ -62,6 +62,14 @@ describe('feed provenance — the second axis', () => {
       // move an application through the machine, and every row on the page was
       // grown by a seed rather than submitted by anybody outside.
       'supplierApplications',
+        // R8 - materialRequests joins the partly-real class, and it is the
+        // member where the two axes are FURTHEST apart: the verbs are real
+        // (master data genuinely moves a request through the machine) while the
+        // feed is a seed AND the thing the lane is about - a material code -
+        // never arrives through any feed at all, because S/4 issues it and this
+        // platform does not observe that. Verbs real, feed fixture, subject
+        // off-platform.
+        'materialRequests',
         // S82 - supplierDocuments joins the partly-real class and is the
         // sharpest member of it: a supplier can now DECLARE a certificate
         // through a wired verb while every row the page shows was authored as a

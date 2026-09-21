@@ -104,6 +104,10 @@ import type {
 } from '../../data/mockObligations';
 
 import type { RFQ, RFQStatus, RFQCategory } from '../../data/mockRfqs';
+// R8 — the catalog's code-less reason union, reused on `MaterialRequest` rather
+// than mirrored. It sits in `src/data/` precisely so this import is not a
+// service→page inversion; see that file's header.
+import type { CodeLessReason } from '../../data/materialCatalogReason';
 import type { Quotation, QuotationStatus } from '../../data/mockQuotations';
 
 // ─── Re-exports — entities without drift, single source ─────────────────────
@@ -1688,6 +1692,17 @@ export interface IProcurementService {
   // reused deliberately rather than invented.
   getSupplierApplications(scope: QueryScope): Promise<Page<SupplierApplication>>;
 
+  // ── R8 · THE MATERIAL-REQUEST QUEUE ────────────────────────────────────────
+  //
+  // ⚠️ **THE PERSONA GATE IS THE WHOLE TENANCY ANSWER HERE TOO, AND FOR A
+  // DIFFERENT REASON THAN THE APPLICATION QUEUE'S.** There an applicant has no
+  // tenancy; here the REQUESTER is a buyer seat, so there is no supplier to
+  // narrow by on either side of the row. A supplier scope gets `[]` — not a
+  // refusal, because a refusal would tell a supplier that a collection it may
+  // not read EXISTS. Empty is the quieter answer, and it is also the literal
+  // truth: no supplier has a material request.
+  getMaterialRequests(scope: QueryScope): Promise<Page<MaterialRequest>>;
+
   // — Buyer command-center aggregates (buyer-only) —
   getProductionLines(scope: QueryScope): Promise<Page<ProductionLineRow>>;
   getSupplierHealth(scope: QueryScope): Promise<Page<SupplierHealthRow>>;
@@ -1976,4 +1991,166 @@ export interface SupplierApplication {
   readonly decidedBy: ActorAttribution | null;
   /** Present only on a refusal, proven non-blank by the verb before it is written. */
   readonly rejectionReason: string | null;
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// R8 · MATERIAL REQUEST — the record behind asking for a material that does
+// not exist.
+//
+// Fourteen of the RFQ catalog's 23 entries are `CODE_LESS`: the material master
+// does not carry them. A buyer can raise an RFQ on one and the event competes
+// honestly — `codesOfKeys` is a FILTER, so a code-less pick puts NOTHING on
+// `materialIds` — but until this entity there was no way to ask the team to
+// create the material. The gap was permanent from the portal's side.
+//
+// ⚠️ **AND THE DEFECT IS SILENCE, NOT A FALSE CLAIM — WHICH IS WHERE THIS LANE
+// DIFFERS FROM ITS OWN PRECEDENT.** `supplierApplication` exists because
+// `/register` minted `APP-2026-{random}` and told an outsider a numbered
+// application existed when nothing recorded that it did. Nothing here tells a
+// buyer a material will be created. The remedy is therefore a door, not a
+// retraction — and the copy on it must not become the thing B1 had to delete.
+//
+// ── ⚠️ `materialCode: null` IS A LITERAL TYPE, AND THAT IS THE ENFORCEMENT ───
+//
+// Quoted from the precedent this copies, `SupplierApplication.supplierId`:
+//
+//     "A LITERAL type makes the ruling checkable: assigning a supplier id here
+//      is a `tsc` failure, not a review comment, and `readScopeOwner` cannot be
+//      quietly widened later without the type going red first."
+//
+// The same shape for the same reason, one field over. **A material request must
+// never carry a master code**, and a prefix rule cannot say so: C9 §3 —
+// *"No prefix stability is promised, ever. Nothing may parse a material code."*
+// — forbids a prefix being load-bearing anywhere, and this tree holds no
+// branded or nominal types (derived at authoring: zero `__brand`, zero
+// `unique symbol` in `src`). The literal is the one type-level enforcement the
+// tree already sanctions.
+//
+// ── ⚠️ AND THERE IS NO ISSUED-CODE FIELD, ON THREE INDEPENDENT GROUNDS ───────
+//
+//   (i)   `materialIdentity.test.ts` derives `CODE_FIELDS` by VALUE OVERLAP with
+//         `MATERIAL_MASTER`'s keys — a fixed-point closure, not a list. A field
+//         here holding a real master code would be ADMITTED UNAIDED and redden
+//         the four-member pin, exactly as `materialCodes` was admitted the day
+//         the compliance registry was re-keyed onto real codes.
+//   (ii)  **Nothing in this tree observes S/4 issuing a code.** `MATERIAL_MASTER`
+//         is a frozen fixture with no feed, so the field could only ever be
+//         filled by hand — a snapshot with no update path, true when it was
+//         typed and quietly false afterwards.
+//   (iii) It would make this row a second place a master code lives, which is
+//         the two-vocabulary class this tree has measured twice: the compliance
+//         registry's `RM-SAMPLE-…` codes ∩ master = ∅, and the catalog's 23
+//         display strings ∩ master keys = ∅ before the codes landed.
+//
+// **So the request ENDS.** The catalog gains a `CODED` row later as a reviewed
+// source edit, and the two are NOT linked. A reader asking *"did this ever get
+// a code?"* reads the catalog, which is the only place that can answer.
+// ────────────────────────────────────────────────────────────────────────────
+
+/** The four states a material request can be in. Clock-free (law 0.5). */
+export type MaterialRequestStatus =
+  | 'Submitted'
+  | 'Under Review'
+  | 'Approved'
+  | 'Rejected';
+
+export interface MaterialRequest {
+  /** Store-assigned. The store mints identity, never the caller. */
+  readonly id: string;
+  /**
+   * The human-readable reference, store-assigned and minted in the SAME step as
+   * the id so the two can never disagree.
+   *
+   * ⚠️ **THE `MR-` PREFIX IS HYGIENE, NOT ENFORCEMENT, AND SAYING SO IS THE
+   * POINT.** Measured free at authoring — `MR-` occurs ZERO times across `src` +
+   * `docs` + `gate` + `scripts`, with `RM-` at 774 and `APP-` at 16 by the same
+   * matcher in the same run — but C9 §3 forbids a prefix deciding anything, so
+   * nothing may parse this. What keeps a request out of the code space is
+   * `materialCode: null` below and `codesOfKeys` downstream.
+   */
+  readonly requestNumber: string;
+  readonly status: MaterialRequestStatus;
+  /**
+   * ⚠️ **ALWAYS `null`, AND THE LITERAL TYPE IS THE ENFORCEMENT.** See the
+   * header. This row exists BECAUSE there is no code; a field that could hold
+   * one would be the request contradicting its own reason for existing.
+   */
+  readonly materialCode: null;
+  /**
+   * The material's name in the buyer's words.
+   *
+   * ⚠️ **THEIR WORDS, UNVERIFIED, NEVER A JOIN KEY** —
+   * `SupplierApplicationDeclaration.reference`'s rule. Nothing resolves this
+   * against the master, because the whole premise is that the master does not
+   * carry it.
+   */
+  readonly requestedLabel: string;
+  /** Reuses the wizard's own closed category union (`RFQCategory`). Membership
+   *  is proven by the verb, never trusted: `requiredFields` proves presence. */
+  readonly category: RFQCategory;
+  /** Why the buyer needs it — the one field a master-data person acts on.
+   *  Proven non-blank by a policy hook, because the dispatcher's emptiness
+   *  check admits a string of spaces. */
+  readonly need: string;
+  /**
+   * WHY the catalog carries no code for this material, when the request came
+   * from a catalog pick.
+   *
+   * ⚠️ **THE EXISTING `CodeLessReason` UNION, REUSED RATHER THAN MIRRORED.** The
+   * four reasons already have different futures authored into them — a
+   * `NO_MASTER_TARGET` waits on master data, an `AMBIGUOUS_IN_MASTER` waits on a
+   * human to choose, a `NOT_A_MATERIAL` will never acquire a code at all — which
+   * is precisely the triage a reviewer needs. A parallel union here would be the
+   * copy that drifts. `null` for a standalone request, where nothing was picked.
+   */
+  readonly catalogReason: CodeLessReason | null;
+  /**
+   * The sourcing event this request was discovered on, RESOLVED against the RFQ
+   * store at birth — never the payload's word for it (`creationOwner`'s rule:
+   * *"A PAYLOAD ECHO IS NOT A RESOLUTION"*). `null` for a standalone request.
+   *
+   * ⚠️ **PROVENANCE, NOT A DEPENDENCY.** The RFQ does not read this and does not
+   * change because of it. Nothing in this platform can edit an RFQ's materials
+   * after creation, so a request can never make that event's material resolve.
+   */
+  readonly raisedFromRfqId: string | null;
+  /** A specification or a link. `null` rather than `''` — an empty string reads
+   *  as "they typed nothing", and for a standalone request nobody was asked. */
+  readonly specification: string | null;
+  /**
+   * The unit the requester expects.
+   *
+   * ⚠️ **UNVALIDATED FREE TEXT, AND LABELLED AS THE REQUESTER'S CLAIM** (operator
+   * ruling). Measured at authoring: this tree carries THREE distinct UOM value
+   * sets with no mapper between them — `{KG,PCS,L,MT}` (`RFQ['uom']`,
+   * `RFQ_UOM_OPTIONS`, `RFQ_UOMS`, `QuoteUom`), `{KG,PCS,L,ROLL}` (`Uom`, the
+   * type of `MATERIAL_MASTER.canonicalUom`) and `{KG,L,PCS,MT,BOX}`
+   * (`BuyerRequisitions`). **There is no single union to reuse**, and minting a
+   * fourth for this lane is the two-vocabulary class in miniature.
+   *
+   * ⚠️ **AND THE DIVERGENCE IS TYPE-LEVEL, NOT LIVE — measured, and DELIBERATELY
+   * NOT FILED AS A DEFECT.** All 42 master rows are `KG` (31) or `PCS` (11);
+   * `ROLL`, `MT` and `BOX` are each declared in exactly one place and used by no
+   * master row, so the set inexpressible in `RFQ['uom']` is EMPTY today. It is
+   * recorded here as the REASON this field is text, never as a finding.
+   */
+  readonly expectedUom: string | null;
+  readonly submittedAt: string;
+  /**
+   * ⚠️ **ALWAYS `UNATTRIBUTED` IN THIS TREE, AND THE TYPE KEEPS IT HONEST.**
+   * Typing this as `ActorAttribution` rather than `string` means a surface must
+   * RENDER the unattributed state instead of printing a name it does not have —
+   * and it is what makes four-eyes a ONE-LINE PREDICATE the day identity
+   * resolves rather than a migration. See
+   * `MATERIALREQUEST_DECIDER_NOT_REQUESTER`, which states what it does today.
+   */
+  readonly submittedBy: ActorAttribution;
+  /** When somebody picked it up. `null` until they did — never a guessed date.
+   *  The queue's whole question is which requests nobody has started. */
+  readonly reviewStartedAt: string | null;
+  readonly decidedAt: string | null;
+  readonly decidedBy: ActorAttribution | null;
+  /** Present only on a refusal, proven non-blank by the verb before it is
+   *  written. The whole account of the decision anybody will ever have. */
+  readonly justification: string | null;
 }
