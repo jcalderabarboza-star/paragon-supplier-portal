@@ -17,6 +17,8 @@ import { SUPPLIER_SCORECARDS } from './fixtures/buyerScorecard';
 import { purchaseRequisitionStore } from './stores/purchaseRequisitionStore';
 import { supplierApplicationStore } from './stores/supplierApplicationStore';
 import { materialRequestStore } from './stores/materialRequestStore';
+import { pslStore } from './stores/pslStore';
+import type { PslListing } from '../pslListing';
 import {
   INITIAL_CATALOG,
   INITIAL_CERTS,
@@ -554,6 +556,21 @@ export class MockProcurementService implements IProcurementService {
   async getMaterialRequests(scope: QueryScope): Promise<Page<MaterialRequest>> {
     if (scope.personaType !== 'buyer') return { items: [] };
     return { items: [...materialRequestStore.all()] };
+  }
+
+  // PSL P3 — the preferred supplier list. Reads the mutable store, so a row
+  // grown through `t_psl_propose` is list-visible exactly as a dispatched
+  // application is, and a designation changed a moment ago renders changed.
+  //
+  // ⚠️ **THE PERSONA GATE IS NOT TIDINESS HERE — IT IS THE SUPPLIER-READ
+  // BOUNDARY.** Every other buyer-only collection in this file has no
+  // `supplierId` to narrow by; a PSL listing carries one, because the supplier
+  // is the SUBJECT of the decision. Narrowing by it would ship the
+  // supplier-facing read `pslNoSupplierRead.test.ts` refuses and that operator
+  // ruling R7 puts in P4. A supplier scope reads `[]`, published or not.
+  async getPslListings(scope: QueryScope): Promise<Page<PslListing>> {
+    if (scope.personaType !== 'buyer') return { items: [] };
+    return { items: [...pslStore.all()] };
   }
 
   // ─── Buyer command-center aggregates (buyer-only) ─────────────────────────

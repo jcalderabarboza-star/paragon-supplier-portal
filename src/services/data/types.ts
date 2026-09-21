@@ -147,6 +147,8 @@ export type {
 
 // ─── Identity scope — derived from CurrentIdentity at the page boundary ─────
 
+import type { PslListing } from './pslListing';
+
 export interface QueryScope {
   personaType: 'buyer' | 'supplier';
   supplierId: string | null;
@@ -1702,6 +1704,23 @@ export interface IProcurementService {
   // not read EXISTS. Empty is the quieter answer, and it is also the literal
   // truth: no supplier has a material request.
   getMaterialRequests(scope: QueryScope): Promise<Page<MaterialRequest>>;
+
+  // ── PSL P3 · THE PREFERRED SUPPLIER LIST ──────────────────────────────────
+  //
+  // ⚠️ **BUYER-ONLY, AND THIS IS THE ONE COLLECTION WHERE THE PERSONA GATE IS
+  // LOAD-BEARING RATHER THAN TIDY.** A PSL listing NAMES a supplier — the
+  // supplier is its SUBJECT — so unlike the two queues above there genuinely
+  // IS a `supplierId` a naive implementation could narrow by, and narrowing by
+  // it would ship the supplier-facing read that `pslNoSupplierRead.test.ts`
+  // exists to refuse and that P4 has not been designed yet.
+  //
+  // Operator ruling R5: a listing is INTERNAL until the team deliberately
+  // PUBLISHES it, and only then may the supplier see its own status. **P3
+  // builds the publish ACT and no supplier surface.** So a supplier scope
+  // reads `[]` here — published or not, and the emptiness is not a placeholder
+  // for a later filter: the supplier view is a different read with a different
+  // shape, and it is P4.
+  getPslListings(scope: QueryScope): Promise<Page<PslListing>>;
 
   // — Buyer command-center aggregates (buyer-only) —
   getProductionLines(scope: QueryScope): Promise<Page<ProductionLineRow>>;

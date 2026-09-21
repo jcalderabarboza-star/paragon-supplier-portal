@@ -324,6 +324,40 @@ export const processFlowPurposeEn: Record<string, string> = {
 
   'processFlows.purpose.t_application_reject':
     'Paragon declines, and must say why in words somebody can repeat to the applicant. The applicant holds no seat here, so that text is the only account of the decision that will ever exist.',
+
+  // ── psl · the preferred supplier list (P3) ───────────────────────────────
+  //
+  // ⚠️ **READ THE WORD LIST BEFORE EDITING ANY SENTENCE BELOW.** The rule is
+  // that a purpose may not restate a machine fact, and `annotations.test.ts`
+  // enforces it by refusing any purpose string containing a token the page
+  // already renders beside it. For this lane that forbids, among others, the
+  // designation words, the lifecycle words, every required field name — which
+  // includes the ordinary English words *status*, *reason*, *justification* and
+  // *days* — and the four trigger words. The sentences are written around them
+  // on purpose; a fluent-looking edit that reaches for "status" or "days" will
+  // go red, and that is the guard working rather than getting in the way.
+  'processFlows.purpose.entity.psl':
+    'The record of which suppliers Paragon has pre-qualified, for which materials, and on what terms — the master data other modules read before they decide whether an event has to go out to competitive bidding at all. Before this existed the answer lived in a deck and a shared drive, so nothing in the platform could act on it.',
+  'processFlows.purpose.entity.pslCapSetting':
+    'The portal-wide ceiling on how long a pre-qualification may stand before it has to be re-taken, kept as a ledger of decisions rather than a value somebody edits. An unrecorded setting and a chosen one are different facts, and a surface that could not tell them apart would report a default as though somebody had picked it.',
+  'processFlows.purpose.t_psl_propose':
+    'Somebody in sourcing puts a supplier forward for a set of materials and writes down what qualifies them. It grants nothing on its own — it opens the case, so the people who rule on it have something to rule on and the claim is on the record before anybody acts on it.',
+  'processFlows.purpose.t_psl_grant':
+    'The governance side accepts the case and the designation starts to bite. This is the act that can remove an entire competitive event, so it is deliberately not available to the people who raise cases; the platform refuses it to a seat that does both.',
+  'processFlows.purpose.t_psl_reject':
+    'The governance side declines, and writes down why in words the next person to put the same supplier forward will read. That text is the whole account of the decision — nothing else records it, and a later attempt starts a fresh case rather than reopening this one.',
+  'processFlows.purpose.t_psl_change_status':
+    'A supplier moves between designations without the record starting over. The policy this implements says standing is dynamic — suppliers earn a stronger position and lose it — and the ledger keeps every move so the history reads as one relationship rather than a pile of disconnected records.',
+  'processFlows.purpose.t_psl_renew':
+    'The designation is carried into another term. Extending a position that removes competitive bidding is the same decision as granting one, so it faces the same bar; the platform will not let it run past the ceiling and says so rather than quietly shortening what somebody recorded.',
+  'processFlows.purpose.t_psl_withdraw':
+    'Governance stops a designation before it runs out, and says why. A supplier that stops being suitable must not keep an exemption until an expiry date arrives, and this is the difference between a position that lapsed and one somebody took away.',
+  'processFlows.purpose.t_psl_publish':
+    'The buying team deliberately tells the supplier where they stand. Until this happens the position is internal — it is acted on inside Paragon and nobody outside knows — and telling somebody is an act a person takes rather than a side effect of a decision. It happens once, and the date it happened is kept.',
+  'processFlows.purpose.t_psl_cap_override':
+    'One relationship is held to a shorter or longer term than the portal ceiling, with the case for the exception written down and owned. An exception nobody has to explain is the thing this platform is trying not to have.',
+  'processFlows.purpose.t_psl_cap_set':
+    'Somebody records the ceiling the whole portal runs to, so that "nobody has decided" stops being the answer and a later reader can see who chose it and when. Until it is recorded, a constant applies and the surface says exactly that rather than claiming an author for it.',
 };
 
 export const processFlowPurposeId: Record<string, string> = {
@@ -613,4 +647,33 @@ export const processFlowPurposeId: Record<string, string> = {
 
   'processFlows.purpose.t_application_reject':
     'Paragon menolak, dan wajib menyatakan alasannya dengan kata-kata yang bisa diteruskan kepada pemohon. Pemohon tidak punya kursi di sini, sehingga teks itulah satu-satunya keterangan atas keputusan tersebut yang akan pernah ada.',
+
+  // ── psl · daftar pemasok preferensi (P3) ─────────────────────────────────
+  //
+  // ⚠️ Kaidah yang sama berlaku di sini: sebuah tujuan tidak boleh mengulang
+  // fakta mesin. Perhatikan bahwa beberapa token mesin berbentuk kata Inggris
+  // yang juga lazim dalam bahasa Indonesia — *status* salah satunya — sehingga
+  // kalimat di bawah sengaja menghindarinya.
+  'processFlows.purpose.entity.psl':
+    'Catatan tentang pemasok mana yang telah dikualifikasi Paragon, untuk material apa, dan dengan ketentuan apa — data induk yang dibaca modul lain sebelum memutuskan apakah sebuah acara perlu ditenderkan sama sekali. Sebelum ini ada, jawabannya tersimpan di sebuah paparan dan sebuah drive bersama, sehingga tidak ada bagian platform yang bisa bertindak atasnya.',
+  'processFlows.purpose.entity.pslCapSetting':
+    'Plafon seluruh portal atas berapa lama sebuah kualifikasi boleh berlaku sebelum harus diambil ulang, disimpan sebagai riwayat keputusan alih-alih nilai yang disunting seseorang. Pengaturan yang belum dicatat dan pengaturan yang dipilih adalah dua fakta berbeda, dan permukaan yang tidak dapat membedakannya akan melaporkan bawaan seolah-olah ada yang memilihnya.',
+  'processFlows.purpose.t_psl_propose':
+    'Seseorang di bagian sourcing mengajukan pemasok untuk sekumpulan material dan mencatat apa yang membuat mereka layak. Ini belum memberikan apa pun — ini membuka perkaranya, agar pihak yang memutuskan punya sesuatu untuk diputuskan dan klaimnya tercatat sebelum ada yang bertindak atasnya.',
+  'processFlows.purpose.t_psl_grant':
+    'Pihak tata kelola menerima perkaranya dan penetapan mulai berlaku. Tindakan ini dapat meniadakan seluruh acara kompetitif, sehingga sengaja tidak tersedia bagi pihak yang mengajukan perkara; platform menolaknya untuk kursi yang melakukan keduanya.',
+  'processFlows.purpose.t_psl_reject':
+    'Pihak tata kelola menolak, dan mencatat alasannya dengan kata-kata yang akan dibaca orang berikutnya yang mengajukan pemasok yang sama. Teks itu adalah seluruh keterangan atas keputusan tersebut — tidak ada yang lain mencatatnya, dan upaya berikutnya memulai perkara baru alih-alih membuka kembali yang ini.',
+  'processFlows.purpose.t_psl_change_status':
+    'Seorang pemasok berpindah antar penetapan tanpa catatannya dimulai dari awal. Kebijakan yang diterapkan menyatakan kedudukan itu dinamis — pemasok memperoleh posisi yang lebih kuat dan kehilangannya — dan riwayatnya menyimpan setiap perpindahan agar terbaca sebagai satu hubungan, bukan tumpukan catatan yang terputus.',
+  'processFlows.purpose.t_psl_renew':
+    'Penetapan dibawa ke satu periode berikutnya. Memperpanjang posisi yang meniadakan tender kompetitif adalah keputusan yang sama dengan memberikannya, sehingga menghadapi standar yang sama; platform tidak akan membiarkannya melewati plafon dan menyatakannya alih-alih diam-diam memendekkan apa yang telah dicatat seseorang.',
+  'processFlows.purpose.t_psl_withdraw':
+    'Tata kelola menghentikan sebuah penetapan sebelum masanya habis, dan menyatakan mengapa. Pemasok yang tidak lagi sesuai tidak boleh mempertahankan pengecualian sampai tanggal berakhirnya tiba, dan inilah perbedaan antara posisi yang habis dengan sendirinya dan posisi yang dicabut seseorang.',
+  'processFlows.purpose.t_psl_publish':
+    'Tim pembelian secara sengaja memberi tahu pemasok di mana posisi mereka. Sebelum ini terjadi, posisinya bersifat internal — ditindaklanjuti di dalam Paragon tanpa diketahui pihak luar — dan memberi tahu seseorang adalah tindakan yang diambil orang, bukan efek samping sebuah keputusan. Ini terjadi satu kali, dan tanggalnya disimpan.',
+  'processFlows.purpose.t_psl_cap_override':
+    'Satu hubungan dipegang pada periode yang lebih pendek atau lebih panjang dari plafon portal, dengan dasar pengecualiannya tertulis dan ada yang bertanggung jawab. Pengecualian yang tidak perlu dijelaskan siapa pun adalah hal yang berusaha dihindari platform ini.',
+  'processFlows.purpose.t_psl_cap_set':
+    'Seseorang mencatat plafon yang berlaku untuk seluruh portal, sehingga "belum ada yang memutuskan" berhenti menjadi jawabannya dan pembaca berikutnya dapat melihat siapa yang memilihnya dan kapan. Sebelum tercatat, sebuah konstanta berlaku dan permukaan menyatakan persis itu alih-alih mengklaim ada penyusunnya.',
 };

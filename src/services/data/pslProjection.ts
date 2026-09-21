@@ -25,6 +25,25 @@
 //   4. ITS OWN WINDOW CONSTANT, NOT A SHARED ONE. See
 //      `PSL_EXPIRING_WINDOW_DAYS`.
 //
+// ── ⚠️ THE CAP LEDGER IS A PARAMETER, NOT A STORE READ INSIDE A PURE FN ────
+//   P3 built `t_psl_cap_set`, so the portal default is now a RECORDED DECISION
+//   on an append-only ledger rather than a module constant. `effectiveCap` and
+//   everything downstream of it therefore take the ledger as an OPTIONAL last
+//   parameter, defaulted to `pslCapSettingStore.all()` —
+//   `effectiveEnforcement(ledger, checkId, instant)`'s shape, with the default
+//   added so a policy hook needs no wiring and `pslSourcingSeam`'s own
+//   `rows = …` convention is matched rather than contradicted.
+//
+//   ⚠️ **AND P1's "NOTHING ELSE MOVES" WAS WRONG, WHICH IS RECORDED RATHER
+//   THAN QUIETLY FIXED.** The sentence read *"`effectiveCap` gains a ledger
+//   lookup ahead of this constant and `NO_SETTING_RECORDED` starts meaning what
+//   it says. Nothing else moves."* Measured when the verb landed: a ledger read
+//   at the leaf is invisible to a caller that wants to ask *"what would this
+//   render under a DIFFERENT ledger?"*, which is what every probe and the
+//   default-cap spec need. So the parameter threads through **eight** function
+//   signatures, all of them additive and all of them defaulted. The list is in
+//   the P3 batch report; the point recorded here is that the cost was real.
+//
 // ── ⚠️ PUBLICATION IS NOT PROJECTED HERE, AND THAT IS THE POINT ─────────────
 //   Operator ruling: publication and in-force are INDEPENDENT axes. A listing
 //   may be published and expired, or in force and unpublished. So this file
@@ -42,36 +61,58 @@ import {
   type PslStatus,
 } from './pslListing';
 import { daysUntil, isPast } from './dayProjection';
+import {
+  PSL_DEFAULT_CAP_SETTING_ID,
+  pslCapSettingStore,
+  pslSettingInForce,
+  type PslCapSetting,
+} from './mock/stores/pslCapSettingStore';
 
 const MS_PER_DAY = 86_400_000;
 
 // ─── The cap (R2–R4) ─────────────────────────────────────────────────────────
 
 /**
- * THE PORTAL-WIDE DEFAULT VALIDITY CAP, IN DAYS.
+ * THE FALLBACK VALIDITY CAP, IN DAYS — what applies when NOBODY HAS RECORDED A
+ * PORTAL DEFAULT.
  *
- * ⚠️ **THIS IS A CONSTANT STANDING IN FOR A SETTING THAT DOES NOT EXIST YET,
- * AND THE SHAPE IS THE TREE'S OWN.** `lib/enforcement.ts` already models
- * exactly this situation: a governed value the ledger may carry, a ceiling that
- * applies when it does not, and a `source` that SAYS WHICH — its
- * `NO_SETTING_RECORDED` member exists because *"nothing has been decided" is a
- * different sentence from "somebody chose this", and an operator acts on the
- * difference.* `PslCapSource` below is that member set, at three.
+ * ⚠️ **IT STOPPED BEING "A CONSTANT STANDING IN FOR A SETTING THAT DOES NOT
+ * EXIST YET" AT P3, AND THE OLD SENTENCE IS REPLACED RATHER THAN LEFT TO BE
+ * READ CHARITABLY.** `t_psl_cap_set` exists, `pslCapSettingStore` holds its
+ * ledger, and `effectiveCap` looks that ledger up AHEAD of this constant. What
+ * this number now is, exactly: the value in force over an EMPTY ledger.
  *
- * The setting VERB (`t_psl_cap_set`, on the `t_enforcement_set` pattern) is P3.
- * When it lands, `effectiveCap` gains a ledger lookup ahead of this constant
- * and `NO_SETTING_RECORDED` starts meaning what it says. Nothing else moves.
+ * The shape is `lib/enforcement.ts`'s and the reason is unchanged — a governed
+ * value the ledger may carry, a ceiling when it does not, and a `source` that
+ * SAYS WHICH, because *"nothing has been decided" is a different sentence from
+ * "somebody chose this", and an operator acts on the difference.* **Do not
+ * restate how many members `PslCapSource` holds**: the sentence here said
+ * *"that member set, at three"* and P3 made it four, which is
+ * `FLOOR-IN-PROSE-01` in a doc comment two declarations above the union it
+ * miscounts. Count the union.
+ *
+ * ⚠️ **AND THE LEDGER IS NOT SEEDED, DELIBERATELY** — the store ships empty on
+ * `enforcementSettingStore`'s ruling, so `NO_SETTING_RECORDED` is the honest
+ * cold-start answer rather than a decision nobody took.
  */
 export const PSL_DEFAULT_CAP_DAYS = 365;
 
 /**
  * THE ABSOLUTE CEILING. No per-listing override may exceed it.
  *
- * ⚠️ **ITS VALUE IS AN OPEN OPERATOR DECISION AND THE DESIGN DOES NOT DEPEND ON
- * IT.** 730 days (two years) is a PLACEHOLDER chosen only so the bound is
- * exercisable; it is pinned by `pslProjection.test.ts` as a range a reader would
- * call "longer than the default and not unbounded", never as an equality, so a
- * ruling that moves it does not redden a test that was never about the number.
+ * ⚠️ **730 DAYS IS THE OPERATOR'S RULING, NOT A PLACEHOLDER — CORRECTED AT P3
+ * (ruling i).** The sentence here read *"its value is an OPEN OPERATOR DECISION
+ * … 730 days is a PLACEHOLDER chosen only so the bound is exercisable"*, and it
+ * stayed true exactly as long as nothing enforced the number. P3 gave it two
+ * verbs that REFUSE on it (`PSL_CAP_WITHIN_CEILING`,
+ * `PSL_DEFAULT_CAP_WITHIN_CEILING`) and a refusal sentence that STATES it, so a
+ * person now meets this figure. A number a surface quotes back to somebody is
+ * not a placeholder, whatever a comment says.
+ *
+ * It is still pinned by `pslProjection.test.ts` as a RANGE rather than an
+ * equality — longer than the default, and not unbounded — because a later
+ * ruling that moves it must redden the verbs that quote it and not a projection
+ * test that was never about the number.
  *
  * ⚠️ **AND THE POLICY'S CONTRACT-TERM EXCEPTION IS NOT IMPLEMENTED HERE.** The
  * policy allows a validity longer than the cap where a signed contract runs
@@ -114,11 +155,41 @@ export const PSL_EXPIRING_WINDOW_DAYS = 90;
 export type PslCapSource =
   /** The listing carries its own override and it is within the ceiling. */
   | 'LISTING_OVERRIDE'
-  /** No override on this listing. The portal default applies — and nothing has
-   *  been DECIDED for it, because the setting verb is P3. */
+  /**
+   * No override on this listing, and NOBODY HAS SET A PORTAL DEFAULT EITHER, so
+   * `PSL_DEFAULT_CAP_DAYS` applies.
+   *
+   * ⚠️ **THIS MEMBER NOW MEANS WHAT IT SAYS, WHICH IS WHAT P3 WAS FOR.** Until
+   * `t_psl_cap_set` existed it was the only answer the constant could give, so
+   * it could not distinguish *"nothing has been decided"* from *"somebody chose
+   * this"* — the exact difference `EnforcementModeSource` was split to carry.
+   */
   | 'NO_SETTING_RECORDED'
-  /** An override exists and EXCEEDS the ceiling, so the ceiling applies. Named
-   *  separately so "bounded" is never mistaken for "chosen". */
+  /** No override on this listing, and a portal default HAS been recorded
+   *  through `t_psl_cap_set`. Somebody chose this, and an operator acts on the
+   *  difference — which is the whole reason it is a separate member rather
+   *  than a second meaning for `NO_SETTING_RECORDED`. */
+  | 'PORTAL_DEFAULT'
+  /**
+   * The cap that would otherwise apply EXCEEDS the ceiling, so the ceiling
+   * applies. Named separately so "bounded" is never mistaken for "chosen".
+   *
+   * ⚠️ **UNREACHABLE THROUGH THE MACHINE, AND KEPT ANYWAY — THE REASON IS THE
+   * WHOLE OF ITS JUSTIFICATION.** Both cap verbs refuse a value above
+   * `PSL_CAP_CEILING_DAYS`, so no dispatch can produce a row or a setting that
+   * lands here. What CAN is a later ruling that LOWERS the ceiling: a 700-day
+   * override or portal default recorded legitimately under a 730-day ceiling
+   * would exceed a 365-day one the day it is ruled, and this arm is what stops
+   * that cap staying silently in force above the new bound. Deleting the arm
+   * would make the ceiling advisory for every row recorded before it moved.
+   *
+   * ⚠️ **AND ITS COVERAGE MOVED FROM SEEDED TO SYNTHETIC AT P3** (operator
+   * ruling h). The retired corpus carried `psl-005` with a 2000-day override
+   * precisely to exercise this arm from DATA; the machine now refuses that row,
+   * so `pslProjection.test.ts` covers it with SYNTHETIC inputs — both an
+   * over-ceiling override and an over-ceiling portal default — and says so at
+   * the site.
+   */
   | 'CEILING_BOUNDED';
 
 export interface PslCap {
@@ -134,18 +205,32 @@ export interface PslCap {
  * ⚠️ NO CLOCK. The cap is a duration, not an instant — it is decidable from the
  * row alone, which is why this function takes no `now`.
  */
-export function effectiveCap(row: Pick<PslListing, 'capDaysOverride'>): PslCap {
+export function effectiveCap(
+  row: Pick<PslListing, 'capDaysOverride'>,
+  ledger: readonly PslCapSetting[] = pslCapSettingStore.all(),
+): PslCap {
   const override = row.capDaysOverride;
-  if (override === null) {
-    // The default is itself bounded, so a future ruling that lowers the ceiling
-    // below the default cannot leave the default silently in force above it.
-    if (PSL_DEFAULT_CAP_DAYS > PSL_CAP_CEILING_DAYS)
+  if (override !== null) {
+    // The ceiling bounds an override even though the verb refuses one above it:
+    // a row recorded under a HIGHER ceiling must not stay in force above a
+    // lower one the day a ruling moves it. See `CEILING_BOUNDED`.
+    if (override > PSL_CAP_CEILING_DAYS)
       return { days: PSL_CAP_CEILING_DAYS, source: 'CEILING_BOUNDED' };
-    return { days: PSL_DEFAULT_CAP_DAYS, source: 'NO_SETTING_RECORDED' };
+    return { days: override, source: 'LISTING_OVERRIDE' };
   }
-  if (override > PSL_CAP_CEILING_DAYS)
+  // No override. The PORTAL DEFAULT applies — recorded, or the constant.
+  const setting = pslSettingInForce(ledger, PSL_DEFAULT_CAP_SETTING_ID);
+  const days = setting === null ? PSL_DEFAULT_CAP_DAYS : setting.days;
+  // The default is itself bounded, for the reason above and for the one this
+  // line already carried: a future ruling that lowers the ceiling below the
+  // default cannot leave the default silently in force above it.
+  if (days > PSL_CAP_CEILING_DAYS)
     return { days: PSL_CAP_CEILING_DAYS, source: 'CEILING_BOUNDED' };
-  return { days: override, source: 'LISTING_OVERRIDE' };
+  // ONE `if … return` PER OUTCOME, never a ternary (convention 1 at the top of
+  // this file): `projectionGate`'s write-site matcher recognises `return '...'`
+  // and cannot see a member inside a conditional expression.
+  if (setting === null) return { days, source: 'NO_SETTING_RECORDED' };
+  return { days, source: 'PORTAL_DEFAULT' };
 }
 
 /**
@@ -163,10 +248,11 @@ export function effectiveCap(row: Pick<PslListing, 'capDaysOverride'>): PslCap {
  */
 export function effectiveValidUntil(
   row: Pick<PslListing, 'validFrom' | 'validUntil' | 'capDaysOverride'>,
+  ledger?: readonly PslCapSetting[],
 ): string | null {
   const from = Date.parse(row.validFrom.slice(0, 10));
   if (!Number.isFinite(from)) return null;
-  const capped = new Date(from + effectiveCap(row).days * MS_PER_DAY)
+  const capped = new Date(from + effectiveCap(row, ledger).days * MS_PER_DAY)
     .toISOString()
     .slice(0, 10);
   const authored = row.validUntil.slice(0, 10);
@@ -212,13 +298,14 @@ export type PslDisplayStatus = PslLifecycle | 'Scheduled' | 'Expiring' | 'Expire
 export function pslDisplayStatus(
   row: Pick<PslListing, 'lifecycle' | 'validFrom' | 'validUntil' | 'capDaysOverride'>,
   nowIso: string,
+  ledger?: readonly PslCapSetting[],
 ): PslDisplayStatus {
   if (!isInForceLifecycle(row.lifecycle)) return row.lifecycle;
   // The START boundary, on the same `isPast` convention as the end — a listing
   // effective TODAY is effective, because `isPast(0)` is true.
   const begun = daysUntil(row.validFrom, nowIso);
   if (begun !== null && !isPast(begun)) return 'Scheduled';
-  const days = daysUntil(effectiveValidUntil(row), nowIso);
+  const days = daysUntil(effectiveValidUntil(row, ledger), nowIso);
   if (days === null) return row.lifecycle;
   if (isPast(days)) return 'Expired';
   if (days <= PSL_EXPIRING_WINDOW_DAYS) return 'Expiring';
@@ -235,8 +322,9 @@ export function pslDisplayStatus(
 export function isPslInForce(
   row: Pick<PslListing, 'lifecycle' | 'validFrom' | 'validUntil' | 'capDaysOverride'>,
   nowIso: string,
+  ledger?: readonly PslCapSetting[],
 ): boolean {
-  const shown = pslDisplayStatus(row, nowIso);
+  const shown = pslDisplayStatus(row, nowIso, ledger);
   return shown === 'Listed' || shown === 'Expiring';
 }
 
@@ -270,9 +358,10 @@ export function isPslInForce(
 export function bestPslStatus(
   rows: readonly PslListing[],
   nowIso: string,
+  ledger?: readonly PslCapSetting[],
 ): PslStatus | null {
   // Stage 1 — the clock. Discard everything not in force.
-  const inForce = rows.filter((r) => isPslInForce(r, nowIso));
+  const inForce = rows.filter((r) => isPslInForce(r, nowIso, ledger));
   if (inForce.length === 0) return null;
   // Stage 2 — the ladder, read off the vocabulary's own declaration order so
   // there is no second ranking to drift from it.
@@ -291,17 +380,20 @@ export function listingsForSupplier(
   rows: readonly PslListing[],
   supplierId: string,
   nowIso: string,
+  ledger?: readonly PslCapSetting[],
 ): PslListing[] {
   const rank = (r: PslListing): number => PSL_STATUSES.indexOf(r.status);
   return rows
     .filter((r) => r.supplierId === supplierId)
     .slice()
     .sort((a, b) => {
-      const af = isPslInForce(a, nowIso) ? 0 : 1;
-      const bf = isPslInForce(b, nowIso) ? 0 : 1;
+      const af = isPslInForce(a, nowIso, ledger) ? 0 : 1;
+      const bf = isPslInForce(b, nowIso, ledger) ? 0 : 1;
       if (af !== bf) return af - bf;
       if (rank(a) !== rank(b)) return rank(a) - rank(b);
-      return (effectiveValidUntil(a) ?? '').localeCompare(effectiveValidUntil(b) ?? '');
+      return (effectiveValidUntil(a, ledger) ?? '').localeCompare(
+        effectiveValidUntil(b, ledger) ?? '',
+      );
     });
 }
 
@@ -324,3 +416,4 @@ export function hasMaterialScope(
 
 /** Re-exported so a consumer needs one import for the whole axis. */
 export type { PslLifecycle, PslStatus };
+export type { PslCapSetting };

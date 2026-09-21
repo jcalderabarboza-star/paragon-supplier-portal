@@ -43,8 +43,15 @@ export const pslEn: Record<string, string> = {
   // — Profile tab / section —
   'psl.tab': 'Preferred list',
   'psl.section.title': 'Preferred Supplier List',
+  // ⚠️ **THE OLD SENTENCE WENT FALSE THE MOMENT P3 LANDED AND IS REPLACED
+  // RATHER THAN SOFTENED.** It read *"Read-only — listings are raised and
+  // approved off-portal."* Listings are now raised, decided, re-designated,
+  // renewed, published and capped IN this portal, and a subtitle telling a
+  // buyer otherwise would send them looking for a process that no longer
+  // exists. The replacement says what the section is and what the seat can do
+  // here, which is what the old one was doing for a tree with no verbs.
   'psl.section.subtitle':
-    'Governance decisions about this supplier. Read-only — listings are raised and approved off-portal.',
+    'Governance decisions about this supplier. Listed designations are managed here; new listings are raised on the Preferred suppliers queue.',
   'psl.section.empty': 'This supplier holds no PSL listing.',
   'psl.section.emptyHint':
     'Suppliers without a listing compete normally on every sourcing event.',
@@ -106,6 +113,123 @@ export const pslEn: Record<string, string> = {
     'This event does not have enough eligible suppliers to be competitive. It cannot be published as it stands.',
   'psl.toast.awardIntegrity':
     'The award does not name the supplier who submitted the winning quotation, or names one who was never invited. Nothing was recorded.',
+
+  // ── P3 · THE QUEUE ────────────────────────────────────────────────────────
+  'psl.queue.title': 'Preferred suppliers',
+  'psl.queue.subtitle':
+    'Proposed listings waiting on a decision, and every listing this platform holds.',
+  'psl.queue.nav': 'Preferred suppliers',
+  'psl.queue.tab.proposed': 'Awaiting decision',
+  'psl.queue.tab.all': 'All listings',
+  'psl.queue.empty': 'No listing is waiting on a decision.',
+  'psl.queue.emptyAll': 'No supplier holds a listing yet.',
+  'psl.queue.emptyHint': 'Raise one with New listing.',
+  'psl.queue.col.supplier': 'Supplier',
+  'psl.queue.col.scope': 'Scope',
+  'psl.queue.col.status': 'Designation',
+  'psl.queue.col.lifecycle': 'State',
+  'psl.queue.col.validity': 'Validity',
+  'psl.queue.openProfile': 'Open the supplier profile',
+
+  // ── P3 · THE VERBS ────────────────────────────────────────────────────────
+  'psl.verb.propose': 'New listing',
+  'psl.verb.grant': 'Approve',
+  'psl.verb.reject': 'Refuse',
+  'psl.verb.changeStatus': 'Change designation',
+  'psl.verb.renew': 'Renew',
+  'psl.verb.withdraw': 'Withdraw',
+  'psl.verb.publish': 'Share with supplier',
+  'psl.verb.capOverride': 'Set a cap for this listing',
+  'psl.verb.cancel': 'Cancel',
+
+  // ── P3 · THE FORMS ────────────────────────────────────────────────────────
+  'psl.form.propose.title': 'Propose a preferred-supplier listing',
+  'psl.form.supplier': 'Supplier',
+  'psl.form.supplier.pick': 'Choose a supplier',
+  'psl.form.materialCodes': 'Material codes',
+  'psl.form.materialCodes.hint': 'One or more codes from the material catalog, comma separated.',
+  'psl.form.status': 'Designation',
+  'psl.form.validFrom': 'Valid from',
+  'psl.form.validUntil': 'Valid until',
+  'psl.form.justification': 'Justification',
+  'psl.form.justification.hint':
+    'Why this supplier holds this designation. A Mandatory or Sole Source listing suspends competitive bidding.',
+  'psl.form.reason': 'Reason',
+  'psl.form.reason.hint': 'Recorded in the listing ledger. A silent change of designation is not allowed.',
+  'psl.form.capDays': 'Cap, in days',
+  'psl.form.capJustification': 'Why this listing runs to a different cap',
+  'psl.form.newValidUntil': 'New end date',
+  'psl.form.evidence': 'Evidence references',
+  'psl.form.evidence.hint': 'Supplier document ids, comma separated. Optional.',
+
+  // ── P3 · WHAT THE SURFACE SAYS BEFORE THE ACT ─────────────────────────────
+  //
+  // ⚠️ The unattributed notice is rendered BEFORE a decision, not after it.
+  // Every act below is recorded against `UNATTRIBUTED: NO_PERSON_IN_SESSION`,
+  // and a person should know that before they commit, not discover it in a
+  // ledger afterwards — `t_role_grant`'s surface makes the same call.
+  'psl.notice.unattributed':
+    'This decision will be recorded without an identified person. Paragon has no signed-in identity yet.',
+  // ⚠️ THE SEAT-SEGREGATION MIRROR (`pslLeadCheck.ts`). It asks the SAME pure
+  // function the policy hook asks, so the panel cannot promise what the
+  // dispatcher will refuse. It deliberately does not say "Lead": there is no
+  // Lead role in this platform and inventing one in copy would be worse than
+  // the gap it papers over.
+  'psl.notice.seatHoldsBoth':
+    'A {{status}} designation suspends competitive bidding, so it cannot be decided by a seat that also raises listings. Narrow this seat to the deciding lane on the identity panel, or route the decision to somebody who holds it.',
+  'psl.notice.published': 'Shared with the supplier on {{date}}. Later changes reach them without sharing again.',
+  'psl.notice.notPublished': 'This listing has not been shared with the supplier.',
+
+  // ── P3 · OUTCOMES ─────────────────────────────────────────────────────────
+  'psl.toast.proposed': 'Listing {{id}} raised for {{supplier}}. It is waiting on a decision.',
+  'psl.toast.granted': 'Listing {{id}} approved. It is now in force for its validity.',
+  'psl.toast.rejected': 'Listing {{id}} refused. A later attempt is a new listing.',
+  'psl.toast.statusChanged': 'Listing {{id}} is now {{status}}.',
+  'psl.toast.renewed': 'Listing {{id}} now runs to {{date}}.',
+  'psl.toast.withdrawn': 'Listing {{id}} withdrawn. It grants nothing from now on.',
+  'psl.toast.published': 'Listing {{id}} shared with the supplier.',
+  'psl.toast.capSet': 'A {{days}}-day cap is recorded for listing {{id}}.',
+
+  // ── P3 · REFUSALS, KEYED TO THE HOOK THAT REFUSED ─────────────────────────
+  //
+  // Keyed to the HOOK, never to a code inside its reason: the hook is what the
+  // dispatcher names and what a type can check. Each names a REMEDY — a
+  // refusal that only says no is the dead end `HALAL-REFUSAL-DEAD-ENDS-01` is
+  // filed about.
+  'psl.refusal.supplierUnknown':
+    'That supplier is not on the roster. Pick the supplier from the directory rather than typing an id.',
+  'psl.refusal.scopeEmpty':
+    'A listing must name at least one material code. Add the materials this designation covers.',
+  'psl.refusal.scopeUnknownCode':
+    'One or more of those codes is not a material this platform carries. Pick them from the material catalog, or raise a material request for one that does not exist yet.',
+  'psl.refusal.statusUnknown':
+    'That is not a designation this platform recognises.',
+  'psl.refusal.validityInverted':
+    'The designation would end before it begins. Correct the dates.',
+  'psl.refusal.validityUnreadable':
+    'The validity dates must both be real days. Enter them as calendar dates.',
+  'psl.refusal.justificationBlank':
+    'A listing needs a written justification — it is the one sentence that says why this supplier holds a designation that may suspend competitive bidding.',
+  'psl.refusal.decisionBlank':
+    'Every entry in a listing ledger carries a reason. Write the reason, then act again.',
+  'psl.refusal.deciderIsProposer':
+    'Whoever proposed this listing may not also decide it. Route it to somebody else.',
+  'psl.refusal.seatHoldsBoth':
+    'This seat both raises and decides listings, so it cannot approve a designation that suspends competitive bidding. Narrow the seat on the identity panel.',
+  'psl.refusal.statusUnchanged':
+    'This listing already carries that designation. Pick a different one, or leave it as it stands.',
+  'psl.refusal.renewalDoesNotExtend':
+    'A renewal moves the end date later. To shorten a validity, record a cap override with its justification instead.',
+  'psl.refusal.renewalExceedsCap':
+    'That end date is beyond the validity cap in force. Record a cap override with its justification first, or renew to a date within the cap.',
+  'psl.refusal.alreadyPublished':
+    'This listing has already been shared with the supplier, and the date it was shared is not overwritten. Changes to the designation reach them without sharing again.',
+  'psl.refusal.capAboveCeiling':
+    'That cap exceeds the platform ceiling of {{ceiling}} days. Record a cap within the ceiling, or take the longer term to whoever can move the ceiling.',
+  'psl.refusal.capNotADuration':
+    'A validity cap is a whole number of days greater than zero.',
+  'psl.refusal.capJustificationBlank':
+    'An override with no justification is an unexplained exception. Write why this listing runs to a different cap from every other one.',
 };
 
 export const pslId: Record<string, string> = {
@@ -133,7 +257,7 @@ export const pslId: Record<string, string> = {
   'psl.tab': 'Daftar preferensi',
   'psl.section.title': 'Daftar Pemasok Preferensi',
   'psl.section.subtitle':
-    'Keputusan tata kelola mengenai pemasok ini. Hanya baca — pencatatan diajukan dan disetujui di luar portal.',
+    'Keputusan tata kelola mengenai pemasok ini. Penetapan yang terdaftar dikelola di sini; pencatatan baru diajukan pada antrean Pemasok preferensi.',
   'psl.section.empty': 'Pemasok ini tidak memiliki pencatatan PSL.',
   'psl.section.emptyHint':
     'Pemasok tanpa pencatatan bersaing secara normal pada setiap acara pengadaan.',
@@ -183,4 +307,106 @@ export const pslId: Record<string, string> = {
     'Acara ini tidak memiliki cukup pemasok yang memenuhi syarat untuk bersaing. Acara tidak dapat diterbitkan seperti sekarang.',
   'psl.toast.awardIntegrity':
     'Penghargaan tidak menyebut pemasok yang mengajukan penawaran pemenang, atau menyebut pemasok yang tidak pernah diundang. Tidak ada yang dicatat.',
+
+  // ── P3 · Antrean ──────────────────────────────────────────────────────────
+  'psl.queue.title': 'Pemasok preferensi',
+  'psl.queue.subtitle':
+    'Pencatatan yang diajukan dan menunggu keputusan, serta seluruh pencatatan yang dimiliki platform ini.',
+  'psl.queue.nav': 'Pemasok preferensi',
+  'psl.queue.tab.proposed': 'Menunggu keputusan',
+  'psl.queue.tab.all': 'Semua pencatatan',
+  'psl.queue.empty': 'Tidak ada pencatatan yang menunggu keputusan.',
+  'psl.queue.emptyAll': 'Belum ada pemasok yang memiliki pencatatan.',
+  'psl.queue.emptyHint': 'Ajukan satu melalui Pencatatan baru.',
+  'psl.queue.col.supplier': 'Pemasok',
+  'psl.queue.col.scope': 'Cakupan',
+  'psl.queue.col.status': 'Penetapan',
+  'psl.queue.col.lifecycle': 'Keadaan',
+  'psl.queue.col.validity': 'Masa berlaku',
+  'psl.queue.openProfile': 'Buka profil pemasok',
+
+  // ── P3 · Verba ────────────────────────────────────────────────────────────
+  'psl.verb.propose': 'Pencatatan baru',
+  'psl.verb.grant': 'Setujui',
+  'psl.verb.reject': 'Tolak',
+  'psl.verb.changeStatus': 'Ubah penetapan',
+  'psl.verb.renew': 'Perpanjang',
+  'psl.verb.withdraw': 'Tarik',
+  'psl.verb.publish': 'Bagikan ke pemasok',
+  'psl.verb.capOverride': 'Tetapkan batas untuk pencatatan ini',
+  'psl.verb.cancel': 'Batal',
+
+  // ── P3 · Formulir ─────────────────────────────────────────────────────────
+  'psl.form.propose.title': 'Ajukan pencatatan pemasok preferensi',
+  'psl.form.supplier': 'Pemasok',
+  'psl.form.supplier.pick': 'Pilih pemasok',
+  'psl.form.materialCodes': 'Kode material',
+  'psl.form.materialCodes.hint': 'Satu atau beberapa kode dari katalog material, dipisahkan koma.',
+  'psl.form.status': 'Penetapan',
+  'psl.form.validFrom': 'Berlaku dari',
+  'psl.form.validUntil': 'Berlaku sampai',
+  'psl.form.justification': 'Justifikasi',
+  'psl.form.justification.hint':
+    'Mengapa pemasok ini memegang penetapan tersebut. Pencatatan Wajib atau Sumber Tunggal menangguhkan tender kompetitif.',
+  'psl.form.reason': 'Alasan',
+  'psl.form.reason.hint': 'Dicatat dalam riwayat pencatatan. Perubahan penetapan tanpa alasan tidak diizinkan.',
+  'psl.form.capDays': 'Batas, dalam hari',
+  'psl.form.capJustification': 'Mengapa pencatatan ini memakai batas yang berbeda',
+  'psl.form.newValidUntil': 'Tanggal akhir baru',
+  'psl.form.evidence': 'Rujukan bukti',
+  'psl.form.evidence.hint': 'Id dokumen pemasok, dipisahkan koma. Opsional.',
+
+  // ── P3 · Yang dinyatakan sebelum tindakan ────────────────────────────────
+  'psl.notice.unattributed':
+    'Keputusan ini akan dicatat tanpa identitas orang. Paragon belum memiliki identitas yang masuk sesi.',
+  'psl.notice.seatHoldsBoth':
+    'Penetapan {{status}} menangguhkan tender kompetitif, sehingga tidak dapat diputuskan oleh kursi yang juga mengajukan pencatatan. Persempit kursi ini ke jalur pemutus pada panel identitas, atau alihkan keputusan kepada pihak yang memegangnya.',
+  'psl.notice.published': 'Dibagikan kepada pemasok pada {{date}}. Perubahan berikutnya sampai kepada mereka tanpa dibagikan ulang.',
+  'psl.notice.notPublished': 'Pencatatan ini belum dibagikan kepada pemasok.',
+
+  // ── P3 · Hasil ────────────────────────────────────────────────────────────
+  'psl.toast.proposed': 'Pencatatan {{id}} diajukan untuk {{supplier}}. Menunggu keputusan.',
+  'psl.toast.granted': 'Pencatatan {{id}} disetujui. Kini berlaku selama masa berlakunya.',
+  'psl.toast.rejected': 'Pencatatan {{id}} ditolak. Upaya berikutnya adalah pencatatan baru.',
+  'psl.toast.statusChanged': 'Pencatatan {{id}} kini berstatus {{status}}.',
+  'psl.toast.renewed': 'Pencatatan {{id}} kini berlaku sampai {{date}}.',
+  'psl.toast.withdrawn': 'Pencatatan {{id}} ditarik. Mulai sekarang tidak memberikan apa pun.',
+  'psl.toast.published': 'Pencatatan {{id}} dibagikan kepada pemasok.',
+  'psl.toast.capSet': 'Batas {{days}} hari tercatat untuk pencatatan {{id}}.',
+
+  // ── P3 · Penolakan, dikunci ke HOOK yang menolak ─────────────────────────
+  'psl.refusal.supplierUnknown':
+    'Pemasok tersebut tidak ada dalam daftar. Pilih pemasok dari direktori, jangan mengetik id.',
+  'psl.refusal.scopeEmpty':
+    'Pencatatan harus menyebut setidaknya satu kode material. Tambahkan material yang dicakup penetapan ini.',
+  'psl.refusal.scopeUnknownCode':
+    'Satu atau beberapa kode tersebut bukan material yang dibawa platform ini. Pilih dari katalog material, atau ajukan permintaan material untuk yang belum ada.',
+  'psl.refusal.statusUnknown':
+    'Itu bukan penetapan yang dikenali platform ini.',
+  'psl.refusal.validityInverted':
+    'Penetapan akan berakhir sebelum dimulai. Perbaiki tanggalnya.',
+  'psl.refusal.validityUnreadable':
+    'Kedua tanggal masa berlaku harus berupa hari yang nyata. Masukkan sebagai tanggal kalender.',
+  'psl.refusal.justificationBlank':
+    'Pencatatan memerlukan justifikasi tertulis — itulah satu kalimat yang menyatakan mengapa pemasok ini memegang penetapan yang dapat menangguhkan tender kompetitif.',
+  'psl.refusal.decisionBlank':
+    'Setiap entri dalam riwayat pencatatan memuat alasan. Tulis alasannya, lalu lakukan lagi.',
+  'psl.refusal.deciderIsProposer':
+    'Pihak yang mengajukan pencatatan ini tidak boleh ikut memutuskannya. Alihkan kepada orang lain.',
+  'psl.refusal.seatHoldsBoth':
+    'Kursi ini mengajukan sekaligus memutuskan pencatatan, sehingga tidak dapat menyetujui penetapan yang menangguhkan tender kompetitif. Persempit kursi pada panel identitas.',
+  'psl.refusal.statusUnchanged':
+    'Pencatatan ini sudah memakai penetapan tersebut. Pilih yang lain, atau biarkan seperti sekarang.',
+  'psl.refusal.renewalDoesNotExtend':
+    'Perpanjangan memundurkan tanggal akhir. Untuk memperpendek masa berlaku, catat pengesampingan batas beserta justifikasinya.',
+  'psl.refusal.renewalExceedsCap':
+    'Tanggal akhir itu melampaui batas masa berlaku yang berlaku. Catat pengesampingan batas beserta justifikasinya terlebih dahulu, atau perpanjang ke tanggal dalam batas.',
+  'psl.refusal.alreadyPublished':
+    'Pencatatan ini sudah dibagikan kepada pemasok, dan tanggal pembagiannya tidak ditimpa. Perubahan penetapan sampai kepada mereka tanpa dibagikan ulang.',
+  'psl.refusal.capAboveCeiling':
+    'Batas itu melebihi plafon platform sebesar {{ceiling}} hari. Catat batas dalam plafon, atau bawa masa yang lebih panjang kepada pihak yang dapat memindahkan plafon.',
+  'psl.refusal.capNotADuration':
+    'Batas masa berlaku adalah bilangan bulat hari yang lebih besar dari nol.',
+  'psl.refusal.capJustificationBlank':
+    'Pengesampingan tanpa justifikasi adalah pengecualian yang tidak dijelaskan. Tulis mengapa pencatatan ini memakai batas yang berbeda dari yang lain.',
 };

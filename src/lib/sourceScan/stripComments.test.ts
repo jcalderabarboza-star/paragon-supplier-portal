@@ -363,6 +363,10 @@ describe('⚠️ THE TWO-REGEX COMMENT STRIP IS EXTINCT — derived, not listed'
         'lib/projectionGate/derive.ts',
         'pages-v2/buyerInvoicesEscalateHonesty.test.ts',
         'pages-v2/deadAffordance.guard.test.tsx',
+        // PSL P3 — the refusal-key gate derives the heads its hooks emit from
+        // `policies.ts`, and strips comments first so a head DISCUSSED in prose
+        // (this lane's comments name several) cannot be mistaken for one emitted.
+        'pages-v2/psl/pslRefusal.test.ts',
         'pages-v2/registrationHonesty.guard.test.ts',
         'pages-v2/solidButtonRetired.guard.test.ts',
         'pages-v2/toastHonesty.guard.test.tsx',

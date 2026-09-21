@@ -203,6 +203,28 @@ export const LOOSE_END_CENSUS: readonly CensusEntry[] = Object.freeze([
       '— name the mechanism, never render it.',
   },
 
+  // ── pslCapSetting ──────────────────────────────────────────────────────────
+  {
+    entity: 'pslCapSetting',
+    kind: 'initial-integrity',
+    subject: 'Governed',
+    reason: 'substrate-only',
+    note:
+      'THE THIRD INSTANCE OF THE DEGENERATE SINGLE-STATE LEDGER SHAPE, and the reasoning is the ' +
+      'one the enforcement machine already carries: the entity IS the portal setting, the settings ' +
+      'are a frozen ' +
+      'closed vocabulary compiled into the tree, and nobody creates one. The recording verb is ' +
+      'statePreserving, so it is neither an entry nor an exit, and the state is correctly declared ' +
+      'terminal. ' +
+      '⚠️ WHAT THE VERB PRODUCES IS NOT AN INSTANCE OF THIS MACHINE — it appends a DECISION to a ' +
+      'ledger, and the thing commanded stays exactly as it was. The cap in force is derived from ' +
+      'that ledger at read; modelling each decision as a born entity would make the setting its own ' +
+      'parent and would put a clock-derived value back into a stored state, which is the law this ' +
+      'lane was built around. ' +
+      '⚠️ AND THE SISTER MACHINE IS DELIBERATELY ABSENT FROM THIS CENSUS: the listing machine has a ' +
+      'real creation verb, four real edges and two declared endings, so it is not a loose end at all.',
+  },
+
   // ── role ───────────────────────────────────────────────────────
   {
     entity: 'role',

@@ -27,6 +27,7 @@ import {
   LucideIcon,
   UserPlus,
   PackagePlus,
+  ListChecks,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useCurrentIdentity } from '../../context/CurrentIdentityContext';
@@ -57,6 +58,15 @@ const BUYER_NAV: NavGroup[] = [
       { labelKey: 'nav.buyer.discovery', icon: Search, path: '/buyer/discovery' },
       { labelKey: 'nav.buyer.marketplace', icon: Store, path: '/marketplace' },
       { labelKey: 'nav.buyer.suppliers', icon: Users, path: '/buyer/suppliers' },
+      // PSL P3 — immediately after the Directory, because the Directory is
+      // where a PSL badge is READ and this is where the designation behind
+      // it is raised and decided. Before Applications, since a listing is
+      // about a supplier the roster already carries.
+      {
+        labelKey: 'nav.buyer.preferredSuppliers',
+        icon: ListChecks,
+        path: '/buyer/preferred-suppliers',
+      },
       { labelKey: 'nav.buyer.supplierApplications', icon: UserPlus, path: '/buyer/supplier-applications' },
       { labelKey: 'nav.buyer.sourcing', icon: FileText, path: '/buyer/sourcing' },
       // R8 — next to Sourcing, because the gap is discovered there: a buyer

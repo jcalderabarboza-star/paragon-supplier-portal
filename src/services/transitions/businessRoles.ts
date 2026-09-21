@@ -202,6 +202,32 @@ const LANE_BUNDLES = Object.freeze({
       // enforcement lane unreachable with no consumer to catch it. Sequencing:
       // retire the grant first, move the atom once a caller exists.
       'enforcement:set',
+      // ── PSL P3 · RAISING A PREFERRED-SUPPLIER LISTING, AND TELLING THE
+      //    SUPPLIER ABOUT IT ─────────────────────────────────────────────────
+      // The policy names the *Procurement Squad* as one of the two parties who
+      // may put a supplier on the list, and this lane already holds every
+      // raise-a-governance-artefact atom in the tree: `rfq:create`,
+      // `contract:draft`, `application:submit`, `materialrequest:submit`.
+      //
+      // ⚠️ **AND THE DECIDING HALF IS DELIBERATELY ELSEWHERE — `compliance`'s.**
+      // `applicationSeed.ts` states the split in this tree's own words:
+      // *"`application:submit` sits in `procurement` and the deciding atoms sit
+      // in `compliance`"*, and it seeds under `procurement` precisely so the
+      // demonstration does not model one person raising and deciding. Copied
+      // here rather than re-argued.
+      'psl:propose',
+      // ⚠️ **PUBLISHING IS A COMMUNICATION ACT, NOT A DECISION, AND KEEPING IT
+      // OUT OF `compliance` BUYS A THIRD AUTHORITY FOR ONE ATOM.** The lane
+      // that decides a designation cannot then unilaterally make its own
+      // decision visible to the supplier. Procurement holding propose AND
+      // publish is harmless by construction: publishing something you proposed
+      // but did not decide grants nothing that was not already granted.
+      //
+      // ⚠️ **AND `psl:cap-set` IS NOT HERE, WHICH IS THE `role:grant` RULING
+      // TRANSFERRED.** Whoever sets the portal-wide validity cap can extend
+      // every designation they proposed, so procurement cannot hold it — the
+      // same sentence that keeps the role editor out of this bundle.
+      'psl:publish',
     ]),
     // The dock. 13 of the 41 human-owned buyer verbs — the largest single lane,
     // and a dock clerk is not a category manager. `asn:flag` is shared with the
@@ -246,6 +272,28 @@ const LANE_BUNDLES = Object.freeze({
       // `supplierdoc:verify` and `:reject` sit together here for the same
       // reason and on the same argument.
       'application:review', 'application:decide',
+      // ── PSL P3 · DECIDING A LISTING, AND BOUNDING EVERY LISTING ──────────
+      // A PSL designation is a governance decision ABOUT A SUPPLIER, and this
+      // lane already holds every one of those: it verifies and refuses a
+      // supplier's paperwork and it decides whether an applicant becomes a
+      // supplier at all. Granting, refusing, re-designating, renewing and
+      // withdrawing are one authority over the life of one record, which is
+      // `supplierdoc:verify`/`:reject` and `application:review`/`:decide` on the
+      // same argument — and it is NOT the segregation `psl:propose` avoids.
+      'psl:decide',
+      // ⚠️ **`psl:cap-set` IS HERE FOR `role:grant`'S REASON, VERBATIM IN
+      // SHAPE: WHOEVER SETS THE CAP CAN EXTEND EVERY DESIGNATION THEY
+      // PROPOSED.** The portal-wide default bounds the validity of every
+      // listing in the platform, and the per-listing override bounds one. A cap
+      // setter in the `procurement` bundle is the bar-lowering `role:grant` was
+      // moved out of that bundle to prevent, with one extra step.
+      //
+      // ⚠️ **AND IT COVERS BOTH CAP VERBS DELIBERATELY** — `t_psl_cap_set` (the
+      // portal default) and `t_psl_cap_override` (one listing). They are the
+      // same authority at two scales, and splitting them would mint a second
+      // atom for a distinction nobody has asked to separate, which is
+      // role-per-distinction (C10 §4.1).
+      'psl:cap-set',
     ]),
     // The SDC / P2 planning lane. `inventorydeclaration:record` is the C4c
     // buyer RECORDING verb — a distinct authority from the supplier's

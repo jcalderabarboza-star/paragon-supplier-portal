@@ -158,6 +158,21 @@ export const useMaterialRequests = () =>
     svc.procurement.getMaterialRequests(scope),
   );
 
+// PSL P3 — the preferred supplier list. Buyer-side only, one collection, no
+// per-supplier shard: the persona gate in the service is the whole tenancy
+// answer, so `scopeKey` has nothing to narrow on. A supplier scope resolves an
+// empty page rather than a refusal.
+//
+// ⚠️ **EVERY PSL SURFACE READS THROUGH THIS HOOK RATHER THAN THE STORE, AND
+// THAT IS WHAT MAKES A DISPATCH VISIBLE.** The store is synchronous and the
+// policy hooks read it directly (they have no query client), but a component
+// that read it directly would never re-render when a verb changed it —
+// `useInvalidateProcurement` is what closes that loop.
+export const usePslListings = () =>
+  useServiceQuery(['procurement', 'pslListings'], (svc, scope) =>
+    svc.procurement.getPslListings(scope),
+  );
+
 export const useIntakeReview = () =>
   useServiceQuery(['procurement', 'prIntake'], (svc, scope) =>
     svc.procurement.getPrIntake(scope),

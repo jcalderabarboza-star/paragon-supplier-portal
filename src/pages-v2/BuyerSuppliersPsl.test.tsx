@@ -12,8 +12,37 @@ import { renderWithProviders } from '../test/test-utils';
 import i18n from '../lib/i18n';
 import BuyerSuppliers from './BuyerSuppliers';
 import { DECLARED_PRESENT } from '../services/data/fixturePresent';
-import { PSL_LISTINGS } from '../services/data/mock/fixtures/pslListings';
+import { seedPslListings } from '../services/data/mock/pslSeed';
+import { pslStore } from '../services/data/mock/stores/pslStore';
+import type { PslListing } from '../services/data/pslListing';
 import { pslStatusFor } from '../services/data/pslSourcingSeam';
+
+/**
+ * THE CORPUS, GROWN RATHER THAN IMPORTED.
+ *
+ * ⚠️ **`PSL_LISTINGS` IS GONE AND THIS IS ITS REPLACEMENT** (PSL P3, operator
+ * ruling h). The nine rows are no longer `PslListing` literals in a frozen
+ * fixture — they are PAYLOADS in `pslSeed.ts`, dispatched through
+ * `t_psl_propose` and its siblings under LANE-CORRECT scopes. So the corpus
+ * does not exist until the seed has run, which is why this is a FUNCTION and
+ * not a const: a module-scope read would capture `[]`.
+ *
+ * ⚠️ **AND THAT IS THE `EMPTY-INPUT-REPORTS-CLEAN-01` SHAPE, WHICH IS WHY THE
+ * SEED'S OWN OUTCOME IS ASSERTED BELOW AND EVERY POPULATION GUARD IN THIS FILE
+ * ASSERTS MEMBERSHIP.** "No row is malformed" passes vacuously over `[]`.
+ */
+const pslRows = (): readonly PslListing[] => pslStore.all();
+
+// ⚠️ SEEDED ONCE, THROUGH THE REAL VERBS. `pslStore.reset()` runs first so the
+// file does not depend on whatever order vitest loaded modules in.
+beforeAll(async () => {
+  pslStore.reset();
+  const outcome = await seedPslListings();
+  // The seed's own refusal is REPORTED rather than swallowed: a half-seeded
+  // store would make every assertion below a different, quieter test.
+  expect(outcome.status, outcome.reason ?? '').toBe('seeded');
+});
+
 
 /** The row for a supplier, found through its own name cell. */
 const rowFor = async (name: string): Promise<HTMLElement> => {
@@ -30,7 +59,7 @@ describe('REACH — the fixture reaches all three Directory cells', () => {
     expect(pslStatusFor('sup-002', null, DECLARED_PRESENT).kind).toBe('IN_FORCE');
     expect(pslStatusFor('sup-007', null, DECLARED_PRESENT).kind).toBe('LAPSED');
     expect(pslStatusFor('sup-001', null, DECLARED_PRESENT).kind).toBe('NOT_LISTED');
-    expect(PSL_LISTINGS.length).toBeGreaterThan(5);
+    expect(pslRows().length).toBeGreaterThan(5);
   });
 });
 

@@ -278,6 +278,21 @@ export const TRANSITION_PURPOSE: FlowAnnotations = Object.freeze({
     purposeKey: 'processFlows.purpose.t_materialrequest_approve',
   },
   t_materialrequest_reject: { purposeKey: 'processFlows.purpose.t_materialrequest_reject' },
+
+  // ── psl · the preferred supplier list (P3) ────────────────────────────────
+  // ⚠️ NINE ROWS, ADDED BECAUSE THE BILATERAL PIN DEMANDED THEM — the same way
+  // the four above arrived. `annotations.test.ts` went red naming every one of
+  // them the moment the two machines registered, which is the gate doing what
+  // its header says: *a verb cannot ship unexplained.*
+  t_psl_propose: { purposeKey: 'processFlows.purpose.t_psl_propose' },
+  t_psl_grant: { purposeKey: 'processFlows.purpose.t_psl_grant' },
+  t_psl_reject: { purposeKey: 'processFlows.purpose.t_psl_reject' },
+  t_psl_change_status: { purposeKey: 'processFlows.purpose.t_psl_change_status' },
+  t_psl_renew: { purposeKey: 'processFlows.purpose.t_psl_renew' },
+  t_psl_withdraw: { purposeKey: 'processFlows.purpose.t_psl_withdraw' },
+  t_psl_publish: { purposeKey: 'processFlows.purpose.t_psl_publish' },
+  t_psl_cap_override: { purposeKey: 'processFlows.purpose.t_psl_cap_override' },
+  t_psl_cap_set: { purposeKey: 'processFlows.purpose.t_psl_cap_set' },
 });
 
 /**
@@ -310,6 +325,8 @@ export const ENTITY_PURPOSE: FlowAnnotations = Object.freeze({
   role: { purposeKey: 'processFlows.purpose.entity.role' },
   supplierApplication: { purposeKey: 'processFlows.purpose.entity.supplierApplication' },
   materialRequest: { purposeKey: 'processFlows.purpose.entity.materialRequest' },
+  psl: { purposeKey: 'processFlows.purpose.entity.psl' },
+  pslCapSetting: { purposeKey: 'processFlows.purpose.entity.pslCapSetting' },
 });
 
 /**

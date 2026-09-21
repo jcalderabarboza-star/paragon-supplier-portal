@@ -24,6 +24,7 @@ import BuyerDiscovery from '../pages-v2/BuyerDiscovery';
 import BuyerRequisitions from '../pages-v2/BuyerRequisitions';
 import BuyerSupplierApplications from '../pages-v2/BuyerSupplierApplications';
 import BuyerMaterialRequests from '../pages-v2/BuyerMaterialRequests';
+import BuyerPreferredSuppliers from '../pages-v2/BuyerPreferredSuppliers';
 import IntakeReview from '../pages-v2/IntakeReview';
 import BuyerInvoices from '../pages-v2/BuyerInvoices';
 import BuyerScorecard from '../pages-v2/BuyerScorecard';
@@ -115,6 +116,15 @@ const AppRouter: React.FC = () => {
           <Route path="/buyer/purchase-requisition" element={<BuyerRequisitions />} />
           <Route path="/buyer/supplier-applications" element={<BuyerSupplierApplications />} />
           <Route path="/buyer/material-requests" element={<BuyerMaterialRequests />} />
+          {/* PSL P3 — the preferred-supplier queue. A flat <Routes> with no
+              layout route, so the page brings its own AppShellV2; a page that
+              forgets it renders with no sidebar and no way back, and
+              `renderWithProviders` will never say so
+              (`ROUTE-SMOKE-GUARD-IS-SELF-REFERENTIAL-01`). */}
+          <Route
+            path="/buyer/preferred-suppliers"
+            element={<BuyerPreferredSuppliers />}
+          />
           <Route path="/buyer/invoices" element={<BuyerInvoices />} />
           <Route path="/buyer/scorecard" element={<BuyerScorecard />} />
           <Route path="/buyer/analytics" element={<BuyerAnalytics />} />

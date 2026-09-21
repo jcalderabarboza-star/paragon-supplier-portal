@@ -24,9 +24,9 @@
 //   `t_rfq_publish`). If a supplier surface ever reaches it, that is the same
 //   leak wearing a different name, so it is in the forbidden set with the rest.
 // ─────────────────────────────────────────────────────────────────────────────
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, beforeAll } from 'vitest';
 import { readFileSync, existsSync } from 'node:fs';
-import { resolve, dirname } from 'node:path';
+import { resolve, dirname, relative, sep } from 'node:path';
 
 import { stripSourceComments } from '../../lib/sourceScan/stripComments';
 import { MockSupplierService } from './mock/MockSupplierService';
@@ -36,21 +36,86 @@ import { rfqFlow } from '../transitions/flows/rfq.flow';
 import { POLICY_HOOKS } from '../transitions/policyHooks';
 import { PERSONA_SYSTEM_ROLES } from '../transitions/businessRoles';
 import { NO_PERSON } from '../../context/noPerson';
-import { PSL_LISTINGS } from './mock/fixtures/pslListings';
+import { seedPslListings } from './mock/pslSeed';
+import { pslStore } from './mock/stores/pslStore';
+import type { PslListing } from './pslListing';
+import { DataError } from './types';
 import type { QueryScope } from './types';
+import { pslModules } from '../../test/pslModules';
+
+/**
+ * THE CORPUS, GROWN RATHER THAN IMPORTED.
+ *
+ * ⚠️ **`PSL_LISTINGS` IS GONE AND THIS IS ITS REPLACEMENT** (PSL P3, operator
+ * ruling h). The nine rows are no longer `PslListing` literals in a frozen
+ * fixture — they are PAYLOADS in `pslSeed.ts`, dispatched through
+ * `t_psl_propose` and its siblings under LANE-CORRECT scopes. So the corpus
+ * does not exist until the seed has run, which is why this is a FUNCTION and
+ * not a const: a module-scope read would capture `[]`.
+ *
+ * ⚠️ **AND THAT IS THE `EMPTY-INPUT-REPORTS-CLEAN-01` SHAPE, WHICH IS WHY THE
+ * SEED'S OWN OUTCOME IS ASSERTED BELOW AND EVERY POPULATION GUARD IN THIS FILE
+ * ASSERTS MEMBERSHIP.** "No row is malformed" passes vacuously over `[]`.
+ */
+const pslRows = (): readonly PslListing[] => pslStore.all();
+
+// ⚠️ SEEDED ONCE, THROUGH THE REAL VERBS. `pslStore.reset()` runs first so the
+// file does not depend on whatever order vitest loaded modules in.
+beforeAll(async () => {
+  pslStore.reset();
+  const outcome = await seedPslListings();
+  // The seed's own refusal is REPORTED rather than swallowed: a half-seeded
+  // store would make every assertion below a different, quieter test.
+  expect(outcome.status, outcome.reason ?? '').toBe('seeded');
+});
+
 
 const SRC = resolve(process.cwd(), 'src');
 
-/** Every module the PSL lives in. A supplier surface may reach none of them. */
+/**
+ * Every module the PSL lives in. A supplier surface may reach none of them.
+ *
+ * ⚠️ **DERIVED FROM THE TREE, NOT LISTED (B-S4d).** The array that stood here
+ * named seven paths and asserted ONE direction only — *"every module named here
+ * exists"* — so a PSL module that gained no entry was invisible to this guard,
+ * forever and silently. It had already happened: P2 shipped `PslGateNotice.tsx`
+ * and the list never grew.
+ *
+ * ⚠️ **AND P3 WOULD HAVE TURNED THAT FROM UNTIDINESS INTO A LEAK.** This
+ * guard's own rule is that **a TYPE-ONLY IMPORT IS NOT A REACH** — correctly,
+ * since a type is erased — and every store in this tree type-imports its row
+ * type. So `pslStore.ts` inherits membership from nothing: on a hand list it
+ * would simply have been absent, and a supplier surface value-importing the
+ * store would have reached the whole corpus with this file green.
+ *
+ * Derived, it is a member by its own NAME, so a value import of it is caught
+ * directly. `rfqSourcingGate.ts` is not `psl*`-named and is added explicitly,
+ * for the reason it was on the old list: it is the P2 gate and a supplier
+ * reaching it is the same leak wearing a different name.
+ */
+/**
+ * ⚠️ **FLOW DEFINITIONS ARE EXCLUDED, AND THE RULE IS STATED RATHER THAN THE
+ * FILENAMES.** `psl.flow.ts` and `pslCapSetting.flow.ts` are glob members and
+ * are NOT part of what this guard protects. A `FlowDefinition` is a declaration
+ * — states, transition ids, role atoms, hook NAMES — and **cannot yield a
+ * `PslListing`**. Every page that imports the transitions barrel registers all
+ * of them already, on both sides, exactly as it has for the other twenty flows
+ * since Step 3.1.
+ *
+ * ⚠️ **AND THE EXCLUSION IS SELF-POLICING RATHER THAN TRUSTED.** A flow file
+ * that ever imported the corpus would make this a hole, so the spec below
+ * asserts that each excluded file's OWN closure reaches no PSL module. Excluded
+ * by a stated property, checked by the property — not by name.
+ */
+const FLOW_DIR = resolve(process.cwd(), 'src/services/transitions/flows');
+const isFlowDefinition = (m: string): boolean => m.startsWith(FLOW_DIR);
+
+const PSL_FLOW_FILES = pslModules().filter(isFlowDefinition);
+
 const PSL_MODULES = [
-  'src/services/data/pslListing.ts',
-  'src/services/data/pslProjection.ts',
-  'src/services/data/pslSourcingSeam.ts',
-  'src/services/data/rfqSourcingGate.ts',
-  'src/services/data/mock/fixtures/pslListings.ts',
-  'src/components/v2-features/PslStatusCell.tsx',
-  'src/components/v2-features/PslListingsSection.tsx',
-].map((p) => resolve(process.cwd(), p));
+  ...pslModules().filter((m) => !isFlowDefinition(m)),
+  resolve(process.cwd(), 'src/services/data/rfqSourcingGate.ts'),
+];
 
 const EXTS = ['.ts', '.tsx', '/index.ts', '/index.tsx'];
 
@@ -137,6 +202,65 @@ function importsOf(file: string): string[] {
 const POLICY_BINDINGS = resolve(process.cwd(), 'src/services/transitions/policies.ts');
 
 /**
+ * ⚠️ **TWO MORE BOUNDARIES, ADDED AT P3 BECAUSE THE DERIVED POPULATION FOUND
+ * THEM — AND FINDING THEM IS WHAT THE DERIVATION WAS FOR.**
+ *
+ * The hand-written module list could not have surfaced either of these: it did
+ * not name `pslStore.ts`, `pslCapSettingStore.ts`, `psl.flow.ts`,
+ * `pslCapSetting.flow.ts` or `lib/i18n/psl.ts`, so the closure was never asked
+ * about them. The glob asks, and the answer was 60 offending edges — every one
+ * of them through exactly TWO files.
+ *
+ * **MEASURED, not predicted.** The shortest path from `SupplierDashboard.tsx`
+ * to the corpus store is:
+ *
+ *   SupplierDashboard → ProvenanceMarker → services/liveness/index →
+ *   services/liveness/registry → mock/MockCommandService → mock/stores/pslStore
+ *
+ * and to the copy fragment:
+ *
+ *   SupplierDashboard → OrdersToConfirmWidget → lib/format → lib/i18n →
+ *   lib/i18n/psl
+ *
+ * ── ⚠️ WHY EACH IS A BOUNDARY AND NOT A DEFECT ─────────────────────────────
+ *
+ * **1. `MockCommandService.ts` — THE ONE COMMAND SERVICE, FOR BOTH PERSONAS.**
+ * Every `CommandTarget` in the platform binds there, so it imports every store;
+ * `LivenessRegistry` reads its `WIRED_COMMAND_TARGETS` census to decide whether
+ * a capability renders SIMULATED or LIVE, and `ProvenanceMarker` renders that
+ * on BOTH sides. This is `policies.ts`'s situation verb for verb: **a
+ * PSL-writing command target and an absolute import-closure claim are mutually
+ * exclusive by construction**, because one dispatcher serves both personas and
+ * there is no buyer-only composition point.
+ *
+ * What replaces the claim is STRONGER in the dimension that matters, and it is
+ * asserted below: `pslTarget.readScopeOwner` returns `null`, so **a supplier is
+ * refused at SCOPE on every PSL verb** — before any hook runs and before any
+ * row is read — and `getPslListings` gates on `personaType` so a supplier scope
+ * reads `[]`, published or not.
+ *
+ * **2. `lib/i18n.ts` — THE ONE TRANSLATION BUNDLE.** Every locale fragment in
+ * the platform registers there and every page loads it. `lib/i18n/psl.ts`
+ * carries COPY — verb labels, refusal sentences, a subtitle — and not one
+ * `PslListing`. Reaching it tells a supplier surface what a button on a screen
+ * they cannot open would have said.
+ *
+ * ⚠️ **BOTH ARE ABSOLUTE PATHS, NOT DIRECTORIES OR REGEXES**, for the reason
+ * the first boundary already states: *an exemption nobody notices is how a
+ * guard dies.* And both are proved load-bearing by the unbounded probe below —
+ * remove them and the offenders come straight back.
+ */
+const COMMAND_SERVICE = resolve(process.cwd(), 'src/services/data/mock/MockCommandService.ts');
+const I18N_BUNDLE = resolve(process.cwd(), 'src/lib/i18n.ts');
+
+/** The three named composition points. A fourth has to be added BY HAND. */
+const BOUNDARIES: ReadonlySet<string> = new Set([
+  POLICY_BINDINGS,
+  COMMAND_SERVICE,
+  I18N_BUNDLE,
+]);
+
+/**
  * The transitive closure of files reachable from `entry`, by import.
  *
  * `stopAt` is the boundary set: a member is RECORDED as reached (so a probe can
@@ -144,7 +268,7 @@ const POLICY_BINDINGS = resolve(process.cwd(), 'src/services/transitions/policie
  * Defaulted, so the probe below can run the same walker with the boundary
  * removed and watch this guard fire.
  */
-function closure(entry: string, stopAt: ReadonlySet<string> = new Set([POLICY_BINDINGS])): Set<string> {
+function closure(entry: string, stopAt: ReadonlySet<string> = BOUNDARIES): Set<string> {
   const seen = new Set<string>();
   const stack = [entry];
   while (stack.length > 0) {
@@ -206,6 +330,81 @@ describe('REACH — the instrument is looking at the shipped tree', () => {
     for (const m of PSL_MODULES) expect(existsSync(m), m).toBe(true);
   });
 
+  it('⚠️ THE DERIVED SET IS REAL AND COVERS THE GLOB — both directions (B-S4d)', () => {
+    // `EMPTY-INPUT-REPORTS-CLEAN-01`: a walker returning `[]` would make every
+    // claim in this file pass having examined nothing. Membership, by name,
+    // never a count.
+    const rel = PSL_MODULES.map((m) => relative(process.cwd(), m).split(sep).join('/'));
+    expect(rel).toContain('src/services/data/pslListing.ts');
+    expect(rel).toContain('src/services/data/pslProjection.ts');
+    expect(rel).toContain('src/services/data/pslSourcingSeam.ts');
+    expect(rel).toContain('src/services/data/rfqSourcingGate.ts');
+    expect(rel).toContain('src/components/v2-features/PslStatusCell.tsx');
+    expect(rel).toContain('src/components/v2-features/PslListingsSection.tsx');
+
+    // ⚠️ THE DIRECTION THE HAND LIST NEVER HAD. These four are the P2 and P3
+    // modules the old array would have had to be edited to gain — and the
+    // STORE is the one that mattered, because a type-imported store inherits
+    // membership from nothing and would have been reachable with this file
+    // green.
+    expect(rel).toContain('src/components/v2-features/PslGateNotice.tsx');
+    expect(rel).toContain('src/services/data/mock/stores/pslStore.ts');
+    expect(rel).toContain('src/services/data/mock/stores/pslCapSettingStore.ts');
+    expect(rel).toContain('src/services/data/pslLeadCheck.ts');
+
+    // COVERAGE, stated as the property: every `psl*` / `Psl*` source file in
+    // the tree that is NOT a flow definition is in the set. Derived on both
+    // sides from the same walker, so this asserts the SET rather than a sample.
+    const glob = pslModules().map((m) => relative(process.cwd(), m).split(sep).join('/'));
+    const protectedGlob = pslModules()
+      .filter((m) => !isFlowDefinition(m))
+      .map((m) => relative(process.cwd(), m).split(sep).join('/'));
+    expect(protectedGlob.every((g) => rel.includes(g))).toBe(true);
+    expect(protectedGlob.length).toBeGreaterThan(8);
+
+    // ⚠️ AND THE EXCLUSION IS VISIBLE RATHER THAN SILENT: the flow files ARE
+    // glob members and are deliberately not in the protected set. A reader who
+    // greps for `psl.flow.ts` here finds it named, with the rule beside it.
+    expect(glob).toContain('src/services/transitions/flows/psl.flow.ts');
+    expect(glob).toContain('src/services/transitions/flows/pslCapSetting.flow.ts');
+    expect(rel).not.toContain('src/services/transitions/flows/psl.flow.ts');
+    expect(rel).not.toContain('src/services/transitions/flows/pslCapSetting.flow.ts');
+
+    // KNOWN-BAD: a spec is not a module, and the retired fixture is gone.
+    expect(rel.some((r) => /\.test\.(ts|tsx)$/.test(r))).toBe(false);
+    expect(rel).not.toContain('src/services/data/mock/fixtures/pslListings.ts');
+  });
+
+  it('⚠️ THE FLOW EXCLUSION IS SELF-POLICING — a flow file reaches no corpus', () => {
+    // ⚠️ **THE HALF THAT KEEPS AN EXCLUSION FROM BEING A HOLE.** Flow
+    // definitions are excluded on a stated property — *a `FlowDefinition`
+    // cannot yield a `PslListing`* — so the property is CHECKED rather than
+    // trusted. The day `psl.flow.ts` imports the store, this goes red and the
+    // exclusion has to be re-argued instead of quietly covering a leak.
+    expect(PSL_FLOW_FILES.length).toBe(2);
+    for (const f of PSL_FLOW_FILES) {
+      const reach = closure(f, new Set());
+      const hits = PSL_MODULES.filter((m) => reach.has(m));
+      expect(hits, `${f} reaches a PSL corpus module`).toEqual([]);
+    }
+  });
+
+  it('⚠️ AND THE TYPE-ONLY GAP IS CLOSED BY MEMBERSHIP, NOT BY THE WALKER', () => {
+    // ⚠️ **THE RESIDUAL IS STATED RATHER THAN PAPERED OVER.** `pslStore.ts`
+    // reaches NO other PSL module — its only PSL import is `import type
+    // { PslListing }`, which this walker correctly drops. So it could never
+    // have been caught transitively, and it is caught because the derivation
+    // makes it a member in its own right.
+    const store = importsOf(resolve(SRC, 'services/data/mock/stores/pslStore.ts'));
+    expect(store.filter((x) => x.includes('pslListing'))).toEqual([]);
+    expect(PSL_MODULES).toContain(resolve(SRC, 'services/data/mock/stores/pslStore.ts'));
+
+    // ⚠️ AND WHAT IS DELIBERATELY *NOT* CAUGHT, so nobody reads the sentence
+    // above as a stronger claim than it is: a supplier surface that TYPE-ONLY
+    // imports `PslListing` and nothing else is not a reach and must not be
+    // flagged — no data crosses an erased import.
+  });
+
   it('⚠️ THE INSTRUMENT CAN FIRE — a BUYER surface DOES reach the PSL', () => {
     // The control that separates "no supplier reaches it" from "the walker
     // reaches nothing". Without this, deleting `importsOf`'s regex body would
@@ -217,8 +416,14 @@ describe('REACH — the instrument is looking at the shipped tree', () => {
 
   it('⚠️ comments cannot be mistaken for imports', () => {
     // This file names every PSL module in prose and imports two of them.
+    // ⚠️ The value import moved at P3 — the frozen fixture is retired and the
+    // corpus is GROWN — so the known-good member is the seed rather than
+    // `./mock/fixtures/pslListings`. The claim is unchanged: a module NAMED
+    // only in prose must not appear, and `pslSourcingSeam` is named repeatedly
+    // above and imported nowhere.
     const self = importsOf(resolve(SRC, 'services/data/pslNoSupplierRead.test.ts'));
-    expect(self).toContain('./mock/fixtures/pslListings');
+    expect(self).toContain('./mock/pslSeed');
+    expect(self).toContain('./mock/stores/pslStore');
     expect(self.filter((s) => s.includes('pslSourcingSeam'))).toEqual([]);
   });
 
@@ -242,7 +447,11 @@ describe('REACH — the instrument is looking at the shipped tree', () => {
     // `import type` line but ALSO loads `pslListings` and `pslProjection` for
     // values — the value imports must survive the filter.
     const cell = importsOf(resolve(SRC, 'components/v2-features/PslStatusCell.tsx'));
-    expect(cell.some((x) => x.includes('pslListings'))).toBe(true);
+    // ⚠️ `pslStore` rather than `pslListings` at P3 (B-S4c): the cell's default
+    // corpus is the STORE now, because a cell defaulted to a frozen snapshot
+    // would render yesterday's designation beside a queue that had just changed
+    // it, with nothing going red.
+    expect(cell.some((x) => x.includes('pslStore'))).toBe(true);
     expect(cell.some((x) => x.includes('pslProjection'))).toBe(true);
   });
 });
@@ -260,6 +469,111 @@ describe('⚠️ NO SUPPLIER SURFACE REACHES ANY PSL MODULE', () => {
       }
     }
     expect(offenders).toEqual([]);
+  });
+
+  it('⚠️ EACH BOUNDARY IS INDIVIDUALLY LOAD-BEARING — drop one and it FIRES', () => {
+    // ⚠️ **THE UNBOUNDED PROBE BELOW PROVES THE SET IS NEEDED; THIS PROVES
+    // EVERY MEMBER OF IT IS.** Without this, a boundary that had stopped
+    // holding anything back would sit in the set forever, and the set would
+    // read as three decisions when it was one decision and two habits.
+    for (const boundary of BOUNDARIES) {
+      const without = new Set([...BOUNDARIES].filter((b) => b !== boundary));
+      const offenders: string[] = [];
+      for (const surface of surfaces) {
+        const reach = closure(surface, without);
+        for (const m of PSL_MODULES) if (reach.has(m)) offenders.push(surface);
+      }
+      expect(
+        offenders.length,
+        `${boundary} holds nothing back — retire it rather than leaving it`,
+      ).toBeGreaterThan(0);
+    }
+  });
+
+  it('⚠️ A SUPPLIER IS REFUSED AT SCOPE ON EVERY PSL VERB — what replaces the claim', () => {
+    // ⚠️ **THIS IS THE ASSERTION THAT PAYS FOR THE `MockCommandService`
+    // BOUNDARY.** The bytes are in a supplier's module graph — they always were
+    // for every other lane, and this platform ships every fixture to every
+    // client and scopes tenancy client-side. What must be true instead is that
+    // a supplier seat cannot reach a PSL verb at all.
+    //
+    // `pslTarget.readScopeOwner` returns `null`, which the dispatcher treats as
+    // "NO SUPPLIER MAY ACT ON THIS" rather than "nothing to compare" (§86), so
+    // the refusal lands at SCOPE — before the role gate, before any hook, and
+    // before any row is read. The refusal kind is therefore identical for a
+    // listing that exists and one that does not, which is what stops it being
+    // an existence oracle across a tenancy boundary.
+    const supplierScope: QueryScope = {
+      personaType: 'supplier',
+      supplierId: 'sup-002',
+      businessRoles: ['commercial', 'fulfilment', 'back_office'],
+      actor: NO_PERSON,
+    };
+    const commands = new MockCommandService();
+    const real = pslRows()[0];
+    expect(real, 'the corpus is empty — this spec would be vacuous').toBeDefined();
+
+    // ⚠️ THE **CODE**, NEVER THE MESSAGE. `dispatcher.ts` throws
+    // `new DataError('SCOPE_DENIED', "command on psl 'psl-001' denied for
+    // scope")` — the message is PROSE and does not contain the kind, which is
+    // exactly why `describeRefusal` returns `null` for a thrown error and
+    // `describeDataError` exists. A `toThrow(/SCOPE_DENIED/)` here would be
+    // matching a sentence somebody may reword.
+    const kindOf = async (input: Parameters<typeof commands.dispatch>[1]): Promise<string> => {
+      try {
+        await commands.dispatch(supplierScope, input);
+        return 'NOT_REFUSED';
+      } catch (e) {
+        return e instanceof DataError ? e.code : `THREW_${String(e)}`;
+      }
+    };
+
+    return (async () => {
+      for (const [transitionId, payload] of [
+        ['t_psl_grant', { reason: 'x' }],
+        ['t_psl_reject', { reason: 'x' }],
+        ['t_psl_withdraw', { reason: 'x' }],
+        ['t_psl_publish', {}],
+        ['t_psl_change_status', { status: 'Validated', reason: 'x' }],
+        ['t_psl_renew', { validUntil: '2030-01-01', reason: 'x' }],
+        ['t_psl_cap_override', { capDaysOverride: 30, capJustification: 'x' }],
+      ] as const) {
+        expect(
+          await kindOf({
+            transitionId,
+            entity: 'psl',
+            entityId: real.id,
+            payload: { ...payload },
+          }),
+          transitionId,
+        ).toBe('SCOPE_DENIED');
+      }
+      // ⚠️ AND THE SAME REFUSAL ON A ROW THAT DOES NOT EXIST — the half that
+      // says the refusal KIND is not an existence oracle across the tenancy
+      // boundary (§86, `ownerlessScope.test.ts`).
+      expect(
+        await kindOf({
+          transitionId: 't_psl_publish',
+          entity: 'psl',
+          entityId: 'psl-does-not-exist',
+          payload: {},
+        }),
+      ).toBe('SCOPE_DENIED');
+
+      // ⚠️ KNOWN-GOOD CONTROL: a BUYER seat holding the atom is NOT refused at
+      // scope. Without it, a dispatcher that refused everything would pass every
+      // assertion above.
+      const buyerPublish = await commands.dispatch(
+        {
+          personaType: 'buyer',
+          supplierId: null,
+          businessRoles: ['procurement'],
+          actor: NO_PERSON,
+        },
+        { transitionId: 't_psl_publish', entity: 'psl', entityId: real.id, payload: {} },
+      );
+      expect(buyerPublish.status).not.toBe(undefined);
+    })();
   });
 
   it('⚠️ THE BOUNDARY IS LOAD-BEARING — remove it and this guard FIRES', () => {
@@ -374,7 +688,7 @@ describe('⚠️ NO SUPPLIER SEAT CAN REACH THE VERBS WHOSE HOOKS READ THE PSL',
     });
     expect(res.status).toBe('failed');
     expect(res.reason).toContain('COMPETITION_UNDER_FLOOR');
-    for (const l of PSL_LISTINGS) expect(res.reason!.includes(l.id), l.id).toBe(false);
+    for (const l of pslRows()) expect(res.reason!.includes(l.id), l.id).toBe(false);
   });
 });
 
@@ -394,14 +708,14 @@ describe('⚠️ THE SUPPLIER READ PATH CARRIES NO PSL FIELD', () => {
     // and the serialised record names no listing id — the leak a key-name scan
     // would miss if a listing were embedded under an innocuous key.
     const blob = JSON.stringify(me);
-    for (const l of PSL_LISTINGS) expect(blob.includes(l.id), l.id).toBe(false);
+    for (const l of pslRows()) expect(blob.includes(l.id), l.id).toBe(false);
   });
 
   it('⚠️ AND sup-002 IS THE MULTI-LISTING SUPPLIER — the test is not vacuous', () => {
     // Asserting "no PSL data" about a supplier that holds none proves nothing.
     // sup-002 holds several, one of them PUBLISHED, so if publication ever
     // leaked into the supplier read this is where it surfaces.
-    const held = PSL_LISTINGS.filter((r) => r.supplierId === 'sup-002');
+    const held = pslRows().filter((r) => r.supplierId === 'sup-002');
     expect(held.length).toBeGreaterThan(1);
     expect(held.some((r) => r.publishedAt !== null)).toBe(true);
   });

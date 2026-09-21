@@ -9,23 +9,51 @@
 // the only way to hold a "usable from a policy hook" claim, because a hook has
 // none of those things and cannot be given them.
 // ─────────────────────────────────────────────────────────────────────────────
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 
 import { DECLARED_PRESENT } from './fixturePresent';
-import { PSL_LISTINGS } from './mock/fixtures/pslListings';
-import { pslStatusFor, suspendsCompetitiveBidding } from './pslSourcingSeam';
+import { seedPslListings } from './mock/pslSeed';
+import { pslStore } from './mock/stores/pslStore';
 import type { PslListing } from './pslListing';
+import { pslStatusFor, suspendsCompetitiveBidding } from './pslSourcingSeam';
+
+/**
+ * THE CORPUS, GROWN RATHER THAN IMPORTED.
+ *
+ * ⚠️ **`PSL_LISTINGS` IS GONE AND THIS IS ITS REPLACEMENT** (PSL P3, operator
+ * ruling h). The nine rows are no longer `PslListing` literals in a frozen
+ * fixture — they are PAYLOADS in `pslSeed.ts`, dispatched through
+ * `t_psl_propose` and its siblings under LANE-CORRECT scopes. So the corpus
+ * does not exist until the seed has run, which is why this is a FUNCTION and
+ * not a const: a module-scope read would capture `[]`.
+ *
+ * ⚠️ **AND THAT IS THE `EMPTY-INPUT-REPORTS-CLEAN-01` SHAPE, WHICH IS WHY THE
+ * SEED'S OWN OUTCOME IS ASSERTED BELOW AND EVERY POPULATION GUARD IN THIS FILE
+ * ASSERTS MEMBERSHIP.** "No row is malformed" passes vacuously over `[]`.
+ */
+const pslRows = (): readonly PslListing[] => pslStore.all();
+
+// ⚠️ SEEDED ONCE, THROUGH THE REAL VERBS. `pslStore.reset()` runs first so the
+// file does not depend on whatever order vitest loaded modules in.
+beforeAll(async () => {
+  pslStore.reset();
+  const outcome = await seedPslListings();
+  // The seed's own refusal is REPORTED rather than swallowed: a half-seeded
+  // store would make every assertion below a different, quieter test.
+  expect(outcome.status, outcome.reason ?? '').toBe('seeded');
+});
+
 
 const MS = 86_400_000;
 const at = (n: number): string =>
   new Date(Date.parse(DECLARED_PRESENT) + n * MS).toISOString();
 
-const byId = (id: string): PslListing => PSL_LISTINGS.find((r) => r.id === id)!;
+const byId = (id: string): PslListing => pslRows().find((r) => r.id === id)!;
 
 // ─────────────────────────────────────────────────────────────────────────────
 describe('REACH — the seam has a real corpus and reaches all three verdicts', () => {
   it('the default corpus is the shipped one and is non-empty', () => {
-    expect(PSL_LISTINGS.length).toBeGreaterThan(5);
+    expect(pslRows().length).toBeGreaterThan(5);
   });
 
   it('⚠️ all three `kind`s are reached by NAMED suppliers at the declared present', () => {

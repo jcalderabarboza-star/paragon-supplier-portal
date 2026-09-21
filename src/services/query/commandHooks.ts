@@ -19,6 +19,7 @@ import type { BidCurrency } from '../../lib/currencyPolicy';
 import type { FxPinSource } from '../../lib/fxPin';
 import type { RFQCategory } from '../../data/mockRfqs';
 import type { CodeLessReason } from '../../data/materialCatalogReason';
+import type { PslStatus } from '../data/pslListing';
 import type {
   CommandResult,
   CommandStatus,
@@ -1575,6 +1576,242 @@ export function useMaterialRequestReject() {
         entity: 'materialRequest',
         entityId: requestId,
         payload: { justification },
+      }),
+    onSuccess: (result) => {
+      if (result.status !== 'failed') invalidate(scope);
+    },
+  });
+}
+
+// ── PSL P3 · THE GOVERNANCE VERBS ───────────────────────────────────────────
+//
+// Eight mutations over one entity. Every payload is TYPED — a
+// `Record<string, unknown>` at a call site is how a field name drifts from the
+// `requiredFields` the dispatcher will check, and the refusal a caller then
+// gets names a field nobody can find on the form.
+//
+// ⚠️ **THE LANES DIFFER PER VERB AND THE HOOKS DO NOT ENCODE THEM.** `scope`
+// comes from the session, so a seat holding only `procurement` gets
+// `ROLE_NOT_PERMITTED` on `usePslGrant` from the dispatcher rather than a
+// different hook. What a SURFACE must do is not offer the verb —
+// `useVerbAvailabilities` is what answers that, per verb, in that verb's own
+// slot.
+
+/** What `t_psl_propose` carries. Mirrors `PSL_PROPOSE_FIELDS`, plus the
+ *  optional evidence references a proposal may cite. */
+export interface PslProposePayload {
+  supplierId: string;
+  materialCodes: readonly string[];
+  status: PslStatus;
+  /** Authored days. Never clock-checked — an already-past validity is a
+   *  BACKFILL, which is how an existing list enters this portal. */
+  validFrom: string;
+  validUntil: string;
+  justification: string;
+  /** The first ledger entry's reason. */
+  reason: string;
+  evidenceRefs?: readonly string[];
+}
+
+/** Raise a listing (`psl:propose`, the `procurement` lane). */
+export function usePslPropose() {
+  const svc = useDataService();
+  const scope = useScope();
+  const invalidate = useInvalidateProcurement();
+
+  return useMutation<CommandResult, Error, { payload: PslProposePayload }>({
+    mutationFn: ({ payload }) =>
+      svc.commands.dispatch(scope, {
+        transitionId: 't_psl_propose',
+        entity: 'psl',
+        payload: { ...payload, materialCodes: [...payload.materialCodes] },
+      }),
+    onSuccess: (result) => {
+      if (result.status !== 'failed') invalidate(scope);
+    },
+  });
+}
+
+/**
+ * Approve a listing (`psl:decide`, the `compliance` lane).
+ *
+ * ⚠️ **A `Mandatory` OR `Sole Source` GRANT ALSO FACES
+ * `PSL_RESTRICTIVE_STATUS_APPROVED`, WHICH THE ROLE GATE CANNOT SEE.** The
+ * surface must ask `restrictiveDecisionVerdict` off the same call rather than
+ * trusting `useVerbAvailability` alone, or it will offer a button the
+ * dispatcher refuses — which is the false-affordance shape R1 swept.
+ */
+export function usePslGrant() {
+  const svc = useDataService();
+  const scope = useScope();
+  const invalidate = useInvalidateProcurement();
+
+  return useMutation<CommandResult, Error, { listingId: string; reason: string }>({
+    mutationFn: ({ listingId, reason }) =>
+      svc.commands.dispatch(scope, {
+        transitionId: 't_psl_grant',
+        entity: 'psl',
+        entityId: listingId,
+        payload: { reason },
+      }),
+    onSuccess: (result) => {
+      if (result.status !== 'failed') invalidate(scope);
+    },
+  });
+}
+
+/** Refuse a listing (`psl:decide`). Terminal — a second attempt is a new
+ *  record through `t_psl_propose`, by ruling. */
+export function usePslReject() {
+  const svc = useDataService();
+  const scope = useScope();
+  const invalidate = useInvalidateProcurement();
+
+  return useMutation<CommandResult, Error, { listingId: string; reason: string }>({
+    mutationFn: ({ listingId, reason }) =>
+      svc.commands.dispatch(scope, {
+        transitionId: 't_psl_reject',
+        entity: 'psl',
+        entityId: listingId,
+        payload: { reason },
+      }),
+    onSuccess: (result) => {
+      if (result.status !== 'failed') invalidate(scope);
+    },
+  });
+}
+
+/** Re-designate a listed supplier (`psl:decide`). The policy's *"status is
+ *  dynamic"* clause, as an append on `Listed`. */
+export function usePslChangeStatus() {
+  const svc = useDataService();
+  const scope = useScope();
+  const invalidate = useInvalidateProcurement();
+
+  return useMutation<
+    CommandResult,
+    Error,
+    { listingId: string; status: PslStatus; reason: string }
+  >({
+    mutationFn: ({ listingId, status, reason }) =>
+      svc.commands.dispatch(scope, {
+        transitionId: 't_psl_change_status',
+        entity: 'psl',
+        entityId: listingId,
+        payload: { status, reason },
+      }),
+    onSuccess: (result) => {
+      if (result.status !== 'failed') invalidate(scope);
+    },
+  });
+}
+
+/**
+ * Extend a validity (`psl:decide`).
+ *
+ * ⚠️ **AN OVER-CAP RENEWAL IS REFUSED, NEVER SILENTLY BOUNDED** (ruling e), so
+ * a surface that clamped the date box would be hiding a refusal the person
+ * needs to see. Let the dispatcher answer and render its words.
+ */
+export function usePslRenew() {
+  const svc = useDataService();
+  const scope = useScope();
+  const invalidate = useInvalidateProcurement();
+
+  return useMutation<
+    CommandResult,
+    Error,
+    { listingId: string; validUntil: string; reason: string }
+  >({
+    mutationFn: ({ listingId, validUntil, reason }) =>
+      svc.commands.dispatch(scope, {
+        transitionId: 't_psl_renew',
+        entity: 'psl',
+        entityId: listingId,
+        payload: { validUntil, reason },
+      }),
+    onSuccess: (result) => {
+      if (result.status !== 'failed') invalidate(scope);
+    },
+  });
+}
+
+/** Stop a designation (`psl:decide`). Terminal. */
+export function usePslWithdraw() {
+  const svc = useDataService();
+  const scope = useScope();
+  const invalidate = useInvalidateProcurement();
+
+  return useMutation<CommandResult, Error, { listingId: string; reason: string }>({
+    mutationFn: ({ listingId, reason }) =>
+      svc.commands.dispatch(scope, {
+        transitionId: 't_psl_withdraw',
+        entity: 'psl',
+        entityId: listingId,
+        payload: { reason },
+      }),
+    onSuccess: (result) => {
+      if (result.status !== 'failed') invalidate(scope);
+    },
+  });
+}
+
+/**
+ * Share a listing with its supplier (`psl:publish`, the `procurement` lane).
+ *
+ * ⚠️ **NO PAYLOAD, AND BOTH FIELDS IT WRITES ARE FORBIDDEN TO A CALLER.**
+ * `publishedAt` is store-assigned (the `pinnedAt` discipline: a caller that
+ * could set it could backdate a disclosure) and `publishedBy` comes from the
+ * SESSION (C10 §6.2).
+ *
+ * ⚠️ **ONCE ONLY, AND NOT UNDOABLE** (rulings b and c). It records that the
+ * supplier was told; a later status change reaches them without publishing
+ * again, and there is no unpublish verb to build a button for.
+ */
+export function usePslPublish() {
+  const svc = useDataService();
+  const scope = useScope();
+  const invalidate = useInvalidateProcurement();
+
+  return useMutation<CommandResult, Error, { listingId: string }>({
+    mutationFn: ({ listingId }) =>
+      svc.commands.dispatch(scope, {
+        transitionId: 't_psl_publish',
+        entity: 'psl',
+        entityId: listingId,
+        payload: {},
+      }),
+    onSuccess: (result) => {
+      if (result.status !== 'failed') invalidate(scope);
+    },
+  });
+}
+
+/**
+ * Record a per-listing validity cap (`psl:cap-set`, the `compliance` lane).
+ *
+ * ⚠️ **ALL FOUR CAP FIELDS TRAVEL TOGETHER, AND TWO OF THEM ARE NOT HERE.**
+ * `capDecidedBy` comes from the session and `capDecidedAt` is store-assigned,
+ * so the caller supplies exactly the two that are its own — which is what makes
+ * the co-presence a property of the machine rather than a rule a fixture had
+ * to honour.
+ */
+export function usePslCapOverride() {
+  const svc = useDataService();
+  const scope = useScope();
+  const invalidate = useInvalidateProcurement();
+
+  return useMutation<
+    CommandResult,
+    Error,
+    { listingId: string; capDaysOverride: number; capJustification: string }
+  >({
+    mutationFn: ({ listingId, capDaysOverride, capJustification }) =>
+      svc.commands.dispatch(scope, {
+        transitionId: 't_psl_cap_override',
+        entity: 'psl',
+        entityId: listingId,
+        payload: { capDaysOverride, capJustification },
       }),
     onSuccess: (result) => {
       if (result.status !== 'failed') invalidate(scope);

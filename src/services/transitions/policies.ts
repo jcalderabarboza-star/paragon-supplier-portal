@@ -48,6 +48,22 @@ import {
 } from './customRoles';
 import { SYSTEM_ROLES, type SystemRoleId } from './businessRoles';
 import { catalogRoles } from './roles';
+import { atomsForSeat } from './customRoles';
+import { mockSuppliers } from '../../data/mockSuppliers';
+import { MATERIAL_MASTER } from '../sdc/fixtures';
+import {
+  isPslStatus,
+  isPublished,
+  PSL_STATUSES,
+  type PslListing,
+  type PslStatus,
+} from '../data/pslListing';
+import {
+  effectiveCap,
+  effectiveValidUntil,
+  PSL_CAP_CEILING_DAYS,
+} from '../data/pslProjection';
+import { restrictiveDecisionVerdict } from '../data/pslLeadCheck';
 import {
   APPLICATION_REQUEST_TYPES,
   VENDOR_BEARING_REQUEST_TYPE,
@@ -917,5 +933,403 @@ bindPolicyHook(POLICY_HOOKS.RFQ_AWARD_AWARDEE_INTEGRITY, ({ entityId, payload, t
     reason:
       `AWARDEE_NOT_THE_QUOTING_SUPPLIER: the award names ${verdict.supplierId}, but ` +
       `${verdict.quotationId} was submitted by ${verdict.quotingSupplierId || '(no such quotation)'}`,
+  };
+});
+
+// ── PSL P3 · THE GOVERNANCE VERBS ───────────────────────────────────────────
+//
+// ⚠️ **THE INSTANT IS `DECLARED_PRESENT`, AS IT ALREADY IS FOR THE P2 SOURCING
+// GATE, AND ONLY TWO HOOKS BELOW NEED ONE AT ALL.** `PolicyHookFn`'s ctx
+// carries six members and none is an instant; the wall clock is wrong because
+// the corpus is anchored at `P`; and a payload-supplied instant is C10 §6.2's
+// attribution-by-assertion shape one axis over — a proposer could backdate
+// their way past a cap. Everything below that needs "now" takes it from the
+// same declared present the sourcing gate does.
+//
+// ⚠️ **AND MOST OF THEM NEED NO CLOCK AT ALL, WHICH IS THE DESIGN.**
+// `PSL_VALIDITY_ORDERED` compares two AUTHORED dates against each other;
+// `PSL_RENEWAL_EXTENDS` compares a proposed end against the effective end;
+// `PSL_RENEWAL_WITHIN_CAP` compares a duration against a cap. Not one of them
+// asks whether a date has passed, because a verb that refused an already-past
+// validity would put the clock inside a transition (law 0.5) and would refuse
+// the day-one BACKFILL that is how an existing PSL enters this portal.
+
+/** The listing a PSL hook is judging, or `null` if the entity is gone. */
+function readPslListing(
+  target: { readEntity(id: string): unknown },
+  entityId: string,
+): PslListing | null {
+  const entity = target.readEntity(entityId);
+  return entity && typeof entity === 'object' ? (entity as PslListing) : null;
+}
+
+/** A payload string with something written in it. The dispatcher's
+ *  `requiredFields` check admits a string of spaces, which is why every
+ *  authored-text rule below is a HOOK and not a required field. */
+const authored = (value: unknown): string =>
+  typeof value === 'string' ? value.trim() : '';
+
+// — propose: the supplier must be on the roster ————————————————————————————
+//
+// A listing for a company the world does not name is a grant to nobody, and it
+// would sit on the Directory beside real suppliers with nothing to distinguish
+// it. `creationOwner` cannot express this: that seam answers TENANCY, and a PSL
+// listing has no tenant (`pslTarget.readScopeOwner` is null by design), so the
+// resolution has to happen where a refusal can say what went wrong.
+bindPolicyHook(POLICY_HOOKS.PSL_SUPPLIER_RESOLVED, ({ payload }) => {
+  const supplierId = authored(payload.supplierId);
+  if (mockSuppliers.some((s) => s.id === supplierId)) return { ok: true };
+  return {
+    ok: false,
+    reason:
+      `PSL_SUPPLIER_UNKNOWN: ${supplierId || '(none given)'} is not on the ` +
+      'supplier roster. Pick the supplier from the directory rather than typing an id.',
+  };
+});
+
+// — propose: the scope must name real material codes ——————————————————————
+//
+// ⚠️ **MEMBERSHIP, NEVER PRESENCE — THE `QUOTATION_SUBMIT_CURRENCY_PERMITTED`
+// LESSON IN ITS THIRD LANE.** `requiredFields` would admit `['anything']`, and
+// the listing would then cover a code no sourcing event can ever match: the
+// grant would be silently unreachable while the record looked granted, and
+// `pslStatusFor`'s narrowed query would simply never return it.
+bindPolicyHook(POLICY_HOOKS.PSL_SCOPE_WELL_FORMED, ({ payload }) => {
+  // ⚠️ **BLANKS ARE DROPPED BEFORE THE EMPTINESS TEST, AND THAT IS WHAT MAKES
+  // THE `PSL_SCOPE_EMPTY` ARM REACHABLE AT ALL.** A literally empty array is
+  // caught by the dispatcher's `requiredFields` check first and refused as
+  // `MISSING_FIELDS:materialCodes` — correct, and it answers before any hook.
+  // What the dispatcher CANNOT see is a list of blanks: `['  ']` is present and
+  // non-empty and names no material. Same gap as the whitespace-justification
+  // case, one field over, and the same remedy.
+  const codes = Array.isArray(payload.materialCodes)
+    ? (payload.materialCodes as readonly unknown[])
+        .map((c) => authored(c))
+        .filter((c) => c !== '')
+    : [];
+  if (codes.length === 0) {
+    return {
+      ok: false,
+      reason:
+        'PSL_SCOPE_EMPTY: a listing must name at least one material code. ' +
+        'Add the materials this designation covers.',
+    };
+  }
+  const unknown = codes.filter((c) => !(c in MATERIAL_MASTER));
+  if (unknown.length === 0) return { ok: true };
+  return {
+    ok: false,
+    reason:
+      `PSL_SCOPE_UNKNOWN_CODE: ${unknown.join(', ')} ` +
+      (unknown.length === 1 ? 'is not a material' : 'are not materials') +
+      ' this platform carries. Pick the codes from the material catalog, or ' +
+      'raise a material request for one that does not exist yet.',
+  };
+});
+
+// — propose / change status: the designation must be a known one ——————————
+bindPolicyHook(POLICY_HOOKS.PSL_STATUS_KNOWN, ({ payload }) => {
+  const status = authored(payload.status);
+  if (isPslStatus(status)) return { ok: true };
+  return {
+    ok: false,
+    reason:
+      `PSL_STATUS_UNKNOWN: ${status || '(none given)'} is not a designation ` +
+      `this platform recognises. It must be one of ${PSL_STATUSES.join(', ')}.`,
+  };
+});
+
+// — propose: the validity must run forwards ————————————————————————————————
+//
+// ⚠️ **TWO AUTHORED DATES AGAINST EACH OTHER, AND NEVER AGAINST `now`.** See
+// this block's header: an already-past validity is a BACKFILL, which is the
+// normal shape of a day-one load, and refusing it would put a clock inside a
+// transition.
+bindPolicyHook(POLICY_HOOKS.PSL_VALIDITY_ORDERED, ({ payload }) => {
+  const from = authored(payload.validFrom).slice(0, 10);
+  const until = authored(payload.validUntil).slice(0, 10);
+  if (!Number.isFinite(Date.parse(from)) || !Number.isFinite(Date.parse(until))) {
+    return {
+      ok: false,
+      reason:
+        'PSL_VALIDITY_UNREADABLE: the validity dates must both be real days. ' +
+        'Enter them as calendar dates.',
+    };
+  }
+  if (from <= until) return { ok: true };
+  return {
+    ok: false,
+    reason:
+      `PSL_VALIDITY_INVERTED: the designation would end (${until}) before it ` +
+      `begins (${from}). Correct the dates.`,
+  };
+});
+
+// — the authored-text guards ———————————————————————————————————————————————
+//
+// Two hooks rather than one, because a refusal must name the FIELD a person has
+// to go and fill. A shared hook would have to branch on `toState` to know
+// which, after which reading the guard no longer tells you what it guards —
+// `MATERIALREQUEST_REFUSAL_AUTHORED`'s own note, one lane over.
+bindPolicyHook(POLICY_HOOKS.PSL_JUSTIFICATION_AUTHORED, ({ payload }) => {
+  if (authored(payload.justification) !== '') return { ok: true };
+  return {
+    ok: false,
+    reason:
+      'PSL_JUSTIFICATION_BLANK: a listing needs a written justification — it ' +
+      'is the one sentence that says why this supplier holds a designation ' +
+      'that may suspend competitive bidding. Write why, then propose again.',
+  };
+});
+
+bindPolicyHook(POLICY_HOOKS.PSL_DECISION_AUTHORED, ({ payload }) => {
+  if (authored(payload.reason) !== '') return { ok: true };
+  return {
+    ok: false,
+    reason:
+      'PSL_DECISION_BLANK: every entry in a listing ledger carries a reason — ' +
+      'a silent change of designation is forbidden. Write the reason, then act again.',
+  };
+});
+
+// ── FOUR-EYES: BUILT, TYPED FOR, AND UNABLE TO FIRE TODAY ───────────────────
+//
+// ⚠️ **THIS HOOK ADMITS EVERY ACT IN THIS TREE, AND SAYING SO HERE IS THE POINT
+// — ITS GREEN MUST NEVER BE READ AS A WORKING CHECK.** `CurrentIdentity.actor`
+// is `UNATTRIBUTED: NO_PERSON_IN_SESSION` on both personas, so `isAttributed`
+// is false on both sides, the comparison never happens, and the hook returns
+// ok. That direction is correct — **an unattributed act is not evidence of
+// self-approval** — and refusing instead would make the lane unusable to
+// demonstrate a rule nobody can yet break.
+//
+// It is `pslListing.ts`'s OWN ruling executed rather than restated: *"Four-eyes
+// (proposer ≠ decider) is UNBUILDABLE today for exactly that reason: every
+// actor in this tree is `UNATTRIBUTED: NO_PERSON_IN_SESSION`, so there are no
+// two values to compare. Typing these as `string` now would make the check a
+// migration later instead of a one-line predicate."* The predicate below IS
+// that one line, in place and waiting, so F1 costs no edit here.
+//
+// ⚠️ **AND IT IS THE PER-DOCUMENT HALF. THE PER-SEAT HALF FIRES TODAY AND IS A
+// DIFFERENT HOOK** — `PSL_RESTRICTIVE_STATUS_APPROVED`, below. Saying so is
+// what stops the pair being read as one check written twice: this one asks
+// *did this PERSON raise it*, that one asks *does this SEAT hold both
+// authorities*, and only the second is answerable without an IdP.
+//
+// ⚠️ **PROBED BOTH WAYS, BECAUSE A ONE-SIDED PROBE OVER A POPULATION WHERE IT
+// CANNOT FIRE PROVES NOTHING** (rule 4): `pslCommand.test.ts` fires it at a
+// SYNTHETIC RESOLVED pair and requires a refusal BY NAME, beside the real-tree
+// run requiring an admit.
+bindPolicyHook(POLICY_HOOKS.PSL_DECIDER_NOT_PROPOSER, ({ entityId, target, scope }) => {
+  const row = readPslListing(target, entityId);
+  const proposer = row?.proposedBy;
+  const decider = scope.actor;
+  if (
+    proposer &&
+    decider &&
+    isAttributed(proposer) &&
+    isAttributed(decider) &&
+    proposer.person.personId === decider.person.personId
+  ) {
+    return {
+      ok: false,
+      reason:
+        `PSL_DECIDER_IS_PROPOSER: ${proposer.person.displayName} proposed this ` +
+        'listing and may not also decide it — raising a designation and ruling ' +
+        'on it are two authorities. Route it to somebody else.',
+    };
+  }
+  return { ok: true };
+});
+
+// — the restrictive-designation check (the "Lead" half that IS buildable) ——
+//
+// ⚠️ **ONE EXPRESSION, TWO READERS.** The rule lives in
+// `services/data/pslLeadCheck.ts` and the panel asks the SAME function off the
+// same call, on `handlePinConfirm` / `PslGateNotice`'s precedent — because an
+// authorisation decision taken inside a hook is invisible to
+// `useVerbAvailability`, and a surface that trusted the role gate alone would
+// offer the verb and the dispatcher would refuse it.
+//
+// ⚠️ **IT IS SEAT SEGREGATION, NOT SENIORITY, AND THE MODULE SAYS SO AT
+// LENGTH.** There is no `Lead` role and one may not be minted (C10 §3.4, plus
+// the bilateral bundle gate). What is checkable is that the deciding seat does
+// not also hold the raising authority — and that is what the refusal says.
+//
+// ⚠️ **THE DEFAULT BUYER SEAT HOLDS BOTH** (§76d: `SEEDED_SEAT_ROLES.buyer` is
+// all six lanes), so out of the box this hook REFUSES a Mandatory or Sole
+// Source decision until somebody narrows the seat on the identity panel. The
+// queue page keeps proposing and deciding out of one panel; that is a SURFACE
+// mitigation and it is not enforcement. This hook is the enforcement.
+bindPolicyHook(
+  POLICY_HOOKS.PSL_RESTRICTIVE_STATUS_APPROVED,
+  ({ entityId, target, payload, scope }) => {
+    // The designation under judgement: the payload's on a change, the row's on
+    // a grant or a renew (neither of which carries one).
+    const stated = authored(payload.status);
+    const row = readPslListing(target, entityId);
+    const status = (isPslStatus(stated) ? stated : row?.status) as PslStatus | undefined;
+    if (!status) return { ok: true };
+    const verdict = restrictiveDecisionVerdict(
+      status,
+      atomsForSeat(scope.businessRoles ?? []),
+    );
+    if (verdict.kind !== 'SEAT_HOLDS_BOTH') return { ok: true };
+    return {
+      ok: false,
+      reason:
+        `PSL_SEAT_HOLDS_BOTH_AUTHORITIES: a ${verdict.status} designation ` +
+        'suspends competitive bidding, so it may not be decided by a seat that ' +
+        'also raises listings. Narrow the seat to the deciding lane on the ' +
+        'identity panel, or route the decision to somebody who holds it.',
+    };
+  },
+);
+
+// — change status: it must actually change ————————————————————————————————
+bindPolicyHook(POLICY_HOOKS.PSL_STATUS_ACTUALLY_CHANGES, ({ entityId, target, payload }) => {
+  const row = readPslListing(target, entityId);
+  const next = authored(payload.status);
+  if (!row || next !== row.status) return { ok: true };
+  return {
+    ok: false,
+    reason:
+      `PSL_STATUS_UNCHANGED: this listing is already ${row.status}. A ledger ` +
+      'entry with no change in it records nothing; pick a different designation ' +
+      'or leave it as it stands.',
+  };
+});
+
+// — renew: it must extend ——————————————————————————————————————————————————
+bindPolicyHook(POLICY_HOOKS.PSL_RENEWAL_EXTENDS, ({ entityId, target, payload }) => {
+  const row = readPslListing(target, entityId);
+  if (!row) return { ok: true };
+  const next = authored(payload.validUntil).slice(0, 10);
+  if (!Number.isFinite(Date.parse(next))) {
+    return {
+      ok: false,
+      reason:
+        'PSL_RENEWAL_UNREADABLE: the new end date must be a real day. Enter it ' +
+        'as a calendar date.',
+    };
+  }
+  const current = effectiveValidUntil(row) ?? row.validUntil.slice(0, 10);
+  if (next > current) return { ok: true };
+  return {
+    ok: false,
+    reason:
+      `PSL_RENEWAL_DOES_NOT_EXTEND: this designation already runs to ${current}. ` +
+      'A renewal moves the end date later; to shorten a validity, record a cap ' +
+      'override with its justification instead.',
+  };
+});
+
+// — renew: it must stay within the cap ————————————————————————————————————
+//
+// ⚠️ **REFUSED HERE RATHER THAN BOUNDED AT READ** (operator ruling e).
+// `effectiveValidUntil` would clamp a longer renewal silently, so a person
+// would record two more years, the record would say two years and the surface
+// would say one. A governance bound that only ever appears in a projection is a
+// bound the decider never meets.
+//
+// ⚠️ **AND THE ASYMMETRY WITH `t_psl_propose` IS DELIBERATE, NOT AN OVERSIGHT.**
+// A proposal's `validUntil` is NOT cap-checked, because the cap is a READ-TIME
+// bound on a stated term: `effectiveValidUntil`, `PslCapSource` and the whole
+// "Effective until" line exist precisely to render a term the platform has
+// bounded. Refusing at propose would make every one of them unreachable. A
+// RENEWAL is different in kind — its entire payload IS the end date, so
+// recording it and then not moving the date is the act failing while reporting
+// success.
+bindPolicyHook(POLICY_HOOKS.PSL_RENEWAL_WITHIN_CAP, ({ entityId, target, payload }) => {
+  const row = readPslListing(target, entityId);
+  if (!row) return { ok: true };
+  const next = authored(payload.validUntil).slice(0, 10);
+  if (!Number.isFinite(Date.parse(next))) return { ok: true }; // named by the hook above
+  const cap = effectiveCap(row);
+  const from = Date.parse(row.validFrom.slice(0, 10));
+  if (!Number.isFinite(from)) return { ok: true };
+  const limit = new Date(from + cap.days * 86_400_000).toISOString().slice(0, 10);
+  if (next <= limit) return { ok: true };
+  return {
+    ok: false,
+    reason:
+      `PSL_RENEWAL_EXCEEDS_CAP: the validity cap in force is ${cap.days} days ` +
+      `from ${row.validFrom.slice(0, 10)}, so this designation may run to ${limit} ` +
+      `at the latest — not ${next}. Record a cap override with its justification ` +
+      'first, or renew to a date within the cap.',
+  };
+});
+
+// — publish: once, and only once ——————————————————————————————————————————
+//
+// `publishedAt` is write-once history (ruling b): it records that the supplier
+// was told. A second publish would either overwrite the instant they were
+// actually told or be a no-op reported as a success, and both are worse than a
+// refusal that says it is already published.
+bindPolicyHook(POLICY_HOOKS.PSL_NOT_ALREADY_PUBLISHED, ({ entityId, target }) => {
+  const row = readPslListing(target, entityId);
+  if (!row || !isPublished(row)) return { ok: true };
+  return {
+    ok: false,
+    reason:
+      'PSL_ALREADY_PUBLISHED: this listing has already been shared with the ' +
+      'supplier, and the date it was shared is a record that is not overwritten. ' +
+      'Changes to the designation reach the supplier without publishing again.',
+  };
+});
+
+// — the cap verbs ——————————————————————————————————————————————————————————
+//
+// ⚠️ **THE REFUSALS STATE THE CEILING, WHICH IS WHY IT STOPPED BEING A
+// PLACEHOLDER** (ruling i). A number a surface quotes back to somebody is a
+// ruling, whatever a comment says; `pslProjection.ts`'s own doc comment was
+// corrected in the same batch.
+bindPolicyHook(POLICY_HOOKS.PSL_CAP_WITHIN_CEILING, ({ payload }) => {
+  const days = Number(payload.capDaysOverride);
+  if (!Number.isInteger(days) || days <= 0) {
+    return {
+      ok: false,
+      reason:
+        'PSL_CAP_NOT_A_DURATION: a validity cap is a whole number of days ' +
+        'greater than zero. Enter the number of days this designation may run.',
+    };
+  }
+  if (days <= PSL_CAP_CEILING_DAYS) return { ok: true };
+  return {
+    ok: false,
+    reason:
+      `PSL_CAP_ABOVE_CEILING: ${days} days exceeds the platform ceiling of ` +
+      `${PSL_CAP_CEILING_DAYS} days. Record a cap within the ceiling, or take ` +
+      'the longer term to whoever can move the ceiling.',
+  };
+});
+
+bindPolicyHook(POLICY_HOOKS.PSL_CAP_JUSTIFICATION_AUTHORED, ({ payload }) => {
+  if (authored(payload.capJustification) !== '') return { ok: true };
+  return {
+    ok: false,
+    reason:
+      'PSL_CAP_JUSTIFICATION_BLANK: an override with no justification is an ' +
+      'unexplained exception. Write why this listing runs to a different cap ' +
+      'from every other one, then record it again.',
+  };
+});
+
+bindPolicyHook(POLICY_HOOKS.PSL_DEFAULT_CAP_WITHIN_CEILING, ({ payload }) => {
+  const days = Number(payload.days);
+  if (!Number.isInteger(days) || days <= 0) {
+    return {
+      ok: false,
+      reason:
+        'PSL_DEFAULT_CAP_NOT_A_DURATION: the portal default cap is a whole ' +
+        'number of days greater than zero.',
+    };
+  }
+  if (days <= PSL_CAP_CEILING_DAYS) return { ok: true };
+  return {
+    ok: false,
+    reason:
+      `PSL_DEFAULT_CAP_ABOVE_CEILING: ${days} days exceeds the platform ceiling ` +
+      `of ${PSL_CAP_CEILING_DAYS} days. A default above the ceiling would be ` +
+      'bounded on every read, which is a setting nobody could act on.',
   };
 });

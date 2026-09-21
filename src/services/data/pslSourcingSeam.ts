@@ -8,7 +8,7 @@
 // constraint than it looks, which is the whole reason this module exists
 // separately rather than as a page helper.
 //
-// ── ⚠️ WHY IT MUST BE PURE, SYNCHRONOUS AND STORE-FREE ──────────────────────
+// ── ⚠️ WHY IT MUST BE PURE AND SYNCHRONOUS ─────────────────────────────────
 //   A `PolicyHookFn` receives ONE ctx (`{entityId, currentState, toState,
 //   payload, target, scope}`) and returns a verdict. It has no React context,
 //   no `useDataService()`, no query client and no `await`. A PSL reader that
@@ -19,8 +19,17 @@
 //   The shape is `verifyHalalAtReceipt`'s, deliberately: a pure function over a
 //   corpus passed as a DEFAULTED PARAMETER. That makes the production call
 //   `pslStatusFor(id, scope, now)` and the test call
-//   `pslStatusFor(id, scope, now, syntheticRows)`, with no module mocking and
-//   no store in either.
+//   `pslStatusFor(id, scope, now, syntheticRows)`, with no module mocking in
+//   either.
+//
+//   ⚠️ **THIS HEADING SAID "AND STORE-FREE" UNTIL P3, AND IT IS CORRECTED
+//   RATHER THAN QUIETLY LEFT.** The default corpus is now `pslStore.all()`, so
+//   a call with no `rows` DOES touch a store — synchronously, which is the
+//   property a hook actually needs. `rfqSourcingGate.ts` has read
+//   `quotationStore` and `mockSuppliers` the same way since P2. What remains
+//   true, and is the whole contract: **every function here is a pure function
+//   of its arguments, and a caller that supplies `rows` reaches no store at
+//   all.**
 //
 // ── ⚠️ PUBLICATION IS DELIBERATELY IGNORED HERE — DO NOT ADD IT ─────────────
 //   **THE SOURCING GATE DEPENDS ON WHETHER A LISTING IS IN FORCE, NEVER ON
@@ -34,14 +43,31 @@
 //
 //   `pslSourcingSeam.test.ts` asserts this by construction — the same row
 //   published and unpublished must return the SAME verdict — so P2 cannot
-//   inherit the wrong premise by reading a stale sentence.
+//   inherit the wrong premise by reading a stale sentence. **At P3 that
+//   assertion is re-held OVER THE STORE** (B-PUB), because an assertion
+//   about a frozen fixture says nothing about rows a verb produced.
+//
+// ── ⚠️ B-S4c · THE CORPUS IS THE STORE, AND THE OLD DEFAULT WAS A LIVE TRAP ─
+//   P1 and P2 defaulted this seam's `rows` to `PSL_LISTINGS` — a FROZEN module
+//   array. P3 gave the lane eight verbs, and had that default survived, **every
+//   one of them would have been invisible to the sourcing gate**: a newly
+//   granted Sole Source listing would not have suspended competitive bidding
+//   and a withdrawn Mandatory one would have kept suspending it, with the whole
+//   suite green, because the gate's own specs pass their rows explicitly and
+//   would never have noticed.
+//
+//   The default is now `pslStore.all()`. `pslSeamReadsTheStore.test.ts` fires
+//   the shipped functions at a row that exists ONLY in the store and requires
+//   them to see it — and it is shown failing against the old binding first,
+//   because a probe that cannot fail proves nothing.
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { PSL_LISTINGS } from './mock/fixtures/pslListings';
+import { pslStore } from './mock/stores/pslStore';
 import {
   bestPslStatus,
   hasMaterialScope,
   isPslInForce,
+  type PslCapSetting,
   type PslStatus,
 } from './pslProjection';
 import type { PslListing } from './pslListing';
@@ -74,14 +100,20 @@ export type PslStanding =
  *                    build cannot interpret must never silently widen a grant.
  * @param nowIso      the instant, injected. Never read from the wall clock —
  *                    a gate must be able to ask "as of when?".
- * @param rows        the corpus. Defaulted so a hook needs no wiring; passed
- *                    explicitly by tests so no module mocking is involved.
+ * @param rows        the corpus. ⚠️ **THE STORE, NOT A FIXTURE** — see the
+ *                    header's B-S4c note. Defaulted so a hook needs no
+ *                    wiring; passed explicitly by tests so no module
+ *                    mocking is involved.
+ * @param ledger      the cap ledger. Defaulted the same way, and threaded
+ *                    because a cap decides `effectiveValidUntil`, which
+ *                    decides whether a listing is in force at all.
  */
 export function pslStatusFor(
   supplierId: string,
   scope: { readonly materialCode: string } | null,
   nowIso: string,
-  rows: readonly PslListing[] = PSL_LISTINGS,
+  rows: readonly PslListing[] = pslStore.all(),
+  ledger?: readonly PslCapSetting[],
 ): PslStanding {
   const held = rows.filter((r) => r.supplierId === supplierId);
   const relevant =
@@ -95,12 +127,12 @@ export function pslStatusFor(
   // ⚠️ `bestPslStatus` runs stage 1 (the clock) before the ladder, so a lapsed
   // Mandatory can never outrank a live Validated here either. The two callers
   // share ONE definition of "in force" rather than two that agree today.
-  const status = bestPslStatus(relevant, nowIso);
+  const status = bestPslStatus(relevant, nowIso, ledger);
   if (status === null) return { kind: 'LAPSED', listings: relevant };
   return {
     kind: 'IN_FORCE',
     status,
-    listings: relevant.filter((r) => isPslInForce(r, nowIso)),
+    listings: relevant.filter((r) => isPslInForce(r, nowIso, ledger)),
   };
 }
 
