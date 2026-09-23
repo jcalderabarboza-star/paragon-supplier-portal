@@ -8,10 +8,13 @@
 // commit involved, which is the trap `invoiceReadIsClockIndependent`'s header
 // names and the one an expiry spec falls into first.
 // ─────────────────────────────────────────────────────────────────────────────
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 
 import { DECLARED_PRESENT } from './fixturePresent';
-import { PSL_LISTINGS } from './mock/fixtures/pslListings';
+import { PSL_DEFAULT_CAP_SETTING_ID } from './mock/stores/pslCapSettingStore';
+import type { ActorAttribution } from '../../lib/enforcement';
+import { seedPslListings } from './mock/pslSeed';
+import { pslStore } from './mock/stores/pslStore';
 import {
   PSL_STATUSES,
   PSL_LIFECYCLES,
@@ -30,18 +33,51 @@ import {
   pslDisplayStatus,
 } from './pslProjection';
 
+/**
+ * THE CORPUS, GROWN RATHER THAN IMPORTED.
+ *
+ * ⚠️ **`PSL_LISTINGS` IS GONE AND THIS IS ITS REPLACEMENT** (PSL P3, operator
+ * ruling h). The nine rows are no longer `PslListing` literals in a frozen
+ * fixture — they are PAYLOADS in `pslSeed.ts`, dispatched through
+ * `t_psl_propose` and its siblings under LANE-CORRECT scopes. So the corpus
+ * does not exist until the seed has run, which is why this is a FUNCTION and
+ * not a const: a module-scope read would capture `[]`.
+ *
+ * ⚠️ **AND THAT IS THE `EMPTY-INPUT-REPORTS-CLEAN-01` SHAPE, WHICH IS WHY THE
+ * SEED'S OWN OUTCOME IS ASSERTED BELOW AND EVERY POPULATION GUARD IN THIS FILE
+ * ASSERTS MEMBERSHIP.** "No row is malformed" passes vacuously over `[]`.
+ */
+const pslRows = (): readonly PslListing[] => pslStore.all();
+
+// ⚠️ SEEDED ONCE, THROUGH THE REAL VERBS. `pslStore.reset()` runs first so the
+// file does not depend on whatever order vitest loaded modules in.
+beforeAll(async () => {
+  pslStore.reset();
+  const outcome = await seedPslListings();
+  // The seed's own refusal is REPORTED rather than swallowed: a half-seeded
+  // store would make every assertion below a different, quieter test.
+  expect(outcome.status, outcome.reason ?? '').toBe('seeded');
+});
+
+
 const MS = 86_400_000;
 /** An instant `n` days from the declared present. */
 const at = (n: number): string =>
   new Date(Date.parse(DECLARED_PRESENT) + n * MS).toISOString();
 
 const byId = (id: string): PslListing => {
-  const row = PSL_LISTINGS.find((r) => r.id === id);
+  const row = pslRows().find((r) => r.id === id);
   if (!row) throw new Error(`fixture row ${id} is gone — this spec is vacuous`);
   return row;
 };
 
-/** A synthetic row, for the arms no shipped fixture should be bent to reach. */
+/** The one actor this tree can construct. Named once so the synthetic ledgers
+ *  below cannot differ from the synthetic rows. */
+const NOBODY: ActorAttribution = { kind: 'UNATTRIBUTED', reason: 'NO_PERSON_IN_SESSION' };
+
+/** A synthetic row, for the arms no shipped corpus should be bent to reach —
+ *  and after P3 that includes `CEILING_BOUNDED`, which the cap VERBS refuse to
+ *  produce. See the ceiling spec below for why the arm still exists. */
 const row = (over: Partial<PslListing>): PslListing => ({
   id: 'psl-synthetic',
   supplierId: 'sup-002',
@@ -56,7 +92,7 @@ const row = (over: Partial<PslListing>): PslListing => ({
   capDecidedAt: null,
   justification: 'synthetic',
   evidenceRefs: [],
-  proposedBy: { kind: 'UNATTRIBUTED', reason: 'NO_PERSON_IN_SESSION' },
+  proposedBy: NOBODY,
   decidedBy: null,
   publishedAt: null,
   publishedBy: null,
@@ -67,13 +103,13 @@ const row = (over: Partial<PslListing>): PslListing => ({
 // ─────────────────────────────────────────────────────────────────────────────
 describe('REACH — the corpus reaches every arm, else every spec below is vacuous', () => {
   it('the population is non-empty and was read from the shipped fixture', () => {
-    expect(PSL_LISTINGS.length).toBeGreaterThan(5);
-    expect(PSL_LISTINGS.every((r) => r.id.startsWith('psl-'))).toBe(true);
+    expect(pslRows().length).toBeGreaterThan(5);
+    expect(pslRows().every((r) => r.id.startsWith('psl-'))).toBe(true);
   });
 
   it('⚠️ every DISPLAY arm is reached by a NAMED row at the declared present', () => {
     const shown = new Map(
-      PSL_LISTINGS.map((r) => [r.id, pslDisplayStatus(r, DECLARED_PRESENT)]),
+      pslRows().map((r) => [r.id, pslDisplayStatus(r, DECLARED_PRESENT)]),
     );
     // A NAMED MEMBER per arm, reached through a VALUE — never a count. Replace
     // the corpus and this goes red (`DATA-POPULATION-INSTRUMENT-SURVIVES-ITS-
@@ -87,10 +123,25 @@ describe('REACH — the corpus reaches every arm, else every spec below is vacuo
     expect(shown.get('psl-009')).toBe('Scheduled');
   });
 
-  it('⚠️ both CAP sources are reached by DATA, not only by synthetic input', () => {
+  it('⚠️ the cap sources reachable BY DATA are reached by data', () => {
+    // ⚠️ **ONE ARM MOVED FROM SEEDED TO SYNTHETIC AT P3, AND THE MOVE IS
+    // RECORDED HERE RATHER THAN LEFT TO BE NOTICED.** This read
+    // `effectiveCap(byId('psl-005')).source === 'CEILING_BOUNDED'`, because the
+    // retired corpus carried a 2000-day override on that row precisely to
+    // exercise the arm from DATA. `PSL_CAP_WITHIN_CEILING` now REFUSES any
+    // override above the ceiling, so the machine cannot produce that row — and
+    // weakening the hook to keep a fixture would be authoring a defect to keep
+    // a test green (operator ruling h).
+    //
+    // `CEILING_BOUNDED` is covered synthetically below, at
+    // *"the ceiling BOUNDS a cap recorded under a HIGHER ceiling"*, with the
+    // reason the arm still exists stated at the site.
     expect(effectiveCap(byId('psl-004')).source).toBe('LISTING_OVERRIDE');
-    expect(effectiveCap(byId('psl-005')).source).toBe('CEILING_BOUNDED');
     expect(effectiveCap(byId('psl-001')).source).toBe('NO_SETTING_RECORDED');
+    // ⚠️ AND THE HALF THAT KEEPS THE SENTENCE ABOVE HONEST: no seeded row
+    // reaches the ceiling arm, which is what makes the synthetic coverage
+    // necessary rather than merely convenient.
+    expect(pslRows().map((r) => effectiveCap(r).source)).not.toContain('CEILING_BOUNDED');
   });
 
   it('⚠️ BOTH publication states are reached, on rows that are NOT both in force', () => {
@@ -196,8 +247,27 @@ describe('the cap (R2–R4)', () => {
     });
   });
 
-  it('⚠️ the ceiling BOUNDS an over-long override — and is named, not silent', () => {
-    const r = byId('psl-005');
+  it('⚠️ the ceiling BOUNDS a cap recorded under a HIGHER ceiling — named, not silent', () => {
+    // ── ⚠️ SYNTHETIC, AND WHY THE ARM STILL EXISTS ────────────────────────
+    // Both cap verbs refuse a value above `PSL_CAP_CEILING_DAYS`, so NO
+    // DISPATCH can produce a row or a setting that lands here. What can is a
+    // later ruling that LOWERS the ceiling: a 700-day override recorded
+    // legitimately under a 730-day ceiling exceeds a 365-day one the day it is
+    // ruled, and this arm is what stops that cap staying silently in force
+    // above the new bound. Delete the arm and the ceiling becomes advisory for
+    // every row recorded before it moved.
+    //
+    // ⚠️ Its coverage MOVED here from `psl-005` at P3 (operator ruling h) —
+    // see the REACH block above for the accounting.
+    // `validUntil` is put far past the ceiling deliberately: the cap only
+    // BINDS when it falls earlier than the authored end, and a synthetic row
+    // whose end sat inside the cap would exercise the other branch while
+    // looking like it exercised this one.
+    const r = row({
+      validFrom: DECLARED_PRESENT,
+      validUntil: at(3000),
+      capDaysOverride: PSL_CAP_CEILING_DAYS + 1,
+    });
     expect(r.capDaysOverride!).toBeGreaterThan(PSL_CAP_CEILING_DAYS);
     expect(effectiveCap(r)).toEqual({
       days: PSL_CAP_CEILING_DAYS,
@@ -207,6 +277,72 @@ describe('the cap (R2–R4)', () => {
     expect(effectiveValidUntil(r)).toBe(
       new Date(from + PSL_CAP_CEILING_DAYS * MS).toISOString().slice(0, 10),
     );
+  });
+
+  it('⚠️ and it bounds an over-long PORTAL DEFAULT too, by the same arm', () => {
+    // The other route into `CEILING_BOUNDED`, and the reason `effectiveCap`
+    // bounds the default as well as the override: a ruling that lowers the
+    // ceiling below a recorded default must not leave the default in force
+    // above it.
+    const ledger = [
+      {
+        settingId: PSL_DEFAULT_CAP_SETTING_ID,
+        days: PSL_CAP_CEILING_DAYS + 100,
+        setBy: NOBODY,
+        setAt: '2026-01-01T00:00:00.000Z',
+      },
+    ];
+    expect(effectiveCap(row({ capDaysOverride: null }), ledger)).toEqual({
+      days: PSL_CAP_CEILING_DAYS,
+      source: 'CEILING_BOUNDED',
+    });
+  });
+
+  it('⚠️ A RECORDED PORTAL DEFAULT IS `PORTAL_DEFAULT`, NOT `NO_SETTING_RECORDED`', () => {
+    // ⚠️ **THE WHOLE POINT OF `t_psl_cap_set`, AND THE SENTENCE P1 PROMISED:**
+    // *"`NO_SETTING_RECORDED` starts meaning what it says."* The two answers
+    // are different sentences — *"nothing has been decided"* versus
+    // *"somebody chose this"* — and an operator acts on the difference.
+    const uncapped = row({ capDaysOverride: null });
+    expect(effectiveCap(uncapped, []).source).toBe('NO_SETTING_RECORDED');
+    const ledger = [
+      {
+        settingId: PSL_DEFAULT_CAP_SETTING_ID,
+        days: 200,
+        setBy: NOBODY,
+        setAt: '2026-01-01T00:00:00.000Z',
+      },
+    ];
+    expect(effectiveCap(uncapped, ledger)).toEqual({ days: 200, source: 'PORTAL_DEFAULT' });
+  });
+
+  it('⚠️ a LISTING OVERRIDE still beats a recorded portal default', () => {
+    // The precedence the record's own header states: the per-listing override
+    // if present, else the portal default. A ledger that could override an
+    // override would make the four cap fields decorative.
+    const ledger = [
+      {
+        settingId: PSL_DEFAULT_CAP_SETTING_ID,
+        days: 200,
+        setBy: NOBODY,
+        setAt: '2026-01-01T00:00:00.000Z',
+      },
+    ];
+    expect(effectiveCap(row({ capDaysOverride: 30 }), ledger)).toEqual({
+      days: 30,
+      source: 'LISTING_OVERRIDE',
+    });
+  });
+
+  it('⚠️ THE LAST APPEND WINS — a ledger is superseded by appending, never edited', () => {
+    const mk = (days: number, setAt: string) => ({
+      settingId: PSL_DEFAULT_CAP_SETTING_ID,
+      days,
+      setBy: NOBODY,
+      setAt,
+    });
+    const ledger = [mk(100, '2026-01-01T00:00:00.000Z'), mk(250, '2026-02-01T00:00:00.000Z')];
+    expect(effectiveCap(row({ capDaysOverride: null }), ledger).days).toBe(250);
   });
 
   it('the earlier of the authored end and the cap wins — in both directions', () => {
@@ -225,7 +361,7 @@ describe('the cap (R2–R4)', () => {
   });
 
   it('⚠️ THE FOUR OVERRIDE FIELDS TRAVEL TOGETHER, across the whole corpus', () => {
-    for (const r of PSL_LISTINGS) {
+    for (const r of pslRows()) {
       const present = [
         r.capDaysOverride,
         r.capJustification,
@@ -236,8 +372,8 @@ describe('the cap (R2–R4)', () => {
     }
     // BILATERAL: and at least one row actually carries them, else the loop
     // above is satisfied by a corpus that has no overrides at all.
-    expect(PSL_LISTINGS.some((r) => r.capDaysOverride !== null)).toBe(true);
-    expect(PSL_LISTINGS.some((r) => r.capDaysOverride === null)).toBe(true);
+    expect(pslRows().some((r) => r.capDaysOverride !== null)).toBe(true);
+    expect(pslRows().some((r) => r.capDaysOverride === null)).toBe(true);
   });
 });
 
@@ -313,7 +449,7 @@ describe('bestPslStatus — restrictiveness, after the clock', () => {
   });
 
   it('the fixture`s multi-listing supplier resolves to its most restrictive LIVE row', () => {
-    const sup002 = PSL_LISTINGS.filter((r) => r.supplierId === 'sup-002');
+    const sup002 = pslRows().filter((r) => r.supplierId === 'sup-002');
     expect(sup002.length).toBeGreaterThan(2);
     // psl-003 is Mandatory and EXPIRED; psl-001 is Sole Source and live.
     expect(bestPslStatus(sup002, DECLARED_PRESENT)).toBe('Sole Source');
@@ -323,7 +459,7 @@ describe('bestPslStatus — restrictiveness, after the clock', () => {
 // ─────────────────────────────────────────────────────────────────────────────
 describe('listingsForSupplier — a stable order a surface can render', () => {
   it('in-force rows come first', () => {
-    const rows = listingsForSupplier(PSL_LISTINGS, 'sup-002', DECLARED_PRESENT);
+    const rows = listingsForSupplier(pslRows(), 'sup-002', DECLARED_PRESENT);
     const live = rows.map((r) => isPslInForce(r, DECLARED_PRESENT));
     expect(live).toEqual([...live].sort((a, b) => Number(b) - Number(a)));
     expect(live).toContain(true);
@@ -331,6 +467,6 @@ describe('listingsForSupplier — a stable order a surface can render', () => {
   });
 
   it('a supplier with no listing gets an empty array, never a throw', () => {
-    expect(listingsForSupplier(PSL_LISTINGS, 'sup-001', DECLARED_PRESENT)).toEqual([]);
+    expect(listingsForSupplier(pslRows(), 'sup-001', DECLARED_PRESENT)).toEqual([]);
   });
 });

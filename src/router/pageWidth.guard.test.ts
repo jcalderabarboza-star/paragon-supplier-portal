@@ -121,7 +121,23 @@ describe('§70 · no page inside AppShellV2 sets its own width', () => {
         'do. §70 fixed the two Roles routes, which were the only exceptions and did ' +
         'not even agree with each other.',
     ).toEqual([]);
-  });
+    // ⚠️ **30 s, AND THE NUMBER IS A MEASUREMENT — THE ASSERTION ABOVE IS
+    // UNTOUCHED.** This test reads every routed page off disk and strips each
+    // one's comments; that IS the work, not an accident of how it is written.
+    // Alone it takes ~0.65 s on `main` and ~0.87–1.17 s here (three runs each) —
+    // and on this branch it crossed the 5000 ms DEFAULT and failed a full-suite
+    // gate run, because the PSL batch adds a route (so the scan reads one more
+    // page, `BuyerPreferredSuppliers`) and nine spec files (so the worker pool
+    // is more saturated). A latent fragility the batch amplified, not a new one.
+    // ⚠️ RAISING A BUDGET IS NOT LOOSENING AN ASSERTION: `offenders` must
+    // still be EMPTY, and a timed-out probe never ran that assertion at all —
+    // which is why a timeout is the one red that proves nothing.
+    // A PER-TEST budget is the tree's existing answer for whole-tree scans —
+    // `readingInstant` (§106i, the same defect three directories over),
+    // `stripComments` (the module THIS guard calls), `projectionGate`,
+    // `dayCounts`, `moduleScopeLiteralGate` and `storedFieldGate` all carry one.
+    // ⚠️ A GLOBAL `testTimeout` WOULD HIDE EVERY FUTURE SLOW TEST and is refused.
+  }, 30000);
 
   it('and the sanctioned measure constraint is still where it belongs', () => {
     // Bilateral: if `max-w-prose` vanishes from PageHeader, the rule above stops

@@ -53,7 +53,22 @@ const PslGateNotice: React.FC<{
   decision: SourcingDecision;
   /** Supplier display names, so a refusal can name a company and not an id. */
   nameOf?: (supplierId: string) => string;
-}> = ({ decision, nameOf }) => {
+  /**
+   * ⚠️ **B-R1 · HAS THE SUPPLIER BEEN TOLD?** Supplied by the PAGE, from the
+   * listing the exemption names, and deliberately NOT carried on the exemption
+   * itself: the gate is publication-blind by ruling and
+   * `rfqSourcingGate.test.ts` asserts *"the exemption is IDENTICAL published
+   * and unpublished"*. A field on the verdict would have made that assertion
+   * fail, and narrowing it to dodge one would have weakened the single guard
+   * that keeps publication out of a governance decision.
+   *
+   * `null` = the page did not resolve it (a listing id it could not find).
+   * Rendered as the INTERNAL case, because "we could not confirm they were
+   * told" and "they were not told" call for the same caution, and claiming the
+   * supplier knows is the only answer that could mislead.
+   */
+  supplierInformed?: boolean | null;
+}> = ({ decision, nameOf, supplierInformed = null }) => {
   const { t } = useTranslation();
   const word = useStatusWord();
   const name = (id: string) => nameOf?.(id) ?? id;
@@ -76,13 +91,48 @@ const PslGateNotice: React.FC<{
         ))}
 
       {competition.kind === 'NOT_REQUIRED' && (
-        <p className="text-xs text-text-secondary" data-testid="psl-gate-not-required">
-          {t('psl.gate.notRequired', {
-            supplier: name(competition.exemption.supplierId),
-            status: word(competition.exemption.status),
-            code: competition.exemption.materialCode,
-          })}
-        </p>
+        <div className="flex flex-col gap-1">
+          <p className="text-xs text-text-secondary" data-testid="psl-gate-not-required">
+            {t('psl.gate.notRequired', {
+              supplier: name(competition.exemption.supplierId),
+              status: word(competition.exemption.status),
+              code: competition.exemption.materialCode,
+            })}
+          </p>
+          {/* ── ⚠️ B-R1 · WHETHER THE SUPPLIER HAS BEEN TOLD, BESIDE THE
+                 CONCLUSION IT QUALIFIES ────────────────────────────────────
+              A buyer reading *"competitive bidding is not required"* is acting
+              on a designation the supplier may never have seen. Publication and
+              in-force are independent axes by ruling, and the seeded corpus
+              carries the falsifying case: an in-force Mandatory listing that is
+              INTERNAL. Until this chip existed, the only place that fact
+              appeared was the supplier profile's PSL tab — a different page,
+              reached by a different act, from a person already being told they
+              need not compete.
+
+              ⚠️ **IT IS A DISCLOSURE, NOT A CONDITION.** The exemption holds
+              either way; `pslStatusFor` and every hook still ignore
+              `publishedAt` (B-PUB). Rendering it as a caveat on the verdict
+              would be the conflation `pslSourcingSeam.ts` refuses in its own
+              header, arriving through the surface instead of the gate. */}
+          <span
+            className={`text-xs inline-flex items-center gap-1 ${
+              supplierInformed === true
+                ? 'text-text-tertiary'
+                : 'text-warning-hover'
+            }`}
+            data-testid="psl-gate-publication"
+          >
+            <span className="font-medium">
+              {supplierInformed === true
+                ? t('psl.published')
+                : t('psl.internal')}
+            </span>
+            {supplierInformed === true
+              ? null
+              : ` · ${t('psl.internal.explain')}`}
+          </span>
+        </div>
       )}
 
       {competition.kind === 'AT_FLOOR' && (

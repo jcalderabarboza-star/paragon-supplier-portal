@@ -11,6 +11,7 @@ import { seedEnforcementLedger } from './services/data/mock/enforcementSeed';
 import { seedSourceableRequisition } from './services/data/mock/requisitionSeed';
 import { seedSupplierApplications } from './services/data/mock/applicationSeed';
 import { seedMaterialRequests } from './services/data/mock/materialRequestSeed';
+import { seedPslListings } from './services/data/mock/pslSeed';
 import { withChaos, chaosConfigFromEnv } from './services/data/mock/withChaos';
 import { queryClient } from './services/query/queryClient';
 import type { IDataService } from './services/data/types';
@@ -105,5 +106,24 @@ seedEnforcementLedger()
   })
   .catch((err) => {
     console.error('[R8] the material-request seed threw:', err);
+  })
+  // PSL P3 — the preferred supplier list. Same contract as the four seeds
+  // above: real dispatched verbs, idempotent on a non-empty store, and a
+  // refusal is REPORTED rather than swallowed.
+  //
+  // ⚠️ **IT DISPATCHES UNDER TWO NARROW SCOPES, NOT THE DEFAULT SEAT.**
+  // `psl:propose` / `psl:publish` are `procurement`'s and `psl:decide` /
+  // `psl:cap-set` are `compliance`'s, and six of the nine rows carry a
+  // restrictive designation — so a seed under the wide seat would be refused by
+  // `PSL_RESTRICTIVE_STATUS_APPROVED`, which is the platform correctly refusing
+  // to model one person raising a listing and approving it.
+  .then(() => seedPslListings())
+  .then((outcome) => {
+    if (outcome.status === 'refused') {
+      console.error('[PSL P3] the preferred-supplier seed did not land:', outcome);
+    }
+  })
+  .catch((err) => {
+    console.error('[PSL P3] the preferred-supplier seed threw:', err);
   })
   .then(renderApp);

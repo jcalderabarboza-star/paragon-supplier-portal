@@ -30,7 +30,13 @@ import KpiCard from '../components/ui-v2/KpiCard';
 import StatusPill from '../components/ui-v2/StatusPill';
 import { statusTone } from '../lib/statusTone';
 import PslListingsSection from '../components/v2-features/PslListingsSection';
-import { PSL_LISTINGS } from '../services/data/mock/fixtures/pslListings';
+// ⚠️ B-S4c — THE PSL COMES THROUGH THE SERVICE, NOT A FROZEN FIXTURE.
+// This import was `PSL_LISTINGS` until P3, and had it survived the eight
+// new verbs, this tab would have rendered a snapshot: a designation changed
+// on the queue a moment earlier would still read as it was, with nothing
+// going red. The hook is also what makes `useInvalidateProcurement` reach
+// this surface after a dispatch — a direct store read never re-renders.
+import { usePslListings } from '../services/query/hooks';
 import { listingsForSupplier } from '../services/data/pslProjection';
 import { DECLARED_PRESENT } from '../services/data/fixturePresent';
 import { useDeepLinkedRecordId } from '../lib/recordDeepLink';
@@ -127,6 +133,14 @@ const BuyerSupplierProfile: React.FC = () => {
   // anchored family, so a page reading `new Date()` would decay on a calendar
   // day with no commit involved.
   const PSL_TODAY = DECLARED_PRESENT;
+  // The corpus, read through the seam so a dispatched verb is visible here.
+  // `listingsForSupplier` still does the SELECTION and the ORDERING on this
+  // page rather than inside the section — `readingInstantGate` attributes a
+  // projection call by the types its arguments carry, and a call made inside
+  // the component would resolve `FORWARDED` and the family would read
+  // `NO-CALL-SITES`. Here the deciding site carries `PSL_TODAY`, which is
+  // `DECLARED_PRESENT`, and the `psl` family reads `P`.
+  const pslRows = usePslListings().data?.items ?? [];
 
   // ⚠️ THE DEEP LINK NAMES A *LISTING*, NOT THE SUPPLIER. The supplier is
   // already the route segment (`/buyer/suppliers/:id`), so `?id=` is free to
@@ -502,7 +516,7 @@ const BuyerSupplierProfile: React.FC = () => {
 
       {activeTab === 'psl' && (
         <PslListingsSection
-          listings={listingsForSupplier(PSL_LISTINGS, supp.id, PSL_TODAY)}
+          listings={listingsForSupplier(pslRows, supp.id, PSL_TODAY)}
           nowIso={PSL_TODAY}
           highlightId={deepLinkedListingId}
         />

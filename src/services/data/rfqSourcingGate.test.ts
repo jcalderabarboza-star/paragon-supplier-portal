@@ -13,10 +13,12 @@
 // provider and no query client — the property that makes it callable from a
 // `PolicyHookFn`, which has none of those.
 // ─────────────────────────────────────────────────────────────────────────────
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 
 import { DECLARED_PRESENT } from './fixturePresent';
-import { PSL_LISTINGS } from './mock/fixtures/pslListings';
+import { seedPslListings } from './mock/pslSeed';
+import { pslStore } from './mock/stores/pslStore';
+import type { PslListing } from './pslListing';
 import { mockRfqs } from '../../data/mockRfqs';
 import { mockSuppliers } from '../../data/mockSuppliers';
 import { SupplierStatus } from '../../types/supplier.types';
@@ -35,7 +37,33 @@ import {
   quotationOwnerOf,
   rosterStatusOf,
 } from './rfqSourcingGate';
-import type { PslListing } from './pslListing';
+
+/**
+ * THE CORPUS, GROWN RATHER THAN IMPORTED.
+ *
+ * ⚠️ **`PSL_LISTINGS` IS GONE AND THIS IS ITS REPLACEMENT** (PSL P3, operator
+ * ruling h). The nine rows are no longer `PslListing` literals in a frozen
+ * fixture — they are PAYLOADS in `pslSeed.ts`, dispatched through
+ * `t_psl_propose` and its siblings under LANE-CORRECT scopes. So the corpus
+ * does not exist until the seed has run, which is why this is a FUNCTION and
+ * not a const: a module-scope read would capture `[]`.
+ *
+ * ⚠️ **AND THAT IS THE `EMPTY-INPUT-REPORTS-CLEAN-01` SHAPE, WHICH IS WHY THE
+ * SEED'S OWN OUTCOME IS ASSERTED BELOW AND EVERY POPULATION GUARD IN THIS FILE
+ * ASSERTS MEMBERSHIP.** "No row is malformed" passes vacuously over `[]`.
+ */
+const pslRows = (): readonly PslListing[] => pslStore.all();
+
+// ⚠️ SEEDED ONCE, THROUGH THE REAL VERBS. `pslStore.reset()` runs first so the
+// file does not depend on whatever order vitest loaded modules in.
+beforeAll(async () => {
+  pslStore.reset();
+  const outcome = await seedPslListings();
+  // The seed's own refusal is REPORTED rather than swallowed: a half-seeded
+  // store would make every assertion below a different, quieter test.
+  expect(outcome.status, outcome.reason ?? '').toBe('seeded');
+});
+
 
 const P = DECLARED_PRESENT;
 const rfq = (id: string) => mockRfqs.find((r) => r.id === id)!;
@@ -47,7 +75,7 @@ describe('REACH — the corpus reaches every arm this file asserts', () => {
     // Reached through the VALUE (a Mandatory, in-force, material-scoped row),
     // then named — so a corpus that keeps the ids and changes the designations
     // reddens here rather than passing silently.
-    const exempting = PSL_LISTINGS.filter(
+    const exempting = pslRows().filter(
       (l) =>
         l.status === 'Mandatory' &&
         l.lifecycle === 'Listed' &&
@@ -64,7 +92,7 @@ describe('REACH — the corpus reaches every arm this file asserts', () => {
     expect(mixed.materialIds).toEqual(['AI-NIAC-6601', 'RM-EMUL-3310']);
     expect(mixed.status).toBe('Draft');
     const codes = new Set(
-      PSL_LISTINGS.flatMap((l) => (l.scope.kind === 'material' ? l.scope.materialCodes : [])),
+      pslRows().flatMap((l) => (l.scope.kind === 'material' ? l.scope.materialCodes : [])),
     );
     expect(codes.has('AI-NIAC-6601')).toBe(true);
     expect(codes.has('RM-EMUL-3310')).toBe(false); // the material with NO listing
@@ -191,13 +219,21 @@ describe('⚠️ THE ORDERING — eligibility decides, THEN the count is taken',
 describe('⚠️ RULING 1 — ANY-SUFFICES, with the counterfactual that proves it is a choice', () => {
   const mixed = () => rfq('rfq-014');
 
-  it('the mixed row is EXEMPT, and the exemption names supplier, designation AND code', () => {
+  it('the mixed row is EXEMPT, and the exemption names supplier, designation, code AND listing', () => {
     const e = pslExemptionFor(mixed().invitedSupplierIds, mixed().materialIds, P);
+    // ⚠️ `listingId` JOINED THE SHAPE AT P3 (B-R1), and this assertion is
+    // widened rather than narrowed: `toEqual` over the WHOLE object is what
+    // makes a silently-added field visible here instead of shipping unnoticed.
+    // The id is what lets the surface say whether the supplier has been TOLD
+    // about the designation exempting the event — a question the GATE must not
+    // answer, because publication and in-force are independent axes and the
+    // next spec in this file holds the exemption identical under a flip.
     expect(e).toEqual({
       kind: 'EXEMPT',
       supplierId: 'sup-005',
       status: 'Mandatory',
       materialCode: 'AI-NIAC-6601',
+      listingId: 'psl-004',
     });
   });
 
@@ -232,7 +268,7 @@ describe('⚠️ RULING 1 — ANY-SUFFICES, with the counterfactual that proves 
 describe('⚠️ THE ACQUITTALS — nothing that is not in force grants anything', () => {
   it('a WITHDRAWN listing grants no exemption', () => {
     // psl-006: sup-007, Validated, lifecycle Withdrawn, on PK-PETB-8804.
-    const row = PSL_LISTINGS.find((l) => l.lifecycle === 'Withdrawn')!;
+    const row = pslRows().find((l) => l.lifecycle === 'Withdrawn')!;
     expect(row.id).toBe('psl-006');
     const code = row.scope.kind === 'material' ? row.scope.materialCodes[0] : '';
     expect(pslExemptionFor([row.supplierId], [code], P).kind).not.toBe('EXEMPT');
@@ -241,7 +277,7 @@ describe('⚠️ THE ACQUITTALS — nothing that is not in force grants anything
   it('a REJECTED listing grants no exemption — even though its status is Mandatory', () => {
     // psl-007 is the sharp one: a MANDATORY designation that was refused. If
     // the ladder were consulted before the clock, this would exempt.
-    const row = PSL_LISTINGS.find((l) => l.lifecycle === 'Rejected')!;
+    const row = pslRows().find((l) => l.lifecycle === 'Rejected')!;
     expect(row.id).toBe('psl-007');
     expect(row.status).toBe('Mandatory');
     const code = row.scope.kind === 'material' ? row.scope.materialCodes[0] : '';
@@ -249,7 +285,7 @@ describe('⚠️ THE ACQUITTALS — nothing that is not in force grants anything
   });
 
   it('a PROPOSED listing grants no exemption — even though its status is Sole Source', () => {
-    const row = PSL_LISTINGS.find((l) => l.lifecycle === 'Proposed')!;
+    const row = pslRows().find((l) => l.lifecycle === 'Proposed')!;
     expect(row.id).toBe('psl-008');
     expect(row.status).toBe('Sole Source');
     const code = row.scope.kind === 'material' ? row.scope.materialCodes[0] : '';
@@ -322,7 +358,7 @@ describe('⚠️ RULING 5 — UNDECIDABLE blocks the EXEMPTION, never the event'
 describe('⚠️ PUBLICATION IS NEVER READ — the same row, both ways', () => {
   /** The exempting row with its publication fact flipped, and nothing else. */
   const flipped = (): readonly PslListing[] =>
-    PSL_LISTINGS.map((l) =>
+    pslRows().map((l) =>
       l.id === 'psl-004'
         ? ({ ...l, publishedAt: l.publishedAt === null ? '2026-08-01T00:00:00+07:00' : null } as PslListing)
         : l,
@@ -331,13 +367,13 @@ describe('⚠️ PUBLICATION IS NEVER READ — the same row, both ways', () => {
   it('the exempting listing really changes publication state in the probe', () => {
     // Anti-vacuity: if the flip were a no-op, "identical verdicts" would be
     // satisfied by a probe that changed nothing.
-    const before = PSL_LISTINGS.find((l) => l.id === 'psl-004')!.publishedAt;
+    const before = pslRows().find((l) => l.id === 'psl-004')!.publishedAt;
     const after = flipped().find((l) => l.id === 'psl-004')!.publishedAt;
     expect(before).not.toBe(after);
   });
 
   it('⚠️ the exemption is IDENTICAL published and unpublished', () => {
-    const a = pslExemptionFor(['sup-005'], ['AI-NIAC-6601'], P, PSL_LISTINGS);
+    const a = pslExemptionFor(['sup-005'], ['AI-NIAC-6601'], P, pslRows());
     const b = pslExemptionFor(['sup-005'], ['AI-NIAC-6601'], P, flipped());
     expect(a).toEqual(b);
     expect(a.kind).toBe('EXEMPT');

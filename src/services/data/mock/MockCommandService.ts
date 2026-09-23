@@ -56,6 +56,7 @@ import {
   asActorAttribution,
   isGovernedCheckId,
   isReviewDay,
+  type ActorAttribution,
   type EnforcementMode,
   type GovernedCheckId,
 } from '../../../lib/enforcement';
@@ -89,6 +90,17 @@ import { requirementResponseStore } from './stores/requirementResponseStore';
 import { inventoryDeclarationStore } from './stores/inventoryDeclarationStore';
 import { incomingShipmentStore } from './stores/incomingShipmentStore';
 import { enforcementSettingStore } from './stores/enforcementSettingStore';
+import { pslStore } from './stores/pslStore';
+import {
+  isPslSettingId,
+  pslCapSettingStore,
+  type PslSettingId,
+} from './stores/pslCapSettingStore';
+import type {
+  PslLifecycle,
+  PslListing,
+  PslStatus,
+} from '../pslListing';
 import { mockShipments } from '../../../data/mockShipments';
 import { mockSuppliers } from '../../../data/mockSuppliers';
 import {
@@ -1951,6 +1963,248 @@ const materialRequestTarget: CommandTarget = {
   },
 };
 
+// ── PSL P3 · THE PREFERRED SUPPLIER LIST — the governance write path ────────
+//
+// ⚠️ **THIS TARGET SHIPS IN THE SAME COMMIT AS ITS FLOW, BY RULING.** The
+// target-less set (`getKnownFlows()` ∖ `WIRED_COMMAND_TARGETS`) is a real
+// population and every member is a machine whose verbs cannot fire. One more —
+// even for one merge — would be a lane that LOOKS built on
+// `/buyer/process-flows` and refuses everything.
+
+/**
+ * WHICH VERB `applyTransition` IS EXECUTING.
+ *
+ * ⚠️ **THIS EXISTS BECAUSE `applyTransition` RECEIVES NO `transitionId` AND
+ * `Listed` HAS FIVE INBOUND EDGES.** `materialRequestTarget` gets away with
+ * keying on `toState` alone and says so — *"each of the three states written
+ * below has exactly ONE inbound edge … derive it from the flow before adding a
+ * fourth: a state that gains a second inbound edge makes one of these writes
+ * fire on the wrong verb, SILENTLY."* On this machine that condition is false
+ * from day one: `t_psl_grant` moves TO `Listed`, and `t_psl_change_status`,
+ * `t_psl_renew`, `t_psl_publish` and `t_psl_cap_override` are all
+ * `statePreserving` ON `Listed`.
+ *
+ * So the discriminator is `(current lifecycle, payload keys)` and it is
+ * DERIVED-AGAINST rather than asserted in prose: `pslTargetDiscriminator.test.ts`
+ * walks `pslFlow`'s own transitions and requires this function to name each one
+ * uniquely from its declared `requiredFields`. Add a sixth edge into `Listed`
+ * whose fields collide with an existing one and that spec goes red before the
+ * wrong write can ship.
+ */
+type PslWriteVerb =
+  | 'grant'
+  | 'reject'
+  | 'withdraw'
+  | 'change_status'
+  | 'renew'
+  | 'publish'
+  | 'cap_override';
+
+export function pslWriteVerbFor(
+  toState: string,
+  currentLifecycle: string | null,
+  payload: Record<string, unknown>,
+): PslWriteVerb | null {
+  if (toState === 'Rejected') return 'reject';
+  if (toState === 'Withdrawn') return 'withdraw';
+  if (toState !== 'Listed') return null;
+  // The ONE edge into `Listed` that MOVES the entity. Every other candidate is
+  // statePreserving and therefore already `Listed`.
+  if (currentLifecycle === 'Proposed') return 'grant';
+  // The four appends, by the field each one is declared to require. The sets
+  // are disjoint by construction and the spec above is what keeps them so.
+  if ('capDaysOverride' in payload) return 'cap_override';
+  if ('validUntil' in payload) return 'renew';
+  if ('status' in payload) return 'change_status';
+  return 'publish';
+}
+
+const pslTarget: CommandTarget = {
+  readState: (id) => pslStore.get(id)?.lifecycle ?? null,
+  // ⚠️ **NULL ALWAYS — AND IT MEANS "NO SUPPLIER MAY ACT ON THIS", NOT
+  // "NOTHING TO COMPARE".** A listing CARRIES a `supplierId`, so returning it
+  // here would be the tempting read — and it would be wrong twice over. It
+  // would make a supplier's scope pass the SCOPE gate on its own listings and
+  // fall through to the ROLE gate, where the refusal kind then reports whether
+  // the row EXISTS across a tenancy boundary (`ownerlessScope.test.ts`, §86).
+  // And a supplier may not act on a PSL listing at all: every atom in this
+  // machine is buyer-side, P4 is the supplier VIEW and it is not this batch.
+  // `supplierId` here is the SUBJECT of a governance decision, never its owner.
+  readScopeOwner: () => null,
+  readEntity: (id) => pslStore.get(id) ?? null,
+  applyTransition: (id, toState, payload, scope) => {
+    const current = pslStore.get(id);
+    const verb = pslWriteVerbFor(toState, current?.lifecycle ?? null, payload);
+    if (!verb || !current) return;
+    const at = new Date().toISOString();
+    const actor: ActorAttribution = scope.actor ?? NO_PERSON;
+    const str = (k: string): string =>
+      typeof payload[k] === 'string' ? (payload[k] as string).trim() : '';
+
+    // The ledger entry every DESIGNATION act appends. `publish` appends none —
+    // `PslStatusChange` requires a `to: PslStatus` and a `lifecycle`, and a
+    // publication is neither; `publishedAt` already IS that record.
+    const append = (
+      row: PslListing,
+      to: PslStatus,
+      lifecycle: PslLifecycle,
+      reason: string,
+    ): PslListing => ({
+      ...row,
+      statusHistory: [
+        ...row.statusHistory,
+        { at, from: row.status, to, lifecycle, reason, by: actor },
+      ],
+    });
+
+    pslStore.update(id, (row) => {
+      if (verb === 'grant') {
+        // ⚠️ `from === to` ON THE GRANT, AND THE LIFECYCLE ADVANCES. The
+        // designation is unchanged; what changed is that somebody decided it.
+        // A target that appended only on a designation CHANGE would leave this
+        // step out of the ledger entirely.
+        const next = append(row, row.status, 'Listed', str('reason'));
+        return { ...next, lifecycle: 'Listed', decidedBy: actor };
+      }
+      if (verb === 'reject') {
+        const next = append(row, row.status, 'Rejected', str('reason'));
+        return { ...next, lifecycle: 'Rejected', decidedBy: actor };
+      }
+      if (verb === 'withdraw') {
+        const next = append(row, row.status, 'Withdrawn', str('reason'));
+        return { ...next, lifecycle: 'Withdrawn', decidedBy: actor };
+      }
+      if (verb === 'change_status') {
+        // Proven a permitted member AND proven to differ from the current one
+        // by `PSL_STATUS_KNOWN` / `PSL_STATUS_ACTUALLY_CHANGES` before this
+        // runs, so it is read rather than re-validated.
+        //
+        // ⚠️ **IT DOES NOT TOUCH `publishedAt`** (operator ruling c). Once
+        // published, the supplier sees the CURRENT status: the team controls
+        // the FIRST disclosure and after that the truth propagates. Clearing
+        // the instant here would be an unpublish under another name, which
+        // ruling (b) refuses.
+        const to = payload.status as PslStatus;
+        return { ...append(row, to, 'Listed', str('reason')), status: to };
+      }
+      if (verb === 'renew') {
+        // Proven later than the effective end AND within the cap by
+        // `PSL_RENEWAL_EXTENDS` / `PSL_RENEWAL_WITHIN_CAP`.
+        const until = str('validUntil');
+        return { ...append(row, row.status, 'Listed', str('reason')), validUntil: until };
+      }
+      if (verb === 'cap_override') {
+        // ⚠️ ALL FOUR CAP FIELDS, WRITTEN IN ONE ACT. That is what makes the
+        // co-presence a property of the machine rather than a rule a fixture
+        // had to honour. `capDecidedAt` is minted HERE (the `pinnedAt`
+        // discipline) and `capDecidedBy` comes from the SESSION (C10 §6.2) —
+        // neither is a payload field, so neither can be asserted by a caller.
+        return {
+          ...row,
+          capDaysOverride: Number(payload.capDaysOverride),
+          capJustification: str('capJustification'),
+          capDecidedBy: actor,
+          capDecidedAt: at,
+        };
+      }
+      // publish — the disclosure, and the only write with no ledger entry.
+      return { ...row, publishedAt: at, publishedBy: actor };
+    });
+  },
+  // ⚠️ **`requireCreationOwner` IS DELIBERATELY NOT SET.** The flag is
+  // per-TARGET and refuses any creation whose `creationOwner` is null; this
+  // target has no creation owner BY DESIGN (`readScopeOwner` is null for the
+  // reason above), so setting it would refuse every proposal. What the flag
+  // exists to prevent — a buyer minting a record for a supplier the governed
+  // data cannot name — is preserved at `PSL_SUPPLIER_RESOLVED`, where the
+  // supplier id is checked against the roster and the refusal can say so.
+  create: (payload, toState, scope) => {
+    const id = pslStore.nextId();
+    const at = new Date().toISOString();
+    const actor: ActorAttribution = scope.actor ?? NO_PERSON;
+    const str = (k: string): string =>
+      typeof payload[k] === 'string' ? (payload[k] as string).trim() : '';
+    // Proven a permitted member by `PSL_STATUS_KNOWN`, a roster id by
+    // `PSL_SUPPLIER_RESOLVED`, real `MATERIAL_MASTER` keys by
+    // `PSL_SCOPE_WELL_FORMED` and ordered by `PSL_VALIDITY_ORDERED` before this
+    // runs. These are reads, not rescues.
+    const status = payload.status as PslStatus;
+    pslStore.add({
+      id,
+      supplierId: str('supplierId'),
+      // Only `kind: 'material'` has a producer — `pslListing.ts` says so, and a
+      // proposal that could choose a grain would be choosing a migration.
+      scope: {
+        kind: 'material',
+        materialCodes: (payload.materialCodes as readonly string[]).map((c) => c.trim()),
+      },
+      status,
+      lifecycle: toState as PslLifecycle,
+      validFrom: str('validFrom'),
+      validUntil: str('validUntil'),
+      // All four `null`: no override, so the portal default applies. The cap is
+      // its own act with its own decider — see `t_psl_cap_override`.
+      capDaysOverride: null,
+      capJustification: null,
+      capDecidedBy: null,
+      capDecidedAt: null,
+      justification: str('justification'),
+      // Optional: a proposal may cite no document. `[]` rather than a guessed
+      // reference — an invented evidence id would be a claim wearing a fact's
+      // clothes, which is the reason `contractId` was refused on this record.
+      evidenceRefs: Array.isArray(payload.evidenceRefs)
+        ? (payload.evidenceRefs as readonly unknown[]).map((r) => String(r))
+        : [],
+      proposedBy: actor,
+      // `null` while `Proposed` — the record's own rule, and what `Proposed`
+      // means at the record level.
+      decidedBy: null,
+      publishedAt: null,
+      publishedBy: null,
+      statusHistory: [
+        {
+          at,
+          // `null` on the first entry — there was no prior designation.
+          from: null,
+          to: status,
+          lifecycle: toState as PslLifecycle,
+          reason: str('reason'),
+          by: actor,
+        },
+      ],
+    });
+    return { entityId: id };
+  },
+};
+
+// ── PSL P3 · THE PORTAL-WIDE VALIDITY CAP — `enforcementTarget`, verb for verb
+//
+// `readState` answers the single state for a known setting key and `null` for
+// anything else, so an unknown key is `NOT_FOUND` rather than a silently
+// created setting. `readScopeOwner` is null: a portal setting is a BUYER
+// governance record with no supplier owner, so a supplier scope is denied at
+// SCOPE — identically for a real key and for a string that is not one, which is
+// what keeps the refusal kind from being a membership test on the vocabulary.
+// `readEntity` hands the hook THE LEDGER FOR THIS KEY. `create` is absent
+// entirely: a setting is not born, it is recorded.
+const pslCapSettingTarget: CommandTarget = {
+  readState: (id) => (isPslSettingId(id) ? 'Governed' : null),
+  readScopeOwner: () => null,
+  readEntity: (id) => pslCapSettingStore.forSetting(id),
+  applyTransition: (id, _toState, payload) => {
+    // `setAt` is minted HERE, from the clock, at the moment of the act — the
+    // `pinnedAt` discipline, and here also the ledger's ordering key. The
+    // payload has already been through `PSL_DEFAULT_CAP_WITHIN_CEILING`, so the
+    // read below cannot record a cap outside the bound.
+    pslCapSettingStore.append({
+      settingId: id as PslSettingId,
+      days: Number(payload.days),
+      setBy: asActorAttribution(payload.setBy)!,
+      setAt: new Date().toISOString(),
+    });
+  },
+};
+
 const TARGETS: Record<string, CommandTarget> = {
   purchaseOrder: purchaseOrderTarget,
   advanceShipNotice: advanceShipNoticeTarget,
@@ -1979,6 +2233,17 @@ const TARGETS: Record<string, CommandTarget> = {
   // its flow so the entity never joins the target-less set, not even for one
   // merge. It mints no code, writes to no catalog, and touches no RFQ.
   materialRequest: materialRequestTarget,
+  // PSL P3 — the preferred-supplier governance write path. Ships in the
+  // same commit as its flow so the entity never joins the target-less set.
+  // Eight verbs: four state edges and four `statePreserving` appends on
+  // `Listed`, which is why this target needs a discriminator that
+  // `materialRequestTarget` does not — see `pslWriteVerbFor`.
+  psl: pslTarget,
+  // PSL P3 — the PORTAL-WIDE validity cap, on `enforcementTarget`'s shape.
+  // Wired so every recorded cap decision lands in the DR-10 trail: a
+  // setting that bounds every designation in the platform must not be
+  // changeable outside the trail that exists to explain it.
+  pslCapSetting: pslCapSettingTarget,
 };
 
 // The behavior-wiring census (was the contract package's "6"; 7 with the G1.1

@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 
 import StatusPill from '../ui-v2/StatusPill';
 import { statusTone } from '../../lib/statusTone';
-import { PSL_LISTINGS } from '../../services/data/mock/fixtures/pslListings';
+import { pslStore } from '../../services/data/mock/stores/pslStore';
 import { pslScopeCodes } from '../../services/data/pslProjection';
 import { pslStatusFor, type PslStanding } from '../../services/data/pslSourcingSeam';
 import type { PslListing } from '../../services/data/pslListing';
@@ -43,7 +43,10 @@ export type PslFilter = 'any' | PslStanding['kind'];
 export function pslStandingOf(
   supplierId: string,
   nowIso: string,
-  rows: readonly PslListing[] = PSL_LISTINGS,
+  // ⚠️ B-S4c — THE STORE, NOT A FROZEN FIXTURE. A cell defaulted to a
+  // snapshot would render yesterday's designation beside a queue that had
+  // just changed it, and nothing would have gone red.
+  rows: readonly PslListing[] = pslStore.all(),
 ): PslStanding {
   return pslStatusFor(supplierId, null, nowIso, rows);
 }

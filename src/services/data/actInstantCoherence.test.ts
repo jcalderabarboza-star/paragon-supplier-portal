@@ -61,6 +61,22 @@
 //   `shipDate`, `startDate` — all legitimately after `P` on live rows, all
 //   deliberately outside the population, and the second rejected discriminator
 //   above is why.
+// · **A CLOCK HOISTED INTO A LOCAL BINDING.** `isClockExpression` resolves
+//   wrappers, receivers and fallbacks, but it reads an INITIALIZER — it does
+//   not follow an identifier to its declaration. So `const at = new Date().
+//   toISOString(); return { ...row, publishedAt: at }` mints an act instant
+//   this half cannot see. **Measured on 2026-09-21, because PSL P3 is the first
+//   code in the tree to write one that way:** every other act-instant site is
+//   inline at the property (`rejectedAt: new Date().toISOString()` ·
+//   `grantedAt:` · `decidedAt:` · `submittedAt:`), and the only two hoisted
+//   sites are `psl`'s own `apply` and `create`. **Widening the matcher to
+//   resolve the binding would change NOTHING today** — `publishedAt` and
+//   `capDecidedAt` are not in any family's `shiftFields` list, so they could
+//   not enter the intersection even if the mint half saw them — so it is not
+//   widened here: a widening that cannot be fired at a defect the tree really
+//   has is a change with no evidence behind it
+//   (`PROBE-MUST-FIRE-AT-A-REAL-DEFECT-01`). What makes `psl`'s silence SAFE
+//   rather than merely unmeasured is asserted below, not argued here.
 // · **Unanchored families.** `RFQ.createdAt`, `PurchaseRequisition.createdDate`,
 //   `Quotation.submittedAt` carry act instants and no anchor, so there is no
 //   shifted corpus to read. They enter this gate the day they are anchored,
@@ -90,6 +106,7 @@ import { mockGoodsReceipts } from '../../data/mockGoodsReceipts';
 import { mockInventory } from '../../data/mockInventory';
 import { mockObligations } from '../../data/mockObligations';
 import { mockContracts } from '../../data/mockContracts';
+import { PSL_ANCHORED_VALIDITY, PSL_SEEDS_RAW } from './mock/pslSeed';
 
 const BACKSLASH = String.fromCharCode(92);
 const norm = (p: string): string => p.split(BACKSLASH).join('/');
@@ -235,6 +252,15 @@ const CORPORA: Readonly<Record<string, readonly Record<string, unknown>[]>> = {
   inventory: mockInventory as unknown as Record<string, unknown>[],
   obligation: mockObligations as unknown as Record<string, unknown>[],
   contract: mockContracts as unknown as Record<string, unknown>[],
+  // ⚠️ **`psl` IS THE FIRST FAMILY WITH NO STATIC CORPUS TO BIND, AND THE
+  // BINDING SAYS SO RATHER THAN PRETENDING OTHERWISE.** Every row above is an
+  // exported fixture array. PSL P3's ruling (h) retired `pslListings.ts` and
+  // seeds the store `[]` — the rows are GROWN through the verbs — so at module
+  // load this family has no rows anywhere. What the shift moved is
+  // `PSL_ANCHORED_VALIDITY`, so that is what is bound: the two authored days,
+  // re-timed, which are the only two fields `shiftFields(…, 'psl', …)` names
+  // and the only two anything here would read.
+  psl: PSL_ANCHORED_VALIDITY as unknown as Record<string, unknown>[],
 };
 
 /**
@@ -292,6 +318,32 @@ describe('⚠️ THE POPULATION — a shifted field a command mints at the act i
     // Both directions, so a new member is red until named and a retired one
     // cannot sit here unbacked.
     expect(population).toEqual(EXPECTED_POPULATION);
+  });
+
+  it('⚠️ `psl` CONTRIBUTES NOTHING, AND IT IS STRUCTURALLY UNABLE TO', () => {
+    // ⚠️ **WHY THIS ASSERTION EXISTS AT ALL.** `psl` is bound as a corpus and
+    // yields no population member, which is the same OUTPUT a family would
+    // produce if the mint half had quietly stopped seeing its fields — and the
+    // reach note above records that this family's act instants ARE invisible to
+    // that half, because PSL P3 hoists its clock into a local binding. So the
+    // one reading this file could not otherwise distinguish is exactly the one
+    // it has to make: *is `psl` silent because it has nothing to say, or
+    // because nobody is listening?*
+    //
+    // It has nothing to say, and the guarantee is a TYPE rather than a habit:
+    // `PslSeedRow` has no field for an act instant. `publishedAt`,
+    // `capDecidedAt` and every `statusHistory.at` are assigned by the store at
+    // the instant of the act, so a seeded PSL row cannot carry an authored one
+    // to be wrong about. This asserts that property over the seed rows, so the
+    // day somebody adds such a field the claim goes red instead of staying
+    // quietly true.
+    const seedKeys = new Set(PSL_SEEDS_RAW.flatMap((r) => Object.keys(r)));
+    expect([...seedKeys].filter((k) => minted.has(k)), 'an authored act instant').toEqual([]);
+    // ⚠️ BILATERAL CONTROL — without it the line above passes just as happily
+    // when `minted` is EMPTY, which is the failure this whole file is built
+    // around. The shift half must still reach this family's own fields.
+    expect([...(shifted.get('psl') ?? [])].sort()).toEqual(['validFrom', 'validUntil']);
+    expect(seedKeys.has('validFrom') && seedKeys.has('validUntil')).toBe(true);
   });
 
   it('every member has at least one non-null seeded value to test', () => {

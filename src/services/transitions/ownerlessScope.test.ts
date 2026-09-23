@@ -79,6 +79,12 @@ import type { QueryScope } from '../data/types';
 import type { TransitionDef } from './schema';
 import { NO_PERSON } from '../../context/noPerson';
 import { GOVERNED_CHECK_IDS } from '../../lib/enforcement';
+import {
+  PSL_SETTING_IDS,
+  pslCapSettingStore,
+} from '../data/mock/stores/pslCapSettingStore';
+import { pslStore } from '../data/mock/stores/pslStore';
+import { DECLARED_PRESENT } from '../data/fixturePresent';
 import { purchaseOrderStore } from '../data/mock/stores/purchaseOrderStore';
 import { asnStore } from '../data/mock/stores/asnStore';
 import { goodsReceiptStore } from '../data/mock/stores/goodsReceiptStore';
@@ -162,6 +168,25 @@ async function realIds(): Promise<Record<string, string | null>> {
       need: 'an ownerless-scope probe',
     },
   });
+  // PSL P3 — the listing lane is a WIRED owner-less target, so it joins this
+  // supply or the CONTROL above reports it silently skipped. Raised through the
+  // real verb, for the reason every other id here is real: a fabricated id
+  // cannot separate "owner-less" from "absent", which is the whole distinction
+  // this file exists to hold.
+  const listed = await svc.dispatch(buyerSeat('procurement'), {
+    transitionId: 't_psl_propose',
+    entity: 'psl',
+    payload: {
+      supplierId: 'sup-002',
+      materialCodes: ['RM-PSTN-7150'],
+      status: 'Validated',
+      validFrom: DECLARED_PRESENT,
+      validUntil: '2099-01-01',
+      justification: 'an ownerless-scope probe',
+      reason: 'an ownerless-scope probe',
+    },
+  });
+
   return {
     purchaseOrder: purchaseOrderStore.all()[0]?.id ?? null,
     advanceShipNotice: asnStore.all()[0]?.asnNumber ?? null,
@@ -178,6 +203,10 @@ async function realIds(): Promise<Record<string, string | null>> {
     supplierDocument: supplierDocumentStore.all()[0]?.id ?? null,
     supplierApplication: raised.entityId ?? null,
     materialRequest: requested.entityId ?? null,
+    psl: listed.entityId ?? null,
+    // The cap ledger's entity IS the setting key — there is no row to create,
+    // which is exactly why the machine is censused as a degenerate ledger.
+    pslCapSetting: PSL_SETTING_IDS[0],
   };
 }
 
@@ -320,6 +349,15 @@ describe('POPULATION — nothing below means anything without this', () => {
     // rather than in `unprobeable`: the lane declares three non-creation verbs.
     expect(ownerless).toContain('materialRequest');
     expect(ownerless).toContain('rfq');
+    // ⚠️ **PSL P3 — AND THIS ONE IS OWNER-LESS FOR A THIRD REASON, WHICH IS
+    // WORTH STATING BECAUSE THE ROW CARRIES A `supplierId` AND THE TEMPTING
+    // IMPLEMENTATION RETURNS IT.** A listing NAMES a supplier as the SUBJECT of
+    // a governance decision, not as its owner. Returning that id would let a
+    // supplier scope clear the SCOPE gate on its own listings and fall through
+    // to the ROLE gate — after which the refusal KIND reports whether the row
+    // EXISTS, across a tenancy boundary, which is the leak §86 is about.
+    expect(ownerless).toContain('psl');
+    expect(ownerless).toContain('pslCapSetting');
     expect(ownerless).not.toContain('purchaseOrder');
     expect(ownerless).not.toContain('invoice');
     expect(ownerful).toContain('purchaseOrder');
@@ -421,6 +459,8 @@ describe('THE LEGITIMATE PATHS — the half a "refuse everyone" fix would break'
       [
         'enforcement',
         'materialRequest',
+        'psl',
+        'pslCapSetting',
         'purchaseRequisition',
         'rfq',
         'role',
@@ -504,5 +544,45 @@ describe('THE LEGITIMATE PATHS — the half a "refuse everyone" fix would break'
     });
     expect(picked.status, picked.reason).toBe('done');
     expect(materialRequestStore.get(requested.entityId!)!.status).toBe('Under Review');
+
+    // PSL P3 — the listing lane, walked the same way: raised by `procurement`
+    // and decided by `compliance`, which is the segregation its atoms express.
+    //
+    // ⚠️ THE DESIGNATION IS `Validated` DELIBERATELY. A `Mandatory` or
+    // `Sole Source` grant additionally faces the restrictive-designation check,
+    // which refuses a seat holding BOTH authorities — so a walk that reached
+    // for the more interesting designation would be testing that hook here
+    // instead of testing that the lane still works. `pslCommand.test.ts` owns
+    // that probe, at a seat built for it.
+    const proposed = await svc.dispatch(buyerSeat('procurement'), {
+      transitionId: 't_psl_propose', entity: 'psl',
+      payload: {
+        supplierId: 'sup-002',
+        materialCodes: ['RM-PSTN-7150'],
+        status: 'Validated',
+        validFrom: DECLARED_PRESENT,
+        validUntil: '2099-01-01',
+        justification: 'an ownerless-scope probe',
+        reason: 'an ownerless-scope probe',
+      },
+    });
+    expect(proposed.status, proposed.reason).toBe('done');
+    const granted = await svc.dispatch(buyerSeat('compliance'), {
+      transitionId: 't_psl_grant', entity: 'psl', entityId: proposed.entityId!,
+      payload: { reason: 'an ownerless-scope probe' },
+    });
+    expect(granted.status, granted.reason).toBe('done');
+    expect(pslStore.get(proposed.entityId!)!.lifecycle).toBe('Listed');
+
+    // PSL P3 — the cap ledger. A degenerate single-state machine like the
+    // enforcement one, so the landing is an APPEND rather than a state change:
+    // the ledger grows and the state is where it always was.
+    const capped = await svc.dispatch(buyerSeat('compliance'), {
+      transitionId: 't_psl_cap_set', entity: 'pslCapSetting',
+      entityId: PSL_SETTING_IDS[0],
+      payload: { days: 200, setBy: NO_PERSON },
+    });
+    expect(capped.status, capped.reason).toBe('done');
+    expect(pslCapSettingStore.all()).toHaveLength(1);
   });
 });

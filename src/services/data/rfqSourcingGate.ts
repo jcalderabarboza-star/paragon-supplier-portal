@@ -30,6 +30,16 @@
 //   when?", and `pslReadIsClockIndependent.test.ts` holds the whole PSL lane —
 //   this module included — to that by source scan AND by behaviour.
 //
+// ── ⚠️ B-S4c · THE CORPUS IS THE STORE, AND THE OLD DEFAULT WAS A LIVE TRAP ─
+//   BOTH defaulted `listings` parameters below bound the FROZEN `PSL_LISTINGS`
+//   until P3. With eight verbs now writing to a store, that binding would have
+//   made this gate act on a snapshot: a listing granted this morning would have
+//   exempted nothing, and one withdrawn this morning would still have exempted
+//   an event. **The suite would have stayed green**, because every spec in this
+//   lane passes its rows explicitly — which is what makes it a good spec and
+//   exactly why it could not have caught this. See `pslSourcingSeam.ts`'s
+//   header for the probe that fires at the defect.
+//
 // ── ⚠️ PUBLICATION IS NEVER READ ────────────────────────────────────────────
 //   Carried from P1 unchanged and re-pinned AT THE HOOK rather than only at the
 //   seam: being IN FORCE decides what a listing grants; being PUBLISHED decides
@@ -49,7 +59,7 @@
 import { mockSuppliers } from '../../data/mockSuppliers';
 import { SupplierStatus } from '../../types/supplier.types';
 import { quotationStore } from './mock/stores/quotationStore';
-import { PSL_LISTINGS } from './mock/fixtures/pslListings';
+import { pslStore } from './mock/stores/pslStore';
 import { pslStatusFor, suspendsCompetitiveBidding } from './pslSourcingSeam';
 import type { PslListing } from './pslListing';
 import type { PslStatus } from './pslProjection';
@@ -185,6 +195,24 @@ export type PslExemption =
       readonly supplierId: string;
       readonly status: PslStatus;
       readonly materialCode: string;
+      /**
+       * THE LISTING THAT PRODUCED THE EXEMPTION.
+       *
+       * ⚠️ **B-R1 IS SERVED BY THIS AND DELIBERATELY NOT BY A `published`
+       * FLAG, AND THE REASON IS AN ASSERTION THAT ALREADY EXISTED.** A buyer
+       * reading *"competitive bidding is not required"* must also see whether
+       * the supplier has been told — but carrying THAT answer here would have
+       * made this object differ under a publication flip, and
+       * `rfqSourcingGate.test.ts` holds *"the exemption is IDENTICAL published
+       * and unpublished"*. Narrowing that assertion to dodge a field would have
+       * been weakening the one guard that keeps publication out of the gate.
+       *
+       * So the GATE stays publication-blind, byte for byte, and the SURFACE
+       * looks the disclosure up from this id (`PslGateNotice`). The id itself
+       * does not move when a listing is published, which is what makes it safe
+       * to carry.
+       */
+      readonly listingId: string | null;
     }
   /** Nothing in force exempts this event. The ordinary answer. */
   | { readonly kind: 'NOT_EXEMPT' }
@@ -225,7 +253,7 @@ export function pslExemptionFor(
   invitedSupplierIds: readonly string[],
   materialCodes: readonly string[],
   nowIso: string,
-  listings: readonly PslListing[] = PSL_LISTINGS,
+  listings: readonly PslListing[] = pslStore.all(),
 ): PslExemption {
   const known = new Set(listings.flatMap((l) => scopeCodesOf(l)));
   const unmapped = materialCodes.filter((c) => !known.has(c));
@@ -234,7 +262,18 @@ export function pslExemptionFor(
     for (const supplierId of invitedSupplierIds) {
       const standing = pslStatusFor(supplierId, { materialCode }, nowIso, listings);
       if (suspendsCompetitiveBidding(standing) && standing.kind === 'IN_FORCE') {
-        return { kind: 'EXEMPT', supplierId, status: standing.status, materialCode };
+        // The listings that actually GRANT it — the ones carrying the winning
+        // designation. A supplier told about one of them knows their standing
+        // for this material; the others are weaker designations on the same
+        // scope and cannot inform them of this one.
+        const granting = standing.listings.filter((l) => l.status === standing.status);
+        return {
+          kind: 'EXEMPT',
+          supplierId,
+          status: standing.status,
+          materialCode,
+          listingId: granting[0]?.id ?? null,
+        };
       }
     }
   }
@@ -314,7 +353,7 @@ export function decideSourcing(
   event: SourcingEventInput,
   nowIso: string,
   statusOf: (supplierId: string) => SupplierStatus | null,
-  listings: readonly PslListing[] = PSL_LISTINGS,
+  listings: readonly PslListing[] = pslStore.all(),
 ): SourcingDecision {
   const eligibility = eligibleInvitees(event.invitedSupplierIds, statusOf);
   const exemption = pslExemptionFor(eligibility.eligible, event.materialIds, nowIso, listings);

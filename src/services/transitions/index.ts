@@ -43,6 +43,8 @@ export { enforcementFlow } from './flows/enforcement.flow';
 export { roleFlow } from './flows/role.flow';
 export { supplierApplicationFlow } from './flows/supplierApplication.flow';
 export { materialRequestFlow } from './flows/materialRequest.flow';
+export { pslFlow, PSL_PROPOSE_FIELDS } from './flows/psl.flow';
+export { pslCapSettingFlow } from './flows/pslCapSetting.flow';
 export * from './customRoles';
 
 import { flowRegistry } from './registry';
@@ -67,6 +69,8 @@ import { enforcementFlow } from './flows/enforcement.flow';
 import { roleFlow } from './flows/role.flow';
 import { supplierApplicationFlow } from './flows/supplierApplication.flow';
 import { materialRequestFlow } from './flows/materialRequest.flow';
+import { pslFlow } from './flows/psl.flow';
+import { pslCapSettingFlow } from './flows/pslCapSetting.flow';
 
 // Seed the shipped flows onto the singleton.
 flowRegistry.register(purchaseOrderFlow); // Step 3.1 — PO
@@ -117,3 +121,17 @@ flowRegistry.register(supplierApplicationFlow); // B1 — Supplier onboarding
 // would put a machine on `/buyer/process-flows` that LOOKS built and refuses
 // everything.
 flowRegistry.register(materialRequestFlow); // R8 — Material request
+// PSL P3 — the preferred-supplier governance machine and its cap ledger.
+// Four state edges (propose / grant / reject / withdraw) and four
+// `statePreserving` appends (change status / renew / publish / cap override).
+// WIRED: both targets ship in this commit, because the target-less set is a
+// real population and one more member would be a lane that LOOKS built on
+// `/buyer/process-flows` and refuses everything.
+flowRegistry.register(pslFlow); // PSL P3 — Preferred Supplier List
+// The PORTAL-WIDE validity cap. A DEGENERATE SINGLE-STATE machine on
+// `enforcementFlow`'s shape and for its reason: the cap in force is DERIVED
+// from an append-only ledger, never stored, so overwriting could never make
+// the history unauditable. Its own flow rather than a widened `enforcement`,
+// because a cap is a number of days and `t_enforcement_set`'s payload is a
+// mode — `roleFlow` is the precedent for minting rather than stretching.
+flowRegistry.register(pslCapSettingFlow); // PSL P3 — the default validity cap

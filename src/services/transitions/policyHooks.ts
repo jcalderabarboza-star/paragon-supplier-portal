@@ -430,6 +430,121 @@ export const POLICY_HOOKS = {
    * `creationOwner` makes one impossible to raise.
    */
   RFQ_AWARD_AWARDEE_INTEGRITY: 'rfq_award_awardee_integrity',
+
+  // ── PSL P3 · THE GOVERNANCE VERBS ─────────────────────────────────────────
+  //
+  // Fifteen hooks over nine verbs. They are SPLIT by remedy rather than merged
+  // by subject, on `RFQ_PUBLISH_*`'s ruling one block up: a buyer who reads one
+  // refusal for two causes cannot act on it. Every one of them names what to do
+  // next, because a refusal that only says no is the dead end
+  // `HALAL-REFUSAL-DEAD-ENDS-01` is filed about.
+  /** psl propose: `supplierId` must name a supplier on the roster. A listing
+   *  for a company the world does not name is a grant to nobody. */
+  PSL_SUPPLIER_RESOLVED: 'psl_supplier_resolved',
+  /** psl propose: `materialCodes` must be a non-empty list of REAL
+   *  `MATERIAL_MASTER` keys. Membership, never presence — `requiredFields`
+   *  would admit `['anything']` and the listing would cover a code no sourcing
+   *  event can ever match, so the grant would be silently unreachable. */
+  PSL_SCOPE_WELL_FORMED: 'psl_scope_well_formed',
+  /** psl propose / change status: `status` is a member of `PSL_STATUSES`.
+   *
+   *  ⚠️ **THE `QUOTATION_SUBMIT_CURRENCY_PERMITTED` LESSON, THIRD LANE.**
+   *  `requiredFields` proves PRESENCE only, so an off-list token reaches the
+   *  store and is written as a designation nothing recognises — after which
+   *  `bestPslStatus`'s ladder simply never matches it and the listing grants
+   *  nothing while looking granted. */
+  PSL_STATUS_KNOWN: 'psl_status_known',
+  /** psl propose: `validFrom` must not fall after `validUntil`.
+   *
+   *  ⚠️ **AND IT IS NOT A CLOCK TEST.** It compares two authored dates against
+   *  each other and never against `now`; a verb that refused an already-past
+   *  validity would put the clock inside a transition (law 0.5) and would
+   *  refuse a day-one BACKFILL, which is the normal way an existing PSL enters
+   *  a new portal. */
+  PSL_VALIDITY_ORDERED: 'psl_validity_ordered',
+  /** psl propose: `justification` must be text with substance. The dispatcher's
+   *  emptiness check admits a string of spaces, and this is the one sentence
+   *  that says WHY a supplier holds a designation that may suspend bidding. */
+  PSL_JUSTIFICATION_AUTHORED: 'psl_justification_authored',
+  /** psl grant / reject / change status / renew / withdraw: `reason` must be
+   *  text with substance. Same guard, a different field, and the record's own
+   *  rule one layer down — *a silent change of designation is forbidden*. */
+  PSL_DECISION_AUTHORED: 'psl_decision_authored',
+  /**
+   * psl grant / reject: **the proposer must not be the decider.**
+   *
+   * ⚠️ **THIS HOOK IS BUILT AND CANNOT FIRE TODAY, AND THAT IS STATED HERE SO
+   * ITS GREEN IS NEVER READ AS A WORKING CHECK.** Every actor in this tree is
+   * `UNATTRIBUTED: NO_PERSON_IN_SESSION`, so `isAttributed` is false on both
+   * sides, the predicate is false, and the hook ADMITS. That is the correct
+   * direction — an unattributed act is not evidence of self-approval.
+   *
+   * It is `pslListing.ts`'s OWN ruling executed: *"Four-eyes (proposer is not
+   * decider) is UNBUILDABLE today … there are no two values to compare. Typing
+   * these as `string` now would make the check a migration later instead of a
+   * one-line predicate."* `proposedBy` is an `ActorAttribution`, so the day an
+   * IdP answers, this hook starts refusing with no edit to its own body.
+   *
+   * ⚠️ **IT IS NOT A SUBSTITUTE FOR THE LANE SPLIT, AND NOT SATISFIED BY IT.**
+   * `psl:propose` is `procurement`'s and `psl:decide` is `compliance`'s, which
+   * makes narrowing POSSIBLE; the default buyer seat holds all six bundles, so
+   * lane segregation does not bind the out-of-box seat (§76d). This hook is the
+   * per-DOCUMENT half, and it is the half that is unbuildable.
+   */
+  PSL_DECIDER_NOT_PROPOSER: 'psl_decider_not_proposer',
+  /**
+   * psl grant / change status / renew: a `Mandatory` or `Sole Source`
+   * designation needs a LEAD sign-off; `Validated` does not.
+   *
+   * ⚠️ **A HOOK AND A SURFACE MIRROR, NOT A SEPARATE ATOM** (operator ruling
+   * b′). A second `Proposed → Listed` edge differing only by `requiredRole`
+   * would be role-per-distinction, which C10 §4.1 refuses, and would leave two
+   * edges with identical from/to for `flowGraph`, `nextAct` and `catalogView`
+   * to reason about.
+   *
+   * ⚠️ **AND THE COST OF THE HOOK IS PAID RATHER THAN IGNORED: AN
+   * AUTHORISATION DECISION OUTSIDE THE ROLE GATE IS INVISIBLE TO EVERY
+   * AVAILABILITY READER**, so a surface would offer the verb and the dispatcher
+   * would refuse it — the false-affordance shape R1 swept. The remedy is the
+   * one this lane already uses twice: ONE expression of the rule, two readers.
+   * `pslLeadCheck.ts` holds it; the hook asks it and so does the panel.
+   */
+  PSL_RESTRICTIVE_STATUS_APPROVED: 'psl_restrictive_status_approved',
+  /** psl change status: the new designation must differ from the current one.
+   *  A change that changes nothing is a ledger entry with no subject, and it
+   *  would let a seat manufacture an audit trail out of repeated no-ops. */
+  PSL_STATUS_ACTUALLY_CHANGES: 'psl_status_actually_changes',
+  /** psl renew: the new `validUntil` must be LATER than the effective end in
+   *  force. A "renewal" that shortens a validity is a different act with a
+   *  different name, and it is not built — shortening happens through the cap
+   *  override, which requires its own justification and its own decider. */
+  PSL_RENEWAL_EXTENDS: 'psl_renewal_extends',
+  /** psl renew: the new `validUntil` must fall within the cap measured from
+   *  `validFrom`.
+   *
+   *  ⚠️ **REFUSED HERE RATHER THAN BOUNDED AT READ** (operator ruling e).
+   *  `effectiveValidUntil` would clamp it silently, so a person would record a
+   *  two-year renewal, the record would show two years and the surface would
+   *  show one. A governance bound that only ever appears in a projection is a
+   *  bound the decider never meets. */
+  PSL_RENEWAL_WITHIN_CAP: 'psl_renewal_within_cap',
+  /** psl publish: a listing already published may not be published again.
+   *  `publishedAt` is write-once history (ruling b), so a second publish would
+   *  either overwrite the instant the supplier was actually told or be a no-op
+   *  reported as a success. Both are worse than a refusal that says it is
+   *  already published. */
+  PSL_NOT_ALREADY_PUBLISHED: 'psl_not_already_published',
+  /** psl cap override: the override must not exceed `PSL_CAP_CEILING_DAYS`.
+   *  The ceiling is the operator's ruling (R4) and the refusal may state it. */
+  PSL_CAP_WITHIN_CEILING: 'psl_cap_within_ceiling',
+  /** psl cap override: `capJustification` must be text with substance. R3 —
+   *  an override with no justification is an unexplained exception, which is
+   *  exactly what the four-field co-presence rule exists to prevent. */
+  PSL_CAP_JUSTIFICATION_AUTHORED: 'psl_cap_justification_authored',
+  /** psl cap set (the PORTAL DEFAULT): `days` must be a positive integer within
+   *  the ceiling. Bounding the default is what stops a later ruling that lowers
+   *  the ceiling from leaving the default silently in force above it. */
+  PSL_DEFAULT_CAP_WITHIN_CEILING: 'psl_default_cap_within_ceiling',
 } as const;
 
 for (const name of Object.values(POLICY_HOOKS)) registerPolicyHook(name);

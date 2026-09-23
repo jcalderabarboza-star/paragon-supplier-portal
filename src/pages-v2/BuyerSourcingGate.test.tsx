@@ -35,6 +35,29 @@ import { mockRfqs } from '../data/mockRfqs';
 import { SupplierStatus } from '../types/supplier.types';
 import { DECLARED_PRESENT } from '../services/data/fixturePresent';
 import { decideSourcing, rosterStatusOf } from '../services/data/rfqSourcingGate';
+import { seedPslListings } from '../services/data/mock/pslSeed';
+import { pslStore } from '../services/data/mock/stores/pslStore';
+
+
+// ── ⚠️ THE PSL CORPUS IS SEEDED HERE NOW, AND THE REASON IS B-S4c ───────────
+//   Until PSL P3 the nine listings were LITERALS in a frozen module, so any
+//   file that read them implicitly — through `pslStatusFor`'s or
+//   `pslExemptionFor`'s defaulted corpus — got them for free at import.
+//
+//   P3 retired that fixture. The corpus is GROWN through the verbs into
+//   `pslStore`, which opens EMPTY, so a spec that does not seed reads `[]` and
+//   every PSL-dependent claim in it passes vacuously — the
+//   `EMPTY-INPUT-REPORTS-CLEAN-01` shape, arriving through a default parameter.
+//
+//   The seed's own outcome is asserted rather than assumed: a half-seeded store
+//   would make every assertion below a different, quieter test.
+
+beforeAll(async () => {
+  pslStore.reset();
+  const pslSeeded = await seedPslListings();
+  expect(pslSeeded.status, pslSeeded.reason ?? '').toBe('seeded');
+});
+
 
 const SUSPENDED = mockSuppliers.find((s) => s.status === SupplierStatus.SUSPENDED)!;
 

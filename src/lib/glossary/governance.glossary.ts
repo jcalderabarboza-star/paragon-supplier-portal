@@ -270,12 +270,16 @@ export const PSL_CAP_SOURCE_GLOSSARY = {
     id: 'Pencatatan ini memiliki batas masa berlakunya sendiri, dengan justifikasi dan pemutus yang tercatat.',
   },
   NO_SETTING_RECORDED: {
-    en: 'The portal default applies because nothing has been decided for this listing — which is a different sentence from "somebody chose this length".',
-    id: 'Bawaan portal berlaku karena belum ada keputusan untuk pencatatan ini — kalimat yang berbeda dari "seseorang memilih durasi ini".',
+    en: 'The fallback cap applies because nothing has been decided — neither on this listing nor portal-wide. That is a different sentence from "somebody chose this length", and an operator acts on the difference.',
+    id: 'Batas cadangan berlaku karena belum ada keputusan — baik pada pencatatan ini maupun untuk seluruh portal. Itu kalimat yang berbeda dari "seseorang memilih durasi ini", dan operator bertindak atas perbedaan tersebut.',
+  },
+  PORTAL_DEFAULT: {
+    en: 'No override on this listing, and a portal-wide default cap HAS been recorded through the setting verb. Somebody chose this length, and it applies to every listing without its own cap.',
+    id: 'Tidak ada pengesampingan pada pencatatan ini, dan batas bawaan seluruh portal TELAH dicatat melalui verba penetapan. Seseorang memilih durasi ini, dan berlaku untuk setiap pencatatan tanpa batasnya sendiri.',
   },
   CEILING_BOUNDED: {
-    en: 'An override was recorded and it exceeds the platform ceiling, so the ceiling applies. Named separately so "bounded" is never read as "chosen".',
-    id: 'Pengesampingan tercatat dan melebihi plafon platform, sehingga plafon yang berlaku. Dinamai terpisah agar "dibatasi" tidak pernah dibaca sebagai "dipilih".',
+    en: 'The cap that would otherwise apply exceeds the platform ceiling, so the ceiling applies. Named separately so "bounded" is never read as "chosen". Both cap verbs refuse a value above the ceiling, so this is reached only by a cap recorded legitimately under a HIGHER ceiling that a later ruling lowered.',
+    id: 'Batas yang seharusnya berlaku melebihi plafon platform, sehingga plafon yang berlaku. Dinamai terpisah agar "dibatasi" tidak pernah dibaca sebagai "dipilih". Kedua verba batas menolak nilai di atas plafon, sehingga ini hanya tercapai oleh batas yang dicatat secara sah di bawah plafon yang LEBIH TINGGI yang kemudian diturunkan oleh suatu keputusan.',
   },
 } satisfies GlossaryOf<PslCapSource>;
 

@@ -145,8 +145,37 @@ import { useRefusalText } from '../hooks/useRefusalText';
 import { DECLARED_PRESENT } from '../services/data/fixturePresent';
 import PslGateNotice from '../components/v2-features/PslGateNotice';
 import { decideSourcing, rosterStatusOf } from '../services/data/rfqSourcingGate';
+import { usePslListings } from '../services/query/hooks';
+import { isPublished } from '../services/data/pslListing';
+import type { SourcingDecision } from '../services/data/rfqSourcingGate';
 import { refusedByPolicy } from '../services/transitions/refusalMessage';
 import { POLICY_HOOKS } from '../services/transitions/policyHooks';
+
+/**
+ * ⚠️ **B-R1 · HAS THE SUPPLIER BEEN TOLD ABOUT THE LISTING THAT EXEMPTS THIS
+ * EVENT?** Resolved HERE, on the page, and never on the verdict.
+ *
+ * The gate is publication-blind by ruling — `pslSourcingSeam.ts` refuses to
+ * read `publishedAt` because a governance outcome must not depend on whether
+ * anybody pressed publish — and `rfqSourcingGate.test.ts` holds the exemption
+ * IDENTICAL under a publication flip. So the disclosure is a SURFACE fact
+ * looked up from the listing id the exemption already carries.
+ *
+ * `null` when there is no exemption or the id resolves to nothing; the notice
+ * renders that as the internal case, because claiming the supplier knows is the
+ * only answer that could mislead.
+ */
+function supplierInformedOf(
+  decision: SourcingDecision,
+  rows: readonly { id: string; publishedAt: string | null }[],
+): boolean | null {
+  if (decision.competition.kind !== 'NOT_REQUIRED') return null;
+  const id = decision.competition.exemption.listingId;
+  if (id === null) return null;
+  const row = rows.find((r) => r.id === id);
+  return row ? isPublished(row) : null;
+}
+
 
 // ⚠️ ANCHORED — this surface rendered values derived from anchored
 // fixture data against the WALL CLOCK, so what a reader saw moved every day
@@ -969,6 +998,25 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
   const selectedRfq = useMemo(
     () => (selectedRfqId ? (baseRfqs.find((r) => r.id === selectedRfqId) ?? null) : null),
     [baseRfqs, selectedRfqId],
+  );
+
+  // ── B-R1 · THE PSL CORPUS, READ FOR ONE PURPOSE: THE DISCLOSURE CHIP ──────
+  //
+  // The gate itself never sees these rows — `decideSourcing` defaults to the
+  // store and stays publication-blind. This read exists so the notice beside
+  // its conclusion can say whether the supplier has been TOLD about the
+  // listing that exempted the event. See `supplierInformedOf`.
+  const pslRows = usePslListings().data?.items ?? [];
+
+  /** The gate's verdict on the OPEN event. Computed once and passed to both the
+   *  notice and its disclosure, so the two cannot be looking at different
+   *  decisions — it used to be recomputed inline at the render site. */
+  const selectedRfqDecision = useMemo(
+    () =>
+      selectedRfq
+        ? decideSourcing(selectedRfq, TODAY, rosterStatusOf)
+        : null,
+    [selectedRfq],
   );
 
   // ── R8 · THE REQUESTS RAISED FROM THE OPEN EVENT ──────────────────────────
@@ -2305,6 +2353,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
               <PslGateNotice
                 decision={draftDecision}
                 nameOf={(id) => supplierNameById.get(id) ?? id}
+                supplierInformed={supplierInformedOf(draftDecision, pslRows)}
               />
             </div>
           </div>
@@ -3106,8 +3155,13 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                 undecidable or simply compete. */}
             <section data-testid="psl-gate-panel">
               <PslGateNotice
-                decision={decideSourcing(selectedRfq, TODAY, rosterStatusOf)}
+                decision={selectedRfqDecision!}
                 nameOf={(id) => supplierNameById.get(id) ?? id}
+                supplierInformed={
+                  selectedRfqDecision
+                    ? supplierInformedOf(selectedRfqDecision, pslRows)
+                    : null
+                }
               />
             </section>
 

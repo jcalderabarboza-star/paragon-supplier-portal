@@ -23,47 +23,89 @@
 //      produce byte-identical output. Catches a clock read that arrives through
 //      a helper the source scan does not name.
 // ─────────────────────────────────────────────────────────────────────────────
-import { describe, it, expect, afterEach } from 'vitest';
+import { describe, it, expect, afterEach, beforeAll } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 import { stripSourceComments } from '../../lib/sourceScan/stripComments';
+import { pslModules } from '../../test/pslModules';
 import { DECLARED_PRESENT } from './fixturePresent';
-import { PSL_LISTINGS } from './mock/fixtures/pslListings';
+import { seedPslListings } from './mock/pslSeed';
+import { pslStore } from './mock/stores/pslStore';
+import type { PslListing } from './pslListing';
 import { bestPslStatus, effectiveValidUntil, listingsForSupplier, pslDisplayStatus } from './pslProjection';
 import { pslStatusFor } from './pslSourcingSeam';
 
+/**
+ * THE CORPUS, GROWN RATHER THAN IMPORTED.
+ *
+ * ⚠️ **`PSL_LISTINGS` IS GONE AND THIS IS ITS REPLACEMENT** (PSL P3, operator
+ * ruling h). The nine rows are no longer `PslListing` literals in a frozen
+ * fixture — they are PAYLOADS in `pslSeed.ts`, dispatched through
+ * `t_psl_propose` and its siblings under LANE-CORRECT scopes. So the corpus
+ * does not exist until the seed has run, which is why this is a FUNCTION and
+ * not a const: a module-scope read would capture `[]`.
+ *
+ * ⚠️ **AND THAT IS THE `EMPTY-INPUT-REPORTS-CLEAN-01` SHAPE, WHICH IS WHY THE
+ * SEED'S OWN OUTCOME IS ASSERTED BELOW AND EVERY POPULATION GUARD IN THIS FILE
+ * ASSERTS MEMBERSHIP.** "No row is malformed" passes vacuously over `[]`.
+ */
+const pslRows = (): readonly PslListing[] => pslStore.all();
+
+// ⚠️ SEEDED ONCE, THROUGH THE REAL VERBS. `pslStore.reset()` runs first so the
+// file does not depend on whatever order vitest loaded modules in.
+beforeAll(async () => {
+  pslStore.reset();
+  const outcome = await seedPslListings();
+  // The seed's own refusal is REPORTED rather than swallowed: a half-seeded
+  // store would make every assertion below a different, quieter test.
+  expect(outcome.status, outcome.reason ?? '').toBe('seeded');
+});
+
+
+/**
+ * ⚠️ **DERIVED, NOT LISTED (B-S4d).** The array that stood here named eight
+ * paths and went stale the moment a PSL module landed without an edit — which
+ * is what `CENSUS-MUST-DERIVE-01` is about, and which had already happened
+ * once (`PslGateNotice.tsx`, P2). The glob covers every `psl*` / `Psl*` source
+ * file; the two non-`psl`-named modules are added by name below.
+ *
+ * ⚠️ **AND THE ADDITIONS MATTER MORE THAN THE GLOB.** `policies.ts` is the one
+ * place in the TRANSITIONS layer that names `DECLARED_PRESENT`, so it is the one
+ * place a `new Date()` could be substituted for it; leaving it out would have
+ * made the *"no PSL module reads the ambient clock"* claim true of everything
+ * except the file where it matters most. `rfqSourcingGate.ts` is the P2 gate.
+ *
+ * The matcher convicts only a ZERO-ARGUMENT `new Date()`, so `policies.ts`'s
+ * `new Date(asOf)` — which parses a caller's argument — is correctly acquitted,
+ * and the bilateral control below says so.
+ *
+ * ⚠️ **THE WRITE PATH IS EXCLUDED BY NAME AND THE REASON IS THE WHOLE POINT OF
+ * THIS FILE.** `pslStore` is glob-matched but the modules that MINT instants —
+ * the target in `MockCommandService.ts` and `pslSeed.ts` — are not PSL-named
+ * and are not here. That is correct rather than convenient: a store-assigned
+ * `publishedAt` is a WRITE and is *supposed* to read the clock at the moment of
+ * the act (the `pinnedAt` discipline). This file is about the READ.
+ */
 const PSL_SOURCES = [
-  'src/services/data/pslListing.ts',
-  'src/services/data/pslProjection.ts',
-  'src/services/data/pslSourcingSeam.ts',
-  // ⚠️ PSL P2 — the gate's decision module AND the hook file that supplies its
-  // instant. `policies.ts` is the one place in the transitions layer that names
-  // `DECLARED_PRESENT`, so it is the one place a `new Date()` could be
-  // substituted for it; leaving it out would have made the "no PSL module reads
-  // the ambient clock" claim true of everything except the file where it
-  // matters most. The matcher convicts only a ZERO-ARGUMENT `new Date()`, so
-  // this file's `new Date(asOf)` — which parses a caller's argument — is
-  // correctly acquitted, and the bilateral control below says so.
-  'src/services/data/rfqSourcingGate.ts',
-  'src/services/transitions/policies.ts',
-  'src/services/data/mock/fixtures/pslListings.ts',
-  'src/components/v2-features/PslStatusCell.tsx',
-  'src/components/v2-features/PslListingsSection.tsx',
-].map((p) => resolve(process.cwd(), p));
+  ...pslModules(),
+  ...['src/services/transitions/policies.ts', 'src/services/data/rfqSourcingGate.ts'].map(
+    (p) => resolve(process.cwd(), p),
+  ),
+];
 
 /** Everything a surface renders for the PSL, as one comparable blob. */
 function readEverything(): string {
-  const suppliers = [...new Set(PSL_LISTINGS.map((r) => r.supplierId)), 'sup-001'];
+  const suppliers = [...new Set(pslRows().map((r) => r.supplierId)), 'sup-001'];
   return JSON.stringify(
     suppliers.map((id) => ({
       id,
       standing: pslStatusFor(id, null, DECLARED_PRESENT),
       best: bestPslStatus(
-        PSL_LISTINGS.filter((r) => r.supplierId === id),
+        pslRows().filter((r) => r.supplierId === id),
         DECLARED_PRESENT,
       ),
-      rows: listingsForSupplier(PSL_LISTINGS, id, DECLARED_PRESENT).map((r) => ({
+      rows: listingsForSupplier(pslRows(), id, DECLARED_PRESENT).map((r) => ({
         id: r.id,
         shown: pslDisplayStatus(r, DECLARED_PRESENT),
         until: effectiveValidUntil(r),
