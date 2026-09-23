@@ -119,14 +119,51 @@ const PSL_MODULES = [
 
 const EXTS = ['.ts', '.tsx', '/index.ts', '/index.tsx'];
 
+/**
+ * ⚠️ **MEMOISED, AND THE CAUSE IS SYSCALLS RATHER THAN PARSING — WHICH IS WHY
+ * `importsOf`'s CACHE DID NOT ALREADY COVER IT.** `importsOf` caches the read
+ * and the comment-strip, so each file is parsed once. Nothing cached the
+ * RESOLUTION: every edge re-probed the filesystem with up to five `existsSync`
+ * calls, on every walk, and `closure` is walked once per (boundary × surface)
+ * pair — 3 × 12 in the load-bearing probe alone, plus 12 more in the unbounded
+ * one. The same handful of edges was therefore resolved thousands of times.
+ *
+ * ⚠️ **THE CAUSE IS REMOVED RATHER THAN BUDGETED, WHICH IS THE ORDER #369 SET**
+ * when it gave `chaosAmbience` a necessary-condition pre-filter instead of a
+ * larger timeout. A budget buys silence; removing the work buys headroom, and
+ * only the second one helps the next seat who adds a surface.
+ *
+ * ⚠️ **AND THE MEMO IS ONLY SOUND BECAUSE THE FILESYSTEM CANNOT MOVE UNDER
+ * IT.** `resolveImport` is a pure function of `(fromFile, spec)` for a FIXED
+ * tree, so caching it would be a live defect in a suite where a spec wrote
+ * files — which is exactly what `treeMutationGate` was built at #369 to forbid.
+ * The cache rests on that guard, not on a habit.
+ *
+ * A cached `null` is a real answer (an unresolvable specifier), so the hit test
+ * is `!== undefined`; `if (hit)` would re-probe every unresolved edge forever
+ * and quietly give back the cost this exists to remove.
+ */
+const resolveCache = new Map<string, string | null>();
+
 function resolveImport(fromFile: string, spec: string): string | null {
   if (!spec.startsWith('.')) return null;
+  const key = `${fromFile}\u0000${spec}`;
+  const hit = resolveCache.get(key);
+  if (hit !== undefined) return hit;
   const base = resolve(dirname(fromFile), spec);
-  if (existsSync(base) && /\.(ts|tsx)$/.test(base)) return base;
-  for (const e of EXTS) {
-    if (existsSync(base + e)) return base + e;
+  let out: string | null = null;
+  if (existsSync(base) && /\.(ts|tsx)$/.test(base)) {
+    out = base;
+  } else {
+    for (const e of EXTS) {
+      if (existsSync(base + e)) {
+        out = base + e;
+        break;
+      }
+    }
   }
-  return null;
+  resolveCache.set(key, out);
+  return out;
 }
 
 /**
@@ -469,7 +506,7 @@ describe('⚠️ NO SUPPLIER SURFACE REACHES ANY PSL MODULE', () => {
       }
     }
     expect(offenders).toEqual([]);
-  });
+  }, 30000);
 
   it('⚠️ EACH BOUNDARY IS INDIVIDUALLY LOAD-BEARING — drop one and it FIRES', () => {
     // ⚠️ **THE UNBOUNDED PROBE BELOW PROVES THE SET IS NEEDED; THIS PROVES
@@ -488,7 +525,21 @@ describe('⚠️ NO SUPPLIER SURFACE REACHES ANY PSL MODULE', () => {
         `${boundary} holds nothing back — retire it rather than leaving it`,
       ).toBeGreaterThan(0);
     }
-  });
+    // ⚠️ **30 s, AND IT IS INSURANCE ON TOP OF A REMOVED CAUSE — NOT INSTEAD
+    // OF ONE.** `resolveImport` is now memoised (see its site), which took this
+    // file from 2997–3914 ms to 1505–2185 ms and this describe's walks from
+    // 1037–1419 ms to 346–591 ms, measured three runs each on a quiet machine.
+    // The budget is still taken because HEADROOM AT THIS RATIO HAS ALREADY
+    // PROVED INSUFFICIENT IN THIS SUITE: `pageWidth.guard` sat at ~4.5x the
+    // 5000 ms default and timed out anyway in a full-suite run, and this test
+    // timed out once at ~2-3x before the memo. A per-test budget is the tree's
+    // standing answer for whole-tree walks — `readingInstant`, `stripComments`,
+    // `projectionGate`, `dayCounts`, `moduleScopeLiteralGate`, `storedFieldGate`
+    // and `pageWidth.guard` all carry one.
+    // ⚠️ A GLOBAL `testTimeout` IS REFUSED: it would hide every future slow test.
+    // ⚠️ NO ASSERTION IS TOUCHED — only the budget. A timed-out probe never ran
+    // its assertion, which is the one red that proves nothing.
+  }, 30000);
 
   it('⚠️ A SUPPLIER IS REFUSED AT SCOPE ON EVERY PSL VERB — what replaces the claim', () => {
     // ⚠️ **THIS IS THE ASSERTION THAT PAYS FOR THE `MockCommandService`
@@ -603,7 +654,7 @@ describe('⚠️ NO SUPPLIER SURFACE REACHES ANY PSL MODULE', () => {
     // cell directly rather than through any policy: it is still convicted.
     const buyer = closure(resolve(SRC, 'pages-v2/BuyerSuppliers.tsx'));
     expect(PSL_MODULES.filter((m) => buyer.has(m)).length).toBeGreaterThan(0);
-  });
+  }, 30000);
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
