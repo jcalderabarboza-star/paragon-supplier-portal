@@ -798,8 +798,14 @@ describe('⚠️ THE PROBES — each aimed at a defect this tree really had', ()
     //
     // The specimen copied is `supplierDocumentRefusal.test.ts`:
     //   `expect(refused.map((d) => d.id)).toEqual(['doc-012'])`
+    // ⚠️ **P4 GREW THIS SET FROM ONE TO THREE, AND THE PIN IS EXTENDED RATHER
+    // THAN RELAXED — it is still an exact set of NAMED MEMBERS.** `psl-011` is
+    // the PUBLISHED-then-withdrawn row operator ruling R5(b) requires the
+    // supplier view to have a sentence for; `psl-012` restores the LAPSED
+    // Directory cell that P4's expiring row took away. Replacing this with a
+    // `.length` or a `toContain` is what this spec exists to refuse.
     const withdrawn = pslStore.all().filter((r) => r.lifecycle === 'Withdrawn');
-    expect(withdrawn.map((r) => r.id)).toEqual(['psl-006']);
+    expect(withdrawn.map((r) => r.id)).toEqual(['psl-006', 'psl-011', 'psl-012']);
 
     const rejected = pslStore.all().filter((r) => r.lifecycle === 'Rejected');
     expect(rejected.map((r) => r.id)).toEqual(['psl-007']);
@@ -809,7 +815,16 @@ describe('⚠️ THE PROBES — each aimed at a defect this tree really had', ()
     expect(pslStore.get('psl-004')!.capDaysOverride).toBe(150);
 
     const published = pslStore.all().filter((r) => r.publishedAt !== null);
-    expect(published.map((r) => r.id)).toEqual(['psl-001', 'psl-003', 'psl-004']);
+    // P4 published two more, both on sup-007 — the default supplier seat, which
+    // held NONE before and would have opened the new supplier view on an empty
+    // page. Extended, not relaxed: still an exact set of named members.
+    expect(published.map((r) => r.id)).toEqual([
+      'psl-001',
+      'psl-003',
+      'psl-004',
+      'psl-010',
+      'psl-011',
+    ]);
 
     // ⚠️ **AND THE COUNTER-RULE IS HONOURED: THIS FILE'S CLAIM DEPENDS ON
     // THESE VALUES.** `DATA-POPULATION-INSTRUMENT-SURVIVES-ITS-CORPUS-01` also

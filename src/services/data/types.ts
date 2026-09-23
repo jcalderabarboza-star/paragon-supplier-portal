@@ -148,6 +148,7 @@ export type {
 // ─── Identity scope — derived from CurrentIdentity at the page boundary ─────
 
 import type { PslListing } from './pslListing';
+import type { SupplierPslView } from './pslSupplierView';
 
 export interface QueryScope {
   personaType: 'buyer' | 'supplier';
@@ -1721,6 +1722,31 @@ export interface IProcurementService {
   // for a later filter: the supplier view is a different read with a different
   // shape, and it is P4.
   getPslListings(scope: QueryScope): Promise<Page<PslListing>>;
+
+  // ── PSL P4 · THE SUPPLIER'S OWN VIEW ──────────────────────────────────────
+  //
+  // ⚠️ **THE SANCTIONED SUPPLIER READ, AND IT IS A DIFFERENT METHOD WITH A
+  // DIFFERENT RETURN TYPE RATHER THAN A FILTER ON THE ONE ABOVE.** Operator
+  // ruling R5: a listing is INTERNAL until the team PUBLISHES it, and only then
+  // may the supplier see its own status.
+  //
+  // It returns `SupplierPslView`, NEVER `PslListing`. `pslSupplierView.ts`'s
+  // header carries the whole argument; the short form is that a supplier
+  // surface may not value-import a PSL module, so the projection has to have
+  // happened before the page sees anything — and `IProcurementService` is where
+  // "before the page" lives, because `DataServiceContext` type-imports only.
+  //
+  // THREE REFUSALS, EACH ITS OWN STATEMENT AND EACH KILLABLE ALONE BY A PROBE:
+  //   · a BUYER scope reads `[]` — the buyer has `getPslListings` and the queue
+  //     page; a buyer answered here would be a second, quieter buyer read whose
+  //     disclosure rules nobody chose.
+  //   · a scope with no `supplierId` reads `[]` — `applySupplierScope`'s own
+  //     defence-in-depth line, restated rather than inherited because this
+  //     method does not pipe through it (its rows are projected, not filtered).
+  //   · TENANCY and PUBLICATION are TWO filters, never one compound predicate.
+  //     Folded together, one mutation would look like two and a probe could not
+  //     tell which half it killed.
+  getMyPslListings(scope: QueryScope): Promise<Page<SupplierPslView>>;
 
   // — Buyer command-center aggregates (buyer-only) —
   getProductionLines(scope: QueryScope): Promise<Page<ProductionLineRow>>;

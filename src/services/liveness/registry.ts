@@ -69,6 +69,13 @@ export type Capability =
   // (gate-1 LIVE) and harvest-gated below: the corpus is a seed plus whatever
   // a demo operator raises, and a request nobody real has made is not a source.
   | 'materialRequests'
+  // PSL P4 — the preferred supplier list. Backed by the WIRED `psl` target
+  // (gate-1 LIVE: `t_psl_propose` / `_grant` / `_publish` / `_withdraw` and the
+  // cap verbs all dispatch) and harvest-gated below: the corpus is
+  // `pslSeed.ts`'s rows plus whatever a demo operator raises. A designation
+  // nobody real decided is not a source — the same sentence
+  // `supplierApplications` and `materialRequests` each carry.
+  | 'psl'
   | 'commodityIntel'
   | 'forecastPublications'
   | 'deliveryAgreements'
@@ -145,6 +152,14 @@ const CAPABILITY_BACKING: Record<Capability, string | null> = {
   // submission, so the pill keeps reading Sample and green stays structurally
   // unreachable. Same two-edit flip shape as supplierApplications.
   materialRequests: 'materialRequest',
+  // PSL P4 — the `psl` CommandTarget is WIRED (`MockCommandService`'s TARGETS),
+  // so gate-1 derives LIVE and every designation on the queue page genuinely
+  // dispatches. Gate-2 below stays SHUT because the list is a SEED: the pill
+  // reads Sample and green is structurally unreachable until a real preferred
+  // supplier list is harvested. Unwire the target and this flips back to
+  // SIMULATED with no edit here — which is the property the whole registry is
+  // built on.
+  psl: 'psl',
   // CI-0 — the Market Intelligence tab reads invented category trend stats with NO
   // lifecycle entity behind them. Null backing → derives SIMULATED → the shared
   // LivenessPill renders amber "Sample"; green is structurally unreachable. When a
@@ -258,6 +273,20 @@ const HARVEST_GATED: Partial<Record<Capability, HarvestGate>> = {
   materialRequests: {
     readinessNoteKey: 'widget.honesty.awaitingMasterData',
     source: 'S/4 material master',
+  },
+  // PSL P4 — wired, and SEEDED. `pslSeed.ts` grows every row through the real
+  // verbs, which is honest about the MACHINE and says nothing about the LIST:
+  // no operator has entered a preferred supplier designation into this portal.
+  // Arc 1's operator-editable registry is the same prerequisite the certificate
+  // holdings wait on, so the two flip together or not at all.
+  psl: {
+    // ⚠️ ITS OWN KEY, NOT `awaitingProducer`. That one reads "awaiting live PR
+    // producer (SOMO / Grid)" and browser QA rendered it verbatim under a
+    // SUPPLIER's preferred-supplier standing — the correct tier carrying
+    // another lane's reason. A marker that names the wrong thing it is waiting
+    // for is worse than a generic one.
+    readinessNoteKey: 'widget.honesty.awaitingPslDecisions',
+    source: 'Operator-entered preferred supplier list',
   },
   // SDC-1 — the forecast publications the planner consolidates are SIMULATED
   // fixtures on the C8 grain; the real producer is the SOMO C8 feed (deferred

@@ -1,6 +1,6 @@
 # C1 — Method Surface
 
-Three distinct axes. **65** (service surface) · **111** (transition catalog) · **17** (wired
+Three distinct axes. **66** (service surface) · **111** (transition catalog) · **17** (wired
 targets). They measure different things; this file keeps them separate.
 
 > ⚠️ **THIS DOCUMENT IS PINNED TO THE TREE, AND THE PIN IS WHY THE NUMBERS ABOVE ARE ALLOWED TO
@@ -33,6 +33,13 @@ targets). They measure different things; this file keeps them separate.
 > anybody remembering to edit this page — which is what the paragraph above promises and this
 > line is the evidence for.
 
+> **RE-HARVEST (2026-09-23, PSL P4).** The supplier-facing half of the preferred-supplier lane
+> landed. `IProcurementService` gained **one** method — `getMyPslListings` — and it is deliberately
+> a SECOND method rather than a persona branch inside `getPslListings`: the two return DIFFERENT
+> TYPES (`PslListing` vs `SupplierPslView`), because a supplier is shown a projected subset of a
+> listing and never the record. A counterparty implementing this surface must implement both, and
+> must not satisfy one with the other. No transition and no target moved — P4 adds no verb.
+
 > **RE-HARVEST (2026-09-21, PSL P3).** The preferred-supplier lane landed, and it is the first
 > batch to add TWO machines at once: `IProcurementService` gained `getPslListings`, the transition
 > catalog went 102 → **111** across 21 → **23** flows, and the wired-target axis 15 → **17**.
@@ -45,7 +52,7 @@ Source of truth: `src/services/data/types.ts` (service + command types),
 
 ---
 
-## Axis 1 — the 65-method service surface (`IDataService`)
+## Axis 1 — the 66-method service surface (`IDataService`)
 
 The single interface the Phase-F1 real adapter implements; pages call it through
 `useDataService()` and do not change when the mock is swapped for `httpDataService`. Every method
@@ -73,7 +80,7 @@ interface IDataService {
 | Sub-service | Count | Methods |
 |---|---|---|
 | `ISupplierService` | 3 | `list`, `getById`, `getCurrent` |
-| `IProcurementService` | 26 | `getPurchaseOrders`, `getPurchaseOrder`, `getInventory`, `getRFQs`, `getQuotations`, `getShipments`, `getASNs`, `getGoodsReceipts`, `getBuyerInvoices`, `getSupplierInvoices`, `getContracts`, `getObligations`, `getDocuments`, `getStorefrontCatalog`, `getStorefrontCerts`, `getStorefrontProducts`, `getKpis`, `getPerformanceTrend`, `getSupplierScorecards`, `getRequisitions`, `getPrIntake`, `getSupplierApplications`, `getMaterialRequests`, `getPslListings`, `getProductionLines`, `getSupplierHealth` |
+| `IProcurementService` | 27 | `getPurchaseOrders`, `getPurchaseOrder`, `getInventory`, `getRFQs`, `getQuotations`, `getShipments`, `getASNs`, `getGoodsReceipts`, `getBuyerInvoices`, `getSupplierInvoices`, `getContracts`, `getObligations`, `getDocuments`, `getStorefrontCatalog`, `getStorefrontCerts`, `getStorefrontProducts`, `getKpis`, `getPerformanceTrend`, `getSupplierScorecards`, `getRequisitions`, `getPrIntake`, `getSupplierApplications`, `getMaterialRequests`, `getPslListings`, `getMyPslListings`, `getProductionLines`, `getSupplierHealth` |
 | `IRiskService` | 7 | `getRiskAlerts`, `getGeoRisks`, `getExposure`, `getScenarios`, `getCompliance`, `getComplianceRegistry`, `getCommodities` |
 | `IDiscoveryService` | 4 | `getRecommended`, `getQualifications`, `getMarketIntel`, `getSingleSourceItems` |
 | `IAnalyticsService` | 7 | `getSummary`, `getSpendByCategory`, `getTopSuppliers`, `getOtifTrend`, `getPoVolumeTrend`, `getChannelMix`, `getSupplierPerformance` |
@@ -81,10 +88,10 @@ interface IDataService {
 | `IDeliveryService` | 4 | `getAgreements`, `releaseLines`, `confirmMatch`, `editPolicy` |
 | `IChaseService` | 1 | `getUnifiedChase` |
 | `IEnforcementService` | 1 | `getEnforcementSettings` |
-| **read subtotal** | **61** | |
+| **read subtotal** | **62** | |
 | `ICommandService` | 3 | `dispatch`, `getCommandStatus`, `settle` |
 | top-level | 1 | `getCapabilities` |
-| **TOTAL** | **65** | |
+| **TOTAL** | **66** | |
 
 **Return contract:** list reads return `Page<T>` (DR-5 — see C2); single reads return `T | null`;
 `getSummary` returns a summary object or `null` (buyer-populated, supplier-null). Failure is

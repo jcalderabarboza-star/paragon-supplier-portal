@@ -51,6 +51,18 @@ export const buyerDashboardEn: Record<string, string> = {
     'Invoices {{invoices}} · forecast responses {{responses}}',
   'buyerDashboard.alerts.contracts.label': 'Contracts expiring',
   'buyerDashboard.alerts.contracts.detail': '{{horizon}} in the renewal horizon',
+  // PSL P4 · R-C. The two preferred-supplier signals.
+  'buyerDashboard.alerts.pslExpiring.label': 'Preferred-supplier listings expiring',
+  'buyerDashboard.alerts.pslExpiring.detail': 'Within the next {{days}} days',
+  'buyerDashboard.alerts.pslExpiredListed.label': 'Preferred-supplier listings expired but still listed',
+  // ⚠️ PLURALISED, BECAUSE BROWSER QA READ *"Across 1 suppliers"* BACK.
+  // i18next's `_one`/`_other` on a `count`, the convention `roles.page.reach_*`
+  // already uses. Indonesian has no plural rule, so it carries `_other` only —
+  // also that file's precedent.
+  'buyerDashboard.alerts.pslExpiredListed.detail_one':
+    'At {{count}} supplier — sourcing no longer treats it as in force',
+  'buyerDashboard.alerts.pslExpiredListed.detail_other':
+    'Across {{count}} suppliers — sourcing no longer treats them as in force',
   // — KPI row —
   'buyerDashboard.kpi.matchRate.label': 'Three-way match rate',
   'buyerDashboard.kpi.matchRate.basis': '{{matched}} of {{total}} invoices matched',
@@ -171,6 +183,12 @@ export const buyerDashboardId: Record<string, string> = {
     'Faktur {{invoices}} · tanggapan perkiraan {{responses}}',
   'buyerDashboard.alerts.contracts.label': 'Kontrak akan berakhir',
   'buyerDashboard.alerts.contracts.detail': '{{horizon}} dalam cakrawala perpanjangan',
+  'buyerDashboard.alerts.pslExpiring.label': 'Pencatatan pemasok pilihan akan kedaluwarsa',
+  'buyerDashboard.alerts.pslExpiring.detail': 'Dalam {{days}} hari ke depan',
+  'buyerDashboard.alerts.pslExpiredListed.label':
+    'Pencatatan pemasok pilihan kedaluwarsa tetapi masih terdaftar',
+  'buyerDashboard.alerts.pslExpiredListed.detail_other':
+    'Pada {{count}} pemasok — pengadaan tidak lagi memperlakukannya sebagai berlaku',
   // — KPI row —
   'buyerDashboard.kpi.matchRate.label': 'Tingkat pencocokan tiga arah',
   'buyerDashboard.kpi.matchRate.basis': '{{matched}} dari {{total}} faktur cocok',

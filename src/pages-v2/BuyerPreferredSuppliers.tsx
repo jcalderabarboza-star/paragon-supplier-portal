@@ -39,11 +39,13 @@
 
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { ListPlus } from 'lucide-react';
 
 import AppShellV2 from '../components/layout-v2/AppShellV2';
 import PageHeader from '../components/ui-v2/PageHeader';
+import PageMetaLine from '../components/ui-v2/PageMetaLine';
+import ProvenanceMarker from '../components/ui-v2/ProvenanceMarker';
 import Button from '../components/ui-v2/Button';
 import SidePanel from '../components/ui-v2/SidePanel';
 import StatusPill from '../components/ui-v2/StatusPill';
@@ -66,7 +68,12 @@ import {
 import { atomsForSeat } from '../services/transitions/customRoles';
 import { restrictiveDecisionVerdict } from '../services/data/pslLeadCheck';
 import { pslRefusalKey } from './psl/pslRefusal';
-import { pslDisplayStatus, pslScopeCodes } from '../services/data/pslProjection';
+import {
+  pslDisplayStatus,
+  pslScopeCodes,
+  pslExpiringRows,
+  pslExpiredStillListedRows,
+} from '../services/data/pslProjection';
 import { PSL_STATUSES, type PslListing, type PslStatus } from '../services/data/pslListing';
 import { DECLARED_PRESENT } from '../services/data/fixturePresent';
 import { statusLabelKey } from '../lib/statusLabel';
@@ -83,7 +90,45 @@ import type { CommandResult } from '../services/data/types';
  */
 const PSL_TODAY = DECLARED_PRESENT;
 
-type Tab = 'proposed' | 'all';
+/**
+ * PSL P4 · R-C — THE TWO ATTENTION TABS.
+ *
+ * ⚠️ **THE BUYER DASHBOARD'S ALERT CARDS LINK STRAIGHT HERE, AND BOTH SIDES
+ * FILTER WITH THE SAME EXPORTED PREDICATE** (`pslExpiringRows` /
+ * `pslExpiredStillListedRows`, in `pslProjection.ts`). A card that counted with
+ * one definition while this page filtered with another would disagree the first
+ * time either gained the cap ledger — `COUNT-RESTATED-ACROSS-INSTRUMENTS-01`,
+ * whose lesson is that a wrong number WITH AN EXPLANATION gets believed. The
+ * drill-down landing on exactly the counted rows is what makes a disagreement
+ * visible to a person rather than only to a test.
+ */
+type Tab = 'proposed' | 'all' | 'expiring' | 'expiredListed';
+
+/** The tabs, in render order. Derived-against by `BuyerPreferredSuppliers.test`
+ *  rather than restated there.
+ *
+ *  i18n-defer: these are KEY SEGMENTS, not copy. Each is resolved at render as
+ *  `t('psl.queue.tab.' + k)` and as `EMPTY_KEY_OF[tab]`, so not one of them
+ *  reaches a reader — the strings a reader sees live in `lib/i18n/psl.ts` in
+ *  both locales. They are also the `?tab=` parameter's vocabulary, which is a
+ *  URL contract and must not change when a locale does. */
+const TABS: readonly Tab[] = Object.freeze(['proposed', 'all', 'expiring', 'expiredListed']);
+
+/** One empty-state sentence per tab. A `Record<Tab, …>` rather than a ternary
+ *  chain, so adding a tab is a type error until its copy exists — which is how
+ *  the two new tabs were forced to bring their own rather than inherit the
+ *  "all listings" sentence and say something false. */
+const EMPTY_KEY_OF: Readonly<Record<Tab, string>> = Object.freeze({
+  proposed: 'psl.queue.empty',
+  all: 'psl.queue.emptyAll',
+  expiring: 'psl.queue.emptyExpiring',
+  expiredListed: 'psl.queue.emptyExpiredListed',
+});
+
+/** Is this a tab? The query parameter is reader-supplied, so it is validated
+ *  rather than cast — an unknown value falls back to the default tab instead of
+ *  rendering an empty table nobody asked for. */
+const isTab = (v: string | null): v is Tab => v !== null && (TABS as readonly string[]).includes(v);
 
 /** Which confirmation step is open. `null` is the panel's resting state. */
 type Pending = 'grant' | 'reject' | null;
@@ -133,7 +178,22 @@ const BuyerPreferredSuppliers: React.FC = () => {
   const { data, isLoading, isError, error } = usePslListings();
   const listings = useMemo(() => data?.items ?? [], [data]);
 
-  const [tab, setTab] = useState<Tab>('proposed');
+  // ⚠️ **`useSearchParams`, NOT `window.location.hash` — AND THE FIRST DRAFT
+  // USED THE HASH.** This app is a HashRouter, so hand-parsing
+  // `location.hash.split('?')[1]` reads correctly in the BROWSER and returns
+  // nothing under the `MemoryRouter` every spec renders through. The drill-down
+  // would have shipped working and untested, with a green suite saying so.
+  // `useDeepLinkedRecordId` already solved this for record ids; this is the
+  // same instrument on a different parameter.
+  //
+  // ⚠️ READ ONCE, AS THE INITIAL STATE, NOT ON EVERY RENDER. The tab is
+  // thereafter the reader's to change; re-deriving it from the URL would snap
+  // the page back to the alert's tab every time they clicked another one.
+  const [searchParams] = useSearchParams();
+  const [tab, setTab] = useState<Tab>(() => {
+    const requested = searchParams.get('tab');
+    return isTab(requested) ? requested : 'proposed';
+  });
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [pending, setPending] = useState<Pending>(null);
   const [reason, setReason] = useState('');
@@ -199,7 +259,21 @@ const BuyerPreferredSuppliers: React.FC = () => {
     () => listings.filter((l) => l.lifecycle === 'Proposed'),
     [listings],
   );
-  const rows = tab === 'proposed' ? proposed : listings;
+  // ⚠️ THE TWO ATTENTION POPULATIONS COME FROM `pslProjection.ts`, NEVER FROM
+  // A PREDICATE WRITTEN HERE — see `Tab`'s note. `PSL_TODAY` is the declared
+  // present, the same instant the dashboard passes its own call.
+  const expiring = useMemo(() => pslExpiringRows(listings, PSL_TODAY), [listings]);
+  const expiredListed = useMemo(
+    () => pslExpiredStillListedRows(listings, PSL_TODAY),
+    [listings],
+  );
+  const ROWS_OF: Readonly<Record<Tab, readonly PslListing[]>> = {
+    proposed,
+    all: listings,
+    expiring,
+    expiredListed,
+  };
+  const rows = ROWS_OF[tab];
 
   const closePanel = (): void => {
     setSelectedId(null);
@@ -351,8 +425,13 @@ const BuyerPreferredSuppliers: React.FC = () => {
         }
       />
 
+      <PageMetaLine className="-mt-6 mb-4">
+        {/* The list DISPATCHES (gate-1 LIVE) and is SEEDED (gate-2 shut). */}
+        <ProvenanceMarker capability="psl" className="align-middle" />
+      </PageMetaLine>
+
       <div className="flex gap-2 mb-4">
-        {(['proposed', 'all'] as const).map((k) => (
+        {TABS.map((k) => (
           <button
             key={k}
             type="button"
@@ -365,7 +444,7 @@ const BuyerPreferredSuppliers: React.FC = () => {
             }`}
           >
             {t(`psl.queue.tab.${k}`)}
-            {k === 'proposed' ? ` (${proposed.length})` : ` (${listings.length})`}
+            {` (${ROWS_OF[k].length})`}
           </button>
         ))}
       </div>
@@ -377,11 +456,7 @@ const BuyerPreferredSuppliers: React.FC = () => {
           breadcrumb={CRUMB}
           title={t('psl.queue.title')}
           subtitle={t('psl.queue.subtitle')}
-          message={
-            tab === 'proposed'
-              ? `${t('psl.queue.empty')} ${t('psl.queue.emptyHint')}`
-              : `${t('psl.queue.emptyAll')} ${t('psl.queue.emptyHint')}`
-          }
+          message={`${t(EMPTY_KEY_OF[tab])} ${t('psl.queue.emptyHint')}`}
         />
       ) : null}
 

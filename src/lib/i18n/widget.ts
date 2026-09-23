@@ -23,6 +23,15 @@ export const widgetEn: Record<string, string> = {
   // Harvest-gated (G1.1): the PR intake is wired but has no live producer yet
   // (SOMO F2 / internal Grid) — names the missing producer, not a generic sample.
   'widget.honesty.awaitingProducer': 'Sample — awaiting live PR producer (SOMO / Grid)',
+  // ⚠️ PSL P4 — ITS OWN SENTENCE, BECAUSE REUSING `awaitingProducer` PUT A
+  // FALSE ONE ON A SUPPLIER-FACING SURFACE. Browser QA read
+  // *"SAMPLE — AWAITING LIVE PR PRODUCER (SOMO / GRID)"* under a supplier's
+  // preferred-supplier standing: the right TIER, attached to another lane's
+  // reason. The marker exists to say WHAT is being waited for, so a shared
+  // key that names the wrong thing is worse than no key — the reader is told
+  // something specific and untrue.
+  'widget.honesty.awaitingPslDecisions':
+    'Sample — awaiting an operator-entered preferred supplier list',
   // Harvest-gated (SDC-1): the forecast publications the planner consolidates
   // are SIMULATED fixtures on the C8 grain until the real SOMO C8 feed lands.
   'widget.honesty.awaitingC8Feed': 'Sample — awaiting SOMO C8 feed',
@@ -190,6 +199,8 @@ export const widgetId: Record<string, string> = {
   'widget.honesty.sample': 'Sampel',
   'widget.honesty.awaitingHarvest': 'Sampel — menunggu panen data Track-R',
   'widget.honesty.awaitingProducer': 'Sampel — menunggu produsen PR live (SOMO / Grid)',
+  'widget.honesty.awaitingPslDecisions':
+    'Sampel — menunggu daftar pemasok pilihan yang dimasukkan operator',
   'widget.honesty.awaitingC8Feed': 'Sampel — menunggu feed data C8 SOMO',
   'widget.honesty.awaitingSupplierIdentities': 'Sampel — menunggu identitas pemasok sungguhan',
   'widget.honesty.awaitingMasterData': 'Sampel — menunggu master material S/4',

@@ -48,6 +48,7 @@ describe('feed provenance — the second axis', () => {
     expect(partlyReal.length).toBeGreaterThan(0);
     expect(new Set(partlyReal)).toEqual(
       new Set<Capability>([
+        'psl',
         'purchaseOrders',
         'advanceShipNotices',
         'goodsReceipts',

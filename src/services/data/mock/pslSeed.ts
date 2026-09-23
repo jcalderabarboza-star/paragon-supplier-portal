@@ -93,6 +93,23 @@ export type PslSeedWalk =
   | 'grant'
   | 'grant+publish'
   | 'grant+withdraw'
+  /**
+   * PSL P4 · PUBLISHED, THEN STOPPED.
+   *
+   * ⚠️ **THE MEMBER EXISTS BECAUSE OPERATOR RULING R5(b) MAKES THE STATE
+   * REACHABLE AND NOTHING SEEDED IT.** Publication is never undone; a listing
+   * that must stop is WITHDRAWN. So a supplier CAN be told about a designation
+   * that is later withdrawn, and the supplier surface has to say something
+   * honest when it is — measured before P4: `published && Withdrawn` rows in
+   * the corpus = **0**, so that arm of the supplier view was an unreachable
+   * branch with no data behind it.
+   *
+   * It is a separate member rather than a boolean pair for the reason the
+   * union's own header gives: booleans would make `withdraw` expressible
+   * without `grant`, and one of those combinations would eventually be
+   * authored.
+   */
+  | 'grant+publish+withdraw'
   | 'reject';
 
 /** One row's worth of authored intent. */
@@ -304,6 +321,115 @@ export const PSL_SEEDS_RAW: readonly PslSeedRow[] = Object.freeze([
     walk: 'grant' as PslSeedWalk,
     decideReason: 'Approved ahead of the campaign, effective on its start date.',
   }),
+
+  // ── sup-007 · PT Sample Packaging Indonesia — THE DEFAULT SUPPLIER SEAT ──
+  //
+  // ⚠️ **THESE TWO EXIST BECAUSE P4 MEASURED THAT THE SUPPLIER-FACING VIEW
+  // WOULD RENDER EMPTY FOR THE ONE SEAT ANYBODY ACTUALLY OPENS.** `SidebarV2`
+  // and `Login` both seed `sup-007`, and of its three listings above NONE is
+  // published — so the first supplier view this portal ever shipped would have
+  // photographed an empty state and looked correct doing it. That is
+  // `EMPTY-INPUT-REPORTS-CLEAN-01` with a screenshot attached, and browser QA
+  // is precisely the instrument that would not have caught it.
+  //
+  // ⚠️ **APPENDED, NEVER INSERTED.** `pslStore.nextId()` mints in dispatch
+  // order and those ids are DEEP-LINK TARGETS (`/buyer/suppliers/sup-002?id=
+  // psl-003`). Placing either of these earlier would silently repoint every
+  // link anybody has copied out of this portal at a different governance
+  // decision. They take `psl-010` and `psl-011`; nothing above moves.
+  //
+  // ⚠️ **THE DATES ARE AUTHORED RAW AGAINST THE SHARED ANCHOR, like every
+  // row above**, and shifted onto `DECLARED_PRESENT` by `anchoredValidity`. The
+  // landings below are what the shift PRODUCES, not what is typed here, and
+  // `pslSeed.test.ts` re-derives them rather than trusting this comment.
+  Object.freeze({
+    intent:
+      'PUBLISHED AND EXPIRING — the supplier-facing lapse line has a subject. ' +
+      'Lands inside PSL_EXPIRING_WINDOW_DAYS at the declared present, on the ' +
+      'DEFAULT supplier seat, so /supplier/performance is not an empty page.',
+    supplierId: 'sup-007',
+    materialCodes: Object.freeze(['PK-PETB-8810', 'PK-CAPF-8820']),
+    status: 'Mandatory' as PslStatus,
+    validFrom: '2025-12-23',
+    validUntil: '2026-06-24',
+    justification:
+      'Directed source for the 250ml bottle and its closure while the ' +
+      'second-source qualification runs; renew or re-compete before it lapses.',
+    // doc-005 is sup-007's ISO 9001 quality certificate — a real row in
+    // `supplierDocuments.ts`. The first draft cited `doc-301`, which does not
+    // exist, and `pslListings.fixture.test.ts` caught it by name.
+    evidenceRefs: Object.freeze(['doc-005']),
+    proposeReason: 'Raised to hold the closure pairing through the current campaign.',
+    walk: 'grant+publish' as PslSeedWalk,
+    decideReason: 'Directed sourcing accepted for the campaign window.',
+  }),
+  Object.freeze({
+    intent:
+      'PUBLISHED, THEN WITHDRAWN — the R5(b) case, which the corpus held ZERO ' +
+      'of before P4. The supplier was told, and then the designation was ' +
+      'stopped rather than un-published. The supplier view must say so.',
+    supplierId: 'sup-007',
+    materialCodes: Object.freeze(['PK-CART-9901']),
+    status: 'Validated' as PslStatus,
+    validFrom: '2026-01-20',
+    validUntil: '2026-12-10',
+    justification:
+      'Pre-qualified for mono-carton supply alongside the incumbent; kept in ' +
+      'competition rather than directed.',
+    evidenceRefs: Object.freeze(['doc-008']),
+    proposeReason: 'Raised after the carton audit closed with no findings.',
+    walk: 'grant+publish+withdraw' as PslSeedWalk,
+    decideReason: 'Qualification accepted; supplier competes alongside the incumbent.',
+    withdrawReason:
+      'Carton volumes consolidated onto a single plant; the qualification is ' +
+      'no longer used and is stopped rather than left to lapse.',
+  }),
+
+  // ── sup-008 · PT Sample Carton Packaging — THE LAPSED EXAMPLE ─────────────
+  //
+  // ⚠️ **THIS ROW EXISTS BECAUSE THE TWO ABOVE DESTROYED A CASE THE TREE
+  // ALREADY DEMONSTRATED, AND IT IS THE PRICE OF THEM RATHER THAN AN ADDITION
+  // ON ITS OWN ACCOUNT.** `psl-010` is PUBLISHED AND EXPIRING, and `Expiring`
+  // IS in force (`isPslInForce` admits `Listed` and `Expiring`) — so sup-007's
+  // Directory verdict moved `LAPSED` → `IN_FORCE`, and measured across the
+  // whole roster afterwards **no supplier was LAPSED at all**. Three shipped
+  // specs assert that the Directory renders three VISIBLY DIFFERENT cells and
+  // that a lapsed Packaging supplier is still invitable; with no lapsed
+  // supplier anywhere those assertions can only be LOOSENED, which is the one
+  // repair this batch is forbidden to make.
+  //
+  // ⚠️ **AND IT IS DELIBERATELY UNPUBLISHED.** The supplier-facing view must
+  // not gain a row it was never meant to demonstrate: this exists for the
+  // BUYER's Directory and sourcing surfaces. Internal is also the truthful
+  // state for a qualification that was stopped before anyone was told.
+  //
+  // sup-008 is category `Packaging`, which is what `BuyerSourcingPsl`'s
+  // derived control requires — it filters rather than naming a supplier, so it
+  // needs no edit; `BuyerSuppliersPsl` names one and is re-pointed here.
+  Object.freeze({
+    intent:
+      'LAPSED — held a designation, holds none in force. Restores the third ' +
+      'Directory cell that psl-010 took away by putting sup-007 in force.',
+    supplierId: 'sup-008',
+    materialCodes: Object.freeze(['PK-CART-9910']),
+    status: 'Validated' as PslStatus,
+    validFrom: '2025-10-25',
+    validUntil: '2026-07-25',
+    justification:
+      'Pre-qualified as a second carton source for the lotion line during the ' +
+      'incumbent capacity review.',
+    // ⚠️ EMPTY, AND DELIBERATELY SO: the document corpus holds rows for
+    // sup-002, sup-005 and sup-007 ONLY. Citing a document sup-008 does not
+    // have would be a reference to a claim nobody made — the exact thing
+    // `evidenceRefs`' own doc comment warns about one level up.
+    evidenceRefs: Object.freeze([]),
+    proposeReason: 'Raised during the carton capacity review.',
+    walk: 'grant+withdraw' as PslSeedWalk,
+    decideReason: 'Second-source qualification accepted for the review period.',
+    withdrawReason:
+      'The capacity review closed with the incumbent retained; the ' +
+      'second-source qualification is stopped.',
+  }),
 ] as const);
 
 /**
@@ -315,8 +441,34 @@ const LIFECYCLE_OF: Readonly<Record<PslSeedWalk, PslLifecycle>> = Object.freeze(
   grant: 'Listed',
   'grant+publish': 'Listed',
   'grant+withdraw': 'Withdrawn',
+  'grant+publish+withdraw': 'Withdrawn',
   reject: 'Rejected',
 });
+
+/**
+ * WHICH WALKS PUBLISH, AND WHICH WITHDRAW — SETS RATHER THAN EQUALITY TESTS.
+ *
+ * ⚠️ **THE EXECUTOR USED `walk === 'grant+publish'` AND `walk ===
+ * 'grant+withdraw'`, AND A THIRD WALK THAT DOES BOTH IS EXACTLY WHAT AN
+ * EQUALITY TEST CANNOT EXPRESS.** Adding `|| walk === 'grant+publish+withdraw'`
+ * to each line twice would work and would have to be edited twice again for the
+ * next member. A membership set is edited once, in the place that names the
+ * property, and `Record<PslSeedWalk, …>` above still forces every member to
+ * declare its lifecycle.
+ *
+ * ⚠️ **NOT A SUBSTRING TEST.** `walk.includes('publish')` would read the
+ * same today and would silently claim a future `'publish-only'` member that the
+ * grant branch never reaches.
+ */
+const WALKS_THAT_PUBLISH: readonly PslSeedWalk[] = Object.freeze([
+  'grant+publish',
+  'grant+publish+withdraw',
+]);
+
+const WALKS_THAT_WITHDRAW: readonly PslSeedWalk[] = Object.freeze([
+  'grant+withdraw',
+  'grant+publish+withdraw',
+]);
 
 /**
  * WHAT THE PROJECTION SEES, WITH THE DATES STILL RAW.
@@ -562,7 +714,12 @@ export async function seedPslListings(
       if (capped.status === 'failed') return refuse(row, capped);
     }
 
-    if (row.walk === 'grant+publish') {
+    // ⚠️ PUBLISH BEFORE WITHDRAW, AND THE ORDER IS THE RULING RATHER THAN A
+    // convenience: R5(b) says publication is never undone, so the only way a
+    // supplier can hold a withdrawn designation is to have been told about it
+    // FIRST. Withdrawing then publishing would announce a designation that had
+    // already stopped, which is a different and dishonest sequence.
+    if (WALKS_THAT_PUBLISH.includes(row.walk)) {
       const published = await commands.dispatch(PROCUREMENT_SCOPE, {
         transitionId: 't_psl_publish',
         entity: 'psl',
@@ -572,7 +729,7 @@ export async function seedPslListings(
       if (published.status === 'failed') return refuse(row, published);
     }
 
-    if (row.walk === 'grant+withdraw') {
+    if (WALKS_THAT_WITHDRAW.includes(row.walk)) {
       const withdrawn = await commands.dispatch(COMPLIANCE_SCOPE, {
         transitionId: 't_psl_withdraw',
         entity: 'psl',

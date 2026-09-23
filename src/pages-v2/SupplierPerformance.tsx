@@ -23,6 +23,7 @@ import {
   Download,
   Info,
   CheckCircle2,
+  Inbox,
 } from 'lucide-react';
 import AppShellV2 from '../components/layout-v2/AppShellV2';
 import {
@@ -50,13 +51,23 @@ import { useCurrentIdentity } from '../context/CurrentIdentityContext';
 import NoSupplierIdentity from '../components/ui-v2/NoSupplierIdentity';
 import LoadingState from '../components/ui-v2/LoadingState';
 import ErrorState from '../components/ui-v2/ErrorState';
-import EmptyState from '../components/ui-v2/EmptyState';
 import {
   useCurrentSupplier,
   useKpis,
   usePurchaseOrders,
+  useMyPslListings,
 } from '../services/query/hooks';
 import type { KpiPoint as Kpi, KpiTrend as Trend } from '../services/data/types';
+import { statusLabelKey } from '../lib/statusLabel';
+import { statusTone } from '../lib/statusTone';
+import { formatDate } from '../lib/format';
+// ⚠️ **A TYPE-ONLY IMPORT OF A PSL MODULE, WHICH IS THE ONE FORM
+// `pslNoSupplierRead.test.ts` PERMITS ON A SUPPLIER SURFACE** — and it says so
+// in its own spec (*"A TYPE-ONLY IMPORT IS NOT A REACH — and an INLINE type
+// specifier IS"*). A type is erased, so no PSL data crosses it. The VALUES that
+// would matter — `pslDisplayStatus`, `effectiveValidUntil`, `pslStore` — are
+// never imported here and must never be: see `pslSupplierView.ts`'s header.
+import type { SupplierPslView } from '../services/data/pslSupplierView';
 
 type Grade = 'A' | 'B' | 'C' | 'D';
 
@@ -179,6 +190,149 @@ const GradeBadge: React.FC<{ grade: Grade; score: number }> = ({ grade, score })
   );
 };
 
+// ─────────────────────────────────────────────────────────────────────────────
+// PSL P4 · THE SUPPLIER'S OWN PREFERRED-SUPPLIER STANDING.
+//
+// ⚠️ **WHY THIS PAGE AND NOT THE STOREFRONT — OPERATOR RULING R-E, STATED
+// AT THE SITE BECAUSE THE OBVIOUS PLACE IS THE WRONG ONE.**
+// `/supplier/storefront` is the supplier's PUBLIC marketplace profile: its
+// header carries a "Preview public profile" control that navigates to
+// `/marketplace/supplier/:id`. A preferred-supplier designation placed there
+// would sit one click from a page the supplier is told is public, inviting them
+// to believe OTHER BUYERS can see a designation that is Paragon-internal
+// master data. `/supplier/performance` is private and is already the page
+// about how Paragon regards this supplier.
+//
+// Measured before building: `SupplierPerformance` is imported by exactly ONE
+// non-test module — `AppRouter.tsx`, at `/supplier/performance` — and
+// `SupplierStorefront` (the public profile) imports no part of it.
+//
+// ⚠️ **NO VERB, AND NO COPY THAT IMPLIES ONE.** The PSL machine has no
+// supplier-side transition at all. A "renew" or "respond" affordance here would
+// be a false affordance, and one living in the COPY rather than in a handler is
+// the variety a handler-based census cannot see.
+//
+// ⚠️ **IT RENDERS ALREADY-PROJECTED STRINGS AND COMPUTES NOTHING.** Every
+// clock comparison happened in `MockProcurementService.getMyPslListings` at
+// `DECLARED_PRESENT`. That is not a style choice — see `pslSupplierView.ts`.
+// ─────────────────────────────────────────────────────────────────────────────
+
+const PslStandingRow: React.FC<{ view: SupplierPslView }> = ({ view }) => {
+  const { t } = useTranslation();
+  const codes = view.scope.map((x) => x.code).join(', ');
+  return (
+    <div
+      data-testid={`supplier-psl-row-${view.viewKey}`}
+      className="border border-border-subtle rounded-lg p-4 bg-bg-surface"
+    >
+      <div className="flex flex-wrap items-center gap-2 mb-3">
+        <StatusPill variant={statusTone(view.status)}>
+          {t(statusLabelKey(view.status) ?? '', { defaultValue: view.status })}
+        </StatusPill>
+        <StatusPill variant={statusTone(view.displayStatus)}>
+          {t(statusLabelKey(view.displayStatus) ?? '', { defaultValue: view.displayStatus })}
+        </StatusPill>
+        <span className="text-xs text-text-tertiary ml-auto">
+          {t('psl.supplier.sharedOn', { date: formatDate(view.publishedAt) })}
+        </span>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
+        <div>
+          <span className="block text-xs text-text-tertiary">{t('psl.supplier.scope')}</span>
+          {view.scope.map((item) => (
+            <span key={item.code} className="block">
+              <Data className="text-xs">{item.code}</Data>
+              {item.label ? (
+                <span className="text-text-secondary text-xs"> {item.label}</span>
+              ) : null}
+            </span>
+          ))}
+        </div>
+        <div>
+          <span className="block text-xs text-text-tertiary">{t('psl.supplier.from')}</span>
+          <Data className="text-xs">{formatDate(view.validFrom)}</Data>
+        </div>
+        <div>
+          <span className="block text-xs text-text-tertiary">{t('psl.supplier.until')}</span>
+          {view.effectiveUntil ? (
+            <Data className="text-xs">{formatDate(view.effectiveUntil)}</Data>
+          ) : (
+            <span className="text-xs text-text-secondary">{t('psl.supplier.noEnd')}</span>
+          )}
+        </div>
+      </div>
+
+      {/* R-D / R-F — one line per state, and the three are mutually exclusive
+          because `displayStatus` is one word. Each states a DATE and asks for
+          nothing: there is no supplier verb to ask for. */}
+      {view.displayStatus === 'Expiring' && view.effectiveUntil ? (
+        <p data-testid="supplier-psl-expiring-line" className="mt-3 text-sm text-warning-hover">
+          {t('psl.supplier.expiringLine', {
+            codes,
+            date: formatDate(view.effectiveUntil),
+          })}
+        </p>
+      ) : null}
+      {view.displayStatus === 'Expired' && view.effectiveUntil ? (
+        <p data-testid="supplier-psl-expired-line" className="mt-3 text-sm text-text-secondary">
+          {t('psl.supplier.expiredLine', { date: formatDate(view.effectiveUntil) })}
+        </p>
+      ) : null}
+      {view.displayStatus === 'Withdrawn' && view.withdrawnAt ? (
+        <p data-testid="supplier-psl-withdrawn-line" className="mt-3 text-sm text-text-secondary">
+          {/* R5(b): publication is never undone, so the supplier was told and
+              must now be told it stopped.
+              ⚠️ THE DATE IS `withdrawnAt`, NOT `effectiveUntil`. The first
+              draft used the validity end and browser QA rendered *"withdrawn on
+              19 Mar 2027"* — a future date for something already stopped. The
+              WHY stays internal; the WHEN cannot, or the sentence is false. */}
+          {t('psl.supplier.withdrawnLine', { date: formatDate(view.withdrawnAt) })}
+        </p>
+      ) : null}
+    </div>
+  );
+};
+
+const PslStandingSection: React.FC = () => {
+  const { t } = useTranslation();
+  const query = useMyPslListings();
+  const views = query.data?.items ?? [];
+
+  return (
+    <section
+      data-testid="supplier-psl-section"
+      className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6 mb-6"
+    >
+      <h2 className="text-section text-text-primary mb-1 pb-3 border-b border-border-subtle">
+        {t('psl.supplier.title')}
+      </h2>
+      <p className="text-xs text-text-tertiary mb-4">
+        {t('psl.supplier.subtitle')}
+        {/* ⚠️ THE MARKER IS NOT DECORATION HERE. The `psl` capability derives
+            LIVE at gate 1 (the CommandTarget really dispatches) and is held
+            SIMULATED by gate 2, because this list is a SEED — no operator has
+            entered a preferred-supplier designation into this portal. Telling a
+            SUPPLIER that a designation is real when the corpus is authored would
+            be the one audience for whom that mistake is not recoverable. */}
+        <ProvenanceMarker capability="psl" className="ml-2 align-middle" />
+      </p>
+      {views.length === 0 ? (
+        <p data-testid="supplier-psl-empty" className="text-sm text-text-secondary">
+          {t('psl.supplier.empty')}{' '}
+          <span className="text-text-tertiary">{t('psl.supplier.emptyHint')}</span>
+        </p>
+      ) : (
+        <div className="flex flex-col gap-3">
+          {views.map((v) => (
+            <PslStandingRow key={v.viewKey} view={v} />
+          ))}
+        </div>
+      )}
+    </section>
+  );
+};
+
 const SupplierPerformance: React.FC = () => {
   const { t } = useTranslation();
   const el = useEnumLabel();
@@ -243,14 +397,41 @@ const SupplierPerformance: React.FC = () => {
         }}
       />
     );
+  // ⚠️ **THE PSL SECTION IS NOT GATED ON KPI DATA, AND THE FIRST DRAFT OF P4
+  // GATED IT BY ACCIDENT — `ENTRANCE-IS-THE-UNIT-01`'s lesson with the operands
+  // swapped.** Placing the section inside the overview tab put it behind this
+  // early return, and `snapshotForScope` hands a KPI snapshot to EXACTLY ONE
+  // tenant (sup-007). So every OTHER supplier — including sup-002 and sup-005,
+  // the two that hold published listings — would have short-circuited to the
+  // empty state and never seen a designation Paragon had deliberately shared
+  // with them. A governance decision is not performance data and must not
+  // inherit its availability.
+  //
+  // ⚠️ `EmptyState` IS NOT USED HERE, AND THE THREE STRINGS ARE THE SAME
+  // ONES. That shared component takes no children, and widening it would touch
+  // its other 28 render sites for one page's need. The texts are unchanged, so
+  // `SupplierPerformance.test.tsx`'s *"empty: shows EmptyState for a supplier
+  // with no published scorecard"* still asserts on the same sentence — and
+  // still kills the same mutant, because a leak of sup-007's snapshot to
+  // another tenant would make `kpis.length > 0` and render the scorecard here.
   if (!mySupplier || kpis.length === 0)
     return (
-      <EmptyState
-        breadcrumb={PERF_CRUMB}
-        title={t('supplierPerformance.empty.title')}
-        subtitle={t('supplierPerformance.empty.subtitle')}
-        message={t('supplierPerformance.empty.message')}
-      />
+      <AppShellV2>
+        <PageHeader
+          breadcrumb={PERF_CRUMB}
+          title={t('supplierPerformance.empty.title')}
+          subtitle={t('supplierPerformance.empty.subtitle')}
+        />
+        <PslStandingSection />
+        <div className="py-16 px-6 flex flex-col items-center text-center">
+          <div className="inline-flex w-14 h-14 rounded-full bg-bg-hover items-center justify-center mb-4">
+            <Inbox size={24} className="text-text-tertiary" />
+          </div>
+          <div className="text-sm text-text-tertiary max-w-md">
+            {t('supplierPerformance.empty.message')}
+          </div>
+        </div>
+      </AppShellV2>
     );
 
   return (
@@ -318,6 +499,8 @@ const SupplierPerformance: React.FC = () => {
 
       {activeTab === 'overview' && (
         <>
+          <PslStandingSection />
+
           <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6 mb-6">
             <h2 className="text-section text-text-primary mb-4 pb-3 border-b border-border-subtle">
               {kpis.length === 1
