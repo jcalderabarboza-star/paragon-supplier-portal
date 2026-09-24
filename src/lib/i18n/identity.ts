@@ -61,9 +61,18 @@ export const identityEn: Record<string, string> = {
   // narrow them afterwards; this states the divergence rather than preventing
   // it. Silence here would leave a seat labelled "Compliance 1" holding only
   // procurement, which is a label naming an authority it does not have.
+  // ⚠️ **THREE ARMS, BECAUSE ONE OF THEM WAS MEASURED WRONG IN THE BROWSER.**
+  // A single `identity.narrowed` string rendered "Roles narrowed from
+  // Procurement 1" on a seat that had just been GIVEN a second lane — a label
+  // naming the opposite of what happened, which is `label-names-wrong-verb`
+  // with a person attached. The divergence is what matters; the DIRECTION is
+  // what the reader checks against the list directly above it, so it has to be
+  // right.
   'identity.narrowed': 'Roles narrowed from {{label}}',
+  'identity.widened': 'Roles widened beyond {{label}}',
+  'identity.rolesChanged': 'Roles changed from {{label}}',
   'identity.narrowedHint':
-    'This seat no longer holds the roles the sample user opens with. Acts are still recorded against that user.',
+    'This seat no longer holds exactly the roles the sample user opens with. Acts are still recorded against that user.',
 
   // — what a sample identity may NOT do (R2) —
   // The pre-act line when a SAMPLE user is selected. The lane's own
@@ -102,8 +111,10 @@ export const identityId: Record<string, string> = {
     'Tindakan dicatat tanpa identitas orang, persis seperti sebelumnya.',
   'identity.switcher.sampleBadge': 'CONTOH',
   'identity.narrowed': 'Peran dipersempit dari {{label}}',
+  'identity.widened': 'Peran diperluas melampaui {{label}}',
+  'identity.rolesChanged': 'Peran diubah dari {{label}}',
   'identity.narrowedHint':
-    'Kursi ini tidak lagi memegang peran bawaan pengguna contoh tersebut. Tindakan tetap dicatat atas nama pengguna itu.',
+    'Kursi ini tidak lagi memegang persis peran bawaan pengguna contoh tersebut. Tindakan tetap dicatat atas nama pengguna itu.',
 
   'identity.preAct.sample': 'Ini akan dicatat atas nama {{label}}.',
   'identity.sample.cannotAcceptRisk':

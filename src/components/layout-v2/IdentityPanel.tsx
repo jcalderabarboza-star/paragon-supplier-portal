@@ -204,10 +204,28 @@ const IdentityPanel: React.FC = () => {
   // labelled "Compliance 1" holding only `procurement` with nothing on the
   // surface saying so. The panel's standing discipline is *say whose act it is;
   // do not take the act* -- so this describes and stops.
-  const narrowed =
-    actingAs !== undefined &&
-    (held.length !== actingAs.roles.length ||
-      !actingAs.roles.every((r) => held.includes(r)));
+  // ⚠️ **WHICH divergence, not merely THAT there is one — and the first version
+  // got this wrong in the browser.** It rendered "Roles narrowed from
+  // Procurement 1" on a seat that had just been GIVEN a second lane, because it
+  // tested only that the two sets differ. A notice naming the opposite of what
+  // happened is worse than none: the reader checks it against the role list
+  // directly above it and learns the panel cannot be trusted.
+  const divergence: 'narrowed' | 'widened' | 'changed' | null = (() => {
+    if (actingAs === undefined) return null;
+    const opens = actingAs.roles as readonly string[];
+    const heldAll = opens.every((r) => held.includes(r));
+    const opensAll = held.every((r) => opens.includes(r));
+    if (heldAll && opensAll) return null;
+    if (opensAll) return 'narrowed'; // held is a proper SUBSET of the roster row
+    if (heldAll) return 'widened'; // held is a proper SUPERSET
+    return 'changed'; // neither contains the other
+  })();
+
+  const DIVERGENCE_KEY: Record<'narrowed' | 'widened' | 'changed', string> = {
+    narrowed: 'identity.narrowed',
+    widened: 'identity.widened',
+    changed: 'identity.rolesChanged',
+  };
 
   const initials = persona === 'supplier' ? 'PS' : 'JJ';
 
@@ -318,12 +336,13 @@ const IdentityPanel: React.FC = () => {
                 );
               })}
             </ul>
-            {narrowed && actingAs && (
+            {divergence !== null && actingAs && (
               <p
                 className="mt-1.5 text-xs text-text-tertiary leading-relaxed"
                 data-testid="identity-narrowed"
+                data-divergence={divergence}
               >
-                {t('identity.narrowed', { label: labelOf(actingAs) })}{' '}
+                {t(DIVERGENCE_KEY[divergence], { label: labelOf(actingAs) })}{' '}
                 {t('identity.narrowedHint')}
               </p>
             )}
