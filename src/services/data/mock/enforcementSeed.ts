@@ -110,6 +110,16 @@ const BUYER_SCOPE: QueryScope = {
   personaType: 'buyer',
   supplierId: null,
   businessRoles: ['procurement'],
+  // ⚠️ **THE ACTOR MOVED FROM THE PAYLOAD TO THE SCOPE (C10 §6.2 / §8.3,
+  // 2026-09-24), AND ITS VALUE IS UNCHANGED.** The seed used to pass
+  // `setBy: SEED_ACTOR` in the payload, which is the ATTRIBUTION BY ASSERTION
+  // seam §6.2 names; the dispatcher now refuses that key outright. What is
+  // recorded is byte-identical — an explicit `UNATTRIBUTED` carrying its reason
+  // — because E2 and E4 both refused to seed an invented person and this batch
+  // does not reverse them. **A GOVERNED LEDGER GETS NO SAMPLE ACTOR** (R4): the
+  // enforcement ledger is append-only, so a fixture person landing here could
+  // never be edited out, only appended over.
+  actor: SEED_ACTOR,
 };
 
 /** What the seed did to ONE check — reported rather than assumed. */
@@ -155,7 +165,9 @@ export async function seedEnforcementLedger(
       entityId: checkId,
       // No `reviewBy`. Full rigour is not a relaxation, so there is nothing to
       // renew — and the store keeps the absence rather than inventing a date.
-      payload: { mode: MAXIMUM_RIGOUR, setBy: SEED_ACTOR },
+      // No `setBy`. The actor rides the SCOPE now; the dispatcher refuses the
+      // key, so passing it here would refuse the seed rather than attribute it.
+      payload: { mode: MAXIMUM_RIGOUR },
     });
     outcomes.push(
       result.status === 'failed'

@@ -1387,9 +1387,11 @@ const enforcementTarget: CommandTarget = {
   readState: (id) => (isGovernedCheckId(id) ? 'Governed' : null),
   readScopeOwner: () => null,
   readEntity: (id) => enforcementSettingStore.forCheck(id),
-  applyTransition: (id, _toState, payload) => {
+  applyTransition: (id, _toState, payload, scope) => {
     const mode = payload.mode as EnforcementMode;
-    const setBy = asActorAttribution(payload.setBy)!;
+    // FROM THE SESSION, never the payload (C10 §6.2). The dispatcher refuses
+    // the key, so there is no payload value left to prefer.
+    const setBy = asActorAttribution(scope.actor) ?? NO_PERSON;
     const setAt = new Date().toISOString();
     const checkId = id as GovernedCheckId;
     enforcementSettingStore.append(
@@ -1427,7 +1429,7 @@ const roleTarget: CommandTarget = {
   readState: (id) => (isSystemRole(id) ? 'Defined' : null),
   readScopeOwner: () => null,
   readEntity: (id) => (isSystemRole(id) ? SYSTEM_ROLES[id] : null),
-  applyTransition: (id, _toState, payload) => {
+  applyTransition: (id, _toState, payload, scope) => {
     const parent = id as SystemRoleId;
     customRoleStore.append({
       id: payload.roleId as string,
@@ -1437,7 +1439,8 @@ const roleTarget: CommandTarget = {
       adds: [...(payload.adds as readonly string[])],
       // THE DRIFT BASELINE, never the resolution source (D1).
       parentAtomsAtGrant: [...SYSTEM_ROLES[parent]],
-      grantedBy: asActorAttribution(payload.grantedBy)!,
+      // FROM THE SESSION, never the payload (C10 §6.2).
+      grantedBy: asActorAttribution(scope.actor) ?? NO_PERSON,
       grantedAt: new Date().toISOString(),
     });
   },
@@ -2191,7 +2194,7 @@ const pslCapSettingTarget: CommandTarget = {
   readState: (id) => (isPslSettingId(id) ? 'Governed' : null),
   readScopeOwner: () => null,
   readEntity: (id) => pslCapSettingStore.forSetting(id),
-  applyTransition: (id, _toState, payload) => {
+  applyTransition: (id, _toState, payload, scope) => {
     // `setAt` is minted HERE, from the clock, at the moment of the act — the
     // `pinnedAt` discipline, and here also the ledger's ordering key. The
     // payload has already been through `PSL_DEFAULT_CAP_WITHIN_CEILING`, so the
@@ -2199,7 +2202,7 @@ const pslCapSettingTarget: CommandTarget = {
     pslCapSettingStore.append({
       settingId: id as PslSettingId,
       days: Number(payload.days),
-      setBy: asActorAttribution(payload.setBy)!,
+      setBy: asActorAttribution(scope.actor) ?? NO_PERSON,
       setAt: new Date().toISOString(),
     });
   },

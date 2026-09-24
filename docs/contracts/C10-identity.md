@@ -583,6 +583,35 @@ first fixture person exists costs one line. **Retrofitting it means auditing eve
 attribution to decide which ones were real**, against records that were written precisely because
 nobody could tell the difference at read time.
 
+#### 6.3a A FIXTURE PERSON IS **SAMPLE**, AND MUST BE MARKED WHEREVER IT IS RENDERED
+
+*(Amendment 1, 2026-09-24. Additive: §6.3's prohibition is unchanged and unweakened.)*
+
+§6.3 governs where a fixture person may be RECORDED. It says nothing about where one may be
+SHOWN, and that is the half a reader meets:
+
+> **A DEMO PERSON AND A REAL PERSON ARE THE SAME SHAPE** — §6.3's own sentence — **AND THEY ARE
+> ALSO THE SAME SHAPE ON SCREEN.** A label rendered without a marker is a demo identity wearing
+> the appearance of a sign-in, on the row where somebody decides whether to believe it.
+
+**The rule:** any surface that renders a fixture person renders a SAMPLE marker with it. Not
+beside it in a corner of the page — *with the label*, so a surface that prints the name without
+the page chrome cannot drop it.
+
+**The mechanism, and it is what D-ID-7 buys.** Because a stamp carries `personId` only (§5.5) and
+the label is resolved at read, there is exactly ONE producer of a person's label. The marker
+attaches THERE, so it is a property of resolution rather than a thing each call site remembers.
+A per-surface convention would be a list, and a list acquires a sixth surface silently.
+
+⚠️ **AND A SAMPLE IDENTITY MAY NOT ACCEPT GOVERNANCE RISK.** Two checks in the implementation
+refused every input while nothing could name a person — the enforcement LOOSENING gate, and
+override completion — and both refused *because* nobody could be named, not because anything
+ruled the act wrong. A fixture person would therefore have opened them as a side effect of a demo
+convenience, and an append-only ledger would record that a `sim-usr-*` person accepted a risk.
+**Both must refuse a fixture person by name**, and the refusal must be distinguishable from the
+UNATTRIBUTED one: *"nobody could be named"* and *"somebody was named and they are not real"* are
+different facts, and collapsing them makes the first look answered.
+
 ### 6.4 `TransitionEvent` gains an optional attribution field **before the audit sink becomes durable**
 
 **The seam is the sink** (`AuditSink`, DR-10 / C3). While it is in-memory, the event shape is
@@ -665,11 +694,11 @@ favour and reads as caution.** Every row below is a negative about our own tree,
 | # | What this contract states | What we actually ship |
 |---|---|---|
 | **8.1** | A model of six objects, three survivors, four ledgers | **ZERO CODE. ZERO TYPES. ZERO FIXTURE PERSONS.** No `Person`, no `SubjectBinding`, no `BusinessRole`, no ledger, no minting rule. This issue is a model and its preconditions, and it must never read as a seam that exists |
-| **8.2** | ⚠️ **D-ID-7: a stamp carries `personId` ONLY** (§5.5) | **`ActingPerson` REQUIRES `displayName`, and its own doc-comment states the OPPOSITE ruling** — *"Captured, never resolved at read"* (`src/lib/enforcement.ts:339-345`). **The shipped shape contradicts this contract.** It is **free to correct today and only today**: zero `RESOLVED` attributions exist (§2.3), so no stored record loses a name. The correction rides a code batch; **this contract is the authority in the interim** |
-| **8.3** | Attribution comes from the SESSION and a payload-supplied `RESOLVED` actor is refused (§6.2) | **`setBy` is a payload field** — `requiredFields: ['mode', 'setBy']` (`flows/enforcement.flow.ts:66`). **Attribution by assertion.** Harmless only because nothing can construct a `RESOLVED` actor; harmful the day something can |
+| **8.2** | ⚠️ **D-ID-7: a stamp carries `personId` ONLY** (§5.5) | ✅ **DISCHARGED — Amendment 1, 2026-09-24.** `ActingPerson` is now `{ readonly personId: string }`; `displayName` is DELETED from the type and from `asActorAttribution`'s boundary, which rebuilds the person field by field so a caller-supplied name cannot pass through. The label is resolved at read from the person registry. **It was spent in the only window it had:** the same branch records this platform's first `RESOLVED` attributions, so the correction landed BEFORE the first stamp, exactly as this row required. Held by `personLabelGuard.test.ts` (no surface prints a person except through the one resolver) |
+| **8.3** | Attribution comes from the SESSION and a payload-supplied `RESOLVED` actor is refused (§6.2) | ✅ **DISCHARGED — Amendment 1, 2026-09-24.** `setBy` has left `requiredFields` on every flow and is taken from `scope.actor`; so has `grantedBy`, which was a LIVE product path (`useGrantRole` forwarded `identity.actor` through the payload). The refusal is **generalised to every verb** and lives in the DISPATCHER (`ACTOR_IN_PAYLOAD`), not in a policy hook per flow — a per-flow hook is a list, and a list decays each time a flow is added. **Refused BY KEY, never by value-shape**, over a population pinned bilaterally to the fields declared `ActorAttribution` (`attributionKeys.test.ts`). An `UNATTRIBUTED` session actor stays legal. ⚠️ **The pin immediately found two keys the hand-written first draft had missed, one of them `approvedBy` — the very key whose one-verb hook this generalises** |
 | **8.4** | `TransitionEvent` carries optional attribution (§6.4) | **It does not.** The event carries `actor: string` and nothing else about who acted (C3). The sink is still in-memory, which is the only reason this is still fixable |
 | **8.5** | `PersonaType` is tenancy only (§3.1) | **It is the authorisation object.** `PERSONA_ROLES` grants 60+ transition-roles to a seat and `capabilitiesFor` derives every capability from it (`roles.ts:18-123`). Unchanged by this contract, which is docs-only |
-| **8.6** | A `sim-usr-*` namespace, pinned by test (§6.3) | **No namespace, no pin.** The only `personId` literals are in specs (`usr-014`), which is why the precondition is still free — **and there is nothing stopping the next fixture from being `usr-020`** |
+| **8.6** | A `sim-usr-*` namespace, pinned by test (§6.3) | ✅ **CLOSED — and it was closed BEFORE this amendment, which is the part worth recording.** The namespace (`context/noPerson.ts`) and its pin (`context/simUsrNamespace.test.ts`) shipped earlier; this row went on declaring *"No namespace, no pin"* regardless. **That is `C9-STALE-BY-FIX-01` (C9 §7.13) reproducing in C10: a contract that OVERSTATES our conformance is caught by anyone who reads the code, and one that UNDERSTATES it is caught by nobody, because the discrepancy is in our favour and reads as caution.** Amendment 1 also extends the pin: the namespace must now be spelled ONLY in the modules entitled to spell it, and every stored attribution must resolve to a roster row |
 | **8.7** | Ten capabilities wait on identity (§2.4) | **The count is the external census's, carried as a DISCLOSURE and NOT re-derived by us** (C9 §3.4). Six are anchored in code-truth in §2.4; the remaining four are **not verified in this tree** and this contract does not assert them |
 | **8.8** | `TransitionRole` is the sole permission atom (§3.3) | **True today and structurally unguarded.** `catalogRoles()` derives from the registry, but **nothing forbids a second permission table from being added tomorrow** — the rule is a contract clause, not yet a mechanism. Recorded so it is not read as enforced |
 
@@ -692,6 +721,26 @@ between two seats.** Any issue of C10 ships, in the message itself:
 **And delivery is a fact to be confirmed, not asserted** (C9 A-14). A message that says this
 document is enclosed, and encloses a description of it, has shipped nothing — that failure ran
 for two exchanges on C9 before either side noticed.
+
+---
+
+## Amendment record
+
+**Amendment 1 — 2026-09-24. Ratified by the Technical Lead; issued with the sample-identity
+batch.** It changes no model object and no ruling; what it ratifies is the TEXT, which §9 states
+is sufficient to require a new SHA and a new ratification.
+
+| Clause | Change |
+|---|---|
+| **§5.5 / §8.2** | `ActingPerson` narrowed to `{ personId }`. `displayName` deleted from the type and from the parsing boundary; the label is resolved at read from the person registry. **DISCHARGED** |
+| **§6.2 / §8.3** | The payload refusal is generalised from one verb to every verb, moved into the dispatcher, and refused BY KEY. `setBy` and `grantedBy` leave their payloads. **DISCHARGED** |
+| **§6.3 / §8.6** | The namespace row is **CLOSED** (it had been closed in code and left open here — `C9-STALE-BY-FIX-01`), and §6.3 gains **§6.3a**: a fixture person is SAMPLE, must be marked wherever rendered, and may not accept governance risk |
+
+⚠️ **WHAT THIS AMENDMENT DOES NOT DO.** It does not create an identity provider, a sign-in, a
+`Person` ledger, a `SubjectBinding` or an `AssignmentAct`. §8.1 is UNCHANGED and still reads
+*"ZERO CODE. ZERO TYPES."* for the model of six objects — what exists is a fixture ROSTER, which
+§6.3 anticipated by name and which this amendment governs rather than promotes. D-ID-2 (§7.1) and
+D-ID-5 (§7.2) stay OPEN.
 
 ---
 

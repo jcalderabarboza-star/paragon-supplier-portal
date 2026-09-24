@@ -70,7 +70,8 @@ export const pslCapSettingFlow: FlowDefinition = {
       statePreserving: true,
       trigger: 'user',
       requiredRole: 'psl:cap-set',
-      requiredFields: ['days', 'setBy'],
+      // `setBy` left this list with `t_enforcement_set`'s, and for its reason.
+      requiredFields: ['days'],
       policyHooks: [POLICY_HOOKS.PSL_DEFAULT_CAP_WITHIN_CEILING],
       surfaceable: {
         surfaced: false,

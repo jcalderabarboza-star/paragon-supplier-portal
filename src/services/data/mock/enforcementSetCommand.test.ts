@@ -29,14 +29,28 @@ import {
 } from '../../../lib/enforcement';
 import { PERSONA_SYSTEM_ROLES } from '../../../services/transitions/businessRoles';
 
+
+// ⚠️ **THE ATTRIBUTION MOVED FROM THE PAYLOAD TO THE SCOPE (C10 §6.2 / §8.3).**
+// These specs used to pass `setBy` as a payload field, which is the seam §6.2
+// names ATTRIBUTION BY ASSERTION — *"the caller states who acted, and the
+// platform records the statement"*. The dispatcher now refuses that key
+// (`ACTOR_IN_PAYLOAD`), so the actor rides the SCOPE, which is where a session
+// actor comes from. **NO ASSERTION BELOW WAS WEAKENED** — every one still
+// requires the same recorded value; only the door it arrives through moved.
+const actingAs = <S extends object>(scope: S, actor: unknown): S =>
+  ({ ...scope, actor }) as S;
 const buyer: QueryScope = { personaType: 'buyer', supplierId: null, businessRoles: PERSONA_SYSTEM_ROLES.buyer };
 const supplier: QueryScope = { personaType: 'supplier', supplierId: 'sup-005', businessRoles: PERSONA_SYSTEM_ROLES.supplier };
 
 const svc = new MockCommandService();
 const CHECK = 'halal.certificate';
 
-/** A named person — the attribution the portal cannot actually produce today. */
-const NAMED = { kind: 'RESOLVED', person: { personId: 'usr-014', displayName: 'Rina Wijaya' } };
+// ⚠️ **A NON-SAMPLE NAMED PERSON, AND `displayName` IS GONE (C10 §8.2 /
+// D-ID-7).** A stamp carries the `personId` alone; the label is resolved at read
+// from the person registry. `usr-014` is deliberately NOT a `sim-usr-*` id — it
+// is the control that proves the accountability lanes still ADMIT a real
+// resolved actor, which is the direction a sample-only probe cannot see.
+const NAMED = { kind: 'RESOLVED', person: { personId: 'usr-014' } };
 /** What E3 WOULD be able to produce, and it is an explicit absence. */
 const NOBODY = { kind: 'UNATTRIBUTED', reason: 'NO_PERSON_IN_SESSION' };
 
@@ -86,9 +100,8 @@ describe('t_enforcement_set — NOTHING IS SEEDED, and that is the safe state', 
 
 describe('t_enforcement_set — the recorded act', () => {
   it('THE LOCK — a buyer records a mode and it lands on the ledger', async () => {
-    const res = await svc.dispatch(
-      buyer,
-      set({ mode: 'OBSERVE', reviewBy: '2027-01-31', setBy: NAMED }),
+    const res = await svc.dispatch(actingAs(buyer, NAMED),
+      set({ mode: 'OBSERVE', reviewBy: '2027-01-31'}),
     );
     expect(res.status).toBe('done');
 
@@ -103,9 +116,8 @@ describe('t_enforcement_set — the recorded act', () => {
   it('the checkId comes from the ENTITY, so the two can never disagree', async () => {
     // There is no `checkId` payload field. A verb that took one could be
     // dispatched against `halal.seal` while recording a setting for `bpom.lot`.
-    await svc.dispatch(
-      buyer,
-      set({ mode: 'OBSERVE', reviewBy: '2027-01-31', setBy: NAMED, checkId: 'bpom.lot' }),
+    await svc.dispatch(actingAs(buyer, NAMED),
+      set({ mode: 'OBSERVE', reviewBy: '2027-01-31', checkId: 'bpom.lot' }),
     );
     expect(enforcementSettingStore.all()[0].checkId).toBe(CHECK);
     expect(enforcementSettingStore.forCheck('bpom.lot')).toEqual([]);
@@ -116,13 +128,10 @@ describe('t_enforcement_set — the recorded act', () => {
     // ledger's ORDERING key, so a forgeable one would let a caller insert itself
     // ahead of a decision it did not know about.
     const before = NOW();
-    await svc.dispatch(
-      buyer,
+    await svc.dispatch(actingAs(buyer, NAMED),
       set({
         mode: 'BLOCK',
-        setBy: NAMED,
-        setAt: '1999-01-01T00:00:00.000Z',
-      }),
+        setAt: '1999-01-01T00:00:00.000Z' }),
     );
     const [row] = enforcementSettingStore.all();
     expect(row.setAt).not.toBe('1999-01-01T00:00:00.000Z');
@@ -132,7 +141,7 @@ describe('t_enforcement_set — the recorded act', () => {
   it('a BLOCK keeps a null reviewBy rather than inventing one', async () => {
     // Full rigour is not a relaxation, so there is nothing to renew. Absence
     // stays absence.
-    await svc.dispatch(buyer, set({ mode: 'BLOCK', setBy: NOBODY }));
+    await svc.dispatch(actingAs(buyer, NOBODY), set({ mode: 'BLOCK'}));
     expect(enforcementSettingStore.all()[0].reviewBy).toBeNull();
   });
 
@@ -145,7 +154,7 @@ describe('t_enforcement_set — the recorded act', () => {
     // "is this check id in the vocabulary?" to a caller entitled to neither
     // answer. Scope denies both identically now.
     await expect(
-      svc.dispatch(supplier, set({ mode: 'BLOCK', setBy: NAMED })),
+      svc.dispatch(actingAs(supplier, NAMED), set({ mode: 'BLOCK'})),
     ).rejects.toThrow(/denied for scope/);
     expect(enforcementSettingStore.all()).toEqual([]);
   });
@@ -154,7 +163,7 @@ describe('t_enforcement_set — the recorded act', () => {
     // `readState` answers null for anything outside `GOVERNED_CHECK_IDS`, so a
     // setting cannot be hung on a check the vocabulary does not name.
     await expect(
-      svc.dispatch(buyer, set({ mode: 'BLOCK', setBy: NAMED }, 'halal.vibes')),
+      svc.dispatch(actingAs(buyer, NAMED), set({ mode: 'BLOCK'}, 'halal.vibes')),
     ).rejects.toBeInstanceOf(DataError);
     expect(enforcementSettingStore.all()).toEqual([]);
   });
@@ -162,7 +171,7 @@ describe('t_enforcement_set — the recorded act', () => {
 
 describe('t_enforcement_set — the D2 freeze is APPEND-ONLY', () => {
   const record = (mode: string, reviewBy: string | null = '2027-01-31') =>
-    svc.dispatch(buyer, set({ mode, reviewBy, setBy: NAMED }));
+    svc.dispatch(actingAs(buyer, NAMED), set({ mode, reviewBy}));
 
   it('THE FREEZE — superseding a mode KEEPS the prior decision', async () => {
     await record('OBSERVE');
@@ -186,9 +195,8 @@ describe('t_enforcement_set — the D2 freeze is APPEND-ONLY', () => {
 
   it('keeps each check`s ledger to itself — the key is checkId (D1)', async () => {
     await record('OBSERVE');
-    await svc.dispatch(
-      buyer,
-      set({ mode: 'BLOCK', reviewBy: null, setBy: NAMED }, 'bpom.lot'),
+    await svc.dispatch(actingAs(buyer, NAMED),
+      set({ mode: 'BLOCK', reviewBy: null}, 'bpom.lot'),
     );
     expect(enforcementSettingStore.forCheck(CHECK)).toHaveLength(1);
     expect(enforcementSettingStore.forCheck('bpom.lot')).toHaveLength(1);
@@ -202,29 +210,26 @@ describe('t_enforcement_set — ⚠️ TIGHTENING IS ALWAYS LEGAL', () => {
     // paperwork"; it is that setting a check to BLOCK is available to anyone,
     // with no resolved identity and no argument. Failing in the strict direction
     // costs a blocked dock; failing the other way costs an anonymous unlock.
-    const res = await svc.dispatch(buyer, set({ mode: 'BLOCK', setBy: NOBODY }));
+    const res = await svc.dispatch(actingAs(buyer, NOBODY), set({ mode: 'BLOCK'}));
     expect(res.status).toBe('done');
     expect(enforcementSettingStore.all()[0].mode).toBe('BLOCK');
   });
 
   it('a tightening WITHIN the relaxed range is legal unattributed — but still needs a review date', async () => {
-    await svc.dispatch(
-      buyer,
-      set({ mode: 'OBSERVE', reviewBy: '2027-01-31', setBy: NAMED }),
+    await svc.dispatch(actingAs(buyer, NAMED),
+      set({ mode: 'OBSERVE', reviewBy: '2027-01-31'}),
     );
     // OBSERVE → BLOCK_OVERRIDABLE is a tightening, so no named actor is needed…
-    const res = await svc.dispatch(
-      buyer,
-      set({ mode: 'BLOCK_OVERRIDABLE', reviewBy: '2027-06-30', setBy: NOBODY }),
+    const res = await svc.dispatch(actingAs(buyer, NOBODY),
+      set({ mode: 'BLOCK_OVERRIDABLE', reviewBy: '2027-06-30'}),
     );
     expect(res.status).toBe('done');
     // …but it is still BELOW full rigour, so `reviewBy` is required. "Always
     // legal" is about the DIRECTION, never about well-formedness: the type makes
     // a relaxation without a review date unrepresentable, and this is the
     // runtime half of that, because the payload crosses a seam.
-    const refused = await svc.dispatch(
-      buyer,
-      set({ mode: 'BLOCK_OVERRIDABLE', setBy: NOBODY }),
+    const refused = await svc.dispatch(actingAs(buyer, NOBODY),
+      set({ mode: 'BLOCK_OVERRIDABLE'}),
     );
     expect(refused.status).toBe('failed');
     expect(refused.reason).toContain('requires reviewBy');
@@ -236,9 +241,8 @@ describe('t_enforcement_set — ⚠️ LOOSENING REQUIRES reviewBy AND A NAMED A
     // An un-governed check baselines at MAXIMUM_RIGOUR, so the first setting
     // below it is a relaxation and must be named. Otherwise the very first act
     // on every check would slip through unattributed.
-    const res = await svc.dispatch(
-      buyer,
-      set({ mode: 'OBSERVE', reviewBy: '2027-01-31', setBy: NOBODY }),
+    const res = await svc.dispatch(actingAs(buyer, NOBODY),
+      set({ mode: 'OBSERVE', reviewBy: '2027-01-31'}),
     );
     expect(res.status).toBe('failed');
     expect(res.reason).toContain('requires a NAMED actor');
@@ -247,9 +251,8 @@ describe('t_enforcement_set — ⚠️ LOOSENING REQUIRES reviewBy AND A NAMED A
   });
 
   it('and the SAME act with a named person is recorded', async () => {
-    const res = await svc.dispatch(
-      buyer,
-      set({ mode: 'OBSERVE', reviewBy: '2027-01-31', setBy: NAMED }),
+    const res = await svc.dispatch(actingAs(buyer, NAMED),
+      set({ mode: 'OBSERVE', reviewBy: '2027-01-31'}),
     );
     expect(res.status).toBe('done');
   });
@@ -280,7 +283,7 @@ describe('t_enforcement_set — ⚠️ LOOSENING REQUIRES reviewBy AND A NAMED A
     // class rule); WRITING refuses it. A stored typo must not relax anything,
     // and an authoring typo must not become a block nobody asked for.
     return svc
-      .dispatch(buyer, set({ mode: 'OFF', reviewBy: '2027-01-31', setBy: NAMED }))
+      .dispatch(actingAs(buyer, NAMED), set({ mode: 'OFF', reviewBy: '2027-01-31' }))
       .then((res) => {
         expect(res.status).toBe('failed');
         expect(res.reason).toContain("'OFF'");
@@ -294,9 +297,8 @@ describe('t_enforcement_set — ⚠️ LOOSENING REQUIRES reviewBy AND A NAMED A
     ['last Tuesday', 'not a date'],
     ['2027-01-31T00:00:00.000Z', 'an instant, not a day'],
   ])('refuses a relaxation whose reviewBy is %o (%s)', async (reviewBy) => {
-    const res = await svc.dispatch(
-      buyer,
-      set({ mode: 'OBSERVE', reviewBy, setBy: NAMED }),
+    const res = await svc.dispatch(actingAs(buyer, NAMED),
+      set({ mode: 'OBSERVE', reviewBy}),
     );
     expect(res.status).toBe('failed');
     expect(res.reason).toContain('reviewBy');
@@ -306,20 +308,74 @@ describe('t_enforcement_set — ⚠️ LOOSENING REQUIRES reviewBy AND A NAMED A
   it.each<[unknown, string]>([
     [{ personId: 'usr-014', displayName: 'Rina' }, 'a person with no discriminant'],
     ['Rina Wijaya', 'a bare typed name — forgeable, and worse than nothing'],
-    [{ kind: 'RESOLVED', person: { personId: 'usr-014' } }, 'a person with no name'],
     [{ kind: 'UNATTRIBUTED', reason: 'BECAUSE' }, 'an off-list absence'],
     [{ kind: 'SYSTEM' }, 'the comfortable third arm'],
-  ])('refuses a malformed actor %o (%s) — never coerces it to UNATTRIBUTED', async (setBy) => {
-    const res = await svc.dispatch(buyer, set({ mode: 'BLOCK', setBy }));
+  ])('refuses a malformed actor %o (%s) — never coerces it to UNATTRIBUTED', async (actor) => {
+    // ⚠️ **THE DOOR MOVED; THE PROPERTY DID NOT.** These cases used to arrive as
+    // a `setBy` PAYLOAD field. C10 §6.2's seam flip took that door away — the
+    // dispatcher refuses the key outright — so a malformed actor now reaches the
+    // policy the only way an actor can: through the SESSION. What is still
+    // asserted is exactly what was asserted before, and it is the load-bearing
+    // half: **a malformed actor is REFUSED, never coerced into `UNATTRIBUTED`**.
+    // Coercing would give every typo a legitimate-looking absence to hide in.
+    const res = await svc.dispatch(actingAs(buyer, actor), set({ mode: 'BLOCK' }));
     expect(res.status).toBe('failed');
-    expect(res.reason).toContain('setBy must be');
+    expect(res.reason).toContain('the commanding scope carries no actor');
     expect(enforcementSettingStore.all()).toEqual([]);
   });
 
-  it.each(['mode', 'setBy'])('requires %s — the field gate, before the policy', async (field) => {
-    const payload: Record<string, unknown> = { mode: 'BLOCK', setBy: NAMED };
+  // ⚠️ **PROBE THE GUARD BOTH WAYS (rule 4), AND THIS CASE CHANGED SIDES.**
+  // `{ kind: 'RESOLVED', person: { personId } }` sat in the MALFORMED list above
+  // labelled *"a person with no name"* — it was refused because `displayName`
+  // was required. C10 §8.2 / D-ID-7 deleted that field, so the very same value
+  // is now the CANONICAL shape of a resolved actor. It moved from the rejected
+  // list to this accepted one rather than being quietly dropped, because a
+  // guard that is wrong about what it should ACCEPT ships looking like a
+  // working guard, and a one-sided probe would never have said so.
+  it('⚠️ ACCEPTS a resolved actor carrying ONLY a personId — the canonical shape', async () => {
+    const res = await svc.dispatch(
+      actingAs(buyer, { kind: 'RESOLVED', person: { personId: 'usr-014' } }),
+      set({ mode: 'BLOCK' }),
+    );
+    expect(res.status).toBe('done');
+    expect(enforcementSettingStore.all()[0].setBy).toEqual({
+      kind: 'RESOLVED',
+      person: { personId: 'usr-014' },
+    });
+  });
+
+  // ⚠️ **AND THE OTHER HALF OF THE SEAM FLIP, WHICH IS A STRENGTHENING RATHER
+  // THAN A MIGRATION** (C10 §6.2 second half, R-PAYLOAD). A caller may no longer
+  // state who acted AT ALL. Refused BY KEY, not by value-shape: a well-formed
+  // actor and a malformed one are refused identically, because refusing only the
+  // well-formed one would let the other through to be dropped silently — the
+  // same silent correction wearing a type error.
+  it.each<[unknown, string]>([
+    [NAMED, 'a WELL-FORMED resolved actor'],
+    [NOBODY, 'a well-formed UNATTRIBUTED one'],
+    ['Rina Wijaya', 'a bare typed name'],
+    [undefined, 'the key present and undefined'],
+  ])('⚠️ REFUSES setBy IN THE PAYLOAD (%o — %s) — an actor never arrives that way', async (setBy) => {
+    const res = await svc.dispatch(
+      actingAs(buyer, NAMED),
+      set({ mode: 'BLOCK', setBy }),
+    );
+    expect(res.status).toBe('failed');
+    expect(res.reason).toContain('ACTOR_IN_PAYLOAD');
+    expect(res.reason).toContain('setBy');
+    expect(enforcementSettingStore.all()).toEqual([]);
+  });
+
+  // ⚠️ **`setBy` LEFT THIS LIST AND THE CASE WAS RETIRED, NOT WEAKENED.** It
+  // read `it.each(['mode', 'setBy'])`. `setBy` is no longer a `requiredField` —
+  // it is no longer a payload field at all (C10 §6.2 / §8.3) — so asserting
+  // that its ABSENCE is refused would assert the opposite of the ruling. The
+  // replacement is the case directly above, which refuses its PRESENCE, and
+  // that is a strictly stronger claim than the one retired here.
+  it.each(['mode'])('requires %s — the field gate, before the policy', async (field) => {
+    const payload: Record<string, unknown> = { mode: 'BLOCK' };
     delete payload[field];
-    const res = await svc.dispatch(buyer, set(payload));
+    const res = await svc.dispatch(actingAs(buyer, NAMED), set(payload));
     expect(res.status).toBe('failed');
     expect(res.reason).toContain('MISSING_FIELDS');
     expect(res.reason).toContain(field);
@@ -328,9 +384,8 @@ describe('t_enforcement_set — ⚠️ LOOSENING REQUIRES reviewBy AND A NAMED A
 
 describe('t_enforcement_set — ⚠️ EVERY CHANGE EMITS A DR-10 EVENT', () => {
   it('a recorded setting lands in the audit sink', async () => {
-    const res = await svc.dispatch(
-      buyer,
-      set({ mode: 'BLOCK', setBy: NAMED }),
+    const res = await svc.dispatch(actingAs(buyer, NAMED),
+      set({ mode: 'BLOCK'}),
     );
     const events = commandAuditSink.byEvent('t_enforcement_set');
     expect(events).toHaveLength(1);
@@ -342,7 +397,7 @@ describe('t_enforcement_set — ⚠️ EVERY CHANGE EMITS A DR-10 EVENT', () => 
     // "Somebody tried to relax the halal certificate check and could not be
     // named" is exactly the kind of thing an audit should be able to see. The
     // ledger stays untouched; the trail does not.
-    await svc.dispatch(buyer, set({ mode: 'OBSERVE', reviewBy: '2027-01-31', setBy: NOBODY }));
+    await svc.dispatch(actingAs(buyer, NOBODY), set({ mode: 'OBSERVE', reviewBy: '2027-01-31'}));
     const events = commandAuditSink.byEvent('t_enforcement_set');
     expect(events).toHaveLength(1);
     expect(events[0].outcome).toBe('failed');
@@ -355,7 +410,7 @@ describe('t_enforcement_set — ⚠️ EVERY CHANGE EMITS A DR-10 EVENT', () => 
     // that leaned on it would be recording "a buyer did this" as though it were
     // "this person accepted this risk". `ENF-NO-PERSON-IN-IDENTITY-01`, visible
     // in the one place it would otherwise hide.
-    await svc.dispatch(buyer, set({ mode: 'BLOCK', setBy: NAMED }));
+    await svc.dispatch(actingAs(buyer, NAMED), set({ mode: 'BLOCK'}));
     const [event] = commandAuditSink.byEvent('t_enforcement_set');
     expect(event.actor).toBe('buyer:all');
     expect(event.actor).not.toContain('usr-014');
@@ -390,15 +445,14 @@ describe('⚠️ H4 — THE CEILING IS IDENTITY, AND IT IS NOT ONLY `BLOCK_OVERR
     // THE KNOWN-GOOD HALF FIRST. Without it, "the dispatch failed" is not
     // evidence that the direction rule fired — it is equally consistent with a
     // broken harness, an unregistered flow, or a role gate. §39's reflex.
-    const ok = await svc.dispatch(buyer, set({ mode: 'BLOCK', setBy: NOBODY }));
+    const ok = await svc.dispatch(actingAs(buyer, NOBODY), set({ mode: 'BLOCK'}));
     expect(ok.status).toBe('done');
     expect(enforcementSettingStore.forCheck(CHECK)).toHaveLength(1);
   });
 
   it('⚠️ `OBSERVE` — THE OPERATOR\'S H4 RULING — CANNOT BE RECORDED TODAY', async () => {
-    const res = await svc.dispatch(
-      buyer,
-      set({ mode: 'OBSERVE', reviewBy: '2027-06-30', setBy: NOBODY }),
+    const res = await svc.dispatch(actingAs(buyer, NOBODY),
+      set({ mode: 'OBSERVE', reviewBy: '2027-06-30'}),
     );
     expect(res.status).toBe('failed');
     expect(res.reason).toContain('requires a NAMED actor');
@@ -412,13 +466,11 @@ describe('⚠️ H4 — THE CEILING IS IDENTITY, AND IT IS NOT ONLY `BLOCK_OVERR
     // The two modes the operator considered are refused IDENTICALLY. That is
     // the whole finding: choosing between them was never the decision that
     // mattered, because neither is reachable.
-    const observe = await svc.dispatch(
-      buyer,
-      set({ mode: 'OBSERVE', reviewBy: '2027-06-30', setBy: NOBODY }),
+    const observe = await svc.dispatch(actingAs(buyer, NOBODY),
+      set({ mode: 'OBSERVE', reviewBy: '2027-06-30'}),
     );
-    const overridable = await svc.dispatch(
-      buyer,
-      set({ mode: 'BLOCK_OVERRIDABLE', reviewBy: '2027-06-30', setBy: NOBODY }),
+    const overridable = await svc.dispatch(actingAs(buyer, NOBODY),
+      set({ mode: 'BLOCK_OVERRIDABLE', reviewBy: '2027-06-30'}),
     );
     expect(observe.status).toBe('failed');
     expect(overridable.status).toBe('failed');
@@ -433,9 +485,8 @@ describe('⚠️ H4 — THE CEILING IS IDENTITY, AND IT IS NOT ONLY `BLOCK_OVERR
     // or the verb. Hand it a person and the operator's ruling lands. This is
     // what "the ceiling is identity" means, stated as an experiment rather than
     // as an opinion.
-    const res = await svc.dispatch(
-      buyer,
-      set({ mode: 'OBSERVE', reviewBy: '2027-06-30', setBy: NAMED }),
+    const res = await svc.dispatch(actingAs(buyer, NAMED),
+      set({ mode: 'OBSERVE', reviewBy: '2027-06-30'}),
     );
     expect(res.status).toBe('done');
     expect(enforcementSettingStore.forCheck(CHECK)[0].mode).toBe('OBSERVE');
@@ -449,15 +500,12 @@ describe('⚠️ H4 — THE CEILING IS IDENTITY, AND IT IS NOT ONLY `BLOCK_OVERR
     // constructs it field by field, so a rationale in the payload is DROPPED
     // rather than stored. Asserted here so the absence is a fact in the suite
     // and not a claim in a report.
-    const res = await svc.dispatch(
-      buyer,
+    const res = await svc.dispatch(actingAs(buyer, NAMED),
       set({
         mode: 'OBSERVE',
         reviewBy: '2027-06-30',
-        setBy: NAMED,
         // A rationale, offered the only way a caller could offer one.
-        rationale: 'the clerk must be told so the renewal can be chased',
-      }),
+        rationale: 'the clerk must be told so the renewal can be chased' }),
     );
     expect(res.status).toBe('done');
     const row = enforcementSettingStore.forCheck(CHECK)[0] as Record<string, unknown>;

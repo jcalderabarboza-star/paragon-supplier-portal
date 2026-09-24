@@ -77,6 +77,7 @@ import { MockCommandService } from './MockCommandService';
 import { pslStore } from './stores/pslStore';
 import { shiftFields } from '../fixturePresent';
 import { NO_PERSON } from '../../../context/noPerson';
+import { SAMPLE_ACTORS } from '../../identity/sampleActors';
 import type { PslLifecycle, PslListing, PslStatus } from '../pslListing';
 import type { CommandResult, QueryScope } from '../types';
 
@@ -510,7 +511,11 @@ const PROCUREMENT_SCOPE: QueryScope = {
   personaType: 'buyer',
   supplierId: null,
   businessRoles: ['procurement'],
-  actor: NO_PERSON,
+  // A SAMPLE PROPOSER (R4). Every seeded listing therefore carries a
+  // `proposedBy` that a demo operator can BE, which is what makes
+  // `PSL_DECIDER_NOT_PROPOSER`'s REFUSED direction reachable from the seeded
+  // corpus rather than only from rows raised by hand.
+  actor: SAMPLE_ACTORS.procurement1,
 };
 
 /**
@@ -522,7 +527,11 @@ const COMPLIANCE_SCOPE: QueryScope = {
   personaType: 'buyer',
   supplierId: null,
   businessRoles: ['compliance'],
-  actor: NO_PERSON,
+  // A DIFFERENT SAMPLE PERSON, and the difference is the point: it is what makes
+  // the ADMITTED direction reachable on the same corpus. Seeding both sides as
+  // one person would leave every seeded row self-decided and the admit arm
+  // untestable without hand-raising a listing first.
+  actor: SAMPLE_ACTORS.compliance1,
 };
 
 export interface PslSeedOutcome {

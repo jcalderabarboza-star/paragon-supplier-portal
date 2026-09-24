@@ -82,6 +82,7 @@ import { formatDate } from '../lib/format';
 import { DataError } from '../services/data/types';
 import { mockSuppliers } from '../data/mockSuppliers';
 import type { CommandResult } from '../services/data/types';
+import ActorPreActNotice from '../components/ui-v2/ActorPreActNotice';
 
 /**
  * THE READING INSTANT. `DECLARED_PRESENT`, exactly as every other PSL surface
@@ -529,7 +530,7 @@ const BuyerPreferredSuppliers: React.FC = () => {
                     nobody BEFORE they commit — `t_role_grant`'s surface makes
                     the same call. */}
                 <p className="text-xs text-text-tertiary" data-testid="psl-unattributed">
-                  {t('psl.notice.unattributed')}
+                  <ActorPreActNotice unattributedKey="psl.notice.unattributed" testId="psl-pre-act-panel" />
                 </p>
 
                 {decideAvailability.kind !== 'held' ? (
@@ -626,7 +627,7 @@ const BuyerPreferredSuppliers: React.FC = () => {
         title={t('psl.form.propose.title')}
       >
         <div className="flex flex-col gap-3 text-sm" data-testid="psl-propose-panel">
-          <p className="text-xs text-text-tertiary">{t('psl.notice.unattributed')}</p>
+          <ActorPreActNotice unattributedKey="psl.notice.unattributed" testId="psl-pre-act-drawer" />
           <Field label={t('psl.form.supplier')}>
             <select
               className={input}

@@ -81,7 +81,16 @@ export const roleFlow: FlowDefinition = {
       // child identical to its parent is a second name for the parent with a
       // grant record attached. The merge rule itself handles an empty set fine
       // (`atomsOfCustomRole`); nothing in this verb produces one.
-      requiredFields: ['roleId', 'displayName', 'description', 'adds', 'grantedBy'],
+      // ⚠️ **`grantedBy` LEFT THIS LIST (C10 §6.2 / R-PAYLOAD, 2026-09-24).** It
+      // was a caller-supplied payload field — ATTRIBUTION BY ASSERTION — and it
+      // was a LIVE product path: `useGrantRole` sent `grantedBy: identity.actor`
+      // straight through. The actor is now taken from `scope.actor`, and the
+      // dispatcher refuses the key.
+      //
+      // ⚠️ `displayName` STAYS, and is a DIFFERENT THING: it is the CUSTOM
+      // ROLE's name, not a person's. D-ID-7 deletes a person's name from a
+      // record; it says nothing about what a role is called.
+      requiredFields: ['roleId', 'displayName', 'description', 'adds'],
       policyHooks: [POLICY_HOOKS.ROLE_GRANT_GOVERNED],
       surfaceable: { surfaced: true },
       version: 1,

@@ -9,6 +9,8 @@ import {
   isSystemRole,
 } from '../services/transitions/businessRoles';
 import { NO_PERSON } from './noPerson';
+import { resolveSamplePerson } from '../services/identity/sampleRoster';
+import type { ActorAttribution } from '../lib/enforcement';
 import { mockSuppliers } from '../data/mockSuppliers';
 
 const IDENTITY_KEY = 'paragon.identity';
@@ -46,6 +48,38 @@ const identityForPersona = (persona: PersonaType): CurrentIdentity =>
         businessRoles: SEEDED_SEAT_ROLES.buyer,
         actor: NO_PERSON,
       };
+
+/**
+ * ⚠️ **THE ACTOR READ BACK FROM STORAGE — AND AN UNKNOWN PERSON FALLS BACK TO
+ * NO PERSON, NEVER TO A GUESSED ONE (R3).**
+ *
+ * `localStorage` is caller-supplied. A stored row claiming
+ * `{ kind: 'RESOLVED', person: { personId: 'whoever' } }` must not become an
+ * attribution: every act this seat then took would be recorded against a person
+ * this portal does not have, which is C10 §6.3's MANUFACTURED PROVENANCE
+ * produced by editing a browser field.
+ *
+ * ⚠️ **AND THE FALLBACK IS THE HONEST ABSENCE RATHER THAN THE LAST KNOWN
+ * PERSON**, which is the same ruling `tenantFromStorage` takes one function
+ * down: "stored something that is not a person" and "stored nothing" are
+ * different facts, and only one of them is safe to guess at. Both land on
+ * `NO_PERSON`, because there is no third thing an unresolvable actor could
+ * honestly be.
+ *
+ * ⚠️ **MEMBERSHIP IN THE ROSTER IS THE TEST, NOT THE `sim-usr-` SPELLING.** A
+ * prefix check would accept `sim-usr-anything`, which is exactly the value a
+ * hand-edited row carries.
+ */
+const actorFromStorage = (value: unknown): ActorAttribution => {
+  if (!value || typeof value !== 'object') return NO_PERSON;
+  const row = value as { kind?: unknown; person?: { personId?: unknown } };
+  if (row.kind !== 'RESOLVED') return NO_PERSON;
+  const personId = row.person?.personId;
+  if (typeof personId !== 'string') return NO_PERSON;
+  return resolveSamplePerson(personId) === undefined
+    ? NO_PERSON
+    : { kind: 'RESOLVED', person: { personId } };
+};
 
 /**
  * Roles read back from storage, filtered to ones this persona can actually
@@ -145,6 +179,7 @@ export const mockIdentitySource: IdentitySource = {
     let storedPersona: PersonaType | null = null;
     let storedRoles: unknown = undefined;
     let storedSupplierId: unknown = undefined;
+    let storedActor: unknown = undefined;
 
     try {
       const raw = window.localStorage.getItem(IDENTITY_KEY);
@@ -154,6 +189,7 @@ export const mockIdentitySource: IdentitySource = {
           storedPersona = parsed.personaType;
           storedRoles = (parsed as { businessRoles?: unknown }).businessRoles;
           storedSupplierId = parsed.supplierId;
+          storedActor = (parsed as { actor?: unknown }).actor;
         }
       }
     } catch {
@@ -180,10 +216,22 @@ export const mockIdentitySource: IdentitySource = {
     // reads the cross-supplier superset), so honouring a stored one there would
     // narrow a buyer to a single tenant — the opposite of the scoping contract.
     const tenant = effective === 'supplier' ? tenantFromStorage(storedSupplierId) : null;
+    // ⚠️ **THE ACTOR SURVIVES A RELOAD ONLY FOR THE PERSONA IT WAS STORED
+    // UNDER**, for the roles' reason exactly: a roster row belongs to one side
+    // of the tenancy line, so carrying a buyer person onto a supplier seat would
+    // attribute supplier acts to somebody who cannot hold a supplier role. The
+    // early `effective !== storedPersona` return above already handles that —
+    // this line is only reached when the sides agree.
+    const actor = actorFromStorage(storedActor);
+    const person = actor.kind === 'RESOLVED' ? resolveSamplePerson(actor.person.personId) : undefined;
     return {
       ...base,
       businessRoles: rolesFromStorage(effective, storedRoles),
       ...(tenant ?? {}),
+      // A person who does not belong to this side is refused rather than
+      // carried: `samplePeopleFor` is what the switcher offers, and storage
+      // must not be able to reach past it.
+      actor: person && person.personaType === effective ? actor : NO_PERSON,
     };
   },
 

@@ -954,8 +954,11 @@ export interface RoleGrantVars {
 /** Grant a custom role: copy one system role and add to it (`t_role_grant`). */
 export function useRoleGrant() {
   const svc = useDataService();
+  // ⚠️ `useCurrentIdentity()` is gone from this hook, and that is the POINT of
+  // the seam flip rather than a tidy-up: the actor is no longer something this
+  // caller reads and forwards. `useScope()` already carries it (`actor:
+  // identity.actor`), so there is nothing left here to assert with.
   const scope = useScope();
-  const { identity } = useCurrentIdentity();
 
   return useMutation<CommandResult, Error, RoleGrantVars>({
     mutationFn: ({ parent, roleId, displayName, description, adds }) =>
@@ -968,7 +971,9 @@ export function useRoleGrant() {
           displayName,
           description,
           adds: [...adds],
-          grantedBy: identity.actor,
+          // No `grantedBy`. The actor rides the SCOPE (`scope.actor`, set from
+          // `identity.actor` at the top of this module) — C10 §6.2, and the
+          // dispatcher refuses the key outright.
         },
       }),
   });

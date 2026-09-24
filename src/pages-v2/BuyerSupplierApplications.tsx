@@ -61,6 +61,7 @@
 import React, { useMemo, useState } from 'react';
 import { Clock, Eye, CheckCircle2, FilePlus2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { personLabel } from '../services/identity/personLabel';
 
 import AppShellV2 from '../components/layout-v2/AppShellV2';
 import PageHeader from '../components/ui-v2/PageHeader';
@@ -108,6 +109,7 @@ import {
   type ApplicationRequestType,
   type ApplicationDeclarationKind,
 } from '../services/transitions/flows/supplierApplication.flow';
+import ActorPreActNotice from '../components/ui-v2/ActorPreActNotice';
 
 /**
  * The empty declaration draft: every permitted subject, no reference yet.
@@ -355,11 +357,22 @@ const BuyerSupplierApplications: React.FC = () => {
   /** The reason must be SUBSTANCE, not presence — the policy's mirror. */
   const canCommitReject = reason.trim().length > 0;
 
+  // ⚠️ RESOLVED AT READ, NEVER STORED (C10 §8.2 / D-ID-7). The record carries a
+  // `personId` and nothing else; `personLabel` is the ONE producer of a
+  // reader-facing person label and is what attaches the SAMPLE marker, so this
+  // surface cannot print an unmarked sample person.
+  //
+  // ⚠️ THE COMMENT SITS ABOVE THE FUNCTION RATHER THAN INSIDE IT, AND THAT IS
+  // LOAD-BEARING: `chipCoverage.test.ts` classifies a message-map use as
+  // non-render by looking for `): string =>` within SIX lines above it. Four
+  // comment lines inside the body pushed the signature out of that window and
+  // the guard raised a FALSE ACCUSATION against a correctly-typed helper —
+  // rule 2, on a proximity window rather than a matcher.
   const renderAttribution = (actor: ActorAttribution | null): string =>
     actor === null
       ? t('applications.panel.notStated')
       : actor.kind === 'RESOLVED'
-        ? actor.person.displayName
+        ? personLabel(actor.person.personId, t)
         : t(UNATTRIBUTED_KEY[actor.reason]);
 
   const startReviewSelected = async () => {
@@ -686,7 +699,7 @@ const BuyerSupplierApplications: React.FC = () => {
               </div>
             </dl>
             <p className="text-xs text-text-tertiary">
-              {t('applications.raise.confirm.unattributed')}
+              <ActorPreActNotice unattributedKey="applications.raise.confirm.unattributed" testId="app-pre-act" />
             </p>
             <div className="flex items-center gap-3">
               <Button

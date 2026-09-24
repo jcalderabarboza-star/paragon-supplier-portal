@@ -495,7 +495,7 @@ describe('THE LEGITIMATE PATHS — the half a "refuse everyone" fix would break'
 
     const enfRes = await svc.dispatch(buyerSeat('procurement'), {
       transitionId: 't_enforcement_set', entity: 'enforcement', entityId: GOVERNED_CHECK_IDS[0],
-      payload: { mode: 'BLOCK', setBy: NO_PERSON },
+      payload: { mode: 'BLOCK' },
     });
     expect(enfRes.status, enfRes.reason).toBe('done');
     expect(enforcementSettingStore.all()).toHaveLength(1);
@@ -507,7 +507,6 @@ describe('THE LEGITIMATE PATHS — the half a "refuse everyone" fix would break'
         displayName: 'Ownerless Gate Probe',
         description: 'Minted by the owner-less scope gate, to prove the lane still works.',
         adds: ['invoice:dispute'],
-        grantedBy: NO_PERSON,
       },
     });
     expect(roleRes.status, roleRes.reason).toBe('done');
@@ -580,7 +579,7 @@ describe('THE LEGITIMATE PATHS — the half a "refuse everyone" fix would break'
     const capped = await svc.dispatch(buyerSeat('compliance'), {
       transitionId: 't_psl_cap_set', entity: 'pslCapSetting',
       entityId: PSL_SETTING_IDS[0],
-      payload: { days: 200, setBy: NO_PERSON },
+      payload: { days: 200 },
     });
     expect(capped.status, capped.reason).toBe('done');
     expect(pslCapSettingStore.all()).toHaveLength(1);

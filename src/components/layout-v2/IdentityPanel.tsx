@@ -8,6 +8,14 @@ import {
   isSystemRole,
   type SystemRoleId,
 } from '../../services/transitions/businessRoles';
+import {
+  samplePeopleFor,
+  resolveSamplePerson,
+  type SamplePerson,
+} from '../../services/identity/sampleRoster';
+import { ROLE_LABEL_KEY } from '../../services/transitions/handoff';
+import { mockSuppliers } from '../../data/mockSuppliers';
+import { NO_PERSON } from '../../context/noPerson';
 import { atomsForSeat } from '../../services/transitions/customRoles';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -145,6 +153,62 @@ const IdentityPanel: React.FC = () => {
   // under-reporting that reach, in the direction that reads as reassuring.
   const atomCount = atomsForSeat(held).length;
 
+  // -- THE SAMPLE USER (R3 / R5 / R6) ---------------------------------------
+  //
+  // OPT-IN, AND THE DEFAULT IS THE HONEST ABSENCE. No sample user is selected
+  // until somebody selects one, so `UNATTRIBUTED: NO_PERSON_IN_SESSION` stays
+  // the seat's opening state and every unattributed render path stays
+  // REACHABLE. Seeding a person here would make those paths dead branches that
+  // no probe could fire at, which is the shape a surface acquires right before
+  // nobody notices it is wrong.
+  const roster = samplePeopleFor(persona);
+  const actingAs =
+    identity.actor.kind === 'RESOLVED'
+      ? resolveSamplePerson(identity.actor.person.personId)
+      : undefined;
+
+  const labelOf = (p: SamplePerson) => `${t(ROLE_LABEL_KEY[p.role])} ${p.ordinal}`;
+
+  // THE ROSTER SEEDS THE ROLES; THE TOGGLES MAY NARROW THEM AFTERWARDS
+  // (operator ruling R3, reading 3 of three). The alternative readings were
+  // rejected for stated reasons: making the roster REPLACE the toggles deletes
+  // the narrowing demonstration this panel was built for, and leaving the two
+  // INDEPENDENT lets a seat labelled "Compliance 1" hold only procurement -- a
+  // label naming an authority it does not have, which is the
+  // `label-names-wrong-verb` defect with a person attached.
+  const selectPerson = useCallback(
+    (p: SamplePerson | null) => {
+      if (p === null) {
+        // Returning to nobody leaves the ROLES where they are. The seat's reach
+        // and the seat's person are two axes, and un-naming the actor is not a
+        // reason to silently re-widen what it may do.
+        setIdentity({ ...identity, actor: NO_PERSON });
+        return;
+      }
+      const tenant =
+        p.personaType === 'supplier' && p.supplierId
+          ? mockSuppliers.find((sup) => sup.id === p.supplierId)
+          : undefined;
+      setIdentity({
+        ...identity,
+        actor: { kind: 'RESOLVED', person: { personId: p.personId } },
+        businessRoles: [...p.roles],
+        ...(tenant ? { supplierId: tenant.id, supplierName: tenant.name } : {}),
+      });
+      setRolesOpen(false);
+    },
+    [identity, setIdentity],
+  );
+
+  // THE DIVERGENCE IS STATED, NOT PREVENTED. Silence here would leave a seat
+  // labelled "Compliance 1" holding only `procurement` with nothing on the
+  // surface saying so. The panel's standing discipline is *say whose act it is;
+  // do not take the act* -- so this describes and stops.
+  const narrowed =
+    actingAs !== undefined &&
+    (held.length !== actingAs.roles.length ||
+      !actingAs.roles.every((r) => held.includes(r)));
+
   const initials = persona === 'supplier' ? 'PS' : 'JJ';
 
   return (
@@ -177,6 +241,92 @@ const IdentityPanel: React.FC = () => {
             <div className="text-sm font-medium text-text-primary" data-testid="identity-persona">
               {t(`nav.persona.${persona}`)}
             </div>
+          </div>
+
+          {/* -- ACTING AS: THE SAMPLE USER (R3/R5/R6) -- */}
+          <div className="py-3 border-b border-border-subtle">
+            <div className="text-label text-text-tertiary uppercase">
+              {t('identity.switcher.title')}
+            </div>
+            <div
+              className="text-sm font-medium text-text-primary mt-0.5"
+              data-testid="identity-acting-as"
+            >
+              {actingAs
+                ? t('identity.actor.sample', { label: labelOf(actingAs) })
+                : t('identity.switcher.none')}
+            </div>
+            <p
+              className="text-xs text-text-tertiary mt-1 leading-relaxed"
+              data-testid="identity-switcher-help"
+            >
+              {actingAs ? t('identity.switcher.help') : t('identity.switcher.noneHint')}
+            </p>
+            <ul
+              role="menu"
+              className="mt-2 flex flex-col gap-0.5 border border-border-subtle rounded-md p-1 max-h-48 overflow-y-auto"
+              data-testid="identity-people-list"
+            >
+              {/* "No sample user" IS AN OPTION, ALWAYS. Without a way back to the
+                  honest absence, selecting a person would be irreversible inside
+                  the session and the unattributed copy would become unreachable
+                  -- a render path nothing could probe. */}
+              <li>
+                <button
+                  type="button"
+                  role="menuitemradio"
+                  aria-checked={actingAs === undefined}
+                  data-testid="identity-person-none"
+                  onClick={() => selectPerson(null)}
+                  className="w-full flex items-center justify-between px-2 py-1.5 rounded-md text-sm hover:bg-bg-hover text-left"
+                >
+                  <span
+                    className={
+                      actingAs === undefined ? 'text-text-primary' : 'text-text-tertiary'
+                    }
+                  >
+                    {t('identity.switcher.none')}
+                  </span>
+                  {actingAs === undefined && <Check size={14} className="text-action" />}
+                </button>
+              </li>
+              {roster.map((p) => {
+                const isActing = actingAs?.personId === p.personId;
+                return (
+                  <li key={p.personId}>
+                    <button
+                      type="button"
+                      role="menuitemradio"
+                      aria-checked={isActing}
+                      data-testid={`identity-person-${p.personId}`}
+                      onClick={() => selectPerson(p)}
+                      className="w-full flex items-center justify-between gap-2 px-2 py-1.5 rounded-md text-sm hover:bg-bg-hover text-left"
+                    >
+                      <span className={isActing ? 'text-text-primary' : 'text-text-tertiary'}>
+                        {labelOf(p)}
+                      </span>
+                      <span className="flex items-center gap-1 shrink-0">
+                        {/* The SAMPLE marker travels on every row, not only the
+                            selected one (operator ruling I4). */}
+                        <span className="text-[10px] tracking-wide text-warning-hover border border-warning/40 bg-warning-soft rounded px-1 py-px">
+                          {t('identity.switcher.sampleBadge')}
+                        </span>
+                        {isActing && <Check size={14} className="text-action" />}
+                      </span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+            {narrowed && actingAs && (
+              <p
+                className="mt-1.5 text-xs text-text-tertiary leading-relaxed"
+                data-testid="identity-narrowed"
+              >
+                {t('identity.narrowed', { label: labelOf(actingAs) })}{' '}
+                {t('identity.narrowedHint')}
+              </p>
+            )}
           </div>
 
           {/* — ACCESS SCOPE: SHOWN, NEVER EDITABLE HERE — */}

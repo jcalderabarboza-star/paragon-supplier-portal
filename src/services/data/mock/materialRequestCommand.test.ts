@@ -408,9 +408,10 @@ describe('the decisions', () => {
 // about the absence, not about the guard). So: the real-tree run proving it
 // ADMITS, and a synthetic RESOLVED pair proving it FIRES, in the same file.
 describe('⚠️ MATERIALREQUEST_DECIDER_NOT_REQUESTER — built, and unable to fire today', () => {
+  // No `displayName` — a stamp carries the `personId` alone (C10 §8.2).
   const RESOLVED = (personId: string): ActorAttribution => ({
     kind: 'RESOLVED',
-    person: { personId, displayName: `Probe ${personId}` },
+    person: { personId },
   });
 
   it('THE REAL TREE: both actors UNATTRIBUTED → the hook ADMITS', async () => {
@@ -444,7 +445,11 @@ describe('⚠️ MATERIALREQUEST_DECIDER_NOT_REQUESTER — built, and unable to 
     );
     expect(r.status).toBe('failed');
     expect(r.reason).toContain('may not also decide');
-    expect(r.reason).toContain('Probe p-alice');
+    // ⚠️ **THE REFUSAL NAMES THE `personId`, NOT A LABEL (C10 §8.2 / D-ID-7).**
+    // It used to interpolate `person.displayName`, which no longer exists on a
+    // record — and naming the stable identifier is the stronger assertion: a
+    // label is resolved at read and can change, an id is permanent (D-ID-1).
+    expect(r.reason).toContain('p-alice');
   });
 
   it('⚠️ AND A DIFFERENT personId PASSES — the guard is not refusing every resolved act', async () => {

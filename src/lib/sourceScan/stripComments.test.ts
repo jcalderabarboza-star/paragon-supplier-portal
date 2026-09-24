@@ -385,6 +385,17 @@ describe('⚠️ THE TWO-REGEX COMMENT STRIP IS EXTINCT — derived, not listed'
     }
     expect(importers.sort()).toEqual(
       [
+        // Added 2026-09-24 by the sample-identity batch. The C10 §6.3 pin needs
+        // to ask "does this file MINT a fixture person id?", and a bare
+        // `includes` over raw source condemned three files that only EXPLAIN the
+        // namespace in prose. Its first fix was a hand-rolled two-regex strip —
+        // the extinct pattern this very spec exists to catch — which is how it
+        // got here.
+        'context/simUsrNamespace.test.ts',
+        // The sample-identity batch's two derivations: the attribution-key
+        // population (parsed, comments stripped) and the person-render census.
+        'services/identity/attributionKeys.test.ts',
+        'services/identity/personLabelGuard.test.ts',
         'lib/projectionGate/dayCounts.ts',
         'lib/projectionGate/derive.ts',
         'pages-v2/buyerInvoicesEscalateHonesty.test.ts',

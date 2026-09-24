@@ -33,6 +33,7 @@ import type { CommandDecision } from '../data/types';
 import type { ActorAttribution } from '../../lib/enforcement';
 import type { AuditSink } from './events';
 import { actorKey } from './events';
+import { attributionKeysIn } from '../identity/attributionKeys';
 import { AUTOMATION_ROLE } from './businessRoles';
 import { getTransition } from './registry';
 import { refusal } from './refusals';
@@ -610,6 +611,43 @@ export function createDispatcher(deps: DispatcherDeps): Dispatcher {
     // (5) transition legality (creation has no from-state to check).
     if (!isCreation && !transition.from.includes(currentState!)) {
       return fin(scope, transition.id, 'failed', refusal('ILLEGAL_TRANSITION', `${currentState}->${transition.to}`));
+    }
+
+    // ── (5b) THE ATTRIBUTION SEAM (C10 §6.2, generalised — R-PAYLOAD) ───────
+    //
+    // ⚠️ **AN ACTOR NEVER ARRIVES THROUGH A PAYLOAD.** §6.2 states the rule in
+    // two halves and records that the second is the one that gets forgotten:
+    // the resolved actor comes from the SESSION, and a payload-supplied one is
+    // **refused by name on write** — *"not ignored, not overwritten, not
+    // silently replaced by the session's. Refused, loudly."* The overwrite is
+    // the tempting build and it is the one §6.2 rules out: a silent correction
+    // of an attribution is a caller that believes it attributed an act and a
+    // record that says somebody else did.
+    //
+    // ⚠️ **IT LIVES HERE RATHER THAN IN A POLICY HOOK, AND THAT IS THE WHOLE
+    // GENERALISATION.** `PR_APPROVAL_ATTRIBUTED` shipped this rule for ONE verb
+    // and ONE key. A hook per flow is a LIST, and a list decays silently every
+    // time a flow is added — the same decay this project has measured on the
+    // target-less-flow sentence twice. The dispatcher sees every verb, so the
+    // rule cannot be forgotten by a flow that did not know about it.
+    //
+    // ⚠️ **BY KEY, NOT BY VALUE-SHAPE**, on the shipped hook's own reasoning:
+    // refusing only a well-formed `RESOLVED` actor would let a malformed one
+    // through to be dropped silently, which is the same silent correction
+    // wearing a type error.
+    //
+    // ⚠️ **THIS SAYS NOTHING ABOUT WHAT `scope.actor` MAY BE.** An
+    // `UNATTRIBUTED` session actor stays legal and must: it is a claim about a
+    // failure to resolve, which is what this platform has today and what makes
+    // the gap countable.
+    const smuggled = attributionKeysIn(payload);
+    if (smuggled.length > 0) {
+      return fin(
+        scope,
+        transition.id,
+        'failed',
+        refusal('ACTOR_IN_PAYLOAD', smuggled.join(',')),
+      );
     }
 
     // (6) requiredFields.

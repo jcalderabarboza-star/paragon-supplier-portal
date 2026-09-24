@@ -148,6 +148,11 @@
 
 import type { BpomRefusalReason } from '../services/sdc/bpom';
 import type { HalalRefusalReason } from '../services/sdc/halal';
+// ⚠️ A RUNTIME import from `lib/` into `services/`, which `shouldCostBacktest.ts`
+// already precedents. It is safe HERE specifically because `sampleRoster.ts`
+// has no runtime imports of its own (its `SystemRoleId` import is type-only and
+// is erased), so no cycle can form back into this module.
+import { isSampleActor } from '../services/identity/sampleRoster';
 
 // ─── The ramp ────────────────────────────────────────────────────────────────
 
@@ -344,19 +349,30 @@ export const REFUSALS_OUTSIDE_ENFORCEMENT: readonly string[] = Object.freeze(
 /**
  * The person who took a recorded act — set a mode, or overrode a verdict.
  *
- * ⚠️ **A NAMED PERSON, NEVER A ROLE.** Two fields rather than one, deliberately:
- * a stable `personId` that survives a rename, and the `displayName` as it stood
- * AT THE MOMENT OF THE ACT, so an audit reads the same in five years. "Buyer"
- * has nowhere to go. See the header for what this shape can and cannot enforce
- * — the real check is E3's session, and `ENF-NO-PERSON-IN-IDENTITY-01` records
- * that the session has no person in it today.
+ * ⚠️ **ONE FIELD, AND THE SECOND ONE WAS DELETED RATHER THAN DEPRECATED
+ * (C10 §8.2 / D-ID-7, amended 2026-09-24).** This interface carried a
+ * `displayName` *"as it stood AT THE MOMENT OF THE ACT"*, and its own
+ * doc-comment stated the ruling C10 §5.5 had already overturned. C10 §8 filed
+ * the divergence against us and said what it cost: **the correction is free
+ * while zero `RESOLVED` attributions exist, and unavailable afterwards**,
+ * because a name in an append-only ledger cannot be erased, corrected or
+ * restricted, and UU PDP grants a data subject rights over all three.
+ *
+ * This batch is what spends that window — it records the first `RESOLVED`
+ * attributions this platform has ever written — so the narrowing lands in the
+ * same branch, before the roster can stamp anything.
+ *
+ * > **THE ACT NAMES WHO TOOK IT. ONLY THE LABEL IS RESOLVED** — from the person
+ * > registry (`services/identity/sampleRoster.ts`), at read, every time.
+ *
+ * ⚠️ **AND THE ASYMMETRY IS THE WHOLE ARGUMENT, NOT A PREFERENCE.** Adding a
+ * name later is additive. Removing one from a permanent ledger is impossible.
+ * Nothing about accountability is softened: the `personId` is permanent
+ * (D-ID-1) and the act still names it.
  */
 export interface ActingPerson {
-  /** The identity that acted. Stable; never a role code. */
+  /** The identity that acted. Stable; never a role code; never a name. */
   readonly personId: string;
-  /** The name as it stood when the act was recorded. Captured, never resolved
-   *  at read — a person who leaves must not erase who decided. */
-  readonly displayName: string;
 }
 
 /**
@@ -422,9 +438,15 @@ const nonEmptyString = (value: unknown): value is string =>
  * absence to hide in, and `UNATTRIBUTED` is a CLAIM — "no person could be
  * resolved, and here is why". The caller refuses instead.
  *
- * A `RESOLVED` actor needs BOTH fields non-empty: a blank `displayName` beside a
- * real `personId` is an audit that reads as nobody in five years, and a blank
- * `personId` is a name that survives nothing.
+ * A `RESOLVED` actor needs a non-empty `personId`: a blank one is a name that
+ * survives nothing.
+ *
+ * ⚠️ **AND THE RETURN IS REBUILT FIELD BY FIELD, WHICH IS NOW LOAD-BEARING
+ * RATHER THAN TIDY.** Spreading `person` would carry a caller-supplied
+ * `displayName` straight through this boundary and into a stored record — the
+ * exact copy D-ID-7 forbids, arriving through the one function every recording
+ * verb is required to call. Naming the single field is what makes the narrowing
+ * enforceable at the seam instead of merely declared in the type.
  */
 export function asActorAttribution(value: unknown): ActorAttribution | undefined {
   if (typeof value !== 'object' || value === null) return undefined;
@@ -432,11 +454,8 @@ export function asActorAttribution(value: unknown): ActorAttribution | undefined
   if (actor.kind === 'RESOLVED') {
     const person = actor.person as Record<string, unknown> | undefined;
     if (typeof person !== 'object' || person === null) return undefined;
-    if (!nonEmptyString(person.personId) || !nonEmptyString(person.displayName)) return undefined;
-    return {
-      kind: 'RESOLVED',
-      person: { personId: person.personId, displayName: person.displayName },
-    };
+    if (!nonEmptyString(person.personId)) return undefined;
+    return { kind: 'RESOLVED', person: { personId: person.personId } };
   }
   if (actor.kind === 'UNATTRIBUTED') {
     return (UNATTRIBUTED_REASONS as readonly string[]).includes(actor.reason as string)
@@ -785,13 +804,37 @@ export interface EnforcementOverride<V extends OverridableVerdict = OverridableV
  *   override's ENTIRE VALUE IS ACCOUNTABILITY — this named person accepted this
  *   risk on this date — so one that cannot be attributed is not an override.
  *
- * Today this returns `false` for every override E3 could construct, because
- * `CurrentIdentity` has no person in it. THAT IS THE DESIGN: the lane is fully
- * built and visibly unusable until identity exists, which makes the gap create
- * pressure instead of being papered over.
+ *   **AND NEITHER CAN A SAMPLE ONE** (operator ruling R2, 2026-09-24).
+ *
+ * ⚠️ **THIS LOCK RAN THE OPPOSITE WAY FROM EVERY OTHER IDENTITY CHECK, AND
+ * THAT IS WHY IT NEEDED A SECOND CLAUSE RATHER THAN NONE.** The four-eyes
+ * predicates make the platform STRICTER when an actor resolves: a check that
+ * admitted everything starts refusing. This one, and the enforcement loosening
+ * gate beside it (`policies.ts`), run the other way — both returned `false` /
+ * refused for every input this tree could construct, and they did so *solely*
+ * because nothing could name a person. C10 §2.3 cites this very function as
+ * proof that the attribution window is still open.
+ *
+ * So the arrival of a roster would have OPENED them, silently, as a side effect
+ * of a demo convenience — and the permanent ledger would then record that a
+ * `sim-usr-*` person accepted a governance risk. That is C10 §6.3's
+ * manufactured provenance arriving through the front door, on the one lane
+ * whose entire value is accountability.
+ *
+ * ⚠️ **THE TEST IS ROSTER MEMBERSHIP, NOT A `sim-usr-` PREFIX MATCH.** The
+ * prefix may be read as a string to decide something in exactly one place —
+ * `simUsrNamespace.test.ts`, the C10 §6.3 pin. Here the question is *is this
+ * one of our fixture people?*, and a lookup answers it without accepting an id
+ * a caller merely spelled to look like one.
+ *
+ * A NON-sample `RESOLVED` actor still completes, unchanged. That arm has no
+ * product caller today and is probed with a synthetic actor in a spec, so the
+ * day F1 lands this function needs no edit.
  */
 export function overrideCompletes(override: EnforcementOverride): boolean {
-  return isAttributed(override.overriddenBy);
+  const actor = override.overriddenBy;
+  if (!isAttributed(actor)) return false;
+  return !isSampleActor(actor.person.personId);
 }
 
 /**

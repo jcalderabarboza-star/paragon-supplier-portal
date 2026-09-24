@@ -31,6 +31,16 @@ import {
 } from '../../../lib/enforcement';
 import { PERSONA_SYSTEM_ROLES } from '../../../services/transitions/businessRoles';
 
+
+// ⚠️ **THE ATTRIBUTION MOVED FROM THE PAYLOAD TO THE SCOPE (C10 §6.2 / §8.3).**
+// These specs used to pass `setBy` as a payload field, which is the seam §6.2
+// names ATTRIBUTION BY ASSERTION — *"the caller states who acted, and the
+// platform records the statement"*. The dispatcher now refuses that key
+// (`ACTOR_IN_PAYLOAD`), so the actor rides the SCOPE, which is where a session
+// actor comes from. **NO ASSERTION BELOW WAS WEAKENED** — every one still
+// requires the same recorded value; only the door it arrives through moved.
+const actingAs = <S extends object>(scope: S, actor: unknown): S =>
+  ({ ...scope, actor }) as S;
 const buyer: QueryScope = { personaType: 'buyer', supplierId: null, businessRoles: PERSONA_SYSTEM_ROLES.buyer };
 const svc = new MockCommandService();
 const NAMED = { kind: 'RESOLVED', person: { personId: 'usr-014', displayName: 'Rina Wijaya' } };
@@ -203,12 +213,11 @@ describe('E4 seed — ⚠️ IT OPENS A LEDGER, IT DOES NOT CLOSE ONE', () => {
     // The append-only ledger means the seed could not overwrite; it could do
     // something worse — append a LATER row that supersedes an operator's own
     // decision with a boot-time default. It does not.
-    await svc.dispatch(buyer, {
+    await svc.dispatch(actingAs(buyer, NAMED), {
       transitionId: 't_enforcement_set',
       entity: 'enforcement',
       entityId: 'bpom.lot',
-      payload: { mode: 'OBSERVE', reviewBy: '2099-12-31', setBy: NAMED },
-    });
+      payload: { mode: 'OBSERVE', reviewBy: '2099-12-31'} });
     const outcomes = await seedEnforcementLedger();
     expect(outcomes).toEqual([
       { checkId: 'halal.seal', status: 'recorded' },

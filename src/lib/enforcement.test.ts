@@ -64,7 +64,12 @@ import { MATERIAL_MASTER } from '../services/sdc/fixtures';
 
 // ─── Fixtures local to the suite. E1 SEEDS NONE IN THE TREE ──────────────────
 
-const PERSON: ActingPerson = { personId: 'usr-014', displayName: 'Rina Wijaya' };
+// ⚠️ **`displayName` IS GONE AND THE PERSONAL NAME WENT WITH IT (C10 §8.2 /
+// D-ID-7).** A stamp carries the `personId` only; the label is resolved at read
+// from the person registry. The literal here is deliberately NOT a `sim-usr-*`
+// id — it is the NON-SAMPLE control that proves the accountability lanes still
+// admit a real resolved actor, which is the half a sample-only probe cannot see.
+const PERSON: ActingPerson = { personId: 'usr-014' };
 
 /** A RESOLVED attribution — an act with a person behind it. */
 const NAMED: ActorAttribution = { kind: 'RESOLVED', person: PERSON };
@@ -570,7 +575,8 @@ describe('E1 — the stamp: an override is coherent at exactly one mode', () => 
   it('the override names WHO, WHY and EXACTLY WHAT it overrode', () => {
     const withOverride = stamp('BLOCK_OVERRIDABLE', true);
     expect(withOverride.override).toEqual({
-      overriddenBy: { kind: 'RESOLVED', person: { personId: 'usr-014', displayName: 'Rina Wijaya' } },
+      // No `displayName` — a stamp carries the `personId` alone (C10 §8.2).
+      overriddenBy: { kind: 'RESOLVED', person: { personId: 'usr-014' } },
       reason: 'ACCEPTED_TO_QUARANTINE',
       overriddenVerdict: 'ADVERSE',
       // E2 · D4 — an override is A DATED ACT OF ACCOUNTABILITY and inherits
@@ -778,7 +784,7 @@ describe('E1 — ⚠️ HEADLESS. NO STORE, NO CONSUMER, NO CLOCK', () => {
     expect(code.match(/new Date\([^)]*\)/g) ?? []).toEqual(['new Date(value)']);
   });
 
-  it('NO STORE, NO SEAM, NO DISPATCHER — and only two type-only imports', () => {
+  it('NO STORE, NO SEAM, NO DISPATCHER — and one runtime import, itself dependency-free', () => {
     const code = codeOf(moduleText());
     for (const forbidden of [
       'useDataService',
@@ -792,9 +798,28 @@ describe('E1 — ⚠️ HEADLESS. NO STORE, NO CONSUMER, NO CLOCK', () => {
       expect(code).not.toContain(forbidden);
     }
     const imports = code.match(/^import .*$/gm) ?? [];
+    // ⚠️ **THIS READ "only two type-only imports" AND A THIRD ONE LANDED — SO
+    // THE CLAIM WAS RE-DERIVED RATHER THAN RELAXED.** R2 requires this module to
+    // keep the override lane shut against a SAMPLE actor, which means
+    // `overrideCompletes` must know what the roster holds. The forbidden list
+    // above is untouched and still passes: no store, no seam, no dispatcher.
     expect(imports).toEqual([
       "import type { BpomRefusalReason } from '../services/sdc/bpom';",
       "import type { HalalRefusalReason } from '../services/sdc/halal';",
+      "import { isSampleActor } from '../services/identity/sampleRoster';",
+    ]);
+    // ⚠️ **AND THE PURITY IS ASSERTED TRANSITIVELY, WHICH IS STRICTLY MORE THAN
+    // THE OLD LINE CHECKED.** A runtime import is only safe here if the module
+    // it reaches is itself inert — otherwise this lib acquires a dependency
+    // graph through one edge, and a cycle back into `enforcement.ts` becomes
+    // possible. The roster's only import is TYPE-ONLY and erases at build.
+    const rosterPath = Object.keys(sources()).find((f) =>
+      f.endsWith('/services/identity/sampleRoster.ts'),
+    );
+    expect(rosterPath, 'the roster must be found, or this asserts nothing').toBeDefined();
+    const rosterImports = codeOf(sources()[rosterPath!]).match(/^import .*$/gm) ?? [];
+    expect(rosterImports).toEqual([
+      "import type { SystemRoleId } from '../transitions/businessRoles';",
     ]);
     // ⚠️ Both are TYPE-ONLY and erase at build. Naming another module's refusal
     // vocabulary in a compile-time census is not acquiring a consumer: nothing
@@ -1072,9 +1097,7 @@ describe('E2 — ⚠️ THE ACTOR IS A DISCRIMINATED ATTRIBUTION', () => {
     ['Rina Wijaya', 'a bare typed name — the forgeable answer the ruling refused'],
     [{ personId: 'usr-014', displayName: 'Rina' }, 'a person with no discriminant'],
     [{ kind: 'RESOLVED' }, 'RESOLVED with no person'],
-    [{ kind: 'RESOLVED', person: { personId: 'usr-014' } }, 'a person with no name'],
     [{ kind: 'RESOLVED', person: { personId: '  ', displayName: 'Rina' } }, 'a blank id'],
-    [{ kind: 'RESOLVED', person: { personId: 'usr-014', displayName: '' } }, 'a blank name'],
     [{ kind: 'UNATTRIBUTED' }, 'UNATTRIBUTED with no reason'],
     [{ kind: 'UNATTRIBUTED', reason: 'BECAUSE' }, 'an off-list reason'],
     [{ kind: 'SYSTEM' }, 'the comfortable third arm'],

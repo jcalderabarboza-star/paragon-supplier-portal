@@ -61,7 +61,9 @@ const grant = (over: Record<string, unknown> = {}, parent = 'receiving') => ({
     displayName: 'Jakarta Night Shift',
     description: 'The dock, after hours.',
     adds: ['invoice:dispute'],
-    grantedBy: NOBODY,
+    // No `grantedBy`. The actor rides the SCOPE now (C10 §6.2 / R-PAYLOAD) and
+    // the dispatcher refuses the key; the recorded value is unchanged, because
+    // every scope in this file already carries `NOBODY`.
     ...over,
   },
 });
@@ -227,9 +229,21 @@ describe('THE REMAINING REFUSALS, each naming what it refused', () => {
     expect(bad.reason).toContain('namespace');
   });
 
-  it('a malformed attribution', async () => {
-    const r = await svc.dispatch(compliance, grant({ grantedBy: 'Rina' }));
-    expect(r.reason).toContain('grantedBy');
+  // ⚠️ **THE CASE CHANGED FROM "MALFORMED" TO "PRESENT AT ALL", AND THAT IS A
+  // STRENGTHENING.** It used to pass a malformed `grantedBy` and require the
+  // refusal to name the field. A caller may no longer state who granted a role
+  // in ANY shape — well-formed or not — so the refusal now lands one gate
+  // earlier and names the key. Refusing only the malformed one would let a
+  // well-formed forgery through to be silently replaced, which is the exact
+  // silent correction C10 §6.2 rules out.
+  it('an attribution in the payload — in ANY shape', async () => {
+    for (const forged of ['Rina', NOBODY, { kind: 'RESOLVED', person: { personId: 'p1' } }]) {
+      const r = await svc.dispatch(compliance, grant({ grantedBy: forged }));
+      expect(r.status).toBe('failed');
+      expect(r.reason).toContain('ACTOR_IN_PAYLOAD');
+      expect(r.reason).toContain('grantedBy');
+      expect(customRoleStore.all()).toEqual([]);
+    }
   });
 
   it('a missing field is caught before any of it — requiredFields', async () => {

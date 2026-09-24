@@ -68,6 +68,7 @@
 import React, { useMemo, useState } from 'react';
 import { Clock, Eye, CheckCircle2, FilePlus2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { personLabel } from '../services/identity/personLabel';
 
 import AppShellV2 from '../components/layout-v2/AppShellV2';
 import PageHeader from '../components/ui-v2/PageHeader';
@@ -112,6 +113,7 @@ import {
   materialRequestReady,
   type MaterialRequestInput,
 } from './sourcing/materialRequest';
+import ActorPreActNotice from '../components/ui-v2/ActorPreActNotice';
 
 /**
  * EXHAUSTIVE over the unattributed vocabulary, deliberately: widening it must
@@ -256,11 +258,22 @@ const BuyerMaterialRequests: React.FC = () => {
   /** The justification must be SUBSTANCE, not presence — the policy's mirror. */
   const canCommitReject = justification.trim().length > 0;
 
+  // ⚠️ RESOLVED AT READ, NEVER STORED (C10 §8.2 / D-ID-7). The record carries a
+  // `personId` and nothing else; `personLabel` is the ONE producer of a
+  // reader-facing person label and is what attaches the SAMPLE marker, so this
+  // surface cannot print an unmarked sample person.
+  //
+  // ⚠️ THE COMMENT SITS ABOVE THE FUNCTION RATHER THAN INSIDE IT, AND THAT IS
+  // LOAD-BEARING: `chipCoverage.test.ts` classifies a message-map use as
+  // non-render by looking for `): string =>` within SIX lines above it. Four
+  // comment lines inside the body pushed the signature out of that window and
+  // the guard raised a FALSE ACCUSATION against a correctly-typed helper —
+  // rule 2, on a proximity window rather than a matcher.
   const renderAttribution = (actor: ActorAttribution | null): string =>
     actor === null
       ? t('materialRequests.detail.none')
       : actor.kind === 'RESOLVED'
-        ? actor.person.displayName
+        ? personLabel(actor.person.personId, t)
         : t(UNATTRIBUTED_KEY[actor.reason]);
 
   const originLabel = (r: MaterialRequest): string =>
@@ -657,7 +670,7 @@ const BuyerMaterialRequests: React.FC = () => {
             </FormSection>
 
             <p className="text-xs text-text-tertiary">
-              {t('materialRequests.raise.unattributed')}
+              <ActorPreActNotice unattributedKey="materialRequests.raise.unattributed" testId="mr-pre-act" />
             </p>
 
             <div className="flex items-center gap-3">
