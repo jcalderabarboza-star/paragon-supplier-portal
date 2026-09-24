@@ -880,8 +880,23 @@ bindPolicyHook(
     ) {
       return {
         ok: false,
+        // ⚠️ **THE HEAD IS WHAT MAKES THIS REFUSAL TRANSLATABLE, AND IT WAS
+        // MISSING — WHICH IS HOW A `personId` REACHED A READER.** Without a head
+        // there is nothing for a surface to key on, so `describeRefusal` fell
+        // back to appending this developer sentence verbatim and the toast
+        // rendered *"the requester (sim-usr-procurement-1) may not also
+        // decide…"*. The sentence itself is correct and stays: it is the
+        // trail a developer reads, and `materialRequestCommand.test.ts` pins
+        // that it names the `personId` (C10 §8.2 / D-ID-1 — the id is stable,
+        // a label is not). What changed is that a reader no longer sees it.
+        //
+        // The head follows `PSL_DECIDER_IS_PROPOSER`'s shape deliberately —
+        // `<HEAD>: <sentence>` is the contract `pslRefusal.ts` already reads,
+        // and copying it is what let this lane reuse the instrument instead of
+        // inventing a second one.
         reason:
-          `the requester (${personRefusalToken(requester.person.personId)}) may not also ` +
+          `MATERIALREQUEST_DECIDER_IS_REQUESTER: the requester ` +
+          `(${personRefusalToken(requester.person.personId)}) may not also ` +
           'decide this request — raising a material request and ruling on it are two authorities',
       };
     }

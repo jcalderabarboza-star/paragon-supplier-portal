@@ -400,6 +400,11 @@ describe('⚠️ THE TWO-REGEX COMMENT STRIP IS EXTINCT — derived, not listed'
         'lib/projectionGate/derive.ts',
         'pages-v2/buyerInvoicesEscalateHonesty.test.ts',
         'pages-v2/deadAffordance.guard.test.tsx',
+        // The copy fix that followed the sample-identity batch: it derives
+        // "which hook refusals name a person?" from `policies.ts`, where the
+        // comments quote the defective sentence — head and `personId` included
+        // — verbatim. Unstripped, the derivation reports a head nobody emits.
+        'pages-v2/personNamingRefusal.test.ts',
         // PSL P3 — the refusal-key gate derives the heads its hooks emit from
         // `policies.ts`, and strips comments first so a head DISCUSSED in prose
         // (this lane's comments name several) cannot be mistaken for one emitted.

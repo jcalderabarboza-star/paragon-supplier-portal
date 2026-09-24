@@ -80,6 +80,18 @@ export const identityEn: Record<string, string> = {
   'identity.preAct.sample': 'This will be recorded against {{label}}.',
   'identity.sample.cannotAcceptRisk':
     'A sample identity cannot accept governance risk. Loosening a governed check or completing an override needs a real signed-in person, and Paragon has no sign-in yet.',
+
+  // — a refusal that NAMES A PERSON (2026-09-24) —
+  //
+  // ⚠️ **`{{person}}` IS FILLED BY `personLabel` AND BY NOTHING ELSE.** The
+  // service refusal behind this key interpolates a `personId`, and browser QA
+  // caught that id reaching a reader verbatim. The copy below is what a reader
+  // sees instead: a ROLE LABEL carrying the SAMPLE marker, in their language.
+  // A call site that filled this from the raw id would re-create the defect
+  // with a translated sentence around it — `personIdNeverRendered.test.ts`
+  // fires the real composition at the real refusal to hold that closed.
+  'identity.refusal.deciderIsRequester':
+    '{{person}} raised this request and may not also decide it. Raising a material request and ruling on it are two authorities — route it to somebody else.',
 };
 
 export const identityId: Record<string, string> = {
@@ -119,4 +131,7 @@ export const identityId: Record<string, string> = {
   'identity.preAct.sample': 'Ini akan dicatat atas nama {{label}}.',
   'identity.sample.cannotAcceptRisk':
     'Identitas contoh tidak dapat menerima risiko tata kelola. Melonggarkan pemeriksaan yang diatur atau menyelesaikan penggantian memerlukan orang sungguhan yang telah masuk, dan Paragon belum memiliki proses masuk.',
+
+  'identity.refusal.deciderIsRequester':
+    '{{person}} mengajukan permintaan ini dan tidak boleh sekaligus memutuskannya. Mengajukan permintaan material dan memutuskannya adalah dua kewenangan — alihkan kepada orang lain.',
 };

@@ -282,6 +282,19 @@ mechanisms whose success signals said nothing about the damage they did.
 > `(SAMPLE)` marker structural instead of five call sites remembering it.
 > `personLabelGuard.test.ts` derives the render population from source.
 >
+> ⚠️ **AND A REFUSAL IS A RENDER SITE TOO — THE HALF THE FIRST BUILD MISSED.**
+> A policy refusal still interpolates the `personId` (the developer trail, and
+> `materialRequestCommand.test.ts` pins it), but `describeRefusal` appends that
+> sentence verbatim, so a surface reading `refusalText(r) ?? r` printed
+> `sim-usr-procurement-1` into a toast. **Browser QA found it; no spec did.**
+> Fixed the way `pslRefusal.ts` already did it — key on the refusal HEAD, render
+> your own copy, fill `{{person}}` from `personLabel` — and **do not restate
+> which heads name a person**: `personNamingRefusal.test.ts` re-derives them from
+> `policies.ts` every run and requires each to be owned by a key map or provably
+> unreachable from a surface. The one exemption (`SAMPLE_ACTOR_CANNOT_LOOSEN`) is
+> re-earned every run by asserting no surface dispatches `t_enforcement_set`, so
+> it becomes a red test rather than a silent leak the day one does.
+>
 > ⚠️ **AND THE TWO LOCKS THAT RUN OPPOSITE TO FOUR-EYES ARE THE THING TO READ
 > BEFORE TOUCHING THIS LANE.** Every other identity check gets STRICTER when an
 > actor resolves. The enforcement LOOSENING gate and `overrideCompletes` run the

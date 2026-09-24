@@ -69,6 +69,7 @@ import React, { useMemo, useState } from 'react';
 import { Clock, Eye, CheckCircle2, FilePlus2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { personLabel } from '../services/identity/personLabel';
+import { personNamingRefusalKey } from './personNamingRefusal';
 
 import AppShellV2 from '../components/layout-v2/AppShellV2';
 import PageHeader from '../components/ui-v2/PageHeader';
@@ -276,6 +277,33 @@ const BuyerMaterialRequests: React.FC = () => {
         ? personLabel(actor.person.personId, t)
         : t(UNATTRIBUTED_KEY[actor.reason]);
 
+  // ⚠️ **A REFUSAL A READER SEES NEVER CARRIES A `personId`.** Browser QA
+  // found this toast rendering *"the requester (sim-usr-procurement-1) may not
+  // also decide this request"* — an internal token standing where a person is
+  // meant, on a governed surface. The fallback chain was
+  // `refusalText(reason) ?? reason`, and `describeRefusal` appends the hook's
+  // own developer sentence verbatim, so the id came through the SECOND link
+  // rather than the last one.
+  //
+  // The person is resolved from the ROW's `submittedBy`, not from the seat.
+  // They are the same person whenever this refusal fires — that identity is
+  // the refusal's own condition — but reading the row is what the copy
+  // actually claims, and a helper that read the seat would go quietly wrong
+  // the day a hook refuses on somebody else's behalf.
+  //
+  // `renderAttribution` routes through `personLabel`, the ONE read-time
+  // resolver, so the SAMPLE marker comes with the label and cannot be dropped
+  // here.
+  const refusalCopy = (
+    reason: string | undefined,
+    row: MaterialRequest | null,
+    fallback: string,
+  ): string => {
+    const key = personNamingRefusalKey(reason);
+    if (key !== null) return t(key, { person: renderAttribution(row?.submittedBy ?? null) });
+    return refusalText(reason) ?? reason ?? fallback;
+  };
+
   const originLabel = (r: MaterialRequest): string =>
     r.raisedFromRfqId === null
       ? t('materialRequests.origin.standalone')
@@ -293,10 +321,11 @@ const BuyerMaterialRequests: React.FC = () => {
         toast({
           variant: 'error',
           title: t('materialRequests.toast.submitFailed.title'),
-          description:
-            refusalText(result.reason) ??
-            result.reason ??
+          description: refusalCopy(
+            result.reason,
+            null,
             t('materialRequests.toast.submitFailed.desc'),
+          ),
         });
         return;
       }
@@ -332,7 +361,7 @@ const BuyerMaterialRequests: React.FC = () => {
         toast({
           variant: 'error',
           title: t('materialRequests.toast.failed.title'),
-          description: refusalText(result.reason) ?? result.reason ?? '',
+          description: refusalCopy(result.reason, selected, ''),
         });
         return;
       }
@@ -357,7 +386,7 @@ const BuyerMaterialRequests: React.FC = () => {
         toast({
           variant: 'error',
           title: t('materialRequests.toast.failed.title'),
-          description: refusalText(result.reason) ?? result.reason ?? '',
+          description: refusalCopy(result.reason, selected, ''),
         });
         return;
       }
@@ -387,7 +416,7 @@ const BuyerMaterialRequests: React.FC = () => {
         toast({
           variant: 'error',
           title: t('materialRequests.toast.failed.title'),
-          description: refusalText(result.reason) ?? result.reason ?? '',
+          description: refusalCopy(result.reason, selected, ''),
         });
         return;
       }
