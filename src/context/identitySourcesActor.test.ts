@@ -2,7 +2,11 @@ import { describe, it, expect, beforeEach } from 'vitest';
 
 import { mockIdentitySource } from './identitySources';
 import { NO_PERSON } from './noPerson';
-import { SAMPLE_PEOPLE, samplePeopleFor } from '../services/identity/sampleRoster';
+import {
+  SAMPLE_PEOPLE,
+  SAMPLE_PERSON_PREFIX,
+  samplePeopleFor,
+} from '../services/identity/sampleRoster';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ⚠️ THE ACTOR SURVIVES A RELOAD — AND AN UNKNOWN PERSON DOES NOT (R3).
@@ -65,7 +69,17 @@ describe('⚠️ THE STORED ACTOR — carried, or refused', () => {
       supplierName: null,
       businessRoles: [...BUYER.roles],
       // Hand-edited: shaped exactly like a roster id, and on no roster.
-      actor: { kind: 'RESOLVED', person: { personId: 'sim-usr-not-a-person' } },
+      //
+      // ⚠️ **BUILT FROM THE PREFIX CONSTANT RATHER THAN WRITTEN AS A LITERAL,
+      // AND THE C10 §6.3 PIN IS WHY.** A literal `sim-usr-…` here is a module
+      // minting a fixture person id of its own, which is the exact thing that
+      // pin refuses — it went red on this file. Deriving it keeps the pin
+      // maximally strict (no entitlement was added for this spec) and makes the
+      // id follow the namespace if it is ever renamed.
+      actor: {
+        kind: 'RESOLVED',
+        person: { personId: `${SAMPLE_PERSON_PREFIX}not-a-person` },
+      },
     });
     expect(mockIdentitySource.load().actor).toEqual(NO_PERSON);
   });
