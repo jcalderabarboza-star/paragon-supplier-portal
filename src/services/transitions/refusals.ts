@@ -80,6 +80,18 @@ export const COMMAND_REFUSALS = [
   'STALE_STATE',
   /** The entity's current state is not in the transition's `from` set. */
   'ILLEGAL_TRANSITION',
+  /**
+   * The payload carried a key under which an actor could arrive (C10 §6.2).
+   *
+   * ⚠️ **POSITION IS SEMANTIC, AND IT IS DERIVED FROM THE TWO NEIGHBOURS RATHER
+   * THAN CHOSEN.** It sits AFTER `ILLEGAL_TRANSITION` because an illegal act
+   * writes nothing, so no forged attribution can come to rest behind it and
+   * refusing here first would leak that the key was even inspected. It sits
+   * BEFORE `MISSING_FIELDS` because both are payload defects and this is the
+   * graver one: an absent field is an incomplete request, an attribution key is
+   * a caller trying to say who acted.
+   */
+  'ACTOR_IN_PAYLOAD',
   /** One or more `requiredFields` were absent or empty in the payload. */
   'MISSING_FIELDS',
   /** The transition names a policy hook that no registration resolves. */

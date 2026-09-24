@@ -34,6 +34,7 @@ import ErrorState from '../components/ui-v2/ErrorState';
 import EmptyState from '../components/ui-v2/EmptyState';
 import { useToast } from '../hooks/useToast';
 import { useTranslation } from 'react-i18next';
+import { personLabel } from '../services/identity/personLabel';
 import { useEnumLabel } from '../hooks/useEnumLabel';
 import { useRequisitions } from '../services/query/hooks';
 import {
@@ -498,13 +499,18 @@ const BuyerRequisitions: React.FC = () => {
   const canRevise = reviseNote.trim().length > 0;
 
   // RESOLVED renders the person; UNATTRIBUTED renders WHICH failure, never a
-  // bare "unknown" — the reason is the part somebody can act on. No `RESOLVED`
-  // value can exist in this tree yet (C10 §2.3); the arm is here because the
-  // union has two, and a surface that handles one arm is a surface that will
-  // render `[object Object]` on the day the other appears.
+  // bare "unknown" — the reason is the part somebody can act on.
+  //
+  // ⚠️ **THE "NO RESOLVED VALUE CAN EXIST IN THIS TREE YET" HALF OF THIS
+  // COMMENT IS RETIRED, NOT EDITED.** It read: *"No `RESOLVED` value can exist
+  // in this tree yet (C10 §2.3); the arm is here because the union has two."*
+  // The sample roster is exactly the thing that made it false, and a comment
+  // asserting an arm is unreachable is the shape that let `SupplierOrders` ship
+  // a live ungated commit (`ENTRANCE-IS-THE-UNIT-01`). The arm is REACHED now,
+  // and it resolves the label at read rather than reading a stored name.
   const renderAttribution = (actor: ActorAttribution): string =>
     actor.kind === 'RESOLVED'
-      ? actor.person.displayName
+      ? personLabel(actor.person.personId, t)
       : t(UNATTRIBUTED_KEY[actor.reason]);
 
   const reviseSelected = async () => {

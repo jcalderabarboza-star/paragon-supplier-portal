@@ -11,6 +11,16 @@ import { seedEnforcementLedger, SEEDED_CHECKS } from '../services/data/mock/enfo
 import BuyerGoodsReceipt from './BuyerGoodsReceipt';
 import { PERSONA_SYSTEM_ROLES } from '../services/transitions/businessRoles';
 
+
+// ⚠️ **THE ATTRIBUTION MOVED FROM THE PAYLOAD TO THE SCOPE (C10 §6.2 / §8.3).**
+// These specs used to pass `setBy` as a payload field, which is the seam §6.2
+// names ATTRIBUTION BY ASSERTION — *"the caller states who acted, and the
+// platform records the statement"*. The dispatcher now refuses that key
+// (`ACTOR_IN_PAYLOAD`), so the actor rides the SCOPE, which is where a session
+// actor comes from. **NO ASSERTION BELOW WAS WEAKENED** — every one still
+// requires the same recorded value; only the door it arrives through moved.
+const actingAs = <S extends object>(scope: S, actor: unknown): S =>
+  ({ ...scope, actor }) as S;
 const alwaysFails = withChaos(mockDataService, { minMs: 0, maxMs: 0, failureRate: 1 });
 const alwaysPending = withChaos(mockDataService, { minMs: 1e7, maxMs: 1e7, failureRate: 0 });
 
@@ -255,14 +265,12 @@ const NAMED_IN_A_TEST = {
 const relaxBothChecks = async () => {
   const svc = new MockCommandService();
   for (const entityId of SEEDED_CHECKS) {
-    const res = await svc.dispatch(
-      { personaType: 'buyer', supplierId: null, businessRoles: PERSONA_SYSTEM_ROLES.buyer },
+    const res = await svc.dispatch(actingAs({ personaType: 'buyer', supplierId: null, businessRoles: PERSONA_SYSTEM_ROLES.buyer }, NAMED_IN_A_TEST),
       {
         transitionId: 't_enforcement_set',
         entity: 'enforcement',
         entityId,
-        payload: { mode: 'OBSERVE', reviewBy: '2099-12-31', setBy: NAMED_IN_A_TEST },
-      },
+        payload: { mode: 'OBSERVE', reviewBy: '2099-12-31'} },
     );
     // A silent refusal here would make the spec below assert nothing.
     expect(res.status).toBe('done');

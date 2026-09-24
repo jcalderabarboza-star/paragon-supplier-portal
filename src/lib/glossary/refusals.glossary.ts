@@ -68,6 +68,13 @@ export const COMMAND_REFUSAL_GLOSSARY = {
     en: 'One or more values the action requires were blank. Nothing was changed. The refusal names each missing field.',
     id: 'Satu atau beberapa nilai yang diperlukan tindakan ini kosong. Tidak ada yang diubah. Penolakan menyebut setiap kolom yang kurang.',
   },
+  // ⚠️ THE COPY NAMES THE REMEDY, NOT THE MECHANISM. A caller reading this has
+  // written an attribution key into a payload; what they need to know is that
+  // the platform decides who acted, not that a set lookup matched.
+  ACTOR_IN_PAYLOAD: {
+    en: 'The request tried to say who performed it. Who acted is taken from the session, never from the request, so that nobody can record an action under somebody else’s name. Nothing was changed.',
+    id: 'Permintaan ini mencoba menyebut siapa yang melakukannya. Pelaku diambil dari sesi, bukan dari permintaan, sehingga tidak ada yang dapat mencatat tindakan atas nama orang lain. Tidak ada yang diubah.',
+  },
   UNBOUND_HOOK: {
     en: 'The action names a rule the system could not find, so it refused rather than skip the rule. Nothing was changed. This is a wiring fault — report it.',
     id: 'Tindakan menyebut aturan yang tidak ditemukan sistem, sehingga ditolak alih-alih melewati aturan itu. Tidak ada yang diubah. Ini kesalahan penyambungan — laporkan.',

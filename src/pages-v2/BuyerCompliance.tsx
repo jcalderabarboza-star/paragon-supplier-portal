@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { personLabel } from '../services/identity/personLabel';
 import {
   AlertTriangle,
   CheckCircle2,
@@ -580,7 +581,10 @@ const BuyerCompliance: React.FC = () => {
                             {' · '}
                             {doc.declaration.declaredBy.kind === 'UNATTRIBUTED'
                               ? t('compliance.queue.declaredBy.unattributed')
-                              : doc.declaration.declaredBy.person.displayName}
+                              : personLabel(
+                                  doc.declaration.declaredBy.person.personId,
+                                  t,
+                                )}
                           </dd>
                         </div>
                         <div className="sm:col-span-2">

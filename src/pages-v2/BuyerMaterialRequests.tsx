@@ -68,6 +68,8 @@
 import React, { useMemo, useState } from 'react';
 import { Clock, Eye, CheckCircle2, FilePlus2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { personLabel } from '../services/identity/personLabel';
+import { personNamingRefusalKey } from './personNamingRefusal';
 
 import AppShellV2 from '../components/layout-v2/AppShellV2';
 import PageHeader from '../components/ui-v2/PageHeader';
@@ -112,6 +114,7 @@ import {
   materialRequestReady,
   type MaterialRequestInput,
 } from './sourcing/materialRequest';
+import ActorPreActNotice from '../components/ui-v2/ActorPreActNotice';
 
 /**
  * EXHAUSTIVE over the unattributed vocabulary, deliberately: widening it must
@@ -256,12 +259,50 @@ const BuyerMaterialRequests: React.FC = () => {
   /** The justification must be SUBSTANCE, not presence — the policy's mirror. */
   const canCommitReject = justification.trim().length > 0;
 
+  // ⚠️ RESOLVED AT READ, NEVER STORED (C10 §8.2 / D-ID-7). The record carries a
+  // `personId` and nothing else; `personLabel` is the ONE producer of a
+  // reader-facing person label and is what attaches the SAMPLE marker, so this
+  // surface cannot print an unmarked sample person.
+  //
+  // ⚠️ THE COMMENT SITS ABOVE THE FUNCTION RATHER THAN INSIDE IT, AND THAT IS
+  // LOAD-BEARING: `chipCoverage.test.ts` classifies a message-map use as
+  // non-render by looking for `): string =>` within SIX lines above it. Four
+  // comment lines inside the body pushed the signature out of that window and
+  // the guard raised a FALSE ACCUSATION against a correctly-typed helper —
+  // rule 2, on a proximity window rather than a matcher.
   const renderAttribution = (actor: ActorAttribution | null): string =>
     actor === null
       ? t('materialRequests.detail.none')
       : actor.kind === 'RESOLVED'
-        ? actor.person.displayName
+        ? personLabel(actor.person.personId, t)
         : t(UNATTRIBUTED_KEY[actor.reason]);
+
+  // ⚠️ **A REFUSAL A READER SEES NEVER CARRIES A `personId`.** Browser QA
+  // found this toast rendering *"the requester (sim-usr-procurement-1) may not
+  // also decide this request"* — an internal token standing where a person is
+  // meant, on a governed surface. The fallback chain was
+  // `refusalText(reason) ?? reason`, and `describeRefusal` appends the hook's
+  // own developer sentence verbatim, so the id came through the SECOND link
+  // rather than the last one.
+  //
+  // The person is resolved from the ROW's `submittedBy`, not from the seat.
+  // They are the same person whenever this refusal fires — that identity is
+  // the refusal's own condition — but reading the row is what the copy
+  // actually claims, and a helper that read the seat would go quietly wrong
+  // the day a hook refuses on somebody else's behalf.
+  //
+  // `renderAttribution` routes through `personLabel`, the ONE read-time
+  // resolver, so the SAMPLE marker comes with the label and cannot be dropped
+  // here.
+  const refusalCopy = (
+    reason: string | undefined,
+    row: MaterialRequest | null,
+    fallback: string,
+  ): string => {
+    const key = personNamingRefusalKey(reason);
+    if (key !== null) return t(key, { person: renderAttribution(row?.submittedBy ?? null) });
+    return refusalText(reason) ?? reason ?? fallback;
+  };
 
   const originLabel = (r: MaterialRequest): string =>
     r.raisedFromRfqId === null
@@ -280,10 +321,11 @@ const BuyerMaterialRequests: React.FC = () => {
         toast({
           variant: 'error',
           title: t('materialRequests.toast.submitFailed.title'),
-          description:
-            refusalText(result.reason) ??
-            result.reason ??
+          description: refusalCopy(
+            result.reason,
+            null,
             t('materialRequests.toast.submitFailed.desc'),
+          ),
         });
         return;
       }
@@ -319,7 +361,7 @@ const BuyerMaterialRequests: React.FC = () => {
         toast({
           variant: 'error',
           title: t('materialRequests.toast.failed.title'),
-          description: refusalText(result.reason) ?? result.reason ?? '',
+          description: refusalCopy(result.reason, selected, ''),
         });
         return;
       }
@@ -344,7 +386,7 @@ const BuyerMaterialRequests: React.FC = () => {
         toast({
           variant: 'error',
           title: t('materialRequests.toast.failed.title'),
-          description: refusalText(result.reason) ?? result.reason ?? '',
+          description: refusalCopy(result.reason, selected, ''),
         });
         return;
       }
@@ -374,7 +416,7 @@ const BuyerMaterialRequests: React.FC = () => {
         toast({
           variant: 'error',
           title: t('materialRequests.toast.failed.title'),
-          description: refusalText(result.reason) ?? result.reason ?? '',
+          description: refusalCopy(result.reason, selected, ''),
         });
         return;
       }
@@ -657,7 +699,7 @@ const BuyerMaterialRequests: React.FC = () => {
             </FormSection>
 
             <p className="text-xs text-text-tertiary">
-              {t('materialRequests.raise.unattributed')}
+              <ActorPreActNotice unattributedKey="materialRequests.raise.unattributed" testId="mr-pre-act" />
             </p>
 
             <div className="flex items-center gap-3">

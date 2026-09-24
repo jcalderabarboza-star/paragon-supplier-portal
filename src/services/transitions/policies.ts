@@ -19,6 +19,8 @@ import {
 import type { GoodsReceipt } from '../../data/mockGoodsReceipts';
 import type { PolicyHookFn } from './dispatcher';
 import { POLICY_HOOKS } from './policyHooks';
+import { personRefusalToken } from '../identity/personLabel';
+import { isSampleActor } from '../identity/sampleRoster';
 import { deriveHeaderDisposition, type GrHeaderDisposition } from './grRollup';
 import { isMatched } from './invoiceRollup';
 import { BASE_CURRENCY, BID_CURRENCIES, isBidCurrency } from '../../lib/currencyPolicy';
@@ -271,7 +273,7 @@ bindPolicyHook(POLICY_HOOKS.RFQ_FX_PIN_WELL_FORMED, rfqFxPinWellFormed);
 // then depend on WHEN the command was dispatched, which is a clock deciding a
 // transition by another route. An unset check baselines at MAXIMUM_RIGOUR, so
 // THE FIRST EVER SETTING BELOW FULL RIGOUR IS A LOOSENING and must be named.
-const enforcementSetGoverned: PolicyHookFn = ({ entityId, payload, target }) => {
+const enforcementSetGoverned: PolicyHookFn = ({ entityId, payload, target, scope }) => {
   const mode = payload.mode;
   if (typeof mode !== 'string' || !isEnforcementMode(mode)) {
     return {
@@ -288,13 +290,25 @@ const enforcementSetGoverned: PolicyHookFn = ({ entityId, payload, target }) => 
       reason: `'${entityId}' is not a governed check (${GOVERNED_CHECK_IDS.join(', ')})`,
     };
   }
-  const actor = asActorAttribution(payload.setBy);
+  // ⚠️ **THE ACTOR COMES FROM THE SESSION. IT USED TO COME FROM THE PAYLOAD,
+  // AND C10 §8.3 FILED THAT AGAINST US FOR AS LONG AS IT STOOD.** `setBy` was a
+  // `requiredField` — *"the caller states who acted, and the platform records
+  // the statement"* — which §6.2 names ATTRIBUTION BY ASSERTION. It was
+  // harmless for exactly one reason: nothing could construct a `RESOLVED`
+  // actor. The sample roster is what removes that reason, so the seam flips in
+  // the same batch rather than after it.
+  //
+  // The dispatcher now refuses the `setBy` KEY outright (`ACTOR_IN_PAYLOAD`),
+  // so a caller cannot reach this line with one. This reads the only source
+  // that remains.
+  const actor = asActorAttribution(scope.actor);
   if (!actor) {
     return {
       ok: false,
       reason:
-        "setBy must be { kind: 'RESOLVED', person: { personId, displayName } } or " +
-        `{ kind: 'UNATTRIBUTED', reason } (${UNATTRIBUTED_REASONS.join(', ')})`,
+        'the commanding scope carries no actor — a governed enforcement setting that cannot ' +
+        'say who took it is not a record, and UNATTRIBUTED is available to any caller that ' +
+        'has no person',
     };
   }
   if (mode !== MAXIMUM_RIGOUR && !isReviewDay(payload.reviewBy)) {
@@ -306,10 +320,57 @@ const enforcementSetGoverned: PolicyHookFn = ({ entityId, payload, target }) => 
   const ledger = target.readEntity(entityId) as readonly EnforcementSetting[] | null;
   const current = settingInForce(ledger ?? undefined, entityId);
   const baseline = current && isEnforcementMode(current.mode) ? current.mode : MAXIMUM_RIGOUR;
+  // ⚠️ **THE LOOSENING GATE RUNS OPPOSITE TO EVERY FOUR-EYES CHECK IN THIS
+  // FILE, AND THAT IS WHY IT NEEDED A SECOND CLAUSE WHEN THE ROSTER LANDED.**
+  //
+  // The four-eyes predicates make the platform STRICTER once an actor resolves:
+  // a check that admitted everything starts refusing. This one runs the other
+  // way. It refused every relaxation in this tree's history — and it did so
+  // SOLELY because nothing could name a person, not because anything decided a
+  // relaxation was wrong. A roster would therefore have OPENED it, silently, as
+  // a side effect of a demo convenience, and the append-only enforcement ledger
+  // would then record that a `sim-usr-*` person accepted a governance risk.
+  //
+  // That is C10 §6.3's MANUFACTURED PROVENANCE arriving through the front door.
+  // The ledger cannot be edited, only appended over, so the original claim
+  // survives whatever is written after it.
+  //
+  // ⚠️ **TWO CLAUSES, NOT ONE WIDENED PREDICATE, BECAUSE THEY REFUSE DIFFERENT
+  // FACTS AND A READER MUST BE TOLD WHICH.** `UNATTRIBUTED` means *nobody could
+  // be named*; a sample actor means *somebody was named and they are not real*.
+  // Collapsing them into "not an acceptable actor" would give both the same
+  // message and make the first one look answered — the `SYSTEM`-reason defect
+  // one layer up.
   if (rigour(mode) < rigour(baseline) && !isAttributed(actor)) {
     return {
       ok: false,
       reason: `loosening ${entityId} from ${baseline} to ${mode} requires a NAMED actor (setBy.kind is UNATTRIBUTED: ${actor.reason})`,
+    };
+  }
+  // ⚠️ ROSTER MEMBERSHIP, NEVER A `sim-usr-` PREFIX MATCH. The prefix may be
+  // read as a string to decide something in exactly ONE place —
+  // `simUsrNamespace.test.ts`, the C10 §6.3 pin, whose job is to police the
+  // spelling. Here the question is *is this one of our fixture people?*, and a
+  // lookup answers it without accepting an id a caller merely spelled to look
+  // like one.
+  //
+  // The `isAttributed` re-test is not redundant: the clause above returns only
+  // when the mode is ALSO a loosening, so an UNATTRIBUTED actor on a TIGHTENING
+  // reaches this line. It is what narrows the union, and it is what keeps a
+  // tightening available to anybody (`lib/enforcement.ts` — the safest act is
+  // always reachable).
+  if (
+    rigour(mode) < rigour(baseline) &&
+    isAttributed(actor) &&
+    isSampleActor(actor.person.personId)
+  ) {
+    return {
+      ok: false,
+      reason:
+        `SAMPLE_ACTOR_CANNOT_LOOSEN: ${personRefusalToken(actor.person.personId)} is a SAMPLE ` +
+        `identity and may not loosen ${entityId} from ${baseline} to ${mode}. A sample identity ` +
+        'cannot accept governance risk — that needs a real signed-in person, and Paragon has no ' +
+        'sign-in yet.',
     };
   }
   return { ok: true };
@@ -339,7 +400,7 @@ bindPolicyHook(POLICY_HOOKS.ENFORCEMENT_SET_GOVERNED, enforcementSetGoverned);
 // privilege grant that cannot outlive the browser tab is a demonstrable act,
 // not a durable ungoverned one. **The day an IdP answers, this is where the
 // `isAttributed` guard lands and where durability becomes arguable.**
-const roleGrantGoverned: PolicyHookFn = ({ entityId, payload }) => {
+const roleGrantGoverned: PolicyHookFn = ({ entityId, payload, scope }) => {
   const parentRefusal = copyableParentRefusal(entityId);
   if (parentRefusal) return { ok: false, reason: parentRefusal };
   const parent = entityId as SystemRoleId;
@@ -386,12 +447,13 @@ const roleGrantGoverned: PolicyHookFn = ({ entityId, payload }) => {
     if (refusal) return { ok: false, reason: refusal };
   }
 
-  if (!asActorAttribution(payload.grantedBy)) {
+  if (!asActorAttribution(scope.actor)) {
     return {
       ok: false,
       reason:
-        "grantedBy must be { kind: 'RESOLVED', person: { personId, displayName } } or " +
-        `{ kind: 'UNATTRIBUTED', reason } (${UNATTRIBUTED_REASONS.join(', ')})`,
+        'the commanding scope carries no actor — a role grant that cannot say who made it ' +
+        `is not a record, and UNATTRIBUTED (${UNATTRIBUTED_REASONS.join(', ')}) is available ` +
+        'to any caller that has no person',
     };
   }
   return { ok: true };
@@ -818,9 +880,24 @@ bindPolicyHook(
     ) {
       return {
         ok: false,
+        // ⚠️ **THE HEAD IS WHAT MAKES THIS REFUSAL TRANSLATABLE, AND IT WAS
+        // MISSING — WHICH IS HOW A `personId` REACHED A READER.** Without a head
+        // there is nothing for a surface to key on, so `describeRefusal` fell
+        // back to appending this developer sentence verbatim and the toast
+        // rendered *"the requester (sim-usr-procurement-1) may not also
+        // decide…"*. The sentence itself is correct and stays: it is the
+        // trail a developer reads, and `materialRequestCommand.test.ts` pins
+        // that it names the `personId` (C10 §8.2 / D-ID-1 — the id is stable,
+        // a label is not). What changed is that a reader no longer sees it.
+        //
+        // The head follows `PSL_DECIDER_IS_PROPOSER`'s shape deliberately —
+        // `<HEAD>: <sentence>` is the contract `pslRefusal.ts` already reads,
+        // and copying it is what let this lane reuse the instrument instead of
+        // inventing a second one.
         reason:
-          `the requester (${requester.person.displayName}) may not also decide this request — ` +
-          'raising a material request and ruling on it are two authorities',
+          `MATERIALREQUEST_DECIDER_IS_REQUESTER: the requester ` +
+          `(${personRefusalToken(requester.person.personId)}) may not also ` +
+          'decide this request — raising a material request and ruling on it are two authorities',
       };
     }
     return { ok: true };
@@ -1133,8 +1210,8 @@ bindPolicyHook(POLICY_HOOKS.PSL_DECIDER_NOT_PROPOSER, ({ entityId, target, scope
     return {
       ok: false,
       reason:
-        `PSL_DECIDER_IS_PROPOSER: ${proposer.person.displayName} proposed this ` +
-        'listing and may not also decide it — raising a designation and ruling ' +
+        `PSL_DECIDER_IS_PROPOSER: ${personRefusalToken(proposer.person.personId)} proposed ` +
+        'this listing and may not also decide it — raising a designation and ruling ' +
         'on it are two authorities. Route it to somebody else.',
     };
   }

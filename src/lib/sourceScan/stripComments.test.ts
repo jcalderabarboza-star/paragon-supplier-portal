@@ -385,10 +385,26 @@ describe('⚠️ THE TWO-REGEX COMMENT STRIP IS EXTINCT — derived, not listed'
     }
     expect(importers.sort()).toEqual(
       [
+        // Added 2026-09-24 by the sample-identity batch. The C10 §6.3 pin needs
+        // to ask "does this file MINT a fixture person id?", and a bare
+        // `includes` over raw source condemned three files that only EXPLAIN the
+        // namespace in prose. Its first fix was a hand-rolled two-regex strip —
+        // the extinct pattern this very spec exists to catch — which is how it
+        // got here.
+        'context/simUsrNamespace.test.ts',
+        // The sample-identity batch's two derivations: the attribution-key
+        // population (parsed, comments stripped) and the person-render census.
+        'services/identity/attributionKeys.test.ts',
+        'services/identity/personLabelGuard.test.ts',
         'lib/projectionGate/dayCounts.ts',
         'lib/projectionGate/derive.ts',
         'pages-v2/buyerInvoicesEscalateHonesty.test.ts',
         'pages-v2/deadAffordance.guard.test.tsx',
+        // The copy fix that followed the sample-identity batch: it derives
+        // "which hook refusals name a person?" from `policies.ts`, where the
+        // comments quote the defective sentence — head and `personId` included
+        // — verbatim. Unstripped, the derivation reports a head nobody emits.
+        'pages-v2/personNamingRefusal.test.ts',
         // PSL P3 — the refusal-key gate derives the heads its hooks emit from
         // `policies.ts`, and strips comments first so a head DISCUSSED in prose
         // (this lane's comments name several) cannot be mistaken for one emitted.

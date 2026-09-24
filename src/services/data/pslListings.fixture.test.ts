@@ -35,6 +35,7 @@ import { DOCUMENTS } from './mock/fixtures/supplierDocuments';
 import { isPslStatus, PSL_LIFECYCLES } from './pslListing';
 import { pslDisplayStatus, type PslDisplayStatus } from './pslProjection';
 import type { PslListing } from './pslListing';
+import { isSampleActor } from '../identity/sampleRoster';
 
 /**
  * THE CORPUS, GROWN RATHER THAN IMPORTED (PSL P3, operator ruling h). It does
@@ -236,7 +237,15 @@ describe('THE HONESTY LAYERS — asserted where they live', () => {
     }
   });
 
-  it('⚠️ NO ROW NAMES A PERSON — every actor is unattributed', () => {
+  // ⚠️ **THE PREMISE WAS REVERSED BY RULING (R4), AND THE CLAIM IS REPLACED
+  // RATHER THAN DROPPED.** This read *"NO ROW NAMES A PERSON — every actor is
+  // unattributed"*. The seeded corpus now carries SAMPLE actors, which is what
+  // makes both four-eyes directions reachable from it. Deleting the assertion
+  // would leave the corpus with no honesty claim on its actors at all — so the
+  // claim narrows instead: every named actor must be a ROSTER MEMBER, because
+  // an id resolving to nobody is the manufactured provenance C10 §6.3 forbids
+  // whether or not it is spelled like a fixture person.
+  it('⚠️ EVERY ACTOR IS A SAMPLE PERSON — on the roster, and never anybody else', () => {
     const actors = pslRows().flatMap((r) => [
       r.proposedBy,
       r.decidedBy,
@@ -245,7 +254,10 @@ describe('THE HONESTY LAYERS — asserted where they live', () => {
       ...r.statusHistory.map((h) => h.by),
     ]).filter((a) => a !== null);
     expect(actors.length).toBeGreaterThan(10);
-    for (const a of actors) expect(a!.kind).toBe('UNATTRIBUTED');
+    for (const a of actors) {
+      expect(a!.kind).toBe('RESOLVED');
+      expect(a!.kind === 'RESOLVED' && isSampleActor(a!.person.personId)).toBe(true);
+    }
   });
 });
 

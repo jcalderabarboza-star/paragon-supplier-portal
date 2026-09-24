@@ -17,6 +17,16 @@ import type { QueryScope } from '../types';
 import { effectiveEnforcement } from '../../../lib/enforcement';
 import { PERSONA_SYSTEM_ROLES } from '../../../services/transitions/businessRoles';
 
+
+// ⚠️ **THE ATTRIBUTION MOVED FROM THE PAYLOAD TO THE SCOPE (C10 §6.2 / §8.3).**
+// These specs used to pass `setBy` as a payload field, which is the seam §6.2
+// names ATTRIBUTION BY ASSERTION — *"the caller states who acted, and the
+// platform records the statement"*. The dispatcher now refuses that key
+// (`ACTOR_IN_PAYLOAD`), so the actor rides the SCOPE, which is where a session
+// actor comes from. **NO ASSERTION BELOW WAS WEAKENED** — every one still
+// requires the same recorded value; only the door it arrives through moved.
+const actingAs = <S extends object>(scope: S, actor: unknown): S =>
+  ({ ...scope, actor }) as S;
 const buyer: QueryScope = { personaType: 'buyer', supplierId: null, businessRoles: PERSONA_SYSTEM_ROLES.buyer };
 const supplier: QueryScope = { personaType: 'supplier', supplierId: 'sup-005', businessRoles: PERSONA_SYSTEM_ROLES.supplier };
 
@@ -35,18 +45,16 @@ describe('IEnforcementService — the ledger, behind the seam', () => {
   });
 
   it('serves the recorded acts, oldest first', async () => {
-    await svc.dispatch(buyer, {
+    await svc.dispatch(actingAs(buyer, NAMED), {
       transitionId: 't_enforcement_set',
       entity: 'enforcement',
       entityId: 'bpom.lot',
-      payload: { mode: 'OBSERVE', reviewBy: '2027-01-31', setBy: NAMED },
-    });
-    await svc.dispatch(buyer, {
+      payload: { mode: 'OBSERVE', reviewBy: '2027-01-31'} });
+    await svc.dispatch(actingAs(buyer, NAMED), {
       transitionId: 't_enforcement_set',
       entity: 'enforcement',
       entityId: 'bpom.lot',
-      payload: { mode: 'BLOCK_OVERRIDABLE', reviewBy: '2027-06-30', setBy: NAMED },
-    });
+      payload: { mode: 'BLOCK_OVERRIDABLE', reviewBy: '2027-06-30'} });
 
     const { items } = await mockDataService.enforcement.getEnforcementSettings(buyer);
     // BOTH acts, in order. The seam does not collapse the ledger to a "current"
@@ -55,12 +63,11 @@ describe('IEnforcementService — the ledger, behind the seam', () => {
   });
 
   it('⚠️ SERVES THE LEDGER, NEVER THE ANSWER — the caller derives, with its own instant', async () => {
-    await svc.dispatch(buyer, {
+    await svc.dispatch(actingAs(buyer, NAMED), {
       transitionId: 't_enforcement_set',
       entity: 'enforcement',
       entityId: 'bpom.lot',
-      payload: { mode: 'OBSERVE', reviewBy: '2027-01-31', setBy: NAMED },
-    });
+      payload: { mode: 'OBSERVE', reviewBy: '2027-01-31'} });
     const { items } = await mockDataService.enforcement.getEnforcementSettings(buyer);
 
     // The same ledger answers differently at two instants, and NOTHING on the

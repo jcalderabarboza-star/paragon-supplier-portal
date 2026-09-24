@@ -101,7 +101,16 @@ export type Capability =
   // POs, supplier-health and production-line fixtures; no single transactional
   // capability describes them, and leaving them the only unmarked figures on an
   // otherwise-marked page is the inversion this batch exists to end.
-  | 'dashboard';
+  | 'dashboard'
+  // ⚠️ **IDENTITY — AND THIS ENTRY IS ACCEPTED AS INSUFFICIENT RATHER THAN
+  // SUFFICIENT (operator ruling).** A pill in a page corner says *this page's
+  // data is a sample*; it does not travel to the row where a person's label is
+  // printed, and the label is where a demo identity gets mistaken for a real
+  // one. The LOAD-BEARING marker is `identity.actor.sample`, attached at the one
+  // read-time resolver (`services/identity/personLabel.ts`), so every surface
+  // that prints a person gets "(SAMPLE)" structurally. This entry is the page
+  // layer of the same honesty, not a substitute for it.
+  | 'identity';
 
 // The ONLY hand-authored fact here: which command entity/flow each capability
 // reads from (`null` = pure fixture, no lifecycle entity). The TIER is never
@@ -202,6 +211,13 @@ const CAPABILITY_BACKING: Record<Capability, string | null> = {
   analytics: null,
   messaging: null,
   dashboard: null,
+  // NULL-BACKED, AND DELIBERATELY SO. There is no identity flow and no identity
+  // CommandTarget — the portal has no sign-in, which is the whole fact this
+  // marker exists to state. Backing it to a merely-adjacent wired entity to make
+  // it look live is `INVENTORY-REFERENT-01`, the defect this registry files
+  // against itself. Null backing derives SIMULATED, so green is structurally
+  // unreachable and the pill reads "Sample" — which is exactly true.
+  identity: null,
 };
 
 // — Gate-2: harvest gating (LIVENESS-DATASOURCE-01) —————————————————————————————

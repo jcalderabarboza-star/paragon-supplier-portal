@@ -439,7 +439,7 @@ describe('⚠️ THE HOLE, PINNED OPEN — a statePreserving race passes this ga
       svc.dispatch(procurement, {
         transitionId: 't_enforcement_set', entity: 'enforcement', entityId: check,
         expectedState: 'Governed',
-        payload: { mode, setBy: NO_PERSON, reviewBy: mode === 'BLOCK' ? null : '2027-01-31' },
+        payload: { mode, reviewBy: mode === 'BLOCK' ? null : '2027-01-31' },
       });
     const first = await set('BLOCK');
     expect(first.status, first.reason).toBe('done');

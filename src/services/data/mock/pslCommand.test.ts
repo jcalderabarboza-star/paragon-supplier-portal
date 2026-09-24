@@ -579,11 +579,13 @@ describe('t_psl_cap_override — the per-listing cap, and the ceiling BOTH WAYS'
 // ─────────────────────────────────────────────────────────────────────────────
 describe('t_psl_cap_set — the PORTAL DEFAULT, and what it makes true', () => {
   const setting = (days: number): Promise<CommandResult> =>
+    // The actor rides the SCOPE, not the payload (C10 §6.2 / R-PAYLOAD). The
+    // recorded value is unchanged — `COMPLIANCE` already carries `NO_PERSON`.
     commands.dispatch(COMPLIANCE, {
       transitionId: 't_psl_cap_set',
       entity: 'pslCapSetting',
       entityId: PSL_DEFAULT_CAP_SETTING_ID,
-      payload: { days, setBy: NO_PERSON },
+      payload: { days },
     });
 
   it('⚠️ KNOWN-GOOD FIRST — a cap within the ceiling is recorded on the ledger', async () => {
@@ -625,7 +627,7 @@ describe('t_psl_cap_set — the PORTAL DEFAULT, and what it makes true', () => {
         transitionId: 't_psl_cap_set',
         entity: 'pslCapSetting',
         entityId: 'psl.not_a_setting',
-        payload: { days: 100, setBy: NO_PERSON },
+        payload: { days: 100 },
       });
     } catch (e) {
       code = e instanceof DataError ? e.code : `THREW_${String(e)}`;
@@ -640,7 +642,7 @@ describe('t_psl_cap_set — the PORTAL DEFAULT, and what it makes true', () => {
       transitionId: 't_psl_cap_set',
       entity: 'pslCapSetting',
       entityId: PSL_DEFAULT_CAP_SETTING_ID,
-      payload: { days: 200, setBy: NO_PERSON },
+      payload: { days: 200 },
     });
     expect(r.status).toBe('failed');
     expect(r.reason).toMatch(/ROLE_NOT_PERMITTED/);

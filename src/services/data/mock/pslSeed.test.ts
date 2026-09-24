@@ -33,6 +33,7 @@ import { isPublished, PSL_LIFECYCLES, PSL_STATUSES } from '../pslListing';
 import { SYSTEM_ROLES } from '../../transitions/businessRoles';
 import { MATERIAL_MASTER } from '../../sdc/fixtures';
 import { mockSuppliers } from '../../../data/mockSuppliers';
+import { isSampleActor } from '../../identity/sampleRoster';
 
 const P = DECLARED_PRESENT;
 
@@ -76,7 +77,18 @@ describe('⚠️ EVERY ROW WAS PRODUCED BY AN ACT — not written into the store
       const first = r.statusHistory[0];
       expect(first.from, r.id).toBeNull();
       expect(first.lifecycle, r.id).toBe('Proposed');
-      expect(first.by.kind, r.id).toBe('UNATTRIBUTED');
+      // ⚠️ **THIS READ `toBe('UNATTRIBUTED')` AND THE PREMISE WAS REVERSED BY
+      // RULING (R4), NOT BY ACCIDENT.** The seed now proposes as a SAMPLE
+      // person, which is what makes `PSL_DECIDER_NOT_PROPOSER`'s refused
+      // direction reachable from the seeded corpus. The replacement is stricter
+      // than the line it replaces: it is not enough to be RESOLVED, the person
+      // must be a ROSTER MEMBER — an id resolving to nobody would be exactly the
+      // manufactured provenance C10 §6.3 forbids.
+      expect(first.by.kind, r.id).toBe('RESOLVED');
+      expect(
+        first.by.kind === 'RESOLVED' && isSampleActor(first.by.person.personId),
+        r.id,
+      ).toBe(true);
     }
   });
 
@@ -286,7 +298,18 @@ describe('⚠️ THE HONESTY LAYERS SURVIVED THE MOVE FROM FIXTURE TO SEED', () 
     expect(named.filter((c) => !master.has(c))).toEqual([]);
   });
 
-  it('⚠️ NO ROW NAMES A PERSON — every actor is unattributed', () => {
+  // ⚠️ **THE TITLE READ "NO ROW NAMES A PERSON — every actor is unattributed",
+  // AND R4 REVERSED IT DELIBERATELY.** Retiring the old assertion outright would
+  // have left this corpus with NO honesty claim on its actors at all, which is
+  // the direction that goes unnoticed. So the claim is replaced rather than
+  // dropped, and the replacement is narrower: every actor must be a SAMPLE
+  // person from the roster, and no row may name anybody else.
+  //
+  // ⚠️ **AND THE BOTH-DIRECTIONS CONTROL IS THE LOAD-BEARING HALF** (rule 4):
+  // asserting only "they are all on the roster" would pass over a corpus where
+  // one person both proposed and decided everything — which is precisely the
+  // geometry that makes the four-eyes ADMIT arm unreachable while looking fine.
+  it('⚠️ EVERY ACTOR IS A SAMPLE PERSON — named, on the roster, and never anybody else', () => {
     const actors = pslStore
       .all()
       .flatMap((r) => [
@@ -298,7 +321,24 @@ describe('⚠️ THE HONESTY LAYERS SURVIVED THE MOVE FROM FIXTURE TO SEED', () 
       ])
       .filter((a) => a !== null);
     expect(actors.length).toBeGreaterThan(10);
-    for (const a of actors) expect(a!.kind).toBe('UNATTRIBUTED');
+    for (const a of actors) {
+      expect(a!.kind).toBe('RESOLVED');
+      expect(a!.kind === 'RESOLVED' && isSampleActor(a!.person.personId)).toBe(true);
+    }
+  });
+
+  it('⚠️ AND THE PROPOSER IS NOT THE DECIDER — or the four-eyes ADMIT arm is unreachable', () => {
+    const decided = pslStore.all().filter((r) => r.decidedBy !== null);
+    expect(decided.length, 'no decided row means this asserts nothing').toBeGreaterThan(0);
+    for (const r of decided) {
+      const proposer = r.proposedBy.kind === 'RESOLVED' ? r.proposedBy.person.personId : null;
+      const decider = r.decidedBy!.kind === 'RESOLVED' ? r.decidedBy!.person.personId : null;
+      expect(proposer, r.id).not.toBeNull();
+      expect(decider, r.id).not.toBeNull();
+      expect(decider, `${r.id}: seeded self-decision — the admit arm cannot fire`).not.toBe(
+        proposer,
+      );
+    }
   });
 
   it('⚠️ THE FOUR CAP FIELDS TRAVEL TOGETHER — now a property of the machine', () => {

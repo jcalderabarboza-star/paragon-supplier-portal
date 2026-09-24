@@ -158,21 +158,51 @@ describe('§82 · the supplier declares', () => {
     expect(doc.declaration!.scopeText).toBe(DECLARATION.scopeText);
   });
 
-  it('⚠️ declaredAt AND declaredBy ARE MINTED, NOT ACCEPTED (C10 §6.2)', async () => {
+  // ⚠️ **THIS SPEC USED TO ASSERT THE EXACT BEHAVIOUR C10 §6.2 RULES OUT, AND
+  // THE FIX MADE IT RED — WHICH IS THE FINDING, NOT THE BREAKAGE.** It dispatched
+  // a FORGED `declaredBy` and asserted the act SUCCEEDED with the forgery
+  // *ignored*: `expect(doc.declaration!.declaredBy).toEqual(NO_PERSON)`. §6.2
+  // names that precisely and refuses it — *"not ignored, not overwritten, not
+  // silently replaced by the session's. Refused, loudly"* — because a silent
+  // correction of an attribution is **a caller that believes it attributed an
+  // act and a record that says somebody else did**. The old assertion was the
+  // silent correction, written down as the expected result.
+  //
+  // Both halves are still proved, and the attribution half is now STRONGER: the
+  // forgery does not land (it never did) AND the act is refused by name (it was
+  // not). `declaredAt` keeps its own assertion, because a backdated CLOCK is a
+  // different defect from a forged ACTOR and only the second is an attribution.
+  it('⚠️ A FORGED declaredBy IS REFUSED BY NAME, NOT SILENTLY IGNORED (C10 §6.2)', async () => {
     const res = await svc.dispatch(backOffice, {
       transitionId: 't_supplierdoc_declare',
       entity: 'supplierDocument',
       payload: {
         ...DECLARATION,
         supplierId: 'sup-007',
-        // A caller backdating its own declaration against an expiry deadline,
-        // and naming whoever it likes as the declarer. Both must be ignored.
+        declaredBy: { kind: 'RESOLVED', person: { personId: 'p1' } },
+      },
+    });
+    expect(res.status).toBe('failed');
+    expect(res.reason).toContain('ACTOR_IN_PAYLOAD');
+    expect(res.reason).toContain('declaredBy');
+    // Nothing was written at all — the refusal is not a partial write.
+    expect(res.entityId).toBeUndefined();
+  });
+
+  it('⚠️ declaredAt IS MINTED, NOT ACCEPTED — a caller cannot backdate itself', async () => {
+    const res = await svc.dispatch(backOffice, {
+      transitionId: 't_supplierdoc_declare',
+      entity: 'supplierDocument',
+      payload: {
+        ...DECLARATION,
+        supplierId: 'sup-007',
+        // A caller backdating its own declaration against an expiry deadline.
         declaredAt: '1999-01-01T00:00:00.000Z',
-        declaredBy: { kind: 'RESOLVED', person: { personId: 'p1', displayName: 'Forged' } },
       },
     });
     const doc = supplierDocumentStore.get(res.entityId!)!;
     expect(doc.declaration!.declaredAt).not.toBe('1999-01-01T00:00:00.000Z');
+    // And the actor is the SESSION's, which today is an honest absence.
     expect(doc.declaration!.declaredBy).toEqual(NO_PERSON);
     expect(doc.declaration!.declaredBy.kind).toBe('UNATTRIBUTED');
   });

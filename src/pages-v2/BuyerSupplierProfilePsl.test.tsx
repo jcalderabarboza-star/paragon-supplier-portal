@@ -157,9 +157,14 @@ describe('BuyerSupplierProfile — the PSL tab (EN)', () => {
     expect(body).toContain('150 days');
     expect(body).toMatch(/Override recorded for this listing/);
     expect(body).toMatch(/must be re-taken before the next campaign/);
-    // ⚠️ AND THE DECIDER IS A SENTENCE, NEVER A NAME. Every actor in this tree
-    // is UNATTRIBUTED; a surface that printed a name would be inventing one.
-    expect(body).toMatch(/Recorded without an identified person/);
+    // ⚠️ **THIS READ "THE DECIDER IS A SENTENCE, NEVER A NAME", AND THE SEEDED
+    // CORPUS NOW NAMES ONE (R4).** The old line rested on *"Every actor in this
+    // tree is UNATTRIBUTED; a surface that printed a name would be inventing
+    // one."* A roster person is not invented — but it is not a REAL person
+    // either, so the replacement asserts the thing that now matters: the label
+    // is rendered WITH ITS SAMPLE MARKER. A decider printed as a bare name here
+    // would be the one place in the portal a demo identity reads as a sign-in.
+    expect(body).toMatch(/Compliance 1 \(SAMPLE\)/);
   });
 
   it('⚠️ THE CEILING-BOUNDED WORDING STILL RENDERS — on a SYNTHETIC row', () => {
@@ -284,14 +289,16 @@ describe('BuyerSupplierProfile — the PSL tab (ID)', () => {
     expect(body).toContain('Cakupan');
     expect(body).toContain('Sumber Tunggal');
     expect(body).toContain('Dipublikasikan');
-    expect(body).toContain('Tercatat tanpa identitas orang');
+    // The ID marker, and it is deliberately a DIVERGENT token: `CONTOH` is not
+    // spelled the way English spells it, so this assertion can actually fail.
+    expect(body).toContain('(CONTOH)');
 
     // The EN chrome must be GONE — the half a "does the ID string appear?"
     // check cannot make.
     expect(body).not.toContain('Preferred Supplier List');
     expect(body).not.toContain('Scope');
     expect(body).not.toContain('Sole Source');
-    expect(body).not.toContain('Recorded without an identified person');
+    expect(body).not.toContain('(SAMPLE)');
     // ⚠️ But the DATA must survive untranslated: a material code is opaque
     // (C9 §3) and a justification is authored fixture prose, not chrome.
     expect(body).toContain('RM-PSTN-7150');

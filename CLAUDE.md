@@ -246,10 +246,71 @@ mechanisms whose success signals said nothing about the damage they did.
 > 
 > ⚠️ **AND IMPORTER PRESENCE IS NOT VERB COVERAGE (`IMPORTER-PRESENCE-IS-NOT-VERB-COVERAGE-01`, §72a).** `BuyerRequisitions` imported the guard, rendered four of them, and still shipped a live **New PR** button to a seat holding no `pr:create` — because all four guarded verbs act on a document already selected and the CREATE verb lives in the page header. Derive the exposure as **(surface × verb) → guarded?**, never as **surface → imports the guard?**, and derive the surfaces from BOTH dispatch families (`commandHooks` AND the `sdc*Hooks` that call `svc.commands.dispatch` directly — a `commandHooks`-only matcher misses seven verbs).
 >
-> The resolved actor is a SEAM, not a person: `CurrentIdentity.actor` is always
-> `UNATTRIBUTED: NO_PERSON_IN_SESSION`. **C10 §6.2's payload-refusal half is NOT
-> built** and is guarded by a tripwire in `simUsrNamespace.test.ts` — the moment
-> shipped code constructs a `RESOLVED` actor, the refusal must land first.
+> ⚠️ **SAMPLE IDENTITIES EXIST, AND THE TWO SENTENCES THAT STOOD HERE ARE BOTH
+> RETRACTED RATHER THAN EDITED.** They read: *"The resolved actor is a SEAM, not
+> a person: `CurrentIdentity.actor` is always `UNATTRIBUTED:
+> NO_PERSON_IN_SESSION`. **C10 §6.2's payload-refusal half is NOT built** and is
+> guarded by a tripwire in `simUsrNamespace.test.ts` — the moment shipped code
+> constructs a `RESOLVED` actor, the refusal must land first."*
+>
+> **The second clause was ALREADY FALSE when it was last read**, and that is the
+> part worth keeping: `PR_APPROVAL_ATTRIBUTED` (`policies.ts`) had shipped §6.2's
+> refusal half for one verb and said so in its own header — *"THIS IS C10 §6.2's
+> SECOND HALF, AND IT IS THE FIRST IMPLEMENTATION OF IT IN THE TREE."* A
+> not-built claim is the shape nobody re-measures, because a blocker is why you
+> stopped (`FALSE-MECHANISM-MUST-NOT-BE-FILED-01`). **Derive it; do not read it
+> here.**
+>
+> As built: a seat may act as a SAMPLE user chosen from
+> `services/identity/sampleRoster.ts`. **Do not restate the roster size or its
+> members** — derive them from `SAMPLE_PEOPLE`; `sampleRoster.test.ts` derives
+> the four-eyes reachability from `SYSTEM_ROLES` and fails if either direction of
+> either check becomes unreachable. It is **OPT-IN**: the seat still opens
+> `UNATTRIBUTED: NO_PERSON_IN_SESSION`, so every unattributed render path stays
+> reachable and probeable.
+>
+> ⚠️ **§6.2's refusal is now GENERALISED TO EVERY VERB AND LIVES IN THE
+> DISPATCHER** (`ACTOR_IN_PAYLOAD`), not in a hook per flow — a per-flow hook is
+> a list, and a list decays each time a flow is added. It refuses **BY KEY, never
+> by value-shape**, over a population pinned bilaterally to the fields declared
+> `ActorAttribution` (`attributionKeys.test.ts`). `setBy` and `grantedBy` have
+> left their `requiredFields`; `grantedBy` was a LIVE product path.
+>
+> ⚠️ **A STAMP CARRIES `personId` ONLY (C10 §8.2 / D-ID-7, Amendment 1).**
+> `displayName` is deleted from `ActingPerson`; the label is resolved at read by
+> the ONE resolver (`services/identity/personLabel.ts`), which is what makes the
+> `(SAMPLE)` marker structural instead of five call sites remembering it.
+> `personLabelGuard.test.ts` derives the render population from source.
+>
+> ⚠️ **AND A REFUSAL IS A RENDER SITE TOO — THE HALF THE FIRST BUILD MISSED.**
+> A policy refusal still interpolates the `personId` (the developer trail, and
+> `materialRequestCommand.test.ts` pins it), but `describeRefusal` appends that
+> sentence verbatim, so a surface reading `refusalText(r) ?? r` printed
+> `sim-usr-procurement-1` into a toast. **Browser QA found it; no spec did.**
+> Fixed the way `pslRefusal.ts` already did it — key on the refusal HEAD, render
+> your own copy, fill `{{person}}` from `personLabel` — and **do not restate
+> which heads name a person**: `personNamingRefusal.test.ts` re-derives them from
+> `policies.ts` every run and requires each to be owned by a key map or provably
+> unreachable from a surface. The one exemption (`SAMPLE_ACTOR_CANNOT_LOOSEN`) is
+> re-earned every run by asserting no surface dispatches `t_enforcement_set`, so
+> it becomes a red test rather than a silent leak the day one does.
+>
+> ⚠️ **AND THE TWO LOCKS THAT RUN OPPOSITE TO FOUR-EYES ARE THE THING TO READ
+> BEFORE TOUCHING THIS LANE.** Every other identity check gets STRICTER when an
+> actor resolves. The enforcement LOOSENING gate and `overrideCompletes` run the
+> other way: both refused everything *because nobody could be named*, so a roster
+> would have OPENED them silently and an append-only ledger would record that a
+> `sim-usr-*` person accepted a governance risk. Both now refuse a sample actor
+> BY NAME, and the refusal is kept distinguishable from the `UNATTRIBUTED` one —
+> *"nobody could be named"* and *"somebody was named and they are not real"* are
+> different facts. A **non-sample** `RESOLVED` actor is still admitted, probed in
+> a spec, or the locks would delete the lane rather than guard it.
+>
+> ⚠️ **ROSTER MEMBERSHIP, NEVER A `sim-usr-` PREFIX MATCH.** The prefix may be
+> read as a string to decide something in exactly ONE place —
+> `simUsrNamespace.test.ts`, the C10 §6.3 pin, whose job is policing the
+> spelling. A prefix check says yes to `sim-usr-anything`, including a value a
+> caller invented; a roster lookup does not.
 >
 > **AUTHORISATION IS NOW VISIBLE (§65).** The identity panel (`IdentityPanel`,
 > in the avatar) states the seat's role and the scope it grants, and is the ONE

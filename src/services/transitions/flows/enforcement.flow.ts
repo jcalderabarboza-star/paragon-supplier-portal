@@ -66,7 +66,11 @@ export const enforcementFlow: FlowDefinition = {
       // unattributed WITH THE REASON). `setAt` is store-assigned and therefore
       // never a payload field: a caller that could set it could backdate its own
       // audit entry (the `pinnedAt` discipline).
-      requiredFields: ['mode', 'setBy'],
+      // ⚠️ **`setBy` LEFT THIS LIST (C10 §6.2 / §8.3, 2026-09-24).** It read
+      // `['mode', 'setBy']`, which made the attribution a CALLER-SUPPLIED
+      // payload field — the seam §6.2 names ATTRIBUTION BY ASSERTION. The actor
+      // is now taken from `scope.actor`, and the dispatcher refuses the key.
+      requiredFields: ['mode'],
       policyHooks: [POLICY_HOOKS.ENFORCEMENT_SET_GOVERNED],
       surfaceable: {
         surfaced: false,

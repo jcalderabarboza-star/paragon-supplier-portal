@@ -59,7 +59,7 @@
 
 import { MockCommandService } from './MockCommandService';
 import { materialRequestStore } from './stores/materialRequestStore';
-import { NO_PERSON } from '../../../context/noPerson';
+import { SAMPLE_ACTORS } from '../../identity/sampleActors';
 import type { CommandResult, QueryScope } from '../types';
 
 /**
@@ -134,7 +134,11 @@ const PROCUREMENT_SCOPE: QueryScope = {
   personaType: 'buyer',
   supplierId: null,
   businessRoles: ['procurement'],
-  actor: NO_PERSON,
+  // A SAMPLE REQUESTER (R4) — the same person the PSL seed proposes as, so one
+  // demo seat reaches BOTH four-eyes refusals. The deciding lane is `planning`
+  // here and `compliance` there, so the admitted direction differs per lane and
+  // neither is reachable by accident.
+  actor: SAMPLE_ACTORS.procurement1,
 };
 
 export interface MaterialRequestSeedOutcome {

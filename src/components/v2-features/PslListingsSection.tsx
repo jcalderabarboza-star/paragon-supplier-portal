@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { personLabel } from '../../services/identity/personLabel';
 
 import StatusPill from '../ui-v2/StatusPill';
 import { statusLabelKey } from '../../lib/statusLabel';
@@ -38,6 +39,7 @@ import {
   usePslCapOverride,
 } from '../../services/query/commandHooks';
 import { DataError, type CommandResult } from '../../services/data/types';
+import ActorPreActNotice from '../ui-v2/ActorPreActNotice';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // THE SUPPLIER PROFILE'S PSL SECTION — every listing, with what decided it.
@@ -78,7 +80,11 @@ import { DataError, type CommandResult } from '../../services/data/types';
 const Actor: React.FC<{ actor: ActorAttribution | null }> = ({ actor }) => {
   const { t } = useTranslation();
   if (actor === null) return <span className="text-text-tertiary">{t('psl.detail.decidedByNone')}</span>;
-  if (actor.kind === 'RESOLVED') return <span>{actor.person.displayName}</span>;
+  // Resolved at read from the person registry, never from the record (C10
+  // §8.2 / D-ID-7). `personLabel` attaches the SAMPLE marker, so a sample
+  // proposer cannot render as a bare name here.
+  if (actor.kind === 'RESOLVED')
+    return <span>{personLabel(actor.person.personId, t)}</span>;
   return <span className="text-text-tertiary italic">{t('psl.actor.unattributed')}</span>;
 };
 
@@ -360,7 +366,7 @@ const PslListingCard: React.FC<{ listing: PslListing; nowIso: string; highlighte
           {/* ⚠️ BEFORE THE ACT, NEVER AFTER IT. Every verb here records against
               `UNATTRIBUTED: NO_PERSON_IN_SESSION`, and a person should meet
               that before they commit rather than discover it in a ledger. */}
-          <p className="text-xs text-text-tertiary">{t('psl.notice.unattributed')}</p>
+          <ActorPreActNotice unattributedKey="psl.notice.unattributed" testId="psl-pre-act" />
 
           {/* ── PUBLISH — its own atom, its own lane (`procurement`) ───────
               ⚠️ ONCE ONLY AND NEVER UNDONE (rulings b and c). When the listing

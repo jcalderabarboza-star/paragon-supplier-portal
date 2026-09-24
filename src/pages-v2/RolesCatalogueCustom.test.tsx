@@ -55,7 +55,9 @@ const grantOne = () =>
       displayName: NAME,
       description: 'The dock, after hours.',
       adds: ['invoice:dispute'],
-      grantedBy: NOBODY,
+      // No `grantedBy` — the actor rides the SCOPE (C10 §6.2). The STORED row
+      // further down still carries one, and must: `grantedBy` is a stored
+      // FIELD; what moved is the door it arrives through, not the record shape.
     },
   });
 
