@@ -53,13 +53,25 @@ const rowFor = async (name: string): Promise<HTMLElement> => {
 };
 
 describe('REACH — the fixture reaches all three Directory cells', () => {
-  it('sup-002 is IN_FORCE, sup-007 is LAPSED and sup-001 is NOT_LISTED', () => {
+  // ⚠️ **THE LAPSED EXAMPLE MOVED FROM sup-007 TO sup-008 AT PSL P4, AND THE
+  // ASSERTION IS RE-POINTED RATHER THAN RELAXED.** P4 seeded sup-007 a
+  // PUBLISHED, EXPIRING listing so the supplier-facing view would not render
+  // empty for the default seat — and `Expiring` IS in force, so sup-007's
+  // Directory verdict moved LAPSED → IN_FORCE. Measured across the whole roster
+  // at that moment: NO supplier was LAPSED, which would have made the render
+  // spec below unsatisfiable rather than merely wrong. `pslSeed.ts` carries a
+  // lapsed row for sup-008 for exactly this reason and says so at its site.
+  // Every assertion here is the same assertion, about a different named member.
+  it('sup-002 is IN_FORCE, sup-008 is LAPSED and sup-001 is NOT_LISTED', () => {
     // Asserted against the SEAM, so the render specs below cannot be vacuous in
     // a way the page alone would hide.
     expect(pslStatusFor('sup-002', null, DECLARED_PRESENT).kind).toBe('IN_FORCE');
-    expect(pslStatusFor('sup-007', null, DECLARED_PRESENT).kind).toBe('LAPSED');
+    expect(pslStatusFor('sup-008', null, DECLARED_PRESENT).kind).toBe('LAPSED');
     expect(pslStatusFor('sup-001', null, DECLARED_PRESENT).kind).toBe('NOT_LISTED');
     expect(pslRows().length).toBeGreaterThan(5);
+    // ⚠️ AND sup-007 IS NOW IN FORCE — stated so the move above is a measured
+    // fact in this file rather than a claim in a comment.
+    expect(pslStatusFor('sup-007', null, DECLARED_PRESENT).kind).toBe('IN_FORCE');
   });
 });
 
@@ -76,7 +88,7 @@ describe('BuyerSuppliers — the PSL column (EN)', () => {
     const inForce = within(await rowFor('PT Sample Specialty Fats')).getByTestId(
       'psl-cell-status',
     );
-    const lapsed = within(await rowFor('PT Sample Packaging Indonesia')).getByTestId(
+    const lapsed = within(await rowFor('PT Sample Carton Packaging')).getByTestId(
       'psl-cell-lapsed',
     );
     const none = within(await rowFor('PT Sample Oleochemicals')).getByTestId(
@@ -148,7 +160,7 @@ describe('BuyerSuppliers — the PSL column (ID)', () => {
     const inForce = within(await rowFor('PT Sample Specialty Fats')).getByTestId(
       'psl-cell-status',
     );
-    const lapsed = within(await rowFor('PT Sample Packaging Indonesia')).getByTestId(
+    const lapsed = within(await rowFor('PT Sample Carton Packaging')).getByTestId(
       'psl-cell-lapsed',
     );
     const none = within(await rowFor('PT Sample Oleochemicals')).getByTestId(

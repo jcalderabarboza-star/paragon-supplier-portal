@@ -173,6 +173,19 @@ export const usePslListings = () =>
     svc.procurement.getPslListings(scope),
   );
 
+// ⚠️ **PSL P4 — THE SUPPLIER'S OWN VIEW, AND IT IS A SEPARATE HOOK ON A
+// SEPARATE KEY.** `usePslListings` above is the BUYER read; this one answers
+// `[]` to a buyer and the buyer read answers `[]` to a supplier, so neither can
+// stand in for the other. Two keys rather than one because the two reads return
+// DIFFERENT TYPES — a shared key would let a buyer's cached `PslListing[]`
+// satisfy a supplier's `SupplierPslView[]` request on a persona switch, which is
+// the tenancy bleed `scopeKey` exists to prevent, arriving through the type
+// system instead of through the cache.
+export const useMyPslListings = () =>
+  useServiceQuery(['procurement', 'myPslListings'], (svc, scope) =>
+    svc.procurement.getMyPslListings(scope),
+  );
+
 export const useIntakeReview = () =>
   useServiceQuery(['procurement', 'prIntake'], (svc, scope) =>
     svc.procurement.getPrIntake(scope),

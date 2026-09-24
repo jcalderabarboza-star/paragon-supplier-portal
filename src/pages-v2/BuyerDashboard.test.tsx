@@ -85,7 +85,22 @@ const derived = async () => {
   const registry = (await mockDataService.risk.getComplianceRegistry(SCOPE)).items;
   const responses = (await mockDataService.collaboration.getOwnRequirementResponses(SCOPE))
     .items;
-  return { invoices, pos, rfqs, receipts, asns, contracts, obligations, documents, registry, responses };
+  // PSL P4 — read through the SAME seam the page reads, so the derivation this
+  // file compares against cannot diverge from the page's own input.
+  const listings = (await proc.getPslListings(SCOPE)).items;
+  return {
+    invoices,
+    pos,
+    rfqs,
+    receipts,
+    asns,
+    contracts,
+    obligations,
+    documents,
+    registry,
+    responses,
+    listings,
+  };
 };
 
 const seatWith = (roles: readonly string[]): CurrentIdentity => ({
@@ -187,7 +202,17 @@ describe('⚠️ EVERY FIGURE EQUALS ITS DERIVATION', () => {
     await screen.findByText('Good morning — here is what needs you today');
 
     const shown = new Set(alertGroups({ ...d, nowIso: PRESENT_ISO }).map((g) => g.id));
-    for (const id of ['overdueInvoices', 'halal', 'obligations', 'receipts', 'disputes', 'contracts']) {
+    for (const id of [
+      'overdueInvoices',
+      'halal',
+      'obligations',
+      'receipts',
+      'disputes',
+      'contracts',
+      // PSL P4 — both new groups are subject to the same rule.
+      'pslExpiring',
+      'pslExpiredListed',
+    ]) {
       if (shown.has(id as never)) continue;
       expect(screen.queryByTestId(`alert-${id}`), id).not.toBeInTheDocument();
     }

@@ -66,6 +66,14 @@ export const pslEn: Record<string, string> = {
   'psl.detail.capDays': '{{days}} days',
   'psl.detail.capSource.LISTING_OVERRIDE': 'Override recorded for this listing',
   'psl.detail.capSource.NO_SETTING_RECORDED': 'Portal default — no cap has been set',
+  // ⚠️ PORTAL_DEFAULT WAS MISSING IN BOTH LOCALES UNTIL P4, AND NOTHING
+  // COULD SEE IT. The consumer is a TEMPLATE key — `PslListingsSection.tsx`
+  // renders t(`psl.detail.capSource.${cap.source}`) — so neither `tsc` nor
+  // `GlossaryOf<PslCapSource>`'s exhaustiveness check reaches it, and the arm
+  // is LIVE: the moment `t_psl_cap_set` records a portal default, every
+  // listing without its own override returns this source.
+  // `pslCapSourceCopy.guard.test.ts` now derives the members from the union.
+  'psl.detail.capSource.PORTAL_DEFAULT': 'Portal default — a cap has been set',
   'psl.detail.capSource.CEILING_BOUNDED': 'Bounded by the platform ceiling',
   'psl.detail.capJustification': 'Cap justification',
   'psl.detail.justification': 'Justification',
@@ -121,6 +129,11 @@ export const pslEn: Record<string, string> = {
   'psl.queue.nav': 'Preferred suppliers',
   'psl.queue.tab.proposed': 'Awaiting decision',
   'psl.queue.tab.all': 'All listings',
+  'psl.queue.tab.expiring': 'Expiring',
+  'psl.queue.tab.expiredListed': 'Expired, still listed',
+  'psl.queue.emptyExpiring': 'No listing is inside its expiry window.',
+  'psl.queue.emptyExpiredListed':
+    'No listing has run past its effective end date while still listed.',
   'psl.queue.empty': 'No listing is waiting on a decision.',
   'psl.queue.emptyAll': 'No supplier holds a listing yet.',
   'psl.queue.emptyHint': 'Raise one with New listing.',
@@ -230,6 +243,41 @@ export const pslEn: Record<string, string> = {
     'A validity cap is a whole number of days greater than zero.',
   'psl.refusal.capJustificationBlank':
     'An override with no justification is an unexplained exception. Write why this listing runs to a different cap from every other one.',
+
+  // ── P4 · WHAT THE SUPPLIER READS ON /supplier/performance ─────────────
+  //
+  // ⚠️ **PROSE ONLY. NOT ONE STATUS WORD IS RE-KEYED HERE.** `Sole Source`,
+  // `Mandatory`, `Validated`, `Listed`, `Expiring`, `Expired`, `Withdrawn`,
+  // `Scheduled`, `Proposed` and `Rejected` all already resolve through
+  // `statusLabel.ts` in BOTH locales with tones from `statusTone.ts` — measured
+  // before a word was written. A second vocabulary here is how one axis ends up
+  // with two sets of words that drift.
+  //
+  // ⚠️ **THE COPY NEVER PROMISES AN ACT.** There is no supplier verb in the
+  // PSL machine — not one — so a sentence inviting the supplier to renew,
+  // appeal or respond would be a false affordance in the COPY, which is the one
+  // place a handler-based census is blind to (`label-names-wrong-verb`).
+  'psl.supplier.title': 'Your preferred-supplier standing',
+  'psl.supplier.subtitle':
+    'How Paragon procurement has designated you, for which materials, and until when. This page is private to you.',
+  'psl.supplier.empty':
+    'Paragon has not shared a preferred-supplier designation with you.',
+  'psl.supplier.emptyHint':
+    'Designations are decided by the procurement team. Nothing is required from you here.',
+  'psl.supplier.scope': 'Applies to',
+  'psl.supplier.from': 'In effect from',
+  'psl.supplier.until': 'Until',
+  'psl.supplier.sharedOn': 'Shared with you on {{date}}',
+  'psl.supplier.noEnd': 'No end date recorded',
+  // R-D · two distinct sentences. "Never qualified" and "qualified, and the
+  // qualification lapsed" are different facts and only the second implies an
+  // act somebody failed to take — `bestPslStatus`'s own rule, on the surface.
+  'psl.supplier.expiredLine': 'This designation ran until {{date}}.',
+  'psl.supplier.withdrawnLine':
+    'This designation was withdrawn on {{date}} and no longer applies.',
+  // R-F · the lapse line. States the date; asks for nothing.
+  'psl.supplier.expiringLine':
+    'Your preferred-supplier status for {{codes}} lapses on {{date}}.',
 };
 
 export const pslId: Record<string, string> = {
@@ -272,6 +320,8 @@ export const pslId: Record<string, string> = {
   'psl.detail.capDays': '{{days}} hari',
   'psl.detail.capSource.LISTING_OVERRIDE': 'Pengesampingan tercatat untuk pencatatan ini',
   'psl.detail.capSource.NO_SETTING_RECORDED': 'Bawaan portal — belum ada batas yang ditetapkan',
+  'psl.detail.capSource.PORTAL_DEFAULT':
+    'Bawaan portal — batas telah ditetapkan',
   'psl.detail.capSource.CEILING_BOUNDED': 'Dibatasi oleh plafon platform',
   'psl.detail.capJustification': 'Justifikasi batas',
   'psl.detail.justification': 'Justifikasi',
@@ -315,6 +365,11 @@ export const pslId: Record<string, string> = {
   'psl.queue.nav': 'Pemasok preferensi',
   'psl.queue.tab.proposed': 'Menunggu keputusan',
   'psl.queue.tab.all': 'Semua pencatatan',
+  'psl.queue.tab.expiring': 'Akan kedaluwarsa',
+  'psl.queue.tab.expiredListed': 'Kedaluwarsa, masih terdaftar',
+  'psl.queue.emptyExpiring': 'Tidak ada pencatatan yang berada dalam jendela kedaluwarsa.',
+  'psl.queue.emptyExpiredListed':
+    'Tidak ada pencatatan yang melewati tanggal berakhir efektifnya selagi masih terdaftar.',
   'psl.queue.empty': 'Tidak ada pencatatan yang menunggu keputusan.',
   'psl.queue.emptyAll': 'Belum ada pemasok yang memiliki pencatatan.',
   'psl.queue.emptyHint': 'Ajukan satu melalui Pencatatan baru.',
@@ -409,4 +464,23 @@ export const pslId: Record<string, string> = {
     'Batas masa berlaku adalah bilangan bulat hari yang lebih besar dari nol.',
   'psl.refusal.capJustificationBlank':
     'Pengesampingan tanpa justifikasi adalah pengecualian yang tidak dijelaskan. Tulis mengapa pencatatan ini memakai batas yang berbeda dari yang lain.',
+
+  // ── P4 · yang dibaca pemasok di /supplier/performance ───────────────
+  'psl.supplier.title': 'Status pemasok pilihan Anda',
+  'psl.supplier.subtitle':
+    'Bagaimana pengadaan Paragon menetapkan Anda, untuk material apa, dan sampai kapan. Halaman ini bersifat pribadi bagi Anda.',
+  'psl.supplier.empty':
+    'Paragon belum membagikan penetapan pemasok pilihan kepada Anda.',
+  'psl.supplier.emptyHint':
+    'Penetapan diputuskan oleh tim pengadaan. Tidak ada yang diperlukan dari Anda di sini.',
+  'psl.supplier.scope': 'Berlaku untuk',
+  'psl.supplier.from': 'Berlaku sejak',
+  'psl.supplier.until': 'Sampai',
+  'psl.supplier.sharedOn': 'Dibagikan kepada Anda pada {{date}}',
+  'psl.supplier.noEnd': 'Tidak ada tanggal berakhir yang tercatat',
+  'psl.supplier.expiredLine': 'Penetapan ini berlaku sampai {{date}}.',
+  'psl.supplier.withdrawnLine':
+    'Penetapan ini ditarik pada {{date}} dan tidak lagi berlaku.',
+  'psl.supplier.expiringLine':
+    'Status pemasok pilihan Anda untuk {{codes}} berakhir pada {{date}}.',
 };

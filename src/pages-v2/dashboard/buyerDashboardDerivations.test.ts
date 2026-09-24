@@ -43,6 +43,7 @@ import type {
 import type { ContractObligation } from '../../data/mockObligations';
 import type { RFQ } from '../../data/mockRfqs';
 import { mockDataService } from '../../services/data/mock/mockDataService';
+import { pslStore } from '../../services/data/mock/stores/pslStore';
 import type { QueryScope } from '../../services/data/types';
 import type { RequirementResponse } from '../../services/sdc/types';
 import {
@@ -56,6 +57,7 @@ import {
 import { invoiceTier, grTier } from '../widgets/buyerDerivations';
 
 import {
+  ALERT_GROUP_IDS,
   alertGroups,
   buyerLaneIds,
   QUEUE_ROW_ATOMS,
@@ -522,6 +524,14 @@ describe('alertGroups', () => {
     obligations,
     contracts,
     responses,
+    // PSL P4. ⚠️ **READ AT MODULE EVALUATION, AND THE STORE SEEDS EMPTY** —
+    // `seedPslListings` is async and a describe body cannot await, so this is
+    // `[]` here and the two PSL groups are correctly ABSENT from `groups`
+    // below. That is stated rather than quietly relied on: their populated
+    // behaviour is covered in `BuyerDashboardPslAlerts.test.tsx`, against the
+    // seeded store, by named ids. What this file proves about them is the
+    // zero-group rule — an empty population yields no card.
+    listings: pslStore.all(),
     nowIso: P,
   };
   const groups = alertGroups(input);
@@ -577,7 +587,16 @@ describe('alertGroups', () => {
     expect(softened.find((g) => g.id === 'halal')?.severity).toBe('warning');
   });
 
-  it('no group exceeds the six the layout admits', () => {
-    expect(groups.length).toBeLessThanOrEqual(6);
+  it('no group exceeds the vocabulary the layout admits', () => {
+    // ⚠️ DERIVED, NOT RESTATED. This read `toBeLessThanOrEqual(6)` against a
+    // union of six; P4 added two and the number would have been wrong in
+    // exactly the way `FLOOR-IN-PROSE-01` describes. `ALERT_GROUP_IDS` is now
+    // the vocabulary and the type comes off it, so this bound cannot go stale.
+    expect(groups.length).toBeLessThanOrEqual(ALERT_GROUP_IDS.length);
+    // And the anti-vacuity half: the strip is not empty, so the bound is a
+    // bound on something.
+    expect(groups.length).toBeGreaterThan(0);
+    // Every rendered id is a member of the declared vocabulary.
+    for (const g of groups) expect(ALERT_GROUP_IDS).toContain(g.id);
   });
 });

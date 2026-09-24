@@ -149,14 +149,40 @@ describe('THE PROPERTY, over every file in src/', () => {
     expect(files.map(rel)).toContain('pages-v2/SupplierDeliveryAgreements.tsx');
   });
 
+  // ⚠️ **ONE `expect` PER FILE, NOT ONE PER NEWLINE — THE CLAIM IS UNCHANGED
+  // AND THE COST IS NOT.** This walk used to call `expect()` INSIDE the
+  // character loop, so it ran roughly three hundred thousand times over ~10.5
+  // MB of source, building the `@ ${i}` message EAGERLY on every iteration —
+  // including the overwhelming majority that pass. Measured at PSL P4: 10.3 s,
+  // 11.9 s, 10.8 s in isolation against a 30 s budget, about 2.6x headroom, on
+  // a whole-tree walk this file's own siblings already proved insufficient at
+  // 4.5x (`pageWidth.guard` timed out in a full-suite run at that ratio). It
+  // duly timed out under `npm run gates`, which runs a build and two `tsc`
+  // passes before the suite.
+  //
+  // ⚠️ **THE CAUSE IS REMOVED RATHER THAN BUDGETED, WHICH IS THE ORDER #369
+  // SET** when it gave `chaosAmbience` a necessary-condition pre-filter instead
+  // of a larger timeout: a budget buys silence, removing the work buys
+  // headroom, and only the second helps the next seat who adds a file.
+  //
+  // ⚠️ **THE PROPERTY IS THE SAME PROPERTY, STATED AS A SET.** Before: for
+  // every index `i` where `text[i]` is a newline, `out[i]` is a newline.
+  // After: the set of those indices where `out` DISAGREES is empty. Identical
+  // claim, and the message now names the first offending offsets rather than
+  // dying on one of them.
   it("'blank' preserves length and every newline position, on every file", () => {
     for (const f of files) {
       const text = readFileSync(f, 'utf8');
       const out = stripSourceComments(text, 'blank', f);
       expect(out, rel(f)).toHaveLength(text.length);
+      const moved: number[] = [];
       for (let i = 0; i < text.length; i++) {
-        if (text[i] === '\n') expect(out[i], `${rel(f)} @ ${i}`).toBe('\n');
+        if (text[i] === '\n' && out[i] !== '\n') moved.push(i);
       }
+      expect(
+        moved,
+        `${rel(f)} — newline moved at ${moved.slice(0, 5).join(', ')}`,
+      ).toEqual([]);
     }
   }, 30000);
 

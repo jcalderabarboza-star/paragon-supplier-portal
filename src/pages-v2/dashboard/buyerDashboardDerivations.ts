@@ -543,6 +543,13 @@ export function queueRows(input: QueueInput): readonly QueueRow[] {
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { grTier, invoiceTier } from '../widgets/buyerDerivations';
+import {
+  pslExpiringRows,
+  pslExpiredStillListedRows,
+  PSL_EXPIRING_WINDOW_DAYS,
+  type PslCapSetting,
+} from '../../services/data/pslProjection';
+import type { PslListing } from '../../services/data/pslListing';
 import type { FlagSeverity } from '../../components/ui-v2/ExpandableWidget';
 
 /** The alert-card severities, ordered. `none` never reaches a card: a group
@@ -555,13 +562,34 @@ const SEVERITY_RANK: Readonly<Record<AlertSeverity, number>> = Object.freeze({
   info: 2,
 });
 
-export type AlertGroupId =
-  | 'overdueInvoices'
-  | 'halal'
-  | 'obligations'
-  | 'receipts'
-  | 'disputes'
-  | 'contracts';
+/**
+ * EVERY ALERT GROUP THE STRIP CAN HOLD.
+ *
+ * ⚠️ **THE ARRAY IS THE VOCABULARY AND THE TYPE IS DERIVED FROM IT**, the shape
+ * `PSL_STATUSES` already uses. It replaces a hand-written union beside a spec
+ * that asserted *"no group exceeds the six the layout admits"* — a cardinality
+ * in prose, which went stale the moment P4 added a seventh
+ * (`FLOOR-IN-PROSE-01`). Read off the array, that assertion re-derives itself.
+ */
+export const ALERT_GROUP_IDS = Object.freeze([
+  'overdueInvoices',
+  'halal',
+  'obligations',
+  'receipts',
+  'disputes',
+  'contracts',
+  /** PSL P4 · a listing inside `PSL_EXPIRING_WINDOW_DAYS`. */
+  'pslExpiring',
+  /**
+   * PSL P4 · a listing whose record still says `Listed` past its effective end
+   * date — the only PSL signal ruled CRITICAL, because the sourcing gate
+   * (`rfqSourcingGate`) reads `isPslInForce` and its answer has already changed
+   * with nobody told.
+   */
+  'pslExpiredListed',
+] as const);
+
+export type AlertGroupId = (typeof ALERT_GROUP_IDS)[number];
 
 export interface AlertGroup {
   readonly id: AlertGroupId;
@@ -579,6 +607,16 @@ export interface AlertInput {
   readonly obligations: readonly ContractObligation[];
   readonly contracts: readonly Contract[];
   readonly responses: readonly RequirementResponse[];
+  /**
+   * PSL P4. Passed IN rather than read from `pslStore` here, because
+   * `alertGroups` is pure over its input and a store read would make the
+   * dashboard's figures untestable at an injected instant.
+   */
+  readonly listings: readonly PslListing[];
+  /** The cap ledger the two PSL predicates bound their dates by. Optional
+   *  because `effectiveCap` defaults to the live store when it is omitted, and
+   *  every existing caller of this shape predates P4. */
+  readonly capSettings?: readonly PslCapSetting[];
   readonly nowIso: string;
 }
 
@@ -601,6 +639,15 @@ export function alertGroups(input: AlertInput): readonly AlertGroup[] {
   const receipts = receiptGroup(input.receipts);
   const disputes = openDisputeGroup(input.invoices, input.responses);
   const contracts = contractGroup(input.contracts, input.nowIso);
+  // `input.nowIso` as a PROPERTY, for the reason stated at the top of this
+  // function: a destructured instant classifies UNRESOLVED to
+  // `readingInstantGate` and would drag the `psl` family off its pin.
+  const pslExpiring = pslExpiringRows(input.listings, input.nowIso, input.capSettings);
+  const pslExpiredListed = pslExpiredStillListedRows(
+    input.listings,
+    input.nowIso,
+    input.capSettings,
+  );
 
   const all: readonly AlertGroup[] = [
     {
@@ -650,6 +697,37 @@ export function alertGroups(input: AlertInput): readonly AlertGroup[] {
       count: contracts.count,
       detail: { horizon: contracts.renewalHorizon },
       route: '/buyer/contracts',
+    },
+    // ── PSL P4 · R-C ────────────────────────────────────────────
+    //
+    // ⚠️ **BOTH COUNTS COME FROM THE SAME EXPORTED PREDICATE THE QUEUE PAGE
+    // FILTERS BY, AND THE ROUTE CARRIES THE TAB THAT APPLIES IT.** A buyer who
+    // clicks a card reading "2" lands on exactly those two rows. Two
+    // derivations of "which listings are expiring" would drift the first time
+    // one gained the cap ledger and the other did not —
+    // `COUNT-RESTATED-ACROSS-INSTRUMENTS-01` — and the drill-down is what makes
+    // a disagreement VISIBLE rather than merely detectable by a test.
+    {
+      id: 'pslExpiring',
+      severity: 'warning',
+      count: pslExpiring.length,
+      detail: { days: PSL_EXPIRING_WINDOW_DAYS },
+      route: '/buyer/preferred-suppliers?tab=expiring',
+    },
+    {
+      // CRITICAL, and it is the only PSL signal that is. The record still
+      // claims to grant something and it no longer does — which the SOURCING
+      // GATE has already acted on, silently, because `isPslInForce` went false
+      // on a calendar day rather than on an act.
+      id: 'pslExpiredListed',
+      severity: 'critical',
+      count: pslExpiredListed.length,
+      // `count` rather than `suppliers`: the card resolves this through
+      // `t(key, detail)`, and i18next needs the interpolation named `count`
+      // to pick `detail_one` vs `detail_other`. Browser QA read the
+      // unpluralised version back as "Across 1 suppliers".
+      detail: { count: new Set(pslExpiredListed.map((r) => r.supplierId)).size },
+      route: '/buyer/preferred-suppliers?tab=expiredListed',
     },
   ];
 

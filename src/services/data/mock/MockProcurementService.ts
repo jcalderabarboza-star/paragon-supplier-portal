@@ -18,7 +18,9 @@ import { purchaseRequisitionStore } from './stores/purchaseRequisitionStore';
 import { supplierApplicationStore } from './stores/supplierApplicationStore';
 import { materialRequestStore } from './stores/materialRequestStore';
 import { pslStore } from './stores/pslStore';
-import type { PslListing } from '../pslListing';
+import { isPublished, type PslListing } from '../pslListing';
+import { orderListingsForDisplay } from '../pslProjection';
+import { toSupplierPslView, type SupplierPslView } from '../pslSupplierView';
 import {
   INITIAL_CATALOG,
   INITIAL_CERTS,
@@ -571,6 +573,50 @@ export class MockProcurementService implements IProcurementService {
   async getPslListings(scope: QueryScope): Promise<Page<PslListing>> {
     if (scope.personaType !== 'buyer') return { items: [] };
     return { items: [...pslStore.all()] };
+  }
+
+  /**
+   * PSL P4 · THE SUPPLIER'S OWN PUBLISHED LISTINGS — the one sanctioned
+   * supplier-facing PSL read.
+   *
+   * ⚠️ **THE FIVE STEPS ARE SEPARATE STATEMENTS ON PURPOSE.** Each refusal and
+   * each filter is independently killable by a mutation probe; written as one
+   * chained expression a single mutation would remove two guarantees and the
+   * probe could not say which. `pslSupplierView.test.ts` kills each in turn and
+   * names the failing test.
+   *
+   * ⚠️ **NO WALL CLOCK.** `DECLARED_PRESENT` is the reading instant, forwarded
+   * into `toSupplierPslView`; `readingInstantGate` classifies this site as `P`.
+   * The whole portal is read at the declared present and a second clock here
+   * would make this the only supplier surface that drifts.
+   */
+  async getMyPslListings(scope: QueryScope): Promise<Page<SupplierPslView>> {
+    // 1 — PERSONA. A buyer has `getPslListings` and the queue page; answering
+    //     a buyer here would be a second buyer read with nobody's disclosure
+    //     rules on it.
+    if (scope.personaType !== 'supplier') return { items: [] };
+    // 2 — IDENTITY. `applySupplierScope`'s defence-in-depth line, restated
+    //     because this method projects rather than piping through it.
+    const supplierId = scope.supplierId;
+    if (!supplierId) return { items: [] };
+    // 3 — TENANCY. Its own filter.
+    const mine = pslStore.all().filter((r) => r.supplierId === supplierId);
+    // 4 — PUBLICATION (R5). Its own filter. `isPublished` reads null-or-not and
+    //     consults no clock — see `pslListing.ts`.
+    const published = mine.filter(isPublished);
+    // 5 — ORDER, then PROJECT. `orderListingsForDisplay` is the buyer side's own
+    //     ordering contract (in force first, then by restrictiveness, then by
+    //     the day they end), reused so the two sides cannot disagree about what
+    //     "first" means.
+    //
+    //     ⚠️ **ORDER-ONLY, NEVER `listingsForSupplier` — A MUTATION PROBE
+    //     CAUGHT THE DIFFERENCE.** `listingsForSupplier` filters by
+    //     `supplierId` as well as ordering, so calling it here made step 3
+    //     UNKILLABLE: deleting the tenancy filter above changed nothing,
+    //     because this line quietly reapplied it. The read then stated two
+    //     independent guarantees and held one.
+    const ordered = orderListingsForDisplay(published, DECLARED_PRESENT);
+    return { items: ordered.map((r) => toSupplierPslView(r, DECLARED_PRESENT)) };
   }
 
   // ─── Buyer command-center aggregates (buyer-only) ─────────────────────────

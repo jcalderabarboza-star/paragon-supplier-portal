@@ -382,9 +382,40 @@ export function listingsForSupplier(
   nowIso: string,
   ledger?: readonly PslCapSetting[],
 ): PslListing[] {
+  return orderListingsForDisplay(
+    rows.filter((r) => r.supplierId === supplierId),
+    nowIso,
+    ledger,
+  );
+}
+
+/**
+ * THE ORDER ALONE — no filtering of any kind.
+ *
+ * ⚠️ **SPLIT OUT OF `listingsForSupplier` BECAUSE A MUTATION PROBE PROVED THE
+ * COMBINED FUNCTION MADE A CALLER'S OWN TENANCY FILTER UNKILLABLE.** P4's
+ * supplier read states tenancy and publication as two independent filters, each
+ * required to be killable alone; but it then ordered through
+ * `listingsForSupplier`, which filters by `supplierId` a second time. Deleting
+ * the service's tenancy filter changed NOTHING and the probe came back
+ * SURVIVED — a guard that reads as two statements and is one.
+ *
+ * ⚠️ **THE DEFECT WAS NOT THE REDUNDANCY, IT WAS THE MASKING.** A duplicated
+ * filter is harmless until something relies on the first one being load-bearing;
+ * then the second one silently holds the invariant and nothing can tell you
+ * which. So the two jobs are now two functions, and a caller picks the one whose
+ * contract it actually wants.
+ *
+ * `listingsForSupplier` is unchanged for its existing callers: same filter, same
+ * order, same signature.
+ */
+export function orderListingsForDisplay(
+  rows: readonly PslListing[],
+  nowIso: string,
+  ledger?: readonly PslCapSetting[],
+): PslListing[] {
   const rank = (r: PslListing): number => PSL_STATUSES.indexOf(r.status);
   return rows
-    .filter((r) => r.supplierId === supplierId)
     .slice()
     .sort((a, b) => {
       const af = isPslInForce(a, nowIso, ledger) ? 0 : 1;
@@ -412,6 +443,53 @@ export function hasMaterialScope(
   row: PslListing,
 ): row is PslListing & { scope: { kind: 'material'; materialCodes: readonly string[] } } {
   return row.scope.kind === 'material';
+}
+
+// ─── THE ATTENTION PREDICATES — ONE DEFINITION, TWO CALLERS (P4 · R-C) ───────
+
+/**
+ * ⚠️ **ONE PREDICATE PER SIGNAL, EXPORTED, BECAUSE TWO SURFACES ASK THE SAME
+ * QUESTION AND A SECOND DEFINITION IS HOW THEY COME TO DISAGREE.** The buyer
+ * dashboard's alert card counts these rows and `/buyer/preferred-suppliers`
+ * renders them behind a tab the card links to. Written twice they would drift
+ * the first time one gained the cap ledger and the other did not —
+ * `COUNT-RESTATED-ACROSS-INSTRUMENTS-01`, whose whole lesson is that *a wrong
+ * number with an explanation gets believed*. Written once they cannot.
+ *
+ * ⚠️ **AND THEY RETURN ROWS, NEVER COUNTS.** A count is satisfied by the wrong
+ * match; a named member is not. The equality spec compares ids, which is only
+ * possible because these hand back the rows themselves.
+ *
+ * NO CLOCK IS READ HERE — `nowIso` is the caller's, forwarded, exactly as
+ * every other function in this file takes it.
+ */
+export function pslExpiringRows(
+  rows: readonly PslListing[],
+  nowIso: string,
+  ledger?: readonly PslCapSetting[],
+): PslListing[] {
+  return rows.filter((r) => pslDisplayStatus(r, nowIso, ledger) === 'Expiring');
+}
+
+/**
+ * IN FORCE ON THE RECORD, OVER ON THE CALENDAR.
+ *
+ * ⚠️ **THE `lifecycle === 'Listed'` HALF IS NOT REDUNDANT AND DELETING IT WOULD
+ * BE A SILENT WIDENING.** `pslDisplayStatus` returns the stored lifecycle
+ * unchanged for anything not in force, so a `Withdrawn` row can never read
+ * `Expired` — but `Listed` is the only lifecycle `isInForceLifecycle` admits,
+ * and stating it here says WHICH population this is about rather than relying
+ * on a fact one function away. The signal is *"the record still claims to grant
+ * something and it no longer does"*, and that claim lives on the lifecycle.
+ */
+export function pslExpiredStillListedRows(
+  rows: readonly PslListing[],
+  nowIso: string,
+  ledger?: readonly PslCapSetting[],
+): PslListing[] {
+  return rows.filter(
+    (r) => r.lifecycle === 'Listed' && pslDisplayStatus(r, nowIso, ledger) === 'Expired',
+  );
 }
 
 /** Re-exported so a consumer needs one import for the whole axis. */

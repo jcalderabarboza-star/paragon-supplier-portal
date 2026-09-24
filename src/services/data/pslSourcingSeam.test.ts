@@ -58,11 +58,18 @@ describe('REACH — the seam has a real corpus and reaches all three verdicts', 
 
   it('⚠️ all three `kind`s are reached by NAMED suppliers at the declared present', () => {
     expect(pslStatusFor('sup-002', null, DECLARED_PRESENT).kind).toBe('IN_FORCE');
-    // sup-007 holds three listings and not one is in force (Withdrawn /
-    // Rejected / Proposed) — the case a boolean seam could not express.
-    expect(pslStatusFor('sup-007', null, DECLARED_PRESENT).kind).toBe('LAPSED');
+    // ⚠️ **THE LAPSED MEMBER MOVED FROM sup-007 TO sup-008 AT PSL P4 — the
+    // assertion is re-pointed, not relaxed.** P4 seeded sup-007 a PUBLISHED,
+    // EXPIRING listing so the supplier-facing view is not empty for the default
+    // seat, and `Expiring` IS in force — so sup-007 became IN_FORCE and, for a
+    // moment, NO supplier was LAPSED anywhere. sup-008 now holds a granted and
+    // withdrawn listing: held a designation, holds none in force, which is
+    // still the case a boolean seam could not express.
+    expect(pslStatusFor('sup-008', null, DECLARED_PRESENT).kind).toBe('LAPSED');
     // sup-001 is a real roster member that holds nothing.
     expect(pslStatusFor('sup-001', null, DECLARED_PRESENT).kind).toBe('NOT_LISTED');
+    // And the move itself, measured here rather than asserted in prose.
+    expect(pslStatusFor('sup-007', null, DECLARED_PRESENT).kind).toBe('IN_FORCE');
   });
 });
 
@@ -213,8 +220,9 @@ describe('suspendsCompetitiveBidding — the policy`s own split', () => {
   });
 
   it('LAPSED and NOT_LISTED never suspend it', () => {
+    // sup-008 is the LAPSED member since P4 — see the REACH block above.
     expect(
-      suspendsCompetitiveBidding(pslStatusFor('sup-007', null, DECLARED_PRESENT)),
+      suspendsCompetitiveBidding(pslStatusFor('sup-008', null, DECLARED_PRESENT)),
     ).toBe(false);
     expect(
       suspendsCompetitiveBidding(pslStatusFor('sup-001', null, DECLARED_PRESENT)),

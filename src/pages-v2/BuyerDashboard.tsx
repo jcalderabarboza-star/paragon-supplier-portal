@@ -62,6 +62,7 @@ import {
   useProductionLines,
   useRFQs,
   useSupplierHealth,
+  usePslListings,
 } from '../services/query/hooks';
 import { useOwnRequirementResponses } from '../services/query/sdcSupplierHooks';
 import {
@@ -186,6 +187,8 @@ const BuyerDashboard: React.FC = () => {
   // other buyer surface covers, and both are marked as sample where they render.
   const linesQ = useProductionLines();
   const healthQ = useSupplierHealth();
+  // PSL P4 · R-C. The BUYER read (`getPslListings`), not the supplier one.
+  const pslQ = usePslListings();
 
   const queries = [
     invoicesQ,
@@ -200,6 +203,7 @@ const BuyerDashboard: React.FC = () => {
     responsesQ,
     linesQ,
     healthQ,
+    pslQ,
   ];
 
   if (queries.some((q) => q.isPending)) return <LoadingState breadcrumb={DASH_CRUMB} />;
@@ -230,7 +234,8 @@ const BuyerDashboard: React.FC = () => {
     !registryQ.data ||
     !responsesQ.data ||
     !linesQ.data ||
-    !healthQ.data
+    !healthQ.data ||
+    !pslQ.data
   )
     return <LoadingState breadcrumb={DASH_CRUMB} />;
 
@@ -246,6 +251,7 @@ const BuyerDashboard: React.FC = () => {
   const responses = responsesQ.data;
   const productionLines = linesQ.data.items;
   const supplierHealth = healthQ.data.items;
+  const listings = pslQ.data.items;
   const linesAtRisk = productionLines.filter((l) => AT_RISK_LEVELS.includes(l.risk)).length;
 
   if (invoices.length === 0 && obligations.length === 0 && registry.length === 0)
@@ -264,6 +270,7 @@ const BuyerDashboard: React.FC = () => {
     obligations,
     contracts,
     responses,
+    listings,
     nowIso: PRESENT_ISO,
   });
   const match = matchRate(invoices);

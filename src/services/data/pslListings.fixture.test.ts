@@ -70,6 +70,11 @@ const INTENT: Readonly<Record<string, PslDisplayStatus>> = {
   'psl-007': 'Rejected',
   'psl-008': 'Proposed',
   'psl-009': 'Scheduled',
+  // PSL P4 — the two sup-007 rows the supplier-facing view is built on, and the
+  // sup-008 row that restores the LAPSED Directory cell they took away.
+  'psl-010': 'Expiring',
+  'psl-011': 'Withdrawn',
+  'psl-012': 'Withdrawn',
 };
 
 /** Does every raw row still tell its intended story if the family were anchored

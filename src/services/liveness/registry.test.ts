@@ -38,6 +38,7 @@ describe('LivenessRegistry — derived from the wiring census (cannot drift)', (
     const live = ALL_CAPABILITIES.filter((c) => liveness(c) === 'LIVE');
     expect(new Set(live)).toEqual(
       new Set<Capability>([
+        'psl',
         'purchaseOrders',
         'advanceShipNotices',
         'goodsReceipts',
@@ -200,6 +201,15 @@ describe('LivenessRegistry — harvest gate (LIVENESS-DATASOURCE-01, gate-2)', (
       // BACK from S/4, which this platform does not observe at all. Green
       // could never mean "the material now exists".
       'materialRequests',
+      // PSL P4 — the same shape once more, and here the temptation is that the
+      // LIST is the product. Every row dispatches through the real verbs and a
+      // buyer can raise, grant, publish and withdraw one on the queue page, so
+      // gate-1 derives LIVE honestly. What no wiring can supply is a preferred
+      // supplier list somebody at Paragon actually decided: `pslSeed.ts` is a
+      // worked example, not a source. Green here would tell a SUPPLIER that a
+      // designation shown to them is real, which is the one audience for whom
+      // that mistake is not recoverable.
+      'psl',
     ]);
     for (const cap of ALL_CAPABILITIES) {
       if (gated.has(cap)) continue;
