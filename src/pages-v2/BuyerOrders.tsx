@@ -35,6 +35,7 @@ import SearchBar from '../components/ui-v2/SearchBar';
 import StatusPill from '../components/ui-v2/StatusPill';
 import NextActLine from '../components/ui-v2/NextActLine';
 import { statusTone } from '../lib/statusTone';
+import { stopName } from '../lib/nameStop';
 import Table from '../components/ui-v2/Table';
 import TableHeader, { TableHeaderCell } from '../components/ui-v2/TableHeader';
 import TableRow from '../components/ui-v2/TableRow';
@@ -205,7 +206,7 @@ const buildComms = (po: PurchaseOrder) => [
     ts: `${po.orderDate} 09:00`,
     sender: 'Procurement',
     channel: po.channel,
-    preview: `${po.poNumber} issued to ${po.supplierName}. Total ${formatIDR(po.totalValue)}.`,
+    preview: `${po.poNumber} issued to ${stopName(po.supplierName)}. Total ${stopName(formatIDR(po.totalValue))}.`,
   },
   {
     ts: `${po.orderDate} 10:18`,
@@ -220,7 +221,7 @@ const buildComms = (po: PurchaseOrder) => [
     ts: `${po.requestedDeliveryDate} 14:32`,
     sender: 'Procurement',
     channel: po.channel,
-    preview: `Reminder: requested delivery ${formatDate(po.requestedDeliveryDate)}.`,
+    preview: `Reminder: requested delivery ${stopName(formatDate(po.requestedDeliveryDate))}.`,
   },
 ];
 

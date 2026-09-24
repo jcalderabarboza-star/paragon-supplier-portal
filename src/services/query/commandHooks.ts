@@ -10,6 +10,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { useDataService } from '../data/DataServiceContext';
+import type { PrCreatePayload } from '../../pages-v2/requisitions/prCreatePayload';
 import { useToast } from '../../hooks/useToast';
 import { classifySettleFault } from '../transitions/settleFaults';
 import { DataError } from '../data/types';
@@ -901,8 +902,14 @@ export function useInvoiceSettlePayment() {
 // the PR list re-derives and the pushed Draft is list-visible.
 
 export interface PrCreateVars {
-  /** The t_pr_create payload (material + quantity required; C7 §2.1). */
-  payload: Record<string, unknown>;
+  /**
+   * The `t_pr_create` payload. **TYPED, not `Record<string, unknown>`** — an
+   * entrance omitting a required field is now a `tsc` failure instead of a
+   * silent default at the target. Required keys are pinned EQUAL to the verb's
+   * `requiredFields` through the compiler API (`prCreatePayload.test.ts`), in
+   * both directions, so the interface cannot drift from the machine.
+   */
+  payload: PrCreatePayload;
   /** Governed-decision provenance, present only on a genuine quantity override. */
   decision?: CommandDecision;
 }
@@ -916,9 +923,13 @@ export function usePurchaseRequisitionCreate() {
   return useMutation<CommandResult, Error, PrCreateVars>({
     mutationFn: ({ payload, decision }) =>
       svc.commands.dispatch(scope, {
+        // Spread at the seam, exactly as `useMaterialRequestSubmit` does: the
+        // spine's `CommandInput.payload` is `Record<string, unknown>`, and an
+        // INTERFACE has no implicit index signature. The spread is the honest
+        // widening — it never loosens what the CALLER had to satisfy.
         transitionId: 't_pr_create',
         entity: 'purchaseRequisition',
-        payload,
+        payload: { ...payload },
         ...(decision ? { decision } : {}),
       }),
     onSuccess: (result) => {

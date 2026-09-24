@@ -101,15 +101,15 @@ export const pslEn: Record<string, string> = {
 
   // — The sourcing gate (P2) —
   'psl.gate.notRequired':
-    'Competitive bidding is not required: {{supplier}} holds a {{status}} listing for {{code}}.',
+    'Competitive bidding is not required: {{supplier}} holds a {{status}} listing for {{code, stop}}.',
   'psl.gate.atFloor':
     'Two eligible suppliers invited. Three is the standard for a competitive event.',
   'psl.gate.underFloor':
-    'A competitive event needs at least {{floor}} eligible suppliers invited. This one has {{count}}.',
+    'A competitive event needs at least {{floor}} eligible suppliers invited. This one has {{count, stop}}.',
   'psl.gate.ineligible':
     '{{supplier}} is {{status}} and may not be invited to a sourcing event. Remove them to continue.',
   'psl.gate.undecidable':
-    'Preferred-supplier standing could not be checked for this event: {{codes}}. It will be competed as usual.',
+    'Preferred-supplier standing could not be checked for this event: {{codes, stop}}. It will be competed as usual.',
 
   // — Refusal toasts, keyed to the HOOK that refused (never to the code inside
   //   its reason: the hook is what the dispatcher names and what a type can
@@ -190,18 +190,18 @@ export const pslEn: Record<string, string> = {
   // the gap it papers over.
   'psl.notice.seatHoldsBoth':
     'A {{status}} designation suspends competitive bidding, so it cannot be decided by a seat that also raises listings. Narrow this seat to the deciding lane on the identity panel, or route the decision to somebody who holds it.',
-  'psl.notice.published': 'Shared with the supplier on {{date}}. Later changes reach them without sharing again.',
+  'psl.notice.published': 'Shared with the supplier on {{date, stop}}. Later changes reach them without sharing again.',
   'psl.notice.notPublished': 'This listing has not been shared with the supplier.',
 
   // ── P3 · OUTCOMES ─────────────────────────────────────────────────────────
-  'psl.toast.proposed': 'Listing {{id}} raised for {{supplier}}. It is waiting on a decision.',
+  'psl.toast.proposed': 'Listing {{id}} raised for {{supplier, stop}}. It is waiting on a decision.',
   'psl.toast.granted': 'Listing {{id}} approved. It is now in force for its validity.',
   'psl.toast.rejected': 'Listing {{id}} refused. A later attempt is a new listing.',
-  'psl.toast.statusChanged': 'Listing {{id}} is now {{status}}.',
-  'psl.toast.renewed': 'Listing {{id}} now runs to {{date}}.',
+  'psl.toast.statusChanged': 'Listing {{id}} is now {{status, stop}}.',
+  'psl.toast.renewed': 'Listing {{id}} now runs to {{date, stop}}.',
   'psl.toast.withdrawn': 'Listing {{id}} withdrawn. It grants nothing from now on.',
   'psl.toast.published': 'Listing {{id}} shared with the supplier.',
-  'psl.toast.capSet': 'A {{days}}-day cap is recorded for listing {{id}}.',
+  'psl.toast.capSet': 'A {{days}}-day cap is recorded for listing {{id, stop}}.',
 
   // ── P3 · REFUSALS, KEYED TO THE HOOK THAT REFUSED ─────────────────────────
   //
@@ -272,12 +272,12 @@ export const pslEn: Record<string, string> = {
   // R-D · two distinct sentences. "Never qualified" and "qualified, and the
   // qualification lapsed" are different facts and only the second implies an
   // act somebody failed to take — `bestPslStatus`'s own rule, on the surface.
-  'psl.supplier.expiredLine': 'This designation ran until {{date}}.',
+  'psl.supplier.expiredLine': 'This designation ran until {{date, stop}}.',
   'psl.supplier.withdrawnLine':
     'This designation was withdrawn on {{date}} and no longer applies.',
   // R-F · the lapse line. States the date; asks for nothing.
   'psl.supplier.expiringLine':
-    'Your preferred-supplier status for {{codes}} lapses on {{date}}.',
+    'Your preferred-supplier status for {{codes}} lapses on {{date, stop}}.',
 };
 
 export const pslId: Record<string, string> = {
@@ -340,15 +340,15 @@ export const pslId: Record<string, string> = {
 
   // — Gerbang pengadaan (P2) —
   'psl.gate.notRequired':
-    'Tender kompetitif tidak diperlukan: {{supplier}} memiliki daftar {{status}} untuk {{code}}.',
+    'Tender kompetitif tidak diperlukan: {{supplier}} memiliki daftar {{status}} untuk {{code, stop}}.',
   'psl.gate.atFloor':
     'Dua pemasok yang memenuhi syarat diundang. Tiga adalah standar untuk acara kompetitif.',
   'psl.gate.underFloor':
-    'Acara kompetitif memerlukan setidaknya {{floor}} pemasok yang memenuhi syarat. Acara ini memiliki {{count}}.',
+    'Acara kompetitif memerlukan setidaknya {{floor}} pemasok yang memenuhi syarat. Acara ini memiliki {{count, stop}}.',
   'psl.gate.ineligible':
     '{{supplier}} berstatus {{status}} dan tidak boleh diundang ke acara pengadaan. Keluarkan mereka untuk melanjutkan.',
   'psl.gate.undecidable':
-    'Status pemasok pilihan tidak dapat diperiksa untuk acara ini: {{codes}}. Acara akan ditenderkan seperti biasa.',
+    'Status pemasok pilihan tidak dapat diperiksa untuk acara ini: {{codes, stop}}. Acara akan ditenderkan seperti biasa.',
 
   // — Toast penolakan, dikunci ke HOOK yang menolak —
   'psl.toast.publishIneligible':
@@ -416,18 +416,18 @@ export const pslId: Record<string, string> = {
     'Keputusan ini akan dicatat tanpa identitas orang. Paragon belum memiliki identitas yang masuk sesi.',
   'psl.notice.seatHoldsBoth':
     'Penetapan {{status}} menangguhkan tender kompetitif, sehingga tidak dapat diputuskan oleh kursi yang juga mengajukan pencatatan. Persempit kursi ini ke jalur pemutus pada panel identitas, atau alihkan keputusan kepada pihak yang memegangnya.',
-  'psl.notice.published': 'Dibagikan kepada pemasok pada {{date}}. Perubahan berikutnya sampai kepada mereka tanpa dibagikan ulang.',
+  'psl.notice.published': 'Dibagikan kepada pemasok pada {{date, stop}}. Perubahan berikutnya sampai kepada mereka tanpa dibagikan ulang.',
   'psl.notice.notPublished': 'Pencatatan ini belum dibagikan kepada pemasok.',
 
   // ── P3 · Hasil ────────────────────────────────────────────────────────────
-  'psl.toast.proposed': 'Pencatatan {{id}} diajukan untuk {{supplier}}. Menunggu keputusan.',
+  'psl.toast.proposed': 'Pencatatan {{id}} diajukan untuk {{supplier, stop}}. Menunggu keputusan.',
   'psl.toast.granted': 'Pencatatan {{id}} disetujui. Kini berlaku selama masa berlakunya.',
   'psl.toast.rejected': 'Pencatatan {{id}} ditolak. Upaya berikutnya adalah pencatatan baru.',
-  'psl.toast.statusChanged': 'Pencatatan {{id}} kini berstatus {{status}}.',
-  'psl.toast.renewed': 'Pencatatan {{id}} kini berlaku sampai {{date}}.',
+  'psl.toast.statusChanged': 'Pencatatan {{id}} kini berstatus {{status, stop}}.',
+  'psl.toast.renewed': 'Pencatatan {{id}} kini berlaku sampai {{date, stop}}.',
   'psl.toast.withdrawn': 'Pencatatan {{id}} ditarik. Mulai sekarang tidak memberikan apa pun.',
   'psl.toast.published': 'Pencatatan {{id}} dibagikan kepada pemasok.',
-  'psl.toast.capSet': 'Batas {{days}} hari tercatat untuk pencatatan {{id}}.',
+  'psl.toast.capSet': 'Batas {{days}} hari tercatat untuk pencatatan {{id, stop}}.',
 
   // ── P3 · Penolakan, dikunci ke HOOK yang menolak ─────────────────────────
   'psl.refusal.supplierUnknown':
@@ -478,9 +478,9 @@ export const pslId: Record<string, string> = {
   'psl.supplier.until': 'Sampai',
   'psl.supplier.sharedOn': 'Dibagikan kepada Anda pada {{date}}',
   'psl.supplier.noEnd': 'Tidak ada tanggal berakhir yang tercatat',
-  'psl.supplier.expiredLine': 'Penetapan ini berlaku sampai {{date}}.',
+  'psl.supplier.expiredLine': 'Penetapan ini berlaku sampai {{date, stop}}.',
   'psl.supplier.withdrawnLine':
     'Penetapan ini ditarik pada {{date}} dan tidak lagi berlaku.',
   'psl.supplier.expiringLine':
-    'Status pemasok pilihan Anda untuk {{codes}} berakhir pada {{date}}.',
+    'Status pemasok pilihan Anda untuk {{codes}} berakhir pada {{date, stop}}.',
 };

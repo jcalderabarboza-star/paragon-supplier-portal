@@ -912,7 +912,18 @@ export interface PurchaseRequisition {
   quantity: number;
   uom: string;
   requiredDate: string;
-  estimatedValue: number;
+  /**
+   * ⚠️ **OPTIONAL, AND THE OPTIONALITY IS THE POINT.** Absent means NOBODY
+   * STATED A VALUE. It was `number` until the payload was typed, so an entrance
+   * that supplied none stored `0` via the target's `num()` — and the New PR
+   * form has no such input at all, so EVERY requisition raised there claimed a
+   * budget of zero. `RFQ.estimatedValue` settled this question first
+   * (`sourcing/rfqCreateModel.ts`): *"a blank is the field's own documented
+   * answer, never a fabricated Rp 0"*. A typed zero is a real statement and is
+   * preserved; emptiness may not be mistaken for it. `formatIDR` already
+   * renders `undefined` as an em dash, so no read site needs a fallback.
+   */
+  estimatedValue?: number;
   requestor: string;
   costCenter: string;
   status: PRStatus;
@@ -960,7 +971,16 @@ export interface PurchaseRequisition {
   approvalLevel: string;
   sourceOfSupply: string;
   linkedDoc: string;
-  priority: PRPriority;
+  /**
+   * ⚠️ **OPTIONAL FOR THE SAME REASON, AND ITS CONSUMERS WERE MEASURED
+   * BEFORE THE DEFAULT WAS REMOVED.** The target used to coerce any absent or
+   * unrecognised value to `'Medium'`, so every plan-grid-pushed PR claimed a
+   * priority nobody chose. Derived before the change: this field has exactly
+   * ONE consumer in the tree and it is a RENDER — the detail drawer's Priority
+   * row. Nothing sorts, routes or approves on it, so an absence costs a label
+   * and nothing else.
+   */
+  priority?: PRPriority;
   justification: string;
   source?: PrSource;
   /**

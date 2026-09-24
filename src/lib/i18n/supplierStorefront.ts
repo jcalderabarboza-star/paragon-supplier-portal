@@ -32,7 +32,7 @@ export const supplierStorefrontEn: Record<string, string> = {
   // — Hero —
   'supplierStorefront.hero.est': 'Est. {{year}}',
   'supplierStorefront.hero.fallbackNote':
-    '{{category}} specialist serving {{country}} and regional markets. Preferred channel: {{channel}}.',
+    '{{category}} specialist serving {{country}} and regional markets. Preferred channel: {{channel, stop}}.',
   // — KPI strip —
   'supplierStorefront.kpi.years.eyebrow': 'Years in Business',
   'supplierStorefront.kpi.years.since': 'Since {{year}}',
@@ -94,7 +94,7 @@ export const supplierStorefrontId: Record<string, string> = {
   // — Hero —
   'supplierStorefront.hero.est': 'Berdiri {{year}}',
   'supplierStorefront.hero.fallbackNote':
-    'Spesialis {{category}} yang melayani {{country}} dan pasar regional. Kanal pilihan: {{channel}}.',
+    'Spesialis {{category}} yang melayani {{country}} dan pasar regional. Kanal pilihan: {{channel, stop}}.',
   // — KPI strip —
   'supplierStorefront.kpi.years.eyebrow': 'Tahun Beroperasi',
   'supplierStorefront.kpi.years.since': 'Sejak {{year}}',

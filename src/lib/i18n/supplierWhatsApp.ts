@@ -23,7 +23,7 @@ export const supplierWhatsAppEn: Record<string, string> = {
   //   "Channel Inbox" where recording actually happens) —
   'supplierWhatsApp.header.title': 'Channel Demo — how Paragon reaches you',
   'supplierWhatsApp.header.subtitle':
-    'Conversational commerce channels — WhatsApp, Email, and WeChat — {{supplier}}.',
+    'Conversational commerce channels — WhatsApp, Email, and WeChat — {{supplier, stop}}.',
   'supplierWhatsApp.fallback.supplier': 'Supplier',
   // — Demonstration honesty marker (C5) —
   'supplierWhatsApp.demo.banner':
@@ -148,7 +148,7 @@ export const supplierWhatsAppId: Record<string, string> = {
   //   Kanal" nyata tempat pencatatan sebenarnya terjadi) —
   'supplierWhatsApp.header.title': 'Demo Kanal — cara Paragon menjangkau Anda',
   'supplierWhatsApp.header.subtitle':
-    'Kanal perdagangan percakapan — WhatsApp, Email, dan WeChat — {{supplier}}.',
+    'Kanal perdagangan percakapan — WhatsApp, Email, dan WeChat — {{supplier, stop}}.',
   'supplierWhatsApp.fallback.supplier': 'Pemasok',
   // — Penanda kejujuran demonstrasi (C5) —
   'supplierWhatsApp.demo.banner':

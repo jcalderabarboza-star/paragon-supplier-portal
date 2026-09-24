@@ -119,12 +119,12 @@ export const shipmentsEn: Record<string, string> = {
   // the manual-ASN and dock-scheduler toasts in this very file already use.
   'shipments.toast.reminder.title': 'Reminder not available yet',
   'shipments.toast.reminder.desc':
-    'Supplier reminders for {{asn}} will send once the channel seam is connected. Nothing was sent to {{supplier}}.',
+    'Supplier reminders for {{asn}} will send once the channel seam is connected. Nothing was sent to {{supplier, stop}}.',
   'shipments.toast.tracking.title': 'Carrier tracking not available yet — nothing was opened.',
   'shipments.toast.tracking.desc': 'Carrier: {{carrier}} · {{tracking}}',
   'shipments.toast.carrierAlerted.title': 'Carrier escalation not available yet',
   'shipments.toast.carrierAlerted.desc':
-    'No escalation ticket was opened for {{asn}}. Carrier contact is not wired to a real system.',
+    'No escalation ticket was opened for {{asn, stop}}. Carrier contact is not wired to a real system.',
   'shipments.toast.dockScheduler.title': 'Dock scheduler',
   'shipments.toast.dockScheduler.desc': 'Schedule UI will open in a future release.',
   // — Side-panel footer actions —
@@ -243,12 +243,12 @@ export const shipmentsId: Record<string, string> = {
   'shipments.toast.dockSchedule.desc': 'Gulir ke bawah untuk melihat penugasan.',
   'shipments.toast.reminder.title': 'Pengingat belum tersedia',
   'shipments.toast.reminder.desc':
-    'Pengingat pemasok untuk {{asn}} akan dikirim setelah sambungan kanal aktif. Tidak ada yang dikirim ke {{supplier}}.',
+    'Pengingat pemasok untuk {{asn}} akan dikirim setelah sambungan kanal aktif. Tidak ada yang dikirim ke {{supplier, stop}}.',
   'shipments.toast.tracking.title': 'Pelacakan kurir belum tersedia — tidak ada yang dibuka.',
   'shipments.toast.tracking.desc': 'Kurir: {{carrier}} · {{tracking}}',
   'shipments.toast.carrierAlerted.title': 'Eskalasi kurir belum tersedia',
   'shipments.toast.carrierAlerted.desc':
-    'Tidak ada tiket eskalasi yang dibuka untuk {{asn}}. Kontak kurir belum tersambung ke sistem nyata.',
+    'Tidak ada tiket eskalasi yang dibuka untuk {{asn, stop}}. Kontak kurir belum tersambung ke sistem nyata.',
   'shipments.toast.dockScheduler.title': 'Penjadwal dermaga',
   'shipments.toast.dockScheduler.desc': 'Antarmuka penjadwalan akan tersedia pada rilis mendatang.',
   // — Side-panel footer actions —

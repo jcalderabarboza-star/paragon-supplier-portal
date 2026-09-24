@@ -36,7 +36,7 @@ export const supplierPerformanceEn: Record<string, string> = {
   'supplierPerformance.toast.exportQueued.desc':
     'Downloading performance report PDF...',
   'supplierPerformance.toast.actionSubmitted.title':
-    'Action plan not available yet — nothing was submitted for {{kpi}}.',
+    'Action plan not available yet — nothing was submitted for {{kpi, stop}}.',
   'supplierPerformance.toast.actionSubmitted.desc': 'Nobody was notified — supplier action plans are not wired to a real channel.',
   // — Empty state —
   'supplierPerformance.empty.title': 'No performance data yet',
@@ -114,7 +114,7 @@ export const supplierPerformanceId: Record<string, string> = {
   'supplierPerformance.toast.exportQueued.desc':
     'Mengunduh PDF laporan kinerja...',
   'supplierPerformance.toast.actionSubmitted.title':
-    'Rencana tindakan belum tersedia — tidak ada yang dikirim untuk {{kpi}}.',
+    'Rencana tindakan belum tersedia — tidak ada yang dikirim untuk {{kpi, stop}}.',
   'supplierPerformance.toast.actionSubmitted.desc': 'Tidak ada yang diberi tahu — rencana tindakan pemasok belum tersambung ke kanal nyata.',
   // — Empty state —
   'supplierPerformance.empty.title': 'Belum ada data kinerja',

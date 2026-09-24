@@ -32,6 +32,7 @@
 
 import { describe, it, expect } from 'vitest';
 import ts from 'typescript';
+import { stripSourceComments } from '../lib/sourceScan/stripComments';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { resolve, join } from 'node:path';
 
@@ -225,51 +226,95 @@ describe('⚠️ PROBE — the same matcher at `t_pr_create`, where the drift is
       readFileSync(join(SRC, 'pages-v2', 'intake-review', 'intakeReviewModel.ts'), 'utf8'),
     ).toContain('usePurchaseRequisitionCreate');
 
-    // And the drift, BY NAME: the entrances that do NOT go through the shared
-    // builder. `buildPrCreatePayload` is reached directly by the drawer and
-    // transitively by `IntakeReview` through `buildAcceptPush`.
+    // ⚠️ **THE DRIFT THIS PROBE WAS AIMED AT IS NOW CLOSED, AND THE ASSERTION
+    // IS INVERTED RATHER THAN DELETED.** It used to read
+    // `expect(drifting).toContain('pages-v2/BuyerRequisitions.tsx')` — a
+    // NAMED member, correct on the day it was written, and the reason this
+    // instrument earned its place. `BuyerRequisitions` built its payload inline,
+    // supplied no `estimatedValue`, and the target's `num()` answered 0.
+    //
+    // Deleting the assertion would delete the only thing watching the lane. So
+    // it now says the opposite thing about the same population: EVERY entrance
+    // goes through a builder in the one payload module. The day a fourth
+    // entrance is added inline, this goes red by name.
     const sharedBuilder = new Set([
       ...callersOf('buildPrCreatePayload'),
       ...callersOf('buildAcceptPush'),
+      ...callersOf('buildNewPrPayload'),
     ]);
     const drifting = callers.filter((c) => !sharedBuilder.has(c));
+    expect(drifting).toEqual([]);
 
-    // ⚠️ THE ASSERTION IS A NAMED MEMBER, NEVER A COUNT — a count is satisfied
-    // by the wrong match.
-    expect(drifting).toContain('pages-v2/BuyerRequisitions.tsx');
+    // ⚠️ AND THE MATCHER IS NOT VACUOUS. An empty result is what a broken
+    // `callersOf` also returns (rule 1), so a known-true member is asserted
+    // present in the builder set in the same run.
+    expect(sharedBuilder.has('pages-v2/BuyerRequisitions.tsx')).toBe(true);
   });
 
-  it('⚠️ AND THE FIELD SETS REALLY DIFFER — the consequence, not just the shape', () => {
-    // The drift matters because the target reads the UNION and each entrance's
-    // absences become silent defaults. Measured from source, both sides.
+  it('⚠️ AND THE FIELD SETS NO LONGER DIVERGE SILENTLY — the consequence', () => {
+    // ⚠️ **WHAT THIS ASSERTED BEFORE, AND WHY IT IS REWRITTEN RATHER THAN
+    // RELAXED.** It measured that the two entrances supplied DIFFERENT field
+    // sets — `expect(planGrid).toContain('estimatedValue: line.estimatedValue')`
+    // beside `expect(requisitions).toContain('priority: form.priority')` — and
+    // closed by proving `BuyerRequisitions` sent no `estimatedValue` at all, so
+    // the target's `num()` stored 0.
+    //
+    // The field sets STILL differ, and always will: a pushed plan line knows a
+    // value and a person filling a form does not. What changed is that the
+    // difference is now carried by ONE TYPE, so an absence reaches the target as
+    // an absence instead of as a default it invents. So the claim moves up a
+    // level: both entrances build through the one module, and the fields that
+    // used to be defaulted are OPTIONAL there.
     const read = (rel: string) => readFileSync(join(SRC, ...rel.split('/')), 'utf8');
-    const planGrid = read('pages-v2/plan-grid/planGridModel.ts');
+    const payload = read('pages-v2/requisitions/prCreatePayload.ts');
     const requisitions = read('pages-v2/BuyerRequisitions.tsx');
+    const target = read('services/data/mock/MockCommandService.ts');
 
-    // Only the plan grid supplies `estimatedValue` and `source`.
-    expect(planGrid).toContain('estimatedValue: line.estimatedValue');
-    expect(planGrid).toContain('source: line.source');
-    // Only BuyerRequisitions supplies `costCenter` / `priority` / `justification`.
-    expect(requisitions).toContain('costCenter: form.costCenter');
-    expect(requisitions).toContain('priority: form.priority');
-    expect(requisitions).toContain('justification: form.justification');
-    // And BuyerRequisitions supplies NO estimatedValue — so the target's
-    // `num('estimatedValue')` returns 0 and the PR carries a stated zero.
-    expect(/estimatedValue:\s*[^,\s]/.test(requisitions.split('submitNewPR')[1] ?? '')).toBe(
-      false,
-    );
+    // one module, both builders
+    expect(payload).toContain('export function buildPrCreatePayload');
+    expect(payload).toContain('export function buildNewPrPayload');
+    expect(payload).toContain('estimatedValue?: number');
+    expect(payload).toContain('priority?: PRPriority');
+
+    // the entrance no longer assembles a literal of its own
+    expect(requisitions).toContain('buildNewPrPayload(form, parsedQty.value)');
+    expect(requisitions).not.toContain('priority: form.priority');
+
+    // ⚠️ AND THE DEFAULTS ARE GONE AT THE TARGET, which is where they were
+    // actually applied. `num('estimatedValue')` was the line that turned an
+    // absence into a stated zero.
+    //
+    // ⚠️ **COMMENTS ARE STRIPPED FIRST, AND THIS FILE'S OWN HEADER IS WHY.**
+    // The first draft asserted over raw source and went red on the RFQ create
+    // path's COMMENT explaining why IT does not use `num('estimatedValue')` —
+    // "a comment is not a call site", the rule this file corrected its own
+    // cardinality with, firing on the seat that wrote it again.
+    const code = stripSourceComments(target, 'blank', 'MockCommandService.ts');
+    expect(code).not.toContain("num('estimatedValue')");
+    expect(code).toContain("typeof payload.estimatedValue === 'number'");
+    // the known-true control: `num()` still exists and is still used, so the
+    // absence above is a statement about ONE key rather than about the helper
+    expect(code).toContain("num('quantity')");
   });
 
-  it('⚠️ AND THE UNTYPED PAYLOAD IS WHY — `PrCreateVars` vs `MaterialRequestSubmitVars`', () => {
+  it('⚠️ AND BOTH LANES ARE NOW TYPED — `PrCreateVars` caught up', () => {
+    // ⚠️ **THIS ASSERTED THE DEFECT AND NOW ASSERTS ITS ABSENCE.** It read
+    // `expect(hooks).toMatch(/interface PrCreateVars \{[\s\S]*?payload: Record<string, unknown>/)`
+    // — naming the untyped payload as the MECHANISM of the drift, which it was.
+    // The remedy is the one this file already described: an interface, so an
+    // entrance omitting a required field is a `tsc` failure.
     const hooks = readFileSync(
       join(SRC, 'services', 'query', 'commandHooks.ts'),
       'utf8',
     );
-    // The lane that drifts: untyped.
-    expect(hooks).toMatch(/interface PrCreateVars \{[\s\S]*?payload: Record<string, unknown>/);
-    // The lane that cannot: typed.
+    expect(hooks).toMatch(/interface PrCreateVars \{[\s\S]*?payload: PrCreatePayload/);
     expect(hooks).toMatch(
       /interface MaterialRequestSubmitVars \{[\s\S]*?payload: MaterialRequestSubmitPayload/,
     );
+    // ⚠️ KNOWN-FALSE, SCOPED TO THE LANE THIS BATCH RULED ON. A first draft
+    // asserted it over every `\w*CreateVars` in the file and accused hooks this
+    // batch never examined — rule 2, a widening that manufactures findings. The
+    // claim here is about `PrCreateVars` and stops there.
+    expect(hooks).not.toMatch(/interface PrCreateVars \{[\s\S]{0,400}?payload: Record<string, unknown>/);
   });
 });

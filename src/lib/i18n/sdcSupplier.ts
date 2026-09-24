@@ -688,6 +688,6 @@ export const sdcSupplierId: Record<string, string> = {
 
   // — Halaman kosong —
   'sdcSup.empty.title': 'Tidak ada publikasi prakiraan',
-  'sdcSup.empty.subtitle': 'Belum ada yang diterbitkan ke {{supplier}}.',
+  'sdcSup.empty.subtitle': 'Belum ada yang diterbitkan ke {{supplier, stop}}.',
   'sdcSup.empty.message': 'Baris prakiraan terbit muncul di sini saat siklus perencanaan menerbitkan.',
 };

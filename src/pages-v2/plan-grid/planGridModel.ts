@@ -189,27 +189,19 @@ export function buildQtyDecision(
   };
 }
 
-/**
- * The `t_pr_create` payload a pushed intake line dispatches. C7 §2.1: the
- * accepted qty maps to the required `quantity` field. C7 §2 GG-3: the planning
- * `period` maps to `requiredDate`. Producer `source` (C7 §4) rides through; a
- * genuine override also carries its `reason` in the payload (persisted-intent).
- */
-export function buildPrCreatePayload(
-  line: PrIntakeLine,
-  acceptedQty: number,
-  reason: string,
-): Record<string, unknown> {
-  return {
-    material: line.material,
-    quantity: acceptedQty,
-    uom: line.uom,
-    estimatedValue: line.estimatedValue,
-    requiredDate: line.period,
-    source: line.source,
-    ...(isQtyAdjusted(line, acceptedQty) ? { reason: reason.trim() } : {}),
-  };
-}
+// ⚠️ `buildPrCreatePayload` LIVED HERE AND NOW LIVES IN
+// `pages-v2/requisitions/prCreatePayload.ts`, WITH THE TYPE IT RETURNS.
+//
+// It moved because it stopped being the plan grid's payload and became THE
+// `t_pr_create` payload: the New PR form builds through the same module and the
+// same interface, so an entrance that omits a required field is a `tsc` failure
+// rather than a silent default at the target. Keeping the builder here while
+// the type lived elsewhere would have been a split brain — one file deciding
+// the shape, another deciding what the shape means.
+//
+// The C6-LOCK helpers above stay: they are about the GOVERNED DECISION (is this
+// an override, does it carry a reason, what does the audit record), which is the
+// plan grid's question and nobody else's. The payload is everybody's.
 
 /**
  * The per-row push state on the plain-DOM adjust-and-push panel. PLANNED until a

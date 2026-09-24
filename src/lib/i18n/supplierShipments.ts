@@ -26,7 +26,7 @@ export const supplierShipmentsEn: Record<string, string> = {
   // — Page header —
   'supplierShipments.header.title': 'Shipments & ASN',
   'supplierShipments.header.subtitle':
-    'Advance Ship Notices · Paragon WMS integration · EDI 856 — {{name}}.',
+    'Advance Ship Notices · Paragon WMS integration · EDI 856 — {{name, stop}}.',
   // — Meta line —
   'supplierShipments.meta.summary':
     '{{shipments}} shipments · {{pos}} confirmed POs ready to ship',
@@ -182,7 +182,7 @@ export const supplierShipmentsId: Record<string, string> = {
   // — Page header —
   'supplierShipments.header.title': 'Pengiriman & ASN',
   'supplierShipments.header.subtitle':
-    'Advance Ship Notices · integrasi Paragon WMS · EDI 856 — {{name}}.',
+    'Advance Ship Notices · integrasi Paragon WMS · EDI 856 — {{name, stop}}.',
   // — Meta line —
   'supplierShipments.meta.summary':
     '{{shipments}} pengiriman · {{pos}} PO terkonfirmasi siap dikirim',

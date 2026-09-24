@@ -251,13 +251,13 @@ export const goodsReceiptEn: Record<string, string> = {
   // document itself. A single "certificate not valid" would delete the
   // difference an operator acts on.
   'goodsReceipt.wizard.cert.reason.EXPIRED':
-    'The halal certificate for {{material}} expired on {{expiry}}.',
+    'The halal certificate for {{material}} expired on {{expiry, stop}}.',
   'goodsReceipt.wizard.cert.reason.SCHEME_INVALID':
     'The halal certificate for {{material}} is in date, but its scheme no longer satisfies the BPJPH mandate (GR 42/2024) as of this receipt.',
   'goodsReceipt.wizard.cert.reason.UNDER_REVIEW':
     'A halal certificate for {{material}} is with the certifier and has not been granted.',
   'goodsReceipt.wizard.cert.reason.NO_CERT':
-    'No halal certificate is on record for {{supplier}} covering {{material}}.',
+    'No halal certificate is on record for {{supplier}} covering {{material, stop}}.',
   'goodsReceipt.wizard.cert.field.supplier': 'Supplier',
   'goodsReceipt.wizard.cert.field.certNumber': 'Certificate',
   'goodsReceipt.wizard.cert.field.scheme': 'Scheme',
@@ -492,13 +492,13 @@ export const goodsReceiptId: Record<string, string> = {
   'goodsReceipt.wizard.cert.notice.proceeds':
     'Hal ini tidak menghentikan penerimaan. Catat dan sampaikan perpanjangannya kepada pemasok dan tim kepatuhan.',
   'goodsReceipt.wizard.cert.reason.EXPIRED':
-    'Sertifikat halal untuk {{material}} kedaluwarsa pada {{expiry}}.',
+    'Sertifikat halal untuk {{material}} kedaluwarsa pada {{expiry, stop}}.',
   'goodsReceipt.wizard.cert.reason.SCHEME_INVALID':
     'Sertifikat halal untuk {{material}} masih berlaku, tetapi skemanya tidak lagi memenuhi mandat BPJPH (PP 42/2024) pada saat penerimaan ini.',
   'goodsReceipt.wizard.cert.reason.UNDER_REVIEW':
     'Sertifikat halal untuk {{material}} sedang diproses lembaga sertifikasi dan belum diterbitkan.',
   'goodsReceipt.wizard.cert.reason.NO_CERT':
-    'Tidak ada sertifikat halal yang tercatat untuk {{supplier}} yang mencakup {{material}}.',
+    'Tidak ada sertifikat halal yang tercatat untuk {{supplier}} yang mencakup {{material, stop}}.',
   'goodsReceipt.wizard.cert.field.supplier': 'Pemasok',
   'goodsReceipt.wizard.cert.field.certNumber': 'Sertifikat',
   'goodsReceipt.wizard.cert.field.scheme': 'Skema',

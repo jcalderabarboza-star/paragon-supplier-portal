@@ -12,6 +12,7 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import { syncDocumentLocale } from './documentLocale';
+import { registerNameStop } from './nameStop';
 import { statusResourcesEn, statusResourcesId } from './statusLabel';
 import { enumResourcesEn, enumResourcesId } from './priorityLabel';
 import { modeResourcesEn, modeResourcesId } from './modeLabel';
@@ -439,7 +440,7 @@ export const resources = {
       'asn.create.action': 'Create ASN',
       'asn.submit.action': 'Submit',
       'asn.create.success.title': '{{asnNumber}} drafted',
-      'asn.create.success.desc': 'Draft created from {{poNumber}}. {{correlationId}} recorded.',
+      'asn.create.success.desc': 'Draft created from {{poNumber, stop}}. {{correlationId}} recorded.',
       'asn.create.failed.title': 'Could not create ASN',
       'asn.create.failed.desc': 'The ASN could not be drafted ({{reason}}).',
       'asn.submit.success.title': '{{asnNumber}} submitted',
@@ -448,7 +449,7 @@ export const resources = {
       'asn.submit.failed.desc': 'Submission was rejected ({{reason}}).',
       'asn.submit.missingFields': 'Carrier, tracking number and ETA are required. ({{code}})',
       'asn.submit.confirm': 'Submit ASN',
-      'asn.submit.form.intro': 'Provide the carrier, tracking number, and ETA for {{poNumber}}.',
+      'asn.submit.form.intro': 'Provide the carrier, tracking number, and ETA for {{poNumber, stop}}.',
       'asn.submit.form.carrier': 'Carrier',
       'asn.submit.form.tracking': 'Tracking number',
       'asn.submit.form.eta': 'Estimated arrival',
@@ -489,7 +490,7 @@ export const resources = {
         'The settling system did not answer. The document is unchanged and still awaiting settlement — run the same action again; settling twice is safe.',
       'settle.failed.UNGOVERNED':
         'The settlement stopped on an unclassified fault. The document is unchanged and still awaiting settlement — retrying will not clear it. Report the reference below.',
-      'settle.failed.ref': 'Reference {{correlationId}}.',
+      'settle.failed.ref': 'Reference {{correlationId, stop}}.',
       // §91e — the GR mirror of `invoice.settle.retried.*`. A retried settle is
       // a DIFFERENT event from a first-time one and says so: the reader already
       // saw a failure toast, and "posted to SAP" alone would not tell them the
@@ -501,7 +502,7 @@ export const resources = {
       // — Invoice verbs (Step 4 batch iii, DR-7) —
       'invoice.create.action': 'New invoice',
       'invoice.create.success.title': '{{invoiceNumber}} drafted',
-      'invoice.create.success.desc': 'Draft created against {{poNumber}}. {{correlationId}} recorded.',
+      'invoice.create.success.desc': 'Draft created against {{poNumber, stop}}. {{correlationId}} recorded.',
       'invoice.create.failed.title': 'Could not create invoice',
       'invoice.create.failed.desc': 'The invoice could not be drafted ({{reason}}).',
       'invoice.submit.action': 'Submit',
@@ -542,7 +543,7 @@ export const resources = {
       'invoice.match.deferred.desc':
         'Nothing was changed here. The 3-way match completes when the goods receipt is posted in SAP.',
       'invoice.remittance.generated.title': 'Remittance advice generated',
-      'invoice.remittance.generated.desc': 'Available to the supplier via {{channel}}.',
+      'invoice.remittance.generated.desc': 'Available to the supplier via {{channel, stop}}.',
       'invoice.denied.title': 'Not authorized',
       'invoice.denied.desc': 'You are not authorized to act on this invoice.',
     },
@@ -871,7 +872,7 @@ export const resources = {
       'asn.create.action': 'Buat ASN',
       'asn.submit.action': 'Kirim',
       'asn.create.success.title': '{{asnNumber}} dibuat',
-      'asn.create.success.desc': 'Draf dibuat dari {{poNumber}}. {{correlationId}} tercatat.',
+      'asn.create.success.desc': 'Draf dibuat dari {{poNumber, stop}}. {{correlationId}} tercatat.',
       'asn.create.failed.title': 'Tidak dapat membuat ASN',
       'asn.create.failed.desc': 'ASN tidak dapat dibuat ({{reason}}).',
       'asn.submit.success.title': '{{asnNumber}} dikirim',
@@ -880,7 +881,7 @@ export const resources = {
       'asn.submit.failed.desc': 'Pengiriman ditolak ({{reason}}).',
       'asn.submit.missingFields': 'Kurir, nomor pelacakan, dan ETA wajib diisi. ({{code}})',
       'asn.submit.confirm': 'Kirim ASN',
-      'asn.submit.form.intro': 'Isi kurir, nomor pelacakan, dan ETA untuk {{poNumber}}.',
+      'asn.submit.form.intro': 'Isi kurir, nomor pelacakan, dan ETA untuk {{poNumber, stop}}.',
       'asn.submit.form.carrier': 'Kurir',
       'asn.submit.form.tracking': 'Nomor pelacakan',
       'asn.submit.form.eta': 'Perkiraan tiba',
@@ -914,7 +915,7 @@ export const resources = {
         'Sistem penyelesai tidak menjawab. Dokumen tidak berubah dan masih menunggu penyelesaian — jalankan tindakan yang sama sekali lagi; menyelesaikan dua kali tetap aman.',
       'settle.failed.UNGOVERNED':
         'Penyelesaian berhenti karena kesalahan yang tidak terklasifikasi. Dokumen tidak berubah dan masih menunggu penyelesaian — mengulang tidak akan menuntaskannya. Laporkan referensi di bawah.',
-      'settle.failed.ref': 'Referensi {{correlationId}}.',
+      'settle.failed.ref': 'Referensi {{correlationId, stop}}.',
       // §91e — cermin ID dari `invoice.settle.retried.*`.
       'gr.settle.retried.title': 'Penyelesaian tuntas saat dicoba ulang',
       'gr.settle.retried.desc': 'SAP menetapkan dokumen material. Penerimaan barang kini terkirim.',
@@ -923,7 +924,7 @@ export const resources = {
       // — Invoice verbs (ID stub — refined in the Phase 3′ ID-first sweep) —
       'invoice.create.action': 'Faktur baru',
       'invoice.create.success.title': '{{invoiceNumber}} dibuat',
-      'invoice.create.success.desc': 'Draf dibuat untuk {{poNumber}}. {{correlationId}} tercatat.',
+      'invoice.create.success.desc': 'Draf dibuat untuk {{poNumber, stop}}. {{correlationId}} tercatat.',
       'invoice.create.failed.title': 'Tidak dapat membuat faktur',
       'invoice.create.failed.desc': 'Faktur tidak dapat dibuat ({{reason}}).',
       'invoice.submit.action': 'Kirim',
@@ -962,7 +963,7 @@ export const resources = {
       'invoice.match.deferred.desc':
         'Tidak ada yang berubah di sini. Pencocokan 3 arah selesai saat penerimaan barang diposting di SAP.',
       'invoice.remittance.generated.title': 'Bukti pembayaran dibuat',
-      'invoice.remittance.generated.desc': 'Tersedia bagi pemasok melalui {{channel}}.',
+      'invoice.remittance.generated.desc': 'Tersedia bagi pemasok melalui {{channel, stop}}.',
       'invoice.denied.title': 'Tidak berwenang',
       'invoice.denied.desc': 'Anda tidak berwenang menindaklanjuti faktur ini.',
     },
@@ -976,6 +977,15 @@ i18n.use(initReactI18next).init({
   interpolation: { escapeValue: false }, // React already escapes
   returnNull: false,
 });
+
+// The `stop` interpolation formatter (`lib/nameStop.ts`), registered HERE
+// because it must run after `init()` — `services.formatter` does not exist
+// before it. Unconditional by ruling: every interpolation immediately followed
+// by a full stop carries `, stop`, so a name ending in its own stop
+// ("Sample Vitamins Co.") never renders two. It throws rather than no-ops if
+// the formatter service is missing; see that module for why a silent failure
+// would be worse than a broken boot.
+registerNameStop(i18n);
 
 // HTML-LANG-STUCK-AT-EN-01 (§39c). Bind `<html lang>` / `<html dir>` /
 // `document.title` to the language, here rather than in a root component: this

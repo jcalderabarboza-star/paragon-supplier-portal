@@ -12,12 +12,13 @@
 // ────────────────────────────────────────────────────────────────────────────
 
 import type { PrIntakeLine } from '../../services/data/types';
-import { buildPrCreatePayload, type PushRowState } from '../plan-grid/planGridModel';
+import { type PushRowState } from '../plan-grid/planGridModel';
+import { buildPrCreatePayload, type PrCreatePayload } from '../requisitions/prCreatePayload';
 
 /** The accept-as-suggested push: the existing payload builder at qty=suggested,
  * reason empty — so it can never contain `reason` — and NO decision. */
 export interface AcceptPush {
-  readonly payload: Record<string, unknown>;
+  readonly payload: PrCreatePayload;
   /** Always undefined: accept-as-suggested overrides nothing (FORK-C c2). */
   readonly decision: undefined;
 }

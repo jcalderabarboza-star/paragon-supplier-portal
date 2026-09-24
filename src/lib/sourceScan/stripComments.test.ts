@@ -400,6 +400,13 @@ describe('⚠️ THE TWO-REGEX COMMENT STRIP IS EXTINCT — derived, not listed'
         'lib/projectionGate/derive.ts',
         'pages-v2/buyerInvoicesEscalateHonesty.test.ts',
         'pages-v2/deadAffordance.guard.test.tsx',
+        // Added 2026-09-24 by the small-fixes batch (§107c). The
+        // `t_pr_create` entrance census asserts the target no longer calls
+        // `num('estimatedValue')` — and its first draft went red on the RFQ
+        // create path's COMMENT explaining why IT does not use that helper.
+        // "A comment is not a call site" — the rule that file corrected its
+        // own cardinality with, firing on it a second time.
+        'pages-v2/materialRequestEntrances.test.ts',
         // The copy fix that followed the sample-identity batch: it derives
         // "which hook refusals name a person?" from `policies.ts`, where the
         // comments quote the defective sentence — head and `personId` included

@@ -740,8 +740,15 @@ const purchaseRequisitionTarget: CommandTarget = {
       payload.source === 'INTERNAL_GRID' || payload.source === 'SOMO'
         ? (payload.source as PrSource)
         : undefined;
-    const priority: PRPriority =
-      payload.priority === 'High' || payload.priority === 'Low' ? payload.priority : 'Medium';
+    // ⚠️ **AN ABSENT PRIORITY IS NOW ABSENT, NOT `'Medium'`.** This coerced
+    // every unrecognised OR MISSING value to Medium, so each plan-grid push —
+    // which supplies no priority — stored a choice nobody made, and the drawer
+    // rendered it beside choices people really did make. Same shape as `source`
+    // directly above, which was already honest: recognised or nothing.
+    const priority: PRPriority | undefined =
+      payload.priority === 'High' || payload.priority === 'Medium' || payload.priority === 'Low'
+        ? payload.priority
+        : undefined;
     const pr: PurchaseRequisition = {
       id: prNumber, // store keyed by id; the assigned number doubles as the id
       prNumber,
@@ -753,7 +760,6 @@ const purchaseRequisitionTarget: CommandTarget = {
       // C7 §2 GG-3 — `period` (planning bucket) maps to requiredDate today; a
       // single date until the bucket representation is pinned by IBP co-design.
       requiredDate: str('requiredDate') || str('period'),
-      estimatedValue: num('estimatedValue'),
       requestor: str('requestor'),
       costCenter: str('costCenter'),
       status: toState as PRStatus,
@@ -761,8 +767,15 @@ const purchaseRequisitionTarget: CommandTarget = {
       approvalLevel: '',
       sourceOfSupply: '',
       linkedDoc: '',
-      priority,
       justification: str('justification'),
+      // ⚠️ WRITTEN ONLY WHEN SUPPLIED. `num()` would answer 0 and the document
+      // would claim a budget of nothing — the defect `RFQ.estimatedValue` retired
+      // one entity over. The same presence check this file already uses for the
+      // RFQ create path (`typeof payload.estimatedValue === 'number'`).
+      ...(typeof payload.estimatedValue === 'number'
+        ? { estimatedValue: payload.estimatedValue }
+        : {}),
+      ...(priority ? { priority } : {}),
       ...(source ? { source } : {}),
     };
     purchaseRequisitionStore.add(pr);

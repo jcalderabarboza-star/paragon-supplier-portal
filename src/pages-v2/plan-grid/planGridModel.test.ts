@@ -9,12 +9,12 @@ import {
   isQtyAdjusted,
   overrideBlocked,
   buildQtyDecision,
-  buildPrCreatePayload,
   applyPushResult,
   selectedLine,
   type WhatIfWeights,
   type PrIntakeLine,
 } from './planGridModel';
+import { buildPrCreatePayload } from '../requisitions/prCreatePayload';
 import { mockQuotations } from '../../data/mockQuotations';
 
 // ────────────────────────────────────────────────────────────────────────────

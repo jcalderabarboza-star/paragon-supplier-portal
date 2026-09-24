@@ -286,6 +286,52 @@ export function driftVerdict(
   return 'ok';
 }
 
+// ── ⚠️ WHICH ROWS ACTUALLY REACHED THE RULE ABOVE, AND WHY IT IS PRINTED ────
+//
+//   `familyDrift` returns EARLY on four of the seven verdicts, every one of
+//   them BEFORE `driftVerdict` is called. On such a row `toleranceDays` is a
+//   DECLARED NUMBER THAT DECIDED NOTHING — and the table printed it in the same
+//   column, in the same ink, as a tolerance that is live. A reader comparing
+//   `drift 24` against `tol 7` reads a breach; the verdict column says
+//   `read-at-present`, and only the source resolves the disagreement. It was
+//   read as a breach, which is why this exists.
+//
+//   ⚠️ **AND TODAY THAT IS EVERY ROW.** Since the 2026-09-15 rebind onto the
+//   reading instant, NO family reaches `driftVerdict` at all — so the module
+//   whose own header says it exists to give `toleranceDays` A CONSUMER
+//   currently gives it none. That is not a rule to loosen; it is a fact the
+//   report must SAY, because the alternative is a column that reads live while
+//   nothing consults it — *"A DECLARED NUMBER WITH NO READER"*, the defect this
+//   module was built to close, returned through a different door.
+//
+//   The field is KEPT (operator ruling). The instant is derived by
+//   `readingInstantGate` at call time, so a family rejoins the moment a
+//   projection call site takes `new Date()`, and its tolerance is live again
+//   with nobody editing this file. An instrument that can come back is waiting,
+//   not retired.
+//
+//   ⚠️ **THE PARTITION IS EXHAUSTIVE BY TYPE, NOT BY VIGILANCE.** The map below
+//   covers EVERY `DriftVerdict`, so a new member is a `tsc` failure at its
+//   declaration rather than a row that quietly picks a side. `clockDrift.test.ts`
+//   also pins it against the INDEPENDENT `headroomDays === null` signal, in both
+//   directions — two derivations of one fact, so neither can drift alone.
+
+/** Every verdict, mapped to whether the row REACHED `driftVerdict`. */
+export const VERDICT_PARTITION: Readonly<Record<DriftVerdict, boolean>> = {
+  'no-window-declared': false,
+  'read-at-present': false,
+  'not-projected': false,
+  'unresolved-instant': false,
+  ok: true,
+  warn: true,
+  FALSE: true,
+};
+
+/** Did this row reach the verdict rule — i.e. did its `tol` decide anything? */
+export function reachesVerdict(d: FamilyDrift): boolean {
+  return VERDICT_PARTITION[d.verdict];
+}
+
 /**
  * One family's exposure to the wall clock at `todayIso` (`YYYY-MM-DD`).
  *
@@ -463,7 +509,11 @@ export function formatDriftReport(
     `  ${'family'.padEnd(17)}${'drift'.padStart(6)}${'tol'.padStart(6)}` +
     `${'headroom'.padStart(10)}  ${'verdict'.padEnd(vw)}  reading instant`;
   const body = rows.map((d) => {
-    const tol = d.toleranceDays === null ? '—' : String(d.toleranceDays);
+    // ⚠️ AN INERT TOLERANCE IS PARENTHESISED, so the column cannot be read as
+    // a live threshold on a row whose verdict never consulted it. Derived from
+    // the verdict, never from a hand-kept list of families.
+    const tolNum = d.toleranceDays === null ? '—' : String(d.toleranceDays);
+    const tol = d.toleranceDays !== null && !reachesVerdict(d) ? `(${tolNum})` : tolNum;
     const head = d.headroomDays === null ? '—' : String(d.headroomDays);
     return (
       `  ${d.family.padEnd(17)}${String(d.driftDays).padStart(6)}` +
@@ -471,12 +521,19 @@ export function formatDriftReport(
       d.instant
     );
   });
+  // ⚠️ DERIVED, NEVER A LITERAL — the same rule the column width above follows,
+  // for the same reason. A count typed into this string is wrong the day a
+  // family rejoins, and nothing fails when it is (`FLOOR-IN-PROSE-01`).
+  const reached = rows.filter(reachesVerdict).length;
   return [
     `  DECLARED_PRESENT = ${DECLARED_PRESENT}   today = ${todayIso}`,
     '',
     head,
     '  ' + '─'.repeat(head.length - 2),
     ...body,
+    '',
+    `  ${reached} of ${rows.length} families reach driftVerdict. A parenthesised tol is`,
+    '  DECLARED but consulted nothing on that row.',
     ...waitingFooter(wallReadFamilies(todayIso, instants)),
   ].join('\n');
 }

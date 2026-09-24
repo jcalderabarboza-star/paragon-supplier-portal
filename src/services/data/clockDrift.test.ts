@@ -37,6 +37,8 @@ import {
   driftVerdict,
   wallReadFamilies,
   waitingFooter,
+  reachesVerdict,
+  VERDICT_PARTITION,
   type ReadingInstants,
 } from './clockDrift';
 import { DECLARED_PRESENT, FAMILY_ANCHORS, type FixtureFamily } from './fixturePresent';
@@ -288,5 +290,71 @@ describe('the report a person reads', () => {
     const out = formatDriftReport(plus(DECLARED_PRESENT, day), { ...all('P'), [f]: 'WALL' });
     expect(out).toContain('FALSE');
     expect(out).toContain('WALL');
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// WHICH ROWS REACHED THE VERDICT RULE — and the tolerance that decided nothing.
+//
+// ⚠️ **TWO INDEPENDENT DERIVATIONS OF ONE FACT, PINNED TOGETHER.**
+// `reachesVerdict` reads the VERDICT; `headroomDays !== null` reads the value
+// `familyDrift` only computes on the path that calls `driftVerdict`. They must
+// agree on every family at every date — and because they are computed from
+// different fields, a change that moves one without the other goes red instead
+// of silently re-partitioning the table.
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('the tolerance that decided nothing', () => {
+  it('⚠️ the partition covers EVERY verdict — no member may be absent', () => {
+    // Exhaustive by type at the declaration; this asserts the same thing over
+    // the values, so a member added with a wrong side is caught by ONE of the
+    // two. Both sides must be non-empty or the partition is not a partition.
+    const members = Object.keys(VERDICT_PARTITION);
+    expect(members.length).toBeGreaterThan(4);
+    expect(Object.values(VERDICT_PARTITION).some((v) => v)).toBe(true);
+    expect(Object.values(VERDICT_PARTITION).some((v) => !v)).toBe(true);
+  });
+
+  it('⚠️ agrees with headroomDays on every family, both directions', () => {
+    // the live tree — every family read at P
+    for (const d of driftReport(DECLARED_PRESENT, all('P'))) {
+      expect(reachesVerdict(d)).toBe(d.headroomDays !== null);
+    }
+    // and a tree where a windowed family IS wall-read, so the other side of
+    // the partition is exercised rather than asserted over one case
+    const f = WINDOWED[0];
+    const wall = driftReport(DECLARED_PRESENT, { ...all('P'), [f]: 'WALL' });
+    const row = wall.find((d) => d.family === f)!;
+    expect(reachesVerdict(row)).toBe(true);
+    expect(row.headroomDays).not.toBeNull();
+    for (const d of wall) expect(reachesVerdict(d)).toBe(d.headroomDays !== null);
+  });
+
+  it('⚠️ an inert tolerance is parenthesised; a live one is not', () => {
+    const f = WINDOWED[0];
+    const inert = formatDriftReport(DECLARED_PRESENT, all('P'));
+    const tol = FAMILY_ANCHORS[f].toleranceDays;
+    expect(tol).not.toBeNull();
+    expect(inert).toContain(`(${tol})`);
+
+    const live = formatDriftReport(DECLARED_PRESENT, { ...all('P'), [f]: 'WALL' });
+    const liveRow = live.split('\n').find((l) => l.trimStart().startsWith(f))!;
+    expect(liveRow).toContain(String(tol));
+    expect(liveRow).not.toContain(`(${tol})`);
+  });
+
+  it('⚠️ the footer count is DERIVED, not a literal', () => {
+    // Today every family is read at P, so the count is 0 — but asserting "0"
+    // would pin the tree's current shape, not the arithmetic. Make one family
+    // wall-read and the count must MOVE. That is what separates a derived
+    // number from a literal that happens to be right (`FLOOR-IN-PROSE-01`).
+    const f = WINDOWED[0];
+    const n = driftReport(DECLARED_PRESENT, all('P')).length;
+    expect(formatDriftReport(DECLARED_PRESENT, all('P'))).toContain(
+      `0 of ${n} families reach driftVerdict`,
+    );
+    expect(
+      formatDriftReport(DECLARED_PRESENT, { ...all('P'), [f]: 'WALL' }),
+    ).toContain(`1 of ${n} families reach driftVerdict`);
   });
 });

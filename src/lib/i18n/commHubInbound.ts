@@ -41,7 +41,7 @@ export const commHubInboundEn: Record<string, string> = {
   'commHub.row.materialHint': 'Suggested from the message — confirm the correct material.',
   'commHub.row.totalLabel': 'Total quantity ({{uom}})',
   'commHub.row.uomLabel': 'Unit',
-  'commHub.row.uomMismatch': 'Message said {{msg}}; the material’s unit is {{master}}. The unit comes from the material master, not the message.',
+  'commHub.row.uomMismatch': 'Message said {{msg}}; the material’s unit is {{master, stop}}. The unit comes from the material master, not the message.',
   // CP-2 · B1 — the named dispatch refusal (D-OPS-MASTERMISS), in the buyer's
   // own language. Refused outright: no quarantine, no accept-with-marker.
   'commHub.refusal.UNKNOWN_MATERIAL':
@@ -121,7 +121,7 @@ export const commHubInboundId: Record<string, string> = {
   'commHub.row.materialHint': 'Disarankan dari pesan — konfirmasi material yang benar.',
   'commHub.row.totalLabel': 'Total kuantitas ({{uom}})',
   'commHub.row.uomLabel': 'Satuan',
-  'commHub.row.uomMismatch': 'Pesan menyebut {{msg}}; satuan material adalah {{master}}. Satuan berasal dari master material, bukan pesan.',
+  'commHub.row.uomMismatch': 'Pesan menyebut {{msg}}; satuan material adalah {{master, stop}}. Satuan berasal dari master material, bukan pesan.',
   'commHub.refusal.UNKNOWN_MATERIAL':
     'Master material tidak mengenal kode ini, sehingga tidak ada satuan untuknya. Tidak ada yang dicatat — pilih material dari daftar, atau tambahkan kode tersebut ke master terlebih dahulu.',
   'commHub.confirm.hint': 'Tidak ada yang dicatat sampai Anda mengonfirmasi.',
