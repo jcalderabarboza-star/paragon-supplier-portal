@@ -18,11 +18,18 @@
 // indistinguishable from having nothing to look at.
 // ─────────────────────────────────────────────────────────────────────────────
 import { describe, it, expect } from 'vitest';
-import { mkdtempSync, writeFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 
-import { specFiles, treeMutations, MENTIONS_FS, REPO_ROOT } from './derive';
+import {
+  specFiles,
+  treeMutations,
+  findRepoRoot,
+  MENTIONS_FS,
+  PROJECT_NAME,
+  REPO_ROOT,
+} from './derive';
 
 /** A synthetic spec on disk, OUTSIDE the tree under test — which is the rule
  *  this file exists to enforce, so breaking it here would be absurd. */
@@ -49,8 +56,12 @@ describe('tree-mutation gate · THE POPULATION, before any claim about it', () =
     expect(
       rel.some((f) => f.endsWith('/src/pages-v2/dashboard/buyerDashboardNoLiterals.guard.test.ts')),
     ).toBe(true);
-    // …and the walk really is rooted at this repo, not at someone's cwd.
-    expect(REPO_ROOT.replace(/\\/g, '/')).toMatch(/paragon-supplier-portal$/);
+    // …and the walk really is rooted at THIS REPOSITORY. Asserted from what
+    // the repository DECLARES — `name` in its own package.json — never from the
+    // folder somebody cloned into, which is a label and not an identity.
+    expect(
+      (JSON.parse(readFileSync(join(REPO_ROOT, 'package.json'), 'utf8')) as { name: string }).name,
+    ).toBe(PROJECT_NAME);
   });
 
   it('⚠️ the fs pre-filter admits every spec that imports fs, and only those', () => {
@@ -62,6 +73,120 @@ describe('tree-mutation gate · THE POPULATION, before any claim about it', () =
     expect(MENTIONS_FS.test("const fs = require('node:fs');")).toBe(true);
     expect(MENTIONS_FS.test("const fs = await import('node:fs');")).toBe(true);
     expect(MENTIONS_FS.test("import { render } from '@testing-library/react';")).toBe(false);
+  });
+});
+
+/**
+ * A synthetic repository on disk, OUTSIDE the tree under test, in a FIXED
+ * layout:
+ *
+ *   <root>/                          package.json named `names.root`, or none
+ *   <root>/paragon-supplier-portal/  package.json named `names.decoy`, or none
+ *   <root>/outer/                    package.json named `names.outer`, or none
+ *   <root>/outer/inner/deep/         never a package.json
+ *
+ * ⚠️ **THE LAYOUT IS FIXED AND EVERY PATH BELOW IS BUILT FROM STRING LITERALS,
+ * WHICH IS NOT STYLE.** The first draft of this helper took caller-supplied
+ * relative paths, and THE CLAIM three describes down convicted it: a target
+ * assembled from a loop variable folds to `UNRESOLVED`, which this gate refuses
+ * rather than passes. That is the gate working on the file that enforces it,
+ * and the fix is the one its own failure message prescribes — make the write
+ * foldable — never a widened acquittal.
+ */
+const withSyntheticRepo = <T,>(
+  names: { root?: string; decoy?: string; outer?: string },
+  run: (dirs: { root: string; decoy: string; deep: string }) => T,
+): T => {
+  const root = mkdtempSync(join(tmpdir(), 'repo-root-probe-'));
+  const decoy = join(root, 'paragon-supplier-portal');
+  const deep = join(root, 'outer', 'inner', 'deep');
+  mkdirSync(decoy, { recursive: true });
+  mkdirSync(deep, { recursive: true });
+  if (names.root !== undefined)
+    writeFileSync(join(root, 'package.json'), JSON.stringify({ name: names.root }), 'utf8');
+  if (names.decoy !== undefined)
+    writeFileSync(
+      join(root, 'paragon-supplier-portal', 'package.json'),
+      JSON.stringify({ name: names.decoy }),
+      'utf8',
+    );
+  if (names.outer !== undefined)
+    writeFileSync(
+      join(root, 'outer', 'package.json'),
+      JSON.stringify({ name: names.outer }),
+      'utf8',
+    );
+  try {
+    return run({ root, decoy, deep });
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+};
+
+describe('tree-mutation gate · THE ROOT, which used to be the folder name', () => {
+  // ⚠️ **THE ASSERTION THAT STOOD HERE WAS `/paragon-supplier-portal$/` OVER
+  // `process.cwd()`, AND IT WAS WRONG IN BOTH DIRECTIONS AT ONCE**: it convicted
+  // this repository cloned into any other folder — a clean clone went red on a
+  // gate that had found no defect, which is the worst reading an instrument can
+  // produce — and it acquitted any OTHER repository sitting in a folder somebody
+  // had named `paragon-supplier-portal`. Both directions are probed below
+  // against synthetic directories, so the replacement is shown to be STRONGER
+  // rather than merely different. A folder name is a label anybody can type;
+  // `name` in package.json is the repository's own claim, and it travels with
+  // the clone.
+
+  it('⚠️ the decoy directory really is spelled the way the old check matched', () => {
+    // Without this, the two probes below could pass while probing nothing: a
+    // decoy misspelled against `PROJECT_NAME` is not the old check's input.
+    expect(withSyntheticRepo({}, (d) => d.decoy.endsWith(PROJECT_NAME))).toBe(true);
+  });
+
+  it('⚠️ FINDS the root from a deep descendant — the walk is upward, not the cwd', () => {
+    expect(findRepoRoot(join(REPO_ROOT, 'src', 'lib', 'treeMutationGate'))).toBe(REPO_ROOT);
+    expect(findRepoRoot(REPO_ROOT)).toBe(REPO_ROOT);
+  });
+
+  it('⚠️ FOLDER-NAME INDEPENDENT — a clone under any other name still resolves', () => {
+    // The defect this batch exists for, reproduced on disk: the same declared
+    // identity, in a directory named nothing like it.
+    withSyntheticRepo({ root: PROJECT_NAME }, ({ root, deep }) => {
+      expect(root.endsWith(PROJECT_NAME)).toBe(false); // mkdtemp names it otherwise
+      expect(findRepoRoot(deep)).toBe(resolve(root));
+    });
+  });
+
+  it('⚠️ and the FOLDER NAME ALONE buys nothing — identity is what is DECLARED', () => {
+    // The old check's false-ACQUITTAL direction, which is the one a one-sided
+    // probe never reaches. A directory called `paragon-supplier-portal` whose
+    // package.json says it is something else is not this repository.
+    withSyntheticRepo({ decoy: 'some-other-project' }, ({ decoy }) => {
+      expect(findRepoRoot(decoy)).toBe(null);
+    });
+  });
+
+  it('⚠️ NO DECLARATION ANYWHERE is null — never a fallback to the start dir', () => {
+    // A fallback would put the gate back where it began: walking whichever
+    // directory it happened to be handed. Null is refused loudly at module
+    // scope, so the gate cannot run against the wrong tree in silence.
+    // (This reads the real ancestors of the OS temp dir, which is outside this
+    // repository — stated because it is the one assumption the probe makes.)
+    withSyntheticRepo({}, ({ deep }) => {
+      expect(findRepoRoot(deep)).toBe(null);
+    });
+  });
+
+  it('⚠️ the NEAREST DECLARING ancestor wins, not the first package.json seen', () => {
+    withSyntheticRepo({ root: PROJECT_NAME, outer: 'unrelated-package' }, ({ root, deep }) => {
+      // `outer` declares a different name, so it is walked PAST, not stopped at.
+      expect(findRepoRoot(deep)).toBe(resolve(root));
+    });
+  });
+
+  it("⚠️ a spec's process.cwd() really is the root this gate models it as", () => {
+    // `evalPath` folds `process.cwd()` to REPO_ROOT, which is an assumption
+    // about the RUNNER rather than an identity. Unasserted, it is how a gate
+    // starts classifying every path against the wrong tree without saying so.
+    expect(resolve(process.cwd())).toBe(REPO_ROOT);
   });
 });
 

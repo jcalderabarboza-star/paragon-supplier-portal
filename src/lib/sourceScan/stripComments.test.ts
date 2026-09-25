@@ -396,6 +396,14 @@ describe('⚠️ THE TWO-REGEX COMMENT STRIP IS EXTINCT — derived, not listed'
         // population (parsed, comments stripped) and the person-render census.
         'services/identity/attributionKeys.test.ts',
         'services/identity/personLabelGuard.test.ts',
+        // Added by the handover batch (H1-b). The env gate asks "which
+        // environment variables does the code READ?", and five source comments
+        // in this tree name env vars in prose — `main.tsx`, `withChaos.ts`,
+        // `envBadge.ts`, `vite-env.d.ts` and `GRInspectionWizard.tsx`. Counting
+        // them would make `.env.example` document whatever a comment happened to
+        // mention, which is the same "a comment is not a call site" shape three
+        // entries below.
+        'lib/envGate/derive.ts',
         'lib/projectionGate/dayCounts.ts',
         'lib/projectionGate/derive.ts',
         'pages-v2/buyerInvoicesEscalateHonesty.test.ts',

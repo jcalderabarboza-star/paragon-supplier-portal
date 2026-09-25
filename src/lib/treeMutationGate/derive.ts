@@ -47,9 +47,84 @@
 // ─────────────────────────────────────────────────────────────────────────────
 import ts from 'typescript';
 import { readdirSync, statSync, readFileSync } from 'node:fs';
-import { join, resolve, relative, sep } from 'node:path';
+import { join, resolve, relative, sep, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-export const REPO_ROOT = process.cwd();
+// ── ⚠️ THE ROOT IS DERIVED FROM WHAT THE REPOSITORY DECLARES, NEVER FROM THE
+//    FOLDER IT WAS CLONED INTO. ──────────────────────────────────────────────
+//   This gate used to root itself at `process.cwd()` and prove that rooting by
+//   asserting the path ENDED IN `paragon-supplier-portal`. Both halves were
+//   wrong in the same direction, and the second hid the first: a clean clone
+//   into any other directory name went red on a gate that had found no defect,
+//   which is the worst reading an instrument can produce — a failure that says
+//   nothing about the tree. A handover engineer clones into whatever they like.
+//
+//   ⚠️ **AND THE REPLACEMENT IS STRICTLY STRONGER, WHICH IS THE CONDITION FOR
+//   MAKING IT.** A folder name is a label anybody can type; `name` in
+//   `package.json` is the repository's own claim about its identity and travels
+//   with the clone. The old check PASSED on an unrelated project sitting in a
+//   folder somebody had named `paragon-supplier-portal`, and it FAILED on this
+//   repository in a folder named anything else. Both directions are now right,
+//   and `treeMutation.guard.test.ts` probes both of them against synthetic
+//   directories rather than taking this paragraph's word for it.
+//
+//   The walk is upward from THIS MODULE, not from the cwd, so the root is the
+//   same object however the suite is invoked. Precedent:
+//   `chartPalette.guard.test.tsx` already roots itself at
+//   `dirname(fileURLToPath(import.meta.url))`; what is added here is the
+//   repository's own assertion at the end of the walk, so the answer cannot be
+//   "three directories up, whatever that happens to be".
+
+/** The repository's declared identity — `name` in its own `package.json`. */
+export const PROJECT_NAME = 'paragon-supplier-portal';
+
+/**
+ * `name` in `<dir>/package.json`, or null when no package.json is there.
+ *
+ * ABSENT and UNREADABLE are deliberately different facts: only `ENOENT` means
+ * "keep walking". Anything else is re-thrown, because a root that cannot be
+ * read is not the same as a root that is not here, and a gate that conflates
+ * them resolves to the wrong tree in silence.
+ */
+function packageNameAt(dir: string): string | null {
+  let text: string;
+  try {
+    text = readFileSync(join(dir, 'package.json'), 'utf8');
+  } catch (e) {
+    if ((e as NodeJS.ErrnoException).code === 'ENOENT') return null;
+    throw e;
+  }
+  const name: unknown = (JSON.parse(text) as { name?: unknown }).name;
+  return typeof name === 'string' ? name : null;
+}
+
+/**
+ * The nearest ancestor of `start` (inclusive) whose package.json declares
+ * `PROJECT_NAME`. Null when there is none — NEVER a fallback to `start` or to
+ * the cwd, because a fallback would put this gate back where it began: looking
+ * at whichever directory it happened to be handed.
+ */
+export function findRepoRoot(start: string): string | null {
+  let dir = resolve(start);
+  for (;;) {
+    if (packageNameAt(dir) === PROJECT_NAME) return dir;
+    const up = dirname(dir);
+    if (up === dir) return null;
+    dir = up;
+  }
+}
+
+export const REPO_ROOT: string = (() => {
+  const from = dirname(fileURLToPath(import.meta.url));
+  const root = findRepoRoot(from);
+  if (root === null)
+    throw new Error(
+      `tree-mutation gate: walked up from ${from} and found no package.json ` +
+        `declaring "name": "${PROJECT_NAME}". The gate refuses to guess a root ` +
+        `rather than walk the wrong tree.`,
+    );
+  return root;
+})();
 
 /** Directories that are never part of the tree under test. */
 const SKIP_DIRS = new Set(['node_modules', '.git', 'dist', 'coverage', '.vite']);
@@ -118,6 +193,10 @@ function evalPath(
       if (parts.some((p) => p === null)) return null;
       return (parts as string[]).reduce((a, b) => (a ? join(a, b) : b), '');
     }
+    // A spec's `process.cwd()` is vitest's root, which is this repository's
+    // root. That is an assumption about the RUNNER, not an identity, so the
+    // guard asserts it rather than leaving it implicit — if a future runner
+    // changes cwd, the gate says so instead of misclassifying every path.
     if (callee === 'cwd') return REPO_ROOT;
     if (callee === 'tmpdir') return TMP;
     // `mkdtempSync(join(tmpdir(), 'x-'))` evaluates to a directory UNDER its
