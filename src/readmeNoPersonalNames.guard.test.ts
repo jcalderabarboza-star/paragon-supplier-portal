@@ -53,6 +53,21 @@ const TITLE_PHRASE = /\b[A-Z][a-z]+(?:[ \t]+[A-Z][a-z]+)+\b/g;
 /** Person-shaped fixture fields. Derived from source, never listed. */
 const PERSON_FIELD = /\b(?:contactName|contactPerson|personName|displayName|fullName)\s*:\s*'([^']+)'/g;
 
+/**
+ * This spec is the ONE place in the repository allowed to write the historic
+ * names down, because documenting the defect requires naming it.
+ *
+ * ⚠️ **AND THAT MAKES IT SELF-DISARMING IF IT IS LEFT IN THE CORPUS — MEASURED,
+ * NOT FORESEEN.** Direction B convicts a phrase that appears nowhere else in the
+ * tree. The moment this file was COMMITTED it became a tracked file, `James
+ * Chen` became attested by the very guard that exists to catch it, and both the
+ * conviction probe and its own corpus control went red. In the working copy the
+ * file was still untracked, so `git ls-files` did not list it and everything was
+ * green — **a guard validated against a tree that did not yet contain it.** The
+ * clean clone is what found this, which is precisely what a clean clone is for.
+ */
+const SELF = 'src/readmeNoPersonalNames.guard.test.ts';
+
 /** Every tracked file except the README itself and the things that cannot attest. */
 function attestationCorpus(): string {
   const out = execFileSync('git', ['-c', 'core.quotepath=false', 'ls-files'], {
@@ -62,7 +77,7 @@ function attestationCorpus(): string {
   });
   const parts: string[] = [];
   for (const rel of out.split('\n')) {
-    if (!rel || rel === 'README.md') continue;
+    if (!rel || rel === 'README.md' || rel === SELF) continue;
     if (/\.(png|ico|svg|xlsx|woff2?)$/i.test(rel) || rel === 'package-lock.json') continue;
     try {
       parts.push(readFileSync(join(REPO_ROOT, rel), 'utf8'));
@@ -97,6 +112,23 @@ describe('README person references · THE POPULATIONS, before any claim', () => 
     // …and it is NOT attesting the historic defect, which is what makes
     // direction B able to catch it at all.
     expect(corpus).not.toContain('James Chen');
+  });
+
+  it('⚠️ the corpus excludes exactly TWO files, and this one really holds the specimen', () => {
+    // The exclusion is the load-bearing part and the easiest to widen by
+    // accident, so it is pinned rather than trusted. If the specimen ever left
+    // this file, the exclusion would be buying nothing and should go with it.
+    const tracked = execFileSync('git', ['-c', 'core.quotepath=false', 'ls-files'], {
+      cwd: REPO_ROOT,
+      encoding: 'utf8',
+      maxBuffer: 64 * 1024 * 1024,
+    }).split('\n');
+    expect(tracked).toContain(SELF);
+    expect(tracked).toContain('README.md');
+    expect(readFileSync(join(REPO_ROOT, SELF), 'utf8')).toContain('James Chen');
+    // Everything else is IN the corpus — asserted by a member that could only
+    // come from a third file.
+    expect(corpus).toContain('Budi Santoso'); // src/data/mockSuppliers.ts
   });
 
   it('⚠️ the person population is DERIVED and holds a known member BY NAME', () => {
