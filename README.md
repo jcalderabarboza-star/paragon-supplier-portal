@@ -24,9 +24,16 @@ field on each transition carries the reason and, for an external fact, the syste
 its owner at `/buyer/process-flows`, so the boundary is a page you can open rather than a paragraph
 you have to trust.
 
+The team implementing the backend builds against the contract package in
+`src/services/contracts/` and proves conformance with the two factories in
+`src/services/contracts/conformance/`.
+
 **What it is not.** Not an EDI-capable system of record, and not integrated with anything. The
 non-portal channels (WhatsApp, API, EDI) are *designed* and explicitly marked not-connected in
-`src/data/communicationProfiles.ts`. No Ariba integration exists or is scheduled here.
+`src/data/communicationProfiles.ts`. No Ariba integration exists or is scheduled here. And some
+surfaces are further along than others — `/register`, the supplier self-registration wizard, is
+five steps of UI that make **no service call at all**: submitting it records nothing anywhere.
+A buyer-raised supplier application *is* recorded; a supplier raising their own is not built.
 
 ---
 
