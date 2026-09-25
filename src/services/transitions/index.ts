@@ -45,6 +45,8 @@ export { supplierApplicationFlow } from './flows/supplierApplication.flow';
 export { materialRequestFlow } from './flows/materialRequest.flow';
 export { pslFlow, PSL_PROPOSE_FIELDS } from './flows/psl.flow';
 export { pslCapSettingFlow } from './flows/pslCapSetting.flow';
+export { deliveryReleaseFlow, DELIVERY_LINE_STATES } from './flows/deliveryRelease.flow';
+export { deliveryPolicyFlow, DELIVERY_POLICY_STATE } from './flows/deliveryPolicy.flow';
 export * from './customRoles';
 
 import { flowRegistry } from './registry';
@@ -71,6 +73,8 @@ import { supplierApplicationFlow } from './flows/supplierApplication.flow';
 import { materialRequestFlow } from './flows/materialRequest.flow';
 import { pslFlow } from './flows/psl.flow';
 import { pslCapSettingFlow } from './flows/pslCapSetting.flow';
+import { deliveryReleaseFlow } from './flows/deliveryRelease.flow';
+import { deliveryPolicyFlow } from './flows/deliveryPolicy.flow';
 
 // Seed the shipped flows onto the singleton.
 flowRegistry.register(purchaseOrderFlow); // Step 3.1 — PO
@@ -135,3 +139,15 @@ flowRegistry.register(pslFlow); // PSL P3 — Preferred Supplier List
 // because a cap is a number of days and `t_enforcement_set`'s payload is a
 // mode — `roleFlow` is the precedent for minting rather than stretching.
 flowRegistry.register(pslCapSettingFlow); // PSL P3 — the default validity cap
+// CALL-OFF STEP 1 — the delivery-agreement lane, brought into the transition
+// system. TWO machines for TWO entities, which is what the model already said:
+// a SCHEDULE LINE has a real lifecycle (`draft` → `released`, SAP LPA internal
+// character until an explicit release), and an item's DRAWDOWN TOLERANCE has
+// none — it has a ledger, exactly like a governed enforcement check.
+//
+// WIRED: both targets ship in this commit, so neither entity joins the
+// target-less set (`getKnownFlows()` ∖ `WIRED_COMMAND_TARGETS`) even for one
+// merge. Before this batch the lane was in NEITHER set — it had three writes
+// and no verbs at all, which is why nothing audited them.
+flowRegistry.register(deliveryReleaseFlow); // Call-off 1 — the schedule line
+flowRegistry.register(deliveryPolicyFlow); // Call-off 1 — the drawdown tolerance

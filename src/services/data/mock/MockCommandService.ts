@@ -44,6 +44,20 @@ import { supplierApplicationStore } from './stores/supplierApplicationStore';
 import { materialRequestStore } from './stores/materialRequestStore';
 import { VENDOR_BEARING_REQUEST_TYPE } from '../../transitions/flows/supplierApplication.flow';
 import { NO_PERSON } from '../../../context/noPerson';
+// CALL-OFF STEP 1 — the delivery lane's domain verbs, address resolvers, store
+// and shared shipment pool. The targets below are the tree's only writers of
+// that store.
+import {
+  adjustDraftLine,
+  confirmFulfillment,
+  deriveFulfillment,
+  releaseScheduleLines,
+  setActivePolicy,
+} from '../../delivery';
+import { resolveItem, resolveLine } from '../../delivery/addressing';
+import { deliveryShipmentPoolFor } from '../../delivery/pool';
+import { schedulingAgreementStore } from '../../delivery/stores/schedulingAgreementStore';
+import type { DrawdownEnforcement, SchedulingAgreementItem } from '../../delivery/types';
 import type { RFQ, RFQStatus, RFQCategory } from '../../../data/mockRfqs';
 import type { CodeLessReason } from '../../../data/materialCatalogReason';
 import type { Quotation, QuotationStatus } from '../../../data/mockQuotations';
@@ -2221,6 +2235,161 @@ const pslCapSettingTarget: CommandTarget = {
   },
 };
 
+// ── CALL-OFF STEP 1 · THE DELIVERY LANE'S TARGETS ───────────────────────────
+//
+// ⚠️ **THESE TWO TARGETS ARE THE ONLY PLACE IN THE TREE THAT MUTATES
+// `schedulingAgreementStore`.** That is the point of the batch, and it is
+// asserted rather than described: `deliveryBypass.test.ts` derives every
+// `schedulingAgreementStore.update(` call site from source and requires the set
+// to be exactly this file. Before the batch the three writes sat on
+// `MockDeliveryService`, gated by `scope.personaType === 'buyer'` and nothing
+// else — no atom, no policy hook, no `TransitionEvent`, no actor.
+//
+// ⚠️ **NO DOCUMENT NUMBER IS MINTED HERE, AND THERE IS NOWHERE TO PUT ONE.**
+// `sapReleaseNumber` is not written and no verb's `requiredFields` carries a
+// number field. SAP assigns it on transmission (Pattern B) — C12 §2.1: *"we
+// CARRY identity, we do not ASSIGN it."*
+//
+// ⚠️ **THE VERB IS DERIVED FROM (currentState → toState), NOT PASSED.**
+// `applyTransition` does not receive the transition id, and this flow has three
+// verbs over two states. The mapping is total and unambiguous because the
+// schema makes it so — `Draft→Released` is the only release, `Draft→Draft` the
+// only adjust, `Released→Released` the only confirm — which is `pslWriteVerbFor`
+// one lane over. An unmapped pair throws rather than guessing: a target that
+// silently did nothing would be a dispatched act with no effect and a `done`
+// event to say it worked.
+
+/** Which delivery verb does this state pair mean? Total over the flow's legal
+ *  edges; anything else is a schema/target disagreement and must be loud. */
+function deliveryWriteVerbFor(
+  currentState: string,
+  toState: string,
+): 'release' | 'adjust' | 'confirm' {
+  if (currentState === 'Draft' && toState === 'Released') return 'release';
+  if (currentState === 'Draft' && toState === 'Draft') return 'adjust';
+  if (currentState === 'Released' && toState === 'Released') return 'confirm';
+  throw new Error(`deliveryRelease: no verb for ${currentState} → ${toState}`);
+}
+
+/** Persist one rewritten item back onto its agreement — immutably, the ONE
+ *  mutation shape this lane has ever used. */
+function persistItem(agreementId: string, lineSeq: number, next: SchedulingAgreementItem): void {
+  schedulingAgreementStore.update(agreementId, (a) => ({
+    ...a,
+    items: a.items.map((i) => (i.lineSeq === lineSeq ? next : i)),
+  }));
+}
+
+const deliveryReleaseTarget: CommandTarget = {
+  // The flow's vocabulary is `Draft`/`Released`; the model's is
+  // `draft`/`released`. Mapped HERE, in the one place that knows both.
+  readState: (id) => {
+    const resolved = resolveLine(id);
+    if (!resolved) return null;
+    return resolved.line.state === 'released' ? 'Released' : 'Draft';
+  },
+  // ⚠️ **NULL MEANS NO SUPPLIER MAY ACT, NOT "NOTHING TO COMPARE" (§86).** A
+  // delivery schedule is a BUYER governance record: releasing, adjusting and
+  // confirming are all Paragon's acts, and the supplier mirror is read-only by
+  // ruling. So a supplier scope is denied at SCOPE — identically for a real
+  // `releaseRef` and for a string that is not one, which is what keeps the
+  // refusal kind from reporting existence across a tenancy boundary.
+  readScopeOwner: () => null,
+  // The RESOLVED line with its parents — what the hooks read. `readEntity` is
+  // documented as "full entity for policy hooks to inspect", and the hooks here
+  // need the agreement (for the supplier's shipment pool) and the item (for the
+  // fulfillment derivation), not just the row.
+  readEntity: (id) => resolveLine(id),
+  applyTransition: (id, toState, payload, scope) => {
+    const resolved = resolveLine(id);
+    // The dispatcher answered NOT_FOUND if this were null, so it cannot be —
+    // stated as a throw rather than a silent return, because a target that did
+    // nothing would still emit `done`.
+    if (!resolved) throw new Error(`deliveryRelease: ${id} vanished between gate and apply`);
+    const { agreement, item, line } = resolved;
+    const currentState = line.state === 'released' ? 'Released' : 'Draft';
+    const verb = deliveryWriteVerbFor(currentState, toState);
+    // FROM THE SESSION, never the payload (C10 §6.2). The dispatcher refuses
+    // `releasedBy` / `adjustedBy` / `confirmedBy` as payload keys, so there is
+    // no caller-supplied value left to prefer.
+    const actor = asActorAttribution(scope.actor) ?? NO_PERSON;
+    const now = sdcClock.now();
+
+    if (verb === 'release') {
+      const r = releaseScheduleLines(item, { releaseSeqs: [line.releaseSeq] }, now, actor);
+      if (!r.ok) throw new Error(`deliveryRelease: pure verb refused after gates: ${r.reason}`);
+      persistItem(agreement.id, item.lineSeq, r.item);
+      return;
+    }
+    if (verb === 'adjust') {
+      const r = adjustDraftLine(
+        item,
+        line.releaseSeq,
+        {
+          ...(typeof payload.plannedQty === 'number' ? { plannedQty: payload.plannedQty } : {}),
+          ...(typeof payload.releaseDate === 'string' ? { releaseDate: payload.releaseDate } : {}),
+        },
+        now,
+        actor,
+      );
+      if (!r.ok) throw new Error(`deliveryAdjust: pure verb refused after gates: ${r.reason}`);
+      persistItem(agreement.id, item.lineSeq, r.item);
+      return;
+    }
+    // CONFIRM — ACCEPT-AS-OBSERVED. The `(ref, qty)` is re-derived from the
+    // SAME pool the hook checked and the surface rendered, never taken from a
+    // payload: a caller that could state the quantity could state one nobody
+    // was shown, and `deliveredQty` is a governed total.
+    const observed = deriveFulfillment(
+      item,
+      deliveryShipmentPoolFor(agreement.supplierId),
+      now,
+    ).find((f) => f.releaseSeq === line.releaseSeq);
+    if (!observed || observed.matchedRef === undefined || observed.actualQty === undefined) {
+      throw new Error(`deliveryConfirm: match vanished between gate and apply on ${id}`);
+    }
+    const r = confirmFulfillment(item, line.releaseSeq, {
+      fulfilledBy: observed.matchedRef,
+      actualQty: observed.actualQty,
+      now,
+      confirmedBy: actor,
+    });
+    if (!r.ok) throw new Error(`deliveryConfirm: pure verb refused after gates: ${r.reason}`);
+    persistItem(agreement.id, item.lineSeq, r.item);
+  },
+};
+
+// ── The drawdown tolerance — `enforcementTarget`'s shape, verb for verb ──────
+//
+// THE ENTITY IS THE ITEM'S GOVERNED TOLERANCE. `entityId` is
+// `agreementId#lineSeq`, so the entity commanded and the item written cannot
+// disagree — there is no `agreementId` payload field to disagree with it.
+// `readState` answers the single state for an item that exists and `null` for
+// anything else, which makes an unknown address `NOT_FOUND` rather than a
+// silently created setting. `create` is absent entirely: a tolerance is born
+// with its item, at contract signing.
+const deliveryPolicyTarget: CommandTarget = {
+  readState: (id) => (resolveItem(id) ? 'Governed' : null),
+  readScopeOwner: () => null,
+  readEntity: (id) => resolveItem(id),
+  applyTransition: (id, _toState, payload, scope) => {
+    const resolved = resolveItem(id);
+    if (!resolved) throw new Error(`deliveryPolicy: ${id} vanished between gate and apply`);
+    const { agreement, item } = resolved;
+    const r = setActivePolicy(item, {
+      tolerancePct: payload.tolerancePct as number | null,
+      enforcement: payload.enforcement as DrawdownEnforcement,
+      reason: payload.reason as string,
+      now: sdcClock.now(),
+      // FROM THE SESSION, never the payload. `activeChangedBy` is an
+      // `ATTRIBUTION_KEYS` member precisely so the dispatcher refuses it there.
+      changedBy: asActorAttribution(scope.actor) ?? NO_PERSON,
+    });
+    if (!r.ok) throw new Error(`deliveryPolicy: pure verb refused after gates: ${r.reason}`);
+    persistItem(agreement.id, item.lineSeq, r.item);
+  },
+};
+
 const TARGETS: Record<string, CommandTarget> = {
   purchaseOrder: purchaseOrderTarget,
   advanceShipNotice: advanceShipNoticeTarget,
@@ -2260,6 +2429,12 @@ const TARGETS: Record<string, CommandTarget> = {
   // setting that bounds every designation in the platform must not be
   // changeable outside the trail that exists to explain it.
   pslCapSetting: pslCapSettingTarget,
+  // CALL-OFF STEP 1 — the delivery lane. Two entities, two targets, shipped in
+  // the same commit as their flows so neither joins the target-less set. These
+  // are the ONLY writers of `schedulingAgreementStore` in the tree, which is
+  // what makes "no second write path" a derived assertion rather than a claim.
+  deliveryRelease: deliveryReleaseTarget,
+  deliveryPolicy: deliveryPolicyTarget,
 };
 
 // The behavior-wiring census (was the contract package's "6"; 7 with the G1.1

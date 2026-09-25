@@ -65,6 +65,11 @@ describe('LivenessRegistry — derived from the wiring census (cannot drift)', (
         // order: a capability that reached gate-1 without a gate-2 entry would
         // have gone green on seeded rows.
         'supplierDocuments',
+        // CALL-OFF STEP 1 — the delivery lane's two targets ship with their
+        // flows, so gate-1 derives LIVE from birth. Its gate-2 entry lands in
+        // the SAME commit, the only safe order: a capability that reached
+        // gate-1 without one would have gone green on a generated calendar.
+        'deliveryAgreements',
       ]),
     );
   });
@@ -210,6 +215,15 @@ describe('LivenessRegistry — harvest gate (LIVENESS-DATASOURCE-01, gate-2)', (
       // designation shown to them is real, which is the one audience for whom
       // that mistake is not recoverable.
       'psl',
+      // CALL-OFF STEP 1 — and here the temptation is that the WRITES are the
+      // product: four real verbs, an audited trail, an actor on every row. All
+      // of that is true and none of it makes the DATA real. Every agreement on
+      // screen is a calendar this module generated at import against a
+      // SIMULATED SAP number, and a release taken in a session is a demo act on
+      // a demo row. Green would tell a buyer that a schedule the vendor has
+      // been given is one S/4HANA knows about, which is exactly the claim
+      // `sapReleaseNumber` is left absent to avoid making.
+      'deliveryAgreements',
     ]);
     for (const cap of ALL_CAPABILITIES) {
       if (gated.has(cap)) continue;

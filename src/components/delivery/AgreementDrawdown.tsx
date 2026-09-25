@@ -18,7 +18,7 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
-import { PackageCheck, Send, SlidersHorizontal } from 'lucide-react';
+import { PackageCheck, Pencil, Send, SlidersHorizontal } from 'lucide-react';
 import StatusPill from '../ui-v2/StatusPill';
 import KpiCard from '../ui-v2/KpiCard';
 import TargetBar from '../ui-v2/TargetBar';
@@ -26,6 +26,8 @@ import Data from '../ui-v2/Data';
 import Button from '../ui-v2/Button';
 import ReleaseCalendar from './ReleaseCalendar';
 import PolicyEditor from './PolicyEditor';
+import HandoffNotice from '../ui-v2/HandoffNotice';
+import type { VerbAvailability } from '../../services/transitions/handoff';
 import { formatNumber, formatDate } from '../../lib/format';
 import type { TFunction } from 'i18next';
 import type {
@@ -33,6 +35,7 @@ import type {
   DeliveryItemView,
   EditPolicyPatch,
   ReleaseSelection,
+  ScheduleLine,
   TolerancePolicy,
 } from '../../services/delivery';
 
@@ -67,6 +70,47 @@ export type OnEditPolicy = (
   patch: EditPolicyPatch,
 ) => Promise<boolean>;
 
+/** The adjust write (call-off step 1) — move a DRAFT line's date and/or
+ *  quantity. Threaded alongside the others when the viewer is a buyer; resolves
+ *  `true` when APPLIED (the inline editor closes) and `false` on an honest
+ *  refusal (it stays open so the operator can correct it). The page owns the
+ *  toast. */
+export type OnAdjust = (
+  /** The line's `releaseRef` — the portal join-chain the generator minted, and
+   *  the dispatcher's entityId. Passed rather than re-derived from a triple, so
+   *  no second resolution can disagree with the first. */
+  releaseRef: string,
+  /** Whose cache must refresh alongside the buyer's (SDC-4d cross-scope). */
+  supplierId: string,
+  patch: { plannedQty?: number; releaseDate?: string },
+) => Promise<boolean>;
+
+/**
+ * ⚠️ **PER-VERB GATING, NOT PER-SURFACE (`ENTRANCE-IS-THE-UNIT-01`).**
+ *
+ * Before call-off step 1 this card asked one question — *"was a handler
+ * threaded?"* — and the page answered it with `personaType === 'buyer'`. That
+ * conflated FOUR authorities into one, and after this batch they genuinely
+ * differ: release / adjust / confirm are `procurement`'s and the drawdown
+ * tolerance is `compliance`'s, precisely so the lane that releases cannot relax
+ * the check it is measured against.
+ *
+ * So each verb carries its OWN availability and renders its OWN notice in its
+ * OWN slot (§76: one notice per verb, never a group collapse). Absent ⇒ the
+ * card is read-only for that verb and nothing renders — which is what the
+ * supplier mirror passes, deliberately: its response is step 2.
+ */
+export interface DeliveryVerbAvailability {
+  readonly release?: VerbAvailability;
+  readonly adjust?: VerbAvailability;
+  readonly confirm?: VerbAvailability;
+  readonly policy?: VerbAvailability;
+}
+
+/** Does the seat hold this verb? An ABSENT availability is not "held" — a card
+ *  rendered without one is read-only, never permissive by omission. */
+const holds = (a?: VerbAvailability): boolean => a?.kind === 'held';
+
 /**
  * A stored FRACTION as display percent — the ONE conversion for this surface.
  *
@@ -100,6 +144,9 @@ const AgreementCard: React.FC<{
   onRelease?: OnRelease;
   onConfirm?: OnConfirm;
   onEditPolicy?: OnEditPolicy;
+  onAdjust?: OnAdjust;
+  /** Per-verb authority for this seat — see `DeliveryVerbAvailability`. */
+  availability?: DeliveryVerbAvailability;
   /** Show the policy-deviation marker + its "changed {when} — {why}" detail. TRUE
    *  for the buyer (governance history is theirs). FALSE for the supplier mirror —
    *  the MODE chip (Governed / Reference) stays, but the contract-default, edit
@@ -114,6 +161,8 @@ const AgreementCard: React.FC<{
   onRelease,
   onConfirm,
   onEditPolicy,
+  onAdjust,
+  availability,
   showPolicyHistory = true,
   proposedCaptionKey,
 }) => {
@@ -167,9 +216,12 @@ const AgreementCard: React.FC<{
             key={iv.item.lineSeq}
             iv={iv}
             agreementId={agreement.id}
+            supplierId={agreement.supplierId}
             onRelease={onRelease}
             onConfirm={onConfirm}
             onEditPolicy={onEditPolicy}
+            onAdjust={onAdjust}
+            availability={availability}
             showPolicyHistory={showPolicyHistory}
             proposedCaptionKey={proposedCaptionKey}
           />
@@ -184,17 +236,23 @@ const AgreementCard: React.FC<{
 const ItemBlock: React.FC<{
   iv: DeliveryItemView;
   agreementId: string;
+  supplierId: string;
   onRelease?: OnRelease;
   onConfirm?: OnConfirm;
   onEditPolicy?: OnEditPolicy;
+  onAdjust?: OnAdjust;
+  availability?: DeliveryVerbAvailability;
   showPolicyHistory?: boolean;
   proposedCaptionKey?: string;
 }> = ({
   iv,
   agreementId,
+  supplierId,
   onRelease,
   onConfirm,
   onEditPolicy,
+  onAdjust,
+  availability,
   showPolicyHistory = true,
   proposedCaptionKey,
 }) => {
@@ -206,9 +264,18 @@ const ItemBlock: React.FC<{
   // ── Policy-edit (the THIRD write) — buyer-only governance. `onEditPolicy`
   // present ⇒ the viewer is a buyer; the edit affordance renders on the policy
   // chip. The editor closes on an APPLIED edit, stays open on an honest refusal. ──
-  const canEdit = !!onEditPolicy;
+  // ⚠️ **AND IT NOW READS THE ATOM, NOT THE PROP (call-off step 1).** A
+  // threaded handler used to mean "the viewer is a buyer", which conflated the
+  // four delivery authorities into one. `delivery:policy-set` is `compliance`'s
+  // and the other three are `procurement`'s, deliberately — so a seat holding
+  // procurement alone sees the release controls and a WAIT here.
+  const canEdit = !!onEditPolicy && holds(availability?.policy);
   const [editing, setEditing] = useState(false);
   const [savingPolicy, setSavingPolicy] = useState(false);
+  // THE MODE IS GATED, NOT THE DOOR. A panel left open while the seat is
+  // narrowed collapses; component state outlives the seat
+  // (`ENTRANCE-IS-THE-UNIT-01`, and `SupplierShipments`' own precedent).
+  const effectiveEditing = editing && canEdit;
 
   const doEditPolicy = async (patch: EditPolicyPatch) => {
     if (!onEditPolicy) return;
@@ -238,20 +305,62 @@ const ItemBlock: React.FC<{
   const draftDates = item.scheduleLines
     .filter((l) => l.state === 'draft')
     .map((l) => l.releaseDate);
-  const canRelease = !!onRelease && draftDates.length > 0;
+  const canRelease = !!onRelease && holds(availability?.release) && draftDates.length > 0;
+  const canAdjust = !!onAdjust && holds(availability?.adjust);
 
   // ── Confirm-match (the SECOND write) — buyer-only, over INFERRED released
   // lines. `onConfirm` present ⇒ buyer; a proposal to accept exists when any
   // released line carries an inferred proximity match. ────────────────────────
   const hasInferred = iv.fulfillment.some((f) => f.inferred);
-  const canConfirm = !!onConfirm && hasInferred;
+  const canConfirm = !!onConfirm && holds(availability?.confirm) && hasInferred;
 
   // The per-line action column shows for a buyer with anything actionable — a
   // draft to release OR an inferred match to confirm. `pending` is keyed by a
   // string so release/confirm/horizon never collide.
-  const showActions = (!!onRelease && draftDates.length > 0) || canConfirm;
+  // ⚠️ **THE COLUMN RENDERS WHENEVER A VERB IS *OFFERABLE*, HELD OR NOT.** The
+  // operator constraint is that a cross-role handoff renders THE WAIT, NOT A
+  // GAP — so a seat without `delivery:release` must still see the column, with
+  // "Awaiting Procurement" where the button would be. Keying this on `canRelease`
+  // would hide the column and reproduce the invisible-bottleneck the rule exists
+  // to prevent.
+  const releaseOfferable = !!availability?.release && draftDates.length > 0;
+  const confirmOfferable = !!availability?.confirm && hasInferred;
+  const showActions = releaseOfferable || confirmOfferable;
   const [horizon, setHorizon] = useState('');
   const [pending, setPending] = useState<string | null>(null);
+  // The line being adjusted, and its seeded values. Collapsed by `canAdjust` so
+  // a narrowed seat cannot keep an open editor (the mode gate above).
+  const [adjustSeq, setAdjustSeq] = useState<number | null>(null);
+  const [adjustDate, setAdjustDate] = useState('');
+  const [adjustQty, setAdjustQty] = useState('');
+  const effectiveAdjustSeq = canAdjust ? adjustSeq : null;
+
+  const openAdjust = (line: ScheduleLine) => {
+    setAdjustSeq(line.releaseSeq);
+    setAdjustDate(line.releaseDate);
+    setAdjustQty(String(line.plannedQty));
+  };
+
+  const doAdjust = async () => {
+    if (!onAdjust || effectiveAdjustSeq === null) return;
+    const line = item.scheduleLines.find((l) => l.releaseSeq === effectiveAdjustSeq);
+    if (!line) return;
+    setPending(`adj-${effectiveAdjustSeq}`);
+    try {
+      // Only CHANGED knobs are sent. An unchanged field would still be a valid
+      // patch, but sending it would record an adjustment that adjusted nothing —
+      // a stamp with no act behind it, which the change history would then show.
+      const qty = Number(adjustQty);
+      const patch: { plannedQty?: number; releaseDate?: string } = {
+        ...(adjustDate !== line.releaseDate ? { releaseDate: adjustDate } : {}),
+        ...(Number.isFinite(qty) && qty !== line.plannedQty ? { plannedQty: qty } : {}),
+      };
+      const applied = await onAdjust(line.releaseRef, supplierId, patch);
+      if (applied) setAdjustSeq(null);
+    } finally {
+      setPending(null);
+    }
+  };
   // Effective horizon: the chosen date, or the earliest draft date (release the
   // next period). A stale pick (its lines already released) falls back to the
   // earliest remaining — no effect needed.
@@ -311,8 +420,9 @@ const ItemBlock: React.FC<{
               {t('delivery.policy.deviation')}
             </span>
           )}
-          {/* Edit tolerance (the THIRD write) — buyer-only, contract DA tab only. */}
-          {canEdit && (
+          {/* Edit tolerance — `compliance`'s atom. A seat without it sees the
+              WAIT in this verb's own slot, never a missing control. */}
+          {canEdit ? (
             <Button
               variant="outline"
               icon={SlidersHorizontal}
@@ -321,6 +431,13 @@ const ItemBlock: React.FC<{
             >
               {t('delivery.policy.edit.action')}
             </Button>
+          ) : (
+            availability?.policy && (
+              <HandoffNotice
+                availability={availability.policy}
+                testId="handoff-delivery-policy-set"
+              />
+            )
           )}
         </div>
       </div>
@@ -341,7 +458,7 @@ const ItemBlock: React.FC<{
 
       {/* The inline editor (buyer-only) — presets + custom two-knob + required
           reason + reset-to-default. Portal-only + SIMULATED (the banner says so). */}
-      {canEdit && editing && (
+      {effectiveEditing && (
         <PolicyEditor
           active={ledger.activePolicy}
           contractDefault={policy.contractDefault}
@@ -371,6 +488,11 @@ const ItemBlock: React.FC<{
           "release the next N periods" motion. Solid primary = the reserved
           consequential-commit signal (DP2-BUTTON-01): a release transmits to the
           vendor. Portal-only + SIMULATED — the honesty banner above says so. */}
+      {!canRelease && releaseOfferable && availability?.release && (
+        <div className="mb-5" data-testid="handoff-delivery-release-toolbar">
+          <HandoffNotice availability={availability.release} testId="handoff-delivery-release" />
+        </div>
+      )}
       {canRelease && (
         <div className="flex flex-wrap items-center gap-2 mb-5 rounded-lg border border-border-subtle bg-bg-hover px-4 py-3">
           <span className="text-label text-text-tertiary uppercase">
@@ -410,6 +532,74 @@ const ItemBlock: React.FC<{
           Both are OUTLINE — release keeps the ONE solid primary (the toolbar
           above), DP2-BUTTON-01. The roll-up SidePanel renders the SAME calendar
           without the slot → read-only. */}
+      {/* ── ADJUST A DRAFT LINE (call-off step 1) ────────────────────────────
+          ⚠️ **THE LPA ADJUSTABILITY, FINALLY WITH A DOOR.** `adjustDraftLine`
+          shipped freeze-enforced and specced with ZERO product call sites,
+          while the design spec's whole reason for choosing SAP doc type LPA
+          over LP was that releases must stay individually adjustable after
+          generation. This is that entrance — and it is also the remedy the
+          back-dating refusal names: move the date forward, then release.
+
+          ⚠️ **THE MODE IS GATED, NOT THE DOOR (`ENTRANCE-IS-THE-UNIT-01`).**
+          `effectiveAdjustSeq` collapses to null the moment the seat stops
+          holding `delivery:adjust`, so a panel left open while the seat is
+          narrowed closes itself rather than presenting a live commit behind a
+          comment asserting it is unreachable. Component state outlives the
+          seat; `SupplierShipments` says so in its own words and is the
+          precedent copied here. */}
+      {effectiveAdjustSeq !== null && (
+        <div
+          className="border border-border-subtle rounded-lg bg-bg-subtle px-4 py-3 mb-3"
+          data-testid="delivery-adjust-editor"
+        >
+          <div className="text-label text-text-tertiary uppercase mb-1">
+            {t('delivery.adjust.title')}
+          </div>
+          <p className="text-xs text-text-secondary mb-3">{t('delivery.adjust.hint')}</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+            <div>
+              <label className="block text-xs text-text-tertiary mb-1" htmlFor="adjust-date">
+                {t('delivery.adjust.dateLabel')}
+              </label>
+              <input
+                id="adjust-date"
+                type="date"
+                value={adjustDate}
+                onChange={(e) => setAdjustDate(e.target.value)}
+                className="w-full border border-border-subtle rounded px-2 py-1.5 text-sm"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-text-tertiary mb-1" htmlFor="adjust-qty">
+                {t('delivery.adjust.qtyLabel')}
+              </label>
+              <input
+                id="adjust-qty"
+                type="number"
+                min="1"
+                value={adjustQty}
+                onChange={(e) => setAdjustQty(e.target.value)}
+                className="w-full border border-border-subtle rounded px-2 py-1.5 text-sm"
+              />
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              onClick={doAdjust}
+              disabled={pending === `adj-${effectiveAdjustSeq}`}
+            >
+              {pending === `adj-${effectiveAdjustSeq}`
+                ? t('delivery.adjust.saving')
+                : t('delivery.adjust.save')}
+            </Button>
+            <Button variant="secondary" onClick={() => setAdjustSeq(null)}>
+              {t('delivery.adjust.cancel')}
+            </Button>
+          </div>
+        </div>
+      )}
+
       <ReleaseCalendar
         iv={iv}
         proposedCaptionKey={proposedCaptionKey}
@@ -419,28 +609,52 @@ const ItemBlock: React.FC<{
             ? (line, fv) => {
                 // Draft line → the Release action (buyer with a draft to transmit).
                 if (line.state === 'draft') {
-                  return onRelease ? (
-                    <Button
-                      variant="outline"
-                      className="px-3 py-1.5 text-xs"
-                      disabled={pending !== null}
-                      onClick={() =>
-                        doRelease({ releaseSeqs: [line.releaseSeq] }, `rel-${line.releaseSeq}`)
-                      }
-                    >
-                      {pending === `rel-${line.releaseSeq}`
-                        ? t('delivery.release.releasing')
-                        : t('delivery.release.line')}
-                    </Button>
-                  ) : (
-                    <span className="text-text-tertiary">—</span>
+                  return (
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      {canRelease ? (
+                        <Button
+                          variant="outline"
+                          className="px-3 py-1.5 text-xs"
+                          disabled={pending !== null}
+                          onClick={() =>
+                            doRelease({ releaseSeqs: [line.releaseSeq] }, `rel-${line.releaseSeq}`)
+                          }
+                        >
+                          {pending === `rel-${line.releaseSeq}`
+                            ? t('delivery.release.releasing')
+                            : t('delivery.release.line')}
+                        </Button>
+                      ) : (
+                        availability?.release && (
+                          <HandoffNotice
+                            availability={availability.release}
+                            testId="handoff-delivery-release-line"
+                          />
+                        )
+                      )}
+                      {/* Adjust — the draft-only door. A RELEASED line never
+                          offers it: the freeze is the honesty boundary and the
+                          schema refuses the verb there before the pure guard
+                          runs. */}
+                      {canAdjust && (
+                        <Button
+                          variant="secondary"
+                          icon={Pencil}
+                          className="px-3 py-1.5 text-xs"
+                          disabled={pending !== null}
+                          onClick={() => openAdjust(line)}
+                        >
+                          {t('delivery.adjust.action')}
+                        </Button>
+                      )}
+                    </div>
                   );
                 }
                 // Released + INFERRED → the Confirm-match action (accept the
                 // proximity proposal as a confirmed delivery). A confirmed
                 // (inferred:false) or unmatched line shows no action.
-                if (fv?.inferred && onConfirm) {
-                  return (
+                if (fv?.inferred && availability?.confirm) {
+                  return canConfirm ? (
                     <Button
                       variant="outline"
                       className="px-3 py-1.5 text-xs"
@@ -451,6 +665,11 @@ const ItemBlock: React.FC<{
                         ? t('delivery.confirm.confirming')
                         : t('delivery.confirm.action')}
                     </Button>
+                  ) : (
+                    <HandoffNotice
+                      availability={availability.confirm}
+                      testId="handoff-delivery-confirm"
+                    />
                   );
                 }
                 return <span className="text-text-tertiary">—</span>;

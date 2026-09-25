@@ -39,6 +39,7 @@ import { requireUom } from '../sdc/materialMaster';
 import type { IncomingShipment } from '../sdc/types';
 import { generateSchedule } from './generator';
 import { releaseScheduleLines } from './release';
+import { DELIVERY_SEED_ACTOR } from './seedActor';
 import { DRAWDOWN_PRESET_CASE_B, DRAWDOWN_PRESET_CASE_C } from './ledger';
 import type {
   ReleaseType,
@@ -99,6 +100,7 @@ function buildAgreement(spec: AgreementSpec): SchedulingAgreement {
             draftItem,
             { releaseSeqs: [...spec.releaseSeqs] },
             RELEASE_STAMP,
+            DELIVERY_SEED_ACTOR,
           );
           if (!r.ok) throw new Error(`scale demo release failed (${spec.agreementId}): ${r.reason}`);
           return r.item;

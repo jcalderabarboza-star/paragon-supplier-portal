@@ -293,6 +293,12 @@ export const TRANSITION_PURPOSE: FlowAnnotations = Object.freeze({
   t_psl_publish: { purposeKey: 'processFlows.purpose.t_psl_publish' },
   t_psl_cap_override: { purposeKey: 'processFlows.purpose.t_psl_cap_override' },
   t_psl_cap_set: { purposeKey: 'processFlows.purpose.t_psl_cap_set' },
+
+  // ── the delivery lane (call-off step 1) ───────────────────────────────────
+  t_delivery_release: { purposeKey: 'processFlows.purpose.t_delivery_release' },
+  t_delivery_adjust: { purposeKey: 'processFlows.purpose.t_delivery_adjust' },
+  t_delivery_confirm: { purposeKey: 'processFlows.purpose.t_delivery_confirm' },
+  t_delivery_policy_set: { purposeKey: 'processFlows.purpose.t_delivery_policy_set' },
 });
 
 /**
@@ -327,6 +333,8 @@ export const ENTITY_PURPOSE: FlowAnnotations = Object.freeze({
   materialRequest: { purposeKey: 'processFlows.purpose.entity.materialRequest' },
   psl: { purposeKey: 'processFlows.purpose.entity.psl' },
   pslCapSetting: { purposeKey: 'processFlows.purpose.entity.pslCapSetting' },
+  deliveryRelease: { purposeKey: 'processFlows.purpose.entity.deliveryRelease' },
+  deliveryPolicy: { purposeKey: 'processFlows.purpose.entity.deliveryPolicy' },
 });
 
 /**

@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { MockDeliveryService } from './MockDeliveryService';
+import { MockCommandService } from './MockCommandService';
+import { SAMPLE_PEOPLE } from '../../identity/sampleRoster';
 import { schedulingAgreementStore } from '../../delivery/stores/schedulingAgreementStore';
 import type { QueryScope } from '../types';
 import { PERSONA_SYSTEM_ROLES } from '../../../services/transitions/businessRoles';
@@ -8,9 +10,16 @@ import { PERSONA_SYSTEM_ROLES } from '../../../services/transitions/businessRole
 // demo fleet (deriveAgreementView over SCALE_DEMO_SHIPMENTS @ the shared SDC clock
 // 2026-08-25). sa-1002 (ctr-004 / sup-005, AI-NIAC-6601, FRC) has TWO inferred
 // matches — seq1 delivered late, seq2 on time — the perfect honesty-lock case.
-const BUYER: QueryScope = { personaType: 'buyer', supplierId: null, businessRoles: PERSONA_SYSTEM_ROLES.buyer };
-const SUPPLIER_005: QueryScope = { personaType: 'supplier', supplierId: 'sup-005', businessRoles: PERSONA_SYSTEM_ROLES.supplier };
-const svc = new MockDeliveryService();
+//
+// ⚠️ **THE SEAT NAMES A PERSON SINCE CALL-OFF STEP 1 (Q6).** `t_delivery_confirm`
+// refuses an unattributed seat: accepting a delivery moves `deliveredQty`, a
+// governed total, and an act with a consequence is never recorded against
+// nobody. Nothing else in this file changed — confirm has no date rule.
+const PERSON = SAMPLE_PEOPLE.find((p) => p.role === 'procurement')!;
+const ACTOR = { kind: 'RESOLVED', person: { personId: PERSON.personId } } as const;
+const BUYER: QueryScope = { personaType: 'buyer', supplierId: null, businessRoles: PERSONA_SYSTEM_ROLES.buyer, actor: ACTOR };
+const SUPPLIER_005: QueryScope = { personaType: 'supplier', supplierId: 'sup-005', businessRoles: PERSONA_SYSTEM_ROLES.supplier, actor: ACTOR };
+const svc = new MockDeliveryService(new MockCommandService());
 
 /** The item-10 view for one contract's single agreement. */
 async function itemTen(contractId: string) {
@@ -63,9 +72,14 @@ describe('MockDeliveryService.confirmMatch — the second write', () => {
   });
 
   it('is buyer-only: a supplier scope is refused (SCOPE_DENIED), store untouched', async () => {
-    const result = await svc.confirmMatch(SUPPLIER_005, 'sa-1002', 10, 2);
-    expect(result.ok).toBe(false);
-    if (!result.ok) expect(result.reason).toBe('SCOPE_DENIED');
+    // ⚠️ The refusal moved to the DISPATCHER at call-off step 1: the reason is
+    // now `POLICY_REJECTED:<hook>:<HEAD>` rather than a bare domain enum, and a
+    // SCOPE denial is THROWN rather than returned. The claim is unchanged and is
+    // asserted at the new mechanism; `deliveryRefusal.ts` is what turns the head
+    // into copy a reader sees.
+    await expect(svc.confirmMatch(SUPPLIER_005, 'sa-1002', 10, 2)).rejects.toMatchObject({
+      code: 'SCOPE_DENIED',
+    });
     const item = await itemTen('ctr-004');
     expect(item.ledger.deliveredQty).toBe(0); // the refusal never wrote
   });
@@ -74,21 +88,27 @@ describe('MockDeliveryService.confirmMatch — the second write', () => {
     await svc.confirmMatch(BUYER, 'sa-1002', 10, 2);
     const again = await svc.confirmMatch(BUYER, 'sa-1002', 10, 2);
     expect(again.ok).toBe(false);
-    if (!again.ok) expect(again.reason).toBe('ALREADY_CONFIRMED');
+    if (!again.ok) expect(again.reason).toContain('DELIVERY_ALREADY_CONFIRMED');
   });
 
   it('a released line with NO matched delivery is NOTHING_TO_CONFIRM (sa-1001 seq1 missed)', async () => {
     const result = await svc.confirmMatch(BUYER, 'sa-1001', 10, 1);
     expect(result.ok).toBe(false);
-    if (!result.ok) expect(result.reason).toBe('NOTHING_TO_CONFIRM');
+    if (!result.ok) expect(result.reason).toContain('DELIVERY_NOTHING_TO_CONFIRM');
   });
 
-  it('a DRAFT line has no derived fulfillment → NOTHING_TO_CONFIRM (sa-1002 seq3 is draft)', async () => {
-    // seqs 1–2 are released; seq3 is still draft. deriveFulfillment omits it, so
-    // the service refuses before the pure NOT_RELEASED guard is reached.
+  it('a DRAFT line cannot be confirmed — now refused by the SCHEMA (sa-1002 seq3 is draft)', async () => {
+    // seqs 1–2 are released; seq3 is still draft.
+    //
+    // ⚠️ **THE REFUSAL GOT EARLIER AND STRICTER, WHICH IS WHY THE NAME CHANGED.**
+    // This used to read `NOTHING_TO_CONFIRM`, because the service reached the
+    // shipment pool, found no match for a draft line, and said so. Now
+    // `t_delivery_confirm` declares `from: ['Released']`, so the dispatcher
+    // refuses `ILLEGAL_TRANSITION` before any hook runs. The claim — a draft
+    // line cannot be confirmed — is identical; the lock is one layer out.
     const result = await svc.confirmMatch(BUYER, 'sa-1002', 10, 3);
     expect(result.ok).toBe(false);
-    if (!result.ok) expect(result.reason).toBe('NOTHING_TO_CONFIRM');
+    if (!result.ok) expect(result.reason).toContain('ILLEGAL_TRANSITION');
   });
 
   it('an unknown agreement or item is refused UNKNOWN_RELEASE_SEQ', async () => {

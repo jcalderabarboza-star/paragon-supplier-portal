@@ -1,7 +1,10 @@
 import React from 'react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { screen, fireEvent, waitFor } from '@testing-library/react';
-import { renderWithProviders } from '../../test/test-utils';
+// ⚠️ A NAMED SEAT SINCE CALL-OFF STEP 1 — every delivery verb refuses an
+// unattributed one (Q6), so the probe adopts a sample person exactly as an
+// operator does on the identity panel.
+import { renderWithProviders, BUYER_NAMED_COMPLIANCE } from '../../test/test-utils';
 import type { CurrentIdentity } from '../../context/CurrentIdentityContext';
 import { schedulingAgreementStore } from '../delivery/stores/schedulingAgreementStore';
 import { useDeliveryAgreements, useEditPolicy } from './deliveryHooks';
@@ -19,12 +22,24 @@ const SUPPLIER_005: CurrentIdentity = {
   actor: NO_PERSON,
 };
 
-/** A probe that reads ctr-004's agreement and can widen item 10's tolerance. */
+/** A probe that reads ctr-004's agreement and TIGHTENS item 10's tolerance.
+ *
+ *  ⚠️ **IT USED TO WIDEN, AND A WIDENING IS NOW REFUSED.**
+ *  `SAMPLE_ACTOR_CANNOT_LOOSEN` (C10 §6.3a) refuses a loosening recorded
+ *  against a sample identity, and every identity this platform can offer is
+ *  one. The claim under test is about INVALIDATION — that a successful write
+ *  re-derives the read — which any legal edit exercises. */
 const Probe: React.FC = () => {
   const query = useDeliveryAgreements('ctr-004');
   const edit = useEditPolicy();
   const itemTen = query.data?.[0]?.items.find((iv) => iv.item.lineSeq === 10);
-  const outcome = edit.data ? (edit.data.ok ? 'ok' : `refused:${edit.data.reason}`) : 'idle';
+  const outcome = edit.isError
+    ? 'error'
+    : edit.data
+      ? edit.data.ok
+        ? 'ok'
+        : `refused:${edit.data.reason}`
+      : 'idle';
   return (
     <div>
       <span data-testid="deviation">{String(itemTen?.ledger.policyDeviation ?? 'loading')}</span>
@@ -34,7 +49,7 @@ const Probe: React.FC = () => {
           edit.mutate({
             agreementId: 'sa-1002',
             itemSeq: 10,
-            patch: { tolerancePct: 0.25, enforcement: 'flag', reason: 'widen for Q3' },
+            patch: { tolerancePct: 0.02, enforcement: 'flag', reason: 'tighten for Q3' },
           })
         }
       >
@@ -48,7 +63,7 @@ describe('useEditPolicy — invalidation re-derives the delivery read', () => {
   afterEach(() => schedulingAgreementStore.reset());
 
   it('a buyer edit flips the read: policyDeviation true after invalidation', async () => {
-    renderWithProviders(<Probe />); // default buyer identity
+    renderWithProviders(<Probe />, { identity: BUYER_NAMED_COMPLIANCE }); // a NAMED buyer seat
     await waitFor(() => expect(screen.getByTestId('deviation').textContent).toBe('false'));
 
     fireEvent.click(screen.getByText('edit'));
@@ -66,9 +81,7 @@ describe('useEditPolicy — invalidation re-derives the delivery read', () => {
 
     // Buyer-only: the service refused (SCOPE_DENIED); onSuccess sees !ok and
     // invalidates nothing — the read holds at no-deviation.
-    await waitFor(() =>
-      expect(screen.getByTestId('outcome').textContent).toBe('refused:SCOPE_DENIED'),
-    );
+await waitFor(() => expect(screen.getByTestId('outcome').textContent).toBe('error'));
     expect(screen.getByTestId('deviation').textContent).toBe('false');
   });
 });

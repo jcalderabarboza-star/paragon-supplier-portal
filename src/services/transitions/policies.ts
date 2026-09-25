@@ -22,6 +22,13 @@ import { POLICY_HOOKS } from './policyHooks';
 import { personRefusalToken } from '../identity/personLabel';
 import { isSampleActor } from '../identity/sampleRoster';
 import { deriveHeaderDisposition, type GrHeaderDisposition } from './grRollup';
+// The delivery lane (call-off step 1) — the address resolvers, the shared
+// shipment pool and the fulfillment derivation its hooks read.
+import type { ResolvedItem, ResolvedLine } from '../delivery/addressing';
+import { deliveryShipmentPoolFor } from '../delivery/pool';
+import { deriveFulfillment } from '../delivery/fulfillment';
+import { sdcClock } from '../sdc/clock';
+import type { DrawdownEnforcement, TolerancePolicy } from '../delivery/types';
 import { isMatched } from './invoiceRollup';
 import { BASE_CURRENCY, BID_CURRENCIES, isBidCurrency } from '../../lib/currencyPolicy';
 import { isUsableRate } from '../../lib/fxPin';
@@ -1410,3 +1417,340 @@ bindPolicyHook(POLICY_HOOKS.PSL_DEFAULT_CAP_WITHIN_CEILING, ({ payload }) => {
       'bounded on every read, which is a setting nobody could act on.',
   };
 });
+
+// ════════════════════════════════════════════════════════════════════════════
+// THE DELIVERY LANE (call-off step 1)
+//
+// Five hooks. One runs on EVERY delivery verb; the other four are that verb's
+// own law. Read `flows/deliveryRelease.flow.ts` and `flows/deliveryPolicy.flow.ts`
+// for why the lane is two machines.
+// ════════════════════════════════════════════════════════════════════════════
+
+/**
+ * ⚠️ **THE SEAT MUST NAME A PERSON — ON EVERY VERB IN THIS LANE (Q6).**
+ *
+ * Every other identity check in this file refuses a FIELD. This refuses a
+ * SEAT, and it exists because of something measured rather than imagined: one
+ * click by a seat carrying `UNATTRIBUTED: NO_PERSON_IN_SESSION` released three
+ * back-dated schedule lines, and the supplier mirror immediately read five
+ * overdue deliveries for commitments nobody had asked that supplier to make.
+ * **An act that creates supplier-facing obligations is never recorded against
+ * nobody.**
+ *
+ * The refusal NAMES THE REMEDY. A seat that cannot act and is not told how is
+ * indistinguishable from a broken control, and this platform's sample roster
+ * exists precisely so the remedy is one click away.
+ *
+ * ⚠️ **IT IS DELIBERATELY NOT `isSampleActor`-AWARE.** A sample person is a
+ * perfectly good actor for a release: the act is a portal record, and refusing
+ * them would leave the whole lane unreachable. The one act a sample identity
+ * may NOT take is LOOSENING a governed setting, and that lives in
+ * `DELIVERY_POLICY_GOVERNED` where the loosening is visible.
+ */
+const deliveryActorAttributed: PolicyHookFn = ({ scope }) => {
+  const actor = asActorAttribution(scope.actor);
+  if (actor && isAttributed(actor)) return { ok: true };
+  return {
+    ok: false,
+    reason:
+      'DELIVERY_ACTOR_UNATTRIBUTED: this seat carries no person, and a delivery ' +
+      'act creates an obligation a supplier is chased for. Adopt a sample user ' +
+      'on the identity panel, then take the act again.',
+  };
+};
+
+bindPolicyHook(POLICY_HOOKS.DELIVERY_ACTOR_ATTRIBUTED, deliveryActorAttributed);
+
+/**
+ * Is this ISO day on or after the declared present? A line due TODAY is
+ * releasable — the rule refuses the PAST, not the present.
+ *
+ * Day granularity, deliberately: `DECLARED_PRESENT` is a `YYYY-MM-DD` and every
+ * `releaseDate` in this lane is too, so a lexicographic compare IS the date
+ * compare and no timezone can bend it. No clock is read — `DECLARED_PRESENT` is
+ * a module constant computed at load, which is what keeps every spec that
+ * exercises this deterministic.
+ */
+function isNotPast(day: string): boolean {
+  return day >= DECLARED_PRESENT;
+}
+
+/**
+ * `t_delivery_release` — **A COMMITMENT CANNOT BE MADE IN THE PAST.**
+ *
+ * Releasing a line whose date has already gone derives `Missed` on the very
+ * next read: the delivery was due before the vendor was told to make it. The
+ * chase engine then pushes on it, because chase pushes on RELEASED lines. That
+ * is how one click produced five overdue obligations against a supplier who had
+ * never seen the schedule.
+ *
+ * ⚠️ **THE REMEDY IS NAMED AND IT IS NOW REACHABLE**, which is why this guard
+ * ships in the same batch as `t_delivery_adjust`: the operator moves the line's
+ * date forward and releases it. Before this batch the only honest answer would
+ * have been *"you cannot"*, because adjusting a draft line had no door.
+ *
+ * ⚠️ **IT DOES NOT FALSIFY A SEEDED LINE, AND THAT IS A MEASUREMENT.** The demo
+ * calendars were released by this same pure verb at fixture-build time with an
+ * injected stamp, and every date so released is LATER than that stamp — they
+ * were transmitted while still in the future, which is exactly what this rule
+ * requires of a release. `deliveryBackdating.test.ts` re-derives that over the
+ * live corpus every run.
+ */
+const deliveryReleaseNotBackdated: PolicyHookFn = ({ entityId, target }) => {
+  const resolved = target.readEntity(entityId) as ResolvedLine | null;
+  if (!resolved) return { ok: false, reason: 'entity missing' };
+  const { releaseDate } = resolved.line;
+  if (isNotPast(releaseDate)) return { ok: true };
+  return {
+    ok: false,
+    reason:
+      `DELIVERY_RELEASE_BACKDATED: this line is due ${releaseDate}, which is already ` +
+      `past (today is ${DECLARED_PRESENT}). Transmitting it would create a delivery ` +
+      'that is overdue the moment the supplier is told about it. Move the date ' +
+      'forward first, then release it.',
+  };
+};
+
+bindPolicyHook(POLICY_HOOKS.DELIVERY_RELEASE_NOT_BACKDATED, deliveryReleaseNotBackdated);
+
+/**
+ * `t_delivery_adjust` — the patch must say something, and it must be sayable.
+ *
+ * At least one knob (the "at least one of" rule `requiredFields` structurally
+ * cannot express), each knob well-formed, and a new `releaseDate` that is not
+ * in the past — the release guard's rule seen one verb earlier, because moving
+ * a line INTO the past simply rebuilds the defect somewhere the release guard
+ * would then have to catch.
+ */
+const deliveryAdjustPatchValid: PolicyHookFn = ({ payload }) => {
+  const hasQty = 'plannedQty' in payload;
+  const hasDate = 'releaseDate' in payload;
+  if (!hasQty && !hasDate) {
+    return {
+      ok: false,
+      reason:
+        'DELIVERY_ADJUST_EMPTY: an adjustment must change the quantity, the date, ' +
+        'or both. Nothing was supplied.',
+    };
+  }
+  if (hasQty) {
+    const qty = payload.plannedQty;
+    // `Number.isFinite` rather than `typeof === 'number'` — the 4a-FIND-01
+    // family: `typeof NaN === 'number'`, and NaN fails every later comparison
+    // silently, including the Σ plannedQty the drawdown envelope is read from.
+    if (typeof qty !== 'number' || !Number.isFinite(qty) || qty <= 0) {
+      return {
+        ok: false,
+        reason:
+          `DELIVERY_ADJUST_QTY_NOT_A_QUANTITY: '${String(qty)}' is not a finite ` +
+          'quantity greater than zero.',
+      };
+    }
+  }
+  if (hasDate) {
+    const date = payload.releaseDate;
+    if (typeof date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      return {
+        ok: false,
+        reason:
+          `DELIVERY_ADJUST_DATE_UNREADABLE: '${String(date)}' is not a date this ` +
+          'platform can read (YYYY-MM-DD).',
+      };
+    }
+    if (!isNotPast(date)) {
+      return {
+        ok: false,
+        reason:
+          `DELIVERY_ADJUST_DATE_BACKDATED: ${date} is already past (today is ` +
+          `${DECLARED_PRESENT}). A delivery cannot be planned for a day that has gone.`,
+      };
+    }
+  }
+  return { ok: true };
+};
+
+bindPolicyHook(POLICY_HOOKS.DELIVERY_ADJUST_PATCH_VALID, deliveryAdjustPatchValid);
+
+/**
+ * `t_delivery_confirm` — there must BE a proposal to accept.
+ *
+ * The match is re-derived here from the SAME pool the surface rendered and the
+ * target will write (`delivery/pool.ts`), so the three cannot disagree about
+ * what is being accepted. A silent success on an unmatched line would move
+ * `deliveredQty` — a governed total feeding the drawdown ledger — on no
+ * evidence whatsoever.
+ */
+const deliveryConfirmHasMatch: PolicyHookFn = ({ entityId, target }) => {
+  const resolved = target.readEntity(entityId) as ResolvedLine | null;
+  if (!resolved) return { ok: false, reason: 'entity missing' };
+  const { agreement, item, line } = resolved;
+  if (line.fulfilledBy !== undefined || line.actualQty !== undefined) {
+    return {
+      ok: false,
+      reason:
+        `DELIVERY_ALREADY_CONFIRMED: line ${line.releaseSeq} already carries a ` +
+        'confirmed delivery. Confirming again would count it twice.',
+    };
+  }
+  const observed = deriveFulfillment(
+    item,
+    deliveryShipmentPoolFor(agreement.supplierId),
+    sdcClock.now(),
+  ).find((f) => f.releaseSeq === line.releaseSeq);
+  if (!observed || observed.matchedRef === undefined || observed.actualQty === undefined) {
+    return {
+      ok: false,
+      reason:
+        'DELIVERY_NOTHING_TO_CONFIRM: no shipment has been matched to line ' +
+        `${line.releaseSeq}, so there is no delivery to accept.`,
+    };
+  }
+  return { ok: true };
+};
+
+bindPolicyHook(POLICY_HOOKS.DELIVERY_CONFIRM_HAS_MATCH, deliveryConfirmHasMatch);
+
+// ── The drawdown tolerance: how hard it bites, and which way a change runs ───
+
+/**
+ * Rigour of a drawdown enforcement mode. HIGHER BITES HARDER — the same ordering
+ * `lib/enforcement.ts` gives the governed-check modes, and for the same purpose:
+ * a change is a LOOSENING when the number goes down.
+ *
+ * `'block'` ranks strictest even though it is the known-unimplemented arm. The
+ * ORDER is about what the setting CLAIMS, and a person choosing it is claiming
+ * the strictest available stance; ranking it by what the code currently does
+ * would make the safest-sounding choice the easiest one to walk back from.
+ */
+const DRAWDOWN_RIGOUR: Readonly<Record<DrawdownEnforcement, number>> = Object.freeze({
+  block: 2,
+  flag: 1,
+  ignore: 0,
+});
+
+/** A tolerance band as a comparable width. `null` is UNLIMITED — the widest band
+ *  there is, which is why it sorts above every finite percentage. */
+function bandWidth(pct: number | null): number {
+  return pct === null ? Number.POSITIVE_INFINITY : pct;
+}
+
+/**
+ * Does moving from `from` to `to` LOOSEN the governance?
+ *
+ * Either knob can do it independently: dropping the enforcement mode (block →
+ * flag → ignore) or widening the tolerance band (10% → 25%, or anything →
+ * unlimited). BOTH are answered, because a change that tightened one knob while
+ * widening the other would otherwise slip through on the tightening.
+ */
+export function drawdownLoosens(from: TolerancePolicy, to: TolerancePolicy): boolean {
+  return (
+    DRAWDOWN_RIGOUR[to.enforcement] < DRAWDOWN_RIGOUR[from.enforcement] ||
+    bandWidth(to.tolerancePct) > bandWidth(from.tolerancePct)
+  );
+}
+
+/**
+ * `t_delivery_policy_set` — the governance write.
+ *
+ * ⚠️ **THE SAMPLE-ACTOR LOOSENING LOCK APPLIES HERE. THAT WAS DERIVED, NOT
+ * ASSUMED.** `enforcementSetGoverned`'s ground is not that its ledger is
+ * append-only — that is why the DAMAGE is unrepairable, not why the ACT is
+ * wrong. Its ground is *"a sample identity cannot accept governance risk — that
+ * needs a real signed-in person, and Paragon has no sign-in yet."* A drawdown
+ * tolerance is exactly a governed check: it decides whether an over-delivery is
+ * flagged at all, and after this batch a loosening lands in the DR-10 trail
+ * under a person's name. The rival reading — the `role:grant` exemption, which
+ * turns on a grant not surviving the session — was considered and rejected,
+ * because durability was never the enforcement gate's argument.
+ *
+ * ⚠️ **TWO CLAUSES, NOT ONE, FOR `enforcementSetGoverned`'S REASON.** *Nobody
+ * could be named* and *somebody was named and they are not real* are different
+ * facts and a reader must be told which. The first is already refused upstream
+ * by `DELIVERY_ACTOR_ATTRIBUTED` on this same verb, so the clause here is
+ * defence in depth rather than the primary gate — stated, because "the other
+ * hook happens to catch it" is a convention and this is a rule.
+ *
+ * TIGHTENING stays available to any attributed seat. The safest act is always
+ * reachable — `lib/enforcement.ts`'s rule, one lane over.
+ */
+const deliveryPolicyGoverned: PolicyHookFn = ({ entityId, payload, target, scope }) => {
+  const resolved = target.readEntity(entityId) as ResolvedItem | null;
+  if (!resolved) return { ok: false, reason: 'entity missing' };
+
+  const enforcement = payload.enforcement;
+  if (typeof enforcement !== 'string' || !(enforcement in DRAWDOWN_RIGOUR)) {
+    return {
+      ok: false,
+      reason:
+        `DELIVERY_POLICY_MODE_UNKNOWN: '${String(enforcement)}' is not a drawdown ` +
+        `enforcement mode (${Object.keys(DRAWDOWN_RIGOUR).join(', ')}).`,
+    };
+  }
+  const pct = payload.tolerancePct;
+  if (pct !== null && (typeof pct !== 'number' || !Number.isFinite(pct) || pct < 0)) {
+    return {
+      ok: false,
+      reason:
+        `DELIVERY_POLICY_TOLERANCE_NOT_A_NUMBER: '${String(pct)}' is not a finite, ` +
+        'non-negative tolerance, and null (unlimited) is the only other legal value.',
+    };
+  }
+  // `requiredFields` proves the key is present; this proves it has substance —
+  // the `SUPPLIERDOC_REFUSAL_AUTHORED` reasoning (the dispatcher's emptiness
+  // check admits a string of spaces).
+  const why = payload.reason;
+  if (typeof why !== 'string' || why.trim() === '') {
+    return {
+      ok: false,
+      reason:
+        'DELIVERY_POLICY_REASON_BLANK: a tolerance change is an attributable ' +
+        'deviation from the contract default. Write why it is changing.',
+    };
+  }
+
+  const next: TolerancePolicy = {
+    tolerancePct: pct as number | null,
+    enforcement: enforcement as DrawdownEnforcement,
+  };
+  const current = resolved.item.drawdownPolicy.active;
+  // ⚠️ **A NO-OP IS REFUSED HERE, NOT LEFT TO THE PURE VERB — AND THE FIRST
+  // BUILD OF THIS BATCH GOT IT WRONG IN A WAY WORTH RECORDING.** `setActivePolicy`
+  // already answers `NO_CHANGE`, but it runs INSIDE `applyTransition`, after
+  // every gate has passed. A refusal raised there is not a refusal the
+  // dispatcher can return — the target had already committed to writing, so it
+  // threw, and the caller received an exception where it expected an honest
+  // `{ ok: false }`. **A rule that can refuse must refuse BEFORE the act**, and
+  // this is that rule moved to where it can.
+  if (current.tolerancePct === next.tolerancePct && current.enforcement === next.enforcement) {
+    return {
+      ok: false,
+      reason:
+        'DELIVERY_POLICY_NO_CHANGE: the active tolerance already carries these ' +
+        'values. Recording it again would stamp a change that changed nothing.',
+    };
+  }
+  if (!drawdownLoosens(current, next)) return { ok: true };
+
+  const actor = asActorAttribution(scope.actor);
+  if (!actor || !isAttributed(actor)) {
+    return {
+      ok: false,
+      reason:
+        'DELIVERY_POLICY_LOOSENING_UNATTRIBUTED: relaxing a drawdown tolerance ' +
+        'requires a NAMED actor, and this seat carries no person.',
+    };
+  }
+  if (isSampleActor(actor.person.personId)) {
+    return {
+      ok: false,
+      reason:
+        `SAMPLE_ACTOR_CANNOT_LOOSEN: ${personRefusalToken(actor.person.personId)} is a ` +
+        'SAMPLE identity and may not relax a drawdown tolerance. A sample identity ' +
+        'cannot accept governance risk — that needs a real signed-in person, and ' +
+        'Paragon has no sign-in yet. Tightening the tolerance is still available.',
+    };
+  }
+  return { ok: true };
+};
+
+bindPolicyHook(POLICY_HOOKS.DELIVERY_POLICY_GOVERNED, deliveryPolicyGoverned);

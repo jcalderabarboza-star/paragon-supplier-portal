@@ -11,6 +11,13 @@
 // returning its honest reason rather than a silent success.
 // ─────────────────────────────────────────────────────────────────────────────
 
+// ⚠️ **THE PURE VERBS TAKE AN ACTOR SINCE CALL-OFF STEP 1 — REQUIRED, NOT
+// OPTIONAL.** An optional actor is a silent default, and a silent default is how
+// an unattributed act comes to look attributed. These specs are about the
+// DOMAIN rather than about a seat, so they pass the same `DELIVERY_SEED_ACTOR`
+// the fixtures do — which is the honest value: nothing here is taken by a
+// person either.
+import { DELIVERY_SEED_ACTOR } from '../seedActor';
 import { describe, it, expect } from 'vitest';
 import { releaseScheduleLines, adjustDraftLine } from '../release';
 import { deriveDrawdownLedger, DRAWDOWN_PRESET_CASE_B } from '../ledger';
@@ -56,7 +63,7 @@ function mustRelease(r: ReturnType<typeof releaseScheduleLines>) {
 describe('releaseScheduleLines — the horizon arm (the FRC/JIT "next N periods" motion)', () => {
   it('releases every line dated on or before the horizon, inclusive', () => {
     // Lines 1–3 are 2025-10-01 / 11-01 / 12-01; the horizon lands ON line 3.
-    const res = mustRelease(releaseScheduleLines(item(), { horizonDate: '2025-12-01' }, NOW));
+    const res = mustRelease(releaseScheduleLines(item(), { horizonDate: '2025-12-01' }, NOW, DELIVERY_SEED_ACTOR));
     expect(res.releasedSeqs).toEqual([1, 2, 3]);
     const states = res.item.scheduleLines.map((l) => l.state);
     expect(states.slice(0, 3)).toEqual(['released', 'released', 'released']);
@@ -64,17 +71,17 @@ describe('releaseScheduleLines — the horizon arm (the FRC/JIT "next N periods"
   });
 
   it('stamps releasedAt = the injected now on exactly the released lines', () => {
-    const res = mustRelease(releaseScheduleLines(item(), { horizonDate: '2025-11-01' }, NOW));
+    const res = mustRelease(releaseScheduleLines(item(), { horizonDate: '2025-11-01' }, NOW, DELIVERY_SEED_ACTOR));
     for (const l of res.item.scheduleLines) {
       expect(l.releasedAt).toBe(l.state === 'released' ? NOW : undefined);
     }
   });
 
   it('skips already-released lines silently and releases only the rest (idempotent repeat)', () => {
-    const first = mustRelease(releaseScheduleLines(item(), { horizonDate: '2025-11-01' }, NOW));
+    const first = mustRelease(releaseScheduleLines(item(), { horizonDate: '2025-11-01' }, NOW, DELIVERY_SEED_ACTOR));
     // Re-run against a LATER horizon: 1–2 already released, so only 3–4 flip.
     const second = mustRelease(
-      releaseScheduleLines(first.item, { horizonDate: '2026-01-01' }, LATER),
+      releaseScheduleLines(first.item, { horizonDate: '2026-01-01' }, LATER, DELIVERY_SEED_ACTOR),
     );
     expect(second.releasedSeqs).toEqual([3, 4]);
     // The first release's stamp is NOT overwritten by the second call.
@@ -83,14 +90,14 @@ describe('releaseScheduleLines — the horizon arm (the FRC/JIT "next N periods"
   });
 
   it('a horizon whose whole range is already released is NO_LINES_SELECTED, not an empty ok', () => {
-    const first = mustRelease(releaseScheduleLines(item(), { horizonDate: '2025-11-01' }, NOW));
-    const again = releaseScheduleLines(first.item, { horizonDate: '2025-11-01' }, LATER);
+    const first = mustRelease(releaseScheduleLines(item(), { horizonDate: '2025-11-01' }, NOW, DELIVERY_SEED_ACTOR));
+    const again = releaseScheduleLines(first.item, { horizonDate: '2025-11-01' }, LATER, DELIVERY_SEED_ACTOR);
     expect(again.ok).toBe(false);
     if (!again.ok) expect(again.reason).toBe('NO_LINES_SELECTED');
   });
 
   it('a horizon before the first line releases nothing (NO_LINES_SELECTED)', () => {
-    const res = releaseScheduleLines(item(), { horizonDate: '2025-09-30' }, NOW);
+    const res = releaseScheduleLines(item(), { horizonDate: '2025-09-30' }, NOW, DELIVERY_SEED_ACTOR);
     expect(res.ok).toBe(false);
     if (!res.ok) expect(res.reason).toBe('NO_LINES_SELECTED');
   });
@@ -98,7 +105,7 @@ describe('releaseScheduleLines — the horizon arm (the FRC/JIT "next N periods"
 
 describe('releaseScheduleLines — the explicit-seq arm (a UI selection)', () => {
   it('releases exactly the named seqs, and can skip a line a horizon could not', () => {
-    const res = mustRelease(releaseScheduleLines(item(), { releaseSeqs: [1, 3] }, NOW));
+    const res = mustRelease(releaseScheduleLines(item(), { releaseSeqs: [1, 3] }, NOW, DELIVERY_SEED_ACTOR));
     expect(res.releasedSeqs).toEqual([1, 3]);
     expect(res.item.scheduleLines[0].state).toBe('released');
     expect(res.item.scheduleLines[1].state).toBe('draft'); // line 2 deliberately skipped
@@ -106,13 +113,13 @@ describe('releaseScheduleLines — the explicit-seq arm (a UI selection)', () =>
   });
 
   it('returns releasedSeqs ascending and de-duplicated regardless of caller order', () => {
-    const res = mustRelease(releaseScheduleLines(item(), { releaseSeqs: [3, 1, 3] }, NOW));
+    const res = mustRelease(releaseScheduleLines(item(), { releaseSeqs: [3, 1, 3] }, NOW, DELIVERY_SEED_ACTOR));
     expect(res.releasedSeqs).toEqual([1, 3]);
   });
 
   it('an explicitly named released line is REFUSED (not silently skipped like a horizon)', () => {
-    const first = mustRelease(releaseScheduleLines(item(), { releaseSeqs: [1] }, NOW));
-    const again = releaseScheduleLines(first.item, { releaseSeqs: [1, 2] }, LATER);
+    const first = mustRelease(releaseScheduleLines(item(), { releaseSeqs: [1] }, NOW, DELIVERY_SEED_ACTOR));
+    const again = releaseScheduleLines(first.item, { releaseSeqs: [1, 2] }, LATER, DELIVERY_SEED_ACTOR);
     expect(again.ok).toBe(false);
     if (!again.ok) expect(again.reason).toBe('ALREADY_RELEASED');
     // …and the refusal is total: line 2 did NOT partially release.
@@ -120,13 +127,13 @@ describe('releaseScheduleLines — the explicit-seq arm (a UI selection)', () =>
   });
 
   it('an unknown seq is UNKNOWN_RELEASE_SEQ, never a silent skip', () => {
-    const res = releaseScheduleLines(item(), { releaseSeqs: [1, 99] }, NOW);
+    const res = releaseScheduleLines(item(), { releaseSeqs: [1, 99] }, NOW, DELIVERY_SEED_ACTOR);
     expect(res.ok).toBe(false);
     if (!res.ok) expect(res.reason).toBe('UNKNOWN_RELEASE_SEQ');
   });
 
   it('an empty selection is honest silence (NO_LINES_SELECTED), not an empty success', () => {
-    const res = releaseScheduleLines(item(), { releaseSeqs: [] }, NOW);
+    const res = releaseScheduleLines(item(), { releaseSeqs: [] }, NOW, DELIVERY_SEED_ACTOR);
     expect(res.ok).toBe(false);
     if (!res.ok) expect(res.reason).toBe('NO_LINES_SELECTED');
   });
@@ -139,7 +146,7 @@ describe('releaseScheduleLines — release character (one document, one type)', 
     const mixed = DRAFT_LINES.map((l, i) =>
       i === 1 ? ({ ...l, releaseType: 'JIT' } as ScheduleLine) : l,
     );
-    const res = releaseScheduleLines(item(mixed), { releaseSeqs: [1, 2] }, NOW);
+    const res = releaseScheduleLines(item(mixed), { releaseSeqs: [1, 2] }, NOW, DELIVERY_SEED_ACTOR);
     expect(res.ok).toBe(false);
     if (!res.ok) expect(res.reason).toBe('RELEASE_TYPE_MISMATCH');
   });
@@ -148,14 +155,14 @@ describe('releaseScheduleLines — release character (one document, one type)', 
     const mixed = DRAFT_LINES.map((l, i) =>
       i === 1 ? ({ ...l, releaseType: 'JIT' } as ScheduleLine) : l,
     );
-    expect(releaseScheduleLines(item(mixed), { releaseSeqs: [1, 3] }, NOW).ok).toBe(true);
+    expect(releaseScheduleLines(item(mixed), { releaseSeqs: [1, 3] }, NOW, DELIVERY_SEED_ACTOR).ok).toBe(true);
   });
 });
 
 describe('releaseScheduleLines — purity (the input is never mutated)', () => {
   it('returns a NEW item and leaves the source lines all-draft and unstamped', () => {
     const source = item();
-    const res = mustRelease(releaseScheduleLines(source, { horizonDate: '2026-12-01' }, NOW));
+    const res = mustRelease(releaseScheduleLines(source, { horizonDate: '2026-12-01' }, NOW, DELIVERY_SEED_ACTOR));
     expect(res.item).not.toBe(source);
     expect(res.item.scheduleLines).not.toBe(source.scheduleLines);
     expect(source.scheduleLines.every((l) => l.state === 'draft')).toBe(true);
@@ -167,7 +174,7 @@ describe('releaseScheduleLines — purity (the input is never mutated)', () => {
 
 describe('releaseScheduleLines — THE LEDGER REACTS (ledger.ts unchanged)', () => {
   it('a partial release accumulates into releasedQty and drops remainingQty', () => {
-    const res = mustRelease(releaseScheduleLines(item(), { releaseSeqs: [1, 2, 3] }, NOW));
+    const res = mustRelease(releaseScheduleLines(item(), { releaseSeqs: [1, 2, 3] }, NOW, DELIVERY_SEED_ACTOR));
     const led = deriveDrawdownLedger(res.item);
     expect(led.releasedQty).toBe(540_000); // 3 × 180,000
     expect(led.remainingQty).toBe(1_460_000);
@@ -179,7 +186,7 @@ describe('releaseScheduleLines — THE LEDGER REACTS (ledger.ts unchanged)', () 
     // The honest assertion. Under the generator invariant Σ plannedQty ===
     // agreedTotalQty, so a full release reaches the envelope and never breaches
     // it — no out-of-envelope line is fabricated to force an exception.
-    const res = mustRelease(releaseScheduleLines(item(), { horizonDate: '2026-12-31' }, NOW));
+    const res = mustRelease(releaseScheduleLines(item(), { horizonDate: '2026-12-31' }, NOW, DELIVERY_SEED_ACTOR));
     expect(res.releasedSeqs).toHaveLength(12);
     const led = deriveDrawdownLedger(res.item);
     expect(led.releasedQty).toBe(2_000_000);
@@ -190,7 +197,7 @@ describe('releaseScheduleLines — THE LEDGER REACTS (ledger.ts unchanged)', () 
 
 describe('adjustDraftLine — the ENFORCED freeze (Decision B)', () => {
   it('adjusts a draft line and stamps adjustedAt', () => {
-    const res = adjustDraftLine(item(), 2, { plannedQty: 150_000 }, NOW);
+    const res = adjustDraftLine(item(), 2, { plannedQty: 150_000 }, NOW, DELIVERY_SEED_ACTOR);
     expect(res.ok).toBe(true);
     if (!res.ok) return;
     expect(res.adjustedSeq).toBe(2);
@@ -201,7 +208,7 @@ describe('adjustDraftLine — the ENFORCED freeze (Decision B)', () => {
   });
 
   it('applies only the patched fields, leaving the rest intact', () => {
-    const res = adjustDraftLine(item(), 2, { releaseDate: '2025-11-15' }, NOW);
+    const res = adjustDraftLine(item(), 2, { releaseDate: '2025-11-15' }, NOW, DELIVERY_SEED_ACTOR);
     expect(res.ok).toBe(true);
     if (!res.ok) return;
     const line = res.item.scheduleLines[1];
@@ -210,8 +217,8 @@ describe('adjustDraftLine — the ENFORCED freeze (Decision B)', () => {
   });
 
   it('REFUSES a released line — the freeze is a law, not a comment', () => {
-    const released = mustRelease(releaseScheduleLines(item(), { releaseSeqs: [1] }, NOW));
-    const res = adjustDraftLine(released.item, 1, { plannedQty: 999_999 }, LATER);
+    const released = mustRelease(releaseScheduleLines(item(), { releaseSeqs: [1] }, NOW, DELIVERY_SEED_ACTOR));
+    const res = adjustDraftLine(released.item, 1, { plannedQty: 999_999 }, LATER, DELIVERY_SEED_ACTOR);
     expect(res.ok).toBe(false);
     if (!res.ok) expect(res.reason).toBe('ALREADY_RELEASED');
     // The committed quantity is unchanged — no silent edit slipped through.
@@ -219,14 +226,14 @@ describe('adjustDraftLine — the ENFORCED freeze (Decision B)', () => {
   });
 
   it('an unknown seq is UNKNOWN_RELEASE_SEQ', () => {
-    const res = adjustDraftLine(item(), 99, { plannedQty: 1 }, NOW);
+    const res = adjustDraftLine(item(), 99, { plannedQty: 1 }, NOW, DELIVERY_SEED_ACTOR);
     expect(res.ok).toBe(false);
     if (!res.ok) expect(res.reason).toBe('UNKNOWN_RELEASE_SEQ');
   });
 
   it('does not mutate the input item', () => {
     const source = item();
-    adjustDraftLine(source, 2, { plannedQty: 1 }, NOW);
+    adjustDraftLine(source, 2, { plannedQty: 1 }, NOW, DELIVERY_SEED_ACTOR);
     expect(source.scheduleLines[1].plannedQty).toBe(180_000);
     expect(source.scheduleLines[1].adjustedAt).toBeUndefined();
   });
@@ -234,9 +241,9 @@ describe('adjustDraftLine — the ENFORCED freeze (Decision B)', () => {
 
 describe('the releasedAt ⟺ released invariant', () => {
   it('holds across a release, a repeat, and an adjustment', () => {
-    const a = mustRelease(releaseScheduleLines(item(), { horizonDate: '2025-12-01' }, NOW));
-    const b = mustRelease(releaseScheduleLines(a.item, { releaseSeqs: [5] }, LATER));
-    const c = adjustDraftLine(b.item, 6, { plannedQty: 1_000 }, LATER);
+    const a = mustRelease(releaseScheduleLines(item(), { horizonDate: '2025-12-01' }, NOW, DELIVERY_SEED_ACTOR));
+    const b = mustRelease(releaseScheduleLines(a.item, { releaseSeqs: [5] }, LATER, DELIVERY_SEED_ACTOR));
+    const c = adjustDraftLine(b.item, 6, { plannedQty: 1_000 }, LATER, DELIVERY_SEED_ACTOR);
     expect(c.ok).toBe(true);
     if (!c.ok) return;
     for (const l of c.item.scheduleLines) {
@@ -245,7 +252,7 @@ describe('the releasedAt ⟺ released invariant', () => {
   });
 
   it('an adjusted DRAFT line never acquires a releasedAt', () => {
-    const res = adjustDraftLine(item(), 4, { plannedQty: 1_000 }, NOW);
+    const res = adjustDraftLine(item(), 4, { plannedQty: 1_000 }, NOW, DELIVERY_SEED_ACTOR);
     expect(res.ok).toBe(true);
     if (!res.ok) return;
     expect(res.item.scheduleLines[3].releasedAt).toBeUndefined();

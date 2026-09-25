@@ -1,10 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { MockDeliveryService } from './MockDeliveryService';
+// Call-off step 1 — the delivery seam dispatches now, so it holds the command
+// service. This file only READS, so the dependency changes nothing it asserts.
+import { MockCommandService } from './MockCommandService';
 import type { QueryScope } from '../types';
 import { PERSONA_SYSTEM_ROLES } from '../../../services/transitions/businessRoles';
 
 const BUYER: QueryScope = { personaType: 'buyer', supplierId: null, businessRoles: PERSONA_SYSTEM_ROLES.buyer };
-const svc = new MockDeliveryService();
+const svc = new MockDeliveryService(new MockCommandService());
 
 describe('MockDeliveryService — per-contract scoping (contractId query)', () => {
   it('no query → the buyer superset (both the pristine anchor and the demo)', async () => {

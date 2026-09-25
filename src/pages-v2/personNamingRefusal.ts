@@ -29,22 +29,29 @@
 //   type can check and a test can pin; the sentence is free to be rewritten.
 //   Matching the prose would make every copy edit a silent behaviour change.
 //
-// ── ⚠️ WHY THIS MAP HOLDS ONE ENTRY AND NOT THREE ──────────────────────────
-//   Derived, not chosen. Exactly THREE shipped hook refusals interpolate a
-//   `personId` (`personNamingRefusal.test.ts` re-derives the set every run):
+// ── ⚠️ WHICH HEADS THIS MAP HOLDS, AND WHY ────────────────────────────────
+//   Derived, not chosen — `personNamingRefusal.test.ts` re-derives the set of
+//   person-naming heads from `policies.ts` every run and requires each to be
+//   accounted for. Do NOT restate the cardinality here: the sentence that stood
+//   in this spot opened *"WHY THIS MAP HOLDS ONE ENTRY AND NOT THREE"* and was
+//   falsified by the next batch to add a hook (`FLOOR-IN-PROSE-01`, in a
+//   comment about a derived population).
 //
-//     · `PSL_DECIDER_IS_PROPOSER`        — already owned by `PSL_REFUSAL_KEYS`,
-//       and a second key for it here would be a second vocabulary. The spec
-//       asserts that ownership rather than assuming it.
+//     · `PSL_DECIDER_IS_PROPOSER`        — owned by `PSL_REFUSAL_KEYS`, and a
+//       second key for it here would be a second vocabulary. The spec asserts
+//       that ownership rather than assuming it.
 //     · `MATERIALREQUEST_DECIDER_IS_REQUESTER` — reachable from a page, and the
 //       one this module was built for.
-//     · `SAMPLE_ACTOR_CANNOT_LOOSEN`     — UNREACHABLE. No `.tsx` and no hook
-//       dispatches `t_enforcement_set`, so no reader can ever receive it. A key
-//       for it would be `FORWARD-PROMISE-HAS-NO-HANDLER-01`: copy promising to
-//       render something nothing can produce. The spec ASSERTS the
-//       unreachability instead, so the day a surface dispatches that verb the
-//       suite goes red and asks for the key — which is the opposite of a
-//       forward promise, and the only version of this that cannot rot.
+//     · `SAMPLE_ACTOR_CANNOT_LOOSEN`     — ⚠️ **OWNED HERE SINCE CALL-OFF STEP
+//       1, HAVING BEEN EXEMPT AS "UNREACHABLE" BEFORE IT.** The exemption was
+//       argued from the ENFORCEMENT emission (*"no hook dispatches
+//       `t_enforcement_set`"*), which remains true and is still asserted. But a
+//       head is not an emission: `delivery_policy_governed` emits this same head
+//       from a verb the drawdown-tolerance editor dispatches on a shipped buyer
+//       surface, and the derivation returns a SET — so ONE exemption silently
+//       covered TWO emissions and the gate would have read green while a
+//       `sim-usr-*` id reached an operator. **Account for the head, never for
+//       the site.**
 //
 // ── ⚠️ `null` IS THE HONEST ANSWER AND EVERY FALLBACK SURVIVES ─────────────
 //   An unrecognised reason returns `null`, so a call site reads
@@ -62,6 +69,19 @@
  */
 export const PERSON_NAMING_REFUSAL_KEYS: Readonly<Record<string, string>> = Object.freeze({
   MATERIALREQUEST_DECIDER_IS_REQUESTER: 'identity.refusal.deciderIsRequester',
+  // ⚠️ **IT JOINED AT CALL-OFF STEP 1, AND THE EXEMPTION THAT COVERED IT IS
+  // DELETED RATHER THAN NARROWED.** The reasoning in the header above — *"no
+  // `.tsx` and no hook dispatches `t_enforcement_set`, so no reader can ever
+  // receive it"* — was true of the ENFORCEMENT emission and still is. It was
+  // never true of the head: `delivery_policy_governed` emits the SAME head from
+  // a verb the tolerance editor dispatches on a shipped buyer surface.
+  //
+  // **The derivation returns a SET of heads, so one exemption covered both
+  // emissions** — the gate would have stayed green while a `sim-usr-*` id
+  // reached an operator's screen in a governance refusal. That is the precise
+  // shape this module exists to make impossible, arriving through the door the
+  // module held open for itself.
+  SAMPLE_ACTOR_CANNOT_LOOSEN: 'identity.refusal.sampleCannotLoosen',
 });
 
 /**

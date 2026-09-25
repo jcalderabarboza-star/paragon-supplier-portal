@@ -107,26 +107,52 @@ describe('mock fixtures — delivery agreement ownership (seeded rows)', () => {
   });
 
   // Read-only for suppliers is an explicit CONTRACT, not merely a UI absence: every
-  // write verb refuses a supplier scope with SCOPE_DENIED — even the OWNER supplier
-  // (sup-007 on its own sa-0002) — because release / confirm / policy-edit are all
-  // buyer governance actions. It sits here rather than in the factory only because
-  // it names a seeded agreement id to act on.
+  // write verb refuses a supplier scope — even the OWNER supplier (sup-007 on its
+  // own sa-0002) — because release / confirm / policy-edit are all buyer
+  // governance actions. It sits here rather than in the factory only because it
+  // names a seeded agreement id to act on.
+  //
+  // ⚠️ **THE REFUSAL MOVED HOUSE AT CALL-OFF STEP 1, AND IT GOT STRONGER RATHER
+  // THAN WEAKER.** It used to be a predicate inside `MockDeliveryService`
+  // (`scope.personaType === 'buyer'`) that RETURNED `{ ok: false, reason:
+  // 'SCOPE_DENIED' }`. It is now the DISPATCHER's scope gate, reading each
+  // target's `readScopeOwner: () => null` — which means *no supplier may act on
+  // this*, not *nothing to compare* (§86) — and the dispatcher THROWS
+  // `SCOPE_DENIED` rather than returning it, exactly as it does for every other
+  // lane (cf. `SupplierForecasts`: "a refusal the dispatcher THROWS rather than
+  // returns"). **The assertion is rewritten to the new mechanism, never
+  // loosened:** each write must still be refused, and the refusal must still
+  // name SCOPE_DENIED.
   it('a supplier scope is refused ALL three delivery writes (SCOPE_DENIED)', async () => {
-    const rel = await svc.delivery.releaseLines(aScope, 'sa-0002', 10, { releaseSeqs: [1] });
-    expect(rel.ok).toBe(false);
-    if (!rel.ok) expect(rel.reason).toBe('SCOPE_DENIED');
+    await expect(
+      svc.delivery.releaseLines(aScope, 'sa-0002', 10, { releaseSeqs: [1] }),
+    ).rejects.toMatchObject({ code: 'SCOPE_DENIED' });
 
-    const conf = await svc.delivery.confirmMatch(aScope, 'sa-0002', 20, 2);
-    expect(conf.ok).toBe(false);
-    if (!conf.ok) expect(conf.reason).toBe('SCOPE_DENIED');
-
-    const edit = await svc.delivery.editPolicy(aScope, 'sa-0002', 10, {
-      tolerancePct: 0.25,
-      enforcement: 'flag',
-      reason: 'supplier attempt',
+    await expect(svc.delivery.confirmMatch(aScope, 'sa-0002', 20, 2)).rejects.toMatchObject({
+      code: 'SCOPE_DENIED',
     });
-    expect(edit.ok).toBe(false);
-    if (!edit.ok) expect(edit.reason).toBe('SCOPE_DENIED');
+
+    await expect(
+      svc.delivery.editPolicy(aScope, 'sa-0002', 10, {
+        tolerancePct: 0.25,
+        enforcement: 'flag',
+        reason: 'supplier attempt',
+      }),
+    ).rejects.toMatchObject({ code: 'SCOPE_DENIED' });
+  });
+
+  // ⚠️ **AND THE SUPPLIER'S OWN AGREEMENT IS STILL THERE AFTERWARDS.** A refusal
+  // that threw halfway through a write would look identical to one that refused
+  // before it. The three attempts above run against `sa-0002`, so this asserts
+  // the lines they named are untouched — which is what makes the refusal a
+  // refusal rather than a partial act with an exception on the end.
+  it('and nothing was written by any of the three refused attempts', async () => {
+    const own = (await svc.delivery.getAgreements(aScope)).items.find(
+      (v) => v.agreement.id === 'sa-0002',
+    )!;
+    const item10 = own.agreement.items.find((i) => i.lineSeq === 10)!;
+    expect(item10.scheduleLines.find((l) => l.releaseSeq === 1)!.state).toBe('draft');
+    expect(item10.drawdownPolicy.active).toEqual(item10.drawdownPolicy.contractDefault);
   });
 
   // SDC-5e — the supplier obligations view derives from the OWN-scoped views, so a

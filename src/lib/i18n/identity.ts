@@ -92,6 +92,10 @@ export const identityEn: Record<string, string> = {
   // fires the real composition at the real refusal to hold that closed.
   'identity.refusal.deciderIsRequester':
     '{{person}} raised this request and may not also decide it. Raising a material request and ruling on it are two authorities — route it to somebody else.',
+  // Call-off step 1 — `SAMPLE_ACTOR_CANNOT_LOOSEN` became reader-facing when the
+  // drawdown-tolerance editor started dispatching a verb whose hook emits it.
+  'identity.refusal.sampleCannotLoosen':
+    '{{person}} is a sample identity and may not relax a governed setting. Accepting that risk needs a real signed-in person, and Paragon has no sign-in yet — tightening is still available.',
 };
 
 export const identityId: Record<string, string> = {
@@ -134,4 +138,6 @@ export const identityId: Record<string, string> = {
 
   'identity.refusal.deciderIsRequester':
     '{{person}} mengajukan permintaan ini dan tidak boleh sekaligus memutuskannya. Mengajukan permintaan material dan memutuskannya adalah dua kewenangan — alihkan kepada orang lain.',
+  'identity.refusal.sampleCannotLoosen':
+    '{{person}} adalah identitas contoh dan tidak boleh melonggarkan pengaturan yang diatur. Menerima risiko itu memerlukan orang sungguhan yang telah masuk, dan Paragon belum memiliki proses masuk — memperketat tetap tersedia.',
 };

@@ -727,6 +727,22 @@ const BuyerInventory: React.FC = () => {
                     </Data>
                   </div>
                 </div>
+                {/* ⚠️ **THESE TWO ARE DISPLAY ARITHMETIC AND THE COPY NOW SAYS
+                    SO (operator ruling Q1, call-off step 1).** Measured: the
+                    only occurrences of `reorderPoint` / `safetyStock` anywhere
+                    in `src/` are these two labels and these two render sites.
+                    There is no stored field, no lead time, no per-material
+                    policy and no trigger — the numbers are `avgDailyDemand × 7`
+                    and `× 14`, two multipliers written here.
+
+                    A figure captioned "Reorder Point" on a procurement screen
+                    reads as a planning parameter somebody set and something
+                    consults. Nothing consults these. **SOMO owns the reorder
+                    point** (Q1) — it holds the lead times, the safety-stock
+                    policy and the consumption signal, and this portal holds
+                    none of the three. The caption is the whole fix: no
+                    behaviour changes, and the number stops claiming to be a
+                    parameter. */}
                 <div>
                   <div className="text-xs text-text-tertiary">
                     {t('buyerInventory.panel.safetyStock')}
@@ -735,6 +751,9 @@ const BuyerInventory: React.FC = () => {
                     <Data>
                       {formatNumber(selected.avgDailyDemand * 7)} {selected.uom}
                     </Data>
+                  </div>
+                  <div className="text-[10px] italic text-text-tertiary mt-0.5">
+                    {t('buyerInventory.panel.safetyStockBasis')}
                   </div>
                 </div>
                 <div>
@@ -745,6 +764,9 @@ const BuyerInventory: React.FC = () => {
                     <Data>
                       {formatNumber(selected.avgDailyDemand * 14)} {selected.uom}
                     </Data>
+                  </div>
+                  <div className="text-[10px] italic text-text-tertiary mt-0.5">
+                    {t('buyerInventory.panel.reorderPointBasis')}
                   </div>
                 </div>
               </div>

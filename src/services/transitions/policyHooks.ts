@@ -545,6 +545,88 @@ export const POLICY_HOOKS = {
    *  the ceiling. Bounding the default is what stops a later ruling that lowers
    *  the ceiling from leaving the default silently in force above it. */
   PSL_DEFAULT_CAP_WITHIN_CEILING: 'psl_default_cap_within_ceiling',
+
+  // ── THE DELIVERY LANE (call-off step 1) ───────────────────────────────────
+  /**
+   * EVERY delivery verb: the commanding scope must name a person.
+   *
+   * ⚠️ **THIS RUNS THE OPPOSITE WAY TO THE REST OF THE FILE AND THAT IS THE
+   * POINT.** Most hooks here refuse a FIELD. This refuses a SEAT — and it is
+   * the operator's Q6 ruling, which exists because of a measured incident: one
+   * click by a seat with no person released three back-dated lines, and the
+   * supplier mirror immediately showed five overdue deliveries it had never
+   * been asked about. **An act that creates supplier-facing obligations is
+   * never recorded against nobody.**
+   *
+   * It is ONE hook on all four verbs rather than four copies, so "every verb in
+   * this lane requires an attributed actor" is a property a spec can DERIVE
+   * from the flows instead of a list somebody keeps in step.
+   *
+   * The refusal names the remedy — pick a sample user on the identity panel —
+   * because a seat that cannot act and is not told how is indistinguishable
+   * from a broken control.
+   */
+  DELIVERY_ACTOR_ATTRIBUTED: 'delivery_actor_attributed',
+  /**
+   * `t_delivery_release`: a line dated before the declared present may not be
+   * transmitted.
+   *
+   * ⚠️ **THE DEFECT THIS EXISTS FOR WAS MEASURED IN A BROWSER, NOT IMAGINED.**
+   * Releasing a past-dated draft instantly derives `Missed` — the line was due
+   * before it was ever sent — and the chase engine pushes on released lines, so
+   * one click manufactured supplier-facing delinquency for deliveries nobody
+   * had asked for. A commitment cannot be made in the past.
+   *
+   * ⚠️ **AND IT DOES NOT FALSIFY A SEEDED LINE.** Every seeded release went
+   * through the same pure verb at fixture-build time with an injected stamp of
+   * `2026-03-15`, and every date it released is LATER than that: those lines
+   * were transmitted while their dates were still in the future, which is
+   * exactly what this rule requires. `deliveryBackdating.test.ts` asserts that
+   * over the live corpus rather than asserting it here in prose.
+   */
+  DELIVERY_RELEASE_NOT_BACKDATED: 'delivery_release_not_backdated',
+  /**
+   * `t_delivery_adjust`: the patch must carry at least one knob, each knob must
+   * be well-formed, and a new `releaseDate` may not be in the past.
+   *
+   * The "at least one" rule is here rather than in `requiredFields` because
+   * that list rules on absence UNCONDITIONALLY and an adjustment legitimately
+   * carries either knob alone (`t_enforcement_set`'s `reviewBy` reasoning).
+   * The date bound is the same rule as the release guard seen from the other
+   * side: moving a line INTO the past would rebuild the defect the release
+   * guard refuses, one verb earlier.
+   */
+  DELIVERY_ADJUST_PATCH_VALID: 'delivery_adjust_patch_valid',
+  /**
+   * `t_delivery_confirm`: there must BE a proposed match to accept.
+   *
+   * Derived from the SAME shipment pool the surface renders and the target
+   * writes (`delivery/pool.ts`), so a confirm can never accept a quantity the
+   * operator was not shown. An unmatched line is refused rather than confirmed
+   * with nothing — a silent success here would move `deliveredQty`, a governed
+   * total, on no evidence at all.
+   */
+  DELIVERY_CONFIRM_HAS_MATCH: 'delivery_confirm_has_match',
+  /**
+   * `t_delivery_policy_set`: the tolerance must be well-formed, must actually
+   * change something, and **a LOOSENING may not be recorded against a SAMPLE
+   * identity** (C10 §6.3a, the `SAMPLE_ACTOR_CANNOT_LOOSEN` lock).
+   *
+   * ⚠️ **THE LOCK APPLIES, AND IT WAS DERIVED RATHER THAN ASSUMED.**
+   * `enforcementSetGoverned`'s ground is that a sample identity cannot accept
+   * governance risk — *"that needs a real signed-in person, and Paragon has no
+   * sign-in yet"* — and a drawdown tolerance is exactly a governed check: it is
+   * what decides whether an over-delivery is flagged at all. Loosening it
+   * accepts commercial risk in a named person's name, and after this batch that
+   * name lands in the DR-10 trail. The rival reading (this store does not
+   * survive a reload, so the `role:grant` durability exemption applies) was
+   * measured and rejected: the enforcement lane's own argument never rested on
+   * durability, it rested on WHO MAY ACCEPT RISK.
+   *
+   * TIGHTENING stays available to any attributed seat, exactly as it does on
+   * the enforcement gate — the safest act is always reachable.
+   */
+  DELIVERY_POLICY_GOVERNED: 'delivery_policy_governed',
 } as const;
 
 for (const name of Object.values(POLICY_HOOKS)) registerPolicyHook(name);

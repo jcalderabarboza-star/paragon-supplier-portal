@@ -1,60 +1,109 @@
 // ────────────────────────────────────────────────────────────────────────────
-// MockDeliveryService — the Delivery Agreement read seam's mock implementation.
+// MockDeliveryService — the Delivery Agreement seam's mock implementation.
 //
-// Mirrors MockCollaborationService: scope moves INTO the service, the pure
-// derivations run HERE (data-in / view-out), and the shared sdcClock supplies
-// "now" so the service and the pure fulfillment selector agree on the timeline.
+// ⚠️ **THE WRITES NO LONGER WRITE. THEY DISPATCH (call-off step 1).**
+// This class used to hold three direct store mutations gated by ONE predicate
+// (`scope.personaType === 'buyer'`) — no atom, no policy hook, no
+// `TransitionEvent`, no actor. Its own header said so: *"NO command dispatcher,
+// NO CommandTarget → deliveryAgreements stays SIMULATED by construction."*
+// That sentence is retired rather than softened: the lane now has two flows,
+// two CommandTargets and four verbs, and every write below is a `dispatch`.
 //
-//   · SCOPING: SchedulingAgreement carries `supplierId`, so applySupplierScope
-//     gives buyer = the cross-supplier superset, a supplier = its OWN agreements
-//     only, a scopeless call = [] (defence in depth). No cross-supplier leak.
-//   · SHIPMENT POOL: the LIVE incomingShipmentStore (the real seam — post-F1 real
-//     shipments flow straight in) PLUS the SIMULATED demo shipments that draw down
-//     the demo agreement. deriveAgreementView filters the pool to each agreement's
-//     supplier before matching. The pristine ctr-003 anchor is all-draft, so it
-//     matches nothing and reads deliveredQty 0 honestly.
-//   · WRITE (the ONE mutation): `releaseLines` — the draft→released transmit
-//     moment. BUYER-ONLY. Applies Batch-2's pure `releaseScheduleLines` to the
-//     STORED item and persists it; the next read re-derives over the mutated
-//     store. NO command dispatcher, NO CommandTarget → deliveryAgreements stays
-//     SIMULATED by construction (a portal release, never a SAP posting).
+// What each write method still owns is ORCHESTRATION, which is exactly the job
+// the backend will do server-side at F1: resolve the selection into addresses,
+// dispatch one command per address, and re-read the view. It owns no rule and
+// no mutation — every gate is the dispatcher's, and the only code that touches
+// `schedulingAgreementStore` is the two targets.
+//
+//   · SCOPING: unchanged. `applySupplierScope` on the READ; the WRITE's tenancy
+//     is now the dispatcher's `readScopeOwner: () => null` (a supplier is
+//     denied at SCOPE, not by a predicate in this file).
+//   · SHIPMENT POOL: lifted to `delivery/pool.ts` so the view, the confirm
+//     policy hook and the confirm target all resolve the IDENTICAL pool.
+//
+// ⚠️ **AND `t_delivery_adjust` IS NOT HERE, DELIBERATELY.** It is dispatched
+// straight from `useAdjustLine` (the `commandHooks` precedent). C1 freezes this
+// interface's method list, and an adjust is one command against one address —
+// there is no orchestration for a seam method to do, so adding one would widen
+// a ratified contract to gain a pass-through.
+//
+// ⚠️ **A RELEASE OF MANY LINES IS MANY COMMANDS, AND THAT IS THE HONEST SHAPE.**
+// The entity is the SCHEDULE LINE, so a horizon release dispatches one command
+// per line in range. Each line is an independent commitment to a vendor, each
+// gets its own `TransitionEvent`, and each can be refused on its own merits —
+// which the back-dating guard makes routine rather than exotic. A PARTIAL
+// outcome is therefore real and is REPORTED (`releasedSeqs` + `refusals`)
+// rather than collapsed into one boolean: "three transmitted, two refused
+// because they are already past" is the truth, and an all-or-nothing wrapper
+// would have to either hide it or duplicate the policy outside the dispatcher
+// to pre-check it.
 // ────────────────────────────────────────────────────────────────────────────
 
 import { applySupplierScope } from '../scoping';
-import { incomingShipmentStore } from './stores/incomingShipmentStore';
 import { sdcClock } from '../../sdc';
 import { mockSuppliers } from '../../../data/mockSuppliers';
-import {
-  DELIVERY_DEMO_SHIPMENTS,
-  SCALE_DEMO_SHIPMENTS,
-  confirmFulfillment,
-  deriveAgreementView,
-  deriveFulfillment,
-  releaseScheduleLines,
-  setActivePolicy,
-} from '../../delivery';
+import { deriveAgreementView } from '../../delivery';
+import { deliveryShipmentPool } from '../../delivery/pool';
+import { itemKey } from '../../delivery/addressing';
 import { schedulingAgreementStore } from '../../delivery/stores/schedulingAgreementStore';
 import type {
-  ConfirmCommandResult,
   DeliveryAgreementView,
-  EditPolicyCommandResult,
   EditPolicyPatch,
-  ReleaseCommandResult,
   ReleaseSelection,
   SchedulingAgreement,
+  SchedulingAgreementItem,
 } from '../../delivery';
-import type { DeliveryQuery, IDeliveryService, Page, QueryScope } from '../types';
+import type {
+  ConfirmCommandResult,
+  EditPolicyCommandResult,
+  ReleaseCommandResult,
+  ReleaseLineRefusal,
+} from '../../delivery';
+import type {
+  DeliveryQuery,
+  ICommandService,
+  IDeliveryService,
+  Page,
+  QueryScope,
+} from '../types';
 
 /** Display join — resolve the agreement supplier's name from reference data. */
 function supplierNameOf(supplierId: string): string | null {
   return mockSuppliers.find((s) => s.id === supplierId)?.name ?? null;
 }
 
-/** The buyer gate for the release write: release is a BUYER action (transmit to a
- *  vendor) — a supplier (or a scopeless call) can never release. */
-const buyerOnly = (scope: QueryScope): boolean => scope.personaType === 'buyer';
+/**
+ * Which DRAFT lines does this selection name, in ascending seq order?
+ *
+ * The two arms keep the pure verb's own semantics (`release.ts`, Decision E):
+ * the HORIZON arm skips already-released lines silently (re-releasing a horizon
+ * is a natural operator repeat); the EXPLICIT arm names them, because an
+ * operator who named a line deserves to be told what happened to it.
+ */
+function selectLines(
+  item: SchedulingAgreementItem,
+  selection: ReleaseSelection,
+): { readonly seqs: readonly number[]; readonly named: boolean } {
+  if ('horizonDate' in selection) {
+    return {
+      seqs: item.scheduleLines
+        .filter((l) => l.releaseDate <= selection.horizonDate && l.state === 'draft')
+        .map((l) => l.releaseSeq),
+      named: false,
+    };
+  }
+  return { seqs: [...new Set(selection.releaseSeqs)].sort((a, b) => a - b), named: true };
+}
 
 export class MockDeliveryService implements IDeliveryService {
+  /**
+   * The command seam every write below goes through.
+   *
+   * Injected rather than imported, so this class cannot reach a second
+   * dispatcher and a spec can hand it one that records what it was asked to do.
+   */
+  constructor(private readonly commands: ICommandService) {}
+
   /** The scoped delivery-agreement views (drawdown ledger + per-line fulfillment,
    *  derived internally as of the shared SDC clock). Buyer = superset; supplier =
    *  own agreements only. `query.contractId` narrows to one contract's agreements
@@ -71,148 +120,165 @@ export class MockDeliveryService implements IDeliveryService {
     return { items: scoped.map((agreement) => this.viewOf(agreement)) };
   }
 
-  /** Release the selected DRAFT lines of ONE item. BUYER-ONLY. Applies the pure
-   *  `releaseScheduleLines` to the STORED item, persists the new agreement, and
-   *  returns the re-derived view (or an honest ReleaseReason on refusal). NO
-   *  dispatcher, NO CommandTarget — SIMULATED by construction. `now` is the shared
-   *  SIMULATED clock (keeps `releasedAt` in the fixture timeline). */
+  /**
+   * Release the selected DRAFT lines of ONE item — as one `t_delivery_release`
+   * command per line, through the dispatcher.
+   *
+   * Every gate is the dispatcher's: the `delivery:release` atom, the attributed
+   * actor (Q6), the back-dating guard, and the tenancy denial of a supplier
+   * scope. This method resolves addresses and reports outcomes; it decides
+   * nothing.
+   */
   async releaseLines(
     scope: QueryScope,
     agreementId: string,
     itemSeq: number,
     selection: ReleaseSelection,
   ): Promise<ReleaseCommandResult> {
-    // Buyer-only, and the agreement must be in this scope's superset (a supplier
-    // is refused before touching the store — release is a buyer verb).
-    if (!buyerOnly(scope)) {
-      return { ok: false, reason: 'SCOPE_DENIED', detail: 'release is a buyer action' };
-    }
-    const agreement = schedulingAgreementStore.get(agreementId);
-    if (!agreement) {
-      return { ok: false, reason: 'UNKNOWN_RELEASE_SEQ', detail: `no agreement ${agreementId}` };
-    }
-    const item = agreement.items.find((i) => i.lineSeq === itemSeq);
-    if (!item) {
+    const located = this.locate(agreementId, itemSeq);
+    if (!located) {
       return { ok: false, reason: 'UNKNOWN_RELEASE_SEQ', detail: `no item ${itemSeq}` };
     }
+    const { agreement, item } = located;
+    const { seqs, named } = selectLines(item, selection);
+    if (seqs.length === 0) {
+      return {
+        ok: false,
+        reason: 'NO_LINES_SELECTED',
+        detail: 'the selection resolved to no releasable draft lines',
+      };
+    }
 
-    const result = releaseScheduleLines(item, selection, sdcClock.now());
-    if (!result.ok) return { ok: false, reason: result.reason, detail: result.detail };
+    const releasedSeqs: number[] = [];
+    const refusals: ReleaseLineRefusal[] = [];
+    for (const releaseSeq of seqs) {
+      const line = item.scheduleLines.find((l) => l.releaseSeq === releaseSeq);
+      if (!line) {
+        refusals.push({ releaseSeq, reason: `no schedule line ${releaseSeq}` });
+        continue;
+      }
+      // An already-released line: silent on the horizon arm (an operator
+      // repeat), reported on the explicit arm (they named it). The pure verb
+      // draws the same distinction for the same reason.
+      if (line.state === 'released') {
+        if (named) refusals.push({ releaseSeq, reason: 'ALREADY_RELEASED' });
+        continue;
+      }
+      const result = await this.commands.dispatch(scope, {
+        transitionId: 't_delivery_release',
+        entity: 'deliveryRelease',
+        entityId: line.releaseRef,
+        // EMPTY, AND IT CANNOT BE OTHERWISE. The address carries the
+        // coordinates and the session carries the actor, so there is no field
+        // for a caller to supply — and therefore nowhere a document number
+        // could be smuggled in (C12 §2.1).
+        payload: {},
+      });
+      if (result.status === 'failed') {
+        refusals.push({ releaseSeq, reason: result.reason ?? 'REFUSED' });
+      } else {
+        releasedSeqs.push(releaseSeq);
+      }
+    }
 
-    // Persist: swap the released item into a new agreement (immutable throughout).
-    schedulingAgreementStore.update(agreementId, (a) => ({
-      ...a,
-      items: a.items.map((i) => (i.lineSeq === itemSeq ? result.item : i)),
-    }));
-    const updated = schedulingAgreementStore.get(agreementId)!;
-    return { ok: true, view: this.viewOf(updated) };
+    if (releasedSeqs.length === 0) {
+      // Nothing was transmitted. The FIRST refusal is the reason, because the
+      // selection is ordered and the first thing that went wrong is what an
+      // operator wants read out to them.
+      return {
+        ok: false,
+        reason: refusals[0]?.reason ?? 'NO_LINES_SELECTED',
+        detail: refusals.map((r) => `line ${r.releaseSeq}: ${r.reason}`).join('; '),
+      };
+    }
+    return {
+      ok: true,
+      view: this.viewOf(this.reread(agreement.id)),
+      releasedSeqs,
+      refusals,
+    };
   }
 
-  /** Confirm the fulfillment of ONE released line (the delivery lane's SECOND
-   *  write — accept an INFERRED proximity proposal as a confirmed fact). BUYER-ONLY.
-   *  Re-derives the observed match, ACCEPTS-AS-OBSERVED (writes `fulfilledBy` +
-   *  the observed `actualQty` via the pure `confirmFulfillment`), persists, and
-   *  returns the re-derived view — the proposal now binds authoritatively
-   *  (inferred:false) and `deliveredQty` has climbed. NO dispatcher, NO
-   *  CommandTarget — SIMULATED by construction (a portal confirm, never a SAP GR). */
+  /**
+   * Confirm the fulfillment of ONE released line — `t_delivery_confirm`.
+   *
+   * ACCEPT-AS-OBSERVED: the `(ref, qty)` is derived by the TARGET from the same
+   * pool this service rendered, so nothing about the accepted quantity travels
+   * in a payload. A confirm is a PORTAL record, never a SAP goods-receipt.
+   */
   async confirmMatch(
     scope: QueryScope,
     agreementId: string,
     itemSeq: number,
     releaseSeq: number,
   ): Promise<ConfirmCommandResult> {
-    // Buyer-only — accepting a delivery against a released commitment is a buyer
-    // judgment (a supplier is refused before touching the store).
-    if (!buyerOnly(scope)) {
-      return { ok: false, reason: 'SCOPE_DENIED', detail: 'confirm is a buyer action' };
+    const located = this.locate(agreementId, itemSeq);
+    const line = located?.item.scheduleLines.find((l) => l.releaseSeq === releaseSeq);
+    if (!located || !line) {
+      return { ok: false, reason: 'UNKNOWN_RELEASE_SEQ', detail: `no schedule line ${releaseSeq}` };
     }
-    const agreement = schedulingAgreementStore.get(agreementId);
-    if (!agreement) {
-      return { ok: false, reason: 'UNKNOWN_RELEASE_SEQ', detail: `no agreement ${agreementId}` };
-    }
-    const item = agreement.items.find((i) => i.lineSeq === itemSeq);
-    if (!item) {
-      return { ok: false, reason: 'UNKNOWN_RELEASE_SEQ', detail: `no item ${itemSeq}` };
-    }
-
-    // Re-derive the observed match over the SAME supplier-scoped pool viewOf uses,
-    // so the accepted (ref, qty) is exactly what the surface proposed.
-    const ownShipments = this.shipmentPool().filter((s) => s.supplierId === agreement.supplierId);
-    const fv = deriveFulfillment(item, ownShipments, sdcClock.now()).find(
-      (f) => f.releaseSeq === releaseSeq,
-    );
-    // Nothing to accept unless there IS a match carrying an observed qty. An
-    // already-CONFIRMED line (inferred:false) is caught by the pure guard below;
-    // an unmatched line (no ref / no qty) is NOTHING_TO_CONFIRM here.
-    if (!fv || fv.matchedRef === undefined || fv.actualQty === undefined) {
-      return {
-        ok: false,
-        reason: 'NOTHING_TO_CONFIRM',
-        detail: `line ${releaseSeq} has no matched delivery to confirm`,
-      };
-    }
-
-    const result = confirmFulfillment(item, releaseSeq, {
-      fulfilledBy: fv.matchedRef,
-      actualQty: fv.actualQty, // ACCEPT-AS-OBSERVED — line.actualQty === s.qty (no split).
-      now: sdcClock.now(),
+    const result = await this.commands.dispatch(scope, {
+      transitionId: 't_delivery_confirm',
+      entity: 'deliveryRelease',
+      entityId: line.releaseRef,
+      payload: {},
     });
-    if (!result.ok) return { ok: false, reason: result.reason, detail: result.detail };
-
-    schedulingAgreementStore.update(agreementId, (a) => ({
-      ...a,
-      items: a.items.map((i) => (i.lineSeq === itemSeq ? result.item : i)),
-    }));
-    const updated = schedulingAgreementStore.get(agreementId)!;
-    return { ok: true, view: this.viewOf(updated) };
+    if (result.status === 'failed') {
+      return { ok: false, reason: result.reason ?? 'REFUSED' };
+    }
+    return { ok: true, view: this.viewOf(this.reread(located.agreement.id)) };
   }
 
-  /** Re-point ONE item's ACTIVE drawdown tolerance (the delivery lane's THIRD
-   *  write — the governance write). BUYER-ONLY. Applies the pure `setActivePolicy`
-   *  (writes `active` + the who/when/why stamp; `contractDefault` immutable), persists,
-   *  and returns the re-derived view — the ledger now marks `policyDeviation` and
-   *  re-derives `enforced` / `exceptions` against the new `active`. NO dispatcher,
-   *  NO CommandTarget — SIMULATED by construction (a portal governance record). */
+  /**
+   * Re-point ONE item's ACTIVE drawdown tolerance — `t_delivery_policy_set`.
+   *
+   * The governance write, and the one whose atom is `compliance`'s rather than
+   * `procurement`'s: whoever sets the tolerance can relax the check the release
+   * lane is measured against.
+   */
   async editPolicy(
     scope: QueryScope,
     agreementId: string,
     itemSeq: number,
     patch: EditPolicyPatch,
   ): Promise<EditPolicyCommandResult> {
-    // Buyer-only — a drawdown tolerance is a buyer governance decision (a supplier
-    // is refused before touching the store).
-    if (!buyerOnly(scope)) {
-      return { ok: false, reason: 'SCOPE_DENIED', detail: 'policy-edit is a buyer action' };
-    }
-    const agreement = schedulingAgreementStore.get(agreementId);
-    if (!agreement) {
-      return { ok: false, reason: 'UNKNOWN_ITEM', detail: `no agreement ${agreementId}` };
-    }
-    const item = agreement.items.find((i) => i.lineSeq === itemSeq);
-    if (!item) {
+    const located = this.locate(agreementId, itemSeq);
+    if (!located) {
       return { ok: false, reason: 'UNKNOWN_ITEM', detail: `no item ${itemSeq}` };
     }
-
-    const result = setActivePolicy(item, { ...patch, now: sdcClock.now() });
-    if (!result.ok) return { ok: false, reason: result.reason, detail: result.detail };
-
-    schedulingAgreementStore.update(agreementId, (a) => ({
-      ...a,
-      items: a.items.map((i) => (i.lineSeq === itemSeq ? result.item : i)),
-    }));
-    const updated = schedulingAgreementStore.get(agreementId)!;
-    return { ok: true, view: this.viewOf(updated) };
+    const result = await this.commands.dispatch(scope, {
+      transitionId: 't_delivery_policy_set',
+      entity: 'deliveryPolicy',
+      entityId: itemKey(agreementId, itemSeq),
+      payload: {
+        tolerancePct: patch.tolerancePct,
+        enforcement: patch.enforcement,
+        reason: patch.reason,
+      },
+    });
+    if (result.status === 'failed') {
+      return { ok: false, reason: result.reason ?? 'REFUSED' };
+    }
+    return { ok: true, view: this.viewOf(this.reread(located.agreement.id)) };
   }
 
-  /** The live shipment pool: the real store + the SIMULATED demo shipments (the
-   *  demo + the at-scale fleet). Shared by `viewOf` and `confirmMatch` so a read
-   *  and a confirm resolve the identical match. */
-  private shipmentPool() {
-    return [
-      ...incomingShipmentStore.all(),
-      ...DELIVERY_DEMO_SHIPMENTS,
-      ...SCALE_DEMO_SHIPMENTS,
-    ];
+  /** Resolve an agreement + item from the store, or null. */
+  private locate(
+    agreementId: string,
+    itemSeq: number,
+  ): { agreement: SchedulingAgreement; item: SchedulingAgreementItem } | null {
+    const agreement = schedulingAgreementStore.get(agreementId);
+    if (!agreement) return null;
+    const item = agreement.items.find((i) => i.lineSeq === itemSeq);
+    return item ? { agreement, item } : null;
+  }
+
+  /** Re-read an agreement AFTER a dispatch — the store swapped the object, so a
+   *  stale reference would render the world as it was before the act. */
+  private reread(agreementId: string): SchedulingAgreement {
+    const a = schedulingAgreementStore.get(agreementId);
+    if (!a) throw new Error(`delivery: agreement ${agreementId} vanished after a successful write`);
+    return a;
   }
 
   /** Derive one agreement's view-model as of the shared SIMULATED clock, over the
@@ -220,7 +286,7 @@ export class MockDeliveryService implements IDeliveryService {
   private viewOf(agreement: SchedulingAgreement): DeliveryAgreementView {
     return deriveAgreementView(
       agreement,
-      this.shipmentPool(),
+      deliveryShipmentPool(),
       sdcClock.now(),
       supplierNameOf(agreement.supplierId),
     );

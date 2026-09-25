@@ -1,3 +1,10 @@
+// ⚠️ **THE PURE VERBS TAKE AN ACTOR SINCE CALL-OFF STEP 1 — REQUIRED, NOT
+// OPTIONAL.** An optional actor is a silent default, and a silent default is how
+// an unattributed act comes to look attributed. These specs are about the
+// DOMAIN rather than about a seat, so they pass the same `DELIVERY_SEED_ACTOR`
+// the fixtures do — which is the honest value: nothing here is taken by a
+// person either.
+import { DELIVERY_SEED_ACTOR } from '../../delivery/seedActor';
 import { describe, expect, it } from 'vitest';
 import {
   ANTICIPATION_DAYS,
@@ -74,7 +81,12 @@ function buildItem(opts: {
       releaseType: opts.releaseType,
     }),
   };
-  const r = releaseScheduleLines(item, { releaseSeqs: opts.releaseSeqs }, '2026-01-15T00:00:00.000Z');
+  const r = releaseScheduleLines(
+    item,
+    { releaseSeqs: opts.releaseSeqs },
+    '2026-01-15T00:00:00.000Z',
+    DELIVERY_SEED_ACTOR,
+  );
   if (!r.ok) throw new Error(`test release failed: ${r.reason}`);
   return r.item;
 }

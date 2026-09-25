@@ -24,6 +24,7 @@ import ProvenanceMarker from '../components/ui-v2/ProvenanceMarker';
 import NotFound from './NotFound';
 import { useContracts, useObligations, useSuppliers } from '../services/query/hooks';
 import {
+  useAdjustLine,
   useConfirmMatch,
   useDeliveryAgreements,
   useEditPolicy,
@@ -37,7 +38,15 @@ import {
   docCount,
   typeLabel,
 } from './contracts/contractView';
+import ChangeHistory from '../components/delivery/ChangeHistory';
+import { availabilityOfAtom } from '../services/transitions/handoff';
+import { deliveryRefusalKey } from '../components/delivery/deliveryRefusal';
+import { personNamingRefusalKey } from './personNamingRefusal';
+import { useRefusalText } from '../hooks/useRefusalText';
+import { personLabel } from '../services/identity/personLabel';
+import { SAMPLE_PERSON_PREFIX } from '../services/identity/sampleRoster';
 import AgreementCard, {
+  type OnAdjust,
   type OnConfirm,
   type OnEditPolicy,
   type OnRelease,
@@ -66,23 +75,107 @@ const ContractDetailView: React.FC<{
   const { identity } = useCurrentIdentity();
   const { toast } = useToast();
   const release = useReleaseLines();
+  const adjust = useAdjustLine();
   const confirm = useConfirmMatch();
   const editPolicy = useEditPolicy();
-  const canRelease = identity.personaType === 'buyer';
+  // ⚠️ **PER-VERB, NOT PER-PERSONA (call-off step 1).** This read
+  // `identity.personaType === 'buyer'` and threaded ALL THREE handlers off that
+  // one boolean — which was honest while the lane had no atoms, and is not any
+  // more. `delivery:release` / `:adjust` / `:confirm` are `procurement`'s and
+  // `delivery:policy-set` is `compliance`'s, deliberately so that the lane that
+  // transmits schedules cannot relax the tolerance it is measured against. Each
+  // verb now answers for itself, and a seat that lacks one sees the WAIT in that
+  // verb's own slot rather than a missing control.
+  //
+  // `personaType` still guards the whole block: a supplier viewing a buyer route
+  // gets a read-only card, and the dispatcher denies a supplier scope anyway
+  // (`readScopeOwner: () => null`). This only hides affordances.
+  const isBuyer = identity.personaType === 'buyer';
+  const deliveryAvailability = useMemo(
+    () =>
+      isBuyer
+        ? {
+            release: availabilityOfAtom('delivery:release', identity.businessRoles),
+            adjust: availabilityOfAtom('delivery:adjust', identity.businessRoles),
+            confirm: availabilityOfAtom('delivery:confirm', identity.businessRoles),
+            policy: availabilityOfAtom('delivery:policy-set', identity.businessRoles),
+          }
+        : undefined,
+    [isBuyer, identity.businessRoles],
+  );
+  // The honesty banner speaks for the page, so it asks whether ANY delivery verb
+  // is held — a seat holding none is reading, not writing.
+  const canRelease =
+    deliveryAvailability !== undefined &&
+    Object.values(deliveryAvailability).some((a) => a.kind === 'held');
+
+  /**
+   * A refusal in the reader's language.
+   *
+   * ⚠️ **KEYED ON THE HOOK'S REFUSAL HEAD, NEVER ITS PROSE** — `pslRefusal.ts`'s
+   * ratified pattern. The dispatcher hands back a developer's English sentence
+   * (and, for the sample-actor lock, one with a `personId` in it); rendering it
+   * raw is the defect browser QA found in Wave E and the one
+   * `personNamingRefusal.ts` exists for. `{{person}}` is filled by the ONE
+   * resolver, which is what carries the `(SAMPLE)` marker.
+   */
+  const refusalText = useRefusalText();
+  const refusalCopy = (reason?: string): string => {
+    const personKey = personNamingRefusalKey(reason);
+    if (personKey) {
+      const id = reason?.match(new RegExp(`${SAMPLE_PERSON_PREFIX}[A-Za-z0-9-]+`))?.[0];
+      return t(personKey, { person: id ? personLabel(id, t) : t('identity.actor.unknown') });
+    }
+    const key = deliveryRefusalKey(reason);
+    return key ? t(key) : (refusalText(reason) ?? reason ?? '');
+  };
 
   const handleRelease: OnRelease = async (agreementId, itemSeq, selection) => {
     const result = await release.mutateAsync({ agreementId, itemSeq, selection });
     if (result.ok) {
-      toast({ variant: 'success', title: t('delivery.release.toastOk') });
-    } else {
-      // An honest refusal is surfaced (never a silent no-op). ALREADY_RELEASED is
-      // an idempotent repeat (info), the rest are warnings.
+      // ⚠️ **A PARTIAL RELEASE IS REPORTED AS ONE.** The entity is the schedule
+      // LINE, so a horizon release is many independent commands and the
+      // back-dating guard can refuse some of them. Announcing an unqualified
+      // success over a partial outcome is the false-affordance class this batch
+      // exists to remove, not to relocate.
+      const partial = result.refusals.length > 0;
       toast({
-        variant: result.reason === 'ALREADY_RELEASED' ? 'info' : 'warning',
+        variant: partial ? 'warning' : 'success',
+        title: t('delivery.release.toastOk'),
+        description: partial
+          ? `${t('delivery.release.toastPartial', {
+              released: result.releasedSeqs.length,
+              refused: result.refusals.length,
+            })} ${refusalCopy(result.refusals[0]?.reason)}`
+          : undefined,
+      });
+    } else {
+      // An honest refusal is surfaced (never a silent no-op).
+      toast({
+        variant: 'warning',
         title: t('delivery.release.toastRefused'),
-        description: t(`delivery.release.reason.${result.reason}`),
+        description: refusalCopy(result.reason),
       });
     }
+  };
+
+  /**
+   * Adjust a DRAFT line — the LPA adjustability's first product door, and the
+   * remedy the back-dating refusal names. Returns whether it APPLIED, so the
+   * inline editor closes on success and stays open on a refusal.
+   */
+  const handleAdjust: OnAdjust = async (releaseRef, supplierId, patch) => {
+    const result = await adjust.mutateAsync({ releaseRef, supplierId, patch });
+    if (result.status !== 'failed') {
+      toast({ variant: 'success', title: t('delivery.adjust.toastOk') });
+      return true;
+    }
+    toast({
+      variant: 'warning',
+      title: t('delivery.adjust.toastRefused'),
+      description: refusalCopy(result.reason),
+    });
+    return false;
   };
 
   // The confirm-match write (the delivery lane's SECOND). Accept an inferred
@@ -96,9 +189,9 @@ const ContractDetailView: React.FC<{
     } else {
       // ALREADY_CONFIRMED is an idempotent repeat (info); the rest are warnings.
       toast({
-        variant: result.reason === 'ALREADY_CONFIRMED' ? 'info' : 'warning',
+        variant: 'warning',
         title: t('delivery.confirm.toastRefused'),
-        description: t(`delivery.confirm.reason.${result.reason}`),
+        description: refusalCopy(result.reason),
       });
     }
   };
@@ -115,9 +208,9 @@ const ContractDetailView: React.FC<{
       return true;
     }
     toast({
-      variant: result.reason === 'NO_CHANGE' ? 'info' : 'warning',
+      variant: 'warning',
       title: t('delivery.policy.edit.toastRefused'),
-      description: t(`delivery.policy.edit.reason.${result.reason}`),
+      description: refusalCopy(result.reason),
     });
     return false;
   };
@@ -205,13 +298,20 @@ const ContractDetailView: React.FC<{
           ) : (
             <div className="space-y-8">
               {agreements.map((view) => (
-                <AgreementCard
-                  key={view.agreement.id}
-                  view={view}
-                  onRelease={canRelease ? handleRelease : undefined}
-                  onConfirm={canRelease ? handleConfirm : undefined}
-                  onEditPolicy={canRelease ? handleEditPolicy : undefined}
-                />
+                <div key={view.agreement.id}>
+                  <AgreementCard
+                    view={view}
+                    onRelease={isBuyer ? handleRelease : undefined}
+                    onConfirm={isBuyer ? handleConfirm : undefined}
+                    onEditPolicy={isBuyer ? handleEditPolicy : undefined}
+                    onAdjust={isBuyer ? handleAdjust : undefined}
+                    availability={deliveryAvailability}
+                  />
+                  {/* The stamps' first reader. Buyer-side only: a change history
+                      is governance history, and the supplier mirror stays
+                      read-only in this batch by ruling (its response is step 2). */}
+                  <ChangeHistory agreement={view.agreement} />
+                </div>
               ))}
             </div>
           )}

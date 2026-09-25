@@ -1,3 +1,10 @@
+// ⚠️ **THE PURE VERBS TAKE AN ACTOR SINCE CALL-OFF STEP 1 — REQUIRED, NOT
+// OPTIONAL.** An optional actor is a silent default, and a silent default is how
+// an unattributed act comes to look attributed. These specs are about the
+// DOMAIN rather than about a seat, so they pass the same `DELIVERY_SEED_ACTOR`
+// the fixtures do — which is the honest value: nothing here is taken by a
+// person either.
+import { DELIVERY_SEED_ACTOR } from '../seedActor';
 import { describe, expect, it } from 'vitest';
 import { setActivePolicy } from '../policy';
 import { releaseScheduleLines } from '../release';
@@ -33,6 +40,7 @@ describe('setActivePolicy — the policy-edit write (pure)', () => {
       enforcement: 'ignore',
       reason: 'switch to reference-only for Q3',
       now: NOW,
+      changedBy: DELIVERY_SEED_ACTOR,
     });
 
     expect(result.ok).toBe(true);
@@ -42,7 +50,10 @@ describe('setActivePolicy — the policy-edit write (pure)', () => {
     expect(result.item.drawdownPolicy.activeChangedAt).toBe(NOW);
     expect(result.item.drawdownPolicy.activeChangeReason).toBe('switch to reference-only for Q3');
     // activeChangedBy is NEVER written (deferred to the Stage-F dispatcher).
-    expect(result.item.drawdownPolicy.activeChangedBy).toBeUndefined();
+    // ⚠️ **WRITTEN NOW.** The field was declared and never written — "deferred
+    // to the Stage-F dispatcher" — and the lane HAS its dispatcher, so the
+    // deferral is over. The pure verb records whatever actor it is handed.
+    expect(result.item.drawdownPolicy.activeChangedBy).toEqual(DELIVERY_SEED_ACTOR);
     // The input is never mutated.
     expect(item.drawdownPolicy.active).toBe(DRAWDOWN_PRESET_CASE_B);
     expect(item.drawdownPolicy.activeChangedAt).toBeUndefined();
@@ -57,6 +68,7 @@ describe('setActivePolicy — the policy-edit write (pure)', () => {
       enforcement: 'flag',
       reason: 'widen tolerance after amendment',
       now: NOW,
+      changedBy: DELIVERY_SEED_ACTOR,
     });
     expect(result.ok).toBe(true);
     if (!result.ok) return;
@@ -68,11 +80,11 @@ describe('setActivePolicy — the policy-edit write (pure)', () => {
 
   it('refuses a blank / whitespace reason (REASON_REQUIRED)', () => {
     const item = itemWith(DRAWDOWN_PRESET_CASE_B);
-    const blank = setActivePolicy(item, { tolerancePct: null, enforcement: 'ignore', reason: '', now: NOW });
+    const blank = setActivePolicy(item, { tolerancePct: null, enforcement: 'ignore', reason: '', now: NOW, changedBy: DELIVERY_SEED_ACTOR });
     expect(blank.ok).toBe(false);
     if (!blank.ok) expect(blank.reason).toBe('REASON_REQUIRED');
 
-    const ws = setActivePolicy(item, { tolerancePct: null, enforcement: 'ignore', reason: '   ', now: NOW });
+    const ws = setActivePolicy(item, { tolerancePct: null, enforcement: 'ignore', reason: '   ', now: NOW, changedBy: DELIVERY_SEED_ACTOR });
     expect(ws.ok).toBe(false);
     if (!ws.ok) expect(ws.reason).toBe('REASON_REQUIRED');
   });
@@ -84,6 +96,7 @@ describe('setActivePolicy — the policy-edit write (pure)', () => {
       enforcement: DRAWDOWN_PRESET_CASE_B.enforcement,
       reason: 'no real change',
       now: NOW,
+      changedBy: DELIVERY_SEED_ACTOR,
     });
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.reason).toBe('NO_CHANGE');
@@ -96,6 +109,7 @@ describe('setActivePolicy — the policy-edit write (pure)', () => {
       enforcement: 'block',
       reason: 'tighten and record block intent',
       now: NOW,
+      changedBy: DELIVERY_SEED_ACTOR,
     });
     expect(result.ok).toBe(true);
     if (!result.ok) return;
@@ -114,7 +128,7 @@ describe('setActivePolicy — the policy-edit write (pure)', () => {
       agreedTotalQty: 30_000,
       scheduleLines: draftLines,
     };
-    const released = releaseScheduleLines(base, { releaseSeqs: [1, 2] }, NOW);
+    const released = releaseScheduleLines(base, { releaseSeqs: [1, 2] }, NOW, DELIVERY_SEED_ACTOR);
     expect(released.ok).toBe(true);
     if (!released.ok) return;
 
@@ -129,6 +143,7 @@ describe('setActivePolicy — the policy-edit write (pure)', () => {
       enforcement: 'flag',
       reason: 'tighten the envelope',
       now: NOW,
+      changedBy: DELIVERY_SEED_ACTOR,
     });
     expect(tightened.ok).toBe(true);
     if (!tightened.ok) return;
@@ -160,6 +175,7 @@ describe('setActivePolicy — the policy-edit write (pure)', () => {
       enforcement: 'flag',
       reason: 'hand-crafted NaN',
       now: NOW,
+      changedBy: DELIVERY_SEED_ACTOR,
     });
     expect(result.ok).toBe(false);
     if (result.ok) return;
@@ -175,6 +191,7 @@ describe('setActivePolicy — the policy-edit write (pure)', () => {
       enforcement: DRAWDOWN_PRESET_CASE_B.enforcement,
       reason: 'same enforcement, NaN tolerance',
       now: NOW,
+      changedBy: DELIVERY_SEED_ACTOR,
     });
     expect(result.ok).toBe(false);
     if (result.ok) return;
@@ -189,6 +206,7 @@ describe('setActivePolicy — the policy-edit write (pure)', () => {
         enforcement: 'flag',
         reason: 'non-finite',
         now: NOW,
+      changedBy: DELIVERY_SEED_ACTOR,
       });
       expect(result.ok).toBe(false);
       if (!result.ok) expect(result.reason).toBe('TOLERANCE_NOT_A_NUMBER');
@@ -202,6 +220,7 @@ describe('setActivePolicy — the policy-edit write (pure)', () => {
       enforcement: 'flag',
       reason: 'negative envelope',
       now: NOW,
+      changedBy: DELIVERY_SEED_ACTOR,
     });
     expect(result.ok).toBe(false);
     if (result.ok) return;
@@ -217,6 +236,7 @@ describe('setActivePolicy — the policy-edit write (pure)', () => {
       enforcement: 'ignore',
       reason: 'unlimited is legal',
       now: NOW,
+      changedBy: DELIVERY_SEED_ACTOR,
     });
     expect(result.ok).toBe(true);
     if (!result.ok) return;
@@ -233,6 +253,7 @@ describe('setActivePolicy — the policy-edit write (pure)', () => {
       enforcement: 'block',
       reason: 'zero slack',
       now: NOW,
+      changedBy: DELIVERY_SEED_ACTOR,
     });
     expect(result.ok).toBe(true);
     if (!result.ok) return;
@@ -247,6 +268,7 @@ describe('setActivePolicy — the policy-edit write (pure)', () => {
       enforcement: DRAWDOWN_PRESET_CASE_B.enforcement,
       reason: 'reset to contract default',
       now: NOW,
+      changedBy: DELIVERY_SEED_ACTOR,
     });
     expect(result.ok).toBe(true);
     if (!result.ok) return;

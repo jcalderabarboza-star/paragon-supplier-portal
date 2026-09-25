@@ -416,6 +416,11 @@ describe('⚠️ THE TWO-REGEX COMMENT STRIP IS EXTINCT — derived, not listed'
         // `policies.ts`, and strips comments first so a head DISCUSSED in prose
         // (this lane's comments name several) cannot be mistaken for one emitted.
         'pages-v2/psl/pslRefusal.test.ts',
+        // Call-off step 1 — the delivery lane's refusal-key gate, on
+        // `pslRefusal.test.ts`'s contract and for its reason: `policies.ts`'s
+        // comments name several delivery heads, so an unstripped derivation
+        // demands copy for refusals nothing emits.
+        'components/delivery/deliveryRefusal.test.ts',
         'pages-v2/registrationHonesty.guard.test.ts',
         'pages-v2/solidButtonRetired.guard.test.ts',
         'pages-v2/toastHonesty.guard.test.tsx',
@@ -425,6 +430,11 @@ describe('⚠️ THE TWO-REGEX COMMENT STRIP IS EXTINCT — derived, not listed'
         'services/data/approvalBandAuthored.guard.test.ts',
         'services/data/documentDisplayState.test.ts',
         'services/data/fixturePresent.guard.test.ts',
+        // Call-off step 1 — the bypass census asks "what still writes the
+        // agreement store?", and `MockDeliveryService`'s header quotes the
+        // retired direct write verbatim. Unstripped, the census accuses the one
+        // file that stopped doing it.
+        'services/delivery/__tests__/deliveryBypass.test.ts',
         // PSL P1 — both walk source to make a claim about REACHABILITY, so both
         // must be blind to a module named in prose. This file names every PSL
         // module in its own header.

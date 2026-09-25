@@ -7,6 +7,13 @@
 // stays all-draft / no-shipments / deliveredQty 0 (proven in the last block).
 // ─────────────────────────────────────────────────────────────────────────────
 
+// ⚠️ **THE PURE VERBS TAKE AN ACTOR SINCE CALL-OFF STEP 1 — REQUIRED, NOT
+// OPTIONAL.** An optional actor is a silent default, and a silent default is how
+// an unattributed act comes to look attributed. These specs are about the
+// DOMAIN rather than about a seat, so they pass the same `DELIVERY_SEED_ACTOR`
+// the fixtures do — which is the honest value: nothing here is taken by a
+// person either.
+import { DELIVERY_SEED_ACTOR } from '../seedActor';
 import { describe, expect, it } from 'vitest';
 import type { IncomingShipment } from '../../sdc/types';
 import { SCHEDULING_AGREEMENT_CTR003 } from '../fixtures';
@@ -70,7 +77,7 @@ function ship(
 /** Release the named seqs of ITEM10 through Batch 2's pure transition. Batch 3
  *  matches ONLY what Batch 2 produced; the fixture stays untouched. */
 function release(seqs: number[]): SchedulingAgreementItem {
-  const r = releaseScheduleLines(ITEM10, { releaseSeqs: seqs }, RELEASE_STAMP);
+  const r = releaseScheduleLines(ITEM10, { releaseSeqs: seqs }, RELEASE_STAMP, DELIVERY_SEED_ACTOR);
   if (!r.ok) throw new Error(`fixture release failed: ${r.reason}`);
   return r.item;
 }

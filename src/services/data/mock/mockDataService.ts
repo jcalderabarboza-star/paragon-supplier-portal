@@ -14,7 +14,12 @@ import { capabilitiesFor } from '../../transitions';
 // Shared instances so the chase service composes the SAME collaboration + delivery
 // reads the rest of the app uses (the single SDC-5d composition point).
 const collaboration = new MockCollaborationService();
-const delivery = new MockDeliveryService();
+// ⚠️ **THE COMMAND SERVICE IS NOW A DEPENDENCY OF THE DELIVERY SERVICE, NOT A
+// SIBLING (call-off step 1).** Every delivery write dispatches, so the seam has
+// to hold the dispatcher rather than reach past it to a store. One shared
+// instance, so a delivery command and a PO command land in the same DR-10 trail.
+const commands = new MockCommandService();
+const delivery = new MockDeliveryService(commands);
 
 export const mockDataService: IDataService = {
   suppliers: new MockSupplierService(),
@@ -26,6 +31,6 @@ export const mockDataService: IDataService = {
   delivery,
   chase: new MockChaseService(collaboration, delivery),
   enforcement: new MockEnforcementService(),
-  commands: new MockCommandService(),
+  commands,
   getCapabilities: async (scope) => capabilitiesFor(scope),
 };

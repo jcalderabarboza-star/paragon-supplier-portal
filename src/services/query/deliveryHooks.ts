@@ -20,7 +20,7 @@ import type {
   ReleaseCommandResult,
   ReleaseSelection,
 } from '../delivery';
-import type { QueryScope } from '../data/types';
+import type { CommandResult, QueryScope } from '../data/types';
 
 /** The scoped delivery-agreement views (drawdown ledger + per-line fulfillment).
  *  Buyer-scoped superset; a supplier persona resolves only its own. Pass a
@@ -74,6 +74,80 @@ export function useReleaseLines() {
         personaType: 'supplier',
         supplierId: result.view.agreement.supplierId,
       });
+      qc.invalidateQueries({
+        predicate: (q) => {
+          if (q.queryKey[0] !== 'delivery') return false;
+          const last = q.queryKey[q.queryKey.length - 1];
+          return last === BUYER_SCOPE_KEY || last === supplierKey;
+        },
+      });
+    },
+  });
+}
+
+/** The variables an adjust mutation carries — ONE draft line, addressed by its
+ *  `releaseRef` (the portal join-chain the generator has always minted), plus
+ *  the knobs that change and the supplier whose cache must refresh.
+ *
+ *  ⚠️ **THE ADDRESS IS THE `releaseRef`, NOT A TRIPLE.** The other three
+ *  mutations pass `(agreementId, itemSeq, …)` because the SEAM resolves them;
+ *  this one dispatches directly, and the dispatcher addresses one entity by one
+ *  id. Passing the ref the surface already holds means no second resolution
+ *  step can disagree with the first. */
+export interface AdjustLineVars {
+  releaseRef: string;
+  supplierId: string;
+  patch: { plannedQty?: number; releaseDate?: string };
+}
+
+/**
+ * Adjust a DRAFT schedule line — `t_delivery_adjust`, dispatched DIRECTLY.
+ *
+ * ⚠️ **IT DOES NOT GO THROUGH `svc.delivery` AND THAT IS A RULING, NOT A
+ * SHORTCUT.** `C1-methods.md` enumerates `IDeliveryService`'s methods and
+ * `c1MethodSurface.contract.test.ts` pins the two EQUAL, so a fifth method is a
+ * contract amendment. An adjust is one command against one address with no
+ * orchestration to do, so a seam method would widen a ratified interface to
+ * gain a pass-through. This is the `commandHooks` shape instead — the tree's
+ * own precedent for a verb a page fires directly.
+ *
+ * ⚠️ **THE LANE'S NEW WRITE, ONTO A CAPABILITY THAT WAS ALREADY BUILT.**
+ * `adjustDraftLine` shipped freeze-enforced and specced with zero product call
+ * sites, while the design spec's reason for choosing SAP doc type LPA over LP
+ * was exactly that releases stay individually adjustable after generation. It
+ * is also the remedy the back-dating refusal names.
+ *
+ * Same SDC-4d cross-scope invalidation as its siblings: an adjustment moves a
+ * date the supplier mirror renders, so that scope's cache refreshes too, and no
+ * other supplier's is disturbed.
+ */
+export function useAdjustLine() {
+  const svc = useDataService();
+  const { identity } = useCurrentIdentity();
+  const scope: QueryScope = {
+    personaType: identity.personaType,
+    supplierId: identity.supplierId,
+    businessRoles: identity.businessRoles,
+    actor: identity.actor,
+  };
+  const qc = useQueryClient();
+
+  return useMutation<CommandResult, Error, AdjustLineVars>({
+    mutationFn: ({ releaseRef, patch }) =>
+      svc.commands.dispatch(scope, {
+        transitionId: 't_delivery_adjust',
+        entity: 'deliveryRelease',
+        entityId: releaseRef,
+        payload: {
+          ...(patch.plannedQty !== undefined ? { plannedQty: patch.plannedQty } : {}),
+          ...(patch.releaseDate !== undefined ? { releaseDate: patch.releaseDate } : {}),
+        },
+      }),
+    onSuccess: (result, vars) => {
+      // An honest refusal changed nothing — no invalidation, exactly as the
+      // three siblings do it.
+      if (result.status === 'failed') return;
+      const supplierKey = scopeKey({ personaType: 'supplier', supplierId: vars.supplierId });
       qc.invalidateQueries({
         predicate: (q) => {
           if (q.queryKey[0] !== 'delivery') return false;

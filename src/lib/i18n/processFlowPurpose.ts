@@ -358,6 +358,19 @@ export const processFlowPurposeEn: Record<string, string> = {
     'One relationship is held to a shorter or longer term than the portal ceiling, with the case for the exception written down and owned. An exception nobody has to explain is the thing this platform is trying not to have.',
   'processFlows.purpose.t_psl_cap_set':
     'Somebody records the ceiling the whole portal runs to, so that "nobody has decided" stops being the answer and a later reader can see who chose it and when. Until it is recorded, a constant applies and the surface says exactly that rather than claiming an author for it.',
+  // ── the delivery lane (call-off step 1) ───────────────────────────────────
+  'processFlows.purpose.entity.deliveryRelease':
+    'One dated line of a delivery schedule, from the moment it is drawn up to the moment a delivery is accepted against it. While it is internal, Paragon can move its date and its quantity and the supplier knows nothing about it. Sending it out is the act that turns a plan into a promise somebody will be chased for, which is why that act, and not the drawing-up, is where the accountability starts.',
+  'processFlows.purpose.entity.deliveryPolicy':
+    'How much a delivery may differ from what was agreed before anybody is told about it. It is the check the delivery lane is measured against, so it is deliberately not the delivery lane that sets it — and it is kept as a record of decisions rather than a number somebody edits, because "nobody has chosen yet" and "somebody chose this" are different facts.',
+  'processFlows.purpose.t_delivery_release':
+    'Paragon tells the supplier that a particular quantity is wanted on a particular date. Before this, the line is an internal plan nobody outside has seen; after it, the supplier is expected to deliver and will be reminded if they do not. A line whose date has already passed cannot be sent out at all — that would create a delivery that was late before anyone asked for it.',
+  'processFlows.purpose.t_delivery_adjust':
+    'The date or the quantity of a line that has not been sent out yet is changed. This is the whole reason Paragon uses the adjustable form of a scheduling agreement: plans move, and moving one before anybody has been told costs nothing. Once the line has gone out it is frozen — changing a promise already made is a different act, with a different name, and it is not built here.',
+  'processFlows.purpose.t_delivery_confirm':
+    'Paragon accepts that a particular shipment was the delivery for a particular line. Until somebody says so, the match is only a suggestion the platform made because the dates were close, and it is shown as one. Accepting it moves the delivered total, which is the figure the drawdown is read from — so it is a judgement a person makes, not a conclusion the platform reaches on its own.',
+  'processFlows.purpose.t_delivery_policy_set':
+    'Somebody records how much over- or under-delivery is tolerated on one material, and why it is changing. Relaxing it is a decision to carry commercial risk, so it is kept away from the people who send the schedules out, and it asks for a name and a justification in words before it will be recorded.',
 };
 
 export const processFlowPurposeId: Record<string, string> = {
@@ -676,4 +689,17 @@ export const processFlowPurposeId: Record<string, string> = {
     'Satu hubungan dipegang pada periode yang lebih pendek atau lebih panjang dari plafon portal, dengan dasar pengecualiannya tertulis dan ada yang bertanggung jawab. Pengecualian yang tidak perlu dijelaskan siapa pun adalah hal yang berusaha dihindari platform ini.',
   'processFlows.purpose.t_psl_cap_set':
     'Seseorang mencatat plafon yang berlaku untuk seluruh portal, sehingga "belum ada yang memutuskan" berhenti menjadi jawabannya dan pembaca berikutnya dapat melihat siapa yang memilihnya dan kapan. Sebelum tercatat, sebuah konstanta berlaku dan permukaan menyatakan persis itu alih-alih mengklaim ada penyusunnya.',
+  // ── jalur pengiriman (call-off langkah 1) ─────────────────────────────────
+  'processFlows.purpose.entity.deliveryRelease':
+    'Satu baris bertanggal dari jadwal pengiriman, sejak disusun hingga saat sebuah pengiriman diterima atasnya. Selama masih bersifat internal, Paragon dapat memindahkan tanggal dan jumlahnya tanpa pemasok mengetahui apa pun. Mengirimkannya ke pemasok adalah tindakan yang mengubah rencana menjadi janji yang akan ditagih kepada seseorang, dan karena itulah pertanggungjawaban dimulai di sana, bukan saat penyusunannya.',
+  'processFlows.purpose.entity.deliveryPolicy':
+    'Seberapa jauh sebuah pengiriman boleh menyimpang dari yang disepakati sebelum ada yang diberi tahu. Ini adalah pemeriksaan yang mengukur jalur pengiriman, sehingga sengaja bukan jalur pengiriman yang menetapkannya — dan disimpan sebagai riwayat keputusan alih-alih angka yang disunting seseorang, karena "belum ada yang memilih" dan "seseorang memilih ini" adalah dua fakta berbeda.',
+  'processFlows.purpose.t_delivery_release':
+    'Paragon memberi tahu pemasok bahwa jumlah tertentu diinginkan pada tanggal tertentu. Sebelum ini, baris itu adalah rencana internal yang belum dilihat pihak luar; sesudahnya, pemasok diharapkan mengirim dan akan diingatkan bila tidak. Baris yang tanggalnya sudah lewat tidak dapat dikirimkan sama sekali — itu akan menciptakan pengiriman yang sudah terlambat sebelum ada yang memintanya.',
+  'processFlows.purpose.t_delivery_adjust':
+    'Tanggal atau jumlah sebuah baris yang belum dikirimkan diubah. Inilah alasan Paragon memakai bentuk perjanjian penjadwalan yang dapat disesuaikan: rencana bergeser, dan menggesernya sebelum ada yang diberi tahu tidak menimbulkan biaya apa pun. Begitu baris itu keluar ke pemasok, ia terkunci — mengubah janji yang sudah diberikan adalah tindakan lain, dengan nama lain, dan itu tidak dibangun di sini.',
+  'processFlows.purpose.t_delivery_confirm':
+    'Paragon menerima bahwa suatu pengiriman tertentu adalah pemenuhan untuk baris tertentu. Sampai ada yang menyatakannya, kecocokan itu hanyalah usulan yang dibuat platform karena tanggalnya berdekatan, dan ditampilkan sebagai usulan. Menerimanya menggerakkan total terkirim, yaitu angka yang dibaca penarikan — jadi ini penilaian yang diambil orang, bukan kesimpulan yang ditarik platform sendiri.',
+  'processFlows.purpose.t_delivery_policy_set':
+    'Seseorang mencatat seberapa besar kelebihan atau kekurangan pengiriman yang ditoleransi pada satu material, dan mengapa itu berubah. Melonggarkannya adalah keputusan untuk menanggung risiko komersial, sehingga dijauhkan dari pihak yang mengirimkan jadwal, dan meminta nama serta pembenaran tertulis sebelum dicatat.',
 };

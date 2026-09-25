@@ -23,6 +23,11 @@ export const widgetEn: Record<string, string> = {
   // Harvest-gated (G1.1): the PR intake is wired but has no live producer yet
   // (SOMO F2 / internal Grid) — names the missing producer, not a generic sample.
   'widget.honesty.awaitingProducer': 'Sample — awaiting live PR producer (SOMO / Grid)',
+  // Call-off step 1 — the delivery lane's verbs are real and its ROWS are not.
+  // The pill names what it waits for rather than saying a generic "Sample",
+  // because "wired" is exactly the thing a reader would otherwise round to live.
+  'widget.honesty.awaitingScheduleFeed':
+    'Sample — awaiting S/4HANA scheduling agreements',
   // ⚠️ PSL P4 — ITS OWN SENTENCE, BECAUSE REUSING `awaitingProducer` PUT A
   // FALSE ONE ON A SUPPLIER-FACING SURFACE. Browser QA read
   // *"SAMPLE — AWAITING LIVE PR PRODUCER (SOMO / GRID)"* under a supplier's
@@ -199,6 +204,8 @@ export const widgetId: Record<string, string> = {
   'widget.honesty.sample': 'Sampel',
   'widget.honesty.awaitingHarvest': 'Sampel — menunggu panen data Track-R',
   'widget.honesty.awaitingProducer': 'Sampel — menunggu produsen PR live (SOMO / Grid)',
+  'widget.honesty.awaitingScheduleFeed':
+    'Sampel — menunggu perjanjian penjadwalan S/4HANA',
   'widget.honesty.awaitingPslDecisions':
     'Sampel — menunggu daftar pemasok pilihan yang dimasukkan operator',
   'widget.honesty.awaitingC8Feed': 'Sampel — menunggu feed data C8 SOMO',
