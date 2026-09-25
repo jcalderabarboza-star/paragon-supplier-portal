@@ -71,7 +71,7 @@ export const supplierInventoryEn: Record<string, string> = {
   // — Empty state (all-empty early return) —
   'supplierInventory.empty.title': 'No inventory yet',
   'supplierInventory.empty.subtitle':
-    'No stock records on file for {{supplier}}.',
+    'No stock records on file for {{supplier, stop}}.',
   'supplierInventory.empty.thisSupplier': 'this supplier',
   'supplierInventory.empty.message':
     'Stock positions will appear here once inventory is reported.',
@@ -136,7 +136,7 @@ export const supplierInventoryId: Record<string, string> = {
   // — Empty state (all-empty early return) —
   'supplierInventory.empty.title': 'Belum ada inventaris',
   'supplierInventory.empty.subtitle':
-    'Tidak ada catatan stok untuk {{supplier}}.',
+    'Tidak ada catatan stok untuk {{supplier, stop}}.',
   'supplierInventory.empty.thisSupplier': 'pemasok ini',
   'supplierInventory.empty.message':
     'Posisi stok akan muncul di sini setelah inventaris dilaporkan.',

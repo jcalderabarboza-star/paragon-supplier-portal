@@ -63,7 +63,7 @@ export const widgetEn: Record<string, string> = {
   // so "the rest of the portal is dated {{date}}" would be false where it shows.
   'widget.honesty.sessionStamp': 'Recorded this session',
   'widget.honesty.sessionStampNote':
-    "Written from this device's clock at the moment the action was recorded, not from this portal's fixed demonstration present of {{date}}.",
+    "Written from this device's clock at the moment the action was recorded, not from this portal's fixed demonstration present of {{date, stop}}.",
   'widget.allClear': 'All clear',
   'widget.aria.expand': 'Expand {{title}}',
   'widget.aria.show': 'Show {{title}}',
@@ -209,7 +209,7 @@ export const widgetId: Record<string, string> = {
   'widget.honesty.commandsDispatch': 'Perintah dijalankan — buku besar in-memory',
   'widget.honesty.sessionStamp': 'Dicatat pada sesi ini',
   'widget.honesty.sessionStampNote':
-    'Ditulis dari jam perangkat ini pada saat tindakan dicatat, bukan dari waktu kini tetap portal ini, yaitu {{date}}.',
+    'Ditulis dari jam perangkat ini pada saat tindakan dicatat, bukan dari waktu kini tetap portal ini, yaitu {{date, stop}}.',
   'widget.allClear': 'Semua beres',
   'widget.aria.expand': 'Perluas {{title}}',
   'widget.aria.show': 'Tampilkan {{title}}',

@@ -103,7 +103,7 @@ export const riskEn: Record<string, string> = {
   'risk.toast.warRoomForwarded.title': 'Scenario forwarded to War Room',
   'risk.toast.warRoomForwarded.desc':
     '{{title}} dispatched to procurement leadership.',
-  'risk.toast.activationInitiated': 'Plan activation not available yet — nothing was activated for {{name}}.',
+  'risk.toast.activationInitiated': 'Plan activation not available yet — nothing was activated for {{name, stop}}.',
   'risk.toast.openingAnalysis': 'Full analysis not available yet — {{id}} has no detail view.',
   // — Compliance Risks tab —
   'risk.compliance.actionRequired': 'Action required: ',
@@ -133,8 +133,8 @@ export const riskEn: Record<string, string> = {
   'risk.compliance.differentAngleSuffix':
     ': this view focuses on expiry urgency for risk-exposed suppliers only.',
   // — Compliance toasts —
-  'risk.toast.urgentRenewal': 'Urgent renewal not available yet — nothing was requested from {{supplier}}.',
-  'risk.toast.reminderSent': 'Reminder not available yet — nothing was sent to {{supplier}}.',
+  'risk.toast.urgentRenewal': 'Urgent renewal not available yet — nothing was requested from {{supplier, stop}}.',
+  'risk.toast.reminderSent': 'Reminder not available yet — nothing was sent to {{supplier, stop}}.',
   // — Commodity Prices tab —
   'risk.commodity.alertIf': 'Alert if {{dir}}:',
   'risk.commodity.dirAbove': 'above',
@@ -240,7 +240,7 @@ export const riskId: Record<string, string> = {
   'risk.toast.warRoomForwarded.title': 'Skenario diteruskan ke War Room',
   'risk.toast.warRoomForwarded.desc':
     '{{title}} dikirim ke pimpinan pengadaan.',
-  'risk.toast.activationInitiated': 'Aktivasi rencana belum tersedia — tidak ada yang diaktifkan untuk {{name}}.',
+  'risk.toast.activationInitiated': 'Aktivasi rencana belum tersedia — tidak ada yang diaktifkan untuk {{name, stop}}.',
   'risk.toast.openingAnalysis': 'Analisis lengkap belum tersedia — {{id}} tidak memiliki tampilan detail.',
   // — Compliance Risks tab —
   'risk.compliance.actionRequired': 'Tindakan diperlukan: ',
@@ -266,8 +266,8 @@ export const riskId: Record<string, string> = {
   'risk.compliance.differentAngleSuffix':
     ': tampilan ini berfokus pada urgensi kedaluwarsa hanya untuk pemasok yang berisiko.',
   // — Compliance toasts —
-  'risk.toast.urgentRenewal': 'Pembaruan mendesak belum tersedia — tidak ada yang diminta dari {{supplier}}.',
-  'risk.toast.reminderSent': 'Pengingat belum tersedia — tidak ada yang dikirim ke {{supplier}}.',
+  'risk.toast.urgentRenewal': 'Pembaruan mendesak belum tersedia — tidak ada yang diminta dari {{supplier, stop}}.',
+  'risk.toast.reminderSent': 'Pengingat belum tersedia — tidak ada yang dikirim ke {{supplier, stop}}.',
   // — Commodity Prices tab —
   'risk.commodity.alertIf': 'Peringatan jika {{dir}}:',
   'risk.commodity.dirAbove': 'di atas',

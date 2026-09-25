@@ -47,6 +47,7 @@
 // ────────────────────────────────────────────────────────────────────────────
 
 import { MockCommandService } from './MockCommandService';
+import type { PrCreatePayload } from '../../../pages-v2/requisitions/prCreatePayload';
 import { purchaseRequisitionStore } from './stores/purchaseRequisitionStore';
 import { NO_PERSON } from '../../../context/noPerson';
 import type { CommandResult, QueryScope } from '../types';
@@ -56,7 +57,7 @@ import type { CommandResult, QueryScope } from '../types';
  * RFQ category union, which is the whole reason the row exists — see
  * `requisitionPrefill.ts` for why a non-member cannot be mapped into one.
  */
-const SEED = Object.freeze({
+const SEED: PrCreatePayload = Object.freeze({
   material: 'Wardah Floral Accord',
   category: 'Fragrance',
   quantity: 250,

@@ -8,7 +8,7 @@ export const rfqsEn: Record<string, string> = {
   'rfqs.crumb.page': 'MY RFQS & QUOTES',
   // header + meta
   'rfqs.header.title': 'My Sourcing Events',
-  'rfqs.header.subtitle': 'RFQs received from Paragon Corp procurement team — {{supplier}}.',
+  'rfqs.header.subtitle': 'RFQs received from Paragon Corp procurement team — {{supplier, stop}}.',
   'rfqs.meta.event.one': 'open event',
   'rfqs.meta.event.other': 'open events',
   'rfqs.meta.quote.one': 'quote pending evaluation',
@@ -164,7 +164,7 @@ export const rfqsEn: Record<string, string> = {
   'rfqs.panel.pdfDrop': 'Click to attach quotation PDF or drag & drop',
   // wrapper empty state
   'rfqs.empty.title': 'No sourcing events yet',
-  'rfqs.empty.subtitle': 'No RFQ invitations on file for {{supplier}}.',
+  'rfqs.empty.subtitle': 'No RFQ invitations on file for {{supplier, stop}}.',
   'rfqs.empty.message': 'RFQ invitations from Paragon Corp appear here.',
   // toasts
   'rfqs.toast.declined.title': 'RFQ decline not available yet — {{rfq}} was not declined.',
@@ -172,7 +172,7 @@ export const rfqsEn: Record<string, string> = {
   'rfqs.toast.question.title': 'Message not sent for {{rfq}}',
   'rfqs.toast.question.body': 'Nothing was sent — supplier messaging is not wired to a real channel.',
   'rfqs.toast.missing.title': 'Required fields missing',
-  'rfqs.toast.missing.body': 'Please fill: {{fields}}.',
+  'rfqs.toast.missing.body': 'Please fill: {{fields, stop}}.',
   'rfqs.toast.priceRefused.title': 'Quotation not submitted — check the unit price',
   'rfqs.toast.leadTimeRefused.title': 'Quotation not submitted — check the lead time',
   'rfqs.toast.moqRefused.title':
@@ -181,13 +181,13 @@ export const rfqsEn: Record<string, string> = {
   'rfqs.toast.sameDayAck.body':
     'A 0-day lead time is a same-day delivery offer. Tick the confirmation under the lead-time field to submit it.',
   'rfqs.toast.submitted.title': 'Quotation submitted for {{rfq}}',
-  'rfqs.toast.submitted.body': 'Paragon procurement team will review by {{date}}.',
+  'rfqs.toast.submitted.body': 'Paragon procurement team will review by {{date, stop}}.',
   'rfqs.toast.submitFailed.title': 'Quotation could not be submitted',
   'rfqs.toast.submitFailed.body': 'Please try again, or contact Paragon procurement.',
   // Names the rejected currency AND the permitted set — "invalid currency" tells
   // a supplier neither what they sent nor what they may send (2e-c-2).
   'rfqs.toast.currencyRefused.body':
-    '“{{currency}}” is not a currency Paragon accepts for bids. Permitted: {{permitted}}. Your quote was not submitted.',
+    '“{{currency}}” is not a currency Paragon accepts for bids. Permitted: {{permitted, stop}}. Your quote was not submitted.',
   'rfqs.field.currency': 'Bid currency',
   'rfqs.field.unitPrice': 'Unit price',
   'rfqs.field.leadTime': 'Lead time',
@@ -201,7 +201,7 @@ export const rfqsId: Record<string, string> = {
   'rfqs.crumb.page': 'RFQ & PENAWARAN SAYA',
   // header + meta
   'rfqs.header.title': 'Acara Sourcing Saya',
-  'rfqs.header.subtitle': 'RFQ diterima dari tim pengadaan Paragon Corp — {{supplier}}.',
+  'rfqs.header.subtitle': 'RFQ diterima dari tim pengadaan Paragon Corp — {{supplier, stop}}.',
   'rfqs.meta.event.one': 'acara terbuka',
   'rfqs.meta.event.other': 'acara terbuka',
   'rfqs.meta.quote.one': 'penawaran menunggu evaluasi',
@@ -345,7 +345,7 @@ export const rfqsId: Record<string, string> = {
   'rfqs.panel.pdfDrop': 'Klik untuk melampirkan PDF penawaran atau seret & lepas',
   // wrapper empty state
   'rfqs.empty.title': 'Belum ada acara sourcing',
-  'rfqs.empty.subtitle': 'Tidak ada undangan RFQ di berkas untuk {{supplier}}.',
+  'rfqs.empty.subtitle': 'Tidak ada undangan RFQ di berkas untuk {{supplier, stop}}.',
   'rfqs.empty.message': 'Undangan RFQ dari Paragon Corp muncul di sini.',
   // toasts
   'rfqs.toast.declined.title': 'Penolakan RFQ belum tersedia — {{rfq}} tidak ditolak.',
@@ -353,7 +353,7 @@ export const rfqsId: Record<string, string> = {
   'rfqs.toast.question.title': 'Pesan tidak terkirim untuk {{rfq}}',
   'rfqs.toast.question.body': 'Tidak ada yang dikirim — perpesanan pemasok belum tersambung ke kanal nyata.',
   'rfqs.toast.missing.title': 'Kolom wajib belum diisi',
-  'rfqs.toast.missing.body': 'Harap isi: {{fields}}.',
+  'rfqs.toast.missing.body': 'Harap isi: {{fields, stop}}.',
   'rfqs.toast.priceRefused.title': 'Penawaran tidak dikirim — periksa harga satuan',
   'rfqs.toast.leadTimeRefused.title': 'Penawaran tidak dikirim — periksa waktu tunggu',
   'rfqs.toast.moqRefused.title':
@@ -362,11 +362,11 @@ export const rfqsId: Record<string, string> = {
   'rfqs.toast.sameDayAck.body':
     'Waktu tunggu 0 hari adalah tawaran pengiriman di hari yang sama. Centang konfirmasi di bawah kolom waktu tunggu untuk mengirim.',
   'rfqs.toast.submitted.title': 'Penawaran dikirim untuk {{rfq}}',
-  'rfqs.toast.submitted.body': 'Tim pengadaan Paragon akan meninjau paling lambat {{date}}.',
+  'rfqs.toast.submitted.body': 'Tim pengadaan Paragon akan meninjau paling lambat {{date, stop}}.',
   'rfqs.toast.submitFailed.title': 'Penawaran tidak dapat dikirim',
   'rfqs.toast.submitFailed.body': 'Silakan coba lagi, atau hubungi pengadaan Paragon.',
   'rfqs.toast.currencyRefused.body':
-    '“{{currency}}” bukan mata uang yang diterima Paragon untuk penawaran. Yang diizinkan: {{permitted}}. Penawaran Anda tidak dikirim.',
+    '“{{currency}}” bukan mata uang yang diterima Paragon untuk penawaran. Yang diizinkan: {{permitted, stop}}. Penawaran Anda tidak dikirim.',
   'rfqs.field.currency': 'Mata uang penawaran',
   'rfqs.field.unitPrice': 'Harga satuan',
   'rfqs.field.leadTime': 'Waktu tunggu',

@@ -77,7 +77,7 @@ export const identityEn: Record<string, string> = {
   // — what a sample identity may NOT do (R2) —
   // The pre-act line when a SAMPLE user is selected. The lane's own
   // "no person in session" copy is untouched and still used when none is.
-  'identity.preAct.sample': 'This will be recorded against {{label}}.',
+  'identity.preAct.sample': 'This will be recorded against {{label, stop}}.',
   'identity.sample.cannotAcceptRisk':
     'A sample identity cannot accept governance risk. Loosening a governed check or completing an override needs a real signed-in person, and Paragon has no sign-in yet.',
 
@@ -128,7 +128,7 @@ export const identityId: Record<string, string> = {
   'identity.narrowedHint':
     'Kursi ini tidak lagi memegang persis peran bawaan pengguna contoh tersebut. Tindakan tetap dicatat atas nama pengguna itu.',
 
-  'identity.preAct.sample': 'Ini akan dicatat atas nama {{label}}.',
+  'identity.preAct.sample': 'Ini akan dicatat atas nama {{label, stop}}.',
   'identity.sample.cannotAcceptRisk':
     'Identitas contoh tidak dapat menerima risiko tata kelola. Melonggarkan pemeriksaan yang diatur atau menyelesaikan penggantian memerlukan orang sungguhan yang telah masuk, dan Paragon belum memiliki proses masuk.',
 

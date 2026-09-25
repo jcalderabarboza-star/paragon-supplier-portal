@@ -17,7 +17,7 @@ export const supplierOrdersEn: Record<string, string> = {
   // — Page header —
   'supplierOrders.header.title': 'My Orders',
   'supplierOrders.header.subtitle':
-    'Purchase orders received from Paragon Corp — {{supplier}}.',
+    'Purchase orders received from Paragon Corp — {{supplier, stop}}.',
   // — Meta line —
   'supplierOrders.meta.orders.one': '{{count}} order',
   'supplierOrders.meta.orders.other': '{{count}} orders',
@@ -126,11 +126,11 @@ export const supplierOrdersEn: Record<string, string> = {
   'supplierOrders.toast.changeSubmitted.desc': 'Paragon team will review.',
   'supplierOrders.toast.asnCreation.title': 'ASN creation for {{poNumber}}',
   'supplierOrders.toast.asnContinue': 'Open My Shipments & ASN to create it there.',
-  'supplierOrders.toast.creatingAsn.title': 'ASN creation not available from this card — nothing was created for {{poNumber}}.',
+  'supplierOrders.toast.creatingAsn.title': 'ASN creation not available from this card — nothing was created for {{poNumber, stop}}.',
   // — Empty state (all-empty early return) —
   'supplierOrders.empty.title': 'No purchase orders yet',
   'supplierOrders.empty.subtitle':
-    'No purchase orders on file for {{supplier}}.',
+    'No purchase orders on file for {{supplier, stop}}.',
   'supplierOrders.empty.message':
     'Purchase orders issued by Paragon Corp will appear here.',
 };
@@ -142,7 +142,7 @@ export const supplierOrdersId: Record<string, string> = {
   // — Page header —
   'supplierOrders.header.title': 'Pesanan Saya',
   'supplierOrders.header.subtitle':
-    'Pesanan pembelian diterima dari Paragon Corp — {{supplier}}.',
+    'Pesanan pembelian diterima dari Paragon Corp — {{supplier, stop}}.',
   // — Meta line —
   'supplierOrders.meta.orders.one': '{{count}} pesanan',
   'supplierOrders.meta.orders.other': '{{count}} pesanan',
@@ -244,11 +244,11 @@ export const supplierOrdersId: Record<string, string> = {
   'supplierOrders.toast.asnCreation.title': 'Pembuatan ASN untuk {{poNumber}}',
   'supplierOrders.toast.asnContinue':
     'Buka Pengiriman & ASN Saya untuk membuatnya di sana.',
-  'supplierOrders.toast.creatingAsn.title': 'Pembuatan ASN tidak tersedia dari kartu ini — tidak ada yang dibuat untuk {{poNumber}}.',
+  'supplierOrders.toast.creatingAsn.title': 'Pembuatan ASN tidak tersedia dari kartu ini — tidak ada yang dibuat untuk {{poNumber, stop}}.',
   // — Empty state (all-empty early return) —
   'supplierOrders.empty.title': 'Belum ada pesanan pembelian',
   'supplierOrders.empty.subtitle':
-    'Tidak ada pesanan pembelian tercatat untuk {{supplier}}.',
+    'Tidak ada pesanan pembelian tercatat untuk {{supplier, stop}}.',
   'supplierOrders.empty.message':
     'Pesanan pembelian yang diterbitkan oleh Paragon Corp akan muncul di sini.',
 };

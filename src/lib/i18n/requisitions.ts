@@ -135,13 +135,16 @@ export const requisitionsEn: Record<string, string> = {
   'requisitions.panel.approvalLevel.authored':
     'Authored on the document — not derived from the estimated value.',
   'requisitions.panel.approvalLevel.unassigned': 'Not assigned',
+  // The priority twin of the line above: nobody chose one, and the document
+  // says so rather than showing a Medium the target invented.
+  'requisitions.panel.priority.unset': 'Not set',
   'requisitions.panel.field.approvedBy': 'Approved by',
   'requisitions.panel.field.status': 'Status',
   'requisitions.panel.source.title': 'Source of supply',
   'requisitions.panel.source.found': 'Source found',
   'requisitions.panel.source.none': 'No source',
-  'requisitions.panel.source.pirExists': 'PIR exists for {{material}}.',
-  'requisitions.panel.source.noPir': 'No PIR found for {{material}}. A Sourcing Event will be required.',
+  'requisitions.panel.source.pirExists': 'PIR exists for {{material, stop}}.',
+  'requisitions.panel.source.noPir': 'No PIR found for {{material, stop}}. A Sourcing Event will be required.',
   'requisitions.panel.linkedDocument': 'Linked document:',
   'requisitions.panel.justification': 'Justification',
   // — Toasts —
@@ -334,13 +337,14 @@ export const requisitionsId: Record<string, string> = {
   'requisitions.panel.approvalLevel.authored':
     'Ditulis pada dokumen — bukan hasil perhitungan dari nilai estimasi.',
   'requisitions.panel.approvalLevel.unassigned': 'Belum ditetapkan',
+  'requisitions.panel.priority.unset': 'Belum diatur',
   'requisitions.panel.field.approvedBy': 'Disetujui oleh',
   'requisitions.panel.field.status': 'Status',
   'requisitions.panel.source.title': 'Sumber pasokan',
   'requisitions.panel.source.found': 'Sumber ditemukan',
   'requisitions.panel.source.none': 'Tidak ada sumber',
-  'requisitions.panel.source.pirExists': 'PIR tersedia untuk {{material}}.',
-  'requisitions.panel.source.noPir': 'Tidak ada PIR untuk {{material}}. Acara Sourcing akan diperlukan.',
+  'requisitions.panel.source.pirExists': 'PIR tersedia untuk {{material, stop}}.',
+  'requisitions.panel.source.noPir': 'Tidak ada PIR untuk {{material, stop}}. Acara Sourcing akan diperlukan.',
   'requisitions.panel.linkedDocument': 'Dokumen tertaut:',
   'requisitions.panel.justification': 'Justifikasi',
   // — Toasts —

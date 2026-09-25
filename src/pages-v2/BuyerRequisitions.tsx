@@ -52,6 +52,7 @@ import { formatNumber, formatIDR, formatDate } from '../lib/format';
 import { normalizeQty, type QtyRefusalReason } from '../lib/localeNumber';
 import { useNavigate } from 'react-router-dom';
 import type { PurchaseRequisition, PRStatus } from '../services/data/types';
+import { buildNewPrPayload } from './requisitions/prCreatePayload';
 import type { ActorAttribution, UnattributedReason } from '../lib/enforcement';
 // GL-1 - the glossary destination for this surface's refusals.
 import GlossaryTermChip from '../components/ui-v2/GlossaryTermChip';
@@ -374,16 +375,13 @@ const BuyerRequisitions: React.FC = () => {
     // an unreadable quantity short-circuits here, so nothing reaches the spine.
     if (!parsedQty.ok || !canSubmit || createPr.isPending) return;
     try {
+      // ⚠️ THROUGH THE ONE BUILDER, NOT INLINE. This object literal WAS the
+      // drift: it supplied no `estimatedValue` (the form has no such input), so
+      // the target's `num()` answered 0 and every PR raised here claimed a
+      // budget of nothing. The builder returns a typed `PrCreatePayload`, so an
+      // absence stays an absence and a missing REQUIRED key is a `tsc` failure.
       const result = await createPr.mutateAsync({
-        payload: {
-          material: form.material,
-          quantity: parsedQty.value,
-          uom: form.uom,
-          requiredDate: form.date,
-          costCenter: form.costCenter,
-          priority: form.priority,
-          justification: form.justification,
-        },
+        payload: buildNewPrPayload(form, parsedQty.value),
       });
       if (result.status === 'failed') {
         toast({
@@ -1209,7 +1207,13 @@ const BuyerRequisitions: React.FC = () => {
                 <div>
                   <dt className="text-text-tertiary">{t('requisitions.panel.field.priority')}</dt>
                   <dd className="text-text-primary font-medium">
-                    {el(selectedPR.priority)}
+                    {/* ⚠️ ABSENT IS SAID, NOT GUESSED. The target used to coerce a
+                        missing priority to 'Medium', so a plan-grid push showed
+                        a choice nobody made. Same shape as the approval band
+                        below, which has said "Not assigned" since §69. */}
+                    {selectedPR.priority
+                      ? el(selectedPR.priority)
+                      : t('requisitions.panel.priority.unset')}
                   </dd>
                 </div>
                 <div>

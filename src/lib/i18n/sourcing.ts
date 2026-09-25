@@ -271,7 +271,7 @@ export const sourcingEn: Record<string, string> = {
   // nothing on `materialIds`, and the buyer is the only one who can still
   // change that — no verb edits an RFQ's materials after creation.
   'sourcing.wizard.materials.noMasterCode':
-    'Not in the material master: {{materials}}. The event will go ahead and will require competitive bidding — a preferred-supplier exemption cannot be checked without a master code.',
+    'Not in the material master: {{materials, stop}}. The event will go ahead and will require competitive bidding — a preferred-supplier exemption cannot be checked without a master code.',
   // ── R8 · THE WIZARD'S MATERIAL-REQUEST OFFER ───────────────────────────────
   //
   // ⚠️ **IT IS OFFERED WHERE THE GAP IS DISCOVERED AND DISPATCHED AFTER THE RFQ
@@ -285,7 +285,7 @@ export const sourcingEn: Record<string, string> = {
   // verb edits an RFQ's materials after creation.
   'sourcing.wizard.materials.requestOffer': 'Ask for these to be created in the material master',
   'sourcing.wizard.materials.requestOffer.marked':
-    'A material request will be raised for: {{materials}}. This does not change the event — the RFQ goes ahead and will still require competitive bidding.',
+    'A material request will be raised for: {{materials, stop}}. This does not change the event — the RFQ goes ahead and will still require competitive bidding.',
   'sourcing.wizard.materials.requestOffer.undo': 'Do not raise a request',
   'sourcing.wizard.materials.requestNeed': 'Why these are needed (for master data)',
   'sourcing.wizard.materials.requestNeed.hint':
@@ -315,7 +315,7 @@ export const sourcingEn: Record<string, string> = {
     'Master data will review it under Material requests. The material does not exist yet, and the event is unchanged.',
   // ── R8 · THE RFQ DETAIL LINE ───────────────────────────────────────────────
   'sourcing.detail.materialRequest.pending':
-    'A material request is pending for: {{materials}}. This event is unchanged and will still require competitive bidding.',
+    'A material request is pending for: {{materials, stop}}. This event is unchanged and will still require competitive bidding.',
   'sourcing.detail.materialRequest.decided':
     'A material request for {{materials}} was decided ({{status}}). This event is unchanged either way — an RFQ’s materials cannot be edited after it is created.',
   'sourcing.wizard.field.totalQty': 'Total quantity',
@@ -527,7 +527,7 @@ export const sourcingId: Record<string, string> = {
   'sourcing.fx.dialog.title.record': 'Catat kurs {{currency}}',
   'sourcing.fx.dialog.title.supersede': 'Ganti kurs {{currency}}',
   'sourcing.fx.dialog.body.record':
-    'Kurs ini yang dipakai Paragon untuk membandingkan penawaran {{currency}}. Kurs dicatat pada RFQ dan disimpan bersama keputusan pemenangan.',
+    'Kurs ini yang dipakai Paragon untuk membandingkan penawaran {{currency, stop}}. Kurs dicatat pada RFQ dan disimpan bersama keputusan pemenangan.',
   'sourcing.fx.dialog.body.supersede':
     'Ini mencatat kurs {{currency}} BARU. Kurs yang ada tidak diubah atau dihapus — kurs lama tetap tersimpan pada RFQ, sehingga dasar yang dipakai setiap perbandingan sebelumnya tetap tercatat.',
   'sourcing.fx.dialog.prior': 'Yang berlaku saat ini:',
@@ -653,11 +653,11 @@ export const sourcingId: Record<string, string> = {
   'sourcing.wizard.field.materials': 'Material spesifik',
   'sourcing.wizard.materials.selectFirst': 'Pilih kategori terlebih dahulu untuk melihat material yang tersedia.',
   'sourcing.wizard.materials.noMasterCode':
-    'Tidak ada di master material: {{materials}}. Acara tetap berjalan dan akan memerlukan tender kompetitif — pengecualian pemasok terdaftar tidak dapat diperiksa tanpa kode master.',
+    'Tidak ada di master material: {{materials, stop}}. Acara tetap berjalan dan akan memerlukan tender kompetitif — pengecualian pemasok terdaftar tidak dapat diperiksa tanpa kode master.',
   // — R8 · penawaran permintaan material di wizard —
   'sourcing.wizard.materials.requestOffer': 'Minta ini dibuatkan di master material',
   'sourcing.wizard.materials.requestOffer.marked':
-    'Permintaan material akan diajukan untuk: {{materials}}. Ini tidak mengubah acara — RFQ tetap berjalan dan akan tetap memerlukan tender kompetitif.',
+    'Permintaan material akan diajukan untuk: {{materials, stop}}. Ini tidak mengubah acara — RFQ tetap berjalan dan akan tetap memerlukan tender kompetitif.',
   'sourcing.wizard.materials.requestOffer.undo': 'Jangan ajukan permintaan',
   'sourcing.wizard.materials.requestNeed': 'Mengapa ini dibutuhkan (untuk master data)',
   'sourcing.wizard.materials.requestNeed.hint':
@@ -674,7 +674,7 @@ export const sourcingId: Record<string, string> = {
   'sourcing.toast.requestRaised.desc':
     'Master data akan meninjaunya di Permintaan material. Material belum ada, dan acara tidak berubah.',
   'sourcing.detail.materialRequest.pending':
-    'Permintaan material tertunda untuk: {{materials}}. Acara ini tidak berubah dan akan tetap memerlukan tender kompetitif.',
+    'Permintaan material tertunda untuk: {{materials, stop}}. Acara ini tidak berubah dan akan tetap memerlukan tender kompetitif.',
   'sourcing.detail.materialRequest.decided':
     'Permintaan material untuk {{materials}} telah diputuskan ({{status}}). Acara ini tidak berubah dalam kedua kasus — material sebuah RFQ tidak dapat diubah setelah dibuat.',
   'sourcing.wizard.field.totalQty': 'Total kuantitas',

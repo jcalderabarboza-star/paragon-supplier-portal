@@ -22,7 +22,7 @@ export const supplierDocumentsEn: Record<string, string> = {
   // — Page header —
   'supplierDocuments.header.title': 'My Documents',
   'supplierDocuments.header.subtitle':
-    'Certifications, compliance documents, COAs, and contracts · Halal & BPOM tracking — {{name}}.',
+    'Certifications, compliance documents, COAs, and contracts · Halal & BPOM tracking — {{name, stop}}.',
   'supplierDocuments.common.supplierFallback': 'Supplier',
   'supplierDocuments.action.declareCert': 'Declare a certificate',
   // — Meta line —
@@ -136,7 +136,7 @@ export const supplierDocumentsEn: Record<string, string> = {
   'supplierDocuments.alert.refused.other': '{{count}} documents were refused:',
   // — Empty state (all-empty early return) —
   'supplierDocuments.empty.title': 'No documents yet',
-  'supplierDocuments.empty.subtitle': 'No documents on file for {{name}}.',
+  'supplierDocuments.empty.subtitle': 'No documents on file for {{name, stop}}.',
   'supplierDocuments.empty.supplierFallback': 'this supplier',
   'supplierDocuments.empty.message':
     'Uploaded certifications, COAs, and contracts will appear here.',
@@ -149,7 +149,7 @@ export const supplierDocumentsId: Record<string, string> = {
   // — Page header —
   'supplierDocuments.header.title': 'Dokumen Saya',
   'supplierDocuments.header.subtitle':
-    'Sertifikasi, dokumen kepatuhan, COA, dan kontrak · Pelacakan Halal & BPOM — {{name}}.',
+    'Sertifikasi, dokumen kepatuhan, COA, dan kontrak · Pelacakan Halal & BPOM — {{name, stop}}.',
   'supplierDocuments.common.supplierFallback': 'Pemasok',
   'supplierDocuments.action.declareCert': 'Nyatakan sertifikat',
   // — Meta line —
@@ -258,7 +258,7 @@ export const supplierDocumentsId: Record<string, string> = {
   'supplierDocuments.alert.refused.one': '{{count}} dokumen ditolak:',
   'supplierDocuments.alert.refused.other': '{{count}} dokumen ditolak:',
   'supplierDocuments.empty.title': 'Belum ada dokumen',
-  'supplierDocuments.empty.subtitle': 'Tidak ada dokumen tercatat untuk {{name}}.',
+  'supplierDocuments.empty.subtitle': 'Tidak ada dokumen tercatat untuk {{name, stop}}.',
   'supplierDocuments.empty.supplierFallback': 'pemasok ini',
   'supplierDocuments.empty.message':
     'Sertifikasi, COA, dan kontrak yang diunggah akan muncul di sini.',

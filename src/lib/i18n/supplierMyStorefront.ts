@@ -20,7 +20,7 @@ export const supplierMyStorefrontEn: Record<string, string> = {
   // — Page header —
   'supplierMyStorefront.header.title': 'My Catalog',
   'supplierMyStorefront.header.subtitle':
-    'Your public profile in the Paragon Supplier Marketplace — {{supplier}}.',
+    'Your public profile in the Paragon Supplier Marketplace — {{supplier, stop}}.',
   'supplierMyStorefront.header.preview': 'Preview public profile',
   // — Meta line —
   'supplierMyStorefront.meta.summary':
@@ -151,7 +151,7 @@ export const supplierMyStorefrontId: Record<string, string> = {
   // — Page header —
   'supplierMyStorefront.header.title': 'Katalog Saya',
   'supplierMyStorefront.header.subtitle':
-    'Profil publik Anda di Pasar Pemasok Paragon — {{supplier}}.',
+    'Profil publik Anda di Pasar Pemasok Paragon — {{supplier, stop}}.',
   'supplierMyStorefront.header.preview': 'Pratinjau profil publik',
   // — Meta line —
   'supplierMyStorefront.meta.summary':

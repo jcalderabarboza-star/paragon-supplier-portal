@@ -19,7 +19,7 @@ export const supplierInvoicesEn: Record<string, string> = {
   // — Page header —
   'supplierInvoices.header.title': 'My Invoices',
   'supplierInvoices.header.subtitle':
-    'Submit and track invoices · view payment status and remittance advice — {{supplier}}.',
+    'Submit and track invoices · view payment status and remittance advice — {{supplier, stop}}.',
   'supplierInvoices.action.export': 'Export',
   // — Meta line (count sibling; trailing <Data> date rendered after the phrase) —
   'supplierInvoices.meta.summary.one': '{{count}} invoice · last submitted',
@@ -127,7 +127,7 @@ export const supplierInvoicesEn: Record<string, string> = {
     'An invoice amount must be greater than zero.',
   // — Empty state (all-empty early return) —
   'supplierInvoices.empty.title': 'No invoices yet',
-  'supplierInvoices.empty.subtitle': 'No invoices on file for {{supplier}}.',
+  'supplierInvoices.empty.subtitle': 'No invoices on file for {{supplier, stop}}.',
   'supplierInvoices.empty.message':
     'Submitted invoices and payment status will appear here.',
   'supplierInvoices.empty.fallbackSupplier': 'this supplier',
@@ -140,7 +140,7 @@ export const supplierInvoicesId: Record<string, string> = {
   // — Page header —
   'supplierInvoices.header.title': 'Faktur Saya',
   'supplierInvoices.header.subtitle':
-    'Ajukan dan lacak faktur · lihat status pembayaran dan bukti pembayaran — {{supplier}}.',
+    'Ajukan dan lacak faktur · lihat status pembayaran dan bukti pembayaran — {{supplier, stop}}.',
   'supplierInvoices.action.export': 'Ekspor',
   // — Meta line —
   'supplierInvoices.meta.summary.one': '{{count}} faktur · terakhir diajukan',
@@ -247,7 +247,7 @@ export const supplierInvoicesId: Record<string, string> = {
     'Jumlah faktur harus lebih besar dari nol.',
   // — Empty state (all-empty early return) —
   'supplierInvoices.empty.title': 'Belum ada faktur',
-  'supplierInvoices.empty.subtitle': 'Tidak ada faktur untuk {{supplier}}.',
+  'supplierInvoices.empty.subtitle': 'Tidak ada faktur untuk {{supplier, stop}}.',
   'supplierInvoices.empty.message':
     'Faktur yang diajukan dan status pembayaran akan muncul di sini.',
   'supplierInvoices.empty.fallbackSupplier': 'pemasok ini',

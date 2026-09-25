@@ -45,9 +45,18 @@ describe('§69 · the population this file rests on', () => {
     // …and they are NOT distinguished by value magnitude in the direction the
     // band implies: the UNBANDED row is worth twice the banded one. A rule that
     // assigned bands by value could not have produced this pair.
-    expect(purchaseRequisitionStore.get('pr-005')!.estimatedValue).toBeGreaterThan(
-      purchaseRequisitionStore.get('pr-004')!.estimatedValue,
-    );
+    // ⚠️ BOTH VALUES ARE ASSERTED PRESENT FIRST, and that is a STRENGTHENING
+    // rather than a concession to the type. `estimatedValue` became optional
+    // when the `t_pr_create` payload was typed (an entrance that states no value
+    // no longer stores 0), so "the unbanded row is worth more" now has a
+    // precondition it did not have to say out loud before: both rows must
+    // actually carry a value. A comparison against an absent one would be
+    // vacuous in exactly the direction this spec exists to rule out.
+    const v5 = purchaseRequisitionStore.get('pr-005')!.estimatedValue;
+    const v4 = purchaseRequisitionStore.get('pr-004')!.estimatedValue;
+    expect(v5).toBeTypeOf('number');
+    expect(v4).toBeTypeOf('number');
+    expect(v5!).toBeGreaterThan(v4!);
   });
 });
 

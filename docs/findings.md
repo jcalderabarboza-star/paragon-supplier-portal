@@ -25087,3 +25087,204 @@ behind it is the thing this register exists to distrust.
 4. **EVERY BATCH THAT CHANGES A RENDERED SURFACE CARRIES BROWSER QA WHOSE OUTPUT
    REACHES THE STRATEGIST** (operator standing rule), *"even when the dispatch omits
    it — the omission is the finding."*
+
+## §107 · THE SMALL-FIXES BATCH — A NAME'S OWN FULL STOP, A TOLERANCE WITH NO CONSUMER, AND A REQUISITION THAT CLAIMED A BUDGET OF NOTHING (2026-09-24)
+
+Three queued items, scoped read-only and then built. Each turned out to be one
+step wider than the sentence that dispatched it, and the widening is the part
+worth keeping.
+
+---
+
+### §107a · `NAME-ENDS-IN-ITS-OWN-FULL-STOP-01` — CLOSED
+
+**The defect, on screen, verbatim:**
+
+```
+Listing psl-015 raised for Sample Salicylics & Niacinamide Ltd.. It is waiting on a decision.
+Pencatatan psl-016 diajukan untuk Sample Vitamins Co.. Menunggu keputusan.
+```
+
+A supplier's legal name is DATA. `Sample Vitamins Co.` · `Sample Aromatics Sdn.
+Bhd.` · `Sample Salicylics & Niacinamide Ltd.` are 3 of the 12 seeded suppliers
+(`sup-009`, `sup-004`, `sup-011`), and `data/supplierIdentity.test.ts` admits
+`Ltd.` / `Co.` / `Sdn.` / `Bhd.` / `Pte.` BY NAME as jurisdiction forms. When
+copy puts its own sentence-ending stop straight after one, the reader gets two.
+
+**The population, derived by PROPERTY rather than by variable name:** every
+interpolation immediately followed by `.`, in every locale — **104 occurrences**
+(94 in `lib/i18n/*.ts` + 10 in `lib/i18n.ts`), of which **57 across 29 keys**
+carry a name-bearing variable.
+
+⚠️ **THREE THINGS THE FIRST MATCHER MISSED, AND EACH IS THE GENERAL LESSON:**
+
+1. **A site OUTSIDE the i18n layer entirely.** `BuyerOrders.tsx:208` builds a
+   rendered preview in a template literal — `` `${po.poNumber} issued to
+   ${po.supplierName}. Total …` `` — and is `i18n-defer`'d, so an i18n-only
+   remedy misses it and an i18n-only GATE READS GREEN OVER IT. That is rule 1
+   with the instrument's own blind spot standing in for the tree's.
+2. **The defect population DIFFERS BY LOCALE.** `sdcSup.empty.subtitle` reads
+   `'…published to {{supplier}} yet.'` in EN — no adjacency, no defect — and
+   `'…diterbitkan ke {{supplier}}.'` in ID. **A remedy driven by reading EN copy
+   does not see the ID string.**
+3. **A multi-line value.** The scope derivation parsed `'key': 'value'` pairs and
+   missed `widget.honesty.sessionStampNote`, whose value is a continuation line.
+   One occurrence, a system token, cost nothing — and would have been inherited
+   by the gate for free. The shipped gate never looks for a string boundary at
+   all, and asserts that site BY NAME.
+
+**The remedy: an unconditional i18next interpolation formatter, declared in the
+copy.** `{{supplier, stop}}.` — `lib/nameStop.ts` strips exactly one trailing
+stop, keeping interior abbreviation stops (`Sdn. Bhd.` → `Sdn. Bhd`).
+
+⚠️ **UNCONDITIONAL IS THE LOAD-BEARING WORD, AND IT IS THE `--merge` ARGUMENT.**
+A date, an id, a count can never end in a stop, so the formatter is a NO-OP on
+them — which is exactly why applying it to them costs nothing and removes the
+only thing that could rot: the per-site judgement *"is this variable a name?"* A
+seat that has to decide will one day decide wrong; a seat with one form cannot.
+It also deletes the ALLOWLIST a "names only" rule would have needed — ~14 system
+tokens each carrying a stated exemption.
+
+⚠️ **AND THE REASON IT IS IN THE COPY RATHER THAN AT THE CALL SITE.**
+`t('…', { supplier: stopName(name) })` produces identical output and puts the
+remedy SOMEWHERE OTHER THAN WHERE THE STOP IS VISIBLE, so every future call site
+has to remember. Written into the string, the decision and the stop it answers
+are the SAME BYTES — the `i18n-defer:` property applied to punctuation — and the
+two locales become independent, which finding 2 above proves they must be.
+
+**Registration fails LOUD.** i18next resolves an unknown format specifier by
+warning and returning the value unformatted, so a silently-failed registration
+would render `Ltd..` again with every gate green. `registerNameStop` throws
+instead. (i18next v26 removed `interpolation.format`; the API is
+`i18n.services.formatter.add`.)
+
+**The gate is `lib/i18n/nameStop.guard.test.ts`, TWO HALVES, and one half alone
+was refused.** Half 2's classifier was run against **main's bytes before the fix**
+and reported exactly **3 COPY sites — all in `BuyerOrders.tsx`, including :208 —
+and 15 KEY sites, nothing unclassified, across 150 files.**
+`PROBE-MUST-FIRE-AT-A-REAL-DEFECT-01`: that run is the evidence the matcher is
+aimed at the right thing, because a synthetic subject agrees with the matcher by
+construction.
+
+⚠️ **THE KEY/COPY DISCRIMINATOR IS DERIVED FROM THE INTRODUCING TOKEN, NOT FROM
+THE VARIABLE'S NAME.** 15 of the 18 template-literal sites are `t()` keys,
+`key=`, `data-testid=` or a jump argument — not reader-visible at all. A
+name-based matcher would have accused `${arm}`, `${g.id}` and `${k}`, which is
+rule 2 exactly; and demanding `stopName` inside `t(\`identity.${arm}.title\`)`
+would CORRUPT THE LOOKUP. The exclusion is asserted, not assumed.
+
+---
+
+### §107b · `TOLERANCE-LOST-ITS-CONSUMER-AT-THE-REBIND-01` — the dispatched premise inverted
+
+The dispatch said `npm run drift` *"passes because every reading instant is P"*
+(true) and that it *"looks breached"* (**false**). The report already prints
+`read-at-present`, headroom `—`, and a footer saying *"No anchored family is read
+against the wall clock. This instrument is WAITING, not retired."* Option (a) of
+the three dispatched was already built.
+
+⚠️ **THE REAL FINDING IS SHARPER AND NOBODY WAS LOOKING AT IT: `toleranceDays`
+HAS NO CONSUMER FOR ANY FAMILY.** `familyDrift` returns early on four of seven
+verdicts, all of them **before `driftVerdict` is called**. Today all 8 families
+short-circuit — 5 `read-at-present`, 3 `no-window-declared` — so **`driftVerdict`
+is called ZERO times over the live population.** The module's own first line is
+*"THE DRIFT READER — the instrument that gives `toleranceDays` a consumer"*, and
+*"THE DEFECT THIS CLOSES: A DECLARED NUMBER WITH NO READER."* The 2026-09-15
+rebind onto the reading instant took that consumer away again, **and nobody
+noticed because the report still printed the column.**
+
+That is the defect the module was built to close, returned through a different
+door — and it is invisible to every gate, because a column that prints is not a
+column that decides.
+
+**Re-anchoring was MEASURED BLOCKED, not estimated.** `DECLARED_PRESENT` is
+DERIVED: `BPJPH_MANDATE_DATE ('2026-10-17') − MANDATE_LEAD_DAYS (47)` =
+`2026-08-31`. `SDC_WINDOW` is `['2026-08-25','2026-09-01']` and
+`fixturePresent.guard.test.ts:460` pins `P` inside it. Today as `P` needs lead
+23 → `2026-09-24`, outside the window, gate red by name. **The maximum re-anchor
+available without first anchoring `sdc` is ONE DAY** (lead 46). And it would move
+every date on every surface: 49 non-test modules read `DECLARED_PRESENT`, 16
+corpora are `shiftFields`-anchored.
+
+**Built (operator ruling): the FIELD IS KEPT, the REPORT changed.** An inert
+tolerance is parenthesised — `(40)`, `(7)` — and a derived footer names how many
+families reach the rule. The partition is exhaustive over `DriftVerdict` BY TYPE,
+and pinned against the INDEPENDENT `headroomDays === null` signal in both
+directions, so neither derivation can move alone. The footer count is proven
+derived rather than literal by making one family wall-read and requiring the
+number to MOVE — a literal `0` happens to be right today.
+
+---
+
+### §107c · `PR-PAYLOAD-DEFAULTS-A-BUDGET-OF-NOTHING-01` — CLOSED
+
+`materialRequest.ts`'s header had already recorded this lane as drifting and
+OUT OF SCOPE BY RULING. This is that ruling arriving.
+
+**Verified, every clause:** `PrCreateVars.payload` was `Record<string, unknown>`;
+`t_pr_create.requiredFields` is only `['material','quantity']`; the target read
+the union of 12 keys and defaulted each absence — `str()` → `''`, `num()` → `0`,
+`priority` → `'Medium'`.
+
+**Reproduced in the browser, both locales, before the fix:** a PR raised from the
+New PR form rendered **`Rp 0`** in the list AND the drawer, two rows above a PR
+showing a real `Rp 96.0jt`, with nothing to tell them apart.
+
+⚠️ **AND THE FORM MAKES IT UNAVOIDABLE — the part a field-set table does not
+show.** The New PR form has NO estimated-value input at all. Raising a PR without
+a value is not a path a careless person takes; **it is the only path that surface
+has.** Every requisition ever raised there claimed a budget of zero.
+
+⚠️ **PRIORITY IS THE SAME CLASS AND WAS NOT IN THE DISPATCH.** Every plan-grid
+push stored `priority: 'Medium'` — a choice nobody made, rendered beside choices
+people really did make. Its consumers were MEASURED before the default was
+removed: **exactly one, and it is a RENDER** (the drawer's Priority row). No
+sort, no approval route, no comparison. So the absence costs a label and nothing
+else, and the drawer now says "Not set" the way it has said "Not assigned" for an
+unset approval band since §69.
+
+**The remedy is this tree's own ruling on the same field name, one entity over**
+(`sourcing/rfqCreateModel.ts`): *"estimatedValue — OPTIONAL. A blank is the
+field's own documented answer ('not specified') and resolves to an ABSENCE the
+payload omits, **never a fabricated Rp 0**."* `RFQ.estimatedValue` has been
+`?: number` ever since. A typed zero is PRESERVED — emptiness is the defect, not
+zero. `formatIDR` already answers `undefined` with an em dash, so the render
+sites needed no fallback.
+
+`requiredFields` is UNCHANGED and must stay `['material','quantity']`: adding
+`estimatedValue` would refuse the New PR form outright, which is the opposite of
+the fix. `material` stays free text (C7 GG-4, open). `''` stays the
+representation for `category` / `requestor` / `costCenter` / `justification` —
+honest by `types.ts:955` and left alone.
+
+---
+
+### §107d · `PR-PAYLOAD-REASON-KEY-HAS-NO-READER-01` — FILED, NOT FIXED
+
+`buildPrCreatePayload` puts `reason` into the `t_pr_create` payload on a genuine
+quantity override (`...(isQtyAdjusted(...) ? { reason: reason.trim() } : {})`),
+and **the target's `create()` never reads it.** The C6-LOCK audit trail reaches
+DR-10 through the SEPARATE `decision` argument, which the dispatcher forwards
+verbatim — so the governance is intact and nothing is lost today.
+
+What is unclear is what the key is FOR: persisted intent that was never
+persisted, or a second carrier for something `decision` already carries. **Filed
+rather than changed** (operator ruling, this batch): removing it touches C6-LOCK
+provenance and that is a ruling, not a tidy-up. It is recorded here so the next
+seat to open the lane does not re-derive it.
+
+---
+
+### §107e · `CLAUDE.md` §72a READ FALSE — corrected
+
+`IMPORTER-PRESENCE-IS-NOT-VERB-COVERAGE-01` (§72a) is quoted in `CLAUDE.md` as
+still open: *"`BuyerRequisitions` imported the guard, rendered four of them, and
+still shipped a live **New PR** button to a seat holding no `pr:create`."*
+**Measured in the browser this batch: closed.** With the default seat the header
+renders `handoff-pr-create` → *"Awaiting Requisitioner"*, and the button appears
+only after adopting the Requisitioner seat. The FINDING's lesson is untouched and
+still correct — derive coverage as (surface × verb), never as (surface → imports
+the guard?) — only its status sentence was stale.
+
+`FALSE-MECHANISM-MUST-NOT-BE-FILED-01`'s neighbour: a CLOSED finding left
+standing as open is a blocker nobody re-measures, and a blocker is why you stop.

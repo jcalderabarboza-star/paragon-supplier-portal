@@ -90,7 +90,7 @@ export const supplierApplicationsEn: Record<string, string> = {
   // — Confirm-before-commit —
   'applications.confirm.approve.title': 'Approve this applicant?',
   'applications.confirm.approve.body':
-    'This records the decision for {{company}}. It cannot be undone, and it creates no supplier record — the vendor master is raised in S/4HANA.',
+    'This records the decision for {{company, stop}}. It cannot be undone, and it creates no supplier record — the vendor master is raised in S/4HANA.',
   'applications.confirm.approve.commit': 'Yes, approve',
   'applications.confirm.reject.title': 'Refuse this applicant?',
   'applications.confirm.reject.body':
@@ -221,7 +221,7 @@ export const supplierApplicationsId: Record<string, string> = {
 
   'applications.confirm.approve.title': 'Setujui pemohon ini?',
   'applications.confirm.approve.body':
-    'Ini mencatat keputusan untuk {{company}}. Tidak dapat dibatalkan, dan tidak membuat catatan pemasok — data induk vendor diterbitkan di S/4HANA.',
+    'Ini mencatat keputusan untuk {{company, stop}}. Tidak dapat dibatalkan, dan tidak membuat catatan pemasok — data induk vendor diterbitkan di S/4HANA.',
   'applications.confirm.approve.commit': 'Ya, setujui',
   'applications.confirm.reject.title': 'Tolak pemohon ini?',
   'applications.confirm.reject.body':

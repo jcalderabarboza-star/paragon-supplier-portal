@@ -82,9 +82,22 @@ describe('2e-c currency arc — every named cause is translated (i18n sweep)', (
   it('the supplier-side currency refusal names the token AND the permitted set', () => {
     // 2e-c-2. "Invalid currency" tells a supplier neither what they sent nor
     // what they may send; both halves have to survive into Indonesian.
+    // ⚠️ THE CLAIM IS THAT THE VARIABLE IS INTERPOLATED, NOT HOW IT IS
+    // SPELLED. `{{permitted}}` sits immediately before a full stop, so it now
+    // carries the unconditional `stop` formatter (`lib/nameStop.ts`) and a
+    // literal `toContain('{{permitted}}')` no longer matches a string that says
+    // exactly what it always said. Matching the variable WITH OR WITHOUT a
+    // format keeps this spec about the refusal's content, which is what its
+    // name promises, and stops it failing on a punctuation fix.
+    const interpolates = (s: string, v: string) =>
+      new RegExp(`\{\{ ?${v}( ?, ?[A-Za-z_]+)? ?\}\}`).test(s);
     for (const bundle of [rfqsEn, rfqsId]) {
-      expect(bundle['rfqs.toast.currencyRefused.body']).toContain('{{currency}}');
-      expect(bundle['rfqs.toast.currencyRefused.body']).toContain('{{permitted}}');
+      const body = bundle['rfqs.toast.currencyRefused.body'];
+      expect(interpolates(body, 'currency')).toBe(true);
+      expect(interpolates(body, 'permitted')).toBe(true);
+      // and the matcher is not vacuous — a variable the string does not carry
+      // must still be reported absent
+      expect(interpolates(body, 'supplier')).toBe(false);
     }
   });
 

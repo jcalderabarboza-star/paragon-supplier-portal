@@ -4,6 +4,7 @@ import Data from '../../components/ui-v2/Data';
 import Button from '../../components/ui-v2/Button';
 import PlanCellMarker from './PlanCellMarker';
 import { usePurchaseRequisitionCreate } from '../../services/query/commandHooks';
+import { buildPrCreatePayload } from '../requisitions/prCreatePayload';
 import { HandoffNotice } from '../../components/ui-v2/HandoffNotice';
 import { useVerbAvailability } from '../../hooks/useVerbAvailability';
 import { DataError } from '../../services/data/types';
@@ -13,7 +14,6 @@ import {
   isQtyAdjusted,
   overrideBlocked,
   buildQtyDecision,
-  buildPrCreatePayload,
   applyPushResult,
   PLANNED_ROW,
   type PrIntakeLine,
