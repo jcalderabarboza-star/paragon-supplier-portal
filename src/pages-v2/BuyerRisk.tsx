@@ -512,7 +512,6 @@ const ScenarioTab: React.FC<{ scenarios: Scenario[] }> = ({ scenarios }) => {
   }));
   const [activeScenario, setActiveScenario] = useState<string>('me');
   const [expandedAlt, setExpandedAlt] = useState<string | null>('s1');
-  const [warRoomSent, setWarRoomSent] = useState(false);
 
   // Detail for the picked scenario; falls back to the first modeled one for
   // library entries that are not yet fully modeled.
@@ -521,13 +520,11 @@ const ScenarioTab: React.FC<{ scenarios: Scenario[] }> = ({ scenarios }) => {
   if (!featured) return null;
 
   const sendToWarRoom = () => {
-    setWarRoomSent(true);
     toast({
-      variant: 'success',
+      variant: 'info',
       title: t('risk.toast.warRoomForwarded.title'),
       description: t('risk.toast.warRoomForwarded.desc', { title: featured.title }),
     });
-    setTimeout(() => setWarRoomSent(false), 4000);
   };
 
   return (
@@ -565,7 +562,7 @@ const ScenarioTab: React.FC<{ scenarios: Scenario[] }> = ({ scenarios }) => {
             onClick={sendToWarRoom}
             className="shrink-0"
           >
-            {warRoomSent ? t('risk.scenario.sent') : t('risk.scenario.sendWarRoom')}
+            {t('risk.scenario.sendWarRoom')}
           </Button>
         </div>
       </section>

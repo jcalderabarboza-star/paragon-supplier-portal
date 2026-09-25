@@ -94,15 +94,14 @@ export const riskEn: Record<string, string> = {
   'risk.scenario.lib.tw': 'Taiwan Strait closure',
   'risk.scenario.lib.pa': 'Pandemic resurgence',
   'risk.scenario.sendWarRoom': 'Send to War Room',
-  'risk.scenario.sent': '✓ Sent',
   'risk.scenario.responseAlternatives': 'Response alternatives',
   'risk.scenario.activatePlan': 'Activate plan',
   'risk.scenario.viewFullAnalysis': 'View full analysis',
   'risk.scenario.ariaRecommendation': 'ARIA Recommendation',
   // — Scenario toasts —
-  'risk.toast.warRoomForwarded.title': 'Scenario forwarded to War Room',
+  'risk.toast.warRoomForwarded.title': 'War Room escalation not available yet',
   'risk.toast.warRoomForwarded.desc':
-    '{{title}} dispatched to procurement leadership.',
+    'Nothing was forwarded — {{title}} was not sent to procurement leadership.',
   'risk.toast.activationInitiated': 'Plan activation not available yet — nothing was activated for {{name, stop}}.',
   'risk.toast.openingAnalysis': 'Full analysis not available yet — {{id}} has no detail view.',
   // — Compliance Risks tab —
@@ -231,15 +230,14 @@ export const riskId: Record<string, string> = {
   'risk.scenario.lib.tw': 'Penutupan Selat Taiwan',
   'risk.scenario.lib.pa': 'Kebangkitan pandemi',
   'risk.scenario.sendWarRoom': 'Kirim ke War Room',
-  'risk.scenario.sent': '✓ Terkirim',
   'risk.scenario.responseAlternatives': 'Alternatif respons',
   'risk.scenario.activatePlan': 'Aktifkan rencana',
   'risk.scenario.viewFullAnalysis': 'Lihat analisis lengkap',
   'risk.scenario.ariaRecommendation': 'Rekomendasi ARIA',
   // — Scenario toasts —
-  'risk.toast.warRoomForwarded.title': 'Skenario diteruskan ke War Room',
+  'risk.toast.warRoomForwarded.title': 'Eskalasi War Room belum tersedia',
   'risk.toast.warRoomForwarded.desc':
-    '{{title}} dikirim ke pimpinan pengadaan.',
+    'Tidak ada yang diteruskan — {{title}} tidak dikirim ke pimpinan pengadaan.',
   'risk.toast.activationInitiated': 'Aktivasi rencana belum tersedia — tidak ada yang diaktifkan untuk {{name, stop}}.',
   'risk.toast.openingAnalysis': 'Analisis lengkap belum tersedia — {{id}} tidak memiliki tampilan detail.',
   // — Compliance Risks tab —

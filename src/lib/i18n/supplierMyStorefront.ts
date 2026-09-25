@@ -86,12 +86,13 @@ export const supplierMyStorefrontEn: Record<string, string> = {
   'supplierMyStorefront.addForm.ccy': 'CCY',
   'supplierMyStorefront.addForm.capacity': 'Capacity/month',
   'supplierMyStorefront.addForm.certifications': 'Certifications',
-  'supplierMyStorefront.toast.materialRemoved': 'Material removed from catalog',
+  'supplierMyStorefront.toast.materialRemoved':
+    'Material removed from this view only — not saved, storefront editing is not wired to a real store.',
   'supplierMyStorefront.toast.materialNameRequired': 'Material name is required',
   'supplierMyStorefront.toast.materialSubmitted.title':
-    'New material submitted for review',
+    'New material not submitted',
   'supplierMyStorefront.toast.materialSubmitted.desc':
-    'Paragon procurement will notify you within 3 business days.',
+    'Nothing was sent to Paragon procurement — storefront editing is not wired to a real store.',
   // — Step 3: certifications on display —
   'supplierMyStorefront.step3.title': 'Certifications on display',
   'supplierMyStorefront.step3.description':
@@ -217,12 +218,13 @@ export const supplierMyStorefrontId: Record<string, string> = {
   'supplierMyStorefront.addForm.ccy': 'Mata uang',
   'supplierMyStorefront.addForm.capacity': 'Kapasitas/bulan',
   'supplierMyStorefront.addForm.certifications': 'Sertifikasi',
-  'supplierMyStorefront.toast.materialRemoved': 'Material dihapus dari katalog',
+  'supplierMyStorefront.toast.materialRemoved':
+    'Material dihapus dari tampilan ini saja — tidak disimpan, penyuntingan etalase belum tersambung ke penyimpanan nyata.',
   'supplierMyStorefront.toast.materialNameRequired': 'Nama material wajib diisi',
   'supplierMyStorefront.toast.materialSubmitted.title':
-    'Material baru dikirim untuk ditinjau',
+    'Material baru tidak dikirim',
   'supplierMyStorefront.toast.materialSubmitted.desc':
-    'Pengadaan Paragon akan memberi tahu Anda dalam 3 hari kerja.',
+    'Tidak ada yang dikirim ke pengadaan Paragon — penyuntingan etalase belum tersambung ke penyimpanan nyata.',
   // — Step 3: certifications on display —
   'supplierMyStorefront.step3.title': 'Sertifikasi yang ditampilkan',
   'supplierMyStorefront.step3.description':

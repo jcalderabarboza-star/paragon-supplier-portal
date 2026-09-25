@@ -408,6 +408,13 @@ describe('⚠️ THE TWO-REGEX COMMENT STRIP IS EXTINCT — derived, not listed'
         'lib/projectionGate/derive.ts',
         'pages-v2/buyerInvoicesEscalateHonesty.test.ts',
         'pages-v2/deadAffordance.guard.test.tsx',
+        // Added by H2. The external-claim guard asks "does a toast claim a file,
+        // a notified party or a stored record that nothing produced?", and its
+        // comment-only probe (P4) requires that a COMMENTED-OUT `toast(` call is
+        // not a call site. Without the shared strip that probe convicts prose —
+        // the same failure `SupplierCertsExpiringWidget` records two entries
+        // below, arrived at independently for the sixth time.
+        'pages-v2/externalClaimHonesty.guard.test.tsx',
         // Added 2026-09-24 by the small-fixes batch (§107c). The
         // `t_pr_create` entrance census asserts the target no longer calls
         // `num('estimatedValue')` — and its first draft went red on the RFQ
