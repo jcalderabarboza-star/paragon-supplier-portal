@@ -16,6 +16,7 @@ import type {
 } from '../context/CurrentIdentityContext';
 import { SEEDED_SEAT_ROLES } from '../services/transitions/businessRoles';
 import { NO_PERSON } from '../context/noPerson';
+import { SAMPLE_PEOPLE } from '../services/identity/sampleRoster';
 
 // Default persona for page tests that don't care about identity.
 //
@@ -41,6 +42,38 @@ export const BUYER: CurrentIdentity = {
   businessRoles: SEEDED_SEAT_ROLES.buyer,
   // The portal has no persons; UNATTRIBUTED is the measured fact, not a stub.
   actor: NO_PERSON,
+};
+
+/**
+ * THE SEEDED BUYER SEAT, ACTING AS A NAMED PERSON.
+ *
+ * ⚠️ **IT IS A SEPARATE CONSTANT AND NOT A WIDENING OF `BUYER`, DELIBERATELY.**
+ * `BUYER.actor` is `UNATTRIBUTED`, which is the MEASURED fact about this
+ * platform (no sign-in exists) and is what ~200 specs assert against. Changing
+ * it would hand every one of them an attributed actor they never asked for, and
+ * would silently delete the coverage of every unattributed render path.
+ *
+ * This exists because call-off step 1 made one lane refuse an unattributed seat
+ * outright (Q6 — a delivery act creates supplier-facing obligations), so a spec
+ * exercising a delivery WRITE has to adopt a person exactly as an operator does
+ * on the identity panel. Use it for those; use `BUYER` for everything else.
+ */
+export const BUYER_NAMED: CurrentIdentity = {
+  ...BUYER,
+  actor: {
+    kind: 'RESOLVED',
+    person: { personId: SAMPLE_PEOPLE.find((p) => p.role === 'procurement')!.personId },
+  },
+};
+
+/** The same seat acting as a named COMPLIANCE person — the lane that owns
+ *  `delivery:policy-set`, which `procurement` deliberately does not hold. */
+export const BUYER_NAMED_COMPLIANCE: CurrentIdentity = {
+  ...BUYER,
+  actor: {
+    kind: 'RESOLVED',
+    person: { personId: SAMPLE_PEOPLE.find((p) => p.role === 'compliance')!.personId },
+  },
 };
 
 // The seeded supplier (sup-007) — pass to renderWithProviders for pages that

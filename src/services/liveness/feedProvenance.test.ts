@@ -77,6 +77,14 @@ describe('feed provenance — the second axis', () => {
         // sample. Verbs real, feed fixture - which is exactly the distinction
         // this two-axis marker exists to render.
         'supplierDocuments',
+        // CALL-OFF STEP 1 — deliveryAgreements joins the partly-real class, and
+        // it is the member where a reader is most likely to round the two axes
+        // together: the verbs are real, the refusals bite, and every act names
+        // a person and lands in the DR-10 trail. The FEED is still a calendar
+        // this platform generated at import against a SIMULATED SAP number, and
+        // no S/4HANA scheduling agreement has ever been read. Verbs real, feed
+        // fixture — which is the whole distinction this marker renders.
+        'deliveryAgreements',
       ]),
     );
   });

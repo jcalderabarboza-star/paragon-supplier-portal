@@ -70,6 +70,12 @@ export const buyerInventoryEn: Record<string, string> = {
   'buyerInventory.panel.moq': 'MOQ',
   'buyerInventory.panel.safetyStock': 'Safety Stock',
   'buyerInventory.panel.reorderPoint': 'Reorder Point',
+  // Q1 (call-off step 1): these two say what they are. Nothing in this portal
+  // computes a reorder point — SOMO owns planning — and a number captioned
+  // "Reorder Point" with no basis beside it reads as a parameter somebody set.
+  'buyerInventory.panel.safetyStockBasis': 'Shown as 7 days of average demand — not a planning parameter.',
+  'buyerInventory.panel.reorderPointBasis':
+    'Shown as 14 days of average demand — not a planning parameter. Reorder points are set in SOMO.',
   // — Side panel: sections —
   'buyerInventory.panel.recentUpdates': 'Recent inventory updates',
   'buyerInventory.panel.activePos': 'Active POs',
@@ -161,6 +167,10 @@ export const buyerInventoryId: Record<string, string> = {
   'buyerInventory.panel.moq': 'MOQ',
   'buyerInventory.panel.safetyStock': 'Stok Pengaman',
   'buyerInventory.panel.reorderPoint': 'Titik Pemesanan Ulang',
+  'buyerInventory.panel.safetyStockBasis':
+    'Ditampilkan sebagai 7 hari permintaan rata-rata — bukan parameter perencanaan.',
+  'buyerInventory.panel.reorderPointBasis':
+    'Ditampilkan sebagai 14 hari permintaan rata-rata — bukan parameter perencanaan. Titik pemesanan ulang ditetapkan di SOMO.',
   // — Side panel: sections —
   'buyerInventory.panel.recentUpdates': 'Pembaruan inventaris terbaru',
   'buyerInventory.panel.activePos': 'PO Aktif',

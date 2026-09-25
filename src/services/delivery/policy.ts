@@ -31,6 +31,7 @@ import type {
   SchedulingAgreementItem,
   TolerancePolicy,
 } from './types';
+import type { ActorAttribution } from '../../lib/enforcement';
 
 // ─── Rejection vocabulary ─────────────────────────────────────────────────────
 
@@ -72,11 +73,15 @@ export interface EditPolicyInput {
   readonly enforcement: DrawdownEnforcement;
   readonly reason: string;
   readonly now: string;
+  /** WHO re-pointed the tolerance — injected exactly as `now` is. Omitted from
+   *  `EditPolicyPatch` BY TYPE, so attribution structurally cannot travel from a
+   *  surface or a command payload. */
+  readonly changedBy: ActorAttribution;
 }
 
 /** The service-facing patch — the input WITHOUT the injected clock (`now` is added
  *  at the service seam, the SDC convention). The hook/UI carry exactly this. */
-export type EditPolicyPatch = Omit<EditPolicyInput, 'now'>;
+export type EditPolicyPatch = Omit<EditPolicyInput, 'now' | 'changedBy'>;
 
 export type EditPolicyResult =
   | {
@@ -92,8 +97,10 @@ export type EditPolicyResult =
  * Re-point an item's ACTIVE drawdown tolerance and stamp when + why.
  *
  * Writes ONLY `{ active, activeChangedAt, activeChangeReason }` onto the policy —
- * `contractDefault` is spread through UNTOUCHED (immutable by construction) and
- * `activeChangedBy` is never written (deferred to the Stage-F dispatcher). The
+ * `contractDefault` is spread through UNTOUCHED (immutable by construction).
+ * `activeChangedBy` IS written now, from the injected `changedBy` — the field
+ * stood declared-and-never-written, "deferred to the Stage-F dispatcher", and
+ * this lane's CommandTarget is that dispatcher. The
  * ledger re-derives `policyDeviation` / `enforced` / `exceptions` against the new
  * `active` on the next read — this function never touches the ledger.
  *
@@ -149,6 +156,7 @@ export function setActivePolicy(
       ...item.drawdownPolicy,
       active,
       activeChangedAt: input.now,
+      activeChangedBy: input.changedBy,
       activeChangeReason: reason,
     },
   };

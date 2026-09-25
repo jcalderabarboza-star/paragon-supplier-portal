@@ -183,13 +183,23 @@ const CAPABILITY_BACKING: Record<Capability, string | null> = {
   // "Sample — awaiting SOMO C8 feed" and green stays structurally unreachable
   // (LIVENESS-DATASOURCE-01: wiring alone must never flip green).
   forecastPublications: 'requirementResponse',
-  // The delivery drawdown/compliance surface reads the headless delivery domain
-  // (SchedulingAgreement + the pure derivations) off SIMULATED fixtures — no
-  // lifecycle CommandTarget behind it. Null backing → derives SIMULATED → the
-  // shared LivenessPill renders amber "Sample"; green is structurally unreachable.
-  // When the real S/4HANA scheduling-agreement feed lands (Pattern B, Stage F), it
-  // flips through the same two gates.
-  deliveryAgreements: null,
+  // ⚠️ **CALL-OFF STEP 1 — GATE 1 FLIPPED, AND GATE 2 IS WHY THE PILL DID NOT
+  // TURN GREEN.** This backing was `null` because the lane genuinely had no
+  // CommandTarget: three writes went straight to a store. It now has two
+  // (`deliveryRelease` + `deliveryPolicy`), so the wiring census derives LIVE —
+  // and **the DATA has not changed at all.** Every agreement on screen is a
+  // seeded `sa-*` calendar generated at module load against SIMULATED SAP
+  // numbers; a release taken in this session is a demo act against demo rows.
+  // **Wiring is not a data source** (`LIVENESS-DATASOURCE-01`), so the harvest
+  // entry below holds it SIMULATED and green stays structurally unreachable
+  // until the real S/4HANA scheduling-agreement feed lands (Pattern B, Stage F).
+  //
+  // It is backed to `deliveryRelease` rather than `deliveryPolicy` because the
+  // release lifecycle is what the surface RENDERS — the calendar, the drawdown,
+  // the fulfillment. Backing a pill to a merely-adjacent wired entity is
+  // `INVENTORY-REFERENT-01`, and the tolerance ledger is adjacent, not the
+  // read-model on screen.
+  deliveryAgreements: 'deliveryRelease',
   // ── D-CENSUS-8 — the eight late-marked domains ────────────────────────────
   // All null-backed, DELIBERATELY. Each of these surfaces reads a frozen fixture
   // array through `mockDataService`; none is the read-model of a lifecycle
@@ -236,6 +246,13 @@ export interface HarvestGate {
 }
 
 const HARVEST_GATED: Partial<Record<Capability, HarvestGate>> = {
+  // Call-off step 1 — the delivery lane's verbs landed (gate-1 LIVE) while its
+  // rows stayed exactly what they were: fixtures. Gate 2 holds it SIMULATED
+  // until S/4HANA answers with real scheduling agreements and real releases.
+  deliveryAgreements: {
+    readinessNoteKey: 'widget.honesty.awaitingScheduleFeed',
+    source: 'S/4HANA',
+  },
   compliance: {
     readinessNoteKey: 'widget.honesty.awaitingHarvest',
     source: 'Track-R',

@@ -228,6 +228,32 @@ const LANE_BUNDLES = Object.freeze({
       // every designation they proposed, so procurement cannot hold it — the
       // same sentence that keeps the role editor out of this bundle.
       'psl:publish',
+      // ── CALL-OFF STEP 1 · THE DELIVERY SCHEDULE ──────────────────────────
+      // Transmitting a delivery schedule to a vendor, adjusting one before it
+      // is transmitted, and accepting that a delivery drew it down are three
+      // moments in the life of ONE contractual commitment. This lane already
+      // holds every contract verb in the tree — `contract:draft`,
+      // `:activate`, `:renew`, `:terminate` — plus `obligation:track` and
+      // `:complete`, which is the same authority over what a contract obliges.
+      //
+      // ⚠️ **THE RIVAL READING FOR `delivery:confirm` IS `receiving`'s, AND IT
+      // IS RECORDED RATHER THAN ARGUED AWAY** (the
+      // `inventorydeclaration:declare` house style). The dock is who knows
+      // whether goods arrived. What decided it the other way: a confirm is not
+      // an observation of arrival — it accepts an INFERRED proximity match as
+      // an authoritative drawdown, and what moves is `deliveredQty` on the
+      // contract-consumption ledger. That is a category manager's instrument,
+      // and `receiving`'s own bundle says *"a dock clerk is not a category
+      // manager."* The real observation of arrival stays `gr:receive`.
+      //
+      // ⚠️ **AND `delivery:policy-set` IS DELIBERATELY NOT HERE — IT IS
+      // `compliance`'s**, for `role:grant`'s and `psl:cap-set`'s sentence:
+      // this lane releases the schedules and the drawdown ledger is what flags
+      // a release that runs past its envelope, so procurement cannot also set
+      // the tolerance it is measured against.
+      'delivery:release',
+      'delivery:adjust',
+      'delivery:confirm',
     ]),
     // The dock. 13 of the 41 human-owned buyer verbs — the largest single lane,
     // and a dock clerk is not a category manager. `asn:flag` is shared with the
@@ -294,6 +320,20 @@ const LANE_BUNDLES = Object.freeze({
       // atom for a distinction nobody has asked to separate, which is
       // role-per-distinction (C10 §4.1).
       'psl:cap-set',
+      // ── CALL-OFF STEP 1 · THE DRAWDOWN TOLERANCE ─────────────────────────
+      // ⚠️ **`role:grant` AND `psl:cap-set`'S RULING, TRANSFERRED WORD FOR
+      // WORD.** Procurement transmits the delivery schedules; the drawdown
+      // ledger is what FLAGS a release that runs past its envelope. If
+      // procurement could also set the tolerance, procurement could relax the
+      // very check it is measured against — which is the sentence that moved
+      // `role:grant` out of that bundle and kept `psl:cap-set` out of it. The
+      // same party cannot both set the bar and be governed by it.
+      //
+      // This lane is the right home for the third: it already decides what a
+      // supplier's paperwork must satisfy and whether an applicant becomes a
+      // supplier at all. A commercial over-delivery tolerance is the same kind
+      // of authority over the same relationship.
+      'delivery:policy-set',
     ]),
     // The SDC / P2 planning lane. `inventorydeclaration:record` is the C4c
     // buyer RECORDING verb — a distinct authority from the supplier's

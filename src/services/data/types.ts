@@ -1859,11 +1859,18 @@ export interface IDeliveryService {
    * `releaseScheduleLines`, persists to the mutable store, and returns the
    * RE-DERIVED agreement view — or an honest `ReleaseReason` on refusal.
    *
-   * SIMULATED by construction: this write does NOT go through the command
-   * dispatcher and registers NO CommandTarget, so `deliveryAgreements` stays
-   * null-backed in the LivenessRegistry (the honest amber "Sample" marker holds).
-   * A released line is transmitted in the PORTAL, not posted to SAP —
-   * `sapReleaseNumber` stays absent until the Pattern-B feed binds it (Stage F).
+   * ⚠️ **IT DISPATCHES (call-off step 1). THE SENTENCE THAT STOOD HERE IS
+   * RETIRED, NOT SOFTENED.** It read: *"this write does NOT go through the
+   * command dispatcher and registers NO CommandTarget."* It does both now —
+   * `t_delivery_release` against the `deliveryRelease` target, ONE command per
+   * line, so every gate (the `delivery:release` atom, the attributed actor, the
+   * back-dating guard, the tenancy denial) is the dispatcher's and every act
+   * lands in the DR-10 trail.
+   *
+   * A PARTIAL outcome is real and is reported: `releasedSeqs` names what went,
+   * `refusals` names what did not and why. A released line is transmitted in the
+   * PORTAL, not posted to SAP — `sapReleaseNumber` stays absent until the
+   * Pattern-B feed binds it (Stage F), and this verb has no field to put one in.
    */
   releaseLines(
     scope: QueryScope,
@@ -1880,8 +1887,10 @@ export interface IDeliveryService {
    * reason (`NOTHING_TO_CONFIRM` / `ALREADY_CONFIRMED` / `NOT_RELEASED` /
    * `SCOPE_DENIED` / `UNKNOWN_RELEASE_SEQ`).
    *
-   * SIMULATED by construction, exactly like release: NO dispatcher, NO
-   * CommandTarget, so `deliveryAgreements` stays null-backed (amber marker holds).
+   * ⚠️ **IT DISPATCHES `t_delivery_confirm` (call-off step 1)** — the
+   * no-dispatcher sentence that stood here is retired. The accepted `(ref, qty)`
+   * is derived by the TARGET from the shared shipment pool, never carried in a
+   * payload, so a caller cannot accept a quantity nobody was shown.
    * A confirm is a PORTAL record, not a SAP goods-receipt — `fulfilledDate` /
    * `sapReleaseNumber` stay absent until the Pattern-B feed binds them (Stage F).
    */
@@ -1891,19 +1900,34 @@ export interface IDeliveryService {
     itemSeq: number,
     releaseSeq: number,
   ): Promise<ConfirmCommandResult>;
+  // ⚠️ **`adjustLine` IS DELIBERATELY NOT ON THIS SEAM (call-off step 1).**
+  // `t_delivery_adjust` is dispatched DIRECTLY from `useAdjustLine`, on the
+  // `commandHooks` precedent, for two reasons that point the same way:
+  //
+  //   · **C1 is a frozen contract.** `C1-methods.md` enumerates this
+  //     interface's methods and `c1MethodSurface.contract.test.ts` pins the two
+  //     EQUAL. A fifth method here is a contract amendment — a new SHA and a
+  //     new ratification — and a lane batch does not get to make one as a side
+  //     effect. The gate caught it; the gate was right.
+  //   · **There is nothing for the seam to do.** The other three methods
+  //     ORCHESTRATE: `releaseLines` expands a selection into many commands,
+  //     `confirmMatch` and `editPolicy` re-derive a view. An adjust is one
+  //     command against one address, so a seam method would be a pass-through
+  //     whose only effect is to widen a frozen interface.
   /**
-   * Re-point ONE item's ACTIVE drawdown tolerance (the delivery lane's THIRD write
-   * — the GOVERNANCE write). BUYER-ONLY: adjusting a tolerance is a buyer decision.
-   * Applies the pure `setActivePolicy` (writes `active` + the who/when/why stamp;
-   * `contractDefault` is immutable, `activeChangedBy` deferred to the dispatcher),
-   * persists, and returns the RE-DERIVED view — the ledger now marks
-   * `policyDeviation` and re-derives `enforced` / `exceptions` against the new
-   * `active`. Or an honest reason (`REASON_REQUIRED` / `NO_CHANGE` / `SCOPE_DENIED`
-   * / `UNKNOWN_ITEM`).
+   * Re-point ONE item's ACTIVE drawdown tolerance (the GOVERNANCE write) —
+   * `t_delivery_policy_set` against the `deliveryPolicy` target.
    *
-   * SIMULATED by construction, exactly like release / confirm: NO dispatcher, NO
-   * CommandTarget, so `deliveryAgreements` stays null-backed (the amber marker
-   * holds). A tolerance change is a PORTAL governance record, never posted to SAP.
+   * ⚠️ **ITS ATOM IS `compliance`'s, NOT `procurement`'s**, and that is the
+   * `role:grant` / `psl:cap-set` ruling transferred: procurement transmits the
+   * schedules and the drawdown ledger flags a release that runs past its
+   * envelope, so procurement cannot also set the tolerance it is measured
+   * against. `activeChangedBy` — declared and never written, *"deferred to the
+   * Stage-F dispatcher"* — is written now, from the session.
+   *
+   * ⚠️ **AND A LOOSENING IS REFUSED TO A SAMPLE IDENTITY** (C10 §6.3a,
+   * `SAMPLE_ACTOR_CANNOT_LOOSEN`). Tightening stays available to any attributed
+   * seat. A tolerance change is a PORTAL governance record, never posted to SAP.
    */
   editPolicy(
     scope: QueryScope,

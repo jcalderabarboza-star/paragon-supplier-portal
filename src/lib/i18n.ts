@@ -308,6 +308,63 @@ export const resources = {
       'delivery.release.reason.RELEASE_TYPE_MISMATCH':
         'One release cannot span both FRC and JIT lines.',
       'delivery.release.reason.SCOPE_DENIED': 'Only a buyer can transmit a release.',
+      // ── Call-off step 1 — the lane's refusals, in the reader's language ──
+      // Keyed on the hook's refusal HEAD (`deliveryRefusal.ts`), never on its
+      // prose, so a copy edit is never a silent behaviour change.
+      'delivery.refusal.actorUnattributed':
+        'This seat is not acting as anyone. A delivery act creates an obligation the supplier is chased for, so it has to be recorded against a person — pick a sample user on the identity panel, then try again.',
+      'delivery.refusal.releaseBackdated':
+        'This line is already past its delivery date, so transmitting it would create a delivery that is overdue the moment the supplier hears about it. Move the date forward first, then release it.',
+      'delivery.refusal.adjustEmpty': 'Change the quantity, the date, or both.',
+      'delivery.refusal.adjustQtyNotANumber':
+        'The quantity has to be a number greater than zero.',
+      'delivery.refusal.adjustDateUnreadable': 'That date could not be read.',
+      'delivery.refusal.adjustDateBackdated':
+        'That date has already passed. A delivery cannot be planned for a day that has gone.',
+      'delivery.refusal.alreadyConfirmed':
+        'That delivery is already confirmed — confirming again would count it twice.',
+      'delivery.refusal.nothingToConfirm':
+        'No shipment has been matched to that line, so there is no delivery to accept.',
+      'delivery.refusal.policyModeUnknown': 'That is not a drawdown enforcement mode.',
+      'delivery.refusal.policyToleranceNotANumber':
+        'The tolerance has to be a number that is not negative, or unlimited.',
+      'delivery.refusal.policyReasonBlank':
+        'A tolerance change is a recorded deviation from the contract default. Write why it is changing.',
+      'delivery.refusal.policyLooseningUnattributed':
+        'Relaxing a tolerance has to be recorded against a person, and this seat is not acting as anyone.',
+      'delivery.refusal.policyNoChange':
+        'The tolerance already carries those values — nothing would change.',
+      // ── Adjust action (the LPA adjustability, first wired at call-off 1) ──
+      'delivery.adjust.action': 'Adjust',
+      'delivery.adjust.title': 'Adjust this draft line',
+      'delivery.adjust.hint':
+        'A draft line is internal — it has not been transmitted, so date and quantity are still yours to change. Once it is released it is frozen.',
+      'delivery.adjust.dateLabel': 'Delivery date',
+      'delivery.adjust.qtyLabel': 'Planned quantity',
+      'delivery.adjust.save': 'Save adjustment',
+      'delivery.adjust.saving': 'Saving…',
+      'delivery.adjust.cancel': 'Cancel',
+      'delivery.adjust.toastOk': 'Draft line adjusted in the portal (simulated) — not posted to SAP.',
+      'delivery.adjust.toastRefused': 'Adjustment not applied',
+      // ── Partial release reporting (one command per line) ──
+      'delivery.release.toastPartial':
+        '{{released}} released, {{refused}} refused.',
+      // ── The change history (the stamps' first reader) ──
+      'delivery.history.title': 'Change history',
+      'delivery.history.empty': 'Nothing has been recorded against this agreement yet.',
+      'delivery.history.colAct': 'Act',
+      'delivery.history.colLine': 'Line',
+      'delivery.history.colActor': 'Who',
+      'delivery.history.colWhen': 'When',
+      'delivery.history.act.released': 'Released to supplier',
+      'delivery.history.act.adjusted': 'Draft line adjusted',
+      'delivery.history.act.confirmed': 'Delivery confirmed',
+      'delivery.history.act.policy': 'Tolerance changed',
+      'delivery.history.lineRef': '{{material}} · release {{seq}}',
+      'delivery.history.itemRef': '{{material}}',
+      'delivery.history.noActor': 'Not recorded — no person in session',
+      'delivery.history.seedNote':
+        'Acts recorded before this agreement was opened in a session carry no person, because nobody took them.',
       // — The shared per-line action column header (Release or Confirm) —
       'delivery.action.col': 'Action',
       // — Confirm-match action (the second write) —
@@ -746,6 +803,61 @@ export const resources = {
       'delivery.release.reason.RELEASE_TYPE_MISMATCH':
         'Satu rilis tidak bisa mencakup baris FRC dan JIT sekaligus.',
       'delivery.release.reason.SCOPE_DENIED': 'Hanya pembeli yang dapat mengirim rilis.',
+      // ── Call-off langkah 1 — penolakan jalur ini, dalam bahasa pembaca ──
+      'delivery.refusal.actorUnattributed':
+        'Kursi ini tidak bertindak atas nama siapa pun. Tindakan pengiriman menciptakan kewajiban yang akan ditagih ke pemasok, jadi harus tercatat atas nama seseorang — pilih pengguna contoh di panel identitas, lalu coba lagi.',
+      'delivery.refusal.releaseBackdated':
+        'Baris ini sudah melewati tanggal pengirimannya, sehingga mengirimkannya akan menciptakan pengiriman yang langsung terlambat begitu pemasok diberi tahu. Majukan tanggalnya dulu, baru rilis.',
+      'delivery.refusal.adjustEmpty': 'Ubah jumlahnya, tanggalnya, atau keduanya.',
+      'delivery.refusal.adjustQtyNotANumber':
+        'Jumlah harus berupa angka yang lebih besar dari nol.',
+      'delivery.refusal.adjustDateUnreadable': 'Tanggal itu tidak dapat dibaca.',
+      'delivery.refusal.adjustDateBackdated':
+        'Tanggal itu sudah lewat. Pengiriman tidak dapat direncanakan pada hari yang sudah berlalu.',
+      'delivery.refusal.alreadyConfirmed':
+        'Pengiriman itu sudah dikonfirmasi — mengonfirmasi lagi akan menghitungnya dua kali.',
+      'delivery.refusal.nothingToConfirm':
+        'Belum ada pengiriman yang dicocokkan dengan baris itu, jadi tidak ada pengiriman untuk diterima.',
+      'delivery.refusal.policyModeUnknown': 'Itu bukan mode penegakan penarikan.',
+      'delivery.refusal.policyToleranceNotANumber':
+        'Toleransi harus berupa angka yang tidak negatif, atau tanpa batas.',
+      'delivery.refusal.policyReasonBlank':
+        'Perubahan toleransi adalah penyimpangan tercatat dari ketentuan kontrak. Tuliskan alasan perubahannya.',
+      'delivery.refusal.policyLooseningUnattributed':
+        'Melonggarkan toleransi harus tercatat atas nama seseorang, dan kursi ini tidak bertindak atas nama siapa pun.',
+      'delivery.refusal.policyNoChange':
+        'Toleransi sudah bernilai seperti itu — tidak ada yang akan berubah.',
+      // ── Tindakan penyesuaian (keluwesan LPA) ──
+      'delivery.adjust.action': 'Sesuaikan',
+      'delivery.adjust.title': 'Sesuaikan baris draf ini',
+      'delivery.adjust.hint':
+        'Baris draf bersifat internal — belum dikirimkan, sehingga tanggal dan jumlahnya masih dapat Anda ubah. Setelah dirilis, baris itu terkunci.',
+      'delivery.adjust.dateLabel': 'Tanggal pengiriman',
+      'delivery.adjust.qtyLabel': 'Jumlah rencana',
+      'delivery.adjust.save': 'Simpan penyesuaian',
+      'delivery.adjust.saving': 'Menyimpan…',
+      'delivery.adjust.cancel': 'Batal',
+      'delivery.adjust.toastOk': 'Baris draf disesuaikan di portal (simulasi) — tidak diposkan ke SAP.',
+      'delivery.adjust.toastRefused': 'Penyesuaian tidak diterapkan',
+      // ── Pelaporan rilis sebagian (satu perintah per baris) ──
+      'delivery.release.toastPartial':
+        '{{released}} dirilis, {{refused}} ditolak.',
+      // ── Riwayat perubahan (pembaca pertama dari stempel itu) ──
+      'delivery.history.title': 'Riwayat perubahan',
+      'delivery.history.empty': 'Belum ada yang tercatat pada perjanjian ini.',
+      'delivery.history.colAct': 'Tindakan',
+      'delivery.history.colLine': 'Baris',
+      'delivery.history.colActor': 'Siapa',
+      'delivery.history.colWhen': 'Kapan',
+      'delivery.history.act.released': 'Dirilis ke pemasok',
+      'delivery.history.act.adjusted': 'Baris draf disesuaikan',
+      'delivery.history.act.confirmed': 'Pengiriman dikonfirmasi',
+      'delivery.history.act.policy': 'Toleransi diubah',
+      'delivery.history.lineRef': '{{material}} · rilis {{seq}}',
+      'delivery.history.itemRef': '{{material}}',
+      'delivery.history.noActor': 'Tidak tercatat — tidak ada orang dalam sesi',
+      'delivery.history.seedNote':
+        'Tindakan yang tercatat sebelum perjanjian ini dibuka dalam sesi tidak memuat nama orang, karena tidak ada yang melakukannya.',
       // — Header kolom aksi per-baris bersama (Rilis atau Konfirmasi) —
       'delivery.action.col': 'Aksi',
       // — Aksi konfirmasi kecocokan (penulisan kedua) —

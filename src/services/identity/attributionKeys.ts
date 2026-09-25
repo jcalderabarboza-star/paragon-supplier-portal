@@ -59,10 +59,29 @@ export const ATTRIBUTION_KEYS: readonly string[] = Object.freeze([
   //     dispatcher mints it from the TRIGGER and no payload reaches it today —
   //     but it is a field on a stored record, which is this array's stated rule,
   //     and an exception argued once is an exception argued again later.
+  // ⚠️ **`activeChangedBy`, `adjustedBy`, `confirmedBy` and `releasedBy` JOINED
+  // AT CALL-OFF STEP 1**, when the delivery lane's four writes stopped being
+  // direct store mutations and became dispatched verbs. Each is a field
+  // declared `ActorAttribution` on the delivery model, which is this array's
+  // stated rule — and each is now written by a CommandTarget from
+  // `scope.actor`, so a payload carrying one is a caller trying to say who
+  // acted. `activeChangedBy` is the sharpest of the four: it had been declared
+  // `string` and never written, *"deferred to the Stage-F dispatcher"*, and a
+  // lane arriving at its dispatcher is exactly when a deferred attribution
+  // either becomes real or becomes a lie.
+  'activeChangedBy',
+  'adjustedBy',
   'approvedBy',
   'attribution',
   'by',
   'capDecidedBy',
+  // `EditPolicyInput.changedBy` — the delivery tolerance's actor, injected at
+  // the target exactly as `now` is. The bilateral pin is what found it: the
+  // first draft of this batch added the three `ScheduleLine` fields and MISSED
+  // this one, which is the same omission the array's own header records against
+  // `approvedBy`. A hand list reproduces the gap it was written to close.
+  'changedBy',
+  'confirmedBy',
   'decidedBy',
   'declaredBy',
   'grantedBy',
@@ -70,6 +89,7 @@ export const ATTRIBUTION_KEYS: readonly string[] = Object.freeze([
   'proposedBy',
   'publishedBy',
   'rejectedBy',
+  'releasedBy',
   'setBy',
   'submittedBy',
 ]);

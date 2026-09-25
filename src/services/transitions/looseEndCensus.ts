@@ -242,4 +242,40 @@ export const LOOSE_END_CENSUS: readonly CensusEntry[] = Object.freeze([
       'as a born entity would have made the parent its creator, which is the one relationship the ' +
       'copy deliberately does not have — a child follows its parent, it is not owned by it.',
   },
+
+  // ── the delivery lane (call-off step 1) ────────────────────────────────────
+  {
+    entity: 'deliveryRelease',
+    kind: 'initial-integrity',
+    subject: 'Draft',
+    reason: 'substrate-only',
+    note:
+      'A SCHEDULE LINE IS NOT CREATED BY A VERB — IT IS MATERIALISED WITH ITS AGREEMENT, at ' +
+      'contract signing, by the pure generator (`generateSchedule`) which emits the whole calendar ' +
+      'in one step from a cadence and an envelope. So the flow has three real edges and no creation ' +
+      'transition, and that is the honest shape: a line comes into existence as part of a document ' +
+      'somebody negotiated, never one at a time. ' +
+      '⚠️ AND MINTING A CREATION VERB HERE WOULD BE WORSE THAN THE GAP. The document the calendar ' +
+      'belongs to is a SAP scheduling agreement — `t_contract_draft` is already `external-fact` for ' +
+      'this reason, and C12 §2.1 names portal-side origination of an S/4-owned document as the ' +
+      'thing not to build. A verb that created a schedule line would be a portal claim about a ' +
+      "document Paragon does not own, and the generator's invariant (Σ plannedQty === " +
+      'agreedTotalQty) could not survive lines arriving individually.',
+  },
+  {
+    entity: 'deliveryPolicy',
+    kind: 'initial-integrity',
+    subject: 'Governed',
+    reason: 'substrate-only',
+    note:
+      'THE SAME DEGENERATE SINGLE-STATE LEDGER SHAPE AS `enforcement` AND `role`, and for the same ' +
+      "reason: the entity IS an agreement item's governed tolerance, and an item is born with one " +
+      'at signing. The set verb is statePreserving, so it is neither an entry nor an exit, and the ' +
+      'state is correctly declared terminal. ' +
+      '⚠️ WHAT THE VERB WRITES IS NOT AN INSTANCE OF THIS MACHINE: it re-points `active` on a ' +
+      'policy that already exists beside its immutable `contractDefault`. Modelling a tolerance ' +
+      'change as a born entity would make the item its own creator and would lose the one thing ' +
+      'the pair exists to express — that there is a default somebody agreed to and a current value ' +
+      'somebody moved, with the distance between them visible.',
+  },
 ]);

@@ -34,6 +34,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import type { ScheduleLine, SchedulingAgreementItem } from './types';
+import type { ActorAttribution } from '../../lib/enforcement';
 
 // ─── Rejection vocabulary ─────────────────────────────────────────────────────
 
@@ -59,6 +60,11 @@ export interface ConfirmInput {
   readonly fulfilledBy: string;
   readonly actualQty: number;
   readonly now: string;
+  /** WHO accepted the proposal — injected exactly as `now` is, never carried in
+   *  a command payload (the field is an `ATTRIBUTION_KEYS` member, so the
+   *  dispatcher refuses it there). Required, not optional: a defaulted actor is
+   *  how an unattributed act comes to look attributed. */
+  readonly confirmedBy: ActorAttribution;
 }
 
 export type ConfirmResult =
@@ -126,6 +132,7 @@ export function confirmFulfillment(
     fulfilledBy: input.fulfilledBy,
     actualQty: input.actualQty,
     confirmedAt: input.now,
+    confirmedBy: input.confirmedBy,
   };
   return { ok: true, item: withLine(item, releaseSeq, next), confirmedSeq: releaseSeq };
 }

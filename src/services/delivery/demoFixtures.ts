@@ -37,6 +37,7 @@ import { requireUom } from '../sdc/materialMaster';
 import type { IncomingShipment } from '../sdc/types';
 import { generateSchedule } from './generator';
 import { releaseScheduleLines } from './release';
+import { DELIVERY_SEED_ACTOR } from './seedActor';
 import { DRAWDOWN_PRESET_CASE_B, DRAWDOWN_PRESET_CASE_C } from './ledger';
 import type { SchedulingAgreement, SchedulingAgreementItem } from './types';
 
@@ -52,7 +53,7 @@ const RELEASE_STAMP = '2026-03-15T00:00:00.000Z';
 /** Release the named draft seqs through Batch 2's real transition (honest by
  *  construction — no hand-stamped 'released' state). */
 function releaseOK(item: SchedulingAgreementItem, seqs: number[]): SchedulingAgreementItem {
-  const r = releaseScheduleLines(item, { releaseSeqs: seqs }, RELEASE_STAMP);
+  const r = releaseScheduleLines(item, { releaseSeqs: seqs }, RELEASE_STAMP, DELIVERY_SEED_ACTOR);
   if (!r.ok) throw new Error(`demo release failed: ${r.reason}`);
   return r.item;
 }

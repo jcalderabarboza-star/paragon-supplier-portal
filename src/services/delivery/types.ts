@@ -36,6 +36,10 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import type { Uom } from '../sdc/types';
+// WHO TOOK A RECORDED ACT — the discriminated attribution every governed write
+// in this platform records (C10 §6.2 / §8.2). TYPE-ONLY, so this module still
+// takes no runtime dependency on anything outside the domain.
+import type { ActorAttribution } from '../../lib/enforcement';
 // The honest-render liveness tier (F0.6 registry) — TYPE-ONLY import, so this
 // module takes NO runtime dependency on the registry and does not touch it. All
 // seed data is SIMULATED; the flip to LIVE rides a real SAP feed (Pattern B), not
@@ -109,7 +113,19 @@ export interface TolerancePolicy {
 export interface DrawdownPolicy {
   readonly contractDefault: TolerancePolicy;
   readonly active: TolerancePolicy;
-  readonly activeChangedBy?: string;
+  /**
+   * WHO re-pointed `active`. An `ActorAttribution`, never a name string —
+   * C10 §8.2 / D-ID-7: a stamp carries `personId` only and the label resolves
+   * at READ through the one resolver (`services/identity/personLabel.ts`).
+   *
+   * ⚠️ **IT IS WRITTEN BY THE TARGET FROM `scope.actor`, NEVER BY A CALLER.**
+   * It used to be `string` and was never written at all ("deferred to the
+   * Stage-F dispatcher"). This batch IS that dispatcher, and the field being
+   * declared `ActorAttribution` is what puts it in `ATTRIBUTION_KEYS` — so the
+   * dispatcher refuses the key in a payload (`ACTOR_IN_PAYLOAD`) and the only
+   * remaining source is the session.
+   */
+  readonly activeChangedBy?: ActorAttribution;
   readonly activeChangedAt?: string;
   readonly activeChangeReason?: string;
 }
@@ -146,11 +162,27 @@ export interface ScheduleLine {
    */
   readonly releasedAt?: string;
   /**
+   * WHO transmitted this line. Written by the `deliveryRelease` CommandTarget
+   * from `scope.actor`, never by a caller — the field's `ActorAttribution` type
+   * is what enlists it in `ATTRIBUTION_KEYS`, so the dispatcher refuses the key
+   * in a payload. INVARIANT: present ⟺ `releasedAt` present.
+   *
+   * ⚠️ **A SEEDED LINE CARRIES `UNATTRIBUTED`, AND THAT IS THE TRUTH ABOUT IT.**
+   * The demo calendars are released at fixture-build time by the pure verb with
+   * an injected stamp; no person took those acts, so the history renders them
+   * with no actor rather than inventing one. Every act taken IN A SESSION is
+   * attributed, because the dispatcher refuses an unattributed seat.
+   */
+  readonly releasedBy?: ActorAttribution;
+  /**
    * ISO stamp of the last draft-side adjustment (Batch-2 `adjustDraftLine`).
    * Only ever set on a 'draft' line — a released line is frozen, so it can never
    * acquire one after release.
    */
   readonly adjustedAt?: string;
+  /** WHO last adjusted this draft line. Target-written from `scope.actor`.
+   *  INVARIANT: present ⟺ `adjustedAt` present. */
+  readonly adjustedBy?: ActorAttribution;
   /**
    * ISO stamp of the confirm-match write (`confirmFulfillment`) — the PORTAL audit
    * stamp for "when the buyer accepted this delivery", INJECTED by the caller.
@@ -159,6 +191,9 @@ export interface ScheduleLine {
    * portal record, not a goods-receipt.
    */
   readonly confirmedAt?: string;
+  /** WHO accepted the proposed match as a fact. Target-written from
+   *  `scope.actor`. INVARIANT: present ⟺ `confirmedAt` present. */
+  readonly confirmedBy?: ActorAttribution;
   /**
    * The SAP-assigned release-document number (Decision C). DECLARED, NEVER SEEDED
    * and never written by this module — SAP assigns it on transmission (Pattern B),

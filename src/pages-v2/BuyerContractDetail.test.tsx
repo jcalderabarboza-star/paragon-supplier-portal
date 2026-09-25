@@ -1,7 +1,7 @@
 import { afterEach } from 'vitest';
 import { Routes, Route } from 'react-router-dom';
 import { screen, fireEvent, waitFor } from '@testing-library/react';
-import { renderWithProviders, SUPPLIER } from '../test/test-utils';
+import { renderWithProviders, SUPPLIER, BUYER_NAMED_COMPLIANCE } from '../test/test-utils';
 import { mockDataService } from '../services/data/mock/mockDataService';
 import { withChaos } from '../services/data/mock/withChaos';
 import { schedulingAgreementStore } from '../services/delivery/stores/schedulingAgreementStore';
@@ -13,12 +13,27 @@ const alwaysFails = withChaos(mockDataService, { minMs: 0, maxMs: 0, failureRate
 // release in one test never leaks into another's read.
 afterEach(() => schedulingAgreementStore.reset());
 
-const at = (path: string) =>
+/**
+ * Render the route.
+ *
+ * ⚠️ **`identity` IS A PARAMETER SINCE CALL-OFF STEP 1.** The default seat is
+ * `BUYER`, whose actor is `UNATTRIBUTED` — the measured fact about this
+ * platform. Every delivery VERB refuses such a seat by name (Q6: an act that
+ * creates supplier-facing obligations is never recorded against nobody), so a
+ * test that WRITES has to adopt a person, exactly as an operator does on the
+ * identity panel. Tests that only READ keep the default and assert what they
+ * always asserted.
+ */
+const at = (path: string, identity?: Parameters<typeof renderWithProviders>[1] extends
+  | { identity?: infer I }
+  | undefined
+  ? I
+  : never) =>
   renderWithProviders(
     <Routes>
       <Route path="/buyer/contracts/:id" element={<BuyerContractDetail />} />
     </Routes>,
-    { route: path },
+    { route: path, ...(identity ? { identity } : {}) },
   );
 
 describe('BuyerContractDetail — nested contract detail route', () => {
@@ -75,19 +90,30 @@ describe('BuyerContractDetail — nested contract detail route', () => {
 
   it('a buyer can edit an item drawdown tolerance — the deviation surfaces', async () => {
     // ctr-004 (sa-1002) is a single Case-B item → one "Edit tolerance" control.
-    at('/buyer/contracts/ctr-004');
+    // A NAMED seat: `t_delivery_policy_set` refuses an unattributed one.
+    at('/buyer/contracts/ctr-004', BUYER_NAMED_COMPLIANCE);
     fireEvent.click(await screen.findByRole('tab', { name: /Delivery Agreements/ }));
     fireEvent.click(await screen.findByRole('button', { name: /Edit tolerance/ }));
-    // The reference-only preset (Case C) + a required reason, then save.
-    fireEvent.click(screen.getByRole('button', { name: /Reference only/ }));
+    // ⚠️ **IT TIGHTENS NOW, AND IT TYPES A NUMBER RATHER THAN CLICKING A
+    // PRESET (call-off step 1).** This used to click `Reference only
+    // (unlimited)` — the widest band and the weakest mode, a loosening on both
+    // knobs — which `SAMPLE_ACTOR_CANNOT_LOOSEN` refuses for a sample identity,
+    // and every identity this platform can offer is one. The other preset is
+    // sa-1002's CURRENT policy, so clicking it would be refused as a no-op. So
+    // the walk types a tighter percentage, which is what an operator does when
+    // neither quick-pick is what they want.
+    //
+    // **The assertion under test is unchanged**: a saved edit re-derives the
+    // deviation detail against the IMMUTABLE contract default.
+    fireEvent.change(screen.getByLabelText(/Tolerance/i), { target: { value: '2' } });
     fireEvent.change(screen.getByPlaceholderText(/Why is this tolerance changing/), {
-      target: { value: 'switch to reference-only for Q3' },
+      target: { value: 'tighten the envelope for Q3' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Save tolerance' }));
-    // Re-derive: the deviation detail names the IMMUTABLE contract default, and the
-    // policy chip flips to the un-enforced "reference envelope" mode.
+    // Re-derive: the deviation detail names the IMMUTABLE contract default, and
+    // the policy chip states the NEW governed threshold.
     expect(await screen.findByText(/Deviates from contract default/)).toBeInTheDocument();
-    expect(screen.getByText(/Reference envelope — not enforced/)).toBeInTheDocument();
+    expect(screen.getByText(/Governed — flag over 2%/)).toBeInTheDocument();
   });
 
   it('a supplier persona sees the DA tab read-only — no release control', async () => {

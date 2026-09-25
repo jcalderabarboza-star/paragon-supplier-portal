@@ -39,6 +39,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import type { ScheduleLine, SchedulingAgreementItem } from './types';
+import type { ActorAttribution } from '../../lib/enforcement';
 
 // ─── Rejection vocabulary ─────────────────────────────────────────────────────
 
@@ -142,6 +143,12 @@ function withLines(
  * an agreement-level release would have to straddle both. A caller wanting two
  * items calls twice.
  *
+ * `releasedBy` is REQUIRED and injected exactly as `now` is — the caller states
+ * WHO, and the only caller that matters (the `deliveryRelease` CommandTarget)
+ * takes it from `scope.actor`. Required rather than optional deliberately: an
+ * optional actor is a silent default, and a silent default is how an
+ * unattributed act comes to look like an attributed one.
+ *
  * INVARIANT: `releasedAt` present ⟺ `state === 'released'`. Set together here,
  * and unreachable afterwards because a released line refuses every adjustment.
  *
@@ -157,6 +164,7 @@ export function releaseScheduleLines(
   item: SchedulingAgreementItem,
   selection: ReleaseSelection,
   now: string,
+  releasedBy: ActorAttribution,
 ): ReleaseResult {
   const lines = item.scheduleLines;
   let targets: ScheduleLine[];
@@ -208,7 +216,7 @@ export function releaseScheduleLines(
   const seqs = new Set(targets.map((l) => l.releaseSeq));
   return {
     ok: true,
-    item: withLines(item, seqs, (l) => ({ ...l, state: 'released', releasedAt: now })),
+    item: withLines(item, seqs, (l) => ({ ...l, state: 'released', releasedAt: now, releasedBy })),
     releasedSeqs: [...seqs].sort((a, b) => a - b),
   };
 }
@@ -236,6 +244,7 @@ export function adjustDraftLine(
   releaseSeq: number,
   patch: ScheduleLinePatch,
   now: string,
+  adjustedBy: ActorAttribution,
 ): AdjustResult {
   const line = item.scheduleLines.find((l) => l.releaseSeq === releaseSeq);
   if (!line) {
@@ -254,6 +263,7 @@ export function adjustDraftLine(
     ...(patch.plannedQty !== undefined ? { plannedQty: patch.plannedQty } : {}),
     ...(patch.releaseDate !== undefined ? { releaseDate: patch.releaseDate } : {}),
     adjustedAt: now,
+    adjustedBy,
   };
   return {
     ok: true,

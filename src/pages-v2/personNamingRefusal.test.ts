@@ -130,11 +130,18 @@ describe('⚠️ EVERY PERSON-NAMING HEAD IS ACCOUNTED FOR', () => {
   }
 
   it('every head is owned by a key map, or is provably unreachable', () => {
+    // ⚠️ **THE `SAMPLE_ACTOR_CANNOT_LOOSEN` EXEMPTION IS GONE (call-off step
+    // 1).** It read `h !== 'SAMPLE_ACTOR_CANNOT_LOOSEN'` and was earned by the
+    // assertion below that no surface dispatches `t_enforcement_set`. That
+    // assertion is still true and still runs — but the head is emitted by a
+    // SECOND hook now (`delivery_policy_governed`), from a verb the tolerance
+    // editor dispatches, and this derivation returns a SET of heads. One
+    // exemption therefore covered both emissions: the gate would have read
+    // green while a `sim-usr-*` id reached an operator in a governance refusal.
+    // The head is owned by `PERSON_NAMING_REFUSAL_KEYS` and the filter no
+    // longer excuses anything.
     const unaccounted = personNamingHeads().filter(
-      (h) =>
-        !(h in PERSON_NAMING_REFUSAL_KEYS) &&
-        !(h in PSL_REFUSAL_KEYS) &&
-        h !== 'SAMPLE_ACTOR_CANNOT_LOOSEN',
+      (h) => !(h in PERSON_NAMING_REFUSAL_KEYS) && !(h in PSL_REFUSAL_KEYS),
     );
     expect(
       unaccounted,
@@ -142,9 +149,13 @@ describe('⚠️ EVERY PERSON-NAMING HEAD IS ACCOUNTED FOR', () => {
     ).toEqual([]);
   });
 
-  it('⚠️ AND THE ONE EXEMPTION IS EARNED EVERY RUN — no surface dispatches t_enforcement_set', () => {
-    // The moment one does, `SAMPLE_ACTOR_CANNOT_LOOSEN` becomes reader-facing
-    // and needs copy. This is the assertion that says so instead of a comment.
+  it('⚠️ THE ENFORCEMENT VERB IS STILL UNSURFACED — asserted, though it no longer buys an exemption', () => {
+    // It used to license shipping `SAMPLE_ACTOR_CANNOT_LOOSEN` untranslated.
+    // The head has copy now (a delivery hook emits it from a reachable verb),
+    // so this no longer excuses anything — it is kept because the claim
+    // *"`t_enforcement_set` is ruled-unsurfaced"* is load-bearing elsewhere
+    // (`businessRoles.ts` sequences the `enforcement:set` atom move on it), and
+    // an assertion is how this tree states a claim it relies on.
     expect(enforcementSetIsDispatchableFromASurface()).toBe(false);
   });
 

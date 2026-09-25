@@ -1,7 +1,10 @@
 import React from 'react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { screen, fireEvent, waitFor } from '@testing-library/react';
-import { renderWithProviders } from '../../test/test-utils';
+// ⚠️ A NAMED SEAT SINCE CALL-OFF STEP 1 — every delivery verb refuses an
+// unattributed one (Q6), so the probe adopts a sample person exactly as an
+// operator does on the identity panel.
+import { renderWithProviders, BUYER_NAMED } from '../../test/test-utils';
 import type { CurrentIdentity } from '../../context/CurrentIdentityContext';
 import { schedulingAgreementStore } from '../delivery/stores/schedulingAgreementStore';
 import { useDeliveryAgreements, useConfirmMatch } from './deliveryHooks';
@@ -24,7 +27,13 @@ const Probe: React.FC = () => {
   const query = useDeliveryAgreements('ctr-004');
   const confirm = useConfirmMatch();
   const itemTen = query.data?.[0]?.items.find((iv) => iv.item.lineSeq === 10);
-  const outcome = confirm.data ? (confirm.data.ok ? 'ok' : `refused:${confirm.data.reason}`) : 'idle';
+  const outcome = confirm.isError
+    ? 'error'
+    : confirm.data
+      ? confirm.data.ok
+        ? 'ok'
+        : `refused:${confirm.data.reason}`
+      : 'idle';
   return (
     <div>
       <span data-testid="delivered">{itemTen?.ledger.deliveredQty ?? 'loading'}</span>
@@ -42,7 +51,7 @@ describe('useConfirmMatch — invalidation re-derives the delivery read', () => 
   afterEach(() => schedulingAgreementStore.reset());
 
   it('a buyer confirm flips the read: deliveredQty climbs after invalidation', async () => {
-    renderWithProviders(<Probe />); // default buyer identity
+    renderWithProviders(<Probe />, { identity: BUYER_NAMED }); // a NAMED buyer seat
     await waitFor(() => expect(screen.getByTestId('delivered').textContent).toBe('0'));
 
     fireEvent.click(screen.getByText('confirm'));
@@ -60,9 +69,7 @@ describe('useConfirmMatch — invalidation re-derives the delivery read', () => 
 
     // Buyer-only: the service refused (SCOPE_DENIED); onSuccess sees !ok and
     // invalidates nothing — the read holds at 0.
-    await waitFor(() =>
-      expect(screen.getByTestId('outcome').textContent).toBe('refused:SCOPE_DENIED'),
-    );
+await waitFor(() => expect(screen.getByTestId('outcome').textContent).toBe('error'));
     expect(screen.getByTestId('delivered').textContent).toBe('0');
   });
 });

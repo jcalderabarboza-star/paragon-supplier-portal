@@ -95,6 +95,8 @@ import { purchaseRequisitionStore } from '../data/mock/stores/purchaseRequisitio
 import { requirementResponseStore } from '../data/mock/stores/requirementResponseStore';
 import { inventoryDeclarationStore } from '../data/mock/stores/inventoryDeclarationStore';
 import { incomingShipmentStore } from '../data/mock/stores/incomingShipmentStore';
+import { schedulingAgreementStore } from '../delivery/stores/schedulingAgreementStore';
+import { SAMPLE_PEOPLE } from '../identity/sampleRoster';
 import { enforcementSettingStore } from '../data/mock/stores/enforcementSettingStore';
 import { supplierDocumentStore } from '../data/mock/stores/supplierDocumentStore';
 import { supplierApplicationStore } from '../data/mock/stores/supplierApplicationStore';
@@ -207,6 +209,16 @@ async function realIds(): Promise<Record<string, string | null>> {
     // The cap ledger's entity IS the setting key — there is no row to create,
     // which is exactly why the machine is censused as a degenerate ledger.
     pslCapSetting: PSL_SETTING_IDS[0],
+    // CALL-OFF STEP 1 — the delivery lane's two addresses. The line is named by
+    // its `releaseRef` (the portal join-chain) and the tolerance by
+    // `agreementId#lineSeq`. Both are read off the LIVE store rather than
+    // written as literals, so a re-seeded corpus supplies a real id or none.
+    deliveryRelease: schedulingAgreementStore.all()[0]?.items[0]?.scheduleLines[0]?.releaseRef ?? null,
+    deliveryPolicy: (() => {
+      const a = schedulingAgreementStore.all()[0];
+      const item = a?.items[0];
+      return a && item ? `${a.id}#${item.lineSeq}` : null;
+    })(),
   };
 }
 
@@ -247,6 +259,25 @@ type Walk = { entity: string; t: TransitionDef; id: string; state: string | null
 async function walk(entity: string, t: TransitionDef): Promise<Walk | null> {
   const at = (id: string, state: string | null) => ({ entity, t, id, state });
 
+  // CALL-OFF STEP 1 — the delivery lane. A line in the verb's own from-state,
+  // and the tolerance ledger's single state. Walked like every other row here:
+  // the id comes from the LIVE store, never a literal.
+  if (entity === 'deliveryRelease') {
+    for (const a of schedulingAgreementStore.all()) {
+      for (const i of a.items) {
+        const line = i.scheduleLines.find((l) =>
+          t.from.includes(l.state === 'released' ? 'Released' : 'Draft'),
+        );
+        if (line) return at(line.releaseRef, line.state === 'released' ? 'Released' : 'Draft');
+      }
+    }
+    return null;
+  }
+  if (entity === 'deliveryPolicy') {
+    const a = schedulingAgreementStore.all()[0];
+    const item = a?.items[0];
+    return a && item ? at(`${a.id}#${item.lineSeq}`, 'Governed') : null;
+  }
   if (entity === 'rfq') {
     const row = rfqStore.all().find((r) => t.from.includes(r.status));
     return row ? at(row.id, rfqStore.get(row.id)!.status) : null;
@@ -299,6 +330,7 @@ async function ownerlessWalks(): Promise<Walk[]> {
 }
 
 const resetAll = () => {
+  schedulingAgreementStore.reset();
   rfqStore.reset();
   purchaseRequisitionStore.reset();
   enforcementSettingStore.reset();
@@ -457,6 +489,13 @@ describe('THE LEGITIMATE PATHS — the half a "refuse everyone" fix would break'
     const { ownerless } = await derive();
     expect(ownerless.sort()).toEqual(
       [
+        // CALL-OFF STEP 1 — both delivery targets answer `readScopeOwner: null`,
+        // which means NO SUPPLIER MAY ACT rather than "nothing to compare"
+        // (§86). A delivery schedule is a buyer governance record: releasing,
+        // adjusting, confirming and re-pointing a tolerance are Paragon's acts,
+        // and the supplier mirror is read-only by ruling.
+        'deliveryPolicy',
+        'deliveryRelease',
         'enforcement',
         'materialRequest',
         'psl',
@@ -467,6 +506,63 @@ describe('THE LEGITIMATE PATHS — the half a "refuse everyone" fix would break'
         'supplierApplication',
       ],
     );
+
+    // ⚠️ **THE DELIVERY LANE NEEDS A *NAMED* SEAT, AND THAT IS THE POINT OF
+    // THE WALK RATHER THAN AN INCONVENIENCE TO IT.** `buyerSeat` carries
+    // `NO_PERSON`, which every other lane here accepts; all four delivery verbs
+    // refuse it BY NAME (Q6 — an act that creates supplier-facing obligations
+    // is never recorded against nobody). So the landing proof has to adopt a
+    // person, exactly as an operator does on the identity panel.
+    const named = (role: 'procurement' | 'compliance'): QueryScope => ({
+      ...buyerSeat(role),
+      actor: {
+        kind: 'RESOLVED',
+        person: { personId: SAMPLE_PEOPLE.find((x) => x.role === role)!.personId },
+      },
+    });
+
+    // A line dated on or after the declared present — the back-dating guard
+    // refuses anything earlier, and a walk pointed at a past line would be
+    // measuring that guard instead of the scope gate.
+    const futureLine = (() => {
+      for (const a of schedulingAgreementStore.all()) {
+        for (const i of a.items) {
+          const l = i.scheduleLines.find(
+            (x) => x.state === 'draft' && x.releaseDate >= DECLARED_PRESENT,
+          );
+          if (l) return { agreementId: a.id, lineSeq: i.lineSeq, line: l };
+        }
+      }
+      return null;
+    })()!;
+    expect(futureLine, 'no releasable draft line — the walk would examine nothing').toBeTruthy();
+
+    const relRes = await svc.dispatch(named('procurement'), {
+      transitionId: 't_delivery_release',
+      entity: 'deliveryRelease',
+      entityId: futureLine.line.releaseRef,
+    });
+    expect(relRes.status, relRes.reason).toBe('done');
+    expect(
+      schedulingAgreementStore
+        .get(futureLine.agreementId)!
+        .items.find((i) => i.lineSeq === futureLine.lineSeq)!
+        .scheduleLines.find((l) => l.releaseSeq === futureLine.line.releaseSeq)!.state,
+    ).toBe('released');
+
+    // The tolerance ledger, TIGHTENED — a loosening is refused to a sample
+    // identity (C10 §6.3a), and every identity this platform can offer is one.
+    const polRes = await svc.dispatch(named('compliance'), {
+      transitionId: 't_delivery_policy_set',
+      entity: 'deliveryPolicy',
+      entityId: `${futureLine.agreementId}#${futureLine.lineSeq}`,
+      payload: {
+        tolerancePct: 0,
+        enforcement: 'block',
+        reason: 'tightened by the owner-less scope walk',
+      },
+    });
+    expect(polRes.status, polRes.reason).toBe('done');
 
     // ⚠️ **A PUBLISHABLE DRAFT, NOT MERELY THE FIRST ONE.** PSL P2 put a
     // competition floor on `t_rfq_publish`, and `rfq-008` is a deliberate

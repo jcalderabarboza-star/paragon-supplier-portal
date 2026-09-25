@@ -1,3 +1,10 @@
+// ⚠️ **THE PURE VERBS TAKE AN ACTOR SINCE CALL-OFF STEP 1 — REQUIRED, NOT
+// OPTIONAL.** An optional actor is a silent default, and a silent default is how
+// an unattributed act comes to look attributed. These specs are about the
+// DOMAIN rather than about a seat, so they pass the same `DELIVERY_SEED_ACTOR`
+// the fixtures do — which is the honest value: nothing here is taken by a
+// person either.
+import { DELIVERY_SEED_ACTOR } from '../seedActor';
 import { describe, expect, it } from 'vitest';
 import { confirmFulfillment } from '../confirm';
 import type { ScheduleLine, SchedulingAgreementItem } from '../types';
@@ -35,7 +42,12 @@ function itemWith(lines: ScheduleLine[]): SchedulingAgreementItem {
   };
 }
 
-const INPUT = { fulfilledBy: 'ASN-778', actualQty: 95, now: NOW };
+const INPUT = {
+  fulfilledBy: 'ASN-778',
+  actualQty: 95,
+  now: NOW,
+  confirmedBy: DELIVERY_SEED_ACTOR,
+};
 
 describe('confirmFulfillment — the second write (accept-as-observed)', () => {
   it('writes fulfilledBy + actualQty + confirmedAt on a released line, immutably', () => {

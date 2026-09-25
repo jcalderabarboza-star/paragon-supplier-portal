@@ -83,8 +83,18 @@ describe('BuyerCommHub — the buyer/planner Communication Hub (C4a)', () => {
 
   it('shows the SIMULATED liveness marker and NO fabricated channel chrome', () => {
     renderWithProviders(<BuyerCommHub />);
-    // Honest amber "Sample" marker (LivenessRegistry two-gate).
-    expect(screen.getAllByText('Sample').length).toBeGreaterThan(0);
+    // Honest amber marker (LivenessRegistry two-gate).
+    //
+    // ⚠️ **IT NAMES WHAT IT IS WAITING FOR NOW, AND THAT IS THE ASSERTION
+    // GETTING STRONGER.** `deliveryAgreements` gained a CommandTarget at
+    // call-off step 1, so gate-1 derives LIVE — and gate-2 holds it SIMULATED
+    // because the ROWS are still a generated calendar. A harvest-gated
+    // capability renders its specific waiting-state rather than the generic
+    // "Sample", which is precisely the distinction a reader needs when the
+    // verbs are real and the data is not.
+    expect(
+      screen.getAllByText(/Sample — awaiting S\/4HANA scheduling agreements/).length,
+    ).toBeGreaterThan(0);
     // None of the retired mock's dishonest chrome survives.
     expect(screen.queryByText(/360dialog/i)).not.toBeInTheDocument();
     expect(screen.queryByText('✓✓')).not.toBeInTheDocument();

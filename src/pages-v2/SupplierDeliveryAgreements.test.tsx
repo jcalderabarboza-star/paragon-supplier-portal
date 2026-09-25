@@ -1,3 +1,4 @@
+import { SAMPLE_PEOPLE } from '../services/identity/sampleRoster';
 import { afterEach, describe, expect, it } from 'vitest';
 import { screen, waitFor, within } from '@testing-library/react';
 import { renderWithProviders, SUPPLIER } from '../test/test-utils';
@@ -16,7 +17,19 @@ import { PERSONA_SYSTEM_ROLES } from '../services/transitions/businessRoles';
 // (sa-0001 pristine + sa-0002 rich) via the identity-scoped hook — own-only by
 // construction. Read-only: no release / confirm / policy-edit control renders.
 
-const buyerScope: QueryScope = { personaType: 'buyer', supplierId: null, businessRoles: PERSONA_SYSTEM_ROLES.buyer };
+// ⚠️ **A NAMED SEAT SINCE CALL-OFF STEP 1.** These tests SEED a deviation
+// through the real write so the mirror renders a genuine one, and every
+// delivery verb refuses an unattributed seat by name (Q6). The person is a
+// roster member, never a hand-spelled id (C10 §6.3).
+const buyerScope: QueryScope = {
+  personaType: 'buyer',
+  supplierId: null,
+  businessRoles: PERSONA_SYSTEM_ROLES.buyer,
+  actor: {
+    kind: 'RESOLVED',
+    person: { personId: SAMPLE_PEOPLE.find((p) => p.role === 'compliance')!.personId },
+  },
+};
 
 describe('SupplierDeliveryAgreements — own-facts-only read-only mirror', () => {
   afterEach(() => schedulingAgreementStore.reset());
@@ -60,24 +73,31 @@ describe('SupplierDeliveryAgreements — own-facts-only read-only mirror', () =>
   });
 
   it('shows the tolerance MODE chip but HIDES the buyer-internal deviation history', async () => {
-    // Seed a genuine deviation the production way — a buyer re-points sa-0002 item
-    // 10's active tolerance (25% ≠ the 10% contract default). The supplier must see
-    // the resulting MODE, never the contract-default / date / reason behind it.
+    // Seed a genuine deviation the production way — a buyer re-points sa-0002
+    // item 10's active tolerance. The supplier must see the resulting MODE,
+    // never the contract-default / date / reason behind it.
+    //
+    // ⚠️ **IT TIGHTENS RATHER THAN WIDENS, AND THE SEAT NAMES A PERSON (call-off
+    // step 1).** The edit used to widen 10% → 25%, which is a LOOSENING — and
+    // `SAMPLE_ACTOR_CANNOT_LOOSEN` now refuses that, because a sample identity
+    // cannot accept governance risk. The claim under test is about what the
+    // SUPPLIER may see of a deviation, which any deviation exercises, so it
+    // moves to 2% and keeps every assertion below unchanged.
     const res = await mockDataService.delivery.editPolicy(buyerScope, 'sa-0002', 10, {
-      tolerancePct: 0.25,
+      tolerancePct: 0.02,
       enforcement: 'flag',
-      reason: 'buyer Q3 widen',
+      reason: 'buyer Q3 tighten',
     });
     expect(res.ok).toBe(true);
 
     renderWithProviders(<SupplierDeliveryAgreements />, { identity: SUPPLIER });
     await waitFor(() => expect(screen.getAllByText('PK-PETB-8810').length).toBeGreaterThan(0));
     // The MODE chip stays — the supplier sees the tolerance that applies to them.
-    expect(screen.getAllByText(/Governed — flag over 25%/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Governed — flag over 2%/).length).toBeGreaterThan(0);
     // The deviation marker + detail (contract default / date / reason) are hidden.
     expect(screen.queryByText(/Active policy changed from contract default/)).toBeNull();
     expect(screen.queryByText(/Deviates from contract default/)).toBeNull();
-    expect(screen.queryByText(/buyer Q3 widen/)).toBeNull();
+    expect(screen.queryByText(/buyer Q3 tighten/)).toBeNull();
   });
 
   // ── CP-0 · W1 · 2f-d — the governed chip must state the ACTUAL threshold ────

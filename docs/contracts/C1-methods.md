@@ -1,6 +1,6 @@
 # C1 — Method Surface
 
-Three distinct axes. **66** (service surface) · **111** (transition catalog) · **17** (wired
+Three distinct axes. **66** (service surface) · **115** (transition catalog) · **19** (wired
 targets). They measure different things; this file keeps them separate.
 
 > ⚠️ **THIS DOCUMENT IS PINNED TO THE TREE, AND THE PIN IS WHY THE NUMBERS ABOVE ARE ALLOWED TO
@@ -43,6 +43,8 @@ targets). They measure different things; this file keeps them separate.
 > **RE-HARVEST (2026-09-21, PSL P3).** The preferred-supplier lane landed, and it is the first
 > batch to add TWO machines at once: `IProcurementService` gained `getPslListings`, the transition
 > catalog went 102 → **111** across 21 → **23** flows, and the wired-target axis 15 → **17**.
+> Re-harvested again at call-off step 1: the delivery lane's two machines took the catalog to
+> **115** across **25** flows and the wired-target axis to **19**.
 > Every figure moved BY THE PIN going red — twelve assertions across three axes plus C5's borrowed
 > figure — which is the fourth consecutive batch where this document was corrected by the gate
 > rather than by anybody remembering it exists.
@@ -107,7 +109,7 @@ the string, because those are different claims and only the first is the contrac
 
 ---
 
-## Axis 2 — the 111-transition catalog (23 flows)
+## Axis 2 — the 115-transition catalog (25 flows)
 
 Every authored state-machine edge across the registered flows (`id: 't_<entity>_<verb>'`). Derived
 from `getKnownFlows()` — the seeded registry — never from a grep over the flow files, because a
@@ -139,7 +141,9 @@ transition id can be assembled at a call site rather than written as a literal (
 | `materialRequest.flow.ts` | `materialRequest` | 4 | `t_materialrequest_submit`, `t_materialrequest_start_review`, `t_materialrequest_approve`, `t_materialrequest_reject` | **wired** |
 | `psl.flow.ts` | `psl` | 8 | `t_psl_propose`, `t_psl_grant`, `t_psl_reject`, `t_psl_change_status`, `t_psl_renew`, `t_psl_withdraw`, `t_psl_publish`, `t_psl_cap_override` | **wired** |
 | `pslCapSetting.flow.ts` | `pslCapSetting` | 1 | `t_psl_cap_set` | **wired** |
-| **TOTAL** | | **111** | | |
+| `deliveryRelease.flow.ts` | `deliveryRelease` | 3 | `t_delivery_release`, `t_delivery_adjust`, `t_delivery_confirm` | **wired** |
+| `deliveryPolicy.flow.ts` | `deliveryPolicy` | 1 | `t_delivery_policy_set` | **wired** |
+| **TOTAL** | | **115** | | |
 
 **Flow shape** (`schema.ts`, `FlowDefinition` / `TransitionDef`): each transition declares
 `from[]` / `to` / `trigger` / `requiredRole` / `requiredFields[]` / `policyHooks[]` /
@@ -155,12 +159,12 @@ system reference is minted only on `settle` (see C5, SAP boundary).
 
 ---
 
-## Axis 3 — the 17 wired CommandTargets
+## Axis 3 — the 19 wired CommandTargets
 
-A `CommandTarget` is the per-entity adapter the dispatcher reads/writes through. **17 exist**, the
+A `CommandTarget` is the per-entity adapter the dispatcher reads/writes through. **19 exist**, the
 runtime export `WIRED_COMMAND_TARGETS` (`MockCommandService.ts` `TARGETS`):
 
-- **wired:** `purchaseOrder`, `advanceShipNotice`, `goodsReceipt`, `invoice`, `rfq`, `quotation`, `purchaseRequisition`, `supplierDocument`, `requirementResponse`, `inventoryDeclaration`, `incomingShipment`, `enforcement`, `role`, `supplierApplication`, `materialRequest`, `psl`, `pslCapSetting`
+- **wired:** `purchaseOrder`, `advanceShipNotice`, `goodsReceipt`, `invoice`, `rfq`, `quotation`, `purchaseRequisition`, `supplierDocument`, `requirementResponse`, `inventoryDeclaration`, `incomingShipment`, `enforcement`, `role`, `supplierApplication`, `materialRequest`, `psl`, `pslCapSetting`, `deliveryRelease`, `deliveryPolicy`
 
 The interface is **7 members** (`dispatcher.ts`, `CommandTarget`):
 
@@ -185,9 +189,9 @@ transitions — scope is derived from the payload's **parent** (`creationOwner`,
 compare"** (§86). The dispatcher's supplier arm compares `owner !== scope.supplierId`
 unconditionally; a target that wants a supplier to reach a verb must NAME that supplier.
 
-### Wiring census (23 flows → 3 states)
+### Wiring census (25 flows → 3 states)
 
-- **17 behavior-wired** — have a `CommandTarget`, dispatch runs against in-memory stores. Named
+- **19 behavior-wired** — have a `CommandTarget`, dispatch runs against in-memory stores. Named
   above.
 - **2 rolled-up sub-flows** — authored, participate via terminal rollup (`grRollup.ts` /
   `invoiceRollup.ts`), **no standalone target**: `goodsReceiptLine`, `invoiceMatch`.
