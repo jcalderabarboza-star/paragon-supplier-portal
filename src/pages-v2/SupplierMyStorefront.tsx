@@ -203,7 +203,7 @@ const StorefrontEditor: React.FC<StorefrontEditorProps> = ({
 
   const removeCatalogItem = (id: string) => {
     setCatalog((prev) => prev.filter((x) => x.id !== id));
-    toast({ title: t('supplierMyStorefront.toast.materialRemoved') });
+    toast({ variant: 'info', title: t('supplierMyStorefront.toast.materialRemoved') });
   };
 
   const toggleNewCert = (c: string) => {
@@ -230,7 +230,7 @@ const StorefrontEditor: React.FC<StorefrontEditorProps> = ({
     setNewMaterial(emptyMaterial);
     setShowAddForm(false);
     toast({
-      variant: 'success',
+      variant: 'info',
       title: t('supplierMyStorefront.toast.materialSubmitted.title'),
       description: t('supplierMyStorefront.toast.materialSubmitted.desc'),
     });

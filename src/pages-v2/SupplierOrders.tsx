@@ -345,6 +345,7 @@ const SupplierOrders: React.FC = () => {
   const goToASN = () => {
     if (!selected) return;
     toast({
+      variant: 'info',
       title: t('supplierOrders.toast.asnCreation.title', {
         poNumber: selected.poNumber,
       }),

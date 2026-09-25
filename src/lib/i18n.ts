@@ -599,8 +599,9 @@ export const resources = {
       'invoice.match.deferred.title': 'Awaiting 3-way match',
       'invoice.match.deferred.desc':
         'Nothing was changed here. The 3-way match completes when the goods receipt is posted in SAP.',
-      'invoice.remittance.generated.title': 'Remittance advice generated',
-      'invoice.remittance.generated.desc': 'Available to the supplier via {{channel, stop}}.',
+      'invoice.remittance.generated.title': 'Remittance advice not available yet',
+      'invoice.remittance.generated.desc':
+        'Nothing was generated and nothing was sent to the supplier via {{channel, stop}}.',
       'invoice.denied.title': 'Not authorized',
       'invoice.denied.desc': 'You are not authorized to act on this invoice.',
     },
@@ -1074,8 +1075,9 @@ export const resources = {
       'invoice.match.deferred.title': 'Menunggu pencocokan 3 arah',
       'invoice.match.deferred.desc':
         'Tidak ada yang berubah di sini. Pencocokan 3 arah selesai saat penerimaan barang diposting di SAP.',
-      'invoice.remittance.generated.title': 'Bukti pembayaran dibuat',
-      'invoice.remittance.generated.desc': 'Tersedia bagi pemasok melalui {{channel, stop}}.',
+      'invoice.remittance.generated.title': 'Bukti pembayaran belum tersedia',
+      'invoice.remittance.generated.desc':
+        'Tidak ada yang dibuat dan tidak ada yang dikirim ke pemasok melalui {{channel, stop}}.',
       'invoice.denied.title': 'Tidak berwenang',
       'invoice.denied.desc': 'Anda tidak berwenang menindaklanjuti faktur ini.',
     },

@@ -144,8 +144,10 @@ export const complianceEn: Record<string, string> = {
   'compliance.expiry.remaining': '{{days}}d remaining',
   // — Remind action + toast —
   'compliance.action.remind': 'Remind',
-  'compliance.toast.reminderQueued': 'Reminder queued for {{supplier}}',
-  'compliance.toast.reminderDesc': 'Simulated — delivery pending live channel.',
+  'compliance.toast.reminderQueued':
+    'Reminder not available yet — nothing was sent to {{supplier, stop}}.',
+  'compliance.toast.reminderDesc':
+    'Supplier reminders are not wired to a real channel.',
   // — §WAVE E · THE BUYER'S REQUEST —
   // The copy never says "upload" and never says "send": the platform
   // transmits nothing to anybody. A request OPENS A SLOT the supplier can
@@ -304,8 +306,10 @@ export const complianceId: Record<string, string> = {
   'compliance.expiry.remaining': '{{days}} hari tersisa',
   // — Remind action + toast —
   'compliance.action.remind': 'Ingatkan',
-  'compliance.toast.reminderQueued': 'Pengingat diantrikan untuk {{supplier}}',
-  'compliance.toast.reminderDesc': 'Simulasi — pengiriman menunggu kanal langsung.',
+  'compliance.toast.reminderQueued':
+    'Pengingat belum tersedia — tidak ada yang dikirim ke {{supplier, stop}}.',
+  'compliance.toast.reminderDesc':
+    'Pengingat pemasok belum tersambung ke kanal nyata.',
   // — §WAVE E · PERMINTAAN PEMBELI —
   'compliance.request.action': 'Minta dokumen',
   'compliance.request.panel.title': 'Minta dokumen dari pemasok',
