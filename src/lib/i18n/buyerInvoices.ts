@@ -169,9 +169,10 @@ export const buyerInvoicesEn: Record<string, string> = {
   'buyerInvoices.remit.invoiceNo': 'Invoice no',
   'buyerInvoices.remit.downloadPdf': 'Download PDF',
   'buyerInvoices.remit.note':
-    'This remittance advice confirms payment has been processed. The supplier will receive notification via their preferred communication channel.',
-  'buyerInvoices.toast.downloadPdf.title': 'Downloading remittance PDF',
-  'buyerInvoices.toast.downloadPdf.desc': 'File will be available in a moment.',
+    'This remittance advice is a preview — no payment was processed and no notification was sent to the supplier.',
+  'buyerInvoices.toast.downloadPdf.title': 'Remittance PDF not available yet',
+  'buyerInvoices.toast.downloadPdf.desc':
+    'No file was downloaded — PDF download is not wired to a real system.',
   // — Escalate toast —
   'buyerInvoices.toast.escalate.title':
     '{{invoiceNumber}} — escalation not available yet',
@@ -331,9 +332,10 @@ export const buyerInvoicesId: Record<string, string> = {
   'buyerInvoices.remit.invoiceNo': 'No. faktur',
   'buyerInvoices.remit.downloadPdf': 'Unduh PDF',
   'buyerInvoices.remit.note':
-    'Bukti pembayaran ini mengonfirmasi bahwa pembayaran telah diproses. Pemasok akan menerima notifikasi melalui kanal komunikasi pilihan mereka.',
-  'buyerInvoices.toast.downloadPdf.title': 'Mengunduh PDF bukti pembayaran',
-  'buyerInvoices.toast.downloadPdf.desc': 'File akan tersedia sebentar lagi.',
+    'Bukti pembayaran ini adalah pratinjau — tidak ada pembayaran yang diproses dan tidak ada notifikasi yang dikirim ke pemasok.',
+  'buyerInvoices.toast.downloadPdf.title': 'PDF bukti pembayaran belum tersedia',
+  'buyerInvoices.toast.downloadPdf.desc':
+    'Tidak ada berkas yang diunduh — unduhan PDF belum tersambung ke sistem nyata.',
   // — Escalate toast —
   'buyerInvoices.toast.escalate.title':
     '{{invoiceNumber}} — eskalasi belum tersedia',

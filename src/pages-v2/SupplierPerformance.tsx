@@ -376,7 +376,7 @@ const SupplierPerformance: React.FC = () => {
 
   const exportReport = () =>
     toast({
-      variant: 'success',
+      variant: 'info',
       title: t('supplierPerformance.toast.exportQueued.title'),
       description: t('supplierPerformance.toast.exportQueued.desc'),
     });

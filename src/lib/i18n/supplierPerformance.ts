@@ -32,9 +32,10 @@ export const supplierPerformanceEn: Record<string, string> = {
     'Paragon scorecard · Rolling 12-week KPIs · Improvement tracking',
   'supplierPerformance.action.exportReport': 'Export Report',
   // — Toasts —
-  'supplierPerformance.toast.exportQueued.title': 'Performance report queued',
+  'supplierPerformance.toast.exportQueued.title':
+    'Performance report not available yet',
   'supplierPerformance.toast.exportQueued.desc':
-    'Downloading performance report PDF...',
+    'No file was generated — performance report export is not wired to a real system.',
   'supplierPerformance.toast.actionSubmitted.title':
     'Action plan not available yet — nothing was submitted for {{kpi, stop}}.',
   'supplierPerformance.toast.actionSubmitted.desc': 'Nobody was notified — supplier action plans are not wired to a real channel.',
@@ -110,9 +111,9 @@ export const supplierPerformanceId: Record<string, string> = {
   'supplierPerformance.action.exportReport': 'Ekspor Laporan',
   // — Toasts —
   'supplierPerformance.toast.exportQueued.title':
-    'Laporan kinerja dalam antrean',
+    'Laporan kinerja belum tersedia',
   'supplierPerformance.toast.exportQueued.desc':
-    'Mengunduh PDF laporan kinerja...',
+    'Tidak ada berkas yang dibuat — ekspor laporan kinerja belum tersambung ke sistem nyata.',
   'supplierPerformance.toast.actionSubmitted.title':
     'Rencana tindakan belum tersedia — tidak ada yang dikirim untuk {{kpi, stop}}.',
   'supplierPerformance.toast.actionSubmitted.desc': 'Tidak ada yang diberi tahu — rencana tindakan pemasok belum tersambung ke kanal nyata.',

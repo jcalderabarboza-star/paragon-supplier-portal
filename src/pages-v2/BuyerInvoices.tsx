@@ -655,7 +655,7 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
     // Honest: the advice is generated for the supplier to retrieve — not a live
     // external send we cannot verify (law 0.6).
     toast({
-      variant: 'success',
+      variant: 'info',
       title: t('invoice.remittance.generated.title'),
       description: t('invoice.remittance.generated.desc', { channel: selected.channel }),
     });
@@ -664,6 +664,7 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
 
   const downloadPdf = () => {
     toast({
+      variant: 'info',
       title: t('buyerInvoices.toast.downloadPdf.title'),
       description: t('buyerInvoices.toast.downloadPdf.desc'),
     });

@@ -122,9 +122,11 @@ export const supplierOrdersEn: Record<string, string> = {
   'supplierOrders.units': 'units',
   // — Toasts (page-local; PO-confirm toasts reuse shared po.confirm.*) —
   'supplierOrders.toast.changeSubmitted.title':
-    'Change request for {{poNumber}} submitted',
-  'supplierOrders.toast.changeSubmitted.desc': 'Paragon team will review.',
-  'supplierOrders.toast.asnCreation.title': 'ASN creation for {{poNumber}}',
+    'Change request for {{poNumber}} not submitted',
+  'supplierOrders.toast.changeSubmitted.desc':
+    'Nothing was sent — change requests are not wired to a real channel.',
+  'supplierOrders.toast.asnCreation.title':
+    'ASN creation not available from this panel — nothing was created for {{poNumber, stop}}.',
   'supplierOrders.toast.asnContinue': 'Open My Shipments & ASN to create it there.',
   'supplierOrders.toast.creatingAsn.title': 'ASN creation not available from this card — nothing was created for {{poNumber, stop}}.',
   // — Empty state (all-empty early return) —
@@ -239,9 +241,11 @@ export const supplierOrdersId: Record<string, string> = {
   'supplierOrders.units': 'unit',
   // — Toasts (page-local; PO-confirm toasts reuse shared po.confirm.*) —
   'supplierOrders.toast.changeSubmitted.title':
-    'Permintaan perubahan untuk {{poNumber}} dikirim',
-  'supplierOrders.toast.changeSubmitted.desc': 'Tim Paragon akan meninjau.',
-  'supplierOrders.toast.asnCreation.title': 'Pembuatan ASN untuk {{poNumber}}',
+    'Permintaan perubahan untuk {{poNumber}} tidak dikirim',
+  'supplierOrders.toast.changeSubmitted.desc':
+    'Tidak ada yang dikirim — permintaan perubahan belum tersambung ke kanal nyata.',
+  'supplierOrders.toast.asnCreation.title':
+    'Pembuatan ASN tidak tersedia dari panel ini — tidak ada yang dibuat untuk {{poNumber, stop}}.',
   'supplierOrders.toast.asnContinue':
     'Buka Pengiriman & ASN Saya untuk membuatnya di sana.',
   'supplierOrders.toast.creatingAsn.title': 'Pembuatan ASN tidak tersedia dari kartu ini — tidak ada yang dibuat untuk {{poNumber, stop}}.',
