@@ -13,38 +13,42 @@ const SEED_SUPPLIER_ID = 'sup-007';
 const SEED_SUPPLIER_NAME =
   mockSuppliers.find((s) => s.id === SEED_SUPPLIER_ID)?.name ?? null;
 
-const INPUT_STYLE: React.CSSProperties = {
-  width: '100%',
-  padding: '10px 12px',
-  border: '1px solid #CBD5E1',
-  borderRadius: '6px',
-  fontSize: '14px',
-  fontFamily: 'inherit',
-  color: NAVY,
-  background: 'white',
-  boxSizing: 'border-box',
-  outline: 'none',
-};
+// ⚠️ `INPUT_STYLE` IS GONE WITH THE LAST INPUT. It styled the password box, then
+// the email box, and a shared style const outliving both of its consumers is how
+// a page keeps the shape of a form it no longer has.
 
 const Login: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { setIdentity } = useCurrentIdentity();
   const [activeTab, setActiveTab] = useState<'buyer' | 'supplier'>('buyer');
-  // ⚠️ **THE EMAIL IS COLLECTED AND READ BY NOTHING, AND THAT IS DISCLOSED ON
-  // THE PAGE RATHER THAN HIDDEN — H3.** `handleSignIn` below does not look at it:
-  // it sets a persona and navigates. The field stays because a sign-in surface
-  // that asks for nothing is a stranger thing than one that says what it does
-  // with what you type, and `login.demo.note` says exactly that.
+  // ⚠️ **THE EMAIL FIELD IS GONE, AND THIS IS A REVERSAL RATHER THAN AN EDIT.**
+  // H3 kept it and said so on the page, on this reasoning, quoted rather than
+  // paraphrased: *"the field stays because a sign-in surface that asks for nothing
+  // is a stranger thing than one that says what it does with what you type."*
+  // H3's own PR header then flagged it for the operator, because the ruling it was
+  // executing had named the password. **The operator has now ruled (2026-09-28):
+  // remove it — the same defect as the password, one field over.**
   //
-  // ⚠️ **THE PASSWORD FIELD IS GONE AND ITS STATE WITH IT.** It was a
-  // `type="password"` input bound to `useState`, so the page CAPTURED a secret
-  // and then ignored it. An ignored email is a dead field; an ignored password is
-  // a credential prompt that authenticates nobody, and the two are not the same
-  // defect. Nothing in this portal checks a password — the real access gate is an
-  // HMAC-signed cookie at the edge (SEC-GATE-01), which runs before this bundle
-  // is ever served — so the box could only ever have been theatre.
-  const [email, setEmail] = useState('');
+  // ⚠️ **AND THE ARGUMENT FOR KEEPING IT DID NOT SURVIVE BEING WRITTEN DOWN.** It
+  // traded a real defect (a field that captures a reader's address and hands it to
+  // nothing) for a FAMILIARITY one — the page looks like a login. A disclosure
+  // under the button makes the collection honest; it does not make it purposeful.
+  // Nothing in this portal has ever read an email: `handleSignIn` sets a persona
+  // and navigates, and the real access gate is an HMAC-signed cookie at the edge
+  // (SEC-GATE-01) that runs before this bundle is served at all. A box that looks
+  // like a credential prompt, is not one, and asks a reader to type their own
+  // address into it is worse than a page that admits what it is.
+  //
+  // ⚠️ **THE PASSWORD FIELD WENT AT H3 FOR THE SAME REASON** — a `type="password"`
+  // input bound to `useState`, so the page CAPTURED a secret and then ignored it.
+  // The two were graded differently then ("an ignored email is a dead field; an
+  // ignored password is a credential prompt that authenticates nobody") and the
+  // grading was right about the severity and wrong about the disposal.
+  //
+  // What remains is a persona chooser that says it is one. There is no form state
+  // left on this page, and no `onKeyDown` handler either: the sign-in control is a
+  // `<button>`, which Enter and Space already activate.
 
   const signInAsBuyer = () => {
     setIdentity({
@@ -143,21 +147,8 @@ const Login: React.FC = () => {
           ))}
         </div>
 
-        {/* Form */}
+        {/* Sign-in */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '20px' }}>
-          <div>
-            <label style={{ fontSize: '12px', fontWeight: 600, color: '#475569', display: 'block', marginBottom: '5px' }}>
-              {t('login.field.email')}
-            </label>
-            <input
-              type="email"
-              style={INPUT_STYLE}
-              placeholder={t('login.field.emailPlaceholder')}
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && handleSignIn()}
-            />
-          </div>
           <button
             onClick={handleSignIn}
             style={{

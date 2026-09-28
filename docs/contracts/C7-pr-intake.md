@@ -71,6 +71,121 @@ D-4, D-5 and D-11 are C8 items — corrected in [C8](./C8-forecast-publication.m
 
 ---
 
+## Amendment 1 (2026-09-28) — the planning bucket, the override's subject, and the requisition's origin
+
+**Four operator rulings, ratified 2026-09-28, ahead of the Planning Grid lane (Design 1 §10 row
+B0). Each is stated with what it changes, and with WHY — a rule whose reason does not travel with
+it gets re-derived wrongly.**
+
+⚠️ **AND THE DIRECTION OF THIS AMENDMENT IS THE OPPOSITE OF THE CORRECTION RECORD ABOVE.** Those
+eleven divergences all ran one way — the document understating the code — and were fixed by
+believing the code. **Three of the four rulings below run the other way: the contract now states a
+position the code does NOT yet hold.** That is legitimate and it is not the same thing as drift, on
+the precedent this package already set and pins: *"Contract is authority, the code lags until its
+booked batch"* (C8-FIND-03, asserted in `ledgerTruth.test.ts`). It is only legitimate while the
+batch is NAMED, so each ruling below names its batch, and a ruling whose batch has landed must move
+to the register as CLOSED rather than sit here reading as pending.
+
+### A1-R1 · A bucket is a MONTH or an ISO WEEK, never a date. Quarters are refused. GG-3 closes on C8's side.
+
+**The ruling.** A planning bucket is `'YYYY-MM'` (monthly — raw materials) or `'YYYY-Www'`
+(ISO-weekly — packaging). **Quarters are refused.** A horizon holds **one grain**; the telescoping
+view (weeks near, months far) is two horizons side by side, never one array holding both.
+
+**What it changes on this seam.** `PrIntakeLine.period: string` becomes
+**`periodBucket: BucketId`**, and `t_pr_create` **stops writing it into `requiredDate`**. GG-3 is
+therefore resolved **on C8's side** (bucket-native), not C7's — see C8 GG-3′, which was already
+CLOSED there, and which this document was resolving the OPPOSITE way.
+
+**Why, and the evidence is measured rather than argued.** `requiredDate: str('requiredDate') ||
+str('period')` (`MockCommandService.ts`) puts a bucket in a date-named, date-typed field. On the
+surface: a pushed `'2026-Q3'` line renders an **em dash** on the requisitions page, and a
+`'2026-08'` line renders **`01 Aug 2026`** — a day nobody entered. A missing figure and a
+fabricated one, and **the fabricated one is worse, because it reads as an answer.** A required date
+is a commitment to a day; a bucket is a grain; one field cannot be both, and the reader is what
+lost.
+
+**Why quarters are refused rather than parsed.** A month and an ISO week are grains a producer can
+commit against. A quarter is a reporting period wearing a planning grain's clothes, and it is
+precisely the form that renders as nothing today. **Measured:** `'2026-Q3'` sits on **two of the
+four rows** of `prIntake.ts`. The refusal is what NAMES those rows for B2 to re-express; an unparsed
+free string named nothing for a year, which is how two formats came to coexist in one fixture
+(§2.3) with nothing to notice.
+
+**As built at A1 — and what deliberately is NOT.** The vocabulary and the ONE function both seams
+parse through are shipped: `BucketId` / `BucketGrain` / `parseBucket` / `parseHorizon` in
+`bucket.ts`, pinned bilaterally in `bucket.test.ts`. **`PrIntakeLine` is UNCHANGED**, and that is a
+decision rather than an omission: renaming a REQUIRED field touches the fixture, the payload
+builder, both surfaces and their specs, so it is behaviour and it belongs in B2 as ONE atomic
+change. Adding `periodBucket?` beside `period` was rejected — two fields meaning one thing is a
+second source of truth, which is the defect this seam already has in `requiredDate`.
+
+⚠️ **THE HORIZON DEPTH IS A REGISTRY VALUE AND IS DELIBERATELY NOT WRITTEN IN THIS DOCUMENT**
+(ruling A1-R7, recorded in full at C8 GG-8). Derive it from `DEFAULT_HORIZON_BUCKETS`
+(`bucket.ts`). A depth in contract prose is wrong the first time the plan changes and nothing fails
+when it is — `FLOOR-IN-PROSE-01`, and C8 GG-8 is already carrying a stale `6` in a code comment for
+exactly that reason.
+
+### A1-R2 · C6-LOCK's subject — a producer-adjusted line is NOT a planner override
+
+**The ruling.** The planner's baseline is the intake line's **`acceptedQty` as delivered by the
+producer**, not `suggestedQty`. A reason is owed **only for the planner's own change**. The stored
+`wasAdjusted` boolean is **retired in favour of a derivation**.
+
+**Recorded in full at C6 §8.3**, which is where C6-LOCK lives; repeated here only because this
+seam's field table carries `wasAdjusted` and its §2.1 calls it the audit signal.
+
+**Why it lands on C7 at all.** `wasAdjusted` is a STORED field on `PrIntakeLine` (`types.ts`) whose
+value a fixture author writes by hand beside the two quantities that determine it. ⚠️ **AND THE
+HONEST STATEMENT IS THAT NO ROW LIES TODAY** — derived across all four rows of `prIntake.ts`,
+`wasAdjusted === (acceptedQty !== suggestedQty)` holds in every one. The defect is not a present
+falsehood; it is that **nothing checks**, so the first row that disagrees with its own quantities
+will disagree silently, and the field that reads as the audit signal is the one carrying the lie.
+A value derived at read cannot disagree with the pair it is derived from.
+
+**Batch:** B2 (the `intakeLine` machine) removes the field and moves the baseline.
+
+### A1-R3 · The requisition carries its origin — on the DOCUMENT, not only on the event
+
+**The ruling.** `PurchaseRequisition` gains `intakeLineId?`, `periodBucket?` and
+`decision?: CommandDecision`. **One intake line creates at most one PR**, and the idempotency key
+**is the intake line id**.
+
+**As built at A1:** the three fields are on the DTO (`types.ts`), optional, written by nothing yet
+and read by nothing yet, with B2 named at the site as the batch that does both.
+
+**Why this is not a duplicate of the DR-10 audit, which is the objection it has to answer.** Audit
+and provenance are different jobs. The event answers *what happened, in order, to whom*, and is
+append-only. The document answers *what am I looking at* to the one person whose decision depends
+on it — the approver, on the row in front of them. **No surface in this tree renders a
+`TransitionEvent`.** So the flow C6-LOCK calls "audited" recorded nothing an approver could read,
+while the drawer genuinely refused to dispatch without a reason: **a full enforcement chain
+terminating in a reader who cannot see the result.** That is C7-FIND-02's real shape, and it is the
+same class as `revisionNote`'s (§68: a verb required it, `applyTransition` dropped it, no field
+existed to disappoint).
+
+**Why the key is the intake line id and not a minted one.** C7-FIND-05 records that the F2 Event
+Mesh is at-least-once and this intake has no dedupe key, so **a redelivered SOMO event mints a
+duplicate PR**. A key the producer already owns needs no coordination; a key we mint has to be
+carried back to the producer to be useful, and a key derived from the payload's contents changes
+when a planner legitimately edits the quantity. The intake line id is stable across exactly the
+retries that must collapse.
+
+⚠️ **AND THE DUPLICATE IS ALREADY REACHABLE WITHOUT THE WIRE, WHICH IS THE PART TO TAKE FROM THIS.**
+Measured on the surface: Accept → reload → the row is PLANNED again with the PR still in the store.
+**Three Draft requisitions for one requirement is one click away today**, with no Event Mesh
+involved. C7-FIND-05's framing as an F2 precondition understates it.
+
+**Batch:** B2 wires the cascade, the key and the render.
+
+### A1-R4 · One sentence separating VIEW state from PLAN state
+
+Recorded at **C6 §1**, where the browser-storage ban lives. Named here so a reader of this seam does
+not re-derive it: **C6's ban on browser persistence covers PLAN state only.** A saved column width
+is not a truth about a material.
+
+---
+
 ## 0. Seam scope — RM/PM requirements only (the boundary)
 
 **What crosses this seam is the already-exploded RM/PM (raw-material / packaging-material)
@@ -175,9 +290,9 @@ field list; the prior version of this table described fields that were never bui
 | `segment` | `string \| null` | nullable | `:642` | SOMO-authored ABC-XYZ class, read-only; `null` for internal-Grid |
 | `suggestedQty` | `number` | req | `:643` | the machine recommendation (§2.1) |
 | `acceptedQty` | `number` | req | `:644` | the qty acted on → `quantity` (§2.1) |
-| `wasAdjusted` | `boolean` | req | `:645` | override flag (§2.1 — **see the defect**) |
+| `wasAdjusted` | `boolean` | req | `:645` | override flag (§2.1 — **see the defect**). ⚠️ **RETIRED BY RULING A1-R2**, in favour of a derivation from the two quantities; still on the type until B2 |
 | `uom` | `string` | req | `:646` | ⚠️ free string, NOT a closed union (contrast C8's `Uom`) |
-| `period` | `string` | req | `:647` | planning bucket; **unparsed free string** (GG-3) |
+| `period` | `string` | req | `:647` | planning bucket; **unparsed free string** (GG-3). ⚠️ **BECOMES `periodBucket: BucketId` BY RULING A1-R1** — month or ISO week, quarters refused, parsed by `parseBucket`; still spelled `period: string` on the type until B2 (Amendment 1) |
 | `estimatedValue` | `number` | req | `:648` | ⚠️ **IDR assumed, nowhere declared** (§2.3) |
 | `source` | `PrSource` = `'INTERNAL_GRID' \| 'SOMO'` | req | `:649`, `:601` | the producer (§4) |
 | `planState` | `IntakePlanState` = `'PLANNED' \| 'committed'` | req | `:650`, `:634` | the C6 plan-state axis (§4) |
@@ -218,6 +333,22 @@ as-is" are different governance records). An intake line carries **all three**:
 
 All three exist on `PrIntakeLine` (`types.ts:643-645`) and survive on the READ side.
 
+⚠️ **AND THE THIRD ONE IS RETIRED BY RULING A1-R2 (2026-09-28) — IT IS NOT THE AUDIT SIGNAL THIS
+SECTION CALLS IT.** Two independent reasons, and either alone is sufficient:
+
+1. **It is derivable from the pair beside it, so it can only ever add a way to be wrong.** Nothing
+   checks `wasAdjusted === (acceptedQty !== suggestedQty)`. All four rows of `prIntake.ts` satisfy
+   it today (derived, not assumed); the first row that does not will disagree silently, and it will
+   be the field that reads as the audit signal that carries the falsehood.
+2. **Its comparison is against the wrong baseline.** A SOMO line arrives already adjusted by the
+   producer (`pil-somo-002`: 5,000 suggested / 4,500 accepted). Measured against `suggestedQty`,
+   that line reads as an override nobody in this building made — and the plan grid's drawer then
+   **demands a planner's reason for SOMO's own delta** before it will push. The baseline is the
+   producer's `acceptedQty`; the producer's delta is SHOWN, never charged to the planner.
+
+For SOMO: an emitter carrying all three values stays conforming — we simply stop STORING the third
+and derive it. The from/to pair is what the audit needs and it is what the `decision` carries.
+
 ### ⚠️ C7-FIND-02 (DEFECT, OPEN) — two of the three do not survive the WRITE
 
 This document previously asserted: *"`wasAdjusted` is **stored, not derived-and-discarded** — the
@@ -241,6 +372,16 @@ reason-gate genuinely blocks an unexplained override before dispatch (`overrideB
 **Recorded as a DEFECT, not as intended behaviour.** For SOMO: an emitter that carries all three
 values is conforming and correct — but be aware that today only the accepted value reaches our
 PR entity. Closing this is a code batch, not a doc change; registered §7 and in `docs/findings.md`.
+
+⚠️ **THE REMEDY IS NOW RULED, AND IT IS NOT "CARRY ALL THREE ONTO THE ENTITY" (A1-R3, 2026-09-28).**
+Two of the three were going to be carried to fix a provenance problem, and one of them is the field
+A1-R2 retires. What the approver needs on the document is the **from/to pair with its reason** — a
+`decision`, which already exists as a type and is already forwarded verbatim by the dispatcher — plus
+the line it came from and the bucket it sits in. So the entity gains
+`intakeLineId?` · `periodBucket?` · `decision?` (shipped at A1, `types.ts`) and does **not** gain
+`suggestedQty` or `wasAdjusted`: the first is inside `decision.from`, and the second is a derivation.
+**A defect fixed by storing the field the ruling deletes would have been a fix in the wrong
+direction**, which is why this row is amended rather than simply closed.
 
 ### 2.2 Shortfall / constraint (Reply §2a, reserved)
 
@@ -280,10 +421,10 @@ stated here because each one is a place a conforming emitter can be wrong while 
 |---|---|---|
 | **`estimatedValue` is IDR** | no currency field on `PrIntakeLine` (`types.ts:648`) or `PurchaseRequisition`; denomination asserted only at render via `formatIDR` (`BuyerRequisitions.tsx:423,564`) | a non-IDR emitter is silently mis-rendered |
 | **`estimatedValue` is a LINE TOTAL, not a unit price** | implied only by magnitude — `pil-somo-002`: 5,000 KG / 990,000,000 (`fixtures/prIntake.ts:38-43`) | off by the quantity factor |
-| **`period` is an unparsed free string, in TWO formats** | `'2026-Q3'` and `'2026-08'` coexist in one fixture (`fixtures/prIntake.ts:27,42,57,72`); nothing parses or validates | a third format is accepted silently |
-| **`period` lands in a field named `requiredDate`** | `requiredDate: str('requiredDate') \|\| str('period')` (`MockCommandService.ts:577`) — so a date-typed, date-named field holds `"2026-Q3"` | GG-3 is not merely unresolved, it is actively mis-stored |
+| **`period` is an unparsed free string, in TWO formats** | `'2026-Q3'` and `'2026-08'` coexist in one fixture (`fixtures/prIntake.ts:27,42,57,72`); nothing parses or validates. ⚠️ **CLOSED BY RULING A1-R1** — `parseBucket` is now the one discriminator and refuses the quarter form; the two `'2026-Q3'` rows are B2's to re-express | a third format is accepted silently — **and two were, which is how this row came to exist** |
+| **`period` lands in a field named `requiredDate`** | `requiredDate: str('requiredDate') \|\| str('period')` (`MockCommandService.ts:577`) — so a date-typed, date-named field holds `"2026-Q3"` | GG-3 is not merely unresolved, it is actively mis-stored. ⚠️ **RULED 2026-09-28 (A1-R1): GG-3 closes on C8's side and `t_pr_create` stops writing the bucket here.** `PurchaseRequisition.periodBucket?` is the slot, and it exists as of A1 |
 | **`uom` is trusted verbatim from the payload** | `str('uom')` (`:574`), free string (`types.ts:646`) — the C8 sibling does the **opposite**, copying from the material master and never trusting the payload | `'kg'` / `'MT'` pass C7, fail C8 |
-| **No idempotency contract exists** | id === `prNumber` === store-assigned `PR-2026-9xx` (`stores/purchaseRequisitionStore.ts:42-45`); the payload accepts no external reference | **a redelivered SOMO event mints a DUPLICATE PR** |
+| **No idempotency contract exists** | id === `prNumber` === store-assigned `PR-2026-9xx` (`stores/purchaseRequisitionStore.ts:42-45`); the payload accepts no external reference. ⚠️ **RULED (A1-R3): the key IS the intake line id, one line → at most one PR.** `intakeLineId?` exists on the entity as of A1; the dispatch-side key is B2 | **a redelivered SOMO event mints a DUPLICATE PR** — and ⚠️ **a duplicate is already reachable with no wire at all**: Accept → reload → the row is PLANNED again with the PR still in the store (measured) |
 | **Unrecognised `source` is dropped, not rejected** | `:561-564` — `'somo'` or `'SOMO_V2'` yields a PR with **no producer mark** and no error | a casing slip silently destroys provenance |
 | **`createdDate` reads the wall clock** | `new Date()` (`:582`) against a fixture set anchored to an implicit 2026-07-06 present (`FIXTURE-PRESENT-01`) | pushed PRs are stamped out of era |
 
@@ -522,12 +663,16 @@ co-design so the two published shapes converge (Reply "Agreed next joint step" �
 | C7-PROV | Provenance = `source` × registry `liveness` (LIVE/SIMULATED/SPEC); no SEED fork; IBP `seed` = SIMULATED×PLANNED per C6; crosswalk documented | CONTRACT (§4) |
 | **C7-FIND-01** | PR create is author-inert — no `CommandTarget`. | **CLOSED** — wired at G1.1 (`MockCommandService.ts:547-593, :983`; closure recorded `:538`). §3 |
 | **C7-FIND-01a** | Add a `purchaseRequisitions` liveness capability for intake provenance. | **CLOSED — resolved differently than prescribed**: structural backing + gate-2, not `null` (`registry.ts:51, :70-78`). §3 |
-| **C7-FIND-02** | **DEFECT** — `suggestedQty` + `wasAdjusted` documented as stored; `create` reads neither and `PurchaseRequisition` has no field for either (`MockCommandService.ts:547-593`; `types.ts:569-587`). Audit signal survives on the DR-10 event only. | **OPEN** — code batch (§2.1) |
+| **C7-FIND-02** | **DEFECT** — `suggestedQty` + `wasAdjusted` documented as stored; `create` reads neither and `PurchaseRequisition` has no field for either (`MockCommandService.ts:547-593`; `types.ts:569-587`). Audit signal survives on the DR-10 event only, **and no surface in this tree renders an event**. | **OPEN — REMEDY RULED, SHAPE LANDED (A1-R3).** The entity now carries `intakeLineId?` / `periodBucket?` / `decision?`; the write and the render are B2. ⚠️ The remedy is deliberately NOT "store all three" — `wasAdjusted` is retired by A1-R2 and `suggestedQty` is `decision.from` (§2.1) |
 | **C7-FIND-03** | **DEFECT** — `shortfall` promised as RESERVED (§2.2) but never added to `PrIntakeLine` (`types.ts:636-653`); landing it is a shape change, not additive. | **OPEN** — code batch (§2.2) |
 | **C7-FIND-04** | Five payload keys read but undocumented (`category`, `requestor`, `costCenter`, `justification`, `priority`) — `priority` silently defaults to `'Medium'` on any unrecognised value (`MockCommandService.ts:565-566`). | **DOCUMENTED** here (§3.1); `priority`'s silent default is a **candidate defect** |
-| **C7-FIND-05** | **No idempotency contract at the intake.** id === store-assigned `prNumber` (`stores/purchaseRequisitionStore.ts:42-45`); no external reference accepted. F2 Event Mesh is at-least-once ⇒ a redelivered SOMO event mints a duplicate PR. | **OPEN** — must close before the F2 wire (§2.3) |
+| **C7-FIND-05** | **No idempotency contract at the intake.** id === store-assigned `prNumber` (`stores/purchaseRequisitionStore.ts:42-45`); no external reference accepted. F2 Event Mesh is at-least-once ⇒ a redelivered SOMO event mints a duplicate PR. ⚠️ **AND IT IS NOT ONLY AN F2 RISK** — measured on the surface, Accept → reload pushes the same line again with the PR still in the store, so three Drafts for one requirement is one click away with no wire at all. | **OPEN — KEY RULED (A1-R3): the intake line id, one line → at most one PR.** `intakeLineId?` exists on the entity as of A1; the dispatch-side key is B2. Must still close before the F2 wire (§2.3) |
 | GG-1, GG-2 | lane + segment | **CLOSED by build** on the read line (`types.ts:640,642`); not carried to the entity (§6) |
-| GG-3, GG-4, GG-5, GG-6 | period-bucket · material-as-S/4-code · shortfall · qty provenance | **OPEN** — IBP co-design (§6); GG-4 recommendation at §6.1 |
+| **GG-3** | **period bucket.** | **CLOSED 2026-09-28 (operator ruling A1-R1) — ON C8's SIDE.** Month `'YYYY-MM'` or ISO week `'YYYY-Www'`; **quarters refused**; one grain per horizon; `parseBucket` (`bucket.ts`) is the one discriminator both seams go through. C7 was resolving this the OPPOSITE way and is corrected, not reconciled. **Cross-seam ask to SOMO stands** (C8 GG-3′: confirm one plan at both grains). Code: B2 |
+| GG-4, GG-5, GG-6 | material-as-S/4-code · shortfall · qty provenance | **OPEN** — IBP co-design (§6); GG-4 recommendation at §6.1 |
+| **A1-R1** | Bucket vocabulary: `BucketId` = month \| ISO week; quarters refused; one grain per horizon; `PrIntakeLine.period` → `periodBucket`; `t_pr_create` stops writing it into `requiredDate`. | **RATIFIED — operator 2026-09-28** (Amendment 1). Vocabulary + parse SHIPPED at A1; the field rename is **B2** |
+| **A1-R2** | C6-LOCK's subject: the baseline is the producer's `acceptedQty`, a reason is owed only for the planner's own change, and the stored `wasAdjusted` is retired in favour of a derivation. | **RATIFIED — operator 2026-09-28.** Recorded in full at C6 §8.3; code is **B2** |
+| **A1-R3** | The requisition carries its origin on the DOCUMENT: `intakeLineId?` · `periodBucket?` · `decision?`; idempotency key = intake line id; one intake line → at most one PR. | **RATIFIED — operator 2026-09-28.** DTO shape SHIPPED at A1 (`types.ts`); write + render + key are **B2** |
 | **C7-MATERIAL-JOIN** | C7 (display string) and C8 (code) do not join. Recommendation: **collapse the spaces, do not crosswalk them** — a crosswalk between two spaces we control carries no information. **NOT built here.** ⚠️ **CORRECTED 2026-08-06:** the reason this row gave — *`inferBpom` derives BPOM applicability from the code prefix, so a format change moves compliance behaviour* — **is no longer true.** `inferBpom` is deleted; applicability is a master field. The linkage is now **master-membership**, not prefix: an unresolvable code is **refused** at goods receipt. `C9-STALE-BY-FIX-01` (C9 §7.13). | **OPEN** — investigation-first batch (§6.1) |
 | SOMO-SEAM | SOMO producer tier | **SPEC** — `order_creation` deferred (Seam §0) |
 

@@ -4,8 +4,18 @@ The contract that freezes **PLANNED-as-axis** before any grid engine exists, so 
 G0.2 engine choice (FORK-G1) is evaluated **against** this doctrine and can never bend it.
 
 **Status:** CONTRACT · authored G0.1 (FORK-3, machine-harvest from code-truth + thin prose)
-· additive, docs-only · generated at `main` (Canon True-Up, #66). No product code — the
-grid engine and the `PlanGrid` primitive are G0.2/G1, gated on **FORK-G1 (OPEN)**.
+· additive, docs-only · generated at `main` (Canon True-Up, #66) · **amended 2026-09-28 (A1-R2,
+A1-R4 — see §1 and §8.3).**
+
+⚠️ **THE STATUS LINE'S SECOND SENTENCE IS CORRECTED, NOT SOFTENED.** It read: *"No product code —
+the grid engine and the `PlanGrid` primitive are G0.2/G1, gated on **FORK-G1 (OPEN)**."* Both
+halves are false and have been for over a year. **FORK-G1 was RULED on 2026-07-14** —
+`react-datasheet-grid` v4.11.6 (MIT), formulas OUT, no licence (`docs/g0-2-engine-scorecard.md`
+§6.1) — and the product code exists: `PlanGrid.tsx`, `plan-grid/*`, and a drawer that dispatches
+`t_pr_create`. A contract whose own header says its subject is unbuilt is the shape nobody
+re-measures, because an unbuilt thing is why you stopped reading. **FORK-G1′** (AG Grid Enterprise
+after handover) is recorded in the Stage G register, not here — this contract is engine-agnostic by
+design and must stay so.
 
 **Grounding:** `docs/Stage_G_Grid_Planning_Layer_Plan_v1.md` §2 (the adjudicated keystone) +
 `docs/Grid_Planning_Layer_Investigation_2026-07-14.md`. Every seam this contract binds to is
@@ -47,6 +57,34 @@ committing. It is held in a dedicated client-side plan store and is, by contract
   separate concern the grid renders *on top of* those reads.
 - **NEVER persisted to localStorage.** The codebase deliberately deleted its localStorage
   overlays; that pattern stays dead. A PlanDraft is session-scoped and disappears on reload.
+
+⚠️ **AND THE BAN COVERS PLAN STATE ONLY. VIEW STATE IS A DIFFERENT THING AND MAY BE PERSISTED PER
+SEAT** (operator ruling A1-R4, 2026-09-28 — the sentence this contract was asked to gain, recorded
+with its reason rather than as a bare permission).
+
+**The distinction, stated so nobody has to re-derive it: a column width is not a truth about a
+material.** The three bullets above exist because a *planned value* that survives outside the seam
+is a **second source of truth** — a quantity somebody may act on that no seam read produced, and
+that no push ever committed. A saved column order, a hidden measure, a sort, a density, a
+collapsed group: none of these asserts anything about a material, a supplier or a quantity. Lose
+them and a planner loses their arrangement of the screen; lose an unpushed quantity and the
+platform has disagreed with itself about a number.
+
+**What this licenses, and what it does not.** Per-seat grid layouts may be persisted client-side
+(key: `personId` when the actor is `RESOLVED`, otherwise `unattributed:<personaType>:<scope>`), on
+the `customRoles.ts` honest-read pattern — absent, corrupt and unparseable distinguished from
+empty, every stored column id re-validated against the *current* registry, unknown ids **dropped
+and named** to the reader, and a first-class *reset to view default*. It licenses nothing about a
+value. ⚠️ **AND THE TEST IS NOT "IS THIS UI STATE?" BUT "COULD SOMEBODY ACT ON IT?"** — a saved
+FILTER is view state, and a saved filter that silently hides a short bucket is a decision aid that
+has been quietly changed, which is why the exceptions view's own toggle is a control the reader can
+see rather than a preference they inherit.
+
+**Durable plan drafts are NOT this.** A planner who wants to leave and come back to hundreds of
+planned rows gets a **governed document** — the G2 `Plan` entity behind `t_plan_save`, through a
+service store — never browser storage. That is a decision gate of its own (Design 1 D4/B9), and the
+reason it stays a gate is that `localStorage` is exactly what anyone will reach for if the honest
+route is not built.
 
 **Where it lives — the harvested neighbor pattern.** The plan store follows the house
 client-state pattern of `CurrentIdentityContext` (`src/context/CurrentIdentityContext.tsx`):
@@ -269,8 +307,10 @@ Each is written so a G1 vitest can bind to it directly.
 | C6-PUSH | Push-to-execute is the only exit; both failure channels leave the row PLANNED-with-reason; no optimistic writes | CONTRACT (§3) |
 | C6-HONESTY | Three source tiers × two plan states; SPEC×PLANNED explicit; real-command-over-SIMULATED renders SIMULATED | CONTRACT (§5) |
 | **G0.1-FIND-01** | One-`causationId`-per-push is INTENT; the public `ICommandService` seam accepts no caller correlation today. Seam extension (caller-supplied correlation OR model-push-as-cascade-source) is a **G1/G2 dependency**. | **OPEN** (§4) |
-| FORK-G1 | Grid engine + license posture + formulas IN/OUT | OPEN — resolved by the G0.2 scorecard (lean: AG Grid Enterprise, formulas OUT) |
-| **C6-LOCK** | Formulas locked; accepted qty the single editable field; every override reason-gated + authored, commits via `t_pr_create`, DR-10 `decision` opaque/verbatim | **CONTRACT** (§8, G1.2b) |
+| FORK-G1 | Grid engine + license posture + formulas IN/OUT | ⚠️ **RULED 2026-07-14, NOT OPEN — this row said OPEN for over a year.** `react-datasheet-grid` v4.11.6 (MIT), formulas OUT, no licence (`docs/g0-2-engine-scorecard.md` §6.1). The prior text also carried the pre-spike *lean* (AG Grid) as though it were the outcome, which is the opposite of what was ruled. **FORK-G1′** (2026-09-28) is in the Stage G register |
+| **C6-LOCK** | Formulas locked; accepted qty the single editable field; every override reason-gated + authored, commits via `t_pr_create`, DR-10 `decision` opaque/verbatim | **CONTRACT** (§8, G1.2b) · **amended by A1-R2** (§8.3) |
+| **A1-R2** | C6-LOCK's subject: the baseline is the producer's `acceptedQty`, so a reason is owed only for the planner's own change; the stored `wasAdjusted` is retired in favour of a derivation. The reason-gate itself is unchanged — only one comparison's left-hand side moves. | **RATIFIED — operator 2026-09-28** (§8.3). Code is **B2**; `CommandDecision.wasAdjusted` is explicitly NOT in scope and the reason is stated at the site |
+| **A1-R4** | C6 §1's browser-persistence ban covers **plan state only**. Per-seat grid LAYOUTS are view state and may be persisted, on the honest-read pattern with a reset control. Durable plan drafts remain a governed document (G2 `Plan`), never browser storage. | **RATIFIED — operator 2026-09-28** (§1) |
 
 ---
 
@@ -311,6 +351,52 @@ Accept-as-suggested is not an override (accepted === suggested): it needs no rea
 no `decision`. A `source:'SOMO'` line whose accepted qty a human adjusts is still a SIMULATED ×
 PLANNED render (LIVENESS-DATASOURCE-01) — the human adjusted a **sample** requirement; pushing it
 mints a Draft that stays simulated, **never a live procurement instruction**.
+
+⚠️ **AMENDMENT 1 (operator ruling A1-R2, 2026-09-28) — THE SUBJECT OF §8.3 IS THE PLANNER'S OWN
+CHANGE, AND `wasAdjusted` IS RETIRED AS A STORED BOOLEAN.**
+
+**The baseline is the intake line's `acceptedQty` AS DELIVERED BY THE PRODUCER, not
+`suggestedQty`.** A reason is owed only when the planner moves the number again.
+
+**The defect this corrects was measured on the surface, not reasoned about.** A SOMO line can arrive
+already adjusted by its producer — `pil-somo-002` carries 5,000 suggested against 4,500 accepted.
+Against `suggestedQty` that line reads as an override, so the adjust drawer **demands a planner's
+justification for SOMO's own delta** before it will push, while Intake Review's *Accept as
+suggested* on the SAME row pushes **5,000**. One requirement, two quantities, and the path that
+looks more governed is the one making a human account for an act they did not commit.
+
+**So: the producer's delta is SHOWN, read-only ("SOMO adjusted 5,000 → 4,500"), never charged to the
+planner.** *Accept* pushes 4,500; the drawer pre-fills 4,500 and demands no reason; a reason becomes
+mandatory the moment the planner leaves 4,500.
+
+⚠️ **AND THE REASON-GATE ITSELF IS UNCHANGED, WHICH IS THE PART NOT TO OVER-READ.** §8.3's
+load-bearing guarantee — `overrideBlocked` true ⇒ no dispatch — stands exactly as written. What moves
+is the **left-hand side of one comparison** (`isQtyAdjusted`, `planGridModel.ts`, today
+`acceptedQty !== line.suggestedQty`). A gate comparing against the wrong baseline is not a weak gate;
+it is a correct gate pointed at the wrong fact, and loosening it was never the remedy.
+
+**`wasAdjusted` retired, on two independent grounds:**
+
+1. **It is derivable from the pair it sits beside**, so it can only add a way to disagree. On
+   `PrIntakeLine` it is a hand-authored fixture literal next to the two quantities that determine
+   it, and **nothing checks the two agree**. Derived across all four rows of `prIntake.ts` today:
+   every one satisfies `wasAdjusted === (acceptedQty !== suggestedQty)`. **No row lies now** — the
+   defect is that the first one to disagree will do so in silence, in the field that reads as the
+   audit signal.
+2. **Its comparison is the one this amendment moves** (ground 1 above would be true of any redundant
+   boolean; this one is specific).
+
+⚠️ **`CommandDecision.wasAdjusted` IS A DIFFERENT FIELD AND IS *NOT* RETIRED HERE, THOUGH IT CARRIES
+THE SAME REDUNDANCY.** It is computed at build time (`buildQtyDecision`), never authored, so it
+cannot be edited into a lie by a fixture — and it is `to !== from` on the very record it rides, which
+is the form ground 1 asks for. It stays because the DR-10 event is an **append-only, opaque,
+forwarded-verbatim** carrier: changing its shape is a change to the audit vocabulary and to the
+dispatcher's passthrough, and it earns its own ruling rather than riding this one. Recorded here so
+the next reader does not have to measure it again, and does not assume the two names mean one field.
+
+**Batch:** B2 (the `intakeLine` machine) removes the stored field and moves the baseline. Until then
+`isQtyAdjusted` still compares against `suggestedQty`, and this section is the contract the code is
+lagging — named, on the C8-FIND-03 precedent, not drifting.
 
 **As-built (G1.2b):** the gate + payload + decision are pure functions
 (`src/pages-v2/plan-grid/planGridModel.ts` — `overrideBlocked` / `buildQtyDecision` /
