@@ -92,25 +92,46 @@ describe('§74 · BuyerCollaboration — requirementresponse:dispute', () => {
   });
 });
 
+// ⚠️ **DISMISS CHANGED SIDES AT A2, AND THE REVERSAL IS RECORDED HERE RATHER
+// THAN THE ASSERTION BEING QUIETLY REWRITTEN.** The withheld case read
+// *"keeps Dismiss, loses Accept"*, on the express ground that *"Dismiss is
+// local view state holding no atom — gating it would invent an authority the
+// machine never asserted."*
+//
+// **That ground was correct and it has expired.** A2 made dismissal a
+// DISPATCHED VERB (`t_intake_dismiss`, atom `pr:create`), because a planner
+// setting a line aside had made a decision that no colleague could see and that
+// a reload erased. The machine now asserts exactly the authority the old
+// comment said it did not, so gating it invents nothing — and leaving it
+// ungated would be the opposite defect: a control that dispatches a verb the
+// seat cannot fire, which is a button that refuses.
+//
+// The surface consequence: a withheld seat loses BOTH controls and reads ONE
+// notice, because all three intake verbs hold the same atom.
 describe('§74 · IntakeReview — pr:create, one notice for an unbounded table', () => {
-  it('HELD: a requisitioner seat gets accept controls and no notice', async () => {
+  it('HELD: a requisitioner seat gets BOTH triage controls and no notice', async () => {
     renderWithProviders(<IntakeReview />, { identity: REQUISITIONER });
     // Wait for the ROWS, not the heading — the heading renders before the read
     // resolves, and querying then finds an empty table and calls it a result.
-    const accepts = await screen.findAllByRole('button', { name: /Accept as suggested/i });
+    const accepts = await screen.findAllByRole('button', { name: /Accept as delivered/i });
     expect(accepts.length).toBeGreaterThan(0);
-    expect(screen.queryByTestId('handoff-intake-accept')).not.toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: /Dismiss/i }).length).toBeGreaterThan(0);
+    expect(screen.queryByTestId('handoff-intake-triage')).not.toBeInTheDocument();
   });
 
-  it('WITHHELD: a finance seat reads the owner ONCE, keeps Dismiss, loses Accept', async () => {
+  it('WITHHELD: a finance seat reads the owner ONCE and loses BOTH controls', async () => {
     renderWithProviders(<IntakeReview />, { identity: FINANCE });
-    const dismisses = await screen.findAllByRole('button', { name: /Dismiss/i });
-    // Dismiss is local view state holding no atom — gating it would invent an
-    // authority the machine never asserted.
-    expect(dismisses.length).toBeGreaterThan(0);
-    expect(screen.queryAllByRole('button', { name: /Accept as suggested/i })).toHaveLength(0);
-    const notice = screen.getByTestId('handoff-intake-accept');
-    expect(notice).toHaveTextContent('Awaiting Requisitioner');
+    // The rows must be on screen before an absence means anything — otherwise
+    // this passes against an empty table, which is every seat's answer.
+    await screen.findByText(/Glycerin USP/);
+    expect(screen.queryAllByRole('button', { name: /Accept as delivered/i })).toHaveLength(0);
+    expect(screen.queryAllByRole('button', { name: /Dismiss/i })).toHaveLength(0);
+    // ONE notice for the surface, never one per row: the atom does not vary by
+    // row, and the same string repeated down a column teaches nothing after the
+    // first.
+    const notices = screen.getAllByTestId('handoff-intake-triage');
+    expect(notices).toHaveLength(1);
+    expect(notices[0]).toHaveTextContent('Awaiting Requisitioner');
   });
 });
 
@@ -119,8 +140,10 @@ describe('§74 · ID from birth, across the group', () => {
     await i18n.changeLanguage('id');
     try {
       renderWithProviders(<IntakeReview />, { identity: FINANCE });
-      await screen.findAllByRole('button', { name: /Abaikan/i });
-      expect(screen.getByTestId('handoff-intake-accept')).toHaveTextContent('Menunggu Pemohon');
+      // The withheld seat has no control left to wait on, so the wait anchors on
+      // a ROW — the same act-hygiene point, one element over.
+      await screen.findByText(/Glycerin USP/);
+      expect(screen.getByTestId('handoff-intake-triage')).toHaveTextContent('Menunggu Pemohon');
     } finally {
       await i18n.changeLanguage('en');
     }

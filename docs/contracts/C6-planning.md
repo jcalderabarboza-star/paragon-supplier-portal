@@ -419,15 +419,26 @@ Derived at dispatch from a `from` that still held the producer's *suggestion*, i
 compute the wrong fact — and do it in the one place nobody can correct afterwards. **Deriving a value
 from the wrong operand is not safer than authoring it; it is the same error with better provenance.**
 
-**Batch:** the code is **not** in A1 and is not B2's machine either — it is the R2 behaviour batch
-(dispatcher derivation + payload removal + the baseline move + both surfaces' reason-gating), which
-is separable from the `intakeLine` machine and awaits its own dispatch. Until it lands,
-`buildQtyDecision` still authors the field against `suggestedQty`, and this section is the contract
-the code is lagging — named, on the C8-FIND-03 precedent, not drifting.
+⚠️ **BATCH — CORRECTED: THE R2 BEHAVIOUR WORK WAS FOLDED INTO A2 RATHER THAN DISPATCHED
+SEPARATELY, AND IT HAS LANDED.** This paragraph read that the code *"is not B2's machine either …
+and awaits its own dispatch"*. The operator dispatched the two together, and that is worth
+recording as a ruling rather than as a scheduling detail: the baseline move and the machine touch
+THE SAME TWO SURFACES, so landing them apart would have left one surface measuring against
+`suggestedQty` while the other measured against `acceptedQty` — **the very split A1-R2 exists to
+close, reproduced across a merge boundary instead of across two pages.**
 
-**Batch:** B2 (the `intakeLine` machine) removes the stored field and moves the baseline. Until then
-`isQtyAdjusted` still compares against `suggestedQty`, and this section is the contract the code is
-lagging — named, on the C8-FIND-03 precedent, not drifting.
+**As built at A2.** `wasAdjusted` is derived in `dispatcher.ts` from the decision's own quantities
+and stamped onto the DR-10 event AND onto the document. `CommandInput.decision` is typed
+`CommandDecisionInput`, which **has no such key**, so no caller can author one — the type is what
+enforces the ruling, not this paragraph. `buildQtyDecision` returns that input type and measures
+`from` against the producer's `acceptedQty`. Both surfaces gate on that same baseline. Probed by
+mutation: re-pointing `INTAKE_OVERRIDE_REASONED` at `suggestedQty` is killed by name, which is the
+probe firing at the defect the tree really carried rather than at a synthetic one.
+
+**Batch: DONE at A2.** The stored `PrIntakeLine.wasAdjusted` is deleted from the type and from the
+fixture, and `isQtyAdjusted` compares against `acceptedQty`. What replaces the boolean on the
+surfaces is `producerAdjusted`, derived at read and rendered as *whose* act it was — "SOMO adjusted
+5,000 → 4,500" — which the old boolean could never say, because a bare `true` names nobody.
 
 **As-built (G1.2b):** the gate + payload + decision are pure functions
 (`src/pages-v2/plan-grid/planGridModel.ts` — `overrideBlocked` / `buildQtyDecision` /

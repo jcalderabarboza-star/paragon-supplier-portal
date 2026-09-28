@@ -19,7 +19,8 @@ import PlanCellMarker from './plan-grid/PlanCellMarker';
 import { dataCell, textCell } from './plan-grid/cells';
 import IntakeAdjustDrawer from './plan-grid/IntakeAdjustDrawer';
 import FullScreenSection from './plan-grid/FullScreenSection';
-import { useQuotations } from '../services/query/hooks';
+import { useIntakeReview, useQuotations } from '../services/query/hooks';
+import type { IntakeLine } from '../services/data/types';
 import { formatIDR, formatNumber } from '../lib/format';
 import { mockSuppliers } from '../data/mockSuppliers';
 import {
@@ -27,11 +28,9 @@ import {
   DEFAULT_WEIGHTS,
   awardScenarioRows,
   buildWhatIfOverlay,
-  SAMPLE_INTAKE_LINES,
   selectedLine,
   type AwardCriterionKey,
   type AwardScenarioRow,
-  type PrIntakeLine,
   type WhatIfWeights,
 } from './plan-grid/planGridModel';
 
@@ -85,6 +84,15 @@ const PlanGrid: React.FC = () => {
   // intake DSG's "Adjust" action column sets this; the drawer reads it via the
   // pure `selectedLine` resolver. One line at a time — the working set of one.
   const [selectedLineId, setSelectedLineId] = useState<string | null>(null);
+
+  // ⚠️ **A2 — THE GRID READS THE SEAM, NOT THE FIXTURE ALIAS.** It rendered
+  // `SAMPLE_INTAKE_LINES` directly, so its plan-state column showed the literal
+  // `'PLANNED'` on every row forever: a line the drawer had already committed
+  // still read PLANNED two columns away from the drawer that committed it. The
+  // seam carries the machine's triage, so both halves of this page now answer
+  // from the same place.
+  const intakeQuery = useIntakeReview();
+  const intakeLines = intakeQuery.data?.items ?? [];
 
   const awardRows = useMemo(
     () => awardScenarioRows(quotations, AWARD_RFQ),
@@ -172,7 +180,7 @@ const PlanGrid: React.FC = () => {
     [t],
   );
 
-  const intakeColumns = useMemo<Column<PrIntakeLine>[]>(
+  const intakeColumns = useMemo<Column<IntakeLine>[]>(
     () => [
       {
         // G1.3.2 — the working-set selection affordance: an explicit per-row
@@ -183,7 +191,7 @@ const PlanGrid: React.FC = () => {
         title: t('planGrid.intake.col.select'),
         disabled: true,
         minWidth: 96,
-        component: ({ rowData }: CellProps<PrIntakeLine>) => (
+        component: ({ rowData }: CellProps<IntakeLine>) => (
           <div className="w-full px-2">
             <button
               type="button"
@@ -204,13 +212,13 @@ const PlanGrid: React.FC = () => {
         disabled: true,
         grow: 2,
         minWidth: 170,
-        component: textCell<PrIntakeLine>((r) => r.material),
+        component: textCell<IntakeLine>((r) => r.material),
       },
       {
         title: t('planGrid.intake.col.source'),
         disabled: true,
         minWidth: 120,
-        component: textCell<PrIntakeLine>(
+        component: textCell<IntakeLine>(
           (r) => t(`planGrid.source.${r.source}`),
           'text-text-secondary',
         ),
@@ -220,7 +228,7 @@ const PlanGrid: React.FC = () => {
         disabled: true,
         grow: 2,
         minWidth: 180,
-        component: textCell<PrIntakeLine>(
+        component: textCell<IntakeLine>(
           (r) => r.suggestedSource ?? t('planGrid.empty.dash'),
           'text-text-secondary',
         ),
@@ -229,7 +237,7 @@ const PlanGrid: React.FC = () => {
         title: t('planGrid.intake.col.segment'),
         disabled: true,
         minWidth: 90,
-        component: textCell<PrIntakeLine>(
+        component: textCell<IntakeLine>(
           (r) => r.segment ?? t('planGrid.empty.dash'),
           'text-text-secondary',
         ),
@@ -238,28 +246,40 @@ const PlanGrid: React.FC = () => {
         title: t('planGrid.intake.col.suggestedQty'),
         disabled: true,
         minWidth: 110,
-        component: dataCell<PrIntakeLine>((r) => `${formatNumber(r.suggestedQty)} ${r.uom}`),
+        component: dataCell<IntakeLine>((r) => `${formatNumber(r.suggestedQty)} ${r.uom}`),
       },
       {
         title: t('planGrid.intake.col.acceptedQty'),
         disabled: true,
         minWidth: 110,
-        component: dataCell<PrIntakeLine>((r) => `${formatNumber(r.acceptedQty)} ${r.uom}`),
+        component: dataCell<IntakeLine>((r) => `${formatNumber(r.acceptedQty)} ${r.uom}`),
       },
       {
         title: t('planGrid.intake.col.adjusted'),
         disabled: true,
-        minWidth: 110,
-        component: ({ rowData }: CellProps<PrIntakeLine>) => (
+        minWidth: 190,
+        // ⚠️ **THIS COLUMN NAMES THE PRODUCER'S ACT, AND IT USED TO NAME
+        // NOBODY'S.** It read a stored `wasAdjusted` boolean — a hand-authored
+        // fixture literal sitting beside the two quantities that determine it,
+        // with nothing checking they agreed (A1-R2 retired it). It is derived
+        // now, and it SAYS WHOSE DELTA IT IS: a trim SOMO made is SOMO's act,
+        // shown here read-only, and never the planner's to justify.
+        component: ({ rowData }: CellProps<IntakeLine>) => (
           <div className="w-full px-2 text-sm">
             <span
               className={`inline-flex items-center rounded-sm border px-1.5 py-0.5 text-[11px] font-medium ${
-                rowData.wasAdjusted
+                rowData.producerAdjusted
                   ? 'border-warning/30 bg-warning-soft text-warning-hover'
                   : 'border-border-subtle bg-bg-hover text-text-tertiary'
               }`}
             >
-              {t(rowData.wasAdjusted ? 'planGrid.adjusted.yes' : 'planGrid.adjusted.no')}
+              {rowData.producerAdjusted
+                ? t('planGrid.adjusted.byProducer', {
+                    producer: t(`planGrid.source.${rowData.source}`),
+                    from: formatNumber(rowData.suggestedQty),
+                    to: formatNumber(rowData.acceptedQty),
+                  })
+                : t('planGrid.adjusted.no')}
             </span>
           </div>
         ),
@@ -268,20 +288,20 @@ const PlanGrid: React.FC = () => {
         title: t('planGrid.intake.col.period'),
         disabled: true,
         minWidth: 90,
-        component: dataCell<PrIntakeLine>((r) => r.period),
+        component: dataCell<IntakeLine>((r) => r.periodBucket),
       },
       {
         title: t('planGrid.intake.col.estValue'),
         disabled: true,
         minWidth: 130,
-        component: dataCell<PrIntakeLine>((r) => formatIDR(r.estimatedValue, { compact: true })),
+        component: dataCell<IntakeLine>((r) => formatIDR(r.estimatedValue, { compact: true })),
       },
       {
         title: t('planGrid.intake.col.provenance'),
         disabled: true,
         grow: 2,
         minWidth: 170,
-        component: ({ rowData }: CellProps<PrIntakeLine>) => (
+        component: ({ rowData }: CellProps<IntakeLine>) => (
           <div className="w-full px-2">
             <PlanCellMarker capability="purchaseRequisitions" planState={rowData.planState} />
           </div>
@@ -305,7 +325,7 @@ const PlanGrid: React.FC = () => {
       <PageMetaLine className="-mt-6 mb-6">
         {t('planGrid.meta.summary', {
           quotations: awardRows.length,
-          lines: SAMPLE_INTAKE_LINES.length,
+          lines: intakeLines.length,
         })}
       </PageMetaLine>
 
@@ -386,8 +406,8 @@ const PlanGrid: React.FC = () => {
                 className="plan-dsg overflow-hidden rounded-lg border border-border-subtle bg-bg-surface"
                 style={dsgVar(dsgHeight)}
               >
-                <DataSheetGrid<PrIntakeLine>
-                  value={SAMPLE_INTAKE_LINES as PrIntakeLine[]}
+                <DataSheetGrid<IntakeLine>
+                  value={intakeLines as IntakeLine[]}
                   columns={intakeColumns}
                   gutterColumn={false}
                   lockRows
@@ -407,7 +427,7 @@ const PlanGrid: React.FC = () => {
           {() => (
             <>
               <p className="mb-3 text-sm text-text-secondary">{t('planGrid.drawer.subtitle')}</p>
-              <IntakeAdjustDrawer line={selectedLine(SAMPLE_INTAKE_LINES, selectedLineId)} />
+              <IntakeAdjustDrawer line={selectedLine(intakeLines, selectedLineId)} />
             </>
           )}
         </FullScreenSection>

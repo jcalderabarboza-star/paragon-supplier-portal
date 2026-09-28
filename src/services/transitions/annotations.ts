@@ -190,6 +190,11 @@ export const TRANSITION_PURPOSE: FlowAnnotations = Object.freeze({
 
   // ── purchaseRequisition ────────────────────────────────────────────────────
   t_pr_create: { purposeKey: 'processFlows.purpose.t_pr_create' },
+
+  // A2 · the intake triage machine.
+  t_intake_dismiss: { purposeKey: 'processFlows.purpose.t_intake_dismiss' },
+  t_intake_restore: { purposeKey: 'processFlows.purpose.t_intake_restore' },
+  t_intake_commit: { purposeKey: 'processFlows.purpose.t_intake_commit' },
   t_pr_submit: { purposeKey: 'processFlows.purpose.t_pr_submit' },
   t_pr_approve: { purposeKey: 'processFlows.purpose.t_pr_approve' },
   t_pr_reject: { purposeKey: 'processFlows.purpose.t_pr_reject' },
@@ -322,6 +327,7 @@ export const ENTITY_PURPOSE: FlowAnnotations = Object.freeze({
   contract: { purposeKey: 'processFlows.purpose.entity.contract' },
   obligation: { purposeKey: 'processFlows.purpose.entity.obligation' },
   purchaseRequisition: { purposeKey: 'processFlows.purpose.entity.purchaseRequisition' },
+  intakeLine: { purposeKey: 'processFlows.purpose.entity.intakeLine' },
   supplierDocument: { purposeKey: 'processFlows.purpose.entity.supplierDocument' },
   compliance: { purposeKey: 'processFlows.purpose.entity.compliance' },
   requirementResponse: { purposeKey: 'processFlows.purpose.entity.requirementResponse' },

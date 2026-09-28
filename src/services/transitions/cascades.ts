@@ -58,6 +58,23 @@ export const CASCADES: Record<string, readonly CascadeLink[]> = {
     { targetEntity: 'quotation', targetTransitionId: 't_quotation_award' },
     { targetEntity: 'quotation', targetTransitionId: 't_quotation_reject' },
   ],
+  // A2 · the intake commit mints the requisition. **This is the only link in
+  // this registry that carries an IDEMPOTENCY KEY** — the resolver sets it to
+  // the intake line's own id, so a redelivered commit returns the FIRST
+  // requisition instead of minting a second (C7-FIND-05).
+  //
+  // ⚠️ **THE SOURCE IS THE ONLY EXIT FROM PLANNED, SO A SILENT FAN-OUT
+  // FAILURE HERE WOULD BE A LINE MARKED COMMITTED WITH NOTHING COMMITTED.** The
+  // fan-out re-dispatches inside a `catch {}`, and only two exits throw
+  // (`NOT_FOUND` / `SCOPE_DENIED`) — both before any emit, both traceless. The
+  // remedy is at the resolver, as it is for the other four: it hands back a
+  // command it has already confirmed it can build, or it hands back nothing. A
+  // `t_pr_create` is a CREATION, so there is no target id to be wrong about;
+  // what the resolver confirms instead is that the line and its quantity
+  // resolve, and `intakeCascade.test.ts` probes the negative.
+  t_intake_commit: [
+    { targetEntity: 'purchaseRequisition', targetTransitionId: 't_pr_create' },
+  ],
 };
 
 /** The cascade links declared for a source transition (empty if none). */

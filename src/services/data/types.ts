@@ -33,6 +33,7 @@ import type { EnforcementSetting, ActorAttribution } from '../../lib/enforcement
 // vocabulary, and the ONE function that decides membership is `parseBucket` in
 // the module beside it. Importing the alias does not import the parse.
 import type { BucketId } from '../planning/bucket';
+import type { IntakeLineState } from '../transitions/flows/intakeLine.flow';
 
 // SDC-4b — the collaboration read seam's row types (type-only; the SDC layer
 // already imports IntakePlanState from here, so this reverse reference is a
@@ -1109,11 +1110,13 @@ export interface PurchaseRequisition {
 }
 
 // ─── PR-intake line (C7 §2 — one shape, two producers) ──────────────────────
-// Promoted to the service seam at Phase A/1 (getPrIntake) so the intake REVIEW
+// Promoted to the service seam at Phase A/1 (getIntakeLines) so the intake REVIEW
 // surface is a real consumer, not a page-local const reader (FORK-B=b2). SOMO-
 // authored fields (suggestedSource lane, segment) are read-only + nullable for a
 // Grid line. Quantity carries THREE values (C7 §2.1: suggested / accepted /
-// wasAdjusted — the fact of adjustment is itself the audit signal). Liveness is
+// and the producer's delta is SHOWN, never charged to the planner — A1-R2 retired
+// the stored `wasAdjusted`, which was a hand-authored literal beside the two
+// quantities that determine it, with nothing checking they agreed). Liveness is
 // NOT a field — it is registry-derived (purchaseRequisitions, gate-2 shut →
 // SIMULATED). Plan-state IS a per-row field (the C6 overlay axis). `deficit` is
 // the recommend-first "why" a review triages on (C7 §2; FORK-D — bomContext and
@@ -1127,16 +1130,89 @@ export interface PrIntakeLine {
   readonly suggestedSource: string | null;
   /** SOMO-authored ABC-XYZ policy class; null for an internal-Grid line. */
   readonly segment: string | null;
+  /** What the producer's solve PROPOSED, before the producer's own adjustment. */
   readonly suggestedQty: number;
+  /**
+   * What the producer DELIVERED — and **the baseline every override is measured
+   * against** (operator ruling A1-R2, C6 §8.3 Amendment 1).
+   *
+   * ⚠️ **THE GAP TO `suggestedQty` IS THE PRODUCER'S ACT, NOT THE PLANNER'S.**
+   * A SOMO line can arrive already trimmed; that delta is SHOWN read-only
+   * ("SOMO adjusted 5,000 → 4,500") and never charged to the planner. A commit
+   * at this number owes no reason and carries no `decision`.
+   */
   readonly acceptedQty: number;
-  readonly wasAdjusted: boolean;
   readonly uom: string;
-  readonly period: string;
+  /**
+   * The planning bucket — `'YYYY-MM'` or `'YYYY-Www'`, parsed by `parseBucket`.
+   *
+   * ⚠️ **RENAMED FROM `period: string` AT A2, AND THE RENAME IS THE FIX.**
+   * An unparsed free string held two formats for a year and nothing could refuse
+   * a third; `BucketId` names the vocabulary and `parseBucket` is the one
+   * discriminator both seams go through (A1-R1, C7 Amendment 1). It is NOT a
+   * date and must never be rendered through `formatDate` — `'2026-09'` is the
+   * one form `Date` happily parses, so that call renders `01 Sept 2026`, a
+   * specific day nobody entered.
+   */
+  readonly periodBucket: BucketId;
   readonly estimatedValue: number;
   readonly source: PrSource;
-  readonly planState: IntakePlanState;
   /** C7 §2 recommend-first rationale — the "why" a review triages on. Nullable. */
   readonly deficit?: string;
+}
+
+/**
+ * An intake line AS THE SEAM DELIVERS IT — the producer's record plus the
+ * triage the `intakeLine` machine has recorded against it (A2 / Design 1 B2).
+ *
+ * ⚠️ **THE SPLIT IS LOAD-BEARING: `PrIntakeLine` IS WHAT A PRODUCER SAID,
+ * THIS IS WHAT PARAGON HAS DONE ABOUT IT.** A fixture row may only ever carry
+ * the first. Storing a triage field on the producer's record would mean a
+ * fixture edit could assert that somebody had dismissed a line, in the same
+ * shape as a dismissal somebody actually performed.
+ *
+ * ⚠️ **FOUR OF THESE FIVE FIELDS ARE DERIVED AT READ, NOT STORED, AND THE
+ * ONE THAT IS STORED IS THE ONE NOTHING ELSE DETERMINES.** `state` and
+ * `committedAt` are the machine's own facts. `planState` follows from `state`;
+ * `producerAdjusted` follows from the two quantities; `prNumber` is looked up
+ * through the requisition that names this line. Each of those three had a
+ * stored predecessor in this tree, and each predecessor could disagree with the
+ * values beside it in silence — which is what `wasAdjusted` was retired for.
+ */
+export interface IntakeLine extends PrIntakeLine {
+  /** The triage state — the `intakeLine` machine's, `'Pending'` until an act. */
+  readonly state: IntakeLineState;
+  /**
+   * The C6 overlay axis, DERIVED from `state`: a committed line has left
+   * PLANNED, and a commit is the only exit (C6 §3). Not a stored field — a
+   * second answer to "is this committed?" is a second answer that can be wrong.
+   */
+  readonly planState: IntakePlanState;
+  /**
+   * The PRODUCER's own adjustment, DERIVED — `acceptedQty !== suggestedQty`.
+   * Shown read-only; it is never the planner's to justify (A1-R2).
+   */
+  readonly producerAdjusted: boolean;
+  /**
+   * The quantity the planner committed. Present only once `Committed`, and
+   * distinct from `acceptedQty`, which is the producer's and never changes.
+   */
+  readonly committedQty?: number;
+  /** The planner's stated reason — present only when they moved the number. */
+  readonly overrideReason?: string;
+  /**
+   * The requisition this line minted, DERIVED by looking up the PR that names
+   * this line (`PurchaseRequisition.intakeLineId`).
+   *
+   * ⚠️ **DERIVED RATHER THAN WRITTEN BACK, AND THAT IS WHAT MAKES "ONE LINE
+   * → AT MOST ONE PR" CHECKABLE AT READ.** A stored copy would have to be
+   * written by the cascade's consequence into the cascade's source, and the two
+   * could then disagree — a line claiming a requisition that does not name it
+   * back is exactly the duplicate this machine exists to make impossible.
+   */
+  readonly prNumber?: string;
+  /** When the commit happened — the machine's own fact, from `sdcClock`. */
+  readonly committedAt?: string;
 }
 
 // ─── Risk / Compliance entities (buyer-side, inline today) ──────────────────
@@ -1567,16 +1643,46 @@ export type CommandOutcome = 'done' | 'submitted' | 'failed';
  * `decision` never annotates one. Mirrors the optional `causationId` passthrough
  * — additive to the seam, not a new event type.
  */
-export interface CommandDecision {
+export interface CommandDecisionInput {
   /** The field the human adjusted (e.g. `acceptedQty`). */
   field: string;
-  /** The platform-suggested value. */
+  /**
+   * The BASELINE the change is measured from — for an intake commit, the
+   * PRODUCER's accepted quantity, never `suggestedQty` (A1-R2, C6 §8.3
+   * Amendment 1). A `from` that still held the producer's *suggestion* would
+   * make every derivation below faithfully compute the wrong fact, in the one
+   * place nobody can correct afterwards.
+   */
   from: number;
   /** The human-accepted value. */
   to: number;
   /** The required justification — a silent override is forbidden (C6-LOCK §8.3). */
   reason: string;
-  /** True when `to !== from` (a genuine override); false for accept-as-suggested. */
+}
+
+/**
+ * The decision AS RECORDED — what the dispatcher stamps onto the DR-10 event
+ * and onto the document. It is `CommandDecisionInput` plus the one field the
+ * caller may not supply.
+ *
+ * ⚠️ **`wasAdjusted` IS DERIVED AT DISPATCH AND IS NEVER AUTHORED** (operator
+ * ruling A1-R2a, C6 §8.3 Amendment 1a). It has left `CommandInput.decision`
+ * entirely, so there is no key for a caller to set and therefore no way for a
+ * caller to disagree with the pair it sits beside.
+ *
+ * ⚠️ **"NEVER AUTHORED" IS THE LOAD-BEARING HALF, NOT A TIDYING.** A
+ * derivation computed by the CALLER is still an authored value at the seam: the
+ * dispatcher receives a boolean it cannot check and forwards it verbatim onto
+ * an APPEND-ONLY ledger. Today's caller happens to compute it correctly; the
+ * next one has no obligation to, and the failure would be silent and permanent.
+ * This is `ACTOR_IN_PAYLOAD`'s shape one field over — that gate refuses
+ * attribution keys BY KEY rather than by value-shape, on the ground that a
+ * caller which can assert a fact about the act can misstate it, and
+ * `wasAdjusted` asserts *"a human changed this"*, which is a governance claim
+ * of exactly that kind.
+ */
+export interface CommandDecision extends CommandDecisionInput {
+  /** True when `to !== from` (a genuine override). DERIVED — see above. */
   wasAdjusted: boolean;
 }
 
@@ -1660,10 +1766,15 @@ export interface CommandInput {
   idempotencyKey?: string;
   /**
    * The governed-decision provenance (C6-LOCK). Present only when this dispatch
-   * carries a human override — the dispatcher forwards it verbatim to the audit
-   * event; it participates in NO validation (opaque).
+   * carries a human override — the dispatcher stamps `wasAdjusted` onto it and
+   * forwards the result to the audit event; it participates in NO validation
+   * (opaque to every gate).
+   *
+   * ⚠️ **`CommandDecisionInput`, NOT `CommandDecision` — THE CALLER HAS NO
+   * `wasAdjusted` KEY** (A1-R2a). See `CommandDecision` for why that is the
+   * load-bearing half of the ruling rather than a tidying.
    */
-  decision?: CommandDecision;
+  decision?: CommandDecisionInput;
 }
 
 /** The synchronous result of dispatching a command. */
@@ -1778,7 +1889,16 @@ export interface IProcurementService {
   getRequisitions(scope: QueryScope, filter?: PRFilter): Promise<Page<PurchaseRequisition>>;
 
   // — PR-intake review (buyer-only; C7 §2 — one shape, two producers) —
-  getPrIntake(scope: QueryScope): Promise<Page<PrIntakeLine>>;
+  //
+  // ⚠️ **`getIntakeLines` REPLACED `getPrIntake` AT A2, AND IT IS A RENAME
+  // WITH A RETURN-TYPE CHANGE RATHER THAN AN ALIAS.** The old read handed back
+  // the PRODUCER's rows and nothing else, so every surface had to keep its own
+  // triage in `useState` — which is how two surfaces came to hold independent
+  // answers about the same line. This one returns `IntakeLine`: the producer's
+  // record WITH the `intakeLine` machine's recorded triage, so there is one
+  // answer and every surface reads it. A parallel `getPrIntake` was considered
+  // and refused; it would have kept the second answer reachable.
+  getIntakeLines(scope: QueryScope): Promise<Page<IntakeLine>>;
 
   // — Supplier applications (B2, buyer-only ACQUIRE stage) —
   //
@@ -1787,7 +1907,7 @@ export interface IProcurementService {
   // `supplierId` (the row's field is typed `null`), because an applicant is not
   // a tenant. So there is nothing to narrow BY, and the honest boundary is the
   // persona: the whole collection is buyer-side or it is nothing. A supplier
-  // scope reads an empty page — the `getRequisitions` / `getPrIntake` shape,
+  // scope reads an empty page — the `getRequisitions` / `getIntakeLines` shape,
   // reused deliberately rather than invented.
   getSupplierApplications(scope: QueryScope): Promise<Page<SupplierApplication>>;
 

@@ -47,6 +47,13 @@ export { pslFlow, PSL_PROPOSE_FIELDS } from './flows/psl.flow';
 export { pslCapSettingFlow } from './flows/pslCapSetting.flow';
 export { deliveryReleaseFlow, DELIVERY_LINE_STATES } from './flows/deliveryRelease.flow';
 export { deliveryPolicyFlow, DELIVERY_POLICY_STATE } from './flows/deliveryPolicy.flow';
+export {
+  intakeLineFlow,
+  INTAKE_LINE_STATES,
+  INTAKE_COMMIT_FIELDS,
+  isIntakeLineState,
+  type IntakeLineState,
+} from './flows/intakeLine.flow';
 export * from './customRoles';
 
 import { flowRegistry } from './registry';
@@ -75,6 +82,7 @@ import { pslFlow } from './flows/psl.flow';
 import { pslCapSettingFlow } from './flows/pslCapSetting.flow';
 import { deliveryReleaseFlow } from './flows/deliveryRelease.flow';
 import { deliveryPolicyFlow } from './flows/deliveryPolicy.flow';
+import { intakeLineFlow } from './flows/intakeLine.flow';
 
 // Seed the shipped flows onto the singleton.
 flowRegistry.register(purchaseOrderFlow); // Step 3.1 — PO
@@ -151,3 +159,8 @@ flowRegistry.register(pslCapSettingFlow); // PSL P3 — the default validity cap
 // and no verbs at all, which is why nothing audited them.
 flowRegistry.register(deliveryReleaseFlow); // Call-off 1 — the schedule line
 flowRegistry.register(deliveryPolicyFlow); // Call-off 1 — the drawdown tolerance
+// A2 · Design 1 B2 — the intake triage machine. WIRED in the same commit as
+// its target, so the entity never joins the target-less set. No creation edge:
+// `Pending` is the born state, because a producer emitted the line and Paragon
+// did not author it.
+flowRegistry.register(intakeLineFlow); // A2 — Intake line

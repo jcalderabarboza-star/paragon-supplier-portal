@@ -3,22 +3,13 @@ import { useTranslation } from 'react-i18next';
 import Data from '../../components/ui-v2/Data';
 import Button from '../../components/ui-v2/Button';
 import PlanCellMarker from './PlanCellMarker';
-import { usePurchaseRequisitionCreate } from '../../services/query/commandHooks';
-import { buildPrCreatePayload } from '../requisitions/prCreatePayload';
+import { useIntakeCommit } from '../../services/query/commandHooks';
 import { HandoffNotice } from '../../components/ui-v2/HandoffNotice';
 import { useVerbAvailability } from '../../hooks/useVerbAvailability';
-import { DataError } from '../../services/data/types';
+import { DataError, type IntakeLine } from '../../services/data/types';
 import { formatNumber } from '../../lib/format';
 import { normalizeQty, type QtyRefusalReason } from '../../lib/localeNumber';
-import {
-  isQtyAdjusted,
-  overrideBlocked,
-  buildQtyDecision,
-  applyPushResult,
-  PLANNED_ROW,
-  type PrIntakeLine,
-  type PushRowState,
-} from './planGridModel';
+import { isQtyAdjusted, overrideBlocked } from './planGridModel';
 // GL-1 - the glossary destination for this surface's refusals.
 import GlossaryTermChip from '../../components/ui-v2/GlossaryTermChip';
 import { useRefusalText } from '../../hooks/useRefusalText';
@@ -73,10 +64,10 @@ const QTY_REFUSAL_KEY: Record<QtyRefusalReason, string> = {
   AMBIGUOUS_QTY: 'planGrid.push.qty.refused.ambiguous',
 };
 
-const IntakeAdjustDrawer: React.FC<{ line: PrIntakeLine | null }> = ({ line }) => {
+const IntakeAdjustDrawer: React.FC<{ line: IntakeLine | null }> = ({ line }) => {
   const { t } = useTranslation();
   const refusalText = useRefusalText();
-  const createPr = usePurchaseRequisitionCreate();
+  const commit = useIntakeCommit();
 
   // §74 — `t_pr_create` (atom `pr:create`, held by `requisitioner`). The
   // push is the ONLY exit from PLANNED (C6 §3), so a seat without the atom
@@ -90,7 +81,13 @@ const IntakeAdjustDrawer: React.FC<{ line: PrIntakeLine | null }> = ({ line }) =
   // being silently rounded into a number on its way into state.
   const [acceptedRaw, setAcceptedRaw] = useState<Record<string, string>>({});
   const [reason, setReason] = useState<Record<string, string>>({});
-  const [pushState, setPushState] = useState<Record<string, PushRowState>>({});
+  // ⚠️ **A2 — THE OUTCOME MAP IS GONE AND ONLY THE REFUSAL SURVIVES.** The
+  // drawer used to hold a `PushRowState` per line, which made it the SECOND
+  // place in the product that knew whether a line was committed — and the two
+  // disagreed the moment anybody reloaded. `line.state` answers that now, so
+  // what is left here is a message about an act that did NOT happen, which is
+  // the one thing no store should keep.
+  const [refusal, setRefusal] = useState<Record<string, string>>({});
 
   if (!line) {
     return (
@@ -107,8 +104,8 @@ const IntakeAdjustDrawer: React.FC<{ line: PrIntakeLine | null }> = ({ line }) =
   // "4.500" is exactly the token the parser cannot read without a convention.
   const raw = acceptedRaw[line.id] ?? String(line.acceptedQty);
   const why = reason[line.id] ?? '';
-  const state = pushState[line.id] ?? PLANNED_ROW;
-  const committed = state.planState === 'committed';
+  const committed = line.state === 'Committed';
+  const failure = refusal[line.id];
 
   // The ONE parse. No hint: a buyer's own form carries no origin convention, so
   // a token legal under both readings refuses rather than picking one.
@@ -129,24 +126,39 @@ const IntakeAdjustDrawer: React.FC<{ line: PrIntakeLine | null }> = ({ line }) =
     const qty = parsed.value;
     if (overrideBlocked(line, qty, why)) return;
 
-    const payload = buildPrCreatePayload(line, qty, why);
-    // A genuine override carries the opaque decision provenance; an
-    // accept-as-suggested push carries none (nothing was overridden).
-    const decision = isQtyAdjusted(line, qty) ? buildQtyDecision(line, qty, why) : undefined;
-
+    setRefusal((r) => {
+      const next = { ...r };
+      delete next[line.id];
+      return next;
+    });
     try {
-      const result = await createPr.mutateAsync({ payload, decision });
-      setPushState((s) => ({
-        ...s,
-        [line.id]:
-          result.status === 'failed'
-            ? applyPushResult({ ok: false, reason: result.reason ?? 'failed' })
-            : applyPushResult({ ok: true, entityId: result.entityId ?? '' }),
-      }));
+      // ⚠️ **THE DRAWER COMMITS THE LINE; THE CASCADE MINTS THE REQUISITION.**
+      // It used to dispatch `t_pr_create` itself, which is exactly why the same
+      // line was pushable again after a reload — nothing recorded that it had
+      // been. `t_intake_commit` is `from: ['Pending']`, so the machine refuses a
+      // second press and TELLS the planner; the cascade's replay key (the line's
+      // own id) answers a redelivery with the first result instead. One line
+      // → at most one requisition, and the two mechanisms cover the two callers.
+      //
+      // ⚠️ **THE RAW TOKEN TRAVELS BESIDE THE NUMBER**, so
+      // `INTAKE_QTY_AGREES` can re-parse what the human actually typed. It is
+      // the only guard that can catch the locale misread this very field has
+      // already shipped once — "4.500" read as 4.5.
+      const result = await commit.mutateAsync({
+        lineId: line.id,
+        acceptedQty: qty,
+        acceptedQtyRaw: raw,
+        // Omitted, not `''`, when nothing was overridden: an empty string would
+        // read as an override whose reason was left blank, which is the state
+        // the gate exists to make unreachable.
+        ...(isQtyAdjusted(line, qty) ? { overrideReason: why } : {}),
+      });
+      if (result.status === 'failed') {
+        setRefusal((r) => ({ ...r, [line.id]: result.reason ?? 'failed' }));
+      }
     } catch (e) {
       // Hard authz failure arrives as a thrown DataError — same "stay PLANNED".
-      const reasonCode = e instanceof DataError ? e.code : 'ERROR';
-      setPushState((s) => ({ ...s, [line.id]: applyPushResult({ ok: false, reason: reasonCode }) }));
+      setRefusal((r) => ({ ...r, [line.id]: e instanceof DataError ? e.code : 'ERROR' }));
     }
   };
 
@@ -160,18 +172,35 @@ const IntakeAdjustDrawer: React.FC<{ line: PrIntakeLine | null }> = ({ line }) =
             {t(`planGrid.source.${line.source}`)}
           </div>
         </div>
-        <PlanCellMarker capability="purchaseRequisitions" planState={state.planState} />
+        <PlanCellMarker capability="purchaseRequisitions" planState={line.planState} />
       </div>
 
       <div className="grid gap-4 px-4 py-4 sm:grid-cols-2">
         {/* Suggested (read-only) */}
         <div>
           <div className="mb-1 text-label uppercase tracking-wider text-text-tertiary">
-            {t('planGrid.push.col.suggested')}
+            {t('planGrid.push.col.delivered')}
           </div>
+          {/* ⚠️ **THE PRODUCER'S DELIVERED QUANTITY, AND IT IS THE BASELINE
+              EVERY OVERRIDE IS MEASURED FROM** (A1-R2). This slot used to show
+              `suggestedQty`, which is what made the gate below demand a
+              planner's justification for the producer's own arithmetic. The
+              producer's delta is shown underneath, as SOMO's act, read-only. */}
           <Data className="text-sm">
-            {formatNumber(line.suggestedQty)} {line.uom}
+            {formatNumber(line.acceptedQty)} {line.uom}
           </Data>
+          {line.producerAdjusted && (
+            <div
+              className="mt-1 text-[11px] text-text-tertiary"
+              data-testid={`producer-adjusted-${line.id}`}
+            >
+              {t('planGrid.adjusted.byProducer', {
+                producer: t(`planGrid.source.${line.source}`),
+                from: formatNumber(line.suggestedQty),
+                to: formatNumber(line.acceptedQty),
+              })}
+            </div>
+          )}
         </div>
 
         {/* Accepted (the ONE editable field) */}
@@ -208,9 +237,11 @@ const IntakeAdjustDrawer: React.FC<{ line: PrIntakeLine | null }> = ({ line }) =
                     : 'border-border-subtle bg-bg-hover text-text-tertiary'
                 }`}
               >
+                {/* The PLANNER's change, measured from the producer's
+                    delivered quantity — the only move that owes a reason. */}
                 {adjusted
-                  ? `${t('planGrid.adjusted.yes')} · ${formatNumber(line.suggestedQty)}→${formatNumber(parsed.value)}`
-                  : t('planGrid.adjusted.no')}
+                  ? `${t('planGrid.adjusted.byPlanner')} · ${formatNumber(line.acceptedQty)}→${formatNumber(parsed.value)}`
+                  : t('planGrid.adjusted.asDelivered')}
               </span>
             ) : (
               // The refusal REPLACES the adjusted chip: with no readable
@@ -254,24 +285,34 @@ const IntakeAdjustDrawer: React.FC<{ line: PrIntakeLine | null }> = ({ line }) =
       {/* Push action + committed / failed feedback */}
       <div className="flex items-center justify-between gap-3 border-t border-border-subtle px-4 py-3">
         <div className="text-[11px]">
-          {committed && state.prNumber && (
+          {/* ⚠️ **A COMMITTED LINE WITH NO NUMBER IS A SESSION BOUNDARY, NOT A
+              FAILED COMMIT** — the triage persists and the requisition store
+              does not, so a line committed before a reload is `Committed` with
+              no requisition in THIS session naming it back. The label says that
+              rather than "none was raised", which would be false: one was.
+              Storing the number instead would leave a dangling reference an
+              approver could chase and not find. See `IntakeReview.tsx` for the
+              full note; it goes away when `httpDataService` lands. */}
+          {committed && (
             <Data className="text-text-secondary">
-              {t('planGrid.push.committed', { pr: state.prNumber })}
+              {line.prNumber
+                ? t('planGrid.push.committed', { pr: line.prNumber })
+                : t('planGrid.push.committedNoPr')}
             </Data>
           )}
-          {state.failureReason && (
-            <span className="text-danger">
-              {refusalText(state.failureReason) ?? t('planGrid.push.failed', { reason: state.failureReason })}
+          {failure && (
+            <span className="text-danger" role="alert">
+              {refusalText(failure) ?? t('planGrid.push.failed', { reason: failure })}
             </span>
           )}
         </div>
         {pushAvailability.kind === 'held' ? (
           <Button
             variant="outline"
-            disabled={blocked || committed || createPr.isPending}
+            disabled={blocked || committed || commit.isPending}
             onClick={push}
           >
-            {createPr.isPending ? t('planGrid.push.pushing') : t('planGrid.push.button')}
+            {commit.isPending ? t('planGrid.push.pushing') : t('planGrid.push.button')}
           </Button>
         ) : (
           <HandoffNotice availability={pushAvailability} testId="handoff-plangrid-push" />

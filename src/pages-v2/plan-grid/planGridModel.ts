@@ -16,7 +16,7 @@
 
 import type { Quotation } from '../../data/mockQuotations';
 import type {
-  CommandDecision,
+  CommandDecisionInput,
   PrIntakeLine,
   IntakePlanState,
 } from '../../services/data/types';
@@ -150,9 +150,32 @@ export const SAMPLE_INTAKE_LINES: readonly PrIntakeLine[] = PR_INTAKE_LINES;
 // helpers express the gate + the push payload + the decision provenance so the
 // governance is headless-provable, independent of the (virtualized) grid.
 
-/** True when the human accepted a quantity different from the suggested one. */
+/**
+ * True when the PLANNER moved the quantity — measured against the PRODUCER's
+ * delivered `acceptedQty`, never against `suggestedQty`.
+ *
+ * ⚠️ **ONE OPERAND MOVED AND THAT IS THE WHOLE OF RULING A1-R2** (C6 §8.3
+ * Amendment 1). It read `acceptedQty !== line.suggestedQty`, and the defect was
+ * measured on the surface rather than reasoned about: `pil-somo-002` arrives
+ * with 5,000 suggested against 4,500 accepted, so against `suggestedQty` that
+ * line reads as an override — the drawer **demanded a planner's justification
+ * for SOMO's own delta** before it would push, while Intake Review's *Accept*
+ * on the same row pushed 5,000. One requirement, two quantities, and the path
+ * that looked more governed was the one making a human account for an act they
+ * did not commit.
+ *
+ * ⚠️ **THE GATE ITSELF IS UNCHANGED, WHICH IS THE PART NOT TO OVER-READ.**
+ * `overrideBlocked` true ⇒ no dispatch stands exactly as written. A gate
+ * comparing against the wrong baseline is not a weak gate; it is a correct gate
+ * pointed at the wrong fact, and loosening it was never the remedy.
+ *
+ * The PRODUCER's own delta has its own name — `producerAdjusted`, in
+ * `services/data/intakeLineProjection.ts` — because it is a different fact
+ * about a different actor, and one function answering both is how they came to
+ * be confused.
+ */
 export function isQtyAdjusted(line: PrIntakeLine, acceptedQty: number): boolean {
-  return acceptedQty !== line.suggestedQty;
+  return acceptedQty !== line.acceptedQty;
 }
 
 /**
@@ -179,13 +202,20 @@ export function buildQtyDecision(
   line: PrIntakeLine,
   acceptedQty: number,
   reason: string,
-): CommandDecision {
+): CommandDecisionInput {
   return {
     field: 'acceptedQty',
-    from: line.suggestedQty,
+    // The PRODUCER's delivered quantity (A1-R2). Derived at dispatch from a
+    // `from` that still held the producer's *suggestion*, `wasAdjusted` would
+    // faithfully compute the wrong fact — in the one place nobody can correct
+    // afterwards. Deriving a value from the wrong operand is not safer than
+    // authoring it; it is the same error with better provenance.
+    from: line.acceptedQty,
     to: acceptedQty,
     reason: reason.trim(),
-    wasAdjusted: isQtyAdjusted(line, acceptedQty),
+    // ⚠️ **NO `wasAdjusted`, AND IT IS THE TYPE THAT ENFORCES THAT** — the
+    // return type is `CommandDecisionInput`, which has no such key (A1-R2a).
+    // The dispatcher derives it, once, for every caller.
   };
 }
 
@@ -242,11 +272,19 @@ export function applyPushResult(outcome: PushOutcome): PushRowState {
 // This pure resolver is the selection contract: id → the line, or null when
 // nothing (or a stale id) is selected. The drawer renders `selectedLine(...)`.
 
-/** Resolve the selected working-set line, or null if none / the id is stale. */
-export function selectedLine(
-  lines: readonly PrIntakeLine[],
+/**
+ * Resolve the selected working-set line, or null if none / the id is stale.
+ *
+ * GENERIC over the row type rather than pinned to `PrIntakeLine` (A2): the grid
+ * hands it `IntakeLine` now — the producer's record WITH its triage — and the
+ * resolver's only claim is about the id. Narrowing it to the producer's shape
+ * would force a cast at the one call site, and a cast is how a drawer comes to
+ * read a different object from the one the grid rendered.
+ */
+export function selectedLine<T extends { readonly id: string }>(
+  lines: readonly T[],
   selectedId: string | null,
-): PrIntakeLine | null {
+): T | null {
   if (selectedId === null) return null;
   return lines.find((l) => l.id === selectedId) ?? null;
 }

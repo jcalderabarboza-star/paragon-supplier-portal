@@ -72,6 +72,7 @@
 // ────────────────────────────────────────────────────────────────────────────
 
 import type { PrIntakeLine, PRPriority } from '../../services/data/types';
+import type { BucketId } from '../../services/planning/bucket';
 import { isQtyAdjusted } from '../plan-grid/planGridModel';
 
 /**
@@ -91,8 +92,20 @@ export interface PrCreatePayload {
 
   readonly uom?: string;
   readonly category?: string;
-  /** C7 §2 GG-3 — the planning `period` maps here today. */
+  /**
+   * A required DATE, and only ever a date.
+   *
+   * ⚠️ **THE PLANNING BUCKET USED TO MAP HERE AND NO LONGER DOES** (A1-R1,
+   * written at A2). It is `periodBucket`, below. A required date is a
+   * commitment to a day; a bucket is a grain; one field could not be both, and
+   * the one that lost was the reader's — `'2026-09'` rendered as
+   * `01 Sept 2026`, a day nobody entered.
+   */
   readonly requiredDate?: string;
+  /** The intake line this requisition is being committed FROM (A1-R3). */
+  readonly intakeLineId?: string;
+  /** The planning bucket the requirement sits in — month or ISO week (A1-R1). */
+  readonly periodBucket?: BucketId;
   /**
    * ⚠️ OMITTED WHEN NOBODY SAID. Never `0`. See the header: a budget of
    * nothing is a different claim from no budget at all.
@@ -127,7 +140,10 @@ export function buildPrCreatePayload(
     quantity: acceptedQty,
     uom: line.uom,
     estimatedValue: line.estimatedValue,
-    requiredDate: line.period,
+    // ⚠️ **NO `requiredDate`. THE BUCKET GOES TO `periodBucket`** (A1-R1) —
+    // this line used to read `requiredDate: line.period`, which is how a
+    // date-named field came to hold a grain. Nobody named a day, so no day is
+    // claimed; the cascade adds `intakeLineId` and `periodBucket` beside this.
     source: line.source,
     ...(isQtyAdjusted(line, acceptedQty) ? { reason: reason.trim() } : {}),
   };

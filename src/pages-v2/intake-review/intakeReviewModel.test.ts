@@ -1,122 +1,118 @@
 // ────────────────────────────────────────────────────────────────────────────
-// intakeReviewModel (Phase A/1) — the PURE triage model behind the review
-// surface, tested HEADLESS.
+// intakeReviewModel (A2) — the PURE model behind the review surface, headless.
 //
-// The load-bearing guarantees of FORK-C=(c2), provable without a DOM:
-//  · accept-as-suggested ROUTES to the existing push with NO override — the
-//    payload quantity IS the suggestion, it never carries a `reason`, and no
-//    DR-10 decision is built (nothing was overridden). One mutation path.
-//  · dismiss is EPHEMERAL — a pure set operation on client state that never
-//    touches a line, a payload, or the seam. Restore is its exact inverse.
-//  · a committed line outranks a stale dismissal (push is the ONLY exit from
-//    PLANNED — a dismissal cannot mask a commit, C6 §3).
+// ⚠️ **MOST OF WHAT THIS FILE USED TO PROVE IS NO LONGER TRUE, AND THAT IS THE
+// BATCH RATHER THAN A REGRESSION.** It asserted, correctly, that:
+//
+//   · *"accept-as-suggested pushes THE SUGGESTION — a producer-recorded
+//     `acceptedQty` is not silently committed by a triage accept"*, and
+//   · *"dismiss is EPHEMERAL — a pure set operation on client state that never
+//     touches a line, a payload, or the seam."*
+//
+// Both were faithful descriptions of a design ruled wrong. The first is exactly
+// the defect A1-R2 names: one requirement, two quantities, with this surface
+// pushing 5,000 while the drawer pre-filled 4,500 and demanded a justification
+// for the gap. The second is F2: a decision held in `useState`, invisible to
+// the next seat and gone on reload.
+//
+// So the specs are DELETED rather than loosened, and the floor follows them
+// down. What replaces them asserts the opposite of the first (accept commits
+// the DELIVERED quantity) and relocates the second: the triage is a machine
+// state, proven against the machine in `intakeMachine.test.ts` and against the
+// store in `intakeLineStore.test.ts`, because a set operation is not where it
+// lives any more.
 // ────────────────────────────────────────────────────────────────────────────
 
 import { describe, it, expect } from 'vitest';
 
 import { PR_INTAKE_LINES } from '../../services/data/mock/fixtures/prIntake';
-import { applyPushResult, PLANNED_ROW } from '../plan-grid/planGridModel';
-import {
-  buildAcceptPush,
-  triageStatus,
-  triageCounts,
-  dismissLine,
-  restoreLine,
-} from './intakeReviewModel';
+import { projectIntakeLine } from '../../services/data/intakeLineProjection';
+import { INTAKE_LINE_STATES } from '../../services/transitions/flows/intakeLine.flow';
+import type { IntakeLine } from '../../services/data/types';
+import { buildAcceptCommit, triageCounts } from './intakeReviewModel';
 
-// pil-somo-001 (Glycerin): accepted === suggested (a clean as-suggested line).
-const AS_SUGGESTED = PR_INTAKE_LINES.find((l) => !l.wasAdjusted)!;
-// pil-somo-002 (Niacinamide): producer-recorded adjustment (accepted ≠ suggested).
-const PRODUCER_ADJUSTED = PR_INTAKE_LINES.find((l) => l.wasAdjusted)!;
+/** Project a producer row at a chosen triage state — no store, no dispatcher. */
+const at = (id: string, state: IntakeLine['state']): IntakeLine =>
+  projectIntakeLine(
+    PR_INTAKE_LINES.find((l) => l.id === id)!,
+    state === 'Committed'
+      ? { lineId: id, state, committedQty: 1, committedAt: '2026-09-28T00:00:00.000Z' }
+      : { lineId: id, state },
+    [],
+  );
 
-describe('buildAcceptPush — accept-as-suggested is NOT an override (FORK-C c2)', () => {
-  it('pushes the SUGGESTED quantity — even when the fixture carries a producer adjustment', () => {
-    expect(buildAcceptPush(AS_SUGGESTED).payload.quantity).toBe(AS_SUGGESTED.suggestedQty);
-    // As-suggested means THE SUGGESTION: a producer-recorded acceptedQty is not
-    // silently committed by a triage accept — that path is the plan-grid drawer.
-    expect(buildAcceptPush(PRODUCER_ADJUSTED).payload.quantity).toBe(
-      PRODUCER_ADJUSTED.suggestedQty,
-    );
-    expect(buildAcceptPush(PRODUCER_ADJUSTED).payload.quantity).not.toBe(
-      PRODUCER_ADJUSTED.acceptedQty,
-    );
+// NAMED MEMBERS reached through VALUES, not through ids alone: this file's
+// claims are about quantities, so a corpus re-anchor that keeps the ids and
+// changes the numbers must redden it (`DATA-POPULATION-INSTRUMENT-SURVIVES-
+// ITS-CORPUS-01`).
+const AS_DELIVERED = PR_INTAKE_LINES.find((l) => l.acceptedQty === l.suggestedQty)!;
+const PRODUCER_TRIMMED = PR_INTAKE_LINES.find((l) => l.id === 'pil-somo-002')!;
+
+describe('buildAcceptCommit — Accept commits the PRODUCER’s delivered quantity (A1-R2)', () => {
+  it('pins the producer-trimmed specimen, so the reversal is measured not asserted', () => {
+    // The row the ruling is about: 5,000 suggested, 4,500 delivered.
+    expect([PRODUCER_TRIMMED.suggestedQty, PRODUCER_TRIMMED.acceptedQty]).toEqual([5_000, 4_500]);
   });
 
-  it('never carries a reason and never builds a DR-10 decision (nothing overridden)', () => {
-    for (const line of PR_INTAKE_LINES) {
-      const push = buildAcceptPush(line);
-      expect('reason' in push.payload).toBe(false);
-      expect(push.decision).toBeUndefined();
+  it('commits the DELIVERED quantity — the exact inverse of what it used to push', () => {
+    const line = projectIntakeLine(PRODUCER_TRIMMED, undefined, []);
+    expect(buildAcceptCommit(line).acceptedQty).toBe(4_500);
+    // The old behaviour, named so a regression is caught rather than re-argued.
+    expect(buildAcceptCommit(line).acceptedQty).not.toBe(PRODUCER_TRIMMED.suggestedQty);
+  });
+
+  it('and is unchanged on a line the producer did not adjust (the two coincide)', () => {
+    const line = projectIntakeLine(AS_DELIVERED, undefined, []);
+    expect(buildAcceptCommit(line).acceptedQty).toBe(AS_DELIVERED.suggestedQty);
+    expect(buildAcceptCommit(line).acceptedQty).toBe(AS_DELIVERED.acceptedQty);
+  });
+
+  it('carries NO overrideReason, structurally — accept-as-delivered overrides nothing', () => {
+    for (const row of PR_INTAKE_LINES) {
+      const commit = buildAcceptCommit(projectIntakeLine(row, undefined, []));
+      expect('overrideReason' in commit).toBe(false);
     }
   });
 
-  it('rides the C7 provenance through: source, requiredDate=period, material, uom', () => {
-    const { payload } = buildAcceptPush(AS_SUGGESTED);
-    expect(payload.source).toBe(AS_SUGGESTED.source);
-    expect(payload.requiredDate).toBe(AS_SUGGESTED.period);
-    expect(payload.material).toBe(AS_SUGGESTED.material);
-    expect(payload.uom).toBe(AS_SUGGESTED.uom);
+  // ⚠️ **CANONICAL DIGITS, NOT THE DISPLAY GROUPING.** `INTAKE_QTY_AGREES`
+  // re-parses this token and refuses unless it lands exactly on the number, and
+  // `'4.500'` is precisely the form the parser cannot read without a convention
+  // — so sending the grouped string would make Accept refuse its own default.
+  it('sends the raw token as canonical digits that re-parse to the number', () => {
+    const commit = buildAcceptCommit(projectIntakeLine(PRODUCER_TRIMMED, undefined, []));
+    expect(commit.acceptedQtyRaw).toBe('4500');
+    expect(Number(commit.acceptedQtyRaw)).toBe(commit.acceptedQty);
   });
 });
 
-describe('dismissLine / restoreLine — honest EPHEMERAL client state (never the seam)', () => {
-  it('dismiss adds the id to a NEW set; the input set is never mutated', () => {
-    const before: ReadonlySet<string> = new Set<string>();
-    const after = dismissLine(before, AS_SUGGESTED.id);
-    expect(after.has(AS_SUGGESTED.id)).toBe(true);
-    expect(before.has(AS_SUGGESTED.id)).toBe(false); // purity — no in-place write
-    expect(before.size).toBe(0);
+describe('triageCounts — the review-queue summary, from the MACHINE’s state', () => {
+  it('partitions the whole inbound set across pending / committed / dismissed', () => {
+    const lines = [
+      at('pil-somo-001', 'Committed'),
+      at('pil-somo-002', 'Dismissed'),
+      at('pil-grid-001', 'Pending'),
+      at('pil-grid-002', 'Pending'),
+    ];
+    const counts = triageCounts(lines);
+    expect(counts).toEqual({ total: 4, pending: 2, committed: 1, dismissed: 1 });
+    expect(counts.pending + counts.committed + counts.dismissed).toBe(counts.total);
   });
 
-  it('restore is the exact inverse and is equally pure', () => {
-    const dismissed = dismissLine(new Set<string>(), AS_SUGGESTED.id);
-    const restored = restoreLine(dismissed, AS_SUGGESTED.id);
-    expect(restored.has(AS_SUGGESTED.id)).toBe(false);
-    expect(dismissed.has(AS_SUGGESTED.id)).toBe(true); // input untouched
+  it('an untriaged set is entirely pending — Pending is the born state', () => {
+    const lines = PR_INTAKE_LINES.map((l) => projectIntakeLine(l, undefined, []));
+    expect(triageCounts(lines).pending).toBe(PR_INTAKE_LINES.length);
   });
 
-  it('a dismissal never touches the line itself — the seam rows are not writable', () => {
-    const snapshot = JSON.stringify(PR_INTAKE_LINES);
-    dismissLine(new Set<string>(), PRODUCER_ADJUSTED.id);
-    expect(JSON.stringify(PR_INTAKE_LINES)).toBe(snapshot);
-  });
-});
-
-describe('triageStatus — committed > dismissed > pending', () => {
-  it('a line with no push state and no dismissal is pending', () => {
-    expect(triageStatus(AS_SUGGESTED, undefined, new Set())).toBe('pending');
-    expect(triageStatus(AS_SUGGESTED, PLANNED_ROW, new Set())).toBe('pending');
-  });
-
-  it('a dismissed line reads dismissed', () => {
-    const dismissed = dismissLine(new Set<string>(), AS_SUGGESTED.id);
-    expect(triageStatus(AS_SUGGESTED, undefined, dismissed)).toBe('dismissed');
-  });
-
-  it('a committed line reads accepted — and outranks a stale dismissal (C6 §3)', () => {
-    const committed = applyPushResult({ ok: true, entityId: 'PR-2026-9001' });
-    expect(triageStatus(AS_SUGGESTED, committed, new Set())).toBe('accepted');
-    const dismissed = dismissLine(new Set<string>(), AS_SUGGESTED.id);
-    expect(triageStatus(AS_SUGGESTED, committed, dismissed)).toBe('accepted');
-  });
-
-  it('a failed push stays pending (both failure channels leave the row PLANNED, C6 §6)', () => {
-    const failed = applyPushResult({ ok: false, reason: 'SCOPE_DENIED' });
-    expect(triageStatus(AS_SUGGESTED, failed, new Set())).toBe('pending');
-  });
-});
-
-describe('triageCounts — the review-queue summary', () => {
-  it('partitions the whole inbound set across pending / accepted / dismissed', () => {
-    const committed = applyPushResult({ ok: true, entityId: 'PR-2026-9001' });
-    const pushStates = { [AS_SUGGESTED.id]: committed };
-    const dismissed = dismissLine(new Set<string>(), PRODUCER_ADJUSTED.id);
-
-    const counts = triageCounts(PR_INTAKE_LINES, pushStates, dismissed);
-    expect(counts.total).toBe(PR_INTAKE_LINES.length);
-    expect(counts.accepted).toBe(1);
-    expect(counts.dismissed).toBe(1);
-    expect(counts.pending).toBe(PR_INTAKE_LINES.length - 2);
-    expect(counts.pending + counts.accepted + counts.dismissed).toBe(counts.total);
+  // ⚠️ **THE PARTITION IS A PROPERTY OF THE STATE UNION, AND THIS IS WHAT
+  // KEEPS IT ONE.** A fourth state added to the flow would land in no bucket,
+  // and a hand-written if/else would have folded it silently into the last
+  // branch instead. The counter is built from the union, so this control is the
+  // thing that fires.
+  it('every declared state has a bucket — a fourth state reddens this', () => {
+    expect([...INTAKE_LINE_STATES].sort()).toEqual(['Committed', 'Dismissed', 'Pending']);
+    for (const state of INTAKE_LINE_STATES) {
+      const counts = triageCounts([at('pil-somo-001', state)]);
+      expect(counts.pending + counts.committed + counts.dismissed).toBe(1);
+    }
   });
 });

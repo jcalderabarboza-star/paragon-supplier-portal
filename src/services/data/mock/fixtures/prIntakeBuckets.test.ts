@@ -44,8 +44,8 @@ describe('PR intake fixture — every period is a legal bucket (operator ruling 
   });
 
   it('THE CLAIM — no row carries a period the parser refuses', () => {
-    const refused = PR_INTAKE_LINES.filter((l) => !parseBucket(l.period).ok).map(
-      (l) => `${l.id}: ${l.period}`,
+    const refused = PR_INTAKE_LINES.filter((l) => !parseBucket(l.periodBucket).ok).map(
+      (l) => `${l.id}: ${l.periodBucket}`,
     );
     expect(refused).toEqual([]);
   });
@@ -54,7 +54,7 @@ describe('PR intake fixture — every period is a legal bucket (operator ruling 
     const grainOf = (id: string): string => {
       const line = PR_INTAKE_LINES.find((l) => l.id === id);
       expect(line, `${id} has left the fixture`).toBeDefined();
-      const outcome = parseBucket(line!.period);
+      const outcome = parseBucket(line!.periodBucket);
       expect(outcome.ok, `${id} carries an unparseable period`).toBe(true);
       if (!outcome.ok) throw new Error('unreachable');
       return outcome.bucket.grain;
@@ -68,7 +68,7 @@ describe('PR intake fixture — every period is a legal bucket (operator ruling 
 
   it('⚠️ BOTH grains are reachable from this fixture, which a single-grain corpus could not do', () => {
     const grains = new Set(
-      PR_INTAKE_LINES.map((l) => parseBucket(l.period)).flatMap((o) =>
+      PR_INTAKE_LINES.map((l) => parseBucket(l.periodBucket)).flatMap((o) =>
         o.ok ? [o.bucket.grain] : [],
       ),
     );

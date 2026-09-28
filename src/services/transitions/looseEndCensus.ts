@@ -163,6 +163,21 @@ export const LOOSE_END_CENSUS: readonly CensusEntry[] = Object.freeze([
       'as a fact, so minting one would be CTR-FABRICATION-01 a layer down. Its source arrives with F2.',
   },
 
+  // ── intakeLine (A2) ──────────────────────────────────────────
+  {
+    entity: 'intakeLine',
+    kind: 'initial-integrity',
+    subject: 'Pending',
+    reason: 'born-state',
+    note:
+      'No creation verb, BY RULING rather than by omission. The line already exists when Paragon '  +
+      'first sees it — a producer emitted it — so a birth verb would be this platform claiming to '  +
+      'author a requirement it received, and it would need a caller there is none of. The entity '  +
+      'exists because its subject does, which is exactly what this reason names. Note the contrast '  +
+      'with the two sub-flows above: those are substrate nothing instantiates; this one is '  +
+      'instantiated by the world, and its three verbs are all reachable and all wired.',
+  },
+
   // ── compliance ─────────────────────────────────────────────────────────────
   {
     entity: 'compliance',

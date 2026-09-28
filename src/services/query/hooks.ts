@@ -187,8 +187,8 @@ export const useMyPslListings = () =>
   );
 
 export const useIntakeReview = () =>
-  useServiceQuery(['procurement', 'prIntake'], (svc, scope) =>
-    svc.procurement.getPrIntake(scope),
+  useServiceQuery(['procurement', 'intakeLines'], (svc, scope) =>
+    svc.procurement.getIntakeLines(scope),
   );
 
 // ⚠️ **RESTORED (operator direction).** These were retired when the widget grid

@@ -215,11 +215,59 @@ describe('⚠️ THE BOUNDARY — an ingress key, never a user-action dedupe', (
     expect(declaring.some((f) => f.includes('types.ts'))).toBe(true);
   });
 
-  it('the cascade fan-out passes no key — a cascade is not an ingress', async () => {
+  // ⚠️ **THIS ASSERTION IS RETIRED AND REPLACED RATHER THAN LOOSENED, AND THE
+  // REVERSAL IS RECORDED HERE BECAUSE IT IS THE KIND A LATER BATCH WOULD
+  // OTHERWISE RE-DERIVE WRONGLY.** It read:
+  //
+  //   *"the cascade fan-out passes no key — a cascade is not an ingress"*
+  //
+  // and it was TRUE of every cascade in the tree when it was written. A2 makes
+  // one of them an ingress on purpose: `t_intake_commit` → `t_pr_create` carries
+  // `idempotencyKey = the intake line id`, because the SOURCE of that cascade is
+  // reachable by a redelivered producer event, and a redelivery must not mint a
+  // second requisition (C7-FIND-05).
+  //
+  // ⚠️ **THE BOUNDARY THE FILE EXISTS FOR IS UNCHANGED, AND IT IS THE ONE
+  // ABOVE**: no page, component or hook supplies a key. A person pressing a
+  // button twice must be REFUSED and told, and every user-facing verb still is.
+  // What moved is only the claim about the fan-out, and the narrower property
+  // that survives is worth more than the blanket one it replaces:
+  //
+  //   **THE DISPATCHER NEVER MINTS A KEY. IT FORWARDS THE RESOLVER'S, OR NONE.**
+  //
+  // A dispatcher that constructed a key from something of its own — the
+  // entity id, the correlation id, a hash of the payload — would be deciding
+  // which acts are "the same act", which is a judgement only the resolver that
+  // knows the domain can make. That is what this now checks.
+  it('the fan-out FORWARDS the resolver\u2019s key and mints none of its own', async () => {
     const src = readFileSync(join(ROOT, 'src/services/transitions/dispatcher.ts'), 'utf8');
     // The re-dispatch inside the fan-out builds its CommandInput inline.
-    const fanOut = /transitionId: c\.transitionId[\s\S]{0,200}?\}/.exec(src)?.[0] ?? '';
+    const fanOut = /transitionId: c\.transitionId[\s\S]{0,900}?\n {12}\},/.exec(src)?.[0] ?? '';
+    // Known-good control: the window really did capture the fan-out's input.
     expect(fanOut).not.toBe('');
-    expect(fanOut).not.toMatch(/idempotencyKey/);
+    expect(fanOut).toMatch(/entity: c\.entity/);
+    expect(fanOut).toMatch(/payload: c\.payload/);
+
+    // Every `idempotencyKey` in that window is a forward of `c.idempotencyKey`.
+    const keyMentions = fanOut.match(/idempotencyKey[^,\n]*/g) ?? [];
+    expect(keyMentions.length).toBeGreaterThan(0);
+    for (const mention of keyMentions) {
+      expect(mention).toMatch(/c\.idempotencyKey/);
+    }
+  });
+
+  // And the other half of "mints none of its own": a key reaches the replay
+  // ledger only through `CommandInput`. Derived through the RUNNING dispatcher
+  // rather than from source — two keyless dispatches of the same command must
+  // raise two acts, which the OPT-IN specs above already assert, so what is
+  // added here is the cascade-shaped case the old assertion used to cover.
+  it('a cascade link that declares NO key still raises a fresh act each time', async () => {
+    // `t_rfq_create` → `t_pr_source` declares no key, so its fan-out must be
+    // free to fire again — the property the retired assertion protected, kept
+    // as a behavioural check instead of a source one.
+    const src = readFileSync(join(ROOT, 'src/services/data/mock/MockCommandService.ts'), 'utf8');
+    const rfqArm = /if \(ctx\.transitionId === 't_rfq_create'\)[\s\S]{0,1200}?\n {4}\}/.exec(src)?.[0] ?? '';
+    expect(rfqArm).not.toBe('');
+    expect(rfqArm).not.toMatch(/idempotencyKey/);
   });
 });
