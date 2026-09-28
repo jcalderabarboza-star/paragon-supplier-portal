@@ -309,7 +309,8 @@ Each is written so a G1 vitest can bind to it directly.
 | **G0.1-FIND-01** | One-`causationId`-per-push is INTENT; the public `ICommandService` seam accepts no caller correlation today. Seam extension (caller-supplied correlation OR model-push-as-cascade-source) is a **G1/G2 dependency**. | **OPEN** (§4) |
 | FORK-G1 | Grid engine + license posture + formulas IN/OUT | ⚠️ **RULED 2026-07-14, NOT OPEN — this row said OPEN for over a year.** `react-datasheet-grid` v4.11.6 (MIT), formulas OUT, no licence (`docs/g0-2-engine-scorecard.md` §6.1). The prior text also carried the pre-spike *lean* (AG Grid) as though it were the outcome, which is the opposite of what was ruled. **FORK-G1′** (2026-09-28) is in the Stage G register |
 | **C6-LOCK** | Formulas locked; accepted qty the single editable field; every override reason-gated + authored, commits via `t_pr_create`, DR-10 `decision` opaque/verbatim | **CONTRACT** (§8, G1.2b) · **amended by A1-R2** (§8.3) |
-| **A1-R2** | C6-LOCK's subject: the baseline is the producer's `acceptedQty`, so a reason is owed only for the planner's own change; the stored `wasAdjusted` is retired in favour of a derivation. The reason-gate itself is unchanged — only one comparison's left-hand side moves. | **RATIFIED — operator 2026-09-28** (§8.3). Code is **B2**; `CommandDecision.wasAdjusted` is explicitly NOT in scope and the reason is stated at the site |
+| **A1-R2** | C6-LOCK's subject: the baseline is the producer's `acceptedQty`, so a reason is owed only for the planner's own change; the stored `PrIntakeLine.wasAdjusted` is retired in favour of a derivation. The reason-gate itself is unchanged — only one comparison's left-hand side moves. | **RATIFIED — operator 2026-09-28** (§8.3). Code is the **R2 behaviour batch**, awaiting dispatch |
+| **A1-R2a** | `CommandDecision.wasAdjusted` is **derived at dispatch** from the accepted quantity against the producer's baseline, and is **never authored** — it leaves the payload, so no caller can assert it. | **RATIFIED — operator 2026-09-28** (§8.3 Amendment 1a). ⚠️ **REVERSES** this register's prior position that the field was explicitly out of scope; recorded as a reversal, not an edit. Code rides the same R2 behaviour batch |
 | **A1-R4** | C6 §1's browser-persistence ban covers **plan state only**. Per-seat grid LAYOUTS are view state and may be persisted, on the honest-read pattern with a reset control. Durable plan drafts remain a governed document (G2 `Plan`), never browser storage. | **RATIFIED — operator 2026-09-28** (§1) |
 
 ---
@@ -386,13 +387,43 @@ it is a correct gate pointed at the wrong fact, and loosening it was never the r
 2. **Its comparison is the one this amendment moves** (ground 1 above would be true of any redundant
    boolean; this one is specific).
 
-⚠️ **`CommandDecision.wasAdjusted` IS A DIFFERENT FIELD AND IS *NOT* RETIRED HERE, THOUGH IT CARRIES
-THE SAME REDUNDANCY.** It is computed at build time (`buildQtyDecision`), never authored, so it
-cannot be edited into a lie by a fixture — and it is `to !== from` on the very record it rides, which
-is the form ground 1 asks for. It stays because the DR-10 event is an **append-only, opaque,
-forwarded-verbatim** carrier: changing its shape is a change to the audit vocabulary and to the
-dispatcher's passthrough, and it earns its own ruling rather than riding this one. Recorded here so
-the next reader does not have to measure it again, and does not assume the two names mean one field.
+⚠️ **AMENDMENT 1a (operator ruling, 2026-09-28) — `CommandDecision.wasAdjusted` IS DERIVED AT
+DISPATCH FROM THE ACCEPTED QUANTITY AGAINST THE PRODUCER'S BASELINE, AND IS NEVER AUTHORED.**
+
+**This REVERSES the paragraph that stood here, and the reversal is recorded rather than the text
+replaced**, because the paragraph was right about the mechanism and wrong about what to do with it.
+It read: *"`CommandDecision.wasAdjusted` IS A DIFFERENT FIELD AND IS NOT RETIRED HERE, THOUGH IT
+CARRIES THE SAME REDUNDANCY … It stays because the DR-10 event is an append-only, opaque,
+forwarded-verbatim carrier: changing its shape is a change to the audit vocabulary and to the
+dispatcher's passthrough, and it earns its own ruling rather than riding this one."* **It asked for
+a ruling and it has one.** What it got right and what survives: the two `wasAdjusted` fields are not
+one field, and the event carrier is opaque and forwarded verbatim.
+
+**What the ruling changes.** The value is **computed by the dispatcher** from the decision's own
+quantities and stamped onto the `TransitionEvent`. **No caller supplies it** — it leaves the
+authored payload entirely, so there is no key for a caller to set and therefore no way for a caller
+to disagree with the pair it sits beside.
+
+**Why "never authored" is the load-bearing half, and not a tidying.** A derivation computed by the
+CALLER is still an authored value at the seam: the dispatcher receives a boolean it cannot check and
+forwards it verbatim onto an **append-only ledger**. Today's caller happens to compute it correctly;
+a second caller — B2's cascade is the next one — has no obligation to, and the failure would be
+silent and permanent. **This is `ACTOR_IN_PAYLOAD`'s shape one field over:** that gate refuses
+attribution keys in a payload BY KEY rather than by value-shape, on the ground that a caller which
+can assert a fact about the act can misstate it. `wasAdjusted` asserts *"a human changed this"*,
+which is a governance claim of exactly that kind.
+
+⚠️ **AND THE BASELINE IS THE RULING'S OTHER HALF, WITHOUT WHICH THE DERIVATION IS PRECISELY WRONG.**
+`wasAdjusted` is derived against the **producer's baseline** (A1-R2 above), never `suggestedQty`.
+Derived at dispatch from a `from` that still held the producer's *suggestion*, it would faithfully
+compute the wrong fact — and do it in the one place nobody can correct afterwards. **Deriving a value
+from the wrong operand is not safer than authoring it; it is the same error with better provenance.**
+
+**Batch:** the code is **not** in A1 and is not B2's machine either — it is the R2 behaviour batch
+(dispatcher derivation + payload removal + the baseline move + both surfaces' reason-gating), which
+is separable from the `intakeLine` machine and awaits its own dispatch. Until it lands,
+`buildQtyDecision` still authors the field against `suggestedQty`, and this section is the contract
+the code is lagging — named, on the C8-FIND-03 precedent, not drifting.
 
 **Batch:** B2 (the `intakeLine` machine) removes the stored field and moves the baseline. Until then
 `isQtyAdjusted` still compares against `suggestedQty`, and this section is the contract the code is

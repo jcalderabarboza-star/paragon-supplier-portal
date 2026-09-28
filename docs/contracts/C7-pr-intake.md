@@ -107,10 +107,25 @@ lost.
 
 **Why quarters are refused rather than parsed.** A month and an ISO week are grains a producer can
 commit against. A quarter is a reporting period wearing a planning grain's clothes, and it is
-precisely the form that renders as nothing today. **Measured:** `'2026-Q3'` sits on **two of the
-four rows** of `prIntake.ts`. The refusal is what NAMES those rows for B2 to re-express; an unparsed
-free string named nothing for a year, which is how two formats came to coexist in one fixture
-(§2.3) with nothing to notice.
+precisely the form that renders as nothing today. When this amendment was written, `'2026-Q3'` sat
+on **two of the four rows** of `prIntake.ts`. The refusal is what NAMED those rows to re-express; an
+unparsed free string named nothing for a year, which is how two formats came to coexist in one
+fixture (§2.3) with nothing to notice.
+
+⚠️ **AND THOSE TWO ROWS ARE NOW FIXED — AMENDED 2026-09-28, THE SAME DAY, BY A SECOND OPERATOR
+RULING.** This paragraph is corrected rather than left to read as pending: **no row in the product
+tree carries the refused form any longer.** `pil-somo-001` is a raw material and became the MONTH
+`'2026-09'`; `pil-grid-002` is packaging and became the ISO WEEK `'2026-W36'`. **The grain follows
+the lane**, which means the fixture now exercises BOTH grains — something no single-grain corpus
+could do, and the reason the weekly form is reachable by a surface at all. Asserted, not claimed:
+`prIntakeBuckets.test.ts` runs every row through `parseBucket` and pins those two rows by their
+PARSED GRAIN, with the quarter refusal as the known-bad control in the same run.
+
+⚠️ **THE CONSEQUENCE FOR THE NEXT READER, BECAUSE IT INVERTS WHERE THE RISK NOW LIES.** The quarter
+form now survives in the tree **only inside `bucket.test.ts`**, as that parser's known-bad input. So
+the hazard is no longer *"a refused value is sitting in a fixture"* — it is that a later edit tidying
+the fixture to one grain would delete the tree's only week-shaped bucket, and the row-level loop
+would still pass on four months. That is what the named grain pins are for.
 
 **As built at A1 — and what deliberately is NOT.** The vocabulary and the ONE function both seams
 parse through are shipped: `BucketId` / `BucketGrain` / `parseBucket` / `parseHorizon` in
@@ -143,7 +158,15 @@ falsehood; it is that **nothing checks**, so the first row that disagrees with i
 will disagree silently, and the field that reads as the audit signal is the one carrying the lie.
 A value derived at read cannot disagree with the pair it is derived from.
 
-**Batch:** B2 (the `intakeLine` machine) removes the field and moves the baseline.
+**Batch:** the **R2 behaviour batch** — which is *not* B2's `intakeLine` machine, and the distinction
+is worth keeping because it decides what can ship first. Removing the stored field and moving the
+baseline touches `planGridModel`, the adjust drawer, the intake-review model and `PlanGrid`'s
+`wasAdjusted` column; **none of it needs the machine**, so it is separable and does not wait on B2.
+
+⚠️ **AND A SECOND RULING THE SAME DAY EXTENDED THIS TO THE AUDIT CARRIER — A1-R2a, RECORDED AT C6
+§8.3 Amendment 1a.** `CommandDecision.wasAdjusted` is **derived at dispatch** and **never authored**:
+it leaves the payload entirely, so no caller can assert it onto an append-only ledger. That reverses
+C6's previously recorded position that the carrier was out of scope, and it rides the same batch.
 
 ### A1-R3 · The requisition carries its origin — on the DOCUMENT, not only on the event
 
@@ -421,8 +444,8 @@ stated here because each one is a place a conforming emitter can be wrong while 
 |---|---|---|
 | **`estimatedValue` is IDR** | no currency field on `PrIntakeLine` (`types.ts:648`) or `PurchaseRequisition`; denomination asserted only at render via `formatIDR` (`BuyerRequisitions.tsx:423,564`) | a non-IDR emitter is silently mis-rendered |
 | **`estimatedValue` is a LINE TOTAL, not a unit price** | implied only by magnitude — `pil-somo-002`: 5,000 KG / 990,000,000 (`fixtures/prIntake.ts:38-43`) | off by the quantity factor |
-| **`period` is an unparsed free string, in TWO formats** | `'2026-Q3'` and `'2026-08'` coexist in one fixture (`fixtures/prIntake.ts:27,42,57,72`); nothing parses or validates. ⚠️ **CLOSED BY RULING A1-R1** — `parseBucket` is now the one discriminator and refuses the quarter form; the two `'2026-Q3'` rows are B2's to re-express | a third format is accepted silently — **and two were, which is how this row came to exist** |
-| **`period` lands in a field named `requiredDate`** | `requiredDate: str('requiredDate') \|\| str('period')` (`MockCommandService.ts:577`) — so a date-typed, date-named field holds `"2026-Q3"` | GG-3 is not merely unresolved, it is actively mis-stored. ⚠️ **RULED 2026-09-28 (A1-R1): GG-3 closes on C8's side and `t_pr_create` stops writing the bucket here.** `PurchaseRequisition.periodBucket?` is the slot, and it exists as of A1 |
+| **`period` is an unparsed free string, in TWO formats** | `'2026-Q3'` and `'2026-08'` coexisted in one fixture; nothing parsed or validated. ⚠️ **CLOSED BY RULING A1-R1 AND THE FIXTURE NOW CONFORMS (2026-09-28).** `parseBucket` is the one discriminator and refuses the quarter form, and the two `'2026-Q3'` rows have been re-expressed — `pil-somo-001` → month `'2026-09'`, `pil-grid-002` → ISO week `'2026-W36'`, grain following lane. **Derive the row set, do not read it here:** `prIntakeBuckets.test.ts` runs every row through the parser each run. ⚠️ **The FIELD is still `period: string` on the type** — the rename to `periodBucket` is B2's, so a non-conforming value is caught by a spec rather than by `tsc` | a third format is accepted silently — **and two were, which is how this row came to exist.** The type still cannot refuse one; only the parser and that spec can |
+| **`period` lands in a field named `requiredDate`** | `requiredDate: str('requiredDate') \|\| str('period')` (`MockCommandService.ts:577`) — so a date-typed, date-named field holds a BUCKET. ⚠️ The `"2026-Q3"` example is now HISTORICAL (the fixture was fixed 2026-09-28) and the replacement examples are `'2026-09'` and `'2026-W36'` | GG-3 is not merely unresolved, it is actively mis-stored. ⚠️ **RULED 2026-09-28 (A1-R1): GG-3 closes on C8's side and `t_pr_create` stops writing the bucket here.** `PurchaseRequisition.periodBucket?` is the slot, and it exists as of A1. ⚠️ **AND FIXING THE FIXTURE MOVED ONE ROW FROM THE HONEST FAILURE TO THE DISHONEST ONE — MEASURED, AND THE FIRST DRAFT OF THIS CELL GUESSED IT BACKWARDS.** Through `formatDate`: `'2026-Q3'` → `—`, `'2026-W36'` → `—`, but `'2026-09'` → **`01 Sept 2026`**. An unparseable bucket renders as visibly ABSENT; a MONTH is the one form `Date` happily parses, so it renders **a specific day nobody entered**. So the ISO-week row is unchanged at the reader (em dash before, em dash after) and `pil-somo-001` went from an em dash to a fabricated day — **the population of requisitions claiming a day nobody chose grows from two rows to three.** That is a real cost of conforming the fixture ahead of B2, it is booked here rather than discovered later, and it is an argument for B2's ordering, not against the ruling |
 | **`uom` is trusted verbatim from the payload** | `str('uom')` (`:574`), free string (`types.ts:646`) — the C8 sibling does the **opposite**, copying from the material master and never trusting the payload | `'kg'` / `'MT'` pass C7, fail C8 |
 | **No idempotency contract exists** | id === `prNumber` === store-assigned `PR-2026-9xx` (`stores/purchaseRequisitionStore.ts:42-45`); the payload accepts no external reference. ⚠️ **RULED (A1-R3): the key IS the intake line id, one line → at most one PR.** `intakeLineId?` exists on the entity as of A1; the dispatch-side key is B2 | **a redelivered SOMO event mints a DUPLICATE PR** — and ⚠️ **a duplicate is already reachable with no wire at all**: Accept → reload → the row is PLANNED again with the PR still in the store (measured) |
 | **Unrecognised `source` is dropped, not rejected** | `:561-564` — `'somo'` or `'SOMO_V2'` yields a PR with **no producer mark** and no error | a casing slip silently destroys provenance |
