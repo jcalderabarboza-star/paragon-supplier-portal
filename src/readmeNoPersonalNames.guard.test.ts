@@ -40,7 +40,8 @@
 // ─────────────────────────────────────────────────────────────────────────────
 import { describe, it, expect } from 'vitest';
 import { execFileSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync, statSync } from 'node:fs';
+import ts from 'typescript';
 import { join } from 'node:path';
 
 import { REPO_ROOT } from './lib/treeMutationGate/derive';
@@ -196,5 +197,175 @@ describe('README person references · THE CLAIM', () => {
         'occurred nowhere but the README that carried it). If it is a real term, ' +
         'the tree should be saying it somewhere too.',
     ).toEqual([]);
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// DIRECTION C · THE RENDERED SURFACE, NOT THE README — H3 addendum.
+//
+// ⚠️ **THE RULE WAS RIGHT AND ITS REACH WAS ONE FILE.** Directions A and B are
+// both scoped to `README.md`, which is how `IdentityPanel.tsx` shipped this:
+//
+//     const initials = persona === 'supplier' ? 'PS' : 'JJ';
+//
+// rendered into the avatar in the top bar of EVERY ROUTE IN THE PORTAL. `JJ` is
+// a person's initials — the operator's — so the one place in this product where
+// a reader looks to find out WHO THEY ARE was answering with a name, while a
+// guard existed whose entire subject is that this platform names no persons. A
+// document was covered and the screen was not.
+//
+// ── WHY A LITERAL IS THE THING CONVICTED, RATHER THAN THE LETTERS `JJ` ──────
+//
+// A matcher for `JJ` would be a word list of exactly one entry, wrong the moment
+// somebody authors different initials, and it could never have been written
+// before the defect existed. The property that is actually wrong is structural:
+// **an identity glyph must be DERIVED from the identity, never authored beside
+// it.** So the population is every declaration in the rendered tree whose name
+// says it holds initials, and the claim is that none of them contains a string
+// literal. `IdentityPanel` now reads
+// `t(`nav.persona.${persona}`).trim().charAt(0).toUpperCase()` — no literal, and
+// it cannot drift from the label the panel prints in full one line below.
+//
+// ⚠️ **THIS IS THE SAME SHAPE AS `moduleScopeLiteralGate`'S DISCRIMINATOR AND
+// DELIBERATELY SO: IT RE-DECIDES ITSELF.** The day somebody adds an `initials`
+// helper anywhere under `src/`, it joins this population with nobody editing
+// this file — which is the one property a name list can never have.
+//
+// REACH LIMITS, stated rather than left to be assumed:
+//   · It reads DECLARATION NAMES. An authored glyph assigned to a variable
+//     called something else, or inlined straight into JSX, is outside it.
+//   · It forbids a literal in the initializer, so a derivation that happens to
+//     contain a legitimate literal (a separator, a fallback `'?'`) would be
+//     convicted. There is none today; if one is ever needed, the right answer is
+//     to narrow this to string literals of 1–3 LETTERS, not to exempt the file.
+//   · Directions A and B still cover the README only. Nothing here extends them.
+// ═══════════════════════════════════════════════════════════════════════════
+
+/** Every `.tsx` under `src/` — the rendered tree, excluding its own specs. */
+function renderedFiles(dir: string, out: string[] = []): string[] {
+  for (const entry of readdirSync(dir)) {
+    const p = join(dir, entry);
+    if (statSync(p).isDirectory()) renderedFiles(p, out);
+    else if (/\.tsx$/.test(p) && !/\.(test|smoke)\.tsx$/.test(p)) out.push(p);
+  }
+  return out;
+}
+
+interface InitialsDecl {
+  readonly file: string;
+  readonly line: number;
+  readonly name: string;
+  readonly init: string;
+}
+
+/**
+ * Declarations that hold an identity glyph, by NAME, with their initializer text.
+ * Exported so the probe below fires the SHIPPED matcher rather than a copy of it.
+ */
+export function initialsDeclarations(file: string, raw: string): InitialsDecl[] {
+  const sf = ts.createSourceFile(file, raw, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+  const rel = file.split('\\').join('/').replace(/^.*\/src\//, 'src/');
+  const out: InitialsDecl[] = [];
+  const visit = (n: ts.Node): void => {
+    if (
+      ts.isVariableDeclaration(n) &&
+      ts.isIdentifier(n.name) &&
+      /initials?$/i.test(n.name.text) &&
+      n.initializer
+    ) {
+      out.push({
+        file: rel,
+        line: sf.getLineAndCharacterOfPosition(n.getStart(sf)).line + 1,
+        name: n.name.text,
+        init: n.initializer.getText(sf),
+      });
+    }
+    ts.forEachChild(n, visit);
+  };
+  visit(sf);
+  return out;
+}
+
+/**
+ * A quoted run of ONE TO THREE LETTERS is an authored glyph. Anything else is not.
+ *
+ * ⚠️ **NARROWED FROM "ANY LITERAL" BECAUSE "ANY LITERAL" CONVICTED TWO
+ * CORRECT DERIVATIONS ON THE FIRST RUN, AND THE COMMENT ABOVE HAD ALREADY NAMED
+ * THIS AS THE RIGHT REMEDY IF IT HAPPENED — so it is taken rather than argued.**
+ * Measured:
+ *
+ *   src/components/ui-v2/SupplierCard.tsx:37
+ *   src/pages-v2/BuyerSupplierProfile.tsx:234
+ *     initials = name.split(/\s+/).map((w) => w[0]).filter(Boolean).slice(0, 2).join('')
+ *
+ * Both DERIVE the glyph from a supplier's own name — a company, not a person —
+ * which is the exact behaviour this rule wants. They were convicted for the `''`
+ * they hand to `join`, a separator that names nobody. **Derivation rule 2: the
+ * wide form manufactured accusations against the two files already doing the
+ * right thing, while the defect it was written for is a two-letter token.**
+ *
+ * So the unit is the SHAPE of an authored glyph rather than the presence of a
+ * literal: `'JJ'` and `'PS'` are convicted; `''`, `'?'`, a regex separator and a
+ * template literal carrying an i18n key are not.
+ */
+const AUTHORED_GLYPH = /(['"])[A-Za-z]{1,3}\1/;
+
+describe('rendered identity chrome · NO AUTHORED PERSONAL GLYPH (direction C)', () => {
+  const FILES = renderedFiles(join(REPO_ROOT, 'src'));
+  const DECLS = FILES.flatMap((f) => initialsDeclarations(f, readFileSync(f, 'utf8')));
+
+  it('⚠️ the population is real and REACHES the declaration this rule was written for', () => {
+    // Anti-vacuity, and the specific kind that matters here: a population derived
+    // by declaration NAME goes silently empty if somebody renames the variable,
+    // and an empty population passes the claim below over nothing
+    // (`EMPTY-INPUT-REPORTS-CLEAN-01`). So the avatar's own declaration is named.
+    expect(FILES.length).toBeGreaterThan(100);
+    expect(DECLS.length).toBeGreaterThan(0);
+    expect(DECLS.map((d) => `${d.file}::${d.name}`)).toContain(
+      'src/components/layout-v2/IdentityPanel.tsx::initials',
+    );
+  });
+
+  it('⚠️ no identity glyph is AUTHORED — every one is derived', () => {
+    const authored = DECLS.filter((d) => AUTHORED_GLYPH.test(d.init)).map(
+      (d) => `${d.file}:${d.line} ${d.name} = ${d.init.replace(/\s+/g, ' ').slice(0, 80)}`,
+    );
+    expect(
+      authored,
+      'An identity glyph is written as a literal beside the identity instead of derived from it. ' +
+        'The operator’s standing rule is roles only, never personal names, and an authored glyph is ' +
+        'how `JJ` — a real person’s initials — reached the top bar of every route in the portal. ' +
+        'Derive it from the same localized label the surface already prints.',
+    ).toEqual([]);
+  });
+
+  it('⚠️ CONVICTS the declaration this repository shipped at 81c9840', () => {
+    // `PROBE-MUST-FIRE-AT-A-REAL-DEFECT-01` — the SHIPPED matcher, fired at the
+    // geometry the tree really occupied, naming the member. Not a synthetic
+    // subject: this is `IdentityPanel.tsx`'s line as `main` carried it when this
+    // branch was cut, and it is the only place that line now survives.
+    const shipped = `
+      const IdentityPanel = () => {
+        const initials = persona === 'supplier' ? 'PS' : 'JJ';
+        return <button>{initials}</button>;
+      };
+    `;
+    const decls = initialsDeclarations('C:/history/src/IdentityPanel.tsx', shipped);
+    expect(decls.map((d) => d.name)).toEqual(['initials']);
+    expect(AUTHORED_GLYPH.test(decls[0].init), 'the authored pair must be convicted').toBe(true);
+  });
+
+  it('⚠️ ACQUITS the derivation that replaced it — on the merits, not by not looking', () => {
+    // The same matcher, the opposite verdict. Without this the conviction above
+    // is satisfied by a rule that convicts every initializer there is.
+    const fixed = `
+      const IdentityPanel = () => {
+        const initials = t(\`nav.persona.\${persona}\`).trim().charAt(0).toUpperCase();
+        return <button>{initials}</button>;
+      };
+    `;
+    const decls = initialsDeclarations('C:/history/src/IdentityPanel.tsx', fixed);
+    expect(decls.map((d) => d.name)).toEqual(['initials']);
+    expect(AUTHORED_GLYPH.test(decls[0].init), 'the derived glyph must be acquitted').toBe(false);
   });
 });

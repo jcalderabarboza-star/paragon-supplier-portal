@@ -60,6 +60,18 @@ export const buyerSuppliersEn: Record<string, string> = {
   'buyerSuppliers.tier.whatsapp': 'Tier 1 · WhatsApp',
   'buyerSuppliers.tier.web': 'Tier 2 · Web Portal',
   'buyerSuppliers.tier.api': 'Tier 3 · API/EDI',
+  'buyerSuppliers.toast.bulkUploadUnavailable.title': 'Bulk upload not available yet',
+  'buyerSuppliers.toast.bulkDownloadUnavailable.title': 'Bulk download not available yet',
+  'buyerSuppliers.toast.exportUnavailable.title': 'Export not available yet',
+  'buyerSuppliers.toast.inviteUnavailable.title': 'Supplier invitation not available yet',
+  'buyerSuppliers.toast.bulkUploadUnavailable.desc':
+    'Nothing was uploaded — bulk supplier upload is not wired to a real system.',
+  'buyerSuppliers.toast.bulkDownloadUnavailable.desc':
+    'No file was downloaded — bulk download is not wired to a real system.',
+  'buyerSuppliers.toast.exportUnavailable.desc':
+    'No file was generated — export is not wired to a real system.',
+  'buyerSuppliers.toast.inviteUnavailable.desc':
+    'Nothing was sent — no invitation reached anyone, and no supplier record was created.',
 };
 
 export const buyerSuppliersId: Record<string, string> = {
@@ -109,4 +121,16 @@ export const buyerSuppliersId: Record<string, string> = {
   'buyerSuppliers.tier.whatsapp': 'Tingkat 1 · WhatsApp',
   'buyerSuppliers.tier.web': 'Tingkat 2 · Portal Web',
   'buyerSuppliers.tier.api': 'Tingkat 3 · API/EDI',
+  'buyerSuppliers.toast.bulkUploadUnavailable.title': 'Unggahan massal belum tersedia',
+  'buyerSuppliers.toast.bulkDownloadUnavailable.title': 'Unduhan massal belum tersedia',
+  'buyerSuppliers.toast.exportUnavailable.title': 'Ekspor belum tersedia',
+  'buyerSuppliers.toast.inviteUnavailable.title': 'Undangan pemasok belum tersedia',
+  'buyerSuppliers.toast.bulkUploadUnavailable.desc':
+    'Tidak ada yang diunggah — unggahan massal pemasok belum tersambung ke sistem nyata.',
+  'buyerSuppliers.toast.bulkDownloadUnavailable.desc':
+    'Tidak ada berkas yang diunduh — unduhan massal belum tersambung ke sistem nyata.',
+  'buyerSuppliers.toast.exportUnavailable.desc':
+    'Tidak ada berkas yang dibuat — ekspor belum tersambung ke sistem nyata.',
+  'buyerSuppliers.toast.inviteUnavailable.desc':
+    'Tidak ada yang dikirim — tidak ada undangan yang sampai ke siapa pun, dan tidak ada catatan pemasok yang dibuat.',
 };

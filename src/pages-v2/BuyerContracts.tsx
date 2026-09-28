@@ -1318,8 +1318,26 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
           <div className="flex flex-col items-end gap-1">
           <BulkActionsBar
             actions={[
-              { label: t('contracts.action.export'), icon: FileSpreadsheet },
-              { label: t('contracts.action.templates'), icon: ScrollText },
+              {
+                label: t('contracts.action.export'),
+                icon: FileSpreadsheet,
+                onClick: () =>
+                  toast({
+                    variant: 'info',
+                    title: t('contracts.toast.exportUnavailable.title'),
+                    description: t('contracts.toast.exportUnavailable.desc'),
+                  }),
+              },
+              {
+                label: t('contracts.action.templates'),
+                icon: ScrollText,
+                onClick: () =>
+                  toast({
+                    variant: 'info',
+                    title: t('contracts.toast.templatesUnavailable.title'),
+                    description: t('contracts.toast.templatesUnavailable.desc'),
+                  }),
+              },
             ]}
             primary={
               draftAvailability.kind === 'held'

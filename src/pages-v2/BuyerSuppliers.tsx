@@ -33,6 +33,7 @@ import PslStatusCell, {
 } from '../components/v2-features/PslStatusCell';
 import { DECLARED_PRESENT } from '../services/data/fixturePresent';
 import { useCategoryLabel } from '../hooks/useCategoryLabel';
+import { useToast } from '../hooks/useToast';
 import {
   SupplierStatus,
   SupplierTier,
@@ -65,6 +66,7 @@ const TODAY = DECLARED_PRESENT;
 
 const BuyerSuppliers: React.FC = () => {
   const { t } = useTranslation();
+  const { toast } = useToast();
   const cl = useCategoryLabel();
   const suppliersQuery = useSuppliers();
   const suppliers = suppliersQuery.data?.items ?? [];
@@ -170,11 +172,47 @@ const BuyerSuppliers: React.FC = () => {
         actions={
           <BulkActionsBar
             actions={[
-              { label: t('buyerSuppliers.actions.bulkUpload'), icon: Upload },
-              { label: t('buyerSuppliers.actions.bulkDownload'), icon: Download },
-              { label: t('buyerSuppliers.actions.export'), icon: FileSpreadsheet },
+              {
+                label: t('buyerSuppliers.actions.bulkUpload'),
+                icon: Upload,
+                onClick: () =>
+                  toast({
+                    variant: 'info',
+                    title: t('buyerSuppliers.toast.bulkUploadUnavailable.title'),
+                    description: t('buyerSuppliers.toast.bulkUploadUnavailable.desc'),
+                  }),
+              },
+              {
+                label: t('buyerSuppliers.actions.bulkDownload'),
+                icon: Download,
+                onClick: () =>
+                  toast({
+                    variant: 'info',
+                    title: t('buyerSuppliers.toast.bulkDownloadUnavailable.title'),
+                    description: t('buyerSuppliers.toast.bulkDownloadUnavailable.desc'),
+                  }),
+              },
+              {
+                label: t('buyerSuppliers.actions.export'),
+                icon: FileSpreadsheet,
+                onClick: () =>
+                  toast({
+                    variant: 'info',
+                    title: t('buyerSuppliers.toast.exportUnavailable.title'),
+                    description: t('buyerSuppliers.toast.exportUnavailable.desc'),
+                  }),
+              },
             ]}
-            primary={{ label: t('buyerSuppliers.actions.invite'), icon: UserPlus }}
+            primary={{
+              label: t('buyerSuppliers.actions.invite'),
+              icon: UserPlus,
+              onClick: () =>
+                toast({
+                  variant: 'info',
+                  title: t('buyerSuppliers.toast.inviteUnavailable.title'),
+                  description: t('buyerSuppliers.toast.inviteUnavailable.desc'),
+                }),
+            }}
           />
         }
       />

@@ -282,6 +282,12 @@ export const contractsEn: Record<string, string> = {
   'contracts.docs.empty.body':
     'The portal holds no documents against this contract. Supplier certificates are managed on the compliance surface and are not linked to contracts here.',
   'contracts.detail.deliveryEmpty': 'No delivery agreements for this contract yet.',
+  'contracts.toast.exportUnavailable.title': 'Export not available yet',
+  'contracts.toast.templatesUnavailable.title': 'Templates not available yet',
+  'contracts.toast.exportUnavailable.desc':
+    'No file was generated — export is not wired to a real system.',
+  'contracts.toast.templatesUnavailable.desc':
+    'No template was downloaded — the template library is not wired to a real system.',
 };
 
 export const contractsId: Record<string, string> = {
@@ -528,4 +534,10 @@ export const contractsId: Record<string, string> = {
   'contracts.docs.empty.body':
     'Portal tidak menyimpan dokumen apa pun untuk kontrak ini. Sertifikat pemasok dikelola di permukaan kepatuhan dan tidak ditautkan ke kontrak di sini.',
   'contracts.detail.deliveryEmpty': 'Belum ada perjanjian pengiriman untuk kontrak ini.',
+  'contracts.toast.exportUnavailable.title': 'Ekspor belum tersedia',
+  'contracts.toast.templatesUnavailable.title': 'Templat belum tersedia',
+  'contracts.toast.exportUnavailable.desc':
+    'Tidak ada berkas yang dibuat — ekspor belum tersambung ke sistem nyata.',
+  'contracts.toast.templatesUnavailable.desc':
+    'Tidak ada templat yang diunduh — pustaka templat belum tersambung ke sistem nyata.',
 };

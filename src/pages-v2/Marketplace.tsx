@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Globe2, Users, FileText, Clock, ArrowUpRight } from 'lucide-react';
+import { Globe2, Users, FileText, Clock } from 'lucide-react';
 import { useCategoryLabel } from '../hooks/useCategoryLabel';
 import AppShellV2 from '../components/layout-v2/AppShellV2';
 import PageHeader from '../components/ui-v2/PageHeader';
@@ -244,12 +244,10 @@ const Marketplace: React.FC = () => {
               {t('marketplace.rfq.subtitle')}
             </p>
           </div>
-          <button
-            type="button"
-            className="inline-flex items-center gap-1 text-sm font-medium text-teal hover:text-teal-hover"
-          >
-            {t('marketplace.rfq.viewAll')} <ArrowUpRight size={14} />
-          </button>
+          {/* ⚠️ `View all` IS GONE — H3. The table directly beneath this heading
+              renders `OPEN_RFQS` IN FULL — there is no longer list to go to — so the
+              control was a duplicate of the surface it sat on, and nothing would
+              have changed had it worked. */}
         </div>
         <Table>
           <TableHeader>

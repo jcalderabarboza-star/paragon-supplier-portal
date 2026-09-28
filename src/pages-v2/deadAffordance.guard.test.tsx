@@ -460,69 +460,163 @@ const DEAD = ALL.filter((s) => s.cls === 'DEAD');
 const idOf = (s: { file: string; key: string }): string => `${s.file}::${s.key}`;
 
 /**
- * ⚠️ **THE NAMED RESIDUE. A RATCHET, NOT AN ALLOWLIST.**
+ * ⚠️ **THE RESIDUE IS GONE, AND ITS ABSENCE IS THE ASSERTION — H3.**
  *
- * Every row is a KNOWN DEFECT with the ruling that governs it, or the word
- * `UNRULED` where nothing does. Adding a row is how a new dead control is
- * admitted — deliberately visible in a diff. Removing one is how a fix is
- * recorded, and the fix REDDENS this file until the row goes, which is what
- * stops a row outliving its subject (`C9-STALE-BY-FIX-01`).
+ * This file used to carry `RESIDUE`, a named list of 29 known-dead controls with
+ * a ruling against each, pinned EQUAL to the derived DEAD set in both
+ * directions. That was the right instrument for a tree that had 29 of them: it
+ * refused a NEW one silently appearing, and it reddened when one was FIXED, so
+ * no row could outlive its subject (`C9-STALE-BY-FIX-01`).
  *
- * **NOT IN THIS LIST, because this batch removed them:**
- * `sourcing.panel.exportComparison` (now an honest `info` toast) and the
- * polymorphic footer button that rendered `FOOTER_LABEL` (deleted).
+ * ⚠️ **BUT A RATCHET THAT ADMITS A NEW MEMBER BY EDITING A LIST IS STILL A LIST,
+ * AND THE POPULATION IS NOW ZERO — SO THE LIST IS DELETED RATHER THAN EMPTIED.**
+ * Every one of the 29 was WIRED, given an honest notice, or removed at H3. An
+ * empty `RESIDUE` kept beside an empty `DEAD` would pass two assertions that
+ * each say nothing, and it would leave the door it was built as: a seat with a
+ * handler-less control could ship it by adding one line here with the word
+ * `UNRULED` beside it. **There is no such line to add now.** `DEAD` is asserted
+ * EMPTY, by name, and the only way to make this file green again is to make the
+ * control true, honest, or absent.
+ *
+ * ⚠️ **AND DELETING THE LIST TOOK THE INSTRUMENT'S ONLY REAL SUBJECT WITH IT,
+ * WHICH IS THE PART THAT NEEDED A REPLACEMENT RATHER THAN A NOTE.** The old
+ * `CONTROL+` pointed at `BuyerSourcing`'s `Export` descriptor — a member of the
+ * tree — and asked "is a known-dead control convicted?". No member is left to
+ * point at, so a zero from now on could equally mean *the matcher stopped
+ * working*: `EMPTY-INPUT-REPORTS-CLEAN-01` arriving the day the tree is repaired.
+ * `CONTROL+` therefore runs `censusOf` over SYNTHETIC source, and the pointer
+ * rule below runs it over **the source this repository actually shipped** — see
+ * `PROBE-MUST-FIRE-AT-A-REAL-DEFECT-01` at that site.
  */
-const RESIDUE: ReadonlyArray<{ id: string; ruling: string }> = [
-  // — page header `BulkActionsBar` descriptors. §103h names the structural fix:
-  //   make `onClick` required, a type change across 16 call sites. Its own arc.
-  { id: 'src/pages-v2/BuyerSourcing.tsx::sourcing.action.export', ruling: '§103h' },
-  { id: 'src/pages-v2/BuyerSourcing.tsx::sourcing.action.templates', ruling: '§103h' },
-  { id: 'src/pages-v2/BuyerContracts.tsx::contracts.action.export', ruling: '§103h (same shape)' },
-  { id: 'src/pages-v2/BuyerContracts.tsx::contracts.action.templates', ruling: '§103h (same shape)' },
-  { id: 'src/pages-v2/BuyerOrders.tsx::buyerOrders.action.export', ruling: 'UNRULED' },
-  { id: 'src/pages-v2/BuyerOrders.tsx::buyerOrders.action.bulkDownload', ruling: 'UNRULED' },
-  { id: 'src/pages-v2/BuyerOrders.tsx::buyerOrders.action.newPo', ruling: 'UNRULED' },
-  { id: 'src/pages-v2/BuyerRequisitions.tsx::requisitions.action.export', ruling: 'UNRULED' },
-  { id: 'src/pages-v2/BuyerRequisitions.tsx::requisitions.action.bulkDownload', ruling: 'UNRULED' },
-  { id: 'src/pages-v2/BuyerSuppliers.tsx::buyerSuppliers.actions.bulkUpload', ruling: 'UNRULED' },
-  { id: 'src/pages-v2/BuyerSuppliers.tsx::buyerSuppliers.actions.bulkDownload', ruling: 'UNRULED' },
-  { id: 'src/pages-v2/BuyerSuppliers.tsx::buyerSuppliers.actions.export', ruling: 'UNRULED' },
-  { id: 'src/pages-v2/BuyerSuppliers.tsx::buyerSuppliers.actions.invite', ruling: 'UNRULED' },
+const RESIDUE: ReadonlyArray<{ id: string; ruling: string }> = [];
 
-  // — `BuyerOrders`' side-panel footer: the SAME SHAPE as the button this batch
-  //   removed from `BuyerSourcing` — a per-status label lookup with no handler.
-  { id: 'src/pages-v2/BuyerOrders.tsx::buyerOrders.footer.viewFullDetails', ruling: 'UNRULED' },
-  { id: 'src/pages-v2/BuyerOrders.tsx::dyn:FOOTER_ACTION_KEY[selectedPO.status]', ruling: 'UNRULED' },
+/**
+ * ⚠️ **BLIND SPOT 1 OF 3, AND THE ONLY ONE WITH A MEMBER THE OLD CENSUS NEVER
+ * SAW: A CLICK INVITATION THAT IS NOT A CONTROL.**
+ *
+ * `censusOf` above finds a control by VOCABULARY — `Button`, `button`, `a`, an
+ * `on[A-Z]` prop, or an interactive `role`. A `<span>` has none of those, so a
+ * `<span className="text-teal underline cursor-pointer">` is invisible to it
+ * **while looking more clickable than half the buttons in the portal**: teal,
+ * underlined, and the cursor changes under the pointer.
+ *
+ * **The specimen is real and was found by deriving this class rather than by
+ * reading the census**: `SupplierRegistration.tsx` rendered the Code of Conduct
+ * and the Terms inside a `<Trans>` as exactly that pair of spans, with no
+ * handler, no `href` and no document anywhere in the tree to open. A reader is
+ * asked to AGREE to two things it implies they can read first.
+ *
+ * ── THE DISCRIMINATOR, DERIVED FROM THE MEASURED POPULATION ─────────────────
+ *
+ * `cursor-pointer` alone convicts 39 elements and 22 of them are `<label>`s and
+ * `<button>`s that are correctly interactive. What separates the defect is that
+ * **nothing anywhere inside or on the element can receive a click**: no `on*`
+ * prop, no `href`, no `to`, no `role` on the element itself, AND no descendant
+ * carrying one, AND no descendant control tag.
+ *
+ * ⚠️ **THE DESCENDANT HALF IS LOAD-BEARING AND WITHOUT IT THIS RULE CONVICTS
+ * WORKING CODE — MEASURED, NOT FORESEEN (derivation rule 2).** `BuyerSuppliers`'
+ * directory row is `<TableRow className="relative cursor-pointer">` with NO
+ * handler of its own: its own comment explains that a `<tr onClick>` is
+ * invisible to the keyboard and to "open in a new tab", so the row's act is a
+ * real stretched anchor in a cell beneath it. The pointer style is on the row
+ * because that is where a reader's cursor is. Convicting it would accuse the one
+ * row in the tree that got accessibility RIGHT, so the rule reads inside.
+ */
+const POINTER_TAGS_EXEMPT = new Set(['a', 'button', 'Button', 'input', 'select', 'textarea', 'label']);
 
-  // — the four filed at `findings.md:6286` when the class was opened.
-  { id: 'src/pages-v2/BuyerSupplierProfile.tsx::buyerSupplierProfile.actions.message', ruling: 'DEAD-AFFORDANCE-01 (findings §6286)' },
-  { id: 'src/pages-v2/BuyerSupplierProfile.tsx::buyerSupplierProfile.actions.createRfq', ruling: 'DEAD-AFFORDANCE-01 (findings §6286)' },
-  { id: 'src/pages-v2/SupplierStorefront.tsx::supplierStorefront.header.connect', ruling: 'DEAD-AFFORDANCE-01 (findings §6286)' },
-  { id: 'src/pages-v2/SupplierStorefront.tsx::supplierStorefront.header.requestRfq', ruling: 'DEAD-AFFORDANCE-01 (findings §6286)' },
+interface PointerSite {
+  readonly file: string;
+  readonly line: number;
+  readonly tag: string;
+}
 
-  { id: 'src/pages-v2/BuyerSupplierProfile.tsx::buyerSupplierProfile.comm.reset', ruling: 'UNRULED' },
-  { id: 'src/pages-v2/BuyerSupplierProfile.tsx::buyerSupplierProfile.comm.save', ruling: 'UNRULED' },
-  { id: 'src/pages-v2/SupplierStorefront.tsx::supplierStorefront.catalog.requestQuote', ruling: 'UNRULED' },
-  { id: 'src/pages-v2/SupplierStorefront.tsx::supplierStorefront.contact.saveDraft', ruling: 'UNRULED' },
-  { id: 'src/pages-v2/SupplierStorefront.tsx::supplierStorefront.contact.send', ruling: 'UNRULED' },
-  { id: 'src/pages-v2/Marketplace.tsx::marketplace.rfq.viewAll', ruling: 'UNRULED' },
+function pointerCensusOf(file: string, raw: string): PointerSite[] {
+  const sf = ts.createSourceFile(file, raw, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+  const rel = file.split('\\').join('/').replace(/^.*\/src\//, 'src/');
+  const out: PointerSite[] = [];
+  const visit = (n: ts.Node): void => {
+    if (ts.isJsxOpeningElement(n) || ts.isJsxSelfClosingElement(n)) {
+      const tag = n.tagName.getText(sf);
+      const attrs = n.attributes.properties.filter(ts.isJsxAttribute);
+      const nameOf = (a: ts.JsxAttribute): string => a.name.getText(sf);
+      const cls = attrs.find((a) => nameOf(a) === 'className');
+      const clsText = cls?.initializer ? cls.initializer.getText(sf) : '';
+      if (clsText.includes('cursor-pointer') && !POINTER_TAGS_EXEMPT.has(tag)) {
+        const ownHandler = attrs.some(
+          (a) => /^on[A-Z]/.test(nameOf(a)) || nameOf(a) === 'href' || nameOf(a) === 'to' || nameOf(a) === 'role',
+        );
+        const parent = n.parent;
+        const inner =
+          ts.isJsxElement(parent) && parent.openingElement === n
+            ? raw.slice(parent.openingElement.getEnd(), parent.closingElement.getStart(sf))
+            : '';
+        // A descendant that can receive the click. Text-level, deliberately
+        // generous: this side of the test must ACQUIT, so a false positive here
+        // costs a missed defect while a false negative accuses working code.
+        const innerReachable =
+          /\bon[A-Z]\w*\s*=/.test(inner) ||
+          /\b(?:href|to)\s*=/.test(inner) ||
+          /<(?:button|a|input|select|textarea|Button)\b/.test(inner);
+        if (!ownHandler && !innerReachable) {
+          out.push({ file: rel, line: sf.getLineAndCharacterOfPosition(n.getStart(sf)).line + 1, tag });
+        }
+      }
+    }
+    ts.forEachChild(n, visit);
+  };
+  visit(sf);
+  return out;
+}
 
-  // — app chrome, on EVERY route in the portal. The bell additionally renders a
-  //   hardcoded "3": a VALUE claim, which this guard does not judge (see reach).
-  { id: 'src/components/layout-v2/TopBarV2.tsx::topbar.toggleNav', ruling: 'UNRULED' },
-  { id: 'src/components/layout-v2/TopBarV2.tsx::topbar.notifications', ruling: 'UNRULED' },
+const DEAD_POINTERS = FILES.flatMap((f) => pointerCensusOf(f, readFileSync(f, 'utf8')));
 
-  // — inside the rendered WhatsApp message mock, not a portal control.
-  { id: 'src/pages-v2/SupplierWhatsApp.tsx::text:Unsubscribe', ruling: 'UNRULED (messenger-chrome mock)' },
+/**
+ * ⚠️ **THE DEFECT THIS REPOSITORY ACTUALLY SHIPPED, QUOTED SO THE RULE CAN BE
+ * FIRED AT IT — `PROBE-MUST-FIRE-AT-A-REAL-DEFECT-01`.**
+ *
+ * A synthetic subject agrees with its matcher by construction: the seat that
+ * aimed the rule also built the target, so a synthetic probe can only show that
+ * the matcher RUNS, never that it is aimed at the right thing. This is
+ * `SupplierRegistration.tsx`'s agreements block as it stood at `81c9840`, the
+ * commit this branch was cut from — the geometry the tree really occupied, and
+ * the one thing in this file that was aimed by something other than this seat.
+ *
+ * It is captured today because today is the only cheap day to capture it. After
+ * this batch it survives nowhere but here.
+ */
+const SHIPPED_DEFECT_81C9840 = `
+      <FormSection eyebrow={t('a.eyebrow')} title={t('a.title')}>
+        <label className="flex items-start gap-3 cursor-pointer mb-2">
+          <input type="checkbox" checked={form.agreed1} onChange={(e) => setForm(e)} className="mt-1 accent-teal" />
+          <span className="text-sm text-text-secondary">
+            <Trans
+              i18nKey="registration.review.agreement1.text"
+              components={{
+                coc: <span className="text-teal underline cursor-pointer" />,
+                terms: <span className="text-teal underline cursor-pointer" />,
+              }}
+            />
+          </span>
+        </label>
+      </FormSection>
+`;
 
-  // — ⚠️ THE ONLY MEMBER IN THE TREE THAT IS DEAD BY AN EXPLICIT `() => {}`
-  //   RATHER THAN BY A MISSING HANDLER, and the only one outside `pages-v2`
-  //   and `components/`. A hand census scoped to the v2 pages does not see it;
-  //   this guard walks all of `src/`, which is how it surfaced.
-  { id: 'src/pages/auth/Login.tsx::text:Forgot password?', ruling: 'UNRULED' },
-];
+/** A handler-less `Button`, and beside it one that acts. Both synthetic. */
+const SYNTHETIC_CONTROLS = `
+const Synthetic = () => {
+  const { t } = useTranslation();
+  const [open, setOpen] = useState(false);
+  return (
+    <div>
+      <Button variant="secondary">{t('synthetic.dead')}</Button>
+      <Button variant="outline" onClick={() => setOpen(!open)}>{t('synthetic.live')}</Button>
+    </div>
+  );
+};
+`;
 
-describe('DEAD-AFFORDANCE-01 — the census, ratcheted', () => {
+describe('DEAD-AFFORDANCE-01 — the census, at zero', () => {
   // ── anti-vacuity: this suite must be looking at the real tree ────────────
   it('the population is the real one, not an empty or truncated read', () => {
     expect(FILES.length).toBeGreaterThan(100);
@@ -531,17 +625,25 @@ describe('DEAD-AFFORDANCE-01 — the census, ratcheted', () => {
   });
 
   // ── BILATERAL CONTROLS on the instrument, both directions, same run ──────
-  it('CONTROL+ a known-DEAD control is FOUND and convicted', () => {
-    // ⚠️ **RE-POINTED, AND THE REASON TRAVELS WITH IT.** This control named
-    //    `sourcing.award.rejectAll` until the operator ruled the bulk reject OUT:
-    //    a buyer reviews and rejects quotations ONE BY ONE, each with a stated
-    //    justification, so a single control that rejects a whole set is the wrong
-    //    affordance to carry — it was removed, not wired and not noticed. A
-    //    control whose subject no longer exists proves nothing, so this names
-    //    another missing-handler member on the SAME surface. If §103h retires the
-    //    `BulkActionsBar` descriptors too, re-point it again rather than delete it.
-    const known = DEAD.find((s) => idOf(s) === 'src/pages-v2/BuyerSourcing.tsx::sourcing.action.export');
-    expect(known, '`Export` has no onClick (§103h) and must be convicted').toBeDefined();
+  it('CONTROL+ a known-DEAD control is FOUND and convicted — over SYNTHETIC source', () => {
+    // ⚠️ **THIS CONTROL IS SYNTHETIC BECAUSE THE TREE NO LONGER HAS A SUBJECT,
+    //    AND THAT IS A LOSS THAT HAS TO BE STATED RATHER THAN PAPERED OVER.** It
+    //    named `sourcing.action.export` while that descriptor was dead; H3 gave it
+    //    an honest notice, so pointing at it now would assert the opposite of the
+    //    truth. A control whose subject was FIXED proves nothing, exactly as one
+    //    whose subject was DELETED proves nothing — the note that stood here
+    //    already said "re-point it rather than delete it", and there is nowhere
+    //    left in `src/` to re-point it TO. So the subject is constructed, and the
+    //    limit is named: this shows the matcher RUNS and convicts the shape. It
+    //    cannot show the matcher is aimed at the right thing. The pointer rule
+    //    below carries that half, fired at source this repository really shipped.
+    const sites = censusOf('C:/synthetic/src/Synthetic.tsx', SYNTHETIC_CONTROLS);
+    const dead = sites.filter((s) => s.cls === 'DEAD');
+    expect(dead.map((s) => s.key), 'the handler-less Button must be convicted').toEqual([
+      'synthetic.dead',
+    ]);
+    const live = sites.find((s) => s.key === 'synthetic.live');
+    expect(live?.cls, 'and the one beside it, which acts, must not be').toBe('LIVE');
   });
 
   it('CONTROL- a known-LIVE control is FOUND and ACQUITTED', () => {
@@ -582,41 +684,181 @@ describe('DEAD-AFFORDANCE-01 — the census, ratcheted', () => {
     expect([...new Set(dupes)]).toEqual([]);
   });
 
-  // ── THE RATCHET, BOTH DIRECTIONS ────────────────────────────────────────
-  it('⚠️ NO UNNAMED dead control — a NEW one is red until it is named here', () => {
-    const named = new Set(RESIDUE.map((r) => r.id));
-    const unnamed = DEAD.filter((s) => !named.has(idOf(s))).map((s) => `${idOf(s)}  (${s.file}:${s.line})`);
+  // ── THE FLOOR IS ZERO ───────────────────────────────────────────────────
+  it('⚠️ NO dead control anywhere in src/ — zero is the floor, not a target', () => {
     expect(
-      unnamed,
-      'A control with no handler was added, or one stopped being live. Wire it, give it an honest ' +
-        'response, remove it — or add it to RESIDUE with its ruling.',
+      DEAD.map((s) => `${idOf(s)}  (${s.file}:${s.line})`),
+      'A control with no handler was added, or one stopped being live. There is no residue list to ' +
+        'name it in any more: wire it, give it an honest response in the shape the tree already uses ' +
+        '(an `info` toast whose copy admits nothing happened, in BOTH locales), or remove it.',
     ).toEqual([]);
   });
 
-  it('⚠️ NO STALE residue row — a FIXED control is red until its row is removed', () => {
-    const dead = new Set(DEAD.map(idOf));
-    const stale = RESIDUE.filter((r) => !dead.has(r.id)).map((r) => r.id);
+  it('⚠️ and the residue list stays deleted — an empty list is the door, not the lock', () => {
+    // If a seat re-introduces `RESIDUE` with a row in it, the assertion above
+    // would still be the thing that has to be satisfied — but this makes the
+    // attempt itself red, so the diff cannot read as "adding a known defect the
+    // way this file has always allowed". It never allowed it at zero.
+    expect(RESIDUE).toEqual([]);
+  });
+
+  // ── BLIND SPOT 1 · the click invitation that is not a control ────────────
+  it('⚠️ NO dead pointer — a link-styled element that nothing can click', () => {
     expect(
-      stale,
-      'These are named as dead and are not. If they were fixed, delete the rows: a residue row that ' +
-        'outlives its subject is the `C9-STALE-BY-FIX-01` failure this list exists to avoid.',
+      DEAD_POINTERS.map((p) => `${p.file}:${p.line} <${p.tag}>`),
+      'This element changes the cursor to a pointer and neither it nor anything inside it can ' +
+        'receive a click. Either give it the act it promises, or take the pointer styling off.',
     ).toEqual([]);
   });
 
-  it('every residue row states a ruling or says UNRULED — never a bare exemption', () => {
-    const blank = RESIDUE.filter((r) => !r.ruling || !r.ruling.trim()).map((r) => r.id);
-    expect(blank).toEqual([]);
+  it('CONTROL+ the pointer rule convicts the source THIS REPOSITORY SHIPPED at 81c9840', () => {
+    // ⚠️ `PROBE-MUST-FIRE-AT-A-REAL-DEFECT-01`. Not a synthetic subject: the
+    //    agreements block of `SupplierRegistration.tsx` as it stood on `main` when
+    //    this branch was cut. TWO spans, both convicted, and the `<label>` and
+    //    `<input>` around them — which are correctly interactive — acquitted in the
+    //    same run, so this is bilateral inside one probe.
+    const hits = pointerCensusOf('C:/history/src/SupplierRegistration.tsx', SHIPPED_DEFECT_81C9840);
+    expect(hits.map((h) => h.tag), 'both Code-of-Conduct / Terms spans must be convicted').toEqual([
+      'span',
+      'span',
+    ]);
   });
 
-  it('⚠️ this batch\'s two controls are NOT in the residue — they were fixed, not named', () => {
-    const ids = new Set(RESIDUE.map((r) => r.id));
-    expect(ids.has('src/pages-v2/BuyerSourcing.tsx::sourcing.panel.exportComparison')).toBe(false);
-    expect([...ids].some((i) => i.includes('FOOTER_LABEL'))).toBe(false);
-    // and the removed button's key can no longer appear anywhere in the census
+  it('CONTROL- the pointer rule ACQUITS the row whose act is a stretched anchor', () => {
+    // ⚠️ THE FALSE ACCUSATION THIS RULE IS MOST LIKELY TO MAKE, asserted against
+    //    rather than described. `BuyerSuppliers`' directory row carries
+    //    `cursor-pointer` and NO handler; its act is a real `<a>` inside a cell,
+    //    which is the accessible shape and the one this tree deliberately moved to.
+    const row = `
+      <TableRow key={s.id} className="relative cursor-pointer">
+        <TableCell>
+          <RecordRowLink to={'/buyer/suppliers/' + s.id} label={s.name} />
+        </TableCell>
+      </TableRow>
+    `;
+    expect(pointerCensusOf('C:/synthetic/src/Row.tsx', row)).toEqual([]);
+    // and the same row with its anchor removed IS convicted, so the acquittal
+    // above is the descendant rule firing and not the whole probe being inert.
+    const bare = `
+      <TableRow key={s.id} className="relative cursor-pointer">
+        <TableCell>{s.name}</TableCell>
+      </TableRow>
+    `;
+    expect(pointerCensusOf('C:/synthetic/src/Row.tsx', bare).map((p) => p.tag)).toEqual(['TableRow']);
+  });
+
+  // ── BLIND SPOT 2 · the descriptor with an OPTIONAL handler ───────────────
+  it('⚠️ `BulkActionsBar` descriptors REQUIRE a handler — the type is the gate', () => {
+    // ⚠️ **THIS IS §103h's STRUCTURAL FIX AND IT IS NOT ASSERTED HERE BECAUSE A
+    //    TEST IS THE RIGHT PLACE FOR IT — IT IS ASSERTED BECAUSE THE TYPE CAN BE
+    //    QUIETLY UNDONE.** Thirteen of the 29 dead controls in this file's history
+    //    were `{ label, icon }` descriptors: `onClick?: () => void` type-checked
+    //    them perfectly, and every page header in the portal is built from this
+    //    one component. `onClick` is now REQUIRED, so a handler-less descriptor is
+    //    a `tsc` failure at the call site — earlier, closer to the defect, and
+    //    impossible to forget. Restoring the `?` would make thirteen holes
+    //    reappear with no test going red anywhere, which is what this reads for.
+    // ⚠️ READ THROUGH `codeOnly`, AND THE FIRST DRAFT DID NOT — it went red on
+    //    its first run against the comment in `BulkActionsBar.tsx` that QUOTES the
+    //    retired `onClick?: () => void` in order to explain why it is retired. An
+    //    instrument that convicts a file for DOCUMENTING the defect it fixed is
+    //    reading prose as code, which is the one thing the stripper at the top of
+    //    this file exists to prevent — and it fired here, in a probe written by the
+    //    same batch that wrote the comment.
+    const src = codeOnly(
+      readFileSync(join(SRC, 'components', 'ui-v2', 'BulkActionsBar.tsx'), 'utf8'),
+    );
+    expect(/\bonClick\?\s*:/.test(src), 'onClick must not be optional on either descriptor').toBe(
+      false,
+    );
+    expect(
+      (src.match(/\bonClick:\s*\(\)\s*=>\s*void/g) ?? []).length,
+      'both `BulkAction` and `PrimaryAction` must require it',
+    ).toBe(2);
+  });
+
+  // ── BLIND SPOT 3 · the control behind a spread, recorded and never judged ─
+  it('⚠️ the SPREAD exemption is pinned to a named set, so a new one cannot hide in it', () => {
+    // A control with `{...rest}` is recorded and judged NOWHERE, because the
+    // spread may carry the handler — `Button.tsx`'s own `{...rest}` is the
+    // specimen and convicting it would accuse the primitive every live button in
+    // the portal is built from. That reasoning is sound for `Button` and is NOT a
+    // licence: any other component that starts spreading props would join the
+    // unjudged set in silence. Pinned, it joins this assertion instead.
+    expect([...new Set(ALL.filter((s) => s.cls === 'SPREAD').map((s) => s.file))]).toEqual([
+      'src/components/ui-v2/Button.tsx',
+    ]);
+  });
+
+  // ── THE H3 REMOVALS, BY KEY ─────────────────────────────────────────────
+  it('⚠️ the controls H3 REMOVED are absent from the census, not merely acquitted', () => {
+    // A removal and a fix are different outcomes and this file should be able to
+    // tell them apart. These nine were judged GONE — decoration, a duplicate of
+    // the surface they sat on, or a promise no plan in this repository makes —
+    // so their KEYS must not appear anywhere in the population. If one comes
+    // back, it comes back as a diff against this list.
+    const removed = [
+      'src/components/layout-v2/TopBarV2.tsx::topbar.toggleNav',
+      'src/components/layout-v2/TopBarV2.tsx::topbar.notifications',
+      'src/pages-v2/Marketplace.tsx::marketplace.rfq.viewAll',
+      'src/pages-v2/BuyerOrders.tsx::buyerOrders.footer.viewFullDetails',
+      'src/pages-v2/BuyerSupplierProfile.tsx::buyerSupplierProfile.comm.reset',
+      'src/pages-v2/BuyerSupplierProfile.tsx::buyerSupplierProfile.comm.save',
+      'src/pages/auth/Login.tsx::text:Forgot password?',
+      'src/pages-v2/SupplierWhatsApp.tsx::text:Unsubscribe',
+    ];
+    const present = new Set(ALL.map(idOf));
+    expect(removed.filter((r) => present.has(r))).toEqual([]);
+    // The polymorphic footer label lookup went with the button it labelled.
+    // ⚠️ **SCOPED TO `BuyerOrders`, AND THE FIRST DRAFT WAS NOT** — it accused
+    //    `BuyerInvoices`, which carries its OWN `FOOTER_ACTION_KEY` behind a LIVE
+    //    control (`dyn:commitAction?commitAction.labelKey:FOOTER_ACTION_KEY[…]`,
+    //    classified LIVE at `BuyerInvoices.tsx:1131`). Two pages happened to name a
+    //    constant the same thing, and a tree-wide `includes` read that as the
+    //    deleted one coming back. Derivation rule 2, inside the assertion written
+    //    to record a deletion.
+    expect(
+      ALL.filter(
+        (s) => s.file === 'src/pages-v2/BuyerOrders.tsx' && s.key.includes('FOOTER_ACTION_KEY'),
+      ),
+    ).toEqual([]);
     expect(ALL.some((s) => s.key.includes('FOOTER_LABEL'))).toBe(false);
   });
 
-  it('`Export comparison` is now classified TOAST_ONLY, not DEAD', () => {
+  it('⚠️ the controls H3 made HONEST are TOAST_ONLY, not DEAD and not silently LIVE', () => {
+    // Twenty controls kept their place on the surface and gained a notice that
+    // admits nothing happened. `TOAST_ONLY` is the class that says so: the
+    // control is no longer silent, and whether its COPY is honest is
+    // `toastHonesty.guard`'s question in both locales, not this file's.
+    const honest = [
+      'src/pages-v2/BuyerSourcing.tsx::sourcing.action.export',
+      'src/pages-v2/BuyerSourcing.tsx::sourcing.action.templates',
+      'src/pages-v2/BuyerContracts.tsx::contracts.action.export',
+      'src/pages-v2/BuyerContracts.tsx::contracts.action.templates',
+      'src/pages-v2/BuyerOrders.tsx::buyerOrders.action.export',
+      'src/pages-v2/BuyerOrders.tsx::buyerOrders.action.bulkDownload',
+      'src/pages-v2/BuyerOrders.tsx::buyerOrders.action.newPo',
+      'src/pages-v2/BuyerRequisitions.tsx::requisitions.action.export',
+      'src/pages-v2/BuyerRequisitions.tsx::requisitions.action.bulkDownload',
+      'src/pages-v2/BuyerSuppliers.tsx::buyerSuppliers.actions.bulkUpload',
+      'src/pages-v2/BuyerSuppliers.tsx::buyerSuppliers.actions.bulkDownload',
+      'src/pages-v2/BuyerSuppliers.tsx::buyerSuppliers.actions.export',
+      'src/pages-v2/BuyerSuppliers.tsx::buyerSuppliers.actions.invite',
+      'src/pages-v2/BuyerSupplierProfile.tsx::buyerSupplierProfile.actions.message',
+      'src/pages-v2/BuyerSupplierProfile.tsx::buyerSupplierProfile.actions.createRfq',
+      'src/pages-v2/SupplierStorefront.tsx::supplierStorefront.header.connect',
+      'src/pages-v2/SupplierStorefront.tsx::supplierStorefront.header.requestRfq',
+      'src/pages-v2/SupplierStorefront.tsx::supplierStorefront.catalog.requestQuote',
+      'src/pages-v2/SupplierStorefront.tsx::supplierStorefront.contact.saveDraft',
+      'src/pages-v2/SupplierStorefront.tsx::supplierStorefront.contact.send',
+    ];
+    const byId = new Map(ALL.map((s) => [idOf(s), s.cls]));
+    expect(honest.filter((h) => byId.get(h) !== 'TOAST_ONLY').map((h) => `${h} -> ${byId.get(h)}`)).toEqual(
+      [],
+    );
+  });
+
+  it('`Export comparison` is still classified TOAST_ONLY, not DEAD', () => {
     const s = ALL.find(
       (x) => x.file === 'src/pages-v2/BuyerSourcing.tsx' && x.key === 'sourcing.panel.exportComparison',
     );
@@ -630,18 +872,28 @@ describe('DEAD-AFFORDANCE-01 — the census, ratcheted', () => {
 // reader who assumes this guard covers a claim it does not reach is the failure
 // the block is built against.
 //
-// **GUARDED — these assertions and nothing else:** the DEAD set equals RESIDUE
-// in both directions; every row carries a ruling; keys are unique per file; the
-// instrument finds a known dead control and acquits a known live one; the
-// exclusions each fire at least once; the population is non-empty.
+// **GUARDED — these assertions and nothing else:** the DEAD set is EMPTY and the
+// residue list stays deleted; no element invites a click that nothing can
+// receive; `BulkActionsBar`'s two descriptors REQUIRE a handler; the SPREAD
+// exemption is pinned to `Button.tsx`; the nine H3 removals are absent by key
+// and the twenty H3 notices are `TOAST_ONLY` by key; keys are unique per file;
+// the instrument convicts a synthetic dead control, convicts the source this
+// repository shipped at `81c9840`, acquits a known-live control and acquits the
+// stretched-anchor row; the exclusions each fire at least once; the population
+// is non-empty.
 //
 // ⚠️ **NOT GUARDED — and this half is why the block exists, because a list of
 // guarded things reads as completeness.**
-//   · **PROP-THREADED HANDLERS.** A handler arriving as a prop (`onEdit`,
-//     `onPin`) is classified `PROP_THREADED` and judged NOWHERE. It is resolved
-//     only at the CALL SITE, which is itself in the population — so the act is
-//     covered, but the inner rendering is not, and a component whose prop is
-//     never supplied would be invisible here.
+//   · **PROP-THREADED HANDLERS** (37 sites today). A handler arriving as a prop
+//     (`onEdit`, `onPin`) is classified `PROP_THREADED` and judged NOWHERE. It is
+//     resolved only at the CALL SITE, which is itself in the population — so the
+//     act is covered, but the inner rendering is not, and a component whose prop
+//     is never supplied would be invisible here. **This is the largest unjudged
+//     class left and it is NOT closed by H3**; closing it means following an
+//     import, which this file deliberately does not do.
+//   · **UNRESOLVED HANDLERS** (35 sites today). A body whose whole act is a call
+//     this file cannot see — a ref method, an imported helper — is recorded and
+//     judged nowhere, because "I could not see it" is not "it is not there".
 //   · **CONTROLS RENDERED FROM RUNTIME DATA.** A control whose existence or
 //     handler comes from fetched data, a config object built at runtime, or a
 //     `.map()` over a service response is not visible to an AST. This file reads
@@ -650,16 +902,26 @@ describe('DEAD-AFFORDANCE-01 — the census, ratcheted', () => {
 //   · **WHETHER A `TOAST_ONLY` CONTROL IS HONEST.** That is
 //     `toastHonesty.guard.test.tsx`'s question, in both locales, and it is NOT
 //     re-asked here. This guard only records that such a control is not silent.
-//   · **VALUE CLAIMS.** `TopBarV2`'s bell renders a hardcoded `3`. The BUTTON is
-//     convicted here; the fabricated COUNT beside it is a data claim and no rule
-//     in this file can see it. It is the more misleading of the two.
+//     All twenty H3 notices land in that guard's population, which is where their
+//     copy is judged.
+//   · **VALUE CLAIMS.** The specimen this block used to name — `TopBarV2`'s bell
+//     rendering a hardcoded `3` — is gone, because the control it sat on was
+//     removed. The LIMIT is unchanged and is the reason the removal was the right
+//     disposal rather than a notice: no rule in this file can see a fabricated
+//     COUNT, so the only way to stop that one was to delete it.
 //   · **A DISABLED CONTROL WITH A STATED REASON** is not distinguished from a
 //     live one: `disabled` is not read at all. A permanently-disabled control
 //     with no explanation would pass.
 //   · **"THE HANDLER MATCHES THE LABEL."** Same limit `toastHonesty` states: a
 //     handler that does something SMALLER or OTHER than its label says is LIVE
 //     here. `LABEL-NAMES-THE-WRONG-VERB` is a different instrument.
-//   · **A CONTROL BEHIND A SPREAD** is recorded and never judged. `Button.tsx`
-//     is the specimen; any future `{...props}` control joins it silently.
+//   · **A CONTROL BEHIND A SPREAD** is recorded and never judged. `Button.tsx` is
+//     the specimen; a NEW one is now caught by the pin above, but it is caught as
+//     "somebody else started spreading", not judged on its merits.
+//   · **THE POINTER RULE READS `className` AS TEXT.** A `cursor-pointer` arriving
+//     from a variable, a `clsx` call this file does not evaluate, or a Tailwind
+//     `group-hover` is outside it. Its descendant test is text-level and
+//     deliberately GENEROUS: it errs toward acquitting, so its failures are
+//     missed defects rather than accusations against working code.
 //   · **THIS BLOCK IS PROSE AND IS NOT ITSELF ASSERTED.**
 // ═══════════════════════════════════════════════════════════════════════════

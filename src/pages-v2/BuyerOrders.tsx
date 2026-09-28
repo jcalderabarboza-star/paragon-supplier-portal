@@ -29,6 +29,7 @@ import PageMetaLine from '../components/ui-v2/PageMetaLine';
 import ProvenanceMarker from '../components/ui-v2/ProvenanceMarker';
 import KpiCard from '../components/ui-v2/KpiCard';
 import BulkActionsBar from '../components/ui-v2/BulkActionsBar';
+import { useToast } from '../hooks/useToast';
 import SubTabs from '../components/ui-v2/SubTabs';
 import FilterChipsBar from '../components/ui-v2/FilterChipsBar';
 import SearchBar from '../components/ui-v2/SearchBar';
@@ -40,7 +41,6 @@ import Table from '../components/ui-v2/Table';
 import TableHeader, { TableHeaderCell } from '../components/ui-v2/TableHeader';
 import TableRow from '../components/ui-v2/TableRow';
 import TableCell from '../components/ui-v2/TableCell';
-import Button from '../components/ui-v2/Button';
 import SidePanel from '../components/ui-v2/SidePanel';
 import Timeline, { TimelineEvent } from '../components/ui-v2/Timeline';
 import LoadingState from '../components/ui-v2/LoadingState';
@@ -110,16 +110,6 @@ const COUNTRY_FLAG: Record<string, string> = {
 };
 
 const DAY_MS = 24 * 60 * 60 * 1000;
-
-const FOOTER_ACTION_KEY: Record<POStatus, string> = {
-  [POStatus.SENT]: 'buyerOrders.footer.sendReminder',
-  [POStatus.VIEWED]: 'buyerOrders.footer.sendReminder',
-  [POStatus.ACKNOWLEDGED]: 'buyerOrders.footer.requestAsn',
-  [POStatus.CONFIRMED]: 'buyerOrders.footer.requestAsn',
-  [POStatus.PARTIALLY_DELIVERED]: 'buyerOrders.footer.trackShipment',
-  [POStatus.DELIVERED]: 'buyerOrders.footer.viewGr',
-  [POStatus.CLOSED]: 'buyerOrders.footer.viewGr',
-};
 
 const STATUS_RANK: Record<POStatus, number> = {
   [POStatus.SENT]: 1,
@@ -230,6 +220,7 @@ const lineTotal = (li: PurchaseOrder['lineItems'][number]): number =>
 
 const BuyerOrders: React.FC = () => {
   const { t } = useTranslation();
+  const { toast } = useToast();
   const ORDERS_CRUMB = [
     t('buyerOrders.crumb.transact'),
     t('buyerOrders.crumb.purchaseOrders'),
@@ -372,10 +363,37 @@ const BuyerOrders: React.FC = () => {
         actions={
           <BulkActionsBar
             actions={[
-              { label: t('buyerOrders.action.export'), icon: FileSpreadsheet },
-              { label: t('buyerOrders.action.bulkDownload'), icon: Download },
+              {
+                label: t('buyerOrders.action.export'),
+                icon: FileSpreadsheet,
+                onClick: () =>
+                  toast({
+                    variant: 'info',
+                    title: t('buyerOrders.toast.exportUnavailable.title'),
+                    description: t('buyerOrders.toast.exportUnavailable.desc'),
+                  }),
+              },
+              {
+                label: t('buyerOrders.action.bulkDownload'),
+                icon: Download,
+                onClick: () =>
+                  toast({
+                    variant: 'info',
+                    title: t('buyerOrders.toast.bulkDownloadUnavailable.title'),
+                    description: t('buyerOrders.toast.bulkDownloadUnavailable.desc'),
+                  }),
+              },
             ]}
-            primary={{ label: t('buyerOrders.action.newPo'), icon: Plus }}
+            primary={{
+              label: t('buyerOrders.action.newPo'),
+              icon: Plus,
+              onClick: () =>
+                toast({
+                  variant: 'info',
+                  title: t('buyerOrders.toast.newPoUnavailable.title'),
+                  description: t('buyerOrders.toast.newPoUnavailable.desc'),
+                }),
+            }}
           />
         }
       />
@@ -577,20 +595,20 @@ const BuyerOrders: React.FC = () => {
         </Table>
       </div>
 
+      {/* ⚠️ THE PANEL HAS NO FOOTER, AND BOTH CONTROLS THAT WERE THERE ARE GONE
+          RATHER THAN WIRED — H3, each for its own reason. `View full details`
+          pointed at a PO detail page that does not exist in `AppRouter`: THIS
+          PANEL IS the detail view, so the control was a duplicate of the surface
+          it sat on. The button beside it was a per-status label lookup
+          (`FOOTER_ACTION_KEY`) with no handler at ANY status — the same shape as
+          `BuyerSourcing`'s `FOOTER_LABEL` button, which was deleted rather than
+          wired, and that precedent is followed here rather than re-argued.
+          Wiring either would have meant a new page or a new verb, and the H3
+          ruling forbids building either to make a control true. */}
       <SidePanel
         open={selectedPO !== null}
         onClose={closePanel}
         title={panelTitle}
-        footerActions={
-          selectedPO && (
-            <>
-              <Button variant="secondary">{t('buyerOrders.footer.viewFullDetails')}</Button>
-              <Button variant="outline">
-                {t(FOOTER_ACTION_KEY[selectedPO.status])}
-              </Button>
-            </>
-          )
-        }
       >
         {selectedPO && (
           <div className="space-y-6">

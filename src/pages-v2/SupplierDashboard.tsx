@@ -478,9 +478,15 @@ const SupplierDashboard: React.FC = () => {
       <PageHeader
         breadcrumb={dashCrumb}
         title={t('supplierDashboard.header.title', { name: mySupplier.name })}
+        /* ⚠️ `Last login: 5 April 2026` IS GONE — H3 addendum. It was an authored
+           literal presented as a SESSION FACT, and this portal has no login: the
+           access gate is an HMAC cookie at the edge (SEC-GATE-01) and the in-app
+           seat is a persona with `actor: UNATTRIBUTED: NO_PERSON_IN_SESSION`, so
+           nothing anywhere records when anyone last signed in. A date is the most
+           believable kind of false claim because a reader checks it against
+           nothing. The `{{date}}` slot is removed from BOTH locales rather than
+           filled with a computed value, because there is no value to compute. */
         subtitle={t('supplierDashboard.header.subtitle', {
-          // i18n-defer: mock/sample data — hardcoded last-login date.
-          date: '5 April 2026',
           channel: channelLabel,
         })}
       />

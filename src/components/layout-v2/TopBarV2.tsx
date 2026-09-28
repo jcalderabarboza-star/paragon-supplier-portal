@@ -1,5 +1,5 @@
 import React from 'react';
-import { Menu, Search, Bell } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { resolveEnvBadge } from '../../lib/envBadge';
 import LanguageMenu from './LanguageMenu';
@@ -16,13 +16,11 @@ const TopBarV2: React.FC = () => {
     <header className="h-14 w-full bg-bg-surface border-b border-border-subtle flex items-center px-4 gap-4">
       {/* Left cluster */}
       <div className="flex items-center gap-3 min-w-0">
-        <button
-          type="button"
-          aria-label={t('topbar.toggleNav')}
-          className="p-2 rounded-md text-text-secondary hover:bg-bg-hover"
-        >
-          <Menu size={18} />
-        </button>
+        {/* ⚠️ THE NAV TOGGLE IS GONE — H3. `AppShellV2` and `SidebarV2` hold no
+            collapse state of any kind, so there was nothing for this control to
+            toggle, and giving it one would have meant BUILDING a collapsible
+            shell — which the H3 ruling forbids. The sidebar is always present;
+            the control that implied it could be put away is not. */}
         <span className="text-sm font-semibold text-text-primary whitespace-nowrap">
           {t('app.title')}
         </span>
@@ -57,16 +55,14 @@ const TopBarV2: React.FC = () => {
       {/* Right cluster */}
       <div className="flex items-center gap-3">
         <LanguageMenu />
-        <button
-          type="button"
-          aria-label={t('topbar.notifications')}
-          className="relative p-2 rounded-md text-text-secondary hover:bg-bg-hover"
-        >
-          <Bell size={18} />
-          <span className="absolute top-1 right-1 min-w-[16px] h-4 px-1 rounded-full bg-danger text-white text-[10px] font-bold flex items-center justify-center">
-            3
-          </span>
-        </button>
+        {/* ⚠️ THE BELL IS GONE AND THE BADGE WITH IT — H3, and the badge is the
+            more misleading half. There is no notification store, no notification
+            route and no notification verb in this tree, so the button could not
+            be wired to anything; the hardcoded `3` beside it was a VALUE claim —
+            three unread somethings — that no data here supports.
+            `deadAffordance.guard` convicts the button and states in its own reach
+            block that it cannot see the count. Removing the control removes both,
+            which is why this is GONE rather than an honest notice. */}
         {/* The avatar is now a PANEL, not a decoration: the current role and the
             scope it grants live here, because identity belongs with identity. */}
         <IdentityPanel />

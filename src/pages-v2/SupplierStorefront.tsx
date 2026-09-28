@@ -33,6 +33,7 @@ import { PreferredChannel } from '../types/supplier.types';
 import { useSupplier, useStorefrontProducts } from '../services/query/hooks';
 import { useCategoryLabel } from '../hooks/useCategoryLabel';
 import { useChannelLabel } from '../hooks/useChannelLabel';
+import { useToast } from '../hooks/useToast';
 import { DECLARED_PRESENT } from '../services/data/fixturePresent';
 
 // ⚠️ ANCHORED — this surface rendered values derived from anchored
@@ -105,6 +106,7 @@ const CHANNEL_ICON: Record<PreferredChannel, LucideIcon> = {
 
 const SupplierStorefront: React.FC = () => {
   const { t } = useTranslation();
+  const { toast } = useToast();
   const cl = useCategoryLabel();
   const chl = useChannelLabel();
   const { id } = useParams<{ id: string }>();
@@ -218,10 +220,30 @@ const SupplierStorefront: React.FC = () => {
         subtitle={`${cl(supp.category)} · ${supp.city}, ${supp.country}`}
         actions={
           <div className="flex items-center gap-2">
-            <Button variant="secondary" icon={MessageCircle}>
+            <Button
+              variant="secondary"
+              icon={MessageCircle}
+              onClick={() =>
+                toast({
+                  variant: 'info',
+                  title: t('supplierStorefront.toast.connectUnavailable.title'),
+                  description: t('supplierStorefront.toast.connectUnavailable.desc'),
+                })
+            }
+            >
               {t('supplierStorefront.header.connect')}
             </Button>
-            <Button variant="outline" icon={Send}>
+            <Button
+              variant="outline"
+              icon={Send}
+              onClick={() =>
+                toast({
+                  variant: 'info',
+                  title: t('supplierStorefront.toast.requestRfqUnavailable.title'),
+                  description: t('supplierStorefront.toast.requestRfqUnavailable.desc'),
+                })
+            }
+            >
               {t('supplierStorefront.header.requestRfq')}
             </Button>
           </div>
@@ -356,7 +378,17 @@ const SupplierStorefront: React.FC = () => {
                 </div>
               </div>
               <div className="mt-4">
-                <Button variant="secondary" className="w-full">
+                <Button
+                  variant="secondary"
+                  className="w-full"
+                  onClick={() =>
+                    toast({
+                      variant: 'info',
+                      title: t('supplierStorefront.toast.requestQuoteUnavailable.title'),
+                      description: t('supplierStorefront.toast.requestQuoteUnavailable.desc'),
+                    })
+                }
+                >
                   {t('supplierStorefront.catalog.requestQuote')}
                 </Button>
               </div>
@@ -460,10 +492,29 @@ const SupplierStorefront: React.FC = () => {
               className="w-full bg-white border border-border-input rounded-md p-3 text-sm text-text-primary placeholder:text-text-tertiary focus:outline-none focus:border-action transition-colors"
             />
             <div className="mt-4 flex justify-end gap-2">
-              <Button variant="secondary">
+              <Button
+                variant="secondary"
+                onClick={() =>
+                  toast({
+                    variant: 'info',
+                    title: t('supplierStorefront.toast.saveDraftUnavailable.title'),
+                    description: t('supplierStorefront.toast.saveDraftUnavailable.desc'),
+                  })
+              }
+              >
                 {t('supplierStorefront.contact.saveDraft')}
               </Button>
-              <Button variant="outline" icon={Send}>
+              <Button
+                variant="outline"
+                icon={Send}
+                onClick={() =>
+                  toast({
+                    variant: 'info',
+                    title: t('supplierStorefront.toast.sendUnavailable.title'),
+                    description: t('supplierStorefront.toast.sendUnavailable.desc'),
+                  })
+              }
+              >
                 {t('supplierStorefront.contact.send')}
               </Button>
             </div>

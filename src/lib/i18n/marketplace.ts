@@ -37,7 +37,6 @@ export const marketplaceEn: Record<string, string> = {
   'marketplace.rfq.title': 'Open RFQ Opportunities',
   'marketplace.rfq.subtitle':
     'Illustrative open-RFQ teaser — not yet wired to live sourcing data.',
-  'marketplace.rfq.viewAll': 'View all',
   'marketplace.rfq.col.rfq': 'RFQ #',
   'marketplace.rfq.col.material': 'Material',
   'marketplace.rfq.col.quantity': 'Quantity',
@@ -81,7 +80,6 @@ export const marketplaceId: Record<string, string> = {
   'marketplace.rfq.title': 'Peluang RFQ Terbuka',
   'marketplace.rfq.subtitle':
     'Cuplikan RFQ-terbuka ilustratif — belum terhubung ke data sourcing langsung.',
-  'marketplace.rfq.viewAll': 'Lihat semua',
   'marketplace.rfq.col.rfq': 'RFQ #',
   'marketplace.rfq.col.material': 'Material',
   'marketplace.rfq.col.quantity': 'Kuantitas',
