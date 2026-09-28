@@ -12,9 +12,17 @@ A forecast line may later firm into a C7 requirement, but that is a state transi
 side (plan → accepted), not the same seam.
 
 **Status:** CONTRACT · **first issue, 2026-08-03**, generated from code-truth at `main` #157
-(`063adca`) · additive, docs-only. Supersedes `docs/C8_Forecast_Publication_Seam_Proposal.md`
+(`063adca`) · **amended 2026-09-28 (A1-R1 · A1-R6 · A1-R7 — see §2.2 and §5)** · additive,
+docs-only. Supersedes `docs/C8_Forecast_Publication_Seam_Proposal.md`
 (2026-07-16), which was a **proposal, never ratified**. Carries SOMO's rulings of 2026-08-03 as
 **ratified** where marked, and **two items as explicitly UNRATIFIED / NOT DEFAULTED** (§2.2, §4.4).
+
+⚠️ **AMENDMENT 1 (2026-09-28) DOES NOT RATIFY EITHER OF THOSE TWO.** `commitmentClass` (§2.2) and
+spec-vs-substance identity (§4.4) stay exactly as open as they were — A1-R6 rules on **what a surface
+must SHOW while one of them is open**, which is the opposite of settling it. What the amendment does
+settle is the bucket VOCABULARY (A1-R1: GG-3′ now closed on both seams, month or ISO week, quarters
+refused) and the horizon DEPTH (A1-R7: a registry value, not a number in this document). The
+cross-seam ask to SOMO for the weekly grain is new and is open.
 
 **The three items SOMO requires for ratification are in §3.2, §4.3 and §4.5** — recorded in the
 DOCUMENT, not in correspondence, per our own rule held to us: **a ruling that stays on one
@@ -237,6 +245,25 @@ visibility, not on the work.
 
 **Supplier-facing vocabulary is `commitmentClass` only.** A supplier must never see internal
 liveness terms (`SIMULATED×PLANNED`, `Tier`) — FLAG-2.
+
+⚠️ **AND WHILE IT IS UNRATIFIED, A SURFACE RENDERS THE RAW STATE BESIDE THE CLASS** (operator ruling
+A1-R6, 2026-09-28). The planning grid shows `lockState` and `approvalState` as SOMO emitted them,
+alongside the projected `commitmentClass`, wherever the class is displayed to a Paragon seat.
+
+**Why both and not the class alone, which is the easier surface to build.** `firm` is the field a
+supplier builds stock against and on which dead-stock liability disputes are decided. Rendering only
+the class makes the grid **the place a liability class is silently decided** — by a projection table
+sitting in a contract marked UNRATIFIED, executed by code, read by a planner as a fact. Rendering
+both keeps the derivation visible: a reader can see that `firm` came from *locked*, and can see it
+disagree the day the ratified mapping differs from the proposal.
+
+⚠️ **AND THE RAW STATE IS NOT SUPPLIER-FACING — THE TWO HALVES OF THIS RULING PULL OPPOSITE WAYS AND
+BOTH HOLD.** FLAG-2's rule above is unchanged: a supplier sees `commitmentClass` and never an
+internal term. `lockState` / `approvalState` are SOMO's plan states, and showing a supplier its
+producer's internal governance states would be exporting a vocabulary they did not agree to read.
+**The raw pair is for the Paragon seat that has to answer for the class; the class is for the
+supplier who has to act on it.** A single surface obeying one half of this ruling and forgetting the
+other is the shape to watch for.
 
 ---
 
@@ -550,9 +577,9 @@ compliance-and-explosion change until proven otherwise.
 
 | # | Gap | Status |
 |---|---|---|
-| **GG-3′** | **period bucket vs single date.** C8 is bucket-native — a supplier confirms "I can meet Aug-25", not a date. **Built that way:** `periodBucket: string` (`sdc/types.ts:130`), documented as *"the planning grain … NOT a resolved date"* (`:122-126`). | **CLOSED our side.** ⚠️ C7 resolves the SAME gap the OPPOSITE way (bucket written into `requiredDate`, C7 GG-3). **Ask stands:** confirm SOMO can emit one plan at both grains. |
+| **GG-3′** | **period bucket vs single date.** C8 is bucket-native — a supplier confirms "I can meet Aug-25", not a date. **Built that way:** `periodBucket: string` (`sdc/types.ts:130`), documented as *"the planning grain … NOT a resolved date"* (`:122-126`). | **CLOSED our side, AND NOW CLOSED ON C7's TOO — 2026-09-28, operator ruling A1-R1, ON THIS SIDE'S TERMS.** The cross-seam disagreement this cell recorded is resolved by C7 adopting bucket-native, not by C8 conceding: C7 `period` → `periodBucket`. ⚠️ **AND THE VOCABULARY IS NOW TYPED RATHER THAN `string`** — `BucketId` is a month `'YYYY-MM'` **or an ISO week `'YYYY-Www'`**, **quarters refused**, **one grain per horizon**, decided by ONE function both seams call (`parseBucket`, `bucket.ts`). **Ask stands and is now sharper:** confirm SOMO can emit one plan at BOTH grains — monthly for raw materials, ISO-weekly for packaging. Until it answers, the weekly grain exists in our vocabulary and in no producer's emission. |
 | **GG-7** | **revision cadence + net-change.** Governed cadence (monthly RM / weekly PM) rather than per-revision, with flagged emergency republication; and a net-change delta so unchanged lines are not re-confirmed. | **OPEN.** No cadence or delta machinery in code. Full re-confirmation of an unchanged 200-line forecast every cycle is how supplier adoption dies. |
-| **GG-8** | **horizon boundary.** How many buckets forward, and is the commitment boundary a fixed offset or plan-driven per material? | **OPEN.** Code comments a 6-bucket window as "trimmable" (`sdc/types.ts:152`); nothing enforces it. Now partly superseded by §2 — the boundary question is the projection question. |
+| **GG-8** | **horizon boundary.** How many buckets forward, and is the commitment boundary a fixed offset or plan-driven per material? | **DEPTH RULED, BOUNDARY STILL OPEN — and the two halves are different questions (2026-09-28, A1-R7).** ⚠️ **THE DEPTH IS A REGISTRY VALUE AND IS DELIBERATELY NOT WRITTEN IN THIS CELL.** Derive it from `DEFAULT_HORIZON_BUCKETS` (`bucket.ts`) — one depth per grain, trimmable per view. A figure in contract prose is wrong the first time the plan changes and nothing fails when it is, and **this very cell is the proof**: it has carried a **6** since authoring, from a code comment that enforced nothing. The COMMITMENT BOUNDARY — fixed offset or plan-driven per material — is untouched by the ruling and stays **OPEN**; it is the projection question (§2). |
 
 ---
 
@@ -595,8 +622,12 @@ never mistake an acknowledgment for a commitment — there is no number to misre
 | **C8-FIND-01** | **This contract did not exist** while the code hardened past the 2026-07-16 proposal — `allocation` (required), the `Uom` union, per-line `provenance` and a `commitmentClass` mapping all landed unseen by SOMO. | **CLOSED by this document** |
 | **C8-FIND-02** | The SOMO inbound emission shape is **not modelled in code** — no type exists; only `Allocation.materialPeriodTotal` residue. §1.2 is SPEC prose, not a harvested shape. | **OPEN** — lands with the F2 producer |
 | **C8-FIND-03** | **Code/contract divergence, knowingly held:** the void mapping (§2.1) remains in code (`sdc/types.ts:23`, `sdc/FLAGS.md` pre-correction) until the booked code batch. Contract is authority. | **OPEN** — booked code batch |
-| GG-3′ | bucket-native on C8 | **CLOSED our side**; cross-seam ask stands (§5) |
-| GG-7, GG-8 | cadence + net-change · horizon boundary | **OPEN** — co-design (§5) |
+| GG-3′ | bucket-native on C8 | **CLOSED BOTH SIDES 2026-09-28** (C7 adopts bucket-native, A1-R1); vocabulary now typed — month or ISO week, quarters refused, one grain per horizon; cross-seam ask for the WEEKLY grain stands (§5) |
+| GG-7 | cadence + net-change | **OPEN** — co-design (§5) |
+| GG-8 | horizon boundary | **DEPTH RULED** (A1-R7: a registry value in `bucket.ts`, not a contract number); **BOUNDARY OPEN** — co-design (§5) |
+| **A1-R1** | `BucketId` = `'YYYY-MM'` \| `'YYYY-Www'`; quarters refused; one grain per horizon; ONE parse function serves both seams. | **RATIFIED — operator 2026-09-28.** Vocabulary + parse SHIPPED (`bucket.ts`, pinned by `bucket.test.ts`); `ForecastLine.periodBucket` stays `string` on the type until a batch re-types it, and the parse is the gate meanwhile |
+| **A1-R6** | `commitmentClass` stays UNRATIFIED (§2.2), and the grid **renders the raw `lockState` / `approvalState` BESIDE the class** until named owners in procurement and finance ratify the projection. | **RATIFIED — operator 2026-09-28** (§2.2). Render obligation lands with the grid's supplier-facing columns |
+| **A1-R7** | Horizon depth is a **registry value per grain**, not a contract number. | **RATIFIED — operator 2026-09-28** (§5 GG-8). `DEFAULT_HORIZON_BUCKETS` (`bucket.ts`) |
 | C4-FEEDBACK | Supplier response → Snowflake commons | **SPEC** — gated on F1/F2 (§6) |
 
 ---

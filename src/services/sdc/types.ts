@@ -292,7 +292,22 @@ export interface ForecastPublication {
   /** SOMO's plan version this snapshot came from (bound onto the response). */
   readonly planVersion: string;
   readonly publishedAt: string;
-  /** The rolling horizon of period buckets (C8 GG-8: 6-bucket window; trimmable). */
+  /**
+   * The rolling horizon of period buckets.
+   *
+   * ⚠️ **THE `6` THAT STOOD HERE IS DELETED RATHER THAN CORRECTED** (C8 GG-8,
+   * operator ruling A1-R7, 2026-09-28). This comment read *"6-bucket window;
+   * trimmable"* and **nothing enforced it** — C8's own GG-8 row then quoted this
+   * comment back as if it were the contract's figure, so one unenforced number
+   * became two. The depth is a **registry value per grain**: derive it from
+   * `DEFAULT_HORIZON_BUCKETS` (`services/planning/bucket.ts`), trimmable per view.
+   *
+   * ⚠️ **EVERY MEMBER IS ONE GRAIN, AND `string` DOES NOT SAY SO.** A horizon is a
+   * `BucketId[]` — all months or all weeks, never mixed — decided by
+   * `parseHorizon`. The element type stays `string` until a batch re-types this
+   * seam; the parse is the gate meanwhile, and a mixed-grain horizon is refused
+   * there rather than silently totalled here.
+   */
   readonly horizon: readonly string[];
   readonly lines: readonly ForecastLine[];
   readonly provenance: Provenance;

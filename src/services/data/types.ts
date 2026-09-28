@@ -28,6 +28,12 @@ import type {
 // vocabulary is not acquiring a consumer, and nothing in this file calls it.
 import type { EnforcementSetting, ActorAttribution } from '../../lib/enforcement';
 
+// A planning bucket id (C7 GG-3 / C8 GG-3′, closed on C8's side). TYPE-ONLY for
+// the same reason as the line above: `PurchaseRequisition.periodBucket` names the
+// vocabulary, and the ONE function that decides membership is `parseBucket` in
+// the module beside it. Importing the alias does not import the parse.
+import type { BucketId } from '../planning/bucket';
+
 // SDC-4b — the collaboration read seam's row types (type-only; the SDC layer
 // already imports IntakePlanState from here, so this reverse reference is a
 // type-only cycle TS resolves at erase-time — no runtime import is emitted).
@@ -1030,6 +1036,68 @@ export interface PurchaseRequisition {
    * tell it had not happened.
    */
   approvedBy?: import('../../lib/enforcement').ActorAttribution;
+  /**
+   * ── THE REQUISITION CARRIES ITS ORIGIN (C7 §2.1, R3 · operator 2026-09-28) ──
+   *
+   * ⚠️ **THREE OPTIONAL FIELDS, AND THE DEFECT THEY CLOSE WAS MEASURED ON THE
+   * SURFACE, NOT INFERRED.** The plan grid's drawer REQUIRES an override reason
+   * before it will dispatch (`overrideBlocked`, the load-bearing gate), the
+   * payload carries it, and `purchaseRequisitionTarget.create` reads neither it
+   * nor the intake line it came from — `PurchaseRequisition` had no field for
+   * either. So the reason and the from/to ride the DR-10 `TransitionEvent`, **and
+   * no surface in this tree renders an event.** The flow C6-LOCK calls "audited"
+   * recorded nothing an approver could read (C7-FIND-02, OPEN).
+   *
+   * ⚠️ **AUDIT ON THE EVENT AND PROVENANCE ON THE DOCUMENT ARE DIFFERENT JOBS,
+   * WHICH IS WHY THIS IS NOT A DUPLICATE OF THE EVENT.** The event answers *what
+   * happened, in order, to whom* and is append-only. The document answers *what
+   * am I looking at* to the one person whose decision depends on it — the
+   * approver, on the row in front of them. A ledger nobody reads is not an
+   * answer to that.
+   *
+   * ⚠️ **OPTIONAL, AND NOT MERELY FOR MIGRATION.** A requisition raised on the
+   * New PR form has NO intake line and NO bucket, and absent is the honest
+   * statement of that. Compare `estimatedValue` two screens up: a typed zero is a
+   * real statement, emptiness may not be mistaken for one. The same rule here —
+   * an absent `decision` means nobody overrode anything, never "the override was
+   * unexplained".
+   *
+   * ⚠️ **NOTHING WRITES THESE YET, AND SAYING SO IS THE POINT.** A1 lands the
+   * shape the contracts now demand so B1/B2 build against a pinned one; the
+   * `intakeLine` machine's cascade into `t_pr_create` is what populates them, and
+   * `BuyerRequisitions`' drawer is what renders them. Both are B2. A field with a
+   * named consumer and a named batch is data-in-waiting; the moment one of these
+   * is written by nothing and read by nothing with no batch left, it is the
+   * `certBasis` shape and should be deleted.
+   */
+  /** The `intakeLine` this requisition was committed from. Absent on a New PR form row. */
+  intakeLineId?: string;
+  /**
+   * The planning bucket the requirement sits in — `'YYYY-MM'` or `'YYYY-Www'`,
+   * parsed by `parseBucket` (`services/planning/bucket.ts`).
+   *
+   * ⚠️ **THIS IS NOT `requiredDate`, AND THE DIFFERENCE IS THE WHOLE POINT.**
+   * `t_pr_create` writes the intake line's bucket INTO `requiredDate` today
+   * (`requiredDate: str('requiredDate') || str('period')`), so a date-named field
+   * holds `'2026-Q3'` and the requisitions page renders an em dash for it — or,
+   * for `'2026-08'`, **`01 Aug 2026`, a day nobody entered.** A required date is
+   * a commitment to a day; a bucket is a grain. One field cannot be both, and the
+   * one that lost was the reader's.
+   */
+  periodBucket?: BucketId;
+  /**
+   * The governed decision that created this requisition — the planner's own
+   * change to the quantity, with its reason (C6-LOCK §8.3).
+   *
+   * ⚠️ **THE BASELINE IS THE PRODUCER'S ACCEPTED QUANTITY, NOT `suggestedQty`**
+   * (operator ruling R2, 2026-09-28 — C6 §8.3). A SOMO-adjusted line arrives with
+   * its own delta and no reason; that delta is SOMO's act and is shown, never
+   * charged to the planner. `buildQtyDecision` still measures against
+   * `suggestedQty` and so still demands a reason for a move the human did not
+   * make; correcting it is B2's, and the ruling is recorded in C6 so the code
+   * lands against a stated position rather than a remembered one.
+   */
+  decision?: CommandDecision;
 }
 
 // ─── PR-intake line (C7 §2 — one shape, two producers) ──────────────────────

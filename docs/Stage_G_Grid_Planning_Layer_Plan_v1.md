@@ -2,6 +2,30 @@
 
 **Status:** DRAFT — authored by Seat 3 (strategic, read-only), 2026-07-14. Pending
 operator adjudication. G0 is not cleared to Seat 2 until this document is ratified.
+**Amended 2026-09-28** — FORK-G1's stale register row corrected and **FORK-G1′**
+recorded (§3 G0.3, §6).
+
+⚠️ **AND THE TWO SENTENCES ABOVE ARE THEMSELVES STALE, WHICH IS WORTH KNOWING BEFORE
+READING ANYTHING ELSE HERE.** G0 *was* cleared. Derived rather than recalled —
+`git log --format='%ad %s' --date=short | grep -oE '^[0-9-]+ G[0-9]\.[0-9][a-z]?' |
+sort -u` returns **G0.1 · G0.2 · G1.1 · G1.2a (2026-07-14) · G1.2b · G1.3
+(2026-07-15)**, and the C6 planning contract this document grounds has read
+`CONTRACT · authored G0.1` ever since.
+
+⚠️ **NOTE WHAT THE DERIVATION DOES NOT RETURN: THERE IS NO `G0.3` COMMIT.** G0.3 is
+the FORK-G1 adjudication (§3 below), and its exit criterion was *the scorecard
+artifact* — which exists (`docs/g0-2-engine-scorecard.md` §6.1 carries the ruling,
+dated 2026-07-14) and landed inside the G0.2 batch. **A decision can be ratified
+without a commit bearing its name**, so the absence is not a gap; it is recorded here
+because a reader deriving the batch list will notice the hole and should not conclude
+the fork was never ruled. It was — see the register row.
+**Stage G is DORMANT at G1.3, not pending** (see `CLAUDE.md` → THE RECALIBRATED PATH).
+The status line is left as written rather than rewritten, because *"pending
+adjudication"* is what this document was when it was authored, and the Planning Grid
+lane now starting is not a resumption of Stage G — it is a new lane that inherits
+Stage G's keystone and its engine ruling. **This amendment touches only the two
+engine rows**; nothing else here has been re-verified against the tree, and a reader
+should treat the rest as a 2026-07-14 artefact.
 **Grounding:** `Grid_Planning_Layer_Investigation_2026-07-14.md` (adjudicated).
 **Scope of this document:** Stage G placement, the design keystone, the G0 engine
 bake-off in full, and the G1/G2/G3+ skeleton. **G1+ batch detail is deliberately NOT
@@ -118,6 +142,75 @@ requires in-grid formulas AND the spike shows they can be honesty-contained.
 
 *Gate: no Stage G product code is written before FORK-G1 is ruled.*
 
+### ⚠️ THE OUTCOME, RECORDED WHERE THE LEAN IS — AND IT WAS NOT THE LEAN
+
+**FORK-G1 was RULED on 2026-07-14: `react-datasheet-grid` v4.11.6 (MIT), formulas
+OUT, no licence** (`docs/g0-2-engine-scorecard.md` §6.1). The lean above named AG
+Grid Enterprise; the ruling went the other way, on the ground that *"the engine is
+a reversible frontend implementation detail; the doctrine is the permanent
+contract"* — and a commercial licence is premature cost on a reversible decision.
+`package.json` has shipped `react-datasheet-grid` ever since.
+
+⚠️ **THE LEAN IS LEFT STANDING ABOVE RATHER THAN DELETED, AND THIS BLOCK IS WHY
+THAT IS SAFE NOW.** For over a year the register carried the lean as though it were
+the outcome (see the FORK-G1 row in §6, corrected in the same batch as this block),
+so a reader met a pre-decision wearing a ruling's clothes. Deleting the lean would
+hide that it was overturned, which is the more useful fact of the two: **the spike
+was run, and it changed the answer.**
+
+### FORK-G1′ — AG Grid Enterprise, AFTER THE HANDOVER (operator ruling, 2026-09-28)
+
+**The ruling.** AG Grid Enterprise, **two developer licences**, is **INSTALLED BY THE
+SE TEAM AFTER HANDOVER (28 Oct 2026)**. Our Planning Grid is built on **the engine
+already in the repository** (`react-datasheet-grid`).
+
+**What this does and does not reverse.** It does **not** reverse FORK-G1's reasoning
+— the engine remains a reversible detail and the doctrine remains the contract. It
+adds an owner and a date: the Enterprise-grade capabilities (row grouping, subtotals,
+range selection, fill handle, set filters, column chooser, export, saved layouts, and
+the accessibility gap below) are the **SE Team's** to build on AG Grid after handover.
+
+**What we build, and the consequence for sequencing.** The registries, the views, the
+read seam and the **governed-edit seam** ship on the installed engine, so the move to
+AG Grid is an **engine swap, not a redesign**. Our grid batches therefore do **not**
+depend on the licence arriving — which is the whole point of recording the ownership
+split rather than the purchase.
+
+**Why AG Grid at all, given FORK-G1 ruled against it.** The scorecard's §6.3 made the
+upgrade **FIRM** on four named triggers and said the trigger would be *"a scale
+event"*. The Planning Grid meets **two of them on its first view** — complex
+grouping / pivoting / aggregation (trigger 2) and heavy concurrent editing (trigger 3)
+— and **the first at RFP scale** (outgrowing client-side virtualisation). So this is
+the scorecard's own upgrade path firing, not a reversal of its ruling.
+
+**Plus a fifth ground §6.3 did not weigh: accessibility.** The read-only review of
+2026-09-28 measured **zero ARIA on the installed engine** — 0 `role=`/`aria-` in
+`dist`, 0 `[role=grid]` in the DOM — against an RFP that asks for a daily-use
+instrument for named users with RBAC and audit. **Recorded as that review's
+measurement, not re-measured here**, and it is the one trigger a scale event would
+never produce: it does not improve with volume, and nothing in §6.3's list would ever
+have fired on it. A licence is no longer premature cost on a reversible decision; it
+is the cost of the accessibility and the grouping the surface actually needs.
+
+**Licence handling, so it is not re-derived at install time.** USD 999 per developer,
+perpetual with one year of updates (vendor page, 2026-09-28). ⚠️ **The pricing page
+does not define who counts as a developer — the EULA does**, and confirming that the
+two licences cover the two front-end developers who will *edit grid code* (and that
+reviewers, QA and code readers do not need a third) is a named action for the Lead
+Engineer **before** the install. The design names the file boundary
+`plan-grid/engine/**` so *"writes grid code"* is checkable in a PR rather than argued.
+The key is read from a non-`VITE_`-prefixed build-time env in the vendor's documented
+manner; it is not a secret and is not treated as one, and it does not live in the
+repository.
+
+**What stays on the installed engine regardless:** `BulkStockEntryGrid` (supplier SOH
+batches), until the supplier-collaboration confirmation grid lands on the new
+component. `react-datasheet-grid` leaves `package.json` only then.
+
+**If the operator reverses this:** the honest fallback is the installed engine with
+model-layer sort/filter/totals and **the accessibility gap filed OPEN** — not a third
+engine, which is an engine to write rather than to choose.
+
 ---
 
 ## 4. Phase skeleton — G1 / G2 / G3+ (names, intent, honesty gates ONLY)
@@ -160,6 +253,12 @@ requires in-grid formulas AND the spike shows they can be honesty-contained.
    values; (iv) Excel-paste lands as PLANNED/EXTERNAL, never as seam data; (v) no
    formula cells while formulas-OUT stands; (vi) plan-vs-actual honesty (no
    unaudited savings claims); (vii) no client-side plan persistence outside the seam.
+   ⚠️ **(vii) IS ABOUT PLAN STATE AND NOTHING ELSE** (operator ruling A1-R4,
+   2026-09-28, recorded in full at C6 §1): a per-seat grid LAYOUT — column order,
+   width, hidden measures, sort, density — is **view** state and may be persisted, on
+   the honest-read pattern with a reset control. A column width is not a truth about a
+   material. Read as a ban on all client persistence, (vii) would forbid a planner
+   keeping their own screen arrangement while doing nothing extra for plan integrity.
 6. Browser QA before sealing visible UI; EN/ID from birth; DP-1/2/3 conformance.
 7. Branch + PR + operator-approved merge (four-actor model) — unchanged.
 
@@ -171,5 +270,6 @@ requires in-grid formulas AND the spike shows they can be honesty-contained.
 |---|---|---|
 | G-PLACE | Stage G = I6 award-scenario implementation; priority after I3 closes | ADJUDICATED |
 | G-KEYSTONE | PLANNED = orthogonal axis, not a registry tier; overlay never merged; push-only exit | ADJUDICATED |
-| FORK-G1 | Grid engine + license posture + formulas IN/OUT | **OPEN — resolved by G0 scorecard** (lean: AG Grid Enterprise, formulas OUT) |
+| FORK-G1 | Grid engine + license posture + formulas IN/OUT | ⚠️ **RULED 2026-07-14 — `react-datasheet-grid` v4.11.6 (MIT), formulas OUT, no licence** (`docs/g0-2-engine-scorecard.md` §6.1). **CORRECTED 2026-09-28:** this row read *"OPEN — resolved by G0 scorecard (lean: AG Grid Enterprise, formulas OUT)"* for over a year — **both halves wrong in the same cell.** It was not open: the scorecard ruled it the day the row was written. And the *lean* it quoted is the option the ruling REJECTED, so the register named the losing engine as the outcome while `package.json` shipped the winning one. A pre-decision left in a status column reads as a decision, and this is the specimen. |
+| **FORK-G1′** | AG Grid Enterprise, **two developer licences**, **installed by the SE Team AFTER handover (28 Oct 2026)**. Our Planning Grid is built on the engine already in the repository; the move is then an engine swap, not a redesign. Enterprise-grade features + the ARIA gap are the SE Team's. Licence-holder confirmation against the EULA is a named action for the Lead Engineer before install. | **RATIFIED — operator ruling 2026-09-28** (§3, G0.3). Does **not** reverse FORK-G1's reasoning; it adds an owner and a date. Our grid batches do not depend on the licence arriving |
 | G-PRECOND | Build Plan branch merged to main before G0 opens | **SATISFIED 2026-07-14** — the Build Plan merged as PR #65 (`65edbde`) and G0.1 opened the next day as PR #67 (`dc059fc`). Carried as `OPEN — operator` for five weeks after the thing it gated had already run; corrected 2026-08-20. **Stage G is DORMANT at G1.3, not next** — see `CLAUDE.md` → THE RECALIBRATED PATH. |

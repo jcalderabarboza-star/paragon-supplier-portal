@@ -18,25 +18,31 @@
 // data, sans = names/prose). Keying them would invite a "translation" of a name.
 //
 // ⚠️ **AND `login.demo.note` IS THE LOAD-BEARING STRING, NOT DECORATION.** The
-// page collects an email and hands it to nothing: `handleSignIn` reads neither
-// the email nor (before H3) the password — it sets a persona and navigates. The
-// note is what makes that true on screen rather than merely true in the source,
-// so it says plainly that nothing typed here is checked. If the email field is
-// ever wired to a real identity provider, this string is the first thing that
-// must change, and it must change BEFORE the wiring, not after.
+// sign-in button sets a persona and navigates; it authenticates nobody, and a
+// reader cannot tell that from the button. The note is what makes that true on
+// screen rather than merely true in the source.
+//
+// ⚠️ **IT WAS REWRITTEN AT A1 BECAUSE THE FIELDS IT DESCRIBED ARE GONE, AND A
+// DISCLOSURE THAT DESCRIBES A REMOVED CONTROL IS ITSELF A FALSE CLAIM.** It read
+// *"Nothing you type here is checked and no password is asked for"* — accurate
+// while an email box stood above it, and after the operator's 2026-09-28 ruling
+// removed that box there was nothing left to type. The string now states the
+// absence rather than the futility: no email or password is asked for, and none is
+// checked. `login.field.email` / `login.field.emailPlaceholder` left with the
+// input rather than staying behind as keys nothing reaches.
+//
+// If this page is ever wired to a real identity provider, this string is the first
+// thing that must change, and it must change BEFORE the wiring, not after.
 export const loginEn: Record<string, string> = {
   // — Brand block —
   'login.brand.portal': 'Supplier Portal',
   // — Persona tabs —
   'login.tab.buyer': 'Paragon Team',
   'login.tab.supplier': 'Supplier',
-  // — Form —
-  'login.field.email': 'Email',
-  'login.field.emailPlaceholder': 'you@example.com',
   // — The demo sign-in, and the sentence that makes it honest —
   'login.demo.signIn': 'Enter the demo',
   'login.demo.note':
-    'Demo sign-in. Nothing you type here is checked and no password is asked for — the tab above chooses the seat you browse as.',
+    'Demo sign-in. No email or password is asked for and none is checked — the tab above chooses the seat you browse as.',
   // — Supplier self-registration —
   'login.register': 'New supplier? Register here →',
   // — Direct persona entry —
@@ -53,18 +59,10 @@ export const loginId: Record<string, string> = {
   // — Persona tabs —
   'login.tab.buyer': 'Tim Paragon',
   'login.tab.supplier': 'Pemasok',
-  // — Form —
-  'login.field.email': 'Email',
-  // ⚠️ `.example`, NOT `.com` — `thirdPartyIdentifiers.test.ts` convicted the
-  // first draft of this line. `contoh.com` is a REGISTRABLE domain that somebody
-  // owns; `example.com` is RFC 2606-reserved and so is every `.example` host, and
-  // the guard's stated preference is the latter. A placeholder that can resolve is
-  // a placeholder that can one day send mail to a stranger.
-  'login.field.emailPlaceholder': 'anda@contoh.example',
   // — The demo sign-in, and the sentence that makes it honest —
   'login.demo.signIn': 'Masuk ke demo',
   'login.demo.note':
-    'Masuk demo. Tidak ada yang Anda ketik di sini yang diperiksa dan tidak ada kata sandi yang diminta — tab di atas memilih kursi yang Anda gunakan untuk menjelajah.',
+    'Masuk demo. Tidak ada email atau kata sandi yang diminta maupun diperiksa — tab di atas memilih kursi yang Anda gunakan untuk menjelajah.',
   // — Supplier self-registration —
   'login.register': 'Pemasok baru? Daftar di sini →',
   // — Direct persona entry —
