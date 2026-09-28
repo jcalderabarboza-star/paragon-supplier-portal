@@ -14,10 +14,18 @@
 // ⚠️ **QUARTERS ARE REFUSED, AND THAT IS A RULING RATHER THAN AN OMISSION**
 // (operator, 2026-09-28). A month and an ISO week are grains a producer can
 // commit against; a quarter is a reporting period wearing a planning grain's
-// clothes, and it is the form that renders as nothing today. `'2026-Q3'` sits on
-// two of the four rows of `fixtures/prIntake.ts` and the intake seam will refuse
-// it when B2 lands the machine — which is the point: a refusal names the rows to
-// re-express, where an unparsed free string named nothing for a year.
+// clothes, and it is the form that renders as nothing today.
+//
+// ⚠️ **AND THE SENTENCE THAT STOOD HERE IS RETIRED BECAUSE ITS SUBJECT WAS FIXED.**
+// It read: *"`'2026-Q3'` sits on two of the four rows of `fixtures/prIntake.ts` and
+// the intake seam will refuse it when B2 lands the machine."* The operator ruled
+// those two rows into valid buckets on 2026-09-28, so **no row in the product tree
+// carries the refused form any more** — `pil-somo-001` is a month and
+// `pil-grid-002` an ISO week, and `prIntakeBuckets.test.ts` asserts that against
+// this parser rather than claiming it here. What the prediction got right is worth
+// keeping: **a refusal named the rows to re-express, where an unparsed free string
+// named nothing for a year.** The remaining `'2026-Q3'` literals in the tree are
+// in THIS module's specs, where they are the known-bad input.
 //
 // ⚠️ **ONE GRAIN PER HORIZON.** The telescoping view a planner wants — weeks
 // near, months far — is TWO horizons side by side, never one array holding both.

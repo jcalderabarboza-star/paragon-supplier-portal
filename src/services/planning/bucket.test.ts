@@ -103,9 +103,13 @@ describe('⚠️ KNOWN-GOOD FIRST — the parse accepts the grains the operator 
 
 describe('⚠️ THE REFUSALS — quarters by ruling, and everything that is not a bucket', () => {
   it('a QUARTER is refused, and it is the form the tree actually carries', () => {
-    // `'2026-Q3'` sits on two of the four rows of `fixtures/prIntake.ts` today and
-    // renders as an em dash on the requisitions page. The refusal is what names
-    // those rows for B2 to re-express.
+    // ⚠️ THE FORM IS NO LONGER IN THE PRODUCT TREE, AND THAT IS WHY THIS
+    // ASSERTION MATTERS MORE RATHER THAN LESS. It used to sit on two rows of
+    // `fixtures/prIntake.ts`, rendering as an em dash on the requisitions page;
+    // the operator ruled those rows into real buckets on 2026-09-28, so this spec
+    // is now the ONLY thing in the tree that still exercises the quarter form.
+    // Delete it and nothing anywhere would notice the parser starting to accept
+    // one.
     expect(parseBucket('2026-Q3')).toEqual({
       ok: false,
       reason: 'UNPARSEABLE_BUCKET',

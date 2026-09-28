@@ -1094,8 +1094,16 @@ export interface PurchaseRequisition {
    * its own delta and no reason; that delta is SOMO's act and is shown, never
    * charged to the planner. `buildQtyDecision` still measures against
    * `suggestedQty` and so still demands a reason for a move the human did not
-   * make; correcting it is B2's, and the ruling is recorded in C6 so the code
-   * lands against a stated position rather than a remembered one.
+   * make; correcting it is the R2 behaviour batch's (separable from B2's
+   * machine), and the ruling is recorded in C6 so the code lands against a
+   * stated position rather than a remembered one.
+   *
+   * ⚠️ **AND `wasAdjusted` WILL NOT BE ON THIS PAYLOAD WHEN THAT BATCH LANDS**
+   * (operator ruling A1-R2a, 2026-09-28, C6 §8.3 Amendment 1a): it is DERIVED AT
+   * DISPATCH and NEVER AUTHORED, so a caller has no key to set. A boolean
+   * asserting *"a human changed this"* is a governance claim, and a caller that
+   * can assert one can misstate it onto an append-only ledger — `ACTOR_IN_PAYLOAD`
+   * one field over.
    */
   decision?: CommandDecision;
 }
