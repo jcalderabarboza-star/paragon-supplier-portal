@@ -2685,8 +2685,26 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
             <HandoffNotice availability={rfqCreateAvailability} testId="handoff-rfq-create" />
             <BulkActionsBar
               actions={[
-                { label: t('sourcing.action.export'), icon: FileSpreadsheet },
-                { label: t('sourcing.action.templates'), icon: FileText },
+                {
+                  label: t('sourcing.action.export'),
+                  icon: FileSpreadsheet,
+                  onClick: () =>
+                    toast({
+                      variant: 'info',
+                      title: t('sourcing.toast.exportUnavailable.title'),
+                      description: t('sourcing.toast.exportUnavailable.desc'),
+                    }),
+                },
+                {
+                  label: t('sourcing.action.templates'),
+                  icon: FileText,
+                  onClick: () =>
+                    toast({
+                      variant: 'info',
+                      title: t('sourcing.toast.templatesUnavailable.title'),
+                      description: t('sourcing.toast.templatesUnavailable.desc'),
+                    }),
+                },
               ]}
               {...(rfqCreateAvailability.kind === 'held'
                 ? {

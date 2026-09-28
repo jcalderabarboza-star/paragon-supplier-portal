@@ -82,11 +82,6 @@ export const buyerOrdersEn: Record<string, string> = {
   'buyerOrders.lines.col.lineTotal': 'Line total',
   'buyerOrders.lines.total': 'Total',
   // — Side-panel footer actions —
-  'buyerOrders.footer.viewFullDetails': 'View Full Details',
-  'buyerOrders.footer.sendReminder': 'Send reminder',
-  'buyerOrders.footer.requestAsn': 'Request ASN',
-  'buyerOrders.footer.trackShipment': 'Track shipment',
-  'buyerOrders.footer.viewGr': 'View GR',
   // — Communication-history toggle —
   'buyerOrders.comms.show': 'Show',
   'buyerOrders.comms.hide': 'Hide',
@@ -101,6 +96,15 @@ export const buyerOrdersEn: Record<string, string> = {
   'buyerOrders.timeline.invoiceSubmitted': 'Invoice Submitted',
   'buyerOrders.timeline.paymentPosted': 'Payment Posted',
   'buyerOrders.timeline.ackAfter': '{{hours}}h after send',
+  'buyerOrders.toast.exportUnavailable.title': 'Export not available yet',
+  'buyerOrders.toast.bulkDownloadUnavailable.title': 'Bulk download not available yet',
+  'buyerOrders.toast.newPoUnavailable.title': 'PO creation not available yet',
+  'buyerOrders.toast.exportUnavailable.desc':
+    'No file was generated — export is not wired to a real system.',
+  'buyerOrders.toast.bulkDownloadUnavailable.desc':
+    'No file was downloaded — bulk download is not wired to a real system.',
+  'buyerOrders.toast.newPoUnavailable.desc':
+    'No purchase order was created — purchase orders are raised in SAP and that seam is not wired to this portal.',
 };
 
 export const buyerOrdersId: Record<string, string> = {
@@ -179,11 +183,6 @@ export const buyerOrdersId: Record<string, string> = {
   'buyerOrders.lines.col.lineTotal': 'Total baris',
   'buyerOrders.lines.total': 'Total',
   // — Side-panel footer actions —
-  'buyerOrders.footer.viewFullDetails': 'Lihat Detail Lengkap',
-  'buyerOrders.footer.sendReminder': 'Kirim pengingat',
-  'buyerOrders.footer.requestAsn': 'Minta ASN',
-  'buyerOrders.footer.trackShipment': 'Lacak pengiriman',
-  'buyerOrders.footer.viewGr': 'Lihat GR',
   // — Communication-history toggle —
   'buyerOrders.comms.show': 'Tampilkan',
   'buyerOrders.comms.hide': 'Sembunyikan',
@@ -198,4 +197,13 @@ export const buyerOrdersId: Record<string, string> = {
   'buyerOrders.timeline.invoiceSubmitted': 'Faktur Diajukan',
   'buyerOrders.timeline.paymentPosted': 'Pembayaran Diposting',
   'buyerOrders.timeline.ackAfter': '{{hours}} jam setelah dikirim',
+  'buyerOrders.toast.exportUnavailable.title': 'Ekspor belum tersedia',
+  'buyerOrders.toast.bulkDownloadUnavailable.title': 'Unduhan massal belum tersedia',
+  'buyerOrders.toast.newPoUnavailable.title': 'Pembuatan PO belum tersedia',
+  'buyerOrders.toast.exportUnavailable.desc':
+    'Tidak ada berkas yang dibuat — ekspor belum tersambung ke sistem nyata.',
+  'buyerOrders.toast.bulkDownloadUnavailable.desc':
+    'Tidak ada berkas yang diunduh — unduhan massal belum tersambung ke sistem nyata.',
+  'buyerOrders.toast.newPoUnavailable.desc':
+    'Tidak ada pesanan pembelian yang dibuat — pesanan pembelian dibuat di SAP dan sambungan itu belum tersambung ke portal ini.',
 };

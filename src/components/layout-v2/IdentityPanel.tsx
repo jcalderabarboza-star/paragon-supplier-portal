@@ -227,7 +227,23 @@ const IdentityPanel: React.FC = () => {
     changed: 'identity.rolesChanged',
   };
 
-  const initials = persona === 'supplier' ? 'PS' : 'JJ';
+  // ⚠️ **DERIVED FROM THE PERSONA LABEL, NEVER AUTHORED — H3 addendum.** This
+  // read `persona === 'supplier' ? 'PS' : 'JJ'`, and `JJ` is a PERSON's initials:
+  // the operator's. The standing rule is roles only, never personal names
+  // (`readmeNoPersonalNames.guard`, now extended to reach this declaration), and
+  // C10's argument is the same one — a `TransitionRole` is the permission atom
+  // and this platform deliberately contains no persons. So the glyph comes from
+  // the same localized label the panel prints in full one line below, which means
+  // it cannot drift from it and cannot name anybody.
+  //
+  // ⚠️ **AND THE ID COLLISION IS STATED RATHER THAN ENGINEERED AROUND.**
+  // `nav.persona.*` is Buyer / Supplier in EN and Pembeli / Pemasok in ID, so in
+  // Indonesian BOTH personas derive `P`. That is correct and not a defect here:
+  // exactly ONE avatar renders at a time — it is the CURRENT seat, not a chooser —
+  // so the letter never has to tell two visible things apart, and the panel it
+  // opens names the persona in words. Inventing a disambiguating token would be
+  // authoring one again, which is the thing this line exists to stop.
+  const initials = t(`nav.persona.${persona}`).trim().charAt(0).toUpperCase();
 
   return (
     <div ref={rootRef} className="relative" onKeyDown={onKeyDown}>

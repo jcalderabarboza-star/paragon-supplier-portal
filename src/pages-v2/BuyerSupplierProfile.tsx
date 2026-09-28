@@ -58,6 +58,7 @@ import {
 import { formatIDR, formatNumber, formatDate } from '../lib/format';
 import { useCategoryLabel } from '../hooks/useCategoryLabel';
 import { useChannelLabel } from '../hooks/useChannelLabel';
+import { useToast } from '../hooks/useToast';
 import { SupplierTier } from '../types/supplier.types';
 import type { ProfileCertStatus, PurchaseOrder } from '../services/data/types';
 
@@ -121,6 +122,7 @@ type TabId =
   | 'msglog';
 
 const BuyerSupplierProfile: React.FC = () => {
+  const { toast } = useToast();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { t } = useTranslation();
@@ -264,10 +266,30 @@ const BuyerSupplierProfile: React.FC = () => {
         subtitle={`${cl(supp.category)} · ${supp.city}, ${supp.country} · ${TIER_LABEL[supp.tier]}`}
         actions={
           <div className="flex items-center gap-2">
-            <Button variant="secondary" icon={MessageSquare}>
+            <Button
+              variant="secondary"
+              icon={MessageSquare}
+              onClick={() =>
+                toast({
+                  variant: 'info',
+                  title: t('buyerSupplierProfile.toast.messageUnavailable.title'),
+                  description: t('buyerSupplierProfile.toast.messageUnavailable.desc'),
+                })
+              }
+            >
               {t('buyerSupplierProfile.actions.message')}
             </Button>
-            <Button variant="outline" icon={ShoppingCart}>
+            <Button
+              variant="outline"
+              icon={ShoppingCart}
+              onClick={() =>
+                toast({
+                  variant: 'info',
+                  title: t('buyerSupplierProfile.toast.createRfqUnavailable.title'),
+                  description: t('buyerSupplierProfile.toast.createRfqUnavailable.desc'),
+                })
+              }
+            >
               {t('buyerSupplierProfile.actions.createRfq')}
             </Button>
           </div>
@@ -454,10 +476,13 @@ const BuyerSupplierProfile: React.FC = () => {
               <dd className="text-text-primary">{t('buyerSupplierProfile.comm.yes')}</dd>
             </div>
           </dl>
-          <div className="mt-5 flex justify-end gap-2">
-            <Button variant="secondary">{t('buyerSupplierProfile.comm.reset')}</Button>
-            <Button variant="outline">{t('buyerSupplierProfile.comm.save')}</Button>
-          </div>
+          {/* ⚠️ `Reset` AND `Save` ARE GONE — H3, and the reason is that there was
+              never anything to save. Everything above is a `<dl>` of `<dt>`/`<dd>`
+              pairs read straight off the supplier record: this section has no
+              input, no local state and no draft, so the pair was not an unwired
+              form — it was a form's furniture with no form behind it. Wiring them
+              would have meant BUILDING the editable preferences this page does
+              not have, which the H3 ruling forbids. */}
         </section>
       )}
 

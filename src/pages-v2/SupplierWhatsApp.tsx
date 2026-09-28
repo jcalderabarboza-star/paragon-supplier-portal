@@ -980,9 +980,13 @@ const EmailPanel: React.FC = () => {
           </div>
           <div className="px-4 py-3 bg-bg-hover border-t border-border-subtle text-xs text-text-tertiary text-center">
             Paragon Corp · Jl. Swadarma Raya No. 1, Jakarta ·{' '}
-            <a href="#" className="text-text-tertiary underline">
-              Unsubscribe
-            </a>
+            {/* ⚠️ A `<span>`, NOT AN `<a href="#">` — H3. This is the footer of a
+                DEPICTED email inside the channel mock, so the WORD belongs to the
+                picture and stays; the anchor does not, because `href="#"` is a
+                control that goes nowhere. The underline stays (an email footer
+                looks like that) and there was never a `cursor-pointer` here, so
+                nothing now invites a click. */}
+            <span className="text-text-tertiary underline">Unsubscribe</span>
           </div>
         </div>
 

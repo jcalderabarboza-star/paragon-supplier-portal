@@ -19,6 +19,7 @@ import { modeResourcesEn, modeResourcesId } from './modeLabel';
 import { categoryResourcesEn, categoryResourcesId } from './categoryLabel';
 import { channelResourcesEn, channelResourcesId } from './channelLabel';
 import { registrationEn, registrationId } from './i18n/registration';
+import { loginEn, loginId } from './i18n/login';
 import { contractsEn, contractsId } from './i18n/contracts';
 import { buyerCommHubEn, buyerCommHubId } from './i18n/buyerCommHub';
 import { supplierWhatsAppEn, supplierWhatsAppId } from './i18n/supplierWhatsApp';
@@ -111,6 +112,7 @@ export const resources = {
       ...categoryResourcesEn,
       ...channelResourcesEn,
       ...registrationEn,
+      ...loginEn,
       ...contractsEn,
       ...buyerCommHubEn,
       ...supplierWhatsAppEn,
@@ -471,8 +473,6 @@ export const resources = {
       'chase.pushWhatsApp': 'Push via WhatsApp',
       // — Shared chrome: top bar —
       'topbar.search': 'Search... (Ctrl K)',
-      'topbar.toggleNav': 'Toggle navigation',
-      'topbar.notifications': 'Notifications',
       'topbar.userAvatar': 'User avatar',
       'topbar.language': 'Language',
       // — Shared ui-v2 primitives. THESE ARE ACCESSIBLE NAMES, NOT VISIBLE COPY
@@ -614,6 +614,7 @@ export const resources = {
       ...categoryResourcesId,
       ...channelResourcesId,
       ...registrationId,
+      ...loginId,
       ...contractsId,
       ...buyerCommHubId,
       ...supplierWhatsAppId,
@@ -963,8 +964,6 @@ export const resources = {
       'chase.pushWhatsApp': 'Dorong via WhatsApp',
       // — Shared chrome: top bar —
       'topbar.search': 'Cari... (Ctrl K)',
-      'topbar.toggleNav': 'Alihkan navigasi',
-      'topbar.notifications': 'Notifikasi',
       'topbar.userAvatar': 'Avatar pengguna',
       'topbar.language': 'Bahasa',
       // — Primitif ui-v2 bersama: nama aksesibilitas, bukan teks terlihat

@@ -1177,9 +1177,17 @@ const ReviewStep: React.FC<ReviewStepProps> = ({ form, setForm, errors, requestT
           <span className="text-sm text-text-secondary">
             <Trans
               i18nKey="registration.review.agreement1.text"
+              /* ⚠️ NOT LINKS — H3, and this pair is the one member of the
+                 dead-control population that `deadAffordance.guard` structurally
+                 CANNOT see: a `<span>` is not in its control vocabulary, and these
+                 carry no handler, no `href` and no `role` for it to read. They were
+                 styled `underline cursor-pointer`, which is a click invitation, and
+                 there is no Code of Conduct and no Terms document anywhere in this
+                 tree to open. The document NAMES stay emphasised; the promise that
+                 pressing them opens something is gone. */
               components={{
-                coc: <span className="text-teal underline cursor-pointer" />,
-                terms: <span className="text-teal underline cursor-pointer" />,
+                coc: <span className="font-semibold text-text-primary" />,
+                terms: <span className="font-semibold text-text-primary" />,
               }}
             />
           </span>

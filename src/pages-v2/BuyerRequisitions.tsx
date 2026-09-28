@@ -611,8 +611,26 @@ const BuyerRequisitions: React.FC = () => {
             <HandoffNotice availability={createAvailability} testId="handoff-pr-create" />
             <BulkActionsBar
               actions={[
-                { label: t('requisitions.action.export'), icon: FileSpreadsheet },
-                { label: t('requisitions.action.bulkDownload'), icon: Download },
+                {
+                  label: t('requisitions.action.export'),
+                  icon: FileSpreadsheet,
+                  onClick: () =>
+                    toast({
+                      variant: 'info',
+                      title: t('requisitions.toast.exportUnavailable.title'),
+                      description: t('requisitions.toast.exportUnavailable.desc'),
+                    }),
+                },
+                {
+                  label: t('requisitions.action.bulkDownload'),
+                  icon: Download,
+                  onClick: () =>
+                    toast({
+                      variant: 'info',
+                      title: t('requisitions.toast.bulkDownloadUnavailable.title'),
+                      description: t('requisitions.toast.bulkDownloadUnavailable.desc'),
+                    }),
+                },
               ]}
               {...(createAvailability.kind === 'held'
                 ? {

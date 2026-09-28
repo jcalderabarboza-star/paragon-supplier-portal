@@ -417,6 +417,12 @@ export const sourcingEn: Record<string, string> = {
   'sourcing.state.empty.title': 'No sourcing events yet',
   'sourcing.state.empty.subtitle': 'No RFQs are on file.',
   'sourcing.state.empty.message': 'Sourcing events and quote evaluations appear here once RFQs are raised.',
+  'sourcing.toast.exportUnavailable.title': 'Export not available yet',
+  'sourcing.toast.templatesUnavailable.title': 'Templates not available yet',
+  'sourcing.toast.exportUnavailable.desc':
+    'No file was generated — export is not wired to a real system.',
+  'sourcing.toast.templatesUnavailable.desc':
+    'No template was downloaded — the template library is not wired to a real system.',
 };
 
 export const sourcingId: Record<string, string> = {
@@ -776,4 +782,10 @@ export const sourcingId: Record<string, string> = {
   'sourcing.state.empty.title': 'Belum ada acara sumber',
   'sourcing.state.empty.subtitle': 'Belum ada RFQ yang tercatat.',
   'sourcing.state.empty.message': 'Acara sumber dan evaluasi penawaran muncul di sini setelah RFQ diajukan.',
+  'sourcing.toast.exportUnavailable.title': 'Ekspor belum tersedia',
+  'sourcing.toast.templatesUnavailable.title': 'Templat belum tersedia',
+  'sourcing.toast.exportUnavailable.desc':
+    'Tidak ada berkas yang dibuat — ekspor belum tersambung ke sistem nyata.',
+  'sourcing.toast.templatesUnavailable.desc':
+    'Tidak ada templat yang diunduh — pustaka templat belum tersambung ke sistem nyata.',
 };

@@ -27,7 +27,7 @@ export const supplierInventoryEn: Record<string, string> = {
   // — Toasts —
   'supplierInventory.toast.exportPreparing.title': 'EDI export not available yet — no file was generated.',
   'supplierInventory.toast.exportPreparing.desc':
-    'EDI 846 format download starting.',
+    'No EDI 846 file was produced — the EDI export seam is not wired to a real system.',
   'supplierInventory.toast.syncing.title':
     'Inventory sync not available yet — nothing was synced.',
   // — Meta line —
@@ -91,7 +91,7 @@ export const supplierInventoryId: Record<string, string> = {
   // — Toasts —
   'supplierInventory.toast.exportPreparing.title': 'Ekspor EDI belum tersedia — tidak ada berkas yang dibuat.',
   'supplierInventory.toast.exportPreparing.desc':
-    'Unduhan format EDI 846 dimulai.',
+    'Tidak ada berkas EDI 846 yang dibuat — sambungan ekspor EDI belum tersambung ke sistem nyata.',
   'supplierInventory.toast.syncing.title':
     'Sinkronisasi inventaris belum tersedia — tidak ada yang disinkronkan.',
   // — Meta line —

@@ -18,7 +18,7 @@ export const supplierDashboardEn: Record<string, string> = {
   // — Page header —
   'supplierDashboard.header.title': 'Welcome back, {{name}}',
   'supplierDashboard.header.subtitle':
-    'Paragon Corp Supplier Portal · Last login: {{date}} · Channel: {{channel}}',
+    'Paragon Corp Supplier Portal · Channel: {{channel}}',
   // — Meta line —
   'supplierDashboard.meta.identity': 'Supplier identity · {{country}} · {{category}}',
   // — Identity card —
@@ -106,7 +106,7 @@ export const supplierDashboardId: Record<string, string> = {
   // — Page header —
   'supplierDashboard.header.title': 'Selamat datang kembali, {{name}}',
   'supplierDashboard.header.subtitle':
-    'Portal Pemasok Paragon Corp · Login terakhir: {{date}} · Kanal: {{channel}}',
+    'Portal Pemasok Paragon Corp · Kanal: {{channel}}',
   // — Meta line —
   'supplierDashboard.meta.identity': 'Identitas pemasok · {{country}} · {{category}}',
   // — Identity card —

@@ -114,6 +114,16 @@ const EXTERNAL_CLAIM: readonly RegExp[] = [
   /\bdownloading\b/i,
   /\bdownload (?:starting|started)\b/i,
   /\bmengunduh\b/i,
+  // ⚠️ **ADDED AT H3, AND FORCED BY A KNOWN-TRUE MEMBER FAILING RATHER THAN
+  //    CHOSEN** — which is the bar this register's header sets for touching it.
+  //    `mengunduh` is the VERB ("downloading"); the copy that shipped used the
+  //    NOUN — `'Unduhan format EDI 846 dimulai.'` — so the Indonesian half of a
+  //    real, shipped contradiction was UNCONVICTABLE while its English half was
+  //    caught by `download (?:starting|started)` one line above. The EN rule
+  //    existed and its ID mirror did not, and the asymmetry was invisible because
+  //    no probe had ever fired at an ID-only claim. Every control below was re-run
+  //    after this line, per the widening note further down.
+  /\bunduhan\b[^.]{0,30}\bdimulai\b/i,
   /\b(?:advice|report|file|pdf|snapshot|document)\b[^.]{0,30}\bgenerated\b/i,
   /\b(?:bukti|laporan|berkas|dokumen)\b[^.]{0,30}\bdibuat\b/i,
   // a party was notified
@@ -187,6 +197,58 @@ const ADMISSIONS: readonly RegExp[] = [
 
 const claims = (s: string) => EXTERNAL_CLAIM.some((r) => r.test(s));
 const admits = (s: string) => ADMISSIONS.some((r) => r.test(s));
+
+/**
+ * ⚠️ **A NEGATED CLAIM IS NOT A CLAIM, AND THIS EXISTS BECAUSE THE PER-STRING
+ * RULE BELOW MADE FIVE FALSE ACCUSATIONS ON ITS FIRST RUN — H3 addendum.**
+ *
+ * `claims()` is a phrase matcher, so `"Message not sent for {{rfq}}"` matches
+ * `sent for` and `"Material baru tidak dikirim"` matches `dikirim`. Under the
+ * JOINED rule that never surfaced: the sibling description carried an explicit
+ * `nothing was sent` / `tidak ada yang dikirim`, so the pair was acquitted.
+ * Judged alone, five ALREADY-HONEST titles were convicted — titles whose whole
+ * honesty is the word `not` or `tidak` in front of the verb:
+ *
+ *   BuyerScorecard.tsx:521        Improvement plan **not** sent to {{name}}
+ *   BuyerScorecard.tsx:521        Rencana perbaikan **tidak** dikirim ke {{name}}
+ *   SupplierMyStorefront.tsx:232  Material baru **tidak** dikirim
+ *   SupplierOrders.tsx:335        Permintaan perubahan untuk {{poNumber}} **tidak** dikirim
+ *   SupplierRFQs.tsx:844          Message **not** sent for {{rfq}}
+ *
+ * **Derivation rule 2, on the instrument this batch was tightening**: widening
+ * the unit from a pair to a single string manufactured accusations against
+ * working copy exactly as readily as the loose rule hid a real defect.
+ *
+ * ⚠️ **THE REMEDY IS GRAMMAR, NOT A PHRASE LIST, AND THAT DISTINCTION IS THE
+ * WHOLE REASON THIS IS DEFENSIBLE.** Adding `not sent` / `tidak dikirim` to
+ * `ADMISSIONS` would have fixed these five and nothing else — the next negated
+ * verb would fail again, and the register would grow one phrase per incident
+ * until it was a word list, which is what `ENF-SEED-LIST-IS-NOT-THE-VOCABULARY-01`
+ * is about. Instead: a claim whose match is immediately preceded by a NEGATOR is
+ * not a claim. The negator set is eight tokens of EN/ID grammar and closed for
+ * the same reason a pronoun list would be — it is a property of the languages,
+ * not of this product's copy.
+ *
+ * ⚠️ **AND IT IS DELIBERATELY EXISTENTIAL, NOT UNIVERSAL: a string still claims
+ * if ANY of its matches is un-negated.** `"Nothing was saved, and the supplier
+ * was notified"` must stay convicted. Negating one clause does not buy the other.
+ *
+ * REACH LIMIT, stated: the window is the 16 characters before the match, so a
+ * negation separated from its verb by a longer phrase is outside it. That errs
+ * toward CONVICTION, which is the safe direction here — a false accusation gets
+ * read and argued with, a false acquittal gets filed as green.
+ */
+const NEGATOR = /\b(?:not|no|never|without|tidak|belum|bukan|tanpa)\b[^.]{0,4}$/i;
+
+const claimsUnnegated = (s: string): boolean =>
+  EXTERNAL_CLAIM.some((r) => {
+    const re = new RegExp(r.source, r.flags.includes('g') ? r.flags : `${r.flags}g`);
+    for (const m of s.matchAll(re)) {
+      const before = s.slice(Math.max(0, (m.index ?? 0) - 16), m.index ?? 0);
+      if (!NEGATOR.test(before)) return true;
+    }
+    return false;
+  });
 
 const EN = (resources as unknown as Record<string, { translation: Record<string, unknown> }>).en
   .translation;
@@ -430,6 +492,109 @@ describe('external-claim honesty guard (H2)', () => {
       offenders.map((o) => `${o.at} (${o.fn}) :: ${o.en.join(' / ')}`),
       'A toast claims a file, a notification or a stored record that no non-setter act produced, and its copy does not admit it.',
     ).toEqual([]);
+  });
+
+  /**
+   * ⚠️ **THE HOLE ABOVE, AND IT IS THE SAME DEFECT ONE LEVEL DOWN — H3 addendum.**
+   *
+   * The assertion above judges each LOCALE alone, and its own comment explains
+   * why: joining EN and ID let one locale's admission acquit the other's claim.
+   * **It then joins TITLE and DESCRIPTION**, so an admission in the TITLE acquits
+   * a claim in the BODY — the identical mechanism, one nesting level in, written
+   * by the batch that had just named it.
+   *
+   * **MEASURED, NOT HYPOTHESISED — the tree shipped one.**
+   * `supplierInventory.toast.exportPreparing` read, in EN:
+   *
+   *   title: 'EDI export not available yet — no file was generated.'
+   *   desc:  'EDI 846 format download starting.'
+   *
+   * and in ID the same shape (`belum tersedia` over `Unduhan format EDI 846
+   * dimulai.`). The title admits; the body says a download is starting. A reader
+   * gets both at once in one toast, and the sentence that is WRONG is the
+   * specific one — "download starting" is what a person acts on, and the honest
+   * headline above it reads as a label rather than a correction.
+   *
+   * ⚠️ **AND THIS IS THE DANGEROUS DIRECTION, WHICH IS WHY IT IS A SEPARATE
+   * ASSERTION RATHER THAN A TIGHTENING OF THE ONE ABOVE.** The joined rule errs
+   * toward ACQUITTAL, and an acquittal terminates the investigation
+   * (`SILENT-PESSIMISM-TERMINATES-THE-INVESTIGATION-01` — the axis is whichever
+   * direction stops you looking). A site that has been through this guard and
+   * come out green is a site nobody reads again.
+   *
+   * ⚠️ **THE COUNTER-RISK IS REAL AND IS WHY THE RULE IS EXACTLY THIS AND NOT
+   * "EVERY STRING MUST ADMIT".** A title is often a bare noun phrase that claims
+   * nothing at all and needs no admission; requiring one everywhere would redden
+   * dozens of honest sites and teach the next batch to paste `not available yet`
+   * into headings. So the unit is: **a string that CLAIMS must ITSELF admit.** A
+   * string that claims nothing is judged by nothing, exactly as before.
+   */
+  it('⚠️ no SINGLE string claims an external effect while only its SIBLING admits', () => {
+    const offenders: string[] = [];
+    for (const s of SITES) {
+      if (s.backed) continue;
+      for (const loc of ['en', 'id'] as const) {
+        for (const one of s[loc]) {
+          if (claimsUnnegated(one) && !admits(one))
+            offenders.push(`${s.at} (${s.fn}) [${loc}] :: ${one}`);
+        }
+      }
+    }
+    expect(
+      offenders,
+      'This string claims a file, a notification or a stored record on its own. A sibling string in ' +
+        'the same toast admitting it is not enough: the reader is handed both, and this is the one ' +
+        'they act on.',
+    ).toEqual([]);
+  });
+
+  /**
+   * ⚠️ `PROBE-MUST-FIRE-AT-A-REAL-DEFECT-01` for the assertion above, and it must
+   * be its own probe because `RETIRED`'s members are stored PRE-JOINED (title and
+   * body in one string), which is precisely the shape the per-string rule cannot
+   * be tested by. This is the EDI copy as `main` carried it at `81c9840`, kept as
+   * two strings because two strings is the whole point.
+   *
+   * The bilateral half runs in the same test: the SAME title with a body that
+   * admits — which is what shipped after H3 — must be acquitted, so a green
+   * reading proves the rule discriminates rather than that it is inert.
+   */
+  it('KNOWN-TRUE — the EDI 846 title/body contradiction shipped at 81c9840 is convicted', () => {
+    const title = 'EDI export not available yet — no file was generated.';
+    const bodyThen = 'EDI 846 format download starting.';
+    const bodyNow = 'No EDI 846 file was produced — the EDI export seam is not wired to a real system.';
+    const idTitle = 'Ekspor EDI belum tersedia — tidak ada berkas yang dibuat.';
+    const idBodyThen = 'Unduhan format EDI 846 dimulai.';
+    const idBodyNow =
+      'Tidak ada berkas EDI 846 yang dibuat — sambungan ekspor EDI belum tersambung ke sistem nyata.';
+
+    // the title admitted all along, in both locales
+    expect(admits(title)).toBe(true);
+    expect(admits(idTitle)).toBe(true);
+
+    // ⚠️ THE OLD RULE ACQUITTED THE PAIR — stated as a measurement, because a
+    //    gap nobody demonstrates is a gap nobody believes.
+    expect(claims([title, bodyThen].join(' ')) && !admits([title, bodyThen].join(' '))).toBe(false);
+
+    // the NEW rule convicts the body on its own …
+    expect(claimsUnnegated(bodyThen) && !admits(bodyThen), 'EN body must be convicted alone').toBe(
+      true,
+    );
+    expect(
+      claimsUnnegated(idBodyThen) && !admits(idBodyThen),
+      'ID body must be convicted alone',
+    ).toBe(true);
+
+    // … and ACQUITS the copy that replaced it, which is the half that shows the
+    // rule discriminates instead of simply demanding an admission everywhere.
+    expect(
+      claimsUnnegated(bodyNow) && !admits(bodyNow),
+      'the shipped EN replacement must be acquitted',
+    ).toBe(false);
+    expect(
+      claimsUnnegated(idBodyNow) && !admits(idBodyNow),
+      'the shipped ID replacement must be acquitted',
+    ).toBe(false);
   });
 
   it.each(RETIRED.map((r) => [r.what, r] as const))(

@@ -76,8 +76,6 @@ export const buyerSupplierProfileEn: Record<string, string> = {
   'buyerSupplierProfile.comm.email': 'Email',
   'buyerSupplierProfile.comm.businessHours': 'Business-hours only',
   'buyerSupplierProfile.comm.yes': 'Yes',
-  'buyerSupplierProfile.comm.reset': 'Reset to defaults',
-  'buyerSupplierProfile.comm.save': 'Save profile',
   // — Compliance tab —
   'buyerSupplierProfile.compliance.heading': 'Compliance documents',
   'buyerSupplierProfile.compliance.col.document': 'Document',
@@ -116,6 +114,13 @@ export const buyerSupplierProfileEn: Record<string, string> = {
   'buyerSupplierProfile.msglog.col.type': 'Type',
   'buyerSupplierProfile.msglog.col.preview': 'Preview',
   'buyerSupplierProfile.msglog.col.status': 'Status',
+  'buyerSupplierProfile.toast.messageUnavailable.title': 'Messaging not available yet',
+  'buyerSupplierProfile.toast.createRfqUnavailable.title':
+    'RFQ creation not available from this page yet',
+  'buyerSupplierProfile.toast.messageUnavailable.desc':
+    'Nothing was sent — supplier messaging is not wired to a real channel.',
+  'buyerSupplierProfile.toast.createRfqUnavailable.desc':
+    'Nothing was created — an RFQ is raised on the Sourcing page, which cannot yet be opened with this supplier already invited.',
 };
 
 export const buyerSupplierProfileId: Record<string, string> = {
@@ -171,8 +176,6 @@ export const buyerSupplierProfileId: Record<string, string> = {
   'buyerSupplierProfile.comm.email': 'Email',
   'buyerSupplierProfile.comm.businessHours': 'Hanya jam kerja',
   'buyerSupplierProfile.comm.yes': 'Ya',
-  'buyerSupplierProfile.comm.reset': 'Setel ulang ke bawaan',
-  'buyerSupplierProfile.comm.save': 'Simpan profil',
   // — Compliance tab —
   'buyerSupplierProfile.compliance.heading': 'Dokumen kepatuhan',
   'buyerSupplierProfile.compliance.col.document': 'Dokumen',
@@ -212,4 +215,11 @@ export const buyerSupplierProfileId: Record<string, string> = {
   'buyerSupplierProfile.msglog.col.type': 'Jenis',
   'buyerSupplierProfile.msglog.col.preview': 'Pratinjau',
   'buyerSupplierProfile.msglog.col.status': 'Status',
+  'buyerSupplierProfile.toast.messageUnavailable.title': 'Perpesanan belum tersedia',
+  'buyerSupplierProfile.toast.createRfqUnavailable.title':
+    'Pembuatan RFQ belum tersedia dari halaman ini',
+  'buyerSupplierProfile.toast.messageUnavailable.desc':
+    'Tidak ada yang dikirim — perpesanan pemasok belum tersambung ke kanal nyata.',
+  'buyerSupplierProfile.toast.createRfqUnavailable.desc':
+    'Tidak ada yang dibuat — RFQ dibuat di halaman Sourcing, yang belum dapat dibuka dengan pemasok ini sudah diundang.',
 };

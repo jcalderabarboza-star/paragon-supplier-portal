@@ -77,6 +77,21 @@ export const supplierStorefrontEn: Record<string, string> = {
     'This supplier is API-integrated. Requests are auto-submitted to their ERP.',
   // — Track tab sample-data chip (not a canonical status token) —
   'supplierStorefront.sampleData': 'Sample data',
+  'supplierStorefront.toast.connectUnavailable.title': 'Connect not available yet',
+  'supplierStorefront.toast.requestRfqUnavailable.title': 'RFQ request not available yet',
+  'supplierStorefront.toast.requestQuoteUnavailable.title': 'Quote request not available yet',
+  'supplierStorefront.toast.saveDraftUnavailable.title': 'Draft saving not available yet',
+  'supplierStorefront.toast.sendUnavailable.title': 'Sending not available yet',
+  'supplierStorefront.toast.connectUnavailable.desc':
+    'Nothing was sent — no connection request reached this supplier.',
+  'supplierStorefront.toast.requestRfqUnavailable.desc':
+    'Nothing was sent — no RFQ request reached this supplier.',
+  'supplierStorefront.toast.requestQuoteUnavailable.desc':
+    'Nothing was sent — no quote request reached this supplier.',
+  'supplierStorefront.toast.saveDraftUnavailable.desc':
+    'Nothing was saved — this message stays in this browser only and is lost when the page reloads.',
+  'supplierStorefront.toast.sendUnavailable.desc':
+    'Nothing was sent — this message did not reach the supplier.',
 };
 
 export const supplierStorefrontId: Record<string, string> = {
@@ -139,4 +154,19 @@ export const supplierStorefrontId: Record<string, string> = {
     'Pemasok ini terintegrasi API. Permintaan dikirim otomatis ke ERP mereka.',
   // — Track tab sample-data chip (not a canonical status token) —
   'supplierStorefront.sampleData': 'Data contoh',
+  'supplierStorefront.toast.connectUnavailable.title': 'Hubungkan belum tersedia',
+  'supplierStorefront.toast.requestRfqUnavailable.title': 'Permintaan RFQ belum tersedia',
+  'supplierStorefront.toast.requestQuoteUnavailable.title': 'Permintaan penawaran belum tersedia',
+  'supplierStorefront.toast.saveDraftUnavailable.title': 'Penyimpanan draf belum tersedia',
+  'supplierStorefront.toast.sendUnavailable.title': 'Pengiriman belum tersedia',
+  'supplierStorefront.toast.connectUnavailable.desc':
+    'Tidak ada yang dikirim — tidak ada permintaan koneksi yang sampai ke pemasok ini.',
+  'supplierStorefront.toast.requestRfqUnavailable.desc':
+    'Tidak ada yang dikirim — tidak ada permintaan RFQ yang sampai ke pemasok ini.',
+  'supplierStorefront.toast.requestQuoteUnavailable.desc':
+    'Tidak ada yang dikirim — tidak ada permintaan penawaran yang sampai ke pemasok ini.',
+  'supplierStorefront.toast.saveDraftUnavailable.desc':
+    'Tidak ada yang disimpan — pesan ini hanya ada di peramban ini dan hilang saat halaman dimuat ulang.',
+  'supplierStorefront.toast.sendUnavailable.desc':
+    'Tidak ada yang dikirim — pesan ini tidak sampai ke pemasok.',
 };

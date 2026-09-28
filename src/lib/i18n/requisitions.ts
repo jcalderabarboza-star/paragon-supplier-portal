@@ -215,6 +215,12 @@ export const requisitionsEn: Record<string, string> = {
   //   by the create path in the same sentence. Procurement IS derivable-true:
   //   `pr:approve` lives in exactly one bundle (`businessRoles.ts`).
   'requisitions.new.info': 'After submission this PR goes to Procurement for a decision. If a PIR or Outline Agreement exists, a PO is created directly. Otherwise, a Sourcing Event is initiated.',
+  'requisitions.toast.exportUnavailable.title': 'Export not available yet',
+  'requisitions.toast.bulkDownloadUnavailable.title': 'Bulk download not available yet',
+  'requisitions.toast.exportUnavailable.desc':
+    'No file was generated — export is not wired to a real system.',
+  'requisitions.toast.bulkDownloadUnavailable.desc':
+    'No file was downloaded — bulk download is not wired to a real system.',
 };
 
 export const requisitionsId: Record<string, string> = {
@@ -397,4 +403,10 @@ export const requisitionsId: Record<string, string> = {
   'requisitions.new.step3.desc': 'Mengapa ini dibutuhkan?',
   'requisitions.new.placeholder.justification': 'Alasan bisnis…',
   'requisitions.new.info': 'Setelah pengajuan, PR ini diteruskan ke tim Pengadaan untuk diputuskan. Jika PIR atau Outline Agreement tersedia, PO dibuat langsung. Jika tidak, Acara Sourcing dimulai.',
+  'requisitions.toast.exportUnavailable.title': 'Ekspor belum tersedia',
+  'requisitions.toast.bulkDownloadUnavailable.title': 'Unduhan massal belum tersedia',
+  'requisitions.toast.exportUnavailable.desc':
+    'Tidak ada berkas yang dibuat — ekspor belum tersambung ke sistem nyata.',
+  'requisitions.toast.bulkDownloadUnavailable.desc':
+    'Tidak ada berkas yang diunduh — unduhan massal belum tersambung ke sistem nyata.',
 };

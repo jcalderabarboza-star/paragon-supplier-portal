@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useCurrentIdentity } from '../../context/CurrentIdentityContext';
 import { mockSuppliers } from '../../data/mockSuppliers';
 import { SEEDED_SEAT_ROLES } from '../../services/transitions/businessRoles';
@@ -26,11 +27,24 @@ const INPUT_STYLE: React.CSSProperties = {
 };
 
 const Login: React.FC = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { setIdentity } = useCurrentIdentity();
   const [activeTab, setActiveTab] = useState<'buyer' | 'supplier'>('buyer');
+  // ⚠️ **THE EMAIL IS COLLECTED AND READ BY NOTHING, AND THAT IS DISCLOSED ON
+  // THE PAGE RATHER THAN HIDDEN — H3.** `handleSignIn` below does not look at it:
+  // it sets a persona and navigates. The field stays because a sign-in surface
+  // that asks for nothing is a stranger thing than one that says what it does
+  // with what you type, and `login.demo.note` says exactly that.
+  //
+  // ⚠️ **THE PASSWORD FIELD IS GONE AND ITS STATE WITH IT.** It was a
+  // `type="password"` input bound to `useState`, so the page CAPTURED a secret
+  // and then ignored it. An ignored email is a dead field; an ignored password is
+  // a credential prompt that authenticates nobody, and the two are not the same
+  // defect. Nothing in this portal checks a password — the real access gate is an
+  // HMAC-signed cookie at the edge (SEC-GATE-01), which runs before this bundle
+  // is ever served — so the box could only ever have been theatre.
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
 
   const signInAsBuyer = () => {
     setIdentity({
@@ -94,7 +108,7 @@ const Login: React.FC = () => {
             PARAGON CORP
           </div>
           <div style={{ color: TEAL, fontSize: '13px', fontWeight: 600, marginTop: '2px' }}>
-            Supplier Portal
+            {t('login.brand.portal')}
           </div>
           <div style={{ color: '#94A3B8', fontSize: '12px', fontStyle: 'italic', marginTop: '6px' }}>
             Portal Kolaborasi Pemasok
@@ -103,7 +117,7 @@ const Login: React.FC = () => {
 
         {/* Tabs */}
         <div style={{ display: 'flex', borderBottom: '1px solid #E2E8F0', marginBottom: '24px' }}>
-          {([['buyer', 'Paragon Team'], ['supplier', 'Supplier Login']] as const).map(([tab, label]) => (
+          {([['buyer', 'login.tab.buyer'], ['supplier', 'login.tab.supplier']] as const).map(([tab, labelKey]) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -124,7 +138,7 @@ const Login: React.FC = () => {
                 transition: 'all 0.15s',
               }}
             >
-              {label}
+              {t(labelKey)}
             </button>
           ))}
         </div>
@@ -133,31 +147,17 @@ const Login: React.FC = () => {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '20px' }}>
           <div>
             <label style={{ fontSize: '12px', fontWeight: 600, color: '#475569', display: 'block', marginBottom: '5px' }}>
-              Email
+              {t('login.field.email')}
             </label>
             <input
               type="email"
               style={INPUT_STYLE}
-              placeholder="you@example.com"
+              placeholder={t('login.field.emailPlaceholder')}
               value={email}
               onChange={e => setEmail(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleSignIn()}
             />
           </div>
-          <div>
-            <label style={{ fontSize: '12px', fontWeight: 600, color: '#475569', display: 'block', marginBottom: '5px' }}>
-              Password
-            </label>
-            <input
-              type="password"
-              style={INPUT_STYLE}
-              placeholder="••••••••"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && handleSignIn()}
-            />
-          </div>
-
           <button
             onClick={handleSignIn}
             style={{
@@ -175,11 +175,24 @@ const Login: React.FC = () => {
               letterSpacing: '0.02em',
             }}
           >
-            Sign In
+            {t('login.demo.signIn')}
           </button>
 
-          <div style={{ display: 'flex', justifyContent: activeTab === 'buyer' ? 'flex-end' : 'space-between', alignItems: 'center' }}>
-            {activeTab === 'supplier' && (
+          {/* ⚠️ THE DISCLOSURE SITS UNDER THE CONTROL IT IS ABOUT — H3. This is the
+              one string on the page that has to be here: the button above does not
+              authenticate anybody, and a reader cannot tell that from the button. */}
+          <div style={{ fontSize: '11px', lineHeight: 1.5, color: '#475569' }}>
+            {t('login.demo.note')}
+          </div>
+
+          {/* ⚠️ `Forgot password?` IS GONE — H3. It carried `onClick={() => {}}`:
+              the only control in the whole tree that was dead by an EXPLICIT empty
+              handler rather than by a missing one, which is why it read as wired to
+              every reader and to every matcher that looks for a handler's presence.
+              There is no password to forget — the field above it is gone for the
+              same reason — so there was nothing to send anyone to. */}
+          {activeTab === 'supplier' && (
+            <div style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
               <button
                 onClick={() => navigate('/register')}
                 style={{
@@ -187,25 +200,18 @@ const Login: React.FC = () => {
                   color: TEAL, fontSize: '12px', fontWeight: 500, fontFamily: 'inherit', padding: 0,
                 }}
               >
-                New supplier? Register here →
+                {t('login.register')}
               </button>
-            )}
-            <button
-              style={{
-                border: 'none', background: 'none', cursor: 'pointer',
-                color: '#94A3B8', fontSize: '12px', fontFamily: 'inherit', padding: 0,
-              }}
-              onClick={() => {}}
-            >
-              Forgot password?
-            </button>
-          </div>
+            </div>
+          )}
         </div>
 
         {/* Divider */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', margin: '20px 0' }}>
           <div style={{ flex: 1, height: '1px', background: '#E2E8F0' }} />
-          <span style={{ fontSize: '11px', color: '#94A3B8', whiteSpace: 'nowrap', fontWeight: 500 }}>Demo Mode</span>
+          <span style={{ fontSize: '11px', color: '#94A3B8', whiteSpace: 'nowrap', fontWeight: 500 }}>
+            {t('login.divider')}
+          </span>
           <div style={{ flex: 1, height: '1px', background: '#E2E8F0' }} />
         </div>
 
@@ -222,7 +228,7 @@ const Login: React.FC = () => {
             onMouseEnter={e => (e.currentTarget.style.borderColor = NAVY)}
             onMouseLeave={e => (e.currentTarget.style.borderColor = '#CBD5E1')}
           >
-            i View as Buyer
+            {t('login.viewAsBuyer')}
           </button>
           <button
             onClick={handleViewAsSupplier}
@@ -235,14 +241,14 @@ const Login: React.FC = () => {
             onMouseEnter={e => (e.currentTarget.style.borderColor = TEAL)}
             onMouseLeave={e => (e.currentTarget.style.borderColor = '#CBD5E1')}
           >
-            i View as Supplier
+            {t('login.viewAsSupplier')}
           </button>
         </div>
       </div>
 
       {/* Footer */}
       <div style={{ marginTop: '24px', fontSize: '11px', color: '#475569', textAlign: 'center' }}>
-        © 2026 PT Paragon Technology and Innovation. All rights reserved.
+        {t('login.footer')}
       </div>
     </div>
   );
