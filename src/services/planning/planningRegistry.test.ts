@@ -53,13 +53,24 @@ describe('B1 · derived ⇒ not editable, and derived ⇒ carries its honesty ma
   });
 });
 
-describe('B1 · the editable measure set is exactly {acceptedQty} (B4 widens it)', () => {
+describe('the editable measure set is exactly {acceptedQty, allocation} (B4a widened it)', () => {
   it('pinned by name, derived from the registry', () => {
-    // ⚠️ Design 1 §3 names TWO (acceptedQty and allocation). `allocation`'s verb,
-    // `t_publication_allocate`, does not exist until B4 — pinned here so the day
-    // B4 adds it, this line is the one it has to change, on purpose.
-    expect(MEASURES.filter((m) => m.editable !== false).map((m) => m.id)).toEqual(['acceptedQty']);
-    expect(measureOf('allocation').editable).toBe(false);
+    // ⚠️ WIDENED ON PURPOSE AT B4a. Design 1 §3 names TWO (acceptedQty and
+    // allocation); B1 held `allocation` off because `t_publication_allocate` did
+    // not exist, and said this line would be the one to change the day it did.
+    // It did (the forecast publication machine), so the set is the design's.
+    expect(MEASURES.filter((m) => m.editable !== false).map((m) => m.id)).toEqual(['acceptedQty', 'allocation']);
+  });
+
+  it('B4a · allocation edits a DRAFT publication, gated on the planning atom — and owes no reason', () => {
+    const edit = measureOf('allocation').editable;
+    if (edit === false) throw new Error('allocation must be editable');
+    const verb = getTransition(edit.verb);
+    expect(verb?.id).toBe('t_publication_allocate');
+    expect(verb?.from).toEqual(['Draft']);
+    expect(edit.atom).toBe(verb?.requiredRole);
+    expect(verb?.requiredFields).toContain(edit.payloadField);
+    expect(edit.reasonRequiredWhen).toBeUndefined();
   });
 
   it('the edit names a verb the machine really has, gated on the atom the machine really requires', () => {

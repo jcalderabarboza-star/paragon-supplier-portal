@@ -693,6 +693,36 @@ export const POLICY_HOOKS = {
    * un-falsifiable, and it is the fifth shipped hook to use it.
    */
   INTAKE_OVERRIDE_REASONED: 'intake_override_reasoned',
+
+  // ── B4a · THE FORECAST PUBLICATION (Design 2 §2.1) ─────────────────────────
+  // Bound in the mock layer (`mock/publicationTarget.ts`), beside the store and
+  // the SOMO feed they read — the requirement-response hooks' precedent.
+  /** Open: the horizon parses as ONE grain (A1's parser) and matches `grain`. */
+  PUB_HORIZON_ONE_GRAIN: 'pub_horizon_one_grain',
+  /** Open: the SOMO plan version exists in the feed, from the named emission. */
+  PUB_PLANVERSION_KNOWN: 'pub_planversion_known',
+  /** Allocate: the material resolves in the planning master. */
+  PUB_MATERIAL_KNOWN: 'pub_material_known',
+  /** Allocate: the basis is one of the three `AllocationBasis` tokens, by name. */
+  PUB_BASIS_KNOWN: 'pub_basis_known',
+  /** Allocate: the bucket is in the draft's horizon AND the draft holds a total for it. */
+  PUB_LINE_IN_HORIZON: 'pub_line_in_horizon',
+  /** Allocate: the quantity is a finite number ≥ 0 (a zero un-allocates a supplier). */
+  PUB_QTY_FLOOR: 'pub_qty_floor',
+  /** Allocate: `forecastQtyRaw` re-parses (stated convention, else none) to `forecastQty`. */
+  PUB_QTY_AGREES: 'pub_qty_agrees',
+  /** Allocate: Σ over suppliers ≤ the material-period total (integrity #4). */
+  PUB_ALLOC_WITHIN_TOTAL: 'pub_alloc_within_total',
+  /** Approve: the line exists and its class is `firm`. */
+  PUB_LINE_IS_FIRM: 'pub_line_is_firm',
+  /** Approve: a RESOLVED actor signs — a sample person is admitted and marked. */
+  PUB_ACTOR_ATTRIBUTED: 'pub_actor_attributed',
+  /** Publish: the draft carries at least one line. */
+  PUB_HAS_LINES: 'pub_has_lines',
+  /** Publish: every firm line carries its approval (invariant #3). */
+  PUB_FIRM_LINES_APPROVED: 'pub_firm_lines_approved',
+  /** Withdraw: the reason is authored text, not whitespace. */
+  PUB_TEXT_AUTHORED: 'pub_text_authored',
 } as const;
 
 for (const name of Object.values(POLICY_HOOKS)) registerPolicyHook(name);

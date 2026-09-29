@@ -311,6 +311,14 @@ export interface ForecastPublication {
   readonly horizon: readonly string[];
   readonly lines: readonly ForecastLine[];
   readonly provenance: Provenance;
+  /**
+   * B4a · when the suppliers' answers are due — stamped by `t_publication_publish`
+   * as `publishedAt + RESPONSE_DUE_DAYS` (a constant for now; the governed
+   * setting is SE-18). ABSENT on the seed publications, which were never
+   * published through the verb: no deadline was set, so none is claimed.
+   * OVERDUE IS DERIVED AT READ (`isResponseOverdue`), never stored.
+   */
+  readonly responseDueAt?: string;
 }
 
 // ─── Object 1 — RequirementResponse (the spine, design §2.1) ──────────────────

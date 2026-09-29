@@ -3,11 +3,11 @@
 //
 // READS (scoped react-query over the SDC module, keyed under 'sdc' + scopeKey):
 //   · useOwnForecastLines — the current publication's lines fanned to THIS
-//     supplier, read THROUGH the FLAG-2 gate: `supplierVisiblePublications()`
-//     admits only LIVE publications, so the governed lane is EMPTY today (every
-//     fixture is SIMULATED) and the page falls back to the explicitly-marked
-//     sample path. When F1 real identities + a LIVE feed land, the gate is
-//     already in this read path — the demo exemption collapses by construction.
+//     supplier, read through `svc.collaboration.getPublications` (B4a), where
+//     FLAG-2 is STRUCTURAL: LIVE publications only, own lines only, so the
+//     governed lane is EMPTY today (every publication is SIMULATED) and the page
+//     asks for the sample BY NAME (`includeSimulatedSample`). When a LIVE feed
+//     lands the service answers from it and `sample` turns false by itself.
 //   · useOwnRequirementResponses — the supplier's OWN submissions
 //     (own-facts-only, FORK-3b-C: status ONLY, no rank/score/consolidation —
 //     those need sibling data scoping hides).
@@ -16,9 +16,9 @@
 // `svc.collaboration.*` (SDC-4b), so per-supplier isolation is SERVICE-LEVEL —
 // the same scoping-contract guarantee the procurement reads already have. Hook
 // names + return shapes are unchanged, so callers (SupplierForecasts) are
-// untouched. The two NON-own reads that stay fixture-derived here — forecast
-// lines (through the FLAG-2 gate) and collaborated materials (master data) — are
-// not supplier-written, so they are not part of the collaboration read seam.
+// untouched. Since B4a no read in this module imports the publication fixture:
+// the forecast lines and the publications half of the collaborated materials
+// both go through `getPublications` (a source scan pins the absence).
 //
 // WRITE: useRequirementResponseSubmit — dispatches t_requirementresponse_submit
 // (the SHARED channel-agnostic write-path, DEC-COMMS-PRIMARY) through the
@@ -31,10 +31,8 @@ import { useDataService } from '../data/DataServiceContext';
 import { useCurrentIdentity } from '../../context/CurrentIdentityContext';
 import { useServiceQuery, scopeKey } from './useServiceQuery';
 import {
-  FORECAST_PUBLICATIONS,
   SUPPLIER_MATERIAL_RELATIONSHIPS,
   currentPublication,
-  supplierVisiblePublications,
   ownCollaboratedMaterials,
   // CP-2 · B1 — the ONE master lookup; no page re-derives its own join.
   labelOf,
@@ -60,9 +58,9 @@ export interface OwnForecastLinesRead {
   /** ONLY this supplier's fanned lines of that publication. */
   lines: readonly ForecastLine[];
   /**
-   * FLAG-2 verdict for the render path: true only when the publication came
-   * through `supplierVisiblePublications()` (a LIVE feed). False = the sample
-   * fallback — the page MUST render its honest sample marking.
+   * FLAG-2 verdict for the render path: `!page.sample` — true only when the
+   * service answered from LIVE publications. False = the sample the page asked
+   * for by name — the page MUST render its honest sample marking.
    */
   liveFeed: boolean;
 }
@@ -72,13 +70,14 @@ export interface OwnForecastLinesRead {
 export function useOwnForecastLines() {
   return useServiceQuery<OwnForecastLinesRead>(
     ['sdc', 'ownForecastLines'],
-    async (_svc, scope) => {
-      // The governed lane: only LIVE publications may reach a supplier at all.
-      const live = supplierVisiblePublications(FORECAST_PUBLICATIONS);
-      const liveFeed = live.length > 0;
-      // Sample fallback (operator-demo path): the SIMULATED fixtures render
-      // ONLY under the page's explicit sample marking — never as if real.
-      const publication = currentPublication(liveFeed ? live : FORECAST_PUBLICATIONS);
+    async (svc, scope) => {
+      // ⚠️ B4a · THROUGH THE SERVICE, AND THE FIXTURE IMPORT IS GONE. FLAG-2 is
+      // the service's now (LIVE only, own lines only); the SIMULATED sample is
+      // asked for BY NAME, and `sample` — not a guess made here — is what the
+      // page's honesty banner is keyed to.
+      const page = await svc.collaboration.getPublications(scope, { includeSimulatedSample: true });
+      const liveFeed = !page.sample;
+      const publication = currentPublication(page.items);
       const lines =
         publication && scope.supplierId
           ? publication.lines
@@ -294,11 +293,14 @@ export interface CollaboratedMaterialView extends CollaboratedMaterial {
 export function useOwnCollaboratedMaterials() {
   return useServiceQuery<readonly CollaboratedMaterialView[]>(
     ['sdc', 'ownCollaboratedMaterials'],
-    async (_svc, scope) => {
+    async (svc, scope) => {
       if (!scope.supplierId) return [];
+      // B4a · the publications half of (i)∪(ii) through the service, like the
+      // forecast lines — the same sample opt-in, the same own-lines scoping.
+      const page = await svc.collaboration.getPublications(scope, { includeSimulatedSample: true });
       return ownCollaboratedMaterials(
         SUPPLIER_MATERIAL_RELATIONSHIPS,
-        FORECAST_PUBLICATIONS,
+        page.items,
         scope.supplierId,
       ).map((m) => {
         const unit = uomOf(m.materialCode);

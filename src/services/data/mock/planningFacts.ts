@@ -27,7 +27,6 @@
 import type { Tier } from '../../liveness/registry';
 import { feedProvenance, liveness, type Capability } from '../../liveness/registry';
 import {
-  FORECAST_PUBLICATIONS,
   SUPPLIER_MATERIAL_RELATIONSHIPS,
   consolidationRows,
   currentPublication,
@@ -40,6 +39,8 @@ import {
 } from '../../sdc';
 import { requirementResponseStore } from './stores/requirementResponseStore';
 import { intakeLineStore } from './stores/intakeLineStore';
+// B4a — the publications are a store; the constant is only its seed.
+import { forecastPublicationStore } from './stores/forecastPublicationStore';
 import { somoIntakeLineId } from '../../planning/somoIntake';
 import { inventoryDeclarationStore } from './stores/inventoryDeclarationStore';
 import { incomingShipmentStore } from './stores/incomingShipmentStore';
@@ -132,7 +133,8 @@ export function derivePlanningFacts(q: PlanningFactsQuery): PlanningFactsOutcome
 
   // — The real stores (the 42 real codes). Monthly only where the source is
   //   bucket-native at month grain; dated sources map into either grain. —
-  const pub = currentPublication(FORECAST_PUBLICATIONS);
+  const publications = forecastPublicationStore.publications();
+  const pub = currentPublication(publications);
   if (pub) {
     const demandBy = new Map<string, number>();
     for (const line of pub.lines) {
@@ -147,7 +149,7 @@ export function derivePlanningFacts(q: PlanningFactsQuery): PlanningFactsOutcome
       push('demand', code, null, bucket, total, pub.planVersion, pub.provenance.liveness);
     }
     if (grain === 'month') {
-      for (const row of consolidationRows(FORECAST_PUBLICATIONS, requirementResponseStore.all())) {
+      for (const row of consolidationRows(publications, requirementResponseStore.all())) {
         const s = row.state;
         const response = 'response' in s ? s.response : null;
         const confirmed = response?.forecastConfirmation?.confirmedQty ?? null;
@@ -212,7 +214,7 @@ export function derivePlanningFacts(q: PlanningFactsQuery): PlanningFactsOutcome
   // Supplier coverage Σ — DERIVED, MODELED, as-of the current bucket.
   if (grain === 'month') {
     for (const e of supplierCoverageEntries(
-      FORECAST_PUBLICATIONS,
+      publications,
       inventoryDeclarationStore.all(),
       incomingShipmentStore.all(),
       SUPPLIER_MATERIAL_RELATIONSHIPS,

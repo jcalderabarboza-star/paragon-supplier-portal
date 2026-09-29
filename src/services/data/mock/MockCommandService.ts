@@ -122,12 +122,15 @@ import type {
 import { mockShipments } from '../../../data/mockShipments';
 import { mockSuppliers } from '../../../data/mockSuppliers';
 import {
-  FORECAST_PUBLICATIONS,
   SUPPLIER_MATERIAL_RELATIONSHIPS,
   isKnownMaterial,
   requireUom,
   sdcClock,
 } from '../../sdc';
+// B4a — the publications are a STORE now, and the publication target binds its
+// hooks on import.
+import { forecastPublicationStore } from './stores/forecastPublicationStore';
+import { forecastPublicationTarget, previouslyPublished } from './publicationTarget';
 import type {
   Acknowledgment,
   IncomingShipment,
@@ -135,6 +138,7 @@ import type {
   InventoryDeclaration,
   Provenance,
   RequirementResponse,
+  ForecastPublication,
   RequirementResponseStatus,
   RootCause,
   ShipmentDirection,
@@ -844,10 +848,10 @@ const purchaseRequisitionTarget: CommandTarget = {
 //   `uom` is NEVER trusted from the payload — copied from the material master
 //   (invariant #2). `submissionVersion` is DERIVED (prior max + 1 over the
 //   response thread). confirmedQty: 0 is a LEGAL short confirmation (F-2).
-//   Publications are the frozen SDC fixtures until the SOMO C8 feed lands —
-//   read-only here (responses mutate; publications never do).
+//   Publications are read from `forecastPublicationStore` (B4a) — what was
+//   PUBLISHED, never a draft or a withdrawn one; responses never mutate them.
 const publicationById = (publicationId: string) =>
-  FORECAST_PUBLICATIONS.find((p) => p.publicationId === publicationId);
+  forecastPublicationStore.publications().find((p) => p.publicationId === publicationId);
 
 /** F-4 ruling: a store-minted response is SUPPLIER-authored, committed, and
  *  SIMULATED — the backing store is a mock; liveness flips at F1, not here. */
@@ -886,8 +890,8 @@ const nextSubmissionVersion = (supplierId: string, materialCode: string, periodB
  * the revision answers the CURRENT question rather than re-answering the old one.
  */
 const bindingPublicationFor = (r: RequirementResponse) => {
-  let best: (typeof FORECAST_PUBLICATIONS)[number] | undefined;
-  for (const p of FORECAST_PUBLICATIONS) {
+  let best: ForecastPublication | undefined;
+  for (const p of forecastPublicationStore.publications()) {
     const fans = p.lines.some(
       (l) =>
         l.supplierId === r.supplierId &&
@@ -1345,7 +1349,7 @@ const collaboratedMaterial = (supplierId: string, materialCode: string): boolean
   SUPPLIER_MATERIAL_RELATIONSHIPS.some(
     (r) => r.supplierId === supplierId && r.materialCode === materialCode,
   ) ||
-  FORECAST_PUBLICATIONS.some((p) =>
+  forecastPublicationStore.publications().some((p) =>
     p.lines.some((l) => l.supplierId === supplierId && l.materialCode === materialCode),
   );
 
@@ -2649,6 +2653,9 @@ const TARGETS: Record<string, CommandTarget> = {
   // machine on `/buyer/process-flows` that LOOKS built and refuses everything
   // is worse than one honestly badged AUTHORED — UNWIRED.
   intakeLine: intakeLineTarget,
+  // B4a · Design 2 §2.1 — the forecast publication. Ships in the same commit as
+  // its flow, so the entity never joins the target-less set.
+  forecastPublication: forecastPublicationTarget,
   requirementResponse: requirementResponseTarget,
   inventoryDeclaration: inventoryDeclarationTarget,
   incomingShipment: incomingShipmentTarget,
@@ -2788,6 +2795,23 @@ const resolveCascades = (ctx: CascadeContext): CascadeCommand[] => {
           }
         : {}),
     }));
+  }
+  // — B4a · publishing retires the previous publication of the same grain ———
+  //
+  // The resolver hands back only what it has confirmed: a Published record of
+  // the SAME grain that is not the one just published. None → `[]`, which is
+  // the first publication of a grain and is not an error.
+  if (ctx.entity === 'forecastPublication' && ctx.transitionId === 't_publication_publish') {
+    const published = forecastPublicationStore.get(ctx.entityId);
+    if (!published || published.state !== 'Published') return [];
+    return previouslyPublished(published.grain, published.publicationId).flatMap((prior) =>
+      cascadesFor(ctx.transitionId).map((link) => ({
+        entity: link.targetEntity,
+        entityId: prior.publicationId,
+        transitionId: link.targetTransitionId,
+        payload: { supersededBy: published.publicationId },
+      })),
+    );
   }
   // — A3 · a supplier's revision retires the version it revises ————————————
   //

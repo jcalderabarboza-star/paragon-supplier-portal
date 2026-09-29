@@ -201,6 +201,34 @@ describe('a multi-cell paste — every cell judged on its own', () => {
     expect(d.refusals.get(cellKey(row.id, '2026-11'))).toEqual({ rowId: row.id, bucket: '2026-11', raw: '15000', reason: 'NO_SEAM_ROW' });
   });
 
+  // ⚠️ OPERATOR RULING (B4a): a PASTED token whose reading differs between EN
+  // and ID is refused as AMBIGUOUS whatever the seat; a TYPED one keeps the
+  // seat's convention. Both directions, both conventions, pinned.
+  it.each([
+    ['12.000', 'id'],
+    ['12.000', 'en'],
+    ['12,000', 'id'],
+    ['12,000', 'en'],
+  ] as const)('a pasted "%s" is refused as AMBIGUOUS under the %s seat — retype asked', (raw, conv) => {
+    const row = acceptedRow('SIM-RM-0007');
+    const r = applyPaste(EMPTY_DRAFT, [row], HORIZON, { row: 0, col: 0 }, raw, conv);
+    expect(r).toMatchObject({ planned: 0, refused: 1 });
+    expect(r.draft.refusals.get(cellKey(row.id, '2026-08'))).toEqual({ rowId: row.id, bucket: '2026-08', raw, reason: 'AMBIGUOUS_QTY' });
+  });
+
+  it('KNOWN-GOOD: a paste that reads the same in both conventions is planned — plain digits, and ID-only grouping', () => {
+    const row = acceptedRow('SIM-RM-0007');
+    const r = applyPaste(EMPTY_DRAFT, [row], HORIZON, { row: 0, col: 0 }, '12000\t1.234.567\t2,5', 'id');
+    expect(r).toMatchObject({ planned: 3, refused: 0 });
+    expect([...r.draft.entries.values()].map((e) => e.value)).toEqual([12000, 1234567, 2.5]);
+  });
+
+  it('a TYPED "12.000" keeps the seat’s convention — the ruling is paste-only', () => {
+    const row = acceptedRow('SIM-RM-0007');
+    expect([...applyEdit(EMPTY_DRAFT, row, '2026-08', '12.000', 'TYPED', 'id').entries.values()][0].value).toBe(12000);
+    expect([...applyEdit(EMPTY_DRAFT, row, '2026-08', '12,000', 'TYPED', 'en').entries.values()][0].value).toBe(12000);
+  });
+
   it('cells past the grid’s edge are counted, never silently dropped', () => {
     const row = acceptedRow('SIM-RM-0007');
     const r = applyPaste(EMPTY_DRAFT, [row], HORIZON, { row: 0, col: HORIZON.length - 1 }, '1\t2\n3', 'en');

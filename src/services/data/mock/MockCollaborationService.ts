@@ -24,8 +24,8 @@ import { inventoryDeclarationStore } from './stores/inventoryDeclarationStore';
 import { incomingShipmentStore } from './stores/incomingShipmentStore';
 import { asnStore } from './stores/asnStore';
 import {
-  FORECAST_PUBLICATIONS,
   SUPPLIER_MATERIAL_RELATIONSHIPS,
+  supplierVisiblePublications,
   currentPublication,
   currentDeclarations,
   consolidationRows,
@@ -43,8 +43,20 @@ import type {
   SupplierCoverageEntry,
   SupplierRollup,
   ChaseEntry,
+  ForecastPublication,
 } from '../../sdc';
-import type { ICollaborationService, Page, QueryScope, ASN } from '../types';
+import type {
+  ICollaborationService,
+  Page,
+  PublicationsPage,
+  PublicationsQuery,
+  QueryScope,
+  ASN,
+} from '../types';
+import { forecastPublicationStore } from './stores/forecastPublicationStore';
+
+/** B4a — what was published, from the STORE (the constant is only its seed). */
+const published = (): readonly ForecastPublication[] => forecastPublicationStore.publications();
 
 /** The buyer gate for the consolidation reads: only a buyer sees the superset; a
  *  supplier (or a scopeless call) sees nothing — never cross-supplier data. */
@@ -105,6 +117,35 @@ export class MockCollaborationService implements ICollaborationService {
     return { items: applySupplierScope(scope, asnStore.all()) };
   }
 
+  // ─── B4a · the publications (Design 2 §2.2) ─────────────────────────────────
+
+  /**
+   * What was published, for this scope.
+   *
+   * ⚠️ FLAG-2 IS STRUCTURAL HERE, NOT A PAGE'S HABIT. A buyer reads every
+   * published publication. A supplier reads LIVE publications only
+   * (`supplierVisiblePublications`), and of each only ITS OWN lines — another
+   * supplier's split is another tenancy. Every seed is SIMULATED, so that read
+   * is EMPTY today, by design.
+   *
+   * The sample the supplier page renders under its banner is reached ONLY
+   * through `includeSimulatedSample: true`, and the page it returns says so
+   * (`sample: true`) — the banner is keyed to that flag, never to a guess. It
+   * is offered only when no LIVE publication exists: a real plan is never
+   * mixed with a sample one.
+   */
+  async getPublications(scope: QueryScope, q: PublicationsQuery = {}): Promise<PublicationsPage> {
+    const all = published();
+    if (scope.personaType === 'buyer') return { items: [...all], sample: false };
+    const own = scope.supplierId;
+    if (!own) return { items: [], sample: false };
+    const ownLines = (p: ForecastPublication): ForecastPublication =>
+      Object.freeze({ ...p, lines: Object.freeze(p.lines.filter((l) => l.supplierId === own)) });
+    const live = supplierVisiblePublications(all);
+    if (live.length > 0 || !q.includeSimulatedSample) return { items: live.map(ownLines), sample: false };
+    return { items: all.map(ownLines), sample: true };
+  }
+
   // ─── P2 consolidation reads (buyer-superset, BUYER-GATED) ────────────────────
 
   /** The consolidation rows (every current-publication line + its response
@@ -112,7 +153,7 @@ export class MockCollaborationService implements ICollaborationService {
   async getConsolidation(scope: QueryScope): Promise<Page<ConsolidationRow>> {
     if (!buyerOnly(scope)) return { items: [] };
     return {
-      items: [...consolidationRows(FORECAST_PUBLICATIONS, requirementResponseStore.all())],
+      items: [...consolidationRows(published(), requirementResponseStore.all())],
     };
   }
 
@@ -122,7 +163,7 @@ export class MockCollaborationService implements ICollaborationService {
     return {
       items: [
         ...supplierCoverageEntries(
-          FORECAST_PUBLICATIONS,
+          published(),
           inventoryDeclarationStore.all(),
           incomingShipmentStore.all(),
           SUPPLIER_MATERIAL_RELATIONSHIPS,
@@ -136,16 +177,16 @@ export class MockCollaborationService implements ICollaborationService {
    *  Buyer-only. */
   async getChase(scope: QueryScope): Promise<Page<ChaseEntry>> {
     if (!buyerOnly(scope)) return { items: [] };
-    const current = currentPublication(FORECAST_PUBLICATIONS);
+    const current = currentPublication(published());
     if (current === null) return { items: [] };
-    const rows = consolidationRows(FORECAST_PUBLICATIONS, requirementResponseStore.all());
+    const rows = consolidationRows(published(), requirementResponseStore.all());
     return { items: [...chaseList(current, rows, sdcClock.now())] };
   }
 
   /** The per-supplier response rollups (responded / partial / silent). Buyer-only. */
   async getRollups(scope: QueryScope): Promise<Page<SupplierRollup>> {
     if (!buyerOnly(scope)) return { items: [] };
-    const rows = consolidationRows(FORECAST_PUBLICATIONS, requirementResponseStore.all());
+    const rows = consolidationRows(published(), requirementResponseStore.all());
     return { items: [...supplierRollups(rows)] };
   }
 }

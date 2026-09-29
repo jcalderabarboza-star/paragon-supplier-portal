@@ -195,6 +195,14 @@ export const TRANSITION_PURPOSE: FlowAnnotations = Object.freeze({
   t_intake_dismiss: { purposeKey: 'processFlows.purpose.t_intake_dismiss' },
   t_intake_restore: { purposeKey: 'processFlows.purpose.t_intake_restore' },
   t_intake_commit: { purposeKey: 'processFlows.purpose.t_intake_commit' },
+
+  // B4a · the forecast publication.
+  t_publication_open: { purposeKey: 'processFlows.purpose.t_publication_open' },
+  t_publication_allocate: { purposeKey: 'processFlows.purpose.t_publication_allocate' },
+  t_publication_approve_firm: { purposeKey: 'processFlows.purpose.t_publication_approve_firm' },
+  t_publication_publish: { purposeKey: 'processFlows.purpose.t_publication_publish' },
+  t_publication_supersede: { purposeKey: 'processFlows.purpose.t_publication_supersede' },
+  t_publication_withdraw: { purposeKey: 'processFlows.purpose.t_publication_withdraw' },
   t_pr_submit: { purposeKey: 'processFlows.purpose.t_pr_submit' },
   t_pr_approve: { purposeKey: 'processFlows.purpose.t_pr_approve' },
   t_pr_reject: { purposeKey: 'processFlows.purpose.t_pr_reject' },
@@ -334,6 +342,7 @@ export const ENTITY_PURPOSE: FlowAnnotations = Object.freeze({
   obligation: { purposeKey: 'processFlows.purpose.entity.obligation' },
   purchaseRequisition: { purposeKey: 'processFlows.purpose.entity.purchaseRequisition' },
   intakeLine: { purposeKey: 'processFlows.purpose.entity.intakeLine' },
+  forecastPublication: { purposeKey: 'processFlows.purpose.entity.forecastPublication' },
   supplierDocument: { purposeKey: 'processFlows.purpose.entity.supplierDocument' },
   compliance: { purposeKey: 'processFlows.purpose.entity.compliance' },
   requirementResponse: { purposeKey: 'processFlows.purpose.entity.requirementResponse' },
