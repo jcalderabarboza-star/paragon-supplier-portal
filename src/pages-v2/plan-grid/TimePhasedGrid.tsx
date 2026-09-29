@@ -160,7 +160,14 @@ const TimePhasedGrid: React.FC<{ viewId: Extract<ViewId, 'rm-plan' | 'pm-plan' |
   const gutter = useMemo(
     () => ({
       title: <span className="px-2 text-xs">{t('planGrid.tp.keyColumn')}</span>,
+      // ⚠️ `basis`, NOT `minWidth`: the engine sizes its sticky columns from
+      // `basis` and defaults it to 40 px (useColumns.js), so a `minWidth` alone
+      // rendered a 40-px gutter whose text ran over the buckets — found in
+      // browser QA, invisible to jsdom.
+      basis: 360,
       minWidth: 360,
+      grow: 0,
+      shrink: 0,
       component: ({ rowData }: { rowData: PlanRow }) => (
         <div className="flex w-full min-w-0 items-center gap-2 px-2 text-xs">
           <Data className={`w-28 shrink-0 ${rowData.blockHead ? 'font-semibold' : 'text-text-tertiary'}`}>
@@ -189,7 +196,10 @@ const TimePhasedGrid: React.FC<{ viewId: Extract<ViewId, 'rm-plan' | 'pm-plan' |
           <ModelMarker label={t('planGrid.tp.modeled')} title={t('planGrid.tp.modeledTitle')} />
         </span>
       ),
+      basis: 330,
       minWidth: 330,
+      grow: 0,
+      shrink: 0,
       component: ({ rowData }: { rowData: PlanRow }) => {
         const b = rowData.blockHead ? blockOf.get(rowData.materialCode) : undefined;
         if (!b) return <span />;
@@ -307,7 +317,7 @@ const TimePhasedGrid: React.FC<{ viewId: Extract<ViewId, 'rm-plan' | 'pm-plan' |
         // Height-pinned like every DSG on this page (`--plan-dsg-h`): a grid that
         // auto-shrinks to its content feeds the resize loop that made it tremble.
         <div
-          className="plan-dsg overflow-hidden rounded-lg border border-border-subtle bg-bg-surface"
+          className="plan-dsg tp-grid overflow-hidden rounded-lg border border-border-subtle bg-bg-surface"
           data-testid="tp-grid"
           style={{ '--plan-dsg-h': `${GRID_H}px` } as React.CSSProperties}
         >

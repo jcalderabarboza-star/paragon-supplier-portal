@@ -14,3 +14,13 @@
 .plan-dsg .dsg-container {
   height: var(--plan-dsg-h) !important;
 }
+
+/* B2 — the time-phased grid's sticky columns must be OPAQUE. The gutter (key
+ * columns) and the sticky right column (horizon totals) stay in place while the
+ * buckets scroll UNDER them; with the engine's transparent cell background the
+ * scrolled figures showed through the key columns (browser QA). */
+.tp-grid .dsg-cell-gutter,
+.tp-grid .dsg-cell-sticky-right {
+  background: #ffffff;
+  z-index: 2;
+}
