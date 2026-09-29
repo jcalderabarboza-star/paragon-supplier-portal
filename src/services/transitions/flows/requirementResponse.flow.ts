@@ -53,11 +53,21 @@ import { POLICY_HOOKS } from '../policyHooks';
 export const requirementResponseFlow: FlowDefinition = {
   entity: 'requirementResponse',
   version: 1,
-  states: ['Draft', 'Submitted', 'UnderReview', 'Accepted', 'Disputed'],
-  initial: 'Submitted',
+  states: ['Draft', 'Submitted', 'UnderReview', 'Accepted', 'Disputed', 'Superseded'],
+  // ⚠️ A3 · SDC-R13 — THIS SAID `'Submitted'` AFTER PF-1b MOVED THE COMMITMENT
+  // VERB'S BIRTH TO `Draft`, so the registry declared an initial state the
+  // creation that matters never lands in. `acknowledge` still births at
+  // `Submitted` (see the header); the declared initial names the commitment
+  // path, which is the one this machine exists for.
+  initial: 'Draft',
   /** PF-0 · D-2 — 'Disputed' is deliberately absent: it has no resolution edge
-   *  and is a hole, not an ending (censused). */
-  terminals: ['Accepted'],
+   *  and is a hole, not an ending (censused).
+   *
+   *  ⚠️ A3 · `Accepted` IS NO LONGER TERMINAL. A supplier may revise an accepted
+   *  commitment (`t_requirementresponse_revise`), and a terminal state with an
+   *  exit is a contradiction the registry would carry silently. `Superseded` is
+   *  the ending now: a version a later version has replaced. */
+  terminals: ['Superseded'],
   transitions: [
     {
       // Supplier confirms a published forecast line. Creation-shape (store-
@@ -119,6 +129,14 @@ export const requirementResponseFlow: FlowDefinition = {
         // the agreement hook would be comparing a parse result against an
         // unvalidated `unknown` and would have to duplicate the floor to say so.
         POLICY_HOOKS.RR_SUBMIT_QTY_AGREES,
+        // ⚠️ A3 · SDC-R4/R5 — THE ACCIDENTAL PATH IS CLOSED BY THE VERB, NOT BY
+        // THE SURFACE REMEMBERING. A second creation over an existing answer was
+        // the ONLY move a supplier had after a buyer's decision, and it orphaned
+        // a dispute (Probe A) or cut an accepted commitment with no trace
+        // (Probe B). While any non-superseded sibling exists for the response
+        // key, the supplier's move is `t_requirementresponse_revise`, which links
+        // the versions — or, for a Draft, the promote.
+        POLICY_HOOKS.RR_SUBMIT_NO_OPEN_SIBLING,
       ],
       surfaceable: { surfaced: true },
       version: 1,
@@ -255,6 +273,69 @@ export const requirementResponseFlow: FlowDefinition = {
       requiredFields: ['resolutionReason'],
       policyHooks: [POLICY_HOOKS.RR_DISPUTE_TEXT_AUTHORED],
       surfaceable: { surfaced: true },
+      version: 1,
+    },
+    {
+      // ⚠️ A3 · SDC-R4/R5 — THE SUPPLIER'S EXIT FROM A BUYER'S DECISION, WHICH DID
+      // NOT EXIST. Every exit from Disputed and Accepted was the buyer's, so the
+      // supplier's only move was a fresh creation — which left a dispute open
+      // and unreachable, or cut an accepted commitment with no trace.
+      //
+      // ⚠️ DISPATCHED AGAINST THE PRIOR, AND IT DOES NOT MOVE THE PRIOR TO
+      // `Draft`. The target MINTS the next version of the same response key in
+      // `Draft`, with `supersedes: <priorId>`; the prior is retired to
+      // `Superseded` by the cascade below. `to: 'Draft'` names where the
+      // THREAD lands, not where this row lands — the one edge in the machine
+      // whose destination is a sibling, stated here because the registry cannot
+      // express it and a reader of the edge alone would believe the prior
+      // reopened. The dispatched entity being the prior is what makes the link
+      // un-falsifiable: a caller cannot point a revision at a response it did
+      // not revise, because it never names the link — it names the entity.
+      //
+      // Same atom as submit (commercial): revising IS answering again. The same
+      // floor and agreement hooks, because the number is the same kind of number.
+      id: 't_requirementresponse_revise',
+      from: ['Disputed', 'Accepted'],
+      to: 'Draft',
+      trigger: 'user',
+      requiredRole: 'requirementresponse:submit',
+      requiredFields: ['confirmedQty', 'confirmedQtyRaw'],
+      policyHooks: [
+        // Reads the ENTITY's material on a revise (the payload carries none).
+        POLICY_HOOKS.SDC_MATERIAL_KNOWN,
+        // An acknowledgment carries no quantity to revise; revising one with a
+        // `confirmedQty` would turn a visibility response into a commitment.
+        POLICY_HOOKS.RR_REVISE_COMMITMENT_ONLY,
+        POLICY_HOOKS.RR_SUBMIT_QTY_FLOOR,
+        POLICY_HOOKS.RR_SUBMIT_QTY_AGREES,
+        // Cutting an ACCEPTED quantity requires a root cause (SDC-R5).
+        POLICY_HOOKS.RR_REVISE_ROOT_CAUSE_WHEN_CUT,
+      ],
+      surfaceable: { surfaced: true },
+      version: 1,
+    },
+    {
+      // ⚠️ A3 — THE CONSEQUENCE, NOT AN ACT. Fired only by the cascade from
+      // `t_requirementresponse_revise`, under the automation grant, on the prior
+      // version. The target stamps `supersededFrom` from the pre-transition
+      // status and, when that was `Disputed`, appends a store-minted
+      // `superseded-by-revision` ledger entry — so the dispute reads as answered
+      // BY THE SUPPLIER, distinct from resolved by the buyer and from never
+      // answered.
+      id: 't_requirementresponse_supersede',
+      from: ['Disputed', 'Accepted'],
+      to: 'Superseded',
+      trigger: 'cascade',
+      requiredRole: 'requirementresponse:supersede',
+      requiredFields: [],
+      policyHooks: [],
+      surfaceable: {
+        surfaced: false,
+        because: 'computed',
+        why:
+          'Raised by the revise cascade. It is the consequence of a supplier ' +
+          'revising, derived by the platform, not something anybody declares.',
+      },
       version: 1,
     },
   ],

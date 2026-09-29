@@ -13,7 +13,7 @@ import {
   Trash2,
   Truck,
 } from 'lucide-react';
-import { nextActorFrom, userVerbsFrom } from '../services/transitions';
+import { getFlow, nextActorFrom, personaCan, userVerbsFrom } from '../services/transitions';
 import AppShellV2 from '../components/layout-v2/AppShellV2';
 import PageHeader from '../components/ui-v2/PageHeader';
 import PageMetaLine from '../components/ui-v2/PageMetaLine';
@@ -39,6 +39,7 @@ import {
   useRequirementResponseSubmit,
   useRequirementResponseAcknowledge,
   useRequirementResponsePromote,
+  useRequirementResponseRevise,
   useOwnCollaboratedMaterials,
   useOwnInventoryDeclarations,
   useOwnIncomingShipments,
@@ -276,9 +277,12 @@ const latestResponseFor = (
 const LineCard: React.FC<{
   line: ForecastLine;
   latest?: RequirementResponse;
+  /** A3 — an answer already open on this line (any publication). */
+  openAnswer?: RequirementResponse;
   onConfirm: (line: ForecastLine) => void;
+  onRevise: (response: RequirementResponse, line: ForecastLine) => void;
   onAcknowledge: (line: ForecastLine) => void;
-}> = ({ line, latest, onConfirm, onAcknowledge }) => {
+}> = ({ line, latest, openAnswer, onConfirm, onRevise, onAcknowledge }) => {
   // ⚠️ **THE SHARPEST PAIR IN THE SPLIT, AND IT IS ONE ENTITY.** A commitment
   // line is COMMERCIAL's; a visibility-only line's acknowledgment is BACK
   // OFFICE's — the flow header is explicit that the latter "carries NO
@@ -310,9 +314,32 @@ const LineCard: React.FC<{
         {confirmable ? (
           // Outline opener — the SOLID commit lives on the panel's Submit (F-3).
           lineVerbs.commit.kind === 'held' ? (
-            <Button variant="outline" onClick={() => onConfirm(line)}>
-              {t('sdcSup.line.confirm')}
-            </Button>
+            // ⚠️ A3 — WITH AN ANSWER OPEN, "Confirm" WOULD BE A FALSE AFFORDANCE:
+            // `rr_submit_no_open_sibling` refuses a second creation, so the card
+            // offers the move the machine allows instead — Revise from a
+            // buyer's decision, otherwise a pointer to the open answer.
+            openAnswer ? (
+              REVISABLE_FROM.has(openAnswer.status) && openAnswer.forecastConfirmation ? (
+                <Button
+                  variant="outline"
+                  data-testid="sdcsup-line-revise"
+                  onClick={() => onRevise(openAnswer, line)}
+                >
+                  {t('sdcSup.responses.revise')}
+                </Button>
+              ) : (
+                <span
+                  className="text-xs text-text-tertiary text-right max-w-[16rem]"
+                  data-testid="sdcsup-line-open-answer"
+                >
+                  {t('sdcSup.line.openAnswer')}
+                </span>
+              )
+            ) : (
+              <Button variant="outline" onClick={() => onConfirm(line)}>
+                {t('sdcSup.line.confirm')}
+              </Button>
+            )
           ) : (
             <HandoffNotice availability={lineVerbs.commit} testId="handoff-rr-commit" />
           )
@@ -389,12 +416,61 @@ const nextActorKey = (state: string): string | null => {
   const next = nextActorFrom('requirementResponse', state);
   if (next.kind === 'ended') return 'sdcSup.responses.actor.ended';
   if (next.kind === 'stranded') return null;
+  // ⚠️ A3 — A SUPPLIER VERB THAT ONLY REOPENS THE THREAD IS AN OPTION, NOT A
+  // DUTY. `t_requirementresponse_revise` returns the response key to the flow's
+  // INITIAL state, and from `Accepted` it is the supplier's only exit — so the
+  // bare derivation would print "Your turn — this is waiting on you" over an
+  // accepted commitment nobody is waiting on. Still DERIVED, never mapped per
+  // status: "reopens" is `to === flow.initial`, read off the machine, so the day
+  // a supplier verb from these states does something else, the copy follows it.
+  const initial = getFlow('requirementResponse')?.initial;
+  const supplierVerbs = userVerbsFrom('requirementResponse', state).filter((v) =>
+    personaCan('supplier', v.requiredRole),
+  );
+  const onlyReopens = supplierVerbs.length > 0 && supplierVerbs.every((v) => v.to === initial);
+  if (onlyReopens) {
+    return next.personas.includes('buyer')
+      ? 'sdcSup.responses.actor.buyerOrRevise'
+      : 'sdcSup.responses.actor.revisable';
+  }
   // The supplier's own turn wins the label when both personas can act — this is
   // the supplier's page, and "your turn" is the actionable half.
   return next.personas.includes('supplier')
     ? 'sdcSup.responses.actor.supplier'
     : 'sdcSup.responses.actor.buyer';
 };
+
+/** A3 — states a supplier may revise from, read off the machine (the from-set
+ *  of every surfaced supplier verb that reopens the thread). */
+const REVISABLE_FROM: ReadonlySet<string> = new Set(
+  (getFlow('requirementResponse')?.transitions ?? [])
+    .filter(
+      (t) =>
+        t.surfaceable.surfaced &&
+        t.trigger === 'user' &&
+        t.to === getFlow('requirementResponse')?.initial &&
+        personaCan('supplier', t.requiredRole),
+    )
+    .flatMap((t) => t.from),
+);
+
+/** A3 — the supplier's OPEN answer for a line, across publications: every state
+ *  but `Superseded` (the same set `rr_submit_no_open_sibling` refuses over). */
+const openAnswerFor = (
+  responses: readonly RequirementResponse[],
+  line: ForecastLine,
+): RequirementResponse | undefined =>
+  responses
+    .filter(
+      (r) =>
+        r.materialCode === line.materialCode &&
+        r.periodBucket === line.periodBucket &&
+        r.status !== 'Superseded',
+    )
+    .reduce<RequirementResponse | undefined>(
+      (best, r) => (!best || r.submissionVersion > best.submissionVersion ? r : best),
+      undefined,
+    );
 
 const NextActorLine: React.FC<{ state: string }> = ({ state }) => {
   const { t } = useTranslation();
@@ -423,6 +499,14 @@ const NextActorLine: React.FC<{ state: string }> = ({ state }) => {
 //
 // DP2-WARN-01: `text-warning-hover` is the ONLY warning colour legal as TEXT on
 // light — the bright DEFAULT fails AA and `text-warning` must never be used.
+/** A3 — three kinds, three labels. A two-way ternary would call the supplier's
+ *  own revision "Paragon resolved the dispute". */
+const LEDGER_LABEL_KEY: Record<DisputeEntry['kind'], string> = {
+  raised: 'sdcSup.responses.dispute.raised',
+  resolved: 'sdcSup.responses.dispute.resolved',
+  'superseded-by-revision': 'sdcSup.responses.dispute.supersededByRevision',
+};
+
 const DisputeLedger: React.FC<{ entries: readonly DisputeEntry[] }> = ({ entries }) => {
   const { t } = useTranslation();
   if (entries.length === 0) return null;
@@ -439,15 +523,11 @@ const DisputeLedger: React.FC<{ entries: readonly DisputeEntry[] }> = ({ entries
             <span
               className={e.kind === 'raised' ? 'text-warning-hover' : 'text-success'}
             >
-              {t(
-                e.kind === 'raised'
-                  ? 'sdcSup.responses.dispute.raised'
-                  : 'sdcSup.responses.dispute.resolved',
-              )}
+              {t(LEDGER_LABEL_KEY[e.kind])}
             </span>{' '}
             <Data className="text-text-tertiary normal-case">{formatDate(e.at)}</Data>
           </div>
-          <div className="text-xs text-text-secondary">{e.text}</div>
+          {e.text && <div className="text-xs text-text-secondary">{e.text}</div>}
         </div>
       ))}
     </div>
@@ -461,7 +541,11 @@ const ResponsesTab: React.FC<{
    *  board would read `awaiting` forever. */
   onSubmitDraft: (responseId: string) => void;
   submittingId: string | null;
-}> = ({ responses, onSubmitDraft, submittingId }) => {
+  /** A3 — revise a Disputed / Accepted answer; `null` when the line it answers
+   *  is not in the rendered publication (nothing to show the demand against). */
+  onRevise: ((response: RequirementResponse) => void) | null;
+  canRevise: (response: RequirementResponse) => boolean;
+}> = ({ responses, onSubmitDraft, submittingId, onRevise, canRevise }) => {
   const { t } = useTranslation();
   // ⚠️ PROMOTE SHARES `requirementresponse:submit` WITH THE DRAFT CREATION —
   // one atom guards both drafting and sending, so this lane cannot express a
@@ -526,8 +610,34 @@ const ResponsesTab: React.FC<{
                     testId="handoff-rr-promote"
                   />
                 ))}
+              {/* A3 — the supplier's exit from a buyer's decision. Same atom as
+                  the draft and the promote (`requirementresponse:submit`), so the
+                  same availability answers for it. */}
+              {REVISABLE_FROM.has(r.status) &&
+                r.forecastConfirmation &&
+                onRevise &&
+                canRevise(r) &&
+                (promoteAvailability.kind === 'held' ? (
+                  <Button
+                    variant="outline"
+                    data-testid="sdcsup-response-revise"
+                    onClick={() => onRevise(r)}
+                  >
+                    {t('sdcSup.responses.revise')}
+                  </Button>
+                ) : (
+                  <HandoffNotice
+                    availability={promoteAvailability}
+                    testId="handoff-rr-revise"
+                  />
+                ))}
             </div>
           </div>
+          {r.supersedes && (
+            <div className="text-xs text-text-tertiary mb-2" data-testid="sdcsup-response-revises">
+              <Data className="text-xs">{t('sdcSup.responses.revises', { id: r.supersedes })}</Data>
+            </div>
+          )}
           {/* R1a — WHOSE ACT IS NEXT. Derived from the machine
               (`nextActorFrom`), never from a per-status constant: every exit
               from Submitted / UnderReview / Disputed is the buyer's by
@@ -1097,7 +1207,10 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
   const acknowledgeMutation = useRequirementResponseAcknowledge();
   // PF-1b — the promotion of a saved draft into a real submission.
   const promoteMutation = useRequirementResponsePromote();
+  const reviseMutation = useRequirementResponseRevise();
   const [promotingId, setPromotingId] = useState<string | null>(null);
+  // A3 — the answer being revised, when the confirm panel is open in revise mode.
+  const [revising, setRevising] = useState<RequirementResponse | null>(null);
   const declareMutation = useInventoryDeclare();
   const reportMutation = useIncomingShipmentReport();
 
@@ -1136,8 +1249,23 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
   };
 
   const openConfirm = (line: ForecastLine) => {
+    setRevising(null);
     setPanelLine(line);
     setForm(emptyForm);
+  };
+  /** A3 — the line a response answers, in the RENDERED publication. */
+  const lineFor = (r: RequirementResponse): ForecastLine | undefined =>
+    lines.find((l) => l.materialCode === r.materialCode && l.periodBucket === r.periodBucket);
+  const openRevise = (r: RequirementResponse, line?: ForecastLine) => {
+    const target = line ?? lineFor(r);
+    if (!target) return;
+    setRevising(r);
+    setPanelLine(target);
+    setForm(emptyForm);
+  };
+  const closePanel = () => {
+    setPanelLine(null);
+    setRevising(null);
   };
   const openAcknowledge = (line: ForecastLine) => {
     setAckPanelLine(line);
@@ -1161,6 +1289,13 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
   // falling short — it says it cannot read them.
   const isShort =
     panelLine !== null && confirmQty.ok && confirmQty.value < panelLine.forecastQty;
+  // A3 · SDC-R5 — cutting an ACCEPTED quantity owes a root cause even when the
+  // new figure still covers the demand; the form mirrors the transition's rule
+  // (`rr_revise_root_cause_when_cut`) so the supplier is told before dispatch.
+  const acceptedQty =
+    revising?.status === 'Accepted' ? revising.forecastConfirmation?.confirmedQty : undefined;
+  const isCut = acceptedQty !== undefined && confirmQty.ok && confirmQty.value < acceptedQty;
+  const rootCauseRequired = isShort || isCut;
 
   const failToast = () =>
     toast({
@@ -1185,7 +1320,7 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
       return;
     }
     // Short (including 0): the deviation needs its root cause (form-level rule).
-    if (confirmQty.value < panelLine.forecastQty && !form.rootCauseLevel1) {
+    if ((confirmQty.value < panelLine.forecastQty || isCut) && !form.rootCauseLevel1) {
       toast({
         variant: 'error',
         title: t('sdcSup.toast.missingRootCause.title'),
@@ -1195,6 +1330,51 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
     }
     // Snapshot keys come from the RENDERED publication + line; supplierId from
     // the IDENTITY — never the form (un-falsifiable binding, SDC-2a).
+    // A3 — REVISE: the payload carries only what the supplier says now; the line
+    // binding is the prior's, resolved by the target, never by this form.
+    if (revising) {
+      const revisePayload: Record<string, unknown> = {
+        confirmedQty: confirmQty.value,
+        confirmedQtyRaw: form.confirmedQty,
+        ...(form.committedDate ? { committedDate: form.committedDate } : {}),
+        ...(form.capacityConstraint ? { capacityConstraint: form.capacityConstraint } : {}),
+        ...(form.rootCauseLevel1
+          ? {
+              rootCause: {
+                level1: form.rootCauseLevel1,
+                ...(form.rootCauseNote ? { note: form.rootCauseNote } : {}),
+              },
+            }
+          : {}),
+      };
+      try {
+        const res = await reviseMutation.mutateAsync({
+          responseId: revising.id,
+          payload: revisePayload,
+          causationId: causationId(),
+        });
+        if (res.status === 'failed') {
+          toast({
+            variant: 'error',
+            title: t('sdcSup.toast.failed.title'),
+            description: refusalText(res.reason) ?? res.reason ?? t('sdcSup.toast.failed.body'),
+          });
+          return;
+        }
+        recordAttempt('RequirementResponse', res);
+        toast({
+          variant: 'success',
+          title: t('sdcSup.toast.revised.title', { material: materialLabel(panelLine.materialCode) }),
+          description: t('sdcSup.toast.revised.body', { id: revising.id }),
+        });
+        closePanel();
+        setForm(emptyForm);
+        setActiveTab('responses');
+      } catch {
+        failToast();
+      }
+      return;
+    }
     const payload = buildRequirementResponsePayload(publication, panelLine, supplierId, {
       // The SAME parsed value the gate above judged — the builder can no longer
       // re-read the string and reach a different number (CP-0 §4).
@@ -1586,7 +1766,9 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
                 key={`${line.materialCode}|${line.periodBucket}`}
                 line={line}
                 latest={latestResponseFor(responses, publication, line)}
+                openAnswer={openAnswerFor(responses, line)}
                 onConfirm={openConfirm}
+                onRevise={openRevise}
                 onAcknowledge={openAcknowledge}
               />
             ))}
@@ -1626,21 +1808,28 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
           responses={responses}
           onSubmitDraft={submitDraft}
           submittingId={promoteMutation.isPending ? promotingId : null}
+          onRevise={(r) => openRevise(r)}
+          canRevise={(r) => lineFor(r) !== undefined}
         />
       )}
 
       {/* ── Forecast confirm panel (SDC-2b) ─────────────────────────────────── */}
       <SidePanel
         open={panelLine !== null}
-        onClose={() => setPanelLine(null)}
+        onClose={closePanel}
         title={
           panelLine
-            ? t('sdcSup.panel.title', { material: materialLabel(panelLine.materialCode) })
+            ? revising
+              ? t('sdcSup.panel.reviseTitle', {
+                  material: materialLabel(panelLine.materialCode),
+                  id: revising.id,
+                })
+              : t('sdcSup.panel.title', { material: materialLabel(panelLine.materialCode) })
             : ''
         }
         footerActions={
           <>
-            <Button variant="secondary" onClick={() => setPanelLine(null)}>
+            <Button variant="secondary" onClick={closePanel}>
               {t('sdcSup.panel.cancel')}
             </Button>
             {/* ⚠️ PF-1b — WAS SOLID, NOW OUTLINE, and the ruling is what changed
@@ -1652,10 +1841,10 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
             <Button
               variant="outline"
               icon={Send}
-              disabled={submitMutation.isPending}
+              disabled={submitMutation.isPending || reviseMutation.isPending}
               onClick={submitConfirmation}
             >
-              {submitMutation.isPending
+              {submitMutation.isPending || reviseMutation.isPending
                 ? t('sdcSup.panel.submitting')
                 : t('sdcSup.panel.submit')}
             </Button>
@@ -1688,6 +1877,17 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
                   </Data>
                 </span>
               </div>
+              {/* A3 — what this revision answers, said before the number is typed. */}
+              {revising && (
+                <p className="mt-2 text-xs text-text-secondary" data-testid="sdcsup-revise-note">
+                  {revising.status === 'Accepted'
+                    ? t('sdcSup.panel.reviseAccepted', {
+                        qty: formatNumber(revising.forecastConfirmation?.confirmedQty ?? 0),
+                        uom: panelLine.uom,
+                      })
+                    : t('sdcSup.panel.reviseDisputed', { id: revising.id })}
+                </p>
+              )}
             </section>
 
             <FormSection
@@ -1771,7 +1971,7 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
               <div>
                 <label className={labelClass} htmlFor="sdcsup-rootcause">
                   {t('sdcSup.panel.rootCause.level1')}
-                  {isShort && <span className="text-danger"> *</span>}
+                  {rootCauseRequired && <span className="text-danger"> *</span>}
                 </label>
                 <select
                   id="sdcsup-rootcause"

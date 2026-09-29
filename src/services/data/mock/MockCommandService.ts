@@ -857,11 +857,98 @@ const PROV_SUPPLIER_SUBMIT: Provenance = Object.freeze({
   planState: 'committed',
 });
 
+/** Root cause persists only when it carries a level1 (a shapeless object is
+ *  dropped, not guessed) — the supplier's explanation for a deviation. Shared by
+ *  the creation and the revision, so the two cannot keep different shapes. */
+const rootCauseFrom = (payload: Record<string, unknown>): RootCause | undefined => {
+  const rc = payload.rootCause as Partial<RootCause> | undefined;
+  return rc && typeof rc.level1 === 'string' && rc.level1
+    ? {
+        level1: rc.level1,
+        ...(typeof rc.level2 === 'string' && rc.level2 ? { level2: rc.level2 } : {}),
+        ...(typeof rc.note === 'string' && rc.note ? { note: rc.note } : {}),
+      }
+    : undefined;
+};
+
+/** The next `submissionVersion` on a response key — prior max + 1 over the
+ *  thread, which spans publications (A3 · SDC-R6). */
+const nextSubmissionVersion = (supplierId: string, materialCode: string, periodBucket: string) =>
+  requirementResponseStore
+    .forResponseKey(supplierId, materialCode, periodBucket)
+    .reduce((m, r) => Math.max(m, r.submissionVersion), 0) + 1;
+
+/**
+ * A3 · the publication a REVISION binds: the latest-published snapshot that fans
+ * this exact supplier × material × period line. The prior's own publication
+ * always qualifies (it fanned the line the prior answered), so this never comes
+ * back empty for a response that exists — and when the plan was re-published,
+ * the revision answers the CURRENT question rather than re-answering the old one.
+ */
+const bindingPublicationFor = (r: RequirementResponse) => {
+  let best: (typeof FORECAST_PUBLICATIONS)[number] | undefined;
+  for (const p of FORECAST_PUBLICATIONS) {
+    const fans = p.lines.some(
+      (l) =>
+        l.supplierId === r.supplierId &&
+        l.materialCode === r.materialCode &&
+        l.periodBucket === r.periodBucket,
+    );
+    if (fans && (!best || Date.parse(p.publishedAt) > Date.parse(best.publishedAt))) best = p;
+  }
+  return best ?? publicationById(r.publicationId);
+};
+
+/**
+ * A3 · `t_requirementresponse_revise` — MINT THE NEXT VERSION; LEAVE THE PRIOR.
+ *
+ * ⚠️ THE PRIOR IS NOT WRITTEN HERE. It is retired to `Superseded` by the cascade,
+ * which is the one place that knows it is a consequence rather than an act — so
+ * the prior carries exactly one transition for its retirement, stamped by
+ * automation, and never a `Draft` it did not occupy. The hooks already proved the
+ * number (floor + agreement), the kind (commitment only) and the cut (root cause
+ * when an Accepted quantity falls), so this is a plain read of the payload.
+ */
+const mintRevision = (prior: RequirementResponse, payload: Record<string, unknown>) => {
+  const pub = bindingPublicationFor(prior);
+  const str = (k: string) => (typeof payload[k] === 'string' ? (payload[k] as string) : '');
+  const rootCause = rootCauseFrom(payload);
+  const next: RequirementResponse = {
+    id: requirementResponseStore.nextNumber(),
+    supplierId: prior.supplierId,
+    materialCode: prior.materialCode,
+    periodBucket: prior.periodBucket,
+    publicationId: pub?.publicationId ?? prior.publicationId,
+    planVersion: pub?.planVersion ?? prior.planVersion,
+    // A draft has no submission instant (PF-1b); the promote stamps it.
+    submissionVersion: nextSubmissionVersion(prior.supplierId, prior.materialCode, prior.periodBucket),
+    status: 'Draft',
+    forecastConfirmation: {
+      confirmedQty: payload.confirmedQty as number,
+      uom: requireUom(prior.materialCode),
+      ...(str('committedDate') ? { committedDate: str('committedDate') } : {}),
+      ...(str('capacityConstraint') ? { capacityConstraint: str('capacityConstraint') } : {}),
+    },
+    ...(rootCause ? { rootCause } : {}),
+    supersedes: prior.id,
+    provenance: PROV_SUPPLIER_SUBMIT,
+  };
+  requirementResponseStore.add(next);
+};
+
 const requirementResponseTarget: CommandTarget = {
   readState: (id) => requirementResponseStore.get(id)?.status ?? null,
   readScopeOwner: (id) => requirementResponseStore.get(id)?.supplierId ?? null,
   readEntity: (id) => requirementResponseStore.get(id) ?? null,
   applyTransition: (id, toState, payload) => {
+    // A3 — only `t_requirementresponse_revise` lands on `Draft` from an existing
+    // row (creation births through `create`, never here), so `toState` alone
+    // names the act, exactly as `Disputed` does for the raise below.
+    if (toState === 'Draft') {
+      const prior = requirementResponseStore.get(id);
+      if (prior) mintRevision(prior, payload);
+      return;
+    }
     requirementResponseStore.update(id, (r) => ({
       ...r,
       status: toState as RequirementResponseStatus,
@@ -889,6 +976,25 @@ const requirementResponseTarget: CommandTarget = {
             disputeResponse: [
               ...(r.disputeResponse ?? []),
               { kind: 'resolved' as const, text: String(payload.resolutionReason), at: sdcClock.now() },
+            ],
+          }
+        : {}),
+      // ⚠️ A3 — THE RETIREMENT RECORDS WHAT IT RETIRED. `supersededFrom` is the
+      // PRE-transition status (`r` is the pre-transition record), because
+      // `Superseded` alone forgets whether an accepted commitment or a disputed
+      // one was replaced — and the consolidation and the buyer's queue say
+      // different things about each. A Disputed prior also gets a ledger entry,
+      // store-minted and textless: the answer is the next version, and the entry
+      // is what keeps "answered by revising" apart from "resolved" and from
+      // "never answered".
+      ...(toState === 'Superseded' && (r.status === 'Disputed' || r.status === 'Accepted')
+        ? { supersededFrom: r.status }
+        : {}),
+      ...(toState === 'Superseded' && r.status === 'Disputed'
+        ? {
+            disputeResponse: [
+              ...(r.disputeResponse ?? []),
+              { kind: 'superseded-by-revision' as const, text: '', at: sdcClock.now() },
             ],
           }
         : {}),
@@ -941,24 +1047,8 @@ const requirementResponseTarget: CommandTarget = {
     // unlike a `??` chain, it can never silently invent a unit if that hook is
     // ever unwired.
     const uom = requireUom(materialCode);
-    // Root cause persists only when it carries a level1 (a shapeless object is
-    // dropped, not guessed) — the supplier's explanation for a deviation.
-    const rc = payload.rootCause as Partial<RootCause> | undefined;
-    const rootCause: RootCause | undefined =
-      rc && typeof rc.level1 === 'string' && rc.level1
-        ? {
-            level1: rc.level1,
-            ...(typeof rc.level2 === 'string' && rc.level2 ? { level2: rc.level2 } : {}),
-            ...(typeof rc.note === 'string' && rc.note ? { note: rc.note } : {}),
-          }
-        : undefined;
+    const rootCause = rootCauseFrom(payload);
     const id = requirementResponseStore.nextNumber();
-    const prior = requirementResponseStore.forResponseKey(
-      supplierId,
-      materialCode,
-      periodBucket,
-      publicationId,
-    );
     // SDC-2b-EXT — the response KIND branches on the fanned line's PUBLISHED
     // commitmentClass (authoritative our-side data, never caller input). The
     // symmetric class guards make class ⟺ verb exactly 1:1, so this branch is
@@ -1012,8 +1102,9 @@ const requirementResponseTarget: CommandTarget = {
       // submission is stamped WITHIN the simulated timeline (after the seed), so
       // the newest-first "My responses" sort surfaces it correctly.
       ...(toState === 'Draft' ? {} : { submittedAt: sdcClock.now() }),
-      // Versioned, never overwritten: prior max + 1 over the response thread.
-      submissionVersion: prior.reduce((m, r) => Math.max(m, r.submissionVersion), 0) + 1,
+      // Versioned, never overwritten: prior max + 1 over the response thread,
+      // which spans publications (A3 · SDC-R6).
+      submissionVersion: nextSubmissionVersion(supplierId, materialCode, periodBucket),
       status: toState as RequirementResponseStatus, // 'Submitted'
       ...kindFields,
       ...(rootCause ? { rootCause } : {}),
@@ -1154,6 +1245,58 @@ bindPolicyHook(POLICY_HOOKS.RR_DISPUTE_TEXT_AUTHORED, ({ payload, toState, curre
   return { ok: true };
 });
 
+// A3 · SDC-R4/R5 — NO SECOND ANSWER WHILE ONE IS OPEN.
+//
+// The thread is the response key ACROSS publications (the store's
+// `forResponseKey`), and "open" is every state but `Superseded`: a Draft is
+// submitted by the promote, a Submitted / UnderReview answer is with the buyer,
+// and a Disputed / Accepted one is answered by the revise — none of them by a
+// fresh creation, which is the move that orphaned Probe A's dispute and cut
+// Probe B's commitment. The sibling is NAMED in the refusal so the caller is
+// told which answer it would have buried.
+bindPolicyHook(POLICY_HOOKS.RR_SUBMIT_NO_OPEN_SIBLING, ({ payload }) => {
+  const open = requirementResponseStore
+    .forResponseKey(
+      String(payload.supplierId),
+      String(payload.materialCode),
+      String(payload.periodBucket),
+    )
+    .filter((r) => r.status !== 'Superseded');
+  if (open.length === 0) return { ok: true };
+  const named = open.map((r) => `${r.id} v${r.submissionVersion} ${r.status}`).join(', ');
+  return {
+    ok: false,
+    reason: `an answer is already open for this line (${named}) — revise it, or submit the draft; a second creation would bury it`,
+  };
+});
+
+// A3 — only a COMMITMENT is revised (invariant #11's XOR, from the revise side).
+bindPolicyHook(POLICY_HOOKS.RR_REVISE_COMMITMENT_ONLY, ({ entityId, target }) => {
+  const prior = target.readEntity(entityId) as RequirementResponse | null;
+  return prior?.forecastConfirmation
+    ? { ok: true }
+    : {
+        ok: false,
+        reason: `${entityId} is an acknowledgment — it carries no quantity to revise`,
+      };
+});
+
+// A3 · SDC-R5 — cutting an ACCEPTED quantity owes a root cause. The floor ran
+// first, so `confirmedQty` is a finite non-negative number here.
+bindPolicyHook(POLICY_HOOKS.RR_REVISE_ROOT_CAUSE_WHEN_CUT, ({ entityId, target, currentState, payload }) => {
+  if (currentState !== 'Accepted') return { ok: true };
+  const prior = target.readEntity(entityId) as RequirementResponse | null;
+  const accepted = prior?.forecastConfirmation?.confirmedQty;
+  const next = payload.confirmedQty as number;
+  if (accepted === undefined || next >= accepted) return { ok: true };
+  const rc = payload.rootCause as { level1?: unknown } | undefined;
+  if (rc && typeof rc.level1 === 'string' && rc.level1.trim() !== '') return { ok: true };
+  return {
+    ok: false,
+    reason: `revising accepted ${accepted} down to ${next} requires a root cause — an accepted commitment is not cut without saying why`,
+  };
+});
+
 // SDC-2b-EXT — the symmetric class guards (the honesty lock). creationOwner
 // already proved the fanned line exists, so resolving it here cannot miss.
 const fannedLineClass = (payload: Record<string, unknown>) =>
@@ -1221,8 +1364,14 @@ const collaboratedMaterial = (supplierId: string, materialCode: string): boolean
 // REFUSED OUTRIGHT — no quarantine, no accept-with-marker. At F2, an
 // unresolvable code in SOMO's live feed gets a loud error at WIRE TIME rather
 // than a silent backlog of facts that exist but are not trustworthy.
-bindPolicyHook(POLICY_HOOKS.SDC_MATERIAL_KNOWN, ({ payload }) => {
-  const materialCode = typeof payload.materialCode === 'string' ? payload.materialCode : '';
+bindPolicyHook(POLICY_HOOKS.SDC_MATERIAL_KNOWN, ({ payload, entityId, target }) => {
+  // A3 — a REVISE addresses an existing response and carries no material in its
+  // payload; the material it will stamp a unit for is the ENTITY's. Every
+  // creation verb this hook guards has no entity yet (`entityId` is ''), so for
+  // them this reads the payload exactly as before.
+  const entity = entityId ? (target.readEntity(entityId) as { materialCode?: unknown } | null) : null;
+  const source = entity ? entity.materialCode : payload.materialCode;
+  const materialCode = typeof source === 'string' ? source : '';
   return isKnownMaterial(materialCode)
     ? { ok: true }
     : {
@@ -2637,6 +2786,21 @@ const resolveCascades = (ctx: CascadeContext): CascadeCommand[] => {
             },
           }
         : {}),
+    }));
+  }
+  // — A3 · a supplier's revision retires the version it revises ————————————
+  //
+  // `ctx.entityId` is the PRIOR (the revise is dispatched against it), and the
+  // resolver confirms it still exists and still sits in a state the supersede
+  // may leave before handing it back — the `if (!gr) return []` discipline, so
+  // the fan-out's `catch {}` has nothing traceless to swallow.
+  if (ctx.entity === 'requirementResponse' && ctx.transitionId === 't_requirementresponse_revise') {
+    const prior = requirementResponseStore.get(ctx.entityId);
+    if (!prior || (prior.status !== 'Disputed' && prior.status !== 'Accepted')) return [];
+    return cascadesFor(ctx.transitionId).map((link) => ({
+      entity: link.targetEntity,
+      entityId: prior.id,
+      transitionId: link.targetTransitionId,
     }));
   }
   if (ctx.entity === 'goodsReceipt') {

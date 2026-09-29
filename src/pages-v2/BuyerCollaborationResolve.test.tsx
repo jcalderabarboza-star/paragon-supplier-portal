@@ -110,7 +110,9 @@ describe('R1b — the gate is the MACHINE, and it is probed both ways', () => {
 });
 
 describe('R1b — every state this lane can reach HAS a label, in both locales', () => {
-  it('⚠ all five requirementResponse states resolve through the CENTRAL map', () => {
+  // A3 — six now: `Superseded` joined, and this derives from `flow.states`, so it
+  // was covered the moment the flow declared it (the title is the only count).
+  it('⚠ every requirementResponse state resolves through the CENTRAL map', () => {
     // Found by browser QA, not by review: resolving landed the response in
     // `UnderReview` and the lifecycle chip vanished, because the central map is
     // keyed for the DISPLAY vocabulary ('Under Review', with a space) and the

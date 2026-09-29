@@ -109,6 +109,9 @@ const STATUS_TONE: Record<string, StatusTone> = {
   // have made its own EN label the literal "UnderReview", because this map's EN
   // value IS the canonical string — which is exactly what browser QA caught.
   Accepted: 'success',
+  // A3 — `Superseded`: a response a later version replaced. Neutral, never
+  // danger — being revised is not a failure, it is history.
+  Superseded: 'neutral',
   Manual: 'neutral',
   Outbound: 'neutral',
 

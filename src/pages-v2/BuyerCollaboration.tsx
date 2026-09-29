@@ -25,6 +25,7 @@ import {
   type ConsolidationRow,
   type SupplierCoverageEntry,
   type CommitmentClass,
+  type ChaseReason,
 } from '../services/sdc';
 import {
   useConsolidationRows,
@@ -124,6 +125,24 @@ const responseOf = (state: ConsolidationRow['state']): RequirementResponse | nul
 const supplierName = (id: string): string =>
   mockSuppliers.find((s) => s.id === id)?.name ?? id;
 
+/** The chase reason's label — a closed map, so a new reason is a type error
+ *  here rather than a ternary silently rendering it as its neighbour (A3 added
+ *  `revised-after-accept`, which the old two-way ternary would have called
+ *  "Partial response"). */
+const CHASE_REASON_KEY: Record<ChaseReason, string> = {
+  overdue: 'sdc.chase.reason.overdue',
+  'partial-response': 'sdc.chase.reason.partial',
+  'revised-after-accept': 'sdc.chase.reason.revisedAfterAccept',
+};
+
+/** A3 — the queue chip for an answer awaiting review: what it revises, if anything. */
+const reviewChip = (row: ConsolidationRow, version: number): { key: string; opts?: { version: number } } =>
+  row.revisionOf === 'Disputed'
+    ? { key: 'sdc.review.revisedAfterDispute', opts: { version } }
+    : row.revisionOf === 'Accepted'
+      ? { key: 'sdc.review.revisedAfterAccept', opts: { version } }
+      : { key: 'sdc.review.submitted' };
+
 const CLASS_LABEL_KEY: Record<CommitmentClass, string> = {
   firm: 'sdc.class.firm',
   'semi-firm': 'sdc.class.semiFirm',
@@ -183,6 +202,16 @@ type CoverageRow = ConsolidationRow & {
 // immutable ledger the supplier reads, which is the reserved irreversible-commit
 // class. The row CTA that opens this panel is outline: it commits nothing.
 // ────────────────────────────────────────────────────────────────────────────
+/** A3 — the ledger's THREE kinds, each with its own words. The two-way ternary
+ *  that stood here rendered every non-`raised` entry as "Paragon resolved the
+ *  dispute" — which is exactly the conflation the `superseded-by-revision`
+ *  entry exists to prevent: the SUPPLIER answered it, by revising. */
+const LEDGER_LABEL_KEY: Record<DisputeEntry['kind'], string> = {
+  raised: 'sdc.resolve.raised',
+  resolved: 'sdc.resolve.resolved',
+  'superseded-by-revision': 'sdc.resolve.supersededByRevision',
+};
+
 const DisputeExchange: React.FC<{ entries: readonly DisputeEntry[] }> = ({ entries }) => {
   const { t } = useTranslation();
   if (entries.length === 0) return null;
@@ -197,7 +226,7 @@ const DisputeExchange: React.FC<{ entries: readonly DisputeEntry[] }> = ({ entri
         >
           <div className="text-label mb-0.5 uppercase">
             <span className={e.kind === 'raised' ? 'text-warning-hover' : 'text-success'}>
-              {t(e.kind === 'raised' ? 'sdc.resolve.raised' : 'sdc.resolve.resolved')}
+              {t(LEDGER_LABEL_KEY[e.kind])}
             </span>{' '}
             <Data className="normal-case text-text-tertiary">{formatDate(e.at)}</Data>
           </div>
@@ -593,6 +622,12 @@ const BuyerCollaboration: React.FC = () => {
               <Data className="text-xs text-danger">
                 −{formatNumber(rowData.state.deficitQty)} {rowData.line.uom}
               </Data>
+            ) : rowData.state.kind === 'revised-after-accept' ? (
+              // A3 — the CUT, against the figure the buyer accepted: that is the
+              // gap a plan is now standing on, whatever the demand says.
+              <Data className="text-xs text-danger">
+                −{formatNumber(rowData.state.cutQty)} {rowData.line.uom}
+              </Data>
             ) : (
               <span className="text-xs text-text-tertiary">{t('sdc.empty.dash')}</span>
             )}
@@ -658,6 +693,16 @@ const BuyerCollaboration: React.FC = () => {
                     {t(statusLabelKey(responseOf(s)!.status)!)}
                   </span>
                 )}
+              {s.kind === 'revised-after-accept' && (
+                // ⚠️ A3 · SDC-R5 — the cut Probe B measured as plain `short`.
+                // Danger, not warning: an accepted number has been withdrawn.
+                <span className={CHIP_DANGER} data-testid="sdc-revised-after-accept">
+                  {t('sdc.state.revisedAfterAccept', {
+                    accepted: formatNumber(s.acceptedQty),
+                    now: formatNumber(s.acceptedQty - s.cutQty),
+                  })}
+                </span>
+              )}
               {s.kind === 'stale-against-current' && (
                 <span className={CHIP_WARNING}>
                   {s.answeredQty === null
@@ -898,12 +943,16 @@ const BuyerCollaboration: React.FC = () => {
                 <span className="min-w-[10rem] font-medium text-text-primary">
                   {supplierName(entry.supplierId)}
                 </span>
-                <span className={entry.reason === 'overdue' ? CHIP_WARNING : CHIP_INFO}>
-                  {t(
-                    entry.reason === 'overdue'
-                      ? 'sdc.chase.reason.overdue'
-                      : 'sdc.chase.reason.partial',
-                  )}
+                <span
+                  className={
+                    entry.reason === 'revised-after-accept'
+                      ? CHIP_DANGER
+                      : entry.reason === 'overdue'
+                        ? CHIP_WARNING
+                        : CHIP_INFO
+                  }
+                >
+                  {t(CHASE_REASON_KEY[entry.reason])}
                 </span>
                 <span className="text-text-secondary">
                   {t('sdc.chase.awaitingLines', { n: entry.awaitingLines })}
@@ -942,7 +991,12 @@ const BuyerCollaboration: React.FC = () => {
                   key={row.id}
                   className="flex flex-wrap items-center gap-3 rounded-lg border border-border-subtle bg-bg-surface px-4 py-3 text-sm"
                 >
-                  <span className={CHIP_INFO}>{t('sdc.review.submitted')}</span>
+                  <span className={CHIP_INFO} data-testid="sdc-review-chip">
+                    {(() => {
+                      const chip = reviewChip(row, response.submissionVersion);
+                      return t(chip.key, chip.opts);
+                    })()}
+                  </span>
                   <span className="font-medium text-text-primary">
                     {supplierName(row.line.supplierId)}
                   </span>

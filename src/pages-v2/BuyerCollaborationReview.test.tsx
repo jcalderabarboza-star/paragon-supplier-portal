@@ -24,7 +24,7 @@ import { renderWithProviders, BUYER } from '../test/test-utils';
 import BuyerCollaboration from './BuyerCollaboration';
 import SupplierForecasts from './SupplierForecasts';
 import { requirementResponseStore } from '../services/data/mock/stores/requirementResponseStore';
-import { getFlow, userVerbsFrom } from '../services/transitions';
+import { getFlow, personaCan, userVerbsFrom } from '../services/transitions';
 import { rolesHolding } from '../services/transitions/businessRoles';
 import { mockDataService } from '../services/data/mock/mockDataService';
 import i18n from '../lib/i18n';
@@ -98,10 +98,22 @@ describe('wave C — the gate is the MACHINE, probed in both directions', () => 
     for (const atom of atoms) expect(rolesHolding(atom)).toContain('planning');
   });
 
-  it('⚠ `Accepted` IS TERMINAL — derived from the flow, not asserted in prose', () => {
+  // ⚠️ A3 — INVERTED, NOT DELETED. This read "`Accepted` IS TERMINAL … no
+  // transition leaves it". A3 gives the SUPPLIER an exit from an accepted
+  // commitment (SDC-R5 — the cut Probe B measured had no trace because there was
+  // no verb to carry one), so the property the spec guards is now: the only ways
+  // out of `Accepted` are the supplier's revise and its automation consequence —
+  // never a BUYER verb, which is what "the buyer's decision stands" means here.
+  it('⚠ `Accepted` is left only by the supplier revising — no BUYER verb leaves it', () => {
     const f = getFlow('requirementResponse')!;
     expect(f.states).toContain('Accepted');
-    expect(f.transitions.filter((t) => t.from.includes('Accepted'))).toHaveLength(0);
+    expect(f.terminals).not.toContain('Accepted');
+    expect(
+      f.transitions.filter((t) => t.from.includes('Accepted')).map((t) => t.id).sort(),
+    ).toEqual(['t_requirementresponse_revise', 't_requirementresponse_supersede']);
+    for (const t of f.transitions.filter((x) => x.from.includes('Accepted'))) {
+      expect(personaCan('buyer', t.requiredRole), t.id).toBe(false);
+    }
   });
 });
 

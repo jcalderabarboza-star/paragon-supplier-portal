@@ -1,6 +1,6 @@
 # C1 — Method Surface
 
-Three distinct axes. **66** (service surface) · **118** (transition catalog) · **20** (wired
+Three distinct axes. **66** (service surface) · **120** (transition catalog) · **20** (wired
 targets). They measure different things; this file keeps them separate.
 
 > ⚠️ **THIS DOCUMENT IS PINNED TO THE TREE, AND THE PIN IS WHY THE NUMBERS ABOVE ARE ALLOWED TO
@@ -52,6 +52,12 @@ targets). They measure different things; this file keeps them separate.
 > Every figure moved BY THE PIN going red — twelve assertions across three axes plus C5's borrowed
 > figure — which is the fourth consecutive batch where this document was corrected by the gate
 > rather than by anybody remembering it exists.
+
+> **RE-HARVEST (2026-09-29, A3).** Supplier answers stay honest: `requirementResponse` gained
+> `t_requirementresponse_revise` (the supplier's exit from `Disputed` / `Accepted`) and
+> `t_requirementresponse_supersede` (its automation consequence), taking the catalog to **120**
+> across the same **26** flows. No service method and no wired target moved — the verbs ride the
+> target that already existed. Moved by the pin going red, again.
 
 Source of truth: `src/services/data/types.ts` (service + command types),
 `src/services/transitions/` (schema, dispatcher, flows).
@@ -113,7 +119,7 @@ the string, because those are different claims and only the first is the contrac
 
 ---
 
-## Axis 2 — the 118-transition catalog (26 flows)
+## Axis 2 — the 120-transition catalog (26 flows)
 
 Every authored state-machine edge across the registered flows (`id: 't_<entity>_<verb>'`). Derived
 from `getKnownFlows()` — the seeded registry — never from a grep over the flow files, because a
@@ -137,7 +143,7 @@ transition id can be assembled at a call site rather than written as a literal (
 | `intakeLine.flow.ts` | `intakeLine` | 3 | `t_intake_dismiss`, `t_intake_restore`, `t_intake_commit` | **wired** |
 | `supplierDocument.flow.ts` | `supplierDocument` | 5 | `t_supplierdoc_request`, `t_supplierdoc_declare`, `t_supplierdoc_submit`, `t_supplierdoc_verify`, `t_supplierdoc_reject` | **wired** |
 | `compliance.flow.ts` | `compliance` | 3 | `t_compliance_submit`, `t_compliance_verify`, `t_compliance_reject` | inert |
-| `requirementResponse.flow.ts` | `requirementResponse` | 7 | `t_requirementresponse_submit`, `t_requirementresponse_acknowledge`, `t_requirementresponse_promote`, `t_requirementresponse_review`, `t_requirementresponse_accept`, `t_requirementresponse_dispute`, `t_requirementresponse_resolve` | **wired** |
+| `requirementResponse.flow.ts` | `requirementResponse` | 9 | `t_requirementresponse_submit`, `t_requirementresponse_acknowledge`, `t_requirementresponse_promote`, `t_requirementresponse_review`, `t_requirementresponse_accept`, `t_requirementresponse_dispute`, `t_requirementresponse_resolve`, `t_requirementresponse_revise`, `t_requirementresponse_supersede` | **wired** |
 | `inventoryDeclaration.flow.ts` | `inventoryDeclaration` | 2 | `t_inventorydeclaration_declare`, `t_inventorydeclaration_record` | **wired** |
 | `incomingShipment.flow.ts` | `incomingShipment` | 4 | `t_incomingshipment_report`, `t_incomingshipment_ship`, `t_incomingshipment_arrive`, `t_incomingshipment_cancel` | **wired** |
 | `enforcement.flow.ts` | `enforcement` | 1 | `t_enforcement_set` | **wired** |
@@ -148,7 +154,7 @@ transition id can be assembled at a call site rather than written as a literal (
 | `pslCapSetting.flow.ts` | `pslCapSetting` | 1 | `t_psl_cap_set` | **wired** |
 | `deliveryRelease.flow.ts` | `deliveryRelease` | 3 | `t_delivery_release`, `t_delivery_adjust`, `t_delivery_confirm` | **wired** |
 | `deliveryPolicy.flow.ts` | `deliveryPolicy` | 1 | `t_delivery_policy_set` | **wired** |
-| **TOTAL** | | **118** | | |
+| **TOTAL** | | **120** | | |
 
 **Flow shape** (`schema.ts`, `FlowDefinition` / `TransitionDef`): each transition declares
 `from[]` / `to` / `trigger` / `requiredRole` / `requiredFields[]` / `policyHooks[]` /

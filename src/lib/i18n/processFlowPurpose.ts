@@ -275,6 +275,10 @@ export const processFlowPurposeEn: Record<string, string> = {
     'The planner does not take the answer — the gap is too big, or the reason given does not hold — and says so to the supplier.',
   'processFlows.purpose.t_requirementresponse_resolve':
     'The disagreement has been worked through and the answer goes back for a decision, instead of sitting unfinished.',
+  'processFlows.purpose.t_requirementresponse_revise':
+    'The supplier answers a planner’s decision with a new number — after an objection, or when a commitment the planner already took can no longer be met — and the earlier answer stays on file, linked to this one, instead of being buried.',
+  'processFlows.purpose.t_requirementresponse_supersede':
+    'Records that a later answer replaced an earlier one, so the earlier one is kept as history rather than reading as still open.',
 
   // ── inventoryDeclaration ───────────────────────────────────────────────────
   'processFlows.purpose.entity.inventoryDeclaration':
@@ -625,6 +629,10 @@ export const processFlowPurposeId: Record<string, string> = {
     'Perencana tidak memakai jawaban itu — selisihnya terlalu besar, atau alasan yang diberikan tidak kuat — dan menyampaikannya kepada pemasok.',
   'processFlows.purpose.t_requirementresponse_resolve':
     'Perselisihannya sudah dibereskan dan jawabannya dikembalikan untuk diputuskan, alih-alih menggantung tanpa penyelesaian.',
+  'processFlows.purpose.t_requirementresponse_revise':
+    'Pemasok menjawab keputusan perencana dengan angka baru — setelah ada keberatan, atau ketika komitmen yang sudah diambil perencana tak lagi bisa dipenuhi — dan jawaban sebelumnya tetap tersimpan dan tertaut ke jawaban ini, bukan terkubur.',
+  'processFlows.purpose.t_requirementresponse_supersede':
+    'Mencatat bahwa jawaban yang lebih baru menggantikan yang lama, sehingga yang lama tetap tersimpan sebagai riwayat alih-alih terbaca masih terbuka.',
 
   // ── inventoryDeclaration ───────────────────────────────────────────────────
   'processFlows.purpose.entity.inventoryDeclaration':

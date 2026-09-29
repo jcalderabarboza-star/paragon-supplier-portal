@@ -36,6 +36,9 @@ export const sdcSupplierEn: Record<string, string> = {
   'sdcSup.line.visibilityHint': 'Forward visibility only — no commitment requested.',
   'sdcSup.line.lastResponse': 'Your latest response: {{qty}} {{uom}} · v{{version}} · {{status}}',
   'sdcSup.line.lastResponseAck': 'Your latest response: Acknowledged · v{{version}} · {{status}}',
+  // A3 — a second creation over an open answer is refused by the verb, so the
+  // card does not offer it; it says where the open answer is instead.
+  'sdcSup.line.openAnswer': 'An answer is already open for this line — continue it from the responses tab.',
   'sdcSup.lines.emptyTitle': 'No published lines',
   'sdcSup.lines.emptyBody': 'No forecast lines have been published to your account.',
 
@@ -50,6 +53,11 @@ export const sdcSupplierEn: Record<string, string> = {
   'sdcSup.responses.actor.buyer': 'Awaiting Paragon — nothing needed from you',
   'sdcSup.responses.actor.supplier': 'Your turn — this is waiting on you',
   'sdcSup.responses.actor.ended': 'Complete — no further action',
+  // A3 — the two readings a revise verb adds, both DERIVED (see `nextActorKey`).
+  'sdcSup.responses.actor.revisable': 'Nothing needed from you — revise it only if your commitment changes',
+  'sdcSup.responses.actor.buyerOrRevise': 'Awaiting Paragon — or revise your answer yourself',
+  'sdcSup.responses.revise': 'Revise',
+  'sdcSup.responses.revises': 'Revises {{id}}',
   'sdcSup.responses.submitDraft': 'Submit to buyer',
   'sdcSup.responses.submitting': 'Submitting…',
   'sdcSup.responses.col.material': 'Material',
@@ -62,6 +70,7 @@ export const sdcSupplierEn: Record<string, string> = {
   // did not write them (the mirror of `rootCause` directly above).
   'sdcSup.responses.dispute.raised': 'Paragon disputed this',
   'sdcSup.responses.dispute.resolved': 'Paragon resolved the dispute',
+  'sdcSup.responses.dispute.supersededByRevision': 'You answered it with a revision',
   'sdcSup.responses.rootCause': 'Root cause',
   // SDC-2b-EXT: how an acknowledgment renders — never a quantity, and the
   // label reads "Response" (the word "confirmed" never touches an ack).
@@ -71,6 +80,11 @@ export const sdcSupplierEn: Record<string, string> = {
 
   // — Confirm panel —
   'sdcSup.panel.title': 'Confirm {{material}}',
+  'sdcSup.panel.reviseTitle': 'Revise {{material}} — replaces {{id}}',
+  'sdcSup.panel.reviseAccepted':
+    'Paragon accepted {{qty}} {{uom}} and is planning on it. Revising below that needs a root cause.',
+  'sdcSup.panel.reviseDisputed':
+    'This revision is your answer to Paragon’s dispute. {{id}} is kept as history, not replaced in place.',
   'sdcSup.panel.requested': 'Requested',
   'sdcSup.panel.qty.eyebrow': 'Step 1',
   'sdcSup.panel.qty.title': 'Confirmed quantity',
@@ -131,6 +145,8 @@ export const sdcSupplierEn: Record<string, string> = {
   'sdcSup.toast.missingRootCause.title': 'Root cause required',
   'sdcSup.toast.missingRootCause.body': 'You are confirming below the requested quantity — select a root-cause category.',
   'sdcSup.toast.draftSaved.title': 'Draft saved — {{material}}',
+  'sdcSup.toast.revised.title': 'Revision saved as a draft — {{material}}',
+  'sdcSup.toast.revised.body': 'Submit it from the responses tab. {{id}} is kept as history.',
   'sdcSup.toast.draftSaved.body':
     'Not sent yet. Review it under My responses, then submit it to the buyer.',
   'sdcSup.toast.promoted.title': '{{responseId}} submitted',
@@ -395,6 +411,7 @@ export const sdcSupplierId: Record<string, string> = {
   'sdcSup.line.visibilityHint': 'Visibilitas ke depan saja — tidak ada komitmen yang diminta.',
   'sdcSup.line.lastResponse': 'Respons terakhir Anda: {{qty}} {{uom}} · v{{version}} · {{status}}',
   'sdcSup.line.lastResponseAck': 'Respons terakhir Anda: Ditanggapi · v{{version}} · {{status}}',
+  'sdcSup.line.openAnswer': 'Sudah ada jawaban terbuka untuk baris ini — lanjutkan dari tab respons.',
   'sdcSup.lines.emptyTitle': 'Tidak ada baris terbit',
   'sdcSup.lines.emptyBody': 'Belum ada baris prakiraan yang diterbitkan ke akun Anda.',
 
@@ -405,6 +422,10 @@ export const sdcSupplierId: Record<string, string> = {
   'sdcSup.responses.actor.buyer': 'Menunggu Paragon — tidak ada tindakan dari Anda',
   'sdcSup.responses.actor.supplier': 'Giliran Anda — menunggu tindakan Anda',
   'sdcSup.responses.actor.ended': 'Selesai — tidak ada tindakan lanjutan',
+  'sdcSup.responses.actor.revisable': 'Tidak ada yang perlu Anda lakukan — revisi hanya jika komitmen Anda berubah',
+  'sdcSup.responses.actor.buyerOrRevise': 'Menunggu Paragon — atau revisi jawaban Anda sendiri',
+  'sdcSup.responses.revise': 'Revisi',
+  'sdcSup.responses.revises': 'Merevisi {{id}}',
   'sdcSup.responses.submitDraft': 'Kirim ke pembeli',
   'sdcSup.responses.submitting': 'Mengirim…',
   'sdcSup.responses.col.material': 'Material',
@@ -415,6 +436,7 @@ export const sdcSupplierId: Record<string, string> = {
   'sdcSup.responses.col.submitted': 'Dikirim',
   'sdcSup.responses.dispute.raised': 'Paragon menyanggah tanggapan ini',
   'sdcSup.responses.dispute.resolved': 'Paragon menyelesaikan sanggahan',
+  'sdcSup.responses.dispute.supersededByRevision': 'Anda menjawabnya dengan revisi',
   'sdcSup.responses.rootCause': 'Akar masalah',
   'sdcSup.responses.col.response': 'Respons',
   'sdcSup.responses.ack': 'Ditanggapi',
@@ -422,6 +444,11 @@ export const sdcSupplierId: Record<string, string> = {
 
   // — Panel konfirmasi —
   'sdcSup.panel.title': 'Konfirmasi {{material}}',
+  'sdcSup.panel.reviseTitle': 'Revisi {{material}} — menggantikan {{id}}',
+  'sdcSup.panel.reviseAccepted':
+    'Paragon menyetujui {{qty}} {{uom}} dan merencanakan berdasarkan angka itu. Merevisi di bawahnya memerlukan akar masalah.',
+  'sdcSup.panel.reviseDisputed':
+    'Revisi ini adalah jawaban Anda atas sanggahan Paragon. {{id}} disimpan sebagai riwayat, bukan ditimpa.',
   'sdcSup.panel.requested': 'Diminta',
   'sdcSup.panel.qty.eyebrow': 'Langkah 1',
   'sdcSup.panel.qty.title': 'Kuantitas dikonfirmasi',
@@ -478,6 +505,8 @@ export const sdcSupplierId: Record<string, string> = {
   'sdcSup.toast.missingRootCause.title': 'Akar masalah wajib diisi',
   'sdcSup.toast.missingRootCause.body': 'Anda mengonfirmasi di bawah kuantitas yang diminta — pilih kategori akar masalah.',
   'sdcSup.toast.draftSaved.title': 'Draf disimpan — {{material}}',
+  'sdcSup.toast.revised.title': 'Revisi disimpan sebagai draf — {{material}}',
+  'sdcSup.toast.revised.body': 'Kirim dari tab respons. {{id}} disimpan sebagai riwayat.',
   'sdcSup.toast.draftSaved.body':
     'Belum dikirim. Tinjau di Respons Saya, lalu kirim ke pembeli.',
   'sdcSup.toast.promoted.title': '{{responseId}} terkirim',

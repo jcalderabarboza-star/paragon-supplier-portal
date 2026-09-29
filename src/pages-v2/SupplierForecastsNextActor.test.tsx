@@ -81,15 +81,18 @@ const actorOf = (list: HTMLElement, id: string) =>
   within(rowFor(list, id)).queryByTestId('sdcsup-response-actor')?.textContent ?? null;
 
 describe('R1a — every RR state the supplier can see names its actor', () => {
-  it('CONTROL: the five states this asserts over are the five the machine declares', () => {
-    // Not a count — membership. A sixth state would be silently untested by a
-    // spec that hardcoded five names, so the list under test is the flow's.
+  it('CONTROL: the six states this asserts over are the six the machine declares', () => {
+    // Not a count — membership. A seventh state would be silently untested by a
+    // spec that hardcoded six names, so the list under test is the flow's.
+    // A3 added `Superseded`; its row is asserted in `requirementResponseRevise`'s
+    // surface spec, where a revision is what puts a response there.
     expect(getFlow('requirementResponse')!.states).toEqual([
       'Draft',
       'Submitted',
       'UnderReview',
       'Accepted',
       'Disputed',
+      'Superseded',
     ]);
   });
 
@@ -109,19 +112,31 @@ describe('R1a — every RR state the supplier can see names its actor', () => {
     expect(actorOf(list, 'rr-0001')).toBe('Awaiting Paragon — nothing needed from you');
   });
 
-  it('⚠️ Disputed — awaiting Paragon. THE DEAD-END SHAPE, CLOSED.', async () => {
+  // ⚠️ A3 — THIS READ "Awaiting Paragon — nothing needed from you", AND IT WAS
+  // TRUE WHILE EVERY EXIT FROM `Disputed` WAS THE BUYER'S. The supplier now has
+  // one (`t_requirementresponse_revise`), so "nothing needed from you" became a
+  // claim the machine contradicts. The copy is still DERIVED: the buyer can act,
+  // and the supplier's only verb reopens the thread, so it names both.
+  it('⚠️ Disputed — awaiting Paragon, OR the supplier revises. THE DEAD-END SHAPE, CLOSED.', async () => {
     await drive([REVIEW, 't_requirementresponse_dispute']);
     const list = await openResponses();
-    // Before this batch the row read "Disputed" and stopped. A supplier could
+    // Before R1a the row read "Disputed" and stopped. A supplier could
     // not tell a stalled document from one sitting in someone else's queue.
     expect(within(rowFor(list, 'rr-0001')).getByText('Disputed')).toBeTruthy();
-    expect(actorOf(list, 'rr-0001')).toBe('Awaiting Paragon — nothing needed from you');
+    expect(actorOf(list, 'rr-0001')).toBe('Awaiting Paragon — or revise your answer yourself');
   });
 
-  it('Accepted — complete, and NOT "awaiting" anyone', async () => {
+  // ⚠️ A3 — INVERTED, NOT DELETED. This read "Complete — no further action",
+  // derived from `Accepted` being terminal. It is not terminal any more: a
+  // supplier may revise an accepted commitment. And it is NOT "your turn" either
+  // — nothing is waiting on the supplier. The derivation keeps the two apart: a
+  // supplier verb that only REOPENS the thread is an option, not a duty.
+  it('Accepted — nothing needed, and NOT "your turn": the only exit is an optional revision', async () => {
     await drive([REVIEW, 't_requirementresponse_accept']);
     const list = await openResponses();
-    expect(actorOf(list, 'rr-0001')).toBe('Complete — no further action');
+    const actor = actorOf(list, 'rr-0001');
+    expect(actor).toBe('Nothing needed from you — revise it only if your commitment changes');
+    expect(actor).not.toBe('Your turn — this is waiting on you');
   });
 });
 
@@ -130,7 +145,7 @@ describe('R1a — ID from birth (not an EN string with a key around it)', () => 
     await drive([REVIEW, 't_requirementresponse_dispute']);
     await i18n.changeLanguage('id');
     const list = await openResponses();
-    expect(actorOf(list, 'rr-0001')).toBe('Menunggu Paragon — tidak ada tindakan dari Anda');
+    expect(actorOf(list, 'rr-0001')).toBe('Menunggu Paragon — atau revisi jawaban Anda sendiri');
   });
 
   it('renders the Indonesian actor line for the supplier\'s own turn, and for done', async () => {
