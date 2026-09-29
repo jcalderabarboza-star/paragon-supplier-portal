@@ -40,12 +40,19 @@ import { buildRequirementResponsePayload, FORECAST_PUBLICATIONS } from '../../sd
 import type { QueryScope } from '../types';
 import { PERSONA_SYSTEM_ROLES } from '../../../services/transitions/businessRoles';
 
-const sup002: QueryScope = { personaType: 'supplier', supplierId: 'sup-002', businessRoles: PERSONA_SYSTEM_ROLES.supplier };
+// ⚠️ A3 — THIS FILE'S LINE MOVED FROM sup-002 · RM-EMUL-3310 TO sup-007 ·
+// PK-PETB-8810 (both 2026-08, both firm, both fanned by R2), AND NOTHING IT
+// ASSERTS MOVED WITH IT. sup-002's line carries the seed's open answer rr-0001,
+// and `rr_submit_no_open_sibling` now refuses a second creation over an open
+// answer — which is R2 Probe A/B's accidental path, closed by the verb. These
+// specs are about the quantity guards, not about siblings, so they are pointed
+// at a line with no answer on it rather than at the refusal.
+const sup007: QueryScope = { personaType: 'supplier', supplierId: 'sup-007', businessRoles: PERSONA_SYSTEM_ROLES.supplier };
 const svc = new MockCommandService();
 
 const pub = FORECAST_PUBLICATIONS.find((p) => p.publicationId === 'PUB-2026-08-RM-R2')!;
 const line = pub.lines.find(
-  (l) => l.supplierId === 'sup-002' && l.materialCode === 'RM-EMUL-3310',
+  (l) => l.supplierId === 'sup-007' && l.materialCode === 'PK-PETB-8810',
 )!;
 
 /**
@@ -58,7 +65,7 @@ const line = pub.lines.find(
 const submitAsSurfaceDoes = (typed: string) => {
   const parsed = normalizeQty(typed);
   if (!parsed.ok) return { refusedAtSurface: parsed.reason } as const;
-  const payload = buildRequirementResponsePayload(pub, line, 'sup-002', {
+  const payload = buildRequirementResponsePayload(pub, line, 'sup-007', {
     confirmedQty: parsed.value,
     confirmedQtyRaw: typed,
   });
@@ -67,15 +74,15 @@ const submitAsSurfaceDoes = (typed: string) => {
 
 /** A hand-crafted dispatch — the F1-author / channel shape the surface bypasses. */
 const handCrafted = (payload: Record<string, unknown>) =>
-  svc.dispatch(sup002, {
+  svc.dispatch(sup007, {
     transitionId: 't_requirementresponse_submit',
     entity: 'requirementResponse',
     payload: {
       publicationId: 'PUB-2026-08-RM-R2',
       planVersion: 'PV-2026-08.2',
-      materialCode: 'RM-EMUL-3310',
+      materialCode: 'PK-PETB-8810',
       periodBucket: '2026-08',
-      supplierId: 'sup-002',
+      supplierId: 'sup-007',
       ...payload,
     },
   });
@@ -113,7 +120,7 @@ describe('THE KNOWN-GOOD HALF — everything the surface accepts today still pas
   it.each(ACCEPTED)('the surface chain ships %s and the transition accepts it', async (typed, expected) => {
     const attempt = submitAsSurfaceDoes(typed);
     expect(attempt.refusedAtSurface).toBeNull();
-    const res = await svc.dispatch(sup002, {
+    const res = await svc.dispatch(sup007, {
       transitionId: 't_requirementresponse_submit',
       entity: 'requirementResponse',
       payload: attempt.payload!,
@@ -137,7 +144,7 @@ describe('THE KNOWN-GOOD HALF — everything the surface accepts today still pas
     // while carrying a token that reads as exactly that number. If the agreement
     // hook had been written to require integers, this is what would catch it.
     const attempt = submitAsSurfaceDoes('1500,5');
-    const res = await svc.dispatch(sup002, {
+    const res = await svc.dispatch(sup007, {
       transitionId: 't_requirementresponse_submit',
       entity: 'requirementResponse',
       payload: attempt.payload!,

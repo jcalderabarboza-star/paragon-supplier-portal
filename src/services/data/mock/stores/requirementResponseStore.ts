@@ -31,22 +31,26 @@ export const requirementResponseStore = {
     return rows.find((r) => r.id === id);
   },
   /**
-   * Every response answering the SAME published line by the SAME supplier —
-   * the response thread `submissionVersion` counts over (supplier × material ×
-   * period × publication).
+   * Every response by the SAME supplier for the SAME material × period — the
+   * response thread `submissionVersion` counts over.
+   *
+   * ⚠️ A3 · SDC-R6 — THE KEY NO LONGER INCLUDES THE PUBLICATION. It did, so the
+   * first answer to a RE-PUBLISHED plan minted `v1` again beside the `v1` it
+   * followed, and "which is latest" fell to insertion order (`add` prepends).
+   * A re-publication is a new question about the same line, not a new line: the
+   * thread spans publications, and each answer's own `publicationId` still says
+   * which snapshot it bound.
    */
   forResponseKey(
     supplierId: string,
     materialCode: string,
     periodBucket: string,
-    publicationId: string,
   ): readonly RequirementResponse[] {
     return rows.filter(
       (r) =>
         r.supplierId === supplierId &&
         r.materialCode === materialCode &&
-        r.periodBucket === periodBucket &&
-        r.publicationId === publicationId,
+        r.periodBucket === periodBucket,
     );
   },
   /** IMMUTABLE update — swap in a new response + new array. */

@@ -231,6 +231,47 @@ export function useRequirementResponsePromote() {
   });
 }
 
+/**
+ * A3 — REVISE A DISPUTED OR ACCEPTED ANSWER (`t_requirementresponse_revise`).
+ *
+ * Dispatched against the PRIOR response: the target mints the next version of
+ * the same response key as a `Draft` with `supersedes: <priorId>`, and the
+ * cascade retires the prior to `Superseded`. The payload carries only what the
+ * supplier is saying NOW — the line binding is the prior's, never the form's.
+ */
+export function useRequirementResponseRevise() {
+  const svc = useDataService();
+  const { identity } = useCurrentIdentity();
+  const scope: QueryScope = {
+    personaType: identity.personaType,
+    supplierId: identity.supplierId,
+    businessRoles: identity.businessRoles,
+    actor: identity.actor,
+  };
+  const invalidate = useInvalidateSdc();
+
+  return useMutation<
+    CommandResult,
+    Error,
+    { responseId: string; payload: Record<string, unknown>; causationId?: string }
+  >({
+    mutationFn: ({ responseId, payload, causationId }) =>
+      svc.commands.dispatch(
+        scope,
+        {
+          transitionId: 't_requirementresponse_revise',
+          entity: 'requirementResponse',
+          entityId: responseId,
+          payload,
+        },
+        causationId,
+      ),
+    onSuccess: (result) => {
+      if (result.status !== 'failed') invalidate(scope);
+    },
+  });
+}
+
 // ─── SDC-3b — the two additional supplier objects (reads + governed writes) ───
 
 /** One collaborated material, joined with the master for display + the uom the

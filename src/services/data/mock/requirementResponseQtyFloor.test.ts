@@ -56,11 +56,18 @@ import { getTransition } from '../../transitions';
 import type { QueryScope } from '../types';
 import { PERSONA_SYSTEM_ROLES } from '../../../services/transitions/businessRoles';
 
-const sup002: QueryScope = { personaType: 'supplier', supplierId: 'sup-002', businessRoles: PERSONA_SYSTEM_ROLES.supplier };
+// ⚠️ A3 — THIS FILE'S LINE MOVED FROM sup-002 · RM-EMUL-3310 TO sup-007 ·
+// PK-PETB-8810 (both 2026-08, both firm, both fanned by R2), AND NOTHING IT
+// ASSERTS MOVED WITH IT. sup-002's line carries the seed's open answer rr-0001,
+// and `rr_submit_no_open_sibling` now refuses a second creation over an open
+// answer — which is R2 Probe A/B's accidental path, closed by the verb. These
+// specs are about the quantity guards, not about siblings, so they are pointed
+// at a line with no answer on it rather than at the refusal.
+const sup007: QueryScope = { personaType: 'supplier', supplierId: 'sup-007', businessRoles: PERSONA_SYSTEM_ROLES.supplier };
 
 const svc = new MockCommandService();
 
-/** The R2 fanned line for sup-002 (RM-EMUL-3310 / 2026-08), payload-complete.
+/** The R2 fanned line for sup-007 (PK-PETB-8810 / 2026-08), payload-complete.
  *
  *  `raw` defaults to `String(confirmedQty)` so the FLOOR cases below read exactly
  *  as they did before the hoist — a caller that states one number states it once.
@@ -71,9 +78,9 @@ const submit = (confirmedQty: unknown, raw?: string, numberConvention?: 'id' | '
   payload: {
     publicationId: 'PUB-2026-08-RM-R2',
     planVersion: 'PV-2026-08.2',
-    materialCode: 'RM-EMUL-3310',
+    materialCode: 'PK-PETB-8810',
     periodBucket: '2026-08',
-    supplierId: 'sup-002',
+    supplierId: 'sup-007',
     confirmedQty,
     confirmedQtyRaw: raw ?? String(confirmedQty),
     ...(numberConvention ? { numberConvention } : {}),
@@ -82,7 +89,7 @@ const submit = (confirmedQty: unknown, raw?: string, numberConvention?: 'id' | '
 });
 
 const fire = (confirmedQty: unknown, raw?: string, numberConvention?: 'id' | 'en') =>
-  svc.dispatch(sup002, submit(confirmedQty, raw, numberConvention));
+  svc.dispatch(sup007, submit(confirmedQty, raw, numberConvention));
 
 beforeEach(() => {
   requirementResponseStore.reset();
@@ -115,7 +122,7 @@ describe('RR submit qty floor — WHAT MUST STILL PASS (the known-good half)', (
   it('⚠️ A TYPED 0 IS A LEGAL SHORT CONFIRMATION (F-2) AND THE FLOOR MUST NOT REFUSE IT', async () => {
     const res = await fire(0);
     expect(res.status).not.toBe('failed');
-    const stored = requirementResponseStore.all().find((r) => r.supplierId === 'sup-002');
+    const stored = requirementResponseStore.all().find((r) => r.supplierId === 'sup-007');
     expect(stored?.forecastConfirmation?.confirmedQty).toBe(0);
   });
 
@@ -194,7 +201,7 @@ describe('SUB-01 — INVERTED. The witness kept its case and flipped its expecta
   it('⚠️ THE SAME TOKEN UNDER "en" AGREES WITH 2.4 — a stated convention resolves what silence refuses', async () => {
     const res = await fire(2.4, '2.400', 'en');
     expect(res.status).not.toBe('failed');
-    const stored = requirementResponseStore.all().find((r) => r.supplierId === 'sup-002');
+    const stored = requirementResponseStore.all().find((r) => r.supplierId === 'sup-007');
     expect(stored?.forecastConfirmation?.confirmedQty).toBe(2.4);
   });
 

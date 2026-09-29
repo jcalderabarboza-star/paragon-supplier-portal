@@ -169,6 +169,37 @@ export const POLICY_HOOKS = {
   /** RR acknowledge: the fanned line MUST be visibility-only (an acknowledge
    *  can never dodge the commitment floor on a firm/semi-firm line). */
   RR_ACKNOWLEDGE_VISIBILITY_CLASS: 'rr_acknowledge_visibility_class',
+  /**
+   * A3 · RR submit — NO SECOND ANSWER WHILE ONE IS OPEN (SDC-R4/R5).
+   *
+   * A plain creation is refused while any non-`Superseded` response exists for
+   * the response key (supplier × material × period, ACROSS publications). The
+   * re-submission was the accidental path behind both measured holes: over a
+   * Disputed answer it orphaned the dispute (Probe A), over an Accepted one it
+   * cut a commitment with no trace (Probe B). The supplier's move after a
+   * buyer's decision is `t_requirementresponse_revise`, which links the
+   * versions; over a Draft it is the promote. Closed by the VERB, so no surface
+   * has to remember it.
+   */
+  RR_SUBMIT_NO_OPEN_SIBLING: 'rr_submit_no_open_sibling',
+  /**
+   * A3 · RR revise — ONLY A COMMITMENT IS REVISED. An acknowledgment carries no
+   * quantity; revising one with `confirmedQty` would turn a visibility response
+   * into a commitment the line never asked for (invariant #11's XOR, from the
+   * other side). Refused by name rather than branched in the target.
+   */
+  RR_REVISE_COMMITMENT_ONLY: 'rr_revise_commitment_only',
+  /**
+   * A3 · RR revise — CUTTING AN ACCEPTED QUANTITY REQUIRES A ROOT CAUSE (SDC-R5).
+   *
+   * An accepted figure is a commitment the buyer has planned against. Revising it
+   * DOWNWARD without saying why is the silent cut Probe B measured, moved one
+   * verb over. The bound is `rootCause.level1` as a non-blank string —
+   * `requiredFields` cannot express "required only when smaller", and a blank
+   * level1 is the space-bar lesson again (`RR_DISPUTE_TEXT_AUTHORED`). Revising
+   * UP, or revising a Disputed answer, owes nothing here.
+   */
+  RR_REVISE_ROOT_CAUSE_WHEN_CUT: 'rr_revise_root_cause_when_cut',
   /** Inventory declare (SDC-3a, total-first): when batch detail is present,
    *  Σ batch qty must equal totalQty — a total that disagrees with its own
    *  detail is a fabricated number. */

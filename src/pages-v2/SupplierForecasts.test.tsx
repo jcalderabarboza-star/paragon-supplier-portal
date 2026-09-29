@@ -258,28 +258,31 @@ describe('SupplierForecasts — the governed submit (t_requirementresponse_submi
     expect(screen.getByRole('button', { name: /Save draft/ })).toBeInTheDocument();
   });
 
-  it('re-confirming the same line VERSIONS UP — the prior response is not overwritten', async () => {
+  // ⚠️ A3 — INVERTED, NOT DELETED. This read "re-confirming the same line
+  // VERSIONS UP", and a second creation over an open answer is precisely the
+  // accidental path R2 Probe A/B measured (a dispute orphaned, an accepted
+  // commitment cut with no trace). The verb now refuses it
+  // (`rr_submit_no_open_sibling`), so the card must not OFFER it: with a draft
+  // open, "Confirm" is gone and the card says where the open answer is. The
+  // prior is still not overwritten — there is simply no second creation to
+  // overwrite it. Versioning up is asserted through the revise
+  // (`requirementResponseRevise.test.ts`).
+  it('with an answer OPEN on the line, the card offers no second Confirm — and nothing is minted', async () => {
     renderPage();
     await openConfirmFor('PK-PETB-8810');
     setQty('40000');
     submitPanel();
     await screen.findByTestId('sdcsup-responses');
-    // Back to the lines tab; confirm again with a revised (short) quantity.
     fireEvent.click(screen.getByRole('tab', { name: /Published lines/ }));
-    await openConfirmFor('PK-PETB-8810');
-    setQty('38000');
-    fireEvent.change(screen.getByLabelText(/Category/), { target: { value: 'capacity' } });
-    submitPanel();
-    await waitFor(() => {
-      const thread = requirementResponseStore.forResponseKey(
-        'sup-007',
-        'PK-PETB-8810',
-        '2026-08',
-        'PUB-2026-08-RM-R2',
-      );
-      expect(thread).toHaveLength(2);
-      expect(thread.map((r) => r.submissionVersion).sort()).toEqual([1, 2]);
-    });
+    const lines = await screen.findByTestId('sdcsup-lines');
+    const card = within(lines).getByText('PK-PETB-8810').closest('div.bg-bg-surface') as HTMLElement;
+    expect(within(card).queryByRole('button', { name: /^Confirm$/ })).toBeNull();
+    expect(within(card).getByTestId('sdcsup-line-open-answer')).toBeInTheDocument();
+    // CONTROL: a line with no answer still offers Confirm — the rule is per line.
+    const other = within(lines).getByText('PK-CAPF-8820').closest('div.bg-bg-surface') as HTMLElement;
+    expect(within(other).getByRole('button', { name: /^Confirm$/ })).toBeInTheDocument();
+    const thread = requirementResponseStore.forResponseKey('sup-007', 'PK-PETB-8810', '2026-08');
+    expect(thread.map((r) => [r.submissionVersion, r.status])).toEqual([[1, 'Draft']]);
   });
 });
 

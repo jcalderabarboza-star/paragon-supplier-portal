@@ -320,7 +320,11 @@ export type RequirementResponseStatus =
   | 'Submitted'
   | 'UnderReview'
   | 'Accepted'
-  | 'Disputed';
+  | 'Disputed'
+  // A3 · the terminal a revision retires its predecessor to. Reached ONLY by
+  // the automation cascade `t_requirementresponse_supersede`, never by a person:
+  // a supplier revises, and the prior version moving here is the consequence.
+  | 'Superseded';
 
 /** The confirmation against a published forecast line. */
 export interface ForecastConfirmation {
@@ -389,8 +393,17 @@ export interface RootCause {
  * back. Booked: `RR-DISPUTE-HAS-NO-HUMAN-01`, closes with F1 OIDC.
  */
 export interface DisputeEntry {
-  /** `raised` opens the dispute; `resolved` closes it. Both are buyer acts. */
-  readonly kind: 'raised' | 'resolved';
+  /** `raised` opens the dispute; `resolved` closes it. Both are buyer acts.
+   *
+   *  ⚠️ A3 · `superseded-by-revision` IS THE THIRD ANSWER, AND IT IS THE
+   *  SUPPLIER'S. It is store-minted when a Disputed response is retired by a
+   *  revision, carries no text (the answer IS the next version, which the ledger
+   *  entry points the reader at through `supersedes` on that version), and exists
+   *  so "answered by revising" stays distinguishable from "resolved by the buyer"
+   *  and from "never answered" — the three states the ledger was built to keep
+   *  apart. Before it, a re-submission left the dispute open and unreachable
+   *  (R2 Probe A). */
+  readonly kind: 'raised' | 'resolved' | 'superseded-by-revision';
   /** The authored text. Required by the transition and proven non-blank by
    *  `rr_dispute_text_authored` — `requiredFields` proves PRESENCE only. */
   readonly text: string;
@@ -448,6 +461,22 @@ export interface RequirementResponse {
    * field. Read it, never rewrite it.
    */
   readonly disputeResponse?: readonly DisputeEntry[];
+  /**
+   * A3 · the version this one REVISES — the id of the Disputed or Accepted
+   * response it answers. Store-minted by `t_requirementresponse_revise`, never
+   * payload-supplied: the dispatched entity IS the prior, so a caller cannot
+   * point a revision at a response it did not revise. Absent on a first answer.
+   */
+  readonly supersedes?: string;
+  /**
+   * A3 · the state this response was in when a revision retired it — stamped by
+   * the `t_requirementresponse_supersede` cascade from the PRE-transition status,
+   * and present only on a `Superseded` row. It is what lets the consolidation
+   * say "an ACCEPTED commitment was cut" (`revised-after-accept`) and the buyer's
+   * queue say "revised in answer to your dispute": `Superseded` alone forgets
+   * which of the two it came from, and the two are different facts.
+   */
+  readonly supersededFrom?: 'Disputed' | 'Accepted';
   /** source = SUPPLIER; LIVE × committed once submitted (SIMULATED in seed). */
   readonly provenance: Provenance;
 }

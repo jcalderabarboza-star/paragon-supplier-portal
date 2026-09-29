@@ -96,6 +96,7 @@ const STATUS_ID: Record<string, string> = {
   Terminated: 'Dihentikan',
   'Under Review': 'Sedang Ditinjau',
   Accepted: 'Diterima',
+  Superseded: 'Digantikan',
   Manual: 'Manual',
   Outbound: 'Keluar',
   // ── PSL (P1). Terms from the Odyssey procurement term-base; `Sumber Tunggal`

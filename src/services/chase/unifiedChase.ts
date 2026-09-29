@@ -59,6 +59,17 @@ export function worstSeverity(a: ChaseSeverityLevel, b: ChaseSeverityLevel): Cha
  */
 export const DATA_CHASE_SEVERITY: ChaseSeverityLevel = 'soft';
 
+/**
+ * ⚠️ A3 · SDC-R5 — ONE DATA REASON IS NOT ADVISORY. `revised-after-accept` is a
+ * commitment the buyer ACCEPTED, withdrawn by the supplier's own revision: the
+ * "failed signed commitment" the paragraph above reserves `hard` for, arriving
+ * through the data family instead of the delivery one. Every other data reason
+ * keeps `DATA_CHASE_SEVERITY`.
+ */
+export function dataReasonSeverity(reason: ChaseReason): ChaseSeverityLevel {
+  return reason === 'revised-after-accept' ? 'hard' : DATA_CHASE_SEVERITY;
+}
+
 // ─── The unified per-supplier view ────────────────────────────────────────────
 
 /**
@@ -83,7 +94,9 @@ export interface SupplierChaseView {
 /**
  * The severity roll-up RULE (pure; the 5c reducer reduces INTO it):
  *   hard   — ANY commitment entry is hard (a firm miss dominates everything);
- *   soft   — else any soft commitment entry OR any data reason;
+ *          — or a `revised-after-accept` data reason (A3: a withdrawn
+ *            accepted commitment is a commitment miss, not an advisory);
+ *   soft   — else any soft commitment entry OR any other data reason;
  *   none   — else (no live reason in either family).
  * Takes the structural parts, so it works on a full view or a partial during
  * construction (no chicken-and-egg with `overallSeverity`).
@@ -93,7 +106,7 @@ export function severityOf(
 ): ChaseSeverityLevel {
   let acc: ChaseSeverityLevel = 'none';
   for (const entry of view.commitmentEntries) acc = worstSeverity(acc, entry.severity);
-  if (view.dataReasons.length > 0) acc = worstSeverity(acc, DATA_CHASE_SEVERITY);
+  for (const reason of view.dataReasons) acc = worstSeverity(acc, dataReasonSeverity(reason));
   return acc;
 }
 

@@ -625,6 +625,10 @@ export const AUTOMATION_ATOMS: readonly TransitionRole[] = Object.freeze([
   // from describing a machine that no longer exists. Their `compliance:*` twins
   // STAY — that flow is untouched and its verbs are still `system`.
   'compliance:verify', 'compliance:reject',
+  // A3 — the revise cascade retires the prior version. The source verb is the
+  // supplier's `requirementresponse:submit`; this atom moves no quantity and
+  // decides nothing — it records that a later version replaced an earlier one.
+  'requirementresponse:supersede',
 ]);
 
 /** Is this id one of the seeded system roles, or something someone invented? */

@@ -37,7 +37,6 @@ const buyer: QueryScope = { personaType: 'buyer', supplierId: null, businessRole
 // R2 (PUB-2026-08-RM-R2 / PV-2026-08.2) fans RM-EMUL-3310 2026-08 to sup-002 +
 // sup-005; AI-NIAC-6601 2026-10 to sup-007 ONLY.
 const sup002: QueryScope = { personaType: 'supplier', supplierId: 'sup-002', businessRoles: PERSONA_SYSTEM_ROLES.supplier };
-const sup005: QueryScope = { personaType: 'supplier', supplierId: 'sup-005', businessRoles: PERSONA_SYSTEM_ROLES.supplier };
 const sup007: QueryScope = { personaType: 'supplier', supplierId: 'sup-007', businessRoles: PERSONA_SYSTEM_ROLES.supplier };
 
 const svc = new MockCommandService();
@@ -60,6 +59,17 @@ const submit = (overrides: Record<string, unknown> = {}) => ({
     ...overrides,
   },
 });
+
+/**
+ * ⚠️ A3 — THE LINE THE SUCCESS PATHS ANSWER. sup-002's and sup-005's R2 lines
+ * all carry an OPEN seed answer (rr-0001 … rr-0004), and `rr_submit_no_open_sibling`
+ * now refuses a second creation over an open answer — R2 Probe A/B's accidental
+ * path, closed by the verb. The refusals below (scope, role, fields, binding) all
+ * fire BEFORE that hook and keep the sup-002 base; the specs that expect a
+ * creation to LAND are pointed at sup-007's firm line, which has no answer on it.
+ * What they assert did not move.
+ */
+const FREE_LINE = { supplierId: 'sup-007', materialCode: 'PK-PETB-8810', periodBucket: '2026-08' } as const;
 
 beforeEach(() => {
   requirementResponseStore.reset();
@@ -103,7 +113,7 @@ describe('requirementResponse flow — authored machine (SDC-2a)', () => {
 
 describe('t_requirementresponse_submit — supplier-owned creation (line-grain scope)', () => {
   it('a fanned supplier drafts its line → Draft, store-assigned id, raw facts persisted', async () => {
-    const res = await svc.dispatch(sup002, submit());
+    const res = await svc.dispatch(sup007, submit(FREE_LINE));
     expect(res.status).toBe('done');
     expect(res.entityId).toMatch(/^rr-9\d+$/); // 9xxx range (fixtures are 0xxx)
     const r = requirementResponseStore.get(res.entityId!)!;
@@ -112,8 +122,8 @@ describe('t_requirementresponse_submit — supplier-owned creation (line-grain s
     // it. Every raw fact below is persisted at creation exactly as before — the
     // draft is a complete response that has not been sent, not a partial one.
     expect(r.status).toBe('Draft');
-    expect(r.supplierId).toBe('sup-002');
-    expect(r.materialCode).toBe('RM-EMUL-3310');
+    expect(r.supplierId).toBe('sup-007');
+    expect(r.materialCode).toBe('PK-PETB-8810');
     expect(r.periodBucket).toBe('2026-08');
     expect(r.publicationId).toBe('PUB-2026-08-RM-R2');
     expect(r.planVersion).toBe('PV-2026-08.2'); // the snapshot answered, bound
@@ -127,9 +137,9 @@ describe('t_requirementresponse_submit — supplier-owned creation (line-grain s
   });
 
   it('⚠️ PF-1b — promote SUBMITS it, and THAT is when the instant is stamped', async () => {
-    const created = await svc.dispatch(sup002, submit());
+    const created = await svc.dispatch(sup007, submit(FREE_LINE));
     const id = created.entityId!;
-    const promoted = await svc.dispatch(sup002, {
+    const promoted = await svc.dispatch(sup007, {
       transitionId: 't_requirementresponse_promote',
       entity: 'requirementResponse',
       entityId: id,
@@ -214,19 +224,21 @@ describe('t_requirementresponse_submit — the snapshot binding is un-falsifiabl
     expect(requirementResponseStore.all().length).toBe(before);
   });
 
-  it('the response thread versions up — prior max + 1, per publication (never overwrites)', async () => {
-    // The R1 thread already holds rr-0001 (same supplier × material × period,
-    // DIFFERENT publication) — it must NOT leak into R2's version count.
-    const first = await svc.dispatch(sup002, submit());
-    expect(requirementResponseStore.get(first.entityId!)!.submissionVersion).toBe(1);
-    const second = await svc.dispatch(
-      sup002,
-      submit({ confirmedQty: 5500, confirmedQtyRaw: '5500' }),
-    );
-    const r2 = requirementResponseStore.get(second.entityId!)!;
-    expect(r2.submissionVersion).toBe(2);
-    // Versioned, not overwritten — the first submission is still there.
-    expect(requirementResponseStore.get(first.entityId!)).toBeDefined();
+  // ⚠️ A3 · SDC-R6 — INVERTED, NOT DELETED. This read "per publication … the R1
+  // thread's rr-0001 must NOT leak into R2's version count", and that numbering is
+  // exactly the defect R2 measured: the first answer to a re-published plan minted
+  // `v1` beside the `v1` it followed, and "latest" fell to insertion order. The
+  // case is kept; its expectation flipped twice over — the thread spans
+  // publications, and a second creation over the open rr-0001 is refused, by name,
+  // before any version is minted. The versioning itself (v2 over v1 across
+  // publications) is asserted through the revise in `requirementResponseRevise.test.ts`.
+  it('the response thread spans publications — a second creation over the open rr-0001 is refused, nothing minted', async () => {
+    const before = requirementResponseStore.all().length;
+    const res = await svc.dispatch(sup002, submit());
+    expect(res.status).toBe('failed');
+    expect(res.reason).toMatch(/^POLICY_REJECTED:rr_submit_no_open_sibling:/);
+    expect(res.reason).toMatch(/rr-0001 v1 Submitted/);
+    expect(requirementResponseStore.all().length).toBe(before);
   });
 });
 
@@ -340,13 +352,11 @@ describe('t_requirementresponse_submit — honest-by-construction facts', () => 
   it('uom comes from the MATERIAL MASTER, never the caller (invariant #2)', async () => {
     // PK-PETB-8810 is PCS in the master; a caller-supplied uom is IGNORED.
     const res = await svc.dispatch(
-      sup005,
+      sup007,
       submit({
-        supplierId: 'sup-005',
-        materialCode: 'PK-PETB-8810',
-        periodBucket: '2026-09',
-        confirmedQty: 150000,
-        confirmedQtyRaw: '150000',
+        ...FREE_LINE,
+        confirmedQty: 40000,
+        confirmedQtyRaw: '40000',
         uom: 'KG', // spoofed unit — must not persist
       }),
     );
@@ -357,8 +367,9 @@ describe('t_requirementresponse_submit — honest-by-construction facts', () => 
 
   it('confirmedQty 0 + root cause is a LEGAL short confirmation (ruling F-2)', async () => {
     const res = await svc.dispatch(
-      sup002,
+      sup007,
       submit({
+        ...FREE_LINE,
         confirmedQty: 0,
         confirmedQtyRaw: '0',
         rootCause: {
@@ -379,12 +390,12 @@ describe('t_requirementresponse_submit — honest-by-construction facts', () => 
   });
 
   it('a shapeless root cause (no level1) is dropped, not guessed', async () => {
-    const res = await svc.dispatch(sup002, submit({ rootCause: { note: 'x' } }));
+    const res = await svc.dispatch(sup007, submit({ ...FREE_LINE, rootCause: { note: 'x' } }));
     expect(requirementResponseStore.get(res.entityId!)!.rootCause).toBeUndefined();
   });
 
   it('provenance = SUPPLIER × SIMULATED × committed (ruling F-4 — mock store, honest tier)', async () => {
-    const res = await svc.dispatch(sup002, submit());
+    const res = await svc.dispatch(sup007, submit(FREE_LINE));
     expect(requirementResponseStore.get(res.entityId!)!.provenance).toEqual({
       source: 'SUPPLIER',
       liveness: 'SIMULATED',

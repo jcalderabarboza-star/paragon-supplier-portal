@@ -75,6 +75,10 @@ export const CASCADES: Record<string, readonly CascadeLink[]> = {
   t_intake_commit: [
     { targetEntity: 'purchaseRequisition', targetTransitionId: 't_pr_create' },
   ],
+  // A3 — a supplier's revision retires the version it revises.
+  t_requirementresponse_revise: [
+    { targetEntity: 'requirementResponse', targetTransitionId: 't_requirementresponse_supersede' },
+  ],
 };
 
 /** The cascade links declared for a source transition (empty if none). */

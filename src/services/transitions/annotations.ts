@@ -236,6 +236,12 @@ export const TRANSITION_PURPOSE: FlowAnnotations = Object.freeze({
   t_requirementresponse_resolve: {
     purposeKey: 'processFlows.purpose.t_requirementresponse_resolve',
   },
+  t_requirementresponse_revise: {
+    purposeKey: 'processFlows.purpose.t_requirementresponse_revise',
+  },
+  t_requirementresponse_supersede: {
+    purposeKey: 'processFlows.purpose.t_requirementresponse_supersede',
+  },
 
   // ── inventoryDeclaration ───────────────────────────────────────────────────
   t_inventorydeclaration_declare: {

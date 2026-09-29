@@ -59,6 +59,8 @@ export const sdcConsolidationEn: Record<string, string> = {
   'sdc.state.stale': 'Stale — answered {{answered}}, now {{current}}',
   'sdc.state.staleUnverified': 'Stale — answered snapshot unavailable, now {{current}}',
   'sdc.state.carried': 'carried forward',
+  // A3 · SDC-R5 — an accepted figure cut by the supplier's revision.
+  'sdc.state.revisedAfterAccept': 'Accepted {{accepted}}, revised to {{now}}',
   'sdc.state.carriedTitle':
     'Confirmed against the previous version; the line did not move — presumed valid.',
 
@@ -86,6 +88,7 @@ export const sdcConsolidationEn: Record<string, string> = {
   'sdc.chase.empty': 'No one to chase — every supplier has responded in full.',
   'sdc.chase.reason.overdue': 'Overdue',
   'sdc.chase.reason.partial': 'Partial response',
+  'sdc.chase.reason.revisedAfterAccept': 'Accepted commitment cut',
   // `n`, not `count` — i18next reserves `count` for plural-suffix lookup.
   'sdc.chase.awaitingLines': '{{n}} awaiting line(s)',
   'sdc.chase.due': 'Due {{date}}',
@@ -114,6 +117,7 @@ export const sdcConsolidationEn: Record<string, string> = {
   'sdc.resolve.section.answer': 'Your answer',
   'sdc.resolve.raised': 'Paragon disputed this',
   'sdc.resolve.resolved': 'Paragon resolved the dispute',
+  'sdc.resolve.supersededByRevision': 'The supplier answered with a revision',
   'sdc.resolve.noRootCause': 'The supplier stated no cause.',
   'sdc.resolve.srLabel': 'Your answer to {{supplier}} on {{material}}',
   'sdc.resolve.placeholder': 'Explain what you are accepting, changing, or asking for.',
@@ -132,6 +136,9 @@ export const sdcConsolidationEn: Record<string, string> = {
     'Every response the machine says you can take under review. Reviewing does not decide it — it moves the line onto your desk and tells the supplier you have it.',
   'sdc.review.none': 'No response is waiting for review.',
   'sdc.review.submitted': 'Submitted',
+  // A3 — what the queued answer revises, so it is never read as a first answer.
+  'sdc.review.revisedAfterDispute': 'Revised in answer to your dispute — review v{{version}}',
+  'sdc.review.revisedAfterAccept': 'Revised after you accepted — review v{{version}}',
   'sdc.review.cta': 'Start review',
   'sdc.review.ctaTitle': 'Take this response under review — {{material}} · {{period}}',
   'sdc.review.done.title': 'Under review — {{material}}',
@@ -217,6 +224,7 @@ export const sdcConsolidationId: Record<string, string> = {
   'sdc.state.stale': 'Kedaluwarsa — dijawab {{answered}}, kini {{current}}',
   'sdc.state.staleUnverified': 'Kedaluwarsa — snapshot jawaban tak tersedia, kini {{current}}',
   'sdc.state.carried': 'dibawa maju',
+  'sdc.state.revisedAfterAccept': 'Disetujui {{accepted}}, direvisi menjadi {{now}}',
   'sdc.state.carriedTitle':
     'Dikonfirmasi terhadap versi sebelumnya; baris tidak berubah — dianggap tetap berlaku.',
 
@@ -242,6 +250,7 @@ export const sdcConsolidationId: Record<string, string> = {
   'sdc.chase.empty': 'Tidak ada yang perlu dikejar — semua pemasok telah merespons penuh.',
   'sdc.chase.reason.overdue': 'Terlambat',
   'sdc.chase.reason.partial': 'Respons parsial',
+  'sdc.chase.reason.revisedAfterAccept': 'Komitmen yang disetujui dipangkas',
   'sdc.chase.awaitingLines': '{{n}} baris menunggu',
   'sdc.chase.due': 'Jatuh tempo {{date}}',
 
@@ -266,6 +275,7 @@ export const sdcConsolidationId: Record<string, string> = {
   'sdc.resolve.section.answer': 'Jawaban Anda',
   'sdc.resolve.raised': 'Paragon menyanggah tanggapan ini',
   'sdc.resolve.resolved': 'Paragon menyelesaikan sanggahan',
+  'sdc.resolve.supersededByRevision': 'Pemasok menjawab dengan revisi',
   'sdc.resolve.noRootCause': 'Pemasok tidak menyatakan penyebab.',
   'sdc.resolve.srLabel': 'Jawaban Anda kepada {{supplier}} atas {{material}}',
   'sdc.resolve.placeholder': 'Jelaskan apa yang Anda terima, ubah, atau minta.',
@@ -284,6 +294,8 @@ export const sdcConsolidationId: Record<string, string> = {
     'Setiap tanggapan yang menurut mesin dapat Anda telaah. Menelaah belum memutuskan apa pun — ia memindahkan baris ini ke meja Anda dan memberi tahu pemasok bahwa Anda sudah menerimanya.',
   'sdc.review.none': 'Tidak ada tanggapan yang menunggu telaah.',
   'sdc.review.submitted': 'Terkirim',
+  'sdc.review.revisedAfterDispute': 'Direvisi untuk menjawab sanggahan Anda — telaah v{{version}}',
+  'sdc.review.revisedAfterAccept': 'Direvisi setelah Anda setujui — telaah v{{version}}',
   'sdc.review.cta': 'Mulai telaah',
   'sdc.review.ctaTitle': 'Ambil tanggapan ini untuk ditelaah — {{material}} · {{period}}',
   'sdc.review.done.title': 'Sedang ditelaah — {{material}}',

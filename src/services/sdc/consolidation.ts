@@ -157,6 +157,24 @@ export type LineResponseState =
       /** The demand qty in the version the supplier answered (null: not found). */
       readonly answeredQty: number | null;
       readonly currentQty: number;
+    }
+  /**
+   * ⚠️ A3 · SDC-R5 — AN ACCEPTED COMMITMENT WAS CUT BY A REVISION, AND THE
+   * BUYER HAS NOT TAKEN THE NEW NUMBER YET. Derived, never stored: the latest
+   * answer is still with the buyer (`Submitted` / `UnderReview`) and an earlier
+   * version on its `supersedes` chain was retired FROM `Accepted` with a higher
+   * quantity. Before A3 the same cut read as plain `short` — "short by N" with
+   * no mark that the planner had already planned on the larger figure (Probe B).
+   * Chased HARD: it outranks overdue on the chase list, because a plan is
+   * already standing on a number that has gone away.
+   */
+  | {
+      readonly kind: 'revised-after-accept';
+      readonly response: RequirementResponse;
+      /** The quantity the buyer accepted before the revision cut it. */
+      readonly acceptedQty: number;
+      /** acceptedQty − the revised confirmedQty (always > 0 by derivation). */
+      readonly cutQty: number;
     };
 
 /** One consolidation row: a current published line + its collaboration state. */
@@ -165,23 +183,104 @@ export interface ConsolidationRow {
   readonly id: string;
   readonly line: ForecastLine;
   readonly state: LineResponseState;
+  /**
+   * A3 · WHAT THE ROW'S ANSWER REVISES, when it revises anything: the state the
+   * version it `supersedes` was retired from. `'Disputed'` is what lets the
+   * buyer's queue say "revised in answer to your dispute" instead of presenting
+   * the answer as if nobody had objected to its predecessor (Probe A). Absent on
+   * a first answer, and on a row with no answer at all.
+   */
+  readonly revisionOf?: 'Disputed' | 'Accepted';
 }
 
 const lineKey = (supplierId: string, materialCode: string, periodBucket: string): string =>
   `${supplierId}|${materialCode}|${periodBucket}`;
 
-/** The submitted (non-Draft) responses keyed by line, latest submission first. */
+/**
+ * A3 · SDC-R6 — WHICH ANSWER IS LATEST, ORDERED, NEVER BY INSERTION.
+ *
+ * `(publishedAt of the answered publication, submissionVersion, submittedAt)`,
+ * compared in that order. Before A3 this compared `submissionVersion` alone and
+ * kept whichever row came first on a tie — and ties were real, because the
+ * version restarted per publication (Probe A left two `v1` rows on one line),
+ * so the winner was decided by `add` prepending. It picked correctly by accident
+ * of the store's insertion order; a store that appended would have picked the
+ * old answer. An answer to a publication nobody can find sorts before every
+ * answer to one that exists (`publishedAt` −∞) rather than being guessed.
+ */
+export function compareAnswerRecency(
+  publications: readonly ForecastPublication[],
+  a: RequirementResponse,
+  b: RequirementResponse,
+): number {
+  const at = (r: RequirementResponse) => {
+    const p = publications.find((x) => x.publicationId === r.publicationId);
+    return p ? Date.parse(p.publishedAt) : Number.NEGATIVE_INFINITY;
+  };
+  const sub = (r: RequirementResponse) =>
+    r.submittedAt ? Date.parse(r.submittedAt) : Number.NEGATIVE_INFINITY;
+  return (
+    Math.sign(at(a) - at(b)) ||
+    Math.sign(a.submissionVersion - b.submissionVersion) ||
+    Math.sign(sub(a) - sub(b))
+  );
+}
+
+/** The submitted responses keyed by line, latest answer per line. A `Draft` is
+ *  not a response (F-2) and a `Superseded` one has been replaced (A3). */
 function latestSubmittedByLine(
+  publications: readonly ForecastPublication[],
   responses: readonly RequirementResponse[],
 ): Map<string, RequirementResponse> {
   const byLine = new Map<string, RequirementResponse>();
   for (const r of responses) {
-    if (r.status === 'Draft') continue;
+    if (r.status === 'Draft' || r.status === 'Superseded') continue;
     const k = lineKey(r.supplierId, r.materialCode, r.periodBucket);
     const prev = byLine.get(k);
-    if (!prev || r.submissionVersion > prev.submissionVersion) byLine.set(k, r);
+    if (!prev || compareAnswerRecency(publications, r, prev) > 0) byLine.set(k, r);
   }
   return byLine;
+}
+
+/**
+ * A3 · the version `response` revises, and what it was retired from — read off
+ * the `supersedes` link and the prior's `supersededFrom` stamp. One hop: the
+ * DIRECT predecessor is what the buyer's queue describes.
+ */
+export function revisionOf(
+  response: RequirementResponse,
+  responses: readonly RequirementResponse[],
+): 'Disputed' | 'Accepted' | undefined {
+  if (!response.supersedes) return undefined;
+  return responses.find((r) => r.id === response.supersedes)?.supersededFrom;
+}
+
+/**
+ * A3 · SDC-R5 — the highest quantity ACCEPTED anywhere on `response`'s
+ * `supersedes` chain, when it exceeds the response's own. Walks the whole chain
+ * (a cut can be revised again before the buyer looks), guarded against a cycle
+ * by the visited set rather than trusted not to have one.
+ */
+function acceptedAboveOnChain(
+  response: RequirementResponse,
+  responses: readonly RequirementResponse[],
+): number | null {
+  const own = response.forecastConfirmation?.confirmedQty;
+  if (own === undefined) return null;
+  let best: number | null = null;
+  const seen = new Set<string>([response.id]);
+  let next = response.supersedes;
+  while (next && !seen.has(next)) {
+    seen.add(next);
+    const prior = responses.find((r) => r.id === next);
+    if (!prior) break;
+    const q = prior.forecastConfirmation?.confirmedQty;
+    if (prior.supersededFrom === 'Accepted' && q !== undefined && q > own && (best === null || q > best)) {
+      best = q;
+    }
+    next = prior.supersedes;
+  }
+  return best;
 }
 
 /**
@@ -211,9 +310,9 @@ export function consolidationRows(
 ): readonly ConsolidationRow[] {
   const current = currentPublication(publications);
   if (current === null) return [];
-  const submitted = latestSubmittedByLine(responses);
+  const submitted = latestSubmittedByLine(publications, responses);
 
-  return current.lines.map((line) => {
+  return current.lines.map((line): ConsolidationRow => {
     const k = lineKey(line.supplierId, line.materialCode, line.periodBucket);
     const response = submitted.get(k);
 
@@ -222,12 +321,36 @@ export function consolidationRows(
     // somebody is mid-draft is theirs to disclose by submitting.
     if (!response) return { id: k, line, state: { kind: 'awaiting' } };
 
+    const origin = revisionOf(response, responses);
+    const withOrigin = (row: ConsolidationRow): ConsolidationRow =>
+      origin ? { ...row, revisionOf: origin } : row;
+
+    // A3 · SDC-R5 — an accepted figure cut by a revision the buyer has not yet
+    // taken. Checked FIRST: it outranks full / short / stale, because what it
+    // reports is not the line's quantity but a plan standing on a number that
+    // has gone away.
+    if (response.status === 'Submitted' || response.status === 'UnderReview') {
+      const accepted = acceptedAboveOnChain(response, responses);
+      if (accepted !== null) {
+        return withOrigin({
+          id: k,
+          line,
+          state: {
+            kind: 'revised-after-accept',
+            response,
+            acceptedQty: accepted,
+            cutQty: accepted - response.forecastConfirmation!.confirmedQty,
+          },
+        });
+      }
+    }
+
     // Answered the current snapshot → fresh full/short.
     if (
       response.publicationId === current.publicationId &&
       response.planVersion === current.planVersion
     ) {
-      return { id: k, line, state: answeredState(response, line.forecastQty, false) };
+      return withOrigin({ id: k, line, state: answeredState(response, line.forecastQty, false) });
     }
 
     // Answered a superseded snapshot: carry forward presumed-valid when the line
@@ -245,9 +368,9 @@ export function consolidationRows(
         l.periodBucket === line.periodBucket,
     );
     if (answeredLine && answeredLine.forecastQty === line.forecastQty) {
-      return { id: k, line, state: answeredState(response, line.forecastQty, true) };
+      return withOrigin({ id: k, line, state: answeredState(response, line.forecastQty, true) });
     }
-    return {
+    return withOrigin({
       id: k,
       line,
       state: {
@@ -256,7 +379,7 @@ export function consolidationRows(
         answeredQty: answeredLine?.forecastQty ?? null,
         currentQty: line.forecastQty,
       },
-    };
+    });
   });
 }
 
@@ -306,8 +429,11 @@ export function supplierRollups(
  *    (covers silent AND partially-responded suppliers past the due date).
  *  · partial-response — started but incomplete, surfaced even before the
  *    deadline (a nudgeable state the planner may act on early).
+ *  · revised-after-accept — A3 · SDC-R5: a commitment the buyer accepted was
+ *    revised DOWN and the buyer has not taken the new number. Chased HARD —
+ *    listed regardless of deadline and sorted first.
  */
-export type ChaseReason = 'overdue' | 'partial-response';
+export type ChaseReason = 'overdue' | 'partial-response' | 'revised-after-accept';
 
 export interface ChaseEntry {
   readonly supplierId: string;
@@ -331,7 +457,19 @@ export function chaseList(
   const dueAt = addDaysIso(publication.publishedAt, RESPONSE_DUE_DAYS);
   const overdue = Date.parse(now) > Date.parse(dueAt);
   const entries: ChaseEntry[] = [];
+  // ⚠️ A3 · SDC-R5 — CHASED HARD. A supplier with an accepted commitment cut by
+  // a revision is on the list whether or not the deadline has passed and whether
+  // or not any line is awaiting: the planner is standing on a number the
+  // supplier has withdrawn, and that is the one reason that does not wait for a
+  // due date. It sorts above `overdue`.
+  const cutBy = new Set(
+    rows.filter((row) => row.state.kind === 'revised-after-accept').map((row) => row.line.supplierId),
+  );
   for (const r of supplierRollups(rows)) {
+    if (cutBy.has(r.supplierId)) {
+      entries.push({ supplierId: r.supplierId, reason: 'revised-after-accept', awaitingLines: r.awaitingLines, dueAt });
+      continue;
+    }
     if (r.awaitingLines === 0) continue;
     if (overdue) entries.push({ supplierId: r.supplierId, reason: 'overdue', awaitingLines: r.awaitingLines, dueAt });
     else if (r.answeredLines > 0)
@@ -340,6 +478,7 @@ export function chaseList(
   }
   return entries.sort(
     (a, b) =>
+      Number(b.reason === 'revised-after-accept') - Number(a.reason === 'revised-after-accept') ||
       Number(b.reason === 'overdue') - Number(a.reason === 'overdue') ||
       b.awaitingLines - a.awaitingLines ||
       a.supplierId.localeCompare(b.supplierId),

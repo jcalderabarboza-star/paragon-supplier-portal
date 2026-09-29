@@ -272,12 +272,17 @@ describe('C.2 — entityVerbOf qualifies a cascade source with its entity', () =
       }
     }
 
-    // The three that were ambiguous before the qualification, named so a future
+    // The ones that were ambiguous before the qualification, named so a future
     // change that reintroduces a bare form has something specific to break.
+    // A3 added the FIRST same-entity member: the supersede is fired by
+    // `requirementResponse:revise`, and bare `revise` names the source verb in
+    // the very flow it fires into — exactly the collision the qualification
+    // exists to disambiguate.
     expect(rows.filter((r) => r.ambiguous).map((r) => r.key).sort()).toEqual([
       'purchaseRequisition.t_pr_source',
       'quotation.t_quotation_award',
       'quotation.t_quotation_reject',
+      'requirementResponse.t_requirementresponse_supersede',
     ]);
   });
 });
