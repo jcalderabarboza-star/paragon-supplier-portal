@@ -1,0 +1,237 @@
+// ────────────────────────────────────────────────────────────────────────────
+// B1 · THE MOCK DERIVATION OF PLANNING FACTS (Design 1 §2.4).
+//
+// Derives every fact from the stores that already exist plus the generated SOMO
+// fixture. `httpDataService` implements the same seam at F1 from the real
+// producers; nothing that reads the seam changes.
+//
+// ⚠️ `value: null` MEANS "THE PRODUCER GAVE NO FIGURE", AND IS NEVER A ZERO.
+//
+// ⚠️ WHAT THE REAL STORES CANNOT ANSWER, STATED AT THE SITE:
+//  · `suggestedQty` / `acceptedQty` from the INTAKE LINES: a `PrIntakeLine`
+//    carries a display string (`material: 'Niacinamide USP'`), not a
+//    `materialCode`, and the strings do not match the master's labels. A join
+//    on a label is a guess, and a fact minted from a guess is a fabricated fact.
+//    So the intake store contributes NO planning fact until the line carries a
+//    code (B0's contract half, not yet in the tree). The generated fixture
+//    supplies `suggestedQty` for synthetic materials; `acceptedQty` has no
+//    producer in this lane until a planner commits through the grid (B5).
+//  · `openPo` / `received`: PO lines and GR inspection lines live in the mock
+//    document identity space; a line whose code the planning master cannot
+//    resolve is skipped, never given a unit (D-OPS-MASTERMISS).
+//  · `rop` / `safetyStock` / `projectedStock`: SPEC. No producer — no fact.
+// ────────────────────────────────────────────────────────────────────────────
+
+import type { Tier } from '../../liveness/registry';
+import { feedProvenance, liveness, type Capability } from '../../liveness/registry';
+import {
+  FORECAST_PUBLICATIONS,
+  SUPPLIER_MATERIAL_RELATIONSHIPS,
+  consolidationRows,
+  currentPublication,
+  declarationRecency,
+  isKnownMaterial,
+  requireUom,
+  sdcClock,
+  supplierCoverageEntries,
+  type InventoryDeclaration,
+} from '../../sdc';
+import { requirementResponseStore } from './stores/requirementResponseStore';
+import { inventoryDeclarationStore } from './stores/inventoryDeclarationStore';
+import { incomingShipmentStore } from './stores/incomingShipmentStore';
+import { purchaseOrderStore } from './stores/purchaseOrderStore';
+import { goodsReceiptStore } from './stores/goodsReceiptStore';
+import { schedulingAgreementStore } from '../../delivery/stores/schedulingAgreementStore';
+import { POStatus } from '../types';
+import { parseHorizon, type BucketId } from '../../planning/bucket';
+import { measureOf, type MeasureId, type MeasureSource } from '../../planning/measures';
+import {
+  bucketOf,
+  somoHorizon,
+  type PlanningFact,
+  type PlanningFactProvenance,
+  type PlanningFactsOutcome,
+  type PlanningFactsQuery,
+} from '../../planning/facts';
+import {
+  planningMaster,
+  PLANNING_MATERIALS,
+  generatedAllocation,
+  generatedConfirmed,
+  generatedDemand,
+  generatedSuggested,
+  isGeneratedMaterial,
+  suppliersFor,
+} from '../../planning/somoFixture';
+
+/**
+ * ⚠️ THE TIER A FACT CLAIMS WHEN ITS RECORD CARRIES NONE. Wiring alone (gate 1)
+ * is not a live figure: a capability whose FEED is still a fixture reads
+ * SIMULATED, whatever its CommandTarget says. A record that carries its own
+ * provenance (a response, a declaration, a shipment) passes that instead.
+ */
+const tierOf = (capability: Capability): Tier =>
+  feedProvenance(capability) === 'LIVE' ? liveness(capability) : 'SIMULATED';
+
+const committed = (source: MeasureSource, tier: Tier): PlanningFactProvenance => ({
+  source,
+  liveness: tier,
+  planState: 'committed',
+});
+
+/**
+ * Every fact for a horizon and a measure set, derived from the stores that
+ * already exist plus the generated SOMO fixture. Pure over the stores' current
+ * state; scope is applied by the service, not here.
+ */
+export function derivePlanningFacts(q: PlanningFactsQuery): PlanningFactsOutcome {
+  const parsed = parseHorizon(q.horizon);
+  if (!parsed.ok) return { ok: false, reason: parsed.reason, raw: parsed.raw };
+  const grain = parsed.grain;
+  const inHorizon = new Set(parsed.buckets.map((b) => b.id));
+  const index = new Map(parsed.buckets.map((b, i) => [b.id, i]));
+  const wanted = new Set(q.measures);
+  const materialFilter = q.materialCodes ? new Set(q.materialCodes) : null;
+  const want = (code: string) => materialFilter === null || materialFilter.has(code);
+  const current = bucketOf(sdcClock.now(), grain);
+
+  const out: PlanningFact[] = [];
+  const push = (
+    measureId: MeasureId,
+    materialCode: string,
+    supplierId: string | null,
+    periodBucket: BucketId,
+    value: number | null,
+    sourceRef: string,
+    tier?: Tier,
+  ) => {
+    if (!wanted.has(measureId) || !inHorizon.has(periodBucket) || !want(materialCode)) return;
+    // D-OPS-MASTERMISS inside the lane: no unit, no fact.
+    if (!isKnownMaterial(materialCode, planningMaster())) return;
+    const spec = measureOf(measureId);
+    out.push({
+      materialCode,
+      supplierId,
+      periodBucket,
+      measureId,
+      value,
+      uom: requireUom(materialCode, planningMaster()),
+      provenance: committed(spec.source, tier ?? tierOf(spec.capability)),
+      sourceRef,
+    });
+  };
+
+  // — The real stores (the 42 real codes). Monthly only where the source is
+  //   bucket-native at month grain; dated sources map into either grain. —
+  const pub = currentPublication(FORECAST_PUBLICATIONS);
+  if (pub) {
+    const demandBy = new Map<string, number>();
+    for (const line of pub.lines) {
+      const bucket = grain === 'month' ? line.periodBucket : null;
+      if (bucket === null) continue; // publication buckets are months; no week fact is invented
+      push('allocation', line.materialCode, line.supplierId, bucket, line.forecastQty, pub.planVersion, pub.provenance.liveness);
+      const k = `${line.materialCode}|${bucket}`;
+      demandBy.set(k, (demandBy.get(k) ?? 0) + line.forecastQty);
+    }
+    for (const [k, total] of demandBy) {
+      const [code, bucket] = k.split('|');
+      push('demand', code, null, bucket, total, pub.planVersion, pub.provenance.liveness);
+    }
+    if (grain === 'month') {
+      for (const row of consolidationRows(FORECAST_PUBLICATIONS, requirementResponseStore.all())) {
+        const s = row.state;
+        const response = 'response' in s ? s.response : null;
+        const confirmed = response?.forecastConfirmation?.confirmedQty ?? null;
+        if (response?.acknowledgment) continue; // an acknowledgment commits nothing
+        push('confirmed', row.line.materialCode, row.line.supplierId, row.line.periodBucket, confirmed, response?.id ?? pub.planVersion, response?.provenance.liveness);
+        // DERIVED: allocation − confirmed, only when both exist.
+        push(
+          'confirmedDeficit',
+          row.line.materialCode,
+          row.line.supplierId,
+          row.line.periodBucket,
+          confirmed === null ? null : Math.max(0, row.line.forecastQty - confirmed),
+          'confirmedDeficitOf',
+          'SIMULATED',
+        );
+      }
+    }
+  }
+
+  // Supplier stock on hand — AS-OF: rendered in the current bucket only.
+  const latestDecl = new Map<string, InventoryDeclaration>();
+  for (const d of inventoryDeclarationStore.all()) {
+    const k = `${d.supplierId}|${d.materialCode}`;
+    const prev = latestDecl.get(k);
+    if (!prev || declarationRecency(d) > declarationRecency(prev)) latestDecl.set(k, d);
+  }
+  for (const d of latestDecl.values()) push('supplierSoh', d.materialCode, d.supplierId, current, d.totalQty, d.id, d.provenance.liveness);
+
+  // Incoming shipments in flight, by ETA bucket.
+  for (const sh of incomingShipmentStore.all()) {
+    if ((sh.lifecycle !== 'Booked' && sh.lifecycle !== 'Shipped') || !sh.eta) continue;
+    push('incoming', sh.materialCode, sh.supplierId, bucketOf(sh.eta, grain), sh.qty, sh.id, sh.provenance.liveness);
+  }
+
+  // Released call-offs, by release bucket.
+  for (const sa of schedulingAgreementStore.all()) {
+    for (const item of sa.items) {
+      for (const line of item.scheduleLines) {
+        if (line.state !== 'released') continue;
+        push('released', item.materialCode, sa.supplierId, bucketOf(line.releaseDate, grain), line.plannedQty, line.releaseRef, sa.liveness);
+      }
+    }
+  }
+
+  // Open PO quantity, by requested delivery bucket (skipped where unresolvable).
+  const OPEN = new Set<string>([POStatus.SENT, POStatus.VIEWED, POStatus.ACKNOWLEDGED, POStatus.CONFIRMED, POStatus.PARTIALLY_DELIVERED]);
+  for (const po of purchaseOrderStore.all()) {
+    if (!OPEN.has(po.status) || !po.requestedDeliveryDate) continue;
+    for (const li of po.lineItems) {
+      push('openPo', li.materialCode, po.supplierId, bucketOf(po.requestedDeliveryDate, grain), li.quantity, po.poNumber);
+    }
+  }
+
+  // Goods received and posted, by receipt bucket (skipped where unresolvable).
+  for (const gr of goodsReceiptStore.all()) {
+    if (gr.status !== 'Posted to SAP') continue;
+    for (const r of gr.inspectionResults) {
+      push('received', r.materialCode, gr.supplierId, bucketOf(gr.receivedDate, grain), r.qtyAccepted, gr.grNumber);
+    }
+  }
+
+  // Supplier coverage Σ — DERIVED, MODELED, as-of the current bucket.
+  if (grain === 'month') {
+    for (const e of supplierCoverageEntries(
+      FORECAST_PUBLICATIONS,
+      inventoryDeclarationStore.all(),
+      incomingShipmentStore.all(),
+      SUPPLIER_MATERIAL_RELATIONSHIPS,
+      sdcClock.now(),
+    )) {
+      const ratio = e.status.kind === 'no-declaration' ? null : Number.isFinite(e.status.ratio) ? e.status.ratio : null;
+      push('coverageRatio', e.materialCode, e.supplierId, current, ratio, 'supplierCoverageEntries', 'SIMULATED');
+    }
+  }
+
+  // — The generated SOMO fixture (synthetic codes only), within its horizon. —
+  const fixtureHorizon = new Set(somoHorizon(grain));
+  const seedRef = `somo-fixture@${grain}`;
+  for (const code of PLANNING_MATERIALS) {
+    if (!isGeneratedMaterial(code) || !want(code)) continue;
+    for (const b of parsed.buckets) {
+      if (!fixtureHorizon.has(b.id)) continue;
+      push('demand', code, null, b.id, generatedDemand(code, b.id), seedRef, 'SIMULATED');
+      push('suggestedQty', code, null, b.id, generatedSuggested(code, b.id), seedRef, 'SIMULATED');
+      for (const sup of suppliersFor(code)) {
+        const alloc = generatedAllocation(code, sup, b.id);
+        const conf = generatedConfirmed(code, sup, b.id, index.get(b.id) ?? 0);
+        push('allocation', code, sup, b.id, alloc, seedRef, 'SIMULATED');
+        push('confirmed', code, sup, b.id, conf, seedRef, 'SIMULATED');
+        push('confirmedDeficit', code, sup, b.id, alloc === null || conf === null ? null : Math.max(0, alloc - conf), 'confirmedDeficitOf', 'SIMULATED');
+      }
+    }
+  }
+
+  return { ok: true, grain, facts: out };
+}

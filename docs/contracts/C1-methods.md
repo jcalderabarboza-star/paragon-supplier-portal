@@ -1,6 +1,6 @@
 # C1 — Method Surface
 
-Three distinct axes. **66** (service surface) · **120** (transition catalog) · **20** (wired
+Three distinct axes. **67** (service surface) · **120** (transition catalog) · **20** (wired
 targets). They measure different things; this file keeps them separate.
 
 > ⚠️ **THIS DOCUMENT IS PINNED TO THE TREE, AND THE PIN IS WHY THE NUMBERS ABOVE ARE ALLOWED TO
@@ -59,19 +59,26 @@ targets). They measure different things; this file keeps them separate.
 > across the same **26** flows. No service method and no wired target moved — the verbs ride the
 > target that already existed. Moved by the pin going red, again.
 
+> **RE-HARVEST (2026-09-29, B1).** The planning read seam landed: `IDataService` gained a tenth
+> read sub-service, `IPlanningService`, with ONE method — `getPlanningFacts(scope, { horizon,
+> measures, materialCodes? })`, returning long-form `PlanningFact` rows plus an additive
+> `horizonRefusal` when the horizon cannot be parsed (a mixed grain is refused by name, never
+> answered empty). The service surface went 66 → **67**. No transition and no target moved — B1
+> adds no verb. Moved by the pin going red.
+
 Source of truth: `src/services/data/types.ts` (service + command types),
 `src/services/transitions/` (schema, dispatcher, flows).
 
 ---
 
-## Axis 1 — the 66-method service surface (`IDataService`)
+## Axis 1 — the 67-method service surface (`IDataService`)
 
 The single interface the Phase-F1 real adapter implements; pages call it through
 `useDataService()` and do not change when the mock is swapped for `httpDataService`. Every method
 takes `QueryScope` as its first argument (the scoping contract — a supplier only ever sees its
 own data; the buyer sees the superset).
 
-`IDataService` is nine read sub-services + one command sub-service + one top-level method:
+`IDataService` is ten read sub-services + one command sub-service + one top-level method:
 
 ```ts
 interface IDataService {
@@ -84,6 +91,7 @@ interface IDataService {
   delivery: IDeliveryService;
   chase: IChaseService;
   enforcement: IEnforcementService;
+  planning: IPlanningService;
   commands: ICommandService;
   getCapabilities(scope: QueryScope): Promise<CapabilitySet>;
 }
@@ -100,10 +108,11 @@ interface IDataService {
 | `IDeliveryService` | 4 | `getAgreements`, `releaseLines`, `confirmMatch`, `editPolicy` |
 | `IChaseService` | 1 | `getUnifiedChase` |
 | `IEnforcementService` | 1 | `getEnforcementSettings` |
-| **read subtotal** | **62** | |
+| `IPlanningService` | 1 | `getPlanningFacts` |
+| **read subtotal** | **63** | |
 | `ICommandService` | 3 | `dispatch`, `getCommandStatus`, `settle` |
 | top-level | 1 | `getCapabilities` |
-| **TOTAL** | **66** | |
+| **TOTAL** | **67** | |
 
 **Return contract:** list reads return `Page<T>` (DR-5 — see C2); single reads return `T | null`;
 `getSummary` returns a summary object or `null` (buyer-populated, supplier-null). Failure is

@@ -23,11 +23,26 @@ describe('LivenessRegistry — derived from the wiring census (cannot drift)', (
   it('a capability is LIVE iff its backing entity is a wired CommandTarget', () => {
     // The definitional proof: liveness IS census membership. If TARGETS changes,
     // this equivalence carries the tier with it — there is no second source.
+    //
+    // ⚠️ B1 — ONE NAMED EXCEPTION, AND IT IS PINNED BELOW RATHER THAN SKIPPED.
+    // `somoPlanParameters` is the first seeded SPEC capability: no producer and
+    // no fixture, so it is neither wired nor simulated. The equivalence holds for
+    // every OTHER capability; the SPEC set is asserted by name, both ways, in the
+    // next spec — so a second capability drifting to SPEC reddens that one.
     for (const cap of ALL_CAPABILITIES) {
+      if (cap === 'somoPlanParameters') continue;
       const backing = capabilityBacking[cap];
       const wired = backing !== null && WIRED_COMMAND_TARGETS.includes(backing);
       expect(liveness(cap)).toBe(wired ? 'LIVE' : 'SIMULATED');
     }
+  });
+
+  it('B1 — the SPEC set is exactly {somoPlanParameters}: no producer, no fixture, no number', () => {
+    expect(ALL_CAPABILITIES.filter((c) => liveness(c) === 'SPEC')).toEqual(['somoPlanParameters']);
+    // A null backing alone is SIMULATED (a fixture stands in) — SPEC is not
+    // "unwired", it is "nothing stands in". Control on a null-backed neighbour:
+    expect(capabilityBacking.risk).toBeNull();
+    expect(liveness('risk')).toBe('SIMULATED');
   });
 
   it('the LIVE set (gate-1) is exactly the wired-backed capabilities', () => {
