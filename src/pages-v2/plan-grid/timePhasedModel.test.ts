@@ -231,4 +231,30 @@ describe('B2 · the model over the REAL seam and the generated corpus', () => {
       for (const v of Object.values(r.cells)) expect(v === null || typeof v === 'number').toBe(true);
     }
   });
+
+  // ⚠️ B3 · STEP 0 (operator ruling). At B2 1,162 of 1,163 materials were
+  // exceptions and "Exceptions only" narrowed nothing. The share is now pinned
+  // as a BAND over the real seam, and — because a band is satisfied by the
+  // wrong members — by NAMED members on both sides of the rule.
+  it.each([
+    ['rm-plan', 'month'],
+    ['pm-plan', 'week'],
+  ] as const)('%s: exceptions are a realistic minority (10–15%%), named on both sides', async (viewId, grain) => {
+    const view = VIEWS.find((v) => v.viewId === viewId)!;
+    const horizon = somoHorizon(grain).slice(0, view.horizonLength);
+    const measures = visibleMeasures(view.measuresShown);
+    const page = await new MockPlanningService().getPlanningFacts(
+      { personaType: 'buyer', supplierId: null, businessRoles: PERSONA_SYSTEM_ROLES.buyer },
+      { horizon, measures },
+    );
+    const real = buildPlanBlocks(page.items, horizon, measures);
+    const byCode = new Map(real.map((b) => [b.materialCode, b]));
+    const share = real.filter((b) => isPlanException(b.exceptions)).length / real.length;
+    expect(share).toBeGreaterThanOrEqual(0.1);
+    expect(share).toBeLessThanOrEqual(0.15);
+    // named: one short, one awaiting, one covered
+    expect(byCode.get('SIM-RM-0019')?.exceptions).toMatchObject({ shortfall: true, awaiting: false });
+    expect(byCode.get('SIM-PM-0004')?.exceptions).toMatchObject({ shortfall: false, awaiting: true });
+    expect(isPlanException(byCode.get('SIM-RM-0001')!.exceptions)).toBe(false);
+  });
 });

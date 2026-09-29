@@ -21,6 +21,7 @@ import IntakeAdjustDrawer from './plan-grid/IntakeAdjustDrawer';
 import FullScreenSection from './plan-grid/FullScreenSection';
 import SubTabs from '../components/ui-v2/SubTabs';
 import TimePhasedGrid from './plan-grid/TimePhasedGrid';
+import { PlanDraftProvider } from './plan-grid/PlanDraftProvider';
 import { useIntakeReview, useQuotations } from '../services/query/hooks';
 import type { IntakeLine } from '../services/data/types';
 import { formatIDR, formatNumber } from '../lib/format';
@@ -361,9 +362,13 @@ const PlanGrid: React.FC = () => {
         ]}
       />
 
-      {tab === 'rm' && <TimePhasedGrid viewId="rm-plan" />}
-      {tab === 'pm' && <TimePhasedGrid viewId="pm-plan" />}
-      {tab === 'exceptions' && <TimePhasedGrid viewId="exceptions" />}
+      {/* B3 · ONE overlay for the three planning views, held for the page's
+          life: switching tabs keeps a planned change, a reload drops it. */}
+      <PlanDraftProvider>
+        {tab === 'rm' && <TimePhasedGrid viewId="rm-plan" />}
+        {tab === 'pm' && <TimePhasedGrid viewId="pm-plan" />}
+        {tab === 'exceptions' && <TimePhasedGrid viewId="exceptions" />}
+      </PlanDraftProvider>
 
       {/* ── Award scenario — what-if overlay (full-screen-capable) ───────── */}
       {tab === 'award' && (

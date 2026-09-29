@@ -21,10 +21,15 @@ import {
   PLANNING_MATERIALS,
   PLANNING_SUPPLIERS,
   generatedAllocation,
+  generatedConfirmed,
   generatedDemand,
   generatedSuggested,
+  generatedTroubleOf,
   suppliersFor,
 } from '../../planning/somoFixture';
+import { generatedIntakeLine, somoIntakeLineId } from '../../planning/somoIntake';
+import { intakeLineStore } from './stores/intakeLineStore';
+import { MockCommandService } from './MockCommandService';
 
 const BUYER: QueryScope = { personaType: 'buyer', supplierId: null, businessRoles: PERSONA_SYSTEM_ROLES.buyer };
 const SUP007: QueryScope = { personaType: 'supplier', supplierId: 'sup-007', businessRoles: PERSONA_SYSTEM_ROLES.supplier };
@@ -70,6 +75,32 @@ describe('B1 · the generated SOMO fixture — named members, named values', () 
     expect(suppliersFor('SIM-RM-0005')).toHaveLength(2);
     const [a, b] = suppliersFor('SIM-RM-0005');
     expect([generatedAllocation('SIM-RM-0005', a, '2026-08'), generatedAllocation('SIM-RM-0005', b, '2026-08')]).toEqual([13350, 4050]);
+  });
+
+  // ⚠️ B3 · STEP 0 — THE PINNED CONFIRMATION VALUES CHANGED DELIBERATELY
+  // (operator ruling: a realistic mix, ~10–15% exceptions). B1 confirmed only
+  // the first three buckets of every material at 60–100%, so every material was
+  // awaiting AND short. Now a covered material is confirmed in full across the
+  // horizon, and a seeded minority is short (every bucket, below allocation) or
+  // awaiting (near term only). Named members, named values — not a count.
+  it('B3 · the trouble a material carries is seeded and named: short, awaiting, covered', () => {
+    expect(generatedTroubleOf('SIM-RM-0019')).toBe('short');
+    expect(generatedTroubleOf('SIM-PM-0004')).toBe('awaiting');
+    expect(generatedTroubleOf('SIM-RM-0001')).toBeNull();
+    // a real master code is never generated, so it carries no generated trouble
+    expect(generatedTroubleOf('RM-EMUL-3310')).toBeNull();
+  });
+
+  it('B3 · the confirmation values are PINNED per kind', () => {
+    const m = somoHorizon('month');
+    // covered: every bucket confirmed in FULL, far past the old three-bucket cut
+    expect([0, 1, 2, 3, 4].map((i) => generatedConfirmed('SIM-RM-0001', 'sup-sim-034', m[i], i))).toEqual([10750, 11150, 11800, 14650, 14400]);
+    // short: answered everywhere, below the allocation
+    expect(generatedAllocation('SIM-RM-0019', 'sup-sim-037', m[0])).toBe(900);
+    expect(generatedConfirmed('SIM-RM-0019', 'sup-sim-037', m[0], 0)).toBe(630);
+    expect(generatedConfirmed('SIM-RM-0019', 'sup-sim-037', m[4], 4)).toBe(6470);
+    // awaiting: the near term answered in full, the rest not yet — null, never 0
+    expect([0, 1, 2, 3, 4].map((i) => generatedConfirmed('SIM-PM-0004', 'sup-sim-027', m[i], i))).toEqual([2000, 155000, 85000, null, null]);
   });
 
   it('"no figure" is null, never 0 — pinned on a named gap', () => {
@@ -165,5 +196,59 @@ describe('B1 · a supplier scope never receives another supplier\'s facts', () =
       { horizon: somoHorizon('month'), measures: ALL },
     );
     expect(page.items).toEqual([]);
+  });
+});
+
+describe('B3 · the generated SOMO intake lines — what a grid cell commits against', () => {
+  const BUYER_CMD = new MockCommandService();
+  beforeEach(() => intakeLineStore.reset());
+
+  it('a proposal IS an intake line, with named values — the producer delivers what it proposed', () => {
+    expect(generatedIntakeLine(somoIntakeLineId('SIM-RM-0001', '2026-08'))).toEqual({
+      id: 'pil-somo-SIM-RM-0001@2026-08',
+      material: 'Sample raw material 0001',
+      suggestedSource: null,
+      segment: null,
+      suggestedQty: 11700,
+      acceptedQty: 11700,
+      uom: 'KG',
+      periodBucket: '2026-08',
+      estimatedValue: 2_123_550_000,
+      source: 'SOMO',
+    });
+    expect(generatedIntakeLine(somoIntakeLineId('SIM-PM-0002', '2026-W36'))?.acceptedQty).toBe(190850);
+  });
+
+  it('KNOWN-BAD: an id SOMO never emitted resolves to nothing', () => {
+    for (const id of [
+      somoIntakeLineId('RM-EMUL-3310', '2026-08'), // a real code is not generated
+      somoIntakeLineId('SIM-RM-0001', '2030-01'), // outside the fixture horizon
+      somoIntakeLineId('SIM-PM-0006', '2026-08'), // SOMO's named gap — no proposal
+      somoIntakeLineId('SIM-RM-0001', '2026-8'), // not a canonical bucket
+      'pil-somo-SIM-RM-0001', // no bucket
+      'pil-somo-001', // an authored line, not a generated one
+    ]) {
+      expect(generatedIntakeLine(id), id).toBeNull();
+    }
+  });
+
+  it('the acceptedQty fact is keyed by its line: PLANNED at the producer’s figure, then COMMITTED at the committed one', async () => {
+    const id = somoIntakeLineId('SIM-RM-0001', '2026-09');
+    const read = async () =>
+      (await facts(BUYER, somoHorizon('month'), ['acceptedQty'], ['SIM-RM-0001'])).find((f) => f.sourceRef === id)!;
+    const before = await read();
+    expect(before).toMatchObject({ value: generatedSuggested('SIM-RM-0001', '2026-09'), periodBucket: '2026-09' });
+    expect(before.provenance).toMatchObject({ planState: 'planned', liveness: 'SIMULATED', source: 'PLANNER' });
+
+    const r = await BUYER_CMD.dispatch(BUYER, {
+      transitionId: 't_intake_commit',
+      entity: 'intakeLine',
+      entityId: id,
+      payload: { acceptedQty: 900, acceptedQtyRaw: '900', overrideReason: 'Trimmed to storage' },
+    });
+    expect(r.status).not.toBe('failed');
+    const after = await read();
+    expect(after.value).toBe(900);
+    expect(after.provenance.planState).toBe('committed');
   });
 });

@@ -158,11 +158,41 @@ export function generatedAllocation(materialCode: string, supplierId: string, bu
 }
 
 /**
- * The supplier's confirmation. Only the first `CONFIRMED_BUCKETS` of a horizon
- * carry one — a supplier answers the near term first — and the rest are `null`
- * ("not yet answered"), which is exactly the state the chase exists for.
+ * ⚠️ B3 · STEP 0 (operator ruling) — THE MIX IS REALISTIC, AND IT WAS NOT.
+ *
+ * The B1 generator confirmed only the first three buckets of EVERY material and
+ * confirmed each at 60–100% of its allocation, so every material was both
+ * awaiting and short: measured at B2, 1,162 of 1,163 materials were exceptions
+ * and the "Exceptions only" toggle narrowed nothing. A plan where everything is
+ * an exception teaches a planner to ignore the flag.
+ *
+ * Now a supplier has answered the whole horizon in full for most materials, and
+ * a seeded minority carries ONE kind of trouble:
+ *  · `short`    — every bucket answered, below the allocation (a shortfall);
+ *  · `awaiting` — the near term answered in full, the rest not yet answered.
+ * `EXCEPTION_SHARE` is the target share of the generated materials; the
+ * realised share is pinned by named members and by a band in
+ * `planningFacts.test.ts`, never restated here as a count.
  */
+export const EXCEPTION_SHARE = 0.12;
+/** The buckets an `awaiting` material's supplier has already answered. */
 export const CONFIRMED_BUCKETS = 3;
+
+export type GeneratedTrouble = 'short' | 'awaiting';
+
+/** Which trouble, if any, a generated material carries. Deterministic. */
+export function generatedTroubleOf(materialCode: string): GeneratedTrouble | null {
+  if (!isGeneratedMaterial(materialCode)) return null;
+  const u = seededUnit(`trouble|${materialCode}`);
+  if (u < EXCEPTION_SHARE / 2) return 'short';
+  if (u < EXCEPTION_SHARE) return 'awaiting';
+  return null;
+}
+
+/**
+ * The supplier's confirmation of its allocation, or `null` — "not yet
+ * answered", which is exactly the state the chase exists for (never a zero).
+ */
 export function generatedConfirmed(
   materialCode: string,
   supplierId: string,
@@ -170,7 +200,24 @@ export function generatedConfirmed(
   bucketIndex: number,
 ): number | null {
   const a = generatedAllocation(materialCode, supplierId, bucketId);
-  if (a === null || bucketIndex >= CONFIRMED_BUCKETS) return null;
-  const factor = 0.6 + seededUnit(`conf|${materialCode}|${supplierId}|${bucketId}`) * 0.4;
-  return roundTo(a * factor, 10);
+  if (a === null) return null;
+  const trouble = generatedTroubleOf(materialCode);
+  if (trouble === null) return a;
+  if (trouble === 'awaiting') return bucketIndex < CONFIRMED_BUCKETS ? a : null;
+  // `short`: 60–90% of the allocation, rounded DOWN to the planner step so a
+  // short answer can never round back up to a full one.
+  const factor = 0.6 + seededUnit(`conf|${materialCode}|${supplierId}|${bucketId}`) * 0.3;
+  return Math.max(0, Math.floor((a * factor) / 10) * 10);
+}
+
+/**
+ * A seeded unit price in IDR — SIMULATED like every value in this module — so a
+ * generated intake line carries a LINE-TOTAL `estimatedValue` (C7 §2.3) instead
+ * of a stated zero, which would be a claim that the goods cost nothing.
+ */
+export function generatedUnitPrice(materialCode: string): number {
+  const u = seededUnit(`price|${materialCode}`);
+  return SYNTHETIC[materialCode]?.canonicalUom === 'KG'
+    ? roundTo(20_000 + u * 180_000, 500)
+    : roundTo(500 + u * 4_500, 50);
 }

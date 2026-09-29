@@ -34,6 +34,10 @@ export interface ViewSpec {
 
 const PLAN_MEASURES: readonly MeasureId[] = [
   'demand',
+  // B3 · SOMO's proposal and the planner's accepted quantity — the one
+  // editable measure — sit under demand, on the material row.
+  'suggestedQty',
+  'acceptedQty',
   'allocation',
   'confirmed',
   'confirmedDeficit',

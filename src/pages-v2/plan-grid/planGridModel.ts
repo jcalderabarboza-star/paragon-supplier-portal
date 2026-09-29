@@ -325,6 +325,14 @@ export interface PlanRow {
   readonly derived: boolean;
   /** True on the first row of a material's block (where the aggregates sit). */
   readonly blockHead: boolean;
+  /**
+   * B3 · per bucket, the SEAM ROW a cell is anchored to — the fact's own
+   * `sourceRef` — for an EDITABLE measure only. An overlay entry keys on this
+   * (C6 §1: a planned value cannot exist without a seam row to anchor to).
+   */
+  readonly seamRefs?: Readonly<Record<BucketId, string>>;
+  /** B3 · per bucket, whether the seam holds the figure as COMMITTED. */
+  readonly committedCells?: Readonly<Record<BucketId, boolean>>;
 }
 
 /** The horizon aggregates (Design 1 §4.2 `agg:*`), all DERIVED. */
@@ -363,6 +371,15 @@ export function planCellText(value: number | null | undefined, format: (n: numbe
   return value === null || value === undefined ? '—' : format(value);
 }
 
+/**
+ * B3 · is this CELL editable? THE REGISTRY DECIDES, NOT THE PAGE: the measure
+ * must declare an edit spec, the row must be a material row (the spec is a
+ * material-grain act), and the seam must have delivered a row to anchor to.
+ */
+export function isEditableCell(row: PlanRow, bucket: BucketId): boolean {
+  return measureOf(row.measureId).editable !== false && row.supplierId === null && !!row.seamRefs?.[bucket];
+}
+
 /** `supplier|material|bucket` — the key a stale answer is reported by. */
 export const staleKey = (supplierId: string, materialCode: string, bucket: BucketId): string =>
   `${supplierId}|${materialCode}|${bucket}`;
@@ -396,6 +413,8 @@ export function buildPlanBlocks(
 
   // material → measure → supplier('' = material grain) → bucket → value
   const byMaterial = new Map<string, Map<MeasureId, Map<string, Map<BucketId, number | null>>>>();
+  // B3 · editable measures only: `material|measure|bucket` → the seam row.
+  const refs = new Map<string, { ref: string; committed: boolean }>();
   for (const f of facts) {
     if (!shownSet.has(f.measureId) || !inHorizon.has(f.periodBucket)) continue;
     const mats = byMaterial.get(f.materialCode) ?? new Map();
@@ -405,6 +424,12 @@ export function buildPlanBlocks(
     const cells = sups.get(f.supplierId ?? '') ?? new Map();
     sups.set(f.supplierId ?? '', cells);
     cells.set(f.periodBucket, f.value);
+    if (f.supplierId === null && measureOf(f.measureId).editable !== false) {
+      refs.set(`${f.materialCode}|${f.measureId}|${f.periodBucket}`, {
+        ref: f.sourceRef,
+        committed: f.provenance.planState === 'committed',
+      });
+    }
   }
 
   const blocks: PlanBlock[] = [];
@@ -418,6 +443,13 @@ export function buildPlanBlocks(
       const spec = measureOf(measureId);
       for (const supplierKey of [...sups.keys()].sort()) {
         const cells = sups.get(supplierKey)!;
+        const anchored =
+          spec.editable !== false && supplierKey === ''
+            ? horizon.flatMap((b) => {
+                const r = refs.get(`${materialCode}|${measureId}|${b}`);
+                return r ? [[b, r] as const] : [];
+              })
+            : [];
         rows.push({
           id: `${materialCode}|${measureId}|${supplierKey || '-'}`,
           materialCode,
@@ -429,6 +461,12 @@ export function buildPlanBlocks(
           cells: Object.fromEntries(horizon.map((b) => [b, cells.has(b) ? cells.get(b)! : null])),
           derived: spec.derivation === 'derived',
           blockHead: rows.length === 0,
+          ...(anchored.length > 0
+            ? {
+                seamRefs: Object.fromEntries(anchored.map(([b, r]) => [b, r.ref])),
+                committedCells: Object.fromEntries(anchored.map(([b, r]) => [b, r.committed])),
+              }
+            : {}),
         });
       }
     }

@@ -15,10 +15,20 @@
 // ⚠️ WHAT THIS ENGINE CANNOT DO IS NOT FAKED HERE. Row grouping, range fill, set
 // filters, the status bar, Excel export, the column chooser and saved layouts
 // are SE-14, specified in Design 1 §7; none is approximated in page code.
+//
+// ── B3 · GOVERNED EDITS (Design 1 §5.1–§5.2, §5.4) ──────────────────────────
+// An `acceptedQty` cell on a material row is editable because the REGISTRY says
+// so (`isEditableCell` reads `measureOf(..).editable`); every other cell stays
+// read-only. An edit or a paste never touches a row: it goes to the
+// `PlanDraftProvider` overlay, keyed by the cell's seam row, and the cell
+// renders `seam + overlay` with the PLANNED marker (and EXTERNAL for a paste).
+// The engine's own paste is intercepted before it runs, so a paste over a
+// read-only column is judged — and refused — cell by cell rather than silently
+// skipped. `setRowData` is never called: nothing typed reaches the seam rows.
 // ────────────────────────────────────────────────────────────────────────────
 
-import React, { useMemo, useState } from 'react';
-import { DataSheetGrid, type CellProps, type Column } from 'react-datasheet-grid';
+import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { DataSheetGrid, type CellProps, type Column, type DataSheetGridRef } from 'react-datasheet-grid';
 import 'react-datasheet-grid/dist/style.css';
 import './planGrid.css';
 import { useTranslation } from 'react-i18next';
@@ -34,12 +44,16 @@ import { COLUMNS, bucketColumns, bucketColumnId } from '../../services/planning/
 import { measureOf, type MeasureId } from '../../services/planning/measures';
 import { somoHorizon } from '../../services/planning/facts';
 import { visibleMeasures } from './visibleMeasures';
+import { usePlanDraft } from './PlanDraftProvider';
+import PlannedChangesPanel, { CELL_REFUSAL_KEY } from './PlannedChangesPanel';
+import { cellKey, type CellRefusal, type PlanDraftEntry } from './planDraft';
 import {
   DEFAULT_PLAN_FILTER,
   DEFAULT_PLAN_SORT,
   applyPlanView,
   buildPlanBlocks,
   flattenPlanRows,
+  isEditableCell,
   isPlanException,
   planCellText,
   staleKey,
@@ -62,16 +76,50 @@ const supplierLabel = (id: string): string => mockSuppliers.find((s) => s.id ===
  * ⚠️ A DERIVED CELL CARRIES ITS MARKER EVEN WHEN IT IS EMPTY: "the portal would
  * compute this, and has nothing to compute from" is still a computed cell.
  */
-export const PlanBucketCell: React.FC<{ value: number | null | undefined; derived: boolean }> = ({
-  value,
-  derived,
-}) => {
+export const PlanBucketCell: React.FC<{
+  value: number | null | undefined;
+  derived: boolean;
+  /** B3 · the overlay entry for this cell — rendered INSTEAD of the seam value, marked. */
+  planned?: PlanDraftEntry;
+  /** B3 · the last edit of this cell that was refused, with its reason. */
+  refusal?: CellRefusal;
+  /** B3 · the seam holds this figure as COMMITTED (an editable cell only). */
+  committed?: boolean;
+}> = ({ value, derived, planned, refusal, committed }) => {
   const { t } = useTranslation();
-  const text = planCellText(value, formatNumber);
+  // ⚠️ THE OVERLAY IS SHOWN, NEVER MERGED: the seam value stays in the row and
+  // the planned one is read from the draft by seamRef, marked as PLANNED.
+  const text = planCellText(planned ? planned.value : value, formatNumber);
+  const refusalText = refusal
+    ? t(CELL_REFUSAL_KEY[refusal.reason], { source: refusal.source ? t(`planGrid.edit.owner.${refusal.source}`) : '' })
+    : '';
   return (
-    <div className="flex w-full items-center justify-end gap-1 px-2" data-testid="tp-cell">
+    <div
+      className={`flex w-full items-center justify-end gap-1 px-2 ${planned ? 'bg-info-soft' : ''} ${refusal ? 'ring-1 ring-inset ring-danger/60' : ''}`}
+      data-testid="tp-cell"
+      title={refusal ? `“${refusal.raw}” — ${refusalText}` : undefined}
+    >
       {derived && (
         <ModelMarker label={t('planGrid.tp.modeled')} title={t('planGrid.tp.modeledTitle')} />
+      )}
+      {refusal && (
+        <span className="text-[10px] font-semibold text-danger" data-testid="tp-cell-refusal" aria-label={refusalText}>
+          !
+        </span>
+      )}
+      {planned && (
+        <span
+          className="text-[9px] font-semibold uppercase text-info"
+          data-testid="tp-cell-planned"
+          title={t('planGrid.edit.plannedTitle')}
+        >
+          {planned.origin === 'PASTE' ? t('planGrid.edit.externalShort') : t('planGrid.edit.plannedShort')}
+        </span>
+      )}
+      {committed && !planned && (
+        <span className="text-[9px] font-semibold uppercase text-text-tertiary" title={t('planGrid.plan.committed')}>
+          ✓
+        </span>
       )}
       {text === '—' ? (
         <span className="text-xs text-text-tertiary">{text}</span>
@@ -79,6 +127,83 @@ export const PlanBucketCell: React.FC<{ value: number | null | undefined; derive
         <Data className="text-xs">{text}</Data>
       )}
     </div>
+  );
+};
+
+/** B3 · a read-only cell, which still shows a refused paste aimed at it. */
+const ReadOnlyBucketCell: React.FC<{ row: PlanRow; bucket: string; derived: boolean }> = ({ row, bucket, derived }) => {
+  const api = usePlanDraft();
+  return (
+    <PlanBucketCell value={row.cells[bucket]} derived={derived} refusal={api?.draft.refusals.get(cellKey(row.id, bucket))} />
+  );
+};
+
+/**
+ * B3 · an EDITABLE cell. While the engine has it in focus it is a text field
+ * holding the raw token; when focus leaves, a changed token becomes ONE
+ * `GridEditRequest` (origin TYPED) to the overlay — never `setRowData`.
+ * Escape abandons the edit.
+ */
+const EditableBucketCell: React.FC<{
+  row: PlanRow;
+  bucket: string;
+  focus: boolean;
+}> = ({ row, bucket, focus }) => {
+  const { t } = useTranslation();
+  const api = usePlanDraft();
+  const seamRef = row.seamRefs![bucket];
+  const planned = api?.draft.entries.get(seamRef);
+  const refusal = api?.draft.refusals.get(cellKey(row.id, bucket));
+  const initial = planned?.raw ?? (row.cells[bucket] === null || row.cells[bucket] === undefined ? '' : String(row.cells[bucket]));
+  const [text, setText] = useState(initial);
+  const textRef = useRef(initial);
+  const startRef = useRef(initial);
+  const cancelled = useRef(false);
+  const wasFocused = useRef(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useLayoutEffect(() => {
+    if (focus && !wasFocused.current) {
+      startRef.current = initial;
+      textRef.current = initial;
+      setText(initial);
+      cancelled.current = false;
+      inputRef.current?.focus();
+      inputRef.current?.select();
+    }
+    if (!focus && wasFocused.current && !cancelled.current && textRef.current !== startRef.current) {
+      api?.edit(row, bucket, textRef.current, 'TYPED');
+    }
+    wasFocused.current = focus;
+  }, [focus]);
+
+  if (!focus) {
+    return (
+      <PlanBucketCell
+        value={row.cells[bucket]}
+        derived={false}
+        planned={planned}
+        refusal={refusal}
+        committed={row.committedCells?.[bucket]}
+      />
+    );
+  }
+  return (
+    <input
+      ref={inputRef}
+      data-testid="tp-cell-input"
+      aria-label={t('planGrid.edit.cellLabel', { material: row.materialCode, bucket })}
+      inputMode="decimal"
+      className="h-full w-full bg-white px-2 text-right font-mono text-xs text-data-navy outline-none"
+      value={text}
+      onChange={(e) => {
+        textRef.current = e.target.value;
+        setText(e.target.value);
+      }}
+      onKeyDown={(e) => {
+        if (e.key === 'Escape') cancelled.current = true;
+      }}
+    />
   );
 };
 
@@ -90,6 +215,11 @@ const TimePhasedGrid: React.FC<{ viewId: Extract<ViewId, 'rm-plan' | 'pm-plan' |
   const measures = useMemo(() => visibleMeasures(view.measuresShown), [view.measuresShown]);
 
   const factsQuery = usePlanningFacts(horizon, measures);
+  const draftApi = usePlanDraft();
+  const gridRef = useRef<DataSheetGridRef>(null);
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const [selection, setSelection] = useState<{ r0: number; r1: number; c0: number; c1: number } | null>(null);
+  const [pasteNote, setPasteNote] = useState<{ planned: number; refused: number; outside: number } | null>(null);
   const consolidation = useConsolidationRows();
   const lockedExceptions = viewId === 'exceptions';
   // The sort choices, labelled from the COLUMN REGISTRY (B1) — one source for
@@ -124,6 +254,58 @@ const TimePhasedGrid: React.FC<{ viewId: Extract<ViewId, 'rm-plan' | 'pm-plan' |
   const blockOf = useMemo(() => new Map(visible.map((b) => [b.materialCode, b])), [visible]);
   const exceptionCount = useMemo(() => blocks.filter((b) => isPlanException(b.exceptions)).length, [blocks]);
 
+  // B3 · what the SEAM holds per editable cell, for C6 §3's clear-when-agreed.
+  const seamIndex = useMemo(() => {
+    const m = new Map<string, { value: number | null; committed: boolean }>();
+    for (const f of factsQuery.data?.items ?? []) {
+      if (f.supplierId !== null || measureOf(f.measureId).editable === false) continue;
+      m.set(f.sourceRef, { value: f.value, committed: f.provenance.planState === 'committed' });
+    }
+    return m;
+  }, [factsQuery.data]);
+  const reconcileRef = useRef(draftApi?.reconcile);
+  reconcileRef.current = draftApi?.reconcile;
+  useEffect(() => {
+    reconcileRef.current?.((ref) => seamIndex.get(ref));
+  }, [seamIndex]);
+
+  // B3 · the grid selection, as seam rows — what "Push selection" acts on.
+  const selectedRefs = useMemo(() => {
+    if (!selection) return [];
+    const out: string[] = [];
+    for (let r = selection.r0; r <= selection.r1; r++) {
+      for (let c = selection.c0; c <= selection.c1; c++) {
+        const ref = rows[r]?.seamRefs?.[horizon[c]];
+        if (ref) out.push(ref);
+      }
+    }
+    return out;
+  }, [selection, rows, horizon]);
+
+  // B3 · the paste, judged cell by cell. Intercepted in the CAPTURE phase so
+  // the engine's own handler (which would skip a read-only cell in silence and
+  // write the rest into the rows) never runs. A paste while a cell's text field
+  // has focus is left to the field.
+  const pasteRef = useRef<(e: ClipboardEvent) => void>(() => {});
+  pasteRef.current = (e: ClipboardEvent) => {
+    const active = gridRef.current?.activeCell;
+    if (!draftApi || !active || !wrapRef.current) return;
+    const focused = document.activeElement;
+    if (focused instanceof HTMLInputElement && wrapRef.current.contains(focused)) return;
+    const text = e.clipboardData?.getData('text/plain');
+    if (text === undefined || text === null) return;
+    const col = horizon.indexOf((active.colId ?? '').replace(/^bucket:/, ''));
+    if (col < 0) return;
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    setPasteNote(draftApi.paste(rows, horizon, { row: active.row, col }, text));
+  };
+  useEffect(() => {
+    const onPaste = (e: ClipboardEvent) => pasteRef.current(e);
+    document.addEventListener('paste', onPaste, true);
+    return () => document.removeEventListener('paste', onPaste, true);
+  }, []);
+
   // The bucket columns are GENERATED (B1) — once per measure, so each cell reads
   // the governance of ITS measure's column (`b:<measure>:<bucket>`).
   const generated = useMemo(() => {
@@ -141,20 +323,26 @@ const TimePhasedGrid: React.FC<{ viewId: Extract<ViewId, 'rm-plan' | 'pm-plan' |
       horizon.map((bucket) => ({
         id: `bucket:${bucket}`,
         title: <Data className="text-xs">{bucket}</Data>,
-        disabled: true,
-        minWidth: 104,
-        component: ({ rowData }: CellProps<PlanRow>) => (
-          <PlanBucketCell
-            value={rowData.cells[bucket]}
-            derived={
-              generated.ok
-                ? (generated.byId.get(bucketColumnId(rowData.measureId as MeasureId, bucket))?.derived ?? false)
-                : rowData.derived
-            }
-          />
-        ),
+        // THE REGISTRY DECIDES: only a cell `isEditableCell` admits can enter
+        // edit mode, and only while a draft exists to receive the edit.
+        disabled: ({ rowData }: { rowData: PlanRow }) => !draftApi || !isEditableCell(rowData, bucket),
+        minWidth: 112,
+        component: ({ rowData, focus }: CellProps<PlanRow>) =>
+          draftApi && isEditableCell(rowData, bucket) ? (
+            <EditableBucketCell row={rowData} bucket={bucket} focus={focus} />
+          ) : (
+            <ReadOnlyBucketCell
+              row={rowData}
+              bucket={bucket}
+              derived={
+                generated.ok
+                  ? (generated.byId.get(bucketColumnId(rowData.measureId as MeasureId, bucket))?.derived ?? false)
+                  : rowData.derived
+              }
+            />
+          ),
       })),
-    [horizon, generated],
+    [horizon, generated, draftApi],
   );
 
   const gutter = useMemo(
@@ -228,6 +416,22 @@ const TimePhasedGrid: React.FC<{ viewId: Extract<ViewId, 'rm-plan' | 'pm-plan' |
         </div>
         <LivenessPill capability="forecastPublications" />
       </div>
+
+      {viewId !== 'exceptions' && (
+        <p className="mb-2 text-xs text-text-tertiary" data-testid="tp-edit-hint">
+          {t('planGrid.edit.hint')}
+        </p>
+      )}
+      <PlannedChangesPanel selectedRefs={selectedRefs} />
+      {pasteNote && (
+        <p className="mb-2 text-xs text-text-secondary" data-testid="tp-paste-note">
+          {t('planGrid.edit.pasteNote', {
+            planned: formatNumber(pasteNote.planned),
+            refused: formatNumber(pasteNote.refused),
+            outside: formatNumber(pasteNote.outside),
+          })}
+        </p>
+      )}
 
       <div className="mb-3 flex flex-wrap items-end gap-3 text-sm">
         <label className="flex flex-col gap-1">
@@ -317,11 +521,30 @@ const TimePhasedGrid: React.FC<{ viewId: Extract<ViewId, 'rm-plan' | 'pm-plan' |
         // Height-pinned like every DSG on this page (`--plan-dsg-h`): a grid that
         // auto-shrinks to its content feeds the resize loop that made it tremble.
         <div
+          ref={wrapRef}
           className="plan-dsg tp-grid overflow-hidden rounded-lg border border-border-subtle bg-bg-surface"
           data-testid="tp-grid"
           style={{ '--plan-dsg-h': `${GRID_H}px` } as React.CSSProperties}
         >
           <DataSheetGrid<PlanRow>
+            ref={gridRef}
+            onActiveCellChange={({ cell }) => {
+              const i = cell ? horizon.indexOf((cell.colId ?? '').replace(/^bucket:/, '')) : -1;
+              setSelection(cell && i >= 0 ? { r0: cell.row, r1: cell.row, c0: i, c1: i } : null);
+            }}
+            onSelectionChange={({ selection: s }) => {
+              if (!s) return setSelection(null);
+              const col = (id: string | undefined, fallback: number) => {
+                const i = horizon.indexOf((id ?? '').replace(/^bucket:/, ''));
+                return i < 0 ? fallback : i;
+              };
+              setSelection({
+                r0: Math.min(s.min.row, s.max.row),
+                r1: Math.max(s.min.row, s.max.row),
+                c0: col(s.min.colId, s.min.col),
+                c1: col(s.max.colId, s.max.col),
+              });
+            }}
             value={rows}
             columns={columns}
             gutterColumn={gutter}

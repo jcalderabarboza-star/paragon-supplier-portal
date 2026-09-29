@@ -75,6 +75,7 @@ import type {
   MaterialRequest,
 } from '../types';
 import { PR_INTAKE_LINES } from './fixtures/prIntake';
+import { isKnownIntakeLine } from './intakeLines';
 import { intakeLineStore, setKnownIntakeLineIds } from './stores/intakeLineStore';
 import { projectIntakeLine } from '../intakeLineProjection';
 
@@ -544,7 +545,9 @@ export class MockProcurementService implements IProcurementService {
   // REFUSED on read rather than resurrecting a line nobody emitted.
   async getIntakeLines(scope: QueryScope): Promise<Page<IntakeLine>> {
     if (scope.personaType !== 'buyer') return { items: [] };
-    setKnownIntakeLineIds(PR_INTAKE_LINES.map((l) => l.id));
+    // B3: the predicate spans BOTH producers, so a committed generated SOMO line
+    // survives this read; the LIST below is still the authored queue only.
+    setKnownIntakeLineIds(isKnownIntakeLine);
     const requisitions = purchaseRequisitionStore.all();
     return {
       items: PR_INTAKE_LINES.map((line) =>
