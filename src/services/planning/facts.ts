@@ -21,8 +21,9 @@
 //    on a label is a guess; a fact minted from a guess is a fabricated fact. So
 //    the intake store contributes NO planning fact until the line carries a code
 //    (B0's contract half, not yet in the tree). The generated fixture supplies
-//    `suggestedQty` for synthetic materials; `acceptedQty` has no producer in
-//    this lane until a planner commits through the grid (B5).
+//    `suggestedQty` for synthetic materials, and since B3 each such proposal
+//    IS a generated SOMO intake line (`somoIntake.ts`): its `acceptedQty` fact
+//    is keyed by that line and reads PLANNED until `t_intake_commit` commits it.
 //  · `openPo` / `received`: PO lines and GR inspection lines live in the mock
 //    document identity space (~30 codes); a line whose code the planning master
 //    cannot resolve is skipped, never given a unit (D-OPS-MASTERMISS).

@@ -17,6 +17,7 @@ import { DataError } from '../data/types';
 import { useCurrentIdentity } from '../../context/CurrentIdentityContext';
 import { scopeKey } from './useServiceQuery';
 import type { BidCurrency } from '../../lib/currencyPolicy';
+import type { NumberConvention } from '../../lib/localeNumber';
 import type { FxPinSource } from '../../lib/fxPin';
 import type { RFQCategory } from '../../data/mockRfqs';
 import type { CodeLessReason } from '../../data/materialCatalogReason';
@@ -1871,6 +1872,17 @@ export interface IntakeCommitVars {
    * reason was left blank.
    */
   readonly overrideReason?: string;
+  /**
+   * B3 · the convention the SURFACE parsed the raw under — the planning grid
+   * reads under the seat's, and says so, so `INTAKE_QTY_AGREES` re-reads the raw
+   * the same way. Omitted by the drawer, which parses with no hint.
+   */
+  readonly numberConvention?: NumberConvention;
+  /**
+   * B3 · the batch anchor (the SubmissionSession pattern): the first commit of a
+   * grid push mints it, commits 2..n pass it, so one push is one audit group.
+   */
+  readonly causationId?: string;
 }
 
 /** Commit an intake line into the sourcing workload (cascades to `t_pr_create`). */
@@ -1878,23 +1890,33 @@ export function useIntakeCommit() {
   const svc = useDataService();
   const scope = useScope();
   const invalidate = useInvalidateProcurement();
+  const qc = useQueryClient();
 
   return useMutation<CommandResult, Error, IntakeCommitVars>({
-    mutationFn: ({ lineId, acceptedQty, acceptedQtyRaw, overrideReason }) =>
-      svc.commands.dispatch(scope, {
-        transitionId: 't_intake_commit',
-        entity: 'intakeLine',
-        entityId: lineId,
-        payload: {
-          acceptedQty,
-          acceptedQtyRaw,
-          ...(overrideReason && overrideReason.trim() !== ''
-            ? { overrideReason: overrideReason.trim() }
-            : {}),
+    mutationFn: ({ lineId, acceptedQty, acceptedQtyRaw, overrideReason, numberConvention, causationId }) =>
+      svc.commands.dispatch(
+        scope,
+        {
+          transitionId: 't_intake_commit',
+          entity: 'intakeLine',
+          entityId: lineId,
+          payload: {
+            acceptedQty,
+            acceptedQtyRaw,
+            ...(numberConvention ? { numberConvention } : {}),
+            ...(overrideReason && overrideReason.trim() !== ''
+              ? { overrideReason: overrideReason.trim() }
+              : {}),
+          },
         },
-      }),
+        causationId,
+      ),
     onSuccess: (result) => {
-      if (result.status !== 'failed') invalidate(scope);
+      if (result.status === 'failed') return;
+      invalidate(scope);
+      // B3 · the planning seam carries the committed quantity too, and the grid
+      // clears an overlay entry only when THAT read agrees (C6 §3).
+      qc.invalidateQueries({ queryKey: ['planning'] });
     },
   });
 }

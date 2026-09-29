@@ -14,8 +14,10 @@
 //    on a label is a guess, and a fact minted from a guess is a fabricated fact.
 //    So the intake store contributes NO planning fact until the line carries a
 //    code (B0's contract half, not yet in the tree). The generated fixture
-//    supplies `suggestedQty` for synthetic materials; `acceptedQty` has no
-//    producer in this lane until a planner commits through the grid (B5).
+//    supplies `suggestedQty` for synthetic materials, and since B3 each such
+//    proposal IS a generated SOMO intake line (`somoIntake.ts`): its
+//    `acceptedQty` fact is keyed by that line and reads PLANNED until
+//    `t_intake_commit` commits it.
 //  · `openPo` / `received`: PO lines and GR inspection lines live in the mock
 //    document identity space; a line whose code the planning master cannot
 //    resolve is skipped, never given a unit (D-OPS-MASTERMISS).
@@ -37,6 +39,8 @@ import {
   type InventoryDeclaration,
 } from '../../sdc';
 import { requirementResponseStore } from './stores/requirementResponseStore';
+import { intakeLineStore } from './stores/intakeLineStore';
+import { somoIntakeLineId } from '../../planning/somoIntake';
 import { inventoryDeclarationStore } from './stores/inventoryDeclarationStore';
 import { incomingShipmentStore } from './stores/incomingShipmentStore';
 import { purchaseOrderStore } from './stores/purchaseOrderStore';
@@ -73,10 +77,14 @@ import {
 const tierOf = (capability: Capability): Tier =>
   feedProvenance(capability) === 'LIVE' ? liveness(capability) : 'SIMULATED';
 
-const committed = (source: MeasureSource, tier: Tier): PlanningFactProvenance => ({
+const provenanceOf = (
+  source: MeasureSource,
+  tier: Tier,
+  planState: PlanningFactProvenance['planState'] = 'committed',
+): PlanningFactProvenance => ({
   source,
   liveness: tier,
-  planState: 'committed',
+  planState,
 });
 
 /**
@@ -104,6 +112,7 @@ export function derivePlanningFacts(q: PlanningFactsQuery): PlanningFactsOutcome
     value: number | null,
     sourceRef: string,
     tier?: Tier,
+    planState?: PlanningFactProvenance['planState'],
   ) => {
     if (!wanted.has(measureId) || !inHorizon.has(periodBucket) || !want(materialCode)) return;
     // D-OPS-MASTERMISS inside the lane: no unit, no fact.
@@ -116,7 +125,7 @@ export function derivePlanningFacts(q: PlanningFactsQuery): PlanningFactsOutcome
       measureId,
       value,
       uom: requireUom(materialCode, planningMaster()),
-      provenance: committed(spec.source, tier ?? tierOf(spec.capability)),
+      provenance: provenanceOf(spec.source, tier ?? tierOf(spec.capability), planState),
       sourceRef,
     });
   };
@@ -222,7 +231,20 @@ export function derivePlanningFacts(q: PlanningFactsQuery): PlanningFactsOutcome
     for (const b of parsed.buckets) {
       if (!fixtureHorizon.has(b.id)) continue;
       push('demand', code, null, b.id, generatedDemand(code, b.id), seedRef, 'SIMULATED');
-      push('suggestedQty', code, null, b.id, generatedSuggested(code, b.id), seedRef, 'SIMULATED');
+      const suggested = generatedSuggested(code, b.id);
+      push('suggestedQty', code, null, b.id, suggested, seedRef, 'SIMULATED');
+      // B3 · the ACCEPTED quantity of SOMO's proposal, keyed by its intake line —
+      // the `sourceRef` IS the grid cell's `seamRef`. Before a commit it is the
+      // producer's delivered figure (= the proposal) and reads PLANNED; after
+      // `t_intake_commit` it is the committed quantity and reads committed. The
+      // triage store is read, never the overlay: nothing a planner has typed and
+      // not pushed can reach this array (C6 §2).
+      if (suggested !== null && wanted.has('acceptedQty')) {
+        const lineId = somoIntakeLineId(code, b.id);
+        const record = intakeLineStore.get(lineId);
+        const done = record?.state === 'Committed' && typeof record.committedQty === 'number';
+        push('acceptedQty', code, null, b.id, done ? record.committedQty! : suggested, lineId, 'SIMULATED', done ? 'committed' : 'planned');
+      }
       for (const sup of suppliersFor(code)) {
         const alloc = generatedAllocation(code, sup, b.id);
         const conf = generatedConfirmed(code, sup, b.id, index.get(b.id) ?? 0);

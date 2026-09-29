@@ -43,7 +43,7 @@ import { supplierDocumentStore } from './stores/supplierDocumentStore';
 import { supplierApplicationStore } from './stores/supplierApplicationStore';
 import { materialRequestStore } from './stores/materialRequestStore';
 import { intakeLineStore, setKnownIntakeLineIds } from './stores/intakeLineStore';
-import { PR_INTAKE_LINES } from './fixtures/prIntake';
+import { intakeLineById, isKnownIntakeLine } from './intakeLines';
 import { projectIntakeLine } from '../intakeLineProjection';
 import { buildPrCreatePayload } from '../../../pages-v2/requisitions/prCreatePayload';
 import { VENDOR_BEARING_REQUEST_TYPE } from '../../transitions/flows/supplierApplication.flow';
@@ -2590,12 +2590,13 @@ const intakeLineTarget: CommandTarget = {
   readState: (id) => {
     // The producer's set is the authority on which lines EXIST. Told once, here,
     // because this is the first place a dispatch can reach the store.
-    setKnownIntakeLineIds(PR_INTAKE_LINES.map((l) => l.id));
+    // B3: both producers — the authored rows and the generated SOMO proposals.
+    setKnownIntakeLineIds(isKnownIntakeLine);
     return intakeLineStore.stateOf(id);
   },
   readScopeOwner: () => null,
   readEntity: (id) => {
-    const line = PR_INTAKE_LINES.find((l) => l.id === id);
+    const line = intakeLineById(id);
     if (!line) return null;
     return projectIntakeLine(line, intakeLineStore.get(id), purchaseRequisitionStore.all());
   },
@@ -2745,7 +2746,7 @@ const resolveCascades = (ctx: CascadeContext): CascadeCommand[] => {
   // second opinion about rules that already have one — with the second opinion
   // failing SILENTLY where the first fails on the record.
   if (ctx.entity === 'intakeLine' && ctx.transitionId === 't_intake_commit') {
-    const line = PR_INTAKE_LINES.find((l) => l.id === ctx.entityId);
+    const line = intakeLineById(ctx.entityId);
     const qty = ctx.payload.acceptedQty;
     if (!line || typeof qty !== 'number') return [];
     const reason =

@@ -28,7 +28,7 @@ import type { ResolvedItem, ResolvedLine } from '../delivery/addressing';
 import { deliveryShipmentPoolFor } from '../delivery/pool';
 import { deriveFulfillment } from '../delivery/fulfillment';
 import { sdcClock } from '../sdc/clock';
-import { normalizeQty } from '../../lib/localeNumber';
+import { normalizeQty, type NumberConvention } from '../../lib/localeNumber';
 import type { DrawdownEnforcement, TolerancePolicy } from '../delivery/types';
 import { isMatched } from './invoiceRollup';
 import { BASE_CURRENCY, BID_CURRENCIES, isBidCurrency } from '../../lib/currencyPolicy';
@@ -1805,17 +1805,30 @@ bindPolicyHook(POLICY_HOOKS.INTAKE_QTY_FLOOR, ({ payload }) => {
  * is what makes the number falsifiable at the spine rather than only at the
  * surface that happened to parse it.
  *
- * ⚠️ **NO CONVENTION HINT, DELIBERATELY.** An internal buyer form carries no
+ * ⚠️ **NO CONVENTION HINT UNLESS THE CALLER STATES ONE.** The drawer carries no
  * origin signal, so a token legal under BOTH readings (`AMBIGUOUS_QTY`) is
  * REFUSED rather than guessed — the parser's own ruling (CP-0 §5a), and the
  * refusal reason travels so the caller learns which of the three it hit.
+ *
+ * B3 · the planning grid parses under the SEAT's convention (Design 1 §5.4), so
+ * it STATES it (`numberConvention`, the confirm lane's field and rule): the
+ * spine re-reads the raw under the same convention the surface did, and an
+ * unrecognised convention is refused rather than silently dropped to the
+ * hint-free parse.
  */
 bindPolicyHook(POLICY_HOOKS.INTAKE_QTY_AGREES, ({ payload }) => {
   const raw = payload.acceptedQtyRaw;
   if (typeof raw !== 'string') {
     return { ok: false, reason: `INTAKE_QTY_AGREES: acceptedQtyRaw must be text, got ${typeof raw}` };
   }
-  const parsed = normalizeQty(raw);
+  const conv = payload.numberConvention;
+  if (conv !== undefined && conv !== 'id' && conv !== 'en') {
+    return {
+      ok: false,
+      reason: `INTAKE_QTY_AGREES: numberConvention must be 'id' or 'en' when present, got ${JSON.stringify(conv)}`,
+    };
+  }
+  const parsed = normalizeQty(raw, conv as NumberConvention | undefined);
   if (!parsed.ok) {
     return { ok: false, reason: `INTAKE_QTY_AGREES: acceptedQtyRaw is unreadable (${parsed.reason})` };
   }

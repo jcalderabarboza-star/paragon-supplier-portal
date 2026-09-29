@@ -119,14 +119,24 @@ let hydrated = false;
  * would look identical to a corrupt store. Until it is set, a stored row's line
  * id is not checked against anything and the row survives on its own shape.
  */
-let knownLineIds: ReadonlySet<string> | null = null;
+let isKnownLine: ((lineId: string) => boolean) | null = null;
 
 /**
  * Tell the store which lines exist. Called by the read seam, which is the only
  * module that knows the producer's set.
+ *
+ * ⚠️ B3 · A PREDICATE AS WELL AS A SET. The generated SOMO lines behind the
+ * planning grid are ADDRESSABLE rather than enumerated (a pure function of the
+ * seed), so the producer's set can be a membership test; a set is still
+ * accepted and is what every spec hands it.
  */
-export function setKnownIntakeLineIds(ids: Iterable<string>): void {
-  knownLineIds = new Set(ids);
+export function setKnownIntakeLineIds(ids: Iterable<string> | ((lineId: string) => boolean)): void {
+  if (typeof ids === 'function') {
+    isKnownLine = ids;
+    return;
+  }
+  const set = new Set(ids);
+  isKnownLine = (lineId) => set.has(lineId);
 }
 
 /** Why this row cannot be trusted, or `null`. The verbs' own predicates. */
@@ -135,7 +145,7 @@ function refusalFor(row: unknown, seen: ReadonlySet<string>): string | null {
   const r = row as Record<string, unknown>;
   if (typeof r.lineId !== 'string' || r.lineId.trim() === '') return 'lineId is not an id';
   if (seen.has(r.lineId)) return `'${r.lineId}' appears twice in the store`;
-  if (knownLineIds !== null && !knownLineIds.has(r.lineId)) {
+  if (isKnownLine !== null && !isKnownLine(r.lineId)) {
     return `'${r.lineId}' names no intake line the producers emitted`;
   }
   // The SAME membership predicate the flow exports — not a second spelling of
@@ -245,7 +255,7 @@ export const intakeLineStore = {
    */
   stateOf(lineId: string): IntakeLineState | null {
     hydrate();
-    if (knownLineIds !== null && !knownLineIds.has(lineId)) return null;
+    if (isKnownLine !== null && !isKnownLine(lineId)) return null;
     return rows.find((r) => r.lineId === lineId)?.state ?? 'Pending';
   },
   /**
@@ -269,7 +279,7 @@ export const intakeLineStore = {
     rows = [];
     readState = EMPTY_READ;
     hydrated = false;
-    knownLineIds = null;
+    isKnownLine = null;
     try {
       if (typeof window !== 'undefined' && window.localStorage) {
         window.localStorage.removeItem(INTAKE_TRIAGE_KEY);
