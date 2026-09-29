@@ -79,6 +79,10 @@ export const CASCADES: Record<string, readonly CascadeLink[]> = {
   t_requirementresponse_revise: [
     { targetEntity: 'requirementResponse', targetTransitionId: 't_requirementresponse_supersede' },
   ],
+  // B4a — publishing retires the previous publication of the same grain.
+  t_publication_publish: [
+    { targetEntity: 'forecastPublication', targetTransitionId: 't_publication_supersede' },
+  ],
 };
 
 /** The cascade links declared for a source transition (empty if none). */

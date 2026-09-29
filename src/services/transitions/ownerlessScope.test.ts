@@ -96,6 +96,7 @@ import { requirementResponseStore } from '../data/mock/stores/requirementRespons
 import { inventoryDeclarationStore } from '../data/mock/stores/inventoryDeclarationStore';
 import { PR_INTAKE_LINES } from '../data/mock/fixtures/prIntake';
 import { intakeLineStore } from '../data/mock/stores/intakeLineStore';
+import { forecastPublicationStore } from '../data/mock/stores/forecastPublicationStore';
 import { incomingShipmentStore } from '../data/mock/stores/incomingShipmentStore';
 import { schedulingAgreementStore } from '../delivery/stores/schedulingAgreementStore';
 import { SAMPLE_PEOPLE } from '../identity/sampleRoster';
@@ -205,6 +206,8 @@ async function realIds(): Promise<Record<string, string | null>> {
     // because a producer emitted it, and the machine has no creation edge
     // through which a probe could raise one.
     intakeLine: PR_INTAKE_LINES[0]?.id ?? null,
+    // B4a — a seeded publication (the store seeds from the SDC fixture).
+    forecastPublication: forecastPublicationStore.all()[0]?.publicationId ?? null,
     requirementResponse: requirementResponseStore.all()[0]?.id ?? null,
     inventoryDeclaration: inventoryDeclarationStore.all()[0]?.id ?? null,
     incomingShipment: incomingShipmentStore.all()[0]?.id ?? null,
@@ -511,6 +514,10 @@ describe('THE LEGITIMATE PATHS — the half a "refuse everyone" fix would break'
         'deliveryPolicy',
         'deliveryRelease',
         'enforcement',
+        // B4a — a forecast publication is Paragon's plan; a supplier READS it
+        // through `getPublications` and never acts on one, so
+        // `readScopeOwner: () => null` DENIES every supplier (§86).
+        'forecastPublication',
         // A2 — an intake line is Paragon's own plan and names no supplier, so
         // `readScopeOwner: () => null` DENIES every supplier rather than meaning
         // "nothing to compare" (§86).

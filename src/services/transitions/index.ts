@@ -54,6 +54,13 @@ export {
   isIntakeLineState,
   type IntakeLineState,
 } from './flows/intakeLine.flow';
+export {
+  forecastPublicationFlow,
+  FORECAST_PUBLICATION_STATES,
+  PUBLICATION_OPEN_FIELDS,
+  PUBLICATION_ALLOCATE_FIELDS,
+  PUBLICATION_APPROVE_FIELDS,
+} from './flows/forecastPublication.flow';
 export * from './customRoles';
 
 import { flowRegistry } from './registry';
@@ -83,6 +90,7 @@ import { pslCapSettingFlow } from './flows/pslCapSetting.flow';
 import { deliveryReleaseFlow } from './flows/deliveryRelease.flow';
 import { deliveryPolicyFlow } from './flows/deliveryPolicy.flow';
 import { intakeLineFlow } from './flows/intakeLine.flow';
+import { forecastPublicationFlow } from './flows/forecastPublication.flow';
 
 // Seed the shipped flows onto the singleton.
 flowRegistry.register(purchaseOrderFlow); // Step 3.1 — PO
@@ -164,3 +172,6 @@ flowRegistry.register(deliveryPolicyFlow); // Call-off 1 — the drawdown tolera
 // `Pending` is the born state, because a producer emitted the line and Paragon
 // did not author it.
 flowRegistry.register(intakeLineFlow); // A2 — Intake line
+// B4a · Design 2 §2.1 — the forecast publication. WIRED in the same commit as
+// its target (`forecastPublication`), so it never joins the target-less set.
+flowRegistry.register(forecastPublicationFlow); // B4a — Forecast publication

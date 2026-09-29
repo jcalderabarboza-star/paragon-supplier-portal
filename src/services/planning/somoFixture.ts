@@ -32,6 +32,14 @@ import { mockSuppliers } from '../../data/mockSuppliers';
 /** The seed. Changing it changes every generated value — the pins say so. */
 export const SOMO_FIXTURE_SEED = 20261028;
 
+/**
+ * B4a · the plan version the generated fixture IS, and the emission it came
+ * from — so a forecast publication can be opened from it through the same
+ * `PUB_PLANVERSION_KNOWN` check a real SOMO emission passes.
+ */
+export const SOMO_FIXTURE_PLAN_VERSION = `PV-SIM-${SOMO_FIXTURE_SEED}`;
+export const SOMO_FIXTURE_EMISSION = `somo-fixture@${SOMO_FIXTURE_SEED}`;
+
 export const PLANNING_MATERIAL_COUNT = 1200;
 export const PLANNING_SUPPLIER_COUNT = 40;
 

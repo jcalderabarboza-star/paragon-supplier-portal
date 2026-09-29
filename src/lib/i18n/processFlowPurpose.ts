@@ -234,6 +234,22 @@ export const processFlowPurposeEn: Record<string, string> = {
   'processFlows.purpose.t_intake_commit':
     'Turns a proposed requirement into a real request for the buying team, at the figure the planner is willing to stand behind — and only once, so one need never becomes three orders.',
 
+  // ── forecastPublication (B4a) ─────────────────────────────────
+  'processFlows.purpose.entity.forecastPublication':
+    'The plan suppliers are asked to answer: which material, in which period, and how much each supplier is expected to supply — the version every confirmation is measured against.',
+  'processFlows.purpose.t_publication_open':
+    'Starts the next plan from a SOMO version, holding each material\'s total for each period before any supplier is given a share.',
+  'processFlows.purpose.t_publication_allocate':
+    'Gives one supplier a share of a material\'s total for a period — never more, together with the others, than SOMO\'s figure.',
+  'processFlows.purpose.t_publication_approve_firm':
+    'Signs a share in the locked period, where a supplier will build stock on the number — and someone other than the planner who split it puts their name to it.',
+  'processFlows.purpose.t_publication_publish':
+    'Sends the plan to suppliers and sets the date their answers are due; the plan it replaces is retired at the same moment.',
+  'processFlows.purpose.t_publication_supersede':
+    'Marks an older plan as replaced, so suppliers answer the current one while earlier answers stay readable against what they answered.',
+  'processFlows.purpose.t_publication_withdraw':
+    'Takes a sent plan back and says why, so no supplier answers a plan that no longer stands.',
+
   // ── supplierDocument ───────────────────────────────────────────────────────
   'processFlows.purpose.entity.supplierDocument':
     'The paperwork Paragon must hold on a supplier — certificates, licences, bank details — and where each one stands.',
@@ -587,6 +603,22 @@ export const processFlowPurposeId: Record<string, string> = {
     'Mengembalikan kebutuhan yang dikesampingkan ke antrean, karena pilihan yang keliru tidak boleh menjadi jalan buntu.',
   'processFlows.purpose.t_intake_commit':
     'Mengubah usulan kebutuhan menjadi permintaan sungguhan bagi tim pembelian, pada angka yang berani dipertanggungjawabkan perencana — dan hanya sekali, agar satu kebutuhan tidak pernah menjadi tiga pesanan.',
+
+  // ── forecastPublication (B4a) ─────────────────────────────────
+  'processFlows.purpose.entity.forecastPublication':
+    'Rencana yang diminta untuk dijawab pemasok: material apa, pada periode apa, dan berapa yang diharapkan dari tiap pemasok — versi yang menjadi acuan setiap konfirmasi.',
+  'processFlows.purpose.t_publication_open':
+    'Memulai rencana berikutnya dari sebuah versi SOMO, memuat total tiap material per periode sebelum pemasok mana pun diberi bagian.',
+  'processFlows.purpose.t_publication_allocate':
+    'Memberi satu pemasok bagian dari total sebuah material untuk suatu periode — bersama pemasok lain, tidak pernah melebihi angka SOMO.',
+  'processFlows.purpose.t_publication_approve_firm':
+    'Menandatangani bagian pada periode terkunci, tempat pemasok akan menyiapkan stok berdasarkan angka itu — dan yang menandatangani bukan perencana yang membaginya.',
+  'processFlows.purpose.t_publication_publish':
+    'Mengirim rencana kepada pemasok dan menetapkan tanggal jawaban mereka jatuh tempo; rencana yang digantikannya dipensiunkan pada saat yang sama.',
+  'processFlows.purpose.t_publication_supersede':
+    'Menandai rencana lama sebagai sudah diganti, agar pemasok menjawab rencana yang berlaku sementara jawaban sebelumnya tetap terbaca terhadap apa yang mereka jawab.',
+  'processFlows.purpose.t_publication_withdraw':
+    'Menarik kembali rencana yang sudah dikirim beserta penjelasannya, agar tidak ada pemasok yang menjawab rencana yang tidak berlaku lagi.',
 
   // ── supplierDocument ───────────────────────────────────────────────────────
   'processFlows.purpose.entity.supplierDocument':

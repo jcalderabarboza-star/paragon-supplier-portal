@@ -118,6 +118,19 @@ export function applyEdit(
       ? withRefusal(draft, { rowId: row.id, bucket, raw, reason: 'NO_SEAM_ROW' })
       : withRefusal(draft, { rowId: row.id, bucket, raw, reason: 'READ_ONLY', source: spec.source });
   }
+  // ⚠️ OPERATOR RULING (B4a): ON PASTE, A TOKEN WHOSE READING DIFFERS BETWEEN
+  // THE EN AND ID CONVENTIONS IS REFUSED AS AMBIGUOUS — `12.000` / `12,000`
+  // (one separator, then exactly three digits). A pasted value comes from
+  // somewhere else, written under a convention the seat cannot see, so the
+  // seat's convention is not evidence about it. The parser WITHOUT a hint is
+  // exactly that test: it answers AMBIGUOUS_QTY precisely when both readings
+  // are legal and disagree. A TYPED value keeps the seat's convention.
+  if (origin === 'PASTE') {
+    const unhinted = normalizeQty(raw);
+    if (!unhinted.ok && unhinted.reason === 'AMBIGUOUS_QTY') {
+      return withRefusal(draft, { rowId: row.id, bucket, raw, reason: 'AMBIGUOUS_QTY' });
+    }
+  }
   const parsed = normalizeQty(raw, convention);
   if (!parsed.ok) return withRefusal(draft, { rowId: row.id, bucket, raw, reason: parsed.reason });
 

@@ -13,6 +13,7 @@ export * from './fixtures';
 export * from './materialMaster';
 export * from './consolidation';
 export * from './visibility';
+export * from './publication';
 export * from './session';
 export * from './submitModel';
 export * from './inventory';

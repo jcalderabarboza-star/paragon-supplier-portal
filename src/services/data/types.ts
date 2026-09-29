@@ -48,6 +48,7 @@ import type {
   SupplierCoverageEntry,
   SupplierRollup,
   ChaseEntry,
+  ForecastPublication,
 } from '../sdc';
 // Delivery Agreement read seam — the view-model row type (type-only; erased at
 // build, so no runtime import into the data layer).
@@ -2029,6 +2030,29 @@ export interface ICollaborationService {
   getCoverage(scope: QueryScope): Promise<Page<SupplierCoverageEntry>>;
   getChase(scope: QueryScope): Promise<Page<ChaseEntry>>;
   getRollups(scope: QueryScope): Promise<Page<SupplierRollup>>;
+
+  // — B4a · the publications (Design 2 §2.2) —
+  /**
+   * What was published, scoped. Buyer → every published publication. Supplier →
+   * LIVE publications only (FLAG-2, structural), each carrying only that
+   * supplier's own lines. The SIMULATED sample is reached ONLY through
+   * `includeSimulatedSample`, and the page says so (`sample: true`).
+   */
+  getPublications(scope: QueryScope, q?: PublicationsQuery): Promise<PublicationsPage>;
+}
+
+/** B4a — the one opt-in a supplier page may state to reach the sample. */
+export interface PublicationsQuery {
+  readonly includeSimulatedSample?: boolean;
+}
+
+/**
+ * B4a — publications, plus whether they are the SIMULATED sample. `sample` is
+ * what a page's honesty banner is keyed to: true only when the caller asked for
+ * the sample AND no LIVE publication exists.
+ */
+export interface PublicationsPage extends Page<ForecastPublication> {
+  readonly sample: boolean;
 }
 
 // ─── Delivery Agreement reads (the drawdown/compliance surface seam) ──────────

@@ -154,6 +154,12 @@ const LANE_BUNDLES = Object.freeze({
       'contract:draft', 'contract:activate', 'contract:renew', 'contract:terminate',
       'obligation:track', 'obligation:complete',
       'pr:approve', 'pr:reject',
+      // ── B4a · SIGNING A FIRM FORECAST SPLIT — NOT PLANNING'S TO SIGN ─────
+      // Design 2 §2.1. The planner splits a material-period total across
+      // suppliers; a FIRM split is what a supplier builds stock on, so the
+      // signature is a second authority, in this lane. The default seat holds
+      // both lanes — recorded, not pretended away.
+      'publication:approve',
       // ── B1 · RAISING A SUPPLIER APPLICATION, AND ONLY RAISING ONE ─────────
       // Establishing or extending a commercial relationship with a vendor is
       // this lane's subject matter — it sits upstream of the sourcing, orders
@@ -365,6 +371,11 @@ const LANE_BUNDLES = Object.freeze({
       // `MATERIALREQUEST_DECIDER_NOT_REQUESTER` — is built, typed for, and
       // unable to fire until an actor is attributed (F1).
       'materialrequest:review', 'materialrequest:decide',
+      // ── B4a · THE FORECAST PUBLICATION — OPEN, SPLIT, PUBLISH ─────────────
+      // The planner's own acts on the plan a supplier confirms against. The
+      // signature on a firm split is NOT here — `publication:approve` sits in
+      // `procurement` (Design 2 §2.1, segregation).
+      'publication:draft', 'publication:allocate', 'publication:publish',
     ]),
     // Raising and revising a requisition — split from approving one, which is
     // the segregation `pr:approve` living in `procurement` expresses.
@@ -629,6 +640,10 @@ export const AUTOMATION_ATOMS: readonly TransitionRole[] = Object.freeze([
   // supplier's `requirementresponse:submit`; this atom moves no quantity and
   // decides nothing — it records that a later version replaced an earlier one.
   'requirementresponse:supersede',
+  // B4a — the publish cascade retires the previous publication of the same
+  // grain. The source verb is `publication:publish`; this atom decides nothing,
+  // it records that a later publication replaced an earlier one.
+  'publication:supersede',
 ]);
 
 /** Is this id one of the seeded system roles, or something someone invented? */

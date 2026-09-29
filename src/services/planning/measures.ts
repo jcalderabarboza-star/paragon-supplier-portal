@@ -15,14 +15,10 @@
 // of the registry at render (`liveness()`), so the day a producer lands the
 // measure's tier moves with nobody editing this file.
 //
-// ⚠️ THE EDITABLE SET IS {acceptedQty}, AND THAT IS NARROWER THAN THE DESIGN.
-// Design 1 §3 says "exactly one PLANNER measure is editable per row kind" —
-// `acceptedQty` on a material row AND `allocation` on a supplier row. The verb
-// `allocation` would request, `t_publication_allocate`, does not exist yet
-// (Design 2 §2 / Design 1 B4), and an edit spec naming a verb the registry does
-// not hold would be a cell that invites typing and can only ever be refused. So
-// `allocation` is declared NOT editable here, by dispatch, until B4 adds the
-// verb; `measureRegistry.test.ts` pins the set and says B4 widens it.
+// ⚠️ THE EDITABLE SET IS {acceptedQty, allocation} — Design 1 §3's two.
+// `allocation` was held off at B1 because its verb did not exist; B4a added
+// `t_publication_allocate` and widened the pin in `planningRegistry.test.ts` on
+// purpose, with the reason beside it.
 // ────────────────────────────────────────────────────────────────────────────
 
 import type { Capability } from '../liveness/registry';
@@ -129,8 +125,28 @@ export const MEASURES: readonly MeasureSpec[] = Object.freeze([
     honesty: 'planState',
     capability: 'purchaseRequisitions',
   }),
-  // ⚠️ NOT EDITABLE UNTIL B4 ADDS `t_publication_allocate`. See the header.
-  m({ id: 'allocation', source: 'PLANNER', grain: 'supplier', derivation: 'authored', unit: 'materialUom', editable: false, aggregation: qty, defaultVisible: true, honesty: 'liveness', capability: 'forecastPublications' }),
+  // ⚠️ EDITABLE SINCE B4a, WHEN `t_publication_allocate` LANDED — the edit
+  // commits the supplier's share of a DRAFT publication. No grid cell offers it
+  // yet: `isEditableCell` needs a seam row to anchor to, and the draft panel
+  // that supplies one is B4b. No reason is owed: the split IS the planner's act,
+  // with no producer baseline to depart from; a firm split is SIGNED separately
+  // (`t_publication_approve_firm`, procurement).
+  m({
+    id: 'allocation',
+    source: 'PLANNER',
+    grain: 'supplier',
+    derivation: 'authored',
+    unit: 'materialUom',
+    editable: Object.freeze({
+      verb: 't_publication_allocate',
+      atom: 'publication:allocate',
+      payloadField: 'forecastQty',
+    }),
+    aggregation: qty,
+    defaultVisible: true,
+    honesty: 'liveness',
+    capability: 'forecastPublications',
+  }),
   m({ id: 'confirmed', source: 'SUPPLIER', grain: 'supplier', derivation: 'authored', unit: 'materialUom', editable: false, aggregation: qty, defaultVisible: true, honesty: 'liveness', capability: 'forecastPublications' }),
   m({ id: 'confirmedDeficit', source: 'PORTAL', grain: 'supplier', derivation: 'derived', derivedBy: 'confirmedDeficitOf', unit: 'materialUom', editable: false, aggregation: qty, defaultVisible: true, honesty: 'model', capability: 'forecastPublications' }),
   m({ id: 'supplierSoh', source: 'SUPPLIER', grain: 'supplier', derivation: 'authored', unit: 'materialUom', editable: false, aggregation: { overBuckets: 'none', overRows: 'sum' }, defaultVisible: true, honesty: 'liveness', capability: 'inventory', asOf: true }),
