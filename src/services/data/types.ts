@@ -32,7 +32,9 @@ import type { EnforcementSetting, ActorAttribution } from '../../lib/enforcement
 // the same reason as the line above: `PurchaseRequisition.periodBucket` names the
 // vocabulary, and the ONE function that decides membership is `parseBucket` in
 // the module beside it. Importing the alias does not import the parse.
-import type { BucketId } from '../planning/bucket';
+import type { BucketId, BucketRefusalReason } from '../planning/bucket';
+import type { PlanningFact } from '../planning/facts';
+import type { MeasureId } from '../planning/measures';
 import type { IntakeLineState } from '../transitions/flows/intakeLine.flow';
 
 // SDC-4b — the collaboration read seam's row types (type-only; the SDC layer
@@ -2166,6 +2168,35 @@ export interface IEnforcementService {
   getEnforcementSettings(scope: QueryScope): Promise<Page<EnforcementSetting>>;
 }
 
+// ─── Planning read (B1 · Design 1 §2.4) — the long-form fact seam ────────────
+//
+// ONE read for every measure the planning grid can show. Long form so that a new
+// measure is a registry entry and a producer, with no change here.
+//
+// ⚠️ A HORIZON THAT CANNOT BE PARSED IS REFUSED BY NAME, NOT ANSWERED EMPTY. A
+// mixed-grain horizon (months beside weeks), a quarter, or an empty list gets an
+// empty page CARRYING `horizonRefusal` — so "you asked a question with no
+// answer" can never be read as "there are no facts". `Page<T>`'s own fields are
+// untouched; the refusal is additive.
+//
+// SCOPE: a buyer reads every fact; a supplier reads only SUPPLIER-GRAIN facts
+// naming ITSELF — never another supplier's, and never a material-grain figure
+// (demand, SOMO's suggestion), which is Paragon's plan rather than the
+// supplier's commitment. Design 2 §3.
+export interface PlanningFactsQuery {
+  readonly horizon: readonly BucketId[];
+  readonly measures: readonly MeasureId[];
+  readonly materialCodes?: readonly string[];
+}
+
+export type PlanningFactsPage = Page<PlanningFact> & {
+  readonly horizonRefusal?: { readonly reason: BucketRefusalReason; readonly raw: string };
+};
+
+export interface IPlanningService {
+  getPlanningFacts(scope: QueryScope, q: PlanningFactsQuery): Promise<PlanningFactsPage>;
+}
+
 export interface IDataService {
   suppliers: ISupplierService;
   procurement: IProcurementService;
@@ -2181,6 +2212,8 @@ export interface IDataService {
   /** Enforcement read seam (CP-3 · E2) — the append-only setting ledger,
    *  buyer-scoped. The mode in force is derived by the caller, never served. */
   enforcement: IEnforcementService;
+  /** Planning read seam (B1) — long-form facts for a horizon and a measure set. */
+  planning: IPlanningService;
   /** Write seam — the single dispatcher (Step 3.4). */
   commands: ICommandService;
   /** What the current scope may do (Step 3.9 DNA seed; mock-backed today). */

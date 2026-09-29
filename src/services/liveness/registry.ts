@@ -110,7 +110,10 @@ export type Capability =
   // read-time resolver (`services/identity/personLabel.ts`), so every surface
   // that prints a person gets "(SAMPLE)" structurally. This entry is the page
   // layer of the same honesty, not a substitute for it.
-  | 'identity';
+  | 'identity'
+  // B1 — SOMO's planning parameters (reorder point, safety stock, projected
+  // stock). NO PRODUCER EXISTS: SOMO does not emit them yet. See `NO_PRODUCER`.
+  | 'somoPlanParameters';
 
 // The ONLY hand-authored fact here: which command entity/flow each capability
 // reads from (`null` = pure fixture, no lifecycle entity). The TIER is never
@@ -228,7 +231,20 @@ const CAPABILITY_BACKING: Record<Capability, string | null> = {
   // against itself. Null backing derives SIMULATED, so green is structurally
   // unreachable and the pill reads "Sample" — which is exactly true.
   identity: null,
+  somoPlanParameters: null,
 };
+
+/**
+ * ⚠️ B1 — THE FIRST SEEDED `SPEC` CAPABILITY, AND WHY IT IS A SET RATHER THAN A
+ * BACKING VALUE. `SPEC` was reserved vocabulary ("zero code; no seeded
+ * capability is SPEC yet"). A `null` backing already means SIMULATED — a
+ * fixture stands in — so it cannot also mean "nothing stands in". These are the
+ * capabilities for which NO fixture exists either: the platform holds no figure
+ * of any tier, and a surface must render the pill, never a number. Membership
+ * is the whole claim; the day SOMO emits the parameters, the entry leaves this
+ * set and the capability becomes SIMULATED or LIVE by the ordinary rule.
+ */
+const NO_PRODUCER: ReadonlySet<Capability> = new Set<Capability>(['somoPlanParameters']);
 
 // — Gate-2: harvest gating (LIVENESS-DATASOURCE-01) —————————————————————————————
 // A harvest-gated capability reads a SYNTHETIC source today; its entry here means
@@ -385,6 +401,7 @@ export function livenessFrom(
  * NOTE: gate-1 alone is NOT green for a harvest-gated capability — see `isLive`.
  */
 export function liveness(capability: Capability): Tier {
+  if (NO_PRODUCER.has(capability)) return 'SPEC';
   return livenessFrom(CAPABILITY_BACKING[capability], WIRED);
 }
 
