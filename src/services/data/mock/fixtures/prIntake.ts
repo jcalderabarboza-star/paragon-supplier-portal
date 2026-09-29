@@ -7,11 +7,22 @@
 // Grid keeps rendering the same rows (its seam repoint is a later, opportunistic
 // follow-up — not this batch). All rows are pre-commit PLANNED. SOMO lines carry
 // lane + segment + the recommend-first `deficit` ("the why"); internal-Grid lines
-// omit lane/segment (null) but still carry a deficit rationale. wasAdjusted ===
-// (acceptedQty !== suggestedQty). Loudly illustrative — behind the SIMULATED
-// registry marker (purchaseRequisitions, gate-2 shut); nothing here is live.
+// omit lane/segment (null) but still carry a deficit rationale. Loudly
+// illustrative — behind the SIMULATED registry marker (purchaseRequisitions,
+// gate-2 shut); nothing here is live.
 //
-// ⚠️ **EVERY `period` HERE IS A BUCKET `parseBucket` ACCEPTS, AND TWO ROWS WERE
+// ⚠️ **THREE FIELDS LEFT THIS FIXTURE AT A2, AND EVERY ONE OF THEM WAS A
+// VALUE THE ROW BESIDE IT ALREADY DETERMINED.** `wasAdjusted` was a
+// hand-authored boolean next to the two quantities that decide it, with nothing
+// checking the three agreed (retired by A1-R2); `planState` was the literal
+// `'PLANNED'` on every row, which the `intakeLine` machine's state now answers
+// and can answer only one way; and `period` became `periodBucket`, a named
+// vocabulary a parser can refuse rather than a free string that had already
+// held two formats. **A fixture may say what a producer said. It may not
+// assert what Paragon has done about it** — the triage lives in
+// `intakeLineStore`, where only a dispatched verb can write it.
+//
+// ⚠️ **EVERY `periodBucket` HERE IS A BUCKET `parseBucket` ACCEPTS, AND TWO ROWS WERE
 // CHANGED TO MAKE THAT TRUE** (operator ruling, 2026-09-28). `pil-somo-001` and
 // `pil-grid-002` both carried `'2026-Q3'`; quarters are refused by ruling, and
 // those two rows were the only reason the refused form existed anywhere in the
@@ -37,13 +48,11 @@ export const PR_INTAKE_LINES: readonly PrIntakeLine[] = [
     segment: 'AX',
     suggestedQty: 12_000,
     acceptedQty: 12_000,
-    wasAdjusted: false,
     uom: 'KG',
     // A RAW MATERIAL, so the MONTHLY grain (operator ruling, 2026-09-28).
-    period: '2026-09',
+    periodBucket: '2026-09',
     estimatedValue: 534_000_000,
     source: 'SOMO',
-    planState: 'PLANNED',
     deficit: 'Projected net requirement below safety stock for Q3 Wardah lines',
   },
   {
@@ -53,12 +62,10 @@ export const PR_INTAKE_LINES: readonly PrIntakeLine[] = [
     segment: 'BY',
     suggestedQty: 5_000,
     acceptedQty: 4_500,
-    wasAdjusted: true,
     uom: 'KG',
-    period: '2026-08',
+    periodBucket: '2026-08',
     estimatedValue: 990_000_000,
     source: 'SOMO',
-    planState: 'PLANNED',
     deficit: 'Aug forecast gap after Emina reformulation; producer trimmed to on-hand cover',
   },
   {
@@ -68,12 +75,10 @@ export const PR_INTAKE_LINES: readonly PrIntakeLine[] = [
     segment: null,
     suggestedQty: 200_000,
     acceptedQty: 200_000,
-    wasAdjusted: false,
     uom: 'PCS',
-    period: '2026-08',
+    periodBucket: '2026-08',
     estimatedValue: 256_000_000,
     source: 'INTERNAL_GRID',
-    planState: 'PLANNED',
     deficit: 'Packaging plan shortfall for the Make Over launch run',
   },
   {
@@ -83,17 +88,15 @@ export const PR_INTAKE_LINES: readonly PrIntakeLine[] = [
     segment: null,
     suggestedQty: 80_000,
     acceptedQty: 90_000,
-    wasAdjusted: true,
     uom: 'PCS',
     // PACKAGING, so the ISO-WEEKLY grain — and this row is the fixture's only
     // week, which is the point: it is what makes a week-shaped bucket reachable
     // by a surface at all. `2026-W36` runs 31 Aug → 7 Sep, straddling two
     // months, so anything that quietly treats a week as a month's subdivision
     // has a row that disagrees with it.
-    period: '2026-W36',
+    periodBucket: '2026-W36',
     estimatedValue: 81_000_000,
     source: 'INTERNAL_GRID',
-    planState: 'PLANNED',
     deficit: 'Secondary-packaging buffer raised for the Q3 quarterly build',
   },
 ];

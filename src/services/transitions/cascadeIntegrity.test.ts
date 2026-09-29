@@ -232,7 +232,7 @@ describe('cascade-map coverage gate — the shipped map', () => {
     }
   });
 
-  it('⚠️ THE STATED RESIDUAL — one authored target does not declare itself a cascade', () => {
+  it('⚠️ THE STATED RESIDUAL — two authored targets do not declare themselves cascades', () => {
     // `flowGraph`'s cascade-integrity check only examines transitions whose own
     // trigger is `cascade`, so an authored target with any other trigger is
     // invisible to it IN BOTH DIRECTIONS. Pinned as an EXACT SET, inverted: the
@@ -255,7 +255,18 @@ describe('cascade-map coverage gate — the shipped map', () => {
     expect(targets).toContain('t_quotation_award'); // known-true member
     expect(targets).not.toContain('t_pr_convert'); // known-false: unauthored by ruling (F2)
     const notDeclaredCascade = targets.filter((id) => byId.get(id)!.trigger !== 'cascade');
-    expect(notDeclaredCascade).toEqual(['t_invoice_match']);
+    // ⚠️ **`t_pr_create` JOINED THIS RESIDUAL AT A2, AND IT CANNOT LEAVE IT BY
+    // BEING RE-TRIGGERED — WHICH IS A DIFFERENT SHAPE FROM `t_invoice_match`.**
+    // It is a `creation` verb with THREE direct callers of its own (the New PR
+    // form, the requisition seed, and now the intake cascade), so re-declaring
+    // it `cascade` would be false about the other two and would say a person
+    // cannot raise a requisition. A creation verb reached BY a cascade is the
+    // `t_rfq_create` relationship inverted — that one is a creation SOURCE, this
+    // is a creation TARGET — and the dispatcher handles both identically. The
+    // residual is therefore a statement about what `flowGraph`'s trigger-based
+    // check cannot see, not a list of things to fix.
+    expect(notDeclaredCascade.sort()).toEqual(['t_invoice_match', 't_pr_create']);
+    expect(byId.get('t_pr_create')!.trigger).toBe('creation');
   });
 });
 

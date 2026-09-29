@@ -627,6 +627,41 @@ export const POLICY_HOOKS = {
    * the enforcement gate — the safest act is always reachable.
    */
   DELIVERY_POLICY_GOVERNED: 'delivery_policy_governed',
+
+  // ── A2 · THE INTAKE COMMIT — three hooks, three different jobs ────────────
+  /**
+   * Intake commit: `acceptedQty` must be a finite number strictly above zero.
+   *
+   * ⚠️ **A ZERO ON A REQUISITION IS A COMMITMENT, NOT A BLANK.** The field it
+   * guards used to run `Number(e.target.value)` behind a `type="number"`
+   * input, so a CLEARED box became `Number('') === 0` and a pushable zero
+   * reached the store. The surface now refuses that before the click; this is
+   * what stands behind a hand-crafted dispatch that never sees a surface.
+   */
+  INTAKE_QTY_FLOOR: 'intake_qty_floor',
+  /**
+   * Intake commit: `acceptedQtyRaw` must parse — through the ONE legal parser
+   * — to exactly `acceptedQty`.
+   *
+   * ⚠️ **THIS IS THE ONLY GUARD THAT CAN CATCH A LOCALE MISREAD, BECAUSE IT IS
+   * THE ONLY ONE THAT SEES WHAT THE HUMAN TYPED.** `"4.500"` is a legal
+   * `type="number"` value that `Number` reads as 4.5, so an Indonesian buyer's
+   * 4,500 KG was minted as 4.5 KG — measured, on this exact field. A floor
+   * check passes 4.5 happily. Carrying the raw token and re-parsing it is what
+   * makes the number falsifiable.
+   */
+  INTAKE_QTY_AGREES: 'intake_qty_agrees',
+  /**
+   * Intake commit: a quantity that leaves the PRODUCER's accepted quantity
+   * must carry a non-blank `overrideReason`.
+   *
+   * ⚠️ **THE BASELINE IS READ FROM THE LINE, NEVER FROM THE PAYLOAD** (A1-R2,
+   * C6 §8.3 Amendment 1). A caller-supplied baseline would let the caller
+   * choose whether it owed a reason, which is the gate asking the subject to
+   * mark its own paper. `ctx.target.readEntity` is what makes the comparison
+   * un-falsifiable, and it is the fifth shipped hook to use it.
+   */
+  INTAKE_OVERRIDE_REASONED: 'intake_override_reasoned',
 } as const;
 
 for (const name of Object.values(POLICY_HOOKS)) registerPolicyHook(name);

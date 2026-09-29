@@ -1,6 +1,6 @@
 # C1 — Method Surface
 
-Three distinct axes. **66** (service surface) · **115** (transition catalog) · **19** (wired
+Three distinct axes. **66** (service surface) · **118** (transition catalog) · **20** (wired
 targets). They measure different things; this file keeps them separate.
 
 > ⚠️ **THIS DOCUMENT IS PINNED TO THE TREE, AND THE PIN IS WHY THE NUMBERS ABOVE ARE ALLOWED TO
@@ -19,7 +19,7 @@ targets). They measure different things; this file keeps them separate.
 > **RE-HARVEST (2026-09-02).** This document had not been re-harvested since I3.1 and was stale by
 > half its shape. Corrected, as SETS rather than as counts: the service surface gained
 > `ICollaborationService`, `IDeliveryService`, `IChaseService` and `IEnforcementService` (four
-> sub-services this page never named), `IProcurementService` gained `getPrIntake` and
+> sub-services this page never named), `IProcurementService` gained `getIntakeLines` (spelled `getPrIntake` until A2) and
 > `getSupplierApplications`, and `CommandInput` gained `expectedState` (1c) and `decision`. It
 > **lost** `IEngagementService` — a seven-method sub-service this page described and the tree has
 > never contained since — and `IDiscoveryService.getGlobalSuppliers`, which was removed
@@ -44,7 +44,11 @@ targets). They measure different things; this file keeps them separate.
 > batch to add TWO machines at once: `IProcurementService` gained `getPslListings`, the transition
 > catalog went 102 → **111** across 21 → **23** flows, and the wired-target axis 15 → **17**.
 > Re-harvested again at call-off step 1: the delivery lane's two machines took the catalog to
-> **115** across **25** flows and the wired-target axis to **19**.
+> **115** across **25** flows and the wired-target axis to **19**. Re-harvested again at **A2**:
+> the `intakeLine` triage machine took the catalog to **118** across **26** flows and the
+> wired-target axis to **20**, and `IProcurementService`'s `getPrIntake` became `getIntakeLines`
+> — a rename with a return-type change, since the read now carries the machine's recorded triage
+> beside the producer's row. `CommandTarget.create` also gained a fourth parameter (Axis 3).
 > Every figure moved BY THE PIN going red — twelve assertions across three axes plus C5's borrowed
 > figure — which is the fourth consecutive batch where this document was corrected by the gate
 > rather than by anybody remembering it exists.
@@ -82,7 +86,7 @@ interface IDataService {
 | Sub-service | Count | Methods |
 |---|---|---|
 | `ISupplierService` | 3 | `list`, `getById`, `getCurrent` |
-| `IProcurementService` | 27 | `getPurchaseOrders`, `getPurchaseOrder`, `getInventory`, `getRFQs`, `getQuotations`, `getShipments`, `getASNs`, `getGoodsReceipts`, `getBuyerInvoices`, `getSupplierInvoices`, `getContracts`, `getObligations`, `getDocuments`, `getStorefrontCatalog`, `getStorefrontCerts`, `getStorefrontProducts`, `getKpis`, `getPerformanceTrend`, `getSupplierScorecards`, `getRequisitions`, `getPrIntake`, `getSupplierApplications`, `getMaterialRequests`, `getPslListings`, `getMyPslListings`, `getProductionLines`, `getSupplierHealth` |
+| `IProcurementService` | 27 | `getPurchaseOrders`, `getPurchaseOrder`, `getInventory`, `getRFQs`, `getQuotations`, `getShipments`, `getASNs`, `getGoodsReceipts`, `getBuyerInvoices`, `getSupplierInvoices`, `getContracts`, `getObligations`, `getDocuments`, `getStorefrontCatalog`, `getStorefrontCerts`, `getStorefrontProducts`, `getKpis`, `getPerformanceTrend`, `getSupplierScorecards`, `getRequisitions`, `getIntakeLines`, `getSupplierApplications`, `getMaterialRequests`, `getPslListings`, `getMyPslListings`, `getProductionLines`, `getSupplierHealth` |
 | `IRiskService` | 7 | `getRiskAlerts`, `getGeoRisks`, `getExposure`, `getScenarios`, `getCompliance`, `getComplianceRegistry`, `getCommodities` |
 | `IDiscoveryService` | 4 | `getRecommended`, `getQualifications`, `getMarketIntel`, `getSingleSourceItems` |
 | `IAnalyticsService` | 7 | `getSummary`, `getSpendByCategory`, `getTopSuppliers`, `getOtifTrend`, `getPoVolumeTrend`, `getChannelMix`, `getSupplierPerformance` |
@@ -109,7 +113,7 @@ the string, because those are different claims and only the first is the contrac
 
 ---
 
-## Axis 2 — the 115-transition catalog (25 flows)
+## Axis 2 — the 118-transition catalog (26 flows)
 
 Every authored state-machine edge across the registered flows (`id: 't_<entity>_<verb>'`). Derived
 from `getKnownFlows()` — the seeded registry — never from a grep over the flow files, because a
@@ -130,6 +134,7 @@ transition id can be assembled at a call site rather than written as a literal (
 | `contract.flow.ts` | `contract` | 4 | `t_contract_draft`, `t_contract_activate`, `t_contract_renew`, `t_contract_terminate` | inert |
 | `obligation.flow.ts` | `obligation` | 2 | `t_obligation_track`, `t_obligation_complete` | inert |
 | `purchaseRequisition.flow.ts` | `purchaseRequisition` | 7 | `t_pr_create`, `t_pr_submit`, `t_pr_approve`, `t_pr_reject`, `t_pr_revise`, `t_pr_source`, `t_pr_convert` | **wired** |
+| `intakeLine.flow.ts` | `intakeLine` | 3 | `t_intake_dismiss`, `t_intake_restore`, `t_intake_commit` | **wired** |
 | `supplierDocument.flow.ts` | `supplierDocument` | 5 | `t_supplierdoc_request`, `t_supplierdoc_declare`, `t_supplierdoc_submit`, `t_supplierdoc_verify`, `t_supplierdoc_reject` | **wired** |
 | `compliance.flow.ts` | `compliance` | 3 | `t_compliance_submit`, `t_compliance_verify`, `t_compliance_reject` | inert |
 | `requirementResponse.flow.ts` | `requirementResponse` | 7 | `t_requirementresponse_submit`, `t_requirementresponse_acknowledge`, `t_requirementresponse_promote`, `t_requirementresponse_review`, `t_requirementresponse_accept`, `t_requirementresponse_dispute`, `t_requirementresponse_resolve` | **wired** |
@@ -143,7 +148,7 @@ transition id can be assembled at a call site rather than written as a literal (
 | `pslCapSetting.flow.ts` | `pslCapSetting` | 1 | `t_psl_cap_set` | **wired** |
 | `deliveryRelease.flow.ts` | `deliveryRelease` | 3 | `t_delivery_release`, `t_delivery_adjust`, `t_delivery_confirm` | **wired** |
 | `deliveryPolicy.flow.ts` | `deliveryPolicy` | 1 | `t_delivery_policy_set` | **wired** |
-| **TOTAL** | | **115** | | |
+| **TOTAL** | | **118** | | |
 
 **Flow shape** (`schema.ts`, `FlowDefinition` / `TransitionDef`): each transition declares
 `from[]` / `to` / `trigger` / `requiredRole` / `requiredFields[]` / `policyHooks[]` /
@@ -159,12 +164,12 @@ system reference is minted only on `settle` (see C5, SAP boundary).
 
 ---
 
-## Axis 3 — the 19 wired CommandTargets
+## Axis 3 — the 20 wired CommandTargets
 
-A `CommandTarget` is the per-entity adapter the dispatcher reads/writes through. **19 exist**, the
+A `CommandTarget` is the per-entity adapter the dispatcher reads/writes through. **20 exist**, the
 runtime export `WIRED_COMMAND_TARGETS` (`MockCommandService.ts` `TARGETS`):
 
-- **wired:** `purchaseOrder`, `advanceShipNotice`, `goodsReceipt`, `invoice`, `rfq`, `quotation`, `purchaseRequisition`, `supplierDocument`, `requirementResponse`, `inventoryDeclaration`, `incomingShipment`, `enforcement`, `role`, `supplierApplication`, `materialRequest`, `psl`, `pslCapSetting`, `deliveryRelease`, `deliveryPolicy`
+- **wired:** `purchaseOrder`, `advanceShipNotice`, `goodsReceipt`, `invoice`, `rfq`, `quotation`, `purchaseRequisition`, `intakeLine`, `supplierDocument`, `requirementResponse`, `inventoryDeclaration`, `incomingShipment`, `enforcement`, `role`, `supplierApplication`, `materialRequest`, `psl`, `pslCapSetting`, `deliveryRelease`, `deliveryPolicy`
 
 The interface is **7 members** (`dispatcher.ts`, `CommandTarget`):
 
@@ -176,7 +181,7 @@ interface CommandTarget {
   applyTransition(entityId, toState, payload): void;  // the store mutation
   creationOwner?(payload): string | null;             // creation scope from payload's parent
   requireCreationOwner?: boolean;                     // refuse an owner-less creation
-  create?(payload, toState): { entityId: string };    // mint new entity, return assigned id
+  create?(payload, toState, scope, decision?): { entityId: string };  // mint, return assigned id
 }
 ```
 
@@ -185,13 +190,21 @@ transitions — scope is derived from the payload's **parent** (`creationOwner`,
 `poReference → PO.supplierId`) and `create` mints the entity + returns its store-assigned id
 (canonical creation pattern: ASN drafted against its own PO).
 
+⚠️ **`create`'s FOURTH PARAMETER IS THE RECORDED GOVERNED DECISION (A2), AND IT ARRIVES FOR
+`scope`'s REASON, ONE RULING LATER.** A creation that must record an override on the DOCUMENT — not
+only on the DR-10 event — has no other way to reach it, and the alternative is a caller-supplied
+payload field, which is `setBy`'s shape. What the target receives is the decision the DISPATCHER
+completed: `wasAdjusted` is derived there and is **not a key any caller has** (A1-R2a, C6 §8.3
+Amendment 1a), so a target cannot be handed a boolean that disagrees with the pair beside it. Every
+pre-A2 target ignores the parameter.
+
 ⚠️ **`readScopeOwner` returning `null` means "NO SUPPLIER MAY ACT ON THIS", not "nothing to
 compare"** (§86). The dispatcher's supplier arm compares `owner !== scope.supplierId`
 unconditionally; a target that wants a supplier to reach a verb must NAME that supplier.
 
-### Wiring census (25 flows → 3 states)
+### Wiring census (26 flows → 3 states)
 
-- **19 behavior-wired** — have a `CommandTarget`, dispatch runs against in-memory stores. Named
+- **20 behavior-wired** — have a `CommandTarget`, dispatch runs against in-memory stores. Named
   above.
 - **2 rolled-up sub-flows** — authored, participate via terminal rollup (`grRollup.ts` /
   `invoiceRollup.ts`), **no standalone target**: `goodsReceiptLine`, `invoiceMatch`.

@@ -1284,6 +1284,81 @@ const BuyerRequisitions: React.FC = () => {
                     {t('requisitions.panel.approvalLevel.authored')}
                   </dd>
                 </div>
+                {/* ── WHERE THIS REQUISITION CAME FROM (A1-R3, rendered at A2) ──
+                    ⚠️ **THE APPROVER READS THE OVERRIDE HERE, ON THE DOCUMENT,
+                    AND UNTIL NOW THEY COULD NOT READ IT ANYWHERE.** The plan
+                    grid refused to dispatch without a reason, the payload
+                    carried it, and the target dropped it — so it survived only
+                    on the DR-10 event, **and no surface in this tree renders an
+                    event** (C7-FIND-02). A ledger nobody reads is not an answer
+                    to the one person whose decision depends on it.
+
+                    Audit on the event and provenance on the document are
+                    different jobs: the event answers *what happened, in order,
+                    to whom* and is append-only; this answers *what am I looking
+                    at* to the approver, on the row in front of them.
+
+                    Every row is conditional, and absence is the honest
+                    statement: a requisition raised on the New PR form has no
+                    intake line, no bucket and no override, and an absent
+                    `decision` means nobody overrode anything — never "the
+                    override was unexplained". */}
+                {selectedPR.periodBucket && (
+                  <div>
+                    <dt className="text-text-tertiary">
+                      {t('requisitions.panel.field.periodBucket')}
+                    </dt>
+                    {/* ⚠️ **RENDERED AS A BUCKET, NEVER THROUGH `formatDate`.**
+                        A month is the one form `Date` happily parses, so that
+                        call turns `'2026-09'` into `01 Sept 2026` — a specific
+                        day nobody entered, which reads as an answer. */}
+                    <Data as="dd" className="text-text-primary font-medium" data-testid="pr-period-bucket">
+                      {selectedPR.periodBucket}
+                    </Data>
+                    <dd className="mt-1 text-[11px] text-text-tertiary">
+                      {t('requisitions.panel.periodBucket.note')}
+                    </dd>
+                  </div>
+                )}
+                {selectedPR.intakeLineId && (
+                  <div>
+                    <dt className="text-text-tertiary">
+                      {t('requisitions.panel.field.intakeLine')}
+                    </dt>
+                    <Data as="dd" className="text-text-primary font-medium" data-testid="pr-intake-line">
+                      {selectedPR.intakeLineId}
+                    </Data>
+                  </div>
+                )}
+                {selectedPR.decision && (
+                  <div className="sm:col-span-2">
+                    <dt className="text-text-tertiary">
+                      {t('requisitions.panel.field.decision')}
+                    </dt>
+                    <dd
+                      className="text-text-primary font-medium"
+                      data-testid="pr-decision"
+                    >
+                      <Data className="text-sm">
+                        {formatNumber(selectedPR.decision.from)}
+                        {' → '}
+                        {formatNumber(selectedPR.decision.to)}
+                      </Data>
+                    </dd>
+                    <dd className="mt-1 text-text-secondary" data-testid="pr-decision-reason">
+                      {selectedPR.decision.reason}
+                    </dd>
+                    {/* ⚠️ **THE BASELINE IS NAMED, BECAUSE A FROM/TO WITHOUT ONE
+                        IS AMBIGUOUS AND THE AMBIGUITY IS THE DEFECT A1-R2
+                        CLOSED.** `from` is the PRODUCER's delivered quantity,
+                        so this row is the planner's own change and nobody
+                        else's. Read against `suggestedQty` it would charge a
+                        human for the producer's arithmetic. */}
+                    <dd className="mt-1 text-[11px] text-text-tertiary">
+                      {t('requisitions.panel.decision.baseline')}
+                    </dd>
+                  </div>
+                )}
                 {/* And WHO decided, present only once somebody has. Absent
                     before the act rather than pre-filled — which is the whole
                     difference between this row and the one above it. */}

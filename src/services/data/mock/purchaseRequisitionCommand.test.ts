@@ -15,7 +15,7 @@ import { MockCommandService, commandAuditSink } from './MockCommandService';
 import { MockProcurementService } from './MockProcurementService';
 import { purchaseRequisitionStore } from './stores/purchaseRequisitionStore';
 import { DataError } from '../types';
-import type { QueryScope, CommandDecision } from '../types';
+import type { QueryScope, CommandDecision, CommandDecisionInput } from '../types';
 import {
   isLive,
   liveness,
@@ -107,13 +107,15 @@ describe('PR intake — producer provenance persists (C7 §4, DECISION-3)', () =
 });
 
 describe('C6-LOCK — the governed override rides the DR-10 audit (G1.2b)', () => {
-  const decision: CommandDecision = {
+  // What a CALLER may author (A1-R2a) — four fields, no `wasAdjusted`.
+  const decision: CommandDecisionInput = {
     field: 'acceptedQty',
     from: 5_000,
     to: 4_500,
     reason: 'MRP net requirement revised down',
-    wasAdjusted: true,
   };
+  // What the dispatcher RECORDS: the same four, plus the one it derives.
+  const recorded: CommandDecision = { ...decision, wasAdjusted: true };
 
   it('forwards the opaque decision VERBATIM onto the t_pr_create event (actor + ts already there)', async () => {
     const res = await svc.dispatch(buyer, {
@@ -130,24 +132,58 @@ describe('C6-LOCK — the governed override rides the DR-10 audit (G1.2b)', () =
     expect(event.actor).toBe('buyer:all');
     expect(event.ts).toBeTruthy();
     // …and the governed decision is captured VERBATIM (deep-equal, not reshaped).
-    expect(event.decision).toEqual(decision);
+    expect(event.decision).toEqual(recorded);
     // The persisted quantity is the ACCEPTED value (C7 §2.1), not the suggested.
     expect(purchaseRequisitionStore.get(res.entityId!)!.quantity).toBe(4_500);
   });
 
-  it('the decision is opaque — it is NOT validated and never gates the outcome', async () => {
-    // A decision whose numbers are internally inconsistent still forwards verbatim
-    // and does not fail the command: the dispatcher treats it as pure provenance.
-    const nonsense: CommandDecision = { field: 'acceptedQty', from: 1, to: 1, reason: '', wasAdjusted: true };
+  // ⚠️ **THIS SPEC'S SUBJECT BECAME UNREACHABLE, AND THE REPLACEMENT PROVES
+  // WHY RATHER THAN DROPPING THE CLAIM.** It used to pass
+  // `{ from: 1, to: 1, wasAdjusted: true }` — a decision asserting a human
+  // changed a number they did not change — and assert it was forwarded verbatim
+  // onto the append-only ledger. That WAS the behaviour, and A1-R2a is the
+  // ruling that it should not have been: `wasAdjusted` has left the authored
+  // payload entirely, so there is no key for a caller to set and therefore no
+  // way for a caller to disagree with the pair it sits beside.
+  //
+  // What survives unchanged is OPACITY, which is a different property: the
+  // dispatcher still neither reads nor validates the decision, and an
+  // internally odd one still does not fail the command.
+  it('the decision is opaque — not validated, and `wasAdjusted` is DERIVED not taken', async () => {
+    // `from === to` with an empty reason: nothing here is coherent, and none of
+    // it gates the outcome.
+    const authored: CommandDecisionInput = {
+      field: 'acceptedQty',
+      from: 1,
+      to: 1,
+      reason: '',
+    };
     const res = await svc.dispatch(buyer, {
       transitionId: 't_pr_create',
       entity: 'purchaseRequisition',
       payload: { material: 'PET Bottle', quantity: 200_000 },
-      decision: nonsense,
+      decision: authored,
     });
     expect(res.status).toBe('done'); // decision did not affect validation
+
     const event = commandAuditSink.all().find((e) => e.correlationId === res.correlationId)!;
-    expect(event.decision).toEqual(nonsense); // forwarded as-is
+    // The authored half rides verbatim — the dispatcher reshapes nothing.
+    expect(event.decision).toMatchObject(authored);
+    // ⚠️ **AND THE DERIVED HALF DISAGREES WITH WHAT A CALLER WOULD HAVE SAID.**
+    // The retired spec asserted `true` here, from a caller. `from === to`, so
+    // the dispatcher computes `false`, and a caller has no key to say otherwise.
+    expect(event.decision!.wasAdjusted).toBe(false);
+
+    // The bilateral control, on the same path in the same run: a genuine change
+    // derives `true`, so the `false` above is a derivation and not a constant.
+    const changed = await svc.dispatch(buyer, {
+      transitionId: 't_pr_create',
+      entity: 'purchaseRequisition',
+      payload: { material: 'PET Bottle', quantity: 190_000 },
+      decision: { field: 'acceptedQty', from: 200_000, to: 190_000, reason: 'revised' },
+    });
+    const changedEvent = commandAuditSink.all().find((e) => e.correlationId === changed.correlationId)!;
+    expect(changedEvent.decision!.wasAdjusted).toBe(true);
   });
 
   it('a push WITHOUT a decision emits an event with no decision field (accept-as-suggested)', async () => {

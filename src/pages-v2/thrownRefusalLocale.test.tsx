@@ -212,9 +212,18 @@ describe('PR2 · the population — six converted, two deliberately NOT', () => 
     // to remove, pointed backwards — a localized string would be compared
     // against an English constant and the comparison would silently stop
     // matching in Indonesian.
+    // ⚠️ **THE MATCHER NAMES THE EXPRESSION, NOT THE VARIABLE, AND THAT IS A
+    // CORRECTION MADE AT A2 RATHER THAN A LOOSENING.** It read
+    // `/const reasonCode = e instanceof DataError \? e\.code : 'ERROR';/` — a
+    // binding NAME, which is an implementation detail of how the site happened
+    // to be written. A2 inlined both sites into their setState calls and the
+    // property was untouched, but the matcher went red, which is a gate
+    // reporting on its own spelling rather than on the tree. What the ruling
+    // actually says is that the RAW CODE reaches control flow untranslated, and
+    // that is what this matches now.
     for (const rel of ['IntakeReview.tsx', 'plan-grid/IntakeAdjustDrawer.tsx']) {
       const src = read(rel);
-      expect(src, rel).toMatch(/const reasonCode = e instanceof DataError \? e\.code : 'ERROR';/);
+      expect(src, rel).toMatch(/e instanceof DataError \? e\.code : 'ERROR'/);
       expect(src, rel).not.toContain('useDataErrorText');
       expect(src, rel).not.toContain('describeDataError');
     }

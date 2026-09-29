@@ -94,6 +94,8 @@ import { quotationStore } from '../data/mock/stores/quotationStore';
 import { purchaseRequisitionStore } from '../data/mock/stores/purchaseRequisitionStore';
 import { requirementResponseStore } from '../data/mock/stores/requirementResponseStore';
 import { inventoryDeclarationStore } from '../data/mock/stores/inventoryDeclarationStore';
+import { PR_INTAKE_LINES } from '../data/mock/fixtures/prIntake';
+import { intakeLineStore } from '../data/mock/stores/intakeLineStore';
 import { incomingShipmentStore } from '../data/mock/stores/incomingShipmentStore';
 import { schedulingAgreementStore } from '../delivery/stores/schedulingAgreementStore';
 import { SAMPLE_PEOPLE } from '../identity/sampleRoster';
@@ -197,6 +199,12 @@ async function realIds(): Promise<Record<string, string | null>> {
     rfq: rfqStore.all()[0]?.id ?? null,
     quotation: quotationStore.all()[0]?.id ?? null,
     purchaseRequisition: purchaseRequisitionStore.all()[0]?.id ?? null,
+    // A2 — the intake lane is a WIRED owner-less target, so it joins this
+    // supply or the CONTROL above reports it silently skipped. Its id comes
+    // from the PRODUCER's own rows rather than from a store: the line exists
+    // because a producer emitted it, and the machine has no creation edge
+    // through which a probe could raise one.
+    intakeLine: PR_INTAKE_LINES[0]?.id ?? null,
     requirementResponse: requirementResponseStore.all()[0]?.id ?? null,
     inventoryDeclaration: inventoryDeclarationStore.all()[0]?.id ?? null,
     incomingShipment: incomingShipmentStore.all()[0]?.id ?? null,
@@ -390,6 +398,12 @@ describe('POPULATION — nothing below means anything without this', () => {
     // EXISTS, across a tenancy boundary, which is the leak §86 is about.
     expect(ownerless).toContain('psl');
     expect(ownerless).toContain('pslCapSetting');
+    // ⚠️ **A2 · `intakeLine` IS OWNER-LESS BY INTENT, NOT BY OMISSION.** An
+    // intake line is Paragon's own plan: no supplier is a party to it, and
+    // none is named on the row. `readScopeOwner: () => null` therefore DENIES
+    // every supplier at the scope gate rather than meaning "nothing to
+    // compare" — which is the §86 distinction this whole file holds open.
+    expect(ownerless).toContain('intakeLine');
     expect(ownerless).not.toContain('purchaseOrder');
     expect(ownerless).not.toContain('invoice');
     expect(ownerful).toContain('purchaseOrder');
@@ -497,6 +511,10 @@ describe('THE LEGITIMATE PATHS — the half a "refuse everyone" fix would break'
         'deliveryPolicy',
         'deliveryRelease',
         'enforcement',
+        // A2 — an intake line is Paragon's own plan and names no supplier, so
+        // `readScopeOwner: () => null` DENIES every supplier rather than meaning
+        // "nothing to compare" (§86).
+        'intakeLine',
         'materialRequest',
         'psl',
         'pslCapSetting',
@@ -588,6 +606,17 @@ describe('THE LEGITIMATE PATHS — the half a "refuse everyone" fix would break'
     });
     expect(prRes.status, prRes.reason).toBe('done');
     expect(purchaseRequisitionStore.get(draftPr.id)!.status).toBe('Pending Approval');
+
+    // A2 — the intake lane LANDS: a real triage act moves a real producer row.
+    // `t_intake_dismiss` rather than the commit, deliberately — it is the verb
+    // with no payload and no cascade, so what this walk proves is the SCOPE gate
+    // admitting a holder seat and nothing else.
+    const intakeLineId = PR_INTAKE_LINES[0].id;
+    const intakeRes = await svc.dispatch(buyerSeat('requisitioner'), {
+      transitionId: 't_intake_dismiss', entity: 'intakeLine', entityId: intakeLineId,
+    });
+    expect(intakeRes.status, intakeRes.reason).toBe('done');
+    expect(intakeLineStore.stateOf(intakeLineId)).toBe('Dismissed');
 
     const enfRes = await svc.dispatch(buyerSeat('procurement'), {
       transitionId: 't_enforcement_set', entity: 'enforcement', entityId: GOVERNED_CHECK_IDS[0],

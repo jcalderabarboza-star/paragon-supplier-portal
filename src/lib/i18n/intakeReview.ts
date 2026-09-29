@@ -10,12 +10,12 @@ export const intakeReviewEn: Record<string, string> = {
   'intakeReview.header.subtitle':
     'Triage the inbound requirement set — accept into the sourcing workload, or set aside',
   'intakeReview.meta.summary':
-    '{{total}} inbound requirement lines · {{pending}} pending · {{accepted}} accepted · {{dismissed}} dismissed (this session)',
+    '{{total}} inbound requirement lines · {{pending}} pending · {{committed}} committed · {{dismissed}} dismissed',
 
   // — Honesty banner (SIMULATED; review owns no mutation) —
   'intakeReview.honesty.title': 'Recommend-first triage',
   'intakeReview.honesty.body':
-    'Planning proposes; you decide. Accepting a line pushes a Draft requisition through the same governed path as the Plan Grid — with no live producer it stays simulated, never a live procurement instruction. Dismissing a line only sets it aside for this session — nothing is persisted or rejected upstream.',
+    'Planning proposes; you decide. Accepting a line commits the quantity the producer delivered and raises a Draft requisition — with no live producer it stays simulated, never a live procurement instruction. Every decision here is recorded: a dismissal is kept, survives a reload and is visible to your colleagues, and Restore puts the line back. Nothing is rejected upstream — the producer is not told.',
   'intakeReview.adjustHint':
     'Need a different quantity? Adjust & push the line on the Plan Grid.',
 
@@ -24,7 +24,7 @@ export const intakeReviewEn: Record<string, string> = {
   'intakeReview.col.producer': 'Producer',
   'intakeReview.col.lane': 'Source lane',
   'intakeReview.col.segment': 'Segment',
-  'intakeReview.col.qty': 'Suggested qty',
+  'intakeReview.col.qty': 'Delivered qty',
   'intakeReview.col.period': 'Period',
   'intakeReview.col.estValue': 'Est. value',
   'intakeReview.col.why': 'Why (deficit)',
@@ -33,18 +33,20 @@ export const intakeReviewEn: Record<string, string> = {
   'intakeReview.empty': 'No inbound requirement lines.',
 
   // — Triage actions —
-  'intakeReview.action.accept': 'Accept as suggested',
-  'intakeReview.action.accepting': 'Pushing…',
+  'intakeReview.action.accept': 'Accept as delivered',
+  'intakeReview.action.accepting': 'Committing…',
   'intakeReview.action.dismiss': 'Dismiss',
   'intakeReview.action.restore': 'Restore',
-  'intakeReview.accept.aria': 'Accept as suggested — {{material}}',
+  'intakeReview.accept.aria': 'Accept as delivered — {{material}}',
   'intakeReview.dismiss.aria': 'Dismiss {{material}}',
   'intakeReview.restore.aria': 'Restore {{material}}',
 
   // — Triage outcomes (honest labels) —
-  'intakeReview.accepted.label': 'Pushed → {{pr}}',
-  'intakeReview.dismissed.label': 'Dismissed — this session only · not persisted',
-  'intakeReview.failed.label': 'Push failed: {{reason}}',
+  'intakeReview.committed.label': 'Committed → {{pr}}',
+  'intakeReview.committed.noPr':
+    'Committed — its requisition is not in this session’s store',
+  'intakeReview.dismissed.label': 'Dismissed',
+  'intakeReview.failed.label': 'Refused: {{reason}}',
 };
 
 export const intakeReviewId: Record<string, string> = {
@@ -55,12 +57,12 @@ export const intakeReviewId: Record<string, string> = {
   'intakeReview.header.subtitle':
     'Triase kumpulan kebutuhan masuk — terima ke dalam beban kerja pengadaan, atau kesampingkan',
   'intakeReview.meta.summary':
-    '{{total}} baris kebutuhan masuk · {{pending}} menunggu · {{accepted}} diterima · {{dismissed}} diabaikan (sesi ini)',
+    '{{total}} baris kebutuhan masuk · {{pending}} menunggu · {{committed}} dikomit · {{dismissed}} diabaikan',
 
   // — Spanduk kejujuran —
   'intakeReview.honesty.title': 'Triase rekomendasi-dahulu',
   'intakeReview.honesty.body':
-    'Perencanaan mengusulkan; Anda yang memutuskan. Menerima baris mengirim permintaan Draft melalui jalur terkelola yang sama dengan Grid Perencanaan — tanpa produsen live tetap simulasi, bukan instruksi pengadaan langsung. Mengabaikan baris hanya mengesampingkannya untuk sesi ini — tidak ada yang disimpan atau ditolak di hulu.',
+    'Perencanaan mengusulkan; Anda yang memutuskan. Menerima baris mengomit jumlah yang dikirim produsen dan membuat permintaan Draft — tanpa produsen live tetap simulasi, bukan instruksi pengadaan langsung. Setiap keputusan di sini dicatat: pengabaian tersimpan, bertahan setelah muat ulang, dan terlihat oleh rekan Anda, dan Pulihkan mengembalikan barisnya. Tidak ada yang ditolak di hulu — produsen tidak diberi tahu.',
   'intakeReview.adjustHint':
     'Perlu jumlah berbeda? Sesuaikan & kirim baris tersebut di Grid Perencanaan.',
 
@@ -69,7 +71,7 @@ export const intakeReviewId: Record<string, string> = {
   'intakeReview.col.producer': 'Produsen',
   'intakeReview.col.lane': 'Jalur sumber',
   'intakeReview.col.segment': 'Segmen',
-  'intakeReview.col.qty': 'Jumlah disarankan',
+  'intakeReview.col.qty': 'Jumlah dikirim',
   'intakeReview.col.period': 'Periode',
   'intakeReview.col.estValue': 'Nilai est.',
   'intakeReview.col.why': 'Alasan (defisit)',
@@ -78,16 +80,18 @@ export const intakeReviewId: Record<string, string> = {
   'intakeReview.empty': 'Tidak ada baris kebutuhan masuk.',
 
   // — Aksi triase —
-  'intakeReview.action.accept': 'Terima sesuai saran',
-  'intakeReview.action.accepting': 'Mengirim…',
+  'intakeReview.action.accept': 'Terima sesuai kiriman',
+  'intakeReview.action.accepting': 'Mengomit…',
   'intakeReview.action.dismiss': 'Abaikan',
   'intakeReview.action.restore': 'Pulihkan',
-  'intakeReview.accept.aria': 'Terima sesuai saran — {{material}}',
+  'intakeReview.accept.aria': 'Terima sesuai kiriman — {{material}}',
   'intakeReview.dismiss.aria': 'Abaikan {{material}}',
   'intakeReview.restore.aria': 'Pulihkan {{material}}',
 
   // — Hasil triase (label jujur) —
-  'intakeReview.accepted.label': 'Terkirim → {{pr}}',
-  'intakeReview.dismissed.label': 'Diabaikan — sesi ini saja · tidak disimpan',
-  'intakeReview.failed.label': 'Pengiriman gagal: {{reason}}',
+  'intakeReview.committed.label': 'Dikomit → {{pr}}',
+  'intakeReview.committed.noPr':
+    'Dikomit — permintaannya tidak ada di penyimpanan sesi ini',
+  'intakeReview.dismissed.label': 'Diabaikan',
+  'intakeReview.failed.label': 'Ditolak: {{reason}}',
 };

@@ -598,7 +598,20 @@ export const AUTOMATION_ATOMS: readonly TransitionRole[] = Object.freeze([
   'invoice:match', 'invoice:pay',
   'rfq:close',
   'quotation:award', 'quotation:reject',
-  'pr:source', 'pr:convert',
+  // ⚠️ **`pr:create` IS A HUMAN VERB AND IT IS GRANTED HERE ANYWAY (A2), SO
+  // THE REASON MUST TRAVEL WITH IT — IT IS NOT THE `supplierdoc:verify`
+  // MISTAKE REPEATED.** That removal's ground was that NO CASCADE TARGETED
+  // those atoms, so their presence granted an authority nothing used, and a
+  // future cascade could then have verified a certificate on nobody's
+  // authority. Both halves are false here, and the second is the load-bearing
+  // one: `t_intake_commit` → `t_pr_create` is a real link in `CASCADES`, and
+  // **the source verb requires THE SAME ATOM** (`pr:create`, held by
+  // `requisitioner`). So the fan-out can mint nothing a human holding the
+  // source's atom could not have minted directly — the grant adds reach, not
+  // authority, and the human's act is the authorisation the requisition
+  // carries. A seat without `pr:create` cannot commit the line, so the cascade
+  // never runs.
+  'pr:create', 'pr:source', 'pr:convert',
   'shipment:create', 'shipment:advance',
   // ⚠️ **`supplierdoc:verify` / `:reject` LEFT THIS LIST AT §82, BECAUSE THEIR
   // TRIGGER CHANGED.** They were here as machine acts of the "verification

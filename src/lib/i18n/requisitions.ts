@@ -139,6 +139,14 @@ export const requisitionsEn: Record<string, string> = {
   // says so rather than showing a Medium the target invented.
   'requisitions.panel.priority.unset': 'Not set',
   'requisitions.panel.field.approvedBy': 'Approved by',
+  // A2 · the origin the requisition now carries on the DOCUMENT (A1-R3).
+  'requisitions.panel.field.periodBucket': 'Planning bucket',
+  'requisitions.panel.periodBucket.note':
+    'A planning grain — a month or an ISO week, not a required date.',
+  'requisitions.panel.field.intakeLine': 'From intake line',
+  'requisitions.panel.field.decision': 'Quantity override',
+  'requisitions.panel.decision.baseline':
+    'Measured from the quantity the producer delivered — the planner’s own change.',
   'requisitions.panel.field.status': 'Status',
   'requisitions.panel.source.title': 'Source of supply',
   'requisitions.panel.source.found': 'Source found',
@@ -345,6 +353,13 @@ export const requisitionsId: Record<string, string> = {
   'requisitions.panel.approvalLevel.unassigned': 'Belum ditetapkan',
   'requisitions.panel.priority.unset': 'Belum diatur',
   'requisitions.panel.field.approvedBy': 'Disetujui oleh',
+  'requisitions.panel.field.periodBucket': 'Ember perencanaan',
+  'requisitions.panel.periodBucket.note':
+    'Satuan perencanaan — bulan atau minggu ISO, bukan tanggal wajib.',
+  'requisitions.panel.field.intakeLine': 'Dari baris asupan',
+  'requisitions.panel.field.decision': 'Penyesuaian jumlah',
+  'requisitions.panel.decision.baseline':
+    'Diukur dari jumlah yang dikirim produsen — perubahan perencana sendiri.',
   'requisitions.panel.field.status': 'Status',
   'requisitions.panel.source.title': 'Sumber pasokan',
   'requisitions.panel.source.found': 'Sumber ditemukan',

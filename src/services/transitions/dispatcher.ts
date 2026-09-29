@@ -29,7 +29,7 @@ import type {
   CommandStatus,
   CommandOutcome,
 } from '../data/types';
-import type { CommandDecision } from '../data/types';
+import type { CommandDecision, CommandDecisionInput } from '../data/types';
 import type { ActorAttribution } from '../../lib/enforcement';
 import type { AuditSink } from './events';
 import { actorKey } from './events';
@@ -123,6 +123,24 @@ export interface CommandTarget {
     payload: Record<string, unknown>,
     toState: string,
     scope: QueryScope,
+    /**
+     * The RECORDED governed decision — `CommandDecisionInput` with the
+     * dispatcher's derived `wasAdjusted` stamped on (A1-R2a). Present only when
+     * this dispatch carried one.
+     *
+     * ⚠️ **THE FOURTH PARAMETER ARRIVES FOR `scope`'S REASON, ONE RULING
+     * LATER (A2).** A creation that must record a governed override on the
+     * DOCUMENT — not only on the event — has no other way to reach it: the
+     * alternative is a caller-supplied payload field, which is `setBy`'s shape
+     * and is exactly what A1-R2a refuses, because a caller that can assert
+     * *"a human changed this"* can misstate it onto an append-only record.
+     *
+     * ⚠️ **AND IT IS THE DERIVED VALUE, NOT THE CALLER'S.** The target
+     * receives a decision whose `wasAdjusted` the dispatcher computed, so a
+     * target cannot be handed a boolean that disagrees with the pair beside it.
+     * Every pre-A2 target ignores the parameter.
+     */
+    decision?: CommandDecision,
   ): { entityId: string };
 }
 
@@ -148,9 +166,38 @@ export type PolicyHookFn = (ctx: {
 /** A command the dispatcher should fan out after a source transition (G4). */
 export interface CascadeCommand {
   entity: string;
-  entityId: string;
+  /**
+   * The target's id. **OPTIONAL, because a cascade may fire a CREATION** — the
+   * entity does not exist yet and the store assigns its id, exactly as a
+   * directly-dispatched creation works. Every non-creation cascade must set it,
+   * and one that forgets is refused `MISSING_ENTITY_ID` and RECORDED, which is
+   * the honest failure rather than a silent one.
+   */
+  entityId?: string;
   transitionId: string;
   payload?: Record<string, unknown>;
+  /**
+   * The ingress replay key for the fanned command (A2).
+   *
+   * ⚠️ **A CASCADE IS THE ONE PLACE A KEY IS OWED WITHOUT A TRANSPORT
+   * INVOLVED.** `idempotencyKey.test.ts` asserts no USER surface passes one, and
+   * that stands: a person pressing a button twice must be REFUSED, not silently
+   * answered with the first result. A cascade is neither — it is the source
+   * verb's consequence, and if the source can be reached twice (by a redelivered
+   * event, by a retried commit, by a second seat) the consequence must be
+   * reached once. The source's own legality gate covers the human; this covers
+   * everything else.
+   */
+  idempotencyKey?: string;
+  /**
+   * Governed-decision provenance to forward onto the fanned command (A2).
+   *
+   * ⚠️ **`CommandDecisionInput` — A RESOLVER HAS NO `wasAdjusted` KEY
+   * EITHER** (A1-R2a). The resolver is precisely the "second caller with no
+   * obligation to compute it correctly" that ruling names; the derivation
+   * happens once, below, for every caller.
+   */
+  decision?: CommandDecisionInput;
 }
 
 /** Context handed to the cascade resolver after a successful source apply. */
@@ -410,6 +457,28 @@ export function createDispatcher(deps: DispatcherDeps): Dispatcher {
     const attributionFor = (): ActorAttribution | undefined =>
       getTransition(input.transitionId)?.trigger === 'user' ? scope.actor : undefined;
 
+    // ── THE DERIVED DECISION (A1-R2a) — COMPUTED ONCE, HERE, FOR EVERY CALLER ─
+    //
+    // ⚠️ **`wasAdjusted` IS NOT A KEY ANY CALLER HAS**, and that is the
+    // load-bearing half of the ruling rather than a tidying. A derivation
+    // computed by the CALLER is still an authored value at the seam: the
+    // dispatcher would receive a boolean it cannot check and forward it verbatim
+    // onto an APPEND-ONLY ledger. Today's caller happens to compute it
+    // correctly; the cascade resolver added in the same batch has no obligation
+    // to, and the failure would be silent and permanent. `ACTOR_IN_PAYLOAD`'s
+    // shape one field over.
+    //
+    // ⚠️ **THE OPERAND IS THE CALLER'S `from`, AND THE RULING NAMES WHAT THAT
+    // MUST BE.** Derived from a `from` that still held a producer's
+    // *suggestion* rather than its delivered quantity, this would faithfully
+    // compute the WRONG fact in the one place nobody can correct afterwards
+    // (A1-R2). The dispatcher cannot check which baseline a caller chose — that
+    // is `INTAKE_OVERRIDE_REASONED`'s job, at the verb, reading the line.
+    const recorded: CommandDecision | undefined =
+      input.decision === undefined
+        ? undefined
+        : { ...input.decision, wasAdjusted: input.decision.to !== input.decision.from };
+
     const fin = (
       s: QueryScope,
       tid: string,
@@ -424,7 +493,7 @@ export function createDispatcher(deps: DispatcherDeps): Dispatcher {
         reason,
         entityId,
         causationId,
-        input.decision,
+        recorded,
         attributionFor(),
       );
       // Record AFTER the act, and only when there was one. `finish` is the
@@ -681,7 +750,7 @@ export function createDispatcher(deps: DispatcherDeps): Dispatcher {
     let result: CommandResult;
     if (isCreation) {
       if (!target.create) return fin(scope, transition.id, 'failed', refusal('UNSUPPORTED_CREATION', input.entity));
-      const { entityId } = target.create(payload, transition.to, scope);
+      const { entityId } = target.create(payload, transition.to, scope, recorded);
       result = fin(scope, transition.id, outcome, undefined, entityId);
     } else {
       // 2e-c-3 — a state-preserving verb applies with the CURRENT state, so a
@@ -764,7 +833,18 @@ export function createDispatcher(deps: DispatcherDeps): Dispatcher {
               supplierId: null,
               businessRoles: [AUTOMATION_ROLE],
             },
-            { transitionId: c.transitionId, entity: c.entity, entityId: c.entityId, payload: c.payload },
+            {
+              transitionId: c.transitionId,
+              entity: c.entity,
+              entityId: c.entityId,
+              payload: c.payload,
+              // A2 — forwarded so a cascaded CREATION can be reached twice and
+              // mint once. Spread conditionally: an absent key must stay absent,
+              // because `''` and `undefined` take different paths through the
+              // replay check and only one of them is "no key".
+              ...(c.idempotencyKey ? { idempotencyKey: c.idempotencyKey } : {}),
+              ...(c.decision ? { decision: c.decision } : {}),
+            },
             result.correlationId,
           );
         } catch {

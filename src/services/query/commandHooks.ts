@@ -1834,3 +1834,105 @@ export function usePslCapOverride() {
     },
   });
 }
+
+// ── A2 · THE INTAKE TRIAGE LANE ─────────────────────────────────
+//
+// Three verbs, three hooks, one per act — the `useApplication*` shape, because
+// a hook per act is what lets a surface disable exactly the control whose verb
+// is unavailable, rather than one hook branching on a string.
+//
+// ⚠️ **NONE OF THESE PASSES AN `idempotencyKey`, AND THAT IS DELIBERATE.**
+// `idempotencyKey.test.ts` asserts no user surface passes one, and the reason
+// holds here with force: a planner who presses commit twice must be TOLD the
+// second press did nothing — `t_intake_commit` is `from: ['Pending']`, so the
+// machine refuses it `ILLEGAL_TRANSITION` and the surface says so. The key
+// belongs on the CASCADE, where the caller is a consequence rather than a
+// person, and the resolver sets it there.
+
+/** The quantity a commit carries — the number AND the token the human typed. */
+export interface IntakeCommitVars {
+  readonly lineId: string;
+  /**
+   * The parsed quantity. Already parsed by the surface through the ONE legal
+   * parser; this hook re-parses nothing, because a second opinion about a rule
+   * that already has one is how two answers appear.
+   */
+  readonly acceptedQty: number;
+  /**
+   * The RAW token the planner typed. `INTAKE_QTY_AGREES` re-parses it at the
+   * spine and refuses unless it lands exactly on `acceptedQty` — which is the
+   * only guard that can catch a locale misread, because it is the only one that
+   * sees what the human wrote.
+   */
+  readonly acceptedQtyRaw: string;
+  /**
+   * Why the planner left the producer's quantity. Omitted for an
+   * accept-as-delivered — not `''`, which would read as an override whose
+   * reason was left blank.
+   */
+  readonly overrideReason?: string;
+}
+
+/** Commit an intake line into the sourcing workload (cascades to `t_pr_create`). */
+export function useIntakeCommit() {
+  const svc = useDataService();
+  const scope = useScope();
+  const invalidate = useInvalidateProcurement();
+
+  return useMutation<CommandResult, Error, IntakeCommitVars>({
+    mutationFn: ({ lineId, acceptedQty, acceptedQtyRaw, overrideReason }) =>
+      svc.commands.dispatch(scope, {
+        transitionId: 't_intake_commit',
+        entity: 'intakeLine',
+        entityId: lineId,
+        payload: {
+          acceptedQty,
+          acceptedQtyRaw,
+          ...(overrideReason && overrideReason.trim() !== ''
+            ? { overrideReason: overrideReason.trim() }
+            : {}),
+        },
+      }),
+    onSuccess: (result) => {
+      if (result.status !== 'failed') invalidate(scope);
+    },
+  });
+}
+
+/** Set an intake line aside. PAYLOAD-FREE — the verb declares no fields. */
+export function useIntakeDismiss() {
+  const svc = useDataService();
+  const scope = useScope();
+  const invalidate = useInvalidateProcurement();
+
+  return useMutation<CommandResult, Error, { lineId: string }>({
+    mutationFn: ({ lineId }) =>
+      svc.commands.dispatch(scope, {
+        transitionId: 't_intake_dismiss',
+        entity: 'intakeLine',
+        entityId: lineId,
+      }),
+    onSuccess: (result) => {
+      if (result.status !== 'failed') invalidate(scope);
+    },
+  });
+}
+
+/** Put a dismissed line back in the queue — the exact inverse of dismiss. */
+export function useIntakeRestore() {
+  const svc = useDataService();
+  const scope = useScope();
+  const invalidate = useInvalidateProcurement();
+
+  return useMutation<CommandResult, Error, { lineId: string }>({
+    mutationFn: ({ lineId }) =>
+      svc.commands.dispatch(scope, {
+        transitionId: 't_intake_restore',
+        entity: 'intakeLine',
+        entityId: lineId,
+      }),
+    onSuccess: (result) => {
+      if (result.status !== 'failed') invalidate(scope);
+    },
+  });
+}

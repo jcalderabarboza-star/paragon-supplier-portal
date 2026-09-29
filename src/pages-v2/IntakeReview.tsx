@@ -14,87 +14,131 @@ import TableRow from '../components/ui-v2/TableRow';
 import TableCell from '../components/ui-v2/TableCell';
 import PlanCellMarker from './plan-grid/PlanCellMarker';
 import { useIntakeReview } from '../services/query/hooks';
-import { usePurchaseRequisitionCreate } from '../services/query/commandHooks';
+import {
+  useIntakeCommit,
+  useIntakeDismiss,
+  useIntakeRestore,
+} from '../services/query/commandHooks';
 import { HandoffNotice } from '../components/ui-v2/HandoffNotice';
 import { useVerbAvailability } from '../hooks/useVerbAvailability';
-import { DataError, type PrIntakeLine } from '../services/data/types';
+import { DataError, type IntakeLine } from '../services/data/types';
 import { formatIDR, formatNumber } from '../lib/format';
-import { applyPushResult, type PushRowState } from './plan-grid/planGridModel';
-import {
-  buildAcceptPush,
-  dismissLine,
-  restoreLine,
-  triageStatus,
-  triageCounts,
-} from './intake-review/intakeReviewModel';
+import { buildAcceptCommit, triageCounts } from './intake-review/intakeReviewModel';
 import { useRefusalText } from '../hooks/useRefusalText';
 
 // ────────────────────────────────────────────────────────────────────────────
-// IntakeReview (Phase A/1 · sourcing spine) — the recommend-first TRIAGE
-// surface: review the inbound requirement SET (both producers, via the
-// getPrIntake seam), understand WHY each line was recommended (`deficit`,
-// FORK-D), and decide what enters the sourcing workload.
+// IntakeReview (A2 · Design 1 B2) — the recommend-first TRIAGE surface: review
+// the inbound requirement SET (both producers, via the `getIntakeLines` seam),
+// understand WHY each line was recommended (`deficit`), and decide what enters
+// the sourcing workload.
 //
-// Review owns NO mutation (FORK-C=c2). Accept-as-suggested ROUTES to the
-// EXISTING governed push — the same t_pr_create / usePurchaseRequisitionCreate
-// the plan-grid drawer dispatches — in its weakest form: quantity IS the
-// suggestion, no reason, no DR-10 decision (quantity overrides live on the
-// Plan Grid, C6-LOCK). Dismiss is EPHEMERAL client state, honestly labeled
-// "this session only · not persisted" — the row is set aside, never removed,
-// and Restore is its exact inverse. Every marker stays SIMULATED — the
-// registry (`purchaseRequisitions`, gate-2 shut) keeps green unreachable
-// (LIVENESS-DATASOURCE-01).
+// ── ⚠️ EVERY DECISION ON THIS PAGE IS NOW A RECORDED ACT ────────────────────
+//
+// Until A2 this surface owned its own triage: dismissals lived in a
+// `useState` set behind a label reading *"this session only · not persisted"*,
+// and push outcomes lived in a second `useState` map. Both were honest about a
+// defect rather than describing a design — a planner who set a line aside had
+// DECIDED something, and a colleague opening the same queue saw the line back
+// in the pile. Three verbs on the `intakeLine` machine own it now
+// (`t_intake_dismiss` / `t_intake_restore` / `t_intake_commit`), so a dismissal
+// survives a reload and is visible to the next seat, and the honesty banner no
+// longer has to apologise for the page.
+//
+// ── ⚠️ ACCEPT PUSHES THE PRODUCER'S QUANTITY, NOT THE SUGGESTION (A1-R2) ────
+//
+// This page used to push `suggestedQty` while the Plan Grid drawer pre-filled
+// `acceptedQty`. One requirement, two quantities. Both now commit the delivered
+// number and neither owes a reason for it; a reason is owed only when a planner
+// moves it, which is the drawer's job and `INTAKE_OVERRIDE_REASONED`'s gate.
+//
+// ── ⚠️ WHAT IS STILL `useState`, AND WHY IT IS ALLOWED TO BE ────────────────
+//
+// Exactly two things: WHICH row has a request in flight (so that row's buttons
+// can say "Committing…"), and the last refusal text per row. Neither is a fact
+// about the world — the first stops existing the moment the promise settles and
+// the second is a message about an act that did not happen. Nothing a reload
+// should preserve is held here.
+//
+// Every marker stays SIMULATED — the registry (`purchaseRequisitions`, gate-2
+// shut) keeps green unreachable (LIVENESS-DATASOURCE-01).
 // ────────────────────────────────────────────────────────────────────────────
 
+/**
+ * WHY A COMMITTED LINE CAN SHOW NO REQUISITION NUMBER, AND WHY THE COPY SAYS
+ * WHAT IT SAYS (A2, found in browser QA and not by any spec).
+ *
+ * ⚠️ **THE TWO STORES DO NOT PERSIST ALIKE, AND THE ASYMMETRY IS REAL RATHER
+ * THAN A BUG TO PAPER OVER.** `intakeLineStore` writes the triage to
+ * `localStorage`, because a dismissal is a decision a colleague must see and a
+ * reload must not erase. `purchaseRequisitionStore` is an in-memory module
+ * singleton, like every other mock store, so a reload re-seeds it. A line
+ * committed before the reload is therefore `Committed` with NO requisition in
+ * this session naming it back.
+ *
+ * ⚠️ **THE FIRST COPY HERE READ "no requisition was raised", AND THAT WAS A
+ * FALSE STATEMENT ABOUT THE WORLD.** One WAS raised; this session no longer
+ * holds it. The distinction is the whole of this project's honesty rule — an
+ * absent value may not be reported as a value of "none" — so the label names
+ * the STORE's boundary, which is the only thing the surface can actually know.
+ *
+ * ⚠️ **AND THE REMEDY IS NOT TO STORE THE NUMBER.** A stored `prNumber` would
+ * survive the reload and point at a row that does not exist — a dangling
+ * reference an approver could chase and not find, which is worse than an honest
+ * absence. It goes away on its own when `httpDataService` lands and both sides
+ * persist (Phase F1); until then the surface says which session it is in.
+ */
 const IntakeReview: React.FC = () => {
   const { t } = useTranslation();
   const refusalText = useRefusalText();
   const intakeQuery = useIntakeReview();
-  const createPr = usePurchaseRequisitionCreate();
+  const commit = useIntakeCommit();
+  const dismiss = useIntakeDismiss();
+  const restore = useIntakeRestore();
 
-  // §74 — `t_pr_create` (atom `pr:create`, held by `requisitioner`).
+  // §74 / `ENTRANCE-IS-THE-UNIT-01` — all three verbs hold the SAME atom
+  // (`pr:create`, held by `requisitioner`), so one availability reading governs
+  // every control on this page, and the notice sits once at the header rather
+  // than repeating down a column that teaches nothing after the first row.
   //
-  // ⚠️ ONE NOTICE AT THE HEADER, NOT ONE PER ROW. Accept is a per-line
-  // button and this table can hold any number of lines; the same string
-  // repeated down a column teaches nothing after the first and would turn a
-  // handoff into visual noise. The act is identical on every row — one atom,
-  // one owner — so it is stated once, where it governs the whole surface.
-  // DISMISS is untouched: it is local view state holding no atom.
-  const acceptAvailability = useVerbAvailability('pr:create');
+  // ⚠️ **DISMISS IS NO LONGER EXEMPT.** It used to be local view state holding
+  // no atom, so a seat without `pr:create` could still set lines aside. It is a
+  // governed verb now, and gating the MODE rather than one door is the rule:
+  // every control below hangs off this one reading.
+  const triageAvailability = useVerbAvailability('pr:create');
   const lines = intakeQuery.data?.items ?? [];
 
-  // Triage client state: push outcomes per line + the ephemeral dismissed set.
-  const [pushStates, setPushStates] = useState<Record<string, PushRowState>>({});
-  const [dismissed, setDismissed] = useState<ReadonlySet<string>>(new Set());
-  // Which line's accept-push is in flight (per-row Pushing… affordance).
-  const [pushingId, setPushingId] = useState<string | null>(null);
+  // View-only, and neither survives a settle: which row is mid-flight, and the
+  // last refusal per row. See the header for why nothing else lives here.
+  const [inFlightId, setInFlightId] = useState<string | null>(null);
+  const [refusals, setRefusals] = useState<Record<string, string>>({});
 
-  const counts = triageCounts(lines, pushStates, dismissed);
+  const counts = triageCounts(lines);
 
-  const accept = async (line: PrIntakeLine) => {
-    if (triageStatus(line, pushStates[line.id], dismissed) !== 'pending') return;
-    const { payload } = buildAcceptPush(line); // decision is structurally undefined
-    setPushingId(line.id);
+  /**
+   * One place every dispatch lands, so the two failure channels cannot diverge
+   * per control: a returned `status: 'failed'` and a thrown `DataError` both
+   * leave the row exactly where it was, with a reason a reader can act on.
+   */
+  const run = async (lineId: string, fire: () => Promise<{ status: string; reason?: string }>) => {
+    setInFlightId(lineId);
+    setRefusals((r) => {
+      const { [lineId]: _dropped, ...rest } = r;
+      return rest;
+    });
     try {
-      const result = await createPr.mutateAsync({ payload });
-      setPushStates((s) => ({
-        ...s,
-        [line.id]:
-          result.status === 'failed'
-            ? applyPushResult({ ok: false, reason: result.reason ?? 'failed' })
-            : applyPushResult({ ok: true, entityId: result.entityId ?? '' }),
-      }));
+      const result = await fire();
+      if (result.status === 'failed') {
+        setRefusals((r) => ({ ...r, [lineId]: result.reason ?? 'failed' }));
+      }
     } catch (e) {
-      // Hard authz failure arrives as a thrown DataError — same "stay PLANNED".
-      const reasonCode = e instanceof DataError ? e.code : 'ERROR';
-      setPushStates((s) => ({
-        ...s,
-        [line.id]: applyPushResult({ ok: false, reason: reasonCode }),
-      }));
+      setRefusals((r) => ({ ...r, [lineId]: e instanceof DataError ? e.code : 'ERROR' }));
     } finally {
-      setPushingId(null);
+      setInFlightId(null);
     }
   };
+
+  const accept = (line: IntakeLine) =>
+    run(line.id, () => commit.mutateAsync(buildAcceptCommit(line)));
 
   const CRUMB = [t('intakeReview.crumb.acquire'), t('intakeReview.crumb.review')];
 
@@ -106,7 +150,7 @@ const IntakeReview: React.FC = () => {
         subtitle={t('intakeReview.header.subtitle')}
         actions={
           <div className="flex items-center gap-3">
-            <HandoffNotice availability={acceptAvailability} testId="handoff-intake-accept" />
+            <HandoffNotice availability={triageAvailability} testId="handoff-intake-triage" />
             <LivenessPill capability="purchaseRequisitions" />
           </div>
         }
@@ -116,12 +160,14 @@ const IntakeReview: React.FC = () => {
         {t('intakeReview.meta.summary', {
           total: counts.total,
           pending: counts.pending,
-          accepted: counts.accepted,
+          committed: counts.committed,
           dismissed: counts.dismissed,
         })}
       </PageMetaLine>
 
-      {/* Honest framing: triage only — push simulated, dismissal not persisted */}
+      {/* Honest framing. The old copy apologised for a dismissal evaporating;
+          it records one now, and this says the one thing that is still true —
+          the push is simulated, because no live producer exists. */}
       <div className="mb-6 flex items-start gap-2 rounded-lg border border-info/30 bg-info-soft px-4 py-3 text-sm text-text-primary">
         <Info size={16} className="mt-0.5 shrink-0 text-info" />
         <div>
@@ -162,13 +208,13 @@ const IntakeReview: React.FC = () => {
               </TableRow>
             )}
             {lines.map((line) => {
-              const pushState = pushStates[line.id];
-              const status = triageStatus(line, pushState, dismissed);
-              const isDismissed = status === 'dismissed';
-              const isAccepted = status === 'accepted';
-              const pushing = pushingId === line.id;
+              const busy = inFlightId === line.id;
+              const refusal = refusals[line.id];
               return (
-                <TableRow key={line.id} className={isDismissed ? 'opacity-60' : ''}>
+                <TableRow
+                  key={line.id}
+                  className={line.state === 'Dismissed' ? 'opacity-60' : ''}
+                >
                   <TableCell className="font-medium">{line.material}</TableCell>
                   <TableCell className="text-text-secondary">
                     {t(`planGrid.source.${line.source}`)}
@@ -179,13 +225,31 @@ const IntakeReview: React.FC = () => {
                   <TableCell className="text-text-secondary">
                     {line.segment ?? t('planGrid.empty.dash')}
                   </TableCell>
+                  {/* The DELIVERED quantity, which is the number Accept commits
+                      and the baseline any override is measured from (A1-R2).
+                      When the producer trimmed it, the trim is SHOWN — read-only,
+                      never charged to the planner. */}
                   <TableCell className="text-right">
                     <Data className="text-sm">
-                      {formatNumber(line.suggestedQty)} {line.uom}
+                      {formatNumber(line.acceptedQty)} {line.uom}
                     </Data>
+                    {line.producerAdjusted && (
+                      <div
+                        className="mt-0.5 text-[11px] text-text-tertiary"
+                        data-testid={`producer-adjusted-${line.id}`}
+                      >
+                        {t('planGrid.adjusted.byProducer', {
+                          producer: t(`planGrid.source.${line.source}`),
+                          from: formatNumber(line.suggestedQty),
+                          to: formatNumber(line.acceptedQty),
+                        })}
+                      </div>
+                    )}
                   </TableCell>
+                  {/* A BUCKET, rendered as a bucket. Never through `formatDate`,
+                      which turns `'2026-09'` into a day nobody entered. */}
                   <TableCell>
-                    <Data className="text-sm">{line.period}</Data>
+                    <Data className="text-sm">{line.periodBucket}</Data>
                   </TableCell>
                   <TableCell className="text-right">
                     <Data className="text-sm">
@@ -199,61 +263,67 @@ const IntakeReview: React.FC = () => {
                   <TableCell>
                     <PlanCellMarker
                       capability="purchaseRequisitions"
-                      planState={pushState?.planState ?? line.planState}
+                      planState={line.planState}
                     />
                   </TableCell>
                   <TableCell>
-                    {isAccepted && pushState?.prNumber && (
+                    {line.state === 'Committed' && (
                       <Data className="text-xs text-text-secondary">
-                        {t('intakeReview.accepted.label', { pr: pushState.prNumber })}
+                        {line.prNumber
+                          ? t('intakeReview.committed.label', { pr: line.prNumber })
+                          : t('intakeReview.committed.noPr')}
                       </Data>
                     )}
-                    {isDismissed && (
+                    {line.state === 'Dismissed' && (
                       <div className="flex flex-col items-start gap-1.5">
                         <span className="inline-flex items-center rounded-sm border border-border-subtle bg-bg-hover px-1.5 py-0.5 text-[11px] font-medium text-text-tertiary">
                           {t('intakeReview.dismissed.label')}
                         </span>
-                        <Button
-                          variant="secondary"
-                          className="!px-2.5 !py-1 text-xs"
-                          aria-label={t('intakeReview.restore.aria', { material: line.material })}
-                          onClick={() => setDismissed((s) => restoreLine(s, line.id))}
-                        >
-                          {t('intakeReview.action.restore')}
-                        </Button>
-                      </div>
-                    )}
-                    {status === 'pending' && (
-                      <div className="flex flex-col items-start gap-1.5">
-                        <div className="flex items-center gap-2">
-                          {acceptAvailability.kind === 'held' && (
-                            <Button
-                              variant="outline"
-                              className="!px-2.5 !py-1 text-xs"
-                              disabled={pushing}
-                              aria-label={t('intakeReview.accept.aria', { material: line.material })}
-                              onClick={() => accept(line)}
-                            >
-                              {pushing
-                                ? t('intakeReview.action.accepting')
-                                : t('intakeReview.action.accept')}
-                            </Button>
-                          )}
+                        {triageAvailability.kind === 'held' && (
                           <Button
                             variant="secondary"
                             className="!px-2.5 !py-1 text-xs"
-                            disabled={pushing}
-                            aria-label={t('intakeReview.dismiss.aria', { material: line.material })}
-                            onClick={() => setDismissed((s) => dismissLine(s, line.id))}
+                            disabled={busy}
+                            aria-label={t('intakeReview.restore.aria', { material: line.material })}
+                            onClick={() =>
+                              run(line.id, () => restore.mutateAsync({ lineId: line.id }))
+                            }
                           >
-                            {t('intakeReview.action.dismiss')}
+                            {t('intakeReview.action.restore')}
                           </Button>
-                        </div>
-                        {pushState?.failureReason && (
-                          <span className="text-[11px] text-danger">
-                            {refusalText(pushState.failureReason) ?? t('intakeReview.failed.label', { reason: pushState.failureReason })}
-                          </span>
                         )}
+                      </div>
+                    )}
+                    {line.state === 'Pending' && triageAvailability.kind === 'held' && (
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          className="!px-2.5 !py-1 text-xs"
+                          disabled={busy}
+                          aria-label={t('intakeReview.accept.aria', { material: line.material })}
+                          onClick={() => accept(line)}
+                        >
+                          {busy
+                            ? t('intakeReview.action.accepting')
+                            : t('intakeReview.action.accept')}
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          className="!px-2.5 !py-1 text-xs"
+                          disabled={busy}
+                          aria-label={t('intakeReview.dismiss.aria', { material: line.material })}
+                          onClick={() =>
+                            run(line.id, () => dismiss.mutateAsync({ lineId: line.id }))
+                          }
+                        >
+                          {t('intakeReview.action.dismiss')}
+                        </Button>
+                      </div>
+                    )}
+                    {refusal && (
+                      <div className="mt-1 text-[11px] text-danger" role="alert">
+                        {refusalText(refusal) ??
+                          t('intakeReview.failed.label', { reason: refusal })}
                       </div>
                     )}
                   </TableCell>

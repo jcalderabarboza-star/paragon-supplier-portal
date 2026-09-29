@@ -207,24 +207,24 @@ describe('⚠️ THE TWO ENTRANCES, DERIVED — and both route through the ONE b
 // ── THE PROBE, FIRED AT A DEFECT THE TREE REALLY HAS ────────────────────────
 describe('⚠️ PROBE — the same matcher at `t_pr_create`, where the drift is LIVE', () => {
   it('⚠️ IT RETURNS NAMED MEMBERS, or this instrument is broken', () => {
-    // ⚠️ **THREE call sites, and the scope report said four — THIS ASSERTION IS
-    // WHAT CORRECTED IT.** `intake-review/intakeReviewModel.ts` names the hook
-    // only in a comment, which `grep -rln` matched and an identifier scan does
-    // not. Pinned as a LIST rather than a count so the next wrong figure is
-    // caught by name; if it collapses to one or zero the matcher is reporting on
-    // itself rather than on the tree.
+    // ⚠️ **THE POPULATION SHRANK FROM THREE TO ONE AT A2, AND A SHRINKING
+    // POPULATION IS EXACTLY WHAT RULE 1 SAYS TO DISTRUST — SO IT IS EXPLAINED
+    // HERE RATHER THAN QUIETLY RE-PINNED.** `IntakeReview` and
+    // `IntakeAdjustDrawer` no longer dispatch `t_pr_create` at all: both fire
+    // `t_intake_commit` on the `intakeLine` machine, and the CASCADE mints the
+    // requisition. So the two departures are a real architectural change with a
+    // named replacement, not a matcher that stopped seeing them.
+    //
+    // ⚠️ **AND THE DEPARTURE IS ASSERTED, NOT ASSUMED.** A matcher that had
+    // simply broken would also return one member; what separates the two is that
+    // the departed files must now name the REPLACEMENT hook. Checked in the same
+    // run, by the same instrument.
     const callers = callersOf('usePurchaseRequisitionCreate');
-    expect(callers).toEqual([
-      'pages-v2/BuyerRequisitions.tsx',
+    expect(callers).toEqual(['pages-v2/BuyerRequisitions.tsx']);
+    expect(callersOf('useIntakeCommit').sort()).toEqual([
       'pages-v2/IntakeReview.tsx',
       'pages-v2/plan-grid/IntakeAdjustDrawer.tsx',
     ]);
-    // And the excluded file is excluded for the RIGHT reason — it really does
-    // mention the hook, just not as code. Without this the exclusion could be a
-    // matcher that simply misses that path.
-    expect(
-      readFileSync(join(SRC, 'pages-v2', 'intake-review', 'intakeReviewModel.ts'), 'utf8'),
-    ).toContain('usePurchaseRequisitionCreate');
 
     // ⚠️ **THE DRIFT THIS PROBE WAS AIMED AT IS NOW CLOSED, AND THE ASSERTION
     // IS INVERTED RATHER THAN DELETED.** It used to read
@@ -237,9 +237,14 @@ describe('⚠️ PROBE — the same matcher at `t_pr_create`, where the drift is
     // it now says the opposite thing about the same population: EVERY entrance
     // goes through a builder in the one payload module. The day a fourth
     // entrance is added inline, this goes red by name.
+    // ⚠️ **`buildAcceptPush` LEFT THIS SET BECAUSE IT NO LONGER EXISTS**, and
+    // `buildPrCreatePayload`'s only caller is now the CASCADE RESOLVER, which is
+    // a service and therefore outside the entrance population this file walks.
+    // `buildNewPrPayload` is the form's. Naming the departure keeps a shrinking
+    // set legible — a set that quietly loses a member reads the same as one that
+    // never had it.
     const sharedBuilder = new Set([
       ...callersOf('buildPrCreatePayload'),
-      ...callersOf('buildAcceptPush'),
       ...callersOf('buildNewPrPayload'),
     ]);
     const drifting = callers.filter((c) => !sharedBuilder.has(c));

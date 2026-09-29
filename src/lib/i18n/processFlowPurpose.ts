@@ -224,6 +224,16 @@ export const processFlowPurposeEn: Record<string, string> = {
   'processFlows.purpose.t_pr_convert':
     'The need has become a real order. This is what closes the loop for whoever raised it.',
 
+  // ── intakeLine (A2) ───────────────────────────────────────────
+  'processFlows.purpose.entity.intakeLine':
+    'A requirement that planning has proposed and nobody has ruled on yet — the queue where a planner decides which needs enter the buying workload and which are set aside.',
+  'processFlows.purpose.t_intake_dismiss':
+    'Puts a proposed requirement to one side, so a colleague opening the same queue sees that somebody already looked at it rather than meeting the same line again.',
+  'processFlows.purpose.t_intake_restore':
+    'Brings a set-aside requirement back into the queue, because a choice made in error should not be a dead end.',
+  'processFlows.purpose.t_intake_commit':
+    'Turns a proposed requirement into a real request for the buying team, at the figure the planner is willing to stand behind — and only once, so one need never becomes three orders.',
+
   // ── supplierDocument ───────────────────────────────────────────────────────
   'processFlows.purpose.entity.supplierDocument':
     'The paperwork Paragon must hold on a supplier — certificates, licences, bank details — and where each one stands.',
@@ -563,6 +573,16 @@ export const processFlowPurposeId: Record<string, string> = {
     'Kebutuhan ini ditawarkan ke beberapa pemasok sekaligus, bukan langsung ke satu yang sudah dikenal. Dicatat pada permintaannya agar pemohon bisa melihat ke mana kebutuhannya pergi.',
   'processFlows.purpose.t_pr_convert':
     'Kebutuhan itu sudah menjadi pesanan sungguhan. Inilah yang menutup lingkaran bagi siapa pun yang mengajukannya.',
+
+  // ── intakeLine (A2) ───────────────────────────────────────────
+  'processFlows.purpose.entity.intakeLine':
+    'Kebutuhan yang diusulkan perencanaan dan belum diputuskan siapa pun — antrean tempat perencana menentukan kebutuhan mana yang masuk beban kerja pembelian dan mana yang dikesampingkan.',
+  'processFlows.purpose.t_intake_dismiss':
+    'Mengesampingkan sebuah usulan kebutuhan, agar rekan yang membuka antrean yang sama tahu ada orang yang sudah menilainya, bukan bertemu baris yang sama lagi.',
+  'processFlows.purpose.t_intake_restore':
+    'Mengembalikan kebutuhan yang dikesampingkan ke antrean, karena pilihan yang keliru tidak boleh menjadi jalan buntu.',
+  'processFlows.purpose.t_intake_commit':
+    'Mengubah usulan kebutuhan menjadi permintaan sungguhan bagi tim pembelian, pada angka yang berani dipertanggungjawabkan perencana — dan hanya sekali, agar satu kebutuhan tidak pernah menjadi tiga pesanan.',
 
   // ── supplierDocument ───────────────────────────────────────────────────────
   'processFlows.purpose.entity.supplierDocument':

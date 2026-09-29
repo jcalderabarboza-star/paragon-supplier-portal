@@ -42,6 +42,10 @@ import type {
 import { supplierDocumentStore } from './stores/supplierDocumentStore';
 import { supplierApplicationStore } from './stores/supplierApplicationStore';
 import { materialRequestStore } from './stores/materialRequestStore';
+import { intakeLineStore, setKnownIntakeLineIds } from './stores/intakeLineStore';
+import { PR_INTAKE_LINES } from './fixtures/prIntake';
+import { projectIntakeLine } from '../intakeLineProjection';
+import { buildPrCreatePayload } from '../../../pages-v2/requisitions/prCreatePayload';
 import { VENDOR_BEARING_REQUEST_TYPE } from '../../transitions/flows/supplierApplication.flow';
 import { NO_PERSON } from '../../../context/noPerson';
 // CALL-OFF STEP 1 — the delivery lane's domain verbs, address resolvers, store
@@ -744,7 +748,7 @@ const purchaseRequisitionTarget: CommandTarget = {
     }));
   },
   creationOwner: () => null,
-  create: (payload, toState) => {
+  create: (payload, toState, _scope, decision) => {
     const prNumber = purchaseRequisitionStore.nextNumber();
     const str = (k: string) => (typeof payload[k] === 'string' ? (payload[k] as string) : '');
     const num = (k: string) => (typeof payload[k] === 'number' ? (payload[k] as number) : 0);
@@ -771,9 +775,17 @@ const purchaseRequisitionTarget: CommandTarget = {
       // C7 §2.1 — the intake's `acceptedQty` maps to `quantity` (the required field).
       quantity: num('quantity'),
       uom: str('uom'),
-      // C7 §2 GG-3 — `period` (planning bucket) maps to requiredDate today; a
-      // single date until the bucket representation is pinned by IBP co-design.
-      requiredDate: str('requiredDate') || str('period'),
+      // ⚠️ **A2 — `|| str('period')` IS GONE, AND DELETING IT IS THE FIX**
+      // (A1-R1; GG-3 closed on C8's side). A planning bucket used to fall
+      // through into this date-typed, date-named field, so a requisitions page
+      // rendered `'2026-W36'` as an em dash and — worse — `'2026-09'` as
+      // **`01 Sept 2026`, a specific day nobody entered.** One of those is a
+      // missing figure and the other is a fabricated one, and the second is
+      // worse because it looks like an answer. The bucket now lands in
+      // `periodBucket`, below, and a requisition raised from an intake line
+      // carries NO required date, which is the honest statement: nobody named
+      // a day. A required date is a commitment to a day; a bucket is a grain.
+      requiredDate: str('requiredDate'),
       requestor: str('requestor'),
       costCenter: str('costCenter'),
       status: toState as PRStatus,
@@ -791,6 +803,26 @@ const purchaseRequisitionTarget: CommandTarget = {
         : {}),
       ...(priority ? { priority } : {}),
       ...(source ? { source } : {}),
+      // ── THE REQUISITION CARRIES ITS ORIGIN (A1-R3, written at A2) ─────────
+      //
+      // ⚠️ **THREE OPTIONAL FIELDS, EACH ABSENT ON A NEW-PR-FORM ROW, AND THE
+      // ABSENCE IS THE HONEST STATEMENT RATHER THAN A MIGRATION GAP.** A
+      // requisition raised on the form has no intake line and no bucket, and an
+      // absent `decision` means nobody overrode anything — never "the override
+      // was unexplained".
+      //
+      // ⚠️ **AND THE DECISION ARRIVES AS A PARAMETER, NOT FROM `payload`,
+      // WHICH IS THE WHOLE OF A1-R2a.** Reading it from the payload would mean a
+      // caller supplied `wasAdjusted`, and a caller that can assert *"a human
+      // changed this"* can misstate it onto a document an approver reads. What
+      // lands here is the value the DISPATCHER derived from the pair beside it.
+      ...(typeof payload.intakeLineId === 'string' && payload.intakeLineId !== ''
+        ? { intakeLineId: payload.intakeLineId }
+        : {}),
+      ...(typeof payload.periodBucket === 'string' && payload.periodBucket !== ''
+        ? { periodBucket: payload.periodBucket }
+        : {}),
+      ...(decision ? { decision } : {}),
     };
     purchaseRequisitionStore.add(pr);
     return { entityId: prNumber };
@@ -2390,6 +2422,70 @@ const deliveryPolicyTarget: CommandTarget = {
   },
 };
 
+// — Intake-line target (A2 / Design 1 B2 — the C7 triage machine) — buyer-only.
+//   Three verbs, one atom (`pr:create`), one store. The producer's rows are
+//   read-only fixture data; everything this target writes is an ACT.
+//
+//   ⚠️ **`readEntity` RETURNS THE PROJECTED LINE, NOT THE FIXTURE ROW, AND
+//   `INTAKE_OVERRIDE_REASONED` IS WHY.** The hook measures the committed
+//   quantity against the PRODUCER's `acceptedQty`, so it needs the line as the
+//   seam delivers it — handing it a row without its triage would be a hook
+//   reading a different object from the one the surface showed.
+//
+//   ⚠️ **`readScopeOwner: () => null` DENIES EVERY SUPPLIER, AND THAT IS THE
+//   INTENT RATHER THAN "NOTHING TO COMPARE" (§86).** An intake line is
+//   buyer-internal: it is Paragon's own plan, and no supplier is a party to it.
+//   A supplier scope resolves owner=null and is SCOPE_DENIED before the role
+//   gate, exactly as `purchaseRequisitionTarget` intends it.
+const intakeLineTarget: CommandTarget = {
+  readState: (id) => {
+    // The producer's set is the authority on which lines EXIST. Told once, here,
+    // because this is the first place a dispatch can reach the store.
+    setKnownIntakeLineIds(PR_INTAKE_LINES.map((l) => l.id));
+    return intakeLineStore.stateOf(id);
+  },
+  readScopeOwner: () => null,
+  readEntity: (id) => {
+    const line = PR_INTAKE_LINES.find((l) => l.id === id);
+    if (!line) return null;
+    return projectIntakeLine(line, intakeLineStore.get(id), purchaseRequisitionStore.all());
+  },
+  // ⚠️ **`toState` IS THE ONLY DISCRIMINATOR AND ON THIS MACHINE IT IS
+  // SUFFICIENT — DERIVED FROM THE FLOW, NOT ASSUMED.** Each of the three states
+  // has exactly ONE inbound edge: `Dismissed` ← t_intake_dismiss, `Pending` ←
+  // t_intake_restore, `Committed` ← t_intake_commit. Re-derive from
+  // `intakeLine.flow.ts` before adding a fourth; a state that gains a second
+  // inbound edge makes one of these writes fire on the wrong verb, silently.
+  applyTransition: (id, toState, payload) => {
+    if (toState !== 'Committed') {
+      // A dismissal and a restoration record the STATE and nothing else — there
+      // is no substance to either act. Writing a quantity or a reason here
+      // would be inventing a field the verb never asked for and no gate checks.
+      intakeLineStore.put({ lineId: id, state: toState as 'Pending' | 'Dismissed' });
+      return;
+    }
+    // `INTAKE_QTY_FLOOR` and `INTAKE_QTY_AGREES` have already proven this is a
+    // finite quantity above zero that the typed token really reads as, so no
+    // re-check and no fallback: a fallback here would be the write admitting it
+    // does not trust the guards that ran two steps ago.
+    const committedQty = payload.acceptedQty as number;
+    const overrideReason =
+      typeof payload.overrideReason === 'string' ? payload.overrideReason.trim() : '';
+    intakeLineStore.put({
+      lineId: id,
+      state: 'Committed',
+      committedQty,
+      // Absent when nobody owed one. An empty string would read as an override
+      // whose reason was left blank, which is the state the gate exists to make
+      // unreachable — `estimatedValue`'s ruling, one entity over.
+      ...(overrideReason !== '' ? { overrideReason } : {}),
+      // The instant of the act, from the platform clock rather than `new Date()`
+      // so a shifted-clock probe reaches it.
+      committedAt: sdcClock.now(),
+    });
+  },
+};
+
 const TARGETS: Record<string, CommandTarget> = {
   purchaseOrder: purchaseOrderTarget,
   advanceShipNotice: advanceShipNoticeTarget,
@@ -2398,6 +2494,11 @@ const TARGETS: Record<string, CommandTarget> = {
   rfq: rfqTarget,
   quotation: quotationTarget,
   purchaseRequisition: purchaseRequisitionTarget,
+  // A2 — the intake triage machine. Ships in the same commit as its flow so
+  // the entity never joins the target-less set, not even for one merge: a
+  // machine on `/buyer/process-flows` that LOOKS built and refuses everything
+  // is worse than one honestly badged AUTHORED — UNWIRED.
+  intakeLine: intakeLineTarget,
   requirementResponse: requirementResponseTarget,
   inventoryDeclaration: inventoryDeclarationTarget,
   incomingShipment: incomingShipmentTarget,
@@ -2479,6 +2580,65 @@ export const commandTargetFor = (entity: string): CommandTarget | undefined =>
 // declares WHICH verb; the mock resolves WHICH ASN id (the GR's own asnNumber).
 // Best-effort — a GR whose ASN is absent or not in a cascadable state no-ops.
 const resolveCascades = (ctx: CascadeContext): CascadeCommand[] => {
+  // — A2 · the intake commit mints the requisition ———————————————————
+  //
+  // ⚠️ **THIS IS THE ONE FAN-OUT WHOSE SOURCE HAS ALREADY MOVED AN ENTITY TO A
+  // TERMINAL STATE, SO A SILENT FAILURE HERE IS A LINE MARKED COMMITTED WITH
+  // NOTHING COMMITTED.** The dispatcher re-dispatches inside a `catch {}` and
+  // only `NOT_FOUND` / `SCOPE_DENIED` throw — both before any emit, both
+  // traceless. So the resolver confirms what it can before handing anything
+  // back: the line resolves and the quantity is a number. It returns `[]`
+  // otherwise, which is the GR branch's `if (!gr) return []` discipline
+  // (a resolver hands the dispatcher a command it has confirmed, or nothing).
+  //
+  // ⚠️ **AND IT DOES NOT RE-VALIDATE.** The floor, the raw/number agreement
+  // and the reason-gate all ran at the verb, and re-running them here would be a
+  // second opinion about rules that already have one — with the second opinion
+  // failing SILENTLY where the first fails on the record.
+  if (ctx.entity === 'intakeLine' && ctx.transitionId === 't_intake_commit') {
+    const line = PR_INTAKE_LINES.find((l) => l.id === ctx.entityId);
+    const qty = ctx.payload.acceptedQty;
+    if (!line || typeof qty !== 'number') return [];
+    const reason =
+      typeof ctx.payload.overrideReason === 'string' ? ctx.payload.overrideReason : '';
+    // ⚠️ **THE BASELINE IS THE PRODUCER'S `acceptedQty`, NOT `suggestedQty`**
+    // (A1-R2). A decision is carried ONLY for the planner's own change: a commit
+    // at the delivered quantity overrode nothing, so it carries none, and the
+    // dispatcher's derivation would in that case compute `wasAdjusted: false`
+    // over a decision that should not exist at all.
+    const planner = qty !== line.acceptedQty;
+    return cascadesFor(ctx.transitionId).map((link) => ({
+      entity: link.targetEntity,
+      // No `entityId`: `t_pr_create` is a CREATION and the store assigns the
+      // number. Passing one would be this resolver choosing a requisition id.
+      transitionId: link.targetTransitionId,
+      payload: {
+        ...buildPrCreatePayload(line, qty, reason),
+        // The provenance A1-R3 put on the entity and A1 left unwritten: WHICH
+        // line, and WHICH bucket — the bucket in its own field, never in
+        // `requiredDate`, which is what made a requisitions page render
+        // `01 Sept 2026` for a month nobody dated.
+        intakeLineId: line.id,
+        periodBucket: line.periodBucket,
+      },
+      // ONE LINE → AT MOST ONE REQUISITION, by replay as well as by legality.
+      // The key is the line's own id (A1-R3): it is stable across a retry, a
+      // redelivered producer event and a second seat, which is exactly the set
+      // of callers legality cannot answer for.
+      idempotencyKey: line.id,
+      // `wasAdjusted` is absent BY TYPE — the dispatcher derives it (A1-R2a).
+      ...(planner
+        ? {
+            decision: {
+              field: 'acceptedQty',
+              from: line.acceptedQty,
+              to: qty,
+              reason: reason.trim(),
+            },
+          }
+        : {}),
+    }));
+  }
   if (ctx.entity === 'goodsReceipt') {
     const gr = goodsReceiptStore.get(ctx.entityId);
     if (!gr) return [];

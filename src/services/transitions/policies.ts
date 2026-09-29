@@ -5,7 +5,7 @@
 // Kept separate so flow metadata stays serialisable (names, never closures).
 // ────────────────────────────────────────────────────────────────────────────
 
-import type { PurchaseOrder, Invoice } from '../data/types';
+import type { PurchaseOrder, Invoice, IntakeLine } from '../data/types';
 import { RFQ_CATEGORIES, isRfqCategoryMember, type RFQ } from '../../data/mockRfqs';
 import { CODE_LESS_REASONS, isCodeLessReason } from '../../data/materialCatalogReason';
 import { DECLARED_PRESENT } from '../data/fixturePresent';
@@ -28,6 +28,7 @@ import type { ResolvedItem, ResolvedLine } from '../delivery/addressing';
 import { deliveryShipmentPoolFor } from '../delivery/pool';
 import { deriveFulfillment } from '../delivery/fulfillment';
 import { sdcClock } from '../sdc/clock';
+import { normalizeQty } from '../../lib/localeNumber';
 import type { DrawdownEnforcement, TolerancePolicy } from '../delivery/types';
 import { isMatched } from './invoiceRollup';
 import { BASE_CURRENCY, BID_CURRENCIES, isBidCurrency } from '../../lib/currencyPolicy';
@@ -1754,3 +1755,127 @@ const deliveryPolicyGoverned: PolicyHookFn = ({ entityId, payload, target, scope
 };
 
 bindPolicyHook(POLICY_HOOKS.DELIVERY_POLICY_GOVERNED, deliveryPolicyGoverned);
+
+// ── A2 · THE INTAKE COMMIT — three hooks, three different jobs ───────────────
+//
+// ⚠️ **THEY ARE THREE AND NOT ONE, BECAUSE THEY FAIL AT THREE DIFFERENT THINGS
+// AND A PLANNER NEEDS TO BE TOLD WHICH.** A floor violation is a typo; a
+// raw/number disagreement is a locale misread or a hand-crafted dispatch; a
+// missing reason is a governance omission. Collapsing them into one
+// "invalid quantity" refusal would hand all three the same sentence, and the
+// only one a planner can act on is the third.
+
+/**
+ * The quantity must be a finite number strictly above zero.
+ *
+ * ⚠️ **A ZERO IS A COMMITMENT, NOT A BLANK, AND THIS FIELD HAS ALREADY MINTED
+ * ONE.** It ran `Number(e.target.value)` behind a `type="number"` input, so a
+ * CLEARED box became `Number('') === 0` and a requisition for nothing reached
+ * the store. The surface refuses that before the click now; this is what stands
+ * behind a dispatch that never sees a surface.
+ */
+bindPolicyHook(POLICY_HOOKS.INTAKE_QTY_FLOOR, ({ payload }) => {
+  const value = payload.acceptedQty;
+  if (typeof value !== 'number') {
+    return { ok: false, reason: `INTAKE_QTY_FLOOR: acceptedQty must be a number, got ${typeof value}` };
+  }
+  if (!Number.isFinite(value)) {
+    return { ok: false, reason: 'INTAKE_QTY_FLOOR: acceptedQty is not a finite quantity' };
+  }
+  if (value <= 0) {
+    return {
+      ok: false,
+      reason:
+        `INTAKE_QTY_FLOOR: acceptedQty is ${value} — a requisition for nothing is a ` +
+        'commitment to nothing, not an empty field',
+    };
+  }
+  return { ok: true };
+});
+
+/**
+ * The raw token the human typed must parse — through the ONE legal parser — to
+ * exactly the number being committed.
+ *
+ * ⚠️ **THIS IS THE ONLY GUARD THAT CAN SEE A LOCALE MISREAD, BECAUSE IT IS THE
+ * ONLY ONE THAT SEES WHAT THE HUMAN TYPED.** `"4.500"` is a legal
+ * `type="number"` value and `Number` reads it as `4.5`, so an Indonesian
+ * buyer's 4,500 KG was minted as 4.5 KG — measured, on this exact field. A
+ * floor check passes 4.5 without complaint. Carrying the raw beside the number
+ * is what makes the number falsifiable at the spine rather than only at the
+ * surface that happened to parse it.
+ *
+ * ⚠️ **NO CONVENTION HINT, DELIBERATELY.** An internal buyer form carries no
+ * origin signal, so a token legal under BOTH readings (`AMBIGUOUS_QTY`) is
+ * REFUSED rather than guessed — the parser's own ruling (CP-0 §5a), and the
+ * refusal reason travels so the caller learns which of the three it hit.
+ */
+bindPolicyHook(POLICY_HOOKS.INTAKE_QTY_AGREES, ({ payload }) => {
+  const raw = payload.acceptedQtyRaw;
+  if (typeof raw !== 'string') {
+    return { ok: false, reason: `INTAKE_QTY_AGREES: acceptedQtyRaw must be text, got ${typeof raw}` };
+  }
+  const parsed = normalizeQty(raw);
+  if (!parsed.ok) {
+    return { ok: false, reason: `INTAKE_QTY_AGREES: acceptedQtyRaw is unreadable (${parsed.reason})` };
+  }
+  const value = payload.acceptedQty;
+  if (parsed.value !== value) {
+    return {
+      ok: false,
+      reason:
+        `INTAKE_QTY_AGREES: the typed quantity '${raw}' reads as ${parsed.value}, ` +
+        `but the command commits ${String(value)}`,
+    };
+  }
+  return { ok: true };
+});
+
+/**
+ * A quantity that leaves the PRODUCER's accepted quantity must carry a
+ * non-blank reason.
+ *
+ * ⚠️ **THE BASELINE IS READ FROM THE LINE, NEVER FROM THE PAYLOAD** (A1-R2, C6
+ * §8.3 Amendment 1). A caller-supplied baseline would let the caller choose
+ * whether it owed a reason at all — the gate asking its subject to mark its own
+ * paper. `ctx.target.readEntity` is what makes the comparison un-falsifiable,
+ * and this is the fifth shipped hook to read a document through it.
+ *
+ * ⚠️ **AND THE BASELINE IS `acceptedQty`, NOT `suggestedQty`, WHICH IS THE
+ * WHOLE RULING.** A SOMO line arrives already trimmed by its producer; against
+ * `suggestedQty` that line reads as an override, so the drawer demanded a
+ * planner's justification for SOMO's own delta while Intake Review pushed the
+ * untrimmed number for the same requirement. One requirement, two quantities,
+ * and the path that looked more governed was the one making a human account for
+ * an act they did not commit.
+ *
+ * ⚠️ **AN UNRESOLVABLE LINE IS REFUSED, NOT WAVED THROUGH.** With no baseline
+ * there is no question to ask, and answering `{ ok: true }` would make a
+ * missing line the one way to commit any quantity with no reason — a gate whose
+ * failure mode is to stop gating.
+ */
+bindPolicyHook(POLICY_HOOKS.INTAKE_OVERRIDE_REASONED, ({ payload, target, entityId }) => {
+  const line = target.readEntity ? (target.readEntity(entityId) as IntakeLine | null) : null;
+  if (!line || typeof line.acceptedQty !== 'number') {
+    return {
+      ok: false,
+      reason:
+        `INTAKE_OVERRIDE_REASONED: intake line '${entityId}' has no producer quantity to ` +
+        'measure the commit against',
+    };
+  }
+  // Accept-as-delivered. Not an override, so it owes no reason and carries no
+  // decision — `to === from` is exactly what `wasAdjusted` will derive as false.
+  if (payload.acceptedQty === line.acceptedQty) return { ok: true };
+
+  const reason = payload.overrideReason;
+  if (typeof reason !== 'string' || reason.trim() === '') {
+    return {
+      ok: false,
+      reason:
+        `INTAKE_OVERRIDE_REASONED: committing ${String(payload.acceptedQty)} against the ` +
+        `producer's ${line.acceptedQty} is the planner's own change and must say why`,
+    };
+  }
+  return { ok: true };
+});

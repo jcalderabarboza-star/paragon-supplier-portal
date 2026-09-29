@@ -53,6 +53,11 @@ export const planGridEn: Record<string, string> = {
   // — Adjustment —
   'planGrid.adjusted.yes': 'Adjusted',
   'planGrid.adjusted.no': 'As suggested',
+  // A2 · the two deltas, named by WHOSE act they are (A1-R2). The producer's
+  // is shown and never charged to the planner; only the planner's owes a reason.
+  'planGrid.adjusted.byProducer': '{{producer}} adjusted {{from}} → {{to}}',
+  'planGrid.adjusted.byPlanner': 'You adjusted',
+  'planGrid.adjusted.asDelivered': 'As delivered',
 
   // — Adjust & push panel (G1.2b — C6-LOCK governed override) —
   'planGrid.push.title': 'Adjust & push to requisition',
@@ -62,6 +67,7 @@ export const planGridEn: Record<string, string> = {
     'Computed columns (scores, what-if, estimated value) are locked — only accepted quantity is editable.',
   'planGrid.push.col.material': 'Material',
   'planGrid.push.col.suggested': 'Suggested',
+  'planGrid.push.col.delivered': 'Delivered by producer',
   'planGrid.push.col.accepted': 'Accepted',
   'planGrid.push.col.reason': 'Reason',
   'planGrid.push.col.state': 'State',
@@ -71,6 +77,11 @@ export const planGridEn: Record<string, string> = {
   'planGrid.push.button': 'Push to PR',
   'planGrid.push.pushing': 'Pushing…',
   'planGrid.push.committed': 'Pushed → {{pr}}',
+  // A session boundary, not a failed commit: the triage persists and the
+  // requisition store does not. Saying "none was raised" would be false —
+  // one was, and this session no longer holds it.
+  'planGrid.push.committedNoPr':
+    'Committed — its requisition is not in this session’s store',
   'planGrid.push.failed': 'Push failed: {{reason}}',
 
   // — CP-0 · W1 · PR-2b — accepted-quantity refusals (the ONE parse) —
@@ -157,6 +168,9 @@ export const planGridId: Record<string, string> = {
   // — Adjustment —
   'planGrid.adjusted.yes': 'Disesuaikan',
   'planGrid.adjusted.no': 'Sesuai saran',
+  'planGrid.adjusted.byProducer': '{{producer}} menyesuaikan {{from}} → {{to}}',
+  'planGrid.adjusted.byPlanner': 'Anda menyesuaikan',
+  'planGrid.adjusted.asDelivered': 'Sesuai kiriman',
 
   // — Panel sesuaikan & kirim (G1.2b — override terkelola C6-LOCK) —
   'planGrid.push.title': 'Sesuaikan & kirim ke permintaan',
@@ -166,6 +180,7 @@ export const planGridId: Record<string, string> = {
     'Kolom terhitung (skor, simulasi, nilai estimasi) terkunci — hanya jumlah yang diterima yang dapat diubah.',
   'planGrid.push.col.material': 'Material',
   'planGrid.push.col.suggested': 'Disarankan',
+  'planGrid.push.col.delivered': 'Dikirim produsen',
   'planGrid.push.col.accepted': 'Diterima',
   'planGrid.push.col.reason': 'Alasan',
   'planGrid.push.col.state': 'Status',
@@ -175,6 +190,8 @@ export const planGridId: Record<string, string> = {
   'planGrid.push.button': 'Kirim ke PR',
   'planGrid.push.pushing': 'Mengirim…',
   'planGrid.push.committed': 'Terkirim → {{pr}}',
+  'planGrid.push.committedNoPr':
+    'Dikomit — permintaannya tidak ada di penyimpanan sesi ini',
   'planGrid.push.failed': 'Pengiriman gagal: {{reason}}',
 
   // — CP-0 · W1 · PR-2b — penolakan jumlah diterima (satu-satunya parser) —

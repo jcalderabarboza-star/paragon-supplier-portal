@@ -70,11 +70,13 @@ import type {
   SupplierScorecard,
   PurchaseRequisition,
   PRFilter,
-  PrIntakeLine,
+  IntakeLine,
   SupplierApplication,
   MaterialRequest,
 } from '../types';
 import { PR_INTAKE_LINES } from './fixtures/prIntake';
+import { intakeLineStore, setKnownIntakeLineIds } from './stores/intakeLineStore';
+import { projectIntakeLine } from '../intakeLineProjection';
 
 const matchesList = <T>(value: T, filter: T | T[] | undefined): boolean => {
   if (filter === undefined) return true;
@@ -529,9 +531,26 @@ export class MockProcurementService implements IProcurementService {
   // getRequisitions — suppliers never see PR intake. Reads the promoted intake
   // fixture (both producers). Honest render (SIMULATED × PLANNED) is enforced at
   // the page via the purchaseRequisitions capability, not here.
-  async getPrIntake(scope: QueryScope): Promise<Page<PrIntakeLine>> {
+  // ⚠️ **A2 — THIS READ NOW CARRIES THE TRIAGE, AND THAT IS WHY IT REPLACED
+  // `getPrIntake` RATHER THAN SITTING BESIDE IT.** The old read handed back the
+  // producer's rows and nothing else, so each surface kept its own answer to
+  // *has anybody acted on this line?* in `useState` — which is how Intake
+  // Review and the Plan Grid drawer came to hold independent, disagreeing
+  // triage for the same requirement, and how a dismissal evaporated on reload.
+  // One read, one answer, and the machine owns it.
+  //
+  // The producer's set is declared to the store here too: it is the authority
+  // on which lines exist, so a stored triage row naming an unknown line is
+  // REFUSED on read rather than resurrecting a line nobody emitted.
+  async getIntakeLines(scope: QueryScope): Promise<Page<IntakeLine>> {
     if (scope.personaType !== 'buyer') return { items: [] };
-    return { items: [...PR_INTAKE_LINES] };
+    setKnownIntakeLineIds(PR_INTAKE_LINES.map((l) => l.id));
+    const requisitions = purchaseRequisitionStore.all();
+    return {
+      items: PR_INTAKE_LINES.map((line) =>
+        projectIntakeLine(line, intakeLineStore.get(line.id), requisitions),
+      ),
+    };
   }
 
   // ─── Supplier applications (B2, buyer-only) ───────────────────────────────
