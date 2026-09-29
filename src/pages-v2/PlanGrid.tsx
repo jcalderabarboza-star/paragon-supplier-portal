@@ -19,6 +19,8 @@ import PlanCellMarker from './plan-grid/PlanCellMarker';
 import { dataCell, textCell } from './plan-grid/cells';
 import IntakeAdjustDrawer from './plan-grid/IntakeAdjustDrawer';
 import FullScreenSection from './plan-grid/FullScreenSection';
+import SubTabs from '../components/ui-v2/SubTabs';
+import TimePhasedGrid from './plan-grid/TimePhasedGrid';
 import { useIntakeReview, useQuotations } from '../services/query/hooks';
 import type { IntakeLine } from '../services/data/types';
 import { formatIDR, formatNumber } from '../lib/format';
@@ -71,8 +73,16 @@ interface AwardDisplayRow extends AwardScenarioRow {
   whatIf: number;
 }
 
+/**
+ * B2 — the tabs. The time-phased views lead (the planning surface this page is
+ * named for); the two sections that were the whole page until B2 keep their own
+ * tabs and are otherwise untouched — nothing is removed, nothing re-derived.
+ */
+type PlanTab = 'rm' | 'pm' | 'exceptions' | 'award' | 'intake';
+
 const PlanGrid: React.FC = () => {
   const { t } = useTranslation();
+  const [tab, setTab] = useState<PlanTab>('rm');
   const quotationsQuery = useQuotations();
   const quotations = quotationsQuery.data?.items ?? [];
 
@@ -338,7 +348,25 @@ const PlanGrid: React.FC = () => {
         </div>
       </div>
 
+      <SubTabs<PlanTab>
+        className="mb-6"
+        value={tab}
+        onChange={setTab}
+        options={[
+          { id: 'rm', label: t('planGrid.tab.rm') },
+          { id: 'pm', label: t('planGrid.tab.pm') },
+          { id: 'exceptions', label: t('planGrid.tab.exceptions') },
+          { id: 'award', label: t('planGrid.tab.award') },
+          { id: 'intake', label: t('planGrid.tab.intake') },
+        ]}
+      />
+
+      {tab === 'rm' && <TimePhasedGrid viewId="rm-plan" />}
+      {tab === 'pm' && <TimePhasedGrid viewId="pm-plan" />}
+      {tab === 'exceptions' && <TimePhasedGrid viewId="exceptions" />}
+
       {/* ── Award scenario — what-if overlay (full-screen-capable) ───────── */}
+      {tab === 'award' && (
       <section className="mb-8">
         <FullScreenSection title={t('planGrid.award.title')} normalHeight={DSG_H.award}>
           {({ dsgHeight }) => (
@@ -395,8 +423,11 @@ const PlanGrid: React.FC = () => {
           )}
         </FullScreenSection>
       </section>
+      )}
 
       {/* ── Requisition intake — review (C7 §2, full-screen-capable) ──────── */}
+      {tab === 'intake' && (
+      <>
       <section className="mb-8">
         <FullScreenSection title={t('planGrid.intake.title')} normalHeight={DSG_H.intake}>
           {({ dsgHeight }) => (
@@ -432,6 +463,8 @@ const PlanGrid: React.FC = () => {
           )}
         </FullScreenSection>
       </section>
+      </>
+      )}
     </AppShellV2>
   );
 };

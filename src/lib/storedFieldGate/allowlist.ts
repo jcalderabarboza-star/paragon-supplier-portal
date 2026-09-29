@@ -165,15 +165,6 @@ export const STORED_FIELD_ALLOWLIST: readonly Exemption[] = Object.freeze([
       'while no product surface ever asks for it.',
     since: D_F,
   },
-  {
-    key: 'MaterialMasterEntry.materialType',
-    reason: 'unadjudicated',
-    why:
-      'Master material type, read in four specs and nowhere else. Sits beside halalApplicable and ' +
-      'bpomApplicable — both of which ARE read in production — on the same DTO, so the DTO is live and ' +
-      'this field is not.',
-    since: D_F,
-  },
   // ⚠️ §68 — `ActorAttribution.person` WAS HERE AND ITS EXEMPTION OUTLIVED ITS
   // SUBJECT, WHICH IS THE GATE DOING THE ONE THING A ONE-DIRECTIONAL LIST
   // CANNOT. The row read: unreachable by construction, nothing can produce a

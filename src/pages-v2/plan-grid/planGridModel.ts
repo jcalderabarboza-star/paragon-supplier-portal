@@ -21,6 +21,11 @@ import type {
   IntakePlanState,
 } from '../../services/data/types';
 import { PR_INTAKE_LINES } from '../../services/data/mock/fixtures/prIntake';
+import type { BucketId } from '../../services/planning/bucket';
+import type { PlanningFact } from '../../services/planning/facts';
+import { measureOf, type MeasureId } from '../../services/planning/measures';
+import { planningMaster } from '../../services/planning/somoFixture';
+import { materialEntry, type MaterialType } from '../../services/sdc';
 
 // C7 §2 — the intake line + plan-state axis are PROMOTED to the service seam
 // (types.ts) at Phase A/1 and re-exported here so plan-grid consumers keep their
@@ -288,3 +293,275 @@ export function selectedLine<T extends { readonly id: string }>(
   if (selectedId === null) return null;
   return lines.find((l) => l.id === selectedId) ?? null;
 }
+
+// ── B2 · the TIME-PHASED model (Design 1 §4.3, §7 — core only) ──────────────
+//
+// The planning facts arrive long-form (one number per material × supplier ×
+// bucket × measure). This pivots them into what the grid shows — one BLOCK per
+// material, one ROW per measure (a supplier sub-row per supplier for a
+// supplier-grain measure), one CELL per bucket — and does the grid's sort,
+// filter and exception ordering here, in pure TS, where a test can reach it.
+// The engine renders; it decides nothing. That is the fallback §8 names for
+// react-datasheet-grid: "model-layer sort/filter/totals".
+//
+// ⚠️ A MISSING FACT AND A NULL FACT BOTH RENDER "—", AND NEITHER IS A ZERO. The
+// producer saying "no figure" and the producer saying nothing are both
+// absences; a 0 is a claim (nothing can be supplied, nothing is short). The one
+// place a cell becomes text is `planCellText`, and it is mutation-probed.
+
+/** A row in the time-phased grid: one measure of one material (per supplier
+ *  for a supplier-grain measure). */
+export interface PlanRow {
+  readonly id: string;
+  readonly materialCode: string;
+  readonly materialLabel: string;
+  readonly materialType: MaterialType;
+  readonly uom: string;
+  readonly measureId: MeasureId;
+  readonly supplierId: string | null;
+  /** Bucket → value. A bucket absent here had no fact, which reads "—". */
+  readonly cells: Readonly<Record<BucketId, number | null>>;
+  /** Derived by this portal (a client-computed value) — carries its marker. */
+  readonly derived: boolean;
+  /** True on the first row of a material's block (where the aggregates sit). */
+  readonly blockHead: boolean;
+}
+
+/** The horizon aggregates (Design 1 §4.2 `agg:*`), all DERIVED. */
+export interface PlanAggregates {
+  readonly demand: number | null;
+  readonly confirmed: number | null;
+  readonly deficit: number | null;
+  readonly firstShortBucket: BucketId | null;
+}
+
+/** Why a block is an exception. Any one is enough. */
+export interface PlanExceptions {
+  /** Σ shortfall over the horizon is > 0. */
+  readonly shortfall: boolean;
+  /** A supplier was allocated a quantity in a bucket and has not confirmed it. */
+  readonly awaiting: boolean;
+  /** A supplier's answer was given against a plan version that has since moved. */
+  readonly stale: boolean;
+}
+
+export interface PlanBlock {
+  readonly materialCode: string;
+  readonly materialLabel: string;
+  readonly materialType: MaterialType;
+  readonly uom: string;
+  readonly rows: readonly PlanRow[];
+  readonly agg: PlanAggregates;
+  readonly exceptions: PlanExceptions;
+}
+
+/** The exception rule — ONE predicate, mutation-probed. */
+export const isPlanException = (e: PlanExceptions): boolean => e.shortfall || e.awaiting || e.stale;
+
+/** The null rule — the ONE place a planning value becomes text. */
+export function planCellText(value: number | null | undefined, format: (n: number) => string): string {
+  return value === null || value === undefined ? '—' : format(value);
+}
+
+/** `supplier|material|bucket` — the key a stale answer is reported by. */
+export const staleKey = (supplierId: string, materialCode: string, bucket: BucketId): string =>
+  `${supplierId}|${materialCode}|${bucket}`;
+
+const sumOrNull = (values: readonly (number | null)[]): number | null => {
+  const present = values.filter((v): v is number => v !== null);
+  return present.length === 0 ? null : present.reduce((a, b) => a + b, 0);
+};
+
+/**
+ * Pivot facts into blocks.
+ *
+ * `measuresShown` arrives ALREADY free of SPEC measures (`visibleMeasures.ts`).
+ * ⚠️ The filter is not done here, deliberately: this module is imported by the
+ * intake fixture on the SERVICE side, and the liveness registry reads the wired
+ * target census from `MockCommandService` — so importing the registry here
+ * closed an import cycle in which the registry built its wired set from an
+ * uninitialised export and every LIVE capability read SIMULATED (measured: 18
+ * specs across the widgets and the registry went red). The model stays pure.
+ */
+export function buildPlanBlocks(
+  facts: readonly PlanningFact[],
+  horizon: readonly BucketId[],
+  measuresShown: readonly MeasureId[],
+  staleKeys: ReadonlySet<string> = new Set(),
+): readonly PlanBlock[] {
+  const shown = measuresShown;
+  const shownSet = new Set<MeasureId>(shown);
+  const inHorizon = new Set(horizon);
+  const master = planningMaster();
+
+  // material → measure → supplier('' = material grain) → bucket → value
+  const byMaterial = new Map<string, Map<MeasureId, Map<string, Map<BucketId, number | null>>>>();
+  for (const f of facts) {
+    if (!shownSet.has(f.measureId) || !inHorizon.has(f.periodBucket)) continue;
+    const mats = byMaterial.get(f.materialCode) ?? new Map();
+    byMaterial.set(f.materialCode, mats);
+    const sups = mats.get(f.measureId) ?? new Map();
+    mats.set(f.measureId, sups);
+    const cells = sups.get(f.supplierId ?? '') ?? new Map();
+    sups.set(f.supplierId ?? '', cells);
+    cells.set(f.periodBucket, f.value);
+  }
+
+  const blocks: PlanBlock[] = [];
+  for (const [materialCode, mats] of byMaterial) {
+    const entry = materialEntry(materialCode, master);
+    if (!entry) continue; // D-OPS-MASTERMISS: a code the master cannot name is not rendered
+    const rows: PlanRow[] = [];
+    for (const measureId of shown) {
+      const sups = mats.get(measureId);
+      if (!sups) continue;
+      const spec = measureOf(measureId);
+      for (const supplierKey of [...sups.keys()].sort()) {
+        const cells = sups.get(supplierKey)!;
+        rows.push({
+          id: `${materialCode}|${measureId}|${supplierKey || '-'}`,
+          materialCode,
+          materialLabel: entry.label,
+          materialType: entry.materialType,
+          uom: entry.canonicalUom,
+          measureId,
+          supplierId: supplierKey || null,
+          cells: Object.fromEntries(horizon.map((b) => [b, cells.has(b) ? cells.get(b)! : null])),
+          derived: spec.derivation === 'derived',
+          blockHead: rows.length === 0,
+        });
+      }
+    }
+    if (rows.length === 0) continue;
+
+    const rowsOf = (m: MeasureId) => rows.filter((r) => r.measureId === m);
+    const all = (m: MeasureId) => rowsOf(m).flatMap((r) => horizon.map((b) => r.cells[b]));
+    const firstShort =
+      horizon.find((b) => rowsOf('confirmedDeficit').some((r) => (r.cells[b] ?? 0) > 0)) ?? null;
+    const deficit = sumOrNull(all('confirmedDeficit'));
+
+    const awaiting = rowsOf('allocation').some((a) =>
+      horizon.some((b) => {
+        const allocated = a.cells[b];
+        if (allocated === null || allocated <= 0) return false;
+        const conf = rowsOf('confirmed').find((c) => c.supplierId === a.supplierId);
+        return !conf || conf.cells[b] === null;
+      }),
+    );
+    const stale = rows.some(
+      (r) => r.supplierId !== null && horizon.some((b) => staleKeys.has(staleKey(r.supplierId!, materialCode, b))),
+    );
+
+    blocks.push({
+      materialCode,
+      materialLabel: entry.label,
+      materialType: entry.materialType,
+      uom: entry.canonicalUom,
+      rows,
+      agg: {
+        demand: sumOrNull(all('demand')),
+        confirmed: sumOrNull(all('confirmed')),
+        deficit,
+        firstShortBucket: firstShort,
+      },
+      exceptions: { shortfall: (deficit ?? 0) > 0, awaiting, stale },
+    });
+  }
+  return blocks;
+}
+
+export type PlanSortColumn =
+  | 'materialCode'
+  | 'materialLabel'
+  | 'materialType'
+  | 'uom'
+  | 'agg:demand'
+  | 'agg:confirmed'
+  | 'agg:deficit'
+  | 'agg:firstShortBucket';
+
+/** Every column the model can sort by — the ids, which are the B1 registry's.
+ *  Not a render site: labels come from the registry at render. */
+export const PLAN_SORT_COLUMNS: readonly PlanSortColumn[] = [
+  'materialCode',
+  'materialLabel',
+  'materialType',
+  'uom',
+  'agg:demand',
+  'agg:confirmed',
+  'agg:deficit',
+  'agg:firstShortBucket',
+];
+
+export interface PlanSort {
+  readonly colId: PlanSortColumn;
+  readonly dir: 'asc' | 'desc';
+}
+
+export interface PlanFilter {
+  /** RM = ROH, PM = VERP. */
+  readonly materialType: 'all' | MaterialType;
+  /** Case-insensitive, on material code or description. */
+  readonly search: string;
+  readonly exceptionsOnly: boolean;
+}
+
+export const DEFAULT_PLAN_FILTER: PlanFilter = { materialType: 'all', search: '', exceptionsOnly: false };
+export const DEFAULT_PLAN_SORT: PlanSort = { colId: 'materialCode', dir: 'asc' };
+
+const sortValue = (b: PlanBlock, col: PlanSortColumn): string | number | null => {
+  switch (col) {
+    case 'materialCode': return b.materialCode;
+    case 'materialLabel': return b.materialLabel;
+    case 'materialType': return b.materialType;
+    case 'uom': return b.uom;
+    case 'agg:demand': return b.agg.demand;
+    case 'agg:confirmed': return b.agg.confirmed;
+    case 'agg:deficit': return b.agg.deficit;
+    case 'agg:firstShortBucket': return b.agg.firstShortBucket;
+  }
+};
+
+/** Compare with NULLS LAST in both directions — an absent figure never sorts
+ *  as the smallest or the largest; it sorts as "not known". */
+const cmp = (x: string | number | null, y: string | number | null, dir: 1 | -1): number => {
+  if (x === null && y === null) return 0;
+  if (x === null) return 1;
+  if (y === null) return -1;
+  if (typeof x === 'number' && typeof y === 'number') return (x - y) * dir;
+  return String(x).localeCompare(String(y)) * dir;
+};
+
+/**
+ * Filter then order. With "exceptions only" ON, the order is the exception
+ * order — first short bucket (earliest first), then shortfall (largest first),
+ * then code — whatever sort was chosen: an exception list is read by urgency.
+ */
+export function applyPlanView(
+  blocks: readonly PlanBlock[],
+  filter: PlanFilter,
+  sort: PlanSort,
+): readonly PlanBlock[] {
+  const q = filter.search.trim().toLowerCase();
+  const kept = blocks.filter(
+    (b) =>
+      (filter.materialType === 'all' || b.materialType === filter.materialType) &&
+      (q === '' || b.materialCode.toLowerCase().includes(q) || b.materialLabel.toLowerCase().includes(q)) &&
+      (!filter.exceptionsOnly || isPlanException(b.exceptions)),
+  );
+  const byCode = (a: PlanBlock, b: PlanBlock) => a.materialCode.localeCompare(b.materialCode);
+  if (filter.exceptionsOnly) {
+    return [...kept].sort(
+      (a, b) =>
+        cmp(a.agg.firstShortBucket, b.agg.firstShortBucket, 1) ||
+        cmp(a.agg.deficit, b.agg.deficit, -1) ||
+        byCode(a, b),
+    );
+  }
+  const dir = sort.dir === 'asc' ? 1 : -1;
+  return [...kept].sort((a, b) => cmp(sortValue(a, sort.colId), sortValue(b, sort.colId), dir) || byCode(a, b));
+}
+
+/** The rows the grid renders, in block order. */
+export const flattenPlanRows = (blocks: readonly PlanBlock[]): readonly PlanRow[] =>
+  blocks.flatMap((b) => b.rows);

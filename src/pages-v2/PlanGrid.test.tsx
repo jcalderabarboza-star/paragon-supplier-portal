@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { screen, within } from '@testing-library/react';
+import { screen, within, fireEvent } from '@testing-library/react';
 import { renderWithProviders } from '../test/test-utils';
 import PlanGrid from './PlanGrid';
 import { isLive } from '../services/liveness';
@@ -17,6 +17,14 @@ import i18n from '../lib/i18n';
 // recompute + overlay-never-merged logic is proven in planGridModel.test.ts;
 // the per-row SIMULATED×PLANNED chip in PlanCellMarker.test.tsx.
 // ────────────────────────────────────────────────────────────────────────────
+
+// ⚠️ B2 — THE EXISTING SECTIONS MOVED UNDER THEIR OWN TABS (operator ruling:
+// "tabs; the spec clicks the tab"). The award scenario is the Award what-if
+// tab; the intake grid and its drawer are the Intake tab. Each spec below that
+// reaches one of them now selects its tab first; every `expect` is unchanged,
+// except the full-screen count, which is now gathered across the two tabs its
+// three sections live on (same property: three sections, three controls).
+const openTab = (name: RegExp) => fireEvent.click(screen.getByRole('tab', { name }));
 
 describe('PlanGrid — honest render (page-level)', () => {
   it('renders the SIMULATED page pill from the registry — never Live', () => {
@@ -45,17 +53,21 @@ describe('PlanGrid — honest render (page-level)', () => {
     renderWithProviders(<PlanGrid />, { route: '/buyer/plan-grid' });
     // Scope to the section headings — the loose text also appears in the
     // virtualized engine's sticky/measurement render.
+    openTab(/Award what-if/i);
     expect(screen.getByRole('heading', { name: /Award scenario/i })).toBeInTheDocument();
+    openTab(/^Intake$/i);
     expect(screen.getByRole('heading', { name: /Requisition intake/i })).toBeInTheDocument();
   });
 
   it('surfaces the client-computed marker on the what-if column (C6 §5)', () => {
     renderWithProviders(<PlanGrid />, { route: '/buyer/plan-grid' });
+    openTab(/Award what-if/i);
     expect(screen.getByText(/Client-computed/i)).toBeInTheDocument();
   });
 
   it('exposes the editable what-if weights control seeded from DEFAULT_WEIGHTS', () => {
     renderWithProviders(<PlanGrid />, { route: '/buyer/plan-grid' });
+    openTab(/Award what-if/i);
     // the four criteria weight labels are present
     const region = screen.getByTestId('whatif-weights');
     expect(within(region).getByText(/Compliance/i)).toBeInTheDocument();
@@ -69,7 +81,10 @@ describe('PlanGrid — DSG containers are height-pinned (anti-trembling, G1.2b)'
     // All three grids (weights, award, intake) are pinned. Auto-shrink to few-row
     // content is what let the horizontal-scrollbar toggle feed the resize-detector
     // loop (the trembling); the fixed height removes that feedback.
-    const pinned = container.querySelectorAll('.plan-dsg');
+    openTab(/Award what-if/i);
+    const onAward = [...container.querySelectorAll('.plan-dsg')];
+    openTab(/^Intake$/i);
+    const pinned = [...onAward, ...container.querySelectorAll('.plan-dsg')];
     expect(pinned.length).toBe(3);
     pinned.forEach((el) => {
       expect((el as HTMLElement).style.getPropertyValue('--plan-dsg-h')).toMatch(/^\d+px$/);
@@ -80,6 +95,7 @@ describe('PlanGrid — DSG containers are height-pinned (anti-trembling, G1.2b)'
 describe('PlanGrid — working-set adjust & push drawer (C6-LOCK, G1.3.2)', () => {
   it('renders the plain-DOM drawer section; with nothing selected it prompts to select', () => {
     renderWithProviders(<PlanGrid />, { route: '/buyer/plan-grid' });
+    openTab(/^Intake$/i);
     // The un-virtualized full panel is retired; the governed write is now the
     // working-set drawer, which starts empty until a DSG row is selected.
     expect(
@@ -94,7 +110,10 @@ describe('PlanGrid — working-set adjust & push drawer (C6-LOCK, G1.3.2)', () =
 describe('PlanGrid — full-screen wrapper per section (G1.3.2)', () => {
   it('each section (award / intake / drawer) exposes a full-screen expand control', () => {
     renderWithProviders(<PlanGrid />, { route: '/buyer/plan-grid' });
-    expect(screen.getAllByRole('button', { name: /full screen/i })).toHaveLength(3);
+    openTab(/Award what-if/i);
+    const onAward = screen.getAllByRole('button', { name: /full screen/i });
+    openTab(/^Intake$/i);
+    expect([...onAward, ...screen.getAllByRole('button', { name: /full screen/i })]).toHaveLength(3);
   });
 });
 
