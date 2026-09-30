@@ -17,7 +17,6 @@ import { formatDate, formatNumber } from '../lib/format';
 import { statusLabelKey } from '../lib/statusLabel';
 import { mockSuppliers } from '../data/mockSuppliers';
 import {
-  FORECAST_PUBLICATIONS,
   // CP-2 · B1 — the ONE master lookup; a label miss ECHOES the code.
   labelOf,
   currentPublication,
@@ -26,6 +25,7 @@ import {
   type SupplierCoverageEntry,
   type CommitmentClass,
   type ChaseReason,
+  type ForecastPublication,
 } from '../services/sdc';
 import {
   useConsolidationRows,
@@ -36,7 +36,10 @@ import {
   useReviewRequirementResponse,
   useAcceptRequirementResponse,
   useDisputeRequirementResponse,
+  usePublications,
+  usePublicationWorkspace,
 } from '../services/query/sdcBuyerHooks';
+import PublicationLedger from './plan-grid/PublicationLedger';
 import { userVerbsFrom } from '../services/transitions';
 import SidePanel from '../components/ui-v2/SidePanel';
 import Button from '../components/ui-v2/Button';
@@ -83,11 +86,11 @@ import type { CommandResult } from '../services/data/types';
 // the same instant the write stamps use, so display and writes never diverge.
 const SIMULATED_ASOF = SDC_SIMULATED_NOW;
 
-// The CURRENT publication stays module-scope: publications are frozen SOMO
-// fixtures (their producer is the F2 C8 feed, not a supplier write), and drive
-// the period bar + period-class only. The supplier-WRITTEN derivations
-// (rows / rollups / chase / coverage) are live buyer-scoped hooks in-component.
-const CURRENT = currentPublication(FORECAST_PUBLICATIONS);
+// ⚠️ B4b · THE CURRENT PUBLICATION IS READ THROUGH THE SERVICE, NOT THE FIXTURE.
+// It sat module-scope while publications were frozen SOMO constants; since B4a
+// a planner can publish (and supersede) from the grid, so a module-scope read
+// would pin this page to the seed forever. It is `usePublications()` now, in
+// the component, like every other read here.
 
 // Fixed DSG height (px) — same one-source-of-truth pattern as PlanGrid: the
 // `height` prop AND the `--plan-dsg-h` pin (anti-trembling, planGrid.css).
@@ -151,9 +154,9 @@ const CLASS_LABEL_KEY: Record<CommitmentClass, string> = {
 
 /** The PERIOD-level commitment class (period-global firm, design §3.1): one
  *  class per bucket in the fixtures; 'mixed' only if a bucket ever splits. */
-function periodClass(bucket: string): CommitmentClass | 'mixed' {
+function periodClass(current: ForecastPublication | null, bucket: string): CommitmentClass | 'mixed' {
   const classes = new Set(
-    (CURRENT?.lines ?? [])
+    (current?.lines ?? [])
       .filter((l) => l.periodBucket === bucket)
       .map((l) => l.commitmentClass),
   );
@@ -472,6 +475,9 @@ const BuyerCollaboration: React.FC = () => {
   // SDC-4d — the live buyer-scoped consolidation reads (over svc.collaboration.*,
   // fed by the shared sdcClock). Buyer-gated: a supplier persona resolves [].
   const { data: rows = [] } = useConsolidationRows();
+  const { data: publicationsPage } = usePublications();
+  const CURRENT = useMemo(() => currentPublication(publicationsPage?.items ?? []), [publicationsPage]);
+  const { data: workspace } = usePublicationWorkspace();
   const { data: coverage = [] } = useCoverageEntries();
   const { data: chase = [] } = useChaseEntries();
   const { data: rollups = [] } = useSupplierRollups();
@@ -856,14 +862,14 @@ const BuyerCollaboration: React.FC = () => {
               }`}
             >
               <Data className="text-xs">{bucket}</Data>
-              {periodClass(bucket) === 'firm' && <Lock size={12} aria-hidden="true" />}
+              {periodClass(CURRENT, bucket) === 'firm' && <Lock size={12} aria-hidden="true" />}
             </button>
           ))}
         </div>
         {/* The period-level commitmentClass badges — per-line chips only ECHO these */}
         <div className="mt-2 flex flex-wrap gap-2">
           {horizon.map((bucket) => {
-            const cls = periodClass(bucket);
+            const cls = periodClass(CURRENT, bucket);
             return (
               <span key={bucket} className={CHIP_NEUTRAL}>
                 {cls === 'firm' ? (
@@ -905,6 +911,11 @@ const BuyerCollaboration: React.FC = () => {
             </>
           )}
         </FullScreenSection>
+      </section>
+
+      {/* ── B4b · the publications' ledger (Design 2 §2.3) ──────────────────── */}
+      <section className="mb-8 rounded-lg border border-border-subtle bg-bg-surface px-4 py-3" data-testid="sdc-publication-ledger">
+        <PublicationLedger records={workspace?.records ?? []} testId="publication-ledger" />
       </section>
 
       {/* ── Chase list — the pre-scheduler manual WhatsApp interim ─────────── */}

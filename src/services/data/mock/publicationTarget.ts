@@ -16,84 +16,39 @@ import { bindPolicyHook, POLICY_HOOKS, type CommandTarget } from '../../transiti
 import { asActorAttribution } from '../../../lib/enforcement';
 import { normalizeQty, type NumberConvention } from '../../../lib/localeNumber';
 import {
-  FORECAST_PUBLICATIONS,
+  carriedLines,
   commitmentClassFor,
   isKnownMaterial,
+  lineLabel,
+  linesWithoutClass,
   publicationIdFor,
   requireUom,
   responseDueAtFor,
   sdcClock,
   totalKey,
+  unsignedFirmLines,
   type AllocationBasis,
   type ForecastLine,
-  type Provenance,
+  type PublicationLedgerEntry,
 } from '../../sdc';
+import type { QueryScope } from '../types';
 import { parseHorizon, type BucketGrain } from '../../planning/bucket';
-import { somoHorizon } from '../../planning/facts';
-import {
-  PLANNING_MATERIALS,
-  SOMO_FIXTURE_EMISSION,
-  SOMO_FIXTURE_PLAN_VERSION,
-  generatedDemand,
-  isGeneratedMaterial,
-  planningMaster,
-} from '../../planning/somoFixture';
+import { planningMaster } from '../../planning/somoFixture';
 import { forecastPublicationStore, type PublicationRecord } from './stores/forecastPublicationStore';
+import { collaboratingSuppliers, somoPlanFeed } from './publicationFeed';
 
-// ─── The SOMO plan feed ─────────────────────────────────────────────────────
+// B4b · the SOMO plan feed moved to `publicationFeed.ts`; re-exported for the
+// callers that imported it from here.
+export { somoPlanFeed, type PlanFeedEntry } from './publicationFeed';
 
-export interface PlanFeedEntry {
-  /** The emission the plan version arrived in — what `sourceRef` must name. */
-  readonly sourceRef: string;
-  readonly provenance: Provenance;
-  /** SOMO's material-period totals for a horizon, keyed `material|bucket`. */
-  totalsFor(horizon: readonly string[]): Record<string, number>;
-}
+/** The session's person, when one resolved — a stamp, never a label (D-ID-7). */
+const personOf = (scope: QueryScope): string | null => {
+  const actor = asActorAttribution(scope.actor);
+  return actor && actor.kind === 'RESOLVED' ? actor.person.personId : null;
+};
 
-const SIMULATED_SOMO: Provenance = Object.freeze({ source: 'SOMO', liveness: 'SIMULATED', planState: 'PLANNED' });
-
-/**
- * The plan versions SOMO has emitted, as far as this mock knows: every seed
- * publication's version (its totals are the seed lines' own), and the generated
- * fixture's (its totals are the generated demand). Both SIMULATED.
- */
-export function somoPlanFeed(): ReadonlyMap<string, PlanFeedEntry> {
-  const feed = new Map<string, PlanFeedEntry>();
-  for (const p of FORECAST_PUBLICATIONS) {
-    feed.set(p.planVersion, {
-      sourceRef: `somo-emission@${p.planVersion}`,
-      provenance: p.provenance,
-      totalsFor: (horizon) => {
-        const inH = new Set(horizon);
-        const out: Record<string, number> = {};
-        for (const l of p.lines) {
-          if (inH.has(l.periodBucket)) out[totalKey(l.materialCode, l.periodBucket)] = l.allocation.materialPeriodTotal;
-        }
-        return out;
-      },
-    });
-  }
-  feed.set(SOMO_FIXTURE_PLAN_VERSION, {
-    sourceRef: SOMO_FIXTURE_EMISSION,
-    provenance: SIMULATED_SOMO,
-    totalsFor: (horizon) => {
-      const parsed = parseHorizon(horizon);
-      const out: Record<string, number> = {};
-      if (!parsed.ok) return out;
-      const fixture = new Set(somoHorizon(parsed.grain));
-      for (const code of PLANNING_MATERIALS) {
-        if (!isGeneratedMaterial(code)) continue;
-        for (const b of horizon) {
-          if (!fixture.has(b)) continue;
-          const d = generatedDemand(code, b);
-          if (d !== null) out[totalKey(code, b)] = d;
-        }
-      }
-      return out;
-    },
-  });
-  return feed;
-}
+const withRow = (r: PublicationRecord, row: Omit<PublicationLedgerEntry, 'seq'>): readonly PublicationLedgerEntry[] =>
+  Object.freeze([...r.ledger, Object.freeze({ ...row, seq: forecastPublicationStore.nextSeq() })]);
 
 // ─── Verb discrimination ────────────────────────────────────────────────────
 
@@ -122,12 +77,17 @@ export const forecastPublicationTarget: CommandTarget = {
   readEntity: (id) => forecastPublicationStore.get(id) ?? null,
   // A buyer creation, owned by no supplier — the RFQ / PR buyer-verb pattern.
   creationOwner: () => null,
-  create: (payload, toState) => {
+  create: (payload, toState, scope) => {
     const planVersion = str(payload.planVersion);
     const grain = str(payload.grain) as BucketGrain;
     const horizon = (payload.horizon as readonly string[]).map(String);
     const feed = somoPlanFeed().get(planVersion)!; // PUB_PLANVERSION_KNOWN ran
     const publicationId = publicationIdFor(grain, planVersion, forecastPublicationStore.nextRevision(grain, planVersion));
+    const totals = Object.freeze(feed.totalsFor(horizon));
+    // B4b · a revision starts from the current publication's split when the
+    // planner asks for it (PUB_CARRY_FROM_CURRENT ran); otherwise it is empty.
+    const from = typeof payload.carryForwardFrom === 'string' ? forecastPublicationStore.get(payload.carryForwardFrom) : undefined;
+    const now = sdcClock.now();
     forecastPublicationStore.put({
       publicationId,
       state: toState as PublicationRecord['state'],
@@ -135,11 +95,17 @@ export const forecastPublicationTarget: CommandTarget = {
       grain,
       horizon: Object.freeze([...horizon]),
       sourceRef: str(payload.sourceRef),
-      totals: Object.freeze(feed.totalsFor(horizon)),
-      // The split is EMPTY: no supplier has been given anything yet.
-      lines: Object.freeze([]),
+      totals,
+      // Without a carry-forward the split is EMPTY: no supplier has been given
+      // anything yet. With one, the carried lines keep their class and lose
+      // their signature (`carriedLines`).
+      lines: Object.freeze(from ? [...carriedLines(from.lines, horizon, totals)] : []),
       provenance: feed.provenance,
-      openedAt: sdcClock.now(),
+      openedAt: now,
+      ...(from ? { carriedFrom: from.publicationId } : {}),
+      ledger: Object.freeze([
+        Object.freeze({ verb: 't_publication_open' as const, at: now, seq: forecastPublicationStore.nextSeq(), personId: personOf(scope) }),
+      ]),
     });
     return { entityId: publicationId };
   },
@@ -148,16 +114,34 @@ export const forecastPublicationTarget: CommandTarget = {
     if (!r) return;
     const now = sdcClock.now();
     if (toState === 'Published') {
-      forecastPublicationStore.put({ ...r, state: 'Published', publishedAt: now, responseDueAt: responseDueAtFor(now) });
+      forecastPublicationStore.put({
+        ...r,
+        state: 'Published',
+        publishedAt: now,
+        responseDueAt: responseDueAtFor(now),
+        ledger: withRow(r, { verb: 't_publication_publish', at: now, personId: personOf(scope) }),
+      });
       return;
     }
     if (toState === 'Superseded') {
       const by = str(payload.supersededBy);
-      forecastPublicationStore.put({ ...r, state: 'Superseded', ...(by ? { supersededBy: by } : {}) });
+      // A cascade act: the machine retired it, so no person is named.
+      forecastPublicationStore.put({
+        ...r,
+        state: 'Superseded',
+        ...(by ? { supersededBy: by } : {}),
+        ledger: withRow(r, { verb: 't_publication_supersede', at: now, personId: null }),
+      });
       return;
     }
     if (toState === 'Withdrawn') {
-      forecastPublicationStore.put({ ...r, state: 'Withdrawn', withdrawnReason: str(payload.reason).trim() });
+      const reason = str(payload.reason).trim();
+      forecastPublicationStore.put({
+        ...r,
+        state: 'Withdrawn',
+        withdrawnReason: reason,
+        ledger: withRow(r, { verb: 't_publication_withdraw', at: now, personId: personOf(scope), reason }),
+      });
       return;
     }
     const verb = publicationVerbFor(toState, payload);
@@ -346,15 +330,12 @@ bindPolicyHook(POLICY_HOOKS.PUB_HAS_LINES, ({ target, entityId }) =>
 );
 
 bindPolicyHook(POLICY_HOOKS.PUB_FIRM_LINES_APPROVED, ({ target, entityId }) => {
-  const unsigned = (draftOf(target, entityId)?.lines ?? []).filter(
-    (l) => l.commitmentClass === 'firm' && !l.allocation.approvedBy,
-  );
+  // The SAME predicate the publication panel asks before it offers Publish.
+  const unsigned = unsignedFirmLines(draftOf(target, entityId)?.lines ?? []);
   if (unsigned.length === 0) return { ok: true };
   return {
     ok: false,
-    reason:
-      'PUB_FIRM_LINES_APPROVED: firm lines awaiting approval — ' +
-      unsigned.map((l) => `${l.materialCode} ${l.periodBucket} ${l.supplierId}`).join(', '),
+    reason: 'PUB_FIRM_LINES_APPROVED: firm lines awaiting approval — ' + unsigned.map(lineLabel).join(', '),
   };
 });
 
@@ -363,3 +344,39 @@ bindPolicyHook(POLICY_HOOKS.PUB_TEXT_AUTHORED, ({ payload }) =>
     ? { ok: true }
     : { ok: false, reason: 'PUB_TEXT_AUTHORED: a withdrawal must say why, in words' },
 );
+
+// ─── B4b · the two hooks B4a left out, and the carry-forward ────────────────
+
+bindPolicyHook(POLICY_HOOKS.PUB_SUPPLIER_COLLABORATED, ({ payload }) => {
+  const code = str(payload.materialCode);
+  const supplierId = str(payload.supplierId);
+  if (collaboratingSuppliers(code).has(supplierId)) return { ok: true };
+  return {
+    ok: false,
+    reason:
+      `PUB_SUPPLIER_COLLABORATED: ${supplierId} has no relationship with ${code} and has never been allocated it — ` +
+      'a new pairing is not opened from a plan',
+  };
+});
+
+bindPolicyHook(POLICY_HOOKS.PUB_CLASS_PROJECTION_PRESENT, ({ target, entityId }) => {
+  const classless = linesWithoutClass(draftOf(target, entityId)?.lines ?? []);
+  if (classless.length === 0) return { ok: true };
+  return {
+    ok: false,
+    reason: 'PUB_CLASS_PROJECTION_PRESENT: lines without a commitment class — ' + classless.map(lineLabel).join(', '),
+  };
+});
+
+bindPolicyHook(POLICY_HOOKS.PUB_CARRY_FROM_CURRENT, ({ payload }) => {
+  const from = payload.carryForwardFrom;
+  if (from === undefined) return { ok: true };
+  const current = forecastPublicationStore.currentFor(str(payload.grain) as BucketGrain);
+  if (typeof from === 'string' && current && current.publicationId === from) return { ok: true };
+  return {
+    ok: false,
+    reason:
+      `PUB_CARRY_FROM_CURRENT: ${JSON.stringify(from)} is not the current published ${String(payload.grain)} publication` +
+      (current ? ` (${current.publicationId} is)` : ' (there is none)'),
+  };
+});

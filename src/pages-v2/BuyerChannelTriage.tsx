@@ -6,7 +6,7 @@ import Data from '../components/ui-v2/Data';
 import StatusPill from '../components/ui-v2/StatusPill';
 import { useToast } from '../hooks/useToast';
 import { useSuppliers } from '../services/query/hooks';
-import { useInventoryRecord } from '../services/query/sdcBuyerHooks';
+import { useInventoryRecord, usePublications } from '../services/query/sdcBuyerHooks';
 import { HandoffNotice } from '../components/ui-v2/HandoffNotice';
 import { useVerbAvailability } from '../hooks/useVerbAvailability';
 import { parseChannelReply, type ChannelParseResult, type QtyRefusalReason } from '../services/channel/replyParser';
@@ -18,7 +18,6 @@ import {
   sdcClock,
   ownCollaboratedMaterials,
   SUPPLIER_MATERIAL_RELATIONSHIPS,
-  FORECAST_PUBLICATIONS,
   // CP-2 · B1 — the ONE master lookup; this page no longer indexes the master.
   labelOf,
   uomOf,
@@ -115,6 +114,9 @@ const BuyerChannelTriage: React.FC<BuyerChannelTriageProps> = ({ onRecorded }) =
   const refusalText = useRefusalText();
   const { toast } = useToast();
   const suppliersQuery = useSuppliers();
+  // B4b · the publications through the service, never the fixture: a planner
+  // can publish from the grid now, and an ever-fanned pairing is a published one.
+  const { data: publicationsPage } = usePublications();
   const suppliers = useMemo(() => suppliersQuery.data?.items ?? [], [suppliersQuery.data]);
   const recordMutation = useInventoryRecord();
 
@@ -156,7 +158,7 @@ const BuyerChannelTriage: React.FC<BuyerChannelTriageProps> = ({ onRecorded }) =
     if (!subjectSupplierId) return [];
     return ownCollaboratedMaterials(
       SUPPLIER_MATERIAL_RELATIONSHIPS,
-      FORECAST_PUBLICATIONS,
+      publicationsPage?.items ?? [],
       subjectSupplierId,
     ).map((m) => {
       // CP-2 · B1 — a LABEL miss echoes the code (honest); a UNIT miss is null,
@@ -169,7 +171,7 @@ const BuyerChannelTriage: React.FC<BuyerChannelTriageProps> = ({ onRecorded }) =
         uom: unit.ok ? unit.uom : null,
       };
     });
-  }, [subjectSupplierId]);
+  }, [subjectSupplierId, publicationsPage]);
 
   const subjectName = useMemo(
     () => suppliers.find((s) => s.id === subjectSupplierId)?.name ?? subjectSupplierId,

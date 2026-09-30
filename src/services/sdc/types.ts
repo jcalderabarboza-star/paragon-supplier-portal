@@ -38,6 +38,7 @@ import type { IntakePlanState } from '../data/types';
 // data below is `SIMULATED`; the flip to LIVE rides SDC-1's capability
 // registration + a live producer (the proven two-gate op), not this module.
 import type { Tier } from '../liveness/registry';
+import type { BucketGrain } from '../planning/bucket';
 
 // ─── Shared vocabulary ───────────────────────────────────────────────────────
 
@@ -319,6 +320,66 @@ export interface ForecastPublication {
    * OVERDUE IS DERIVED AT READ (`isResponseOverdue`), never stored.
    */
   readonly responseDueAt?: string;
+}
+
+// ─── B4b · the publication as the BUYER sees it — draft, state and ledger ─────
+
+/** The machine's states (`forecastPublication.flow.ts`), one vocabulary. */
+export type PublicationState = 'Draft' | 'Published' | 'Superseded' | 'Withdrawn';
+
+/** The four acts a publication's ledger records (Design 2 §2.3). */
+export type PublicationLedgerVerb =
+  | 't_publication_open'
+  | 't_publication_publish'
+  | 't_publication_supersede'
+  | 't_publication_withdraw';
+
+/**
+ * One row of a publication's history. The ROLE is not stored: it is the lane
+ * holding the verb's atom, derived at read from the flow, so a stored role
+ * string cannot drift from the machine. `personId` is the session's actor when
+ * one resolved — a stamp, never a label (D-ID-7) — and null for a machine act
+ * (the supersede cascade) or a seat that named nobody.
+ */
+export interface PublicationLedgerEntry {
+  readonly verb: PublicationLedgerVerb;
+  readonly at: string;
+  /**
+   * The order the store recorded the act in — monotonic across every
+   * publication. `at` alone cannot order a ledger: the SDC clock is a frozen
+   * present, so an open, a publish and the supersede it cascades all carry ONE
+   * instant, and a sort on `at` then read the cascade above its cause
+   * (measured in browser QA). Ties on `at` break on this.
+   */
+  readonly seq: number;
+  readonly personId: string | null;
+  /** The seed publications were never published through the verb; their rows say so. */
+  readonly seeded?: true;
+  /** A withdrawal's stated reason. */
+  readonly reason?: string;
+}
+
+/** A publication in any state, with its totals and its ledger (buyer-only read). */
+export interface PublicationDocument {
+  readonly publicationId: string;
+  readonly state: PublicationState;
+  readonly planVersion: string;
+  readonly grain: BucketGrain;
+  readonly horizon: readonly string[];
+  /** The SOMO emission (or the generated fixture) the draft was opened from. */
+  readonly sourceRef: string;
+  /** `material|bucket` → SOMO's material-period total the lines split. */
+  readonly totals: Readonly<Record<string, number>>;
+  readonly lines: readonly ForecastLine[];
+  readonly provenance: Provenance;
+  readonly openedAt: string;
+  readonly publishedAt?: string;
+  readonly responseDueAt?: string;
+  readonly supersededBy?: string;
+  readonly withdrawnReason?: string;
+  /** B4b · the publication whose split this draft was opened from, if any. */
+  readonly carriedFrom?: string;
+  readonly ledger: readonly PublicationLedgerEntry[];
 }
 
 // ─── Object 1 — RequirementResponse (the spine, design §2.1) ──────────────────

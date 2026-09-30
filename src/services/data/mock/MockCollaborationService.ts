@@ -50,10 +50,16 @@ import type {
   Page,
   PublicationsPage,
   PublicationsQuery,
+  PublicationWorkspace,
   QueryScope,
   ASN,
 } from '../types';
-import { forecastPublicationStore } from './stores/forecastPublicationStore';
+import { forecastPublicationStore, type PublicationRecord } from './stores/forecastPublicationStore';
+import { planVersionOffers } from './publicationFeed';
+import type { PublicationDocument } from '../../sdc';
+
+/** B4b — a record as the seam's document: everything but the seed object. */
+const asDocument = ({ seed: _seed, ...doc }: PublicationRecord): PublicationDocument => doc;
 
 /** B4a — what was published, from the STORE (the constant is only its seed). */
 const published = (): readonly ForecastPublication[] => forecastPublicationStore.publications();
@@ -144,6 +150,19 @@ export class MockCollaborationService implements ICollaborationService {
     const live = supplierVisiblePublications(all);
     if (live.length > 0 || !q.includeSimulatedSample) return { items: live.map(ownLines), sample: false };
     return { items: all.map(ownLines), sample: true };
+  }
+
+  /**
+   * B4b — the planner's workspace: every publication in every state, drafts and
+   * ledgers included, and the plan versions a draft may be opened from, at both
+   * grains. BUYER-ONLY: a supplier reads an empty workspace, never a draft.
+   */
+  async getPublicationWorkspace(scope: QueryScope): Promise<PublicationWorkspace> {
+    if (!buyerOnly(scope)) return { records: [], offers: [] };
+    return {
+      records: forecastPublicationStore.all().map(asDocument),
+      offers: [...planVersionOffers('month'), ...planVersionOffers('week')],
+    };
   }
 
   // ─── P2 consolidation reads (buyer-superset, BUYER-GATED) ────────────────────

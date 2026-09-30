@@ -21,35 +21,26 @@
 
 import { FORECAST_PUBLICATIONS } from '../../../sdc/fixtures';
 import { totalKey } from '../../../sdc/publication';
-import type { ForecastLine, ForecastPublication, Provenance } from '../../../sdc/types';
+import type { ForecastPublication, PublicationDocument, PublicationLedgerEntry } from '../../../sdc/types';
 import { parseHorizon, type BucketGrain } from '../../../planning/bucket';
 
-export type PublicationState = 'Draft' | 'Published' | 'Superseded' | 'Withdrawn';
+// B4b · the record's shape is the seam's `PublicationDocument` (sdc/types), so
+// the buyer read hands out exactly what the store holds, minus the seed object.
+export type { PublicationState } from '../../../sdc/types';
 
-export interface PublicationRecord {
-  readonly publicationId: string;
-  readonly state: PublicationState;
-  readonly planVersion: string;
-  readonly grain: BucketGrain;
-  readonly horizon: readonly string[];
-  /** The SOMO emission (or the generated fixture) the draft was opened from. */
-  readonly sourceRef: string;
-  /** `material|bucket` → SOMO's material-period total the lines split. */
-  readonly totals: Readonly<Record<string, number>>;
-  readonly lines: readonly ForecastLine[];
-  readonly provenance: Provenance;
-  /** When the draft was opened — the machine's fact, from `sdcClock`. */
-  readonly openedAt: string;
-  readonly publishedAt?: string;
-  readonly responseDueAt?: string;
-  readonly supersededBy?: string;
-  readonly withdrawnReason?: string;
+export interface PublicationRecord extends PublicationDocument {
   /** A seed's own frozen publication object — kept so readers see the same object. */
   readonly seed?: ForecastPublication;
 }
 
+const seededRow = (verb: PublicationLedgerEntry['verb'], at: string, seq: number): PublicationLedgerEntry =>
+  Object.freeze({ verb, at, seq, personId: null, seeded: true as const });
+
 function seedRecords(): PublicationRecord[] {
   const byDate = [...FORECAST_PUBLICATIONS].sort((a, b) => Date.parse(a.publishedAt) - Date.parse(b.publishedAt));
+  // The seeds' rows in the order they happened: each publish, then the
+  // supersede it caused (the NEXT seed's publish retires this one).
+  const publishSeq = (i: number) => 2 * i + 1;
   return byDate.map((p, i) => {
     const parsed = parseHorizon(p.horizon);
     const totals: Record<string, number> = {};
@@ -68,12 +59,21 @@ function seedRecords(): PublicationRecord[] {
       openedAt: p.publishedAt,
       publishedAt: p.publishedAt,
       ...(next ? { supersededBy: next.publicationId } : {}),
+      // The seeds were never opened or published through the verb, and their
+      // ledger rows SAY so (`seeded`) rather than inventing an actor.
+      ledger: Object.freeze([
+        seededRow('t_publication_publish', p.publishedAt, publishSeq(i)),
+        ...(next ? [seededRow('t_publication_supersede', next.publishedAt, publishSeq(i + 1) + 1)] : []),
+      ]),
       seed: p,
     };
   });
 }
 
 let rows: PublicationRecord[] = seedRecords();
+/** The last ledger sequence handed out — the seeds' own rows took the first. */
+const seedSeq = (): number => Math.max(0, ...rows.flatMap((r) => r.ledger.map((e) => e.seq)));
+let lastSeq = seedSeq();
 
 /** A published record as the `ForecastPublication` every reader already takes. */
 export function asPublication(r: PublicationRecord): ForecastPublication {
@@ -104,6 +104,24 @@ export const forecastPublicationStore = {
   nextRevision(grain: BucketGrain, planVersion: string): number {
     return rows.filter((r) => r.grain === grain && r.planVersion === planVersion).length + 1;
   },
+  /**
+   * B4b · the open draft of a grain — the one the grid's allocation cells edit.
+   * More than one can exist (nothing forbids a second open); the LATEST opened
+   * is the working draft, and the panel says which one it is by id.
+   */
+  draftFor(grain: BucketGrain): PublicationRecord | undefined {
+    const drafts = rows.filter((r) => r.state === 'Draft' && r.grain === grain);
+    return drafts[drafts.length - 1];
+  },
+  /** The Published publication of a grain (at most one — publish supersedes). */
+  currentFor(grain: BucketGrain): PublicationRecord | undefined {
+    return rows.find((r) => r.state === 'Published' && r.grain === grain);
+  },
+  /** The next ledger sequence (monotonic; `reset` returns it to the seeds'). */
+  nextSeq(): number {
+    lastSeq += 1;
+    return lastSeq;
+  },
   put(record: PublicationRecord): void {
     // Replaced IN PLACE, so a reader's order does not move under an update.
     rows = rows.some((r) => r.publicationId === record.publicationId)
@@ -113,5 +131,6 @@ export const forecastPublicationStore = {
   /** Back to the seed (test isolation). */
   reset(): void {
     rows = seedRecords();
+    lastSeq = seedSeq();
   },
 };

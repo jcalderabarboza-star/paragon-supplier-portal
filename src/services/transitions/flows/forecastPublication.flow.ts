@@ -73,7 +73,14 @@ export const forecastPublicationFlow: FlowDefinition = {
       trigger: 'creation',
       requiredRole: 'publication:draft',
       requiredFields: [...PUBLICATION_OPEN_FIELDS],
-      policyHooks: [POLICY_HOOKS.PUB_HORIZON_ONE_GRAIN, POLICY_HOOKS.PUB_PLANVERSION_KNOWN],
+      // B4b · `carryForwardFrom` is OPTIONAL and not a required field: a draft
+      // opened without it starts with no split (B4a), one opened with it starts
+      // from the current publication's split, approvals dropped.
+      policyHooks: [
+        POLICY_HOOKS.PUB_HORIZON_ONE_GRAIN,
+        POLICY_HOOKS.PUB_PLANVERSION_KNOWN,
+        POLICY_HOOKS.PUB_CARRY_FROM_CURRENT,
+      ],
       surfaceable: { surfaced: true },
       version: 1,
     },
@@ -89,6 +96,7 @@ export const forecastPublicationFlow: FlowDefinition = {
         POLICY_HOOKS.PUB_MATERIAL_KNOWN,
         POLICY_HOOKS.PUB_BASIS_KNOWN,
         POLICY_HOOKS.PUB_LINE_IN_HORIZON,
+        POLICY_HOOKS.PUB_SUPPLIER_COLLABORATED,
         POLICY_HOOKS.PUB_QTY_FLOOR,
         POLICY_HOOKS.PUB_QTY_AGREES,
         POLICY_HOOKS.PUB_ALLOC_WITHIN_TOTAL,
@@ -120,7 +128,11 @@ export const forecastPublicationFlow: FlowDefinition = {
       trigger: 'user',
       requiredRole: 'publication:publish',
       requiredFields: [],
-      policyHooks: [POLICY_HOOKS.PUB_HAS_LINES, POLICY_HOOKS.PUB_FIRM_LINES_APPROVED],
+      policyHooks: [
+        POLICY_HOOKS.PUB_HAS_LINES,
+        POLICY_HOOKS.PUB_FIRM_LINES_APPROVED,
+        POLICY_HOOKS.PUB_CLASS_PROJECTION_PRESENT,
+      ],
       surfaceable: { surfaced: true },
       version: 1,
     },

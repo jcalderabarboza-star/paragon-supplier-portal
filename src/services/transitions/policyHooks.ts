@@ -723,6 +723,21 @@ export const POLICY_HOOKS = {
   PUB_FIRM_LINES_APPROVED: 'pub_firm_lines_approved',
   /** Withdraw: the reason is authored text, not whitespace. */
   PUB_TEXT_AUTHORED: 'pub_text_authored',
+
+  // ── B4b · the two hooks B4a left out (Design 2 §2.1), and the carry-forward ─
+  /**
+   * Allocate: the supplier already collaborates on the material — a
+   * relationship row, a line in any publication, or (synthetic materials only)
+   * the generated fixture's sourcing. A NEW pairing is refused by name.
+   */
+  PUB_SUPPLIER_COLLABORATED: 'pub_supplier_collaborated',
+  /** Publish: every line carries a commitment class from the closed vocabulary. */
+  PUB_CLASS_PROJECTION_PRESENT: 'pub_class_projection_present',
+  /**
+   * Open: a named carry-forward source is the CURRENT Published publication of
+   * the same grain — the revision the new draft replaces, and nothing else.
+   */
+  PUB_CARRY_FROM_CURRENT: 'pub_carry_from_current',
 } as const;
 
 for (const name of Object.values(POLICY_HOOKS)) registerPolicyHook(name);

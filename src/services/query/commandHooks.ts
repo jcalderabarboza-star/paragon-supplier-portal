@@ -1958,3 +1958,114 @@ export function useIntakeRestore() {
     },
   });
 }
+
+// ── B4b · the forecast publication, from the grid (Design 2 §2.3) ──────────
+
+/** Everything a publication read depends on — the grid, the panel, both seats. */
+function useInvalidatePublications() {
+  const qc = useQueryClient();
+  return () => {
+    qc.invalidateQueries({ queryKey: ['publications'] });
+    qc.invalidateQueries({ queryKey: ['sdc'] });
+    qc.invalidateQueries({ queryKey: ['planning'] });
+  };
+}
+
+export interface AllocateCommandVars {
+  readonly publicationId: string;
+  readonly materialCode: string;
+  readonly periodBucket: string;
+  readonly supplierId: string;
+  readonly forecastQty: number;
+  readonly forecastQtyRaw: string;
+  readonly numberConvention?: NumberConvention;
+  /** The push anchor — rows 2..n of one push pass the first row's correlation id. */
+  readonly causationId?: string;
+}
+
+/**
+ * One supplier's share of one material-period total, on the open draft
+ * (`t_publication_allocate`). The basis is `planner-split`: a grid edit IS the
+ * planner splitting. A refusal comes back as `status: 'failed'` and the grid
+ * keeps the row PLANNED with its reason; nothing is invalidated on a refusal.
+ */
+export function usePublicationAllocate() {
+  const svc = useDataService();
+  const scope = useScope();
+  const invalidate = useInvalidatePublications();
+  return useMutation<CommandResult, Error, AllocateCommandVars>({
+    mutationFn: ({ publicationId, causationId, numberConvention, ...line }) =>
+      svc.commands.dispatch(
+        scope,
+        {
+          transitionId: 't_publication_allocate',
+          entity: 'forecastPublication',
+          entityId: publicationId,
+          payload: { ...line, basis: 'planner-split', ...(numberConvention ? { numberConvention } : {}) },
+        },
+        causationId,
+      ),
+    onSuccess: (result) => {
+      if (result.status !== 'failed') invalidate();
+    },
+  });
+}
+
+export type PublicationActVars =
+  | {
+      readonly kind: 'open';
+      readonly planVersion: string;
+      readonly grain: string;
+      readonly horizon: readonly string[];
+      readonly sourceRef: string;
+      readonly carryForwardFrom?: string;
+    }
+  | {
+      readonly kind: 'approve';
+      readonly publicationId: string;
+      readonly materialCode: string;
+      readonly periodBucket: string;
+      readonly supplierId: string;
+      readonly causationId?: string;
+    }
+  | { readonly kind: 'publish'; readonly publicationId: string };
+
+/**
+ * Open a draft, sign one firm line, or publish — the panel's three acts. The
+ * signature is the session's actor, written by the target; nothing here puts a
+ * person in the payload (C10 §6.2).
+ */
+export function usePublicationAct() {
+  const svc = useDataService();
+  const scope = useScope();
+  const invalidate = useInvalidatePublications();
+  return useMutation<CommandResult, Error, PublicationActVars>({
+    mutationFn: (v) => {
+      if (v.kind === 'open') {
+        const { kind: _k, carryForwardFrom, ...open } = v;
+        return svc.commands.dispatch(scope, {
+          transitionId: 't_publication_open',
+          entity: 'forecastPublication',
+          payload: { ...open, horizon: [...open.horizon], ...(carryForwardFrom ? { carryForwardFrom } : {}) },
+        });
+      }
+      if (v.kind === 'approve') {
+        const { kind: _k, publicationId, causationId, ...line } = v;
+        return svc.commands.dispatch(
+          scope,
+          { transitionId: 't_publication_approve_firm', entity: 'forecastPublication', entityId: publicationId, payload: line },
+          causationId,
+        );
+      }
+      return svc.commands.dispatch(scope, {
+        transitionId: 't_publication_publish',
+        entity: 'forecastPublication',
+        entityId: v.publicationId,
+        payload: {},
+      });
+    },
+    onSuccess: (result) => {
+      if (result.status !== 'failed') invalidate();
+    },
+  });
+}

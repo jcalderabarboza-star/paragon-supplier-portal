@@ -5,7 +5,7 @@
 // ────────────────────────────────────────────────────────────────────────────
 
 import type { BucketGrain } from '../planning/bucket';
-import type { CommitmentClass, ForecastPublication } from './types';
+import type { CommitmentClass, ForecastLine, ForecastPublication } from './types';
 
 // The deadline offset is the ONE that already exists — `consolidation.ts`'s
 // `RESPONSE_DUE_DAYS`, which the chase already reads. A second constant here
@@ -47,3 +47,79 @@ export const totalKey = (materialCode: string, bucket: string): string => `${mat
 /** Store-minted: `PUB-<grain>-<planVersion>-r<n>`. */
 export const publicationIdFor = (grain: BucketGrain, planVersion: string, revision: number): string =>
   `PUB-${grain}-${planVersion}-r${revision}`;
+
+// ─── B4b · the publish gates as data, shared by the hooks and the panel ──────
+//
+// The panel disables Publish WITH THE STATED REASON until the hooks would pass
+// (Design 2 §2.3: "never a toast after a refusal"). To say that honestly the
+// panel must ask the SAME question the hooks ask, so the predicates live here
+// once and both call them — a panel re-deriving the rule would be a second
+// answer that drifts.
+
+/** The closed vocabulary a line's class must come from (C8 §2.2's three). */
+export const COMMITMENT_CLASSES: readonly CommitmentClass[] = Object.freeze(['firm', 'semi-firm', 'visibility-only']);
+
+/** Firm lines that no person has signed (invariant #3). */
+export const unsignedFirmLines = (lines: readonly ForecastLine[]): readonly ForecastLine[] =>
+  lines.filter((l) => l.commitmentClass === 'firm' && !l.allocation.approvedBy);
+
+/** Lines whose class is absent or outside the vocabulary. */
+export const linesWithoutClass = (lines: readonly ForecastLine[]): readonly ForecastLine[] =>
+  lines.filter((l) => !(COMMITMENT_CLASSES as readonly unknown[]).includes(l.commitmentClass));
+
+/** `material bucket supplier` — how a refusal and the panel name one line. */
+export const lineLabel = (l: Pick<ForecastLine, 'materialCode' | 'periodBucket' | 'supplierId'>): string =>
+  `${l.materialCode} ${l.periodBucket} ${l.supplierId}`;
+
+export type PublishBlocker =
+  | { readonly kind: 'NO_LINES' }
+  | { readonly kind: 'UNSIGNED_FIRM'; readonly lines: readonly ForecastLine[] }
+  | { readonly kind: 'NO_CLASS'; readonly lines: readonly ForecastLine[] };
+
+/** Every reason publish would be refused by a hook, in the flow's hook order. */
+export function publishBlockers(lines: readonly ForecastLine[]): readonly PublishBlocker[] {
+  const out: PublishBlocker[] = [];
+  if (lines.length === 0) out.push({ kind: 'NO_LINES' });
+  const unsigned = unsignedFirmLines(lines);
+  if (unsigned.length > 0) out.push({ kind: 'UNSIGNED_FIRM', lines: unsigned });
+  const classless = linesWithoutClass(lines);
+  if (classless.length > 0) out.push({ kind: 'NO_CLASS', lines: classless });
+  return out;
+}
+
+/**
+ * The split a revision starts from (Design 2 §2.1 "the previous allocations
+ * pre-fill"). Each line of `previous` whose material-period the new draft holds
+ * a total for is copied WITH ITS CLASS and WITHOUT ITS SIGNATURE — a signature
+ * is given to one publication, and the new one has not been signed.
+ *
+ * ⚠️ A MATERIAL-PERIOD WHOSE CARRIED SPLIT WOULD EXCEED THE NEW TOTAL IS NOT
+ * CARRIED AT ALL. Carrying it would put a draft above SOMO's total without a
+ * single `t_publication_allocate` — integrity #4 broken by the one path that
+ * skips its hook. It starts unallocated, and the planner splits it again.
+ */
+export function carriedLines(
+  previous: readonly ForecastLine[],
+  horizon: readonly string[],
+  totals: Readonly<Record<string, number>>,
+): readonly ForecastLine[] {
+  const inHorizon = new Set(horizon);
+  const sums = new Map<string, number>();
+  for (const l of previous) {
+    const k = totalKey(l.materialCode, l.periodBucket);
+    if (!inHorizon.has(l.periodBucket) || totals[k] === undefined) continue;
+    sums.set(k, (sums.get(k) ?? 0) + l.forecastQty);
+  }
+  return previous
+    .filter((l) => {
+      const k = totalKey(l.materialCode, l.periodBucket);
+      return sums.has(k) && sums.get(k)! <= totals[k];
+    })
+    .map((l) => {
+      const { approvedBy: _by, approvedAt: _at, ...allocation } = l.allocation;
+      return Object.freeze({
+        ...l,
+        allocation: Object.freeze({ ...allocation, materialPeriodTotal: totals[totalKey(l.materialCode, l.periodBucket)] }),
+      });
+    });
+}

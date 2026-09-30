@@ -328,8 +328,19 @@ describe('the supplier hook no longer imports the fixture (source scan, probed b
     expect(code('services/query/sdcSupplierHooks.ts')).toMatch(/getPublications\(scope, \{ includeSimulatedSample: true \}\)/);
   });
 
-  it('CONTROL: the same matcher FINDS the import where it really is', () => {
-    expect(importsFixture('pages-v2/BuyerCollaboration.tsx')).toBe(true);
+  // B4b · the two buyer pages that still imported the constant at B4a read the
+  // service now, so the control that named one of them as "where the import
+  // really is" lost its premise. It moves to the ONE module whose job is to
+  // import the constant — the store it seeds — and must still FIND it there.
+  it('B4b · BuyerCollaboration and BuyerChannelTriage import no FORECAST_PUBLICATIONS, and read usePublications', () => {
+    for (const page of ['pages-v2/BuyerCollaboration.tsx', 'pages-v2/BuyerChannelTriage.tsx']) {
+      expect(importsFixture(page), page).toBe(false);
+      expect(code(page), page).toMatch(/\busePublications\(\)/);
+    }
+  });
+
+  it('CONTROL: the same matcher FINDS the import where it really is — the store the constant seeds', () => {
+    expect(importsFixture('services/data/mock/stores/forecastPublicationStore.ts')).toBe(true);
   });
 });
 

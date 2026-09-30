@@ -14,7 +14,7 @@ import React, { createContext, useCallback, useContext, useMemo, useState } from
 import { useTranslation } from 'react-i18next';
 import type { NumberConvention } from '../../lib/localeNumber';
 import type { BucketId } from '../../services/planning/bucket';
-import { useIntakeCommit } from '../../services/query/commandHooks';
+import { useIntakeCommit, usePublicationAllocate } from '../../services/query/commandHooks';
 import type { PlanRow } from './planGridModel';
 import {
   EMPTY_DRAFT,
@@ -27,6 +27,7 @@ import {
   reconcile,
   removeEntry,
   setReason,
+  type EditContext,
   type EditOrigin,
   type PlanDraft,
   type SeamCell,
@@ -36,12 +37,14 @@ export interface PlanDraftApi {
   readonly draft: PlanDraft;
   readonly convention: NumberConvention;
   readonly pushing: boolean;
-  edit(row: PlanRow, bucket: BucketId, raw: string, origin: EditOrigin): void;
+  /** B4b · `ctx` carries the rows and SOMO's totals an allocation edit is measured against. */
+  edit(row: PlanRow, bucket: BucketId, raw: string, origin: EditOrigin, ctx?: EditContext): void;
   paste(
     rows: readonly PlanRow[],
     horizon: readonly BucketId[],
     anchor: { row: number; col: number },
     text: string,
+    totalOf?: EditContext['totalOf'],
   ): { planned: number; refused: number; outside: number };
   setReason(seamRef: string, reason: string): void;
   remove(seamRef: string): void;
@@ -56,17 +59,18 @@ export const PlanDraftProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const { i18n } = useTranslation();
   const convention = conventionOf(i18n.language);
   const commit = useIntakeCommit();
+  const allocate = usePublicationAllocate();
   const [draft, setDraft] = useState<PlanDraft>(EMPTY_DRAFT);
   const [pushing, setPushing] = useState(false);
 
   const edit = useCallback<PlanDraftApi['edit']>(
-    (row, bucket, raw, origin) => setDraft((d) => applyEdit(d, row, bucket, raw, origin, convention)),
+    (row, bucket, raw, origin, ctx) => setDraft((d) => applyEdit(d, row, bucket, raw, origin, convention, ctx)),
     [convention],
   );
 
   const paste = useCallback<PlanDraftApi['paste']>(
-    (rows, horizon, anchor, text) => {
-      const r = applyPaste(draft, rows, horizon, anchor, text, convention);
+    (rows, horizon, anchor, text, totalOf) => {
+      const r = applyPaste(draft, rows, horizon, anchor, text, convention, totalOf);
       setDraft(r.draft);
       return { planned: r.planned, refused: r.refused, outside: r.outside };
     },
@@ -79,13 +83,18 @@ export const PlanDraftProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       if (rows.length === 0) return;
       setPushing(true);
       try {
-        const outcomes = await pushEntries(rows, (vars) => commit.mutateAsync(vars), convention);
+        const outcomes = await pushEntries(
+          rows,
+          (vars) => commit.mutateAsync(vars),
+          convention,
+          (vars) => allocate.mutateAsync(vars),
+        );
         setDraft((d) => applyPushOutcomes(d, outcomes));
       } finally {
         setPushing(false);
       }
     },
-    [draft, commit, convention],
+    [draft, commit, allocate, convention],
   );
 
   const api = useMemo<PlanDraftApi>(
