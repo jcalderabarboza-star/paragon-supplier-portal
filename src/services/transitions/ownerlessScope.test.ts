@@ -101,6 +101,7 @@ import { incomingShipmentStore } from '../data/mock/stores/incomingShipmentStore
 import { schedulingAgreementStore } from '../delivery/stores/schedulingAgreementStore';
 import { SAMPLE_PEOPLE } from '../identity/sampleRoster';
 import { enforcementSettingStore } from '../data/mock/stores/enforcementSettingStore';
+import { moduleActivationStore } from '../data/mock/stores/moduleActivationStore';
 import { supplierDocumentStore } from '../data/mock/stores/supplierDocumentStore';
 import { supplierApplicationStore } from '../data/mock/stores/supplierApplicationStore';
 import { materialRequestStore } from '../data/mock/stores/materialRequestStore';
@@ -220,6 +221,9 @@ async function realIds(): Promise<Record<string, string | null>> {
     // The cap ledger's entity IS the setting key — there is no row to create,
     // which is exactly why the machine is censused as a degenerate ledger.
     pslCapSetting: PSL_SETTING_IDS[0],
+    // M1 — the activation ledger's entity IS the module code, like the cap
+    // ledger's is its setting key. `SHP` is a switchable module.
+    moduleActivation: 'SHP',
     // CALL-OFF STEP 1 — the delivery lane's two addresses. The line is named by
     // its `releaseRef` (the portal join-chain) and the tolerance by
     // `agreementId#lineSeq`. Both are read off the LIVE store rather than
@@ -307,6 +311,7 @@ async function walk(entity: string, t: TransitionDef): Promise<Walk | null> {
     return t.from.includes(now) ? at(pending.id, now) : null;
   }
   if (entity === 'enforcement') return at(GOVERNED_CHECK_IDS[0], 'Governed');
+  if (entity === 'moduleActivation') return at('SHP', 'Governed');
   if (entity === 'role') return at('receiving', 'Defined');
   if (entity === 'supplierApplication') {
     const raised = await svc.dispatch(buyerSeat('procurement'), {
@@ -345,6 +350,7 @@ const resetAll = () => {
   rfqStore.reset();
   purchaseRequisitionStore.reset();
   enforcementSettingStore.reset();
+  moduleActivationStore.reset();
   supplierApplicationStore.reset();
   materialRequestStore.reset();
   customRoleStore.reset();
@@ -407,6 +413,9 @@ describe('POPULATION — nothing below means anything without this', () => {
     // every supplier at the scope gate rather than meaning "nothing to
     // compare" — which is the §86 distinction this whole file holds open.
     expect(ownerless).toContain('intakeLine');
+    // M1 — module activation is a BUYER governance record: a supplier reads
+    // what is ON through `getModuleActivation` and never switches anything.
+    expect(ownerless).toContain('moduleActivation');
     expect(ownerless).not.toContain('purchaseOrder');
     expect(ownerless).not.toContain('invoice');
     expect(ownerful).toContain('purchaseOrder');
@@ -523,6 +532,8 @@ describe('THE LEGITIMATE PATHS — the half a "refuse everyone" fix would break'
         // "nothing to compare" (§86).
         'intakeLine',
         'materialRequest',
+        // M1 — the activation ledger; `enforcement`'s shape, verb for verb.
+        'moduleActivation',
         'psl',
         'pslCapSetting',
         'purchaseRequisition',
@@ -715,5 +726,15 @@ describe('THE LEGITIMATE PATHS — the half a "refuse everyone" fix would break'
     });
     expect(capped.status, capped.reason).toBe('done');
     expect(pslCapSettingStore.all()).toHaveLength(1);
+
+    // M1 — the activation ledger LANDS: a named compliance person switches a
+    // leaf module off (INT — nothing hard-depends on it), and the ledger grows.
+    // A NAMED seat, because the verb refuses an unattributed one by name.
+    const switched = await svc.dispatch(named('compliance'), {
+      transitionId: 't_module_set', entity: 'moduleActivation', entityId: 'INT',
+      payload: { phase: 'Planned', enabled: false, reason: 'an ownerless-scope probe' },
+    });
+    expect(switched.status, switched.reason).toBe('done');
+    expect(moduleActivationStore.ledger()).toHaveLength(1);
   });
 });

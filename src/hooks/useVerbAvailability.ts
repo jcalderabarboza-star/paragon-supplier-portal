@@ -24,7 +24,9 @@
 
 import { useMemo } from 'react';
 import { useCurrentIdentity } from '../context/CurrentIdentityContext';
-import { availabilityOfAtom, type VerbAvailability } from '../services/transitions/handoff';
+import { type VerbAvailability } from '../services/transitions/handoff';
+import { availabilityWithModules } from '../services/modules/availability';
+import { useModuleActivation, useRouteModuleOff } from '../context/ModuleActivationContext';
 import { nextActFor, type NextAct } from '../services/transitions/nextAct';
 import type { TransitionRole } from '../services/transitions/schema';
 
@@ -37,7 +39,16 @@ import type { TransitionRole } from '../services/transitions/schema';
 export function useVerbAvailability(atom: TransitionRole): VerbAvailability {
   const { identity } = useCurrentIdentity();
   const roles = identity.businessRoles;
-  return useMemo(() => availabilityOfAtom(atom, roles), [atom, roles]);
+  const persona = identity.personaType;
+  // M1 — the module layer, composed HERE so all the surfaces that already ask
+  // this hook render a switched-off module's notice in the verb's own slot with
+  // no edit of their own. Module before role: the dispatcher's order.
+  const view = useModuleActivation();
+  const routeOff = useRouteModuleOff();
+  return useMemo(
+    () => availabilityWithModules(atom, persona, roles, view, routeOff),
+    [atom, persona, roles, view, routeOff],
+  );
 }
 
 /**
@@ -85,15 +96,18 @@ export function useVerbAvailabilities<K extends string>(
 ): Readonly<Record<K, VerbAvailability>> {
   const { identity } = useCurrentIdentity();
   const roles = identity.businessRoles;
+  const persona = identity.personaType;
+  const view = useModuleActivation();
+  const routeOff = useRouteModuleOff();
   const keys = Object.keys(atoms) as K[];
   // Stable across renders for an inline literal with the same contents.
   const signature = keys.map((k) => `${k}=${atoms[k]}`).join('|');
 
   return useMemo(() => {
     const out = {} as Record<K, VerbAvailability>;
-    for (const k of keys) out[k] = availabilityOfAtom(atoms[k], roles);
+    for (const k of keys) out[k] = availabilityWithModules(atoms[k], persona, roles, view, routeOff);
     return out;
     // `signature` stands in for `atoms`; `keys` is derived from it. (No lint
     // layer in this repo enforces the dep list — the note is for the reader.)
-  }, [signature, roles]);
+  }, [signature, roles, persona, view, routeOff]);
 }

@@ -250,6 +250,12 @@ export const processFlowPurposeEn: Record<string, string> = {
   'processFlows.purpose.t_publication_withdraw':
     'Takes a sent plan back and says why, so no supplier answers a plan that no longer stands.',
 
+  // ── moduleActivation (M1) ─────────────────────────────────────
+  'processFlows.purpose.entity.moduleActivation':
+    'Which parts of the platform are switched on — and a record of who switched each one, when, and why.',
+  'processFlows.purpose.t_module_set':
+    'Switches a part of the platform on or off, saying why, under the name of the person who did it; what is already recorded stays readable either way.',
+
   // ── supplierDocument ───────────────────────────────────────────────────────
   'processFlows.purpose.entity.supplierDocument':
     'The paperwork Paragon must hold on a supplier — certificates, licences, bank details — and where each one stands.',
@@ -619,6 +625,12 @@ export const processFlowPurposeId: Record<string, string> = {
     'Menandai rencana lama sebagai sudah diganti, agar pemasok menjawab rencana yang berlaku sementara jawaban sebelumnya tetap terbaca terhadap apa yang mereka jawab.',
   'processFlows.purpose.t_publication_withdraw':
     'Menarik kembali rencana yang sudah dikirim beserta penjelasannya, agar tidak ada pemasok yang menjawab rencana yang tidak berlaku lagi.',
+
+  // ── moduleActivation (M1) ─────────────────────────────────────
+  'processFlows.purpose.entity.moduleActivation':
+    'Bagian platform mana yang aktif — beserta catatan siapa yang mengubah masing-masing, kapan, dan mengapa.',
+  'processFlows.purpose.t_module_set':
+    'Mengaktifkan atau menonaktifkan sebagian platform, dengan alasan, atas nama orang yang melakukannya; apa yang sudah tercatat tetap dapat dibaca dalam kedua keadaan.',
 
   // ── supplierDocument ───────────────────────────────────────────────────────
   'processFlows.purpose.entity.supplierDocument':

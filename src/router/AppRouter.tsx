@@ -2,6 +2,7 @@ import React, { lazy, Suspense } from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { CurrentIdentityProvider } from '../context/CurrentIdentityContext';
 import { mockIdentitySource } from '../context/identitySources';
+import { ModuleActivationProvider, ModuleGate } from '../context/ModuleActivationContext';
 import LoadingState from '../components/ui-v2/LoadingState';
 import Login from '../pages/auth/Login';
 
@@ -65,6 +66,13 @@ const BuyerCollaboration = lazy(() => import('../pages-v2/BuyerCollaboration'));
 // module out of the entry chunk).
 const SupplierForecasts = lazy(() => import('../pages-v2/SupplierForecasts'));
 
+// M1 · BROWSER-QA HARNESS — built ONLY when `VITE_QA_HARNESS=on` at build time.
+// Vite replaces the env read with a literal, so in every other build this is
+// `null` and the lazy import is dead code the bundler drops: the shipped bundle
+// carries no harness (asserted by grepping the built chunk during QA).
+const QaHarness =
+  import.meta.env.VITE_QA_HARNESS === 'on' ? lazy(() => import('../qa/QaHarness')) : null;
+
 import { ToastProvider } from '../hooks/useToast';
 import Toaster from '../components/ui-v2/Toaster';
 
@@ -74,48 +82,60 @@ const AppRouter: React.FC = () => {
       <ToastProvider>
         <Toaster />
         <CurrentIdentityProvider source={mockIdentitySource}>
+        {/* M1 — what is switched on, read through the service; every route below
+            except the redirect and the 404 sits in its module's gate. */}
+        <ModuleActivationProvider>
+        {QaHarness && (
+          <Suspense fallback={null}>
+            <QaHarness />
+          </Suspense>
+        )}
         <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<SupplierRegistrationV2 />} />
-          <Route path="/buyer/dashboard" element={<BuyerDashboard />} />
-          <Route path="/buyer/suppliers" element={<BuyerSuppliers />} />
-          <Route path="/buyer/suppliers/:id" element={<BuyerSupplierProfile />} />
-          <Route path="/marketplace" element={<Marketplace />} />
-          <Route path="/marketplace/supplier/:id" element={<SupplierStorefrontV2 />} />
-          <Route path="/buyer/orders" element={<BuyerOrders />} />
-          <Route path="/buyer/sourcing" element={<BuyerSourcing />} />
+          <Route path="/login" element={<ModuleGate path="/login"><Login /></ModuleGate>} />
+          <Route path="/register" element={<ModuleGate path="/register"><SupplierRegistrationV2 /></ModuleGate>} />
+          <Route path="/buyer/dashboard" element={<ModuleGate path="/buyer/dashboard"><BuyerDashboard /></ModuleGate>} />
+          <Route path="/buyer/suppliers" element={<ModuleGate path="/buyer/suppliers"><BuyerSuppliers /></ModuleGate>} />
+          <Route path="/buyer/suppliers/:id" element={<ModuleGate path="/buyer/suppliers/:id"><BuyerSupplierProfile /></ModuleGate>} />
+          <Route path="/marketplace" element={<ModuleGate path="/marketplace"><Marketplace /></ModuleGate>} />
+          <Route path="/marketplace/supplier/:id" element={<ModuleGate path="/marketplace/supplier/:id"><SupplierStorefrontV2 /></ModuleGate>} />
+          <Route path="/buyer/orders" element={<ModuleGate path="/buyer/orders"><BuyerOrders /></ModuleGate>} />
+          <Route path="/buyer/sourcing" element={<ModuleGate path="/buyer/sourcing"><BuyerSourcing /></ModuleGate>} />
           {/* Phase A/1 — the recommend-first triage that precedes the plan-grid
               push. Plain DOM (no grid engine) — stays in the entry chunk. */}
-          <Route path="/buyer/intake-review" element={<IntakeReview />} />
+          <Route path="/buyer/intake-review" element={<ModuleGate path="/buyer/intake-review"><IntakeReview /></ModuleGate>} />
           <Route
             path="/buyer/plan-grid"
             element={
-              <Suspense fallback={<LoadingState />}>
-                <PlanGrid />
-              </Suspense>
+              <ModuleGate path="/buyer/plan-grid">
+                <Suspense fallback={<LoadingState />}>
+                  <PlanGrid />
+                </Suspense>
+              </ModuleGate>
             }
           />
           <Route
             path="/buyer/collaboration"
             element={
-              <Suspense fallback={<LoadingState />}>
-                <BuyerCollaboration />
-              </Suspense>
+              <ModuleGate path="/buyer/collaboration">
+                <Suspense fallback={<LoadingState />}>
+                  <BuyerCollaboration />
+                </Suspense>
+              </ModuleGate>
             }
           />
-          <Route path="/buyer/contracts" element={<BuyerContracts />} />
+          <Route path="/buyer/contracts" element={<ModuleGate path="/buyer/contracts"><BuyerContracts /></ModuleGate>} />
           {/* Nested contract detail — the traceability spine's leaf (Overview |
               Delivery Agreements | Docs). Must sit AFTER the list route. */}
-          <Route path="/buyer/contracts/:id" element={<BuyerContractDetail />} />
-          <Route path="/buyer/delivery-agreements" element={<BuyerDeliveryAgreements />} />
-          <Route path="/buyer/chase" element={<BuyerChase />} />
-          <Route path="/buyer/inventory" element={<BuyerInventory />} />
-          <Route path="/buyer/shipments" element={<BuyerShipments />} />
-          <Route path="/buyer/goods-receipt" element={<BuyerGoodsReceipt />} />
-          <Route path="/buyer/discovery" element={<BuyerDiscovery />} />
-          <Route path="/buyer/purchase-requisition" element={<BuyerRequisitions />} />
-          <Route path="/buyer/supplier-applications" element={<BuyerSupplierApplications />} />
-          <Route path="/buyer/material-requests" element={<BuyerMaterialRequests />} />
+          <Route path="/buyer/contracts/:id" element={<ModuleGate path="/buyer/contracts/:id"><BuyerContractDetail /></ModuleGate>} />
+          <Route path="/buyer/delivery-agreements" element={<ModuleGate path="/buyer/delivery-agreements"><BuyerDeliveryAgreements /></ModuleGate>} />
+          <Route path="/buyer/chase" element={<ModuleGate path="/buyer/chase"><BuyerChase /></ModuleGate>} />
+          <Route path="/buyer/inventory" element={<ModuleGate path="/buyer/inventory"><BuyerInventory /></ModuleGate>} />
+          <Route path="/buyer/shipments" element={<ModuleGate path="/buyer/shipments"><BuyerShipments /></ModuleGate>} />
+          <Route path="/buyer/goods-receipt" element={<ModuleGate path="/buyer/goods-receipt"><BuyerGoodsReceipt /></ModuleGate>} />
+          <Route path="/buyer/discovery" element={<ModuleGate path="/buyer/discovery"><BuyerDiscovery /></ModuleGate>} />
+          <Route path="/buyer/purchase-requisition" element={<ModuleGate path="/buyer/purchase-requisition"><BuyerRequisitions /></ModuleGate>} />
+          <Route path="/buyer/supplier-applications" element={<ModuleGate path="/buyer/supplier-applications"><BuyerSupplierApplications /></ModuleGate>} />
+          <Route path="/buyer/material-requests" element={<ModuleGate path="/buyer/material-requests"><BuyerMaterialRequests /></ModuleGate>} />
           {/* PSL P3 — the preferred-supplier queue. A flat <Routes> with no
               layout route, so the page brings its own AppShellV2; a page that
               forgets it renders with no sidebar and no way back, and
@@ -123,48 +143,51 @@ const AppRouter: React.FC = () => {
               (`ROUTE-SMOKE-GUARD-IS-SELF-REFERENTIAL-01`). */}
           <Route
             path="/buyer/preferred-suppliers"
-            element={<BuyerPreferredSuppliers />}
+            element={<ModuleGate path="/buyer/preferred-suppliers"><BuyerPreferredSuppliers /></ModuleGate>}
           />
-          <Route path="/buyer/invoices" element={<BuyerInvoices />} />
-          <Route path="/buyer/scorecard" element={<BuyerScorecard />} />
-          <Route path="/buyer/analytics" element={<BuyerAnalytics />} />
-          <Route path="/buyer/risk" element={<BuyerRisk />} />
+          <Route path="/buyer/invoices" element={<ModuleGate path="/buyer/invoices"><BuyerInvoices /></ModuleGate>} />
+          <Route path="/buyer/scorecard" element={<ModuleGate path="/buyer/scorecard"><BuyerScorecard /></ModuleGate>} />
+          <Route path="/buyer/analytics" element={<ModuleGate path="/buyer/analytics"><BuyerAnalytics /></ModuleGate>} />
+          <Route path="/buyer/risk" element={<ModuleGate path="/buyer/risk"><BuyerRisk /></ModuleGate>} />
           {/* Comm Hub C4a — the buyer/planner front door (chase-derived outbound
               queue + channel-sourced provenance trail). Replaces the retired
               WhatsApp-Hub engagement mock. */}
-          <Route path="/buyer/comm-hub" element={<BuyerCommHub />} />
-          <Route path="/buyer/compliance" element={<BuyerCompliance />} />
+          <Route path="/buyer/comm-hub" element={<ModuleGate path="/buyer/comm-hub"><BuyerCommHub /></ModuleGate>} />
+          <Route path="/buyer/compliance" element={<ModuleGate path="/buyer/compliance"><BuyerCompliance /></ModuleGate>} />
           {/* PF-1 — the Process Flows module: the surface for the PF-0
               flow-graph analyzer. Everything it draws is derived from
               getKnownFlows(); there is no second copy of any machine. */}
-          <Route path="/buyer/process-flows" element={<ProcessFlows />} />
-          <Route path="/buyer/roles" element={<RolesCatalogue />} />
-          <Route path="/buyer/roles/:roleId" element={<RoleDetail />} />
-          <Route path="/glossary" element={<Glossary />} />
-          <Route path="/supplier/dashboard" element={<SupplierDashboardV2 />} />
-          <Route path="/supplier/storefront" element={<SupplierMyStorefront />} />
-          <Route path="/supplier/documents" element={<SupplierDocumentsV2 />} />
-          <Route path="/supplier/whatsapp" element={<SupplierWhatsApp />} />
+          <Route path="/buyer/process-flows" element={<ModuleGate path="/buyer/process-flows"><ProcessFlows /></ModuleGate>} />
+          <Route path="/buyer/roles" element={<ModuleGate path="/buyer/roles"><RolesCatalogue /></ModuleGate>} />
+          <Route path="/buyer/roles/:roleId" element={<ModuleGate path="/buyer/roles/:roleId"><RoleDetail /></ModuleGate>} />
+          <Route path="/glossary" element={<ModuleGate path="/glossary"><Glossary /></ModuleGate>} />
+          <Route path="/supplier/dashboard" element={<ModuleGate path="/supplier/dashboard"><SupplierDashboardV2 /></ModuleGate>} />
+          <Route path="/supplier/storefront" element={<ModuleGate path="/supplier/storefront"><SupplierMyStorefront /></ModuleGate>} />
+          <Route path="/supplier/documents" element={<ModuleGate path="/supplier/documents"><SupplierDocumentsV2 /></ModuleGate>} />
+          <Route path="/supplier/whatsapp" element={<ModuleGate path="/supplier/whatsapp"><SupplierWhatsApp /></ModuleGate>} />
           {/* Comm Hub C2 — inbound reply triage (confirm-before-commit). */}
-          <Route path="/supplier/comm-hub" element={<CommHubInbound />} />
-          <Route path="/supplier/orders" element={<SupplierOrders />} />
-          <Route path="/supplier/rfqs" element={<SupplierRFQsV2 />} />
+          <Route path="/supplier/comm-hub" element={<ModuleGate path="/supplier/comm-hub"><CommHubInbound /></ModuleGate>} />
+          <Route path="/supplier/orders" element={<ModuleGate path="/supplier/orders"><SupplierOrders /></ModuleGate>} />
+          <Route path="/supplier/rfqs" element={<ModuleGate path="/supplier/rfqs"><SupplierRFQsV2 /></ModuleGate>} />
           <Route
             path="/supplier/forecasts"
             element={
-              <Suspense fallback={<LoadingState />}>
-                <SupplierForecasts />
-              </Suspense>
+              <ModuleGate path="/supplier/forecasts">
+                <Suspense fallback={<LoadingState />}>
+                  <SupplierForecasts />
+                </Suspense>
+              </ModuleGate>
             }
           />
-          <Route path="/supplier/shipments" element={<SupplierShipments />} />
-          <Route path="/supplier/invoices" element={<SupplierInvoicesV2 />} />
-          <Route path="/supplier/inventory" element={<SupplierInventoryV2 />} />
-          <Route path="/supplier/delivery-agreements" element={<SupplierDeliveryAgreements />} />
-          <Route path="/supplier/performance" element={<SupplierPerformance />} />
+          <Route path="/supplier/shipments" element={<ModuleGate path="/supplier/shipments"><SupplierShipments /></ModuleGate>} />
+          <Route path="/supplier/invoices" element={<ModuleGate path="/supplier/invoices"><SupplierInvoicesV2 /></ModuleGate>} />
+          <Route path="/supplier/inventory" element={<ModuleGate path="/supplier/inventory"><SupplierInventoryV2 /></ModuleGate>} />
+          <Route path="/supplier/delivery-agreements" element={<ModuleGate path="/supplier/delivery-agreements"><SupplierDeliveryAgreements /></ModuleGate>} />
+          <Route path="/supplier/performance" element={<ModuleGate path="/supplier/performance"><SupplierPerformance /></ModuleGate>} />
           <Route path="/" element={<Navigate to="/buyer/dashboard" replace />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
+        </ModuleActivationProvider>
         </CurrentIdentityProvider>
       </ToastProvider>
     </HashRouter>

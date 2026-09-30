@@ -42,6 +42,13 @@ export const COMMAND_REFUSAL_GLOSSARY = {
     en: 'The action arrived without saying which document it applies to. Nothing was changed. Re-open the document and try from there.',
     id: 'Tindakan datang tanpa menyebut dokumen mana yang dimaksud. Tidak ada yang diubah. Buka kembali dokumen dan coba dari sana.',
   },
+  // M1 · the copy names the SWITCH and who can turn it back on, never the
+  // mechanism: a reader needs to know this part of the platform is off for
+  // everyone, not that a gate evaluated before the role check.
+  MODULE_INACTIVE: {
+    en: 'This part of the platform is switched off, so the action was refused for everyone, whatever their role. Nothing was changed, and existing documents stay readable. The refusal names the module, part or side that is off; the compliance team can switch it back on.',
+    id: 'Bagian platform ini sedang dinonaktifkan, sehingga tindakan ditolak untuk semua orang, apa pun perannya. Tidak ada yang diubah, dan dokumen yang sudah ada tetap dapat dibaca. Penolakan menyebut modul, bagian, atau sisi yang nonaktif; tim kepatuhan dapat mengaktifkannya kembali.',
+  },
   ROLE_NOT_PERMITTED: {
     en: 'Your role is not allowed to perform this action. Nothing was changed. Someone holding the named role must do it.',
     id: 'Peran Anda tidak diizinkan melakukan tindakan ini. Tidak ada yang diubah. Tindakan harus dilakukan oleh pemegang peran yang disebutkan.',

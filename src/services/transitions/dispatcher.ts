@@ -6,6 +6,8 @@
 //   2. QueryScope on EVERY command exactly as reads — a supplier can only
 //      command its own entity, else DataError(SCOPE_DENIED); missing entity ⇒
 //      DataError(NOT_FOUND) (DR-6 amended),
+//   2b. the verb's module, part or side is switched ON (M1 — else
+//      MODULE_INACTIVE, named; the switch set is injected as `moduleGate`),
 //   3. requiredRole ∈ the scope's roles (Step 3.7),
 //   4. transition legality (currentState ∈ transition.from, unless creation),
 //   5. requiredFields present & non-empty in the payload,
@@ -247,6 +249,14 @@ export interface DispatcherDeps {
    * settlement only flips the command status (the pre-Option-B behaviour).
    */
   settleFinalize?: (ctx: SettleContext) => void;
+  /**
+   * M1 · MODULE ACTIVATION (Design 5 §A.3). Given a transition and the
+   * commanding scope, the switch that is OFF for it — `SHP`, `GRC.qualityHold`,
+   * `side:supplier` — or `null` when nothing is. Injected like every other
+   * dependency, so this file stays framework-agnostic and never reads a store.
+   * Absent ⇒ nothing is ever off (every pre-M1 dispatcher built in a test).
+   */
+  moduleGate?: (transitionId: string, scope: QueryScope) => string | null;
 }
 
 export interface Dispatcher {
@@ -574,6 +584,25 @@ export function createDispatcher(deps: DispatcherDeps): Dispatcher {
       } else if (currentState === null) {
         throw new DataError('NOT_FOUND', `${input.entity} '${input.entityId}' not found`);
       }
+    }
+
+    // ── (2b) THE MODULE GATE (M1 · Design 5 §A.3) ────────────────────────────
+    //
+    // ⚠️ **THE PLACEMENT IS THE DESIGN'S, AND BOTH NEIGHBOURS ARE WHY.** After
+    // the scope gate, so a caller outside the tenancy learns nothing — not even
+    // that a module is off. Before the role gate, so a caller inside it learns
+    // that the MODULE is off before it learns anything about its role: "this
+    // part of the platform is switched off" is true for every seat, and telling
+    // a seat without the atom "not your role" would send it to find a person who
+    // could not act either.
+    //
+    // It applies to a cascade too. A fanned command into an OFF module RETURNS
+    // this refusal — it is not one of the two throwing exits the fan-out's
+    // `catch {}` swallows — so it lands on the sink with its reason and the
+    // source's `causationId`: recorded, never silent.
+    const off = deps.moduleGate ? deps.moduleGate(transition.id, scope) : null;
+    if (off !== null) {
+      return fin(scope, transition.id, 'failed', refusal('MODULE_INACTIVE', off));
     }
 
     // (3) requiredRole ∈ scope roles.

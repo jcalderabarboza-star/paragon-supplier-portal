@@ -330,7 +330,10 @@ function supplierSurfaceFiles(): string[] {
   const routerPath = resolve(SRC, 'router/AppRouter.tsx');
   const code = stripSourceComments(readFileSync(routerPath, 'utf8'), 'blank', routerPath);
   const components = [
-    ...code.matchAll(/path="\/supplier\/[^"]*"\s+element=\{<([A-Za-z0-9_]+)/g),
+    // M1 · the page may sit inside its module's `<ModuleGate path="…">`; the
+    // surface is the component INSIDE it. Widened for that one wrapper only —
+    // the same 12 surfaces, member for member, as before the gate existed.
+    ...code.matchAll(/path="\/supplier\/[^"]*"\s+element=\{(?:<ModuleGate\s+path="[^"]*">)?<([A-Za-z0-9_]+)/g),
   ].map((m) => m[1]);
   const imports = new Map<string, string>();
   for (const m of code.matchAll(/import\s+([A-Za-z0-9_]+)\s+from\s+['"]([^'"]+)['"]/g)) {

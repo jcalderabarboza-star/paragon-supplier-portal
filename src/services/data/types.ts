@@ -14,6 +14,7 @@
 //   POLineItem.uom                (was uom/unit)
 // ────────────────────────────────────────────────────────────────────────────
 
+import type { ModuleActivationSetting, ModuleActivationView } from '../modules/activation';
 import type {
   Supplier,
   SupplierStatus,
@@ -2247,6 +2248,23 @@ export interface IPlanningService {
   getPlanningFacts(scope: QueryScope, q: PlanningFactsQuery): Promise<PlanningFactsPage>;
 }
 
+// ─── Module activation read (M1 · Design 5 §A.2–§A.4) ────────────────────────
+//
+// TWO METHODS, BECAUSE THE TWO READERS ARE OWED DIFFERENT THINGS.
+//   · `getModuleActivation` — WHAT IS ON, derived from the ledger at read. Every
+//     seat reads it, a supplier included: a supplier's own pages go read-only
+//     when a module is off, and it cannot render that honestly without knowing.
+//     It carries no attribution — who switched what is governance.
+//   · `getModuleLedger` — THE RECORDED ACTS, append-only, with `setBy` and the
+//     reason. BUYER-ONLY; a supplier resolves to SCOPE_DENIED, the enforcement
+//     ledger's rule, verbatim.
+// There is no clock in the derivation (activation does not lapse), so serving
+// the derived view is safe here where `getEnforcementSettings` could not be.
+export interface IModuleService {
+  getModuleActivation(scope: QueryScope): Promise<ModuleActivationView>;
+  getModuleLedger(scope: QueryScope): Promise<Page<ModuleActivationSetting>>;
+}
+
 export interface IDataService {
   suppliers: ISupplierService;
   procurement: IProcurementService;
@@ -2264,6 +2282,9 @@ export interface IDataService {
   enforcement: IEnforcementService;
   /** Planning read seam (B1) — long-form facts for a horizon and a measure set. */
   planning: IPlanningService;
+  /** Module activation read seam (M1) — what is on (every seat) and the
+   *  append-only ledger of who switched it (buyer only). */
+  modules: IModuleService;
   /** Write seam — the single dispatcher (Step 3.4). */
   commands: ICommandService;
   /** What the current scope may do (Step 3.9 DNA seed; mock-backed today). */

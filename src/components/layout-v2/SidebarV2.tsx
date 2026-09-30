@@ -34,6 +34,8 @@ import { useCurrentIdentity } from '../../context/CurrentIdentityContext';
 import { mockSuppliers } from '../../data/mockSuppliers';
 import { SEEDED_SEAT_ROLES } from '../../services/transitions/businessRoles';
 import { NO_PERSON } from '../../context/noPerson';
+import { useModuleActivation } from '../../context/ModuleActivationContext';
+import { routeOffReason } from '../../services/modules/activation';
 
 const SEED_SUPPLIER_ID = 'sup-007';
 const SEED_SUPPLIER_NAME =
@@ -183,7 +185,13 @@ const SidebarV2: React.FC = () => {
   const { identity, setIdentity } = useCurrentIdentity();
   const persona = identity.personaType;
 
-  const groups = persona === 'buyer' ? BUYER_NAV : SUPPLIER_NAV;
+  // M1 — an OFF module leaves the navigation (Design 5 §A.3: never a dead
+  // link). Its route still renders read-only if reached; the dashboard is PLT
+  // and never leaves. A group left with no item leaves too.
+  const activation = useModuleActivation();
+  const groups = (persona === 'buyer' ? BUYER_NAV : SUPPLIER_NAV)
+    .map((g) => ({ ...g, items: g.items.filter((item) => routeOffReason(item.path, activation) === null) }))
+    .filter((g) => g.items.length > 0);
 
   return (
     <aside className="w-60 shrink-0 h-full bg-bg-sidebar border-r border-border-subtle flex flex-col">

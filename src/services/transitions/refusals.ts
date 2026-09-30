@@ -65,6 +65,17 @@ export const COMMAND_REFUSALS = [
   'UNKNOWN_ENTITY',
   /** A non-creation command arrived without an entity id. */
   'MISSING_ENTITY_ID',
+  /**
+   * M1 · the verb's module, the part governing it, or the commanding side is
+   * switched OFF (Design 5 §A.3). The detail names the switch: `SHP`,
+   * `GRC.qualityHold`, `side:supplier`.
+   *
+   * ⚠️ **POSITION IS SEMANTIC.** Evaluated after the THROWN scope pair (a
+   * caller outside the tenancy learns nothing) and BEFORE `ROLE_NOT_PERMITTED`
+   * (a caller inside it learns the module is off before learning about its
+   * role — the design's order, verbatim).
+   */
+  'MODULE_INACTIVE',
   /** The scope's roles do not include the transition's `requiredRole`. */
   'ROLE_NOT_PERMITTED',
   /**

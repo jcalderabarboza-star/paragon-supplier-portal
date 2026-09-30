@@ -743,6 +743,30 @@ export const POLICY_HOOKS = {
    * open drafts would be two answers to "which split does the grid edit?".
    */
   PUB_ONE_OPEN_DRAFT: 'pub_one_open_draft',
+
+  // ── M1 · MODULE ACTIVATION (Design 5 §A.4) ─────────────────────────────────
+  /** The subject is switchable: a registered module other than PLT (always on),
+   *  or the supplier side — the buyer side cannot go off while PLT is on. */
+  MODULE_KNOWN: 'module_known',
+  /** A module carries a phase, and it agrees with `enabled` (Active/Activating ⇔
+   *  ON; Planned/Backlog ⇔ OFF). A side carries none. */
+  MODULE_PHASE_CONSISTENT: 'module_phase_consistent',
+  /** Every `parts` key is a part of THIS module, and every value a boolean. */
+  MODULE_PARTS_KNOWN: 'module_parts_known',
+  /** `reason` is text with substance — `requiredFields` admits the space bar. */
+  MODULE_REASON_AUTHORED: 'module_reason_authored',
+  /** The act changes something: an unchanged row would be a ledger entry that
+   *  records nothing happening. */
+  MODULE_ACTUALLY_CHANGES: 'module_actually_changes',
+  /** Switching OFF: no HARD dependant is ON — named in the refusal (§A.3). */
+  MODULE_NO_ACTIVE_HARD_DEPENDANTS: 'module_no_active_hard_dependants',
+  /** Switching ON: every HARD dependency is ON — named in the refusal. */
+  MODULE_DEPENDENCIES_ENABLED: 'module_dependencies_enabled',
+  /** A RESOLVED actor from the session: the act must be answerable. */
+  MODULE_SET_ATTRIBUTED: 'module_set_attributed',
+  /** On a PRODUCTION deployment (no environment badge) a sample person is
+   *  refused — D3: the demo admits sample people, production needs a real one. */
+  MODULE_SET_NOT_SAMPLE_IN_PROD: 'module_set_not_sample_in_prod',
 } as const;
 
 for (const name of Object.values(POLICY_HOOKS)) registerPolicyHook(name);

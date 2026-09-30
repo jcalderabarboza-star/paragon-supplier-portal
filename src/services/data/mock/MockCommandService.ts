@@ -131,6 +131,7 @@ import {
 // hooks on import.
 import { forecastPublicationStore } from './stores/forecastPublicationStore';
 import { forecastPublicationTarget, previouslyPublished } from './publicationTarget';
+import { moduleActivationTarget, moduleGate } from './moduleActivationTarget';
 import type {
   Acknowledgment,
   IncomingShipment,
@@ -2696,6 +2697,9 @@ const TARGETS: Record<string, CommandTarget> = {
   // what makes "no second write path" a derived assertion rather than a claim.
   deliveryRelease: deliveryReleaseTarget,
   deliveryPolicy: deliveryPolicyTarget,
+  // M1 — module activation. Ships in the same commit as its flow so the entity
+  // never joins the target-less set; `enforcementTarget`'s shape, verb for verb.
+  moduleActivation: moduleActivationTarget,
 };
 
 // The behavior-wiring census (was the contract package's "6"; 7 with the G1.1
@@ -3023,6 +3027,9 @@ const dispatcher = createDispatcher({
   now: () => new Date().toISOString(),
   cascade: resolveCascades,
   settleFinalize,
+  // M1 — a verb whose module, part or side is OFF is refused by name
+  // (`MODULE_INACTIVE:<switch>`), read from the activation ledger's derived view.
+  moduleGate,
 });
 
 /**

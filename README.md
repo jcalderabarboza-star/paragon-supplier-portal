@@ -139,7 +139,8 @@ src/
 ├── assets/              Images imported by components.
 ├── components/          UI. `ui-v2/` primitives, `layout-v2/` shell, `v2-features/`
 │                        cross-page features, `delivery/` the delivery lane's controls.
-├── context/             React contexts: current identity, adaptive layout.
+├── context/             React contexts: current identity, adaptive layout, module activation
+│                        (what is switched on, and the route gate).
 ├── data/                Long-lived sample data and catalogues (suppliers, POs, materials,
 │                        communication profiles).
 ├── hooks/               Label and toast hooks shared across pages.
@@ -148,6 +149,8 @@ src/
 │                        treeMutationGate, envGate, projectionGate, readingInstantGate).
 ├── pages/               Legacy. Only the login page still lives here.
 ├── pages-v2/            Every shipped page. Buyer and supplier surfaces both.
+├── qa/                  The browser-QA harness. Built ONLY with VITE_QA_HARNESS=on; absent
+│                        from every shipped bundle.
 ├── router/              AppRouter.tsx — a flat HashRouter. A page brings its own shell.
 ├── services/            The engine room:
 │                        transitions/ the state machines, the dispatcher, roles, policies
@@ -160,6 +163,7 @@ src/
 │                        channel/     the communication channels
 │                        chase/       chasing an overdue act
 │                        liveness/    which data sources are live and which simulated
+│                        modules/     module activation: the module registry, what is ON
 │                        testing/     helpers the services share with their specs
 ├── styles/              Tailwind entry.
 ├── test/                Vitest setup and shared test helpers.
