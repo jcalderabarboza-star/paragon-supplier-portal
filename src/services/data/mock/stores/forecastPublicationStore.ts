@@ -106,8 +106,9 @@ export const forecastPublicationStore = {
   },
   /**
    * B4b · the open draft of a grain — the one the grid's allocation cells edit.
-   * More than one can exist (nothing forbids a second open); the LATEST opened
-   * is the working draft, and the panel says which one it is by id.
+   * Since B4b-2 there is at most one: `PUB_ONE_OPEN_DRAFT` refuses a second
+   * open by name. The LATEST is still what is returned, so a store written
+   * around the verb cannot make this answer ambiguous.
    */
   draftFor(grain: BucketGrain): PublicationRecord | undefined {
     const drafts = rows.filter((r) => r.state === 'Draft' && r.grain === grain);

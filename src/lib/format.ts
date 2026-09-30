@@ -1,7 +1,16 @@
 // ────────────────────────────────────────────────────────────────────────────
 // Locale formatting — single source of truth for currency / date / number
-// display. id-ID conventions (Rp prefix, dot thousands); dates render in the
-// Asia/Jakarta timezone so output is deterministic regardless of runner locale.
+// display. Dates render in the Asia/Jakarta timezone so output is deterministic
+// regardless of runner locale.
+//
+// ⚠️ B4b-2 · OPERATOR RULING: A PLAIN NUMBER RENDERS IN THE SEAT'S CONVENTION —
+// EN "6,000" / "1,234.5", ID "6.000" / "1.234,5". It rendered id-ID in BOTH
+// until now, so an EN seat read "6.000" for six thousand while the same seat
+// TYPING "6.000" into a grid cell entered six (`normalizeQty` under the EN
+// convention) — the display and the input disagreed about the same keystrokes.
+// Money is NOT this rule: `formatIDR` keeps the rupiah's own grouping in both
+// languages, and the gate (`numberConvention.gate.test.ts`) lists every other
+// formatting site with its reason.
 //
 // Consolidation target: the ~127 inline formatting sites across pages-v2
 // migrate onto these three functions opportunistically as Phase 1' touches
@@ -15,6 +24,7 @@ const JAKARTA = 'Asia/Jakarta';
 const EMPTY = '—';
 
 const idID = new Intl.NumberFormat('id-ID');
+const enUS = new Intl.NumberFormat('en-US');
 
 // Active UI language, read from the i18n singleton (the SSoT). EN output stays
 // byte-identical to the pre-i18n behaviour; only ID mode diverges.
@@ -22,10 +32,13 @@ function isID(): boolean {
   return i18n.language?.toLowerCase().startsWith('id') ?? false;
 }
 
-/** "1.234.567" (id-ID grouping). null/undefined/NaN → "—". */
+/**
+ * A plain number in the SEAT's convention: EN "1,234,567.5", ID "1.234.567,5".
+ * null/undefined/NaN → "—".
+ */
 export function formatNumber(value?: number | null): string {
   if (value == null || Number.isNaN(value)) return EMPTY;
-  return idID.format(value);
+  return (isID() ? idID : enUS).format(value);
 }
 
 /**

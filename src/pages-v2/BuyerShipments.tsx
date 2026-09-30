@@ -54,6 +54,7 @@ import {
   daysInTransit,
   type ShipmentDisplayState,
 } from '../services/data/shipmentDisplayState';
+import { formatNumber } from '../lib/format';
 
 // ⚠️ THE FOURTH PIN, RETIRED — see BuyerGoodsReceipt for the full note. All
 // three surviving pins read 2026-05-20, which is what evidences the `shipment`
@@ -112,8 +113,7 @@ const AT_DOCK_STATUSES: ShipmentStatus[] = ['At Dock', 'Unloading'];
 
 const PENDING_STATUSES: ShipmentStatus[] = ['Pending ASN', 'ASN Received'];
 
-const formatNumber = (n: number): string =>
-  new Intl.NumberFormat('id-ID').format(n);
+// B4b-2 · the shared `formatNumber` (seat convention), not a local id-ID copy.
 
 const formatDate = (iso?: string): string => {
   if (!iso) return '—';

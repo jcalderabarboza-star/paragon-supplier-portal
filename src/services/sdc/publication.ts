@@ -11,7 +11,7 @@ import type { CommitmentClass, ForecastLine, ForecastPublication } from './types
 // `RESPONSE_DUE_DAYS`, which the chase already reads. A second constant here
 // would be a second answer to "when is it due?" (Design 2 §5.3 makes it a
 // GOVERNED setting with a ledger — SE-18; until then this is the one place).
-import { RESPONSE_DUE_DAYS } from './consolidation';
+import { RESPONSE_DUE_DAYS, sameCommitment } from './consolidation';
 
 const DAY_MS = 86_400_000;
 
@@ -119,7 +119,74 @@ export function carriedLines(
       const { approvedBy: _by, approvedAt: _at, ...allocation } = l.allocation;
       return Object.freeze({
         ...l,
-        allocation: Object.freeze({ ...allocation, materialPeriodTotal: totals[totalKey(l.materialCode, l.periodBucket)] }),
+        allocation: Object.freeze({
+          ...allocation,
+          materialPeriodTotal: totals[totalKey(l.materialCode, l.periodBucket)],
+          // B4b-2 · operator ruling: a carried line SAYS it was carried.
+          basis: 'carried-forward' as const,
+        }),
       });
     });
+}
+
+// ─── B4b-2 · net change (Design 2 §2.1, C8 GG-7) ────────────────────────────
+//
+// A revision re-publishes the whole plan; the supplier should re-confirm only
+// what MOVED. A line whose quantity AND class equal the superseded
+// publication's is "carried — no re-confirmation needed", and the answer given
+// against the superseded line still counts. Derived at read, never stored.
+
+// `sameCommitment` lives in `consolidation.ts` (this module already imports
+// it; the reverse import would be a cycle) and is the ONE rule both read.
+
+/** The line of `pub` that answers to the same supplier × material × period, if any. */
+export const counterpartIn = (pub: ForecastPublication | null, line: ForecastLine): ForecastLine | undefined =>
+  pub?.lines.find(
+    (l) => l.supplierId === line.supplierId && l.materialCode === line.materialCode && l.periodBucket === line.periodBucket,
+  );
+
+/**
+ * The publication `current` superseded: the one published just before it over
+ * the same grain. A horizon's grain is read from its first bucket — a week id
+ * carries a `W`, a month id does not (A1's vocabulary).
+ *
+ * ⚠️ ORDERED BY `publishedAt`, THEN BY THE ORDER THE PUBLICATIONS ARRIVE — the
+ * same tie-break `currentPublication` uses. The SDC clock is frozen, so two
+ * revisions published in one session share an instant; the order the store
+ * recorded them in is then the only order there is.
+ */
+export function previousPublication(
+  publications: readonly ForecastPublication[],
+  current: ForecastPublication | null,
+): ForecastPublication | null {
+  if (!current) return null;
+  const weekly = (p: ForecastPublication) => (p.horizon[0] ?? '').includes('W');
+  const ordered = publications
+    .map((p, i) => ({ p, i }))
+    .filter(({ p }) => weekly(p) === weekly(current))
+    .sort((a, b) => Date.parse(a.p.publishedAt) - Date.parse(b.p.publishedAt) || a.i - b.i);
+  const k = ordered.findIndex(({ p }) => p.publicationId === current.publicationId);
+  return k > 0 ? ordered[k - 1].p : null;
+}
+
+export type NetChange = 'carried' | 'changed';
+
+/** Carried iff the superseded publication held the same commitment for this line. */
+export function netChangeOf(line: ForecastLine, previous: ForecastPublication | null): NetChange {
+  const prior = counterpartIn(previous, line);
+  return prior && sameCommitment(prior, line) ? 'carried' : 'changed';
+}
+
+/** How many of `lines` changed and how many were carried. */
+export function netChangeSummary(
+  lines: readonly ForecastLine[],
+  previous: ForecastPublication | null,
+): { readonly changed: number; readonly carried: number } {
+  let changed = 0;
+  let carried = 0;
+  for (const l of lines) {
+    if (netChangeOf(l, previous) === 'carried') carried++;
+    else changed++;
+  }
+  return { changed, carried };
 }

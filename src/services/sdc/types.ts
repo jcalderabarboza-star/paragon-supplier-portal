@@ -244,7 +244,14 @@ export type MaterialMaster = Readonly<Record<string, MaterialMasterEntry>>;
 export type CommitmentClass = 'firm' | 'semi-firm' | 'visibility-only';
 
 /** How a material×period TOTAL was split across suppliers (addendum §1a). */
-export type AllocationBasis = 'planner-split' | 'quota' | 'award-history';
+/**
+ * B4b-2 · `carried-forward` (operator ruling): the split a revision started
+ * from, copied from the superseded publication by `t_publication_open`'s carry.
+ * It is minted ONLY by the carry — a planner's own allocate may not claim it
+ * (`PUB_BASIS_KNOWN` admits the other three), and re-splitting a carried line
+ * makes it `planner-split`.
+ */
+export type AllocationBasis = 'planner-split' | 'quota' | 'award-history' | 'carried-forward';
 
 /**
  * ⭐ Allocation provenance (addendum §1 — the top schema-affecting fix). The
@@ -507,6 +514,13 @@ export interface RequirementResponse {
   readonly planVersion: string;
   /** Absent while Draft; set on submit. */
   readonly submittedAt?: string;
+  /**
+   * B4b-2 · when the buyer ACCEPTED this answer — the supplier's receipt
+   * (Design 2 §2.4). Store-stamped from the SDC clock on the transition into
+   * `Accepted`, never a payload field (a caller that could set it could backdate
+   * the buyer's decision). Absent on every answer the buyer has not accepted.
+   */
+  readonly acceptedAt?: string;
   readonly submissionVersion: number;
   readonly status: RequirementResponseStatus;
   /** The commitment (firm/semi-firm lines). XOR with `acknowledgment`. */

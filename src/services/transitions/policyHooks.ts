@@ -738,6 +738,11 @@ export const POLICY_HOOKS = {
    * the same grain — the revision the new draft replaces, and nothing else.
    */
   PUB_CARRY_FROM_CURRENT: 'pub_carry_from_current',
+  /**
+   * B4b-2 · Open: no other draft of the grain is open (operator ruling). Two
+   * open drafts would be two answers to "which split does the grid edit?".
+   */
+  PUB_ONE_OPEN_DRAFT: 'pub_one_open_draft',
 } as const;
 
 for (const name of Object.values(POLICY_HOOKS)) registerPolicyHook(name);

@@ -33,6 +33,7 @@ import { useServiceQuery, scopeKey } from './useServiceQuery';
 import {
   SUPPLIER_MATERIAL_RELATIONSHIPS,
   currentPublication,
+  previousPublication,
   ownCollaboratedMaterials,
   // CP-2 · B1 — the ONE master lookup; no page re-derives its own join.
   labelOf,
@@ -58,6 +59,12 @@ export interface OwnForecastLinesRead {
   /** ONLY this supplier's fanned lines of that publication. */
   lines: readonly ForecastLine[];
   /**
+   * B4b-2 · the publication `publication` superseded (own lines only, as the
+   * service scopes every publication) — what net change is measured against,
+   * and where a carried line's prior answer was given. Null on a first plan.
+   */
+  previous: ForecastPublication | null;
+  /**
    * FLAG-2 verdict for the render path: `!page.sample` — true only when the
    * service answered from LIVE publications. False = the sample the page asked
    * for by name — the page MUST render its honest sample marking.
@@ -78,6 +85,7 @@ export function useOwnForecastLines() {
       const page = await svc.collaboration.getPublications(scope, { includeSimulatedSample: true });
       const liveFeed = !page.sample;
       const publication = currentPublication(page.items);
+      const previous = previousPublication(page.items, publication);
       const lines =
         publication && scope.supplierId
           ? publication.lines
@@ -89,7 +97,7 @@ export function useOwnForecastLines() {
                   a.materialCode.localeCompare(b.materialCode),
               )
           : [];
-      return { publication, lines, liveFeed };
+      return { publication, lines, previous, liveFeed };
     },
   );
 }

@@ -68,6 +68,7 @@ import type {
 } from '../services/data/types';
 import { daysUntil } from '../services/data/dayProjection';
 import { DECLARED_PRESENT } from '../services/data/fixturePresent';
+import { formatNumber } from '../lib/format';
 
 // ⚠️ ANCHORED — this surface rendered values derived from anchored
 // fixture data against the WALL CLOCK, so what a reader saw moved every day
@@ -886,7 +887,7 @@ const CommodityTab: React.FC<{ commodities: Commodity[] }> = ({
                   className="text-kpi"
                   style={{ color: c.color }}
                 >
-                  {c.current > 1000 ? c.current.toLocaleString() : c.current}
+                  {formatNumber(c.current)}
                 </Data>
                 <div
                   className={`text-xs font-semibold ${up ? 'text-danger' : 'text-success'}`}
@@ -931,7 +932,7 @@ const CommodityTab: React.FC<{ commodities: Commodity[] }> = ({
                 })}
               </span>
               <span className="font-bold" style={{ color: c.color }}>
-                {c.alert > 1000 ? c.alert.toLocaleString() : c.alert} {c.unit}
+                {formatNumber(c.alert)} {c.unit}
               </span>
               <span className="ml-auto">
                 {breached ? (

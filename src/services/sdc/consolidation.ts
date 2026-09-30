@@ -85,9 +85,16 @@ function daysUntil(nowIso: string, endMs: number): number {
 export function currentPublication(
   publications: readonly ForecastPublication[],
 ): ForecastPublication | null {
+  // ⚠️ B4b-2 · A TIE GOES TO THE ONE RECORDED LATER (`>=`, not `>`). The SDC
+  // clock is a frozen present, so two revisions published in one session carry
+  // ONE `publishedAt`; with `>` the FIRST kept its place and a superseded
+  // revision read as current — for the supplier and in the consolidation — while
+  // the planner's panel (which reads state) said otherwise. Found by the
+  // net-change spec's unequal-count case. The store hands publications out in
+  // the order it recorded them, which is the order they were published.
   let latest: ForecastPublication | null = null;
   for (const p of publications) {
-    if (latest === null || Date.parse(p.publishedAt) > Date.parse(latest.publishedAt)) {
+    if (latest === null || Date.parse(p.publishedAt) >= Date.parse(latest.publishedAt)) {
       latest = p;
     }
   }
@@ -192,6 +199,17 @@ export interface ConsolidationRow {
    */
   readonly revisionOf?: 'Disputed' | 'Accepted';
 }
+
+/**
+ * B4b-2 · THE SAME COMMITMENT — quantity AND class unchanged. The carry-forward
+ * below and the supplier's net-change (`netChangeOf`) both read this, so the
+ * buyer's "presumed valid" and the supplier's "no re-confirmation needed" can
+ * never disagree about one line.
+ */
+export const sameCommitment = (
+  a: Pick<ForecastLine, 'forecastQty' | 'commitmentClass'>,
+  b: Pick<ForecastLine, 'forecastQty' | 'commitmentClass'>,
+): boolean => a.forecastQty === b.forecastQty && a.commitmentClass === b.commitmentClass;
 
 const lineKey = (supplierId: string, materialCode: string, periodBucket: string): string =>
   `${supplierId}|${materialCode}|${periodBucket}`;
@@ -367,7 +385,10 @@ export function consolidationRows(
         l.materialCode === line.materialCode &&
         l.periodBucket === line.periodBucket,
     );
-    if (answeredLine && answeredLine.forecastQty === line.forecastQty) {
+    // B4b-2 · the SAME rule the supplier's net-change reads (`sameCommitment`):
+    // quantity AND class. A line re-classed firm at the same quantity is a new
+    // commitment, and an answer given to its semi-firm predecessor is not one.
+    if (answeredLine && sameCommitment(answeredLine, line)) {
       return withOrigin({ id: k, line, state: answeredState(response, line.forecastQty, true) });
     }
     return withOrigin({
