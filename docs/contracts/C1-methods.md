@@ -1,6 +1,6 @@
 # C1 — Method Surface
 
-Three distinct axes. **68** (service surface) · **126** (transition catalog) · **21** (wired
+Three distinct axes. **69** (service surface) · **126** (transition catalog) · **21** (wired
 targets). They measure different things; this file keeps them separate.
 
 > ⚠️ **THIS DOCUMENT IS PINNED TO THE TREE, AND THE PIN IS WHY THE NUMBERS ABOVE ARE ALLOWED TO
@@ -75,12 +75,20 @@ targets). They measure different things; this file keeps them separate.
 > (`sample: true` on the page). Service surface 67 → **68**, catalog 120 → **126** across 26 →
 > **27** flows, wired targets 20 → **21**. Moved by the pin going red.
 
+> **RE-HARVEST (2026-09-30, B4b-1).** Publish from the grid (Design 2 §2.3). `ICollaborationService`
+> gained ONE method, `getPublicationWorkspace(scope)`: BUYER-ONLY — every publication in every
+> state, drafts and ledgers included, and the SOMO plan versions a draft may be opened from; a
+> supplier scope reads an empty workspace. Service surface 68 → **69**. The catalog and the wired
+> targets did not move: the flow gained hooks (`PUB_SUPPLIER_COLLABORATED`,
+> `PUB_CLASS_PROJECTION_PRESENT`, `PUB_CARRY_FROM_CURRENT`), not transitions. Moved by the pin
+> going red.
+
 Source of truth: `src/services/data/types.ts` (service + command types),
 `src/services/transitions/` (schema, dispatcher, flows).
 
 ---
 
-## Axis 1 — the 68-method service surface (`IDataService`)
+## Axis 1 — the 69-method service surface (`IDataService`)
 
 The single interface the Phase-F1 real adapter implements; pages call it through
 `useDataService()` and do not change when the mock is swapped for `httpDataService`. Every method
@@ -113,15 +121,15 @@ interface IDataService {
 | `IRiskService` | 7 | `getRiskAlerts`, `getGeoRisks`, `getExposure`, `getScenarios`, `getCompliance`, `getComplianceRegistry`, `getCommodities` |
 | `IDiscoveryService` | 4 | `getRecommended`, `getQualifications`, `getMarketIntel`, `getSingleSourceItems` |
 | `IAnalyticsService` | 7 | `getSummary`, `getSpendByCategory`, `getTopSuppliers`, `getOtifTrend`, `getPoVolumeTrend`, `getChannelMix`, `getSupplierPerformance` |
-| `ICollaborationService` | 9 | `getOwnRequirementResponses`, `getOwnInventoryDeclarations`, `getOwnIncomingShipments`, `getOwnSupplierAsns`, `getConsolidation`, `getCoverage`, `getChase`, `getRollups`, `getPublications` |
+| `ICollaborationService` | 10 | `getOwnRequirementResponses`, `getOwnInventoryDeclarations`, `getOwnIncomingShipments`, `getOwnSupplierAsns`, `getConsolidation`, `getCoverage`, `getChase`, `getRollups`, `getPublications`, `getPublicationWorkspace` |
 | `IDeliveryService` | 4 | `getAgreements`, `releaseLines`, `confirmMatch`, `editPolicy` |
 | `IChaseService` | 1 | `getUnifiedChase` |
 | `IEnforcementService` | 1 | `getEnforcementSettings` |
 | `IPlanningService` | 1 | `getPlanningFacts` |
-| **read subtotal** | **64** | |
+| **read subtotal** | **65** | |
 | `ICommandService` | 3 | `dispatch`, `getCommandStatus`, `settle` |
 | top-level | 1 | `getCapabilities` |
-| **TOTAL** | **68** | |
+| **TOTAL** | **69** | |
 
 **Return contract:** list reads return `Page<T>` (DR-5 — see C2); single reads return `T | null`;
 `getSummary` returns a summary object or `null` (buyer-populated, supplier-null). Failure is

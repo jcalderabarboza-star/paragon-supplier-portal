@@ -33,7 +33,7 @@ import {
   buildRequirementResolutionPayload,
 } from '../sdc/submitModel';
 import type { ChannelMessage } from '../channel/types';
-import type { CommandResult, QueryScope } from '../data/types';
+import type { CommandResult, PublicationWorkspace, PublicationsPage, QueryScope } from '../data/types';
 
 /** The consolidation rows (every current-publication line + its response state).
  *  Buyer-scoped; a supplier persona resolves to []. */
@@ -41,6 +41,23 @@ export function useConsolidationRows() {
   return useServiceQuery<readonly ConsolidationRow[]>(
     ['sdc', 'consolidation'],
     async (svc, scope) => (await svc.collaboration.getConsolidation(scope)).items,
+  );
+}
+
+/**
+ * B4b · what was published, as the buyer reads it — through the service, never
+ * the fixture (`BuyerCollaboration` and `BuyerChannelTriage` read this).
+ */
+export function usePublications() {
+  return useServiceQuery<PublicationsPage>(['publications', 'published'], (svc, scope) =>
+    svc.collaboration.getPublications(scope),
+  );
+}
+
+/** B4b · the planner's workspace: drafts, ledgers and the openable plan versions. Buyer-only. */
+export function usePublicationWorkspace() {
+  return useServiceQuery<PublicationWorkspace>(['publications', 'workspace'], (svc, scope) =>
+    svc.collaboration.getPublicationWorkspace(scope),
   );
 }
 

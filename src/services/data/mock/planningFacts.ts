@@ -34,6 +34,7 @@ import {
   isKnownMaterial,
   requireUom,
   sdcClock,
+  totalKey,
   supplierCoverageEntries,
   type InventoryDeclaration,
 } from '../../sdc';
@@ -41,6 +42,8 @@ import { requirementResponseStore } from './stores/requirementResponseStore';
 import { intakeLineStore } from './stores/intakeLineStore';
 // B4a — the publications are a store; the constant is only its seed.
 import { forecastPublicationStore } from './stores/forecastPublicationStore';
+import { collaborationIndex } from './publicationFeed';
+import { allocationAnchor } from '../../planning/allocationAnchor';
 import { somoIntakeLineId } from '../../planning/somoIntake';
 import { inventoryDeclarationStore } from './stores/inventoryDeclarationStore';
 import { incomingShipmentStore } from './stores/incomingShipmentStore';
@@ -114,6 +117,7 @@ export function derivePlanningFacts(q: PlanningFactsQuery): PlanningFactsOutcome
     sourceRef: string,
     tier?: Tier,
     planState?: PlanningFactProvenance['planState'],
+    editAnchor?: string,
   ) => {
     if (!wanted.has(measureId) || !inHorizon.has(periodBucket) || !want(materialCode)) return;
     // D-OPS-MASTERMISS inside the lane: no unit, no fact.
@@ -128,8 +132,22 @@ export function derivePlanningFacts(q: PlanningFactsQuery): PlanningFactsOutcome
       uom: requireUom(materialCode, planningMaster()),
       provenance: provenanceOf(spec.source, tier ?? tierOf(spec.capability), planState),
       sourceRef,
+      ...(editAnchor ? { editAnchor } : {}),
     });
   };
+
+  // ⚠️ B4b · THE OPEN DRAFT SPEAKS FOR EVERY MATERIAL-PERIOD IT HOLDS A TOTAL
+  // FOR (Design 1 §5.3). Where a draft of this grain is open, the `allocation`
+  // row of such a material-period is the DRAFT's split — one row per supplier
+  // who collaborates on the material, PLANNED, anchored so the grid can edit it
+  // — and the published (or generated) split is not ALSO emitted for it: two
+  // allocation figures for one supplier-period would be two answers in one
+  // cell. Every other measure is untouched: demand, confirmation and deficit
+  // still read what was PUBLISHED, which is what suppliers answered against.
+  const draft = forecastPublicationStore.draftFor(grain);
+  const draftKeys = new Set(
+    draft ? Object.keys(draft.totals).filter((k) => inHorizon.has(k.slice(k.indexOf('|') + 1))) : [],
+  );
 
   // — The real stores (the 42 real codes). Monthly only where the source is
   //   bucket-native at month grain; dated sources map into either grain. —
@@ -140,7 +158,9 @@ export function derivePlanningFacts(q: PlanningFactsQuery): PlanningFactsOutcome
     for (const line of pub.lines) {
       const bucket = grain === 'month' ? line.periodBucket : null;
       if (bucket === null) continue; // publication buckets are months; no week fact is invented
-      push('allocation', line.materialCode, line.supplierId, bucket, line.forecastQty, pub.planVersion, pub.provenance.liveness);
+      if (!draftKeys.has(totalKey(line.materialCode, bucket))) {
+        push('allocation', line.materialCode, line.supplierId, bucket, line.forecastQty, pub.planVersion, pub.provenance.liveness);
+      }
       const k = `${line.materialCode}|${bucket}`;
       demandBy.set(k, (demandBy.get(k) ?? 0) + line.forecastQty);
     }
@@ -250,9 +270,34 @@ export function derivePlanningFacts(q: PlanningFactsQuery): PlanningFactsOutcome
       for (const sup of suppliersFor(code)) {
         const alloc = generatedAllocation(code, sup, b.id);
         const conf = generatedConfirmed(code, sup, b.id, index.get(b.id) ?? 0);
-        push('allocation', code, sup, b.id, alloc, seedRef, 'SIMULATED');
+        if (!draftKeys.has(totalKey(code, b.id))) push('allocation', code, sup, b.id, alloc, seedRef, 'SIMULATED');
         push('confirmed', code, sup, b.id, conf, seedRef, 'SIMULATED');
         push('confirmedDeficit', code, sup, b.id, alloc === null || conf === null ? null : Math.max(0, alloc - conf), 'confirmedDeficitOf', 'SIMULATED');
+      }
+    }
+  }
+
+  // — B4b · the open draft's split, one PLANNED row per collaborating supplier.
+  //   A supplier with no line reads "—" (not allocated), never 0. —
+  if (draft && draftKeys.size > 0 && wanted.has('allocation')) {
+    const collaborators = collaborationIndex();
+    for (const k of draftKeys) {
+      const [code, bucket] = [k.slice(0, k.indexOf('|')), k.slice(k.indexOf('|') + 1)];
+      const lines = draft.lines.filter((l) => l.materialCode === code && l.periodBucket === bucket);
+      const suppliers = new Set([...collaborators(code), ...lines.map((l) => l.supplierId)]);
+      for (const sup of suppliers) {
+        const line = lines.find((l) => l.supplierId === sup);
+        push(
+          'allocation',
+          code,
+          sup,
+          bucket,
+          line ? line.forecastQty : null,
+          draft.publicationId,
+          draft.provenance.liveness,
+          'planned',
+          allocationAnchor({ publicationId: draft.publicationId, supplierId: sup, materialCode: code, periodBucket: bucket }),
+        );
       }
     }
   }

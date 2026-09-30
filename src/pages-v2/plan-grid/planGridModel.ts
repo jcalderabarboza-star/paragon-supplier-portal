@@ -373,11 +373,15 @@ export function planCellText(value: number | null | undefined, format: (n: numbe
 
 /**
  * B3 · is this CELL editable? THE REGISTRY DECIDES, NOT THE PAGE: the measure
- * must declare an edit spec, the row must be a material row (the spec is a
- * material-grain act), and the seam must have delivered a row to anchor to.
+ * must declare an edit spec, the row must be of the measure's own grain (a
+ * material row for a material-grain act; since B4b a supplier row for the
+ * supplier-grain `allocation`), and the seam must have delivered a row to
+ * anchor to.
  */
 export function isEditableCell(row: PlanRow, bucket: BucketId): boolean {
-  return measureOf(row.measureId).editable !== false && row.supplierId === null && !!row.seamRefs?.[bucket];
+  const spec = measureOf(row.measureId);
+  const grainMatches = spec.grain === 'supplier' ? row.supplierId !== null : row.supplierId === null;
+  return spec.editable !== false && grainMatches && !!row.seamRefs?.[bucket];
 }
 
 /** `supplier|material|bucket` — the key a stale answer is reported by. */
@@ -430,6 +434,12 @@ export function buildPlanBlocks(
         committed: f.provenance.planState === 'committed',
       });
     }
+    // B4b · a SUPPLIER-grain editable cell anchors only where the seam named an
+    // anchor (`editAnchor` — an allocation on the open draft). It never reads
+    // as committed: a draft's split is a plan until it is published.
+    if (f.supplierId !== null && f.editAnchor && measureOf(f.measureId).editable !== false) {
+      refs.set(`${f.materialCode}|${f.measureId}|${f.periodBucket}|${f.supplierId}`, { ref: f.editAnchor, committed: false });
+    }
   }
 
   const blocks: PlanBlock[] = [];
@@ -443,10 +453,12 @@ export function buildPlanBlocks(
       const spec = measureOf(measureId);
       for (const supplierKey of [...sups.keys()].sort()) {
         const cells = sups.get(supplierKey)!;
+        const refKey = (b: BucketId) =>
+          supplierKey === '' ? `${materialCode}|${measureId}|${b}` : `${materialCode}|${measureId}|${b}|${supplierKey}`;
         const anchored =
-          spec.editable !== false && supplierKey === ''
+          spec.editable !== false
             ? horizon.flatMap((b) => {
-                const r = refs.get(`${materialCode}|${measureId}|${b}`);
+                const r = refs.get(refKey(b));
                 return r ? [[b, r] as const] : [];
               })
             : [];

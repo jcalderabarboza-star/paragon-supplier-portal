@@ -21,6 +21,17 @@
 // every seam array after an edit and a paste, and the mutation probe that
 // writes the value into the row instead is killed by name.
 //
+// ── B4b · ALLOCATION (Design 1 §5.3) ─────────────────────────────────────────
+// A supplier's `allocation` cell edits the OPEN DRAFT publication's split. It
+// enters the same overlay, keyed by its allocation anchor, and pushes as
+// `t_publication_allocate` under the SAME causation anchor as any intake row
+// in the push. Two rules are its own:
+//  · Σ over the material's suppliers ≤ SOMO's material-period total is refused
+//    AT THE CELL (`OVER_TOTAL`), counting each sibling's PLANNED value where it
+//    has one — the hook still decides at dispatch; the cell says it first.
+//  · No reason is owed: the split IS the planner's act, with no producer
+//    baseline to depart from (the registry's edit spec says so).
+//
 // ⚠️ SE-14, NOT HERE: the fill handle, range delete and the engine's undo. A
 // fill is a batch of `GridEditRequest`s with origin FILL (§5.4) and needs range
 // selection the installed engine does not give; a range delete must refuse
@@ -34,6 +45,7 @@ import { measureOf, type MeasureId, type MeasureSource } from '../../services/pl
 import type { CommandResult } from '../../services/data/types';
 import { DataError } from '../../services/data/types';
 import { isEditableCell, type PlanRow } from './planGridModel';
+import { parseAllocationAnchor } from '../../services/planning/allocationAnchor';
 
 export type EditOrigin = 'TYPED' | 'PASTE';
 
@@ -43,6 +55,8 @@ export interface PlanDraftEntry {
   readonly seamRef: string;
   readonly rowId: string;
   readonly materialCode: string;
+  /** B4b · the supplier of a supplier-grain cell (an allocation); null on a material row. */
+  readonly supplierId: string | null;
   readonly uom: string;
   readonly bucket: BucketId;
   readonly measureId: MeasureId;
@@ -67,7 +81,7 @@ export interface PlanDraftEntry {
  * planned value to (C6 §1), and calling that "read-only" would name the wrong
  * owner (found in browser QA: a gap bucket read "the planner owns this figure").
  */
-export type CellRefusalReason = QtyRefusalReason | 'READ_ONLY' | 'NO_SEAM_ROW';
+export type CellRefusalReason = QtyRefusalReason | 'READ_ONLY' | 'NO_SEAM_ROW' | 'NO_OPEN_DRAFT' | 'OVER_TOTAL';
 
 /** A cell edit that did NOT enter the overlay, and why. Shown at the cell. */
 export interface CellRefusal {
@@ -77,6 +91,19 @@ export interface CellRefusal {
   readonly reason: CellRefusalReason;
   /** For READ_ONLY: who owns the figure (the measure's producer). */
   readonly source?: MeasureSource;
+  /** For OVER_TOTAL: what the suppliers would hold, and SOMO's total. */
+  readonly sum?: number;
+  readonly total?: number;
+}
+
+/**
+ * B4b · what an allocation edit is measured against: the rows the grid holds
+ * (the material's other suppliers are among them) and SOMO's material-period
+ * total on the open draft. Absent on a material-grain edit, which needs neither.
+ */
+export interface EditContext {
+  readonly rows: readonly PlanRow[];
+  readonly totalOf: (materialCode: string, bucket: BucketId) => number | undefined;
 }
 
 export interface PlanDraft {
@@ -111,10 +138,18 @@ export function applyEdit(
   raw: string,
   origin: EditOrigin,
   convention: NumberConvention,
+  ctx?: EditContext,
 ): PlanDraft {
   if (!isEditableCell(row, bucket)) {
     const spec = measureOf(row.measureId);
-    return spec.editable !== false && row.supplierId === null
+    // An editable measure with nothing to anchor to names WHY — never "read-only",
+    // which would name the wrong owner (the B3 NO_SEAM_ROW finding): a supplier
+    // allocation is anchored to the open draft, and without one it has nowhere
+    // to go.
+    if (spec.editable !== false && spec.grain === 'supplier' && row.supplierId !== null) {
+      return withRefusal(draft, { rowId: row.id, bucket, raw, reason: 'NO_OPEN_DRAFT' });
+    }
+    return spec.editable !== false && spec.grain === 'material' && row.supplierId === null
       ? withRefusal(draft, { rowId: row.id, bucket, raw, reason: 'NO_SEAM_ROW' })
       : withRefusal(draft, { rowId: row.id, bucket, raw, reason: 'READ_ONLY', source: spec.source });
   }
@@ -135,12 +170,28 @@ export function applyEdit(
   if (!parsed.ok) return withRefusal(draft, { rowId: row.id, bucket, raw, reason: parsed.reason });
 
   const seamRef = row.seamRefs![bucket];
+  // B4b · Σ over suppliers ≤ SOMO's total, at the cell. A sibling's PLANNED
+  // value counts where it has one: the planner is refused against the split
+  // they are building, not against the one they are replacing.
+  if (row.supplierId !== null && ctx) {
+    const total = ctx.totalOf(row.materialCode, bucket);
+    if (total !== undefined) {
+      const others = ctx.rows
+        .filter((r) => r.materialCode === row.materialCode && r.measureId === row.measureId)
+        .filter((r) => r.supplierId !== null && r.supplierId !== row.supplierId && r.seamRefs?.[bucket])
+        .reduce((sum, r) => sum + (draft.entries.get(r.seamRefs![bucket])?.value ?? r.cells[bucket] ?? 0), 0);
+      if (others + parsed.value > total) {
+        return withRefusal(draft, { rowId: row.id, bucket, raw, reason: 'OVER_TOTAL', sum: others + parsed.value, total });
+      }
+    }
+  }
   const prior = draft.entries.get(seamRef);
   const entries = new Map(draft.entries);
   entries.set(seamRef, {
     seamRef,
     rowId: row.id,
     materialCode: row.materialCode,
+    supplierId: row.supplierId,
     uom: row.uom,
     bucket,
     measureId: row.measureId,
@@ -179,6 +230,7 @@ export function applyPaste(
   anchor: { readonly row: number; readonly col: number },
   text: string,
   convention: NumberConvention,
+  totalOf?: EditContext['totalOf'],
 ): { draft: PlanDraft; planned: number; refused: number; outside: number } {
   let next = draft;
   let planned = 0;
@@ -193,7 +245,7 @@ export function applyPaste(
         return;
       }
       const before = next.entries.get(row.seamRefs?.[bucket] ?? '');
-      next = applyEdit(next, row, bucket, raw, 'PASTE', convention);
+      next = applyEdit(next, row, bucket, raw, 'PASTE', convention, totalOf ? { rows, totalOf } : undefined);
       const after = next.entries.get(row.seamRefs?.[bucket] ?? '');
       if (after && after !== before) planned++;
       else refused++;
@@ -202,8 +254,15 @@ export function applyPaste(
   return { draft: next, planned, refused, outside };
 }
 
-/** Did the planner leave the producer's baseline? (A1-R2: the ONLY move that owes a reason.) */
-export const reasonOwed = (e: PlanDraftEntry): boolean => e.value !== e.baseline;
+/**
+ * Did the planner leave the producer's baseline? (A1-R2: the ONLY move that
+ * owes a reason.) Asked of the REGISTRY: a measure whose edit spec owes no
+ * reason (an allocation — the split is the planner's own act) never owes one.
+ */
+export const reasonOwed = (e: PlanDraftEntry): boolean => {
+  const spec = measureOf(e.measureId).editable;
+  return spec !== false && spec.reasonRequiredWhen === 'differsFromBaseline' && e.value !== e.baseline;
+};
 
 /** The reason gate — owed and blank means this row does not dispatch. */
 export const pushBlocked = (e: PlanDraftEntry): boolean => reasonOwed(e) && e.reason.trim() === '';
@@ -241,6 +300,18 @@ export interface CommitVars {
   readonly causationId?: string;
 }
 
+/** B4b · one supplier's share, pushed to the open draft. */
+export interface AllocateVars {
+  readonly publicationId: string;
+  readonly materialCode: string;
+  readonly periodBucket: string;
+  readonly supplierId: string;
+  readonly forecastQty: number;
+  readonly forecastQtyRaw: string;
+  readonly numberConvention: NumberConvention;
+  readonly causationId?: string;
+}
+
 export type PushOutcome =
   | { readonly seamRef: string; readonly kind: 'dispatched'; readonly correlationId: string }
   | { readonly seamRef: string; readonly kind: 'failed'; readonly reason: string }
@@ -260,23 +331,47 @@ export async function pushEntries(
   entries: readonly PlanDraftEntry[],
   commit: (vars: CommitVars) => Promise<CommandResult>,
   convention: NumberConvention,
+  allocate?: (vars: AllocateVars) => Promise<CommandResult>,
 ): Promise<readonly PushOutcome[]> {
   const out: PushOutcome[] = [];
   let anchor: string | undefined;
-  for (const e of entries) {
+  // B4b · allocations that LOWER a share go before those that raise one: the
+  // hook measures Σ against the draft as it stands, so a planner moving
+  // quantity from one supplier to another would otherwise be refused for the
+  // raise before the lower had landed.
+  const isAlloc = (e: PlanDraftEntry) => e.measureId === 'allocation';
+  const delta = (e: PlanDraftEntry) => e.value - (e.baseline ?? 0);
+  const ordered = [
+    ...entries.filter((e) => !isAlloc(e)),
+    ...entries.filter(isAlloc).sort((a, b) => delta(a) - delta(b)),
+  ];
+  for (const e of ordered) {
     if (pushBlocked(e)) {
       out.push({ seamRef: e.seamRef, kind: 'blocked', reason: 'REASON_REQUIRED' });
       continue;
     }
+    const target = isAlloc(e) ? parseAllocationAnchor(e.seamRef) : null;
+    if (isAlloc(e) && (!target || !allocate)) {
+      out.push({ seamRef: e.seamRef, kind: 'failed', reason: 'NOT_ROUTABLE' });
+      continue;
+    }
     try {
-      const result = await commit({
-        lineId: e.seamRef,
-        acceptedQty: e.value,
-        acceptedQtyRaw: e.raw,
-        numberConvention: convention,
-        ...(reasonOwed(e) ? { overrideReason: e.reason.trim() } : {}),
-        ...(anchor ? { causationId: anchor } : {}),
-      });
+      const result = target
+        ? await allocate!({
+            ...target,
+            forecastQty: e.value,
+            forecastQtyRaw: e.raw,
+            numberConvention: convention,
+            ...(anchor ? { causationId: anchor } : {}),
+          })
+        : await commit({
+            lineId: e.seamRef,
+            acceptedQty: e.value,
+            acceptedQtyRaw: e.raw,
+            numberConvention: convention,
+            ...(reasonOwed(e) ? { overrideReason: e.reason.trim() } : {}),
+            ...(anchor ? { causationId: anchor } : {}),
+          });
       anchor ??= result.correlationId;
       out.push(
         result.status === 'failed'

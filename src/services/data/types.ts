@@ -32,7 +32,8 @@ import type { EnforcementSetting, ActorAttribution } from '../../lib/enforcement
 // the same reason as the line above: `PurchaseRequisition.periodBucket` names the
 // vocabulary, and the ONE function that decides membership is `parseBucket` in
 // the module beside it. Importing the alias does not import the parse.
-import type { BucketId, BucketRefusalReason } from '../planning/bucket';
+import type { BucketGrain, BucketId, BucketRefusalReason } from '../planning/bucket';
+import type { Tier } from '../liveness/registry';
 import type { PlanningFact } from '../planning/facts';
 import type { MeasureId } from '../planning/measures';
 import type { IntakeLineState } from '../transitions/flows/intakeLine.flow';
@@ -49,6 +50,7 @@ import type {
   SupplierRollup,
   ChaseEntry,
   ForecastPublication,
+  PublicationDocument,
 } from '../sdc';
 // Delivery Agreement read seam — the view-model row type (type-only; erased at
 // build, so no runtime import into the data layer).
@@ -2039,6 +2041,30 @@ export interface ICollaborationService {
    * `includeSimulatedSample`, and the page says so (`sample: true`).
    */
   getPublications(scope: QueryScope, q?: PublicationsQuery): Promise<PublicationsPage>;
+
+  // — B4b · the planner's workspace (Design 2 §2.3) —
+  /**
+   * BUYER-ONLY. Every publication in every state — drafts included, each with
+   * its totals and its ledger — and the plan versions a draft may be opened
+   * from. A supplier scope reads nothing: a draft is not a publication, and a
+   * ledger names who acted inside the buyer's organisation.
+   */
+  getPublicationWorkspace(scope: QueryScope): Promise<PublicationWorkspace>;
+}
+
+/** B4b — a SOMO plan version a draft may be opened from, at one grain. */
+export interface PlanVersionOffer {
+  readonly planVersion: string;
+  readonly grain: BucketGrain;
+  readonly horizon: readonly string[];
+  readonly sourceRef: string;
+  readonly liveness: Tier;
+}
+
+/** B4b — the planner's publication workspace. */
+export interface PublicationWorkspace {
+  readonly records: readonly PublicationDocument[];
+  readonly offers: readonly PlanVersionOffer[];
 }
 
 /** B4a — the one opt-in a supplier page may state to reach the sample. */

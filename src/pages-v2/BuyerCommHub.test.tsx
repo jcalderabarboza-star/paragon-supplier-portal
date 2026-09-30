@@ -18,13 +18,19 @@ vi.mock('../services/query/chaseHooks', () => ({ useUnifiedChase: vi.fn() }));
 // useConsolidationRows drives the outbound fold; useInventoryRecord is the C4d
 // triage panel's write hook — stubbed here (its REAL dispatch is covered in
 // BuyerChannelTriage.test.tsx), so this page test stays focused on the reads.
-vi.mock('../services/query/sdcBuyerHooks', () => ({
-  useConsolidationRows: vi.fn(),
-  useInventoryRecord: vi.fn(() => ({
-    mutateAsync: vi.fn().mockResolvedValue({ status: 'done', entityId: 'inv-x', correlationId: 'c' }),
-    isPending: false,
-  })),
-}));
+// B4b · the triage panel reads the publications through `usePublications` (it
+// imported the fixture before); the stub serves the SAME seed it used to read.
+vi.mock('../services/query/sdcBuyerHooks', async () => {
+  const { FORECAST_PUBLICATIONS } = await vi.importActual<typeof import('../services/sdc')>('../services/sdc');
+  return {
+    useConsolidationRows: vi.fn(),
+    useInventoryRecord: vi.fn(() => ({
+      mutateAsync: vi.fn().mockResolvedValue({ status: 'done', entityId: 'inv-x', correlationId: 'c' }),
+      isPending: false,
+    })),
+    usePublications: vi.fn(() => ({ data: { items: FORECAST_PUBLICATIONS, sample: false } })),
+  };
+});
 vi.mock('../services/query/hooks', () => ({ useSuppliers: vi.fn() }));
 
 const view = (

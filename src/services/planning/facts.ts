@@ -55,6 +55,13 @@ export interface PlanningFact {
   readonly provenance: PlanningFactProvenance;
   /** The producer's own stamp: planVersion · response id · document ref · fixture seed. */
   readonly sourceRef: string;
+  /**
+   * B4b · the seam row a SUPPLIER-grain cell's edit anchors to, when the seam
+   * offers one — an allocation on the open draft (`allocationAnchor`). Absent
+   * everywhere else. A material-grain cell anchors on `sourceRef` (B3's intake
+   * line), unchanged.
+   */
+  readonly editAnchor?: string;
 }
 
 /** The seam's query shape — declared once, on the service contract. */

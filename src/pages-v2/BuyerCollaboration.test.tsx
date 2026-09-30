@@ -92,20 +92,23 @@ describe('BuyerCollaboration — honest render (page-level)', () => {
 });
 
 describe('BuyerCollaboration — period filter bar (the PERIOD owns the class)', () => {
-  it('carries the period-level commitmentClass badges — FIRM reads as a PERIOD lock', () => {
+  // B4b · the current publication is read through the service now (it was a
+  // module-scope fixture read), so the bar fills when that read resolves — the
+  // SDC-4d precedent below: wait for the read, assert exactly what was asserted.
+  it('carries the period-level commitmentClass badges — FIRM reads as a PERIOD lock', async () => {
     renderWithProviders(<BuyerCollaboration />, { route: '/buyer/collaboration' });
     const bar = screen.getByTestId('sdc-period-bar');
     // The locked badge is period-scoped text, never per-material.
-    expect(bar).toHaveTextContent('2026-08 · FIRM — period locked');
+    await waitFor(() => expect(bar).toHaveTextContent('2026-08 · FIRM — period locked'));
     expect(bar).toHaveTextContent('2026-09 · Semi-firm');
     expect(bar).toHaveTextContent('2026-10 · Visibility only');
   });
 
-  it('offers a filter button per horizon bucket plus all-periods', () => {
+  it('offers a filter button per horizon bucket plus all-periods', async () => {
     renderWithProviders(<BuyerCollaboration />, { route: '/buyer/collaboration' });
     const bar = screen.getByTestId('sdc-period-bar');
     // 1 × all-periods + 3 × horizon buckets
-    expect(bar.querySelectorAll('button')).toHaveLength(4);
+    await waitFor(() => expect(bar.querySelectorAll('button')).toHaveLength(4));
     expect(screen.getByRole('button', { name: /all periods/i })).toBeInTheDocument();
   });
 });
@@ -181,5 +184,15 @@ describe('BuyerCollaboration — i18n', () => {
     } finally {
       await i18n.changeLanguage('en');
     }
+  });
+});
+
+describe('B4b · the publications’ ledger on /buyer/collaboration (Design 2 §2.3)', () => {
+  it('renders every publication’s history, the seeds marked as sample records', async () => {
+    renderWithProviders(<BuyerCollaboration />, { route: '/buyer/collaboration' });
+    const ledger = await screen.findByTestId('publication-ledger');
+    await waitFor(() => expect(ledger.querySelectorAll('[data-testid="publication-ledger-row"]')).toHaveLength(3));
+    expect(ledger).toHaveTextContent('PUB-2026-08-RM-R2');
+    expect(ledger).toHaveTextContent('Sample record — not published through the portal');
   });
 });

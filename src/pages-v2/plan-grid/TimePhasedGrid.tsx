@@ -25,6 +25,12 @@
 // The engine's own paste is intercepted before it runs, so a paste over a
 // read-only column is judged — and refused — cell by cell rather than silently
 // skipped. `setRowData` is never called: nothing typed reaches the seam rows.
+//
+// ── B4b · ALLOCATION AND PUBLISH (Design 1 §5.3, Design 2 §2.3) ─────────────
+// A supplier's `allocation` cell is editable where the seam anchored it to the
+// OPEN DRAFT publication (`editAnchor`); its edit is measured against SOMO's
+// total at the cell and pushes as `t_publication_allocate`. The publication
+// panel (plain DOM) sits above the grid on the plan views.
 // ────────────────────────────────────────────────────────────────────────────
 
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
@@ -38,15 +44,17 @@ import LivenessPill from '../../components/ui-v2/LivenessPill';
 import { formatNumber } from '../../lib/format';
 import { mockSuppliers } from '../../data/mockSuppliers';
 import { usePlanningFacts } from '../../services/query/planningHooks';
-import { useConsolidationRows } from '../../services/query/sdcBuyerHooks';
+import { useConsolidationRows, usePublicationWorkspace } from '../../services/query/sdcBuyerHooks';
+import { totalKey } from '../../services/sdc';
 import { VIEWS, type ViewId } from '../../services/planning/views';
 import { COLUMNS, bucketColumns, bucketColumnId } from '../../services/planning/columns';
 import { measureOf, type MeasureId } from '../../services/planning/measures';
 import { somoHorizon } from '../../services/planning/facts';
 import { visibleMeasures } from './visibleMeasures';
 import { usePlanDraft } from './PlanDraftProvider';
-import PlannedChangesPanel, { CELL_REFUSAL_KEY } from './PlannedChangesPanel';
-import { cellKey, type CellRefusal, type PlanDraftEntry } from './planDraft';
+import PlannedChangesPanel, { cellRefusalText } from './PlannedChangesPanel';
+import PublicationPanel, { draftOfGrain } from './PublicationPanel';
+import { cellKey, type CellRefusal, type EditContext, type PlanDraftEntry } from './planDraft';
 import {
   DEFAULT_PLAN_FILTER,
   DEFAULT_PLAN_SORT,
@@ -90,9 +98,7 @@ export const PlanBucketCell: React.FC<{
   // ⚠️ THE OVERLAY IS SHOWN, NEVER MERGED: the seam value stays in the row and
   // the planned one is read from the draft by seamRef, marked as PLANNED.
   const text = planCellText(planned ? planned.value : value, formatNumber);
-  const refusalText = refusal
-    ? t(CELL_REFUSAL_KEY[refusal.reason], { source: refusal.source ? t(`planGrid.edit.owner.${refusal.source}`) : '' })
-    : '';
+  const refusalText = refusal ? cellRefusalText(t, refusal) : '';
   return (
     <div
       className={`flex w-full items-center justify-end gap-1 px-2 ${planned ? 'bg-info-soft' : ''} ${refusal ? 'ring-1 ring-inset ring-danger/60' : ''}`}
@@ -148,7 +154,9 @@ const EditableBucketCell: React.FC<{
   row: PlanRow;
   bucket: string;
   focus: boolean;
-}> = ({ row, bucket, focus }) => {
+  /** B4b · read at commit time: the rows and SOMO's totals an allocation is measured against. */
+  editContext: () => EditContext;
+}> = ({ row, bucket, focus, editContext }) => {
   const { t } = useTranslation();
   const api = usePlanDraft();
   const seamRef = row.seamRefs![bucket];
@@ -172,7 +180,7 @@ const EditableBucketCell: React.FC<{
       inputRef.current?.select();
     }
     if (!focus && wasFocused.current && !cancelled.current && textRef.current !== startRef.current) {
-      api?.edit(row, bucket, textRef.current, 'TYPED');
+      api?.edit(row, bucket, textRef.current, 'TYPED', editContext());
     }
     wasFocused.current = focus;
   }, [focus]);
@@ -192,7 +200,11 @@ const EditableBucketCell: React.FC<{
     <input
       ref={inputRef}
       data-testid="tp-cell-input"
-      aria-label={t('planGrid.edit.cellLabel', { material: row.materialCode, bucket })}
+      aria-label={
+        row.supplierId
+          ? t('planGrid.edit.allocationCellLabel', { material: row.materialCode, bucket, supplier: supplierLabel(row.supplierId) })
+          : t('planGrid.edit.cellLabel', { material: row.materialCode, bucket })
+      }
       inputMode="decimal"
       className="h-full w-full bg-white px-2 text-right font-mono text-xs text-data-navy outline-none"
       value={text}
@@ -221,6 +233,9 @@ const TimePhasedGrid: React.FC<{ viewId: Extract<ViewId, 'rm-plan' | 'pm-plan' |
   const [selection, setSelection] = useState<{ r0: number; r1: number; c0: number; c1: number } | null>(null);
   const [pasteNote, setPasteNote] = useState<{ planned: number; refused: number; outside: number } | null>(null);
   const consolidation = useConsolidationRows();
+  // B4b · the open draft of this grain — SOMO's totals an allocation is measured against.
+  const workspace = usePublicationWorkspace();
+  const openDraft = useMemo(() => draftOfGrain(workspace.data?.records ?? [], grain), [workspace.data, grain]);
   const lockedExceptions = viewId === 'exceptions';
   // The sort choices, labelled from the COLUMN REGISTRY (B1) — one source for
   // the words, so a sort option can never read differently from its column.
@@ -255,14 +270,24 @@ const TimePhasedGrid: React.FC<{ viewId: Extract<ViewId, 'rm-plan' | 'pm-plan' |
   const exceptionCount = useMemo(() => blocks.filter((b) => isPlanException(b.exceptions)).length, [blocks]);
 
   // B3 · what the SEAM holds per editable cell, for C6 §3's clear-when-agreed.
+  // B4b · an allocation anchor's seam is the DRAFT: whatever it holds, it holds
+  // as recorded (the allocate act landed), and "no line" is a share of zero —
+  // the value a pushed zero is compared with.
   const seamIndex = useMemo(() => {
     const m = new Map<string, { value: number | null; committed: boolean }>();
     for (const f of factsQuery.data?.items ?? []) {
-      if (f.supplierId !== null || measureOf(f.measureId).editable === false) continue;
-      m.set(f.sourceRef, { value: f.value, committed: f.provenance.planState === 'committed' });
+      if (measureOf(f.measureId).editable === false) continue;
+      if (f.supplierId === null) m.set(f.sourceRef, { value: f.value, committed: f.provenance.planState === 'committed' });
+      else if (f.editAnchor) m.set(f.editAnchor, { value: f.value ?? 0, committed: true });
     }
     return m;
   }, [factsQuery.data]);
+  const totalOf = useMemo<EditContext['totalOf']>(
+    () => (code, bucket) => openDraft?.totals[totalKey(code, bucket)],
+    [openDraft],
+  );
+  const editContextRef = useRef<EditContext>({ rows: [], totalOf });
+  editContextRef.current = { rows, totalOf };
   const reconcileRef = useRef(draftApi?.reconcile);
   reconcileRef.current = draftApi?.reconcile;
   useEffect(() => {
@@ -298,7 +323,7 @@ const TimePhasedGrid: React.FC<{ viewId: Extract<ViewId, 'rm-plan' | 'pm-plan' |
     if (col < 0) return;
     e.preventDefault();
     e.stopImmediatePropagation();
-    setPasteNote(draftApi.paste(rows, horizon, { row: active.row, col }, text));
+    setPasteNote(draftApi.paste(rows, horizon, { row: active.row, col }, text, totalOf));
   };
   useEffect(() => {
     const onPaste = (e: ClipboardEvent) => pasteRef.current(e);
@@ -329,7 +354,7 @@ const TimePhasedGrid: React.FC<{ viewId: Extract<ViewId, 'rm-plan' | 'pm-plan' |
         minWidth: 112,
         component: ({ rowData, focus }: CellProps<PlanRow>) =>
           draftApi && isEditableCell(rowData, bucket) ? (
-            <EditableBucketCell row={rowData} bucket={bucket} focus={focus} />
+            <EditableBucketCell row={rowData} bucket={bucket} focus={focus} editContext={() => editContextRef.current} />
           ) : (
             <ReadOnlyBucketCell
               row={rowData}
@@ -417,6 +442,7 @@ const TimePhasedGrid: React.FC<{ viewId: Extract<ViewId, 'rm-plan' | 'pm-plan' |
         <LivenessPill capability="forecastPublications" />
       </div>
 
+      {viewId !== 'exceptions' && <PublicationPanel grain={grain} />}
       {viewId !== 'exceptions' && (
         <p className="mb-2 text-xs text-text-tertiary" data-testid="tp-edit-hint">
           {t('planGrid.edit.hint')}
