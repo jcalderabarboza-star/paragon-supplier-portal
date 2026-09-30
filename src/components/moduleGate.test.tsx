@@ -14,6 +14,7 @@ import { renderWithProviders, SUPPLIER, BUYER } from '../test/test-utils';
 import i18n from '../lib/i18n';
 import SupplierShipments from '../pages-v2/SupplierShipments';
 import BuyerRequisitions from '../pages-v2/BuyerRequisitions';
+import BuyerShipments from '../pages-v2/BuyerShipments';
 import { ModuleActivationContext, ModuleGate } from '../context/ModuleActivationContext';
 import {
   defaultActivation,
@@ -127,6 +128,34 @@ describe('the supplier shipments page — ON, then OFF', () => {
     expect(banner.dataset.moduleOff).toBe('side:supplier');
     expect(banner.textContent).toContain('Supplier side is switched off');
     expect(screen.queryByRole('button', { name: /Create ASN/ })).toBeNull();
+  });
+});
+
+describe('the buyer shipments page — the header’s primary act is withdrawn too', () => {
+  // Found by browser QA, not by a spec: "Manual ASN Entry" sits in the page
+  // header's PRIMARY slot, outside the availability layer, and stayed rendered
+  // on the read-only page. The secondary reads (Export, Dock schedule) stay.
+  const at = (view: ModuleActivationView | null) =>
+    renderWithProviders(
+      <ModuleActivationContext.Provider value={view}>
+        <ModuleGate path="/buyer/shipments">
+          <BuyerShipments />
+        </ModuleGate>
+      </ModuleActivationContext.Provider>,
+      { identity: BUYER, route: '/buyer/shipments' },
+    );
+
+  it('ON: the primary act renders, no notice', async () => {
+    at(null);
+    expect(await screen.findByRole('button', { name: /Manual ASN Entry/ })).toBeInTheDocument();
+    expect(screen.queryByTestId('module-off-primary')).toBeNull();
+  });
+
+  it('OFF: the primary act is replaced by the notice; the reads stay', async () => {
+    at(SHP_OFF);
+    expect(await screen.findByTestId('module-off-primary')).toHaveTextContent('Switched off — Shipments & ASN');
+    expect(screen.queryByRole('button', { name: /Manual ASN Entry/ })).toBeNull();
+    expect(screen.getByRole('button', { name: /Export/ })).toBeInTheDocument();
   });
 });
 
