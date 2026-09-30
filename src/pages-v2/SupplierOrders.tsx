@@ -50,6 +50,7 @@ import {
 // GL-1 - the glossary destination for this surface's refusals.
 import GlossaryTermChip from '../components/ui-v2/GlossaryTermChip';
 import { useRefusalText } from '../hooks/useRefusalText';
+import { formatNumber } from '../lib/format';
 
 type TabKey = 'all' | 'action' | 'progress' | 'completed';
 type PanelMode = 'detail' | 'editing' | 'confirmed' | 'change-request';
@@ -851,7 +852,7 @@ const SupplierOrders: React.FC = () => {
                           </div>
                         </td>
                         <td className="px-3 py-2 text-right text-text-secondary whitespace-nowrap">
-                          <Data>{li.quantity.toLocaleString()} {li.uom}</Data>
+                          <Data>{formatNumber(li.quantity)} {li.uom}</Data>
                         </td>
                         {effectivePanelMode === 'editing' && (
                           <td className="px-3 py-2 text-right">
@@ -1013,7 +1014,7 @@ const SupplierOrders: React.FC = () => {
                     <dd className="text-sm font-bold text-text-primary">
                       <Data>
                         {totalConfirmedQty !== null
-                          ? `${totalConfirmedQty.toLocaleString()} ${t('supplierOrders.units')}`
+                          ? `${formatNumber(totalConfirmedQty)} ${t('supplierOrders.units')}`
                           : '—'}
                       </Data>
                     </dd>

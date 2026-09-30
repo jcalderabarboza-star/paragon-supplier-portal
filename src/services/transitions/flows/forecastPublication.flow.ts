@@ -80,6 +80,7 @@ export const forecastPublicationFlow: FlowDefinition = {
         POLICY_HOOKS.PUB_HORIZON_ONE_GRAIN,
         POLICY_HOOKS.PUB_PLANVERSION_KNOWN,
         POLICY_HOOKS.PUB_CARRY_FROM_CURRENT,
+        POLICY_HOOKS.PUB_ONE_OPEN_DRAFT,
       ],
       surfaceable: { surfaced: true },
       version: 1,

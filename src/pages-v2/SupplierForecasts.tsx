@@ -65,6 +65,12 @@ import {
   buildIncomingShipmentPayload,
   declarationGranularity,
   openSubmissionSession,
+  // B4b-2 · deadline, net change and the carried answer — derived at read.
+  counterpartIn,
+  isResponseOverdue,
+  netChangeOf,
+  netChangeSummary,
+  sdcClock,
   type CommitmentClass,
   type DisputeEntry,
   type ForecastLine,
@@ -274,15 +280,44 @@ const latestResponseFor = (
       undefined,
     );
 
+/**
+ * B4b-2 · the answer a CARRIED line keeps: the latest SUBMITTED own answer to
+ * the same line of the superseded publication. A draft never answered anything
+ * (PF-1b), so it never carries.
+ */
+const carriedAnswerFor = (
+  responses: readonly RequirementResponse[],
+  previous: ForecastPublication | null,
+  line: ForecastLine,
+): RequirementResponse | undefined =>
+  previous
+    ? responses
+        .filter(
+          (r) =>
+            r.publicationId === previous.publicationId &&
+            r.materialCode === line.materialCode &&
+            r.periodBucket === line.periodBucket &&
+            r.submittedAt !== undefined,
+        )
+        .reduce<RequirementResponse | undefined>(
+          (best, r) => (!best || r.submissionVersion > best.submissionVersion ? r : best),
+          undefined,
+        )
+    : undefined;
+
 const LineCard: React.FC<{
   line: ForecastLine;
+  /** B4b-2 · the publication this line belongs to (its deadline) and the one it superseded. */
+  publication: ForecastPublication;
+  previous: ForecastPublication | null;
+  responses: readonly RequirementResponse[];
   latest?: RequirementResponse;
   /** A3 — an answer already open on this line (any publication). */
   openAnswer?: RequirementResponse;
   onConfirm: (line: ForecastLine) => void;
   onRevise: (response: RequirementResponse, line: ForecastLine) => void;
   onAcknowledge: (line: ForecastLine) => void;
-}> = ({ line, latest, openAnswer, onConfirm, onRevise, onAcknowledge }) => {
+}> = ({ line, publication, previous, responses, latest, openAnswer, onConfirm, onRevise, onAcknowledge }) => {
   // ⚠️ **THE SHARPEST PAIR IN THE SPLIT, AND IT IS ONE ENTITY.** A commitment
   // line is COMMERCIAL's; a visibility-only line's acknowledgment is BACK
   // OFFICE's — the flow header is explicit that the latter "carries NO
@@ -296,6 +331,12 @@ const LineCard: React.FC<{
   } as const);
   const { t } = useTranslation();
   const confirmable = line.commitmentClass !== 'visibility-only';
+  // B4b-2 · NET CHANGE, derived at read against the superseded publication:
+  // same quantity AND class = carried, and the answer given to it still counts.
+  const net = netChangeOf(line, previous);
+  const carriedAnswer = net === 'carried' ? carriedAnswerFor(responses, previous, line) : undefined;
+  const prior = counterpartIn(previous, line);
+  const overdue = isResponseOverdue(publication, sdcClock.now());
   return (
     <div className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm border-l-2 border-l-teal p-5">
       <div className="flex items-start justify-between gap-3 flex-wrap">
@@ -306,6 +347,15 @@ const LineCard: React.FC<{
               {line.commitmentClass === 'firm' && <Lock size={11} aria-hidden="true" />}
               {t(CLASS_LABEL_KEY[line.commitmentClass])}
             </span>
+            {previous && (
+              <span className={CHIP} data-testid="sdcsup-line-net" data-net={net}>
+                {net === 'carried'
+                  ? t('sdcSup.net.carried')
+                  : prior
+                    ? t('sdcSup.net.changedFrom', { qty: formatNumber(prior.forecastQty), uom: prior.uom })
+                    : t('sdcSup.net.new')}
+              </span>
+            )}
           </div>
           <div className="text-base font-semibold text-text-primary mt-1">
             {materialLabel(line.materialCode)}
@@ -381,7 +431,34 @@ const LineCard: React.FC<{
             {line.periodBucket}
           </Data>
         </div>
+        {/* B4b-2 · the deadline on every line; OVERDUE is derived at read. */}
+        <div className="bg-bg-hover rounded-md px-3 py-2" data-testid="sdcsup-line-deadline" data-overdue={overdue ? 'true' : 'false'}>
+          <dt className="text-label text-text-tertiary uppercase mb-0.5">
+            {t('sdcSup.line.respondBy')}
+          </dt>
+          {publication.responseDueAt ? (
+            <dd className="text-sm font-semibold">
+              <Data>{formatDate(publication.responseDueAt)}</Data>
+              {overdue && <span className="ml-2 text-xs font-semibold text-danger">{t('sdcSup.deadline.overdue')}</span>}
+            </dd>
+          ) : (
+            <dd className="text-sm text-text-tertiary">{t('sdcSup.deadline.none')}</dd>
+          )}
+        </div>
       </dl>
+
+      {carriedAnswer && (
+        <div className="mt-3 text-xs text-success" data-testid="sdcsup-line-carried-answer">
+          {carriedAnswer.acknowledgment
+            ? t('sdcSup.net.carriedAck', { version: previous!.planVersion, v: carriedAnswer.submissionVersion })
+            : t('sdcSup.net.carriedAnswer', {
+                version: previous!.planVersion,
+                v: carriedAnswer.submissionVersion,
+                qty: formatNumber(carriedAnswer.forecastConfirmation!.confirmedQty),
+                uom: carriedAnswer.forecastConfirmation!.uom,
+              })}
+        </div>
+      )}
 
       {latest && (
         <div className="mt-3 text-xs text-text-secondary">
@@ -633,6 +710,12 @@ const ResponsesTab: React.FC<{
                 ))}
             </div>
           </div>
+          {/* B4b-2 · THE RECEIPT: the buyer's accept, dated (store-stamped). */}
+          {r.acceptedAt && (
+            <div className="text-xs text-success mb-2" data-testid="sdcsup-response-receipt">
+              {t('sdcSup.responses.receipt', { date: formatDate(r.acceptedAt) })}
+            </div>
+          )}
           {r.supersedes && (
             <div className="text-xs text-text-tertiary mb-2" data-testid="sdcsup-response-revises">
               <Data className="text-xs">{t('sdcSup.responses.revises', { id: r.supersedes })}</Data>
@@ -1178,6 +1261,8 @@ interface WorkspaceProps {
   supplierId: string;
   supplierName: string;
   publication: ForecastPublication;
+  /** B4b-2 · the publication `publication` superseded (net change is measured against it). */
+  previous: ForecastPublication | null;
   lines: readonly ForecastLine[];
   liveFeed: boolean;
   responses: readonly RequirementResponse[];
@@ -1191,6 +1276,7 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
   supplierId,
   supplierName,
   publication,
+  previous,
   lines,
   liveFeed,
   responses,
@@ -1704,6 +1790,14 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
     }
   };
 
+  // B4b-2 · the deadline in the tab header, and the net change the banner states.
+  const changeSummary = netChangeSummary(lines, previous);
+  const deadlineLabel = publication.responseDueAt
+    ? isResponseOverdue(publication, sdcClock.now())
+      ? t('sdcSup.deadline.overdueSince', { date: formatDate(publication.responseDueAt) })
+      : t('sdcSup.deadline.dueOn', { date: formatDate(publication.responseDueAt) })
+    : t('sdcSup.deadline.noneShort');
+
   const sohUom = sohForm.materialCode ? materialUom(sohForm.materialCode) : '';
   const shipUom = shipForm.materialCode ? materialUom(shipForm.materialCode) : '';
 
@@ -1736,9 +1830,29 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
         </div>
       )}
 
+      {/* B4b-2 · THE VERSION BANNER: which plan, when, and how much of it moved. */}
+      <div
+        className="mb-4 rounded-lg border border-border-subtle bg-bg-surface px-4 py-3 text-sm text-text-primary"
+        data-testid="sdcsup-version-banner"
+      >
+        {previous
+          ? t('sdcSup.version.banner', {
+              version: publication.planVersion,
+              date: formatDate(publication.publishedAt),
+              changed: formatNumber(changeSummary.changed),
+              carried: formatNumber(changeSummary.carried),
+              count: changeSummary.changed,
+            })
+          : t('sdcSup.version.first', {
+              version: publication.planVersion,
+              date: formatDate(publication.publishedAt),
+              n: formatNumber(lines.length),
+            })}
+      </div>
+
       <SubTabs<TabKey>
         options={[
-          { id: 'lines', label: t('sdcSup.tab.lines'), count: lines.length },
+          { id: 'lines', label: `${t('sdcSup.tab.lines')} · ${deadlineLabel}`, count: lines.length },
           { id: 'stock', label: t('sdcSup.tab.stock'), count: declarations.length },
           { id: 'shipments', label: t('sdcSup.tab.shipments'), count: shipments.length },
           { id: 'responses', label: t('sdcSup.tab.responses'), count: responses.length },
@@ -1765,6 +1879,9 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
               <LineCard
                 key={`${line.materialCode}|${line.periodBucket}`}
                 line={line}
+                publication={publication}
+                previous={previous}
+                responses={responses}
                 latest={latestResponseFor(responses, publication, line)}
                 openAnswer={openAnswerFor(responses, line)}
                 onConfirm={openConfirm}
@@ -2540,6 +2657,7 @@ const SupplierForecasts: React.FC = () => {
       supplierId={supplierId}
       supplierName={mySupplier.name}
       publication={read.publication}
+      previous={read.previous}
       lines={read.lines}
       liveFeed={read.liveFeed}
       responses={responses}

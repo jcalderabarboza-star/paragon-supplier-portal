@@ -44,7 +44,7 @@ import type {
 import type { ComplianceRegistryEntry } from '../../services/data/types';
 // GL-1 - the glossary destination for this surface's refusals.
 import GlossaryTermChip from '../ui-v2/GlossaryTermChip';
-import { formatDate } from '../../lib/format';
+import { formatDate, formatNumber } from '../../lib/format';
 import { useRefusalText } from '../../hooks/useRefusalText';
 import { refusedByPolicy } from '../../services/transitions/refusalMessage';
 import { POLICY_HOOKS } from '../../services/transitions/policyHooks';
@@ -254,7 +254,7 @@ const inputCls =
 
 const radioCls = 'flex items-center gap-1.5 text-sm text-text-primary cursor-pointer';
 
-const formatNumber = (n: number) => new Intl.NumberFormat('id-ID').format(n);
+// B4b-2 · the shared `formatNumber` (seat convention), not a local id-ID copy.
 
 // ── CP-3 · `REQUIRED-OPENS-PRE-ANSWERED-01` — ONE control, BOTH regulatory
 // checks ─────────────────────────────────────────────────────────────────────

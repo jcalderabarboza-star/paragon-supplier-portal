@@ -89,8 +89,8 @@ describe('BulkStockEntryGrid — the Σ banner reads the ONE parse (CP-0 · 2d)'
     renderGrid();
     pickMaterial();
     setTotal('4000');
-    // formatNumber groups id-ID, so 4000 renders as "4.000".
-    expect(banner().textContent).toContain('4.000');
+    // formatNumber follows the seat (operator ruling 1): EN renders "4,000".
+    expect(banner().textContent).toContain('4,000');
   });
 
   it('an AMBIGUOUS total states the refusal — never a fabricated Σ mismatch', () => {
@@ -195,7 +195,7 @@ describe('BulkStockEntryGrid — the Σ never sums across an unknown (CP-0 · 2d
     await waitFor(() => expect(banner().textContent).toMatch(/Batch total/));
     const text = banner().textContent ?? '';
     expect(text).toContain('500');
-    expect(text).toContain('9.000');
+    expect(text).toContain('9,000'); // the EN seat's convention (ruling 1)
     expect(text).toMatch(/batches must sum to the total/);
   });
 

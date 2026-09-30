@@ -1012,6 +1012,9 @@ const requirementResponseTarget: CommandTarget = {
       // only when absent — a later buyer-side move (review / accept / dispute)
       // must not restamp the moment the supplier answered.
       ...(toState === 'Submitted' && !r.submittedAt ? { submittedAt: sdcClock.now() } : {}),
+      // B4b-2 · THE RECEIPT. Stamped on the crossing INTO `Accepted`, from the
+      // SDC clock, by the store — the same discipline as `submittedAt`.
+      ...(toState === 'Accepted' && r.status !== 'Accepted' ? { acceptedAt: sdcClock.now() } : {}),
     }));
   },
   // Line-grain membership folded into creation scope (the quotation pattern,

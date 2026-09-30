@@ -467,8 +467,8 @@ describe('SupplierForecasts — the Σ-banner reads the SAME parse as the payloa
     addTwoBatches();
 
     const banner = screen.getByTestId('soh-batch-sum');
-    // 2.400 is formatNumber(2400) — id-ID grouping, the display convention.
-    expect(banner.textContent).toContain('2.400');
+    // 2,400 is formatNumber(2400) in the EN seat's convention (operator ruling 1).
+    expect(banner.textContent).toContain('2,400');
     expect(banner.textContent).not.toMatch(/do not add up/);
   });
 });

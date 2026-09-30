@@ -8,14 +8,23 @@ afterEach(async () => {
   await i18n.changeLanguage('en');
 });
 
+// ⚠️ B4b-2 · OPERATOR RULING 1: a plain number renders in the SEAT's
+// convention. These pinned id-ID grouping for EVERY seat; the id-ID values now
+// pin the ID seat, and the EN seat gets its own — each exactly.
 describe('formatNumber', () => {
-  it('groups with id-ID dot thousands', () => {
-    expect(formatNumber(1234567)).toBe('1.234.567');
+  it('EN seat — comma thousands', () => {
+    expect(formatNumber(1234567)).toBe('1,234,567');
   });
-  it('handles zero, negative, and large values', () => {
-    expect(formatNumber(0)).toBe('0');
+  it('ID seat — dot thousands (the values this spec pinned before the ruling)', async () => {
+    await i18n.changeLanguage('id');
+    expect(formatNumber(1234567)).toBe('1.234.567');
     expect(formatNumber(-1500)).toBe('-1.500');
     expect(formatNumber(1_250_000_000)).toBe('1.250.000.000');
+  });
+  it('handles zero, negative, and large values (EN seat)', () => {
+    expect(formatNumber(0)).toBe('0');
+    expect(formatNumber(-1500)).toBe('-1,500');
+    expect(formatNumber(1_250_000_000)).toBe('1,250,000,000');
   });
   it('returns em dash for null/undefined/NaN', () => {
     expect(formatNumber(null)).toBe('—');

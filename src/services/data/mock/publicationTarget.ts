@@ -63,6 +63,8 @@ export function publicationVerbFor(toState: string, payload: Record<string, unkn
   return 'forecastQty' in payload ? 'allocate' : 'approve';
 }
 
+// ⚠️ `carried-forward` is deliberately NOT here: only the carry on open mints it.
+// A planner's allocate claiming it would be the split pretending it was copied.
 const ALLOCATION_BASES: readonly AllocationBasis[] = ['planner-split', 'quota', 'award-history'];
 
 const str = (v: unknown): string => (typeof v === 'string' ? v : '');
@@ -365,6 +367,17 @@ bindPolicyHook(POLICY_HOOKS.PUB_CLASS_PROJECTION_PRESENT, ({ target, entityId })
   return {
     ok: false,
     reason: 'PUB_CLASS_PROJECTION_PRESENT: lines without a commitment class — ' + classless.map(lineLabel).join(', '),
+  };
+});
+
+bindPolicyHook(POLICY_HOOKS.PUB_ONE_OPEN_DRAFT, ({ payload }) => {
+  const open = forecastPublicationStore.draftFor(str(payload.grain) as BucketGrain);
+  if (!open) return { ok: true };
+  return {
+    ok: false,
+    reason:
+      `PUB_ONE_OPEN_DRAFT: ${open.publicationId} is already open for the ${String(payload.grain)} grain — ` +
+      'publish it (or let it be) before opening another',
   };
 });
 

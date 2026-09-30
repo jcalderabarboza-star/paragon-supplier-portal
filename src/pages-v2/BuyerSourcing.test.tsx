@@ -149,7 +149,8 @@ describe('BuyerSourcing — the minimum order quantity reaches the comparison', 
     expect(screen.getByText('Min. Order Qty')).toBeInTheDocument();
     // 100,000 PCS against an RFQ for 80,000 — the case JJ named: a minimum that
     // EXCEEDS what is being sourced. Shown as a fact, with no verdict attached.
-    expect(screen.getByText(/100\.000 PCS/)).toBeInTheDocument();
+    // EN seat, EN grouping (operator ruling 1).
+    expect(screen.getByText(/100,000 PCS/)).toBeInTheDocument();
   });
 
   it('a quote with no stated minimum reads as an ANSWER, not as missing data', async () => {

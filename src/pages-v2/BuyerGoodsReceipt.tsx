@@ -70,6 +70,7 @@ import type {
 import { useRefusalText } from '../hooks/useRefusalText';
 import { statusTone } from '../lib/statusTone';
 import { DECLARED_PRESENT } from '../services/data/fixturePresent';
+import { formatNumber } from '../lib/format';
 
 // ⚠️ **THE THIRD PIN, RETIRED — AND THE CANON LISTED ONLY TWO.**
 // `REFERENCE_TODAY` (2026-05-18) and `RFQ_TODAY_MS` (2026-04-25) went at #317.
@@ -125,8 +126,7 @@ const CHECK_VARIANT: Record<string, 'success' | 'warning' | 'danger' | 'neutral'
   'N/A': 'neutral',
 };
 
-const formatNumber = (n: number): string =>
-  new Intl.NumberFormat('id-ID').format(n);
+// B4b-2 · the shared `formatNumber` (seat convention), not a local id-ID copy.
 
 const formatDate = (iso?: string): string => {
   if (!iso) return '—';

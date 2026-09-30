@@ -386,7 +386,7 @@ describe('SupplierRFQs — the minimum order quantity stops being dropped', () =
     // The tile exists on every quote card, so the LABEL is plural here; the
     // VALUE is what identifies this quote, and it is the assertion that matters.
     expect((await screen.findAllByText('Min. order qty')).length).toBeGreaterThan(0);
-    expect(await screen.findByText('100.000 PCS')).toBeInTheDocument();
+    expect(await screen.findByText('100,000 PCS')).toBeInTheDocument(); // EN seat (ruling 1)
   });
 
   it('BLANK is LEGAL — no refusal, submit enabled, and the quote mints without a minimum', async () => {
@@ -504,13 +504,15 @@ describe('SupplierRFQs — display consistency (2e-b-3)', () => {
   // COS-02. The open-RFQ card grouped its quantity with bare `toLocaleString()`
   // (runtime locale) while the minimum order quantity beside it used the pinned
   // `formatNumber` — two quantities on one card, two conventions.
-  it('the open-RFQ quantity groups id-ID, matching every other quantity on the card', async () => {
+  // ⚠️ B4b-2 · the INVARIANT is unchanged — ONE convention on the card, the
+  // shared formatter's — and the convention is now the SEAT's (operator ruling
+  // 1): in this EN seat the comma form, and the dot form is what must be absent.
+  it('the open-RFQ quantity groups in the seat convention, matching every other quantity on the card', async () => {
     render();
     // rfq-010 — 120,000 PCS, the one Open RFQ sup-007 has not yet quoted.
     expect(await screen.findByText('RFQ-2026-010')).toBeInTheDocument();
-    expect(screen.getByText(/120\.000 PCS/)).toBeInTheDocument();
-    // The comma form is what `toLocaleString()` produced under this runner.
-    expect(screen.queryByText(/120,000 PCS/)).not.toBeInTheDocument();
+    expect(screen.getByText(/120,000 PCS/)).toBeInTheDocument();
+    expect(screen.queryByText(/120\.000 PCS/)).not.toBeInTheDocument();
   });
 
   // COS-07. `${q.leadTimeDays} ${t('rfqs.unit.days')}` was raw interpolation, so

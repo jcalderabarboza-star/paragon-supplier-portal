@@ -55,6 +55,7 @@ import {
 import type { AsnStatus, ASN, PurchaseOrder } from '../services/data/types';
 import { useRefusalText } from '../hooks/useRefusalText';
 import { refusalDetailOf } from '../services/transitions/refusalMessage';
+import { formatNumber } from '../lib/format';
 
 type TabKey = 'shipments' | 'create' | 'dock';
 type StatusFilter = AsnStatus | 'All';
@@ -456,7 +457,7 @@ const ShipmentsList: React.FC<ShipmentsListProps> = ({
                               <dd className="text-text-primary">
                                 <Data>
                                   {asn.details.totalCartons
-                                    ? asn.details.totalCartons.toLocaleString()
+                                    ? formatNumber(asn.details.totalCartons)
                                     : '—'}
                                 </Data>
                               </dd>
@@ -466,7 +467,7 @@ const ShipmentsList: React.FC<ShipmentsListProps> = ({
                               <dd className="text-text-primary">
                                 <Data>
                                   {asn.details.grossWeightKg
-                                    ? `${asn.details.grossWeightKg.toLocaleString()} kg`
+                                    ? `${formatNumber(asn.details.grossWeightKg)} kg`
                                     : '—'}
                                 </Data>
                               </dd>
@@ -525,12 +526,12 @@ const ShipmentsList: React.FC<ShipmentsListProps> = ({
                                           </div>
                                         </td>
                                         <td className="py-1.5 text-right text-text-secondary">
-                                          <Data>{li.orderedQty.toLocaleString()}</Data>
+                                          <Data>{formatNumber(li.orderedQty)}</Data>
                                         </td>
                                         <td
                                           className={`py-1.5 text-right font-semibold ${short ? 'text-warning-hover' : 'text-text-primary'}`}
                                         >
-                                          <Data>{li.shippedQty.toLocaleString()}</Data>
+                                          <Data>{formatNumber(li.shippedQty)}</Data>
                                         </td>
                                         <td className="py-1.5 text-right text-text-tertiary">
                                           <Data>{li.lotNumber}</Data>
@@ -853,7 +854,7 @@ const SupplierShipments: React.FC = () => {
                     <div className="text-right shrink-0">
                       <div className="text-xs text-text-tertiary">
                         {t('supplierShipments.wizard.select.qty')}{' '}
-                        <Data>{mat ? `${mat.quantity.toLocaleString()} ${mat.uom}` : '—'}</Data>
+                        <Data>{mat ? `${formatNumber(mat.quantity)} ${mat.uom}` : '—'}</Data>
                       </div>
                       <div className="text-xs text-text-tertiary">
                         {t('supplierShipments.wizard.select.delivery')}{' '}
@@ -1089,7 +1090,7 @@ const SupplierShipments: React.FC = () => {
                 [
                   t('supplierShipments.wizard.review.field.quantity'),
                   selectedPO?.lineItems[0]
-                    ? `${selectedPO.lineItems[0].quantity.toLocaleString()} ${selectedPO.lineItems[0].uom}`
+                    ? `${formatNumber(selectedPO.lineItems[0].quantity)} ${selectedPO.lineItems[0].uom}`
                     : '—',
                 ],
                 [t('supplierShipments.wizard.review.field.carrier'), form.carrier],

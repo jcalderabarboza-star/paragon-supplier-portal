@@ -34,6 +34,7 @@ import LoadingState from '../components/ui-v2/LoadingState';
 import ErrorState from '../components/ui-v2/ErrorState';
 import EmptyState from '../components/ui-v2/EmptyState';
 import { useInventory } from '../services/query/hooks';
+import { formatNumber } from '../lib/format';
 
 const STATUS_VARIANT: Record<StockStatus, 'success' | 'warning' | 'danger' | 'neutral'> = {
   [StockStatus.CRITICAL]: 'danger',
@@ -57,7 +58,8 @@ const SOURCE_VARIANT: Record<string, 'info' | 'success' | 'neutral'> = {
 
 type StatusFilter = StockStatus | 'All';
 
-const fmt = (n: number): string => n.toLocaleString('id-ID');
+// B4b-2 · the seat's convention, through the shared formatter.
+const fmt = (n: number): string => formatNumber(n);
 const fmtDate = (s: string): string => {
   if (!s) return '—';
   return new Date(s).toLocaleDateString('en-GB', {
