@@ -4,7 +4,7 @@ locale: id
 title: Pesanan pembelian
 wired: true
 owner: portal
-source_sha: 81c98403a83a674df80959f7d2290898ddd822fa
+source_sha: dec17faa4489102fd96492989fb7a67caa770ca0
 transitions:
   - t_po_issue
   - t_po_view
@@ -77,7 +77,7 @@ Penanda kejujuran yang perlu dibawa pembaca sepanjang panduan ini: baris pesanan
 - **Pemeriksaan yang dapat menolak:** tidak ada selain peran, legalitas, dan kolom wajib.
 - **Glosarium:** `ILLEGAL_TRANSITION` (jawaban untuk pengiriman buatan tangan dari status selain `Sent`).
 - **Kejujuran:** **WIRED-NO-CALLER.** Transisi terdaftar dan dapat dikirim, tetapi tidak ada hook dan tidak ada halaman yang memanggilnya. Permukaan tetap menawarkan **Akui penerimaan** pada pesanan `Viewed` karena mesin menyatakan itu legal.
-<!-- src: src/services/transitions/flows/purchaseOrder.flow.ts:55-65; src/pages-v2/SupplierOrders.tsx:421-432; _derived/surfaces.md:8 -->
+<!-- src: src/services/transitions/flows/purchaseOrder.flow.ts:55-65; src/pages-v2/SupplierOrders.tsx:422-433; _derived/surfaces.md:8 -->
 
 ### t_po_acknowledge — Akui penerimaan <!-- transition:t_po_acknowledge -->
 
@@ -93,7 +93,7 @@ Penanda kejujuran yang perlu dibawa pembaca sepanjang panduan ini: baris pesanan
 - **Pemeriksaan yang dapat menolak:** tidak ada selain peran, legalitas, dan kolom wajib.
 - **Glosarium:** `ROLE_NOT_PERMITTED`, `ILLEGAL_TRANSITION`, `SCOPE_DENIED`.
 - **Kejujuran:** kursi tanpa `po:acknowledge` (komersial atau administrasi) melihat **Menunggu Pemenuhan Pemasok** di slot footer itu alih-alih tombol. Kuantitas baris tidak tersentuh oleh tindakan ini.
-<!-- src: src/services/transitions/flows/purchaseOrder.flow.ts:66-76; src/pages-v2/SupplierOrders.tsx:429-462,657-673; src/services/query/commandHooks.ts:218-234; src/lib/i18n/supplierOrders.ts:193-201 -->
+<!-- src: src/services/transitions/flows/purchaseOrder.flow.ts:66-76; src/pages-v2/SupplierOrders.tsx:430-463,658-674; src/services/query/commandHooks.ts:224-240; src/lib/i18n/supplierOrders.ts:193-201 -->
 
 ### t_po_confirm — Konfirmasi pesanan <!-- transition:t_po_confirm -->
 
@@ -111,7 +111,7 @@ Penanda kejujuran yang perlu dibawa pembaca sepanjang panduan ini: baris pesanan
 - **Pemeriksaan yang dapat menolak:** `po_confirm_qty_within_ordered` — konfirmasi harus mencakup setiap baris, dan setiap kuantitas yang dikonfirmasi harus berupa angka berhingga lebih dari 0 dan tidak melebihi kuantitas pesanan. `MISSING_FIELDS` dari dispatcher menyala lebih dulu bila `confirmedQuantities` tidak ada.
 - **Glosarium:** `POLICY_REJECTED`, `MISSING_FIELDS`, `ROLE_NOT_PERMITTED`, `EMPTY_QTY`, `NOT_NUMERIC`, `AMBIGUOUS_QTY`.
 - **Kejujuran:** pintu dasbor tidak punya penyuntingan per baris — selalu mengonfirmasi kuantitas pesanan. **Minta perubahan sebagai gantinya → Kirim permintaan perubahan** **bukan** pengiriman perintah: toast berbunyi "Permintaan perubahan untuk PO-… tidak dikirim — tidak ada yang dikirim — permintaan perubahan belum tersambung ke kanal nyata." Tombol **Buat ASN** / **Buat ASN sekarang** di halaman ini juga hanya toast ("Pembuatan ASN tidak tersedia dari panel ini — tidak ada yang dibuat"); pintu sebenarnya adalah **Pengiriman & ASN**. Kursi tanpa `po:confirm` melihat tombol baris berganti label **Lihat** dan **Menunggu Pemenuhan Pemasok** di footer; mode penyuntingan itu sendiri runtuh ke mode detail untuk kursi seperti itu, sehingga tidak ada pintu masuk yang melewati pemberitahuan.
-<!-- src: src/services/transitions/flows/purchaseOrder.flow.ts:77-90; src/services/transitions/policies.ts:96-132; src/pages-v2/SupplierOrders.tsx:288-336,357-369,465-472,683-730; src/pages-v2/widgets/OrdersToConfirmWidget.tsx:31-62,102-115,130-133; src/services/query/commandHooks.ts:176-192; src/lib/i18n.ts:976-983; src/lib/i18n/supplierOrders.ts:213-251 -->
+<!-- src: src/services/transitions/flows/purchaseOrder.flow.ts:77-90; src/services/transitions/policies.ts:97-133; src/pages-v2/SupplierOrders.tsx:289-337,358-370,466-473,684-731; src/pages-v2/widgets/OrdersToConfirmWidget.tsx:31-62,102-115,130-133; src/services/query/commandHooks.ts:182-198; src/lib/i18n.ts:985-992; src/lib/i18n/supplierOrders.ts:213-251 -->
 
 ### t_po_partial_deliver — Sebagian pesanan tiba (S/4HANA) <!-- transition:t_po_partial_deliver -->
 
@@ -143,7 +143,7 @@ Penanda kejujuran yang perlu dibawa pembaca sepanjang panduan ini: baris pesanan
 - **Pemeriksaan yang dapat menolak:** tidak ada selain peran, legalitas, dan kolom wajib.
 - **Glosarium:** tidak ada yang khusus.
 - **Kejujuran:** baris TERSIMULASI. ASN yang mencapai `Delivered` (fakta TMS) dan PO yang mencapai `Delivered` (fakta S/4HANA) adalah dua fakta berbeda pada dua dokumen berbeda; tidak ada yang menggerakkan yang lain di pohon ini.
-<!-- src: src/services/transitions/flows/purchaseOrder.flow.ts:109-126; src/pages-v2/SupplierOrders.tsx:79-100 -->
+<!-- src: src/services/transitions/flows/purchaseOrder.flow.ts:109-126; src/pages-v2/SupplierOrders.tsx:80-101 -->
 
 ### t_po_close — Pesanan ditutup (S/4HANA) <!-- transition:t_po_close -->
 
@@ -181,7 +181,7 @@ Penanda kejujuran yang perlu dibawa pembaca sepanjang panduan ini: baris pesanan
 | Giliran Anda | diturunkan saat dibaca (tindakan berikutnya) | Sent, Viewed, Acknowledged | kursi memegang kata kerja yang legal | baris **Berikutnya** yang sama, kursi pemenuhan pemasok |
 | `+Nh terlambat` | **kolom fixture tersimpan** (`daysOverdue`), hanya tampilan | status terbuka mana pun | `daysOverdue > 0` pada baris fixture | baris `/buyer/orders` dan KPI **Jatuh Tempo** |
 | Penanda provenans | penanda TERSIMULASI | semua | selalu | baris meta `/supplier/orders` |
-<!-- src: src/pages-v2/SupplierOrders.tsx:79-100,493-503; src/pages-v2/widgets/OrdersToConfirmWidget.tsx:39-40,129-130; src/pages-v2/BuyerOrders.tsx:99-100,537-539; src/services/transitions/nextAct.ts:165-207; src/data/mockPurchaseOrders.ts:18,55 -->
+<!-- src: src/pages-v2/SupplierOrders.tsx:80-101,494-504; src/pages-v2/widgets/OrdersToConfirmWidget.tsx:39-40,129-130; src/pages-v2/BuyerOrders.tsx:99-100,555-557; src/services/transitions/nextAct.ts:165-207; src/data/mockPurchaseOrders.ts:18,55 -->
 
 <!-- section:linked -->
 ## 6 · Objek terkait
@@ -197,7 +197,7 @@ Penanda kejujuran yang perlu dibawa pembaca sepanjang panduan ini: baris pesanan
 | Item baris | `lineItems[i].confirmedQty` | hanya ditulis oleh `t_po_confirm`; `t_po_acknowledge` tidak menyentuhnya |
 | `confirmedDeliveryDate`, `daysOverdue` | kolom fixture | hanya tampilan: **Tanggal pengiriman dikonfirmasi** di panel penyuntingan tidak dikirim dalam muatan dan tidak ada yang menulis kedua kolom ini |
 | `channel` | kolom fixture | hanya tampilan |
-<!-- src: src/services/data/mock/MockCommandService.ts:141-160,183; src/services/data/mock/fixtures/supplierShipments.ts:86-167; src/data/mockGoodsReceipts.ts:88-93; src/services/data/mock/MockCommandService.ts:2500-2504; src/services/query/commandHooks.ts:176-192 -->
+<!-- src: src/services/data/mock/MockCommandService.ts:150-169,192; src/services/data/mock/fixtures/supplierShipments.ts:86-167; src/data/mockGoodsReceipts.ts:88-93; src/services/data/mock/MockCommandService.ts:2856-2860; src/services/query/commandHooks.ts:182-198 -->
 
 <!-- section:history -->
 ## 7 · Riwayat status
@@ -212,7 +212,7 @@ Urutan kerja untuk `po-008` (PO-2025-00108, `sup-007`, status fixture `Sent`), s
 | T+1 | Sent → Acknowledged | pemasok · pemenuhan (`supplier:sup-007`) | **Akui penerimaan** | `t_po_acknowledge` · done |
 | T+2 | Acknowledged → Confirmed | pemasok · pemenuhan (`supplier:sup-007`) | **Konfirmasi pesanan** dengan kuantitas | `t_po_confirm` · done |
 | T+3 | Confirmed → (Partially) Delivered → Closed | S/4HANA | tidak dapat direproduksi di portal | `t_po_partial_deliver` / `t_po_deliver` / `t_po_close` |
-<!-- src: src/services/transitions/events.ts:25-104; src/services/transitions/dispatcher.ts:340-388 -->
+<!-- src: src/services/transitions/events.ts:25-129; src/services/transitions/dispatcher.ts:397-450 -->
 
 <!-- section:troubleshooting -->
 ## 8 · Pemecahan masalah
@@ -229,7 +229,7 @@ Urutan kerja untuk `po-008` (PO-2025-00108, `sup-007`, status fixture `Sent`), s
 | **Buat ASN** di sini berbunyi "tidak ada yang dibuat" | toast info | pembuatan ASN berada di **Pengiriman & ASN** | buka `/supplier/shipments` |
 | Pesanan tetap `Confirmed` setelah barang tiba | **Berikutnya: Menunggu S/4HANA** | pengiriman dan penutupan adalah fakta S/4HANA | tidak ada yang perlu dilakukan di portal; tunggu pembaruan S/4HANA |
 | Ada pesanan `Viewed` tetapi Anda tidak bisa menghasilkannya | hanya fixture yang menampilkannya | `t_po_view` tanpa pemanggil | wajar; akui atau konfirmasi dari `Viewed` tetap berfungsi |
-<!-- src: src/lib/glossary/refusals.glossary.ts:32-90; src/lib/i18n/supplierOrders.ts:213-251; src/services/transitions/refusals.ts:61-103 -->
+<!-- src: src/lib/glossary/refusals.glossary.ts:32-97; src/lib/i18n/supplierOrders.ts:213-251; src/services/transitions/refusals.ts:61-114 -->
 
 <!-- section:testdata -->
 ## 9 · Data uji

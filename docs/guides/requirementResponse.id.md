@@ -1,0 +1,334 @@
+---
+entity: requirementResponse
+locale: id
+title: Komitmen prakiraan (requirement response)
+wired: true
+owner: portal
+source_sha: dec17faa4489102fd96492989fb7a67caa770ca0
+transitions:
+  - t_requirementresponse_submit
+  - t_requirementresponse_acknowledge
+  - t_requirementresponse_promote
+  - t_requirementresponse_review
+  - t_requirementresponse_accept
+  - t_requirementresponse_dispute
+  - t_requirementresponse_resolve
+  - t_requirementresponse_revise
+  - t_requirementresponse_supersede
+---
+
+<!-- section:summary -->
+## 1 · Apa proses ini
+
+Requirement response adalah jawaban pemasok atas satu baris ramalan yang diterbitkan: berapa banyak dari yang diminta Paragon yang benar-benar bisa dipasok, pada periode itu. Paragon menerbitkan satu potret prakiraan (sebuah publikasi dengan versi rencana dan horizon berupa periode bulanan); setiap baris di dalamnya ditujukan ke satu pemasok untuk satu material pada satu periode dan membawa kelas komitmen — **Firm**, **Semi-firm**, atau **Visibilitas saja**. Baris Firm atau Semi-firm meminta komitmen kuantitas; baris Visibilitas saja hanya meminta untuk dilihat.
+
+Dua kursi menyentuhnya. Di sisi pemasok, kontak penjualan pemasok (jalur `commercial`) menyusun komitmen di `/supplier/forecasts`, menyimpannya sebagai draf, meninjaunya di **Respons Saya**, lalu mengirimkannya ke Paragon; kontak admin pemasok (`back_office`) menanggapi baris Visibilitas saja. Di sisi pembeli, perencana (`planning`) mengonsolidasikan jawaban semua pemasok di `/buyer/collaboration`, mengambil jawaban yang terkirim untuk ditelaah, lalu menerimanya sebagai angka untuk merencanakan atau menyanggahnya dengan kata-kata yang dibaca pemasok pada baris mereka sendiri. Jawaban yang disanggah kembali ke meja perencana melalui penyelesaian oleh perencana sendiri, atau sebagai versi baru ketika pemasok merevisinya.
+
+Sebuah komitmen dimulai sebagai **Draft** yang tidak dapat dilihat siapa pun di Paragon — papan perencana tetap membaca *Menunggu* untuk baris itu sampai pemasok mengirim dari tab Respons Saya; status awal yang dinyatakan alur adalah Draft. Tanggapan visibilitas melewati tahap draf: tidak ada kuantitas yang perlu ditinjau, sehingga langsung mendarat di **Submitted**. Satu-satunya status akhir adalah **Superseded** (Digantikan) — versi yang telah digantikan versi berikutnya. **Accepted** bukan lagi status akhir: pemasok boleh merevisi komitmen yang sudah diterima. **Disputed** juga bukan status akhir; ia ditinggalkan melalui penyelesaian oleh perencana atau revisi oleh pemasok. Pemasok yang ingin mengubah angka yang disanggah atau diterima menekan **Revisi**, yang mencetak versi berikutnya dari jawaban yang sama sebagai Draft (tertaut ke jawaban yang direvisi) dan memensiunkan jawaban yang direvisi ke Superseded; pembuatan baru kedua di atas jawaban yang masih terbuka ditolak. Definisi alur sendiri mencatat Disputed sebagai celah, bukan akhir.
+
+Penanda kejujuran. Setiap publikasi prakiraan di build ini bersifat SIMULATED, dan publikasi simulasi tidak pernah terlihat oleh pemasok, sehingga halaman pemasok menampilkan set sampel di bawah spanduk **Prakiraan sampel — belum ada publikasi live** dan pil liveness halaman berbunyi *Sampel — menunggu feed data C8 SOMO*; halaman pembeli membawa **Tampilan konsolidasi — bacaan disimulasikan; jalur telaah menulis**. Kesembilan transisi tersambung — delapan yang ditekan orang dan satu kaskade yang mengikuti revisi — dan dikirim melalui tulang punggung perintah portal sendiri; tidak ada yang dimiliki S/4HANA, TMS, atau bank. Stempel waktu berasal dari satu jam simulasi bersama — "hari ini" aplikasi adalah 31 Agu 2026 (12:00 UTC) — bukan jam dinding.
+
+<!-- src: src/services/transitions/flows/requirementResponse.flow.ts:56-70; src/services/transitions/flows/requirementResponse.flow.ts:132-139; src/services/transitions/flows/requirementResponse.flow.ts:278-340; src/services/transitions/cascades.ts:78-81; src/services/data/mock/MockCommandService.ts:907-942; src/lib/statusLabel.ts:99; src/lib/i18n/sdcSupplier.ts:458 -->
+
+<!-- section:lifecycle -->
+## 2 · Jalan siklus hidup
+
+| Langkah | Dari → ke | Jenis | Peran | Transisi |
+|---|---|---|---|---|
+| 1a | ∅ → Draft | tindakan operator (pembuatan) | pemasok · commercial | `t_requirementresponse_submit` |
+| 1b | ∅ → Submitted | tindakan operator (pembuatan, baris Visibilitas saja) | pemasok · back_office | `t_requirementresponse_acknowledge` |
+| 2 | Draft → Submitted | tindakan operator | pemasok · commercial | `t_requirementresponse_promote` |
+| 3 | Submitted → UnderReview | tindakan operator | pembeli · planning | `t_requirementresponse_review` |
+| 4a | UnderReview → Accepted | tindakan operator | pembeli · planning | `t_requirementresponse_accept` |
+| 4b | UnderReview → Disputed | tindakan operator | pembeli · planning | `t_requirementresponse_dispute` |
+| 5 | Disputed → UnderReview | tindakan operator | pembeli · planning | `t_requirementresponse_resolve` |
+| 6 | Disputed, Accepted → Draft (versi BERIKUTNYA dicetak dalam Draft; jawaban yang direvisi dipensiunkan oleh langkah 7) | tindakan operator | pemasok · commercial | `t_requirementresponse_revise` |
+| 7 | Disputed, Accepted → Superseded | kaskade (akhir; dipicu langkah 6) | otomasi | `t_requirementresponse_supersede` |
+
+**Percabangan**
+
+- **Saat pembuatan (verba mana yang membuka respons):** `t_requirementresponse_submit` — kontak penjualan pemasok — bila baris Firm atau Semi-firm (kuantitas diminta) dan pemasok belum punya jawaban terbuka pada baris itu; `t_requirementresponse_acknowledge` — kontak admin pemasok — bila baris Visibilitas saja (tidak ada kuantitas yang diminta). Keduanya terkunci pada kelas baris yang diterbitkan, di dua arah.
+- **Di UnderReview:** `t_requirementresponse_accept` — perencana — bila komitmen adalah angka untuk merencanakan; `t_requirementresponse_dispute` — perencana — bila selisihnya terlalu besar atau alasan yang diberikan tidak kuat, dengan keberatan yang dapat dijawab pemasok.
+- **Di Disputed:** `t_requirementresponse_resolve` — perencana — bila perencana menutup perselisihan; `t_requirementresponse_revise` — kontak penjualan pemasok — bila pemasok menjawab keberatan dengan angka baru.
+- **Di Accepted:** `t_requirementresponse_revise` — kontak penjualan pemasok — bila komitmen yang sudah diterima berubah; memangkasnya di bawah kuantitas yang diterima memerlukan akar masalah. Selain itu jawaban tetap Accepted.
+
+<!-- src: src/services/transitions/flows/requirementResponse.flow.ts:56-70; src/services/transitions/flows/requirementResponse.flow.ts:278-340; src/services/transitions/cascades.ts:78-81; src/services/transitions/businessRoles.ts:646-649 -->
+
+<!-- section:steps -->
+## 3 · Langkah demi langkah
+
+### t_requirementresponse_submit — Simpan draf komitmen <!-- transition:t_requirementresponse_submit -->
+
+- **Jenis langkah:** tindakan operator (pembuatan)
+- **Peran:** pemasok · commercial (kontak penjualan pemasok)
+- **Dari → ke:** ∅ → Draft
+- **Operator — di mana:** `/supplier/forecasts` → tab **Baris terbit** → pada kartu baris Firm atau Semi-firm tekan **Konfirmasi** → panel *Konfirmasi {material}* → **Simpan draf**. **Konfirmasi** hanya ditawarkan selama Anda belum punya jawaban terbuka pada baris itu (status apa pun selain Superseded, terhadap publikasi mana pun); jika ada, kartu menampilkan **Revisi** (jawaban terbuka Anda Disputed atau Accepted) atau *Sudah ada jawaban terbuka untuk baris ini — lanjutkan dari tab respons.*
+- **Operator — lakukan:** Nyatakan berapa banyak dari kuantitas yang diminta yang Anda komitmenkan untuk dipasok pada periode itu. Panel menyimpan draf; belum ada yang dikirim ke Paragon.
+- **Operator — isi:** Langkah 1 *Kuantitas dikonfirmasi* — angka saja, tanpa pemisah ribuan (mis. `40000`); `0` adalah jawaban sah bila Anda sama sekali tidak dapat memasok. Langkah 2 (opsional) *Tanggal komitmen* dan *Kendala kapasitas*. Langkah 3 *Akar masalah* — satu kategori (Kapasitas / Ketersediaan material / Logistik / Kualitas / Lainnya) ditambah catatan opsional; halaman mewajibkan kategori setiap kali kuantitas di bawah yang diminta. Publikasi, versi rencana, material, dan periode diambil dari baris yang Anda buka; identitas pemasok Anda berasal dari sesi, tidak pernah dari formulir.
+- **Penguji — status yang diharapkan:** Draft
+- **Penguji — konfirmasi:** toast *Draf disimpan — {material}* / *Belum dikirim. Tinjau di Respons Saya, lalu kirim ke pembeli.*; halaman berpindah ke **Respons Saya** tempat kartu baru (id `rr-9001`, `rr-9002`, …) menampilkan status **Draf**, baris *Giliran Anda — menunggu tindakan Anda*, dan tombol **Kirim ke pembeli**. Di `/buyer/collaboration` baris itu masih terbaca **Menunggu** — draf tidak pernah ditampilkan ke perencana, bahkan sebagai petunjuk pun tidak. Kembali di kartu baris, muncul *Respons terakhir Anda: {qty} {uom} · v{version} · Draf*, dan **Konfirmasi** digantikan oleh *Sudah ada jawaban terbuka untuk baris ini — lanjutkan dari tab respons.*
+- **Penguji — peristiwa pemicu:** `t_requirementresponse_submit`
+- **Pemeriksaan yang dapat menolak:** `sdc_material_known` — kode material harus ada di master material (jika tidak, `UNKNOWN_MATERIAL`); `rr_submit_planversion_bound` — versi rencana harus milik publikasi yang dirujuk; `rr_submit_commitment_class` — baris tidak boleh Visibilitas saja (kelas itu menerima tanggapan, bukan komitmen); `rr_submit_qty_floor` — kuantitas harus bilangan terhingga ≥ 0; `rr_submit_qty_agrees` — angka harus sesuai dengan token yang Anda ketik ketika dibaca ulang oleh satu-satunya parser kuantitas (token ambigu seperti `40.000` ditolak, bukan ditebak); `rr_submit_no_open_sibling` — tidak boleh ada jawaban Anda yang masih terbuka (status apa pun selain Superseded) untuk pemasok × material × periode yang sama, lintas publikasi; penolakannya menyebut jawaban yang terbuka itu dan berbunyi *revise it, or submit the draft; a second creation would bury it*. Sebelum semua itu, cakupan: baris harus telah ditujukan ke pemasok Anda, atau pengiriman ditolak sebagai `SCOPE_DENIED`.
+- **Glosarium:** Firm · Semi-firm · Visibilitas saja (kelas komitmen); `EMPTY_QTY` · `NOT_NUMERIC` · `AMBIGUOUS_QTY` (penolakan kuantitas); `POLICY_REJECTED`; `SCOPE_DENIED`.
+- **Kejujuran:** Baris yang Anda jawab adalah data sampel SIMULATED di bawah spanduk *Prakiraan sampel — belum ada publikasi live*. Id verba masih berbunyi "submit" meskipun kini membuat draf — celah penamaan yang tercatat, bukan perilaku. Menyusun draf dan mengirim memakai satu izin yang sama, sehingga kontak penjualan yang sama melakukan keduanya.
+<!-- src: src/services/transitions/flows/requirementResponse.flow.ts:90-143; src/services/data/mock/MockCommandService.ts:1024-1123; src/services/data/mock/MockCommandService.ts:1130-1222; src/services/data/mock/MockCommandService.ts:1320-1328; src/services/data/mock/MockCommandService.ts:1375-1389; src/pages-v2/SupplierForecasts.tsx:364-395; src/pages-v2/SupplierForecasts.tsx:1393-1519; src/pages-v2/SupplierForecasts.tsx:1939-2117; src/lib/i18n/sdcSupplier.ts:476-548; src/services/query/sdcSupplierHooks.ts:150-176; src/services/sdc/consolidation.ts:249-261; src/services/transitions/policyHooks.ts:172-184; src/services/data/mock/MockCommandService.ts:1256-1279; src/pages-v2/SupplierForecasts.tsx:364-393; src/pages-v2/SupplierForecasts.tsx:534-550; src/lib/i18n/sdcSupplier.ts:445 -->
+
+### t_requirementresponse_acknowledge — Tanggapi baris visibilitas saja <!-- transition:t_requirementresponse_acknowledge -->
+
+- **Jenis langkah:** tindakan operator (pembuatan)
+- **Peran:** pemasok · back_office (kontak admin pemasok)
+- **Dari → ke:** ∅ → Submitted
+- **Operator — di mana:** `/supplier/forecasts` → tab **Baris terbit** → pada kartu baris Visibilitas saja (petunjuk *Visibilitas ke depan saja — tidak ada komitmen yang diminta.*) tekan **Tanggapi** → panel *Tanggapi {material}* → **Tanggapi**
+- **Operator — lakukan:** Beri tahu Paragon bahwa Anda telah melihat baris itu. Tidak ada kuantitas yang diminta; catatan adalah sinyal dini opsional (perkiraan stok, pandangan kapasitas).
+- **Operator — isi:** *Catatan (sinyal opsional)* — teks bebas, boleh dikosongkan. Publikasi, versi rencana, material, dan periode berasal dari baris.
+- **Penguji — status yang diharapkan:** Submitted (tanpa tahap draf — tidak ada yang perlu ditinjau sebelum dikirim)
+- **Penguji — konfirmasi:** toast *Ditanggapi — {material}* / *Respons visibilitas Anda tercatat di Respons Saya.*; kartu Respons Saya menampilkan **Respons: Ditanggapi**, catatan bila ada, status **Diajukan**, dan *Menunggu Paragon — tidak ada tindakan dari Anda*. Di `/buyer/collaboration` status respons baris terbaca **Ditanggapi** (tidak pernah *Dikonfirmasi*) dengan tanda pisah di kolom Dikonfirmasi, dan respons muncul di **Tanggapan menunggu telaah Anda**.
+- **Penguji — peristiwa pemicu:** `t_requirementresponse_acknowledge`
+- **Pemeriksaan yang dapat menolak:** `sdc_material_known` — kode harus ada di master material; `rr_submit_planversion_bound` — versi rencana harus cocok dengan publikasi; `rr_acknowledge_visibility_class` — baris harus Visibilitas saja (tanggapan tidak pernah boleh menghindari dasar kuantitas pada baris Firm atau Semi-firm). Cakupan seperti pada draf: baris harus ditujukan ke pemasok Anda.
+- **Glosarium:** Visibilitas saja (kelas komitmen); `POLICY_REJECTED`; `SCOPE_DENIED`.
+- **Kejujuran:** Baris sampel SIMULATED yang sama seperti di atas. Tanggapan ini memang tidak membawa kuantitas, sehingga konsolidasi tidak pernah dapat mengiranya sebagai komitmen.
+<!-- src: src/services/transitions/flows/requirementResponse.flow.ts:155-171; src/services/data/mock/MockCommandService.ts:1065-1072; src/services/data/mock/MockCommandService.ts:1332-1340; src/pages-v2/SupplierForecasts.tsx:396-413; src/pages-v2/SupplierForecasts.tsx:1550-1582; src/pages-v2/SupplierForecasts.tsx:2131-2146; src/lib/i18n/sdcSupplier.ts:524-531; src/services/query/sdcSupplierHooks.ts:180-206; src/services/sdc/types.ts:423-425 -->
+
+### t_requirementresponse_promote — Kirim draf ke pembeli <!-- transition:t_requirementresponse_promote -->
+
+- **Jenis langkah:** tindakan operator
+- **Peran:** pemasok · commercial (kontak penjualan pemasok — izin yang sama dengan menyusun draf)
+- **Dari → ke:** Draft → Submitted
+- **Operator — di mana:** `/supplier/forecasts` → tab **Respons Saya** → pada kartu berstatus **Draf** tekan **Kirim ke pembeli**
+- **Operator — lakukan:** Kirim komitmen yang sudah ditinjau ke perencana Paragon. Sebelum ini tidak ada yang terlihat oleh perencanaan; inilah tindakan yang membuat sebuah janji benar-benar menjadi janji.
+- **Operator — isi:** tidak ada yang diisi.
+- **Penguji — status yang diharapkan:** Submitted
+- **Penguji — konfirmasi:** toast *{responseId} terkirim* / *Pembeli kini dapat melihat konfirmasi ini.*; status kartu menjadi **Diajukan**, kolom *Dikirim* terisi tanggal dari jam bersama (dicap hanya pada persilangan ini), dan baris pelaku berbunyi *Menunggu Paragon — tidak ada tindakan dari Anda*. Di `/buyer/collaboration` baris berpindah dari **Menunggu** ke **Dikonfirmasi** atau **Kurang** (dengan defisit) dan respons tercantum di **Tanggapan menunggu telaah Anda**.
+- **Penguji — peristiwa pemicu:** `t_requirementresponse_promote`
+- **Pemeriksaan yang dapat menolak:** tidak ada selain peran, legalitas, dan kolom wajib — menekannya pada selain Draft mengembalikan `ILLEGAL_TRANSITION`; respons milik pemasok lain adalah `SCOPE_DENIED`.
+- **Glosarium:** `ILLEGAL_TRANSITION`; `SCOPE_DENIED`.
+- **Kejujuran:** Komitmen tidak pernah sampai ke pembeli tanpa langkah ini. Jika suatu respons hasil ingesti kanal pernah dibuat melalui verba draf, ia akan tergeletak tanpa terkirim, karena tidak ada kanal yang dapat mempromosikannya — tercatat di alur, tidak dibangun mengelilinginya. Halaman pemasok kini punya tempat untuk tenggat — **Tanggapi sebelum** pada setiap kartu baris dan *tanggapi sebelum {tanggal}* / *terlambat sejak {tanggal}* di samping tab **Baris terbit** — tetapi hanya menampilkan tenggat yang tersimpan pada publikasi, yang dicap ketika perencana menerbitkan melalui verba terbit. Publikasi sampel tidak pernah diterbitkan begitu, sehingga di sana terbaca *Belum ada batas waktu* (*belum ada batas waktu* pada tab), sementara daftar kejar pembeli tetap menurunkan tanggal terbit + 7 hari.
+<!-- src: src/services/transitions/flows/requirementResponse.flow.ts:173-193; src/services/data/mock/MockCommandService.ts:1006-1015; src/pages-v2/SupplierForecasts.tsx:672-689; src/pages-v2/SupplierForecasts.tsx:1524-1547; src/lib/i18n/sdcSupplier.ts:460-461; src/lib/i18n/sdcSupplier.ts:543-544; src/services/query/sdcSupplierHooks.ts:217-239; src/pages-v2/SupplierForecasts.tsx:434-447; src/pages-v2/SupplierForecasts.tsx:1793-1799; src/pages-v2/SupplierForecasts.tsx:1855; src/services/sdc/types.ts:322-329; src/services/sdc/publication.ts:18-29; src/services/sdc/consolidation.ts:473-478; src/lib/i18n/sdcSupplier.ts:418-423 -->
+
+### t_requirementresponse_review — Mulai telaah <!-- transition:t_requirementresponse_review -->
+
+- **Jenis langkah:** tindakan operator
+- **Peran:** pembeli · planning (perencana)
+- **Dari → ke:** Submitted → UnderReview
+- **Operator — di mana:** `/buyer/collaboration` → bagian **Tanggapan menunggu telaah Anda** → baris (pemasok · material · periode · id respons) → **Mulai telaah**
+- **Operator — lakukan:** Bawa jawaban itu ke meja Anda untuk dinilai alih-alih memakainya begitu saja. Menelaah belum memutuskan apa pun; ia memberi tahu pemasok bahwa Anda sudah menerimanya.
+- **Operator — isi:** tidak ada yang diisi.
+- **Penguji — status yang diharapkan:** UnderReview
+- **Penguji — konfirmasi:** toast *Sedang ditelaah — {material}* / *{supplier} dapat melihat bahwa Anda sudah menerima tanggapan mereka.*; baris meninggalkan **Tanggapan menunggu telaah Anda** dan muncul di **Sedang ditelaah — terima atau sanggah**; sel status di grid mendapat chip **Sedang Ditinjau** di samping status kuantitas. Di **Respons Saya** pemasok, status kartu terbaca **Sedang Ditinjau** dengan *Menunggu Paragon — tidak ada tindakan dari Anda*, tanpa memuat ulang.
+- **Penguji — peristiwa pemicu:** `t_requirementresponse_review`
+- **Pemeriksaan yang dapat menolak:** tidak ada selain peran, legalitas, dan kolom wajib. Kursi tanpa jalur planning melihat *Menunggu Perencanaan* menggantikan tombol.
+- **Glosarium:** `ROLE_NOT_PERMITTED`; `ILLEGAL_TRANSITION`.
+- **Kejujuran:** Bagian ini diturunkan dari mesin (setiap baris yang status responsnya menawarkan verba ini), sehingga mengosongkan diri seiring baris berpindah. Telaah adalah pintu depan tetapi bukan satu-satunya jalan ke UnderReview — sanggahan yang diselesaikan juga mendarat di sana.
+<!-- src: src/services/transitions/flows/requirementResponse.flow.ts:195-206; src/pages-v2/BuyerCollaboration.tsx:514-521; src/pages-v2/BuyerCollaboration.tsx:986-1042; src/lib/i18n/sdcConsolidation.ts:291-303; src/services/query/sdcBuyerHooks.ts:203-238; src/services/query/sdcBuyerHooks.ts:323-324 -->
+
+### t_requirementresponse_accept — Terima komitmen <!-- transition:t_requirementresponse_accept -->
+
+- **Jenis langkah:** tindakan operator
+- **Peran:** pembeli · planning (perencana)
+- **Dari → ke:** UnderReview → Accepted
+- **Operator — di mana:** `/buyer/collaboration` → bagian **Sedang ditelaah — terima atau sanggah** → baris → **Terima**
+- **Operator — lakukan:** Pakai komitmen itu sebagai angka untuk merencanakan. Ini tindakan terakhir perencana atas versi ini; pemasok masih dapat merevisinya, dan revisi itu kembali ke meja Anda sebagai versi baru.
+- **Operator — isi:** tidak ada yang diisi.
+- **Penguji — status yang diharapkan:** Accepted (bukan akhir — revisi pemasok meninggalkannya)
+- **Penguji — konfirmasi:** toast *Konfirmasi diterima — {material}* / *{supplier} terikat pada baris ini; baris ini tidak bergerak lagi.*; baris meninggalkan bagian sedang ditelaah; sel status grid menampilkan chip **Diterima**. Kartu pemasok terbaca **Diterima** dengan tanda terima *Diterima pembeli pada {tanggal}* (tanggal jam bersama, dicap sekali pada persilangan ini), baris pelaku *Tidak ada yang perlu Anda lakukan — revisi hanya jika komitmen Anda berubah*, dan tombol **Revisi**.
+- **Penguji — peristiwa pemicu:** `t_requirementresponse_accept`
+- **Pemeriksaan yang dapat menolak:** tidak ada selain peran, legalitas, dan kolom wajib.
+- **Glosarium:** `ROLE_NOT_PERMITTED`; `ILLEGAL_TRANSITION`.
+- **Kejujuran:** Accepted tidak lagi bersifat akhir: `t_requirementresponse_revise` meninggalkannya, sehingga satu-satunya status akhir alur adalah Superseded — diturunkan dari alur, bukan diklaim. Bagian toast *baris ini tidak bergerak lagi* lebih tua dari perubahan itu dan melebih-lebihkannya. Perencanaan di hilir memperlakukan angka itu sebagai nyata sejak titik ini; di build ini konsumen tersebut adalah konsolidasi simulasi yang sama, yang menandai pemangkasan angka ini di kemudian hari sebagai **Disetujui {accepted}, direvisi menjadi {now}**.
+<!-- src: src/services/transitions/flows/requirementResponse.flow.ts:63-70; src/services/transitions/flows/requirementResponse.flow.ts:208-218; src/pages-v2/BuyerCollaboration.tsx:529-536; src/pages-v2/BuyerCollaboration.tsx:1078-1097; src/lib/i18n/sdcConsolidation.ts:311-315; src/services/query/sdcBuyerHooks.ts:334-335; src/services/transitions/flows/requirementResponse.flow.ts:297-299; src/services/data/mock/MockCommandService.ts:1016-1018; src/services/sdc/types.ts:517-523; src/pages-v2/SupplierForecasts.tsx:492-518; src/pages-v2/SupplierForecasts.tsx:690-718; src/lib/i18n/sdcSupplier.ts:424; src/lib/i18n/sdcSupplier.ts:456-458 -->
+
+### t_requirementresponse_dispute — Sanggah komitmen <!-- transition:t_requirementresponse_dispute -->
+
+- **Jenis langkah:** tindakan operator
+- **Peran:** pembeli · planning (perencana)
+- **Dari → ke:** UnderReview → Disputed
+- **Operator — di mana:** `/buyer/collaboration` → bagian **Sedang ditelaah — terima atau sanggah** → baris → **Sanggah** → panel *Sanggah konfirmasi — {material}* → **Ajukan sanggahan**
+- **Operator — lakukan:** Sampaikan mengapa Anda tidak memakai jawaban itu — selisihnya terlalu besar, atau alasan yang diberikan tidak kuat — dalam kata-kata yang dapat dijawab pemasok.
+- **Operator — isi:** *Keberatan Anda* — teks wajib; tombol kirim tetap nonaktif selama kosong (*Sanggahan memerlukan keberatan yang dapat dijawab pemasok.*).
+- **Penguji — status yang diharapkan:** Disputed
+- **Penguji — konfirmasi:** toast *Sanggahan diajukan — {material}* / *{supplier} kini dapat membaca keberatan Anda pada tanggapan mereka.*; baris berpindah ke **Sanggahan menunggu penyelesaian Anda**; sel status grid menampilkan chip **Disengketakan** (warna peringatan) di samping status kuantitas. Pada kartu Respons Saya pemasok muncul baris buku besar **Paragon menyanggah tanggapan ini** dengan tanggal dan teks Anda, status **Disengketakan**, baris pelaku *Menunggu Paragon — atau revisi jawaban Anda sendiri*, dan tombol **Revisi**.
+- **Penguji — peristiwa pemicu:** `t_requirementresponse_dispute`
+- **Pemeriksaan yang dapat menolak:** `rr_dispute_text_authored` — keberatan harus berupa string tidak kosong (tombol spasi tidak lolos; keberadaan saja bukan substansi).
+- **Glosarium:** `POLICY_REJECTED`; `ROLE_NOT_PERMITTED`.
+- **Kejujuran:** Teks itu mendarat sebagai satu entri dalam buku besar sanggahan yang hanya-tambah pada respons — tidak pernah diubah, tidak pernah diterjemahkan, dan tidak pernah dihapus oleh penyelesaian. Tidak ada orang yang dicatat padanya: sesi menyebut peran dan perusahaan, bukan individu. Pemasok tidak dapat menjawab di dalam sanggahan; langkah mereka adalah **Revisi**, yang mencetak versi berikutnya dan memensiunkan respons ini ke Superseded dengan entri buku besar ketiga, yang tampil pada kartu pemasok sebagai *Anda menjawabnya dengan revisi*.
+<!-- src: src/services/transitions/flows/requirementResponse.flow.ts:219-247; src/services/data/mock/MockCommandService.ts:948-986; src/services/data/mock/MockCommandService.ts:1239-1254; src/services/sdc/types.ts:434-490; src/pages-v2/BuyerCollaboration.tsx:1098-1115; src/pages-v2/BuyerCollaboration.tsx:1273; src/lib/i18n/sdcConsolidation.ts:317-331; src/pages-v2/SupplierForecasts.tsx:587-612; src/services/query/sdcBuyerHooks.ts:348-351; src/pages-v2/SupplierForecasts.tsx:492-518; src/pages-v2/SupplierForecasts.tsx:690-708; src/lib/i18n/sdcSupplier.ts:457-458; src/services/data/mock/MockCommandService.ts:995-1005; src/lib/i18n/sdcSupplier.ts:470 -->
+
+### t_requirementresponse_resolve — Selesaikan sanggahan <!-- transition:t_requirementresponse_resolve -->
+
+- **Jenis langkah:** tindakan operator
+- **Peran:** pembeli · planning (perencana — izin yang sama dengan yang mengajukan sanggahan)
+- **Dari → ke:** Disputed → UnderReview
+- **Operator — di mana:** `/buyer/collaboration` → bagian **Sanggahan menunggu penyelesaian Anda** → baris → **Selesaikan** → panel *Selesaikan sanggahan — {material}* (menampilkan *Sanggahan sejauh ini* dan *Yang disampaikan pemasok*) → **Selesaikan sanggahan**
+- **Operator — lakukan:** Tutup perselisihan dan kembalikan jawaban ke meja Anda untuk diputuskan, dengan menjelaskan apa yang Anda terima, ubah, atau minta.
+- **Operator — isi:** *Jawaban Anda* — teks wajib; tombol kirim tetap nonaktif selama kosong (*Penyelesaian memerlukan jawaban yang dapat dibaca pemasok.*).
+- **Penguji — status yang diharapkan:** UnderReview
+- **Penguji — konfirmasi:** toast *Sanggahan diselesaikan — {material}* / *{supplier} kini dapat membaca jawaban Anda pada tanggapan mereka.*; baris meninggalkan bagian sanggahan dan muncul kembali di **Sedang ditelaah — terima atau sanggah**; chip grid menjadi **Sedang Ditinjau**. Kartu pemasok menampilkan baris buku besar kedua **Paragon menyelesaikan sanggahan** di bawah pengajuan, dengan tanggal dan teks — pengajuannya tetap terlihat.
+- **Penguji — peristiwa pemicu:** `t_requirementresponse_resolve`
+- **Pemeriksaan yang dapat menolak:** `rr_dispute_text_authored` — jawaban harus berupa string tidak kosong.
+- **Glosarium:** `POLICY_REJECTED`; `ROLE_NOT_PERMITTED`.
+- **Kejujuran:** Penyelesaian mengembalikan respons ke satu-satunya status asal sanggahan; ia tidak menerimanya. Setelah menyelesaikan, terima atau sanggah lagi dari bagian sedang ditelaah. Buku besar menyimpan kedua entri: sanggahan yang telah dijawab tidak sama dengan yang tidak pernah diajukan.
+<!-- src: src/services/transitions/flows/requirementResponse.flow.ts:248-277; src/services/data/mock/MockCommandService.ts:979-986; src/pages-v2/BuyerCollaboration.tsx:502-509; src/pages-v2/BuyerCollaboration.tsx:1136-1165; src/pages-v2/BuyerCollaboration.tsx:1217; src/lib/i18n/sdcConsolidation.ts:265-289; src/services/query/sdcBuyerHooks.ts:268-271 -->
+
+### t_requirementresponse_revise — Revisi komitmen yang disanggah atau diterima <!-- transition:t_requirementresponse_revise -->
+
+- **Jenis langkah:** tindakan operator
+- **Peran:** pemasok · commercial (kontak penjualan pemasok — izin yang sama dengan menyusun draf dan mengirim)
+- **Dari → ke:** Disputed, Accepted → Draft — dikirim terhadap jawaban yang direvisi, tetapi jawaban itu tidak berpindah ke Draft: platform mencetak versi BERIKUTNYA dari jawaban yang sama dalam Draft, tertaut kepadanya (`supersedes`), dan memensiunkan jawaban yang direvisi ke Superseded melalui `t_requirementresponse_supersede`
+- **Operator — di mana:** `/supplier/forecasts` → tab **Respons Saya** → pada kartu berstatus **Disengketakan** atau **Diterima** tekan **Revisi** (atau tekan **Revisi** pada kartu baris di **Baris terbit**) → panel *Revisi {material} — menggantikan {id}* → **Simpan draf**
+- **Operator — lakukan:** Jawab keputusan perencana dengan angka baru — setelah ada keberatan, atau ketika komitmen yang sudah diambil perencana tak lagi bisa dipenuhi. Revisi adalah draf baru yang Anda kirim seperti draf lainnya; versi yang Anda revisi disimpan sebagai riwayat, tidak pernah diubah.
+- **Operator — isi:** tiga langkah yang sama dengan draf pertama — Langkah 1 *Kuantitas dikonfirmasi* (angka saja; `0` sah), Langkah 2 (opsional) *Tanggal komitmen* dan *Kendala kapasitas*, Langkah 3 *Akar masalah*. Sebelum angka, panel menyebut apa yang Anda jawab: untuk jawaban yang disanggah *Revisi ini adalah jawaban Anda atas sanggahan Paragon. {id} disimpan sebagai riwayat, bukan ditimpa.*; untuk yang diterima *Paragon menyetujui {qty} {uom} dan merencanakan berdasarkan angka itu. Merevisi di bawahnya memerlukan akar masalah.* Kategori akar masalah wajib bila kuantitas di bawah yang diminta, dan juga bila di bawah kuantitas yang diterima. Payload hanya membawa apa yang Anda nyatakan sekarang; baris berasal dari jawaban yang direvisi, diikat ke publikasi terbaru yang menujukan baris yang sama.
+- **Penguji — status yang diharapkan:** Draft (versi baru, dinomori mulai `rr-9001`; jawaban yang direvisi terbaca Superseded)
+- **Penguji — konfirmasi:** toast *Revisi disimpan sebagai draf — {material}* / *Kirim dari tab respons. {id} disimpan sebagai riwayat.*; halaman berpindah ke **Respons Saya**, tempat kartu baru menampilkan status **Draf**, *Merevisi {id}*, versi satu lebih tinggi, *Giliran Anda — menunggu tindakan Anda*, dan **Kirim ke pembeli**; kartu yang direvisi terbaca **Digantikan** dengan *Selesai — tidak ada tindakan lanjutan*. Di `/buyer/collaboration` baris terbaca **Menunggu** sampai revisi dikirim (baik Draft maupun jawaban Superseded tidak dihitung), dan jawaban yang disanggah lalu direvisi meninggalkan **Sanggahan menunggu penyelesaian Anda**. Setelah dikirim, jawaban tercantum di **Tanggapan menunggu telaah Anda** dengan chip *Direvisi untuk menjawab sanggahan Anda — telaah v{version}* atau *Direvisi setelah Anda setujui — telaah v{version}*; revisi yang memangkas kuantitas yang diterima terbaca **Disetujui {accepted}, direvisi menjadi {now}** di grid dan menempatkan pemasok paling atas di daftar kejar sebagai *Komitmen yang disetujui dipangkas*.
+- **Penguji — peristiwa pemicu:** `t_requirementresponse_revise`
+- **Pemeriksaan yang dapat menolak:** `sdc_material_known` — membaca material milik jawaban yang direvisi (payload tidak membawanya); `rr_revise_commitment_only` — tanggapan visibilitas tidak dapat direvisi (*{id} is an acknowledgment — it carries no quantity to revise*); `rr_submit_qty_floor` dan `rr_submit_qty_agrees` — seperti pada draf pertama; `rr_revise_root_cause_when_cut` — merevisi jawaban Accepted di bawah kuantitas yang diterima memerlukan kategori akar masalah yang tidak kosong (*revising accepted {accepted} down to {next} requires a root cause — an accepted commitment is not cut without saying why*); merevisi ke atas, atau merevisi jawaban Disputed, tidak menuntut apa pun di sini. Sebelum semua itu: jawaban pemasok lain adalah `SCOPE_DENIED`, dan jawaban dalam status selain Disputed atau Accepted adalah `ILLEGAL_TRANSITION`.
+- **Glosarium:** `POLICY_REJECTED`; `ILLEGAL_TRANSITION`; `SCOPE_DENIED`.
+- **Kejujuran:** `to: Draft` di registri menyebut tempat utas jawaban mendarat, bukan tempat jawaban yang dikirim mendarat — satu-satunya tepi di mesin ini yang tujuannya adalah saudaranya. Merevisi memakai izin yang sama dengan menyusun draf, sehingga kursi tanpa jalur commercial melihat *Menunggu Komersial Pemasok* di slot tombol. **Revisi** di Respons Saya hanya ditawarkan bila baris jawaban itu ada di publikasi yang sedang tampil. Barisnya adalah data sampel SIMULATED.
+<!-- src: src/services/transitions/flows/requirementResponse.flow.ts:278-316; src/services/transitions/policyHooks.ts:185-202; src/services/data/mock/MockCommandService.ts:879-942; src/services/data/mock/MockCommandService.ts:944-956; src/services/data/mock/MockCommandService.ts:1281-1306; src/services/data/mock/MockCommandService.ts:1375-1389; src/services/query/sdcSupplierHooks.ts:240-280; src/pages-v2/SupplierForecasts.tsx:364-393; src/pages-v2/SupplierForecasts.tsx:492-550; src/pages-v2/SupplierForecasts.tsx:690-724; src/pages-v2/SupplierForecasts.tsx:1335-1349; src/pages-v2/SupplierForecasts.tsx:1375-1463; src/pages-v2/SupplierForecasts.tsx:1935-1945; src/pages-v2/SupplierForecasts.tsx:1997-2007; src/lib/i18n/sdcSupplier.ts:456-459; src/lib/i18n/sdcSupplier.ts:478-482; src/lib/i18n/sdcSupplier.ts:521; src/lib/i18n/sdcSupplier.ts:539-540; src/services/sdc/consolidation.ts:242-300; src/services/sdc/consolidation.ts:342-365; src/services/sdc/consolidation.ts:480-505; src/pages-v2/BuyerCollaboration.tsx:131-147; src/pages-v2/BuyerCollaboration.tsx:702-711; src/pages-v2/BuyerCollaboration.tsx:1005-1010; src/lib/i18n/sdcConsolidation.ts:227; src/lib/i18n/sdcConsolidation.ts:253; src/lib/i18n/sdcConsolidation.ts:297-298; src/lib/statusLabel.ts:99 -->
+
+### t_requirementresponse_supersede — Pensiunkan versi yang direvisi <!-- transition:t_requirementresponse_supersede -->
+
+- **Jenis langkah:** kaskade (dipicu `t_requirementresponse_revise`)
+- **Peran:** otomasi (atom `requirementresponse:supersede`; tidak dipegang kursi mana pun — berjalan di bawah izin otomasi)
+- **Dari → ke:** Disputed, Accepted → Superseded
+- **Operator — di mana:** tidak ada yang menekan ini. Ia menyala ketika pemasok menyimpan revisi (`/supplier/forecasts` → **Revisi** → **Simpan draf**); dispatcher menyebarkannya ke jawaban yang direvisi, setelah memeriksa jawaban itu masih berada di Disputed atau Accepted.
+- **Operator — lakukan:** tidak ada secara langsung. Ia mencatat bahwa versi yang lebih baru menggantikan yang ini, sehingga jawaban lama tetap tersimpan sebagai riwayat alih-alih terbaca masih terbuka.
+- **Operator — isi:** tidak ada yang diisi.
+- **Penguji — status yang diharapkan:** Superseded (akhir — satu-satunya akhir alur)
+- **Penguji — konfirmasi:** di **Respons Saya** pemasok, status kartu yang direvisi terbaca **Digantikan** dengan *Selesai — tidak ada tindakan lanjutan*; jawaban Disputed yang direvisi mendapat baris buku besar ketiga *Anda menjawabnya dengan revisi* (bertanggal, tanpa teks). Di `/buyer/collaboration` jawaban yang dipensiunkan meninggalkan setiap bagian dan grid. Jawaban mencatat dari status mana ia dipensiunkan (`supersededFrom`), dan konsolidasi berhenti menghitungnya. Peristiwa auditnya membawa `causationId` = id korelasi revisi.
+- **Penguji — peristiwa pemicu:** `t_requirementresponse_supersede` (dipicu oleh `t_requirementresponse_revise`)
+- **Pemeriksaan yang dapat menolak:** tidak ada yang khusus — tanpa hook dan tanpa kolom wajib. Kaskade hanya dibangun untuk jawaban yang masih ada di Disputed atau Accepted; penolakan (mis. `ILLEGAL_TRANSITION`) akan dicatat di audit sink dengan `causationId` revisi, tidak pernah ditampilkan, dan revisinya sendiri sudah tercetak.
+- **Glosarium:** `ILLEGAL_TRANSITION`.
+- **Kejujuran:** `/buyer/process-flows` menandai langkah ini sebagai dihitung — akibat dari pemasok merevisi, bukan sesuatu yang dinyatakan seseorang. Entri buku besar yang ditulisnya dicetak oleh penyimpanan dan tanpa teks, sehingga "dijawab dengan revisi" tetap berbeda dari "diselesaikan oleh perencana" dan dari "tidak pernah dijawab". Pelaku peristiwanya adalah string audit pembeli (`buyer:all`), karena izin otomasi berjalan tanpa orang dan tanpa pemasok.
+<!-- src: src/services/transitions/flows/requirementResponse.flow.ts:317-340; src/services/transitions/cascades.ts:78-81; src/services/transitions/businessRoles.ts:646-649; src/services/transitions/dispatcher.ts:841-907; src/services/data/mock/MockCommandService.ts:2823-2837; src/services/data/mock/MockCommandService.ts:987-1005; src/services/sdc/types.ts:474-482; src/services/sdc/types.ts:547-562; src/services/sdc/consolidation.ts:242-262; src/pages-v2/SupplierForecasts.tsx:576-608; src/lib/i18n/sdcSupplier.ts:455; src/lib/i18n/sdcSupplier.ts:470; src/lib/statusLabel.ts:99; src/lib/i18n/processFlowPurpose.ts:678-679; src/services/transitions/events.ts:127-129 -->
+
+<!-- section:forks -->
+## 4 · Percabangan keputusan dan jalur pengecualian
+
+- **Verba mana yang menjawab baris (saat pembuatan).** Cabang A — `t_requirementresponse_submit` — **Kapan:** kelas baris Firm atau Semi-firm; kontak penjualan pemasok menyimpan draf dengan kuantitas. Cabang B — `t_requirementresponse_acknowledge` — **Kapan:** kelas baris Visibilitas saja; kontak admin pemasok menanggapi dengan catatan opsional. Penjaga kelas menolak pasangan yang salah di dua arah.
+- **Penuh atau kurang (di dalam draf).** Cabang A — kuantitas ≥ diminta — **Kapan:** Anda dapat memasok seluruh baris; tidak perlu akar masalah. Cabang B — kuantitas < diminta, termasuk `0` — **Kapan:** Anda tidak dapat memasok penuh; halaman mewajibkan kategori akar masalah, dan grid pembeli akan membaca baris sebagai **Kurang** dengan defisit.
+- **Terima atau sanggah (di UnderReview).** Cabang A — `t_requirementresponse_accept` — **Kapan:** perencana merencanakan dengan angka itu. Cabang B — `t_requirementresponse_dispute` — **Kapan:** perencana keberatan; teksnya menjadi bacaan pemasok.
+- **Pengecualian sanggahan (di Disputed).** Cabang A — `t_requirementresponse_resolve` — **Kapan:** perencana telah membereskan perselisihan; respons kembali ke UnderReview. Cabang B — `t_requirementresponse_revise` — **Kapan:** pemasok menjawab keberatan dengan angka baru; versi berikutnya dicetak sebagai Draft (dari **Revisi** di Respons Saya atau di kartu baris), jawaban yang disanggah dipensiunkan ke Superseded oleh `t_requirementresponse_supersede`, dan konsolidasi membaca versi baru sebagai jawaban terkini begitu terkirim. **Konfirmasi** baru pada baris bukan cabang: pembuatan kedua di atas jawaban terbuka ditolak (`rr_submit_no_open_sibling`), dan halaman tidak menawarkannya.
+- **Revisi setelah diterima (di Accepted).** `t_requirementresponse_revise` — **Kapan:** komitmen yang sudah diterima berubah. Merevisi ke atas tidak menuntut apa pun; merevisi di bawah kuantitas yang diterima memerlukan akar masalah, dan sampai perencana mengambil angka baru grid terbaca **Disetujui {accepted}, direvisi menjadi {now}** dan daftar kejar mendahulukan pemasok itu sebagai *Komitmen yang disetujui dipangkas*, apa pun tenggatnya.
+- **Jawaban kedaluwarsa (publikasi ulang menggeser baris).** Bukan transisi. Ketika publikasi yang lebih baru mengubah kuantitas atau kelas komitmen baris yang sudah dijawab, grid pembeli menandai respons **Kedaluwarsa — dijawab {lama}, kini {baru}**; bila keduanya tidak berubah, jawaban sebelumnya dibawa maju sebagai dianggap tetap berlaku (kartu baris pemasok lalu terbaca *Terbawa — tidak perlu konfirmasi ulang* dan *Jawaban Anda untuk {version} (v{v}, {qty} {uom}) tetap berlaku*). Pemasok tidak dapat mengajukan jawaban baru di atas jawaban kedaluwarsa yang masih terbuka — kartu baris terbaca *Sudah ada jawaban terbuka untuk baris ini — lanjutkan dari tab respons.* — sehingga angka baru datang melalui **Revisi** setelah perencana menerima atau menyanggah, dan revisi mengikat publikasi terbaru yang menujukan baris itu.
+
+<!-- src: src/services/transitions/flows/requirementResponse.flow.ts:278-340; src/services/data/mock/MockCommandService.ts:886-942; src/services/data/mock/MockCommandService.ts:1256-1306; src/services/sdc/consolidation.ts:202-212; src/services/sdc/consolidation.ts:342-404; src/services/sdc/consolidation.ts:480-505; src/pages-v2/SupplierForecasts.tsx:283-305; src/pages-v2/SupplierForecasts.tsx:334-358; src/pages-v2/SupplierForecasts.tsx:364-393; src/pages-v2/SupplierForecasts.tsx:450-461; src/lib/i18n/sdcSupplier.ts:413-417; src/lib/i18n/sdcSupplier.ts:445 -->
+
+<!-- section:flags -->
+## 5 · Bendera pengecualian
+
+| Bendera | Jenis | Berlaku di | Kapan muncul | Di mana ditampilkan |
+|---|---|---|---|---|
+| Menunggu | berbasis waktu, diturunkan saat dibaca | tidak ada respons terkirim (Draf dan jawaban Superseded dihitung tidak ada) | baris publikasi saat ini tidak punya respons yang bukan Draft dan bukan Superseded — termasuk selama revisi masih berupa draf | grid `/buyer/collaboration`, *Status respons* |
+| Kurang −{defisit} | diturunkan saat dibaca | Submitted, UnderReview, Accepted, Disputed | kuantitas dikonfirmasi di bawah permintaan baris | grid *Status respons* + kolom *Defisit* |
+| Disetujui {accepted}, direvisi menjadi {now} | diturunkan saat dibaca | Submitted, UnderReview (revisi yang belum diambil) | versi jawaban sebelumnya dipensiunkan dari Accepted dengan kuantitas lebih tinggi | grid *Status respons* (chip bahaya) + kolom *Defisit* menampilkan pemangkasan terhadap angka yang diterima |
+| Kedaluwarsa — dijawab X, kini Y | diturunkan saat dibaca | semua status terkirim | jawaban mengikat versi rencana yang sudah digantikan dan kuantitas atau kelas komitmen baris berubah | grid *Status respons* (chip peringatan) |
+| dibawa maju | diturunkan saat dibaca | semua status terkirim | jawaban mengikat versi yang digantikan tetapi kuantitas dan kelas baris tidak berubah | grid, token redup di samping Dikonfirmasi / Kurang / Ditanggapi |
+| Chip Sedang Ditinjau / Diterima / Disengketakan | ditimbulkan operator (siklus hidup) | status tersebut | respons telah meninggalkan Submitted | grid *Status respons* (Disengketakan dengan warna peringatan); pil status kartu pemasok |
+| Digantikan | ditimbulkan kaskade (siklus hidup) | Superseded | revisi menggantikan versi ini | hanya pil status kartu pemasok — grid tidak pernah menampilkan jawaban yang dipensiunkan |
+| Direvisi untuk menjawab sanggahan Anda — telaah v{n} / Direvisi setelah Anda setujui — telaah v{n} | diturunkan saat dibaca | Submitted (sebuah revisi) | jawaban merevisi versi yang dipensiunkan dari Disputed / Accepted | **Tanggapan menunggu telaah Anda**, menggantikan chip *Terkirim* |
+| Komitmen yang disetujui dipangkas | diturunkan saat dibaca | tingkat pemasok | salah satu baris pemasok terbaca *Disetujui {accepted}, direvisi menjadi {now}* | **Daftar kejar**, diurutkan paling atas dan dicantumkan apa pun tenggatnya |
+| Terlambat | berbasis waktu, diturunkan saat dibaca | tingkat pemasok | jam bersama telah melewati tanggal terbit + 7 hari dan pemasok masih punya baris menunggu | **Daftar kejar** `/buyer/collaboration`, *Jatuh tempo {tanggal}* |
+| Respons parsial | berbasis waktu, diturunkan saat dibaca | tingkat pemasok | sebelum tenggat, sebagian baris terjawab dan sebagian menunggu (pemasok yang diam tidak dikejar sebelum tenggat) | **Daftar kejar** |
+| Merespons / Parsial / Diam | diturunkan saat dibaca | tingkat pemasok | ringkasan baris terjawab vs menunggu | chip di atas daftar kejar |
+| Paragon menyanggah tanggapan ini / Paragon menyelesaikan sanggahan | ditimbulkan operator | Disputed dan sesudahnya | entri buku besar yang ditulis oleh sanggah dan selesaikan | kartu **Respons Saya** pemasok; panel selesaikan pembeli *Sanggahan sejauh ini* |
+| Anda menjawabnya dengan revisi | ditimbulkan kaskade | Superseded dari Disputed | entri buku besar tanpa teks yang ditulis ketika revisi memensiunkan jawaban yang disanggah | kartu **Respons Saya** pemasok (label pembeli *Pemasok menjawab dengan revisi* ada, tetapi panel selesaikan hanya terbuka pada jawaban Disputed yang masih hidup, sehingga tidak pernah menampilkan jawaban yang dipensiunkan) |
+| Diterima pembeli pada {tanggal} | ditimbulkan operator (tanda terima) | Accepted dan sesudahnya | dicap sekali pada persilangan ke Accepted | kartu **Respons Saya** pemasok |
+| Tanggapi sebelum {tanggal} / Terlambat / Belum ada batas waktu | berbasis waktu, diturunkan saat dibaca | setiap baris publikasi saat ini | tenggat yang tersimpan pada publikasi, bila ada (publikasi sampel tidak punya) | kartu baris `/supplier/forecasts`; label tab *Baris terbit · tanggapi sebelum {tanggal}* / *terlambat sejak {tanggal}* / *belum ada batas waktu* |
+| Rencana {version} terbit {date} — {changed} baris berubah, {carried} terbawa; Terbawa — tidak perlu konfirmasi ulang / Berubah — sebelumnya {qty} {uom} / Berubah — baru di rencana ini | diturunkan saat dibaca | setiap baris, terhadap publikasi yang digantikannya | kuantitas dan kelas dibandingkan dengan publikasi sebelumnya | spanduk versi dan chip kartu baris `/supplier/forecasts` |
+| Prakiraan sampel — belum ada publikasi live | penanda SIMULATED | seluruh halaman | setiap publikasi fixture bersifat SIMULATED, sehingga jalur live kosong | spanduk `/supplier/forecasts`; pil *Sampel — menunggu feed data C8 SOMO* di kedua halaman |
+| Tampilan konsolidasi — bacaan disimulasikan; jalur telaah menulis | penanda SIMULATED | seluruh halaman | selalu di build ini | spanduk `/buyer/collaboration`; baris meta *jam sampel, per {tanggal}* |
+| Menunggu {pemilik} | serah terima peran | kontrol mana pun | kursi tidak memegang atom verba (mis. *Menunggu Perencanaan*, *Menunggu Komersial Pemasok*, *Menunggu Administrasi Pemasok*) | di slot kontrol itu sendiri pada kedua halaman |
+
+<!-- src: src/services/sdc/consolidation.ts:46; src/services/sdc/consolidation.ts:143-185; src/services/sdc/consolidation.ts:423-507; src/pages-v2/BuyerCollaboration.tsx:644-727; src/pages-v2/BuyerCollaboration.tsx:922-978; src/pages-v2/SupplierForecasts.tsx:1823-1831; src/services/sdc/visibility.ts:25-29; src/lib/i18n/roles.ts:277-279; src/lib/i18n/widget.ts:211; src/services/sdc/consolidation.ts:168-185; src/services/sdc/consolidation.ts:242-262; src/services/sdc/consolidation.ts:342-404; src/services/sdc/consolidation.ts:450-505; src/pages-v2/BuyerCollaboration.tsx:131-147; src/pages-v2/BuyerCollaboration.tsx:628-637; src/pages-v2/BuyerCollaboration.tsx:702-711; src/pages-v2/BuyerCollaboration.tsx:957-967; src/pages-v2/BuyerCollaboration.tsx:1005-1010; src/pages-v2/BuyerCollaboration.tsx:292-330; src/lib/i18n/sdcConsolidation.ts:227; src/lib/i18n/sdcConsolidation.ts:253; src/lib/i18n/sdcConsolidation.ts:278; src/lib/i18n/sdcConsolidation.ts:297-298; src/pages-v2/SupplierForecasts.tsx:334-358; src/pages-v2/SupplierForecasts.tsx:434-447; src/pages-v2/SupplierForecasts.tsx:576-608; src/pages-v2/SupplierForecasts.tsx:713-723; src/pages-v2/SupplierForecasts.tsx:1793-1855; src/lib/i18n/sdcSupplier.ts:411-424; src/lib/i18n/sdcSupplier.ts:470; src/lib/statusLabel.ts:99 -->
+
+<!-- section:linked -->
+## 6 · Objek tertaut
+
+**Entitas perwakilan:** `rr-0002` (tanpa nomor dokumen — id penyimpanan adalah nomornya; pemasok `sup-005`, material `RM-EMUL-3310` Glycerin USP 99.5%, periode `2026-08`, status Disputed).
+
+| Bergabung ke | Melalui | Catatan |
+|---|---|---|
+| Publikasi prakiraan `PUB-2026-08-RM` / versi rencana `PV-2026-08.1` | `publicationId` + `planVersion` | potret persis yang dijawab; publikasi saat ini adalah `PUB-2026-08-RM-R2` (`PV-2026-08.2`, terbit 2026-08-15), yang baris gliserin 2026-08-nya tidak berubah, sehingga jawaban dibawa maju |
+| Baris prakiraan (pemasok × material × periode) | `supplierId` + `materialCode` + `periodBucket` | permintaan 3 500 KG Firm; dikonfirmasi 3 000 KG → **Kurang −500 KG** |
+| Entri master material | `materialCode` | satuan (KG) disalin dari master saat pembuatan; payload tidak pernah membawa satuan |
+| Akar masalah (anak) | `rootCause.level1` / `level2` / `note` | `capacity` / `principal-allocation` — penjelasan pemasok sendiri, ditampilkan kembali di kedua kursi |
+| Buku besar sanggahan | `disputeResponse[]` | satu entri `raised` bertanggal 2026-08-17; penyelesaian menambahkan entri `resolved` di sampingnya, tidak pernah menimpanya |
+| Sesi pengajuan `ss-0002` | `attempted[].objectId` | kunjungan pemasok yang juga mendeklarasikan `inv-0002` dan melaporkan `ish-0002`; korelasi audit saja, tanpa status sendiri |
+| Indikator cakupan pemasok | `supplierId` + `materialCode` | proyeksi hanya-tampil pada grid pembeli: stok terdeklarasi + rute masuk ÷ permintaan berkomitmen, bertanda *Model* |
+| `submissionVersion` | diturunkan | maks sebelumnya + 1 atas utas respons — pemasok × material × periode yang sama, lintas publikasi (`publicationId` milik setiap jawaban tetap menyebut potret yang diikatnya); revisi menaikkan versi, tidak pernah menimpa. Jawaban mana yang terbaru diurutkan menurut tanggal publikasi yang dijawab, lalu versi, lalu waktu pengiriman — tidak pernah menurut urutan penyisipan |
+| Versi yang direvisi / yang merevisi | `supersedes` / `supersededFrom` | revisi menyebut versi yang direvisinya di `supersedes` (dicetak penyimpanan, tidak pernah dari payload); versi yang dipensiunkan mencatat apakah ia Disputed atau Accepted di `supersededFrom`. `rr-0002` tidak memiliki keduanya saat diunggah |
+
+Hanya-tampil: `provenance` (`SUPPLIER` · `SIMULATED` · `committed`) dibawa pada setiap respons dan dirender sebagai penanda *Asal*; tidak ada bagian portal yang menulisnya setelah pembuatan. Tidak ada pelaku yang disimpan pada entri sanggahan.
+
+<!-- src: src/services/sdc/fixtures.ts:1189-1218; src/services/sdc/fixtures.ts:1023-1063; src/services/sdc/fixtures.ts:1383-1393; src/services/sdc/types.ts:507-565; src/services/data/mock/MockCommandService.ts:1057; src/services/data/mock/MockCommandService.ts:1113-1115; src/services/data/mock/stores/requirementResponseStore.ts:44-55; src/services/data/mock/stores/requirementResponseStore.ts:33-43; src/services/data/mock/MockCommandService.ts:879-884; src/services/sdc/consolidation.ts:216-262; src/services/sdc/types.ts:547-562 -->
+
+<!-- section:history -->
+## 7 · Riwayat status
+
+Setiap pengiriman perintah menulis satu `TransitionEvent`: `event` = id transisi, `actor` = `supplier:<supplierId>` untuk kursi pemasok atau `buyer:all` untuk pembeli, `ts` dari jam bersama, `outcome` (done / failed), dan `correlationId`. Ketika beberapa objek dikirim dalam satu kunjungan pemasok, `correlationId` perintah pertama menjadi jangkar kunjungan dan perintah berikutnya membawanya sebagai `causationId`. Respons sendiri menyimpan `submittedAt` (dicap sekali, pada persilangan Draft → Submitted atau saat tanggapan visibilitas), `acceptedAt` (dicap sekali, pada persilangan ke Accepted) dan cap `at` pada buku besar sanggahan.
+
+Urutan kerja untuk `rr-0002` sebagaimana akan dihasilkan penguji dari baris yang masih segar (fixture sudah diunggah dalam status Disputed; jalannya langsung dimulai dari draf):
+
+| Waktu | Dari → ke | Pelaku (peran) | Pemicu | Peristiwa |
+|---|---|---|---|---|
+| T+0 | ∅ → Draft | pemasok · commercial | **Simpan draf** pada baris gliserin 2026-08, 3 000 dari 3 500 KG, akar masalah Kapasitas | `t_requirementresponse_submit` |
+| T+1 | Draft → Submitted | pemasok · commercial | **Kirim ke pembeli** di Respons Saya (`submittedAt` dicap) | `t_requirementresponse_promote` |
+| T+2 | Submitted → UnderReview | pembeli · planning | **Mulai telaah** | `t_requirementresponse_review` |
+| T+3 | UnderReview → Disputed | pembeli · planning | **Ajukan sanggahan** dengan keberatan (entri buku besar `raised`) | `t_requirementresponse_dispute` |
+| T+4 | Disputed → UnderReview | pembeli · planning | **Selesaikan sanggahan** dengan jawaban (entri buku besar `resolved`) | `t_requirementresponse_resolve` |
+| T+5 | UnderReview → Accepted | pembeli · planning | **Terima** | `t_requirementresponse_accept` |
+
+Untuk baris Visibilitas saja urutannya lebih pendek: T+0 ∅ → Submitted oleh kontak admin pemasok (`t_requirementresponse_acknowledge`), lalu T+1 dan seterusnya seperti di atas mulai dari **Mulai telaah**.
+
+Revisi mencabangkan urutan ini. Seandainya pemasok menekan **Revisi** pada T+4 alih-alih perencana menyelesaikan (atau setelah T+5), satu pengiriman menulis dua peristiwa: `t_requirementresponse_revise` (pelaku `supplier:sup-005`, dikirim terhadap `rr-0002`) dan `t_requirementresponse_supersede` hasil kaskade (pelaku `buyer:all`, izin otomasi; `causationId` = `correlationId` revisi), yang memensiunkan `rr-0002` ke Superseded. Versi baru (dinomori mulai `rr-9001`, v2, diikat ke `PUB-2026-08-RM-R2`) memulai riwayatnya sendiri di Draft dan berlanjut dengan `t_requirementresponse_promote` dan telaah perencana.
+
+<!-- src: src/services/transitions/events.ts:26-60; src/services/transitions/events.ts:127-129; src/services/sdc/session.ts:15-27; src/services/data/mock/MockCommandService.ts:948-1020; src/services/data/mock/MockCommandService.ts:1103-1116; src/services/data/mock/MockCommandService.ts:907-942; src/services/data/mock/MockCommandService.ts:2823-2837; src/services/transitions/dispatcher.ts:841-907; src/services/data/mock/MockCommandService.ts:1016-1018 -->
+
+<!-- section:troubleshooting -->
+## 8 · Pemecahan masalah
+
+| Gejala | Cara mengetahui | Kemungkinan penyebab | Penyelesaian |
+|---|---|---|---|
+| Tidak ada tombol **Konfirmasi** / **Tanggapi** / **Kirim ke pembeli** / **Revisi**, hanya *Menunggu Komersial Pemasok* atau *Menunggu Administrasi Pemasok* | pemberitahuan serah terima di slot tombol; arahkan kursor: *Peran Anda tidak dapat melakukan tindakan ini.* | kursi tidak memegang `requirementresponse:submit` (commercial) atau `requirementresponse:acknowledge` (back_office) | kursi yang memegang jalur itu melakukan langkahnya (`ROLE_NOT_PERMITTED` bila dipaksa) |
+| Tidak ada **Konfirmasi** pada baris Firm / Semi-firm, hanya *Sudah ada jawaban terbuka untuk baris ini — lanjutkan dari tab respons.* | Respons Saya memuat jawaban untuk material × periode itu dalam status Draft, Submitted, atau UnderReview | pembuatan kedua di atas jawaban terbuka ditolak, sehingga kartu tidak menawarkannya | kirim draf dari Respons Saya, atau tunggu perencana; begitu jawaban Accepted atau Disputed, kartu menawarkan **Revisi** |
+| `POLICY_REJECTED:rr_submit_no_open_sibling` — *an answer is already open for this line (…) — revise it, or submit the draft; a second creation would bury it* | pembuatan dikirim di atas jawaban terbuka (panggilan rakitan tangan, atau halaman yang dirender sebelum jawaban itu ada) | utas sudah memuat jawaban yang bukan Superseded, lintas publikasi | tindak jawaban yang disebut: **Kirim ke pembeli** bila Draft, **Revisi** bila Disputed atau Accepted |
+| `POLICY_REJECTED:rr_revise_commitment_only` — *{id} is an acknowledgment — it carries no quantity to revise* | revisi dikirim terhadap tanggapan visibilitas | hanya komitmen yang dapat direvisi | tidak ada di halaman — **Revisi** tidak pernah ditawarkan pada tanggapan visibilitas |
+| `POLICY_REJECTED:rr_revise_root_cause_when_cut` — *revising accepted {accepted} down to {next} requires a root cause* | merevisi jawaban Accepted di bawah kuantitas yang diterima tanpa kategori | komitmen yang diterima tidak dipangkas tanpa alasan | pilih kategori akar masalah di Langkah 3 (halaman bertanya lebih dulu, dengan *Akar masalah wajib diisi*) |
+| Tidak ada **Mulai telaah** / **Terima** / **Sanggah** / **Selesaikan**, hanya *Menunggu Perencanaan* | pemberitahuan serah terima di atas bagian | kursi pembeli tidak memegang jalur planning | beralih ke kursi yang memegang `planning` |
+| Toast *Kuantitas wajib diisi* dengan pesan "bisa dibaca dua cara" | mengetik `40.000` atau `40,000` | pemisah ambigu — parser menolak, bukan menebak (`AMBIGUOUS_QTY`) | ketik angka saja: `40000` |
+| Toast *Akar masalah wajib diisi* | kuantitas di bawah yang diminta — atau, pada revisi jawaban Accepted, di bawah kuantitas yang diterima | halaman mewajibkan kategori pada konfirmasi kurang dan pada pemangkasan konfirmasi yang diterima | pilih kategori akar masalah di Langkah 3 |
+| Toast *Konfirmasi tidak terkirim* menyebut `POLICY_REJECTED:rr_submit_commitment_class` | menekan Konfirmasi pada baris Visibilitas saja lewat jalur lain | penjaga kelas menolak komitmen di tempat yang tidak memintanya | gunakan **Tanggapi** pada baris itu |
+| `POLICY_REJECTED:rr_acknowledge_visibility_class` | menanggapi baris Firm / Semi-firm | penjaga kelas simetris | gunakan **Konfirmasi** dan beri kuantitas |
+| `POLICY_REJECTED:rr_submit_planversion_bound` | versi rencana payload berbeda dari milik publikasi | payload usang atau dirakit tangan | buka kembali baris dari halaman agar kunci potret berasal dari publikasi yang dirender |
+| `POLICY_REJECTED:sdc_material_known` — *UNKNOWN_MATERIAL* | kode material tidak ada di master | relasi atau baris menyebut kode yang tidak dikenal master | minta kode ditambahkan ke master; tidak ada yang disimpan dengan satuan tebakan |
+| `POLICY_REJECTED:rr_submit_qty_floor` / `rr_submit_qty_agrees` | negatif, tak terhingga, atau angka yang tidak sesuai token ketikannya | pengiriman rakitan tangan atau token salah baca | kirim ulang dari halaman; angka dan tokennya berasal dari satu parse |
+| `POLICY_REJECTED:rr_dispute_text_authored` | sanggahan atau penyelesaian dengan teks kosong | keberadaan bukan substansi | tulis keberatan / jawaban; panel menahan tombol kirim sampai Anda menulisnya |
+| `MISSING_FIELDS` | pengiriman tanpa salah satu dari publicationId, planVersion, materialCode, periodBucket, confirmedQty, confirmedQtyRaw (atau disputeReason / resolutionReason) | pemanggil di luar halaman | gunakan pembangun payload halaman |
+| `ILLEGAL_TRANSITION` | mis. **Kirim ke pembeli** pada non-Draft, atau verba pembeli dari status yang salah | respons berpindah sejak layar dirender | muat ulang; bertindak dari bagian tempat mesin kini mencantumkannya |
+| `SCOPE_DENIED` (dilempar, tampil di toast) | pemasok bertindak pada baris yang tidak ditujukan kepadanya, atau pada respons pemasok lain | gerbang cakupan, sebelum gerbang peran; tidak ada dan milik pihak lain sengaja terlihat sama | bertindak hanya pada baris dan respons Anda sendiri |
+| `STALE_STATE` | tidak pernah dihasilkan di permukaan ini | tidak ada pemanggil SDC yang menyertakan `expectedState` | t/a — dicantumkan demi kelengkapan |
+| Grid pembeli masih terbaca **Menunggu** setelah pemasok "mengonfirmasi" | status kartu pemasok adalah Draf | draf disimpan tetapi belum dikirim | pemasok menekan **Kirim ke pembeli** di Respons Saya |
+| Respons pemasok menampilkan **Disengketakan** dan perencana belum menyelesaikannya | baris pelaku *Menunggu Paragon — atau revisi jawaban Anda sendiri* | penyelesaian perencana dan revisi pemasok sama-sama keluar dari Disputed | perencana menyelesaikan; atau pemasok menekan **Revisi** dan mengirim versi barunya |
+| Grid terbaca **Menunggu** pada baris yang sudah dijawab lalu direvisi pemasok | kartu terbaru pemasok adalah Draf yang *Merevisi {id}*; kartu yang direvisi terbaca **Digantikan** | draf maupun jawaban yang dipensiunkan tidak dihitung | pemasok menekan **Kirim ke pembeli** pada revisi |
+| Baris terbaca **Kedaluwarsa — dijawab 120 000, kini 150 000** | permintaan baris (atau kelasnya) berubah di publikasi yang lebih baru | jawaban mengikat versi rencana yang digantikan | pemasok tidak dapat menjawab baris dari awal selama jawaban kedaluwarsa masih terbuka; perencana menelaahnya lalu menerima atau menyanggah, setelah itu **Revisi** pemasok mengikat publikasi saat ini |
+| Daftar kejar menampilkan pemasok **Terlambat** padahal pemasok berkata tenggatnya tidak pernah ditampilkan | benar untuk publikasi sampel — kartu baris pemasok terbaca **Tanggapi sebelum** *Belum ada batas waktu* | daftar kejar menurunkan tanggal terbit + 7 hari untuk setiap publikasi; halaman pemasok hanya menampilkan tenggat yang tersimpan pada publikasi, yang hanya dimiliki publikasi yang diterbitkan melalui verba terbit | kejar lewat WhatsApp sebagaimana daftar itu dirancang; untuk publikasi sampel tanggalnya hanya ada di `/buyer/collaboration` |
+
+<!-- src: src/services/transitions/refusals.ts:61-114; src/services/transitions/dispatcher.ts:556-610; src/services/transitions/dispatcher.ts:731; src/lib/i18n/roles.ts:277-279; src/lib/i18n/sdcSupplier.ts:488-501; src/lib/i18n/sdcSupplier.ts:534-548; src/services/data/mock/MockCommandService.ts:1130-1340; src/pages-v2/SupplierForecasts.tsx:492-518; src/services/sdc/consolidation.ts:473-507; src/services/data/mock/MockCommandService.ts:1256-1306; src/pages-v2/SupplierForecasts.tsx:364-393; src/pages-v2/SupplierForecasts.tsx:1375-1416; src/pages-v2/SupplierForecasts.tsx:434-447; src/services/sdc/consolidation.ts:249-262; src/services/sdc/consolidation.ts:380-404; src/services/sdc/types.ts:322-329; src/lib/i18n/sdcSupplier.ts:418-423; src/lib/i18n/sdcSupplier.ts:445; src/lib/i18n/sdcSupplier.ts:457 -->
+
+<!-- section:testdata -->
+## 9 · Data uji
+
+| Status | Id fixture | Nomor | Catatan |
+|---|---|---|---|
+| Draft | `rr-0003` | — | sup-002 · RM-EMUL-3320 (Cetearyl Alcohol) · 2026-09 · 2 000 KG terhadap Semi-firm 2 000 (kini 2 600 di publikasi saat ini); tanpa `submittedAt`; tidak terlihat oleh pembeli — baris terbaca **Menunggu** dan menempatkan sup-002 di daftar kejar sebagai Terlambat dengan 1 baris menunggu; kartu barisnya tidak menawarkan **Konfirmasi**, hanya *Sudah ada jawaban terbuka untuk baris ini — lanjutkan dari tab respons.* |
+| Submitted | `rr-0001` | — | sup-002 · RM-EMUL-3310 (Glycerin USP 99.5%) · 2026-08 · 6 000 dari 6 000 KG Firm, tanggal komitmen 2026-08-20; menjawab `PV-2026-08.1`, baris tidak berubah → **Dikonfirmasi · dibawa maju**; tercantum di *Tanggapan menunggu telaah Anda* |
+| Submitted | `rr-0004` | — | sup-005 · PK-PETB-8810 (PET Bottle 250ml) · 2026-09 · 120 000 PCS terhadap baris yang bergeser ke 150 000 → **Kedaluwarsa — dijawab 120 000, kini 150 000**; tetap dihitung terjawab untuk kejar |
+| Submitted | `rr-0005` | — | sup-007 · AI-NIAC-6601 (Niacinamide) · 2026-10 · tanggapan visibilitas dengan catatan terhadap publikasi saat ini → **Ditanggapi**, kolom Dikonfirmasi menampilkan tanda pisah |
+| UnderReview | — | — | tidak ada fixture; capai dengan **Mulai telaah** pada baris Submitted mana pun, atau dengan menyelesaikan `rr-0002` |
+| Accepted | — | — | tidak ada fixture; capai dengan **Terima** dari UnderReview; kartu pemasok lalu menampilkan *Diterima pembeli pada {tanggal}* dan **Revisi** |
+| Disputed | `rr-0002` | — | sup-005 · RM-EMUL-3310 · 2026-08 · 3 000 dari 3 500 KG Firm → **Kurang −500 KG · dibawa maju · Disengketakan**; akar masalah capacity / principal-allocation; satu entri buku besar `raised` bertanggal 2026-08-17; satu-satunya baris di *Sanggahan menunggu penyelesaian Anda*; pada kursi sup-005 kartu Respons Saya maupun kartu barisnya menawarkan **Revisi** |
+| Superseded | — | — | tidak ada fixture; capai dengan menekan **Revisi** pada `rr-0002` sebagai sup-005 dan menyimpan drafnya — `rr-0002` menjadi Superseded (baris buku besar *Anda menjawabnya dengan revisi*) di samping Draft baru pada v2; atau revisi jawaban Accepted mana pun |
+
+Konteks untuk penguji: publikasi `PUB-2026-08-RM` (`PV-2026-08.1`, terbit 2026-08-01) dan publikasi saat ini `PUB-2026-08-RM-R2` (`PV-2026-08.2`, terbit 2026-08-15); horizon 2026-08 (Firm, terkunci), 2026-09 (Semi-firm), 2026-10 (Visibilitas saja). Pada jam bersama (2026-08-31 12:00 UTC) tenggat respons 2026-08-22 telah lewat, sehingga daftar kejar terbaca sup-007 Terlambat · 2 baris menunggu (PK-PETB-8810 2026-08, PK-CAPF-8820 2026-09) dan sup-002 Terlambat · 1 baris menunggu; sup-005 telah menjawab kedua barisnya dan tidak dikejar. Ringkasan: sup-005 Merespons, sup-002 Parsial, sup-007 Parsial. Respons yang dibuat langsung dinomori mulai `rr-9001` dan dicap dengan jam bersama; revisi mengambil nomor berikutnya dari deret itu. Kursi pemasok sampel memegang ketiga jalur pemasok. Halaman pemasok menampilkan *Belum ada batas waktu* pada setiap baris, karena publikasi sampel tidak membawa tenggat tersimpan, dan spanduk versinya membandingkan `PV-2026-08.2` dengan `PV-2026-08.1`.
+
+<!-- src: src/services/sdc/fixtures.ts:891-1140; src/services/sdc/fixtures.ts:1146-1274; src/services/sdc/clock.ts:55; src/services/sdc/consolidation.ts:325-405; src/services/sdc/consolidation.ts:473-507; src/services/data/mock/stores/requirementResponseStore.ts:65-68; src/services/identity/sampleRoster.ts:132-134; src/services/data/mock/MockCommandService.ts:917-942; src/services/data/mock/MockCommandService.ts:995-1005; src/pages-v2/SupplierForecasts.tsx:364-393; src/pages-v2/SupplierForecasts.tsx:434-447; src/pages-v2/SupplierForecasts.tsx:1833-1851; src/services/sdc/types.ts:322-329; src/services/query/sdcSupplierHooks.ts:77-102 -->

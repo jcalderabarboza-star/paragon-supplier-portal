@@ -4,7 +4,7 @@ locale: en
 title: Purchase order
 wired: true
 owner: portal
-source_sha: 81c98403a83a674df80959f7d2290898ddd822fa
+source_sha: dec17faa4489102fd96492989fb7a67caa770ca0
 transitions:
   - t_po_issue
   - t_po_view
@@ -77,7 +77,7 @@ Honesty markers a reader should carry through this guide: the order rows in the 
 - **Checks that can refuse:** none beyond role, legality and required fields.
 - **Glossary:** `ILLEGAL_TRANSITION` (what a hand-crafted dispatch from any state other than `Sent` would get).
 - **Honesty:** **WIRED-NO-CALLER.** The transition is registered and dispatchable, but no hook and no page calls it. The surface still offers **Acknowledge receipt** on a `Viewed` order because the machine says that is legal.
-<!-- src: src/services/transitions/flows/purchaseOrder.flow.ts:55-65; src/pages-v2/SupplierOrders.tsx:421-432; _derived/surfaces.md:8 -->
+<!-- src: src/services/transitions/flows/purchaseOrder.flow.ts:55-65; src/pages-v2/SupplierOrders.tsx:422-433; _derived/surfaces.md:8 -->
 
 ### t_po_acknowledge — Acknowledge receipt <!-- transition:t_po_acknowledge -->
 
@@ -93,7 +93,7 @@ Honesty markers a reader should carry through this guide: the order rows in the 
 - **Checks that can refuse:** none beyond role, legality and required fields.
 - **Glossary:** `ROLE_NOT_PERMITTED`, `ILLEGAL_TRANSITION`, `SCOPE_DENIED`.
 - **Honesty:** a seat without `po:acknowledge` (commercial or back-office) sees **Awaiting Supplier Fulfilment** in that footer slot instead of the button. The row's quantities are untouched by this act.
-<!-- src: src/services/transitions/flows/purchaseOrder.flow.ts:66-76; src/pages-v2/SupplierOrders.tsx:429-462,657-673; src/services/query/commandHooks.ts:218-234; src/lib/i18n/supplierOrders.ts:71-79 -->
+<!-- src: src/services/transitions/flows/purchaseOrder.flow.ts:66-76; src/pages-v2/SupplierOrders.tsx:430-463,658-674; src/services/query/commandHooks.ts:224-240; src/lib/i18n/supplierOrders.ts:71-79 -->
 
 ### t_po_confirm — Confirm order <!-- transition:t_po_confirm -->
 
@@ -111,7 +111,7 @@ Honesty markers a reader should carry through this guide: the order rows in the 
 - **Checks that can refuse:** `po_confirm_qty_within_ordered` — the confirmation must cover every line, and each confirmed quantity must be a finite number greater than 0 and no more than the ordered quantity. The dispatcher's `MISSING_FIELDS` fires first if `confirmedQuantities` is absent.
 - **Glossary:** `POLICY_REJECTED`, `MISSING_FIELDS`, `ROLE_NOT_PERMITTED`, `EMPTY_QTY`, `NOT_NUMERIC`, `AMBIGUOUS_QTY`.
 - **Honesty:** the dashboard door has no per-line editing — it always confirms the ordered quantity. **Request change instead → Submit change request** is **not** a dispatch: the toast says "Change request for PO-… not submitted — nothing was sent — change requests are not wired to a real channel." The **Create ASN** / **Create ASN now** buttons on this page are also toasts ("ASN creation not available from this panel — nothing was created"); the real door is **Shipments & ASN**. A seat without `po:confirm` sees the row button relabelled **View** and **Awaiting Supplier Fulfilment** in the footer; the editing mode itself collapses to detail for such a seat, so no entrance bypasses the notice.
-<!-- src: src/services/transitions/flows/purchaseOrder.flow.ts:77-90; src/services/transitions/policies.ts:96-132; src/pages-v2/SupplierOrders.tsx:288-336,357-369,465-472,683-730; src/pages-v2/widgets/OrdersToConfirmWidget.tsx:31-62,102-115,130-133; src/services/query/commandHooks.ts:176-192; src/lib/i18n.ts:488-495; src/lib/i18n/supplierOrders.ts:91-131 -->
+<!-- src: src/services/transitions/flows/purchaseOrder.flow.ts:77-90; src/services/transitions/policies.ts:97-133; src/pages-v2/SupplierOrders.tsx:289-337,358-370,466-473,684-731; src/pages-v2/widgets/OrdersToConfirmWidget.tsx:31-62,102-115,130-133; src/services/query/commandHooks.ts:182-198; src/lib/i18n.ts:494-501; src/lib/i18n/supplierOrders.ts:91-131 -->
 
 ### t_po_partial_deliver — Part of the order arrives (S/4HANA) <!-- transition:t_po_partial_deliver -->
 
@@ -143,7 +143,7 @@ Honesty markers a reader should carry through this guide: the order rows in the 
 - **Checks that can refuse:** none beyond role, legality and required fields.
 - **Glossary:** none specific.
 - **Honesty:** SIMULATED rows. An ASN reaching `Delivered` (a TMS fact) and a PO reaching `Delivered` (an S/4HANA fact) are two different facts on two different documents; neither drives the other in this tree.
-<!-- src: src/services/transitions/flows/purchaseOrder.flow.ts:109-126; src/pages-v2/SupplierOrders.tsx:79-100 -->
+<!-- src: src/services/transitions/flows/purchaseOrder.flow.ts:109-126; src/pages-v2/SupplierOrders.tsx:80-101 -->
 
 ### t_po_close — The order is closed (S/4HANA) <!-- transition:t_po_close -->
 
@@ -181,7 +181,7 @@ Honesty markers a reader should carry through this guide: the order rows in the 
 | Your move | derived at read (next act) | Sent, Viewed, Acknowledged | the seat holds a legal verb | same **Next** line, supplier fulfilment seat |
 | `+Nd overdue` | **stored fixture field** (`daysOverdue`), display-only | any open state | `daysOverdue > 0` on the fixture row | `/buyer/orders` row and **Overdue** KPI |
 | Provenance marker | SIMULATED marker | all | always | `/supplier/orders` meta line |
-<!-- src: src/pages-v2/SupplierOrders.tsx:79-100,493-503; src/pages-v2/widgets/OrdersToConfirmWidget.tsx:39-40,129-130; src/pages-v2/BuyerOrders.tsx:99-100,537-539; src/services/transitions/nextAct.ts:165-207; src/data/mockPurchaseOrders.ts:18,55 -->
+<!-- src: src/pages-v2/SupplierOrders.tsx:80-101,494-504; src/pages-v2/widgets/OrdersToConfirmWidget.tsx:39-40,129-130; src/pages-v2/BuyerOrders.tsx:99-100,555-557; src/services/transitions/nextAct.ts:165-207; src/data/mockPurchaseOrders.ts:18,55 -->
 
 <!-- section:linked -->
 ## 6 · Linked objects
@@ -197,7 +197,7 @@ Honesty markers a reader should carry through this guide: the order rows in the 
 | Line items | `lineItems[i].confirmedQty` | written by `t_po_confirm` only; `t_po_acknowledge` leaves it untouched |
 | `confirmedDeliveryDate`, `daysOverdue` | fixture fields | display-only: the editing panel's **Confirmed delivery date** is not sent in the payload and nothing writes either field |
 | `channel` | fixture field | display-only |
-<!-- src: src/services/data/mock/MockCommandService.ts:141-160,183; src/services/data/mock/fixtures/supplierShipments.ts:86-167; src/data/mockGoodsReceipts.ts:88-93; src/services/data/mock/MockCommandService.ts:2500-2504; src/services/query/commandHooks.ts:176-192 -->
+<!-- src: src/services/data/mock/MockCommandService.ts:150-169,192; src/services/data/mock/fixtures/supplierShipments.ts:86-167; src/data/mockGoodsReceipts.ts:88-93; src/services/data/mock/MockCommandService.ts:2856-2860; src/services/query/commandHooks.ts:182-198 -->
 
 <!-- section:history -->
 ## 7 · Status history
@@ -212,7 +212,7 @@ Worked sequence for `po-008` (PO-2025-00108, `sup-007`, fixture state `Sent`), a
 | T+1 | Sent → Acknowledged | supplier · fulfilment (`supplier:sup-007`) | **Acknowledge receipt** | `t_po_acknowledge` · done |
 | T+2 | Acknowledged → Confirmed | supplier · fulfilment (`supplier:sup-007`) | **Confirm order** with quantities | `t_po_confirm` · done |
 | T+3 | Confirmed → (Partially) Delivered → Closed | S/4HANA | not reproducible in the portal | `t_po_partial_deliver` / `t_po_deliver` / `t_po_close` |
-<!-- src: src/services/transitions/events.ts:25-104; src/services/transitions/dispatcher.ts:340-388 -->
+<!-- src: src/services/transitions/events.ts:25-129; src/services/transitions/dispatcher.ts:397-450 -->
 
 <!-- section:troubleshooting -->
 ## 8 · Troubleshooting
@@ -229,7 +229,7 @@ Worked sequence for `po-008` (PO-2025-00108, `sup-007`, fixture state `Sent`), a
 | **Create ASN** here says "nothing was created" | info toast | ASN creation lives on **Shipments & ASN** | go to `/supplier/shipments` |
 | Order stays `Confirmed` after goods arrived | **Next: Awaiting S/4HANA** | delivery and closure are S/4HANA facts | nothing to do in the portal; wait for the S/4HANA update |
 | A `Viewed` order exists but you cannot produce one | only fixtures show it | `t_po_view` has no caller | expected; acknowledge or confirm from `Viewed` still works |
-<!-- src: src/lib/glossary/refusals.glossary.ts:32-90; src/lib/i18n/supplierOrders.ts:91-101,124-131; src/services/transitions/refusals.ts:61-103 -->
+<!-- src: src/lib/glossary/refusals.glossary.ts:32-97; src/lib/i18n/supplierOrders.ts:91-101,124-131; src/services/transitions/refusals.ts:61-114 -->
 
 <!-- section:testdata -->
 ## 9 · Test data

@@ -15,7 +15,7 @@ import LifecycleWalk from './process-flows/LifecycleWalk';
 import { looseEndKindKey, reasonKey, ALL_REASONS } from './process-flows/labels';
 import DerivedFlags from './process-flows/DerivedFlags';
 import GuideTabs from './process-flows/GuideTabs';
-import { GUIDES_PENDING_G2, getGuide, guideLocaleFor } from '../guides';
+import { getGuide, guideLocaleFor } from '../guides';
 import { firstParagraphText } from '../guides/markdown';
 import { STEP_KIND_KEY } from '../lib/i18n/stepKind';
 import { EXTERNAL_FACT_OWNER_KEY } from '../lib/i18n/externalFactOwner';
@@ -241,17 +241,16 @@ const TransitionRow: React.FC<{ tv: TransitionView }> = ({ tv }) => {
   );
 };
 
-/** The catalogue card's guide line: the summary's first paragraph, or "Guide pending". */
+/**
+ * The catalogue card's guide line: the summary's first paragraph. Every flow has
+ * a guide in both locales (G2 — `guides.test.ts` holds it), so there is no
+ * "pending" line any more; a card with no guide line is a missing guide, and
+ * that is red in the suite before it is ever blank here.
+ */
 const GuideCardLine: React.FC<{ entity: string }> = ({ entity }) => {
   const { t, i18n } = useTranslation();
   const guide = getGuide(entity, guideLocaleFor(i18n.language));
-  if (!guide) {
-    return GUIDES_PENDING_G2.includes(entity) ? (
-      <span data-testid={`pf-flow-guide-pending-${entity}`} className="mt-1 block text-[10px] uppercase tracking-wider text-text-tertiary">
-        {t('processGuides.catalog.pending')}
-      </span>
-    ) : null;
-  }
+  if (!guide) return null;
   return (
     <span data-testid={`pf-flow-guide-${entity}`} className="mt-1 block">
       <span className="text-[10px] font-semibold uppercase tracking-wider text-teal">{t('processGuides.catalog.guide')}</span>

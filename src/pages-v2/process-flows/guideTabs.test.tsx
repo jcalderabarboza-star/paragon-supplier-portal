@@ -8,8 +8,9 @@
 //   · the Status history is READ from the audit sink: a seeded document says it
 //     has no events, and a document a seat acts on shows that act, by `subject`;
 //   · a fixture id links to the route that lists it;
-//   · a flow whose guide is pending says so, and its history still works;
-//   · Indonesian chrome reads the Indonesian guide.
+//   · every flow's card carries its guide (G2 — no pending marker exists any more);
+//   · Indonesian chrome reads the Indonesian guide, and says it is a draft;
+//     English does not.
 // ────────────────────────────────────────────────────────────────────────────
 
 import { describe, it, expect, afterEach, beforeEach } from 'vitest';
@@ -21,6 +22,7 @@ import { MockCommandService, commandAuditSink } from '../../services/data/mock/M
 import { purchaseOrderStore } from '../../services/data/mock/stores/purchaseOrderStore';
 import { NO_PERSON } from '../../context/noPerson';
 import { getGuide } from '../../guides';
+import { getKnownFlows } from '../../services/transitions';
 import { parseMarkdown, parseInline, firstParagraphText } from '../../guides/markdown';
 import { historyFor, documentsWithEvents } from './statusHistory';
 import type { TransitionEvent } from '../../services/transitions/events';
@@ -54,10 +56,14 @@ describe('guide tabs — Overview first, nothing removed', () => {
     expect(screen.getByRole('heading', { name: 'Lifecycle walk' })).toBeInTheDocument();
   });
 
-  it('the catalogue card carries the guide’s first paragraph; a pending flow says so', async () => {
+  it('the catalogue card carries the guide’s first paragraph — on every flow, with no pending marker', async () => {
     await open();
     expect(screen.getByTestId('pf-flow-guide-purchaseOrder')).toHaveTextContent(/commitment to buy/);
-    expect(screen.getByTestId('pf-flow-guide-pending-rfq')).toHaveTextContent('Guide pending');
+    // G2 — every registered flow has a guide, so every card carries one.
+    for (const f of getKnownFlows()) {
+      expect(screen.getByTestId(`pf-flow-guide-${f.entity}`), f.entity).toBeInTheDocument();
+    }
+    expect(screen.queryAllByTestId(/^pf-flow-guide-pending-/)).toEqual([]);
   });
 });
 
@@ -160,13 +166,30 @@ describe('guide tabs — test data links to the list', () => {
   });
 });
 
-describe('guide tabs — a pending flow, and Indonesian', () => {
-  it('a flow whose guide is pending says so in its authored tabs; its history still renders', async () => {
+describe('guide tabs — a G2 flow, the draft marker, and Indonesian', () => {
+  it('a flow landed at G2 renders its authored tabs; its history still renders', async () => {
     await open('rfq');
     tab('steps');
-    expect(screen.getByTestId('pf-guide-pending')).toBeInTheDocument();
+    expect(screen.queryByTestId('pf-guide-missing')).toBeNull();
+    expect(screen.getByTestId('pf-guide-step-t_rfq_award')).toHaveAttribute('data-citation', 'guide://rfq/en#t_rfq_award');
     tab('history');
     expect(screen.getByTestId('pf-guide-history-live')).toBeInTheDocument();
+  });
+
+  it('KNOWN-GOOD — an English guide carries no draft marker', async () => {
+    await open('requirementResponse');
+    expect(screen.getByTestId('pf-guide-authored')).toBeInTheDocument();
+    expect(screen.queryByTestId('pf-guide-draft')).toBeNull();
+  });
+
+  it('an Indonesian guide says it is a draft, on every tab', async () => {
+    await act(async () => {
+      await i18n.changeLanguage('id');
+    });
+    await open('moduleActivation');
+    expect(screen.getByTestId('pf-guide-draft')).toHaveTextContent(/^Draf — panduan berbahasa Indonesia/);
+    tab('troubleshooting');
+    expect(screen.getByTestId('pf-guide-draft')).toBeInTheDocument();
   });
 
   it('Indonesian chrome reads the Indonesian guide', async () => {

@@ -20,7 +20,6 @@ import registryJson from './generated/guides.json';
 import type { GuideLocale, GuideRegistry, GuideSectionKey, GuideStep, ProcessGuide } from './types';
 
 export type { GuideLocale, GuideSectionKey, GuideStep, GuideStepKind, ProcessGuide } from './types';
-export { GUIDES_PENDING_G2 } from './pending';
 
 /**
  * The JSON as the build wrote it. The cast is the one unchecked step between the
@@ -52,12 +51,47 @@ export function getGuide(entity: string, locale: GuideLocale): ProcessGuide | un
 }
 
 /**
+ * The locales whose guides are still DRAFTS — the page says so on every guide
+ * in one of them. G2 lands the Indonesian guides as translations awaiting the
+ * locale pass; that pass removes `'id'` here, and the banner goes with it.
+ */
+export const GUIDE_DRAFT_LOCALES: readonly GuideLocale[] = Object.freeze(['id']);
+
+/**
  * The route that LISTS a guided entity's documents — where a fixture id in the
- * test-data tab links to. A guide that lands needs an entry; the gate holds the
- * route to the router and to the module that owns the flow.
+ * test-data tab links to. Every flow has a guide (G2), so every flow has an
+ * entry; the gate holds each route to the router and to the module that owns
+ * the flow, so a route here can never point outside the flow's own module.
  */
 export const GUIDE_LIST_ROUTE: Readonly<Record<string, string>> = Object.freeze({
+  advanceShipNotice: '/buyer/shipments',
+  compliance: '/buyer/compliance',
+  contract: '/buyer/contracts',
+  deliveryPolicy: '/buyer/delivery-agreements',
+  deliveryRelease: '/buyer/delivery-agreements',
+  enforcement: '/buyer/goods-receipt',
+  forecastPublication: '/buyer/collaboration',
+  goodsReceipt: '/buyer/goods-receipt',
+  goodsReceiptLine: '/buyer/goods-receipt',
+  incomingShipment: '/buyer/collaboration',
+  intakeLine: '/buyer/intake-review',
+  inventoryDeclaration: '/buyer/collaboration',
+  invoice: '/buyer/invoices',
+  invoiceMatch: '/buyer/invoices',
+  materialRequest: '/buyer/material-requests',
+  moduleActivation: '/buyer/platform/modules/admin',
+  obligation: '/buyer/contracts',
+  psl: '/buyer/preferred-suppliers',
+  pslCapSetting: '/buyer/preferred-suppliers',
   purchaseOrder: '/buyer/orders',
+  purchaseRequisition: '/buyer/purchase-requisition',
+  quotation: '/buyer/sourcing',
+  requirementResponse: '/buyer/collaboration',
+  rfq: '/buyer/sourcing',
+  role: '/buyer/roles',
+  shipment: '/buyer/shipments',
+  supplierApplication: '/buyer/supplier-applications',
+  supplierDocument: '/buyer/compliance',
 });
 
 export const guideCitationKey = (entity: string, locale: GuideLocale, anchor: string): string =>

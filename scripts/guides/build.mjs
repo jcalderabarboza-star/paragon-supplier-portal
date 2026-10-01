@@ -357,6 +357,27 @@ export function buildGuides(srcDir = DEFAULT_SRC) {
 
 export const serialize = (registry) => `${JSON.stringify(registry, null, 2)}\n`;
 
+/** A file's text with its line endings normalised — the one comparison both `--check` and the write use. */
+const normalisedText = (path) => (existsSync(path) ? readFileSync(path, 'utf8').replace(/\r\n?/g, '\n') : null);
+
+/**
+ * Write `text` to `out` ONLY when the content differs, line endings aside;
+ * returns whether it wrote.
+ *
+ * ⚠️ **WHY THE COMPARISON IGNORES LINE ENDINGS.** `core.autocrlf` checks the
+ * JSON out with CRLF on Windows while this script serialises LF, so an
+ * unconditional write turned every local `npm run build` into a modified file
+ * whose git blob was identical — a dirty tree with no change in it (found
+ * after G1's post-merge build). A file whose content already matches is left
+ * byte-for-byte alone; a stale one is rewritten exactly as before.
+ */
+export function writeIfChanged(out, text) {
+  if (normalisedText(out) === text) return false;
+  mkdirSync(dirname(out), { recursive: true });
+  writeFileSync(out, text);
+  return true;
+}
+
 function main(argv) {
   const arg = (name) => {
     const i = argv.indexOf(name);
@@ -375,17 +396,15 @@ function main(argv) {
     throw e;
   }
   if (argv.includes('--check')) {
-    const current = existsSync(out) ? readFileSync(out, 'utf8').replace(/\r\n?/g, '\n') : '';
-    if (current !== text) {
+    if (normalisedText(out) !== text) {
       console.error(`GUIDE BUILD REFUSED — ${relative(REPO_ROOT, out)} is stale; run \`node scripts/guides/build.mjs\``);
       return 1;
     }
     console.log('guides: JSON is current');
     return 0;
   }
-  mkdirSync(dirname(out), { recursive: true });
-  writeFileSync(out, text);
-  console.log(`guides: ${relative(REPO_ROOT, out).split('\\').join('/')} written`);
+  const wrote = writeIfChanged(out, text);
+  console.log(`guides: ${relative(REPO_ROOT, out).split('\\').join('/')} ${wrote ? 'written' : 'unchanged'}`);
   return 0;
 }
 
