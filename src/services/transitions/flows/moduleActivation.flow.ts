@@ -68,9 +68,9 @@ export const moduleActivationFlow: FlowDefinition = {
         POLICY_HOOKS.MODULE_SET_ATTRIBUTED,
         POLICY_HOOKS.MODULE_SET_NOT_SAMPLE_IN_PROD,
       ],
-      // INTENDED, not yet built: the admin page that dispatches it is batch M2
-      // (Design 5 §A.5.2). `surfaced: true` means a screen is intended, never
-      // that one exists (schema.ts) — so M1 is the truthful gap, not a ruling.
+      // BUILT at M2: the admin page (`/buyer/platform/modules/admin`, Design 5
+      // §A.5.2) dispatches it, one act per changed row, through
+      // `useModuleSetBatch`.
       surfaceable: { surfaced: true },
       version: 1,
     },

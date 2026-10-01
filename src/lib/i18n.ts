@@ -189,6 +189,7 @@ export const resources = {
       // Managing who anyone is is a page; who I am is in the avatar.
       'nav.section.platform': 'Platform',
       'nav.buyer.roles': 'Roles',
+      'nav.buyer.modules': 'Modules',
       'nav.persona.buyer': 'Buyer',
       'nav.persona.supplier': 'Supplier',
       'nav.buyer.dashboard': 'Dashboard',
@@ -687,6 +688,7 @@ export const resources = {
       'nav.section.intelligence': 'Intelijen',
       'nav.section.platform': 'Platform',
       'nav.buyer.roles': 'Peran',
+      'nav.buyer.modules': 'Modul',
       'nav.persona.buyer': 'Pembeli',
       'nav.persona.supplier': 'Pemasok',
       'nav.buyer.dashboard': 'Dasbor',

@@ -2,8 +2,9 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import TopBarV2 from './TopBarV2';
 import SidebarV2 from './SidebarV2';
-import { useRouteModuleOff } from '../../context/ModuleActivationContext';
+import { useRouteModuleActivating, useRouteModuleOff } from '../../context/ModuleActivationContext';
 import { ModuleOffNotice } from '../ui-v2/ModuleOffNotice';
+import { ModuleActivatingNotice } from '../ui-v2/ModuleActivatingNotice';
 
 interface AppShellV2Props {
   children: React.ReactNode;
@@ -15,6 +16,8 @@ const AppShellV2: React.FC<AppShellV2Props> = ({ children }) => {
   // banner above it, and every guarded verb slot on it swapped for the notice
   // (Design 5 §A.3). The page itself stays: an OFF module never hides a document.
   const routeOff = useRouteModuleOff();
+  // M2 — a page whose module is in the Activating phase says so, with its guide.
+  const routeActivating = useRouteModuleActivating();
   // Pages build `children` in their own render, so a language change (which
   // re-renders subscribers like TopBar/Sidebar) would NOT re-run a page body —
   // React bails on the referentially-equal children element. Keying <main> on
@@ -28,6 +31,7 @@ const AppShellV2: React.FC<AppShellV2Props> = ({ children }) => {
         <SidebarV2 />
         <main key={i18n.language} className="flex-1 overflow-auto bg-bg-page p-8">
           {routeOff && <ModuleOffNotice off={routeOff} variant="banner" testId="module-off-banner" />}
+          {routeActivating && <ModuleActivatingNotice code={routeActivating} />}
           {children}
         </main>
       </div>

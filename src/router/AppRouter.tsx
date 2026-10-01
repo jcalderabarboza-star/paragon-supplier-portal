@@ -36,6 +36,9 @@ import BuyerCompliance from '../pages-v2/BuyerCompliance';
 import ProcessFlows from '../pages-v2/ProcessFlows';
 import RolesCatalogue from '../pages-v2/RolesCatalogue';
 import RoleDetail from '../pages-v2/RoleDetail';
+// M2 · Design 5 §A.5 — the module roadmap board and the admin page (PLT).
+import ModulesBoard from '../pages-v2/ModulesBoard';
+import ModulesAdmin from '../pages-v2/ModulesAdmin';
 // GL-1 — the glossary surface. PERSONA-NEUTRAL by route, deliberately: the term
 // chips that lead here sit on buyer AND supplier refusal sites, so a
 // `/buyer/...` path would have sent every supplier out of their own shell.
@@ -160,6 +163,8 @@ const AppRouter: React.FC = () => {
           <Route path="/buyer/process-flows" element={<ModuleGate path="/buyer/process-flows"><ProcessFlows /></ModuleGate>} />
           <Route path="/buyer/roles" element={<ModuleGate path="/buyer/roles"><RolesCatalogue /></ModuleGate>} />
           <Route path="/buyer/roles/:roleId" element={<ModuleGate path="/buyer/roles/:roleId"><RoleDetail /></ModuleGate>} />
+          <Route path="/buyer/platform/modules" element={<ModuleGate path="/buyer/platform/modules"><ModulesBoard /></ModuleGate>} />
+          <Route path="/buyer/platform/modules/admin" element={<ModuleGate path="/buyer/platform/modules/admin"><ModulesAdmin /></ModuleGate>} />
           <Route path="/glossary" element={<ModuleGate path="/glossary"><Glossary /></ModuleGate>} />
           <Route path="/supplier/dashboard" element={<ModuleGate path="/supplier/dashboard"><SupplierDashboardV2 /></ModuleGate>} />
           <Route path="/supplier/storefront" element={<ModuleGate path="/supplier/storefront"><SupplierMyStorefront /></ModuleGate>} />

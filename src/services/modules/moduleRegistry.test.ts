@@ -74,7 +74,8 @@ describe('the populations are real — membership controls first', () => {
     expect(ROUTER_PATHS).toContain('/supplier/shipments');
     expect(ROUTER_PATHS).toContain('/buyer/plan-grid'); // a multi-line (Suspense) route
     expect(ROUTER_PATHS).toContain('*');
-    expect(ROUTER_PATHS).not.toContain('/buyer/platform/modules'); // M2's — not built yet
+    expect(ROUTER_PATHS).toContain('/buyer/platform/modules/admin'); // M2's admin page
+    expect(ROUTER_PATHS).not.toContain('/buyer/platform/modules/nope'); // a path the router lacks
   });
 
   it('the flow derivation sees the new machine and an old one', () => {
@@ -83,10 +84,9 @@ describe('the populations are real — membership controls first', () => {
   });
 
   it('every code the union declares has exactly one spec, and PLT alone is always on', () => {
-    // ⚠️ The design's PROSE says "fourteen switchable modules + PLT"; its own
-    // table and its own `ModuleCode` union hold one more (INT is a row). The
-    // table is what was ruled "as proposed", so the table is what is built —
-    // and the count is derived here rather than restated (FLOOR-IN-PROSE-01).
+    // Ruled 2026-10-01: the table's fifteen switchable modules + PLT is the
+    // count (the design's prose miscounted). It is derived here from the union
+    // rather than restated (FLOOR-IN-PROSE-01).
     expect(getModules().map((m) => m.code)).toEqual([...MODULE_CODES]);
     expect(getModules().filter((m) => m.alwaysOn).map((m) => m.code)).toEqual(['PLT']);
   });

@@ -28,6 +28,7 @@ import {
   UserPlus,
   PackagePlus,
   ListChecks,
+  Blocks,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useCurrentIdentity } from '../../context/CurrentIdentityContext';
@@ -131,6 +132,8 @@ const BUYER_NAV: NavGroup[] = [
     labelKey: 'nav.section.platform',
     items: [
       { labelKey: 'nav.buyer.roles', icon: ShieldCheck, path: '/buyer/roles' },
+      // M2 · Design 5 §A.5.1 — the module roadmap board (PLT, so never filtered).
+      { labelKey: 'nav.buyer.modules', icon: Blocks, path: '/buyer/platform/modules' },
     ],
   },
 ];

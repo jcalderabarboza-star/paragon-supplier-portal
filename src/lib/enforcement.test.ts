@@ -687,6 +687,13 @@ describe('E1 — ⚠️ HEADLESS. NO STORE, NO CONSUMER, NO CLOCK', () => {
       '/src/services/data/mock/enforcementSeam.test.ts',
       '/src/services/data/mock/enforcementSeed.test.ts',
       '/src/services/data/mock/enforcementSetCommand.test.ts',
+      // ⚠️ M2 · OPERATOR RULING 1 — "no module part reaches a governed
+      // compliance check". It consumes `GOVERNED_CHECK_IDS` as a VALUE to DERIVE
+      // the check set: which wired targets answer for a check id, and which
+      // surface files spell one. A hand-written list of the three ids would have
+      // kept this census green and gone blind the day a fourth check is
+      // governed. Authorised by the M2 dispatch's ruling 1.
+      '/src/services/modules/moduleParts.complianceCheck.test.ts',
       // ⚠️ THE OWNER-LESS SCOPE GATE, and it is here for a reason worth stating:
       // it consumes `GOVERNED_CHECK_IDS` as a VALUE because `enforcement` turned
       // out to be one of the five OWNER-LESS command targets, and probing its

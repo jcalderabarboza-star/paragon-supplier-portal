@@ -17,6 +17,7 @@
 
 import React, { createContext, useContext, useMemo } from 'react';
 import { useServiceQuery } from '../services/query/useServiceQuery';
+import { getModule, moduleOfRoute, type ModuleCode } from '../services/modules/registry';
 import {
   defaultActivation,
   routeOffReason,
@@ -29,6 +30,8 @@ export const MODULE_ACTIVATION_KEY = ['modules', 'activation'] as const;
 
 export const ModuleActivationContext = createContext<ModuleActivationView | null>(null);
 export const ModuleRouteContext = createContext<OffReason | null>(null);
+/** M2 · the route's module when it is in the `Activating` phase (and ON), else null. */
+export const ModuleRouteActivatingContext = createContext<ModuleCode | null>(null);
 
 let defaults: ModuleActivationView | null = null;
 const registryDefaults = (): ModuleActivationView => (defaults ??= defaultActivation());
@@ -41,6 +44,11 @@ export function useModuleActivation(): ModuleActivationView {
 /** Why the page being rendered is read-only, or null when it is not. */
 export function useRouteModuleOff(): OffReason | null {
   return useContext(ModuleRouteContext);
+}
+
+/** M2 · the module of the page being rendered when it is Activating — for the shell's banner. */
+export function useRouteModuleActivating(): ModuleCode | null {
+  return useContext(ModuleRouteActivatingContext);
 }
 
 /** Mounted by the router: reads the activation through the service seam. */
@@ -57,5 +65,16 @@ export const ModuleActivationProvider: React.FC<{ children: React.ReactNode }> =
 export const ModuleGate: React.FC<{ path: string; children: React.ReactNode }> = ({ path, children }) => {
   const view = useModuleActivation();
   const off = useMemo(() => routeOffReason(path, view), [path, view]);
-  return <ModuleRouteContext.Provider value={off}>{children}</ModuleRouteContext.Provider>;
+  // M2 · Design 5 §A.2 — an `Activating` module is ON and shows its pages with a
+  // banner. A page that is read-only says THAT instead; the two never stack.
+  const activating = useMemo(() => {
+    const m = moduleOfRoute(path);
+    if (off || !m || getModule(m.code).alwaysOn) return null;
+    return view.modules[m.code].phase === 'Activating' ? m.code : null;
+  }, [path, view, off]);
+  return (
+    <ModuleRouteContext.Provider value={off}>
+      <ModuleRouteActivatingContext.Provider value={activating}>{children}</ModuleRouteActivatingContext.Provider>
+    </ModuleRouteContext.Provider>
+  );
 };

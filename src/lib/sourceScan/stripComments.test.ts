@@ -463,6 +463,11 @@ describe('⚠️ THE TWO-REGEX COMMENT STRIP IS EXTINCT — derived, not listed'
         // whose comments name routes in prose ("the plan-grid push"); stripped
         // first so a route DISCUSSED can never be counted as one MOUNTED.
         'services/modules/moduleRegistry.test.ts',
+        // M2 · ruling 1 — the compliance-check derivation reads hook bodies,
+        // the router and surface files; stripped first, because a file that
+        // only NAMES an evaluator in a comment (`PslGateNotice`) is not a site
+        // that calls one, and the spec asserts exactly that.
+        'services/modules/moduleParts.complianceCheck.test.ts',
       ].sort(),
     );
   }, 30000);

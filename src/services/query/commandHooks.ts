@@ -16,6 +16,11 @@ import { classifySettleFault } from '../transitions/settleFaults';
 import { DataError } from '../data/types';
 import { useCurrentIdentity } from '../../context/CurrentIdentityContext';
 import { scopeKey } from './useServiceQuery';
+import { MODULE_ACTIVATION_KEY } from '../../context/ModuleActivationContext';
+import { activeHardDependants } from '../modules/activation';
+import { isModuleCode } from '../modules/registry';
+import { refusedByPolicy } from '../transitions/refusalMessage';
+import { POLICY_HOOKS } from '../transitions/policyHooks';
 import type { BidCurrency } from '../../lib/currencyPolicy';
 import type { NumberConvention } from '../../lib/localeNumber';
 import type { FxPinSource } from '../../lib/fxPin';
@@ -2066,6 +2071,73 @@ export function usePublicationAct() {
     },
     onSuccess: (result) => {
       if (result.status !== 'failed') invalidate();
+    },
+  });
+}
+
+// ── M2 · Design 5 §A.5.2 — SAVE CHANGES ON THE MODULE ADMIN PAGE ────────────
+//
+// ONE `t_module_set` PER CHANGED ROW, UNDER ONE CAUSATION ANCHOR — the
+// SubmissionSession pattern: the first command's correlationId is the anchor
+// and every later command passes it, so the whole save is one audit group while
+// each act keeps its own correlation (`getCommandStatus` stays 1:1).
+//
+// ⚠️ **SEQUENTIAL, AND A REFUSAL DOES NOT STOP THE BATCH.** Each row is decided
+// by the dispatcher against the state the rows before it left; a refused row is
+// returned with its reason and the rest still go (§A.5.2: "a refusal on one row
+// leaves the others applied"). Nothing here interprets a refusal except one
+// derivation: when the dependants rule refused a switch-off, the dependants
+// that blocked it are read from the activation IN FORCE at that moment — the
+// same view the hook read — so the page can name them in either locale without
+// parsing the hook's English.
+
+export interface ModuleSetRow {
+  readonly subject: string;
+  readonly payload: Readonly<Record<string, unknown>>;
+  /** The row's own reason, when it overrides the batch's (§A.5.2). */
+  readonly reason?: string;
+}
+
+export interface ModuleSetOutcome {
+  readonly subject: string;
+  readonly result: CommandResult;
+  /** Set when the dependants rule refused a switch-off: the ON hard dependants. */
+  readonly blockedBy?: readonly string[];
+}
+
+export const MODULE_LEDGER_KEY = ['modules', 'ledger'] as const;
+
+export function useModuleSetBatch() {
+  const svc = useDataService();
+  const scope = useScope();
+  const qc = useQueryClient();
+
+  return useMutation<ModuleSetOutcome[], Error, { rows: readonly ModuleSetRow[]; reason: string }>({
+    mutationFn: async ({ rows, reason }) => {
+      const out: ModuleSetOutcome[] = [];
+      let anchor: string | undefined;
+      for (const row of rows) {
+        const result = await svc.commands.dispatch(
+          scope,
+          { transitionId: 't_module_set', entity: 'moduleActivation', entityId: row.subject, payload: { ...row.payload, reason: row.reason || reason } },
+          anchor,
+        );
+        anchor ??= result.correlationId;
+        let blockedBy: readonly string[] | undefined;
+        if (
+          result.status === 'failed' &&
+          isModuleCode(row.subject) &&
+          refusedByPolicy(result.reason, POLICY_HOOKS.MODULE_NO_ACTIVE_HARD_DEPENDANTS)
+        ) {
+          blockedBy = activeHardDependants(row.subject, await svc.modules.getModuleActivation(scope));
+        }
+        out.push({ subject: row.subject, result, ...(blockedBy ? { blockedBy } : {}) });
+      }
+      return out;
+    },
+    onSettled: () => {
+      void qc.invalidateQueries({ queryKey: [...MODULE_ACTIVATION_KEY] });
+      void qc.invalidateQueries({ queryKey: [...MODULE_LEDGER_KEY] });
     },
   });
 }
