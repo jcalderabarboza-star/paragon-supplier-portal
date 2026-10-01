@@ -22,6 +22,7 @@ interface TransitionEvent {
   readonly ts: string;             // ISO timestamp — SUPPLIED by the caller (no clock in pure code)
   readonly decision?: CommandDecision;      // governed-decision provenance (C6-LOCK), opaque
   readonly attribution?: ActorAttribution;  // WHICH HUMAN (C10 §6.4) — orthogonal to `actor`
+  readonly subject?: TransitionSubject;     // WHICH DOCUMENT (G1) — { entity, entityId, from, to }
 }
 ```
 
@@ -42,6 +43,14 @@ drift into two different stories:
   dressed as `UNATTRIBUTED`**, because `UNATTRIBUTED` is a claim that a human
   acted and could not be resolved — a failure somebody can go and fix — and
   flooding it with machine acts destroys the only pressure to fix one.
+- **`subject`** — **WHICH DOCUMENT** (added at G1, Design 5 §B.2): `{ entity, entityId,
+  from, to }`. Until it existed no event named the entity it was about, so a per-document
+  status history over this sink was unbuildable without a second index beside the ledger.
+  Absent only where the dispatcher refused before it knew the entity (`UNKNOWN_TRANSITION`,
+  `UNKNOWN_ENTITY`, `MISSING_ENTITY_ID`, or a creation refused before it minted an id). On a
+  refusal `to` is where the act would have landed; on a settlement the edge is the boundary
+  verb's interim state → its `settlesTo`. Additive and optional, for C10 §6.4's reason: the
+  sink is still in-memory, which is the only window in which a field can be added.
 
 **Every outcome is an event.** A successful apply (`done`), a SAP-boundary submit (`submitted`),
 and a domain rejection (`failed`, with its reason on the `CommandResult`) all emit — so the audit

@@ -33,7 +33,7 @@ import type {
 } from '../data/types';
 import type { CommandDecision, CommandDecisionInput } from '../data/types';
 import type { ActorAttribution } from '../../lib/enforcement';
-import type { AuditSink } from './events';
+import type { AuditSink, TransitionSubject } from './events';
 import { actorKey } from './events';
 import { attributionKeysIn } from '../identity/attributionKeys';
 import { AUTOMATION_ROLE } from './businessRoles';
@@ -401,6 +401,7 @@ export function createDispatcher(deps: DispatcherDeps): Dispatcher {
     causationId?: string,
     decision?: CommandDecision,
     attribution?: ActorAttribution,
+    subject?: TransitionSubject,
   ): void {
     deps.sink.emit({
       event: transitionId,
@@ -421,6 +422,9 @@ export function createDispatcher(deps: DispatcherDeps): Dispatcher {
       // ⚠️ C10 §6.4 — WHICH HUMAN, beside the existing `actor` (WHICH SEAT).
       // Present ONLY on a `user`-trigger transition; see `attributionFor`.
       ...(attribution ? { attribution } : {}),
+      // G1 — WHICH DOCUMENT. Absent only where the dispatcher refused before it
+      // knew one (see `TransitionEvent.subject`).
+      ...(subject ? { subject } : {}),
     });
   }
 
@@ -433,10 +437,11 @@ export function createDispatcher(deps: DispatcherDeps): Dispatcher {
     causationId?: string,
     decision?: CommandDecision,
     attribution?: ActorAttribution,
+    subject?: TransitionSubject,
   ): CommandResult {
     const correlationId = deps.nextCorrelationId();
     const ts = deps.now();
-    emit(scope, transitionId, outcome, correlationId, ts, reason, causationId, decision, attribution);
+    emit(scope, transitionId, outcome, correlationId, ts, reason, causationId, decision, attribution, subject);
     statuses.set(correlationId, { correlationId, transitionId, status: outcome, ts });
     // WHO MAY LOOK. Recorded here rather than at the `submitted` branch because
     // this is the single mint point: every outcome gets an owner, or the gate
@@ -489,6 +494,26 @@ export function createDispatcher(deps: DispatcherDeps): Dispatcher {
         ? undefined
         : { ...input.decision, wasAdjusted: input.decision.to !== input.decision.from };
 
+    // G1 — WHICH DOCUMENT the event is about. Declared above `fin` because
+    // `fin` reads them; written below, as the dispatch learns them. A subject is
+    // named only once the entity is KNOWN: its state was read (an existing
+    // document), or a creation returned the id it minted. Before that there is
+    // no document to name, and the event says so by omitting the field.
+    let currentState: string | null = null;
+    let stateRead = false;
+    const subjectFor = (entityId?: string): TransitionSubject | undefined => {
+      const def = getTransition(input.transitionId);
+      const id = entityId ?? input.entityId;
+      if (!def || !id) return undefined;
+      if (!stateRead && !(def.trigger === 'creation' && entityId)) return undefined;
+      return {
+        entity: input.entity,
+        entityId: id,
+        from: currentState,
+        to: def.statePreserving && currentState !== null ? currentState : def.to,
+      };
+    };
+
     const fin = (
       s: QueryScope,
       tid: string,
@@ -505,6 +530,7 @@ export function createDispatcher(deps: DispatcherDeps): Dispatcher {
         causationId,
         recorded,
         attributionFor(),
+        subjectFor(entityId),
       );
       // Record AFTER the act, and only when there was one. `finish` is the
       // single mint point, so every outcome passes here exactly once.
@@ -526,7 +552,6 @@ export function createDispatcher(deps: DispatcherDeps): Dispatcher {
 
     // — Scope: QueryScope on every command exactly as reads (creation derives
     //   the owner from the payload's parent; others from the existing entity). —
-    let currentState: string | null = null;
     if (isCreation) {
       const owner = target.creationOwner ? target.creationOwner(payload) : null;
       if (scope.personaType === 'supplier') {
@@ -544,6 +569,7 @@ export function createDispatcher(deps: DispatcherDeps): Dispatcher {
     } else {
       if (!input.entityId) return fin(scope, transition.id, 'failed', refusal('MISSING_ENTITY_ID'));
       currentState = target.readState(input.entityId);
+      stateRead = currentState !== null;
       const owner = target.readScopeOwner(input.entityId);
       if (scope.personaType === 'supplier') {
         // ⚠️ **A SUPPLIER PASSES THIS GATE ONLY BY BEING NAMED AS THE OWNER —
@@ -897,6 +923,15 @@ export function createDispatcher(deps: DispatcherDeps): Dispatcher {
   // ("under the SAME correlationId") and what `getCommandStatus` staying 1:1
   // requires: one command, one correlationId, two recorded acts distinguished by
   // outcome.
+  // G1 — the settlement moves the document from the boundary verb's interim
+  // state to where settlement lands it (`settlesTo`), so its event names that
+  // edge, on the same document the `submitted` event named.
+  function settledSubject(ctx: { entity: string; transitionId: string; entityId: string }): TransitionSubject | undefined {
+    const def = getTransition(ctx.transitionId);
+    if (!def || !ctx.entityId) return undefined;
+    return { entity: ctx.entity, entityId: ctx.entityId, from: def.to, to: def.settlesTo ?? def.to };
+  }
+
   function settle(scope: QueryScope, correlationId: string): CommandStatus | null {
     // ⚠️ **THE GATE SITS ABOVE EVERYTHING, AND THE FALL-THROUGH IS WHY.**
     // `settle` is not a read with a side effect; it is a state-advancing WRITE
@@ -942,6 +977,10 @@ export function createDispatcher(deps: DispatcherDeps): Dispatcher {
             correlationId,
             ts,
             settleFault(classifySettleFault(err), settleFaultDetail(err)),
+            undefined,
+            undefined,
+            undefined,
+            settledSubject(ctx),
           );
           // ⚠️ THE STATUS IS DELIBERATELY *NOT* FLIPPED HERE, AND THIS IS THE
           // ONE BEHAVIOURAL DIFFERENCE IN THE BATCH — confined to a path that
@@ -960,7 +999,7 @@ export function createDispatcher(deps: DispatcherDeps): Dispatcher {
       const settled: CommandStatus = { ...current, status: 'done', ts };
       statuses.set(correlationId, settled);
       pending.delete(correlationId);
-      emit(ctx.scope, current.transitionId, 'done', correlationId, ts);
+      emit(ctx.scope, current.transitionId, 'done', correlationId, ts, undefined, undefined, undefined, undefined, settledSubject(ctx));
       return settled;
     }
     return current ?? null;

@@ -72,6 +72,13 @@ jobs:
       # deprecated and now force onto 24 with a warning. A brand-new workflow
       # should not ship carrying a deprecation notice.
       - uses: actions/checkout@v5
+        with:
+          # G1 — FULL HISTORY, because a gate now reads it. `guides.test.ts`
+          # asserts every process guide's `source_sha` is a commit this
+          # repository holds (`git cat-file -e`), and the default depth-1 clone
+          # holds exactly one commit, so the gate would be red for a reason that
+          # is about the clone, not the guide.
+          fetch-depth: 0
 
       - uses: actions/setup-node@v5
         with:

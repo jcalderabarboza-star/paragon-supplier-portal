@@ -96,6 +96,31 @@ export interface TransitionEvent {
    * `requiredFields`.
    */
   readonly attribution?: import('../../lib/enforcement').ActorAttribution;
+  /**
+   * ⚠️ **WHICH DOCUMENT — G1 (Design 5 §B.2), and until it existed the ledger
+   * could not answer "what happened to THIS purchase order?".** Every other
+   * field says who, when, which verb and how it resolved; none said which
+   * entity. A per-document status history read over this sink would have had to
+   * guess, or keep a second index beside the ledger — and a second copy is the
+   * half that rots. Added while the sink is still in-memory, for C10 §6.4's
+   * reason: once it is durable, an event that cannot name its document is not
+   * repairable by a migration.
+   *
+   * OPTIONAL, and absent means one thing only: the dispatcher refused before it
+   * knew the entity (`UNKNOWN_TRANSITION`, `UNKNOWN_ENTITY`, `MISSING_ENTITY_ID`)
+   * or before a creation minted its id. `from` is the state read at the act
+   * (`null` for a creation); `to` is where the act lands — for a refusal, where
+   * it WOULD have landed; for a state-preserving verb, the same state.
+   */
+  readonly subject?: TransitionSubject;
+}
+
+/** The document an event is about (`TransitionEvent.subject`). */
+export interface TransitionSubject {
+  readonly entity: string;
+  readonly entityId: string;
+  readonly from: string | null;
+  readonly to: string;
 }
 
 /** Stable actor key for an event. Mirrors the query-layer scopeKey format. */

@@ -266,8 +266,10 @@ export const modulesId: Record<string, string> = {
   'modules.activating.body': 'Modul ini sedang dikonfigurasi; data mungkin berupa contoh.',
   'modules.activating.guide': 'Baca panduannya',
 
-  'modules.admin.on': 'Aktif',
-  'modules.admin.off': 'Nonaktif',
+  // On/off is NOT the phase: 'Aktif' is `modules.phase.Active`, so the drawer
+  // read "Aktif · Aktif". A switch state takes its own words (G1 fix-first).
+  'modules.admin.on': 'Menyala',
+  'modules.admin.off': 'Mati',
   'modules.admin.crumb': 'Admin',
   'modules.admin.title': 'Aktivasi modul',
   'modules.admin.subtitle': 'Aktifkan atau nonaktifkan bagian platform. Setiap perubahan dicatat beserta siapa yang membuatnya dan alasannya.',
@@ -279,7 +281,7 @@ export const modulesId: Record<string, string> = {
   'modules.admin.buyerSideLocked': 'Selalu aktif: modul platform, dan halaman ini, berada di sisi pembeli.',
   'modules.admin.col.module': 'Modul',
   'modules.admin.col.phase': 'Fase',
-  'modules.admin.col.onOff': 'Aktif / nonaktif',
+  'modules.admin.col.onOff': 'Menyala / mati',
   'modules.admin.col.parts': 'Bagian',
   'modules.admin.alwaysOn': 'Selalu aktif — tidak dapat diubah.',
   'modules.admin.lastUpdated': 'Terakhir diubah oleh {{who}} pada {{at}}',

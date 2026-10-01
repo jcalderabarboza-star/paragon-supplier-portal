@@ -334,3 +334,21 @@ describe('the Activating phase shows its banner on the module’s pages', () => 
     expect(screen.queryByTestId('module-off-banner')).toBeNull();
   });
 });
+
+// ── THE SWITCH IS NOT THE PHASE ─────────────────────────────────────────────
+// G1 fix-first: in ID the drawer read "Berlaku: Aktif · Aktif" — the ledger
+// act line is `{{phase}} · {{onOff}}`, and `modules.admin.on` had been given
+// the phase word for Active. Pinned in BOTH locales over the whole phase union,
+// so a later "Aktif" on either side is red, not only the one that was seen.
+
+describe('the on/off labels never repeat a phase label', () => {
+  it.each(['en', 'id'] as const)('%s — on, off and every phase are distinct words', async (lng) => {
+    await i18n.changeLanguage(lng);
+    const phases = MODULE_PHASES.map((p) => i18n.t(`modules.phase.${p}`).toLowerCase());
+    const switches = [i18n.t('modules.admin.on'), i18n.t('modules.admin.off')].map((s) => s.toLowerCase());
+    // Anti-vacuity: every key resolved to a translation, not to itself.
+    for (const w of [...phases, ...switches]) expect(w).not.toMatch(/^modules\./);
+    expect(new Set(switches).size).toBe(2);
+    expect(switches.filter((s) => phases.includes(s))).toEqual([]);
+  });
+});

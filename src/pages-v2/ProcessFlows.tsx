@@ -13,7 +13,10 @@ import TableCell from '../components/ui-v2/TableCell';
 import FlowDiagram from './process-flows/FlowDiagram';
 import LifecycleWalk from './process-flows/LifecycleWalk';
 import { looseEndKindKey, reasonKey, ALL_REASONS } from './process-flows/labels';
-import { verbOf, entityVerbOf } from './process-flows/flowLayout';
+import DerivedFlags from './process-flows/DerivedFlags';
+import GuideTabs from './process-flows/GuideTabs';
+import { GUIDES_PENDING_G2, getGuide, guideLocaleFor } from '../guides';
+import { firstParagraphText } from '../guides/markdown';
 import { STEP_KIND_KEY } from '../lib/i18n/stepKind';
 import { EXTERNAL_FACT_OWNER_KEY } from '../lib/i18n/externalFactOwner';
 import { getKnownFlows } from '../services/transitions';
@@ -211,45 +214,7 @@ const TransitionRow: React.FC<{ tv: TransitionView }> = ({ tv }) => {
         ) : null}
       </TableCell>
       <TableCell className="py-3">
-        <span className="flex flex-wrap gap-1">
-          {tv.recordsFact && (
-            <StatusPill variant="neutral" className="text-[10px]">
-              {t('processFlows.flag.recordsFact')}
-            </StatusPill>
-          )}
-          {tv.sapBoundary && (
-            <StatusPill variant="info" className="text-[10px]">
-              {t('processFlows.flag.sapBoundary', { state: tv.settlesTo })}
-            </StatusPill>
-          )}
-          {tv.fansOutTo.map((link) => (
-            <StatusPill key={link.targetTransitionId} variant="info" className="text-[10px]">
-              {t('processFlows.flag.fansOut', {
-                entity: link.targetEntity,
-                verb: verbOf(link.targetTransitionId),
-              })}
-            </StatusPill>
-          ))}
-          {def.trigger === 'cascade' && (
-            <StatusPill
-              variant={tv.firedBy.length > 0 ? 'info' : 'warning'}
-              className="text-[10px]"
-            >
-              {tv.firedBy.length > 0
-                ? // ⚠️ ENTITY-QUALIFIED (C.2). A cascade source lives on ANOTHER
-                  // machine, so a bare verb here can collide with a transition
-                  // in THIS table — measured on three of the five rows that
-                  // render this pill. Same form the `fansOut` pill above already
-                  // uses, so both directions of one relationship read alike. The
-                  // i18n key is untouched: only the value in `{{sources}}`
-                  // changed, so EN and ID needed no new string.
-                  t('processFlows.flag.firedBy', {
-                    sources: tv.firedBy.map(entityVerbOf).join(', '),
-                  })
-                : t('processFlows.flag.firedByNothing')}
-            </StatusPill>
-          )}
-        </span>
+        <DerivedFlags tv={tv} />
       </TableCell>
     </TableRow>
     {/* PF-2 — THE PURPOSE GETS ITS OWN FULL-WIDTH ROW, and the reason is
@@ -273,6 +238,27 @@ const TransitionRow: React.FC<{ tv: TransitionView }> = ({ tv }) => {
       </TableRow>
     )}
     </>
+  );
+};
+
+/** The catalogue card's guide line: the summary's first paragraph, or "Guide pending". */
+const GuideCardLine: React.FC<{ entity: string }> = ({ entity }) => {
+  const { t, i18n } = useTranslation();
+  const guide = getGuide(entity, guideLocaleFor(i18n.language));
+  if (!guide) {
+    return GUIDES_PENDING_G2.includes(entity) ? (
+      <span data-testid={`pf-flow-guide-pending-${entity}`} className="mt-1 block text-[10px] uppercase tracking-wider text-text-tertiary">
+        {t('processGuides.catalog.pending')}
+      </span>
+    ) : null;
+  }
+  return (
+    <span data-testid={`pf-flow-guide-${entity}`} className="mt-1 block">
+      <span className="text-[10px] font-semibold uppercase tracking-wider text-teal">{t('processGuides.catalog.guide')}</span>
+      <span className="mt-0.5 line-clamp-2 block text-[11px] leading-snug text-text-secondary">
+        {firstParagraphText(guide.sections.summary)}
+      </span>
+    </span>
   );
 };
 
@@ -380,6 +366,10 @@ const ProcessFlows: React.FC = () => {
                         transitions: flow.transitionCount,
                       })}
                     </span>
+                    {/* G1 — the card gains its guide's first paragraph, or says
+                        the guide is pending. AFTER the counts, so the entity
+                        name still leads the card. */}
+                    <GuideCardLine entity={flow.entity} />
                   </button>
                 </li>
               );
@@ -459,49 +449,59 @@ const ProcessFlows: React.FC = () => {
             onReset={() => setPath([])}
           />
 
-          {view.looseEnds.length > 0 && (
-            <section className="rounded-md border border-border-subtle bg-bg-surface p-4">
-              <h3 className="text-section text-text-primary">
-                {t('processFlows.looseEnd.title', { total: view.looseEnds.length })}
-              </h3>
-              <p className="mt-1 max-w-prose text-meta text-text-secondary">
-                {t('processFlows.looseEnd.body')}
-              </p>
-              <ul className="mt-3 space-y-2">
-                {view.looseEnds.map((end) => (
-                  <LooseEndRow key={`${end.kind}#${end.subject}`} end={end} />
-                ))}
-              </ul>
-            </section>
-          )}
+          {/* G1 — THE GUIDE TABS (Design 5 §B.2). The loose ends and the
+              transitions table are the Overview tab's body, and Overview opens
+              first, so nothing that was on this page has moved out of view. */}
+          <GuideTabs
+            view={view}
+            overview={
+              <>
+              {view.looseEnds.length > 0 && (
+                <section className="rounded-md border border-border-subtle bg-bg-surface p-4">
+                  <h3 className="text-section text-text-primary">
+                    {t('processFlows.looseEnd.title', { total: view.looseEnds.length })}
+                  </h3>
+                  <p className="mt-1 max-w-prose text-meta text-text-secondary">
+                    {t('processFlows.looseEnd.body')}
+                  </p>
+                  <ul className="mt-3 space-y-2">
+                    {view.looseEnds.map((end) => (
+                      <LooseEndRow key={`${end.kind}#${end.subject}`} end={end} />
+                    ))}
+                  </ul>
+                </section>
+              )}
 
-          <section className="rounded-md border border-border-subtle bg-bg-surface">
-            <div className="border-b border-border-subtle p-4">
-              <h3 className="text-section text-text-primary">
-                {t('processFlows.transitions.title')}
-              </h3>
-              <p className="mt-1 text-meta text-text-tertiary">
-                {t('processFlows.transitions.body')}
-              </p>
-            </div>
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableHeaderCell>{t('processFlows.col.transition')}</TableHeaderCell>
-                  <TableHeaderCell>{t('processFlows.col.edge')}</TableHeaderCell>
-                  <TableHeaderCell>{t('processFlows.col.step')}</TableHeaderCell>
-                  <TableHeaderCell>{t('processFlows.col.role')}</TableHeaderCell>
-                  <TableHeaderCell>{t('processFlows.col.contract')}</TableHeaderCell>
-                  <TableHeaderCell>{t('processFlows.col.links')}</TableHeaderCell>
-                </TableHeader>
-                <tbody>
-                  {view.transitions.map((tv) => (
-                    <TransitionRow key={tv.def.id} tv={tv} />
-                  ))}
-                </tbody>
-              </Table>
-            </div>
-          </section>
+              <section className="rounded-md border border-border-subtle bg-bg-surface">
+                <div className="border-b border-border-subtle p-4">
+                  <h3 className="text-section text-text-primary">
+                    {t('processFlows.transitions.title')}
+                  </h3>
+                  <p className="mt-1 text-meta text-text-tertiary">
+                    {t('processFlows.transitions.body')}
+                  </p>
+                </div>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableHeaderCell>{t('processFlows.col.transition')}</TableHeaderCell>
+                      <TableHeaderCell>{t('processFlows.col.edge')}</TableHeaderCell>
+                      <TableHeaderCell>{t('processFlows.col.step')}</TableHeaderCell>
+                      <TableHeaderCell>{t('processFlows.col.role')}</TableHeaderCell>
+                      <TableHeaderCell>{t('processFlows.col.contract')}</TableHeaderCell>
+                      <TableHeaderCell>{t('processFlows.col.links')}</TableHeaderCell>
+                    </TableHeader>
+                    <tbody>
+                      {view.transitions.map((tv) => (
+                        <TransitionRow key={tv.def.id} tv={tv} />
+                      ))}
+                    </tbody>
+                  </Table>
+                </div>
+              </section>
+              </>
+            }
+          />
         </div>
       </div>
     </AppShellV2>
