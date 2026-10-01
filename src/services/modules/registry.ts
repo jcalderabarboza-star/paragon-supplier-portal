@@ -20,14 +20,18 @@
 // machine (Design 2)"*). SDC's dependency on PLN is therefore HARD now — the
 // design wrote it as *"once Design 2 lands"*, and it has.
 //
-// ⚠️ **TWO PARTS OF §A.1.3 ARE NOT HERE, AND THE OMISSION IS A RULING'S TO
-// REVERSE, NOT AN OVERSIGHT.** `GRC · Halal certificate notice` and `SRC ·
-// Sourcing gates` govern no verb and no route: switching either OFF would mean
-// the surface stops TELLING (the H4 certificate notice) or stops APPLYING (the
-// PSL publish gates) a compliance check. That is a loosening of a governed
-// check, which is the class the two sample-actor locks exist for — not an
-// availability toggle. A part that governs nothing this code enforces would be
-// a toggle no code enforces, which is D1's reason for refusing the grain toggle.
+// ⚠️ **TWO PARTS OF §A.1.3 ARE NOT HERE, BY OPERATOR RULING (2026-10-01).**
+// `GRC · Halal certificate notice` and `SRC · Sourcing gates` are NOT module
+// parts: switching off a compliance check is never a module decision, and it
+// stays governed only by the enforcement ledger. A part that switched one off
+// would make the surface stop TELLING (the H4 certificate notice) or stop
+// APPLYING (the PSL publish gates) a check through a door the enforcement
+// ledger does not watch. `moduleParts.complianceCheck.test.ts` derives the set
+// of compliance-check verbs and routes and pins that no part reaches one.
+//
+// ⚠️ **THE COUNT IS THE TABLE'S: FIFTEEN SWITCHABLE MODULES + PLT (ruled
+// 2026-10-01).** The design's prose said "fourteen"; its own table and union
+// hold fifteen. Derive it from `MODULE_CODES`, never from a sentence.
 //
 // PLT is never written as a dependency. The design lists it for SUP, MAT and
 // REQ and states *"everything → PLT"*; PLT is always on, so the edge can never
@@ -43,7 +47,7 @@ import { getKnownFlows } from '../transitions';
 import type { QueryScope } from '../data/types';
 import type { PersonaType } from '../../context/CurrentIdentityContext';
 
-/** The sixteen codes: PLT plus the fifteen modules the design names. */
+/** PLT plus the switchable modules of the design's table (fifteen, ruled 2026-10-01). */
 export const MODULE_CODES = [
   'PLT', 'SUP', 'CMP', 'PSL', 'MAT', 'REQ', 'PLN', 'SDC',
   'COM', 'SRC', 'CTR', 'ORD', 'SHP', 'GRC', 'INV', 'INT',
@@ -120,7 +124,10 @@ function buildModules(): readonly ModuleSpec[] {
     {
       code: 'PLT', nameKey: name('PLT'), descriptionKey: desc('PLT'), scope: 'cross-cutting', alwaysOn: true,
       routes: ['/login', '/buyer/dashboard', '/supplier/dashboard', '/buyer/roles', '/buyer/roles/:roleId',
-        '/buyer/process-flows', '/glossary', '/', '*'],
+        '/buyer/process-flows', '/glossary', '/', '*',
+        // M2 · Design 5 §A.5 — the roadmap board and the admin page. In PLT, so
+        // the page that switches modules can never be switched off itself.
+        '/buyer/platform/modules', '/buyer/platform/modules/admin'],
       flows: ['role', 'moduleActivation'],
       capabilities: ['identity', 'dashboard'], dependsOn: [], parts: [],
     },

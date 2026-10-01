@@ -17,7 +17,6 @@
 import { bindPolicyHook, POLICY_HOOKS, type CommandTarget, type PolicyDecision } from '../../transitions';
 import { asActorAttribution } from '../../../lib/enforcement';
 import { NO_PERSON } from '../../../context/noPerson';
-import { isSampleActor } from '../../identity/sampleRoster';
 import { moduleActivationStore } from './stores/moduleActivationStore';
 import {
   MODULE_PHASES,
@@ -169,10 +168,9 @@ bindPolicyHook(POLICY_HOOKS.MODULE_SET_ATTRIBUTED, ({ scope }) => {
   );
 });
 
-bindPolicyHook(POLICY_HOOKS.MODULE_SET_NOT_SAMPLE_IN_PROD, ({ scope }) => {
-  if (!moduleDeployment.isProduction()) return ok;
-  const actor = asActorAttribution(scope.actor);
-  return actor?.kind === 'RESOLVED' && isSampleActor(actor.person.personId)
+bindPolicyHook(POLICY_HOOKS.MODULE_SET_NOT_SAMPLE_IN_PROD, ({ scope }) =>
+  // The deployment's ONE answer — the admin page renders read-only on the same call.
+  moduleDeployment.barsActor(scope.actor)
     ? no('a sample person cannot switch a module on a production deployment — a real person must')
-    : ok;
-});
+    : ok,
+);

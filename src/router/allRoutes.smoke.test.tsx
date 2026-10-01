@@ -50,6 +50,8 @@ import BuyerCompliance from '../pages-v2/BuyerCompliance';
 import ProcessFlows from '../pages-v2/ProcessFlows';
 import RolesCatalogue from '../pages-v2/RolesCatalogue';
 import RoleDetail from '../pages-v2/RoleDetail';
+import ModulesBoard from '../pages-v2/ModulesBoard';
+import ModulesAdmin from '../pages-v2/ModulesAdmin';
 import Glossary from '../pages-v2/Glossary';
 import IntakeReview from '../pages-v2/IntakeReview';
 import SupplierDashboardV2 from '../pages-v2/SupplierDashboard';
@@ -120,6 +122,9 @@ const ROUTES: RouteCase[] = [
   { name: 'buyer/process-flows', pattern: '/buyer/process-flows', at: '/buyer/process-flows', element: <ProcessFlows />, identity: BUYER },
   { name: 'buyer/roles', pattern: '/buyer/roles', at: '/buyer/roles', element: <RolesCatalogue />, identity: BUYER },
   { name: 'buyer/roles/:roleId', pattern: '/buyer/roles/:roleId', at: '/buyer/roles/finance', element: <RoleDetail />, identity: BUYER },
+  // M2 · Design 5 §A.5 — the module roadmap board and the admin page.
+  { name: 'buyer/platform/modules', pattern: '/buyer/platform/modules', at: '/buyer/platform/modules', element: <ModulesBoard />, identity: BUYER },
+  { name: 'buyer/platform/modules/admin', pattern: '/buyer/platform/modules/admin', at: '/buyer/platform/modules/admin', element: <ModulesAdmin />, identity: BUYER },
   // ⚠️ THESE TWO WERE NEVER IN THE SMOKE, AND THE OLD SELF-REFERENTIAL GUARD
   // COULD NOT SAY SO. Both have dedicated specs, so they were not untested —
   // but neither was covered by the route table that claimed to cover all of

@@ -18,6 +18,8 @@
 // ────────────────────────────────────────────────────────────────────────────
 
 import { resolveEnvBadge, type EnvBadge } from '../../lib/envBadge';
+import { asActorAttribution } from '../../lib/enforcement';
+import { isSampleActor } from '../identity/sampleRoster';
 
 const liveBadge = (): EnvBadge =>
   resolveEnvBadge(
@@ -36,6 +38,17 @@ export const moduleDeployment = {
   /** Production is the deployment that shows no badge. */
   isProduction(): boolean {
     return this.badge() === null;
+  },
+  /**
+   * M2 · ruling 3 — does this deployment bar this actor from switching a
+   * module? True only on production and only for a SAMPLE person. The ONE
+   * answer: `MODULE_SET_NOT_SAMPLE_IN_PROD` refuses on it and the admin page
+   * renders read-only on it, so the two cannot disagree.
+   */
+  barsActor(actor: unknown): boolean {
+    if (!this.isProduction()) return false;
+    const a = asActorAttribution(actor);
+    return a?.kind === 'RESOLVED' && isSampleActor(a.person.personId);
   },
   set(badge: EnvBadge): void {
     override = { badge };
