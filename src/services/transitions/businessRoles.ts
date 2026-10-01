@@ -340,6 +340,13 @@ const LANE_BUNDLES = Object.freeze({
       // supplier at all. A commercial over-delivery tolerance is the same kind
       // of authority over the same relationship.
       'delivery:policy-set',
+      // ── M1 · SWITCHING A MODULE ON OR OFF (Design 5 D2, ruled) ───────────
+      // The fourth governance atom here, for the three's sentence: the same
+      // party cannot both set the bar and be governed by it. Switching a module
+      // decides what every lane in the platform may do, so it belongs with the
+      // lane that already decides the rules the others are held to — not with
+      // any lane it switches.
+      'module:set',
     ]),
     // The SDC / P2 planning lane. `inventorydeclaration:record` is the C4c
     // buyer RECORDING verb — a distinct authority from the supplier's

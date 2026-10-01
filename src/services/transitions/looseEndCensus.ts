@@ -293,4 +293,21 @@ export const LOOSE_END_CENSUS: readonly CensusEntry[] = Object.freeze([
       'the pair exists to express — that there is a default somebody agreed to and a current value ' +
       'somebody moved, with the distance between them visible.',
   },
+
+  // ── moduleActivation (M1) ──────────────────────────────────────────────
+  {
+    entity: 'moduleActivation',
+    kind: 'initial-integrity',
+    subject: 'Governed',
+    reason: 'substrate-only',
+    note:
+      'THE SAME DEGENERATE SINGLE-STATE LEDGER SHAPE AS THE ENFORCEMENT MACHINE, followed verb for ' +
+      'verb: the entity IS the module (or the side) being switched, and the modules are a closed ' +
+      'vocabulary compiled into the tree — not rows anybody creates. The set verb is ' +
+      'statePreserving, so it is neither an entry nor an exit, and the state is correctly declared ' +
+      'terminal. ' +
+      '⚠️ WHAT THE VERB WRITES IS NOT AN INSTANCE OF THIS MACHINE: it appends a decision to a ' +
+      'ledger, and what is switched on is derived from that ledger at read. Modelling each switch ' +
+      'as a born entity would store the answer instead of the acts that justify it.',
+  },
 ]);

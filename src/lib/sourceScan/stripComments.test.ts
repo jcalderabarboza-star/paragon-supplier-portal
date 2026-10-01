@@ -459,6 +459,10 @@ describe('⚠️ THE TWO-REGEX COMMENT STRIP IS EXTINCT — derived, not listed'
         'services/data/mock/chaosAmbience.test.ts',
         'services/sdc/__tests__/deriveC9FieldList.ts',
         'services/transitions/businessRoles.test.ts',
+        // M1 — the module registry's route derivation reads `AppRouter.tsx`,
+        // whose comments name routes in prose ("the plan-grid push"); stripped
+        // first so a route DISCUSSED can never be counted as one MOUNTED.
+        'services/modules/moduleRegistry.test.ts',
       ].sort(),
     );
   }, 30000);

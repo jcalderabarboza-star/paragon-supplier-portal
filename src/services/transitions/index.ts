@@ -61,6 +61,7 @@ export {
   PUBLICATION_ALLOCATE_FIELDS,
   PUBLICATION_APPROVE_FIELDS,
 } from './flows/forecastPublication.flow';
+export { moduleActivationFlow } from './flows/moduleActivation.flow';
 export * from './customRoles';
 
 import { flowRegistry } from './registry';
@@ -91,6 +92,7 @@ import { deliveryReleaseFlow } from './flows/deliveryRelease.flow';
 import { deliveryPolicyFlow } from './flows/deliveryPolicy.flow';
 import { intakeLineFlow } from './flows/intakeLine.flow';
 import { forecastPublicationFlow } from './flows/forecastPublication.flow';
+import { moduleActivationFlow } from './flows/moduleActivation.flow';
 
 // Seed the shipped flows onto the singleton.
 flowRegistry.register(purchaseOrderFlow); // Step 3.1 — PO
@@ -175,3 +177,4 @@ flowRegistry.register(intakeLineFlow); // A2 — Intake line
 // B4a · Design 2 §2.1 — the forecast publication. WIRED in the same commit as
 // its target (`forecastPublication`), so it never joins the target-less set.
 flowRegistry.register(forecastPublicationFlow); // B4a — Forecast publication
+flowRegistry.register(moduleActivationFlow); // M1 — Module activation

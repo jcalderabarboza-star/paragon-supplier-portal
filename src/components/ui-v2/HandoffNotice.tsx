@@ -2,6 +2,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import type { VerbAvailability } from '../../services/transitions/handoff';
 import { ownerLabelKeys } from '../../services/transitions/handoff';
+import { ModuleOffNotice } from './ModuleOffNotice';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // THE WAIT, RENDERED. The operator's binding constraint, as one component.
@@ -36,6 +37,12 @@ export const HandoffNotice: React.FC<{
 }> = ({ availability, testId = 'handoff-notice' }) => {
   const { t } = useTranslation();
   if (availability.kind === 'held') return null;
+
+  // M1 — the verb's module, part or side is switched off. Nobody may act, so
+  // this names the SWITCH, never an owner; the same slot, the same testId.
+  if (availability.kind === 'module-off') {
+    return <ModuleOffNotice off={availability.off} variant="inline" testId={testId} />;
+  }
 
   if (availability.kind === 'unowned') {
     return (

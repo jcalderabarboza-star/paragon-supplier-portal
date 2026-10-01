@@ -203,6 +203,9 @@ export const TRANSITION_PURPOSE: FlowAnnotations = Object.freeze({
   t_publication_publish: { purposeKey: 'processFlows.purpose.t_publication_publish' },
   t_publication_supersede: { purposeKey: 'processFlows.purpose.t_publication_supersede' },
   t_publication_withdraw: { purposeKey: 'processFlows.purpose.t_publication_withdraw' },
+
+  // M1 · module activation.
+  t_module_set: { purposeKey: 'processFlows.purpose.t_module_set' },
   t_pr_submit: { purposeKey: 'processFlows.purpose.t_pr_submit' },
   t_pr_approve: { purposeKey: 'processFlows.purpose.t_pr_approve' },
   t_pr_reject: { purposeKey: 'processFlows.purpose.t_pr_reject' },
@@ -343,6 +346,7 @@ export const ENTITY_PURPOSE: FlowAnnotations = Object.freeze({
   purchaseRequisition: { purposeKey: 'processFlows.purpose.entity.purchaseRequisition' },
   intakeLine: { purposeKey: 'processFlows.purpose.entity.intakeLine' },
   forecastPublication: { purposeKey: 'processFlows.purpose.entity.forecastPublication' },
+  moduleActivation: { purposeKey: 'processFlows.purpose.entity.moduleActivation' },
   supplierDocument: { purposeKey: 'processFlows.purpose.entity.supplierDocument' },
   compliance: { purposeKey: 'processFlows.purpose.entity.compliance' },
   requirementResponse: { purposeKey: 'processFlows.purpose.entity.requirementResponse' },

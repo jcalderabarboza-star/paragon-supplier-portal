@@ -1,6 +1,8 @@
 import React from 'react';
 import { LucideIcon } from 'lucide-react';
 import Button from './Button';
+import { ModuleOffNotice } from './ModuleOffNotice';
+import { useRouteModuleOff } from '../../context/ModuleActivationContext';
 
 // ⚠️ **`onClick` IS REQUIRED ON BOTH DESCRIPTORS, AND THAT IS THE WHOLE POINT OF
 // THIS FILE'S CONTRIBUTION TO H3 — §103h's structural fix, finally taken.**
@@ -59,6 +61,13 @@ const BulkActionsBar: React.FC<BulkActionsBarProps> = ({
   primary,
   className = '',
 }) => {
+  // M1 · on a READ-ONLY route (its module, part or side switched off) the
+  // PRIMARY slot renders the module notice instead of its control. The primary
+  // slot is the page's act by rule — DP2-BUTTON-01: an Export never occupies
+  // it — so this is the one place a header's act can be withdrawn without
+  // judging each caller. The secondary actions stay: they are the reads
+  // (export, view toggles) an OFF module keeps answering (Design 5 §A.3).
+  const routeOff = useRouteModuleOff();
   return (
     <div className={`inline-flex items-center gap-2 ${className}`}>
       {actions.map((a) => (
@@ -71,7 +80,10 @@ const BulkActionsBar: React.FC<BulkActionsBarProps> = ({
           {a.label}
         </Button>
       ))}
-      {primary && (
+      {primary && routeOff && (
+        <ModuleOffNotice off={routeOff} variant="inline" testId="module-off-primary" />
+      )}
+      {primary && !routeOff && (
         <Button
           variant="outline"
           icon={primary.icon}

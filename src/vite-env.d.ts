@@ -5,6 +5,8 @@ interface ImportMetaEnv {
   readonly VITE_CHAOS_MIN_MS?: string;
   readonly VITE_CHAOS_MAX_MS?: string;
   readonly VITE_CHAOS_FAILURE_RATE?: string;
+  /** M1 — `on` builds the browser-QA harness (`src/qa/QaHarness.tsx`); absent in every shipped build. */
+  readonly VITE_QA_HARNESS?: string;
 }
 
 interface ImportMeta {

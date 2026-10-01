@@ -48,9 +48,18 @@ const routerSrc = readFileSync(ROUTER, 'utf-8');
 const withoutProse = (s: string): string => stripSourceComments(s, 'delete');
 
 /** Route path → component name, DERIVED from the router source (§65a: the
- *  coverage guard that asserted its own table's length never read the router). */
+ *  coverage guard that asserted its own table's length never read the router).
+ *
+ *  M1 · a route's element may sit inside its module's `<ModuleGate path="…">`;
+ *  the page is the component INSIDE the gate. Widened for that one wrapper and
+ *  nothing else — measured on the day: the same 45 routes, member for member,
+ *  as the unwidened matcher returned on the pre-M1 router. */
 function routes(): { path: string; component: string }[] {
-  return [...routerSrc.matchAll(/<Route\s+path="([^"]+)"\s+element=\{<(\w+)\s*\/?>\}/g)].map(
+  return [
+    ...routerSrc.matchAll(
+      /<Route\s+path="([^"]+)"\s+element=\{(?:<ModuleGate\s+path="[^"]*">)?<(\w+)\s*\/?>(?:<\/ModuleGate>)?\}/g,
+    ),
+  ].map(
     (m) => ({ path: m[1], component: m[2] }),
   );
 }

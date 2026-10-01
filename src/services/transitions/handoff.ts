@@ -40,6 +40,7 @@ import type { TransitionDef, TransitionRole } from './schema';
 import type { SystemRoleId, BusinessRoleId } from './businessRoles';
 import { rolesHolding } from './businessRoles';
 import { atomsForSeat } from './customRoles';
+import type { OffReason } from '../modules/activation';
 
 /**
  * WHETHER THIS SEAT MAY FIRE A VERB, AND IF NOT, WHOSE IT IS.
@@ -58,7 +59,15 @@ import { atomsForSeat } from './customRoles';
 export type VerbAvailability =
   | { readonly kind: 'held' }
   | { readonly kind: 'withheld'; readonly owners: readonly SystemRoleId[] }
-  | { readonly kind: 'unowned' };
+  | { readonly kind: 'unowned' }
+  /**
+   * M1 · THE FOURTH ARM — the verb's module, part or side is switched OFF
+   * (Design 5 §A.3). It is not about the seat at all: nobody may act, so it
+   * names the SWITCH and never an owner. Composed by
+   * `services/modules/availability.ts`; the pure functions below never return
+   * it, so `nextAct` and every seat-only reader are unchanged.
+   */
+  | { readonly kind: 'module-off'; readonly off: OffReason };
 
 /** Does `seatRoles` grant `atom`, and if not, who does? */
 export function availabilityOfAtom(

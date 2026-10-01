@@ -1,6 +1,6 @@
 # C1 — Method Surface
 
-Three distinct axes. **69** (service surface) · **126** (transition catalog) · **21** (wired
+Three distinct axes. **71** (service surface) · **127** (transition catalog) · **22** (wired
 targets). They measure different things; this file keeps them separate.
 
 > ⚠️ **THIS DOCUMENT IS PINNED TO THE TREE, AND THE PIN IS WHY THE NUMBERS ABOVE ARE ALLOWED TO
@@ -83,19 +83,30 @@ targets). They measure different things; this file keeps them separate.
 > `PUB_CLASS_PROJECTION_PRESENT`, `PUB_CARRY_FROM_CURRENT`), not transitions. Moved by the pin
 > going red.
 
+> **RE-HARVEST (2026-09-30, M1).** Module activation (Design 5 Part A). `IDataService` gained an
+> eleventh read sub-service, `IModuleService`, with TWO methods: `getModuleActivation(scope)` — what
+> is switched ON, derived from the ledger at read, readable by EVERY seat (a supplier's own pages go
+> read-only when a module is off) and carrying no attribution — and `getModuleLedger(scope)` — the
+> append-only acts with who and why, BUYER-ONLY (a supplier scope is `SCOPE_DENIED`, the
+> enforcement ledger's rule). A new machine, `moduleActivation.flow.ts` (one state, one
+> `statePreserving` verb `t_module_set`, `t_enforcement_set`'s shape), and its wired target. The
+> dispatcher gained the `MODULE_INACTIVE` refusal (pipeline step 3 below). Service surface 69 →
+> **71**, catalog 126 → **127** across 27 → **28** flows, wired targets 21 → **22**. Moved by the
+> pin going red.
+
 Source of truth: `src/services/data/types.ts` (service + command types),
 `src/services/transitions/` (schema, dispatcher, flows).
 
 ---
 
-## Axis 1 — the 69-method service surface (`IDataService`)
+## Axis 1 — the 71-method service surface (`IDataService`)
 
 The single interface the Phase-F1 real adapter implements; pages call it through
 `useDataService()` and do not change when the mock is swapped for `httpDataService`. Every method
 takes `QueryScope` as its first argument (the scoping contract — a supplier only ever sees its
 own data; the buyer sees the superset).
 
-`IDataService` is ten read sub-services + one command sub-service + one top-level method:
+`IDataService` is eleven read sub-services + one command sub-service + one top-level method:
 
 ```ts
 interface IDataService {
@@ -109,6 +120,7 @@ interface IDataService {
   chase: IChaseService;
   enforcement: IEnforcementService;
   planning: IPlanningService;
+  modules: IModuleService;
   commands: ICommandService;
   getCapabilities(scope: QueryScope): Promise<CapabilitySet>;
 }
@@ -126,10 +138,11 @@ interface IDataService {
 | `IChaseService` | 1 | `getUnifiedChase` |
 | `IEnforcementService` | 1 | `getEnforcementSettings` |
 | `IPlanningService` | 1 | `getPlanningFacts` |
-| **read subtotal** | **65** | |
+| `IModuleService` | 2 | `getModuleActivation`, `getModuleLedger` |
+| **read subtotal** | **67** | |
 | `ICommandService` | 3 | `dispatch`, `getCommandStatus`, `settle` |
 | top-level | 1 | `getCapabilities` |
-| **TOTAL** | **69** | |
+| **TOTAL** | **71** | |
 
 **Return contract:** list reads return `Page<T>` (DR-5 — see C2); single reads return `T | null`;
 `getSummary` returns a summary object or `null` (buyer-populated, supplier-null). Failure is
@@ -145,7 +158,7 @@ the string, because those are different claims and only the first is the contrac
 
 ---
 
-## Axis 2 — the 126-transition catalog (27 flows)
+## Axis 2 — the 127-transition catalog (28 flows)
 
 Every authored state-machine edge across the registered flows (`id: 't_<entity>_<verb>'`). Derived
 from `getKnownFlows()` — the seeded registry — never from a grep over the flow files, because a
@@ -181,7 +194,8 @@ transition id can be assembled at a call site rather than written as a literal (
 | `deliveryRelease.flow.ts` | `deliveryRelease` | 3 | `t_delivery_release`, `t_delivery_adjust`, `t_delivery_confirm` | **wired** |
 | `deliveryPolicy.flow.ts` | `deliveryPolicy` | 1 | `t_delivery_policy_set` | **wired** |
 | `forecastPublication.flow.ts` | `forecastPublication` | 6 | `t_publication_open`, `t_publication_allocate`, `t_publication_approve_firm`, `t_publication_publish`, `t_publication_supersede`, `t_publication_withdraw` | **wired** |
-| **TOTAL** | | **126** | | |
+| `moduleActivation.flow.ts` | `moduleActivation` | 1 | `t_module_set` | **wired** |
+| **TOTAL** | | **127** | | |
 
 **Flow shape** (`schema.ts`, `FlowDefinition` / `TransitionDef`): each transition declares
 `from[]` / `to` / `trigger` / `requiredRole` / `requiredFields[]` / `policyHooks[]` /
@@ -197,12 +211,12 @@ system reference is minted only on `settle` (see C5, SAP boundary).
 
 ---
 
-## Axis 3 — the 21 wired CommandTargets
+## Axis 3 — the 22 wired CommandTargets
 
-A `CommandTarget` is the per-entity adapter the dispatcher reads/writes through. **21 exist**, the
+A `CommandTarget` is the per-entity adapter the dispatcher reads/writes through. **22 exist**, the
 runtime export `WIRED_COMMAND_TARGETS` (`MockCommandService.ts` `TARGETS`):
 
-- **wired:** `purchaseOrder`, `advanceShipNotice`, `goodsReceipt`, `invoice`, `rfq`, `quotation`, `purchaseRequisition`, `intakeLine`, `supplierDocument`, `requirementResponse`, `inventoryDeclaration`, `incomingShipment`, `enforcement`, `role`, `supplierApplication`, `materialRequest`, `psl`, `pslCapSetting`, `deliveryRelease`, `deliveryPolicy`, `forecastPublication`
+- **wired:** `purchaseOrder`, `advanceShipNotice`, `goodsReceipt`, `invoice`, `rfq`, `quotation`, `purchaseRequisition`, `intakeLine`, `supplierDocument`, `requirementResponse`, `inventoryDeclaration`, `incomingShipment`, `enforcement`, `role`, `supplierApplication`, `materialRequest`, `psl`, `pslCapSetting`, `deliveryRelease`, `deliveryPolicy`, `forecastPublication`, `moduleActivation`
 
 The interface is **7 members** (`dispatcher.ts`, `CommandTarget`):
 
@@ -235,9 +249,9 @@ pre-A2 target ignores the parameter.
 compare"** (§86). The dispatcher's supplier arm compares `owner !== scope.supplierId`
 unconditionally; a target that wants a supplier to reach a verb must NAME that supplier.
 
-### Wiring census (27 flows → 3 states)
+### Wiring census (28 flows → 3 states)
 
-- **21 behavior-wired** — have a `CommandTarget`, dispatch runs against in-memory stores. Named
+- **22 behavior-wired** — have a `CommandTarget`, dispatch runs against in-memory stores. Named
   above.
 - **2 rolled-up sub-flows** — authored, participate via terminal rollup (`grRollup.ts` /
   `invoiceRollup.ts`), **no standalone target**: `goodsReceiptLine`, `invoiceMatch`.
@@ -264,9 +278,16 @@ One dispatcher for every command (`dispatcher.ts`). It validates in order, then 
    entity, else `DataError('SCOPE_DENIED')`; a non-existent OR foreign entity both resolve to
    `SCOPE_DENIED` for a supplier (no existence leak); a missing entity for the buyer is
    `NOT_FOUND` (DR-6 amended). Creation derives the owner from the payload's parent.
-3. **`requiredRole ∈` the scope's roles** — resolved from the seat's `businessRoles` (§64); there
+3. **Module gate (M1, Design 5 §A.3)** — when the verb's module, the part governing it, or the
+   commanding side is switched OFF, the command is refused `MODULE_INACTIVE:<switch>` (`SHP`,
+   `GRC.qualityHold`, `side:supplier`). AFTER the scope pair, so a caller outside the tenancy
+   learns nothing; BEFORE the role gate, so a caller inside it learns the module is off before
+   anything about its role. A cascade into an OFF module returns this refusal and is recorded —
+   it is not one of the two throwing exits the fan-out swallows. The switch set is injected
+   (`moduleGate`), read from the activation ledger's derived view.
+4. **`requiredRole ∈` the scope's roles** — resolved from the seat's `businessRoles` (§64); there
    is no persona fallback, and a command scope without `businessRoles` is refused.
-4. **Ingress replay (H2a)** — when `CommandInput.idempotencyKey` is supplied and that key has
+5. **Ingress replay (H2a)** — when `CommandInput.idempotencyKey` is supplied and that key has
    already raised an act **under the same tenancy**, the dispatcher returns the FIRST result
    (same `correlationId`, same `entityId`) and raises nothing. It is a RESULT and not a
    refusal: a refusal is `status: 'failed'`, and an at-least-once transport's correct response
@@ -277,13 +298,13 @@ One dispatcher for every command (`dispatcher.ts`). It validates in order, then 
    state, so a replay reaching `expectedState` first would always be refused `STALE_STATE`.
    Optional: omitted, nothing changes. Only outcomes that RAISED an act are recorded, so a
    redelivery after a failure is free to try again. C7-FIND-05.
-5. **State precondition (1c)** — when `CommandInput.expectedState` is supplied it must equal the
+6. **State precondition (1c)** — when `CommandInput.expectedState` is supplied it must equal the
    entity's current state, else `STALE_STATE`. Optional: omitted, nothing changes. It sits AFTER
    the role gate (a caller without the atom learns nothing about the document) and BEFORE
    legality (a stale caller is told *why*, not merely that the act is illegal).
-6. **Transition legality** — `currentState ∈ transition.from` (creation skips: empty `from`).
-7. **`requiredFields`** present & non-empty in the payload.
-8. **`policyHooks`** (resolved by registered name — never closures) all pass.
+7. **Transition legality** — `currentState ∈ transition.from` (creation skips: empty `from`).
+8. **`requiredFields`** present & non-empty in the payload.
+9. **`policyHooks`** (resolved by registered name — never closures) all pass.
 
 Then it applies the store mutation and **emits ONE event** (C3). `sapBoundary` transitions
 resolve `submitted` and settle later. **Hard authorization failures throw `DataError`** (same
