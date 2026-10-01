@@ -263,6 +263,7 @@ Worked sequence a tester produces from **New GR** with **Enter ASN number** = `A
 | **Start inspection** created a new GR and left the old row `Pending Inspection` | two rows for one shipment | the wizard always creates; it does not advance a seeded row | expected in the demo |
 | Rejected a receipt, no ASN discrepancy appeared | supplier page unchanged | the receipt referenced a dock shipment, not an ASN-store number | receive against a live `ASN-2025-…` |
 | **Override hold** / **View in SAP** / **Export** / **Lab Results** do nothing | toasts saying so | display-only controls | none |
+| An action on this flow is refused for every seat, whatever the role | the refusal names `MODULE_INACTIVE:GRC`, or `MODULE_INACTIVE:GRC.inspectionWizard` when only *Inspection wizard* is off, or `MODULE_INACTIVE:GRC.qualityHold` when only *Quality hold* is off; where the surface checks first, the control reads *"Switched off — Goods receipt & inspection"* | the Goods receipt & inspection module (or one of its parts) is switched off; its pages stay readable | have it switched back on at `/buyer/platform/modules/admin`; no role change helps, because the module check runs before the role check |
 <!-- src: src/lib/glossary/refusals.glossary.ts:32-152; src/lib/i18n/goodsReceipt.ts:88-103,157,182-227; src/lib/i18n.ts:522-564; src/pages-v2/BuyerGoodsReceipt.tsx:567-620 -->
 
 <!-- section:testdata -->

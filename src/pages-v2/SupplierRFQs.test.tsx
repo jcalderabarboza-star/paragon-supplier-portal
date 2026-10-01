@@ -219,7 +219,7 @@ describe('SupplierRFQs — the lead time is read once, in four honest states', (
   // ── 2e-b-1a — a DELIBERATE POLICY REVERSAL, not a bug correction ───────────
   // This spec asserted the opposite: that a blank showed a neutral "No lead time
   // stated…" note, left submit ENABLED, and minted a quotation storing an
-  // absence. JJ's commercial ruling makes an incomplete bid unsubmittable.
+  // absence. The operator's commercial ruling makes an incomplete bid unsubmittable.
   it('BLANK — refused as a required field, submit disabled, nothing minted', async () => {
     await openQuotePanel();
     expect(screen.getByTestId('quote-leadtime-refusal')).toHaveTextContent(

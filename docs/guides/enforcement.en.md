@@ -125,6 +125,7 @@ A tester who dispatches `t_enforcement_set` by hand with `mode: OBSERVE` and a `
 | `NOT_FOUND` | thrown | the check id is not one of the three governed ids | use `halal.seal`, `halal.certificate` or `bpom.lot` |
 | `ROLE_NOT_PERMITTED:enforcement:set` | dispatcher | seat does not hold procurement | expected for every other lane |
 | `halal.certificate` shows a notice but never blocks | wizard | the check has no recorded setting and is consulted by nothing that refuses | expected; the notice tells the clerk |
+| An action on this flow is refused for every seat, whatever the role | the refusal names `MODULE_INACTIVE:GRC`; where the surface checks first, the control reads *"Switched off — Goods receipt & inspection"* | the Goods receipt & inspection module is switched off; its pages stay readable | have it switched back on at `/buyer/platform/modules/admin`; no role change helps, because the module check runs before the role check |
 <!-- src: src/services/transitions/policies.ts:301-387; src/services/transitions/refusals.ts:61-114; src/services/data/mock/MockCommandService.ts:1603; src/components/v2-features/GRInspectionWizard.tsx:803-835 -->
 
 <!-- section:testdata -->

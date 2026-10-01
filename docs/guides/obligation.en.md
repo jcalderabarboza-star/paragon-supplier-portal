@@ -116,6 +116,7 @@ There is none. Nothing dispatches an obligation verb — the entity has no comma
 | Symptom | How to tell | Likely cause | Resolve |
 |---|---|---|---|
 | An obligation row appears to offer completion, or a KPI suggests one can be cleared | the row shows a pill and a due date only; there is no button on it | it is a read-only view: obligations are a rollup of fixture contract data and no verb is wired to mark one met | nothing to resolve in the portal; the obligation follows its contract, and the contract is S/4HANA's |
+| — (cannot occur yet) | `MODULE_INACTIVE:CTR` | this flow has no command target, so a hand-crafted dispatch is refused `UNKNOWN_ENTITY` before the module check runs; once it is wired, switching off the Contracts & delivery agreements module refuses every verb by this name | nothing to do today; the module switch is at `/buyer/platform/modules/admin` |
 <!-- src: src/services/data/obligationRollup.ts:81-86; src/pages-v2/BuyerContracts.tsx:1261 -->
 
 <!-- section:testdata -->

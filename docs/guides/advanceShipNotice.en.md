@@ -214,6 +214,7 @@ Worked sequence a tester can produce end-to-end, starting from `po-002` (PO-2025
 | Rejected a receipt but no discrepancy appeared | supplier row unchanged; no **Shipment discrepancies** section | the GR was created from a dock shipment (`ASN-2026-0xx`), not a store ASN, or the ASN is still `Draft` | create the receipt under **Enter ASN number** with a Submitted / In Transit / Delivered `ASN-2025-…` |
 | "The document is not in a state this action can be taken from" on **Reconcile** | toast (`ILLEGAL_TRANSITION`) | someone already reconciled it | refresh; the section re-derives |
 | **Export EDI 856** did nothing | toast "No file was generated" | export is not wired to a real system | none; display-only control |
+| An action on this flow is refused for every seat, whatever the role | the refusal names `MODULE_INACTIVE:SHP`; where the surface checks first, the control reads *"Switched off — Shipments & ASN"* | the Shipments & ASN module is switched off; its pages stay readable | have it switched back on at `/buyer/platform/modules/admin`; no role change helps, because the module check runs before the role check |
 <!-- src: src/lib/glossary/refusals.glossary.ts:32-117; src/lib/i18n.ts:503-520; src/pages-v2/SupplierShipments.tsx:672-680; src/services/data/mock/MockCommandService.ts:228-233 -->
 
 <!-- section:testdata -->

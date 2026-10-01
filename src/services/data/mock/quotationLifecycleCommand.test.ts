@@ -102,8 +102,8 @@ describe('t_quotation_submit — supplier-owned creation (ASN-faithful scope)', 
   // ── CP-0 · W1 · 2e-b-1a — leadTimeDays is BACK on the required floor ───────
   // 2e-b-1 briefly narrowed this spec to unitPrice alone and added a positive
   // twin asserting that "a quote with NO lead time is legal, and stores an
-  // absence". Both are reversed here, DELIBERATELY and not as a bug fix: JJ
-  // ruled that a price with no delivery promise is an INCOMPLETE bid, so the
+  // absence". Both are reversed here, DELIBERATELY and not as a bug fix: the
+  // operator ruled that a price with no delivery promise is an INCOMPLETE bid, so the
   // floor is the two facts that make an offer comparable. The concern that
   // originally motivated the removal — that requiring it pushed suppliers to
   // put *something* in the box, which `|| 0` turned into a same-day promise —

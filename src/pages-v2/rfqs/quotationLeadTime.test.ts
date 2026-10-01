@@ -23,7 +23,7 @@ describe('readLeadTimeDays — three states, and no fabricated number in any of 
   // ── 2e-b-1a — a DELIBERATE POLICY REVERSAL, not a bug correction ───────────
   // 2e-b-1 asserted here that a blank read as `{ok: true, days: null}` — a legal
   // absence the scoring engine dropped an axis for. That was arithmetically
-  // honest and, per JJ's commercial ruling, wrong: a price with no delivery
+  // honest and, per the operator's commercial ruling, wrong: a price with no delivery
   // promise is an INCOMPLETE bid, and ranking it on price alone hides the
   // delivery risk that can make the cheapest quote the worst outcome. Those
   // three specs are replaced below by their opposites. Nothing about them was

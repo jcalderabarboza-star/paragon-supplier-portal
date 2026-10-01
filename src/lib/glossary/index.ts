@@ -56,6 +56,9 @@ export {
   CERT_TYPE_GLOSSARY,
   HALAL_APPLICABILITY_GLOSSARY,
   BPOM_APPLICABILITY_GLOSSARY,
+  PSL_STATUS_GLOSSARY,
+  PSL_LIFECYCLE_GLOSSARY,
+  PSL_CAP_SOURCE_GLOSSARY,
 } from './governance.glossary';
 
 import {
@@ -80,6 +83,9 @@ import {
   CERT_TYPE_GLOSSARY,
   HALAL_APPLICABILITY_GLOSSARY,
   BPOM_APPLICABILITY_GLOSSARY,
+  PSL_STATUS_GLOSSARY,
+  PSL_LIFECYCLE_GLOSSARY,
+  PSL_CAP_SOURCE_GLOSSARY,
 } from './governance.glossary';
 import type { GlossaryEntry } from './types';
 
@@ -124,6 +130,11 @@ const REGISTRIES = [
   { sourceType: 'CertType', sourceFile: 'src/services/data/types.ts', entries: CERT_TYPE_GLOSSARY },
   { sourceType: 'HalalApplicability', sourceFile: 'src/services/sdc/types.ts', entries: HALAL_APPLICABILITY_GLOSSARY },
   { sourceType: 'BpomApplicability', sourceFile: 'src/services/sdc/types.ts', entries: BPOM_APPLICABILITY_GLOSSARY },
+  // E1 — the PSL vocabularies were authored at P1 and never registered, so the
+  // guides that name them could not tick them as terms.
+  { sourceType: 'PslStatus', sourceFile: 'src/services/data/pslListing.ts', entries: PSL_STATUS_GLOSSARY },
+  { sourceType: 'PslLifecycle', sourceFile: 'src/services/data/pslListing.ts', entries: PSL_LIFECYCLE_GLOSSARY },
+  { sourceType: 'PslCapSource', sourceFile: 'src/services/data/pslProjection.ts', entries: PSL_CAP_SOURCE_GLOSSARY },
 ] as const satisfies readonly GlossaryRegistry[];
 
 export const GLOSSARY_REGISTRIES: typeof REGISTRIES = Object.freeze(REGISTRIES);

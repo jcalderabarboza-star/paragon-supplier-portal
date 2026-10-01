@@ -157,6 +157,7 @@ There is none. Nothing dispatches a contract verb — the entity has no command 
 | Symptom | How to tell | Likely cause | Resolve |
 |---|---|---|---|
 | A button appears to offer one of these steps | **New Contract** opens a walkthrough; its last step reads **No contract was created** and *"nothing was sent, and nobody has been notified"* | it is a read-only page for the contract itself: drafting, activating, renewing and terminating an outline agreement are S/4HANA's acts | raise or change the agreement in S/4HANA; the portal reads the outcome when the F2 seam lands |
+| — (cannot occur yet) | `MODULE_INACTIVE:CTR` | this flow has no command target, so a hand-crafted dispatch is refused `UNKNOWN_ENTITY` before the module check runs; once it is wired, switching off the Contracts & delivery agreements module refuses every verb by this name | nothing to do today; the module switch is at `/buyer/platform/modules/admin` |
 <!-- src: src/pages-v2/BuyerContracts.tsx:580-620,1629; src/lib/i18n/contracts.ts:177-181 -->
 
 <!-- section:testdata -->

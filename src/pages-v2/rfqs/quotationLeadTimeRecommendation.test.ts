@@ -175,7 +175,7 @@ describe('FIND-05 — the award recommendation is decided by lead time, honestly
 
   // ── 2e-b-1a — a DELIBERATE POLICY REVERSAL, not a bug correction ───────────
   // This spec asserted that a BLANK lead time SUBMITS (storing an absence,
-  // scoring `null`, and not taking the recommendation). Under JJ's commercial
+  // scoring `null`, and not taking the recommendation). Under the operator's commercial
   // ruling a blank no longer submits at all: an incomplete bid does not enter
   // the comparison. The guarantee it protected — that silence never wins — is
   // strictly stronger now, because silence never gets a row.

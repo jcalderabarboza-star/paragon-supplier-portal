@@ -1299,7 +1299,7 @@ const SupplierWhatsApp: React.FC = () => {
       </PageMetaLine>
 
       {/* C5 — the demonstration honesty marker: a supplier can never mistake these
-          scripted example conversations for their real channel history. JJ's ruling
+          scripted example conversations for their real channel history. The operator's ruling
           keeps the demonstrator; this label makes what it is unmistakable. */}
       <div
         className="mb-6 flex items-start gap-2 rounded-lg border border-warning/30 bg-warning-soft px-4 py-3 text-sm text-text-primary"

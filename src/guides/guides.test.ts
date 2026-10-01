@@ -55,6 +55,7 @@ import { seedSupplierApplications } from '../services/data/mock/applicationSeed'
 import { seedMaterialRequests } from '../services/data/mock/materialRequestSeed';
 import { seedPslListings } from '../services/data/mock/pslSeed';
 import { moduleOfFlow, moduleOfRoute } from '../services/modules/registry';
+import { switchableModules } from '../services/modules/activation';
 import { SAMPLE_PEOPLE } from '../services/identity/sampleRoster';
 import { personLabel } from '../services/identity/personLabel';
 import { ROLE_LABEL_KEY } from '../services/transitions/handoff';
@@ -572,5 +573,45 @@ describe('guides · the citation keys (SE-20) are stable, unique and resolve', (
     expect(new Set(keys).size).toBe(keys.length);
     expect(keys.filter((k) => resolveGuideCitation(k) === null)).toEqual([]);
     expect(keys).toContain(guideCitationKey(g.entity, g.locale, g.transitions[0]));
+  });
+});
+
+// ── E1 · A FLOW THAT CAN BE SWITCHED OFF SAYS WHAT THAT LOOKS LIKE ─────────────
+// The dispatcher refuses every verb of an OFF module with `MODULE_INACTIVE`
+// naming the switch, for every seat, before the role check — so a reader who
+// meets it and opens the guide must find it in troubleshooting. The population is
+// DERIVED: every guide whose flow `moduleOfFlow` places in a module that
+// `switchableModules()` returns. A side switch (`side:supplier`) is not a module
+// and is outside this gate; it refuses every act of a whole side, not a flow's.
+/** Does this troubleshooting text carry a row naming `MODULE_INACTIVE` AND the module code? */
+const namesModuleInactive = (troubleshooting: string, code: string): boolean =>
+  troubleshooting
+    .split(/\r?\n/)
+    .some((row) => row.startsWith('|') && row.includes('MODULE_INACTIVE') && new RegExp(`\\b${code}\\b`).test(row));
+
+describe('guides · a flow in a switchable module names MODULE_INACTIVE in its troubleshooting (E1)', () => {
+  const switchable = new Set<string>(switchableModules());
+  const governed = GUIDES.filter((g) => {
+    const code = moduleOfFlow(g.entity);
+    return code !== null && switchable.has(code);
+  });
+
+  it('the population is real — a known switchable flow is in it, and it is not every guide', () => {
+    expect(governed.map((g) => g.entity)).toContain('forecastPublication');
+    expect(governed.length).toBeLessThan(GUIDES.length);
+  });
+
+  it('KNOWN-BAD — a row naming the refusal but another module, and a module named without the refusal, do not count', () => {
+    expect(namesModuleInactive('| `MODULE_INACTIVE` naming SDC | x | y | z |', 'PLN')).toBe(false);
+    expect(namesModuleInactive('| the PLN module is off | x | y | z |', 'PLN')).toBe(false);
+    expect(namesModuleInactive('`MODULE_INACTIVE:PLN` mentioned in prose, not in a row', 'PLN')).toBe(false);
+  });
+
+  it('KNOWN-GOOD — a table row with the refusal and the code counts', () => {
+    expect(namesModuleInactive('| *"Switched off"* | `MODULE_INACTIVE:PLN` | off | on |', 'PLN')).toBe(true);
+  });
+
+  it.each(governed.map((g) => [g.sourceFile, g] as const))('%s', (_f, g) => {
+    expect(namesModuleInactive(g.sections.troubleshooting, moduleOfFlow(g.entity)!)).toBe(true);
   });
 });

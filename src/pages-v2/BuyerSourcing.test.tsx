@@ -147,7 +147,7 @@ describe('BuyerSourcing — the minimum order quantity reaches the comparison', 
     await openComparison();
 
     expect(screen.getByText('Min. Order Qty')).toBeInTheDocument();
-    // 100,000 PCS against an RFQ for 80,000 — the case JJ named: a minimum that
+    // 100,000 PCS against an RFQ for 80,000 — the case the operator named: a minimum that
     // EXCEEDS what is being sourced. Shown as a fact, with no verdict attached.
     // EN seat, EN grouping (operator ruling 1).
     expect(screen.getByText(/100,000 PCS/)).toBeInTheDocument();

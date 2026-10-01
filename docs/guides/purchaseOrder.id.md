@@ -229,6 +229,7 @@ Urutan kerja untuk `po-008` (PO-2025-00108, `sup-007`, status fixture `Sent`), s
 | **Buat ASN** di sini berbunyi "tidak ada yang dibuat" | toast info | pembuatan ASN berada di **Pengiriman & ASN** | buka `/supplier/shipments` |
 | Pesanan tetap `Confirmed` setelah barang tiba | **Berikutnya: Menunggu S/4HANA** | pengiriman dan penutupan adalah fakta S/4HANA | tidak ada yang perlu dilakukan di portal; tunggu pembaruan S/4HANA |
 | Ada pesanan `Viewed` tetapi Anda tidak bisa menghasilkannya | hanya fixture yang menampilkannya | `t_po_view` tanpa pemanggil | wajar; akui atau konfirmasi dari `Viewed` tetap berfungsi |
+| Tindakan pada alur ini ditolak untuk setiap kursi, apa pun perannya | penolakan menyebut `MODULE_INACTIVE:ORD`; bila permukaan memeriksa lebih dulu, kontrol terbaca *"Dinonaktifkan — Pesanan pembelian"* | modul Pesanan pembelian dinonaktifkan; halamannya tetap dapat dibaca | minta modul diaktifkan kembali di `/buyer/platform/modules/admin`; perubahan peran tidak membantu, karena pemeriksaan modul berjalan sebelum pemeriksaan peran |
 <!-- src: src/lib/glossary/refusals.glossary.ts:32-97; src/lib/i18n/supplierOrders.ts:213-251; src/services/transitions/refusals.ts:61-114 -->
 
 <!-- section:testdata -->

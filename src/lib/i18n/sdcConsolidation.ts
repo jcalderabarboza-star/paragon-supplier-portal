@@ -147,7 +147,7 @@ export const sdcConsolidationEn: Record<string, string> = {
 
   'sdc.underReview.title': 'Under review — accept or dispute',
   'sdc.underReview.subtitle':
-    'Responses on your desk. Accepting closes the line; disputing sends the supplier words they can answer.',
+    'Responses on your desk. Accepting commits the supplier to the line, which they may still revise; disputing sends the supplier words they can answer.',
   'sdc.underReview.none': 'Nothing is on your desk.',
   'sdc.underReview.chip': 'Under review',
 
@@ -155,9 +155,9 @@ export const sdcConsolidationEn: Record<string, string> = {
   // `requirementResponse.flow.ts` declares `Accepted` as a `from` state, so this
   // is the last move the line ever makes. Derived, not asserted in prose.
   'sdc.accept.cta': 'Accept',
-  'sdc.accept.ctaTitle': 'Accept this confirmation and close the line — {{material}} · {{period}}',
+  'sdc.accept.ctaTitle': 'Accept this confirmation for {{material}} · {{period}} — the supplier may still revise it',
   'sdc.accept.done.title': 'Confirmation accepted — {{material}}',
-  'sdc.accept.done.body': '{{supplier}} is committed on this line; it makes no further move.',
+  'sdc.accept.done.body': '{{supplier}} is committed on this line. The supplier may still revise the commitment; a revision comes back to you for review.',
   'sdc.accept.failed.title': 'Could not accept {{material}}',
 
   'sdc.dispute.cta': 'Dispute',
@@ -217,7 +217,7 @@ export const sdcConsolidationId: Record<string, string> = {
   // — Status respons baris —
   'sdc.state.awaiting': 'Menunggu',
   // SDC-2b-EXT: respons visibilitas — tidak pernah tampil "Dikonfirmasi".
-  // (Interim word choice per adjudication; JJ's Indonesian team reviews later.)
+  // (Interim word choice per adjudication; the operator's Indonesian team reviews later.)
   'sdc.state.acknowledged': 'Ditanggapi',
   'sdc.state.confirmedFull': 'Dikonfirmasi',
   'sdc.state.short': 'Kurang',
@@ -304,14 +304,14 @@ export const sdcConsolidationId: Record<string, string> = {
 
   'sdc.underReview.title': 'Sedang ditelaah — terima atau sanggah',
   'sdc.underReview.subtitle':
-    'Tanggapan di meja Anda. Menerima menutup baris ini; menyanggah mengirimkan kata-kata yang dapat dijawab pemasok.',
+    'Tanggapan di meja Anda. Menerima mengikat pemasok pada baris ini, yang masih dapat mereka revisi; menyanggah mengirimkan kata-kata yang dapat dijawab pemasok.',
   'sdc.underReview.none': 'Tidak ada apa pun di meja Anda.',
   'sdc.underReview.chip': 'Sedang ditelaah',
 
   'sdc.accept.cta': 'Terima',
-  'sdc.accept.ctaTitle': 'Terima konfirmasi ini dan tutup baris — {{material}} · {{period}}',
+  'sdc.accept.ctaTitle': 'Terima konfirmasi ini untuk {{material}} · {{period}} — pemasok masih dapat merevisinya',
   'sdc.accept.done.title': 'Konfirmasi diterima — {{material}}',
-  'sdc.accept.done.body': '{{supplier}} terikat pada baris ini; baris ini tidak bergerak lagi.',
+  'sdc.accept.done.body': '{{supplier}} terikat pada baris ini. Pemasok masih dapat merevisi komitmennya; revisi akan kembali kepada Anda untuk ditinjau.',
   'sdc.accept.failed.title': 'Tidak dapat menerima {{material}}',
 
   'sdc.dispute.cta': 'Sanggah',

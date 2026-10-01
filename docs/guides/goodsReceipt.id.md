@@ -263,6 +263,7 @@ Urutan kerja yang dihasilkan penguji dari **GR Baru** dengan **Masukkan nomor AS
 | **Mulai inspeksi** membuat GR baru dan membiarkan baris lama `Pending Inspection` | dua baris untuk satu pengiriman | wizard selalu membuat; ia tidak memajukan baris unggulan | wajar dalam demo |
 | Menolak penerimaan, tidak ada selisih ASN yang muncul | halaman pemasok tak berubah | penerimaan merujuk pengiriman dermaga, bukan nomor penyimpanan ASN | terima terhadap `ASN-2025-…` yang hidup |
 | **Timpa penahanan** / **Lihat di SAP** / **Ekspor** / **Hasil Lab** tidak berbuat apa pun | toast yang menyatakannya | kontrol hanya tampilan | tidak ada |
+| Tindakan pada alur ini ditolak untuk setiap kursi, apa pun perannya | penolakan menyebut `MODULE_INACTIVE:GRC`, atau `MODULE_INACTIVE:GRC.inspectionWizard` bila hanya *Wizard inspeksi* yang dinonaktifkan, atau `MODULE_INACTIVE:GRC.qualityHold` bila hanya *Penahanan mutu* yang dinonaktifkan; bila permukaan memeriksa lebih dulu, kontrol terbaca *"Dinonaktifkan — Penerimaan barang & inspeksi"* | modul Penerimaan barang & inspeksi (atau salah satu bagiannya) dinonaktifkan; halamannya tetap dapat dibaca | minta modul diaktifkan kembali di `/buyer/platform/modules/admin`; perubahan peran tidak membantu, karena pemeriksaan modul berjalan sebelum pemeriksaan peran |
 <!-- src: src/lib/glossary/refusals.glossary.ts:32-152; src/lib/i18n/goodsReceipt.ts:371-386,440,461-486; src/lib/i18n.ts:1013-1045; src/pages-v2/BuyerGoodsReceipt.tsx:567-620 -->
 
 <!-- section:testdata -->

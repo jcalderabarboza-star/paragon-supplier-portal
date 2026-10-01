@@ -66,6 +66,7 @@ import {
 // GL-1 - the glossary destination for this surface's refusals.
 import GlossaryTermChip from '../components/ui-v2/GlossaryTermChip';
 import { DECLARED_PRESENT } from '../services/data/fixturePresent';
+import { formatIDR } from '../lib/format';
 
 // ⚠️ ANCHORED — this surface rendered values derived from anchored
 // fixture data against the WALL CLOCK, so what a reader saw moved every day
@@ -152,13 +153,6 @@ const CATEGORY_LABEL_KEY: Record<string, string> = {
 };
 const catLabel = (t: TFunction, v: string): string =>
   CATEGORY_LABEL_KEY[v] ? t(CATEGORY_LABEL_KEY[v]) : v;
-
-const formatIDR = (value: number): string =>
-  new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
-    maximumFractionDigits: 0,
-  }).format(value);
 
 const formatDate = (iso: string): string => {
   if (!iso) return '—';
@@ -1370,9 +1364,9 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
         )}
         {/* D-CENSUS-8 — `contracts` is null-backed: no contract lifecycle target is
             wired, and SAP owns contract identity. The create wizard on this page
-            still mints one client-side (CTR-FABRICATION-01 / CTR-NUMBER-FABRICATION-01,
-            filed for the D-CENSUS-3 demotion batch); the marker states the feed
-            fact now and does not pretend the wizard's output is a real contract. */}
+            no longer mints one (CTR-FABRICATION-01, retired at f5338c2 and held
+            closed by C11 V15's document-number gate); the marker states the feed
+            fact. */}
         <ProvenanceMarker capability="contracts" className="ml-3 align-middle" />
       </PageMetaLine>
 

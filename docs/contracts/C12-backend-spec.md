@@ -76,10 +76,13 @@ elsewhere. **Derived as the intersection, and the pin re-derives it.**
 document number; the TMS owns the shipment record. We CARRY identity, we do not
 ASSIGN it. A portal-minted number is a fact about a system we do not own.
 
-⚠️ **AND THIS REPOSITORY VIOLATES ITS OWN RULE IN ONE PLACE, WHICH YOU WILL READ
-AS PERMISSION IF NOBODY TELLS YOU.** `BuyerContracts.tsx` mints
-`CTR-${year}-${n}` client-side (`CTR-FABRICATION-01`, filed, unscheduled). It is
-a defect, not a pattern. C11 V15 records it on the invariant it contradicts.
+**This repository used to violate its own rule in one place, and the fix is
+gated rather than remembered.** `BuyerContracts.tsx` minted `CTR-${year}-${n}`
+client-side (`CTR-FABRICATION-01`); it was retired at `f5338c2`, and C11 V15's
+gate (`src/lib/documentNumberGate/documentNumberGate.test.ts`) now refuses a
+governed document number assembled anywhere in shipped source. The two numbers
+the mock backend's stores assign are the stand-in for the system that owns
+them, listed there with that reason. A mint in a backend is outside the gate.
 
 ### 2.2 · Never assert an external fact from portal input
 
@@ -131,7 +134,7 @@ drift from the document that classifies them.
 | **V12** | the actor is never fabricated | assert `personId` is portal-minted and never equal to an IdP subject — buildable the day D-ID-2 lands |
 | **V13** | `DataError`'s shape is fixed | **a serialisation question we have never had to answer.** Ours is an in-process `Error`; yours crosses a wire |
 | **V14** | external facts name their owner | **nothing.** It is a TYPE — you inherit it by compiling |
-| **V15** | never mint a document identity | a source gate over identifier construction. Ours does not exist; §2.1 records the violation |
+| **V15** | never mint a document identity | a schema and endpoint review: no sequence or default assigns a PO, GR, invoice, contract or scheduling-agreement number on insert. Ours is a source gate over our tree, which cannot see your schema |
 | **V16** | authentication bought, authorisation ours | assert an IdP supplies a binding and never a second authorisation path |
 | **V17** | a refusal is a result, not an exception | **checkable only on your side.** We have no transport. Over HTTP it is one line: a business refusal is a 200 carrying a refusal body, never a 4xx/5xx |
 | **V19** | a pinned contract states its pin’s reach | **nothing, if you keep our shape.** The block is generated from the pin’s own assertions and asserted equal to them, so it cannot drift; what it costs you is the discipline of writing one when you add a pin of your own |

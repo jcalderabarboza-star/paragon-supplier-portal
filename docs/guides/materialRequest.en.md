@@ -188,6 +188,7 @@ For the decline branch, walk `mr-0002` (MR-2026-0002, the standalone request) an
 | *"…not in a state this action can be taken from"* | `ILLEGAL_TRANSITION` | acting on a row that already moved | reopen the row and take the act its state offers |
 | Accepted, but the material is still not in the catalog | no new code on the material picker | expected — acceptance records a decision; SAP issues the code, and nothing in the portal observes it | nothing to do in the portal |
 | Wants to change a declined request | the declined row is terminal | by design — no reopen | raise a new request |
+| An action on this flow is refused for every seat, whatever the role | the refusal names `MODULE_INACTIVE:MAT`; where the surface checks first, the control reads *"Switched off — Material requests"* | the Material requests module is switched off; its pages stay readable | have it switched back on at `/buyer/platform/modules/admin`; no role change helps, because the module check runs before the role check |
 
 <!-- src: src/services/transitions/refusals.ts:61; src/lib/glossary/refusals.glossary.ts:324; src/services/transitions/policies.ts:728; src/services/transitions/policies.ts:874; src/lib/i18n/materialRequests.ts:452; src/lib/i18n/sourcing.ts:298 -->
 

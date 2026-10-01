@@ -122,6 +122,7 @@ Urutan kerja untuk `sa-0001#10` (default kontrak 10% · Tandai), sebagaimana aka
 | "Item perjanjian itu tidak ditemukan" | `UNKNOWN_ITEM` dari layanan atau `NOT_FOUND` dari dispatcher | alamat `agreementId#lineSeq` tidak tercocok | muat ulang halaman kontrak |
 | Kursi pemasok melihat chip tetapi tidak dapat menyunting | cermin pemasok | setiap verba pengiriman menolak scope pemasok; cermin menyembunyikan riwayat penyimpangan berdasarkan rancangan | wajar |
 | Mengatur Blokir tidak menghentikan rilis | di atas amplop ditandai, tidak pernah diblokir | `block` dinyatakan tetapi tidak ditegakkan saat rilis | wajar; dicatat sebagai cabang yang diketahui belum diimplementasikan |
+| Tindakan pada alur ini ditolak untuk setiap kursi, apa pun perannya | penolakan menyebut `MODULE_INACTIVE:CTR`, atau `MODULE_INACTIVE:CTR.drawdownPolicy` bila hanya *Kebijakan penarikan* yang dinonaktifkan; bila permukaan memeriksa lebih dulu, kontrol terbaca *"Dinonaktifkan — Kontrak & perjanjian pengiriman"* | modul Kontrak & perjanjian pengiriman (atau salah satu bagiannya) dinonaktifkan; halamannya tetap dapat dibaca | minta modul diaktifkan kembali di `/buyer/platform/modules/admin`; perubahan peran tidak membantu, karena pemeriksaan modul berjalan sebelum pemeriksaan peran |
 <!-- src: src/services/transitions/policies.ts:1450-1463,1681-1757; src/components/delivery/deliveryRefusal.ts:52-66; src/lib/i18n.ts:335-343,419-423; src/services/data/mock/MockDeliveryService.ts:244-248; src/services/delivery/types.ts:84-95 -->
 
 <!-- section:testdata -->

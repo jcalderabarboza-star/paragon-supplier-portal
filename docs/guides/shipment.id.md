@@ -227,6 +227,7 @@ Tidak ada. Riwayat status adalah urutan `TransitionEvent` yang ditulis dispatche
 | Gejala | Cara mengenali | Kemungkinan penyebab | Penyelesaian |
 |---|---|---|---|
 | Sebuah tombol di panel pengiriman tampak menawarkan salah satu langkah ini | labelnya **Kirim pengingat ke pemasok**, **Lacak pengiriman**, **Hubungi kurir**, **Mulai proses GR**, atau **Lihat GR** | ini halaman hanya-baca: tiga yang pertama membuka toast bahwa kemampuannya belum tersedia, dua terakhir berpindah ke penerimaan barang; tindakan memindahkan pengiriman adalah milik TMS | tidak ada yang perlu diselesaikan di portal; tonggaknya datang dari TMS saat INT-TMS-01 hadir |
+| — (belum dapat terjadi) | `MODULE_INACTIVE:SHP` | alur ini belum punya target perintah, sehingga dispatch buatan tangan ditolak `UNKNOWN_ENTITY` sebelum pemeriksaan modul berjalan; setelah tersambung, menonaktifkan modul Pengiriman & ASN menolak setiap verba dengan nama ini | tidak ada yang perlu dilakukan sekarang; sakelar modul ada di `/buyer/platform/modules/admin` |
 <!-- src: src/pages-v2/BuyerShipments.tsx:434-506; src/lib/i18n/shipments.ts:235-259 -->
 
 <!-- section:testdata -->

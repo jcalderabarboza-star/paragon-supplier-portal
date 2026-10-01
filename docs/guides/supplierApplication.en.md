@@ -179,6 +179,7 @@ For the refusal branch, walk `app-0002` (APP-2026-0002) the same way and choose 
 | Approved, but the company is not in the supplier directory | no change on `/buyer/suppliers` | expected — approval records a decision and mints nothing; the vendor master is S/4HANA's | nothing to do in the portal |
 | A company that was refused wants to try again | the refused row is terminal | by design — no reopen | raise a new application |
 | An applicant completed `/register` and nothing is on the pile | queue unchanged | `/register` is a walkthrough; it records nothing and reaches no queue | procurement raises the application on their behalf |
+| An action on this flow is refused for every seat, whatever the role | the refusal names `MODULE_INACTIVE:SUP`, or `MODULE_INACTIVE:SUP.applications` when only *Applications* is off; where the surface checks first, the control reads *"Switched off — Supplier network"* | the Supplier network module (or one of its parts) is switched off; its pages stay readable | have it switched back on at `/buyer/platform/modules/admin`; no role change helps, because the module check runs before the role check |
 
 <!-- src: src/services/transitions/refusals.ts:61; src/lib/glossary/refusals.glossary.ts:324; src/services/transitions/policies.ts:607; src/services/transitions/policies.ts:641; src/lib/i18n/supplierApplications.ts:18 -->
 

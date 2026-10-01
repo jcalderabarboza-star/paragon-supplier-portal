@@ -57,6 +57,7 @@ import {
 } from '../services/data/documentDisplayState';
 import { daysUntil } from '../services/data/dayProjection';
 import { DECLARED_PRESENT } from '../services/data/fixturePresent';
+import { formatIDR } from '../lib/format';
 
 // ⚠️ ANCHORED — this surface rendered values derived from anchored
 // fixture data against the WALL CLOCK, so what a reader saw moved every day
@@ -73,12 +74,6 @@ import { DECLARED_PRESENT } from '../services/data/fixturePresent';
 const TODAY = DECLARED_PRESENT;
 
 type Grade = 'A' | 'B' | 'C' | 'D' | 'F';
-
-const fmtIDR = (v: number): string => {
-  if (v >= 1_000_000_000) return `Rp ${(v / 1_000_000_000).toFixed(1)}M`;
-  if (v >= 1_000_000) return `Rp ${Math.round(v / 1_000_000)}jT`;
-  return `Rp ${v.toLocaleString()}`;
-};
 
 const fmtDate = (s: string): string => {
   if (!s) return '—';
@@ -727,7 +722,7 @@ const SupplierDashboard: React.FC = () => {
                         {po.lineItems.length}
                       </TableCell>
                       <TableCell className="text-right font-semibold text-text-primary whitespace-nowrap">
-                        <Data>{fmtIDR(po.totalValue)}</Data>
+                        <Data>{formatIDR(po.totalValue, { compact: true })}</Data>
                       </TableCell>
                       <TableCell>
                         <StatusPill variant={statusTone(po.status)}>

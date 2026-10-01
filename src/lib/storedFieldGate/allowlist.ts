@@ -67,6 +67,23 @@ export interface Exemption {
 
 const D_F = 'D-F (2026-08-12)';
 
+// ⚠️ E1 · THE PSL ROWS BELOW ARRIVED BECAUSE THE PSL GLOSSARIES WERE REGISTERED,
+// NOT BECAUSE ANYTHING ABOUT THESE FIELDS CHANGED. Registering `PslStatus`,
+// `PslLifecycle` and `PslCapSource` made every DTO that carries one of them
+// glossary-covered, which is this gate's population. Each is the honest label
+// for a residue no seat has ruled on: `unadjudicated`, counted.
+const E1 = 'E1 (2026-10-01)';
+const PSL_SEED_ROW =
+  'A field of the PSL seed row shape (`mock/pslSeed.ts`): the seed reads it to drive the real PSL verbs at ' +
+  'start-up, and this gate classes the seed as fixture, so no non-fixture reader can exist for it. Whether ' +
+  'a seed input shape belongs under the stored-field gate at all is the open ruling.';
+const PSL_LEDGER =
+  'A field the PSL store writes onto a listing or its status ledger. The queue and the detail drawer do not ' +
+  'render it; specs read it. Stored so the history is complete; no surface yet asks.';
+const PSL_PAYLOAD =
+  'A field of the PSL propose payload type. The hook hands the whole payload to dispatch and the target ' +
+  'writes it from the payload record, so there is no property read for the derivation to find.';
+
 /**
  * THE LIST. Every row is a field the derivation flags TODAY.
  *
@@ -326,6 +343,47 @@ export const STORED_FIELD_ALLOWLIST: readonly Exemption[] = Object.freeze([
   // (§41). **The gate went red BEFORE this row was removed** — `AN EXEMPTION
   // OUTLIVED ITS SUBJECT · DataError.cause — the field no longer exists` — which
   // is the whole point of the bilateral half and its first exercise.
+  { key: 'PslSeedRow.capOverride', reason: 'unadjudicated', why: PSL_SEED_ROW, since: E1 },
+  { key: 'PslSeedRow.decideReason', reason: 'unadjudicated', why: PSL_SEED_ROW, since: E1 },
+  { key: 'PslSeedRow.evidenceRefs', reason: 'unadjudicated', why: PSL_SEED_ROW, since: E1 },
+  { key: 'PslSeedRow.intent', reason: 'unadjudicated', why: PSL_SEED_ROW, since: E1 },
+  { key: 'PslSeedRow.justification', reason: 'unadjudicated', why: PSL_SEED_ROW, since: E1 },
+  { key: 'PslSeedRow.materialCodes', reason: 'unadjudicated', why: PSL_SEED_ROW, since: E1 },
+  { key: 'PslSeedRow.proposeReason', reason: 'unadjudicated', why: PSL_SEED_ROW, since: E1 },
+  { key: 'PslSeedRow.status', reason: 'unadjudicated', why: PSL_SEED_ROW, since: E1 },
+  { key: 'PslSeedRow.supplierId', reason: 'unadjudicated', why: PSL_SEED_ROW, since: E1 },
+  { key: 'PslSeedRow.validFrom', reason: 'unadjudicated', why: PSL_SEED_ROW, since: E1 },
+  { key: 'PslSeedRow.validUntil', reason: 'unadjudicated', why: PSL_SEED_ROW, since: E1 },
+  { key: 'PslSeedRow.walk', reason: 'unadjudicated', why: PSL_SEED_ROW, since: E1 },
+  { key: 'PslSeedRow.withdrawReason', reason: 'unadjudicated', why: PSL_SEED_ROW, since: E1 },
+  { key: 'PslListing.capDecidedAt', reason: 'unadjudicated', why: PSL_LEDGER, since: E1 },
+  { key: 'PslListing.publishedBy', reason: 'unadjudicated', why: PSL_LEDGER, since: E1 },
+  { key: 'PslStatusChange.by', reason: 'unadjudicated', why: PSL_LEDGER, since: E1 },
+  { key: 'PslStatusChange.from', reason: 'unadjudicated', why: PSL_LEDGER, since: E1 },
+  { key: 'PslStatusChange.to', reason: 'unadjudicated', why: PSL_LEDGER, since: E1 },
+  { key: 'PslProposePayload.evidenceRefs', reason: 'unadjudicated', why: PSL_PAYLOAD, since: E1 },
+  { key: 'PslProposePayload.justification', reason: 'unadjudicated', why: PSL_PAYLOAD, since: E1 },
+  { key: 'PslProposePayload.reason', reason: 'unadjudicated', why: PSL_PAYLOAD, since: E1 },
+  { key: 'PslProposePayload.status', reason: 'unadjudicated', why: PSL_PAYLOAD, since: E1 },
+  { key: 'PslProposePayload.supplierId', reason: 'unadjudicated', why: PSL_PAYLOAD, since: E1 },
+  { key: 'PslProposePayload.validFrom', reason: 'unadjudicated', why: PSL_PAYLOAD, since: E1 },
+  { key: 'PslProposePayload.validUntil', reason: 'unadjudicated', why: PSL_PAYLOAD, since: E1 },
+  {
+    key: 'RestrictiveDecisionVerdict.status',
+    reason: 'unadjudicated',
+    why:
+      'The PSL four-eyes verdict carries the designation it judged. Every caller branches on `kind` and ' +
+      'none reads the status back; zero reads anywhere.',
+    since: E1,
+  },
+  {
+    key: 'PslExemption.because',
+    reason: 'unadjudicated',
+    why:
+      'Why a PSL designation exempts an RFQ from competitive bidding. The sourcing gate returns it and no ' +
+      'surface or spec reads it; the exemption is acted on, its reason is not shown.',
+    since: E1,
+  },
 ]);
 
 /** Rows still awaiting a ruling. Published by the gate so the debt is a number

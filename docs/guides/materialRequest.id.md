@@ -188,6 +188,7 @@ Untuk cabang penolakan, jalani `mr-0002` (MR-2026-0002, permintaan mandiri) dan 
 | *"…tidak berada dalam status yang memungkinkan tindakan ini"* | `ILLEGAL_TRANSITION` | bertindak pada baris yang sudah berpindah | buka kembali baris dan ambil tindakan yang ditawarkan keadaannya |
 | Disetujui, tetapi material masih belum ada di katalog | tidak ada kode baru di pemilih material | wajar — persetujuan mencatat keputusan; SAP menerbitkan kode, dan tidak ada bagian portal yang mengamatinya | tidak ada yang perlu dilakukan di portal |
 | Ingin mengubah permintaan yang ditolak | baris yang ditolak bersifat terminal | sesuai rancangan — tidak ada buka kembali | ajukan permintaan baru |
+| Tindakan pada alur ini ditolak untuk setiap kursi, apa pun perannya | penolakan menyebut `MODULE_INACTIVE:MAT`; bila permukaan memeriksa lebih dulu, kontrol terbaca *"Dinonaktifkan — Permintaan material"* | modul Permintaan material dinonaktifkan; halamannya tetap dapat dibaca | minta modul diaktifkan kembali di `/buyer/platform/modules/admin`; perubahan peran tidak membantu, karena pemeriksaan modul berjalan sebelum pemeriksaan peran |
 
 <!-- src: src/services/transitions/refusals.ts:61; src/lib/glossary/refusals.glossary.ts:324; src/services/transitions/policies.ts:728; src/services/transitions/policies.ts:874; src/lib/i18n/materialRequests.ts:579; src/lib/i18n/sourcing.ts:670 -->
 

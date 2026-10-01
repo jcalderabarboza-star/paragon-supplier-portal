@@ -97,7 +97,7 @@ describe('scoreQuotations — LIVE axes derive from the quote set', () => {
   // 2e-b-1 had a whole describe block here — "an UNSTATED lead time is absent,
   // not zero" — asserting that an omitted lead time scored `null` and had its
   // axis dropped from the composite (weights renormalised). It was correct
-  // arithmetic for the policy of the time. JJ's commercial ruling removed the
+  // arithmetic for the policy of the time. The operator's commercial ruling removed the
   // policy: a lead time is REQUIRED at quote stage, because a price with no
   // delivery promise is an incomplete bid, so there is no unstated case left
   // for the engine to be honest about. The block is retired rather than fixed;

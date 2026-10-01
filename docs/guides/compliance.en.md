@@ -138,6 +138,7 @@ There is none. Nothing dispatches a compliance verb — the entity has no comman
 | Symptom | How to tell | Likely cause | Resolve |
 |---|---|---|---|
 | A button appears to offer one of these steps | **Confirm** / **Refuse** sit in the *Declared certificates awaiting review* queue; **Remind** on a Valid row opens a toast saying reminders are not wired | the registry table is a read-only projection; the queue's buttons act on supplier documents, not on this machine, and the act of verifying a registry cell belongs to the pipeline Track R has not yet ruled | verify or refuse the supplier document instead; the registry itself changes only when the Track-R harvest lands |
+| — (cannot occur yet) | `MODULE_INACTIVE:CMP` | this flow has no command target, so a hand-crafted dispatch is refused `UNKNOWN_ENTITY` before the module check runs; once it is wired, switching off the Compliance & documents module refuses every verb by this name | nothing to do today; the module switch is at `/buyer/platform/modules/admin` |
 <!-- src: src/pages-v2/BuyerCompliance.tsx:616-642,946-960; src/lib/i18n/compliance.ts:116-119,146-150 -->
 
 <!-- section:testdata -->

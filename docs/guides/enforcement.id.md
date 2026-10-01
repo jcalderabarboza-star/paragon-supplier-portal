@@ -125,6 +125,7 @@ Penguji yang mendispatch `t_enforcement_set` secara manual dengan `mode: OBSERVE
 | `NOT_FOUND` | dilempar | id pemeriksaan bukan salah satu dari tiga id yang diatur | gunakan `halal.seal`, `halal.certificate` atau `bpom.lot` |
 | `ROLE_NOT_PERMITTED:enforcement:set` | dispatcher | kursi tidak memegang pengadaan | wajar untuk setiap jalur lain |
 | `halal.certificate` menampilkan pemberitahuan tetapi tidak pernah memblokir | wizard | pemeriksaan itu tidak memiliki pengaturan tercatat dan tidak dikonsultasikan oleh apa pun yang menolak | wajar; pemberitahuannya memberi tahu petugas |
+| Tindakan pada alur ini ditolak untuk setiap kursi, apa pun perannya | penolakan menyebut `MODULE_INACTIVE:GRC`; bila permukaan memeriksa lebih dulu, kontrol terbaca *"Dinonaktifkan — Penerimaan barang & inspeksi"* | modul Penerimaan barang & inspeksi dinonaktifkan; halamannya tetap dapat dibaca | minta modul diaktifkan kembali di `/buyer/platform/modules/admin`; perubahan peran tidak membantu, karena pemeriksaan modul berjalan sebelum pemeriksaan peran |
 <!-- src: src/services/transitions/policies.ts:301-387; src/services/transitions/refusals.ts:61-114; src/services/data/mock/MockCommandService.ts:1603; src/components/v2-features/GRInspectionWizard.tsx:803-835 -->
 
 <!-- section:testdata -->

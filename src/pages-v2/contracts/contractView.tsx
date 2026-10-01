@@ -48,6 +48,7 @@ import {
 } from '../../services/data/obligationProjection';
 import type { Supplier } from '../../services/data/types';
 import { DECLARED_PRESENT } from '../../services/data/fixturePresent';
+import { formatIDR } from '../../lib/format';
 
 // ⚠️ ANCHORED — this surface rendered values derived from anchored
 // fixture data against the WALL CLOCK, so what a reader saw moved every day
@@ -122,13 +123,6 @@ const CATEGORY_LABEL_KEY: Record<string, string> = {
 };
 const catLabel = (t: TFunction, v: string): string =>
   CATEGORY_LABEL_KEY[v] ? t(CATEGORY_LABEL_KEY[v]) : v;
-
-const formatIDR = (value: number): string =>
-  new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
-    maximumFractionDigits: 0,
-  }).format(value);
 
 const formatDate = (iso: string): string => {
   if (!iso) return '—';

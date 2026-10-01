@@ -122,6 +122,7 @@ Worked sequence for `sa-0001#10` (contract default 10% · Flag), as a tester hol
 | "That agreement item could not be found" | `UNKNOWN_ITEM` from the service or `NOT_FOUND` from the dispatcher | the address `agreementId#lineSeq` does not resolve | reload the contract page |
 | Supplier seat sees the chip but cannot edit | supplier mirror | every delivery verb denies a supplier scope; the mirror hides the deviation history by design | expected |
 | Setting Block did not stop a release | over-envelope is flagged, never blocked | `block` is declared but not enforced at release | expected; recorded as a known-unimplemented arm |
+| An action on this flow is refused for every seat, whatever the role | the refusal names `MODULE_INACTIVE:CTR`, or `MODULE_INACTIVE:CTR.drawdownPolicy` when only *Drawdown policy* is off; where the surface checks first, the control reads *"Switched off — Contracts & delivery agreements"* | the Contracts & delivery agreements module (or one of its parts) is switched off; its pages stay readable | have it switched back on at `/buyer/platform/modules/admin`; no role change helps, because the module check runs before the role check |
 <!-- src: src/services/transitions/policies.ts:1450-1463,1681-1757; src/components/delivery/deliveryRefusal.ts:52-66; src/lib/i18n.ts:335-343,419-423; src/services/data/mock/MockDeliveryService.ts:244-248; src/services/delivery/types.ts:84-95 -->
 
 <!-- section:testdata -->

@@ -56,6 +56,7 @@ import { readInvoiceAmount } from './invoices/invoiceAmountModel';
 // GL-1 - the glossary destination for this surface's refusals.
 import GlossaryTermChip from '../components/ui-v2/GlossaryTermChip';
 import { useRefusalText } from '../hooks/useRefusalText';
+import { formatIDR } from '../lib/format';
 
 // CP-0 · W1 · 2f-d — each refusal names what to type instead. Replaces a
 // hard-coded English literal ('PO and a positive amount are required') that
@@ -92,13 +93,6 @@ const CHANNEL_ICON: Record<SupplierInvoice['channel'], LucideIcon> = {
   Web: Globe,
   API: Send,
 };
-
-const fmtIDR = (n: number): string => {
-  if (n >= 1_000_000_000) return `Rp ${(n / 1_000_000_000).toFixed(1)}M`;
-  return `Rp ${Math.round(n / 1_000_000)}jT`;
-};
-
-const fmtIDRFull = (n: number): string => `Rp ${n.toLocaleString('id-ID')}`;
 
 const fmtDate = (s: string | null): string => {
   if (!s) return '—';
@@ -443,7 +437,7 @@ const SupplierInvoices: React.FC = () => {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-6">
         <KpiCard
           eyebrow={t('supplierInvoices.kpi.received.eyebrow')}
-          value={fmtIDR(sums.paid)}
+          value={formatIDR(sums.paid, { compact: true })}
           subtitle={
             <span className="text-success">
               {t(
@@ -458,7 +452,7 @@ const SupplierInvoices: React.FC = () => {
         />
         <KpiCard
           eyebrow={t('supplierInvoices.kpi.pending.eyebrow')}
-          value={fmtIDR(sums.pending)}
+          value={formatIDR(sums.pending, { compact: true })}
           subtitle={
             <span className="text-warning-hover">
               {t(
@@ -473,7 +467,7 @@ const SupplierInvoices: React.FC = () => {
         />
         <KpiCard
           eyebrow={t('supplierInvoices.kpi.disputed.eyebrow')}
-          value={fmtIDR(sums.disputed)}
+          value={formatIDR(sums.disputed, { compact: true })}
           subtitle={
             <span className="text-danger">
               {t(
@@ -536,10 +530,10 @@ const SupplierInvoices: React.FC = () => {
                   </TableCell>
                   <TableCell className="text-right whitespace-nowrap">
                     <div className="font-semibold text-text-primary">
-                      <Data>{fmtIDR(inv.amount)}</Data>
+                      <Data>{formatIDR(inv.amount, { compact: true })}</Data>
                     </div>
                     <div className="text-xs text-text-tertiary">
-                      <Data>{fmtIDRFull(inv.amount)}</Data>
+                      <Data>{formatIDR(inv.amount)}</Data>
                     </div>
                   </TableCell>
                   <TableCell>
@@ -679,7 +673,7 @@ const SupplierInvoices: React.FC = () => {
                 <div>
                   <dt className="text-text-tertiary">{t('supplierInvoices.field.amount')}</dt>
                   <dd className="text-text-primary font-semibold">
-                    <Data>{fmtIDRFull(selected.amount)}</Data>
+                    <Data>{formatIDR(selected.amount)}</Data>
                   </dd>
                 </div>
                 <div>
@@ -788,7 +782,7 @@ const SupplierInvoices: React.FC = () => {
                   <div>
                     <dt className="text-text-tertiary">{t('supplierInvoices.remittance.amountPaid')}</dt>
                     <dd className="text-text-primary font-semibold">
-                      <Data>{fmtIDRFull(selected.amount)}</Data>
+                      <Data>{formatIDR(selected.amount)}</Data>
                     </dd>
                   </div>
                   <div>
