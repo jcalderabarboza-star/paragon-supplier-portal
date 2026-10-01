@@ -436,6 +436,10 @@ describe('⚠️ THE TWO-REGEX COMMENT STRIP IS EXTINCT — derived, not listed'
         // comments name several delivery heads, so an unstripped derivation
         // demands copy for refusals nothing emits.
         'components/delivery/deliveryRefusal.test.ts',
+        // N1 — the sidebar gate derives the router's paths from the router
+        // SOURCE, where comments name routes in prose; unstripped, a route a
+        // comment merely mentions would demand a nav item.
+        'components/layout-v2/navModel.test.tsx',
         'pages-v2/registrationHonesty.guard.test.ts',
         'pages-v2/solidButtonRetired.guard.test.ts',
         'pages-v2/toastHonesty.guard.test.tsx',
