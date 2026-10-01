@@ -50,7 +50,7 @@ import {
 // GL-1 - the glossary destination for this surface's refusals.
 import GlossaryTermChip from '../components/ui-v2/GlossaryTermChip';
 import { useRefusalText } from '../hooks/useRefusalText';
-import { formatNumber } from '../lib/format';
+import { formatIDR, formatNumber } from '../lib/format';
 
 type TabKey = 'all' | 'action' | 'progress' | 'completed';
 type PanelMode = 'detail' | 'editing' | 'confirmed' | 'change-request';
@@ -61,12 +61,6 @@ const PROGRESS_STATUSES: POStatus[] = [
   POStatus.PARTIALLY_DELIVERED,
 ];
 const COMPLETED_STATUSES: POStatus[] = [POStatus.DELIVERED, POStatus.CLOSED];
-
-const fmtIDR = (v: number): string => {
-  if (v >= 1_000_000_000) return `Rp ${(v / 1_000_000_000).toFixed(1)}M`;
-  if (v >= 1_000_000) return `Rp ${Math.round(v / 1_000_000)}jT`;
-  return `Rp ${v.toLocaleString()}`;
-};
 
 const fmtDate = (s: string): string => {
   if (!s) return '—';
@@ -517,7 +511,7 @@ const SupplierOrders: React.FC = () => {
         />
         <KpiCard
           eyebrow={t('supplierOrders.kpi.totalValue.eyebrow')}
-          value={fmtIDR(totalValuePending)}
+          value={formatIDR(totalValuePending, { compact: true })}
           subtitle={t('supplierOrders.kpi.totalValue.subtitle')}
           icon={Wallet}
         />
@@ -596,7 +590,7 @@ const SupplierOrders: React.FC = () => {
                   {po.lineItems.length}
                 </TableCell>
                 <TableCell className="text-right font-semibold text-text-primary whitespace-nowrap">
-                  <Data>{fmtIDR(po.totalValue)}</Data>
+                  <Data>{formatIDR(po.totalValue, { compact: true })}</Data>
                 </TableCell>
                 <TableCell>
                   <StatusPill variant={statusTone(po.status)}>
@@ -783,7 +777,7 @@ const SupplierOrders: React.FC = () => {
                 <div>
                   <dt className="text-text-tertiary">{t('supplierOrders.panel.totalValue')}</dt>
                   <dd className="text-text-primary font-semibold">
-                    <Data>{fmtIDR(selected.totalValue)}</Data>
+                    <Data>{formatIDR(selected.totalValue, { compact: true })}</Data>
                   </dd>
                 </div>
                 <div>

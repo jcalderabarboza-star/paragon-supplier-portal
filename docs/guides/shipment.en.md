@@ -225,6 +225,7 @@ There is none. A status history is a sequence of `TransitionEvent`s written by t
 | Symptom | How to tell | Likely cause | Resolve |
 |---|---|---|---|
 | A button on the shipment panel appears to offer one of these steps | the label is **Send reminder to supplier**, **Track shipment**, **Contact carrier**, **Begin GR process** or **View GR** | it is a read-only page: the first three open a toast saying the capability is not available, the last two navigate to goods receipt; the act of moving a shipment is the TMS's | nothing to resolve in the portal; the milestone arrives from the TMS when INT-TMS-01 lands |
+| — (cannot occur yet) | `MODULE_INACTIVE:SHP` | this flow has no command target, so a hand-crafted dispatch is refused `UNKNOWN_ENTITY` before the module check runs; once it is wired, switching off the Shipments & ASN module refuses every verb by this name | nothing to do today; the module switch is at `/buyer/platform/modules/admin` |
 <!-- src: src/pages-v2/BuyerShipments.tsx:434-506; src/lib/i18n/shipments.ts:111-135 -->
 
 <!-- section:testdata -->

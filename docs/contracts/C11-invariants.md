@@ -35,8 +35,8 @@ The model is `ExternalFactOwner` (#311): a boundary that had been prose became
 directions. Before that change the rule was true because people remembered it.
 After it, an act that names an owner outside the union does not compile, and an
 owner nobody uses reddens the suite. **That is the standard every row in the
-ENFORCED groups below is held to, and the three rows that cannot meet it say so
-on their own line.**
+ENFORCED groups below is held to, and the rows that cannot meet it say so on
+their own line.**
 
 ## How to read the table
 
@@ -71,7 +71,7 @@ this document** rather than leaving a promise nobody keeps.
 | **V12** | **The actor is never fabricated.** No code path constructs a RESOLVED attribution while no person is authenticated; acts are recorded against `UNATTRIBUTED: NO_PERSON_IN_SESSION` and the surface says so. | `GATE` | `src/context/simUsrNamespace.test.ts` | `the namespace is still unused anywhere in src/` |
 | **V13** | **`DataError` is the read-side failure channel and its shape is fixed** (DR-4). It is an `Error`, survives `instanceof` across the module target, and carries no `cause` — so `in` cannot report one that is not there. | `GATE` | `src/services/data/dataError.contract.test.ts` | `still is an Error, and still survives instanceof across the target` |
 | **V14** | **Every external fact names its owner from a closed union.** An act reporting a fact this platform does not own declares WHICH system reports it, drawn from `ExternalFactOwner`; no non-external act carries an owner, and no member is decorative. | `TYPE` | `src/services/transitions/externalFactOwner.test.ts` | `every external-fact act names an owner from the closed set` |
-| **V15** | **The portal never mints a document identity — S/4 owns it.** PO, GR, invoice and contract numbers, and the vendor master, are SAP's. We carry identity; we do not assign it. ⚠️ **THIS IS NOT ENFORCED.** No gate reads document-number construction, and the tree currently CONTRADICTS this row in one place — `BuyerContracts.tsx` mints `CTR-${year}-${n}` client-side (`CTR-FABRICATION-01`, filed, unscheduled). **What would enforce it:** a source gate over identifier construction, refusing a client-side mint of any governed document number — buildable today, and the sibling of the gate that already retired solid buttons. It is H2, not this batch. | `NOT ENFORCED` | — | — |
+| **V15** | **The portal never mints a document identity — S/4 owns it.** PO, GR, invoice, contract and scheduling-agreement numbers, and the vendor master, are SAP's. We carry identity; we do not assign it. The one violation this row used to record — `BuyerContracts.tsx` minting `CTR-${year}-${n}` client-side (`CTR-FABRICATION-01`) — was retired at `f5338c2`, and the gate below is fired at that retired shape, read out of git. It walks every shipped source file's AST and refuses a string assembled with a governed prefix (`PO-`, `GR-`, `INV-`, `CTR-`, `SA-`) in front of a computed part; fixtures and specs are outside it, and the mock backend's two store-assigned numbers sit on a bilateral list with their reason. **Its reach limit is stated at the gate:** a prefix held in a variable and joined later is not seen. | `GATE` | `src/lib/documentNumberGate/documentNumberGate.test.ts` | `no shipped source constructs a governed document number outside the mock backend` |
 | **V16** | **Authentication is bought; authorisation is ours.** An identity provider supplies a `SubjectBinding` and nothing else — it never mints a `personId`, and it never becomes a second authorisation path. ⚠️ **THIS IS NOT ENFORCED.** It constrains a system that does not exist yet, so there is nothing to gate. **What would enforce it:** nothing, until an IdP lands; at that point a gate asserting `personId` is portal-minted and never equal to a subject becomes buildable. Stated in C10 §3.2 / §5.1 / §7.1 and deliberately restated here, because a reader of this table must not infer it is checked. | `NOT ENFORCED` | — | — |
 | **V17** | **A refusal is a first-class result, not an exception.** A business refusal is a value the caller can branch on; exceptions are reserved for programmer error and transport failure. ⚠️ **THIS IS NOT ENFORCED** as a principle — the factories above assert individual refusals COME BACK as results, which is the behaviour, but nothing asserts that no business path throws. **What would enforce it:** a gate over the dispatcher's own source refusing a `throw` outside the argument-validation prologue. Cheap, and unbuilt. | `NOT ENFORCED` | — | — |
 | **V18** | **An ingress replay raises no second act.** A command carrying an `idempotencyKey` already seen under the same tenancy returns the FIRST result — same `correlationId`, same `entityId` — rather than raising again. It is a RESULT and not a refusal, because a refusal is `status: 'failed'` and an at-least-once transport's correct response to a failure is to redeliver: refusing a replay would convert one duplicate into an unbounded retry loop. Absent, nothing changes. | `FACTORY` | `src/services/contracts/conformance/dispatch.ts` | `the SAME idempotencyKey twice returns the first result — one act, not two` |
@@ -115,9 +115,10 @@ it: the same factory driven by a stub that ignores `scope.supplierId`, which
 went red on isolation, superset and refusal. **Re-run that against your own
 implementation before you trust a green.**
 
-### The eight properties you must assert yourselves
+### The properties you must assert yourselves
 
-V6–V13 are `GATE` rows. Each is true here and unproven there:
+V6–V13 and V15 are `GATE` rows about the running system. Each is true here and
+unproven there:
 
 - **V6** — your dispatch pipeline must order role → state → legality → fields → policy. Nothing we ship can check yours.
 - **V7** — your settlement endpoint must reject a foreign scope on all three axes. Ours is a function call; yours is a webhook, which is a wider door.
@@ -126,6 +127,7 @@ V6–V13 are `GATE` rows. Each is true here and unproven there:
 - **V11** — your DTOs must not grow fields nothing reads.
 - **V12** — your identity layer must not fabricate an actor before an IdP answers.
 - **V13** — your error channel must preserve `DataError`'s shape across the wire, which is a serialisation question we have never had to answer.
+- **V15** — your persistence layer must not assign a PO, GR, invoice, contract or scheduling-agreement number on insert. Our gate reads our source; a sequence column in your schema is outside it.
 
 **V14 is the exception among the unreachable rows and shows what "enforced"
 buys.** It is a TYPE. Any implementation that compiles against these types

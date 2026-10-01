@@ -27,7 +27,7 @@
 //                    acknowledgement (`requiresSameDayAck`); this module reports
 //                    that the ack is owed, and the page enforces it.
 //
-// WHY BLANK STOPPED BEING NEUTRAL (JJ, commercial). 2e-b-1 treated an unstated
+// WHY BLANK STOPPED BEING NEUTRAL (operator ruling, commercial). 2e-b-1 treated an unstated
 // lead time as an absence and dropped the axis for it — neither rewarded nor
 // punished. That is arithmetically honest and commercially wrong: a price with
 // no delivery promise is an INCOMPLETE bid, not a comparable one, and scoring it

@@ -138,6 +138,7 @@ Tidak ada. Tidak ada yang mendispatch verba kepatuhan — entitasnya tidak punya
 | Gejala | Cara mengenali | Kemungkinan penyebab | Penyelesaian |
 |---|---|---|---|
 | Sebuah tombol tampak menawarkan salah satu langkah ini | **Konfirmasi** / **Tolak** berada di antrean *Sertifikat yang dinyatakan, menunggu tinjauan*; **Ingatkan** pada baris Valid membuka toast bahwa pengingat belum tersambung | tabel registri adalah proyeksi hanya-baca; tombol antrean bekerja pada dokumen pemasok, bukan pada mesin ini, dan tindakan memverifikasi sel registri milik pipeline yang belum diputuskan Track R | verifikasi atau tolak dokumen pemasoknya; registri sendiri berubah hanya saat panen data Track-R hadir |
+| — (belum dapat terjadi) | `MODULE_INACTIVE:CMP` | alur ini belum punya target perintah, sehingga dispatch buatan tangan ditolak `UNKNOWN_ENTITY` sebelum pemeriksaan modul berjalan; setelah tersambung, menonaktifkan modul Kepatuhan & dokumen menolak setiap verba dengan nama ini | tidak ada yang perlu dilakukan sekarang; sakelar modul ada di `/buyer/platform/modules/admin` |
 <!-- src: src/pages-v2/BuyerCompliance.tsx:616-642,946-960; src/lib/i18n/compliance.ts:278-281,261 -->
 
 <!-- section:testdata -->

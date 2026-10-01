@@ -241,6 +241,7 @@ A tester continuing from T+3 will find no further event: `t_pr_convert` is never
 | Raised an RFQ but the requisition still says *Approved* | *Linked doc* empty; no `t_pr_source` event | the wizard's *Raise from requisition* field was left at *"Not from a requisition"*, or the chosen requisition was not *Approved* (recorded as `ILLEGAL_TRANSITION` on the cascade) | raise again from the requisition's own **Raise sourcing event** button, or pick it in the wizard |
 | *"This is outside what your account may see — or there is no such record"* | `SCOPE_DENIED` | a supplier seat reached a requisition verb | requisitions are buyer-internal; nothing to do on the supplier side |
 | Requisition stuck at *Sourcing Event* / never *PO Created* | no exit is offered | `t_pr_convert` has no link; PO conversion is S/4HANA's act | expected today; not a defect to chase |
+| An action on this flow is refused for every seat, whatever the role | the refusal names `MODULE_INACTIVE:REQ`; where the surface checks first, the control reads *"Switched off — Requisitions"* | the Requisitions module is switched off; its pages stay readable | have it switched back on at `/buyer/platform/modules/admin`; no role change helps, because the module check runs before the role check |
 
 <!-- src: src/services/transitions/refusals.ts:61; src/lib/glossary/refusals.glossary.ts:324; src/lib/i18n/requisitions.ts:201; src/services/data/mock/MockCommandService.ts:2918 -->
 

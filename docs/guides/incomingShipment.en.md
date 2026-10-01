@@ -187,6 +187,7 @@ Alternative ending: at T+1 or T+2, **Cancel shipment** → Cancelled (`t_incomin
 | `STALE_STATE` | never produced here | no SDC caller supplies `expectedState` | n/a |
 | Buyer coverage did not drop after **Mark arrived** | *Coverage* cell unchanged | reads are cached per seat within a session | reload the buyer page; a persona switch re-reads the live store |
 | ETA on the card is wrong and cannot be changed | no edit control | no ETA revision verb exists in this tree | cancel and report a new leg |
+| An action on this flow is refused for every seat, whatever the role | the refusal names `MODULE_INACTIVE:SDC`, or `MODULE_INACTIVE:SDC.incomingShipments` when only *Incoming shipments* is off; where the surface checks first, the control reads *"Switched off — Supplier collaboration"* | the Supplier collaboration module (or one of its parts) is switched off; its pages stay readable | have it switched back on at `/buyer/platform/modules/admin`; no role change helps, because the module check runs before the role check |
 
 <!-- src: src/services/transitions/refusals.ts:61-114; src/services/transitions/dispatcher.ts:556-610; src/services/data/mock/MockCommandService.ts:1539-1571; src/pages-v2/SupplierForecasts.tsx:1045-1088; src/pages-v2/SupplierForecasts.tsx:1687-1690; src/pages-v2/SupplierForecasts.tsx:1716-1752; src/pages-v2/SupplierForecasts.tsx:2453-2456; src/lib/i18n/sdcSupplier.ts:357-387; src/services/query/sdcSupplierHooks.ts:445-452; src/services/transitions/flows/incomingShipment.flow.ts:5-13 -->
 

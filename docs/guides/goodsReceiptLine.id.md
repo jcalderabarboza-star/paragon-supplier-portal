@@ -188,6 +188,7 @@ Tidak ada `TransitionEvent` yang pernah ditulis untuk sebuah baris: mesin ini ti
 | "Jenis dokumen untuk tindakan ini belum tersambung ke sistem perintah." | `UNKNOWN_ENTITY` pada pengiriman buatan tangan | `goodsReceiptLine` tidak punya target perintah | wajar; bertindak pada header penerimaan sebagai gantinya |
 | Kuantitas ditolak atau pemeriksaan gagal pada satu baris tidak mengubah header seperti yang Anda harapkan | header berbunyi Partially Approved / Rejected | header digulung dari **setiap** baris — satu baris buruk menghasilkan campuran, semua baris buruk menghasilkan penolakan | tinjau baris-baris di langkah kualitas wizard sebelum menekan **Buat GR** |
 | Anda ingin mengarantina atau mengembalikan satu barang | tidak ada kontrol seperti itu | kata kerja tingkat baris dimodelkan, tidak aktif | catat faktanya di alasan penolakan baris atau catatan penerimaan |
+| — (belum dapat terjadi) | `MODULE_INACTIVE:GRC` | alur ini belum punya target perintah, sehingga dispatch buatan tangan ditolak `UNKNOWN_ENTITY` sebelum pemeriksaan modul berjalan; setelah tersambung, menonaktifkan modul Penerimaan barang & inspeksi menolak setiap verba dengan nama ini | tidak ada yang perlu dilakukan sekarang; sakelar modul ada di `/buyer/platform/modules/admin` |
 <!-- src: src/lib/glossary/refusals.glossary.ts:37-40; src/services/transitions/grRollup.ts:49-58 -->
 
 <!-- section:testdata -->

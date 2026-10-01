@@ -229,6 +229,7 @@ Worked sequence for `po-008` (PO-2025-00108, `sup-007`, fixture state `Sent`), a
 | **Create ASN** here says "nothing was created" | info toast | ASN creation lives on **Shipments & ASN** | go to `/supplier/shipments` |
 | Order stays `Confirmed` after goods arrived | **Next: Awaiting S/4HANA** | delivery and closure are S/4HANA facts | nothing to do in the portal; wait for the S/4HANA update |
 | A `Viewed` order exists but you cannot produce one | only fixtures show it | `t_po_view` has no caller | expected; acknowledge or confirm from `Viewed` still works |
+| An action on this flow is refused for every seat, whatever the role | the refusal names `MODULE_INACTIVE:ORD`; where the surface checks first, the control reads *"Switched off — Purchase orders"* | the Purchase orders module is switched off; its pages stay readable | have it switched back on at `/buyer/platform/modules/admin`; no role change helps, because the module check runs before the role check |
 <!-- src: src/lib/glossary/refusals.glossary.ts:32-97; src/lib/i18n/supplierOrders.ts:91-101,124-131; src/services/transitions/refusals.ts:61-114 -->
 
 <!-- section:testdata -->

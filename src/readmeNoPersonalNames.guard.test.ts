@@ -46,6 +46,7 @@ import { join } from 'node:path';
 
 import { REPO_ROOT } from './lib/treeMutationGate/derive';
 import { personNamesInTree } from './lib/personNames';
+import { commentRanges, stripSourceComments } from './lib/sourceScan/stripComments';
 
 const README = join(REPO_ROOT, 'README.md');
 
@@ -365,5 +366,149 @@ describe('rendered identity chrome · NO AUTHORED PERSONAL GLYPH (direction C)',
     const decls = initialsDeclarations('C:/history/src/IdentityPanel.tsx', fixed);
     expect(decls.map((d) => d.name)).toEqual(['initials']);
     expect(AUTHORED_GLYPH.test(decls[0].init), 'the derived glyph must be acquitted').toBe(false);
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// DIRECTION D · CODE COMMENTS — E1.
+//
+// ⚠️ **THE RULE REACHED THE README AND THE RENDERED CHROME, AND THE COMMENTS
+// STILL CITED A PERSON.** Rulings were attributed by initials across eleven
+// source files — `(JJ, commercial)`, `JJ's commercial ruling`, `JJ's Indonesian
+// team` — including four in shipped code. A comment is read by every engineer
+// who opens the file, which makes it the most-read prose in the repository.
+// E1 replaced them with the role (the operator) and this direction keeps them
+// out.
+//
+// ── TWO HALVES, FOR THE SAME REASON A AND B ARE TWO ─────────────────────────
+//   · **A fixture person** (`Budi Santoso`) must not appear in any comment — the
+//     population derived from the tree's own person data, as direction A.
+//   · **Initials** have no person record to derive from, so the instrument is
+//     ATTESTATION, as direction B: an uppercase token of two or three letters,
+//     written the way a person is CITED in a comment — possessive (`XX's`),
+//     parenthetical attribution (`(XX,`), or the subject of a ruling verb (`XX
+//     ruled`, `XX named`) — that appears NOWHERE in this tree's code once the
+//     comments are removed. `RFQ's`, `SAP's`, `PO's` are attested by the code
+//     that names those things; a person's initials are not, because the
+//     platform contains no persons.
+//
+// ⚠️ **NO WORD LIST, FOR THE REASON DIRECTION C GIVES.** A matcher for `JJ` is
+// wrong the moment someone else's initials are written, and it could not have
+// been authored before the defect existed. Attestation re-decides itself: a new
+// abbreviation the code really uses is acquitted with nobody editing this file.
+//
+// ── REACH LIMITS, STATED ────────────────────────────────────────────────────
+//   · Only the three citation shapes above. Bare initials in running prose
+//     (`as JJ wrote`) are outside it.
+//   · Attestation is against `src/` code with comments removed, excluding this
+//     file (which must name the specimen). A person's initials that also occur
+//     as a code token would be acquitted.
+//   · `.ts` / `.tsx` under `src/` only; the docs corpus is outside this
+//     direction, as it is outside A and B.
+//   · The fixture-person half reads only names of two or more capitalised
+//     words. `personNamesInTree` also returns custom-ROLE display names a spec
+//     authors (`'Probe'`, `'Second'`), which are not persons and would convict
+//     every comment containing the English word.
+// ═══════════════════════════════════════════════════════════════════════════
+
+/** A person cited by initials in prose: `XX's `, `(XX,`, `XX ruled|ruling|named|said|asked|decided`. */
+const INITIALS_CITED = /\b([A-Z]{2,3})(?:'s|’s)\s|\(([A-Z]{2,3}),|\b([A-Z]{2,3}) (?:ruled|ruling|named|said|asked|decided)\b/g;
+
+interface SourceText {
+  readonly path: string;
+  readonly text: string;
+}
+
+/** Every tracked `.ts`/`.tsx` under `src/`, except this file. */
+function sourceTexts(): SourceText[] {
+  return execFileSync('git', ['-c', 'core.quotepath=false', 'ls-files', 'src'], {
+    cwd: REPO_ROOT,
+    encoding: 'utf8',
+    maxBuffer: 64 * 1024 * 1024,
+  })
+    .split('\n')
+    .filter((p) => /\.(ts|tsx)$/.test(p) && p !== SELF)
+    .map((path) => ({ path, text: readFileSync(join(REPO_ROOT, path), 'utf8') }));
+}
+
+/** The comment text of one file, through the shared comment-aware scan. */
+const commentTextOf = (s: SourceText): string =>
+  commentRanges(s.text, s.path)
+    .map((r) => s.text.slice(r.pos, r.end))
+    .join('\n');
+
+/** The code of every file with its comments removed — the attestation corpus. */
+const codeCorpus = (files: readonly SourceText[]): string =>
+  files.map((s) => stripSourceComments(s.text, 'space', s.path)).join('\n');
+
+/**
+ * Abbreviations a comment cites in the possessive that the code never spells,
+ * each with what it names. ⚠️ BILATERAL — an entry no comment still needs is
+ * red, so this can only shrink truthfully. It is a list of ACQUITTALS, never of
+ * convictions: nothing here can make a person's initials pass unseen except by
+ * being written into it, in review.
+ */
+const NOT_A_PERSON: Readonly<Record<string, string>> = {
+  RFP: "the client's request-for-proposal document the SDC lane was scoped from (`src/services/sdc/types.ts`).",
+};
+
+/** Initials cited as a person in `comments` that the code never uses: `token`, deduplicated. */
+export function unattestedInitials(comments: string, code: string): string[] {
+  const tokens = [...comments.matchAll(INITIALS_CITED)].map((m) => m[1] ?? m[2] ?? m[3]);
+  return [...new Set(tokens)].filter((tok) => !new RegExp(String.raw`\b${tok}\b`).test(code));
+}
+
+describe('code comments · NO PERSON CITED (direction D)', () => {
+  const FILES = sourceTexts();
+  const CODE = codeCorpus(FILES);
+  const COMMENTS = FILES.map((s) => ({ path: s.path, comments: commentTextOf(s) }));
+  const PEOPLE = personNamesInTree(attestationCorpus()).filter((n) => /^[A-Z][a-z]+(?: [A-Z][a-z]+)+$/.test(n));
+
+  it('⚠️ the populations are real — files, comments, code, and the attestation reaches a known token', () => {
+    expect(FILES.length).toBeGreaterThan(500);
+    expect(COMMENTS.filter((c) => c.comments.length > 0).length).toBeGreaterThan(300);
+    // The corpus attests what the code really uses, and is NOT attesting the
+    // specimen — which is what lets the claim below catch it at all.
+    expect(new RegExp(String.raw`\bRFQ\b`).test(CODE)).toBe(true);
+    expect(new RegExp(String.raw`\bJJ\b`).test(CODE)).toBe(false);
+    expect(PEOPLE).toContain('Budi Santoso');
+  }, 60_000);
+
+  it('⚠️ CONVICTS the comment this repository carried at dda8079 — by name', () => {
+    // `PROBE-MUST-FIRE-AT-A-REAL-DEFECT-01`: the shipped matcher, the live code
+    // corpus, and a comment the tree really held, read out of git.
+    const retired = execFileSync('git', ['show', 'dda8079:src/pages-v2/rfqs/quotationLeadTime.ts'], {
+      cwd: REPO_ROOT,
+      encoding: 'utf8',
+    });
+    expect(unattestedInitials(commentTextOf({ path: 'quotationLeadTime.ts', text: retired }), CODE)).toEqual(['JJ']);
+  });
+
+  it('⚠️ ACQUITS an abbreviation the code uses, in the same shapes — on the merits', () => {
+    expect(unattestedInitials("// the RFQ's deadline (SAP, external) — the PO ruling stands", CODE)).toEqual([]);
+  });
+
+  it('⚠️ no comment cites a person by initials the code never uses', () => {
+    const cited = COMMENTS.flatMap((c) =>
+      unattestedInitials(c.comments, CODE)
+        .filter((tok) => !(tok in NOT_A_PERSON))
+        .map((tok) => `${c.path}: ${tok}`),
+    );
+    expect(
+      cited,
+      'A comment cites a person by initials. The operator’s standing rule is roles only — ' +
+        '"the operator", "the strategist", "the buyer" — in comments as in the README.',
+    ).toEqual([]);
+  });
+
+  it('every acquittal is still needed, and states what it names', () => {
+    const needed = new Set(COMMENTS.flatMap((c) => unattestedInitials(c.comments, CODE)));
+    expect(Object.keys(NOT_A_PERSON).filter((k) => !needed.has(k))).toEqual([]);
+    expect(Object.entries(NOT_A_PERSON).filter(([, why]) => why.trim().length < 20)).toEqual([]);
+  });
+
+  it('⚠️ no comment names a person the tree holds', () => {
+    const named = COMMENTS.flatMap((c) => PEOPLE.filter((p) => c.comments.includes(p)).map((p) => `${c.path}: ${p}`));
+    expect(named).toEqual([]);
   });
 });

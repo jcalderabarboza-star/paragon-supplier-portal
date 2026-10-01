@@ -188,6 +188,7 @@ No `TransitionEvent` is ever written for a line: the machine has no target, so n
 | "The kind of document this action belongs to is not connected to the command system." | `UNKNOWN_ENTITY` on a hand-crafted dispatch | `goodsReceiptLine` has no command target | expected; act on the receipt header instead |
 | A line's rejected quantity or failed check does not change the header the way you expected | header reads Partially Approved / Rejected | the header is rolled up from **every** line — one bad line makes a mix, all bad lines make a reject | review the lines on the wizard's quality step before pressing **Create GR** |
 | You want to quarantine or return one item | no such control exists | line-level verbs are modelled, not active | record the fact in the line's rejection reason or the receipt notes |
+| — (cannot occur yet) | `MODULE_INACTIVE:GRC` | this flow has no command target, so a hand-crafted dispatch is refused `UNKNOWN_ENTITY` before the module check runs; once it is wired, switching off the Goods receipt & inspection module refuses every verb by this name | nothing to do today; the module switch is at `/buyer/platform/modules/admin` |
 <!-- src: src/lib/glossary/refusals.glossary.ts:37-40; src/services/transitions/grRollup.ts:49-58 -->
 
 <!-- section:testdata -->

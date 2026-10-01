@@ -162,6 +162,7 @@ There is none for this machine. Nothing dispatches an `invoiceMatch` verb — th
 | The column reads Qty Mismatch or Price Variance and the invoice stays Pending Match | drawer explanation names the variance | the verdict was written and the header honestly did not advance | finance disputes the invoice or waits for a corrected receipt on the same PO |
 | A verdict changed without anybody acting | the column moved between two reads | a later receipt on the same PO overwrote it (no event) | check the receipts on that PO |
 | Anything tries to fire `t_invmatch_*` | refusal `UNKNOWN_ENTITY:invoiceMatch` | the machine has no command target | not a fault; the verdict is written by the receipt-post cascade |
+| — (cannot occur yet) | `MODULE_INACTIVE:INV` | this flow has no command target, so a hand-crafted dispatch is refused `UNKNOWN_ENTITY` before the module check runs; once it is wired, switching off the Invoices & payment module refuses every verb by this name | nothing to do today; the module switch is at `/buyer/platform/modules/admin` |
 
 <!-- src: src/services/transitions/invoiceRollup.ts:56-110; src/services/data/mock/MockCommandService.ts:2859-2880; src/services/transitions/dispatcher.ts:548 -->
 

@@ -179,6 +179,7 @@ Untuk cabang penolakan, jalani `app-0002` (APP-2026-0002) dengan cara yang sama 
 | Disetujui, tetapi perusahaan tidak ada di direktori pemasok | tidak ada perubahan di `/buyer/suppliers` | wajar — persetujuan mencatat keputusan dan tidak menerbitkan apa pun; data induk vendor milik S/4HANA | tidak ada yang perlu dilakukan di portal |
 | Perusahaan yang ditolak ingin mencoba lagi | baris yang ditolak bersifat terminal | sesuai rancangan — tidak ada buka kembali | ajukan aplikasi baru |
 | Pemohon menyelesaikan `/register` dan tidak ada apa pun di tumpukan | antrean tidak berubah | `/register` adalah panduan; tidak mencatat apa pun dan tidak sampai ke antrean | pengadaan mengajukan aplikasi atas nama mereka |
+| Tindakan pada alur ini ditolak untuk setiap kursi, apa pun perannya | penolakan menyebut `MODULE_INACTIVE:SUP`, atau `MODULE_INACTIVE:SUP.applications` bila hanya *Pengajuan* yang dinonaktifkan; bila permukaan memeriksa lebih dulu, kontrol terbaca *"Dinonaktifkan — Jaringan pemasok"* | modul Jaringan pemasok (atau salah satu bagiannya) dinonaktifkan; halamannya tetap dapat dibaca | minta modul diaktifkan kembali di `/buyer/platform/modules/admin`; perubahan peran tidak membantu, karena pemeriksaan modul berjalan sebelum pemeriksaan peran |
 
 <!-- src: src/services/transitions/refusals.ts:61; src/lib/glossary/refusals.glossary.ts:324; src/services/transitions/policies.ts:607; src/services/transitions/policies.ts:641; src/lib/i18n/supplierApplications.ts:165 -->
 

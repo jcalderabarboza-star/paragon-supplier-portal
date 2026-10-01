@@ -42,7 +42,27 @@ export function formatNumber(value?: number | null): string {
 }
 
 /**
- * Rupiah. Full: "Rp 1.250.000.000". Compact ({ compact: true }) auto-scales:
+ * The rupiah's digits, grouped BY HAND: "1.250.000.000", "1.234,5".
+ *
+ * ⚠️ E1 · NO `Intl`, AND THAT IS THE POINT. `Intl.NumberFormat('id-ID')` names
+ * its locale, so the MACHINE's locale cannot move it — but the ICU data behind
+ * it still can: a runtime built without full ICU falls back to its own
+ * convention and prints "1,250,000,000" for the same call. Money is the one
+ * number this portal promises to render identically on every machine, so its
+ * grouping is plain string arithmetic. Up to three fraction digits, trailing
+ * zeros dropped — what `id-ID` printed before, so no rendered amount moved.
+ */
+function rupiahDigits(value: number): string {
+  const sign = value < 0 ? '-' : '';
+  const [whole, frac] = Math.abs(value).toFixed(3).split('.');
+  const grouped = whole.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  const fraction = frac.replace(/0+$/, '');
+  return sign + grouped + (fraction ? `,${fraction}` : '');
+}
+
+/**
+ * Rupiah — THE ONE rupiah rendering in the portal (`numberConvention.gate.test.ts`
+ * holds every other site to it). Full: "Rp 1.250.000.000". Compact ({ compact: true }) auto-scales:
  *   >=1e12 → "Rp 1.0T"  >=1e9 → "Rp 14.0B" (EN) / "Rp 14.0M" (ID, miliar)
  *   >=1e6 → "Rp 1.5jt"  >=1e3 → "Rp 5.0rb"
  * The billion suffix is the only locale-sensitive tier (EN "B" vs ID "M"); the
@@ -58,7 +78,7 @@ export function formatIDR(value?: number | null, opts?: { compact?: boolean }): 
     if (abs >= 1e6) return scaled(1e6, 'jt');
     if (abs >= 1e3) return scaled(1e3, 'rb');
   }
-  return `Rp ${idID.format(value)}`;
+  return `Rp ${rupiahDigits(value)}`;
 }
 
 // — Currency-aware money (CP-0 · 2e-c-2) ─────────────────────────────────────

@@ -63,7 +63,7 @@ describe('readBidPrice — the ONE read of a supplier bid price', () => {
     expect(readBidPrice('   ')).toEqual({ ok: false, reason: 'EMPTY_QTY' });
   });
 
-  describe('the domain rule: zero is not a bid (JJ ruling, 2e-a)', () => {
+  describe('the domain rule: zero is not a bid (operator ruling, 2e-a)', () => {
     it('refuses a typed zero by NAME — not as "unreadable", not as "blank"', () => {
       expect(readBidPrice('0')).toEqual({ ok: false, reason: 'ZERO_PRICE' });
       expect(readBidPrice('0,00')).toEqual({ ok: false, reason: 'ZERO_PRICE' });

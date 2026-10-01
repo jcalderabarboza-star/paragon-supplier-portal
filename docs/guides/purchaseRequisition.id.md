@@ -241,6 +241,7 @@ Penguji yang melanjutkan dari T+3 tidak akan menemukan event lanjutan: `t_pr_con
 | RFQ sudah diajukan tetapi permintaan masih *Disetujui* | *Dok. tertaut* kosong; tidak ada event `t_pr_source` | kolom *Ajukan dari permintaan* pada wizard dibiarkan *"Bukan dari permintaan"*, atau permintaan yang dipilih bukan *Approved* (dicatat sebagai `ILLEGAL_TRANSITION` pada kaskade) | ajukan lagi dari tombol **Ajukan acara sourcing** pada permintaan, atau pilih di wizard |
 | *"Ini di luar jangkauan akun Anda — atau memang tidak ada datanya"* | `SCOPE_DENIED` | kursi pemasok mencapai verba permintaan | permintaan bersifat internal pembeli; tidak ada yang perlu dilakukan di sisi pemasok |
 | Permintaan tertahan di *Acara Sourcing* / tidak pernah *PO Dibuat* | tidak ada jalan keluar yang ditawarkan | `t_pr_convert` tidak punya tautan; konversi PO adalah tindakan S/4HANA | wajar hari ini; bukan cacat yang perlu dikejar |
+| Tindakan pada alur ini ditolak untuk setiap kursi, apa pun perannya | penolakan menyebut `MODULE_INACTIVE:REQ`; bila permukaan memeriksa lebih dulu, kontrol terbaca *"Dinonaktifkan — Permintaan pembelian"* | modul Permintaan pembelian dinonaktifkan; halamannya tetap dapat dibaca | minta modul diaktifkan kembali di `/buyer/platform/modules/admin`; perubahan peran tidak membantu, karena pemeriksaan modul berjalan sebelum pemeriksaan peran |
 
 <!-- src: src/services/transitions/refusals.ts:61; src/lib/glossary/refusals.glossary.ts:324; src/lib/i18n/requisitions.ts:402; src/services/data/mock/MockCommandService.ts:2918 -->
 

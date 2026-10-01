@@ -159,6 +159,7 @@ Tidak ada. Tidak ada yang mendispatch verba kontrak — entitasnya tidak punya t
 | Gejala | Cara mengenali | Kemungkinan penyebab | Penyelesaian |
 |---|---|---|---|
 | Sebuah tombol tampak menawarkan salah satu langkah ini | **Kontrak Baru** membuka panduan; langkah terakhirnya berbunyi **Tidak ada kontrak yang dibuat** dan *"tidak ada yang dikirim, dan tidak ada seorang pun yang diberi tahu"* | ini halaman hanya-baca untuk kontrak itu sendiri: menyusun, memberlakukan, memperbarui, dan menghentikan perjanjian induk adalah tindakan S/4HANA | buat atau ubah perjanjian di S/4HANA; portal membaca hasilnya saat sambungan F2 hadir |
+| — (belum dapat terjadi) | `MODULE_INACTIVE:CTR` | alur ini belum punya target perintah, sehingga dispatch buatan tangan ditolak `UNKNOWN_ENTITY` sebelum pemeriksaan modul berjalan; setelah tersambung, menonaktifkan modul Kontrak & perjanjian pengiriman menolak setiap verba dengan nama ini | tidak ada yang perlu dilakukan sekarang; sakelar modul ada di `/buyer/platform/modules/admin` |
 <!-- src: src/pages-v2/BuyerContracts.tsx:580-620,1629; src/lib/i18n/contracts.ts:434-438 -->
 
 <!-- section:testdata -->

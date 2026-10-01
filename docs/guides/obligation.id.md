@@ -116,6 +116,7 @@ Tidak ada. Tidak ada yang mendispatch verba kewajiban — entitasnya tidak punya
 | Gejala | Cara mengenali | Kemungkinan penyebab | Penyelesaian |
 |---|---|---|---|
 | Baris kewajiban tampak menawarkan penyelesaian, atau KPI menyiratkan ada yang bisa dituntaskan | baris hanya menampilkan pil dan tanggal jatuh tempo; tidak ada tombol padanya | ini tampilan hanya-baca: kewajiban adalah rollup data kontrak fixture dan tidak ada verba yang tersambung untuk menandainya terpenuhi | tidak ada yang perlu diselesaikan di portal; kewajiban mengikuti kontraknya, dan kontraknya milik S/4HANA |
+| — (belum dapat terjadi) | `MODULE_INACTIVE:CTR` | alur ini belum punya target perintah, sehingga dispatch buatan tangan ditolak `UNKNOWN_ENTITY` sebelum pemeriksaan modul berjalan; setelah tersambung, menonaktifkan modul Kontrak & perjanjian pengiriman menolak setiap verba dengan nama ini | tidak ada yang perlu dilakukan sekarang; sakelar modul ada di `/buyer/platform/modules/admin` |
 <!-- src: src/services/data/obligationRollup.ts:81-86; src/pages-v2/BuyerContracts.tsx:1261 -->
 
 <!-- section:testdata -->

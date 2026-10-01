@@ -440,6 +440,10 @@ describe('⚠️ THE TWO-REGEX COMMENT STRIP IS EXTINCT — derived, not listed'
         'pages-v2/solidButtonRetired.guard.test.ts',
         'pages-v2/toastHonesty.guard.test.tsx',
         'pages-v2/widgets/SupplierCertsExpiringWidget.test.tsx',
+        // E1 — the personal-name guard's comment direction (D) attests initials
+        // against the tree's code with its comments REMOVED; a hand strip here
+        // would be the extinct pattern, and the comments are its subject.
+        'readmeNoPersonalNames.guard.test.ts',
         'router/pageWidth.guard.test.ts',
         'services/contracts/__tests__/c3Events.contract.test.ts',
         'services/data/approvalBandAuthored.guard.test.ts',

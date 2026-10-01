@@ -436,8 +436,8 @@ export const sdcSupplierId: Record<string, string> = {
   'sdcSup.line.period': 'Periode',
   'sdcSup.line.confirm': 'Konfirmasi',
   // SDC-2b-EXT: "Tanggapi/Ditanggapi" = INTERIM adjudicated word choice —
-  // deliberately a RESPONSE verb, not an approval verb; JJ's Indonesian team
-  // reviews the final wording later.
+  // deliberately a RESPONSE verb, not an approval verb; the operator's Indonesian
+  // team reviews the final wording later.
   'sdcSup.line.acknowledge': 'Tanggapi',
   'sdcSup.line.visibilityHint': 'Visibilitas ke depan saja — tidak ada komitmen yang diminta.',
   'sdcSup.line.lastResponse': 'Respons terakhir Anda: {{qty}} {{uom}} · v{{version}} · {{status}}',

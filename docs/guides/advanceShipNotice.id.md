@@ -214,6 +214,7 @@ Urutan kerja yang dapat dihasilkan penguji dari awal sampai akhir, mulai dari `p
 | Menolak penerimaan tetapi tidak ada selisih yang muncul | baris pemasok tak berubah; tidak ada bagian **Selisih pengiriman** | GR dibuat dari pengiriman dermaga (`ASN-2026-0xx`), bukan ASN penyimpanan, atau ASN masih `Draft` | buat penerimaan lewat **Masukkan nomor ASN** dengan `ASN-2025-…` berstatus Submitted / In Transit / Delivered |
 | "Dokumen tidak berada dalam status yang memungkinkan tindakan ini" pada **Rekonsiliasi** | toast (`ILLEGAL_TRANSITION`) | seseorang sudah merekonsiliasinya | muat ulang; bagian itu diturunkan kembali |
 | **Ekspor EDI 856** tidak melakukan apa pun | toast "Tidak ada berkas yang dibuat" | ekspor belum tersambung ke sistem nyata | tidak ada; kontrol hanya tampilan |
+| Tindakan pada alur ini ditolak untuk setiap kursi, apa pun perannya | penolakan menyebut `MODULE_INACTIVE:SHP`; bila permukaan memeriksa lebih dulu, kontrol terbaca *"Dinonaktifkan — Pengiriman & ASN"* | modul Pengiriman & ASN dinonaktifkan; halamannya tetap dapat dibaca | minta modul diaktifkan kembali di `/buyer/platform/modules/admin`; perubahan peran tidak membantu, karena pemeriksaan modul berjalan sebelum pemeriksaan peran |
 <!-- src: src/lib/glossary/refusals.glossary.ts:32-117; src/lib/i18n.ts:994-1011; src/pages-v2/SupplierShipments.tsx:672-680; src/services/data/mock/MockCommandService.ts:228-233 -->
 
 <!-- section:testdata -->

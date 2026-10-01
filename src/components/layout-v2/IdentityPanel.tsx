@@ -228,8 +228,8 @@ const IdentityPanel: React.FC = () => {
   };
 
   // ⚠️ **DERIVED FROM THE PERSONA LABEL, NEVER AUTHORED — H3 addendum.** This
-  // read `persona === 'supplier' ? 'PS' : 'JJ'`, and `JJ` is a PERSON's initials:
-  // the operator's. The standing rule is roles only, never personal names
+  // read a hardcoded two-letter literal for the buyer, and those letters were a
+  // PERSON's initials: the operator's. The standing rule is roles only, never personal names
   // (`readmeNoPersonalNames.guard`, now extended to reach this declaration), and
   // C10's argument is the same one — a `TransitionRole` is the permission atom
   // and this platform deliberately contains no persons. So the glyph comes from

@@ -162,6 +162,7 @@ Tidak ada untuk mesin ini. Tidak ada yang mendispatch verba `invoiceMatch` — e
 | Kolom berbunyi Qty Mismatch atau Price Variance dan faktur tetap Menunggu Pencocokan | penjelasan drawer menyebut varians | verdict ditulis dan header dengan jujur tidak maju | keuangan menyengketakan faktur atau menunggu penerimaan yang dikoreksi pada PO yang sama |
 | Verdict berubah tanpa ada yang bertindak | kolom berpindah di antara dua pembacaan | penerimaan berikutnya pada PO yang sama menimpanya (tanpa event) | periksa penerimaan pada PO itu |
 | Sesuatu mencoba memicu `t_invmatch_*` | penolakan `UNKNOWN_ENTITY:invoiceMatch` | mesin ini tidak punya target perintah | bukan kesalahan; verdict ditulis oleh kaskade pencatatan penerimaan |
+| — (belum dapat terjadi) | `MODULE_INACTIVE:INV` | alur ini belum punya target perintah, sehingga dispatch buatan tangan ditolak `UNKNOWN_ENTITY` sebelum pemeriksaan modul berjalan; setelah tersambung, menonaktifkan modul Faktur & pembayaran menolak setiap verba dengan nama ini | tidak ada yang perlu dilakukan sekarang; sakelar modul ada di `/buyer/platform/modules/admin` |
 
 <!-- src: src/services/transitions/invoiceRollup.ts:56-110; src/services/data/mock/MockCommandService.ts:2859-2880; src/services/transitions/dispatcher.ts:548 -->
 

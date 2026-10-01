@@ -60,8 +60,12 @@ export const requirementResponseFlow: FlowDefinition = {
   // `Submitted` (see the header); the declared initial names the commitment
   // path, which is the one this machine exists for.
   initial: 'Draft',
-  /** PF-0 · D-2 — 'Disputed' is deliberately absent: it has no resolution edge
-   *  and is a hole, not an ending (censused).
+  /** 'Disputed' is absent because it is not an ending: it has three exits —
+   *  the buyer resolves it back to `UnderReview` (`t_requirementresponse_resolve`,
+   *  PF-1a), the supplier revises it (`t_requirementresponse_revise`, A3), or a
+   *  revision retires it to `Superseded` (`t_requirementresponse_supersede`).
+   *  PF-0 · D-2 recorded it as a hole with no resolution edge; PF-1a and A3
+   *  closed that, and the sentence saying so outlived both until E1.
    *
    *  ⚠️ A3 · `Accepted` IS NO LONGER TERMINAL. A supplier may revise an accepted
    *  commitment (`t_requirementresponse_revise`), and a terminal state with an

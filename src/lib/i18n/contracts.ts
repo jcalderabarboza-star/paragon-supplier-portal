@@ -136,11 +136,10 @@ export const contractsEn: Record<string, string> = {
   'contracts.toast.pdfQueued.title': 'PDF export queued',
   'contracts.toast.pdfQueued.desc': 'PDF export coming in Phase 2A.',
   // D-CENSUS-8 — the in-fence half of D-CENSUS-3 (CTR-FABRICATION-01).
-  // SAP owns contract identity. This wizard mints `ctr-new-${Date.now()}` AND the
-  // business number `CTR-<yr>-<n>` client-side, then says a contract was 'created'.
-  // Removing the minting is the DEMOTION to a request-to-SAP form, which is a
-  // behavior batch and is split out per the operator ruling. What marking can fix
-  // today is the CLAIM: this draft exists only in this browser tab.
+  // SAP owns contract identity. This wizard USED TO mint `ctr-new-${Date.now()}`
+  // AND the business number `CTR-<yr>-<n>` client-side; the minting was retired at
+  // f5338c2 and C11 V15's document-number gate holds it closed. What marking still
+  // states is the CLAIM: the collected draft exists only in this browser tab.
   // 2f-b — the create refuses rather than storing a coerced number. The step
   // gate already prevents reaching this, so it is the honest floor, not a path.
   'contracts.toast.numberRefused.title': 'Contract not created',

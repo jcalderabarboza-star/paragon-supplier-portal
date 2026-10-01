@@ -1,5 +1,6 @@
 import React, { createContext, useContext, ReactNode } from 'react';
 import { COUNTRY_PROFILES, CHANNEL_CONFIG, MESSAGE_TEMPLATES, CountryCode } from '../data/communicationProfiles';
+import { formatIDR } from '../lib/format';
 
 type CountryProfile = typeof COUNTRY_PROFILES[CountryCode];
 type ChannelConfig  = typeof CHANNEL_CONFIG[keyof typeof CHANNEL_CONFIG];
@@ -52,7 +53,8 @@ function timeToMins(t: string): number {
 // ─── Currency Formatter ───────────────────────────────────────────────────────
 function formatCurrency(amount: number, currency: string): string {
   switch (currency) {
-    case 'IDR': return 'Rp ' + amount.toLocaleString('id-ID');
+    // E1 — the ONE rupiah rendering (`formatIDR`); the other currencies keep their own locale.
+    case 'IDR': return formatIDR(amount);
     case 'EUR': return '€'  + amount.toLocaleString('de-DE', { minimumFractionDigits: 2 });
     case 'USD': return '$'  + amount.toLocaleString('en-US', { minimumFractionDigits: 2 });
     case 'CNY': return '¥'  + amount.toLocaleString('zh-CN', { minimumFractionDigits: 2 });
