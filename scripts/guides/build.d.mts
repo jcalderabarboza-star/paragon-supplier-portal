@@ -18,3 +18,4 @@ export declare function parseGuide(text: string, file: string): ProcessGuide;
 export declare function guideFiles(srcDir: string): string[];
 export declare function buildGuides(srcDir?: string): GuideRegistry;
 export declare function serialize(registry: GuideRegistry): string;
+export declare function writeIfChanged(out: string, text: string): boolean;

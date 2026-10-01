@@ -23,10 +23,10 @@ export const processGuidesEn: Record<string, string> = {
   'processGuides.authored':
     'Authored guide: written by the team, held to the registry by tests (every transition, fixture, route and source commit is checked) · source commit {{sha}}',
   'processGuides.citation': 'Cite as',
-  'processGuides.pending':
-    'The guide for this process has not landed yet. The catalogue on this page is complete; the authored explanation follows in a later batch.',
+  'processGuides.missing': 'No authored guide is published for this process.',
+  'processGuides.draft':
+    'Draft — this Indonesian guide is a translation awaiting its locale review. The English guide is authoritative.',
   'processGuides.catalog.guide': 'Guide',
-  'processGuides.catalog.pending': 'Guide pending',
 
   'processGuides.lifecycle.walkNote':
     'The interactive walk sits under the diagram above. This is the guide’s account of the same lifecycle, step by step.',
@@ -105,10 +105,10 @@ export const processGuidesId: Record<string, string> = {
   'processGuides.authored':
     'Panduan yang ditulis: disusun oleh tim, dijaga terhadap registri oleh pengujian (setiap transisi, fixture, rute, dan commit sumber diperiksa) · commit sumber {{sha}}',
   'processGuides.citation': 'Kutip sebagai',
-  'processGuides.pending':
-    'Panduan untuk proses ini belum tersedia. Katalog di halaman ini lengkap; penjelasan tertulisnya menyusul pada batch berikutnya.',
+  'processGuides.missing': 'Belum ada panduan tertulis yang diterbitkan untuk proses ini.',
+  'processGuides.draft':
+    'Draf — panduan berbahasa Indonesia ini adalah terjemahan yang menunggu tinjauan bahasa. Panduan berbahasa Inggris yang berlaku.',
   'processGuides.catalog.guide': 'Panduan',
-  'processGuides.catalog.pending': 'Panduan menyusul',
 
   'processGuides.lifecycle.walkNote':
     'Penelusuran interaktif ada di bawah diagram di atas. Ini adalah uraian panduan tentang siklus hidup yang sama, langkah demi langkah.',

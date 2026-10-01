@@ -16,6 +16,7 @@ import type { FlowView, TransitionView } from '../../services/transitions/catalo
 import {
   GUIDE_LIST_ROUTE,
   getGuide,
+  GUIDE_DRAFT_LOCALES,
   guideCitationKey,
   guideLocaleFor,
   type GuideSectionKey,
@@ -41,8 +42,9 @@ import { formatSetAt } from '../modules/moduleLedger';
 // seat's handoff notice and the status history are READ from the registry, the
 // session and the audit sink. Each tab keeps them in separate, labelled boxes.
 //
-// A flow whose guide has not landed (G2) still gets its Overview and its real
-// Status history; the authored tabs say plainly that the guide is pending.
+// Every flow has a guide in both locales since G2, held by `guides.test.ts`.
+// A guide in a DRAFT locale (`GUIDE_DRAFT_LOCALES` — Indonesian until its
+// locale review) carries a banner saying so on every tab.
 // ────────────────────────────────────────────────────────────────────────────
 
 // i18n-defer: tab KEYS, not copy — each reaches the reader only as
@@ -86,11 +88,15 @@ const Box: React.FC<{ title: string; children: React.ReactNode; testId?: string 
   </section>
 );
 
+/**
+ * Unreachable while the gates hold — every flow has a guide in both locales —
+ * and kept so a missing guide renders a true sentence rather than an empty box.
+ */
 const Pending: React.FC = () => {
   const { t } = useTranslation();
   return (
-    <p data-testid="pf-guide-pending" className="text-meta text-text-tertiary">
-      {t('processGuides.pending')}
+    <p data-testid="pf-guide-missing" className="text-meta text-text-tertiary">
+      {t('processGuides.missing')}
     </p>
   );
 };
@@ -479,6 +485,14 @@ const GuideTabs: React.FC<{ view: FlowView; overview: React.ReactNode }> = ({ vi
         {guide && (
           <p className="mt-1 max-w-4xl text-[11px] text-text-tertiary" data-testid="pf-guide-authored">
             {t('processGuides.authored', { sha: guide.sourceSha.slice(0, 8) })}
+          </p>
+        )}
+        {guide && GUIDE_DRAFT_LOCALES.includes(guide.locale) && (
+          <p
+            className="mt-2 max-w-4xl rounded-md border border-warning/40 bg-warning-soft px-2 py-1 text-[11px] text-warning-hover"
+            data-testid="pf-guide-draft"
+          >
+            {t('processGuides.draft')}
           </p>
         )}
         <div role="tablist" aria-label={t('processGuides.tablist')} className="mt-3 flex flex-wrap gap-1 border-b border-border-subtle">

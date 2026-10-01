@@ -11,11 +11,13 @@
 // before anything is believed the registry must hold `purchaseOrder` in both
 // locales and the flow registry must hold `t_po_confirm`.
 //
-// ⚠️ **"GUIDE PENDING" IS ACCEPTED ONLY BY NAME** (`pending.ts`), for the flows
-// whose guide lands at G2 — never by an empty-list door. G2 deletes that file.
+// ⚠️ **EVERY FLOW HAS A GUIDE, IN BOTH LOCALES, WITH NO EXCEPTION LIST (G2).**
+// G1 accepted "guide pending" for flows NAMED in `pending.ts`; G2 landed every
+// guide and DELETED that file rather than emptying it, and a gate below fails
+// by name if a pending allowlist comes back in any form.
 // ────────────────────────────────────────────────────────────────────────────
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, writeFileSync, existsSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
@@ -25,6 +27,33 @@ import { REPO_ROOT } from '../lib/treeMutationGate/derive';
 import { getKnownFlows } from '../services/transitions';
 import { ALL_GLOSSARY_TERMS } from '../lib/glossary';
 import { purchaseOrderStore } from '../services/data/mock/stores/purchaseOrderStore';
+import { asnStore } from '../services/data/mock/stores/asnStore';
+import { goodsReceiptStore } from '../services/data/mock/stores/goodsReceiptStore';
+import { invoiceStore } from '../services/data/mock/stores/invoiceStore';
+import { rfqStore } from '../services/data/mock/stores/rfqStore';
+import { quotationStore } from '../services/data/mock/stores/quotationStore';
+import { purchaseRequisitionStore } from '../services/data/mock/stores/purchaseRequisitionStore';
+import { requirementResponseStore } from '../services/data/mock/stores/requirementResponseStore';
+import { inventoryDeclarationStore } from '../services/data/mock/stores/inventoryDeclarationStore';
+import { incomingShipmentStore } from '../services/data/mock/stores/incomingShipmentStore';
+import { supplierDocumentStore } from '../services/data/mock/stores/supplierDocumentStore';
+import { supplierApplicationStore } from '../services/data/mock/stores/supplierApplicationStore';
+import { materialRequestStore } from '../services/data/mock/stores/materialRequestStore';
+import { pslStore } from '../services/data/mock/stores/pslStore';
+import { enforcementSettingStore } from '../services/data/mock/stores/enforcementSettingStore';
+import { PSL_SETTING_IDS } from '../services/data/mock/stores/pslCapSettingStore';
+import { forecastPublicationStore } from '../services/data/mock/stores/forecastPublicationStore';
+import { schedulingAgreementStore } from '../services/delivery/stores/schedulingAgreementStore';
+import { PR_INTAKE_LINES } from '../services/data/mock/fixtures/prIntake';
+import { itemKey } from '../services/delivery/addressing';
+import { MODULE_CODES } from '../services/modules/registry';
+import { SYSTEM_ROLES } from '../services/transitions/businessRoles';
+import { WIRED_COMMAND_TARGETS, commandTargetFor } from '../services/data/mock/MockCommandService';
+import { seedEnforcementLedger } from '../services/data/mock/enforcementSeed';
+import { seedSourceableRequisition } from '../services/data/mock/requisitionSeed';
+import { seedSupplierApplications } from '../services/data/mock/applicationSeed';
+import { seedMaterialRequests } from '../services/data/mock/materialRequestSeed';
+import { seedPslListings } from '../services/data/mock/pslSeed';
 import { moduleOfFlow, moduleOfRoute } from '../services/modules/registry';
 import { SAMPLE_PEOPLE } from '../services/identity/sampleRoster';
 import { personLabel } from '../services/identity/personLabel';
@@ -33,7 +62,6 @@ import { personNamesInTree } from '../lib/personNames';
 import i18n from '../lib/i18n';
 import {
   GUIDES,
-  GUIDES_PENDING_G2,
   GUIDE_LIST_ROUTE,
   GUIDE_SECTION_KEYS,
   getGuide,
@@ -43,7 +71,14 @@ import {
   type ProcessGuide,
 } from './index';
 import committed from './generated/guides.json';
-import { buildGuides, parseGuide, GuideBuildError, STEP_KINDS, OWNERS } from '../../scripts/guides/build.mjs';
+import {
+  buildGuides,
+  parseGuide,
+  serialize,
+  GuideBuildError,
+  STEP_KINDS,
+  OWNERS,
+} from '../../scripts/guides/build.mjs';
 
 const FLOWS = getKnownFlows();
 const flowOf = (entity: string) => FLOWS.find((f) => f.entity === entity);
@@ -53,14 +88,71 @@ const rawOf = (g: ProcessGuide): string => readFileSync(join(REPO_ROOT, g.source
 const landed = (entity: string) => LOCALES.some((l) => getGuide(entity, l));
 
 /**
- * Where each wired guide's fixture ids live, read at seed — the store map of
- * `review-drafts/guides/_derived/guidefacts.ts`, entry by entry as guides land.
- * A landed WIRED guide with no reader here is red, so G2 cannot land a guide
- * whose test data nothing checks.
+ * The ids each wired guide's test data may name — the population a store (or,
+ * for a ledger whose entities are vocabulary, the vocabulary) holds at seed.
+ * A landed WIRED guide with no entry here is red, so no guide lands with test
+ * data nothing checks.
  */
-const FIXTURE_READERS: Readonly<Record<string, () => readonly { id: string; state: string }[]>> = {
-  purchaseOrder: () => purchaseOrderStore.all().map((p) => ({ id: p.id, state: p.status })),
+const ids = (rows: readonly { id: string }[]) => rows.map((r) => r.id);
+const FIXTURE_IDS: Readonly<Record<string, () => readonly string[]>> = {
+  purchaseOrder: () => ids(purchaseOrderStore.all()),
+  // An ASN has no separate id: it is keyed by its number (`asnStore`).
+  advanceShipNotice: () => asnStore.all().map((a) => a.asnNumber),
+  goodsReceipt: () => ids(goodsReceiptStore.all()),
+  invoice: () => ids(invoiceStore.all()),
+  rfq: () => ids(rfqStore.all()),
+  quotation: () => ids(quotationStore.all()),
+  purchaseRequisition: () => ids(purchaseRequisitionStore.all()),
+  requirementResponse: () => ids(requirementResponseStore.all()),
+  inventoryDeclaration: () => ids(inventoryDeclarationStore.all()),
+  incomingShipment: () => ids(incomingShipmentStore.all()),
+  supplierDocument: () => ids(supplierDocumentStore.all()),
+  supplierApplication: () => ids(supplierApplicationStore.all()),
+  materialRequest: () => ids(materialRequestStore.all()),
+  psl: () => ids(pslStore.all()),
+  forecastPublication: () => forecastPublicationStore.all().map((p) => p.publicationId),
+  intakeLine: () => ids(PR_INTAKE_LINES),
+  deliveryRelease: () =>
+    schedulingAgreementStore
+      .all()
+      .flatMap((a) => a.items.flatMap((it) => (it.scheduleLines ?? []).map((l) => l.releaseRef))),
+  deliveryPolicy: () => schedulingAgreementStore.all().flatMap((a) => a.items.map((it) => itemKey(a.id, it.lineSeq))),
+  enforcement: () => enforcementSettingStore.all().map((e) => e.checkId),
+  // ⚠️ THE THREE LEDGERS BELOW OPEN EMPTY, AND THEIR ENTITIES ARE VOCABULARY —
+  // a setting key, a system role, a module code. Each is addressable, and its
+  // target's `readState` answers the machine's one state for it, which is what
+  // a tester acts on, so it is what the test data may name.
+  pslCapSetting: () => [...PSL_SETTING_IDS],
+  role: () => Object.keys(SYSTEM_ROLES),
+  moduleActivation: () => [...MODULE_CODES],
 };
+
+/**
+ * Each id's state as the MACHINE reads it — the wired target's own `readState`,
+ * never a store field re-mapped here. A row is right only if it names the state
+ * the dispatcher would find.
+ */
+const FIXTURE_READERS: Readonly<Record<string, () => readonly { id: string; state: string }[]>> =
+  Object.fromEntries(
+    Object.entries(FIXTURE_IDS).map(([entity, idsOf]) => [
+      entity,
+      () => idsOf().map((id) => ({ id, state: commandTargetFor(entity)?.readState(id) ?? 'NOT READABLE' })),
+    ]),
+  );
+
+// The seeds `main.tsx` runs before the first paint: four guides name fixtures
+// that are GROWN through the machine at start-up, not authored.
+beforeAll(async () => {
+  for (const seed of [
+    seedEnforcementLedger,
+    seedSourceableRequisition,
+    seedSupplierApplications,
+    seedMaterialRequests,
+    seedPslListings,
+  ]) {
+    await (seed as () => Promise<unknown>)();
+  }
+});
 
 /** The router's routes, derived from its source exactly as the smoke table derives them. */
 const ROUTER_PATHS: readonly string[] = (() => {
@@ -94,6 +186,13 @@ describe('guides · THE POPULATIONS, before any gate is believed', () => {
     expect(getGuide('purchaseOrder', 'en')?.title).toBe('Purchase order');
     expect(getGuide('purchaseOrder', 'id')?.locale).toBe('id');
     expect(getGuide('noSuchFlow', 'en')).toBeUndefined();
+  });
+
+  it('the G2 flows are in the registry by name — the three authored at G2 included', () => {
+    for (const e of ['requirementResponse', 'forecastPublication', 'intakeLine', 'moduleActivation']) {
+      expect(getGuide(e, 'en')?.entity, e).toBe(e);
+      expect(getGuide(e, 'id')?.entity, e).toBe(e);
+    }
   });
 
   it('the flow registry is the real one, not an empty import', () => {
@@ -198,6 +297,40 @@ describe('guides · the build refuses a malformed guide, by name', () => {
     }
   });
 
+  it('the CLI leaves a JSON whose content already matches untouched — CRLF included — and rewrites a stale one', () => {
+    const skipDir = mkdtempSync(join(tmpdir(), 'guides-skip-'));
+    try {
+      // Inline paths, and names no other spec here uses: the tree-mutation gate
+      // folds a write's path through its `const`s BY NAME, so a second `dir` /
+      // `out` in this file would leave every write below UNRESOLVED.
+      const skipOut = join(skipDir, 'out.json');
+      writeFileSync(join(skipDir, FILE), EN);
+      const fresh = serialize(buildGuides(skipDir));
+      const run = () =>
+        spawnSync(process.execPath, ['scripts/guides/build.mjs', '--src', skipDir, '--out', skipOut], {
+          cwd: REPO_ROOT,
+          encoding: 'utf8',
+        });
+      // The Windows checkout's shape: the same content with CRLF endings.
+      const crlf = Buffer.from(fresh.replace(/\n/g, '\r\n'), 'utf8');
+      writeFileSync(join(skipDir, 'out.json'), crlf);
+      const same = run();
+      expect(same.status).toBe(0);
+      expect(same.stdout).toMatch(/ unchanged$/m);
+      expect(readFileSync(skipOut).equals(crlf)).toBe(true);
+      // KNOWN-GOOD — the LF form is equally current and equally left alone.
+      writeFileSync(join(skipDir, 'out.json'), fresh);
+      expect(run().stdout).toMatch(/ unchanged$/m);
+      // KNOWN-BAD — a stale file is rewritten to the fresh parse.
+      writeFileSync(join(skipDir, 'out.json'), '{}\r\n');
+      const stale = run();
+      expect(stale.stdout).toMatch(/ written$/m);
+      expect(readFileSync(skipOut, 'utf8')).toBe(fresh);
+    } finally {
+      rmSync(skipDir, { recursive: true, force: true });
+    }
+  });
+
   it('`npm run build` runs the guide build first, so a stale JSON cannot ship', () => {
     const pkg = JSON.parse(readFileSync(join(REPO_ROOT, 'package.json'), 'utf8'));
     expect(pkg.scripts.build).toMatch(/^node scripts\/guides\/build\.mjs && /);
@@ -206,24 +339,43 @@ describe('guides · the build refuses a malformed guide, by name', () => {
 
 // ── THE BILATERAL GATES ─────────────────────────────────────────────────────
 
-describe('guides · every flow has a guide in EN and in ID — or is NAMED pending', () => {
-  it('a registered flow with no guide pair is red unless the G2 list names it', () => {
-    const missing = FLOWS.map((f) => f.entity).filter(
-      (e) => !(getGuide(e, 'en') && getGuide(e, 'id')) && !GUIDES_PENDING_G2.includes(e),
-    );
+describe('guides · every flow has a guide in EN and in ID — no exceptions', () => {
+  it('a registered flow with no guide pair is red', () => {
+    const missing = FLOWS.map((f) => f.entity).filter((e) => !(getGuide(e, 'en') && getGuide(e, 'id')));
     expect(missing).toEqual([]);
   });
 
-  it('every pending name is a registered flow', () => {
-    expect(GUIDES_PENDING_G2.filter((e) => !flowOf(e))).toEqual([]);
+  it('KNOWN-BAD — the same instrument convicts a flow with no guide', () => {
+    expect(['purchaseOrder', 'noSuchFlow'].filter((e) => !landed(e))).toEqual(['noSuchFlow']);
   });
 
-  it('no pending name has a landed guide — landing one takes it off the list', () => {
-    expect(GUIDES_PENDING_G2.filter(landed)).toEqual([]);
+  it('no pending allowlist exists — G2 deleted it rather than emptying it', () => {
+    expect(existsSync(join(REPO_ROOT, 'src', 'guides', 'pending.ts'))).toBe(false);
+    const sources = execFileSync('git', ['-c', 'core.quotepath=false', 'ls-files', '-co', '--exclude-standard', 'src'], {
+      cwd: REPO_ROOT,
+      encoding: 'utf8',
+    })
+      .split('\n')
+      .filter((rel) => /\.(ts|tsx)$/.test(rel) && !rel.endsWith('guides/guides.test.ts'));
+    const holders = sources.filter((rel) => {
+      try {
+        return /GUIDES_PENDING/.test(readFileSync(join(REPO_ROOT, rel), 'utf8'));
+      } catch {
+        return false;
+      }
+    });
+    expect(holders).toEqual([]);
+  });
+});
+
+describe('guides · `wired` in the front matter is the registry’s own answer', () => {
+  it('KNOWN-GOOD — the wired set is real: a wired flow in, a target-less one out', () => {
+    expect(WIRED_COMMAND_TARGETS).toContain('purchaseOrder');
+    expect(WIRED_COMMAND_TARGETS).not.toContain('shipment');
   });
 
-  it('the pending list names each flow once', () => {
-    expect(new Set(GUIDES_PENDING_G2).size).toBe(GUIDES_PENDING_G2.length);
+  it.each(GUIDES.map((g) => [g.sourceFile, g] as const))('%s', (_f, g) => {
+    expect(g.wired).toBe(WIRED_COMMAND_TARGETS.includes(g.entity));
   });
 });
 
@@ -265,6 +417,12 @@ describe('guides · every fixture id resolves in its store at seed, in the state
     const rows = FIXTURE_READERS.purchaseOrder();
     expect(rows.find((r) => r.id === 'po-008')?.state).toBe('Sent');
     expect(rows.find((r) => r.id === 'po-999')).toBeUndefined();
+    // A row grown at start-up, a producer's line, and a ledger's vocabulary.
+    expect(FIXTURE_READERS.materialRequest().find((r) => r.id === 'mr-0001')?.state).toBe('Submitted');
+    expect(FIXTURE_READERS.intakeLine().find((r) => r.id === 'pil-somo-002')?.state).toBe('Pending');
+    expect(FIXTURE_READERS.moduleActivation().find((r) => r.id === 'ORD')?.state).toBe('Governed');
+    // KNOWN-BAD — an id the machine cannot read is never quietly given a state.
+    expect(commandTargetFor('moduleActivation')?.readState('NOPE')).toBeNull();
   });
 
   it.each(GUIDES.map((g) => [g.sourceFile, g] as const))('%s', (_f, g) => {
