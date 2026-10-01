@@ -1,184 +1,16 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import {
-  LayoutDashboard,
-  Search,
-  Store,
-  Users,
-  FileText,
-  ShoppingCart,
-  Boxes,
-  Truck,
-  ClipboardCheck,
-  Receipt,
-  Inbox,
-  BarChart2,
-  Award,
-  AlertTriangle,
-  ShieldCheck,
-  ScrollText,
-  CalendarClock,
-  BellRing,
-  MessageCircle,
-  Table2,
-  Workflow,
-  BookOpen,
-  Handshake,
-  LucideIcon,
-  UserPlus,
-  PackagePlus,
-  ListChecks,
-  Blocks,
-} from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useCurrentIdentity } from '../../context/CurrentIdentityContext';
 import { mockSuppliers } from '../../data/mockSuppliers';
 import { SEEDED_SEAT_ROLES } from '../../services/transitions/businessRoles';
 import { NO_PERSON } from '../../context/noPerson';
 import { useModuleActivation } from '../../context/ModuleActivationContext';
-import { routeOffReason } from '../../services/modules/activation';
+import { BUYER_NAV, SUPPLIER_NAV, visibleNav } from './navModel';
 
 const SEED_SUPPLIER_ID = 'sup-007';
 const SEED_SUPPLIER_NAME =
   mockSuppliers.find((s) => s.id === SEED_SUPPLIER_ID)?.name ?? null;
-
-interface NavItem {
-  labelKey: string;
-  icon: LucideIcon;
-  path: string;
-}
-
-interface NavGroup {
-  labelKey: string;
-  items: NavItem[];
-}
-
-const BUYER_NAV: NavGroup[] = [
-  {
-    labelKey: 'nav.section.acquire',
-    items: [
-      { labelKey: 'nav.buyer.dashboard', icon: LayoutDashboard, path: '/buyer/dashboard' },
-      { labelKey: 'nav.buyer.discovery', icon: Search, path: '/buyer/discovery' },
-      { labelKey: 'nav.buyer.marketplace', icon: Store, path: '/marketplace' },
-      { labelKey: 'nav.buyer.suppliers', icon: Users, path: '/buyer/suppliers' },
-      // PSL P3 — immediately after the Directory, because the Directory is
-      // where a PSL badge is READ and this is where the designation behind
-      // it is raised and decided. Before Applications, since a listing is
-      // about a supplier the roster already carries.
-      {
-        labelKey: 'nav.buyer.preferredSuppliers',
-        icon: ListChecks,
-        path: '/buyer/preferred-suppliers',
-      },
-      { labelKey: 'nav.buyer.supplierApplications', icon: UserPlus, path: '/buyer/supplier-applications' },
-      { labelKey: 'nav.buyer.sourcing', icon: FileText, path: '/buyer/sourcing' },
-      // R8 — next to Sourcing, because the gap is discovered there: a buyer
-      // picking a material with no master code is offered the request in the
-      // RFQ wizard, and this is where it is then tracked.
-      { labelKey: 'nav.buyer.materialRequests', icon: PackagePlus, path: '/buyer/material-requests' },
-      // Phase A/1 — review precedes the plan-grid push in the sourcing flow.
-      { labelKey: 'nav.buyer.intakeReview', icon: Inbox, path: '/buyer/intake-review' },
-      { labelKey: 'nav.buyer.planGrid', icon: Table2, path: '/buyer/plan-grid' },
-      // SDC-1b — the P2 planner consolidation view (Supplier Data Collaboration).
-      { labelKey: 'nav.buyer.collaboration', icon: Handshake, path: '/buyer/collaboration' },
-    ],
-  },
-  {
-    labelKey: 'nav.section.transact',
-    items: [
-      { labelKey: 'nav.buyer.requisitions', icon: FileText, path: '/buyer/purchase-requisition' },
-      { labelKey: 'nav.buyer.purchaseOrders', icon: ShoppingCart, path: '/buyer/orders' },
-      { labelKey: 'nav.buyer.inventory', icon: Boxes, path: '/buyer/inventory' },
-      { labelKey: 'nav.buyer.shipments', icon: Truck, path: '/buyer/shipments' },
-      { labelKey: 'nav.buyer.goodsReceipt', icon: ClipboardCheck, path: '/buyer/goods-receipt' },
-    ],
-  },
-  {
-    labelKey: 'nav.section.settle',
-    items: [
-      { labelKey: 'nav.buyer.invoices', icon: Receipt, path: '/buyer/invoices' },
-      { labelKey: 'nav.buyer.contracts', icon: ScrollText, path: '/buyer/contracts' },
-      { labelKey: 'nav.buyer.deliveryAgreements', icon: CalendarClock, path: '/buyer/delivery-agreements' },
-      { labelKey: 'nav.buyer.chase', icon: BellRing, path: '/buyer/chase' },
-    ],
-  },
-  {
-    labelKey: 'nav.section.intelligence',
-    items: [
-      { labelKey: 'nav.buyer.analytics', icon: BarChart2, path: '/buyer/analytics' },
-      { labelKey: 'nav.buyer.scorecard', icon: Award, path: '/buyer/scorecard' },
-      { labelKey: 'nav.buyer.risk', icon: AlertTriangle, path: '/buyer/risk' },
-      { labelKey: 'nav.buyer.compliance', icon: ShieldCheck, path: '/buyer/compliance' },
-      { labelKey: 'nav.buyer.commHub', icon: MessageCircle, path: '/buyer/comm-hub' },
-      // PF-1 — the derived flow catalog (read-only; the analyzer's surface).
-      { labelKey: 'nav.buyer.processFlows', icon: Workflow, path: '/buyer/process-flows' },
-      // GL-1 — the glossary. LISTED IN BOTH PERSONAS' NAV, under one
-      // persona-neutral key and one persona-neutral path, because the term chips
-      // that lead here sit on both sides' refusal sites.
-      { labelKey: 'nav.glossary', icon: BookOpen, path: '/glossary' },
-    ],
-  },
-  {
-    // ── THE PLATFORM GROUPING ────────────────────────────────────────────────
-    // Settings-shaped items, deliberately apart from the day-to-day work
-    // sections. WHO I AM is in the avatar panel; MANAGING WHO ANYONE IS is a
-    // page — and a role catalogue is the second, not the first.
-    //
-    // A Users page is NOT here and that is a ruling: the portal holds no people
-    // (staff identity is the corporate directory's, unconnected), so it would
-    // show an empty list and "0 assigned" on every role, with the honest marker
-    // doing all the work. Shipping the shape without the substance is the class
-    // this project spends its time removing.
-    labelKey: 'nav.section.platform',
-    items: [
-      { labelKey: 'nav.buyer.roles', icon: ShieldCheck, path: '/buyer/roles' },
-      // M2 · Design 5 §A.5.1 — the module roadmap board (PLT, so never filtered).
-      { labelKey: 'nav.buyer.modules', icon: Blocks, path: '/buyer/platform/modules' },
-    ],
-  },
-];
-
-const SUPPLIER_NAV: NavGroup[] = [
-  {
-    labelKey: 'nav.section.acquire',
-    items: [
-      { labelKey: 'nav.supplier.dashboard', icon: LayoutDashboard, path: '/supplier/dashboard' },
-      { labelKey: 'nav.supplier.rfqs', icon: Search, path: '/supplier/rfqs' },
-      // SDC-2b — the P1 forecast-confirmation surface (Supplier Data Collaboration).
-      { labelKey: 'nav.supplier.forecasts', icon: Handshake, path: '/supplier/forecasts' },
-      { labelKey: 'nav.supplier.storefront', icon: Store, path: '/supplier/storefront' },
-    ],
-  },
-  {
-    labelKey: 'nav.section.transact',
-    items: [
-      { labelKey: 'nav.supplier.orders', icon: ShoppingCart, path: '/supplier/orders' },
-      { labelKey: 'nav.supplier.shipments', icon: Truck, path: '/supplier/shipments' },
-      { labelKey: 'nav.supplier.inventory', icon: Boxes, path: '/supplier/inventory' },
-    ],
-  },
-  {
-    labelKey: 'nav.section.settle',
-    items: [
-      { labelKey: 'nav.supplier.invoices', icon: Receipt, path: '/supplier/invoices' },
-      { labelKey: 'nav.supplier.documents', icon: FileText, path: '/supplier/documents' },
-      {
-        labelKey: 'nav.supplier.deliveryAgreements',
-        icon: CalendarClock,
-        path: '/supplier/delivery-agreements',
-      },
-    ],
-  },
-  {
-    labelKey: 'nav.section.intelligence',
-    items: [
-      { labelKey: 'nav.supplier.performance', icon: BarChart2, path: '/supplier/performance' },
-      { labelKey: 'nav.supplier.whatsapp', icon: MessageCircle, path: '/supplier/whatsapp' },
-      { labelKey: 'nav.supplier.commHub', icon: Inbox, path: '/supplier/comm-hub' },
-      { labelKey: 'nav.glossary', icon: BookOpen, path: '/glossary' },
-    ],
-  },
-];
 
 const SidebarV2: React.FC = () => {
   const navigate = useNavigate();
@@ -190,11 +22,9 @@ const SidebarV2: React.FC = () => {
 
   // M1 — an OFF module leaves the navigation (Design 5 §A.3: never a dead
   // link). Its route still renders read-only if reached; the dashboard is PLT
-  // and never leaves. A group left with no item leaves too.
+  // and never leaves. A group left with no item leaves too (`visibleNav`).
   const activation = useModuleActivation();
-  const groups = (persona === 'buyer' ? BUYER_NAV : SUPPLIER_NAV)
-    .map((g) => ({ ...g, items: g.items.filter((item) => routeOffReason(item.path, activation) === null) }))
-    .filter((g) => g.items.length > 0);
+  const groups = visibleNav(persona === 'buyer' ? BUYER_NAV : SUPPLIER_NAV, activation);
 
   return (
     <aside className="w-60 shrink-0 h-full bg-bg-sidebar border-r border-border-subtle flex flex-col">
