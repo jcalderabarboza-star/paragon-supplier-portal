@@ -134,6 +134,8 @@ scripts/                 gates.mjs (the runner), floor.json (the recorded counts
                          local gate verify harness.
 docs/                    Plans, investigations, the defect register, and:
 docs/contracts/          THE CONTRACT PACKAGE — C1…C12. What the backend implements.
+docs/guides/             The process guides, one markdown file per flow and locale. Parsed at
+                         build by scripts/guides/build.mjs into src/guides/generated/.
 
 src/
 ├── assets/              Images imported by components.
@@ -141,6 +143,8 @@ src/
 │                        cross-page features, `delivery/` the delivery lane's controls.
 ├── context/             React contexts: current identity, adaptive layout, module activation
 │                        (what is switched on, and the route gate).
+├── guides/              The process-guide registry: the generated JSON, its typed accessor,
+│                        the citation keys, and the gates that hold the guides to the tree.
 ├── data/                Long-lived sample data and catalogues (suppliers, POs, materials,
 │                        communication profiles).
 ├── hooks/               Label and toast hooks shared across pages.
@@ -164,6 +168,7 @@ src/
 │                        chase/       chasing an overdue act
 │                        liveness/    which data sources are live and which simulated
 │                        modules/     module activation: the module registry, what is ON
+│                        audit/       the read-only view of the DR-10 audit sink
 │                        testing/     helpers the services share with their specs
 ├── styles/              Tailwind entry.
 ├── test/                Vitest setup and shared test helpers.

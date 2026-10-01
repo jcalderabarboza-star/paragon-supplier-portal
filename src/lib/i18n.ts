@@ -79,6 +79,7 @@ import {
   processFlowPurposeEn,
   processFlowPurposeId,
 } from './i18n/processFlowPurpose';
+import { processGuidesEn, processGuidesId } from './i18n/processGuides';
 // — GL-1 the glossary surface. PAGE CHROME ONLY: every DEFINITION lives beside
 //   its union in `lib/glossary/*.glossary.ts`, EN and ID on the same entry, so a
 //   vocabulary correction is one edit in one place rather than a hunt through
@@ -164,6 +165,7 @@ export const resources = {
       // — PF-1 process flows —
       ...processFlowsEn,
       ...processFlowPurposeEn,
+      ...processGuidesEn,
       // — GL-1 glossary (chrome only) —
       ...glossaryEn,
       ...identityEn,
@@ -669,6 +671,7 @@ export const resources = {
       // — PF-1 process flows —
       ...processFlowsId,
       ...processFlowPurposeId,
+      ...processGuidesId,
       // — GL-1 glossary (chrome only) —
       ...glossaryId,
       ...identityId,

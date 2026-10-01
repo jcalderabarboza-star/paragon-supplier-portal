@@ -45,14 +45,13 @@ import ts from 'typescript';
 import { join } from 'node:path';
 
 import { REPO_ROOT } from './lib/treeMutationGate/derive';
+import { personNamesInTree } from './lib/personNames';
 
 const README = join(REPO_ROOT, 'README.md');
 
 /** A capitalised phrase of two or more words, on ONE line. */
 const TITLE_PHRASE = /\b[A-Z][a-z]+(?:[ \t]+[A-Z][a-z]+)+\b/g;
 
-/** Person-shaped fixture fields. Derived from source, never listed. */
-const PERSON_FIELD = /\b(?:contactName|contactPerson|personName|displayName|fullName)\s*:\s*'([^']+)'/g;
 
 /**
  * This spec is the ONE place in the repository allowed to write the historic
@@ -90,10 +89,9 @@ function attestationCorpus(): string {
   return parts.join('\n');
 }
 
-/** Every person name the tree itself holds, derived from its own person data. */
-export function personNamesInTree(corpus: string): string[] {
-  return [...new Set([...corpus.matchAll(PERSON_FIELD)].map((m) => m[1]))];
-}
+// The person population lives in `lib/personNames.ts` since G1, so the process
+// guides' gate reads the same denylist rather than a copy of its matcher.
+export { personNamesInTree };
 
 /** Capitalised phrases in `text` that appear nowhere in `corpus`. */
 export function unattestedPhrases(text: string, corpus: string): string[] {

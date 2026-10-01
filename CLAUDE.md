@@ -1514,8 +1514,9 @@ measurements, not an impression:
 1. **`scripts/gates.mjs` never invokes git** — derived: its four `git` substring
    hits are inside the words *legitimate* and *digits*. It sees a WORKING TREE,
    never a diff, so the discriminator above is structurally out of its reach.
-   `.github/workflows/gates.yml` uses `actions/checkout@v5` with no
-   `fetch-depth`, so CI has no history to diff against either.
+   `.github/workflows/gates.yml` checks out full history since G1
+   (`fetch-depth: 0`, for the guides' source-SHA gate), but nothing in the
+   gates diffs against it, so the discriminator is still out of reach.
 2. **The existing pointer gate would NOT protect this paragraph.** It asserts
    only that `CLAUDE.md` CONTAINS the string `scripts/floor.json`, and that
    string occurs at several sites outside this section — so deleting this

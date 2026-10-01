@@ -9,7 +9,7 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "node scripts/guides/build.mjs && tsc && vite build",
     "preview": "vite preview",
     "build:vercel": "VERCEL=1 vite build",
     "preview:vercel": "vite preview",
