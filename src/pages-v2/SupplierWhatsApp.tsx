@@ -1279,7 +1279,6 @@ const SupplierWhatsApp: React.FC = () => {
       <style>{PULSE_CSS}</style>
       <PageHeader
         breadcrumb={[
-          t('supplierWhatsApp.crumb.intelligence'),
           t('supplierWhatsApp.crumb.whatsappHub'),
         ]}
         title={t('supplierWhatsApp.header.title')}

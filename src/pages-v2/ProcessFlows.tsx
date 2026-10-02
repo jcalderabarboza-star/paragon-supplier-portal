@@ -290,7 +290,7 @@ const ProcessFlows: React.FC = () => {
   return (
     <AppShellV2>
       <PageHeader
-        breadcrumb={[t('processFlows.crumb.platform'), t('processFlows.crumb.processFlows')]}
+        breadcrumb={[t('processFlows.crumb.processFlows')]}
         title={t('processFlows.header.title')}
         subtitle={t('processFlows.header.subtitle')}
       />

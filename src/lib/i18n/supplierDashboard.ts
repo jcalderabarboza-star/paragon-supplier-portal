@@ -13,7 +13,6 @@
 // via <Data>/formatters and is never translated.
 export const supplierDashboardEn: Record<string, string> = {
   // — Breadcrumb —
-  'supplierDashboard.crumb.acquire': 'ACQUIRE',
   'supplierDashboard.crumb.dashboard': 'DASHBOARD',
   // — Page header —
   'supplierDashboard.header.title': 'Welcome back, {{name}}',
@@ -101,7 +100,6 @@ export const supplierDashboardEn: Record<string, string> = {
 
 export const supplierDashboardId: Record<string, string> = {
   // — Breadcrumb —
-  'supplierDashboard.crumb.acquire': 'PENGADAAN',
   'supplierDashboard.crumb.dashboard': 'DASBOR',
   // — Page header —
   'supplierDashboard.header.title': 'Selamat datang kembali, {{name}}',

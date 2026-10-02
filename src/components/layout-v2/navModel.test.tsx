@@ -11,7 +11,7 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { screen, within } from '@testing-library/react';
+import { screen, within, fireEvent, render } from '@testing-library/react';
 import { renderWithProviders, SUPPLIER } from '../../test/test-utils';
 import i18n, { resources } from '../../lib/i18n';
 import { stripSourceComments } from '../../lib/sourceScan/stripComments';
@@ -24,8 +24,18 @@ import {
   type ModuleActivationView,
 } from '../../services/modules/activation';
 import { moduleOfRoute } from '../../services/modules/registry';
-import SidebarV2 from './SidebarV2';
-import { BUYER_NAV, NON_DESTINATION_ROUTES, SUPPLIER_NAV, visibleNav, type NavGroup } from './navModel';
+import SidebarV2, { sidebarNavScroll } from './SidebarV2';
+import PageHeader from '../ui-v2/PageHeader';
+import {
+  BUYER_NAV,
+  DETAIL_ROUTE_PARENT,
+  NON_DESTINATION_ROUTES,
+  NO_SECTION_ROUTES,
+  SUPPLIER_NAV,
+  navSectionKeyFor,
+  visibleNav,
+  type NavGroup,
+} from './navModel';
 
 const routerSrc = stripSourceComments(
   readFileSync(join(process.cwd(), 'src', 'router', 'AppRouter.tsx'), 'utf8'),
@@ -238,5 +248,138 @@ describe('a module switched off removes its items; a group left empty never rend
     expect([...nav.children].map((g) => g.firstElementChild!.textContent)).toEqual([
       'Beranda', 'Permintaan', 'Penawaran', 'Pemenuhan', 'Terima pembayaran', 'Kepatuhan', 'Pertumbuhan', 'Komunikasi', 'Platform',
     ]);
+  });
+});
+
+// ════════════════════════════════════════════════════════════════════════════
+// H1 · BREADCRUMB ↔ NAV PARITY. The first breadcrumb segment is the sidebar
+// group, derived by `navSectionKeyFor` and prepended by `PageHeader`. Held both
+// ways over the router's own population, rendered in EN and ID.
+// ════════════════════════════════════════════════════════════════════════════
+
+/** A concrete URL for a route pattern: every `:param` filled. */
+const concrete = (pattern: string): string => pattern.replace(/:[A-Za-z]+/g, 'x-1');
+const groupOf = (groups: readonly NavGroup[], path: string) =>
+  groups.find((g) => g.items.some((i) => i.path === path))?.labelKey;
+
+describe('H1 · every route opens under a nav group, or is named as opening under none', () => {
+  it('the non-destinations split exactly into detail routes and no-section routes', () => {
+    expect([...Object.keys(DETAIL_ROUTE_PARENT), ...NO_SECTION_ROUTES].sort()).toEqual(
+      Object.keys(NON_DESTINATION_ROUTES).sort(),
+    );
+  });
+
+  it('every detail route names a parent that is a nav item', () => {
+    expect(Object.values(DETAIL_ROUTE_PARENT).filter((p) => !ALL_NAV_PATHS.has(p))).toEqual([]);
+  });
+
+  it('every router path resolves to a group, except the no-section routes, which resolve to none', () => {
+    const wrong = ROUTER_PATHS.filter((p) =>
+      NO_SECTION_ROUTES.includes(p) ? navSectionKeyFor(concrete(p)) !== null : navSectionKeyFor(concrete(p)) === null,
+    );
+    expect(wrong).toEqual([]);
+    // the control: an unknown path opens under nothing
+    expect(navSectionKeyFor('/buyer/not-a-real-route')).toBeNull();
+  });
+
+  it.each(SIDES)('%s: every nav item opens under the group that holds it', (_side, groups) => {
+    const wrong = groups.flatMap((g) =>
+      g.items
+        .filter((i) => navSectionKeyFor(concrete(i.path)) !== g.labelKey)
+        .map((i) => `${i.path} → ${navSectionKeyFor(i.path)}`),
+    );
+    expect(wrong).toEqual([]);
+  });
+
+  it('a path on both sides sits in groups with the same label, so the side cannot change the crumb', () => {
+    const both = navPaths(BUYER_NAV).filter((p) => navPaths(SUPPLIER_NAV).includes(p));
+    expect(both).toContain('/glossary');
+    expect(both.filter((p) => groupOf(BUYER_NAV, p) !== groupOf(SUPPLIER_NAV, p))).toEqual([]);
+  });
+
+  it('a detail route opens under its list: contract detail → Contract, a storefront → Source', () => {
+    expect(navSectionKeyFor('/buyer/contracts/ctr-013')).toBe('nav.section.contract');
+    expect(navSectionKeyFor('/marketplace/supplier/sup-007')).toBe('nav.section.source');
+    expect(navSectionKeyFor('/buyer/platform/modules/admin')).toBe('nav.section.platform');
+  });
+
+  it('the retired section vocabulary is gone from every breadcrumb key, EN and ID', () => {
+    const RETIRED = /^(acquire|transact|settle|intelligence|dashboards|pengadaan|akuisisi|transaksi|penyelesaian|intelijen)$/i;
+    const stale = (['en', 'id'] as const).flatMap((lng) =>
+      Object.entries(resources[lng].translation as Record<string, string>)
+        .filter(([k, v]) => /crumb/i.test(k) && RETIRED.test(v.trim()))
+        .map(([k, v]) => `${lng}:${k}=${v}`),
+    );
+    expect(stale).toEqual([]);
+  });
+});
+
+describe('H1 · the header renders the section first — every nav and detail route, EN then ID', () => {
+  const PATTERNS = [...ALL_NAV_PATHS, ...Object.keys(DETAIL_ROUTE_PARENT)];
+  const header = (at: string) => renderWithProviders(<PageHeader breadcrumb={['Tail']} title="T" />, { route: at });
+
+  it.each(['en', 'id'] as const)('%s: the eyebrow is "<group label> · Tail" at every route', async (lng) => {
+    await i18n.changeLanguage(lng);
+    const wrong: string[] = [];
+    for (const p of PATTERNS) {
+      const { unmount } = header(concrete(p));
+      const expected = `${i18n.t(navSectionKeyFor(concrete(p))!)} · Tail`;
+      const got = screen.getByTestId('page-breadcrumb').textContent;
+      if (got !== expected) wrong.push(`${p}: ${got} ≠ ${expected}`);
+      unmount();
+    }
+    expect(PATTERNS.length).toBeGreaterThan(30);
+    expect(wrong).toEqual([]);
+  });
+
+  it('ID labels really differ from EN on a group, so the ID run can fail', async () => {
+    await i18n.changeLanguage('id');
+    expect(i18n.t('nav.section.orderReceive')).not.toBe(
+      (resources.en.translation as Record<string, string>)['nav.section.orderReceive'],
+    );
+  });
+
+  it('the 404 and a render outside any router prepend nothing', () => {
+    const { unmount } = header('/buyer/not-a-real-route');
+    expect(screen.getByTestId('page-breadcrumb').textContent).toBe('Tail');
+    unmount();
+    render(<PageHeader breadcrumb={['Tail']} title="T" />);
+    expect(screen.getByTestId('page-breadcrumb').textContent).toBe('Tail');
+  });
+});
+
+describe('the sidebar keeps its scroll position when a pick mounts the next page', () => {
+  afterEach(() => sidebarNavScroll.reset());
+
+  it('a scrolled nav is restored on the next mount, not reset to the top', () => {
+    const first = renderWithProviders(<SidebarV2 />, { route: '/buyer/dashboard' });
+    const nav = screen.getByRole('navigation');
+    nav.scrollTop = 320;
+    fireEvent.scroll(nav);
+    expect(sidebarNavScroll.get()).toBe(320);
+    first.unmount();
+    renderWithProviders(<SidebarV2 />, { route: '/buyer/analytics' });
+    expect(screen.getByRole('navigation').scrollTop).toBe(320);
+  });
+
+  it('the control: a fresh session starts at the top', () => {
+    renderWithProviders(<SidebarV2 />, { route: '/buyer/dashboard' });
+    expect(screen.getByRole('navigation').scrollTop).toBe(0);
+  });
+
+  it('switching persona starts the other list at the top', () => {
+    renderWithProviders(<SidebarV2 />, { route: '/buyer/dashboard' });
+    const nav = screen.getByRole('navigation');
+    nav.scrollTop = 200;
+    fireEvent.scroll(nav);
+    expect(sidebarNavScroll.get()).toBe(200);
+    fireEvent.click(screen.getByRole('button', { name: 'Supplier' }));
+    expect(sidebarNavScroll.get()).toBe(0);
+  });
+
+  it('the active item is marked, for assistive tech and for the scroll-into-view', () => {
+    renderWithProviders(<SidebarV2 />, { route: '/buyer/invoices' });
+    expect(screen.getByRole('button', { name: 'Invoices' })).toHaveAttribute('aria-current', 'page');
+    expect(screen.getByRole('button', { name: 'Purchase Orders' })).not.toHaveAttribute('aria-current');
   });
 });

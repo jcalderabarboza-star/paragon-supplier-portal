@@ -42,7 +42,6 @@ export const materialRequestsEn: Record<string, string> = {
   'materialRequests.subtitle':
     'Materials a buyer needs that the material master does not carry. Master data reviews each one; the material is created in SAP, not here.',
   'materialRequests.meta.queue': 'Master-data queue',
-  'materialRequests.crumb.source': 'Source',
   'materialRequests.crumb.requests': 'Material requests',
   'materialRequests.meta.note':
     'Raised from the RFQ wizard when a picked material has no master code, or here. A request never changes a sourcing event.',
@@ -184,7 +183,6 @@ export const materialRequestsId: Record<string, string> = {
   'materialRequests.subtitle':
     'Material yang dibutuhkan pembeli namun tidak ada di master material. Master data meninjau setiap permintaan; material dibuat di SAP, bukan di sini.',
   'materialRequests.meta.queue': 'Antrean master data',
-  'materialRequests.crumb.source': 'Sumber',
   'materialRequests.crumb.requests': 'Permintaan material',
   'materialRequests.meta.note':
     'Diajukan dari wizard RFQ saat material yang dipilih tidak memiliki kode master, atau di sini. Permintaan tidak pernah mengubah acara sourcing.',

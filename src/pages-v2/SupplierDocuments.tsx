@@ -254,7 +254,6 @@ const SupplierDocuments: React.FC = () => {
   const { identity } = useCurrentIdentity();
   const { supplierId, supplierName } = identity;
   const docsCrumb = [
-    t('supplierDocuments.crumb.settle'),
     t('supplierDocuments.crumb.myDocuments'),
   ];
   const categoryOptions = CATEGORY_FILTERS.map((c) => ({

@@ -807,7 +807,7 @@ const BuyerCollaboration: React.FC = () => {
   );
 
   const horizon = CURRENT?.horizon ?? [];
-  const CRUMB = [t('sdc.crumb.section'), t('sdc.crumb.page')];
+  const CRUMB = [t('sdc.crumb.page')];
 
   return (
     <AppShellV2>

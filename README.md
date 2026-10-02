@@ -37,6 +37,18 @@ A buyer-raised supplier application *is* recorded; a supplier raising their own 
 
 ---
 
+## Handover
+
+**Start at [`docs/handover/D1_SE_HANDOVER.md`](docs/handover/D1_SE_HANDOVER.md) — the front door
+for the engineering team taking the platform over.** It says what the platform is, how to read it
+in an hour, and the work packages that remain, and every figure in it names the test that pins it.
+[`docs/handover/HANDOVER_INDEX.md`](docs/handover/HANDOVER_INDEX.md) lists the whole package: the
+handover documents in `docs/handover/`, the six designs in `docs/designs/`, and the reviews they
+answer in `docs/reviews/`. `src/handoverIndex.guard.test.ts` fails if a file the index lists is
+missing or a recorded blob id stops matching.
+
+---
+
 ## Quick start
 
 Requires **Node 24** (`.nvmrc` and the `engines` field in `package.json` both say so; CI runs the
@@ -134,6 +146,10 @@ scripts/                 gates.mjs (the runner), floor.json (the recorded counts
                          local gate verify harness.
 docs/                    Plans, investigations, the defect register, and:
 docs/contracts/          THE CONTRACT PACKAGE — C1…C12. What the backend implements.
+docs/handover/           THE HANDOVER PACKAGE — start at D1_SE_HANDOVER.md; HANDOVER_INDEX.md
+                         lists every file in it.
+docs/designs/            The six designs the handover builds on (DESIGN_1…DESIGN_6).
+docs/reviews/            The reviews the designs answer (R0…R4).
 docs/guides/             The process guides, one markdown file per flow and locale. Parsed at
                          build by scripts/guides/build.mjs into src/guides/generated/.
 
@@ -231,6 +247,7 @@ unauthenticated client. The gate fails closed if its secrets are unprovisioned, 
 
 | If you want… | Read |
 |---|---|
+| Where to start, if you are taking the platform over | `docs/handover/D1_SE_HANDOVER.md` |
 | The contract the backend implements | `docs/contracts/README.md`, then C1 (methods) and C2 (schemas) |
 | How a document moves | `/buyer/process-flows` in the running app, then `src/services/transitions/flows/` |
 | Why something was built this way | `docs/findings.md` — the defect register, and the reasoning behind most of the rules in this repository |

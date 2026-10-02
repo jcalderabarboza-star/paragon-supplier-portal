@@ -3,7 +3,6 @@
 // READ-ONLY surface — nothing dispatches (that is G1.2b).
 export const planGridEn: Record<string, string> = {
   // — Page chrome —
-  'planGrid.crumb.acquire': 'Acquire',
   'planGrid.crumb.planGrid': 'Plan Grid',
   'planGrid.header.title': 'Plan Grid',
   'planGrid.header.subtitle': 'Award what-if & requisition intake review',
@@ -271,7 +270,6 @@ export const planGridEn: Record<string, string> = {
 
 export const planGridId: Record<string, string> = {
   // — Page chrome —
-  'planGrid.crumb.acquire': 'Pengadaan',
   'planGrid.crumb.planGrid': 'Grid Perencanaan',
   'planGrid.header.title': 'Grid Perencanaan',
   'planGrid.header.subtitle': 'Simulasi penghargaan & tinjauan asupan permintaan',

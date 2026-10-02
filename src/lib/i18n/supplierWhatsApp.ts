@@ -17,7 +17,6 @@
 
 export const supplierWhatsAppEn: Record<string, string> = {
   // — Breadcrumb —
-  'supplierWhatsApp.crumb.intelligence': 'INTELLIGENCE',
   'supplierWhatsApp.crumb.whatsappHub': 'CHANNEL DEMO',
   // — Page header (relabelled C5: unmistakably a demo, distinct from the real
   //   "Channel Inbox" where recording actually happens) —
@@ -142,7 +141,6 @@ export const supplierWhatsAppEn: Record<string, string> = {
 
 export const supplierWhatsAppId: Record<string, string> = {
   // — Breadcrumb —
-  'supplierWhatsApp.crumb.intelligence': 'INTELIJEN',
   'supplierWhatsApp.crumb.whatsappHub': 'DEMO KANAL',
   // — Page header (dilabeli ulang C5: jelas sebuah demo, berbeda dari "Kotak Masuk
   //   Kanal" nyata tempat pencatatan sebenarnya terjadi) —

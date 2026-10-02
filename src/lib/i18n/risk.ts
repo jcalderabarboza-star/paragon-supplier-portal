@@ -13,7 +13,6 @@
 // stays EN in the page.
 export const riskEn: Record<string, string> = {
   // — Breadcrumb —
-  'risk.crumb.intelligence': 'INTELLIGENCE',
   'risk.crumb.supplyRisk': 'SUPPLY RISK',
   // — Page header —
   'risk.header.title': 'Supply Risk & Scenario Intelligence',
@@ -154,7 +153,6 @@ export const riskEn: Record<string, string> = {
 
 export const riskId: Record<string, string> = {
   // — Breadcrumb —
-  'risk.crumb.intelligence': 'INTELIJEN',
   'risk.crumb.supplyRisk': 'RISIKO PASOKAN',
   // — Page header —
   'risk.header.title': 'Intelijen Risiko Pasokan & Skenario',

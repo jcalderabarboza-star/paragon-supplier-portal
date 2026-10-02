@@ -111,7 +111,7 @@ const BuyerCommHub: React.FC = () => {
     return (id: string) => map.get(id) ?? id;
   }, [suppliersQuery.data]);
 
-  const CRUMB = [t('buyerCommHub.crumb.intelligence'), t('buyerCommHub.crumb.hub')];
+  const CRUMB = [t('buyerCommHub.crumb.hub')];
 
   if (chaseQuery.isPending) return <LoadingState breadcrumb={CRUMB} />;
   if (chaseQuery.isError)

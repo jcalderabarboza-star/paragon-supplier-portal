@@ -222,7 +222,6 @@ const BuyerOrders: React.FC = () => {
   const { t } = useTranslation();
   const { toast } = useToast();
   const ORDERS_CRUMB = [
-    t('buyerOrders.crumb.transact'),
     t('buyerOrders.crumb.purchaseOrders'),
   ];
   const [group, setGroup] = useState<GroupTab>('all');

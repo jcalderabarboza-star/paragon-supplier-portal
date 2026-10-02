@@ -760,7 +760,7 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
   const { toast } = useToast();
   const { t } = useTranslation();
   const refusalText = useRefusalText();
-  const crumb = [t('rfqs.crumb.section'), t('rfqs.crumb.page')];
+  const crumb = [t('rfqs.crumb.page')];
   const submitMutation = useQuotationSubmit();
   const [activeTab, setActiveTab] = useState<TabKey>('open');
   const quoteAvailability = useVerbAvailability('quotation:submit');
@@ -1488,7 +1488,7 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
 // the quote/award tabs stay illustrative (pilled).
 const SupplierRFQs: React.FC = () => {
   const { t } = useTranslation();
-  const crumb = [t('rfqs.crumb.section'), t('rfqs.crumb.page')];
+  const crumb = [t('rfqs.crumb.page')];
   const { identity } = useCurrentIdentity();
   const { supplierId } = identity;
   const supplierQuery = useCurrentSupplier();

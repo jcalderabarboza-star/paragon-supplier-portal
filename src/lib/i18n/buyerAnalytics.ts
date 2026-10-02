@@ -23,7 +23,6 @@
 // percentages, cycle-time hours, counts via formatters) stays EN as data.
 export const buyerAnalyticsEn: Record<string, string> = {
   // — Breadcrumb —
-  'buyerAnalytics.crumb.intelligence': 'INTELLIGENCE',
   'buyerAnalytics.crumb.analytics': 'ANALYTICS',
   // — Page header —
   'buyerAnalytics.header.title': 'Analytics & Procurement Intelligence',
@@ -88,7 +87,6 @@ export const buyerAnalyticsEn: Record<string, string> = {
 
 export const buyerAnalyticsId: Record<string, string> = {
   // — Breadcrumb —
-  'buyerAnalytics.crumb.intelligence': 'INTELIJEN',
   'buyerAnalytics.crumb.analytics': 'ANALITIK',
   // — Page header —
   'buyerAnalytics.header.title': 'Analitik & Intelijen Pengadaan',

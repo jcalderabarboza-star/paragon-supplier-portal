@@ -512,3 +512,116 @@ describe('code comments · NO PERSON CITED (direction D)', () => {
     expect(named).toEqual([]);
   });
 });
+
+// ═══════════════════════════════════════════════════════════════════════════
+// DIRECTION E · THE DOCS CORPUS — H1.
+//
+// ⚠️ **THE HANDOVER PACKAGE ARRIVED CARRYING A PERSON, AND NO DIRECTION ABOVE
+// READ `docs/`.** Four of the six designs closed on a "Source file:" footer —
+// and Design 6 on a confirmation paragraph — naming a local Windows path whose
+// user folder is the operator's personal name. Five lines; H1 replaced the
+// folder with the placeholder `<operator>`. Directions A–D reach the README,
+// the rendered chrome and code comments; this one reaches every markdown file
+// under `docs/`, which is what the engineering team taking the platform over
+// reads first.
+//
+// ── TWO HALVES, ON THE SAME REASONING AS A/B AND D ─────────────────────────
+//   · **A local user-folder path** whose folder is not a placeholder —
+//     `C:\Users\<folder>\…`, `/Users/<folder>/…`, `/home/<folder>/…`. The
+//     folder of a working machine is a person's account name; the property is
+//     structural, so no word list is needed and none could have been written
+//     before the defect existed.
+//   · **A fixture person** the tree holds (direction A's population), in any
+//     doc — minus the acquittals below, each stating what it names.
+//
+// ── REACH LIMITS, STATED ────────────────────────────────────────────────────
+//   · Markdown under `docs/` only. A person named in prose with no path and no
+//     fixture record is outside it, as it is outside A.
+//   · The path half reads three shapes. A UNC share (`\\host\users\…`) or a
+//     `%USERPROFILE%` expansion is outside it.
+// ═══════════════════════════════════════════════════════════════════════════
+
+/** A user-folder path whose folder is not a `<placeholder>`; the folder is group 1, 2 or 3. */
+const USER_FOLDER_PATH = /\b[A-Za-z]:[\\/]Users[\\/](?!<)([^\\/\s`'"*<>|]+)|\/Users\/(?!<)([^/\s`'"*<>|]+)|\/home\/(?!<)([^/\s`'"*<>|]+)/g;
+
+/** Every user folder a text names through a path. Exported so the probes fire the SHIPPED matcher. */
+export function userFoldersIn(text: string): string[] {
+  return [...new Set([...text.matchAll(USER_FOLDER_PATH)].map((m) => m[1] ?? m[2] ?? m[3]))];
+}
+
+/**
+ * Names `personNamesInTree` returns that are NOT persons, each with what it is.
+ * ⚠️ BILATERAL — an entry no doc still needs is red, so this can only shrink
+ * truthfully, and nothing here can let a real person through unseen except by
+ * being written into it, in review.
+ */
+const DOCS_NOT_A_PERSON: Readonly<Record<string, string>> = {
+  'Jakarta Night Shift':
+    'a custom ROLE display name three specs author (`customRoles.test.ts`); docs/findings.md records the batch that rendered it.',
+};
+
+/** Every markdown file under `docs/`, read from disk (an uncommitted doc is still a doc). */
+function docsMarkdown(dir = join(REPO_ROOT, 'docs'), out: SourceText[] = []): SourceText[] {
+  for (const e of readdirSync(dir)) {
+    const p = join(dir, e);
+    if (statSync(p).isDirectory()) docsMarkdown(p, out);
+    else if (/\.md$/i.test(e)) {
+      out.push({ path: p.slice(REPO_ROOT.length + 1).split('\\').join('/'), text: readFileSync(p, 'utf8') });
+    }
+  }
+  return out;
+}
+
+describe('docs · NO PERSON NAMED (direction E)', () => {
+  const DOCS = docsMarkdown();
+  const PEOPLE = personNamesInTree(attestationCorpus()).filter((n) => /^[A-Z][a-z]+(?: [A-Z][a-z]+)+$/.test(n));
+
+  it('⚠️ the population is real and reaches the package this direction was written for', () => {
+    const paths = DOCS.map((d) => d.path);
+    expect(paths.length).toBeGreaterThan(50);
+    expect(paths).toContain('docs/handover/D1_SE_HANDOVER.md');
+    expect(paths).toContain('docs/designs/DESIGN_6_FLOW_BUILDER.md');
+    expect(paths).toContain('docs/findings.md');
+    expect(PEOPLE).toContain('Budi Santoso');
+  });
+
+  it('⚠️ CONVICTS the footer the designs arrived with — the folder, by shape', () => {
+    // `PROBE-MUST-FIRE-AT-A-REAL-DEFECT-01`: Design 3's footer exactly as it was
+    // drafted, with only the personal folder swapped for a stand-in — the real
+    // folder cannot be written here without committing the defect this
+    // direction exists to keep out.
+    const drafted = '*Source file: `C:\\Users\\SomeOperatorName\\review-drafts\\DESIGN_3_STATE_MACHINE.md` (2026-09-28).*';
+    expect(userFoldersIn(drafted)).toEqual(['SomeOperatorName']);
+    expect(userFoldersIn('cwd was /home/someone/repo and /Users/someone-else/x')).toEqual(['someone', 'someone-else']);
+  });
+
+  it('⚠️ ACQUITS the placeholder that replaced it — on the merits, not by not looking', () => {
+    const committed = '*Source file: `C:\\Users\\<operator>\\review-drafts\\DESIGN_3_STATE_MACHINE.md` (2026-09-28).*';
+    expect(userFoldersIn(committed)).toEqual([]);
+    expect(DOCS.find((d) => d.path === 'docs/designs/DESIGN_3_STATE_MACHINE.md')!.text).toContain(
+      'C:\\Users\\<operator>\\review-drafts\\',
+    );
+  });
+
+  it('⚠️ no doc names a local user folder', () => {
+    const named = DOCS.flatMap((d) => userFoldersIn(d.text).map((f) => `${d.path}: ${f}`));
+    expect(
+      named,
+      'A document names a local user folder — on a working machine that is a person’s account name. ' +
+        'Write the folder as `<operator>` (or the role it stands for).',
+    ).toEqual([]);
+  });
+
+  it('⚠️ no doc names a person the tree holds', () => {
+    const named = DOCS.flatMap((d) =>
+      PEOPLE.filter((p) => !(p in DOCS_NOT_A_PERSON) && d.text.includes(p)).map((p) => `${d.path}: ${p}`),
+    );
+    expect(named).toEqual([]);
+  });
+
+  it('every acquittal is still needed, and states what it names', () => {
+    const needed = new Set(PEOPLE.filter((p) => DOCS.some((d) => d.text.includes(p))));
+    expect(Object.keys(DOCS_NOT_A_PERSON).filter((k) => !needed.has(k))).toEqual([]);
+    expect(Object.entries(DOCS_NOT_A_PERSON).filter(([, why]) => why.trim().length < 20)).toEqual([]);
+  });
+});

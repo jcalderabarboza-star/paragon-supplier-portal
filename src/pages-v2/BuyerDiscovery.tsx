@@ -232,7 +232,7 @@ const BuyerDiscovery: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { t } = useTranslation();
-  const crumb = [t('discovery.crumb.acquire'), t('discovery.crumb.discovery')];
+  const crumb = [t('discovery.crumb.discovery')];
 
   // Gate-2 readiness for the global-search tab — the ONE structural home of the
   // "awaiting <source>" text (LIVENESS-DATASOURCE-01), read, never hand-rolled.

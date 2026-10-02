@@ -185,7 +185,6 @@ const BuyerAnalytics: React.FC = () => {
   const [period, setPeriod] = useState<Period>('ytd');
 
   const ANALYTICS_CRUMB = [
-    t('buyerAnalytics.crumb.intelligence'),
     t('buyerAnalytics.crumb.analytics'),
   ];
   const PERIOD_OPTIONS: { id: Period; label: string }[] = PERIOD_IDS.map(

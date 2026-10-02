@@ -1305,7 +1305,7 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
   return (
     <AppShellV2>
       <PageHeader
-        breadcrumb={[t('contracts.crumb.acquire'), t('contracts.crumb.contracts')]}
+        breadcrumb={[t('contracts.crumb.contracts')]}
         title={t('contracts.header.title')}
         subtitle={t('contracts.header.subtitle')}
         actions={
@@ -1657,7 +1657,6 @@ const BuyerContracts: React.FC = () => {
   const obligationsQuery = useObligations();
   const suppliersQuery = useSuppliers();
   const CONTRACTS_CRUMB = [
-    t('contracts.crumb.acquire'),
     t('contracts.crumb.contracts'),
   ];
 

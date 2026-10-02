@@ -762,7 +762,7 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
   return (
     <AppShellV2>
       <PageHeader
-        breadcrumb={[t('goodsReceipt.crumb.transact'), t('goodsReceipt.crumb.gr')]}
+        breadcrumb={[t('goodsReceipt.crumb.gr')]}
         title={t('goodsReceipt.header.title')}
         subtitle={t('goodsReceipt.header.subtitle')}
         actions={
@@ -1288,7 +1288,7 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
 // non-persisting) inspection-wizard state seeded from the resolved reads.
 const BuyerGoodsReceipt: React.FC = () => {
   const { t } = useTranslation();
-  const GR_CRUMB = [t('goodsReceipt.crumb.transact'), t('goodsReceipt.crumb.gr')];
+  const GR_CRUMB = [t('goodsReceipt.crumb.gr')];
   const grQuery = useGoodsReceipts();
   const suppliersQuery = useSuppliers();
   const shipmentsQuery = useShipments();

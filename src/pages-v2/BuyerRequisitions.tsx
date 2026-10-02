@@ -224,7 +224,6 @@ const BuyerRequisitions: React.FC = () => {
     (e instanceof DataError ? e.message : fallback);
   const el = useEnumLabel();
   const REQUISITIONS_CRUMB = [
-    t('requisitions.crumb.acquire'),
     t('requisitions.crumb.requisitions'),
   ];
   const [group, setGroup] = useState<GroupTab>('all');

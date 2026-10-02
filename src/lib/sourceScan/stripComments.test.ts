@@ -440,6 +440,9 @@ describe('⚠️ THE TWO-REGEX COMMENT STRIP IS EXTINCT — derived, not listed'
         // SOURCE, where comments name routes in prose; unstripped, a route a
         // comment merely mentions would demand a nav item.
         'components/layout-v2/navModel.test.tsx',
+        // H1 — the handover figures pin derives the route count from the router
+        // SOURCE, for the reason the N1 sidebar gate above does.
+        'handoverFigures.pin.test.ts',
         'pages-v2/registrationHonesty.guard.test.ts',
         'pages-v2/solidButtonRetired.guard.test.ts',
         'pages-v2/toastHonesty.guard.test.tsx',

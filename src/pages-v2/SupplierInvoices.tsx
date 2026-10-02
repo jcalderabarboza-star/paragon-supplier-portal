@@ -182,7 +182,6 @@ const SupplierInvoices: React.FC = () => {
   // guarded its rows and shipped a live create in its header.
   const invoiceAvailability = useVerbAvailability('invoice:submit');
   const invCrumb = [
-    t('supplierInvoices.crumb.settle'),
     t('supplierInvoices.crumb.invoices'),
   ];
   const INVOICES = invoicesQuery.data?.items ?? [];

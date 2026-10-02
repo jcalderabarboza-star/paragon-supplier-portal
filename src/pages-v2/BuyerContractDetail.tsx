@@ -220,7 +220,7 @@ const ContractDetailView: React.FC<{
     [suppliers, contract.supplierId],
   );
 
-  const CRUMB = [t('contracts.crumb.acquire'), t('contracts.crumb.contracts')];
+  const CRUMB = [t('contracts.crumb.contracts')];
 
   return (
     <AppShellV2>
@@ -331,7 +331,7 @@ const BuyerContractDetail: React.FC = () => {
   const contractsQuery = useContracts();
   const obligationsQuery = useObligations();
   const suppliersQuery = useSuppliers();
-  const CRUMB = [t('contracts.crumb.acquire'), t('contracts.crumb.contracts')];
+  const CRUMB = [t('contracts.crumb.contracts')];
 
   if (contractsQuery.isPending || obligationsQuery.isPending || suppliersQuery.isPending)
     return <LoadingState breadcrumb={CRUMB} />;

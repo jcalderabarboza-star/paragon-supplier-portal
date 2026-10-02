@@ -76,7 +76,6 @@ const BuyerSuppliers: React.FC = () => {
   const [pslFilter, setPslFilter] = useState<PslFilter>('any');
 
   const SUPPLIERS_CRUMB = [
-    t('buyerSuppliers.crumb.acquire'),
     t('buyerSuppliers.crumb.directory'),
   ];
 

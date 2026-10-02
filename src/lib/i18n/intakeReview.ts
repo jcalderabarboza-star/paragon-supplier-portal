@@ -4,7 +4,6 @@
 // session-only state. Producer labels + tier/plan markers reuse planGrid.* keys.
 export const intakeReviewEn: Record<string, string> = {
   // — Page chrome —
-  'intakeReview.crumb.acquire': 'Acquire',
   'intakeReview.crumb.review': 'Intake Review',
   'intakeReview.header.title': 'Intake Review',
   'intakeReview.header.subtitle':
@@ -51,7 +50,6 @@ export const intakeReviewEn: Record<string, string> = {
 
 export const intakeReviewId: Record<string, string> = {
   // — Kerangka halaman —
-  'intakeReview.crumb.acquire': 'Pengadaan',
   'intakeReview.crumb.review': 'Tinjauan Asupan',
   'intakeReview.header.title': 'Tinjauan Asupan',
   'intakeReview.header.subtitle':

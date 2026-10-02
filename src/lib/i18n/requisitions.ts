@@ -9,7 +9,6 @@
 // Outline Agreement/VP kept as codes; priority enum literals stay EN (logic).
 export const requisitionsEn: Record<string, string> = {
   // — Breadcrumb —
-  'requisitions.crumb.acquire': 'ACQUIRE',
   'requisitions.crumb.requisitions': 'REQUISITIONS',
   // — Procurement flow diagram —
   'requisitions.flow.label': 'Procurement flow',
@@ -233,7 +232,6 @@ export const requisitionsEn: Record<string, string> = {
 
 export const requisitionsId: Record<string, string> = {
   // — Breadcrumb —
-  'requisitions.crumb.acquire': 'PENGADAAN',
   'requisitions.crumb.requisitions': 'PERMINTAAN PEMBELIAN',
   // — Procurement flow diagram —
   'requisitions.flow.label': 'Alur pengadaan',

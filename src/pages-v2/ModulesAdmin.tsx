@@ -163,7 +163,7 @@ const ModulesAdmin: React.FC = () => {
     <AppShellV2>
       <div data-testid="modules-admin" data-read-only={readOnly ?? 'editable'}>
         <PageHeader
-          breadcrumb={[t('processFlows.crumb.platform'), t('modules.board.crumb'), t('modules.admin.crumb')]}
+          breadcrumb={[t('modules.board.crumb'), t('modules.admin.crumb')]}
           title={t('modules.admin.title')}
           subtitle={t('modules.admin.subtitle')}
           actions={

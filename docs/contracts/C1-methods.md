@@ -355,7 +355,7 @@ not yet checked the behaviour.**
 
 ## Pin reach
 
-**Pinned by** `src/services/contracts/__tests__/c1MethodSurface.contract.test.ts`.
+**Pinned by** `src/services/contracts/__tests__/c1MethodSurface.contract.test.ts` and `src/handoverFigures.pin.test.ts`.
 
 **GUARDED — these assertions, and nothing else on this page:**
 
@@ -368,6 +368,9 @@ not yet checked the behaviour.**
 - C1 — the command types are documented field for field
 - C5 — the figures C5 borrows from C1 agree with C1’s derivation
 - C1 — `httpDataService` is RESERVED, and that is a claim about an IMPLEMENTATION
+- H1 · the populations are real before any figure is believed
+- H1 · the figures D1 §1 states
+- H1 · the contracts README carries the C1 figures, and C1 is pinned to the tree
 
 
 ⚠️ **THIS INSTRUMENT IS SHARED, AND THE REACH BELOW IS THE INSTRUMENT'S RATHER THAN THIS

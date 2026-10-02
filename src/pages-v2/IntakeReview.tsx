@@ -140,7 +140,7 @@ const IntakeReview: React.FC = () => {
   const accept = (line: IntakeLine) =>
     run(line.id, () => commit.mutateAsync(buildAcceptCommit(line)));
 
-  const CRUMB = [t('intakeReview.crumb.acquire'), t('intakeReview.crumb.review')];
+  const CRUMB = [t('intakeReview.crumb.review')];
 
   return (
     <AppShellV2>

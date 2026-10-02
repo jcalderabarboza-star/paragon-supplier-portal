@@ -24,7 +24,6 @@
 // fixture-derived and left canonical (i18n-defer).
 export const supplierPerformanceEn: Record<string, string> = {
   // — Breadcrumb —
-  'supplierPerformance.crumb.intelligence': 'INTELLIGENCE',
   'supplierPerformance.crumb.myPerformance': 'MY PERFORMANCE',
   // — Page header —
   'supplierPerformance.header.title': 'My Performance',
@@ -102,7 +101,6 @@ export const supplierPerformanceEn: Record<string, string> = {
 
 export const supplierPerformanceId: Record<string, string> = {
   // — Breadcrumb —
-  'supplierPerformance.crumb.intelligence': 'INTELIJEN',
   'supplierPerformance.crumb.myPerformance': 'KINERJA SAYA',
   // — Page header —
   'supplierPerformance.header.title': 'Kinerja Saya',

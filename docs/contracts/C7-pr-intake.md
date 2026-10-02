@@ -372,7 +372,13 @@ SECTION CALLS IT.** Two independent reasons, and either alone is sufficient:
 For SOMO: an emitter carrying all three values stays conforming — we simply stop STORING the third
 and derive it. The from/to pair is what the audit needs and it is what the `decision` carries.
 
-### ⚠️ C7-FIND-02 (DEFECT, OPEN) — two of the three do not survive the WRITE
+### ⚠️ C7-FIND-02 (DEFECT, CLOSED AT A2) — two of the three did not survive the WRITE
+
+> **⚠️ CORRECTED 2026-10-02 (H1, D8 §5a.1) — this heading read "C7-FIND-02 (DEFECT, OPEN) — two
+> of the three do not survive the WRITE"** while this document's own register (below, "C7-FIND-02")
+> records it **CLOSED AT A2**: the cascade writes `intakeLineId` / `periodBucket` / `decision` onto
+> the requisition and `BuyerRequisitions`' drawer renders them. The section is kept as the record of
+> the defect.
 
 This document previously asserted: *"`wasAdjusted` is **stored, not derived-and-discarded** — the
 fact of human adjustment is itself the audit signal."* **That guarantee is not delivered.**

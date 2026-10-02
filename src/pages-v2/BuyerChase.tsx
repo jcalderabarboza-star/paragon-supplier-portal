@@ -50,7 +50,7 @@ const BuyerChase: React.FC = () => {
   const suppliersQuery = useSuppliers();
   const views = query.data ?? [];
 
-  const CRUMB = [t('chase.crumb.settle'), t('chase.title')];
+  const CRUMB = [t('chase.title')];
 
   // Display join — supplierId → name (falls back to the id for a supplier with no
   // master row). A plain lookup, not a derivation.

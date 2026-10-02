@@ -16,7 +16,6 @@
 // late strings.
 export const processFlowsEn: Record<string, string> = {
   // — Page chrome —
-  'processFlows.crumb.platform': 'Platform',
   'processFlows.crumb.processFlows': 'Process Flows',
   'processFlows.header.title': 'Process Flows',
   'processFlows.header.subtitle':
@@ -147,7 +146,6 @@ export const processFlowsEn: Record<string, string> = {
 
 export const processFlowsId: Record<string, string> = {
   // — Page chrome —
-  'processFlows.crumb.platform': 'Platform',
   'processFlows.crumb.processFlows': 'Alur Proses',
   'processFlows.header.title': 'Alur Proses',
   'processFlows.header.subtitle':

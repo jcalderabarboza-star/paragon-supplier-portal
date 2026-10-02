@@ -12,7 +12,6 @@
 // mono DATA / i18n-defer.
 export const buyerInventoryEn: Record<string, string> = {
   // — Breadcrumb —
-  'buyerInventory.crumb.transact': 'TRANSACT',
   'buyerInventory.crumb.inventory': 'INVENTORY VISIBILITY',
   // — Page header —
   'buyerInventory.header.title': 'Inventory Visibility',
@@ -109,7 +108,6 @@ export const buyerInventoryEn: Record<string, string> = {
 
 export const buyerInventoryId: Record<string, string> = {
   // — Breadcrumb —
-  'buyerInventory.crumb.transact': 'TRANSAKSI',
   'buyerInventory.crumb.inventory': 'VISIBILITAS INVENTARIS',
   // — Page header —
   'buyerInventory.header.title': 'Visibilitas Inventaris',

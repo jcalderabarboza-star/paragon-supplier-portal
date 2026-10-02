@@ -1288,7 +1288,7 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
   const { t } = useTranslation();
   const refusalText = useRefusalText();
   const { toast } = useToast();
-  const crumb = [t('sdcSup.crumb.section'), t('sdcSup.crumb.page')];
+  const crumb = [t('sdcSup.crumb.page')];
   const submitMutation = useRequirementResponseSubmit();
   const acknowledgeMutation = useRequirementResponseAcknowledge();
   // PF-1b — the promotion of a saved draft into a real submission.
@@ -2610,7 +2610,7 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
 // rather than gating the whole page.
 const SupplierForecasts: React.FC = () => {
   const { t } = useTranslation();
-  const crumb = [t('sdcSup.crumb.section'), t('sdcSup.crumb.page')];
+  const crumb = [t('sdcSup.crumb.page')];
   const { identity } = useCurrentIdentity();
   const { supplierId } = identity;
   const supplierQuery = useCurrentSupplier();

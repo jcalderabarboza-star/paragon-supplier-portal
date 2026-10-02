@@ -249,7 +249,6 @@ export const resources = {
       'nav.supplier.whatsapp': 'Channel Demo',
       'nav.supplier.commHub': 'Channel Inbox',
       // — Delivery Agreement drawdown/compliance surface (read-only, SIMULATED) —
-      'delivery.crumb.settle': 'Settle',
       'delivery.crumb.title': 'Delivery Overview',
       'delivery.header.title': 'Delivery Overview',
       'delivery.header.subtitle':
@@ -468,7 +467,6 @@ export const resources = {
       'delivery.rollup.count.draft': '{{n}} to release',
       'delivery.rollup.openContract': 'Open contract to release',
       // — SDC-5d: the unified chase surface (buyer/planner) —
-      'chase.crumb.settle': 'Settle',
       'chase.title': 'Chase',
       'chase.subtitle': 'Suppliers to push — forecast responses and delivery commitments, worst first.',
       'chase.meta.summary': '{{count}} supplier(s) to chase · as of {{date}}',
@@ -761,7 +759,6 @@ export const resources = {
       'nav.supplier.whatsapp': 'Demo Kanal',
       'nav.supplier.commHub': 'Kotak Masuk Kanal',
       // — Delivery Agreement drawdown/compliance surface (read-only, SIMULATED) —
-      'delivery.crumb.settle': 'Penyelesaian',
       'delivery.crumb.title': 'Ikhtisar Pengiriman',
       'delivery.header.title': 'Ikhtisar Pengiriman',
       'delivery.header.subtitle':
@@ -975,7 +972,6 @@ export const resources = {
       'delivery.rollup.count.draft': '{{n}} untuk dirilis',
       'delivery.rollup.openContract': 'Buka kontrak untuk merilis',
       // — SDC-5d: the unified chase surface (buyer/planner) —
-      'chase.crumb.settle': 'Penyelesaian',
       'chase.title': 'Tindak Lanjut',
       'chase.subtitle': 'Pemasok yang perlu didorong — respons prakiraan dan komitmen pengiriman, terparah dulu.',
       'chase.meta.summary': '{{count}} pemasok untuk ditindaklanjuti · per {{date}}',

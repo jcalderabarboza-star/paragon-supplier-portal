@@ -15,7 +15,6 @@
 //    technical descriptions stay EN as data / i18n-defer.
 export const supplierMyStorefrontEn: Record<string, string> = {
   // — Breadcrumb —
-  'supplierMyStorefront.crumb.acquire': 'ACQUIRE',
   'supplierMyStorefront.crumb.myStorefront': 'MY STOREFRONT',
   // — Page header —
   'supplierMyStorefront.header.title': 'My Catalog',
@@ -147,7 +146,6 @@ export const supplierMyStorefrontEn: Record<string, string> = {
 
 export const supplierMyStorefrontId: Record<string, string> = {
   // — Breadcrumb —
-  'supplierMyStorefront.crumb.acquire': 'PENGADAAN',
   'supplierMyStorefront.crumb.myStorefront': 'ETALASE SAYA',
   // — Page header —
   'supplierMyStorefront.header.title': 'Katalog Saya',

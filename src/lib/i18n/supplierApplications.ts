@@ -8,7 +8,6 @@
 // ID vocab: application → aplikasi (the register wizard's own word, kept so the
 // two surfaces name the same object); applicant → pemohon; review → tinjau.
 export const supplierApplicationsEn: Record<string, string> = {
-  'applications.crumb.acquire': 'ACQUIRE',
   'applications.crumb.applications': 'Supplier Applications',
   'applications.title': 'Supplier Applications',
   'applications.subtitle':
@@ -156,7 +155,6 @@ export const supplierApplicationsEn: Record<string, string> = {
 };
 
 export const supplierApplicationsId: Record<string, string> = {
-  'applications.crumb.acquire': 'AKUISISI',
   'applications.crumb.applications': 'Aplikasi Pemasok',
   'applications.title': 'Aplikasi Pemasok',
   'applications.subtitle':

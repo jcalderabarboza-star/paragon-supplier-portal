@@ -178,7 +178,7 @@ const BuyerMaterialRequests: React.FC = () => {
   // ⚠️ TRANSLATED, AND BUILT INSIDE THE COMPONENT — the house convention, and
   // the one browser QA caught on the applications page when it was a
   // module-level English literal.
-  const CRUMB = [t('materialRequests.crumb.source'), t('materialRequests.crumb.requests')];
+  const CRUMB = [t('materialRequests.crumb.requests')];
 
   const { data, isLoading, isError, error } = useMaterialRequests();
   const requests = useMemo(() => data?.items ?? [], [data]);

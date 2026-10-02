@@ -8,7 +8,6 @@
 // communication-history previews (buildComms) are mock data (i18n-defer).
 export const buyerOrdersEn: Record<string, string> = {
   // — Breadcrumb —
-  'buyerOrders.crumb.transact': 'TRANSACT',
   'buyerOrders.crumb.purchaseOrders': 'PURCHASE ORDERS',
   // — Page header —
   'buyerOrders.header.title': 'Purchase Orders',
@@ -109,7 +108,6 @@ export const buyerOrdersEn: Record<string, string> = {
 
 export const buyerOrdersId: Record<string, string> = {
   // — Breadcrumb —
-  'buyerOrders.crumb.transact': 'TRANSAKSI',
   'buyerOrders.crumb.purchaseOrders': 'PESANAN PEMBELIAN',
   // — Page header —
   'buyerOrders.header.title': 'Pesanan Pembelian',

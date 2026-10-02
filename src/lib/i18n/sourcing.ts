@@ -9,7 +9,6 @@
 // by StatusPill via statusLabel.ts and are NOT re-declared here.
 export const sourcingEn: Record<string, string> = {
   // — Breadcrumb —
-  'sourcing.crumb.acquire': 'ACQUIRE',
   'sourcing.crumb.sourcing': 'SOURCING & RFQ',
   // — Page header —
   'sourcing.header.title': 'Sourcing & RFQ',
@@ -427,7 +426,6 @@ export const sourcingEn: Record<string, string> = {
 
 export const sourcingId: Record<string, string> = {
   // — Breadcrumb —
-  'sourcing.crumb.acquire': 'PENGADAAN',
   'sourcing.crumb.sourcing': 'SUMBER & RFQ',
   // — Page header —
   'sourcing.header.title': 'Sumber & RFQ',

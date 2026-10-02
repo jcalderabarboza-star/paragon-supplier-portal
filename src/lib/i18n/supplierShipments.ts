@@ -21,7 +21,6 @@
 // values, phone number) stay EN with `// i18n-defer` markers at the call sites.
 export const supplierShipmentsEn: Record<string, string> = {
   // — Breadcrumb —
-  'supplierShipments.crumb.transact': 'TRANSACT',
   'supplierShipments.crumb.shipments': 'SHIPMENTS & ASN',
   // — Page header —
   'supplierShipments.header.title': 'Shipments & ASN',
@@ -177,7 +176,6 @@ export const supplierShipmentsEn: Record<string, string> = {
 
 export const supplierShipmentsId: Record<string, string> = {
   // — Breadcrumb —
-  'supplierShipments.crumb.transact': 'TRANSAKSI',
   'supplierShipments.crumb.shipments': 'PENGIRIMAN & ASN',
   // — Page header —
   'supplierShipments.header.title': 'Pengiriman & ASN',
