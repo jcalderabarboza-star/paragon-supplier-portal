@@ -69,6 +69,7 @@ import {
   generatedDemand,
   generatedSuggested,
   isGeneratedMaterial,
+  planningGrainOf,
   suppliersFor,
 } from '../../planning/somoFixture';
 
@@ -250,6 +251,10 @@ export function derivePlanningFacts(q: PlanningFactsQuery): PlanningFactsOutcome
   const seedRef = `somo-fixture@${grain}`;
   for (const code of PLANNING_MATERIALS) {
     if (!isGeneratedMaterial(code) || !want(code)) continue;
+    // PLN-2 · a material is planned at ONE grain (`PLANNING_GRAIN_OF_TYPE`).
+    // Off it the generator emits no fact at all — not a row of dashes, which
+    // would read as "SOMO gave no figure" for a material it never plans here.
+    if (planningGrainOf(code) !== grain) continue;
     for (const b of parsed.buckets) {
       if (!fixtureHorizon.has(b.id)) continue;
       push('demand', code, null, b.id, generatedDemand(code, b.id), seedRef, 'SIMULATED');

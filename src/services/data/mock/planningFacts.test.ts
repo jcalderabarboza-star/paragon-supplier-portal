@@ -70,7 +70,14 @@ describe('B1 · the generated SOMO fixture — named members, named values', () 
   it('the seeded values are PINNED — a replaced corpus with the same ids goes red here', () => {
     expect(generatedDemand('SIM-RM-0001', '2026-08')).toBe(10750);
     expect(generatedSuggested('SIM-RM-0001', '2026-08')).toBe(11700);
-    expect(generatedDemand('SIM-PM-0002', '2026-08')).toBe(175000);
+    // ⚠️ PLN-2 · ONE MATERIAL, ONE GRAIN. This pin read `175000` for a PACKAGING
+    // material in a MONTH — the generator emitted every material at both grains,
+    // which is how SIM-PM-0068 was committed in 2026-11 and in a week of it
+    // (R-PLN P0 #2). A packaging material is planned weekly only: its weekly
+    // figure is the pin now, and the monthly one is pinned ABSENT.
+    expect(generatedDemand('SIM-PM-0002', '2026-W36')).toBe(178000);
+    expect(generatedDemand('SIM-PM-0002', '2026-08')).toBeNull();
+    expect(generatedDemand('SIM-RM-0001', '2026-W36')).toBeNull();
     expect(suppliersFor('SIM-RM-0001')).toEqual(['sup-sim-034']);
     expect(suppliersFor('SIM-RM-0005')).toHaveLength(2);
     const [a, b] = suppliersFor('SIM-RM-0005');
@@ -99,13 +106,26 @@ describe('B1 · the generated SOMO fixture — named members, named values', () 
     expect(generatedAllocation('SIM-RM-0019', 'sup-sim-037', m[0])).toBe(900);
     expect(generatedConfirmed('SIM-RM-0019', 'sup-sim-037', m[0], 0)).toBe(630);
     expect(generatedConfirmed('SIM-RM-0019', 'sup-sim-037', m[4], 4)).toBe(6470);
-    // awaiting: the near term answered in full, the rest not yet — null, never 0
-    expect([0, 1, 2, 3, 4].map((i) => generatedConfirmed('SIM-PM-0004', 'sup-sim-027', m[i], i))).toEqual([2000, 155000, 85000, null, null]);
+    // awaiting: the near term answered in full, the rest not yet — null, never 0.
+    // PLN-2 · SIM-PM-0004 is packaging, so it is pinned over its WEEKS (it read
+    // `m[i]` and pinned a monthly answer the generator no longer emits).
+    const w = somoHorizon('week');
+    expect([0, 1, 2, 3, 4].map((i) => generatedConfirmed('SIM-PM-0004', 'sup-sim-027', w[i], i))).toEqual([23500, 60500, 156500, null, null]);
+    expect(generatedConfirmed('SIM-PM-0004', 'sup-sim-027', m[0], 0)).toBeNull();
   });
 
   it('"no figure" is null, never 0 — pinned on a named gap', () => {
-    expect(generatedDemand('SIM-PM-0006', '2026-08')).toBeNull();
-    expect(generatedSuggested('SIM-PM-0006', '2026-08')).toBeNull();
+    // ⚠️ PLN-2 · the gap moved INTO the material's own grain. `SIM-PM-0006 @
+    // 2026-08` is null now because packaging is not planned monthly at all — a
+    // pin that holds for a different reason than the one it names, so it would
+    // have kept passing with the gap rule deleted. A weekly gap of a packaging
+    // material and a monthly gap of a raw one are the named gaps, each beside a
+    // neighbouring bucket that DOES carry a figure.
+    expect(generatedDemand('SIM-PM-0006', '2026-W39')).toBeNull();
+    expect(generatedSuggested('SIM-PM-0006', '2026-W39')).toBeNull();
+    expect(generatedDemand('SIM-PM-0006', '2026-W38')).not.toBeNull();
+    expect(generatedDemand('SIM-RM-0003', '2026-11')).toBeNull();
+    expect(generatedDemand('SIM-RM-0003', '2026-10')).not.toBeNull();
   });
 
   it('the fixture horizons are 12 months and 16 weeks from the SDC present, named at both ends', () => {
@@ -143,9 +163,13 @@ describe('B1 · facts DERIVED from the stores that already exist', () => {
   });
 
   it('every fact carries the planning master\'s unit — never a payload\'s', async () => {
-    const fs = await facts(BUYER, somoHorizon('month'), ['demand'], ['RM-EMUL-3310', 'SIM-PM-0002']);
+    const fs = await facts(BUYER, somoHorizon('month'), ['demand'], ['RM-EMUL-3310', 'SIM-RM-0001']);
     expect(fs.find((f) => f.materialCode === 'RM-EMUL-3310')?.uom).toBe(MATERIAL_MASTER['RM-EMUL-3310'].canonicalUom);
-    expect(fs.find((f) => f.materialCode === 'SIM-PM-0002')?.uom).toBe('PCS');
+    expect(fs.find((f) => f.materialCode === 'SIM-RM-0001')?.uom).toBe('KG');
+    // PLN-2 · the PCS half moved to the packaging material's own grain (it was
+    // read off a monthly SIM-PM-0002 fact the generator no longer emits).
+    const weekly = await facts(BUYER, somoHorizon('week'), ['demand'], ['SIM-PM-0002']);
+    expect(weekly.find((f) => f.materialCode === 'SIM-PM-0002')?.uom).toBe('PCS');
   });
 
   it('SPEC measures produce NO fact — there is no number to render', async () => {

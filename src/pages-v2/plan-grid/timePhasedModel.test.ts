@@ -11,6 +11,7 @@ import { describe, it, expect } from 'vitest';
 
 import {
   applyPlanView,
+  blocksOfViewType,
   buildPlanBlocks,
   flattenPlanRows,
   isPlanException,
@@ -24,7 +25,7 @@ import { visibleMeasures } from './visibleMeasures';
 import type { MeasureId } from '../../services/planning/measures';
 import { MockPlanningService } from '../../services/data/mock/MockPlanningService';
 import { somoHorizon } from '../../services/planning/facts';
-import { VIEWS } from '../../services/planning/views';
+import { VIEWS, viewGrainAndHorizon } from '../../services/planning/views';
 import { PERSONA_SYSTEM_ROLES } from '../../services/transitions/businessRoles';
 
 const H = ['2026-08', '2026-09', '2026-10'];
@@ -222,10 +223,15 @@ describe('B2 · the model over the REAL seam and the generated corpus', () => {
       { personaType: 'buyer', supplierId: null, businessRoles: PERSONA_SYSTEM_ROLES.buyer },
       { horizon, measures: view.measuresShown },
     );
-    const real = buildPlanBlocks(page.items, horizon, view.measuresShown);
+    // ⚠️ PLN-2 · the raw-materials view lists RAW MATERIALS. This spec pinned
+    // `SIM-PM-1158` (packaging) as PRESENT in the monthly view — the two-grain
+    // defect, asserted. It now pins the packaging material ABSENT and every
+    // listed block ROH, through the same view-type step the grid runs.
+    const real = blocksOfViewType(buildPlanBlocks(page.items, horizon, view.measuresShown), viewGrainAndHorizon(view, 'month').materialType);
     const byCode = new Map(real.map((b) => [b.materialCode, b]));
     expect(byCode.get('SIM-RM-0001')?.materialType).toBe('ROH');
-    expect(byCode.get('SIM-PM-1158')?.materialType).toBe('VERP');
+    expect(byCode.has('SIM-PM-1158')).toBe(false);
+    expect(real.every((b) => b.materialType === 'ROH')).toBe(true);
     expect(byCode.get('RM-EMUL-3310')?.agg.demand).toBe(9500);
     for (const r of flattenPlanRows(real)) {
       for (const v of Object.values(r.cells)) expect(v === null || typeof v === 'number').toBe(true);
@@ -236,10 +242,13 @@ describe('B2 · the model over the REAL seam and the generated corpus', () => {
   // exceptions and "Exceptions only" narrowed nothing. The share is now pinned
   // as a BAND over the real seam, and — because a band is satisfied by the
   // wrong members — by NAMED members on both sides of the rule.
+  // ⚠️ PLN-2 · the named members are now each view's OWN type. This pinned
+  // SIM-PM-0004 (packaging) and SIM-RM-0019 (raw) in BOTH views — true only
+  // while every material was planned at both grains.
   it.each([
-    ['rm-plan', 'month'],
-    ['pm-plan', 'week'],
-  ] as const)('%s: exceptions are a realistic minority (10–15%%), named on both sides', async (viewId, grain) => {
+    ['rm-plan', 'month', { short: 'SIM-RM-0019', awaiting: 'SIM-RM-0067', covered: 'SIM-RM-0001' }],
+    ['pm-plan', 'week', { short: 'SIM-PM-0034', awaiting: 'SIM-PM-0004', covered: 'SIM-PM-0002' }],
+  ] as const)('%s: exceptions are a realistic minority (10–15%%), named on both sides', async (viewId, grain, named) => {
     const view = VIEWS.find((v) => v.viewId === viewId)!;
     const horizon = somoHorizon(grain).slice(0, view.horizonLength);
     const measures = visibleMeasures(view.measuresShown);
@@ -247,14 +256,14 @@ describe('B2 · the model over the REAL seam and the generated corpus', () => {
       { personaType: 'buyer', supplierId: null, businessRoles: PERSONA_SYSTEM_ROLES.buyer },
       { horizon, measures },
     );
-    const real = buildPlanBlocks(page.items, horizon, measures);
+    const real = blocksOfViewType(buildPlanBlocks(page.items, horizon, measures), viewGrainAndHorizon(view, grain).materialType);
     const byCode = new Map(real.map((b) => [b.materialCode, b]));
     const share = real.filter((b) => isPlanException(b.exceptions)).length / real.length;
     expect(share).toBeGreaterThanOrEqual(0.1);
     expect(share).toBeLessThanOrEqual(0.15);
     // named: one short, one awaiting, one covered
-    expect(byCode.get('SIM-RM-0019')?.exceptions).toMatchObject({ shortfall: true, awaiting: false });
-    expect(byCode.get('SIM-PM-0004')?.exceptions).toMatchObject({ shortfall: false, awaiting: true });
-    expect(isPlanException(byCode.get('SIM-RM-0001')!.exceptions)).toBe(false);
+    expect(byCode.get(named.short)?.exceptions).toMatchObject({ shortfall: true, awaiting: false });
+    expect(byCode.get(named.awaiting)?.exceptions).toMatchObject({ shortfall: false, awaiting: true });
+    expect(isPlanException(byCode.get(named.covered)!.exceptions)).toBe(false);
   });
 });

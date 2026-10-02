@@ -11,7 +11,9 @@
 
 import type { PrIntakeLine } from '../types';
 import { PR_INTAKE_LINES } from './fixtures/prIntake';
-import { generatedIntakeLine } from '../../planning/somoIntake';
+import { crossGrainCommitment, generatedIntakeLine, parseSomoIntakeLineId } from '../../planning/somoIntake';
+import { bindPolicyHook, POLICY_HOOKS } from '../../transitions';
+import { intakeLineStore } from './stores/intakeLineStore';
 
 /** The producer's line for an id, from either producer, or null. */
 export function intakeLineById(id: string): PrIntakeLine | null {
@@ -20,3 +22,29 @@ export function intakeLineById(id: string): PrIntakeLine | null {
 
 /** Did a producer emit this line? The store's membership predicate. */
 export const isKnownIntakeLine = (id: string): boolean => intakeLineById(id) !== null;
+
+/**
+ * ⚠️ PLN-2 · `INTAKE_ONE_GRAIN` — bound HERE, beside the triage store it reads,
+ * because the question is about OTHER lines' acts and only the mock layer holds
+ * them (the B4a publication hooks' precedent, `publicationTarget.ts`). The rule
+ * itself is `crossGrainCommitment`, which reads line ids only.
+ *
+ * The refusal names the material, both periods and the committed line, so a
+ * planner is told WHICH commitment already speaks for this requirement.
+ */
+bindPolicyHook(POLICY_HOOKS.INTAKE_ONE_GRAIN, ({ entityId }) => {
+  const committed = intakeLineStore
+    .all()
+    .filter((r) => r.state === 'Committed')
+    .map((r) => r.lineId);
+  const clash = crossGrainCommitment(entityId, committed);
+  if (clash === null) return { ok: true };
+  const self = parseSomoIntakeLineId(entityId)!;
+  const other = parseSomoIntakeLineId(clash)!;
+  return {
+    ok: false,
+    reason:
+      `INTAKE_ONE_GRAIN: ${self.materialCode} ${self.bucket} overlaps ${other.bucket}, already committed ` +
+      `on intake line '${clash}' — one material and period commits once, at one grain`,
+  };
+});

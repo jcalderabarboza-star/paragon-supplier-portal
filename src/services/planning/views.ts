@@ -10,6 +10,8 @@
 
 import { DEFAULT_HORIZON_BUCKETS, type BucketGrain } from './bucket';
 import type { MeasureId } from './measures';
+import type { MaterialType } from '../sdc';
+import { PLANNING_GRAIN_OF_TYPE, planningTypeOfGrain } from './somoFixture';
 
 export type ViewId = 'rm-plan' | 'pm-plan' | 'exceptions' | 'intake-review' | 'consolidation';
 
@@ -24,6 +26,12 @@ export interface ViewSpec {
   /** Buckets in the horizon; 0 when the view has no bucket axis. */
   readonly horizonLength: number;
   readonly rowKind: 'material' | 'material+supplier';
+  /**
+   * PLN-2 · the material type the view lists. A plan view lists ONE type — the
+   * type planned at its grain (`PLANNING_GRAIN_OF_TYPE`); `current` follows the
+   * grain the planner is in, as the grain does; `any` is a view with no plan grain.
+   */
+  readonly materialType: MaterialType | 'current' | 'any';
   readonly measuresShown: readonly MeasureId[];
   readonly columnsShown: readonly string[];
   readonly defaultGroupBy: readonly string[];
@@ -71,6 +79,7 @@ export const VIEWS: readonly ViewSpec[] = Object.freeze([
   v({
     viewId: 'rm-plan',
     grain: 'month',
+    materialType: 'ROH',
     horizonLength: DEFAULT_HORIZON_BUCKETS.month,
     rowKind: 'material+supplier',
     measuresShown: PLAN_MEASURES,
@@ -81,6 +90,7 @@ export const VIEWS: readonly ViewSpec[] = Object.freeze([
   v({
     viewId: 'pm-plan',
     grain: 'week',
+    materialType: 'VERP',
     horizonLength: DEFAULT_HORIZON_BUCKETS.week,
     rowKind: 'material+supplier',
     measuresShown: PLAN_MEASURES,
@@ -91,6 +101,7 @@ export const VIEWS: readonly ViewSpec[] = Object.freeze([
   v({
     viewId: 'exceptions',
     grain: 'current',
+    materialType: 'current',
     horizonLength: DEFAULT_HORIZON_BUCKETS.month,
     rowKind: 'material+supplier',
     // ⚠️ PLN-1 · `allocation` IS HERE BECAUSE THE EXCEPTION RULE READS IT. An
@@ -108,6 +119,7 @@ export const VIEWS: readonly ViewSpec[] = Object.freeze([
   v({
     viewId: 'intake-review',
     grain: 'none',
+    materialType: 'any',
     horizonLength: 0,
     rowKind: 'material',
     measuresShown: ['suggestedQty', 'acceptedQty'],
@@ -119,6 +131,7 @@ export const VIEWS: readonly ViewSpec[] = Object.freeze([
   v({
     viewId: 'consolidation',
     grain: 'month',
+    materialType: 'any',
     horizonLength: 6,
     rowKind: 'material+supplier',
     measuresShown: ['allocation', 'confirmed', 'confirmedDeficit'],
@@ -138,8 +151,21 @@ export const VIEWS: readonly ViewSpec[] = Object.freeze([
 export function viewGrainAndHorizon(
   view: ViewSpec,
   current: BucketGrain,
-): { readonly grain: BucketGrain; readonly horizonLength: number } {
-  if (view.grain === 'current') return { grain: current, horizonLength: DEFAULT_HORIZON_BUCKETS[current] };
-  const grain: BucketGrain = view.grain === 'week' ? 'week' : 'month';
-  return { grain, horizonLength: view.horizonLength };
+): { readonly grain: BucketGrain; readonly horizonLength: number; readonly materialType: MaterialType | null } {
+  const grain: BucketGrain = view.grain === 'current' ? current : view.grain === 'week' ? 'week' : 'month';
+  const horizonLength = view.grain === 'current' ? DEFAULT_HORIZON_BUCKETS[current] : view.horizonLength;
+  // PLN-2 · a `current` view lists the type planned at the grain it follows.
+  const materialType =
+    view.materialType === 'any' ? null : view.materialType === 'current' ? planningTypeOfGrain(grain) : view.materialType;
+  return { grain, horizonLength, materialType };
 }
+
+/**
+ * PLN-2 · does a view's declared type agree with the lane table? A plan view
+ * listing raw materials at a weekly grain would be the two-grain defect again,
+ * entered through the registry instead of the generator.
+ */
+export const viewTypeAgreesWithGrain = (view: ViewSpec): boolean =>
+  view.materialType === 'any' ||
+  view.materialType === 'current' ||
+  (view.grain !== 'current' && view.grain !== 'none' && PLANNING_GRAIN_OF_TYPE[view.materialType] === view.grain);

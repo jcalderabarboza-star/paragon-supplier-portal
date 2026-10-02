@@ -42,7 +42,6 @@ import Data from '../../components/ui-v2/Data';
 import ModelMarker from '../../components/ui-v2/ModelMarker';
 import LivenessPill from '../../components/ui-v2/LivenessPill';
 import { formatNumber } from '../../lib/format';
-import { mockSuppliers } from '../../data/mockSuppliers';
 import { usePlanningFacts } from '../../services/query/planningHooks';
 import { useConsolidationRows, usePublicationWorkspace } from '../../services/query/sdcBuyerHooks';
 import { totalKey } from '../../services/sdc';
@@ -51,6 +50,7 @@ import type { BucketGrain } from '../../services/planning/bucket';
 import { COLUMNS, bucketColumns, bucketColumnId } from '../../services/planning/columns';
 import { measureOf, type MeasureId } from '../../services/planning/measures';
 import { somoHorizon } from '../../services/planning/facts';
+import { planningSupplierName } from '../../services/planning/somoFixture';
 import { visibleMeasures } from './visibleMeasures';
 import { usePlanDraft } from './PlanDraftProvider';
 import PlannedChangesPanel, { cellRefusalText } from './PlannedChangesPanel';
@@ -60,6 +60,7 @@ import {
   DEFAULT_PLAN_FILTER,
   DEFAULT_PLAN_SORT,
   applyPlanView,
+  blocksOfViewType,
   buildPlanBlocks,
   flattenPlanRows,
   isEditableCell,
@@ -74,9 +75,12 @@ import {
 } from './planGridModel';
 
 const ROW_H = 30;
+// PLN-2 · fits the longest planning-master supplier name on one line (measured in the browser).
+const GUTTER_W = 420;
 const GRID_H = 560;
 
-const supplierLabel = (id: string): string => mockSuppliers.find((s) => s.id === id)?.name ?? id;
+// PLN-2 · the supplier's NAME, from the planning supplier master — never its id.
+const supplierLabel = planningSupplierName;
 
 /**
  * ONE bucket cell. Exported so the null rule and the marker rule are testable
@@ -238,6 +242,41 @@ const EditableBucketCell: React.FC<{
   );
 };
 
+/**
+ * The row's key-column label — exported so it is tested directly (the
+ * virtualised body lays out no rows under jsdom; `PlanBucketCell`'s precedent).
+ */
+export const PlanRowLabel: React.FC<{ row: PlanRow }> = ({ row }) => {
+  const { t } = useTranslation();
+  return (
+    <div className="flex w-full min-w-0 items-center gap-2 px-2 text-xs">
+      <Data className={`w-28 shrink-0 ${row.blockHead ? 'font-semibold' : 'text-text-tertiary'}`}>
+        {row.materialCode}
+      </Data>
+      <span className="w-10 shrink-0 text-text-tertiary">{row.uom}</span>
+      {row.supplierId ? (
+        <span
+          className="flex min-w-0 flex-col leading-[13px] text-text-secondary"
+          data-testid="tp-supplier-row-label"
+          title={t('planGrid.tp.supplierRow', {
+            measure: t(measureOf(row.measureId).labelKey),
+            supplier: supplierLabel(row.supplierId),
+          })}
+        >
+          <span className="text-[11px] text-text-tertiary">{t(measureOf(row.measureId).labelKey)}</span>
+          <span className="whitespace-nowrap" data-testid="tp-supplier-name">
+            {supplierLabel(row.supplierId)}
+          </span>
+        </span>
+      ) : (
+        <span className="min-w-0 truncate text-text-secondary" title={row.materialLabel}>
+          {`${t(measureOf(row.measureId).labelKey)} — ${row.materialLabel}`}
+        </span>
+      )}
+    </div>
+  );
+};
+
 const TimePhasedGrid: React.FC<{
   viewId: Extract<ViewId, 'rm-plan' | 'pm-plan' | 'exceptions'>;
   /** PLN-1 · the grain of the plan tab the planner was last in — a `current`-grain view follows it. */
@@ -245,7 +284,7 @@ const TimePhasedGrid: React.FC<{
 }> = ({ viewId, currentGrain = 'month' }) => {
   const { t } = useTranslation();
   const view = VIEWS.find((v) => v.viewId === viewId)!;
-  const { grain, horizonLength } = viewGrainAndHorizon(view, currentGrain);
+  const { grain, horizonLength, materialType } = viewGrainAndHorizon(view, currentGrain);
   const horizon = useMemo(() => somoHorizon(grain).slice(0, horizonLength), [grain, horizonLength]);
   const measures = useMemo(() => visibleMeasures(view.measuresShown), [view.measuresShown]);
 
@@ -298,9 +337,17 @@ const TimePhasedGrid: React.FC<{
     [consolidation.data],
   );
 
+  // ⚠️ PLN-2 · THE VIEW DECIDES THE MATERIAL TYPE, NOT THE PLANNER. Raw
+  // materials are planned monthly and packaging weekly (`PLANNING_GRAIN_OF_TYPE`),
+  // so each plan view lists exactly one type; a material reaching a view of the
+  // other grain through a dated source (an open PO, an incoming shipment) is not
+  // listed there. A "Material type" select used to offer all types in both
+  // views, which is how one packaging requirement was planned in a month AND in a
+  // week of it.
   const blocks = useMemo(
-    () => buildPlanBlocks(factsQuery.data?.items ?? [], horizon, measures, staleKeys),
-    [factsQuery.data, horizon, measures, staleKeys],
+    () =>
+      blocksOfViewType(buildPlanBlocks(factsQuery.data?.items ?? [], horizon, measures, staleKeys), materialType),
+    [factsQuery.data, horizon, measures, staleKeys, materialType],
   );
   const visible = useMemo(() => applyPlanView(blocks, filter, sort), [blocks, filter, sort]);
   const rows = useMemo(() => flattenPlanRows(visible) as PlanRow[], [visible]);
@@ -424,26 +471,18 @@ const TimePhasedGrid: React.FC<{
       // `basis` and defaults it to 40 px (useColumns.js), so a `minWidth` alone
       // rendered a 40-px gutter whose text ran over the buckets — found in
       // browser QA, invisible to jsdom.
-      basis: 360,
-      minWidth: 360,
+      //
+      // ⚠️ PLN-2 · A SUPPLIER ROW STATES ITS SUPPLIER IN FULL. The label was one
+      // `truncate`d line, so "Allocation · Sample Personal Care Emulsifiers GmbH"
+      // ended in an ellipsis and the supplier — the one word that tells two
+      // allocation rows apart — was the part cut off. The measure and the name
+      // now sit on two lines of their own, and the gutter is wide enough for the
+      // longest name the planning supplier master holds on one line.
+      basis: GUTTER_W,
+      minWidth: GUTTER_W,
       grow: 0,
       shrink: 0,
-      component: ({ rowData }: { rowData: PlanRow }) => (
-        <div className="flex w-full min-w-0 items-center gap-2 px-2 text-xs">
-          <Data className={`w-28 shrink-0 ${rowData.blockHead ? 'font-semibold' : 'text-text-tertiary'}`}>
-            {rowData.materialCode}
-          </Data>
-          <span className="w-10 shrink-0 text-text-tertiary">{rowData.uom}</span>
-          <span className="min-w-0 truncate text-text-secondary" title={rowData.materialLabel}>
-            {rowData.supplierId
-              ? t('planGrid.tp.supplierRow', {
-                  measure: t(measureOf(rowData.measureId).labelKey),
-                  supplier: supplierLabel(rowData.supplierId),
-                })
-              : `${t(measureOf(rowData.measureId).labelKey)} — ${rowData.materialLabel}`}
-          </span>
-        </div>
-      ),
+      component: ({ rowData }: { rowData: PlanRow }) => <PlanRowLabel row={rowData} />,
     }),
     [t],
   );
@@ -507,19 +546,20 @@ const TimePhasedGrid: React.FC<{
       )}
 
       <div className="mb-3 flex flex-wrap items-end gap-3 text-sm">
-        <label className="flex flex-col gap-1">
-          <span className="text-label uppercase text-text-tertiary">{t('planGrid.tp.filter.type')}</span>
-          <select
-            data-testid="tp-filter-type"
-            className="rounded-md border border-border-input bg-bg-surface px-2 py-1.5"
-            value={filter.materialType}
-            onChange={(e) => setFilter({ ...filter, materialType: e.target.value as PlanFilter['materialType'] })}
-          >
-            <option value="all">{t('planGrid.tp.filter.all')}</option>
-            <option value="ROH">{t('planGrid.tp.filter.rm')}</option>
-            <option value="VERP">{t('planGrid.tp.filter.pm')}</option>
-          </select>
-        </label>
+        {materialType && (
+          <div className="flex flex-col gap-1">
+            <span className="text-label uppercase text-text-tertiary">{t('planGrid.tp.filter.type')}</span>
+            <span
+              data-testid="tp-view-type"
+              data-material-type={materialType}
+              className="rounded-md border border-border-subtle bg-bg-subtle px-2 py-1.5 text-text-secondary"
+            >
+              {t(materialType === 'ROH' ? 'planGrid.tp.filter.rm' : 'planGrid.tp.filter.pm')}
+              {' · '}
+              {t(grain === 'month' ? 'planGrid.tp.typeMonthly' : 'planGrid.tp.typeWeekly')}
+            </span>
+          </div>
+        )}
         <label className="flex min-w-[16rem] flex-col gap-1">
           <span className="text-label uppercase text-text-tertiary">{t('planGrid.tp.search')}</span>
           <input

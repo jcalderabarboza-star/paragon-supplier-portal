@@ -80,3 +80,39 @@ export function generatedIntakeLine(id: string): PrIntakeLine | null {
     source: 'SOMO',
   });
 }
+
+/**
+ * ⚠️ PLN-2 · ONE MATERIAL × PERIOD COMMITS AT MOST ONCE, ACROSS GRAINS.
+ *
+ * The committed line, if any, that already speaks for the material and period a
+ * line names at the OTHER grain — a week inside a month committed, or a month
+ * holding a committed week. Same-grain is not this rule's: two lines at one
+ * grain never overlap, and a second commit of the SAME line is refused by the
+ * flow's legality and the cascade's replay key.
+ *
+ * Measured at R-PLN: SIM-PM-0068 committed in 2026-11 and in a week of it became
+ * two requisitions for one requirement. The generator now plans a material at
+ * one grain (`PLANNING_GRAIN_OF_TYPE`), so that pair cannot be emitted; this is
+ * what stands behind a producer that ever emits both — F1's real SOMO — and it
+ * reads only line ids, so it cannot be satisfied by a payload.
+ *
+ * ⚠️ IT SEES GENERATED LINES ONLY. An authored C7 line (`pil-grid-001`) carries
+ * a display label, not a material code (`facts.ts` says why a label join is a
+ * guess), so it names no material this rule could compare.
+ */
+export function crossGrainCommitment(lineId: string, committedLineIds: Iterable<string>): string | null {
+  const self = parseSomoIntakeLineId(lineId);
+  if (!self) return null;
+  const mine = parseBucket(self.bucket);
+  if (!mine.ok) return null;
+  for (const otherId of committedLineIds) {
+    if (otherId === lineId) continue;
+    const other = parseSomoIntakeLineId(otherId);
+    if (!other || other.materialCode !== self.materialCode) continue;
+    const theirs = parseBucket(other.bucket);
+    if (!theirs.ok || theirs.bucket.grain === mine.bucket.grain) continue;
+    // Half-open intervals [start, end): a week ending on the 1st does not overlap that month.
+    if (mine.bucket.startUtc < theirs.bucket.endUtc && theirs.bucket.startUtc < mine.bucket.endUtc) return otherId;
+  }
+  return null;
+}

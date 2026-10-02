@@ -191,6 +191,8 @@ export const intakeLineFlow: FlowDefinition = {
         POLICY_HOOKS.INTAKE_QTY_FLOOR,
         POLICY_HOOKS.INTAKE_QTY_AGREES,
         POLICY_HOOKS.INTAKE_OVERRIDE_REASONED,
+        // PLN-2 · one material × period commits at most once, across grains.
+        POLICY_HOOKS.INTAKE_ONE_GRAIN,
       ],
       surfaceable: { surfaced: true },
       version: 1,

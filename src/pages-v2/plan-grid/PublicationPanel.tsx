@@ -25,7 +25,7 @@ import { useCurrentIdentity } from '../../context/CurrentIdentityContext';
 import { useVerbAvailabilities } from '../../hooks/useVerbAvailability';
 import { useRefusalText } from '../../hooks/useRefusalText';
 import { formatDate, formatNumber } from '../../lib/format';
-import { mockSuppliers } from '../../data/mockSuppliers';
+import { planningSupplierName } from '../../services/planning/somoFixture';
 import { usePublicationAct } from '../../services/query/commandHooks';
 import { usePublicationWorkspace } from '../../services/query/sdcBuyerHooks';
 import {
@@ -42,7 +42,8 @@ import type { BucketGrain } from '../../services/planning/bucket';
 import type { VerbAvailability } from '../../services/transitions/handoff';
 import PublicationLedger from './PublicationLedger';
 
-const supplierName = (id: string): string => mockSuppliers.find((s) => s.id === id)?.name ?? id;
+// PLN-2 · names from the planning supplier master, one resolver for every planning surface.
+const supplierName = planningSupplierName;
 
 /** The working draft of a grain: the LATEST opened (the store's own rule). */
 export function draftOfGrain(records: readonly PublicationDocument[], grain: BucketGrain): PublicationDocument | null {
