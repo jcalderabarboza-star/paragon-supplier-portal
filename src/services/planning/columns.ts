@@ -15,6 +15,7 @@
 // ────────────────────────────────────────────────────────────────────────────
 
 import type { Capability } from '../liveness/registry';
+import { INTAKE_TRIAGE_ATOM } from '../transitions/flows/intakeLine.flow';
 import { parseHorizon, type BucketId, type BucketRefusalReason } from './bucket';
 import {
   measureOf,
@@ -108,7 +109,7 @@ export const COLUMNS: readonly ColumnSpec[] = Object.freeze([
     source: 'PLANNER',
     derivation: 'authored',
     unit: 'text',
-    editable: Object.freeze({ verb: 't_intake_commit', atom: 'pr:create', payloadField: 'overrideReason' }),
+    editable: Object.freeze({ verb: 't_intake_commit', atom: INTAKE_TRIAGE_ATOM, payloadField: 'overrideReason' }),
     defaultVisible: true,
     defaultWidth: 220,
     groupable: false,

@@ -118,10 +118,15 @@ describe('route ↔ module — bilateral', () => {
     const routes = [...routerSrc.matchAll(/<Route\s+path="([^"]+)"\s+element=\{\s*(<[A-Za-z]+(?:\s+path="([^"]*)")?)/g)];
     expect(routes.length).toBe(ROUTER_PATHS.length);
     const wrong = routes
-      .filter(([, path]) => path !== '/' && path !== '*')
+      // PLN-3 · a redirect is excluded by its ELEMENT, not by a path list:
+      // `/buyer/intake-review` became one (into the Plan Grid's intake-review
+      // view) and `/` always was — a redirect paints no gated page.
+      .filter(([, path, open]) => path !== '*' && !open.startsWith('<Navigate'))
       .filter(([, path, open, gatePath]) => !open.startsWith('<ModuleGate') || gatePath !== path)
       .map(([, path]) => path);
     expect(wrong).toEqual([]);
+    // The redirects the element filter excludes, by name — and only those.
+    expect(routes.filter(([, , open]) => open.startsWith('<Navigate')).map(([, path]) => path).sort()).toEqual(['/', '/buyer/intake-review']);
     // KNOWN-BAD twin: the same matcher over a synthetic route whose gate names
     // a different path must report it.
     const bad = '<Route path="/a" element={<ModuleGate path="/b"><A /></ModuleGate>} />';
@@ -163,12 +168,17 @@ describe('flow ↔ module — bilateral', () => {
     expect(atoms.filter((a) => modulesOfAtom(a).length === 0)).toEqual([]);
     expect(modulesOfAtom('asn:create')).toEqual([{ code: 'SHP', part: null }]);
     expect(modulesOfAtom('module:set')).toEqual([{ code: 'PLT', part: null }]);
-    // Derived, and pinned by NAME: an atom spanning modules is legitimate (the
-    // intake commit raises a requisition), and the surface's rule for it — off
-    // only when every place is off — is probed in the availability spec.
+    // Derived, and pinned by NAME. ⚠️ PLN-3 (R1): it was `['pr:create']` — the
+    // intake commit (PLN) and `t_pr_create` (REQ) shared that atom. The intake
+    // verbs hold `intake:triage` now, so NO atom spans two modules, and each of
+    // the two is placed in its own.
     const spanning = atoms.filter((a) => new Set(modulesOfAtom(a).map((m) => m.code)).size > 1).sort();
-    expect(spanning).toEqual(['pr:create']);
-    expect(modulesOfAtom('pr:create').map((m) => m.code).sort()).toEqual(['PLN', 'REQ']);
+    expect(spanning).toEqual([]);
+    expect(modulesOfAtom('pr:create').map((m) => m.code).sort()).toEqual(['REQ']);
+    expect(modulesOfAtom('intake:triage').map((m) => m.code).sort()).toEqual(['PLN']);
+    // Anti-vacuity: the derivation still sees an atom serving SEVERAL places —
+    // within one module — so the empty list above is the tree, not the matcher.
+    expect(modulesOfAtom('gr:inspect').length).toBeGreaterThan(1);
   });
 });
 

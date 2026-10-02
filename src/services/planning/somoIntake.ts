@@ -22,18 +22,24 @@
 // override is measured from is the proposal, and a reason is owed the moment
 // the planner leaves it.
 //
-// ⚠️ NOT IN THE INTAKE REVIEW QUEUE. `getIntakeLines` still lists the four
-// authored lines; the generated ones are reached from the grid, which is where
-// they are shown. The `intake-review` VIEW that would list them is B7's.
+// ⚠️ PLN-3 · IN THE INTAKE QUEUE NOW — ONE POPULATION (R-PLN P0 #6). Until
+// PLN-3 `getIntakeLines` listed only the four authored lines while the grid
+// committed these, so the queue a planner triaged was not the set the grid
+// pushed: a generated line could be committed and never dismissed, and the
+// queue's counts described four lines out of thousands. `generatedIntakeLines`
+// enumerates them for the one read; a line is still ANSWERED on demand by id.
 // ────────────────────────────────────────────────────────────────────────────
 
 import type { PrIntakeLine } from '../data/types';
 import { parseBucket, type BucketId } from './bucket';
 import { somoHorizon } from './facts';
 import {
+  PLANNING_MATERIALS,
+  generatedDemand,
   generatedSuggested,
   generatedUnitPrice,
   isGeneratedMaterial,
+  planningGrainOf,
   planningMaster,
 } from './somoFixture';
 
@@ -78,7 +84,34 @@ export function generatedIntakeLine(id: string): PrIntakeLine | null {
     // PLN-1 · the price travels with the line, so a commit at any quantity is priced from it.
     unitPrice: generatedUnitPrice(parts.materialCode),
     source: 'SOMO',
+    // PLN-3 · the producer's "why", from the two figures it proposed from —
+    // producer data like the authored lines' rationale, never planner copy.
+    deficit: `Planned demand ${generatedDemand(parts.materialCode, parts.bucket)} ${entry.canonicalUom} in ${parts.bucket}; SOMO proposes ${suggested}`,
   });
+}
+
+let generatedPopulation: readonly PrIntakeLine[] | null = null;
+
+/**
+ * PLN-3 · EVERY generated SOMO intake line, in material then bucket order —
+ * the generator's own population, at each material's own grain
+ * (`PLANNING_GRAIN_OF_TYPE`), over the fixture horizon, wherever SOMO proposed
+ * a quantity. A pure function of the seed, so it is built once.
+ */
+export function generatedIntakeLines(): readonly PrIntakeLine[] {
+  if (generatedPopulation) return generatedPopulation;
+  const out: PrIntakeLine[] = [];
+  for (const code of PLANNING_MATERIALS) {
+    if (!isGeneratedMaterial(code)) continue;
+    const grain = planningGrainOf(code);
+    if (grain === null) continue;
+    for (const bucket of somoHorizon(grain)) {
+      const line = generatedIntakeLine(somoIntakeLineId(code, bucket));
+      if (line) out.push(line);
+    }
+  }
+  generatedPopulation = Object.freeze(out);
+  return generatedPopulation;
 }
 
 /**

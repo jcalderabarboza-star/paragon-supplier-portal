@@ -65,7 +65,8 @@ export const BUYER_NAV: readonly NavGroup[] = [
     labelKey: 'nav.section.plan',
     items: [
       { labelKey: 'nav.buyer.planGrid', icon: Table2, path: '/buyer/plan-grid' },
-      { labelKey: 'nav.buyer.intakeReview', icon: Inbox, path: '/buyer/intake-review' },
+      // PLN-3 · Intake Review is a view of the Plan Grid now (Design 1 D8); its
+      // old route redirects there, so the grid's own entry is the one door.
       { labelKey: 'nav.buyer.requisitions', icon: FileText, path: '/buyer/purchase-requisition' },
     ],
   },
@@ -220,6 +221,7 @@ export const NON_DESTINATION_ROUTES: Readonly<Record<string, string>> = {
   '/buyer/roles/:roleId': 'detail route, reached from a role row in Roles',
   '/buyer/platform/modules/admin': 'reached from the Modules board, which is its nav destination',
   '/': 'redirect to the buyer dashboard, not a page',
+  '/buyer/intake-review': 'redirect to the Plan Grid intake-review view, where Intake Review lives since PLN-3 — not a page',
   '*': 'the 404 page for an unknown route, not a destination',
 };
 
@@ -244,7 +246,7 @@ export const DETAIL_ROUTE_PARENT: Readonly<Record<string, string>> = {
 };
 
 /** Non-destinations that open under no group: drawn before a session exists, or routing plumbing. */
-export const NO_SECTION_ROUTES: readonly string[] = ['/login', '/register', '/', '*'];
+export const NO_SECTION_ROUTES: readonly string[] = ['/login', '/register', '/', '/buyer/intake-review', '*'];
 
 /** The nav group label key of the item at `path` on one side, or null. */
 function groupKeyOf(groups: readonly NavGroup[], path: string): string | null {

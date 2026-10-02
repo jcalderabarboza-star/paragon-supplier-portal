@@ -18,6 +18,7 @@
 
 import type { IntakeLine } from '../../services/data/types';
 import type { IntakeLineState } from '../../services/transitions/flows/intakeLine.flow';
+import { parseSomoIntakeLineId } from '../../services/planning/somoIntake';
 
 /**
  * The commit an *Accept as suggested* fires.
@@ -84,4 +85,46 @@ export function triageCounts(lines: readonly IntakeLine[]): TriageCounts {
     committed: byState.Committed,
     dismissed: byState.Dismissed,
   };
+}
+
+// ── PLN-3 · the queue as a VIEW of the grid (Design 1 D8) ───────────────────
+//
+// Intake Review was a page over four authored lines while the grid committed
+// generated SOMO lines it never listed — one requirement set, two surfaces, two
+// answers (R-PLN P0 #6). The page is retired into the grid's `intake-review`
+// view, which reads every line the producers emitted, so the queue is now
+// thousands of rows: it opens on the pending ones (`defaultFilter:
+// 'pendingIntake'`) and a planner narrows it by state and by text.
+
+/** Which lines the intake view shows: one state, or every line. */
+export type IntakeStateFilter = IntakeLineState | 'all';
+
+/** The intake view's opening filter — the pending queue, as the view registry says. */
+export const DEFAULT_INTAKE_STATE_FILTER: IntakeStateFilter = 'Pending';
+
+/**
+ * The material code a line names, when it names one. A generated SOMO line's id
+ * carries it (`pil-somo-<code>@<bucket>`); an authored line carries a display
+ * label only (C7 §6.1, GG-4), so it names none.
+ */
+export function intakeLineCode(line: Pick<IntakeLine, 'id'>): string | null {
+  return parseSomoIntakeLineId(line.id)?.materialCode ?? null;
+}
+
+/**
+ * The lines the intake view shows: those in the chosen state, whose material,
+ * code, period or id contains the search text (case-insensitive). An empty
+ * search narrows nothing.
+ */
+export function filterIntakeLines<L extends IntakeLine>(
+  lines: readonly L[],
+  filter: { readonly state: IntakeStateFilter; readonly query: string },
+): readonly L[] {
+  const q = filter.query.trim().toLowerCase();
+  return lines.filter((line) => {
+    if (filter.state !== 'all' && line.state !== filter.state) return false;
+    if (q === '') return true;
+    const hay = [line.material, intakeLineCode(line) ?? '', line.periodBucket, line.id].join(' ').toLowerCase();
+    return hay.includes(q);
+  });
 }

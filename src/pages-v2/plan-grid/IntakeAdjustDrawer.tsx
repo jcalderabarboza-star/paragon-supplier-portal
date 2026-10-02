@@ -4,6 +4,7 @@ import Data from '../../components/ui-v2/Data';
 import Button from '../../components/ui-v2/Button';
 import PlanCellMarker from './PlanCellMarker';
 import { useIntakeCommit } from '../../services/query/commandHooks';
+import { INTAKE_TRIAGE_ATOM } from '../../services/transitions/flows/intakeLine.flow';
 import { HandoffNotice } from '../../components/ui-v2/HandoffNotice';
 import { useVerbAvailability } from '../../hooks/useVerbAvailability';
 import { DataError, type IntakeLine } from '../../services/data/types';
@@ -69,10 +70,10 @@ const IntakeAdjustDrawer: React.FC<{ line: IntakeLine | null }> = ({ line }) => 
   const refusalText = useRefusalText();
   const commit = useIntakeCommit();
 
-  // §74 — `t_pr_create` (atom `pr:create`, held by `requisitioner`). The
-  // push is the ONLY exit from PLANNED (C6 §3), so a seat without the atom
-  // must read whose act it is rather than meet a button that refuses.
-  const pushAvailability = useVerbAvailability('pr:create');
+  // §74 — `t_intake_commit` (atom `intake:triage`, held by `planning` since
+  // PLN-3). The push is the ONLY exit from PLANNED (C6 §3), so a seat without
+  // the atom must read whose act it is rather than meet a button that refuses.
+  const pushAvailability = useVerbAvailability(INTAKE_TRIAGE_ATOM);
 
   // Per-line editable state keyed by id, so switching the selected line keeps
   // each line's in-progress edit (accepted qty + reason + push outcome). The

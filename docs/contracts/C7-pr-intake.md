@@ -16,7 +16,9 @@ product code — the intake dispatch, the Grid, and the SOMO wire are all downst
 true at #67 and is **false now**: a wired `CommandTarget` (`MockCommandService.ts:547-593`,
 registered `:983`), a mutable store (`stores/purchaseRequisitionStore.ts`), a read seam
 (`types.ts:1194`), a liveness capability (`registry.ts:51`) and two consuming surfaces
-(`IntakeReview.tsx`, `PlanGrid.tsx`) have all landed since. The SOMO wire remains SPEC (§5).
+(`PlanGrid.tsx` and its `intake-review` view, `plan-grid/IntakeReviewView.tsx`) have all landed
+since — the separate Intake Review page was retired into that view at PLN-3 (Amendment 2). The SOMO
+wire remains SPEC (§5).
 
 **Grounding (real sources):**
 - the shipped PR machine — `src/services/transitions/flows/purchaseRequisition.flow.ts` (cited `file:line`);
@@ -206,6 +208,50 @@ involved. C7-FIND-05's framing as an F2 precondition understates it.
 Recorded at **C6 §1**, where the browser-storage ban lives. Named here so a reader of this seam does
 not re-derive it: **C6's ban on browser persistence covers PLAN state only.** A saved column width
 is not a truth about a material.
+
+---
+
+## Amendment 2 (2026-10-02) — who commits, one intake population, and the two refusals that guard them
+
+**Recorded by PLN-2 and PLN-3 (R-PLN P0 #2, #5, #6; operator ruling R1). Unlike Amendment 1, every
+ruling here landed WITH its code, so each names the batch that built it rather than a batch that
+will.** Operator standing rule: every new refusal lands in its flow's process guide (EN + ID) and
+in its contract in the same batch — the refusals below are in `docs/guides/intakeLine.*.md` §8.
+
+### A2-R1 · The planning lane commits an intake line; procurement approves the requisition it raises (R1)
+
+`t_intake_dismiss` / `t_intake_restore` / `t_intake_commit` require **`intake:triage`**, held by the
+**`planning`** lane only (`rolesHolding('intake:triage')` = `['planning']`). They required
+`pr:create`, the `requisitioner` lane's atom, so a seat holding only `planning` could plan a quantity
+in the grid and not push it — the grid read *"Awaiting Requisitioner"* under the planner's own change
+(R-PLN P0 #5). The cascade `t_intake_commit` → `t_pr_create` still raises the requisition, under the
+automation grant; the requisition is born **Draft**, and every later act on it needs its own lane's
+atom. **`pr:approve` / `pr:reject` stay `procurement`'s** and are pinned absent from `planning`, both
+in the bundle and at the dispatcher (`pln3WhoPushes.test.tsx`).
+
+**Refusal:** a seat without the planning lane dispatching any intake verb is refused
+**`ROLE_NOT_PERMITTED:intake:triage`**; the surfaces withhold the controls and read *"Awaiting
+Planning"*. A planning seat approving the requisition it raised is refused
+**`ROLE_NOT_PERMITTED:pr:approve`**.
+
+### A2-R2 · One intake population — the queue is the set the grid commits
+
+`getIntakeLines` returns the authored lines **and every generated SOMO line** (each material at its
+own grain, over the fixture horizon, wherever SOMO proposed a quantity). It returned the four
+authored lines while the grid committed generated ones, so a generated line could not be dismissed
+anywhere and the queue's counts described four lines out of thousands (R-PLN P0 #6). A dismissed
+line's `acceptedQty` fact carries `dismissed`, so its plan-tab cell reads *Dismissed* and cannot be
+edited; restoring it clears both. The Intake Review page is retired into the Plan Grid's
+`intake-review` view (Design 1 D8); `/buyer/intake-review` redirects there. **Batch:** PLN-3.
+
+### A2-R3 · One material × period commits at most once, across grains — `INTAKE_ONE_GRAIN`
+
+A policy hook on `t_intake_commit` (PLN-2). A generated line whose material and period are already
+committed at the OTHER grain — a week inside a committed month, or a month holding a committed week —
+is refused **`POLICY_REJECTED:intake_one_grain`**, naming the material, both periods and the
+committed line. Overlap is half-open (`[start, end)`): a week opening on the 1st belongs to its own
+month only. A dismissed line blocks nothing; a same-grain repeat is legality's and replay's, not this
+rule's. An authored line names no material code (GG-4), so the rule does not see it. **Batch:** PLN-2.
 
 ---
 
@@ -705,6 +751,9 @@ co-design so the two published shapes converge (Reply "Agreed next joint step" �
 | **A1-R3** | The requisition carries its origin on the DOCUMENT: `intakeLineId?` · `periodBucket?` · `decision?`; idempotency key = intake line id; one intake line → at most one PR. | **RATIFIED — operator 2026-09-28. CODE LANDED AT A2:** the cascade writes all three, `BuyerRequisitions`' drawer renders them, and the key is carried on the cascade. **One line → at most one PR holds by TWO mechanisms** — legality (`Committed` is terminal) for a person, replay for a transport — and `intakeCommitIdempotency.test.ts` names which answered in each direction |
 | **C7-MATERIAL-JOIN** | C7 (display string) and C8 (code) do not join. Recommendation: **collapse the spaces, do not crosswalk them** — a crosswalk between two spaces we control carries no information. **NOT built here.** ⚠️ **CORRECTED 2026-08-06:** the reason this row gave — *`inferBpom` derives BPOM applicability from the code prefix, so a format change moves compliance behaviour* — **is no longer true.** `inferBpom` is deleted; applicability is a master field. The linkage is now **master-membership**, not prefix: an unresolvable code is **refused** at goods receipt. `C9-STALE-BY-FIX-01` (C9 §7.13). | **OPEN** — investigation-first batch (§6.1) |
 | SOMO-SEAM | SOMO producer tier | **SPEC** — `order_creation` deferred (Seam §0) |
+| **A2-R1** | Intake triage is the planning lane's (`intake:triage`); the cascade raises the PR; approval stays procurement's. Refusals `ROLE_NOT_PERMITTED:intake:triage` / `:pr:approve`. | **RATIFIED — operator ruling R1. CODE LANDED AT PLN-3** (Amendment 2) |
+| **A2-R2** | One intake population: the queue lists every line the grid commits; a dismissal reads everywhere; Intake Review is a view of the Plan Grid. | **RATIFIED — Design 1 D8. CODE LANDED AT PLN-3** (Amendment 2) |
+| **A2-R3** | `INTAKE_ONE_GRAIN` — one material × period commits at most once across grains; refused `POLICY_REJECTED:intake_one_grain`. | **CODE LANDED AT PLN-2; RECORDED HERE AT PLN-3** (Amendment 2) |
 
 ---
 

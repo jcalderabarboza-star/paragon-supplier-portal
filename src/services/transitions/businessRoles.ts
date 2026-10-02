@@ -383,6 +383,16 @@ const LANE_BUNDLES = Object.freeze({
       // signature on a firm split is NOT here — `publication:approve` sits in
       // `procurement` (Design 2 §2.1, segregation).
       'publication:draft', 'publication:allocate', 'publication:publish',
+      // ── PLN-3 · TRIAGING AN INTAKE LINE — DISMISS, RESTORE, COMMIT (R1) ────
+      // The planner who decides the plan commits it: `t_intake_commit` is the
+      // one exit from PLANNED (C6 §3), and its cascade raises the requisition.
+      // It was `pr:create`, so a seat holding only this lane could plan a
+      // quantity and not push it (R-PLN P0 #5).
+      //
+      // ⚠️ **AND APPROVAL IS DELIBERATELY NOT HERE.** `pr:approve` / `pr:reject`
+      // stay `procurement`'s, so a planner raises a requisition and procurement
+      // approves it — never the same lane (`pln3WhoPushes.test.tsx`).
+      'intake:triage',
     ]),
     // Raising and revising a requisition — split from approving one, which is
     // the segregation `pr:approve` living in `procurement` expresses.
@@ -621,14 +631,19 @@ export const AUTOMATION_ATOMS: readonly TransitionRole[] = Object.freeze([
   // MISTAKE REPEATED.** That removal's ground was that NO CASCADE TARGETED
   // those atoms, so their presence granted an authority nothing used, and a
   // future cascade could then have verified a certificate on nobody's
-  // authority. Both halves are false here, and the second is the load-bearing
-  // one: `t_intake_commit` → `t_pr_create` is a real link in `CASCADES`, and
-  // **the source verb requires THE SAME ATOM** (`pr:create`, held by
-  // `requisitioner`). So the fan-out can mint nothing a human holding the
-  // source's atom could not have minted directly — the grant adds reach, not
-  // authority, and the human's act is the authorisation the requisition
-  // carries. A seat without `pr:create` cannot commit the line, so the cascade
-  // never runs.
+  // authority. That ground is false here: `t_intake_commit` → `t_pr_create` is
+  // a real link in `CASCADES`, and the requisition is minted on the authority
+  // of the human act that fired it.
+  //
+  // ⚠️ **SINCE PLN-3 (R1) THAT HUMAN ACT IS THE PLANNER'S, AND THE GRANT NOW
+  // ADDS AUTHORITY RATHER THAN ONLY REACH — BY RULING, AND BOUNDED.** The
+  // source verb requires `intake:triage` (`planning`), not `pr:create`, so a
+  // planner who holds no requisitioner lane raises a requisition through this
+  // grant. That is the ruling: the planner pushes, the cascade creates the PR.
+  // What bounds it is that the requisition is born a DRAFT and every later act
+  // on it — submit, revise, approve, reject — still needs its own lane's atom;
+  // approval stays `procurement`'s. A seat without `intake:triage` cannot
+  // commit the line, so the cascade never runs.
   'pr:create', 'pr:source', 'pr:convert',
   'shipment:create', 'shipment:advance',
   // ⚠️ **`supplierdoc:verify` / `:reject` LEFT THIS LIST AT §82, BECAUSE THEIR

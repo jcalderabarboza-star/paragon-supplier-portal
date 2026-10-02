@@ -1931,6 +1931,7 @@ export function useIntakeDismiss() {
   const svc = useDataService();
   const scope = useScope();
   const invalidate = useInvalidateProcurement();
+  const qc = useQueryClient();
 
   return useMutation<CommandResult, Error, { lineId: string }>({
     mutationFn: ({ lineId }) =>
@@ -1940,7 +1941,11 @@ export function useIntakeDismiss() {
         entityId: lineId,
       }),
     onSuccess: (result) => {
-      if (result.status !== 'failed') invalidate(scope);
+      if (result.status === 'failed') return;
+      invalidate(scope);
+      // PLN-3 · the plan tabs read the triage too: a dismissed line's cell reads
+      // dismissed there, from the same store (one intake population, P0 #6).
+      qc.invalidateQueries({ queryKey: ['planning'] });
     },
   });
 }
@@ -1950,6 +1955,7 @@ export function useIntakeRestore() {
   const svc = useDataService();
   const scope = useScope();
   const invalidate = useInvalidateProcurement();
+  const qc = useQueryClient();
 
   return useMutation<CommandResult, Error, { lineId: string }>({
     mutationFn: ({ lineId }) =>
@@ -1959,7 +1965,11 @@ export function useIntakeRestore() {
         entityId: lineId,
       }),
     onSuccess: (result) => {
-      if (result.status !== 'failed') invalidate(scope);
+      if (result.status === 'failed') return;
+      invalidate(scope);
+      // PLN-3 · the plan tabs read the triage too: a dismissed line's cell reads
+      // dismissed there, from the same store (one intake population, P0 #6).
+      qc.invalidateQueries({ queryKey: ['planning'] });
     },
   });
 }

@@ -26,7 +26,6 @@ import BuyerRequisitions from '../pages-v2/BuyerRequisitions';
 import BuyerSupplierApplications from '../pages-v2/BuyerSupplierApplications';
 import BuyerMaterialRequests from '../pages-v2/BuyerMaterialRequests';
 import BuyerPreferredSuppliers from '../pages-v2/BuyerPreferredSuppliers';
-import IntakeReview from '../pages-v2/IntakeReview';
 import BuyerInvoices from '../pages-v2/BuyerInvoices';
 import BuyerScorecard from '../pages-v2/BuyerScorecard';
 import BuyerAnalytics from '../pages-v2/BuyerAnalytics';
@@ -103,9 +102,10 @@ const AppRouter: React.FC = () => {
           <Route path="/marketplace/supplier/:id" element={<ModuleGate path="/marketplace/supplier/:id"><SupplierStorefrontV2 /></ModuleGate>} />
           <Route path="/buyer/orders" element={<ModuleGate path="/buyer/orders"><BuyerOrders /></ModuleGate>} />
           <Route path="/buyer/sourcing" element={<ModuleGate path="/buyer/sourcing"><BuyerSourcing /></ModuleGate>} />
-          {/* Phase A/1 — the recommend-first triage that precedes the plan-grid
-              push. Plain DOM (no grid engine) — stays in the entry chunk. */}
-          <Route path="/buyer/intake-review" element={<ModuleGate path="/buyer/intake-review"><IntakeReview /></ModuleGate>} />
+          {/* PLN-3 · the Intake Review PAGE is retired into the Plan Grid's
+              `intake-review` view (Design 1 D8): one intake population, one
+              surface. The route stays so every old link lands on the queue. */}
+          <Route path="/buyer/intake-review" element={<Navigate to="/buyer/plan-grid?view=intake-review" replace />} />
           <Route
             path="/buyer/plan-grid"
             element={

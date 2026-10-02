@@ -76,6 +76,7 @@ import type {
 } from '../types';
 import { PR_INTAKE_LINES } from './fixtures/prIntake';
 import { isKnownIntakeLine } from './intakeLines';
+import { generatedIntakeLines } from '../../planning/somoIntake';
 import { intakeLineStore, setKnownIntakeLineIds } from './stores/intakeLineStore';
 import { projectIntakeLine } from '../intakeLineProjection';
 
@@ -546,13 +547,22 @@ export class MockProcurementService implements IProcurementService {
   async getIntakeLines(scope: QueryScope): Promise<Page<IntakeLine>> {
     if (scope.personaType !== 'buyer') return { items: [] };
     // B3: the predicate spans BOTH producers, so a committed generated SOMO line
-    // survives this read; the LIST below is still the authored queue only.
+    // survives this read.
     setKnownIntakeLineIds(isKnownIntakeLine);
     const requisitions = purchaseRequisitionStore.all();
+    // ⚠️ PLN-3 · AND SO DOES THE LIST — ONE INTAKE POPULATION (R-PLN P0 #6). It
+    // listed the four authored lines while the grid committed generated ones,
+    // so the queue a planner triaged was not the set the grid pushed. A
+    // requisition names its line, so it is indexed once rather than searched
+    // per line across fifteen thousand rows.
+    // The FIRST requisition naming a line, as `projectIntakeLine`'s own `find` reads it.
+    const prByLine = new Map<string, (typeof requisitions)[number]>();
+    for (const r of requisitions) if (r.intakeLineId && !prByLine.has(r.intakeLineId)) prByLine.set(r.intakeLineId, r);
     return {
-      items: PR_INTAKE_LINES.map((line) =>
-        projectIntakeLine(line, intakeLineStore.get(line.id), requisitions),
-      ),
+      items: [...PR_INTAKE_LINES, ...generatedIntakeLines()].map((line) => {
+        const pr = prByLine.get(line.id);
+        return projectIntakeLine(line, intakeLineStore.get(line.id), pr ? [pr] : []);
+      }),
     };
   }
 

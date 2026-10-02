@@ -333,6 +333,8 @@ export interface PlanRow {
   readonly seamRefs?: Readonly<Record<BucketId, string>>;
   /** B3 · per bucket, whether the seam holds the figure as COMMITTED. */
   readonly committedCells?: Readonly<Record<BucketId, boolean>>;
+  /** PLN-3 · per bucket, whether the cell's intake line has been DISMISSED. */
+  readonly dismissedCells?: Readonly<Record<BucketId, boolean>>;
 }
 
 /** The horizon aggregates (Design 1 §4.2 `agg:*`), all DERIVED. */
@@ -381,8 +383,22 @@ export function planCellText(value: number | null | undefined, format: (n: numbe
 export function isEditableCell(row: PlanRow, bucket: BucketId): boolean {
   const spec = measureOf(row.measureId);
   const grainMatches = spec.grain === 'supplier' ? row.supplierId !== null : row.supplierId === null;
-  return spec.editable !== false && grainMatches && !!row.seamRefs?.[bucket] && !isCommittedCell(row, bucket);
+  return (
+    spec.editable !== false &&
+    grainMatches &&
+    !!row.seamRefs?.[bucket] &&
+    !isCommittedCell(row, bucket) &&
+    !isDismissedCell(row, bucket)
+  );
 }
+
+/**
+ * PLN-3 · the cell's intake line has been DISMISSED — set aside in the intake
+ * view. Read-only here: a dismissed line has one way back, Restore, and it is
+ * the intake view's. The cell used to stay editable and push into
+ * `Dismissed->Committed` (R-PLN P0 #6).
+ */
+export const isDismissedCell = (row: PlanRow, bucket: BucketId): boolean => row.dismissedCells?.[bucket] === true;
 
 /**
  * PLN-1 · the seam holds this cell's figure as COMMITTED — the intake line has
@@ -428,7 +444,7 @@ export function buildPlanBlocks(
   // material → measure → supplier('' = material grain) → bucket → value
   const byMaterial = new Map<string, Map<MeasureId, Map<string, Map<BucketId, number | null>>>>();
   // B3 · editable measures only: `material|measure|bucket` → the seam row.
-  const refs = new Map<string, { ref: string; committed: boolean }>();
+  const refs = new Map<string, { ref: string; committed: boolean; dismissed?: boolean }>();
   for (const f of facts) {
     if (!shownSet.has(f.measureId) || !inHorizon.has(f.periodBucket)) continue;
     const mats = byMaterial.get(f.materialCode) ?? new Map();
@@ -442,6 +458,7 @@ export function buildPlanBlocks(
       refs.set(`${f.materialCode}|${f.measureId}|${f.periodBucket}`, {
         ref: f.sourceRef,
         committed: f.provenance.planState === 'committed',
+        ...(f.dismissed ? { dismissed: true } : {}),
       });
     }
     // B4b · a SUPPLIER-grain editable cell anchors only where the seam named an
@@ -487,6 +504,9 @@ export function buildPlanBlocks(
             ? {
                 seamRefs: Object.fromEntries(anchored.map(([b, r]) => [b, r.ref])),
                 committedCells: Object.fromEntries(anchored.map(([b, r]) => [b, r.committed])),
+                ...(anchored.some(([, r]) => r.dismissed)
+                  ? { dismissedCells: Object.fromEntries(anchored.map(([b, r]) => [b, r.dismissed === true])) }
+                  : {}),
               }
             : {}),
         });

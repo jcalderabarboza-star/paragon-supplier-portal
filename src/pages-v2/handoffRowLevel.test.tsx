@@ -6,7 +6,13 @@ import { rolesHolding } from '../services/transitions/businessRoles';
 import BuyerChannelTriage from './BuyerChannelTriage';
 import BuyerCollaboration from './BuyerCollaboration';
 import BuyerGoodsReceipt from './BuyerGoodsReceipt';
-import IntakeReview from './IntakeReview';
+import React from 'react';
+import { useTranslation } from 'react-i18next';
+import type { CellProps } from 'react-datasheet-grid';
+import PlanGrid from './PlanGrid';
+import { IntakeTriageProvider, intakeReviewColumns } from './plan-grid/IntakeReviewView';
+import { useIntakeReview } from '../services/query/hooks';
+import type { IntakeLine } from '../services/data/types';
 
 // ────────────────────────────────────────────────────────────────────────────
 // §74 — THE ROW-LEVEL GROUP. Nine verbs across five surfaces, same hook, same
@@ -108,30 +114,68 @@ describe('§74 · BuyerCollaboration — requirementresponse:dispute', () => {
 //
 // The surface consequence: a withheld seat loses BOTH controls and reads ONE
 // notice, because all three intake verbs hold the same atom.
-describe('§74 · IntakeReview — pr:create, one notice for an unbounded table', () => {
-  it('HELD: a requisitioner seat gets BOTH triage controls and no notice', async () => {
-    renderWithProviders(<IntakeReview />, { identity: REQUISITIONER });
-    // Wait for the ROWS, not the heading — the heading renders before the read
-    // resolves, and querying then finds an empty table and calls it a result.
-    const accepts = await screen.findAllByRole('button', { name: /Accept as delivered/i });
-    expect(accepts.length).toBeGreaterThan(0);
-    expect(screen.getAllByRole('button', { name: /Dismiss/i }).length).toBeGreaterThan(0);
+// ⚠️ PLN-3 · THE SURFACE MOVED AND THE ATOM CHANGED LANE, AND BOTH ARE RECORDED.
+// Intake Review is the Plan Grid's intake-review view (Design 1 D8), and the
+// three intake verbs hold `intake:triage`, the PLANNING lane's (R1). So the
+// holding seat is `planning` now and the requisitioner is WITHHELD — the
+// reversal that is the ruling. The notice sits once in the view's header; the
+// rows are rendered through the view's real columns (the engine lays out no
+// rows under jsdom).
+const IntakeRows: React.FC<{ ids: readonly string[] }> = ({ ids }) => {
+  const { t } = useTranslation();
+  const lines = useIntakeReview().data?.items ?? [];
+  const cols = intakeReviewColumns(t, () => {});
+  return (
+    <IntakeTriageProvider>
+      {ids.map((id) => {
+        const line = lines.find((l) => l.id === id);
+        return line ? (
+          <div key={id}>
+            {cols.map((c, i) => {
+              const Cell = c.component as React.FC<CellProps<IntakeLine>>;
+              return <Cell key={i} {...({ rowData: line } as unknown as CellProps<IntakeLine>)} />;
+            })}
+          </div>
+        ) : null;
+      })}
+    </IntakeTriageProvider>
+  );
+};
+const ROWS = ['pil-somo-001', 'pil-grid-001', 'pil-somo-SIM-PM-0068@2026-W45'] as const;
+
+describe('§74 · the intake-review view — intake:triage, one notice for an unbounded table', () => {
+  it('HELD: a planning seat gets BOTH triage controls on every row and no notice', async () => {
+    renderWithProviders(<IntakeRows ids={ROWS} />, { identity: PLANNING });
+    // Wait for the ROWS — an absence before the read resolves means nothing.
+    await waitFor(() =>
+      expect(screen.getAllByRole('button', { name: /Accept as delivered/i })).toHaveLength(ROWS.length),
+    );
+    expect(screen.getAllByRole('button', { name: /^Dismiss /i })).toHaveLength(ROWS.length);
     expect(screen.queryByTestId('handoff-intake-triage')).not.toBeInTheDocument();
   });
 
-  it('WITHHELD: a finance seat reads the owner ONCE and loses BOTH controls', async () => {
-    renderWithProviders(<IntakeReview />, { identity: FINANCE });
-    // The rows must be on screen before an absence means anything — otherwise
-    // this passes against an empty table, which is every seat's answer.
+  it('WITHHELD: a requisitioner seat — the old holder — loses BOTH controls (R1)', async () => {
+    renderWithProviders(<IntakeRows ids={ROWS} />, { identity: REQUISITIONER });
     await screen.findByText(/Glycerin USP/);
     expect(screen.queryAllByRole('button', { name: /Accept as delivered/i })).toHaveLength(0);
-    expect(screen.queryAllByRole('button', { name: /Dismiss/i })).toHaveLength(0);
-    // ONE notice for the surface, never one per row: the atom does not vary by
-    // row, and the same string repeated down a column teaches nothing after the
-    // first.
+    expect(screen.queryAllByRole('button', { name: /^Dismiss /i })).toHaveLength(0);
+  });
+
+  it('WITHHELD: a finance seat loses BOTH controls, and the view reads the owner ONCE', async () => {
+    renderWithProviders(<IntakeRows ids={ROWS} />, { identity: FINANCE });
+    await screen.findByText(/Glycerin USP/);
+    expect(screen.queryAllByRole('button', { name: /Accept as delivered/i })).toHaveLength(0);
+    expect(screen.queryAllByRole('button', { name: /^Dismiss /i })).toHaveLength(0);
+    // The rows carry no notice of their own — ONE notice for the surface, in the header.
+    expect(screen.queryAllByTestId('handoff-intake-triage')).toHaveLength(0);
+  });
+
+  it('the view’s header carries that one notice, naming Planning', async () => {
+    renderWithProviders(<PlanGrid />, { identity: FINANCE, route: '/buyer/plan-grid?view=intake-review' });
+    await screen.findByTestId('intake-summary');
     const notices = screen.getAllByTestId('handoff-intake-triage');
     expect(notices).toHaveLength(1);
-    expect(notices[0]).toHaveTextContent('Awaiting Requisitioner');
+    expect(notices[0]).toHaveTextContent('Awaiting Planning');
   });
 });
 
@@ -139,11 +183,10 @@ describe('§74 · ID from birth, across the group', () => {
   it('the owner renders in Indonesian with no English frame left behind', async () => {
     await i18n.changeLanguage('id');
     try {
-      renderWithProviders(<IntakeReview />, { identity: FINANCE });
-      // The withheld seat has no control left to wait on, so the wait anchors on
-      // a ROW — the same act-hygiene point, one element over.
-      await screen.findByText(/Glycerin USP/);
-      expect(screen.getByTestId('handoff-intake-triage')).toHaveTextContent('Menunggu Pemohon');
+      // PLN-3 · the owner is Planning now (R1), read in the view's header.
+      renderWithProviders(<PlanGrid />, { identity: FINANCE, route: '/buyer/plan-grid?view=intake-review' });
+      await screen.findByTestId('intake-summary');
+      expect(screen.getByTestId('handoff-intake-triage')).toHaveTextContent('Menunggu Perencanaan');
     } finally {
       await i18n.changeLanguage('en');
     }

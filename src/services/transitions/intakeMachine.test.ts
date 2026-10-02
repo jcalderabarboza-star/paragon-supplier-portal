@@ -95,15 +95,17 @@ describe('population — the machine is registered and wired', () => {
     expect(targetless.length).toBeGreaterThan(0);
   });
 
-  it('all three verbs require `pr:create`, the requisitioner lane’s atom', () => {
+  // PLN-3 (R1) · re-pinned from `pr:create` / `requisitioner`: the planning
+  // lane holds the intake commit now. The supplier half is unchanged.
+  it('all three verbs require `intake:triage`, the planning lane’s atom', () => {
     for (const id of ['t_intake_dismiss', 't_intake_restore', 't_intake_commit']) {
-      expect(getTransition(id)!.requiredRole).toBe('pr:create');
+      expect(getTransition(id)!.requiredRole).toBe('intake:triage');
     }
-    expect(SYSTEM_ROLES.requisitioner).toContain('pr:create');
+    expect(SYSTEM_ROLES.planning).toContain('intake:triage');
     // And no supplier lane holds it, which is what makes this buyer-internal by
     // the MECHANISM rather than by the comment above the target.
     for (const role of PERSONA_SYSTEM_ROLES.supplier) {
-      expect(SYSTEM_ROLES[role]).not.toContain('pr:create');
+      expect(SYSTEM_ROLES[role]).not.toContain('intake:triage');
     }
   });
 });
