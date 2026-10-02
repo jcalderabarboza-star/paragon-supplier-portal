@@ -314,6 +314,30 @@ describe('H1 · every route opens under a nav group, or is named as opening unde
   });
 });
 
+describe('H1 · no breadcrumb segment repeats the group it opens under', () => {
+  // Found in browser QA, not by a spec: Indonesian contract pages read
+  // "KONTRAK · KONTRAK" because the page's own crumb and the Contract group are
+  // the same word in that locale. Held over every crumb key, both locales, so a
+  // collision in a language nobody re-reads is red here.
+  const groupLabels = (lng: 'en' | 'id') => {
+    const R = resources[lng].translation as Record<string, string>;
+    return new Set([...BUYER_NAV, ...SUPPLIER_NAV].map((g) => R[g.labelKey].toLocaleUpperCase()));
+  };
+  const crumbEntries = (lng: 'en' | 'id') =>
+    Object.entries(resources[lng].translation as Record<string, string>).filter(([k]) => /crumb/i.test(k));
+
+  it('the population is real: crumb keys in both locales, and the group labels resolve', () => {
+    expect(crumbEntries('en').length).toBeGreaterThan(30);
+    expect(crumbEntries('id').length).toBe(crumbEntries('en').length);
+    expect(groupLabels('id').has('KONTRAK')).toBe(true);
+  });
+
+  it.each(['en', 'id'] as const)('%s: no crumb key carries a group label', (lng) => {
+    const labels = groupLabels(lng);
+    expect(crumbEntries(lng).filter(([, v]) => labels.has(v.toLocaleUpperCase())).map(([k, v]) => `${k}=${v}`)).toEqual([]);
+  });
+});
+
 describe('H1 · the header renders the section first — every nav and detail route, EN then ID', () => {
   const PATTERNS = [...ALL_NAV_PATHS, ...Object.keys(DETAIL_ROUTE_PARENT)];
   const header = (at: string) => renderWithProviders(<PageHeader breadcrumb={['Tail']} title="T" />, { route: at });

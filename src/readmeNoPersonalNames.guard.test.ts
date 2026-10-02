@@ -448,9 +448,12 @@ const codeCorpus = (files: readonly SourceText[]): string =>
  * convictions: nothing here can make a person's initials pass unseen except by
  * being written into it, in review.
  */
-const NOT_A_PERSON: Readonly<Record<string, string>> = {
-  RFP: "the client's request-for-proposal document the SDC lane was scoped from (`src/services/sdc/types.ts`).",
-};
+//
+// Empty since H1, and emptied by the rule above rather than by hand: `RFP` was
+// acquitted here until `handoverIndex.guard.test.ts` began to name the RFP in
+// code, which attests the token, so the bilateral check below turned red on the
+// row it no longer needed.
+const NOT_A_PERSON: Readonly<Record<string, string>> = {};
 
 /** Initials cited as a person in `comments` that the code never uses: `token`, deduplicated. */
 export function unattestedInitials(comments: string, code: string): string[] {

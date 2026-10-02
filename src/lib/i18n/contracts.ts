@@ -290,7 +290,7 @@ export const contractsEn: Record<string, string> = {
 
 export const contractsId: Record<string, string> = {
   // — Breadcrumb —
-  'contracts.crumb.contracts': 'KONTRAK',
+  'contracts.crumb.contracts': 'DAFTAR KONTRAK',
   // — Page header —
   'contracts.header.title': 'Manajemen Kontrak',
   'contracts.header.subtitle':
