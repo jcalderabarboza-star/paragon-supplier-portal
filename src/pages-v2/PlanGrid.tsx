@@ -21,6 +21,7 @@ import IntakeAdjustDrawer from './plan-grid/IntakeAdjustDrawer';
 import FullScreenSection from './plan-grid/FullScreenSection';
 import SubTabs from '../components/ui-v2/SubTabs';
 import TimePhasedGrid from './plan-grid/TimePhasedGrid';
+import type { BucketGrain } from '../services/planning/bucket';
 import { PlanDraftProvider } from './plan-grid/PlanDraftProvider';
 import { useIntakeReview, useQuotations } from '../services/query/hooks';
 import type { IntakeLine } from '../services/data/types';
@@ -50,7 +51,9 @@ type WeightRow = Record<AwardCriterionKey, number | null>;
 // the what-if WEIGHTS grid; every score is recomputed in pure TS
 // (planGridModel), and the seam `aiCompositeScore` is NEVER written back. The
 // registry (`purchaseRequisitions`, gate-2 shut) keeps every honest marker
-// SIMULATED — green is structurally unreachable. NOTHING here dispatches (G1.2b).
+// SIMULATED — green is structurally unreachable. (Since G1.2b the intake drawer
+// dispatches, and since B3/B4b the time-phased views push through
+// `PlanDraftProvider`; the award what-if itself still writes nothing.)
 // ────────────────────────────────────────────────────────────────────────────
 
 const AWARD_RFQ = 'rfq-003';
@@ -83,7 +86,16 @@ type PlanTab = 'rm' | 'pm' | 'exceptions' | 'award' | 'intake';
 
 const PlanGrid: React.FC = () => {
   const { t } = useTranslation();
-  const [tab, setTab] = useState<PlanTab>('rm');
+  const [tab, setTabState] = useState<PlanTab>('rm');
+  // PLN-1 · the grain of the plan tab the planner was last in. The Exceptions
+  // tab follows it — it was fixed at the monthly grain, so weekly exceptions
+  // had no list of their own.
+  const [planGrain, setPlanGrain] = useState<BucketGrain>('month');
+  const setTab = (next: PlanTab) => {
+    if (next === 'rm') setPlanGrain('month');
+    if (next === 'pm') setPlanGrain('week');
+    setTabState(next);
+  };
   const quotationsQuery = useQuotations();
   const quotations = quotationsQuery.data?.items ?? [];
 
@@ -334,9 +346,13 @@ const PlanGrid: React.FC = () => {
       />
 
       <PageMetaLine className="-mt-6 mb-6">
-        {t('planGrid.meta.summary', {
-          quotations: awardRows.length,
-          lines: intakeLines.length,
+        {/* PLN-1 · it read "3 quotations, 4 intake lines" — two counts from the
+            two SECONDARY tabs, standing over a 1,200-material plan. It names
+            the tabs by their own labels now, and counts nothing: each view's
+            summary line is where a count is derived. */}
+        {t('planGrid.meta.views', {
+          award: t('planGrid.tab.award'),
+          intake: t('planGrid.tab.intake'),
         })}
       </PageMetaLine>
 
@@ -367,7 +383,7 @@ const PlanGrid: React.FC = () => {
       <PlanDraftProvider>
         {tab === 'rm' && <TimePhasedGrid viewId="rm-plan" />}
         {tab === 'pm' && <TimePhasedGrid viewId="pm-plan" />}
-        {tab === 'exceptions' && <TimePhasedGrid viewId="exceptions" />}
+        {tab === 'exceptions' && <TimePhasedGrid key={`exceptions-${planGrain}`} viewId="exceptions" currentGrain={planGrain} />}
       </PlanDraftProvider>
 
       {/* ── Award scenario — what-if overlay (full-screen-capable) ───────── */}

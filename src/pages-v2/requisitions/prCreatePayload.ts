@@ -123,10 +123,34 @@ export interface PrCreatePayload {
 }
 
 /**
+ * PLN-1 · the requisition's value at the quantity COMMITTED, never the
+ * suggestion's.
+ *
+ * ⚠️ AN INTAKE LINE'S `estimatedValue` IS A LINE TOTAL FOR ITS `suggestedQty`
+ * (C7 §2.3 — `pil-somo-002`: 5,000 KG / 990,000,000; the generator computes
+ * `suggested × unit price`). It was copied to the requisition unchanged, so a
+ * planner who committed 9,000 KG of a 10,950 KG suggestion raised a PR priced
+ * for 10,950 — and a 1,090 KG PR carried Rp 1.5B (R-PLN P0 #4, measured). The
+ * approver read a budget for a quantity nobody was asking for.
+ *
+ * The rescale is pro-rata on the line's own unit value. Where that value cannot
+ * be derived — no suggestion to divide by — the field is OMITTED, never carried
+ * as if it fitted: a budget for the wrong quantity is the defect, and absence
+ * is the field's documented "nobody said".
+ */
+export function committedValue(line: PrIntakeLine, committedQty: number): number | undefined {
+  const { estimatedValue, suggestedQty } = line;
+  if (!Number.isFinite(estimatedValue) || !Number.isFinite(committedQty)) return undefined;
+  if (committedQty === suggestedQty) return estimatedValue;
+  if (!(suggestedQty > 0)) return undefined;
+  return Math.round((estimatedValue * committedQty) / suggestedQty);
+}
+
+/**
  * The payload a pushed intake line dispatches (plan grid · Intake Review).
  *
- * Unchanged in behaviour — it always supplied `estimatedValue` and `source` and
- * still does. What changed is the TYPE it returns and the fact that the fields
+ * It supplies `source`, and `estimatedValue` AT THE COMMITTED QUANTITY
+ * (`committedValue`, PLN-1). What changed earlier is the TYPE it returns and the fact that the fields
  * it does not supply (`costCenter`, `priority`, `justification`, `requestor`,
  * `category`) are now absences the target records as absences.
  */
@@ -135,11 +159,12 @@ export function buildPrCreatePayload(
   acceptedQty: number,
   reason: string,
 ): PrCreatePayload {
+  const estimatedValue = committedValue(line, acceptedQty);
   return {
     material: line.material,
     quantity: acceptedQty,
     uom: line.uom,
-    estimatedValue: line.estimatedValue,
+    ...(estimatedValue === undefined ? {} : { estimatedValue }),
     // ⚠️ **NO `requiredDate`. THE BUCKET GOES TO `periodBucket`** (A1-R1) —
     // this line used to read `requiredDate: line.period`, which is how a
     // date-named field came to hold a grain. Nobody named a day, so no day is

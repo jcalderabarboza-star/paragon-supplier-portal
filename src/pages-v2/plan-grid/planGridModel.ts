@@ -381,8 +381,18 @@ export function planCellText(value: number | null | undefined, format: (n: numbe
 export function isEditableCell(row: PlanRow, bucket: BucketId): boolean {
   const spec = measureOf(row.measureId);
   const grainMatches = spec.grain === 'supplier' ? row.supplierId !== null : row.supplierId === null;
-  return spec.editable !== false && grainMatches && !!row.seamRefs?.[bucket];
+  return spec.editable !== false && grainMatches && !!row.seamRefs?.[bucket] && !isCommittedCell(row, bucket);
 }
+
+/**
+ * PLN-1 · the seam holds this cell's figure as COMMITTED — the intake line has
+ * left `Pending`, so its machine admits no second commit (`Committed` is
+ * terminal). It is READ-ONLY at the grid: the cell used to open its editor,
+ * take a new value and push it into a refusal the planner read as
+ * "(Committed->Committed)" (R-PLN, measured). Revising a committed quantity is
+ * the requisition's act now, not the grid's.
+ */
+export const isCommittedCell = (row: PlanRow, bucket: BucketId): boolean => row.committedCells?.[bucket] === true;
 
 /** `supplier|material|bucket` — the key a stale answer is reported by. */
 export const staleKey = (supplierId: string, materialCode: string, bucket: BucketId): string =>

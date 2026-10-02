@@ -26,6 +26,7 @@ import {
   pushEntries,
   reconcile,
   removeEntry,
+  setMagnitudeConfirmed,
   setReason,
   type EditContext,
   type EditOrigin,
@@ -47,6 +48,8 @@ export interface PlanDraftApi {
     totalOf?: EditContext['totalOf'],
   ): { planned: number; refused: number; outside: number };
   setReason(seamRef: string, reason: string): void;
+  /** R2 · confirm (or withdraw) a value the magnitude gate holds. */
+  confirmMagnitude(seamRef: string, confirmed: boolean): void;
   remove(seamRef: string): void;
   dismissRefusal(key: string): void;
   push(seamRefs: readonly string[]): Promise<void>;
@@ -105,6 +108,7 @@ export const PlanDraftProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       edit,
       paste,
       setReason: (ref, reason) => setDraft((d) => setReason(d, ref, reason)),
+      confirmMagnitude: (ref, confirmed) => setDraft((d) => setMagnitudeConfirmed(d, ref, confirmed)),
       remove: (ref) => setDraft((d) => removeEntry(d, ref)),
       dismissRefusal: (key) => setDraft((d) => dismissRefusal(d, key)),
       push,

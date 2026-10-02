@@ -166,9 +166,12 @@ describe('B3 · push from the page', () => {
     intakeLineStore.put({ lineId: ref, state: 'Committed', committedQty: 5 });
     mount(row, [['2026-08', String(row.cells['2026-08']), 'TYPED']]);
     fireEvent.click(screen.getByTestId(`plan-push-row-${ref}`));
-    expect(await screen.findByTestId(`plan-draft-failure-${ref}`)).toHaveTextContent(
-      /not in a state this action can be taken from.*\(Committed->Committed\)/,
-    );
+    // ⚠️ PLN-1 · THIS USED TO PIN THE DEVELOPER TRAIL — "(Committed->Committed)" —
+    // which is what the planner read (R-PLN). The surface now says it in its own
+    // words, and the trail is asserted ABSENT, not merely un-asserted.
+    const failure = await screen.findByTestId(`plan-draft-failure-${ref}`);
+    expect(failure).toHaveTextContent(/already committed and has its requisition/);
+    expect(failure.textContent).not.toMatch(/->|ILLEGAL_TRANSITION/);
     expect(screen.getByTestId('plan-draft-banner')).toBeInTheDocument();
     expect(intakeLineStore.get(ref)?.committedQty).toBe(5);
   });

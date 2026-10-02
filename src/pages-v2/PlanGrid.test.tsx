@@ -44,9 +44,14 @@ describe('PlanGrid — honest render (page-level)', () => {
   it('renders the planning-sandbox banner (honest framing — governed push stays simulated)', () => {
     renderWithProviders(<PlanGrid />, { route: '/buyer/plan-grid' });
     expect(screen.getByText(/Planning sandbox/i)).toBeInTheDocument();
-    // The committed AI composite is never changed; a push stays simulated.
-    expect(screen.getByText(/the committed AI composite is never changed/i)).toBeInTheDocument();
-    expect(screen.getByText(/never a live procurement instruction/i)).toBeInTheDocument();
+    // A push stays simulated, and the banner says what a push does.
+    expect(screen.getByText(/Nothing here is a live procurement instruction/i)).toBeInTheDocument();
+    expect(screen.getByText(/pushing an accepted quantity commits its intake line/i)).toBeInTheDocument();
+    // ⚠️ PLN-1 · the award claim ("the committed composite is never changed")
+    // moved OFF the page banner, which spoke for the award tab over a page that
+    // opens on the plan. It is still asserted — where it is true.
+    openTab(/Award what-if/i);
+    expect(screen.getByText(/The committed composite holds/i)).toBeInTheDocument();
   });
 
   it('renders both grid sections — award scenario and requisition intake', () => {

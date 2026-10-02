@@ -93,7 +93,13 @@ export const VIEWS: readonly ViewSpec[] = Object.freeze([
     grain: 'current',
     horizonLength: DEFAULT_HORIZON_BUCKETS.month,
     rowKind: 'material+supplier',
-    measuresShown: ['demand', 'confirmed', 'confirmedDeficit'],
+    // ⚠️ PLN-1 · `allocation` IS HERE BECAUSE THE EXCEPTION RULE READS IT. An
+    // "awaiting" exception is an allocation a supplier has not confirmed, and
+    // this list used to omit allocation rows — so the Exceptions tab could not
+    // see that class at all and showed 75 exceptions where the plan view's own
+    // toggle showed 130 (R-PLN P0 #3, measured). `exceptionsView.test.ts` holds
+    // the two equal, per grain, over the real seam.
+    measuresShown: ['demand', 'allocation', 'confirmed', 'confirmedDeficit'],
     columnsShown: ['materialCode', 'materialLabel', 'supplierName', 'responseState', 'intakeState', 'agg:deficit', 'agg:firstShortBucket'],
     defaultGroupBy: [],
     defaultSort: [{ colId: 'agg:firstShortBucket', dir: 'asc' }],
@@ -121,3 +127,19 @@ export const VIEWS: readonly ViewSpec[] = Object.freeze([
     defaultSort: [{ colId: 'supplierName', dir: 'asc' }],
   }),
 ]);
+
+/**
+ * PLN-1 · the grain and horizon a view renders at. A `current`-grain view (the
+ * exceptions list) follows the plan tab the planner was last in — it was fixed
+ * at the monthly grain, so weekly exceptions had no list of their own — and its
+ * horizon is that grain's registry default, never the monthly length applied to
+ * weeks.
+ */
+export function viewGrainAndHorizon(
+  view: ViewSpec,
+  current: BucketGrain,
+): { readonly grain: BucketGrain; readonly horizonLength: number } {
+  if (view.grain === 'current') return { grain: current, horizonLength: DEFAULT_HORIZON_BUCKETS[current] };
+  const grain: BucketGrain = view.grain === 'week' ? 'week' : 'month';
+  return { grain, horizonLength: view.horizonLength };
+}
