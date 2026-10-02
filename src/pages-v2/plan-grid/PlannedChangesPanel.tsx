@@ -73,7 +73,7 @@ export const pushReasonKey = (reason: string): string | undefined => {
 };
 
 const PlannedChangesPanel: React.FC<{ selectedRefs: readonly string[] }> = ({ selectedRefs }) => {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const refusalText = useRefusalText();
   const api = usePlanDraft();
   // `t_intake_commit` is `pr:create` (the requisitioner lane); B4b's allocation
@@ -196,9 +196,8 @@ const PlannedChangesPanel: React.FC<{ selectedRefs: readonly string[] }> = ({ se
                         data-testid={`plan-draft-magnitude-${e.seamRef}`}
                       >
                         <span role="alert">
-                          {t('planGrid.edit.magnitude', {
+                          {t(e.value > e.baseline ? 'planGrid.edit.magnitude.high' : 'planGrid.edit.magnitude.low', {
                             baseline: formatNumber(e.baseline),
-                            ratio: new Intl.NumberFormat(i18n.language, { maximumSignificantDigits: 2 }).format(e.value / e.baseline),
                           })}
                         </span>
                         <label className="flex items-center gap-1 text-text-primary">
