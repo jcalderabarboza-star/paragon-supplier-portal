@@ -323,7 +323,7 @@ describe('PLN-2 · INTAKE_ONE_GRAIN — one material × period commits at most o
     expect(clash).toEqual({ material: 'SIM-PM-0068', period: '2026-W45', committed: '2026-11' });
     const en = i18n.t('planGrid.edit.push.oneGrain', clash);
     expect(en).toBe(
-      'Not pushed — SIM-PM-0068 is already committed for 2026-11, which overlaps 2026-W45. One requirement is committed once — monthly or weekly, never both.',
+      'Not pushed — SIM-PM-0068 is already committed for 2026-11, which overlaps 2026-W45 — one requirement is committed once, monthly or weekly, never both.',
     );
     await i18n.changeLanguage('id');
     const id = i18n.t('planGrid.edit.push.oneGrain', clash);
