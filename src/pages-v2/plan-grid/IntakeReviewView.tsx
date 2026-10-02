@@ -219,7 +219,8 @@ export function intakeReviewColumns(
       title: t('planGrid.intake.col.code'),
       disabled: true,
       minWidth: 120,
-      component: dataCell<IntakeLine>((r) => intakeLineCode(r) ?? t('planGrid.empty.dash')),
+      // An authored line carries a label, not a code (GG-4): a dash, the planning null rule.
+      component: dataCell<IntakeLine>((r) => intakeLineCode(r) ?? '—'),
     },
     {
       title: t('planGrid.intake.col.material'),
