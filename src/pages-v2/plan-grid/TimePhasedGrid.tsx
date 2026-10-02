@@ -46,7 +46,8 @@ import { mockSuppliers } from '../../data/mockSuppliers';
 import { usePlanningFacts } from '../../services/query/planningHooks';
 import { useConsolidationRows, usePublicationWorkspace } from '../../services/query/sdcBuyerHooks';
 import { totalKey } from '../../services/sdc';
-import { VIEWS, type ViewId } from '../../services/planning/views';
+import { VIEWS, viewGrainAndHorizon, type ViewId } from '../../services/planning/views';
+import type { BucketGrain } from '../../services/planning/bucket';
 import { COLUMNS, bucketColumns, bucketColumnId } from '../../services/planning/columns';
 import { measureOf, type MeasureId } from '../../services/planning/measures';
 import { somoHorizon } from '../../services/planning/facts';
@@ -54,7 +55,7 @@ import { visibleMeasures } from './visibleMeasures';
 import { usePlanDraft } from './PlanDraftProvider';
 import PlannedChangesPanel, { cellRefusalText } from './PlannedChangesPanel';
 import PublicationPanel, { draftOfGrain } from './PublicationPanel';
-import { cellKey, type CellRefusal, type EditContext, type PlanDraftEntry } from './planDraft';
+import { cellKey, magnitudeFlag, routePaste, type CellRefusal, type EditContext, type PlanDraftEntry } from './planDraft';
 import {
   DEFAULT_PLAN_FILTER,
   DEFAULT_PLAN_SORT,
@@ -99,12 +100,24 @@ export const PlanBucketCell: React.FC<{
   // the planned one is read from the draft by seamRef, marked as PLANNED.
   const text = planCellText(planned ? planned.value : value, formatNumber);
   const refusalText = refusal ? cellRefusalText(t, refusal) : '';
+  // R2 · every edited cell carries its READING — what was entered and what it
+  // was read as — and a value the magnitude gate holds is marked at the cell.
+  const reading = planned
+    ? t('planGrid.edit.reading', { raw: planned.raw, value: formatNumber(planned.value), uom: planned.uom })
+    : '';
+  const flagged = planned ? magnitudeFlag(planned) && planned.magnitudeConfirmed !== true : false;
   return (
     <div
-      className={`flex w-full items-center justify-end gap-1 px-2 ${planned ? 'bg-info-soft' : ''} ${refusal ? 'ring-1 ring-inset ring-danger/60' : ''}`}
+      className={`flex w-full items-center justify-end gap-1 px-2 ${planned ? 'bg-info-soft' : ''} ${refusal ? 'ring-1 ring-inset ring-danger/60' : flagged ? 'ring-1 ring-inset ring-warning' : ''}`}
       data-testid="tp-cell"
-      title={refusal ? `“${refusal.raw}” — ${refusalText}` : undefined}
+      data-reading={reading || undefined}
+      title={refusal ? `“${refusal.raw}” — ${refusalText}` : committed && !planned ? t('planGrid.edit.committedTitle') : reading || undefined}
     >
+      {flagged && (
+        <span className="text-[10px] font-semibold text-warning-hover" data-testid="tp-cell-magnitude" aria-label={t('planGrid.edit.push.magnitudeUnconfirmed')}>
+          ×?
+        </span>
+      )}
       {derived && (
         <ModelMarker label={t('planGrid.tp.modeled')} title={t('planGrid.tp.modeledTitle')} />
       )}
@@ -140,7 +153,13 @@ export const PlanBucketCell: React.FC<{
 const ReadOnlyBucketCell: React.FC<{ row: PlanRow; bucket: string; derived: boolean }> = ({ row, bucket, derived }) => {
   const api = usePlanDraft();
   return (
-    <PlanBucketCell value={row.cells[bucket]} derived={derived} refusal={api?.draft.refusals.get(cellKey(row.id, bucket))} />
+    <PlanBucketCell
+      value={row.cells[bucket]}
+      derived={derived}
+      refusal={api?.draft.refusals.get(cellKey(row.id, bucket))}
+      // PLN-1 · a committed cell is read-only now, and still says it is committed.
+      committed={row.committedCells?.[bucket]}
+    />
   );
 };
 
@@ -219,11 +238,15 @@ const EditableBucketCell: React.FC<{
   );
 };
 
-const TimePhasedGrid: React.FC<{ viewId: Extract<ViewId, 'rm-plan' | 'pm-plan' | 'exceptions'> }> = ({ viewId }) => {
+const TimePhasedGrid: React.FC<{
+  viewId: Extract<ViewId, 'rm-plan' | 'pm-plan' | 'exceptions'>;
+  /** PLN-1 · the grain of the plan tab the planner was last in — a `current`-grain view follows it. */
+  currentGrain?: BucketGrain;
+}> = ({ viewId, currentGrain = 'month' }) => {
   const { t } = useTranslation();
   const view = VIEWS.find((v) => v.viewId === viewId)!;
-  const grain = view.grain === 'week' ? 'week' : 'month';
-  const horizon = useMemo(() => somoHorizon(grain).slice(0, view.horizonLength), [grain, view.horizonLength]);
+  const { grain, horizonLength } = viewGrainAndHorizon(view, currentGrain);
+  const horizon = useMemo(() => somoHorizon(grain).slice(0, horizonLength), [grain, horizonLength]);
   const measures = useMemo(() => visibleMeasures(view.measuresShown), [view.measuresShown]);
 
   const factsQuery = usePlanningFacts(horizon, measures);
@@ -249,6 +272,21 @@ const TimePhasedGrid: React.FC<{ viewId: Extract<ViewId, 'rm-plan' | 'pm-plan' |
   );
   const [filter, setFilter] = useState<PlanFilter>({ ...DEFAULT_PLAN_FILTER, exceptionsOnly: lockedExceptions });
   const [sort, setSort] = useState<PlanSort>(DEFAULT_PLAN_SORT);
+  // PLN-1 · a paste note describes the rows it was made against; a new filter
+  // or order is a different set of rows, so the note goes.
+  useEffect(() => setPasteNote(null), [filter, sort]);
+
+  // PLN-1 · THE HINT NAMES WHAT IS EDITABLE BY ASKING THE REGISTRY. It said
+  // "accepted quantity is the one figure you can change" after B4b made
+  // allocation editable too — a count in prose, gone false with no file edited.
+  const editableLabels = useMemo(
+    () =>
+      measures
+        .filter((m) => measureOf(m).editable !== false)
+        .map((m) => t(measureOf(m).labelKey))
+        .join(' · '),
+    [measures, t],
+  );
 
   const staleKeys = useMemo(
     () =>
@@ -316,13 +354,22 @@ const TimePhasedGrid: React.FC<{ viewId: Extract<ViewId, 'rm-plan' | 'pm-plan' |
     const active = gridRef.current?.activeCell;
     if (!draftApi || !active || !wrapRef.current) return;
     const focused = document.activeElement;
-    if (focused instanceof HTMLInputElement && wrapRef.current.contains(focused)) return;
+    const editor = focused instanceof HTMLInputElement && wrapRef.current.contains(focused) ? focused : null;
     const text = e.clipboardData?.getData('text/plain');
     if (text === undefined || text === null) return;
+    // ⚠️ PLN-1 · EVERY PASTE AIMED AT THE GRID RESETS THE NOTE FIRST. It used to
+    // be written only by a grid paste and never cleared, so a paste the grid
+    // never received kept the last one's "10 planned · 0 refused".
+    setPasteNote(null);
+    if (routePaste(text, editor !== null) === 'field') return;
     const col = horizon.indexOf((active.colId ?? '').replace(/^bucket:/, ''));
     if (col < 0) return;
     e.preventDefault();
     e.stopImmediatePropagation();
+    // A multi-cell paste into an OPEN editor: the editor is abandoned unchanged
+    // (Escape is the engine's and the cell's own "leave without committing")
+    // and the paste is the grid's, anchored at the cell being edited.
+    if (editor) editor.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
     setPasteNote(draftApi.paste(rows, horizon, { row: active.row, col }, text, totalOf));
   };
   useEffect(() => {
@@ -432,7 +479,7 @@ const TimePhasedGrid: React.FC<{ viewId: Extract<ViewId, 'rm-plan' | 'pm-plan' |
   );
 
   return (
-    <div data-testid={`tp-view-${viewId}`}>
+    <div data-testid={`tp-view-${viewId}`} data-grain={grain}>
       {/* SIMULATED while the SOMO fixture feeds it — said before any number. */}
       <div className="mb-4 flex items-start justify-between gap-3 rounded-lg border border-warning/40 bg-warning-soft px-4 py-3 text-sm">
         <div>
@@ -445,7 +492,7 @@ const TimePhasedGrid: React.FC<{ viewId: Extract<ViewId, 'rm-plan' | 'pm-plan' |
       {viewId !== 'exceptions' && <PublicationPanel grain={grain} />}
       {viewId !== 'exceptions' && (
         <p className="mb-2 text-xs text-text-tertiary" data-testid="tp-edit-hint">
-          {t('planGrid.edit.hint')}
+          {t('planGrid.edit.hint', { measures: editableLabels })}
         </p>
       )}
       <PlannedChangesPanel selectedRefs={selectedRefs} />

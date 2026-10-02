@@ -22,7 +22,7 @@ import { useRefusalText } from '../../hooks/useRefusalText';
 import { formatNumber } from '../../lib/format';
 import { mockSuppliers } from '../../data/mockSuppliers';
 import { usePlanDraft } from './PlanDraftProvider';
-import { pushBlocked, reasonOwed, type CellRefusal, type CellRefusalReason, type PlanDraftEntry } from './planDraft';
+import { blockedBy, magnitudeFlag, reasonOwed, type CellRefusal, type CellRefusalReason, type PlanDraftEntry } from './planDraft';
 
 /** EXHAUSTIVE: every reason a cell edit can be refused has its own words. */
 export const CELL_REFUSAL_KEY: Record<CellRefusalReason, string> = {
@@ -33,6 +33,7 @@ export const CELL_REFUSAL_KEY: Record<CellRefusalReason, string> = {
   NO_SEAM_ROW: 'planGrid.edit.refused.NO_SEAM_ROW',
   NO_OPEN_DRAFT: 'planGrid.edit.refused.NO_OPEN_DRAFT',
   OVER_TOTAL: 'planGrid.edit.refused.OVER_TOTAL',
+  COMMITTED: 'planGrid.edit.refused.COMMITTED',
 };
 
 /** The words for one refused cell — the ONE place both render sites read them. */
@@ -51,6 +52,24 @@ const PUSH_REASON_KEY: Readonly<Record<string, string>> = {
   REASON_REQUIRED: 'planGrid.edit.push.reasonRequired',
   SEAM_DISAGREES: 'planGrid.edit.push.seamDisagrees',
   NOT_ROUTABLE: 'planGrid.edit.push.notRoutable',
+  MAGNITUDE_UNCONFIRMED: 'planGrid.edit.push.magnitudeUnconfirmed',
+};
+
+/**
+ * PLN-1 · an intake line that is no longer `Pending` refuses a commit as
+ * `ILLEGAL_TRANSITION:<from>->Committed`, and the spine's own sentence for that
+ * ends in the developer trail — the planner read "(Committed->Committed)"
+ * (R-PLN, measured). Keyed on the refusal HEAD and the FROM-state, rendered in
+ * this surface's own words; any other head falls through to the spine's text.
+ */
+const LINE_STATE_KEY: Readonly<Record<string, string>> = {
+  Committed: 'planGrid.edit.push.alreadyCommitted',
+  Dismissed: 'planGrid.edit.push.lineDismissed',
+};
+export const pushReasonKey = (reason: string): string | undefined => {
+  if (PUSH_REASON_KEY[reason]) return PUSH_REASON_KEY[reason];
+  const m = /^ILLEGAL_TRANSITION:(\w+)->/.exec(reason);
+  return m ? LINE_STATE_KEY[m[1]] : undefined;
 };
 
 const PlannedChangesPanel: React.FC<{ selectedRefs: readonly string[] }> = ({ selectedRefs }) => {
@@ -78,8 +97,10 @@ const PlannedChangesPanel: React.FC<{ selectedRefs: readonly string[] }> = ({ se
     const e = draft.entries.get(r);
     return e?.planState === 'PLANNED' && canPush(e);
   });
-  const pushReason = (reason: string) =>
-    PUSH_REASON_KEY[reason] ? t(PUSH_REASON_KEY[reason]) : (refusalText(reason) ?? t('planGrid.push.failed', { reason }));
+  const pushReason = (reason: string) => {
+    const key = pushReasonKey(reason);
+    return key ? t(key) : (refusalText(reason) ?? t('planGrid.push.failed', { reason }));
+  };
 
   return (
     <div className="mb-3 rounded-lg border border-info/30 bg-info-soft" data-testid="plan-draft-panel">
@@ -163,7 +184,34 @@ const PlannedChangesPanel: React.FC<{ selectedRefs: readonly string[] }> = ({ se
                     <Data>{e.baseline === null ? '—' : formatNumber(e.baseline)}</Data>
                   </td>
                   <td className="px-2 py-1.5 text-right">
-                    <Data>{formatNumber(e.value)}</Data> <span className="text-text-tertiary">{e.uom}</span>
+                    {/* R2 · THE READING: what was typed or pasted, and what it
+                        was read as under the seat's convention — "12.000" = 12 KG
+                        is a slip the planner can see before it is a requisition. */}
+                    <span data-testid={`plan-draft-reading-${e.seamRef}`}>
+                      <Data>{t('planGrid.edit.reading', { raw: e.raw, value: formatNumber(e.value), uom: e.uom })}</Data>
+                    </span>
+                    {magnitudeFlag(e) && e.baseline !== null && (
+                      <div
+                        className="mt-1 flex flex-col items-end gap-0.5 text-left text-[11px] text-warning-hover"
+                        data-testid={`plan-draft-magnitude-${e.seamRef}`}
+                      >
+                        <span role="alert">
+                          {t(e.value > e.baseline ? 'planGrid.edit.magnitude.high' : 'planGrid.edit.magnitude.low', {
+                            baseline: formatNumber(e.baseline),
+                          })}
+                        </span>
+                        <label className="flex items-center gap-1 text-text-primary">
+                          <input
+                            type="checkbox"
+                            data-testid={`plan-draft-confirm-${e.seamRef}`}
+                            checked={e.magnitudeConfirmed === true}
+                            disabled={e.planState === 'PUSHING'}
+                            onChange={(ev) => api.confirmMagnitude(e.seamRef, ev.target.checked)}
+                          />
+                          {t('planGrid.edit.magnitudeConfirm', { value: formatNumber(e.value), uom: e.uom })}
+                        </label>
+                      </div>
+                    )}
                   </td>
                   <td className="px-2 py-1.5">
                     {owed ? (
@@ -177,7 +225,7 @@ const PlannedChangesPanel: React.FC<{ selectedRefs: readonly string[] }> = ({ se
                           disabled={e.planState === 'PUSHING'}
                           onChange={(ev) => api.setReason(e.seamRef, ev.target.value)}
                         />
-                        {pushBlocked(e) && (
+                        {blockedBy(e) === 'REASON_REQUIRED' && (
                           <div className="mt-0.5 text-[11px] text-warning-hover">{t('planGrid.push.reasonRequired')}</div>
                         )}
                       </>

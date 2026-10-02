@@ -44,7 +44,7 @@ import type { BucketId } from '../../services/planning/bucket';
 import { measureOf, type MeasureId, type MeasureSource } from '../../services/planning/measures';
 import type { CommandResult } from '../../services/data/types';
 import { DataError } from '../../services/data/types';
-import { isEditableCell, type PlanRow } from './planGridModel';
+import { isCommittedCell, isEditableCell, type PlanRow } from './planGridModel';
 import { parseAllocationAnchor } from '../../services/planning/allocationAnchor';
 
 export type EditOrigin = 'TYPED' | 'PASTE';
@@ -73,6 +73,11 @@ export interface PlanDraftEntry {
   readonly planState: 'PLANNED' | 'PUSHING';
   /** Why the last push left it PLANNED — present only after a refusal. */
   readonly failureReason?: string;
+  /**
+   * R2 · the planner confirmed a value `magnitudeFlag` holds. Reset by every
+   * re-edit: a confirmation is about ONE value, never about the cell.
+   */
+  readonly magnitudeConfirmed?: boolean;
 }
 
 /**
@@ -81,7 +86,14 @@ export interface PlanDraftEntry {
  * planned value to (C6 §1), and calling that "read-only" would name the wrong
  * owner (found in browser QA: a gap bucket read "the planner owns this figure").
  */
-export type CellRefusalReason = QtyRefusalReason | 'READ_ONLY' | 'NO_SEAM_ROW' | 'NO_OPEN_DRAFT' | 'OVER_TOTAL';
+export type CellRefusalReason =
+  | QtyRefusalReason
+  | 'READ_ONLY'
+  | 'NO_SEAM_ROW'
+  | 'NO_OPEN_DRAFT'
+  | 'OVER_TOTAL'
+  // PLN-1 · the line is already committed; its requisition is where it changes.
+  | 'COMMITTED';
 
 /** A cell edit that did NOT enter the overlay, and why. Shown at the cell. */
 export interface CellRefusal {
@@ -142,6 +154,11 @@ export function applyEdit(
 ): PlanDraft {
   if (!isEditableCell(row, bucket)) {
     const spec = measureOf(row.measureId);
+    // PLN-1 · a committed line names itself — never "read-only" (which names a
+    // producer) and never the spine's illegal-transition trail.
+    if (isCommittedCell(row, bucket)) {
+      return withRefusal(draft, { rowId: row.id, bucket, raw, reason: 'COMMITTED' });
+    }
     // An editable measure with nothing to anchor to names WHY — never "read-only",
     // which would name the wrong owner (the B3 NO_SEAM_ROW finding): a supplier
     // allocation is anchored to the open draft, and without one it has nowhere
@@ -153,19 +170,15 @@ export function applyEdit(
       ? withRefusal(draft, { rowId: row.id, bucket, raw, reason: 'NO_SEAM_ROW' })
       : withRefusal(draft, { rowId: row.id, bucket, raw, reason: 'READ_ONLY', source: spec.source });
   }
-  // ⚠️ OPERATOR RULING (B4a): ON PASTE, A TOKEN WHOSE READING DIFFERS BETWEEN
-  // THE EN AND ID CONVENTIONS IS REFUSED AS AMBIGUOUS — `12.000` / `12,000`
-  // (one separator, then exactly three digits). A pasted value comes from
-  // somewhere else, written under a convention the seat cannot see, so the
-  // seat's convention is not evidence about it. The parser WITHOUT a hint is
-  // exactly that test: it answers AMBIGUOUS_QTY precisely when both readings
-  // are legal and disagree. A TYPED value keeps the seat's convention.
-  if (origin === 'PASTE') {
-    const unhinted = normalizeQty(raw);
-    if (!unhinted.ok && unhinted.reason === 'AMBIGUOUS_QTY') {
-      return withRefusal(draft, { rowId: row.id, bucket, raw, reason: 'AMBIGUOUS_QTY' });
-    }
-  }
+  // ⚠️ OPERATOR RULING R2 (R-PLN, 2026-10-02) — RETIRES B4a'S PASTE REFUSAL.
+  // B4a refused a pasted token whose EN and ID readings differ (`3,000`,
+  // `3.000`). Measured at R-PLN: a spreadsheet copies FORMATTED text, so nearly
+  // every pasted value of 1,000 or more was refused in both locales, while a
+  // TYPED `12.000` under EN was admitted as 12 with nothing said. Typed and
+  // pasted values now follow the SEAT's convention alike, and the 1000× slip is
+  // guarded where it can actually be seen: `magnitudeFlag` holds any value more
+  // than 10× or under 0.1× its baseline until the planner confirms it, and every
+  // edited cell shows its reading ("= 12 KG").
   const parsed = normalizeQty(raw, convention);
   if (!parsed.ok) return withRefusal(draft, { rowId: row.id, bucket, raw, reason: parsed.reason });
 
@@ -264,8 +277,42 @@ export const reasonOwed = (e: PlanDraftEntry): boolean => {
   return spec !== false && spec.reasonRequiredWhen === 'differsFromBaseline' && e.value !== e.baseline;
 };
 
-/** The reason gate — owed and blank means this row does not dispatch. */
-export const pushBlocked = (e: PlanDraftEntry): boolean => reasonOwed(e) && e.reason.trim() === '';
+/** R2 · the ratio band outside which a value is held for an explicit confirm. */
+export const MAGNITUDE_BAND = Object.freeze({ low: 0.1, high: 10 });
+
+/**
+ * R2 · is this value far enough from its baseline to be a separator slip?
+ * More than 10× or under 0.1× the baseline (`12.000` read as 12 against a
+ * delivered 10,950 is 0.001×). No baseline, or a baseline of zero, gives no
+ * ratio to judge by, and the flag stays down rather than guessing.
+ */
+export const magnitudeFlag = (e: Pick<PlanDraftEntry, 'value' | 'baseline'>): boolean => {
+  if (e.baseline === null || !(e.baseline > 0)) return false;
+  const ratio = e.value / e.baseline;
+  return ratio > MAGNITUDE_BAND.high || ratio < MAGNITUDE_BAND.low;
+};
+
+/** R2 · flagged and not yet confirmed — this row does not dispatch. */
+export const magnitudeUnconfirmed = (e: PlanDraftEntry): boolean => magnitudeFlag(e) && e.magnitudeConfirmed !== true;
+
+/**
+ * Which gate holds a row before dispatch — the reason first, because it is the
+ * one the planner writes. THE ONE SOURCE: `pushBlocked` and `pushEntries` both
+ * ask this, so the two cannot disagree about whether a row goes.
+ */
+export const blockedBy = (e: PlanDraftEntry): 'REASON_REQUIRED' | 'MAGNITUDE_UNCONFIRMED' | null =>
+  reasonOwed(e) && e.reason.trim() === '' ? 'REASON_REQUIRED' : magnitudeUnconfirmed(e) ? 'MAGNITUDE_UNCONFIRMED' : null;
+
+/** The gates — an owed, blank reason or an unconfirmed magnitude means this row does not dispatch. */
+export const pushBlocked = (e: PlanDraftEntry): boolean => blockedBy(e) !== null;
+
+export function setMagnitudeConfirmed(draft: PlanDraft, seamRef: string, confirmed: boolean): PlanDraft {
+  const e = draft.entries.get(seamRef);
+  if (!e) return draft;
+  const entries = new Map(draft.entries);
+  entries.set(seamRef, { ...e, magnitudeConfirmed: confirmed });
+  return { entries, refusals: draft.refusals };
+}
 
 export function setReason(draft: PlanDraft, seamRef: string, reason: string): PlanDraft {
   const e = draft.entries.get(seamRef);
@@ -315,7 +362,7 @@ export interface AllocateVars {
 export type PushOutcome =
   | { readonly seamRef: string; readonly kind: 'dispatched'; readonly correlationId: string }
   | { readonly seamRef: string; readonly kind: 'failed'; readonly reason: string }
-  | { readonly seamRef: string; readonly kind: 'blocked'; readonly reason: 'REASON_REQUIRED' };
+  | { readonly seamRef: string; readonly kind: 'blocked'; readonly reason: 'REASON_REQUIRED' | 'MAGNITUDE_UNCONFIRMED' };
 
 /**
  * Push rows, one `t_intake_commit` each, in order, under ONE causation anchor:
@@ -346,8 +393,9 @@ export async function pushEntries(
     ...entries.filter(isAlloc).sort((a, b) => delta(a) - delta(b)),
   ];
   for (const e of ordered) {
-    if (pushBlocked(e)) {
-      out.push({ seamRef: e.seamRef, kind: 'blocked', reason: 'REASON_REQUIRED' });
+    const held = blockedBy(e);
+    if (held) {
+      out.push({ seamRef: e.seamRef, kind: 'blocked', reason: held });
       continue;
     }
     const target = isAlloc(e) ? parseAllocationAnchor(e.seamRef) : null;
@@ -426,3 +474,25 @@ export function reconcile(draft: PlanDraft, seam: (seamRef: string) => SeamCell 
   }
   return changed ? { entries, refusals: draft.refusals } : draft;
 }
+
+// ─── Paste routing (PLN-1) ───────────────────────────────────────────────────
+
+/** Does the clipboard text span more than one cell? A trailing newline does not. */
+export const isMultiCell = (text: string): boolean => /[\t\n]/.test(text.replace(/\r\n?/g, '\n').replace(/\n$/, ''));
+
+export type PasteRoute = 'grid' | 'field';
+
+/**
+ * PLN-1 · WHO TAKES A PASTE. A single token pasted while a cell's editor is
+ * open is the field's own paste. A MULTI-CELL paste is always the grid's,
+ * editor open or not.
+ *
+ * ⚠️ THE DEFECT THIS CLOSES (R-PLN P0 #1, measured): clicking the cell that is
+ * already active opens its editor, and the grid's handler stood aside for ANY
+ * paste into an open editor — so a row copied from a spreadsheet landed in ONE
+ * field as `1000\t2000\t3,000…`, was refused as "not a number", and the paste
+ * note kept saying the PREVIOUS paste's "10 planned · 0 refused". Five pastes of
+ * ten cells left ten planned changes and a page that reported success.
+ */
+export const routePaste = (text: string, editorOpen: boolean): PasteRoute =>
+  editorOpen && !isMultiCell(text) ? 'field' : 'grid';

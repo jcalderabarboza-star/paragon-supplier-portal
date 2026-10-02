@@ -1,17 +1,20 @@
-// Plan Grid (Stage G · G1.2a) i18n fragment. Namespace: planGrid.*
-// The procurement-EXECUTION grid: award what-if overlay + C7 PrIntakeLine review.
-// READ-ONLY surface — nothing dispatches (that is G1.2b).
+// Plan Grid i18n fragment. Namespace: planGrid.*
+// The planning grid (time-phased views, governed edits that dispatch), plus the
+// award what-if and the C7 intake list on their own tabs.
+// ⚠️ PLN-1 · the page chrome carries NO count and NO "the one figure" claim —
+// `planGridChrome.guard.test.ts` holds both, because both went false here with
+// no file edited.
 export const planGridEn: Record<string, string> = {
   // — Page chrome —
   'planGrid.crumb.planGrid': 'Plan Grid',
   'planGrid.header.title': 'Plan Grid',
-  'planGrid.header.subtitle': 'Award what-if & requisition intake review',
-  'planGrid.meta.summary': 'Sample planning surface — {{quotations}} quotations, {{lines}} intake lines',
+  'planGrid.header.subtitle': 'Time-phased plan by material and bucket — demand, the supplier split and the accepted quantity',
+  'planGrid.meta.views': 'Plan views by month and by week, and the exceptions across them; {{award}} and {{intake}} have their own tabs.',
 
   // — Honesty banner (SIMULATED; the ONE governed push in 1.2b) —
   'planGrid.honesty.title': 'Planning sandbox',
   'planGrid.honesty.body':
-    'The award what-if recomputes a proposed score in your browser; the committed AI composite is never changed. In the intake panel you may adjust an accepted quantity — a governed decision that requires a reason and is audited. Pushing creates a Draft requisition, but with no live producer yet it stays simulated, never a live procurement instruction.',
+    'Every figure here is simulated until a live SOMO feed exists. What you change stays planned in this page until you push it: pushing an accepted quantity commits its intake line and raises a Draft requisition; pushing a supplier split edits the open forecast draft. Nothing here is a live procurement instruction.',
 
   // — Award what-if grid —
   'planGrid.award.title': 'Award scenario — RFQ-2026-003 (Halal Glycerin)',
@@ -188,7 +191,7 @@ export const planGridEn: Record<string, string> = {
   'planGrid.tp.refused': 'This horizon cannot be shown ({{reason}}).',
   'planGrid.tp.empty': 'No material matches this filter.',
   // — B3 · governed edits in the grid —
-  'planGrid.edit.hint': 'Accepted quantity is the one figure you can change: select a cell and press Enter to type, or paste cells copied from a spreadsheet. Every other figure belongs to its producer.',
+  'planGrid.edit.hint': 'Editable here: {{measures}} — select a cell and press Enter to type, or paste cells copied from a spreadsheet; an allocation takes edits while a forecast draft is open. Every other figure belongs to its producer.',
   'planGrid.edit.banner_one': '{{n}} planned change — not committed until pushed',
   'planGrid.edit.banner_other': '{{n}} planned changes — not committed until pushed',
   'planGrid.edit.reloadDrops': 'They live in this page only: a reload drops every change that has not been pushed.',
@@ -226,6 +229,15 @@ export const planGridEn: Record<string, string> = {
   // — B4b · allocation in the grid and the publication panel —
   'planGrid.edit.refused.NO_OPEN_DRAFT': 'no open draft covers this figure — open a draft in the publication panel to split it',
   'planGrid.edit.refused.OVER_TOTAL': 'over SOMO’s total — the suppliers would hold {{sum}} of {{total}}',
+  'planGrid.edit.reading': '“{{raw}}” = {{value}} {{uom}}',
+  'planGrid.edit.magnitude.high': 'More than 10× its baseline of {{baseline}} — check the thousands separator.',
+  'planGrid.edit.magnitude.low': 'Under a tenth of its baseline of {{baseline}} — check the thousands separator.',
+  'planGrid.edit.magnitudeConfirm': 'I confirm {{value}} {{uom}}',
+  'planGrid.edit.push.magnitudeUnconfirmed': 'Not pushed — this quantity is more than 10× or under a tenth of its baseline; confirm it first.',
+  'planGrid.edit.refused.COMMITTED': 'already committed — this line raised its requisition; change the quantity on the requisition',
+  'planGrid.edit.push.alreadyCommitted': 'Not pushed — this line is already committed and has its requisition. Change the quantity on the requisition.',
+  'planGrid.edit.push.lineDismissed': 'Not pushed — this line was dismissed in triage. Restore it on Intake Review first.',
+  'planGrid.edit.committedTitle': 'Committed — this line raised its requisition; the quantity changes there, not here',
   'planGrid.edit.push.notRoutable': 'Not pushed — this change is not anchored to an open draft.',
   'planGrid.edit.allocationCellLabel': 'Allocation to {{supplier}} — {{material}} {{bucket}}',
   'planGrid.publication.title': 'Forecast publication',
@@ -272,13 +284,13 @@ export const planGridId: Record<string, string> = {
   // — Page chrome —
   'planGrid.crumb.planGrid': 'Grid Perencanaan',
   'planGrid.header.title': 'Grid Perencanaan',
-  'planGrid.header.subtitle': 'Simulasi penghargaan & tinjauan asupan permintaan',
-  'planGrid.meta.summary': 'Permukaan perencanaan sampel — {{quotations}} penawaran, {{lines}} baris asupan',
+  'planGrid.header.subtitle': 'Rencana berfase waktu per material dan periode — permintaan, pembagian pemasok, dan jumlah yang diterima',
+  'planGrid.meta.views': 'Tampilan rencana per bulan dan per minggu, serta pengecualian di antaranya; {{award}} dan {{intake}} ada di tab masing-masing.',
 
   // — Honesty banner —
   'planGrid.honesty.title': 'Kotak-pasir perencanaan',
   'planGrid.honesty.body':
-    'Simulasi penghargaan menghitung ulang skor usulan di peramban Anda; komposit AI yang telah dikomit tidak pernah diubah. Pada panel asupan Anda dapat menyesuaikan jumlah yang diterima — sebuah keputusan terkelola yang memerlukan alasan dan diaudit. Mengirim membuat permintaan Draft, tetapi tanpa produsen live jumlahnya tetap simulasi, bukan instruksi pengadaan langsung.',
+    'Setiap angka di sini simulasi sampai feed SOMO live tersedia. Yang Anda ubah tetap direncanakan di halaman ini sampai Anda mengirimnya: mengirim jumlah yang diterima mengomit baris asupannya dan membuat permintaan Draft; mengirim pembagian pemasok mengubah draf prakiraan yang terbuka. Tidak ada yang di sini merupakan instruksi pengadaan langsung.',
 
   // — Award what-if grid —
   'planGrid.award.title': 'Skenario penghargaan — RFQ-2026-003 (Gliserin Halal)',
@@ -447,7 +459,7 @@ export const planGridId: Record<string, string> = {
   'planGrid.tp.refused': 'Horizon ini tidak dapat ditampilkan ({{reason}}).',
   'planGrid.tp.empty': 'Tidak ada material yang cocok dengan filter ini.',
   // — B3 · governed edits in the grid —
-  'planGrid.edit.hint': 'Jumlah yang diterima adalah satu-satunya angka yang dapat Anda ubah: pilih sel dan tekan Enter untuk mengetik, atau tempel sel yang disalin dari lembar kerja. Setiap angka lain milik produsennya.',
+  'planGrid.edit.hint': 'Dapat diubah di sini: {{measures}} — pilih sel dan tekan Enter untuk mengetik, atau tempel sel yang disalin dari lembar kerja; alokasi dapat diubah selama draf prakiraan terbuka. Setiap angka lain milik produsennya.',
   'planGrid.edit.banner_other': '{{n}} perubahan terencana — belum dikomit sampai dikirim',
   'planGrid.edit.reloadDrops': 'Perubahan ini hanya ada di halaman ini: memuat ulang menghapus setiap perubahan yang belum dikirim.',
   'planGrid.edit.push.selection': 'Kirim pilihan ({{n}})',
@@ -484,6 +496,15 @@ export const planGridId: Record<string, string> = {
   // — B4b · alokasi di grid dan panel publikasi —
   'planGrid.edit.refused.NO_OPEN_DRAFT': 'tidak ada draf terbuka untuk angka ini — buka draf di panel publikasi untuk membaginya',
   'planGrid.edit.refused.OVER_TOTAL': 'melebihi total SOMO — pemasok akan memegang {{sum}} dari {{total}}',
+  'planGrid.edit.reading': '“{{raw}}” = {{value}} {{uom}}',
+  'planGrid.edit.magnitude.high': 'Lebih dari 10× angka dasarnya {{baseline}} — periksa pemisah ribuan.',
+  'planGrid.edit.magnitude.low': 'Kurang dari sepersepuluh angka dasarnya {{baseline}} — periksa pemisah ribuan.',
+  'planGrid.edit.magnitudeConfirm': 'Saya konfirmasi {{value}} {{uom}}',
+  'planGrid.edit.push.magnitudeUnconfirmed': 'Tidak terkirim — jumlah ini lebih dari 10× atau kurang dari sepersepuluh angka dasarnya; konfirmasi dulu.',
+  'planGrid.edit.refused.COMMITTED': 'sudah dikomit — baris ini sudah membuat permintaannya; ubah jumlahnya pada permintaan',
+  'planGrid.edit.push.alreadyCommitted': 'Tidak terkirim — baris ini sudah dikomit dan sudah memiliki permintaannya. Ubah jumlahnya pada permintaan.',
+  'planGrid.edit.push.lineDismissed': 'Tidak terkirim — baris ini diabaikan saat triase. Pulihkan dulu di Tinjauan Asupan.',
+  'planGrid.edit.committedTitle': 'Dikomit — baris ini sudah membuat permintaannya; jumlahnya diubah di sana, bukan di sini',
   'planGrid.edit.push.notRoutable': 'Tidak terkirim — perubahan ini tidak tertambat pada draf terbuka.',
   'planGrid.edit.allocationCellLabel': 'Alokasi untuk {{supplier}} — {{material}} {{bucket}}',
   'planGrid.publication.title': 'Publikasi prakiraan',

@@ -75,6 +75,8 @@ export function generatedIntakeLine(id: string): PrIntakeLine | null {
     uom: entry.canonicalUom,
     periodBucket: parts.bucket,
     estimatedValue: suggested * generatedUnitPrice(parts.materialCode),
+    // PLN-1 · the price travels with the line, so a commit at any quantity is priced from it.
+    unitPrice: generatedUnitPrice(parts.materialCode),
     source: 'SOMO',
   });
 }

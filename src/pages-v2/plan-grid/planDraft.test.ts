@@ -26,12 +26,15 @@ import {
   applyEdit,
   applyPaste,
   applyPushOutcomes,
+  blockedBy,
   cellKey,
+  magnitudeFlag,
   pushBlocked,
   pushEntries,
   reasonOwed,
   reconcile,
   removeEntry,
+  setMagnitudeConfirmed,
   setReason,
   type CommitVars,
   type PlanDraft,
@@ -201,19 +204,30 @@ describe('a multi-cell paste — every cell judged on its own', () => {
     expect(d.refusals.get(cellKey(row.id, '2026-11'))).toEqual({ rowId: row.id, bucket: '2026-11', raw: '15000', reason: 'NO_SEAM_ROW' });
   });
 
-  // ⚠️ OPERATOR RULING (B4a): a PASTED token whose reading differs between EN
-  // and ID is refused as AMBIGUOUS whatever the seat; a TYPED one keeps the
-  // seat's convention. Both directions, both conventions, pinned.
+  // ⚠️ OPERATOR RULING R2 (R-PLN, 2026-10-02) RETIRES B4a's PASTE REFUSAL. The
+  // four cases B4a pinned as AMBIGUOUS are pinned here to what R2 rules: a
+  // pasted token follows the SEAT's convention exactly as a typed one does, and
+  // the slip reading (12 against a baseline in the thousands) is HELD by the
+  // magnitude gate rather than refused at the cell. Each case names its value
+  // AND its flag, so neither half can drift alone.
   it.each([
-    ['12.000', 'id'],
-    ['12.000', 'en'],
-    ['12,000', 'id'],
-    ['12,000', 'en'],
-  ] as const)('a pasted "%s" is refused as AMBIGUOUS under the %s seat — retype asked', (raw, conv) => {
+    ['12.000', 'id', 12000, false],
+    ['12.000', 'en', 12, true],
+    ['12,000', 'id', 12, true],
+    ['12,000', 'en', 12000, false],
+  ] as const)('R2 · a pasted "%s" under the %s seat reads %d, magnitude-flagged: %s', (raw, conv, value, flagged) => {
     const row = acceptedRow('SIM-RM-0007');
+    const baseline = row.cells['2026-08']!;
+    // population control: the flag claims below hold only for a baseline in
+    // [1,200 · 120,000] — 12 is under 0.1× of it and 12,000 inside the band.
+    expect(baseline).toBeGreaterThanOrEqual(1200);
+    expect(baseline).toBeLessThanOrEqual(120000);
     const r = applyPaste(EMPTY_DRAFT, [row], HORIZON, { row: 0, col: 0 }, raw, conv);
-    expect(r).toMatchObject({ planned: 0, refused: 1 });
-    expect(r.draft.refusals.get(cellKey(row.id, '2026-08'))).toEqual({ rowId: row.id, bucket: '2026-08', raw, reason: 'AMBIGUOUS_QTY' });
+    expect(r).toMatchObject({ planned: 1, refused: 0 });
+    const e = r.draft.entries.get(row.seamRefs!['2026-08'])!;
+    expect(e).toMatchObject({ raw, value, origin: 'PASTE', baseline });
+    expect(magnitudeFlag(e)).toBe(flagged);
+    expect(pushBlocked({ ...e, reason: 'r' })).toBe(flagged);
   });
 
   it('KNOWN-GOOD: a paste that reads the same in both conventions is planned — plain digits, and ID-only grouping', () => {
@@ -223,7 +237,7 @@ describe('a multi-cell paste — every cell judged on its own', () => {
     expect([...r.draft.entries.values()].map((e) => e.value)).toEqual([12000, 1234567, 2.5]);
   });
 
-  it('a TYPED "12.000" keeps the seat’s convention — the ruling is paste-only', () => {
+  it('a TYPED "12.000" keeps the seat’s convention — typed and pasted now agree (R2)', () => {
     const row = acceptedRow('SIM-RM-0007');
     expect([...applyEdit(EMPTY_DRAFT, row, '2026-08', '12.000', 'TYPED', 'id').entries.values()][0].value).toBe(12000);
     expect([...applyEdit(EMPTY_DRAFT, row, '2026-08', '12,000', 'TYPED', 'en').entries.values()][0].value).toBe(12000);
@@ -256,6 +270,10 @@ describe('the reason rule at push (A2 — owed only off the producer’s baselin
 
     // with the reason written, the same row dispatches and the reason travels
     d = setReason(d, moved.seamRef, 'Trimmed to line capacity');
+    // R2 · `1` against a delivered quantity in the thousands is also held by the
+    // magnitude gate — the planner confirms it, as the panel asks them to.
+    expect(blockedBy(d.entries.get(moved.seamRef)!)).toBe('MAGNITUDE_UNCONFIRMED');
+    d = setMagnitudeConfirmed(d, moved.seamRef, true);
     expect(pushBlocked(d.entries.get(moved.seamRef)!)).toBe(false);
     const again = await pushEntries([d.entries.get(moved.seamRef)!], commitVia(BUYER), 'en');
     expect(again[0].kind).toBe('dispatched');
@@ -303,6 +321,10 @@ describe('both failure channels stay PLANNED (C6 §6 invariant 3)', () => {
     d = setReason(d, row.seamRefs!['2026-08'], 'x');
     d = applyEdit(d, row, '2026-09', '0', 'TYPED', 'en'); // INTAKE_QTY_FLOOR refuses zero
     d = setReason(d, row.seamRefs!['2026-09'], 'y');
+    // R2 · both values sit far under their baselines; the planner confirms them,
+    // so what is measured below is the SPINE's two channels, not the gate.
+    d = setMagnitudeConfirmed(d, row.seamRefs!['2026-08'], true);
+    d = setMagnitudeConfirmed(d, row.seamRefs!['2026-09'], true);
     const [thrownRow, returnedRow] = [...d.entries.values()];
 
     const thrown = await pushEntries([thrownRow], commitVia(SUPPLIER), 'en');

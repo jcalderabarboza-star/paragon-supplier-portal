@@ -52,6 +52,8 @@ export const PR_INTAKE_LINES: readonly PrIntakeLine[] = [
     // A RAW MATERIAL, so the MONTHLY grain (operator ruling, 2026-09-28).
     periodBucket: '2026-09',
     estimatedValue: 534_000_000,
+    // PLN-1 · authored, IDR per KG: 12,000 × 44,500 = the line total above.
+    unitPrice: 44_500,
     source: 'SOMO',
     deficit: 'Projected net requirement below safety stock for Q3 Wardah lines',
   },
@@ -65,6 +67,9 @@ export const PR_INTAKE_LINES: readonly PrIntakeLine[] = [
     uom: 'KG',
     periodBucket: '2026-08',
     estimatedValue: 990_000_000,
+    // PLN-1 · authored, IDR per KG. The total above is 5,000 × 198,000 — the
+    // SUGGESTION's quantity, not the 4,500 SOMO delivered.
+    unitPrice: 198_000,
     source: 'SOMO',
     deficit: 'Aug forecast gap after Emina reformulation; producer trimmed to on-hand cover',
   },
@@ -78,6 +83,7 @@ export const PR_INTAKE_LINES: readonly PrIntakeLine[] = [
     uom: 'PCS',
     periodBucket: '2026-08',
     estimatedValue: 256_000_000,
+    unitPrice: 1_280,
     source: 'INTERNAL_GRID',
     deficit: 'Packaging plan shortfall for the Make Over launch run',
   },
@@ -96,6 +102,10 @@ export const PR_INTAKE_LINES: readonly PrIntakeLine[] = [
     // has a row that disagrees with it.
     periodBucket: '2026-W36',
     estimatedValue: 81_000_000,
+    // PLN-1 · authored, IDR per PCS. The total above is 90,000 × 900 — the
+    // DELIVERED quantity, not the 80,000 suggested. Beside pil-somo-002 this is
+    // why a line total cannot be rescaled: its basis differs row to row.
+    unitPrice: 900,
     source: 'INTERNAL_GRID',
     deficit: 'Secondary-packaging buffer raised for the Q3 quarterly build',
   },
