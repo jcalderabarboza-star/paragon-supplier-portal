@@ -15,15 +15,19 @@
 // suppliers the supplier master does not hold.
 // ────────────────────────────────────────────────────────────────────────────
 
+import React from 'react';
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { screen, fireEvent, within } from '@testing-library/react';
+import { screen, fireEvent, within, waitFor } from '@testing-library/react';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 import { renderWithProviders } from '../../test/test-utils';
 import i18n from '../../lib/i18n';
 import PlanGrid from '../PlanGrid';
-import { PlanRowLabel } from './TimePhasedGrid';
+import TimePhasedGrid, { PlanRowLabel } from './TimePhasedGrid';
+import { PlanDraftProvider, usePlanDraft } from './PlanDraftProvider';
+import { derivePlanningFacts } from '../../services/data/mock/planningFacts';
+import { formatNumber } from '../../lib/format';
 import { oneGrainClash } from './PlannedChangesPanel';
 import { blocksOfViewType, buildPlanBlocks, type PlanRow } from './planGridModel';
 import { visibleMeasures } from './visibleMeasures';
@@ -114,6 +118,17 @@ describe('PLN-2 · a plan view lists ONE material type — the type planned at i
     for (const v of VIEWS) expect(viewTypeAgreesWithGrain(v), v.viewId).toBe(true);
     const wrong: ViewSpec = { ...view('rm-plan'), grain: 'week' };
     expect(viewTypeAgreesWithGrain(wrong)).toBe(false);
+  });
+
+  it('on the page: the summary counts the view’s own type — the materials the grid lists', async () => {
+    const typed = (await listed('rm-plan', 'month')).blocks.length;
+    renderWithProviders(
+      <PlanDraftProvider>
+        <TimePhasedGrid viewId="rm-plan" />
+      </PlanDraftProvider>,
+      { route: '/buyer/plan-grid' },
+    );
+    await waitFor(() => expect(screen.getByTestId('tp-summary').textContent).toMatch(new RegExp(`^${formatNumber(typed)} materials`)));
   });
 
   it('on the page: the type is the VIEW’s statement — there is no material-type select to change it', () => {
@@ -255,6 +270,50 @@ describe('PLN-2 · INTAKE_ONE_GRAIN — one material × period commits at most o
     expect(crossGrainCommitment('pil-somo-SIM-PM-0002@2026-W45', [m])).toBeNull();
     // an authored C7 line names no material code, so it is outside the rule
     expect(crossGrainCommitment('pil-grid-001', [m])).toBeNull();
+    // a week that OPENS on the 1st (2027-W05 is Mon 1 Feb) belongs to February only
+    expect(crossGrainCommitment('pil-somo-SIM-PM-0068@2027-W05', ['pil-somo-SIM-PM-0068@2027-01'])).toBeNull();
+    expect(crossGrainCommitment('pil-somo-SIM-PM-0068@2027-W05', ['pil-somo-SIM-PM-0068@2027-02'])).toBe('pil-somo-SIM-PM-0068@2027-02');
+  });
+
+  it('KNOWN-GOOD: a DISMISSED line at the other grain commits nothing, so it blocks nothing', async () => {
+    intakeLineStore.put({ lineId: 'pil-somo-SIM-PM-0068@2026-11', state: 'Dismissed' });
+    const line = somoIntakeLineId('SIM-PM-0068', '2026-W45');
+    expect((await commit(line, 45_750)).status).not.toBe('failed');
+    expect(prsFor(line)).toHaveLength(1);
+  });
+
+  it('on the page: pushing the week shows the refusal in the panel’s own words, and the row stays PLANNED', async () => {
+    alreadyCommitted('pil-somo-SIM-PM-0068@2026-11');
+    const pm = view('pm-plan');
+    const horizon = somoHorizon('week').slice(0, pm.horizonLength);
+    const measures = visibleMeasures(pm.measuresShown);
+    const out = derivePlanningFacts({ horizon, measures, materialCodes: ['SIM-PM-0068'] });
+    if (!out.ok) throw new Error('refused');
+    const row = buildPlanBlocks(out.facts, horizon, measures).flatMap((b) => b.rows).find((r) => r.measureId === 'acceptedQty')!;
+    const ref = row.seamRefs!['2026-W45'];
+    expect(ref).toBe('pil-somo-SIM-PM-0068@2026-W45');
+    const Seed: React.FC = () => {
+      const api = usePlanDraft()!;
+      return (
+        <button type="button" onClick={() => api.edit(row, '2026-W45', String(row.cells['2026-W45']), 'TYPED')}>
+          seed
+        </button>
+      );
+    };
+    renderWithProviders(
+      <PlanDraftProvider>
+        <Seed />
+        <TimePhasedGrid viewId="pm-plan" currentGrain="week" />
+      </PlanDraftProvider>,
+      { route: '/buyer/plan-grid' },
+    );
+    fireEvent.click(screen.getByText('seed'));
+    fireEvent.click(screen.getByTestId(`plan-push-row-${ref}`));
+    const failure = await screen.findByTestId(`plan-draft-failure-${ref}`);
+    expect(failure).toHaveTextContent('SIM-PM-0068 is already committed for 2026-11, which overlaps 2026-W45');
+    expect(failure.textContent).not.toMatch(/INTAKE_ONE_GRAIN|pil-somo-/);
+    expect(prsFor(ref)).toEqual([]);
+    expect(screen.getByTestId('plan-draft-banner')).toBeInTheDocument();
   });
 
   it('the refusal reaches the planner in the surface’s own words, EN and ID — never the developer trail', async () => {
