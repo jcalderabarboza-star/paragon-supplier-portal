@@ -10,29 +10,26 @@ import {
 import 'react-datasheet-grid/dist/style.css';
 import './plan-grid/planGrid.css';
 import { useTranslation } from 'react-i18next';
+import { useSearchParams } from 'react-router-dom';
 import AppShellV2 from '../components/layout-v2/AppShellV2';
 import PageHeader from '../components/ui-v2/PageHeader';
 import PageMetaLine from '../components/ui-v2/PageMetaLine';
 import Data from '../components/ui-v2/Data';
 import LivenessPill from '../components/ui-v2/LivenessPill';
-import PlanCellMarker from './plan-grid/PlanCellMarker';
 import { dataCell, textCell } from './plan-grid/cells';
-import IntakeAdjustDrawer from './plan-grid/IntakeAdjustDrawer';
+import IntakeReviewView from './plan-grid/IntakeReviewView';
 import FullScreenSection from './plan-grid/FullScreenSection';
 import SubTabs from '../components/ui-v2/SubTabs';
 import TimePhasedGrid from './plan-grid/TimePhasedGrid';
 import type { BucketGrain } from '../services/planning/bucket';
 import { PlanDraftProvider } from './plan-grid/PlanDraftProvider';
-import { useIntakeReview, useQuotations } from '../services/query/hooks';
-import type { IntakeLine } from '../services/data/types';
-import { formatIDR, formatNumber } from '../lib/format';
+import { useQuotations } from '../services/query/hooks';
 import { planningSupplierName } from '../services/planning/somoFixture';
 import {
   AWARD_CRITERIA,
   DEFAULT_WEIGHTS,
   awardScenarioRows,
   buildWhatIfOverlay,
-  selectedLine,
   type AwardCriterionKey,
   type AwardScenarioRow,
   type WhatIfWeights,
@@ -62,7 +59,7 @@ const AWARD_RFQ = 'rfq-003';
 // `--plan-dsg-h` + planGrid.css so it cannot auto-shrink to few-row content —
 // the react-resize-detector feedback loop that pinning removes (see planGrid.css).
 // These are the ONE source of truth for both the `height` prop and the pin.
-const DSG_H = { weights: 88, award: 176, intake: 216 } as const;
+const DSG_H = { weights: 88, award: 176 } as const;
 const dsgVar = (h: number) => ({ '--plan-dsg-h': `${h}px` }) as React.CSSProperties;
 
 // PLN-2 · names from the planning supplier master, one resolver for every planning surface.
@@ -84,13 +81,26 @@ interface AwardDisplayRow extends AwardScenarioRow {
  */
 type PlanTab = 'rm' | 'pm' | 'exceptions' | 'award' | 'intake';
 
+/**
+ * PLN-3 · the view a link opens on — `?view=<ViewId>`. The retired Intake Review
+ * route redirects to `?view=intake-review`, so its old links land on the queue
+ * rather than on the raw-material plan.
+ */
+const TAB_OF_VIEW: Readonly<Record<string, PlanTab>> = {
+  'rm-plan': 'rm',
+  'pm-plan': 'pm',
+  exceptions: 'exceptions',
+  'intake-review': 'intake',
+};
+
 const PlanGrid: React.FC = () => {
   const { t } = useTranslation();
-  const [tab, setTabState] = useState<PlanTab>('rm');
+  const [params] = useSearchParams();
+  const [tab, setTabState] = useState<PlanTab>(() => TAB_OF_VIEW[params.get('view') ?? ''] ?? 'rm');
   // PLN-1 · the grain of the plan tab the planner was last in. The Exceptions
   // tab follows it — it was fixed at the monthly grain, so weekly exceptions
   // had no list of their own.
-  const [planGrain, setPlanGrain] = useState<BucketGrain>('month');
+  const [planGrain, setPlanGrain] = useState<BucketGrain>(() => (TAB_OF_VIEW[params.get('view') ?? ''] === 'pm' ? 'week' : 'month'));
   const setTab = (next: PlanTab) => {
     if (next === 'rm') setPlanGrain('month');
     if (next === 'pm') setPlanGrain('week');
@@ -103,19 +113,6 @@ const PlanGrid: React.FC = () => {
   // weights grid updates this; the award what-if column recomputes in pure TS.
   const [weights, setWeights] = useState<WhatIfWeights>(DEFAULT_WEIGHTS);
 
-  // G1.3.2 — the working-set selection: which intake line the drawer edits. The
-  // intake DSG's "Adjust" action column sets this; the drawer reads it via the
-  // pure `selectedLine` resolver. One line at a time — the working set of one.
-  const [selectedLineId, setSelectedLineId] = useState<string | null>(null);
-
-  // ⚠️ **A2 — THE GRID READS THE SEAM, NOT THE FIXTURE ALIAS.** It rendered
-  // `SAMPLE_INTAKE_LINES` directly, so its plan-state column showed the literal
-  // `'PLANNED'` on every row forever: a line the drawer had already committed
-  // still read PLANNED two columns away from the drawer that committed it. The
-  // seam carries the machine's triage, so both halves of this page now answer
-  // from the same place.
-  const intakeQuery = useIntakeReview();
-  const intakeLines = intakeQuery.data?.items ?? [];
 
   const awardRows = useMemo(
     () => awardScenarioRows(quotations, AWARD_RFQ),
@@ -196,137 +193,6 @@ const PlanGrid: React.FC = () => {
             <span className="inline-flex items-center rounded-sm border border-info/30 bg-info-soft px-1.5 py-0.5 font-mono text-xs font-semibold text-info">
               {rowData.whatIf}
             </span>
-          </div>
-        ),
-      },
-    ],
-    [t],
-  );
-
-  const intakeColumns = useMemo<Column<IntakeLine>[]>(
-    () => [
-      {
-        // G1.3.2 — the working-set selection affordance: an explicit per-row
-        // "Adjust" button that lifts the row id into `selectedLineId`. It reads
-        // selection from the virtualized DSG (browse scales) without moving the
-        // reason-gate into the grid body (it stays in the plain-DOM drawer). The
-        // button stops propagation so the DSG's own cell selection is untouched.
-        title: t('planGrid.intake.col.select'),
-        disabled: true,
-        minWidth: 96,
-        component: ({ rowData }: CellProps<IntakeLine>) => (
-          <div className="w-full px-2">
-            <button
-              type="button"
-              aria-label={t('planGrid.intake.select.action', { material: rowData.material })}
-              onClick={(e) => {
-                e.stopPropagation();
-                setSelectedLineId(rowData.id);
-              }}
-              className="inline-flex items-center rounded-md border border-action/40 bg-action-soft px-2 py-0.5 text-xs text-action hover:border-action"
-            >
-              {t('planGrid.intake.col.select')}
-            </button>
-          </div>
-        ),
-      },
-      {
-        title: t('planGrid.intake.col.material'),
-        disabled: true,
-        grow: 2,
-        minWidth: 170,
-        component: textCell<IntakeLine>((r) => r.material),
-      },
-      {
-        title: t('planGrid.intake.col.source'),
-        disabled: true,
-        minWidth: 120,
-        component: textCell<IntakeLine>(
-          (r) => t(`planGrid.source.${r.source}`),
-          'text-text-secondary',
-        ),
-      },
-      {
-        title: t('planGrid.intake.col.lane'),
-        disabled: true,
-        grow: 2,
-        minWidth: 180,
-        component: textCell<IntakeLine>(
-          (r) => r.suggestedSource ?? t('planGrid.empty.dash'),
-          'text-text-secondary',
-        ),
-      },
-      {
-        title: t('planGrid.intake.col.segment'),
-        disabled: true,
-        minWidth: 90,
-        component: textCell<IntakeLine>(
-          (r) => r.segment ?? t('planGrid.empty.dash'),
-          'text-text-secondary',
-        ),
-      },
-      {
-        title: t('planGrid.intake.col.suggestedQty'),
-        disabled: true,
-        minWidth: 110,
-        component: dataCell<IntakeLine>((r) => `${formatNumber(r.suggestedQty)} ${r.uom}`),
-      },
-      {
-        title: t('planGrid.intake.col.acceptedQty'),
-        disabled: true,
-        minWidth: 110,
-        component: dataCell<IntakeLine>((r) => `${formatNumber(r.acceptedQty)} ${r.uom}`),
-      },
-      {
-        title: t('planGrid.intake.col.adjusted'),
-        disabled: true,
-        minWidth: 190,
-        // ⚠️ **THIS COLUMN NAMES THE PRODUCER'S ACT, AND IT USED TO NAME
-        // NOBODY'S.** It read a stored `wasAdjusted` boolean — a hand-authored
-        // fixture literal sitting beside the two quantities that determine it,
-        // with nothing checking they agreed (A1-R2 retired it). It is derived
-        // now, and it SAYS WHOSE DELTA IT IS: a trim SOMO made is SOMO's act,
-        // shown here read-only, and never the planner's to justify.
-        component: ({ rowData }: CellProps<IntakeLine>) => (
-          <div className="w-full px-2 text-sm">
-            <span
-              className={`inline-flex items-center rounded-sm border px-1.5 py-0.5 text-[11px] font-medium ${
-                rowData.producerAdjusted
-                  ? 'border-warning/30 bg-warning-soft text-warning-hover'
-                  : 'border-border-subtle bg-bg-hover text-text-tertiary'
-              }`}
-            >
-              {rowData.producerAdjusted
-                ? t('planGrid.adjusted.byProducer', {
-                    producer: t(`planGrid.source.${rowData.source}`),
-                    from: formatNumber(rowData.suggestedQty),
-                    to: formatNumber(rowData.acceptedQty),
-                  })
-                : t('planGrid.adjusted.no')}
-            </span>
-          </div>
-        ),
-      },
-      {
-        title: t('planGrid.intake.col.period'),
-        disabled: true,
-        minWidth: 90,
-        component: dataCell<IntakeLine>((r) => r.periodBucket),
-      },
-      {
-        title: t('planGrid.intake.col.estValue'),
-        disabled: true,
-        minWidth: 130,
-        component: dataCell<IntakeLine>((r) => formatIDR(r.estimatedValue, { compact: true })),
-      },
-      {
-        title: t('planGrid.intake.col.provenance'),
-        disabled: true,
-        grow: 2,
-        minWidth: 170,
-        component: ({ rowData }: CellProps<IntakeLine>) => (
-          <div className="w-full px-2">
-            <PlanCellMarker capability="purchaseRequisitions" planState={rowData.planState} />
           </div>
         ),
       },
@@ -446,46 +312,9 @@ const PlanGrid: React.FC = () => {
       </section>
       )}
 
-      {/* ── Requisition intake — review (C7 §2, full-screen-capable) ──────── */}
-      {tab === 'intake' && (
-      <>
-      <section className="mb-8">
-        <FullScreenSection title={t('planGrid.intake.title')} normalHeight={DSG_H.intake}>
-          {({ dsgHeight }) => (
-            <>
-              <p className="mb-3 text-sm text-text-secondary">{t('planGrid.intake.subtitle')}</p>
-              <div
-                className="plan-dsg overflow-hidden rounded-lg border border-border-subtle bg-bg-surface"
-                style={dsgVar(dsgHeight)}
-              >
-                <DataSheetGrid<IntakeLine>
-                  value={intakeLines as IntakeLine[]}
-                  columns={intakeColumns}
-                  gutterColumn={false}
-                  lockRows
-                  rowKey="id"
-                  height={dsgHeight}
-                />
-              </div>
-            </>
-          )}
-        </FullScreenSection>
-      </section>
-
-      {/* ── Adjust & push — the ONE governed mutation on the SELECTED line ── */}
-      {/* (C6-LOCK, plain-DOM working-set drawer; full-screen-capable) */}
-      <section className="mb-8">
-        <FullScreenSection title={t('planGrid.drawer.title')} normalHeight={DSG_H.intake}>
-          {() => (
-            <>
-              <p className="mb-3 text-sm text-text-secondary">{t('planGrid.drawer.subtitle')}</p>
-              <IntakeAdjustDrawer line={selectedLine(intakeLines, selectedLineId)} />
-            </>
-          )}
-        </FullScreenSection>
-      </section>
-      </>
-      )}
+      {/* ── PLN-3 · the intake-review view (Design 1 D8) — the retired Intake
+          Review page lives here now, over the ONE intake population. ── */}
+      {tab === 'intake' && <IntakeReviewView />}
     </AppShellV2>
   );
 };

@@ -98,7 +98,9 @@ export const PlanBucketCell: React.FC<{
   refusal?: CellRefusal;
   /** B3 · the seam holds this figure as COMMITTED (an editable cell only). */
   committed?: boolean;
-}> = ({ value, derived, planned, refusal, committed }) => {
+  /** PLN-3 · the cell's intake line was DISMISSED in the intake view. */
+  dismissed?: boolean;
+}> = ({ value, derived, planned, refusal, committed, dismissed }) => {
   const { t } = useTranslation();
   // ⚠️ THE OVERLAY IS SHOWN, NEVER MERGED: the seam value stays in the row and
   // the planned one is read from the draft by seamRef, marked as PLANNED.
@@ -115,7 +117,15 @@ export const PlanBucketCell: React.FC<{
       className={`flex w-full items-center justify-end gap-1 px-2 ${planned ? 'bg-info-soft' : ''} ${refusal ? 'ring-1 ring-inset ring-danger/60' : flagged ? 'ring-1 ring-inset ring-warning' : ''}`}
       data-testid="tp-cell"
       data-reading={reading || undefined}
-      title={refusal ? `“${refusal.raw}” — ${refusalText}` : committed && !planned ? t('planGrid.edit.committedTitle') : reading || undefined}
+      title={
+        refusal
+          ? `“${refusal.raw}” — ${refusalText}`
+          : committed && !planned
+            ? t('planGrid.edit.committedTitle')
+            : dismissed && !planned
+              ? t('planGrid.edit.dismissedTitle')
+              : reading || undefined
+      }
     >
       {flagged && (
         <span className="text-[10px] font-semibold text-warning-hover" data-testid="tp-cell-magnitude" aria-label={t('planGrid.edit.push.magnitudeUnconfirmed')}>
@@ -144,6 +154,15 @@ export const PlanBucketCell: React.FC<{
           ✓
         </span>
       )}
+      {dismissed && !planned && (
+        <span
+          className="text-[9px] font-semibold uppercase text-text-tertiary"
+          data-testid="tp-cell-dismissed"
+          title={t('planGrid.edit.dismissedTitle')}
+        >
+          {t('planGrid.edit.dismissedShort')}
+        </span>
+      )}
       {text === '—' ? (
         <span className="text-xs text-text-tertiary">{text}</span>
       ) : (
@@ -163,6 +182,8 @@ const ReadOnlyBucketCell: React.FC<{ row: PlanRow; bucket: string; derived: bool
       refusal={api?.draft.refusals.get(cellKey(row.id, bucket))}
       // PLN-1 · a committed cell is read-only now, and still says it is committed.
       committed={row.committedCells?.[bucket]}
+      // PLN-3 · and a dismissed one says it was set aside.
+      dismissed={row.dismissedCells?.[bucket]}
     />
   );
 };

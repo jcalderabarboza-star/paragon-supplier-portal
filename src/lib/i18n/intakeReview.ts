@@ -1,13 +1,9 @@
-// Intake Review (Phase A/1 · sourcing spine) i18n fragment. Namespace: intakeReview.*
-// The recommend-first TRIAGE surface: review the inbound requirement set (both
-// producers), accept-as-suggested → the existing governed push, dismiss = honest
-// session-only state. Producer labels + tier/plan markers reuse planGrid.* keys.
+// Intake review i18n fragment. Namespace: intakeReview.*
+// The recommend-first TRIAGE copy. Since PLN-3 it is the Plan Grid's
+// `intake-review` view (Design 1 D8); the page and its chrome keys are retired.
+// Producer labels + tier/plan markers reuse planGrid.* keys.
 export const intakeReviewEn: Record<string, string> = {
-  // — Page chrome —
-  'intakeReview.crumb.review': 'Intake Review',
-  'intakeReview.header.title': 'Intake Review',
-  'intakeReview.header.subtitle':
-    'Triage the inbound requirement set — accept into the sourcing workload, or set aside',
+  // — Queue summary —
   'intakeReview.meta.summary':
     '{{total}} inbound requirement lines · {{pending}} pending · {{committed}} committed · {{dismissed}} dismissed',
 
@@ -16,7 +12,15 @@ export const intakeReviewEn: Record<string, string> = {
   'intakeReview.honesty.body':
     'Planning proposes; you decide. Accepting a line commits the quantity the producer delivered and raises a Draft requisition — with no live producer it stays simulated, never a live procurement instruction. Every decision here is recorded: a dismissal is kept, survives a reload and is visible to your colleagues, and Restore puts the line back. Nothing is rejected upstream — the producer is not told.',
   'intakeReview.adjustHint':
-    'Need a different quantity? Adjust & push the line on the Plan Grid.',
+    'Need a different quantity? Press Adjust on the line and push it from the panel below the list.',
+  'intakeReview.search.label': 'Search intake lines',
+  'intakeReview.search.placeholder': 'Material, code or period…',
+  'intakeReview.filter.state': 'Show',
+  'intakeReview.filter.Pending': 'Pending',
+  'intakeReview.filter.Dismissed': 'Dismissed',
+  'intakeReview.filter.Committed': 'Committed',
+  'intakeReview.filter.all': 'All lines',
+  'intakeReview.showing': 'Showing {{shown}} of {{total}}',
 
   // — Review table —
   'intakeReview.col.material': 'Material',
@@ -49,11 +53,7 @@ export const intakeReviewEn: Record<string, string> = {
 };
 
 export const intakeReviewId: Record<string, string> = {
-  // — Kerangka halaman —
-  'intakeReview.crumb.review': 'Tinjauan Asupan',
-  'intakeReview.header.title': 'Tinjauan Asupan',
-  'intakeReview.header.subtitle':
-    'Triase kumpulan kebutuhan masuk — terima ke dalam beban kerja pengadaan, atau kesampingkan',
+  // — Ringkasan antrean —
   'intakeReview.meta.summary':
     '{{total}} baris kebutuhan masuk · {{pending}} menunggu · {{committed}} dikomit · {{dismissed}} diabaikan',
 
@@ -62,7 +62,15 @@ export const intakeReviewId: Record<string, string> = {
   'intakeReview.honesty.body':
     'Perencanaan mengusulkan; Anda yang memutuskan. Menerima baris mengomit jumlah yang dikirim produsen dan membuat permintaan Draft — tanpa produsen live tetap simulasi, bukan instruksi pengadaan langsung. Setiap keputusan di sini dicatat: pengabaian tersimpan, bertahan setelah muat ulang, dan terlihat oleh rekan Anda, dan Pulihkan mengembalikan barisnya. Tidak ada yang ditolak di hulu — produsen tidak diberi tahu.',
   'intakeReview.adjustHint':
-    'Perlu jumlah berbeda? Sesuaikan & kirim baris tersebut di Grid Perencanaan.',
+    'Perlu jumlah berbeda? Tekan Sesuaikan pada baris itu dan kirim dari panel di bawah daftar.',
+  'intakeReview.search.label': 'Cari baris asupan',
+  'intakeReview.search.placeholder': 'Material, kode, atau periode…',
+  'intakeReview.filter.state': 'Tampilkan',
+  'intakeReview.filter.Pending': 'Menunggu',
+  'intakeReview.filter.Dismissed': 'Diabaikan',
+  'intakeReview.filter.Committed': 'Dikomit',
+  'intakeReview.filter.all': 'Semua baris',
+  'intakeReview.showing': 'Menampilkan {{shown}} dari {{total}}',
 
   // — Tabel tinjauan —
   'intakeReview.col.material': 'Material',

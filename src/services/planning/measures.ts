@@ -21,6 +21,7 @@
 // purpose, with the reason beside it.
 // ────────────────────────────────────────────────────────────────────────────
 
+import { INTAKE_TRIAGE_ATOM } from '../transitions/flows/intakeLine.flow';
 import type { Capability } from '../liveness/registry';
 
 /** The measure vocabulary (Design 1 §3, rows 1–15). A closed union. */
@@ -115,7 +116,7 @@ export const MEASURES: readonly MeasureSpec[] = Object.freeze([
     // quantity — the same rule the verb's own hook enforces.
     editable: Object.freeze({
       verb: 't_intake_commit',
-      atom: 'pr:create',
+      atom: INTAKE_TRIAGE_ATOM, // PLN-3 · the planning lane's (R1)
       payloadField: 'acceptedQty',
       reasonRequiredWhen: 'differsFromBaseline',
       baselineField: 'acceptedQty',

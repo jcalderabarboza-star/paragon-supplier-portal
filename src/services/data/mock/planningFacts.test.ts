@@ -241,6 +241,9 @@ describe('B3 · the generated SOMO intake lines — what a grid cell commits aga
       // PLN-1 · the price travels with the line: 11,700 × 181,500 = the total above.
       unitPrice: 181_500,
       source: 'SOMO',
+      // PLN-3 · the producer's "why", now that the line is in the intake queue:
+      // the demand it proposed from (10,750) and the proposal (11,700).
+      deficit: 'Planned demand 10750 KG in 2026-08; SOMO proposes 11700',
     });
     expect(generatedIntakeLine(somoIntakeLineId('SIM-PM-0002', '2026-W36'))?.acceptedQty).toBe(190850);
   });

@@ -271,6 +271,13 @@ export function derivePlanningFacts(q: PlanningFactsQuery): PlanningFactsOutcome
         const record = intakeLineStore.get(lineId);
         const done = record?.state === 'Committed' && typeof record.committedQty === 'number';
         push('acceptedQty', code, null, b.id, done ? record.committedQty! : suggested, lineId, 'SIMULATED', done ? 'committed' : 'planned');
+        // ⚠️ PLN-3 · ONE INTAKE POPULATION — a line dismissed in the intake view
+        // reads dismissed here too, from the same triage store (R-PLN P0 #6). It
+        // read PLANNED and stayed editable, so a planner pushed it into
+        // `ILLEGAL_TRANSITION:Dismissed->Committed` with no sign it was set aside.
+        if (record?.state === 'Dismissed' && out[out.length - 1]?.sourceRef === lineId) {
+          out[out.length - 1] = { ...out[out.length - 1], dismissed: true };
+        }
       }
       for (const sup of suppliersFor(code)) {
         const alloc = generatedAllocation(code, sup, b.id);

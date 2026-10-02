@@ -223,11 +223,13 @@ describe('⚠️ PROBE — the same matcher at `t_pr_create`, where the drift is
     expect(callers).toEqual(['pages-v2/BuyerRequisitions.tsx']);
     // ⚠️ **B3 ADDED A THIRD ENTRANCE, ON PURPOSE.** The planning grid's
     // overlay pushes through `t_intake_commit` too (`PlanDraftProvider`), and
-    // its push MODE is gated on `pr:create` in `PlannedChangesPanel` — the
+    // its push MODE is gated on `intake:triage` (PLN-3; it was `pr:create`) in `PlannedChangesPanel` — the
     // entrance is the unit, so it is named here rather than absorbed.
+    // PLN-3 · `IntakeReview.tsx` is retired; its Accept moved, with the page,
+    // into the grid's intake-review view.
     expect(callersOf('useIntakeCommit').sort()).toEqual([
-      'pages-v2/IntakeReview.tsx',
       'pages-v2/plan-grid/IntakeAdjustDrawer.tsx',
+      'pages-v2/plan-grid/IntakeReviewView.tsx',
       'pages-v2/plan-grid/PlanDraftProvider.tsx',
     ]);
 

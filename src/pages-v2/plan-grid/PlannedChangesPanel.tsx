@@ -22,6 +22,7 @@ import { useRefusalText } from '../../hooks/useRefusalText';
 import { formatNumber } from '../../lib/format';
 import { planningSupplierName } from '../../services/planning/somoFixture';
 import { usePlanDraft } from './PlanDraftProvider';
+import { INTAKE_TRIAGE_ATOM } from '../../services/transitions/flows/intakeLine.flow';
 import { blockedBy, magnitudeFlag, reasonOwed, type CellRefusal, type CellRefusalReason, type PlanDraftEntry } from './planDraft';
 
 /** EXHAUSTIVE: every reason a cell edit can be refused has its own words. */
@@ -87,11 +88,11 @@ const PlannedChangesPanel: React.FC<{ selectedRefs: readonly string[] }> = ({ se
   const { t } = useTranslation();
   const refusalText = useRefusalText();
   const api = usePlanDraft();
-  // `t_intake_commit` is `pr:create` (the requisitioner lane); B4b's allocation
-  // push is `publication:allocate` (planning). Each row is pushable by the seat
+  // `t_intake_commit` is `intake:triage` (planning, since PLN-3); B4b's
+  // allocation push is `publication:allocate` (planning). Each row is pushable by the seat
   // that holds ITS verb's atom, and a seat without one reads whose act it is —
   // the MODE is gated, not one door (§ENTRANCE).
-  const availability = useVerbAvailabilities({ intake: 'pr:create', allocate: 'publication:allocate' });
+  const availability = useVerbAvailabilities({ intake: INTAKE_TRIAGE_ATOM, allocate: 'publication:allocate' });
   if (!api) return null;
   const { draft, pushing } = api;
   const entries = [...draft.entries.values()];

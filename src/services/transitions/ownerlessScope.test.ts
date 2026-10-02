@@ -630,7 +630,8 @@ describe('THE LEGITIMATE PATHS — the half a "refuse everyone" fix would break'
     // with no payload and no cascade, so what this walk proves is the SCOPE gate
     // admitting a holder seat and nothing else.
     const intakeLineId = PR_INTAKE_LINES[0].id;
-    const intakeRes = await svc.dispatch(buyerSeat('requisitioner'), {
+    // PLN-3 (R1) · the holder seat is `planning` — the intake verbs' lane now.
+    const intakeRes = await svc.dispatch(buyerSeat('planning'), {
       transitionId: 't_intake_dismiss', entity: 'intakeLine', entityId: intakeLineId,
     });
     expect(intakeRes.status, intakeRes.reason).toBe('done');

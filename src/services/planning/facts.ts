@@ -62,6 +62,13 @@ export interface PlanningFact {
    * line), unchanged.
    */
   readonly editAnchor?: string;
+  /**
+   * PLN-3 · the intake line this fact is keyed by has been SET ASIDE
+   * (`t_intake_dismiss`). Present only on such an `acceptedQty` fact. The
+   * figure is still the producer's — a dismissal decides that nobody acts on
+   * it, not what it is — so it stays PLANNED and is marked, never dropped.
+   */
+  readonly dismissed?: true;
 }
 
 /** The seam's query shape — declared once, on the service contract. */

@@ -360,8 +360,10 @@ export function hardDependenciesOf(code: ModuleCode): readonly ModuleCode[] {
 /**
  * Every (module, part) an ATOM's verbs sit in, one entry per distinct pair —
  * for the surface's availability question. An atom is placed by the verbs that
- * require it, and it MAY serve more than one module: `pr:create` fires
- * `t_pr_create` (REQ) and the intake commit (PLN). The surface treats such an
+ * require it, and it MAY serve more than one place: `gr:inspect` serves GRC's
+ * inspection wizard, its quality hold and GRC itself. (`pr:create` served TWO
+ * MODULES — REQ and the intake commit's PLN — until PLN-3 put the intake verbs
+ * on the planning lane's own `intake:triage`.) The surface treats such an
  * atom as off only when EVERY place it serves is off (`atomOffReason`); the
  * dispatcher, which knows the exact verb, stays the authority per act.
  */

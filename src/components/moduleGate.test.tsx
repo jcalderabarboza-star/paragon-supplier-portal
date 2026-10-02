@@ -179,19 +179,32 @@ describe('the availability rule, pure', () => {
   const seat = ['requisitioner', 'procurement'] as const;
   const on = defaultActivation();
 
-  it('an atom serving two modules is off only when BOTH are off (pr:create: REQ and PLN)', () => {
+  // ⚠️ PLN-3 (R1) · THE PROBE MOVED ATOM, AND THE RULE IT PROBES DID NOT CHANGE.
+  // It read `pr:create`, the one atom that served TWO MODULES (REQ for
+  // `t_pr_create`, PLN for the intake commit). R1 put the intake verbs on their
+  // own planning atom, so `pr:create` now serves REQ only and no atom spans two
+  // modules (`moduleRegistry.test.ts` pins that). The rule — off only when EVERY
+  // place is off — still has real members across PARTS of one module, so the
+  // probe is aimed at one: `gr:inspect` serves GRC's inspection wizard, its
+  // quality hold, and GRC itself.
+  it('an atom serving several places is off only when EVERY place is off (gr:inspect: GRC parts)', () => {
+    const recv = ['receiving'] as const;
+    const partsOff = effectiveActivation([row('GRC', true, { parts: { inspectionWizard: false, qualityHold: false } }, 1)]);
+    expect(availabilityWithModules('gr:inspect', 'buyer', recv, partsOff, null).kind).toBe('held');
+    // The mirror case — the FIRST place off, the others on — is what tells
+    // "every" from "some" apart.
+    const firstOff = effectiveActivation([row('GRC', true, { parts: { inspectionWizard: false } }, 1)]);
+    expect(availabilityWithModules('gr:inspect', 'buyer', recv, firstOff, null).kind).toBe('held');
+    const allOff = effectiveActivation([row('INV', false, {}, 1), row('GRC', false, {}, 2)]);
+    // Named by the FIRST place the atom serves, in flow-registration order.
+    expect(availabilityWithModules('gr:inspect', 'buyer', recv, allOff, null)).toMatchObject({ kind: 'module-off', off: { subject: 'GRC' } });
+  });
+
+  it('PLN-3 · pr:create serves REQ only now: PLN off leaves it held, REQ off takes it', () => {
     const plnOff = effectiveActivation([row('SDC', false, {}, 1), row('PLN', false, {}, 2)]);
     expect(availabilityWithModules('pr:create', 'buyer', seat, plnOff, null).kind).toBe('held');
-    const bothOff = effectiveActivation([row('COM', false, {}, 1), row('SDC', false, {}, 2), row('PLN', false, {}, 3), row('REQ', false, {}, 4)]);
-    // Found by the mutation probe: with only PLN off, the FIRST place (REQ) is
-    // the one still on, so "every" and "some" read alike. The mirror case — the
-    // first place off, the second on — is what tells them apart. (Not reachable
-    // through the verb, since PLN hard-depends on REQ; the rule is pure and must
-    // hold for any view it is handed.)
-    const reqOnlyOff = effectiveActivation([row('REQ', false, {}, 1)]);
-    expect(availabilityWithModules('pr:create', 'buyer', seat, reqOnlyOff, null).kind).toBe('held');
-    // Named by the FIRST place the atom serves, in flow-registration order.
-    expect(availabilityWithModules('pr:create', 'buyer', seat, bothOff, null)).toMatchObject({ kind: 'module-off', off: { subject: 'REQ' } });
+    const reqOff = effectiveActivation([row('COM', false, {}, 1), row('SDC', false, {}, 2), row('PLN', false, {}, 3), row('REQ', false, {}, 4)]);
+    expect(availabilityWithModules('pr:create', 'buyer', seat, reqOff, null)).toMatchObject({ kind: 'module-off', off: { subject: 'REQ' } });
   });
 
   it('module before role: a seat WITHOUT the atom still reads the module notice when it is off', () => {

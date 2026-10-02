@@ -221,7 +221,8 @@ describe('PR2 · the population — six converted, two deliberately NOT', () => 
     // reporting on its own spelling rather than on the tree. What the ruling
     // actually says is that the RAW CODE reaches control flow untranslated, and
     // that is what this matches now.
-    for (const rel of ['IntakeReview.tsx', 'plan-grid/IntakeAdjustDrawer.tsx']) {
+    // PLN-3 · the Intake Review site moved with the page into the grid's view.
+    for (const rel of ['plan-grid/IntakeReviewView.tsx', 'plan-grid/IntakeAdjustDrawer.tsx']) {
       const src = read(rel);
       expect(src, rel).toMatch(/e instanceof DataError \? e\.code : 'ERROR'/);
       expect(src, rel).not.toContain('useDataErrorText');

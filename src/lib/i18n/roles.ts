@@ -143,7 +143,7 @@ export const rolesEn: Record<string, string> = {
   'roles.desc.receiving': 'The dock. Receives goods, runs inspection and disposition, and posts the receipt to SAP.',
   'roles.desc.finance': 'Accounts payable. Releases payment, disputes an invoice and resolves the dispute.',
   'roles.desc.compliance': 'Supplier documents and governed-check enforcement. Verification is a pipeline, not a screen.',
-  'roles.desc.planning': 'Demand and supply planning. Reviews supplier responses and records stock declarations.',
+  'roles.desc.planning': 'Demand and supply planning. Reviews supplier responses, records stock declarations, and commits planned requirements, which raises their requisitions. Deliberately cannot approve one.',
   'roles.desc.requisitioner': 'Raises and revises purchase requisitions. Deliberately cannot approve one.',
   // ⚠️ **THE ANCHOR'S ROW MUST NOT CLAIM TO BE A GATE.** It holds no permission,
   //   and nothing in the dispatch path reads it: tenancy is enforced on
@@ -329,7 +329,7 @@ export const rolesId: Record<string, string> = {
   'roles.desc.receiving': 'Dermaga. Menerima barang, menjalankan inspeksi dan disposisi, serta memposting penerimaan ke SAP.',
   'roles.desc.finance': 'Utang usaha. Merilis pembayaran, menyengketakan faktur dan menyelesaikan sengketa.',
   'roles.desc.compliance': 'Dokumen pemasok dan penegakan pemeriksaan yang diatur. Verifikasi adalah alur, bukan layar.',
-  'roles.desc.planning': 'Perencanaan permintaan dan pasokan. Meninjau respons pemasok dan mencatat deklarasi stok.',
+  'roles.desc.planning': 'Perencanaan permintaan dan pasokan. Meninjau respons pemasok, mencatat deklarasi stok, dan mengomit kebutuhan yang direncanakan, yang membuat permintaan pembeliannya. Sengaja tidak dapat menyetujuinya.',
   'roles.desc.requisitioner': 'Mengajukan dan merevisi permintaan pembelian. Sengaja tidak dapat menyetujuinya.',
   'roles.desc.supplier':
     'Menandai sisi pemasok dan tidak memberikan izin apa pun dengan sendirinya. Tindakan pemasok kini berada di tiga jalur — Komersial, Pemenuhan dan Administrasi — dan sebuah kursi memegang peran ini bersama jalur tempat ia bekerja. Bila dipegang sendiri, kursi tersebut adalah kursi pemasok tanpa jalur: bisa membaca, tidak bisa bertindak. Batas tenansi tidak ditegakkan oleh peran ini; kursi pemasok selalu hanya menjangkau dokumennya sendiri, jalur apa pun yang dipegangnya.',

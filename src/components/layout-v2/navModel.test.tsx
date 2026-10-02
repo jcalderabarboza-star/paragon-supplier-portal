@@ -80,7 +80,9 @@ describe('N1 — the order is pinned, stage by stage', () => {
   it('buyer: Home · Plan · Source · Contract · Collaborate · Order & receive · Pay · Suppliers · Insights · Platform', () => {
     expect(shape(BUYER_NAV)).toEqual([
       ['nav.section.home', ['/buyer/dashboard']],
-      ['nav.section.plan', ['/buyer/plan-grid', '/buyer/intake-review', '/buyer/purchase-requisition']],
+      // PLN-3 · Intake Review left the nav: it is the Plan Grid's intake-review
+      // view now, and its old route is a redirect (Design 1 D8).
+      ['nav.section.plan', ['/buyer/plan-grid', '/buyer/purchase-requisition']],
       ['nav.section.source', ['/buyer/sourcing', '/buyer/preferred-suppliers', '/buyer/material-requests', '/buyer/discovery', '/marketplace']],
       ['nav.section.contract', ['/buyer/contracts', '/buyer/delivery-agreements']],
       ['nav.section.collaborate', ['/buyer/collaboration', '/buyer/chase', '/buyer/comm-hub']],

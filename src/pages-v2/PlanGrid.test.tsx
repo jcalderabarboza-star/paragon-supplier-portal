@@ -60,7 +60,7 @@ describe('PlanGrid — honest render (page-level)', () => {
     // virtualized engine's sticky/measurement render.
     openTab(/Award what-if/i);
     expect(screen.getByRole('heading', { name: /Award scenario/i })).toBeInTheDocument();
-    openTab(/^Intake$/i);
+    openTab(/^Intake review$/i);
     expect(screen.getByRole('heading', { name: /Requisition intake/i })).toBeInTheDocument();
   });
 
@@ -88,7 +88,7 @@ describe('PlanGrid — DSG containers are height-pinned (anti-trembling, G1.2b)'
     // loop (the trembling); the fixed height removes that feedback.
     openTab(/Award what-if/i);
     const onAward = [...container.querySelectorAll('.plan-dsg')];
-    openTab(/^Intake$/i);
+    openTab(/^Intake review$/i);
     const pinned = [...onAward, ...container.querySelectorAll('.plan-dsg')];
     expect(pinned.length).toBe(3);
     pinned.forEach((el) => {
@@ -100,7 +100,7 @@ describe('PlanGrid — DSG containers are height-pinned (anti-trembling, G1.2b)'
 describe('PlanGrid — working-set adjust & push drawer (C6-LOCK, G1.3.2)', () => {
   it('renders the plain-DOM drawer section; with nothing selected it prompts to select', () => {
     renderWithProviders(<PlanGrid />, { route: '/buyer/plan-grid' });
-    openTab(/^Intake$/i);
+    openTab(/^Intake review$/i);
     // The un-virtualized full panel is retired; the governed write is now the
     // working-set drawer, which starts empty until a DSG row is selected.
     expect(
@@ -117,7 +117,7 @@ describe('PlanGrid — full-screen wrapper per section (G1.3.2)', () => {
     renderWithProviders(<PlanGrid />, { route: '/buyer/plan-grid' });
     openTab(/Award what-if/i);
     const onAward = screen.getAllByRole('button', { name: /full screen/i });
-    openTab(/^Intake$/i);
+    openTab(/^Intake review$/i);
     expect([...onAward, ...screen.getAllByRole('button', { name: /full screen/i })]).toHaveLength(3);
   });
 });

@@ -53,7 +53,6 @@ import RoleDetail from '../pages-v2/RoleDetail';
 import ModulesBoard from '../pages-v2/ModulesBoard';
 import ModulesAdmin from '../pages-v2/ModulesAdmin';
 import Glossary from '../pages-v2/Glossary';
-import IntakeReview from '../pages-v2/IntakeReview';
 import SupplierDashboardV2 from '../pages-v2/SupplierDashboard';
 import SupplierMyStorefront from '../pages-v2/SupplierMyStorefront';
 import SupplierDocumentsV2 from '../pages-v2/SupplierDocuments';
@@ -139,7 +138,8 @@ const ROUTES: RouteCase[] = [
   // COULD NOT SAY SO. Both have dedicated specs, so they were not untested —
   // but neither was covered by the route table that claimed to cover all of
   // AppRouter, and nothing would have reported that until a route was deleted.
-  { name: 'buyer/intake-review', pattern: '/buyer/intake-review', at: '/buyer/intake-review', element: <IntakeReview />, identity: BUYER },
+  // PLN-3 · `/buyer/intake-review` is a redirect into the Plan Grid's intake-review
+  // view now, so the matcher below excludes it as it excludes `/`.
   { name: 'glossary', pattern: '/glossary', at: '/glossary', element: <Glossary />, identity: BUYER },
   { name: 'supplier/dashboard', pattern: '/supplier/dashboard', at: '/supplier/dashboard', element: <SupplierDashboardV2 />, identity: SUPPLIER },
   { name: 'supplier/storefront', pattern: '/supplier/storefront', at: '/supplier/storefront', element: <SupplierMyStorefront />, identity: SUPPLIER },

@@ -43,10 +43,13 @@ const seatA: QueryScope = {
   supplierId: null,
   businessRoles: PERSONA_SYSTEM_ROLES.buyer,
 };
+// PLN-3 (R1) · seat B holds the PLANNING lane: the intake verbs moved there
+// from `requisitioner`, and this file's subject is a seat that holds the verb
+// meeting the machine — a seat without it would be refused by ROLE first.
 const seatB: QueryScope = {
   personaType: 'buyer',
   supplierId: null,
-  businessRoles: ['requisitioner'],
+  businessRoles: ['planning'],
 };
 
 // ⚠️ **ONE LINE PER SPEC, AND THE REASON IS THE SUBJECT OF THIS FILE.** The

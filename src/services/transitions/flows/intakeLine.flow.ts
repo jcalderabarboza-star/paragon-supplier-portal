@@ -60,16 +60,24 @@
 // `Missing` is the precedent: a natural born-state, reached by existing rather
 // than by acting.
 //
-// ── ⚠️ ONE ATOM ON ALL THREE VERBS, AND IT IS NOT LAZINESS ───────────────────
+// ── ⚠️ ONE ATOM ON ALL THREE VERBS, AND SINCE PLN-3 IT IS PLANNING'S ────────
 //
-// `pr:create` (the `requisitioner` lane). Every one of these three acts decides
-// whether a requirement enters the sourcing workload, and dismissing a line is
-// exactly as consequential as committing it — the requirement disappears from
-// the queue either way. A separate `intake:triage` atom would say the two
-// decisions belong to different people, which is a claim about Paragon's
-// organisation that nobody has made and that `SYSTEM_ROLES` would then have to
-// place. Deriving the reverse is cheap if it is ever wanted; minting the
-// vocabulary first is not.
+// `intake:triage`, held by the `planning` lane (ruling R1). Every one of these
+// three acts decides whether a requirement enters the sourcing workload, and
+// dismissing a line is exactly as consequential as committing it — the
+// requirement disappears from the queue either way — so the three share ONE
+// atom, as they always did.
+//
+// ⚠️ **IT WAS `pr:create`, THE REQUISITIONER'S ATOM, AND R-PLN MEASURED WHAT
+// THAT COST (P0 #5).** The planner who owns the plan could edit a cell and
+// could not push it: a seat holding only `planning` read "Awaiting
+// Requisitioner" under its own planned change. The person deciding the plan is
+// the person committing it, so the commit moved to the plan's lane. The
+// requisition it raises is still `t_pr_create`, fired by the cascade under the
+// automation grant; APPROVING that requisition stays `procurement`'s
+// (`pr:approve` / `pr:reject`), so a planner raises and procurement approves —
+// the segregation `requisitioner` / `procurement` already expressed, one lane
+// over. `pln3WhoPushes.test.tsx` pins both halves.
 // ────────────────────────────────────────────────────────────────────────────
 
 import type { FlowDefinition } from '../schema';
@@ -111,6 +119,12 @@ export function isIntakeLineState(v: unknown): v is IntakeLineState {
  * that can express a conditional obligation and check the value at once. Same
  * shape, same reason, as `supplierApplication`'s `s4Vendor`.
  */
+/**
+ * PLN-3 · the ONE atom the three intake verbs require — the planning lane's.
+ * Exported so every surface that asks "may this seat triage?" spells it once.
+ */
+export const INTAKE_TRIAGE_ATOM = 'intake:triage';
+
 export const INTAKE_COMMIT_FIELDS = Object.freeze([
   'acceptedQty',
   'acceptedQtyRaw',
@@ -145,7 +159,7 @@ export const intakeLineFlow: FlowDefinition = {
       from: ['Pending'],
       to: 'Dismissed',
       trigger: 'user',
-      requiredRole: 'pr:create',
+      requiredRole: INTAKE_TRIAGE_ATOM,
       requiredFields: [],
       policyHooks: [],
       surfaceable: { surfaced: true },
@@ -157,7 +171,7 @@ export const intakeLineFlow: FlowDefinition = {
       from: ['Dismissed'],
       to: 'Pending',
       trigger: 'user',
-      requiredRole: 'pr:create',
+      requiredRole: INTAKE_TRIAGE_ATOM,
       requiredFields: [],
       policyHooks: [],
       surfaceable: { surfaced: true },
@@ -185,7 +199,7 @@ export const intakeLineFlow: FlowDefinition = {
       from: ['Pending'],
       to: 'Committed',
       trigger: 'user',
-      requiredRole: 'pr:create',
+      requiredRole: INTAKE_TRIAGE_ATOM,
       requiredFields: [...INTAKE_COMMIT_FIELDS],
       policyHooks: [
         POLICY_HOOKS.INTAKE_QTY_FLOOR,
