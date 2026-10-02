@@ -35,7 +35,7 @@ import { measureOf } from '../../services/planning/measures';
 import type { BucketGrain } from '../../services/planning/bucket';
 import PlanGrid from '../PlanGrid';
 import { visibleMeasures } from './visibleMeasures';
-import { applyPlanView, buildPlanBlocks, DEFAULT_PLAN_FILTER, DEFAULT_PLAN_SORT, isEditableCell, type PlanRow } from './planGridModel';
+import { applyPlanView, blocksOfViewType, buildPlanBlocks, DEFAULT_PLAN_FILTER, DEFAULT_PLAN_SORT, isEditableCell, type PlanRow } from './planGridModel';
 import { PlanDraftProvider, usePlanDraft } from './PlanDraftProvider';
 import TimePhasedGrid from './TimePhasedGrid';
 import { pushReasonKey } from './PlannedChangesPanel';
@@ -111,7 +111,8 @@ const blocksFor = async (viewId: 'rm-plan' | 'pm-plan' | 'exceptions', grain: Bu
   const horizon = somoHorizon(grain).slice(0, horizonLength);
   const measures = visibleMeasures(view.measuresShown);
   const page = await new MockPlanningService().getPlanningFacts(BUYER, { horizon, measures });
-  return buildPlanBlocks(page.items, horizon, measures);
+  // PLN-2 · the grid lists the view's material type; this helper mirrors the grid.
+  return blocksOfViewType(buildPlanBlocks(page.items, horizon, measures), viewGrainAndHorizon(view, grain).materialType);
 };
 const exceptionCodes = (blocks: Awaited<ReturnType<typeof blocksFor>>) =>
   applyPlanView(blocks, { ...DEFAULT_PLAN_FILTER, exceptionsOnly: true }, DEFAULT_PLAN_SORT).map((b) => b.materialCode).sort();
@@ -128,21 +129,24 @@ describe('PLN-1 #3 · the Exceptions tab lists exactly the exceptions its plan v
     expect(exc).toEqual(plan);
   });
 
+  // PLN-2 · SIM-PM-0004 is packaging, planned weekly: it is named on the WEEKLY
+  // exceptions list (it was read off the monthly one, which no longer lists packaging).
   it('NAMED: SIM-PM-0004 is an AWAITING exception (allocated, unconfirmed) and the Exceptions tab lists it', async () => {
-    const exc = await blocksFor('exceptions', 'month');
+    const exc = await blocksFor('exceptions', 'week');
     const b = exc.find((x) => x.materialCode === 'SIM-PM-0004');
     expect(b?.exceptions).toMatchObject({ awaiting: true, shortfall: false });
     expect(exceptionCodes(exc)).toContain('SIM-PM-0004');
     // and a covered material is not on it
-    expect(exceptionCodes(exc)).not.toContain('SIM-RM-0001');
+    expect(exceptionCodes(exc)).not.toContain('SIM-PM-0002');
   });
 
   it('the exceptions view follows the current grain, at that grain\'s horizon', () => {
     const exc = VIEWS.find((v) => v.viewId === 'exceptions')!;
-    expect(viewGrainAndHorizon(exc, 'month')).toEqual({ grain: 'month', horizonLength: 12 });
-    expect(viewGrainAndHorizon(exc, 'week')).toEqual({ grain: 'week', horizonLength: 16 });
+    // PLN-2 · and the material type planned at that grain.
+    expect(viewGrainAndHorizon(exc, 'month')).toEqual({ grain: 'month', horizonLength: 12, materialType: 'ROH' });
+    expect(viewGrainAndHorizon(exc, 'week')).toEqual({ grain: 'week', horizonLength: 16, materialType: 'VERP' });
     // a fixed-grain view ignores it
-    expect(viewGrainAndHorizon(RM, 'week')).toEqual({ grain: 'month', horizonLength: 12 });
+    expect(viewGrainAndHorizon(RM, 'week')).toEqual({ grain: 'month', horizonLength: 12, materialType: 'ROH' });
   });
 
   it('on the page: Packaging, then Exceptions, opens the WEEKLY exceptions; Raw materials then Exceptions, the monthly', () => {

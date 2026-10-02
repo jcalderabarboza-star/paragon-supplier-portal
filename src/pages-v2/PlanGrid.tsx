@@ -26,7 +26,7 @@ import { PlanDraftProvider } from './plan-grid/PlanDraftProvider';
 import { useIntakeReview, useQuotations } from '../services/query/hooks';
 import type { IntakeLine } from '../services/data/types';
 import { formatIDR, formatNumber } from '../lib/format';
-import { mockSuppliers } from '../data/mockSuppliers';
+import { planningSupplierName } from '../services/planning/somoFixture';
 import {
   AWARD_CRITERIA,
   DEFAULT_WEIGHTS,
@@ -65,8 +65,8 @@ const AWARD_RFQ = 'rfq-003';
 const DSG_H = { weights: 88, award: 176, intake: 216 } as const;
 const dsgVar = (h: number) => ({ '--plan-dsg-h': `${h}px` }) as React.CSSProperties;
 
-const supplierName = (id: string): string =>
-  mockSuppliers.find((s) => s.id === id)?.name ?? id;
+// PLN-2 · names from the planning supplier master, one resolver for every planning surface.
+const supplierName = planningSupplierName;
 
 // dataCell/textCell (the read-only mono/sans cell helpers) moved to the shared
 // ./plan-grid/cells module when the SDC consolidation grid became the second

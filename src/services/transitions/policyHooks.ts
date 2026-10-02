@@ -693,6 +693,19 @@ export const POLICY_HOOKS = {
    * un-falsifiable, and it is the fifth shipped hook to use it.
    */
   INTAKE_OVERRIDE_REASONED: 'intake_override_reasoned',
+  /**
+   * PLN-2 · Intake commit: the material and period this line names must not
+   * already be committed at the OTHER grain — a week inside a committed month,
+   * or a month holding a committed week, is refused by name.
+   *
+   * ⚠️ **MEASURED, NOT HYPOTHESISED.** At R-PLN, SIM-PM-0068 was committed in
+   * 2026-11 and in a week of it, and the cascade minted two requisitions for one
+   * requirement. Each commit was legal on its own line; the defect is a property
+   * of the PAIR, which no per-line edge can see. Bound in the mock layer beside
+   * the triage store it reads (`mock/intakeLines.ts`) — the B4a publication
+   * hooks' precedent.
+   */
+  INTAKE_ONE_GRAIN: 'intake_one_grain',
 
   // ── B4a · THE FORECAST PUBLICATION (Design 2 §2.1) ─────────────────────────
   // Bound in the mock layer (`mock/publicationTarget.ts`), beside the store and

@@ -26,8 +26,9 @@
 // no material is ever answered by two producers.
 // ────────────────────────────────────────────────────────────────────────────
 
-import { MATERIAL_MASTER, type MaterialMaster, type MaterialMasterEntry, type Uom } from '../sdc';
+import { MATERIAL_MASTER, type MaterialMaster, type MaterialMasterEntry, type MaterialType, type Uom } from '../sdc';
 import { mockSuppliers } from '../../data/mockSuppliers';
+import type { BucketGrain } from './bucket';
 
 /** The seed. Changing it changes every generated value — the pins say so. */
 export const SOMO_FIXTURE_SEED = 20261028;
@@ -110,6 +111,44 @@ export const PLANNING_MATERIALS: readonly string[] = Object.freeze(Object.keys(P
 /** Is this code one the generator answers for (a synthetic code)? */
 export const isGeneratedMaterial = (code: string): boolean => code in SYNTHETIC;
 
+/**
+ * ⚠️ PLN-2 · ONE MATERIAL, ONE GRAIN (R-PLN P0 #2). A raw material is planned
+ * monthly and a packaging material weekly, and nothing is planned at both.
+ *
+ * The generator used to emit every synthetic material at BOTH grains, so the
+ * Raw-materials tab (monthly) and the Packaging tab (weekly) each held all
+ * 1,158 materials, and one requirement had two intake lines: SIM-PM-0068 was
+ * committed in 2026-11 AND in a week inside it, and became two requisitions for
+ * one need — measured in the browser at R-PLN. The type decides the grain, and
+ * this table is the ONE place that says so: the generator, the views and the
+ * cross-grain guard all read it.
+ */
+export const PLANNING_GRAIN_OF_TYPE: Readonly<Record<MaterialType, BucketGrain>> = Object.freeze({
+  ROH: 'month',
+  VERP: 'week',
+});
+
+/** The material type planned at a grain — the inverse of the table above. */
+export const planningTypeOfGrain = (grain: BucketGrain): MaterialType =>
+  (Object.keys(PLANNING_GRAIN_OF_TYPE) as MaterialType[]).find((t) => PLANNING_GRAIN_OF_TYPE[t] === grain)!;
+
+/** The grain a planning material is planned at, or null when the master does not know it. */
+export const planningGrainOf = (code: string): BucketGrain | null => {
+  const entry = PLANNING_MASTER_RECORD[code];
+  return entry ? PLANNING_GRAIN_OF_TYPE[entry.materialType] : null;
+};
+
+/** The grain a bucket id is written in — `YYYY-Www` is a week, anything else a month. */
+const grainOfBucketId = (bucketId: string): BucketGrain => (bucketId.includes('-W') ? 'week' : 'month');
+
+/**
+ * Does the generator emit this material at this bucket's grain? Only at the
+ * material's own grain: a packaging material has no monthly figure and a raw
+ * material no weekly one — no demand, no proposal, no intake line.
+ */
+const inLane = (materialCode: string, bucketId: string): boolean =>
+  planningGrainOf(materialCode) === grainOfBucketId(bucketId);
+
 /** The 40 suppliers: the 12 real ones, then synthetic `sup-sim-NNN`. */
 export const PLANNING_SUPPLIERS: readonly string[] = Object.freeze([
   ...mockSuppliers.map((s) => s.id),
@@ -118,6 +157,25 @@ export const PLANNING_SUPPLIERS: readonly string[] = Object.freeze([
     (_, i) => `sup-sim-${pad(mockSuppliers.length + i + 1, 3)}`,
   ),
 ]);
+
+/**
+ * ⚠️ PLN-2 · THE PLANNING SUPPLIER MASTER — the 12 real suppliers by the names
+ * the supplier master gives them, and the synthetic ones by a sample name, the
+ * way the synthetic materials carry "Sample raw material 0001". The grid printed
+ * `sup-sim-015` where a planner reads a supplier, because four surfaces each ran
+ * `mockSuppliers.find(…)?.name ?? id` and the 28 synthetic ids are not in that
+ * master. One resolver, so a surface cannot fall back to an id on its own.
+ */
+const PLANNING_SUPPLIER_NAMES: ReadonlyMap<string, string> = new Map([
+  ...mockSuppliers.map((s) => [s.id, s.name] as const),
+  ...PLANNING_SUPPLIERS.filter((id) => id.startsWith('sup-sim-')).map(
+    (id) => [id, `Sample supplier ${id.slice('sup-sim-'.length)}`] as const,
+  ),
+]);
+
+/** A supplier's name from the planning supplier master; the id only for a supplier no master knows. */
+export const planningSupplierName = (supplierId: string): string =>
+  PLANNING_SUPPLIER_NAMES.get(supplierId) ?? supplierId;
 
 /**
  * The suppliers a generated material is sourced from: one, and a second for
@@ -140,6 +198,8 @@ const roundTo = (v: number, step: number) => Math.max(step, Math.round(v / step)
  */
 export function generatedDemand(materialCode: string, bucketId: string): number | null {
   if (!isGeneratedMaterial(materialCode)) return null;
+  // PLN-2 · off its own grain the material is not planned at all.
+  if (!inLane(materialCode, bucketId)) return null;
   if (seededUnit(`gap|${materialCode}|${bucketId}`) < 0.05) return null;
   const entry = SYNTHETIC[materialCode];
   const u = seededUnit(`dem|${materialCode}|${bucketId}`);

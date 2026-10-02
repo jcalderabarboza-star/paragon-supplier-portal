@@ -622,6 +622,18 @@ export function applyPlanView(
   return [...kept].sort((a, b) => cmp(sortValue(a, sort.colId), sortValue(b, sort.colId), dir) || byCode(a, b));
 }
 
+/**
+ * ⚠️ PLN-2 · THE BLOCKS A VIEW LISTS: the material type the VIEW names
+ * (`viewGrainAndHorizon(…).materialType`), never a planner's choice. `null` is
+ * a view with no plan grain, which lists every type. A raw material is planned
+ * monthly and a packaging material weekly, so the other type reaching a view
+ * through a dated source (an open PO, an incoming shipment) is not listed there.
+ */
+export const blocksOfViewType = (
+  blocks: readonly PlanBlock[],
+  materialType: MaterialType | null,
+): readonly PlanBlock[] => (materialType === null ? blocks : blocks.filter((b) => b.materialType === materialType));
+
 /** The rows the grid renders, in block order. */
 export const flattenPlanRows = (blocks: readonly PlanBlock[]): readonly PlanRow[] =>
   blocks.flatMap((b) => b.rows);

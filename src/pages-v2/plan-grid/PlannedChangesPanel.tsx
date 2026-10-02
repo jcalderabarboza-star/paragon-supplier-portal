@@ -20,7 +20,7 @@ import { HandoffNotice } from '../../components/ui-v2/HandoffNotice';
 import { useVerbAvailabilities } from '../../hooks/useVerbAvailability';
 import { useRefusalText } from '../../hooks/useRefusalText';
 import { formatNumber } from '../../lib/format';
-import { mockSuppliers } from '../../data/mockSuppliers';
+import { planningSupplierName } from '../../services/planning/somoFixture';
 import { usePlanDraft } from './PlanDraftProvider';
 import { blockedBy, magnitudeFlag, reasonOwed, type CellRefusal, type CellRefusalReason, type PlanDraftEntry } from './planDraft';
 
@@ -45,7 +45,8 @@ export function cellRefusalText(t: (key: string, opts?: Record<string, unknown>)
   });
 }
 
-const supplierName = (id: string): string => mockSuppliers.find((s) => s.id === id)?.name ?? id;
+// PLN-2 · names from the planning supplier master, one resolver for every planning surface.
+const supplierName = planningSupplierName;
 
 /** The push-side reasons this surface owns (the spine's own are `useRefusalText`'s). */
 const PUSH_REASON_KEY: Readonly<Record<string, string>> = {
@@ -66,6 +67,16 @@ const LINE_STATE_KEY: Readonly<Record<string, string>> = {
   Committed: 'planGrid.edit.push.alreadyCommitted',
   Dismissed: 'planGrid.edit.push.lineDismissed',
 };
+/**
+ * PLN-2 · a commit refused because the material and period are already
+ * committed at the other grain — read off the refusal so the planner is told
+ * which periods, in the surface's own words rather than the developer trail.
+ */
+export const oneGrainClash = (reason: string): { material: string; period: string; committed: string } | null => {
+  const m = /INTAKE_ONE_GRAIN: (\S+) (\S+) overlaps (\S+),/.exec(reason);
+  return m ? { material: m[1], period: m[2], committed: m[3] } : null;
+};
+
 export const pushReasonKey = (reason: string): string | undefined => {
   if (PUSH_REASON_KEY[reason]) return PUSH_REASON_KEY[reason];
   const m = /^ILLEGAL_TRANSITION:(\w+)->/.exec(reason);
@@ -98,6 +109,8 @@ const PlannedChangesPanel: React.FC<{ selectedRefs: readonly string[] }> = ({ se
     return e?.planState === 'PLANNED' && canPush(e);
   });
   const pushReason = (reason: string) => {
+    const clash = oneGrainClash(reason);
+    if (clash) return t('planGrid.edit.push.oneGrain', clash);
     const key = pushReasonKey(reason);
     return key ? t(key) : (refusalText(reason) ?? t('planGrid.push.failed', { reason }));
   };
