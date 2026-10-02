@@ -386,7 +386,9 @@ describe('PLN-2 · a planning surface names a supplier from the supplier master 
     for (const f of files) {
       const src = readFileSync(resolve(process.cwd(), f), 'utf-8');
       expect(src, f).not.toMatch(/mockSuppliers\.find\(/);
-      expect(src, f).toMatch(/planningSupplierName/);
+      // the surface's own name for the resolver IS the resolver — not a function that might fall back
+      expect(src, f).toMatch(/const (supplierName|supplierLabel) = planningSupplierName;/);
+      expect(src.match(/const (supplierName|supplierLabel) =/g), f).toHaveLength(1);
     }
   });
 });
