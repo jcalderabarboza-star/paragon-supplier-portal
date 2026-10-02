@@ -85,9 +85,9 @@ describe('PLN-2 · a plan view lists ONE material type — the type planned at i
   });
 
   it.each([
-    ['rm-plan', 'month', 'ROH'],
-    ['pm-plan', 'week', 'VERP'],
-  ] as const)('%s lists every block as %s at the %s grain — and a non-trivial number of them', async (viewId, grain, type) => {
+    ['rm-plan', 'ROH', 'month'],
+    ['pm-plan', 'VERP', 'week'],
+  ] as const)('%s lists every block as %s at the %s grain — and a non-trivial number of them', async (viewId, type, grain) => {
     const { blocks } = await listed(viewId, grain);
     expect(blocks.length).toBeGreaterThan(500);
     expect(blocks.filter((b) => b.materialType !== type).map((b) => b.materialCode)).toEqual([]);
