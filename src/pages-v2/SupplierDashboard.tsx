@@ -193,7 +193,6 @@ const SupplierDashboard: React.FC = () => {
   const { identity } = useCurrentIdentity();
   const { supplierId } = identity;
   const dashCrumb = [
-    t('supplierDashboard.crumb.acquire'),
     t('supplierDashboard.crumb.dashboard'),
   ];
   const [dismissedActions, setDismissedActions] = useState<string[]>([]);

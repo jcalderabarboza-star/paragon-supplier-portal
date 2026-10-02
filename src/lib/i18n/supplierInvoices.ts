@@ -14,7 +14,6 @@
 // channel enum, buyer/bank fixture values) is never translated.
 export const supplierInvoicesEn: Record<string, string> = {
   // — Breadcrumb —
-  'supplierInvoices.crumb.settle': 'SETTLE',
   'supplierInvoices.crumb.invoices': 'MY INVOICES',
   // — Page header —
   'supplierInvoices.header.title': 'My Invoices',
@@ -135,7 +134,6 @@ export const supplierInvoicesEn: Record<string, string> = {
 
 export const supplierInvoicesId: Record<string, string> = {
   // — Breadcrumb —
-  'supplierInvoices.crumb.settle': 'PENYELESAIAN',
   'supplierInvoices.crumb.invoices': 'FAKTUR SAYA',
   // — Page header —
   'supplierInvoices.header.title': 'Faktur Saya',

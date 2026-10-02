@@ -218,7 +218,7 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
   const { toast } = useToast();
   const { t } = useTranslation();
   const refusalText = useRefusalText();
-  const crumb = [t('buyerInvoices.crumb.transact'), t('buyerInvoices.crumb.invoices')];
+  const crumb = [t('buyerInvoices.crumb.invoices')];
   // ⚠️ **THE HOOK WAS COMPLETE AND CONSUMERLESS FOR THE WHOLE LIFE OF THIS
   // PAGE.** `useInvoiceApprove` shipped with the same `useMutation` shape as
   // every sibling and exactly one reference in the tree — its own definition —
@@ -1460,7 +1460,7 @@ const MatchTile: React.FC<MatchTileProps> = ({ label, count, variant }) => (
 // the server list) only mounts once real data has resolved.
 const BuyerInvoices: React.FC = () => {
   const { t } = useTranslation();
-  const crumb = [t('buyerInvoices.crumb.transact'), t('buyerInvoices.crumb.invoices')];
+  const crumb = [t('buyerInvoices.crumb.invoices')];
   const invoicesQuery = useBuyerInvoices();
   if (invoicesQuery.isPending) return <LoadingState breadcrumb={crumb} />;
   if (invoicesQuery.isError)

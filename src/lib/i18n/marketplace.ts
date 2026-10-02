@@ -9,7 +9,6 @@
 // RFQ numbers) are sample/mock fixture content and stay EN as DATA / i18n-defer.
 export const marketplaceEn: Record<string, string> = {
   // — Breadcrumb —
-  'marketplace.crumb.acquire': 'ACQUIRE',
   'marketplace.crumb.marketplace': 'MARKETPLACE',
   // — Page header —
   'marketplace.header.title': 'Global Supplier Marketplace',
@@ -52,7 +51,6 @@ export const marketplaceEn: Record<string, string> = {
 
 export const marketplaceId: Record<string, string> = {
   // — Breadcrumb —
-  'marketplace.crumb.acquire': 'PENGADAAN',
   'marketplace.crumb.marketplace': 'PASAR',
   // — Page header —
   'marketplace.header.title': 'Pasar Pemasok Global',

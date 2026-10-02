@@ -159,7 +159,6 @@ const BuyerSupplierProfile: React.FC = () => {
   }
 
   const PROFILE_CRUMB = [
-    t('buyerSupplierProfile.crumb.acquire'),
     t('buyerSupplierProfile.crumb.directory'),
   ];
 
@@ -258,7 +257,6 @@ const BuyerSupplierProfile: React.FC = () => {
 
       <PageHeader
         breadcrumb={[
-          t('buyerSupplierProfile.crumb.acquire'),
           t('buyerSupplierProfile.crumb.directory'),
           supp.name.toUpperCase(),
         ]}

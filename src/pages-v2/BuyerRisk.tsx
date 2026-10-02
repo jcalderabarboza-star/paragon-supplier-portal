@@ -994,7 +994,7 @@ const CommodityTab: React.FC<{ commodities: Commodity[] }> = ({
 const BuyerRisk: React.FC = () => {
   const { toast } = useToast();
   const { t } = useTranslation();
-  const RISK_CRUMB = [t('risk.crumb.intelligence'), t('risk.crumb.supplyRisk')];
+  const RISK_CRUMB = [t('risk.crumb.supplyRisk')];
   const TABS = TAB_DEFS.map((tb) => ({ id: tb.id, label: t(tb.labelKey) }));
   const alertsQuery = useRiskAlerts();
   const geoQuery = useGeoRisks();

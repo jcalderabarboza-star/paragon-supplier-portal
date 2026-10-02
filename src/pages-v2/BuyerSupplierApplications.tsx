@@ -184,7 +184,6 @@ const BuyerSupplierApplications: React.FC = () => {
   // module-level English literal until browser QA read the page in Indonesian
   // and found the one line still in English.
   const APPLICATIONS_CRUMB = [
-    t('applications.crumb.acquire'),
     t('applications.crumb.applications'),
   ];
 

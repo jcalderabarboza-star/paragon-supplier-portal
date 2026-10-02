@@ -31,7 +31,6 @@
 // <Data>/formatters) stays EN as data.
 export const buyerScorecardEn: Record<string, string> = {
   // — Breadcrumb —
-  'buyerScorecard.crumb.intelligence': 'INTELLIGENCE',
   'buyerScorecard.crumb.scorecard': 'SUPPLIER SCORECARD',
   // — Page header —
   'buyerScorecard.header.title': 'Supplier Scorecard',
@@ -82,7 +81,6 @@ export const buyerScorecardEn: Record<string, string> = {
 
 export const buyerScorecardId: Record<string, string> = {
   // — Breadcrumb —
-  'buyerScorecard.crumb.intelligence': 'INTELIJEN',
   'buyerScorecard.crumb.scorecard': 'KARTU SKOR PEMASOK',
   // — Page header —
   'buyerScorecard.header.title': 'Kartu Skor Pemasok',

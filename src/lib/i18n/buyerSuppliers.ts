@@ -16,7 +16,6 @@
 // content (supplier names, cities, country codes) stay EN as data.
 export const buyerSuppliersEn: Record<string, string> = {
   // — Breadcrumb —
-  'buyerSuppliers.crumb.acquire': 'ACQUIRE',
   'buyerSuppliers.crumb.directory': 'SUPPLIER DIRECTORY',
   // — All-empty state —
   'buyerSuppliers.empty.title': 'No suppliers yet',
@@ -76,7 +75,6 @@ export const buyerSuppliersEn: Record<string, string> = {
 
 export const buyerSuppliersId: Record<string, string> = {
   // — Breadcrumb —
-  'buyerSuppliers.crumb.acquire': 'PENGADAAN',
   'buyerSuppliers.crumb.directory': 'DIREKTORI PEMASOK',
   // — All-empty state —
   'buyerSuppliers.empty.title': 'Belum ada pemasok',

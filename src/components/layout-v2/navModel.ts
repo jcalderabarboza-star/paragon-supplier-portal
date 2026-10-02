@@ -42,6 +42,7 @@ import {
   ListChecks,
   Blocks,
 } from 'lucide-react';
+import { matchPath } from 'react-router-dom';
 import { routeOffReason, type ModuleActivationView } from '../../services/modules/activation';
 
 export interface NavItem {
@@ -221,6 +222,59 @@ export const NON_DESTINATION_ROUTES: Readonly<Record<string, string>> = {
   '/': 'redirect to the buyer dashboard, not a page',
   '*': 'the 404 page for an unknown route, not a destination',
 };
+
+/**
+ * H1 · THE BREADCRUMB'S FIRST SEGMENT IS THE SIDEBAR GROUP, DERIVED HERE.
+ *
+ * A page reached from the nav opens under the group that holds it; a detail
+ * route opens under the group of the list it is reached from. Every page's
+ * breadcrumb starts with this label (`PageHeader` prepends it), so a page can
+ * never name a section the sidebar does not show — the old per-page section
+ * keys (Acquire, Transact, Settle, Intelligence) are gone and cannot drift.
+ *
+ * `navModel.test.tsx` holds it both ways: every router path resolves to a group
+ * or is on `NO_SECTION_ROUTES`, and every detail route's parent is a nav item.
+ */
+export const DETAIL_ROUTE_PARENT: Readonly<Record<string, string>> = {
+  '/buyer/suppliers/:id': '/buyer/suppliers',
+  '/marketplace/supplier/:id': '/marketplace',
+  '/buyer/contracts/:id': '/buyer/contracts',
+  '/buyer/roles/:roleId': '/buyer/roles',
+  '/buyer/platform/modules/admin': '/buyer/platform/modules',
+};
+
+/** Non-destinations that open under no group: drawn before a session exists, or routing plumbing. */
+export const NO_SECTION_ROUTES: readonly string[] = ['/login', '/register', '/', '*'];
+
+/** The nav group label key of the item at `path` on one side, or null. */
+function groupKeyOf(groups: readonly NavGroup[], path: string): string | null {
+  return groups.find((g) => g.items.some((i) => i.path === path))?.labelKey ?? null;
+}
+
+/**
+ * The group label key a location opens under, or null when it opens under none.
+ * The side comes from the location's prefix; a persona-neutral path (`/glossary`,
+ * `/marketplace`) is looked up on the buyer side first, then the supplier side.
+ */
+export function navSectionKeyFor(pathname: string): string | null {
+  const sides = pathname.startsWith('/supplier/') ? [SUPPLIER_NAV, BUYER_NAV] : [BUYER_NAV, SUPPLIER_NAV];
+  const lookup = (path: string): string | null => {
+    for (const side of sides) {
+      const key = groupKeyOf(side, path);
+      if (key) return key;
+    }
+    return null;
+  };
+  for (const side of sides) {
+    for (const g of side) {
+      if (g.items.some((i) => matchPath({ path: i.path, end: true }, pathname))) return g.labelKey;
+    }
+  }
+  for (const [pattern, parent] of Object.entries(DETAIL_ROUTE_PARENT)) {
+    if (matchPath({ path: pattern, end: true }, pathname)) return lookup(parent);
+  }
+  return null;
+}
 
 /**
  * The groups a seat sees. An item whose route is off leaves (Design 5 §A.3:

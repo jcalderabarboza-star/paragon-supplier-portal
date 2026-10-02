@@ -114,7 +114,6 @@ const STATUS_FILTER_IDS: StatusFilter[] = [
 const SupplierInventory: React.FC = () => {
   const { t } = useTranslation();
   const INVENTORY_CRUMB = [
-    t('supplierInventory.crumb.transact'),
     t('supplierInventory.crumb.myInventory'),
   ];
   const stockFilterLabel = (id: StatusFilter): string => {

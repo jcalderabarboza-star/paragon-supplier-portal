@@ -95,7 +95,7 @@ const BuyerDeliveryAgreements: React.FC = () => {
   if (views.length === 0) {
     return (
       <EmptyState
-        breadcrumb={[t('delivery.crumb.settle'), t('delivery.crumb.title')]}
+        breadcrumb={[t('delivery.crumb.title')]}
         title={t('delivery.header.title')}
         subtitle={t('delivery.header.subtitle')}
         message={t('delivery.empty')}
@@ -134,7 +134,7 @@ const BuyerDeliveryAgreements: React.FC = () => {
   return (
     <AppShellV2>
       <PageHeader
-        breadcrumb={[t('delivery.crumb.settle'), t('delivery.crumb.title')]}
+        breadcrumb={[t('delivery.crumb.title')]}
         title={t('delivery.header.title')}
         subtitle={t('delivery.header.subtitle')}
         actions={<LivenessPill capability="deliveryAgreements" />}

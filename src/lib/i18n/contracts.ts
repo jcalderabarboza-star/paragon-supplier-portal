@@ -5,7 +5,6 @@
 // resolver, matching the flat-key convention already shipped in i18n.ts).
 export const contractsEn: Record<string, string> = {
   // — Breadcrumb —
-  'contracts.crumb.acquire': 'ACQUIRE',
   'contracts.crumb.contracts': 'CONTRACTS',
   // — Page header —
   'contracts.header.title': 'Contract Management',
@@ -291,8 +290,7 @@ export const contractsEn: Record<string, string> = {
 
 export const contractsId: Record<string, string> = {
   // — Breadcrumb —
-  'contracts.crumb.acquire': 'PENGADAAN',
-  'contracts.crumb.contracts': 'KONTRAK',
+  'contracts.crumb.contracts': 'DAFTAR KONTRAK',
   // — Page header —
   'contracts.header.title': 'Manajemen Kontrak',
   'contracts.header.subtitle':

@@ -19,7 +19,6 @@
 // to keep in step.
 export const buyerDashboardEn: Record<string, string> = {
   // — Breadcrumb —
-  'buyerDashboard.crumb.dashboards': 'DASHBOARDS',
   'buyerDashboard.crumb.commandCenter': 'PROCUREMENT COMMAND CENTER',
   // — Page header —
   'buyerDashboard.header.eyebrow': 'Buyer · Procurement Command Center',
@@ -155,7 +154,6 @@ export const buyerDashboardEn: Record<string, string> = {
 
 export const buyerDashboardId: Record<string, string> = {
   // — Breadcrumb —
-  'buyerDashboard.crumb.dashboards': 'DASBOR',
   'buyerDashboard.crumb.commandCenter': 'PUSAT KOMANDO PENGADAAN',
   // — Page header —
   'buyerDashboard.header.eyebrow': 'Pembeli · Pusat Komando Pengadaan',

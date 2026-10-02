@@ -97,7 +97,6 @@ const SupplierOrders: React.FC = () => {
   const { t } = useTranslation();
   const refusalText = useRefusalText();
   const ORDERS_CRUMB = [
-    t('supplierOrders.crumb.transact'),
     t('supplierOrders.crumb.myOrders'),
   ];
   const { toast } = useToast();

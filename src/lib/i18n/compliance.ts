@@ -16,7 +16,6 @@
 // per-row free-text `action`/`country` are dropped (not on the DTO).
 export const complianceEn: Record<string, string> = {
   // — Breadcrumb —
-  'compliance.crumb.intelligence': 'INTELLIGENCE',
   'compliance.crumb.tracker': 'COMPLIANCE TRACKER',
   // — Page header —
   'compliance.header.title': 'Compliance Tracker',
@@ -192,7 +191,6 @@ export const complianceEn: Record<string, string> = {
 
 export const complianceId: Record<string, string> = {
   // — Breadcrumb —
-  'compliance.crumb.intelligence': 'INTELIJEN',
   'compliance.crumb.tracker': 'PELACAK KEPATUHAN',
   // — Page header —
   'compliance.header.title': 'Pelacak Kepatuhan',

@@ -322,7 +322,7 @@ const PlanGrid: React.FC = () => {
     [t],
   );
 
-  const PLAN_CRUMB = [t('planGrid.crumb.acquire'), t('planGrid.crumb.planGrid')];
+  const PLAN_CRUMB = [t('planGrid.crumb.planGrid')];
 
   return (
     <AppShellV2>

@@ -62,7 +62,6 @@ const Marketplace: React.FC = () => {
   const { t } = useTranslation();
   const cl = useCategoryLabel();
   const MARKETPLACE_CRUMB = [
-    t('marketplace.crumb.acquire'),
     t('marketplace.crumb.marketplace'),
   ];
   const suppliersQuery = useSuppliers();

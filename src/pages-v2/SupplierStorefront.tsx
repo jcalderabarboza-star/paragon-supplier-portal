@@ -119,7 +119,6 @@ const SupplierStorefront: React.FC = () => {
   const supp = supplierQuery.data ?? null;
   const products = productsQuery.data?.items ?? [];
   const crumb = [
-    t('supplierStorefront.crumb.acquire'),
     t('supplierStorefront.crumb.marketplace'),
   ];
 
@@ -212,7 +211,6 @@ const SupplierStorefront: React.FC = () => {
 
       <PageHeader
         breadcrumb={[
-          t('supplierStorefront.crumb.acquire'),
           t('supplierStorefront.crumb.marketplace'),
           supp.name.toUpperCase(),
         ]}

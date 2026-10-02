@@ -250,7 +250,7 @@ const Glossary: React.FC = () => {
   return (
     <AppShellV2>
       <PageHeader
-        breadcrumb={[t('glossary.crumb.platform'), t('glossary.crumb.glossary')]}
+        breadcrumb={[t('glossary.crumb.glossary')]}
         title={t('glossary.header.title')}
         subtitle={t('glossary.header.subtitle')}
       />

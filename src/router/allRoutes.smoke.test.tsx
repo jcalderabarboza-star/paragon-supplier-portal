@@ -71,6 +71,16 @@ import SupplierPerformance from '../pages-v2/SupplierPerformance';
 import NotFound from '../pages-v2/NotFound';
 import { PERSONA_SYSTEM_ROLES } from '../services/transitions/businessRoles';
 import { NO_PERSON } from '../context/noPerson';
+import i18n from '../lib/i18n';
+import { navSectionKeyFor } from '../components/layout-v2/navModel';
+
+/**
+ * H1 · routes that open under a nav group and still draw no breadcrumb, each
+ * with its reason. BILATERAL: a route here that starts drawing one is red.
+ */
+const NO_BREADCRUMB: Readonly<Record<string, string>> = {
+  '/buyer/roles/:roleId': 'a role detail page headed by its back link to Roles and the role name; no eyebrow',
+};
 
 const BUYER: CurrentIdentity = {
   personaType: 'buyer',
@@ -226,5 +236,21 @@ describe('sp-001 — every route mounts without crashing', () => {
     await waitFor(() => expect(container).not.toBeEmptyDOMElement());
     // No React error boundary fell through to a blank error screen.
     expect(screen.queryByText(/something went wrong/i)).not.toBeInTheDocument();
+
+    // H1 · breadcrumb ↔ nav parity, on the real page: the eyebrow opens with the
+    // sidebar group the route sits under, and only once.
+    const key = navSectionKeyFor(at);
+    const crumbs = screen.queryAllByTestId('page-breadcrumb').map((c) => c.textContent!.split(' · '));
+    if (key === null) {
+      // Login, register and the 404 open under no group: nothing is prepended
+      // (the 404's own eyebrow is its only segment).
+      expect(crumbs.filter((segs) => segs.join(' · ') !== '404')).toEqual([]);
+    } else if (pattern in NO_BREADCRUMB) {
+      expect(crumbs, `${pattern} now draws a breadcrumb — remove it from NO_BREADCRUMB`).toEqual([]);
+    } else {
+      expect(crumbs.length, `${pattern} draws no breadcrumb`).toBeGreaterThan(0);
+      const section = i18n.t(key);
+      expect(crumbs.filter((segs) => segs[0] !== section || segs[1] === section)).toEqual([]);
+    }
   });
 });

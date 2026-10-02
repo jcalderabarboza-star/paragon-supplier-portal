@@ -4,7 +4,6 @@
 // surface — nothing edits, dispatches, or publishes (P1 submission is SDC-2).
 export const sdcConsolidationEn: Record<string, string> = {
   // — Page chrome —
-  'sdc.crumb.section': 'Acquire',
   'sdc.crumb.page': 'Supplier Collaboration',
   'sdc.header.title': 'Supplier Collaboration',
   'sdc.header.subtitle': 'Forecast consolidation — demand vs confirmation vs fulfilment',
@@ -179,7 +178,6 @@ export const sdcConsolidationEn: Record<string, string> = {
 
 export const sdcConsolidationId: Record<string, string> = {
   // — Page chrome —
-  'sdc.crumb.section': 'Pengadaan',
   'sdc.crumb.page': 'Kolaborasi Pemasok',
   'sdc.header.title': 'Kolaborasi Pemasok',
   'sdc.header.subtitle': 'Konsolidasi prakiraan — permintaan vs konfirmasi vs pemenuhan',

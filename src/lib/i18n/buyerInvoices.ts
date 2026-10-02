@@ -17,7 +17,6 @@
 // selected by a `count === 1` ternary (flat-key convention, no plural resolver).
 export const buyerInvoicesEn: Record<string, string> = {
   // — Breadcrumb —
-  'buyerInvoices.crumb.transact': 'TRANSACT',
   'buyerInvoices.crumb.invoices': 'INVOICES & PAYMENT',
   // — Page header —
   'buyerInvoices.header.title': 'Invoices & Payment',
@@ -186,7 +185,6 @@ export const buyerInvoicesEn: Record<string, string> = {
 
 export const buyerInvoicesId: Record<string, string> = {
   // — Breadcrumb —
-  'buyerInvoices.crumb.transact': 'TRANSAKSI',
   'buyerInvoices.crumb.invoices': 'FAKTUR & PEMBAYARAN',
   // — Page header —
   'buyerInvoices.header.title': 'Faktur & Pembayaran',

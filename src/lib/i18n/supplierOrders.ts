@@ -12,7 +12,6 @@
 // (line-item descriptions, channel value) stay EN as data / i18n-defer.
 export const supplierOrdersEn: Record<string, string> = {
   // — Breadcrumb —
-  'supplierOrders.crumb.transact': 'TRANSACT',
   'supplierOrders.crumb.myOrders': 'MY ORDERS',
   // — Page header —
   'supplierOrders.header.title': 'My Orders',
@@ -139,7 +138,6 @@ export const supplierOrdersEn: Record<string, string> = {
 
 export const supplierOrdersId: Record<string, string> = {
   // — Breadcrumb —
-  'supplierOrders.crumb.transact': 'TRANSAKSI',
   'supplierOrders.crumb.myOrders': 'PESANAN SAYA',
   // — Page header —
   'supplierOrders.header.title': 'Pesanan Saya',

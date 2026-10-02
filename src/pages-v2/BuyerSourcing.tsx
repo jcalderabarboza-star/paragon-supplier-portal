@@ -2673,7 +2673,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
   return (
     <AppShellV2>
       <PageHeader
-        breadcrumb={[t('sourcing.crumb.acquire'), t('sourcing.crumb.sourcing')]}
+        breadcrumb={[t('sourcing.crumb.sourcing')]}
         title={t('sourcing.header.title')}
         subtitle={t('sourcing.header.subtitle')}
         actions={
@@ -4009,7 +4009,6 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
 const BuyerSourcing: React.FC = () => {
   const { t } = useTranslation();
   const sourcingCrumb = [
-    t('sourcing.crumb.acquire'),
     t('sourcing.crumb.sourcing'),
   ];
   const rfqsQuery = useRFQs();

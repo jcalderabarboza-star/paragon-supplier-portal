@@ -343,7 +343,6 @@ const SupplierPerformance: React.FC = () => {
   const { supplierId } = identity;
   const [activeTab, setActiveTab] = useState<string>('overview');
   const PERF_CRUMB = [
-    t('supplierPerformance.crumb.intelligence'),
     t('supplierPerformance.crumb.myPerformance'),
   ];
   const TABS = [

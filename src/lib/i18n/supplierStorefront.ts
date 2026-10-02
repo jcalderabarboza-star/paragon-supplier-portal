@@ -19,7 +19,6 @@
 //    i18n-defer.
 export const supplierStorefrontEn: Record<string, string> = {
   // — Breadcrumb —
-  'supplierStorefront.crumb.acquire': 'ACQUIRE',
   'supplierStorefront.crumb.marketplace': 'MARKETPLACE',
   // — Back-nav link —
   'supplierStorefront.nav.marketplace': 'Marketplace',
@@ -96,7 +95,6 @@ export const supplierStorefrontEn: Record<string, string> = {
 
 export const supplierStorefrontId: Record<string, string> = {
   // — Breadcrumb —
-  'supplierStorefront.crumb.acquire': 'PENGADAAN',
   'supplierStorefront.crumb.marketplace': 'PASAR',
   // — Back-nav link —
   'supplierStorefront.nav.marketplace': 'Pasar',

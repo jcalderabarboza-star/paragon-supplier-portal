@@ -395,7 +395,7 @@ const BuyerCompliance: React.FC = () => {
   return (
     <AppShellV2>
       <PageHeader
-        breadcrumb={[t('compliance.crumb.intelligence'), t('compliance.crumb.tracker')]}
+        breadcrumb={[t('compliance.crumb.tracker')]}
         title={t('compliance.header.title')}
         subtitle={t('compliance.header.subtitle')}
         actions={

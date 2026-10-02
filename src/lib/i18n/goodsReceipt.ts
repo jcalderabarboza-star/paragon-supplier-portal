@@ -19,7 +19,6 @@
 // and radio label and are left verbatim.
 export const goodsReceiptEn: Record<string, string> = {
   // — Breadcrumb —
-  'goodsReceipt.crumb.transact': 'TRANSACT',
   'goodsReceipt.crumb.gr': 'GOODS RECEIPT & QC',
   // — Page header —
   'goodsReceipt.header.title': 'Goods Receipt & Quality Control',
@@ -308,7 +307,6 @@ export const goodsReceiptEn: Record<string, string> = {
 
 export const goodsReceiptId: Record<string, string> = {
   // — Breadcrumb —
-  'goodsReceipt.crumb.transact': 'TRANSAKSI',
   'goodsReceipt.crumb.gr': 'PENERIMAAN BARANG & QC',
   // — Page header —
   'goodsReceipt.header.title': 'Penerimaan Barang & Kontrol Kualitas',

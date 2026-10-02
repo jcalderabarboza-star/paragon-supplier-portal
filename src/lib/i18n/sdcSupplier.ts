@@ -5,7 +5,6 @@
 // internal liveness / plan-state grammar ever reaches these strings.
 export const sdcSupplierEn: Record<string, string> = {
   // — Page chrome —
-  'sdcSup.crumb.section': 'Acquire',
   'sdcSup.crumb.page': 'Forecasts',
   'sdcSup.header.title': 'Forecast Commitments',
   'sdcSup.header.subtitle': 'Published forecast lines for {{supplier}} — confirm what you can supply',
@@ -394,7 +393,6 @@ export const sdcSupplierEn: Record<string, string> = {
 
 export const sdcSupplierId: Record<string, string> = {
   // — Kerangka halaman —
-  'sdcSup.crumb.section': 'Pengadaan',
   'sdcSup.crumb.page': 'Prakiraan',
   'sdcSup.header.title': 'Komitmen Prakiraan',
   'sdcSup.header.subtitle': 'Baris prakiraan terbit untuk {{supplier}} — konfirmasikan yang dapat Anda pasok',

@@ -83,7 +83,7 @@ const ModulesBoard: React.FC = () => {
     <AppShellV2>
       <div data-testid="modules-board">
         <PageHeader
-          breadcrumb={[t('processFlows.crumb.platform'), t('modules.board.crumb')]}
+          breadcrumb={[t('modules.board.crumb')]}
           title={t('modules.board.title')}
           subtitle={t('modules.board.subtitle')}
           actions={

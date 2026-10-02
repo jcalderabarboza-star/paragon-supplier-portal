@@ -10,7 +10,6 @@
 // EN+ID from birth (MARKER-I18N-HOLE-01).
 export const glossaryEn: Record<string, string> = {
   // — Page chrome —
-  'glossary.crumb.platform': 'Platform',
   'glossary.crumb.glossary': 'Glossary',
   'glossary.header.title': 'Glossary',
   'glossary.header.subtitle':
@@ -68,7 +67,6 @@ export const glossaryEn: Record<string, string> = {
 
 export const glossaryId: Record<string, string> = {
   // — Chrome halaman —
-  'glossary.crumb.platform': 'Platform',
   'glossary.crumb.glossary': 'Glosarium',
   'glossary.header.title': 'Glosarium',
   'glossary.header.subtitle':

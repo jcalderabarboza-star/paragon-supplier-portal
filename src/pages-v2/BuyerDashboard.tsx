@@ -169,7 +169,6 @@ const BuyerDashboard: React.FC = () => {
   const [lane, setLane] = useState<SystemRoleId | null>(null);
 
   const DASH_CRUMB = [
-    t('buyerDashboard.crumb.dashboards'),
     t('buyerDashboard.crumb.commandCenter'),
   ];
 

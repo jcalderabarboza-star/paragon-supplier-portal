@@ -144,7 +144,6 @@ const BuyerInventory: React.FC = () => {
   const { t } = useTranslation();
   const cl = useCategoryLabel();
   const INVENTORY_CRUMB = [
-    t('buyerInventory.crumb.transact'),
     t('buyerInventory.crumb.inventory'),
   ];
   const { toast } = useToast();

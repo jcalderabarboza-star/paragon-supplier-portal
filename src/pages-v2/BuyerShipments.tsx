@@ -150,7 +150,6 @@ const BuyerShipments: React.FC = () => {
   const { toast } = useToast();
   // Breadcrumb is built from t() inside the component (mirrors BuyerDiscovery).
   const SHIPMENTS_CRUMB = [
-    t('shipments.crumb.transact'),
     t('shipments.crumb.shipments'),
   ];
   const shipmentsQuery = useShipments();

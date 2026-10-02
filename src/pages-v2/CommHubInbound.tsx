@@ -285,7 +285,7 @@ const CommHubInbound: React.FC = () => {
     }
   };
 
-  const crumb = [t('commHub.crumb.intelligence'), t('commHub.crumb.inbound')];
+  const crumb = [t('commHub.crumb.inbound')];
   const hasRows = parsed !== null && rows.length > 0;
   const recognized = parsed !== null && parsed.specHint !== null;
 

@@ -19,11 +19,11 @@ Source of truth: `DataServiceContext.tsx`, `types.ts`, `MockCommandService.ts`, 
 | SAP boundary (Option B) | **LIVE** (2 verbs) | `settleFinalize` → real SAP settlement webhook |
 | `AuditSink` / `TransitionEvent` (DR-10) | **LIVE** in-memory / durable **RESERVED** | `AuditSink` interface (C3) |
 | `httpDataService` | **RESERVED** | `DataServiceContext` service prop |
-| OIDC / real IdP | **RESERVED** | persona→role map (`roles.ts`) |
+| OIDC / real IdP | **RESERVED** | the seat's `businessRoles`, resolved by `atomsForSeat` (`customRoles.ts`) — corrected 2026-10-02, see the section |
 | INT-TMS-01 (Portal↔TMS ASN boundary) | **RESERVED** | `advanceShipNotice` system-trigger transitions |
 | Backend / datastore | **RESERVED** (greenfield) | in-memory stores |
 | Snowflake clean-data layer | **SPEC** (C4) | durable `AuditSink` tee |
-| LivenessRegistry | **SPEC** | — (named, no code) |
+| LivenessRegistry | **LIVE** (in-memory) | `src/services/liveness/registry.ts` — corrected 2026-10-02, see the section |
 
 ---
 
@@ -108,9 +108,22 @@ verbs are behavior-wired (they are not — C1 wiring census).
 
 ## OIDC / real IdP · **RESERVED**
 
-The persona→transition-role table (`PERSONA_ROLES`, `roles.ts`) is the placeholder. Phase-4′ OIDC
-swaps it for a real IdP claim set; the transition metadata (`requiredRole` strings) and the
-dispatcher are untouched. System/cascade transitions (Paragon-side automation) map to `buyer`.
+> ⚠️ **RETRACTED 2026-10-02 (H1, D8 §2.2) — QUOTED, NOT SILENTLY EDITED.** This section and the
+> table row above read: *"The persona→transition-role table (`PERSONA_ROLES`, `roles.ts`) is the
+> placeholder. Phase-4′ OIDC swaps it for a real IdP claim set; the transition metadata
+> (`requiredRole` strings) and the dispatcher are untouched. System/cascade transitions
+> (Paragon-side automation) map to `buyer`."* and *"persona→role map (`roles.ts`)"*. **Both stopped
+> being true at Batch A (§64).** `PERSONA_ROLES` is now a DERIVED tenancy view and its own header
+> says it *"IS NO LONGER THE AUTHORISATION SOURCE"* (`src/services/transitions/roles.ts`).
+
+**As built.** The dispatcher authorises a seat by its business roles: `scope.businessRoles`,
+resolved to permission atoms by `atomsForSeat` (`src/services/transitions/customRoles.ts`, over
+`SYSTEM_ROLES` in `src/services/transitions/businessRoles.ts`). A command scope without
+`businessRoles` is refused — there is no persona fallback. System and cascade transitions run under
+the `automation` grant, which is not assignable to a person. **The swap-point is therefore the
+source of the seat's `businessRoles`:** today the identity panel's sample seat; after OIDC, the
+roles an IdP subject is bound to (C10). The transition metadata (`requiredRole` atoms) and the
+dispatcher are untouched by that swap.
 
 ---
 
@@ -127,12 +140,22 @@ eventually feeds. (`docs/findings.md` INT-TMS-01.)
 
 ---
 
-## LivenessRegistry · **SPEC**
+## LivenessRegistry · **LIVE (in-memory)**
 
-Named as a forward seam ("LivenessRegistry-to-come") with **zero code** (grep-confirmed). Its
-intended job is to record which flows/verbs are behavior-wired vs. inert (the C1 wiring census,
-made queryable at runtime) so a surface can honestly render "wired / authored-unwired" instead of
-the census living only in docs. **SPEC** — appears here only as a pointer; the SE-Team builds it.
+> ⚠️ **RETRACTED 2026-10-02 (H1, D8 §2.1) — QUOTED, NOT SILENTLY EDITED.** This section was headed
+> `LivenessRegistry · **SPEC**` and read: *"Named as a forward seam ("LivenessRegistry-to-come")
+> with **zero code** (grep-confirmed). … **SPEC** — appears here only as a pointer; the SE-Team
+> builds it."* The table row above read `| LivenessRegistry | **SPEC** | — (named, no code) |`.
+> **Both were false for most of this contract's life:** the registry was built at F0.6 (PR #60) and
+> every honest-render marker in the portal reads it.
+
+**As built.** `src/services/liveness/registry.ts` holds one tier per capability. The tier is
+DERIVED: a capability is `LIVE` when its backing entity is in `WIRED_COMMAND_TARGETS`, `SIMULATED`
+otherwise, and `SPEC` when it has no producer at all. A second gate holds a wired capability off
+green while its real data source has not landed (`awaitsHarvest`, LIVENESS-DATASOURCE-01), so
+`isLive` — the one predicate every marker reads — is green only through both gates
+(`registry.test.ts`, `flipHarness.test.ts`). The capability count, the green subset and the `SPEC`
+subset are pinned by name in `src/handoverFigures.pin.test.ts` and are not restated here.
 
 ---
 

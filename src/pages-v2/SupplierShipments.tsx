@@ -571,7 +571,6 @@ const SupplierShipments: React.FC = () => {
   const { t } = useTranslation();
   const refusalText = useRefusalText();
   const SHIPMENTS_CRUMB = [
-    t('supplierShipments.crumb.transact'),
     t('supplierShipments.crumb.shipments'),
   ];
   const { toast } = useToast();

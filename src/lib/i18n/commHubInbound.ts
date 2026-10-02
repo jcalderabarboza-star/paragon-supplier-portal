@@ -2,7 +2,6 @@
 // EN/ID parity is guarded by fragments.test.ts.
 
 export const commHubInboundEn: Record<string, string> = {
-  'commHub.crumb.intelligence': 'Intelligence',
   'commHub.crumb.inbound': 'Channel Inbox',
   'commHub.header.title': 'Channel Inbox — reply triage',
   'commHub.header.subtitle': 'Turn a supplier reply into a governed update — you confirm before anything is recorded.',
@@ -82,7 +81,6 @@ export const commHubInboundEn: Record<string, string> = {
 };
 
 export const commHubInboundId: Record<string, string> = {
-  'commHub.crumb.intelligence': 'Intelijen',
   'commHub.crumb.inbound': 'Kotak Masuk Kanal',
   'commHub.header.title': 'Kotak Masuk Kanal — triase balasan',
   'commHub.header.subtitle': 'Ubah balasan pemasok menjadi pembaruan terkelola — Anda mengonfirmasi sebelum apa pun dicatat.',

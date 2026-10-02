@@ -55,7 +55,7 @@ const SupplierDeliveryAgreements: React.FC = () => {
   // (reuse 5a; no new read). Memoised before the guards so hook order is stable.
   const obligations = useMemo(() => shapeObligations(views, SDC_SIMULATED_NOW), [views]);
 
-  const CRUMB = [t('delivery.crumb.settle'), t('delivery.supplier.title')];
+  const CRUMB = [t('delivery.supplier.title')];
 
   // A buyer (or a scopeless session) has no supplier workspace here — guard like
   // every other #/supplier/* page.

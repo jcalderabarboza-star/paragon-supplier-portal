@@ -2,7 +2,6 @@
 // + channel-sourced provenance trail). EN/ID parity is guarded by fragments.test.ts.
 
 export const buyerCommHubEn: Record<string, string> = {
-  'buyerCommHub.crumb.intelligence': 'Intelligence',
   'buyerCommHub.crumb.hub': 'Communication Hub',
   'buyerCommHub.header.title': 'Communication Hub',
   'buyerCommHub.header.subtitle':
@@ -81,7 +80,6 @@ export const buyerCommHubEn: Record<string, string> = {
 };
 
 export const buyerCommHubId: Record<string, string> = {
-  'buyerCommHub.crumb.intelligence': 'Intelijen',
   'buyerCommHub.crumb.hub': 'Pusat Komunikasi',
   'buyerCommHub.header.title': 'Pusat Komunikasi',
   'buyerCommHub.header.subtitle':

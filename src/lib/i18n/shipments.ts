@@ -15,7 +15,6 @@
 // central label map) are left as EN literals in the page (i18n-defer).
 export const shipmentsEn: Record<string, string> = {
   // — Breadcrumb —
-  'shipments.crumb.transact': 'TRANSACT',
   'shipments.crumb.shipments': 'SHIPMENTS & ASN',
   // — Page header —
   'shipments.header.title': 'Shipments & ASN',
@@ -142,7 +141,6 @@ export const shipmentsEn: Record<string, string> = {
 
 export const shipmentsId: Record<string, string> = {
   // — Breadcrumb —
-  'shipments.crumb.transact': 'TRANSAKSI',
   'shipments.crumb.shipments': 'PENGIRIMAN & ASN',
   // — Page header —
   'shipments.header.title': 'Pengiriman & ASN',

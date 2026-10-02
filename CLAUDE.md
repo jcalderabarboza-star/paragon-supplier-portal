@@ -208,7 +208,13 @@ unreachable by construction. **The mode is unconditional so that no seat has to
 decide it** — see the merge doctrine for the full argument and for the four
 mechanisms whose success signals said nothing about the damage they did.
 
-## Current state (as-built: main @ #65 — F0 + I3 complete; Stage G planning canon on main)
+## Current state (as-built — derive the `main` it describes with `git log -1 main`; F0 + I3 complete; Stage G planning canon on main)
+
+> ⚠️ **THE HEADING IS CORRECTED, NOT THE BLOCK (H1, 2026-10-02, D8 §5.1).** It read *"as-built:
+> main @ #65"* while the block under it was true-upped repeatedly and the heading never was — a PR
+> number in a heading is `FLOOR-IN-PROSE-01` with a pointer instead of a count, so it is deleted in
+> favour of the derivation rather than replaced by a newer number. The SE handover package
+> (`docs/handover/`, front door `D1_SE_HANDOVER.md`) states the tree it was pinned to.
 
 > ⚠️ **AUTHORISATION NOW EXISTS (Batch A, §64).** `resolveRoles` no longer widens
 > a persona to its whole atom set: it resolves the SEAT's business roles
@@ -532,8 +538,15 @@ and the Stage G planning canon + World-Class Build Plan are now on main.
   still carried it as `OPEN — operator` until this true-up.
 
   Derivation, re-runnable: `git log --format='%ad %s' --date=short | grep -oE
-  '^[0-9-]+ G[0-9]\.[0-9][a-z]?' | sort -u`. **Stage G is DORMANT, not next** —
-  it stands where G1.3 left it and is not on the recalibrated path below.
+  '^[0-9-]+ G[0-9]\.[0-9][a-z]?' | sort -u`.
+
+  ⚠️ **RETRACTED 2026-10-02 (H1, D8 §5.2) — QUOTED, NOT EDITED.** The line here read *"**Stage G
+  is DORMANT, not next** — it stands where G1.3 left it and is not on the recalibrated path
+  below."* **Overtaken:** the planning grid was built at B1–B4b (PRs #382–#387) on
+  `docs/designs/DESIGN_1_PLANNING_GRID.md` (`src/pages-v2/plan-grid/`), and the grid's engine move
+  to AG Grid is the SE Team's (SE-1, `docs/handover/D1_SE_HANDOVER.md` §4). The derivation above
+  only finds `G`-prefixed batch names, so it cannot see that work — which is how this sentence
+  survived it.
 - **Stage F — Foundation** (governed data + integration backbone): **F0**
   contract-freeze & ledger truth (F0.1–F0.6 COMPLETE; F0.6 = LivenessRegistry,
   PR #60 closed F0) → **F1** real backend
@@ -639,7 +652,13 @@ Three arcs, in order. Nothing else is queued.
      that survives measurement. H4 / `D-COMP-HALAL-4` is already open, not
      pending.
 
-- **ARC 2 · THE REQUISITION LANE.** ⚠️ **The dispatched premise inverted twice,
+- **ARC 2 · THE REQUISITION LANE.** ⚠️ **RETRACTED 2026-10-02 (H1, D8 §5.4) — THE PARAGRAPH
+  BELOW IS FALSE AT THE TREE AND IS KEPT ONLY AS THE RECORD OF WHAT ARC 2 FIXED.**
+  `BuyerRequisitions.tsx` imports and uses `useRequisitionSubmit`, `useRequisitionApprove` and
+  `useRequisitionReject`: "Submit for approval" dispatches `t_pr_submit`, and `Pending Approval`
+  carries approve and reject, which dispatch `t_pr_approve` / `t_pr_reject`. **Do not read the
+  "false affordances" below as open** — re-derive from the file, as the retracted text itself
+  says to. The paragraph as it stood: ⚠️ **The dispatched premise inverted twice,
   and the lane is in WORSE shape than "unreachable", not better.** Derived:
   `purchaseRequisition` **IS** a wired `CommandTarget`
   (`MockCommandService.ts:1292`), so `t_pr_submit` / `t_pr_approve` /

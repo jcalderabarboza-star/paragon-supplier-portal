@@ -25,7 +25,6 @@
 // city, country, email, phone, website, intelligenceNote) stay EN as data.
 export const buyerSupplierProfileEn: Record<string, string> = {
   // — Breadcrumb —
-  'buyerSupplierProfile.crumb.acquire': 'ACQUIRE',
   'buyerSupplierProfile.crumb.directory': 'SUPPLIER DIRECTORY',
   // — Back link / not-found —
   'buyerSupplierProfile.back.directory': 'Supplier Directory',
@@ -125,7 +124,6 @@ export const buyerSupplierProfileEn: Record<string, string> = {
 
 export const buyerSupplierProfileId: Record<string, string> = {
   // — Breadcrumb —
-  'buyerSupplierProfile.crumb.acquire': 'PENGADAAN',
   'buyerSupplierProfile.crumb.directory': 'DIREKTORI PEMASOK',
   // — Back link / not-found —
   'buyerSupplierProfile.back.directory': 'Direktori Pemasok',

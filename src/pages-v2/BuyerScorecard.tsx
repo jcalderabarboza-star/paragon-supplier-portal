@@ -197,7 +197,6 @@ const BuyerScorecard: React.FC = () => {
   const [selectedId, setSelectedId] = useState<string>('zhejiang');
 
   const SCORECARD_CRUMB = [
-    t('buyerScorecard.crumb.intelligence'),
     t('buyerScorecard.crumb.scorecard'),
   ];
 

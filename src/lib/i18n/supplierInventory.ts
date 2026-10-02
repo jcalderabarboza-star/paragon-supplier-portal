@@ -15,7 +15,6 @@
 // via <Data>/formatters, material codes, UoM, supplier names) stays EN.
 export const supplierInventoryEn: Record<string, string> = {
   // — Breadcrumb —
-  'supplierInventory.crumb.transact': 'TRANSACT',
   'supplierInventory.crumb.myInventory': 'MY INVENTORY',
   // — Page header —
   'supplierInventory.header.title': 'My Inventory',
@@ -79,7 +78,6 @@ export const supplierInventoryEn: Record<string, string> = {
 
 export const supplierInventoryId: Record<string, string> = {
   // — Breadcrumb —
-  'supplierInventory.crumb.transact': 'TRANSAKSI',
   'supplierInventory.crumb.myInventory': 'INVENTARIS SAYA',
   // — Page header —
   'supplierInventory.header.title': 'Inventaris Saya',

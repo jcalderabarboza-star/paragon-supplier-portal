@@ -248,7 +248,6 @@ const StorefrontEditor: React.FC<StorefrontEditorProps> = ({
     <AppShellV2>
       <PageHeader
         breadcrumb={[
-          t('supplierMyStorefront.crumb.acquire'),
           t('supplierMyStorefront.crumb.myStorefront'),
         ]}
         title={t('supplierMyStorefront.header.title')}
@@ -918,7 +917,6 @@ const SupplierMyStorefront: React.FC = () => {
   const catalogQuery = useStorefrontCatalog();
   const certsQuery = useStorefrontCerts();
   const crumb = [
-    t('supplierMyStorefront.crumb.acquire'),
     t('supplierMyStorefront.crumb.myStorefront'),
   ];
 

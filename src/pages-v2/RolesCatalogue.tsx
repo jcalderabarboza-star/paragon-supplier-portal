@@ -5,6 +5,7 @@ import { Info, Lock, Users, ArrowRight, Search, AlertTriangle } from 'lucide-rea
 import AppShellV2 from '../components/layout-v2/AppShellV2';
 import { deriveRoleViews, roleTotals, type RoleView } from './roles/roleModel';
 import CreateRolePanel from './roles/CreateRolePanel';
+import { useNavSection } from '../components/ui-v2/PageHeader';
 import { customRoleStore } from '../services/transitions/customRoles';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -99,6 +100,7 @@ const RoleRow: React.FC<{ role: RoleView }> = ({ role }) => {
 
 const RolesCatalogue: React.FC = () => {
   const { t } = useTranslation();
+  const section = useNavSection();
   // The derivation reads a MUTABLE store now, so the memo needs a reason to run
   // again. `version` is that reason and nothing else: no query caches a role
   // definition, so there is no `invalidateQueries` that would do this for us.
@@ -138,7 +140,10 @@ const RolesCatalogue: React.FC = () => {
           carry its testid. */}
       <div data-testid="roles-catalogue">
         <header className="mb-4">
-          <div className="text-label text-text-tertiary uppercase font-mono">SET-RL · ROLES</div>
+          {/* H1 — the first segment is the sidebar group, derived (`useNavSection`). */}
+          <div className="text-label text-text-tertiary uppercase font-mono" data-testid="page-breadcrumb">
+            {[section, 'SET-RL · ROLES'].filter(Boolean).join(' · ')}
+          </div>
           <h1 className="text-xl font-semibold text-text-primary">{t('roles.page.title')}</h1>
           <p className="text-sm text-text-secondary">{t('roles.page.subtitle')}</p>
         </header>

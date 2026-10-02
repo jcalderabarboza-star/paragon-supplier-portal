@@ -9,7 +9,6 @@
 // the page (i18n-defer) because they seed the search query against EN data.
 export const discoveryEn: Record<string, string> = {
   // — Breadcrumb —
-  'discovery.crumb.acquire': 'ACQUIRE',
   'discovery.crumb.discovery': 'DISCOVERY',
   // — Page header —
   'discovery.header.title': 'Supplier Discovery',
@@ -160,7 +159,6 @@ export const discoveryEn: Record<string, string> = {
 
 export const discoveryId: Record<string, string> = {
   // — Breadcrumb —
-  'discovery.crumb.acquire': 'PENGADAAN',
   'discovery.crumb.discovery': 'PENEMUAN',
   // — Page header —
   'discovery.header.title': 'Penemuan Pemasok',

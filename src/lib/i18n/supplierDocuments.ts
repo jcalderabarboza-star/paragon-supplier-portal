@@ -17,7 +17,6 @@
 // EN in the page.
 export const supplierDocumentsEn: Record<string, string> = {
   // — Breadcrumb —
-  'supplierDocuments.crumb.settle': 'SETTLE',
   'supplierDocuments.crumb.myDocuments': 'MY DOCUMENTS',
   // — Page header —
   'supplierDocuments.header.title': 'My Documents',
@@ -144,7 +143,6 @@ export const supplierDocumentsEn: Record<string, string> = {
 
 export const supplierDocumentsId: Record<string, string> = {
   // — Breadcrumb —
-  'supplierDocuments.crumb.settle': 'PENYELESAIAN',
   'supplierDocuments.crumb.myDocuments': 'DOKUMEN SAYA',
   // — Page header —
   'supplierDocuments.header.title': 'Dokumen Saya',

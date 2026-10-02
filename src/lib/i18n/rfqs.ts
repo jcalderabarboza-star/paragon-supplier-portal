@@ -4,7 +4,6 @@
 // currency, material/category data, and certificate names stay verbatim.
 export const rfqsEn: Record<string, string> = {
   // breadcrumb
-  'rfqs.crumb.section': 'ACQUIRE',
   'rfqs.crumb.page': 'MY RFQS & QUOTES',
   // header + meta
   'rfqs.header.title': 'My Sourcing Events',
@@ -197,7 +196,6 @@ export const rfqsEn: Record<string, string> = {
 
 export const rfqsId: Record<string, string> = {
   // breadcrumb
-  'rfqs.crumb.section': 'PENGADAAN',
   'rfqs.crumb.page': 'RFQ & PENAWARAN SAYA',
   // header + meta
   'rfqs.header.title': 'Acara Sourcing Saya',

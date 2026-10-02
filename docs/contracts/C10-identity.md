@@ -4,9 +4,18 @@
 approval is recorded — for a platform that today **contains no persons at all**.
 
 **Status:** CONTRACT · **FIRST ISSUE, 2026-08-10** · generated from code-truth at `main`
-`df585c5` · **MODEL AND PRECONDITIONS ONLY. ZERO CODE. ZERO TYPES. ZERO FIXTURE PERSONS.**
+`df585c5` · **AMENDMENT 1, 2026-09-24** · **ERRATA, 2026-10-02 (H1) — corrections of fact,
+recorded at the end of this document and NOT YET RATIFIED as an amendment** · **MODEL AND
+PRECONDITIONS ONLY for the six-object model of §3–§4: ZERO CODE, ZERO TYPES.** A fixture ROSTER
+exists (`src/services/identity/sampleRoster.ts`), governed by §6.3 / §6.3a — it is sample data,
+not the `Person` of §3.2.
 
-Nothing in this document is implemented. It is issued **before** the first line of identity code
+> ⚠️ **ERRATUM (2026-10-02, H1) — QUOTED, NOT SILENTLY EDITED.** This line read *"MODEL AND
+> PRECONDITIONS ONLY. ZERO CODE. ZERO TYPES. ZERO FIXTURE PERSONS."* and the paragraph below it
+> opened *"Nothing in this document is implemented."* Since Amendment 1, §5.5, §6.2 and §6.3 are
+> implemented and a fixture roster exists; §3–§4's model objects and §3.5's ledgers are not.
+
+As first issued, nothing in this document was implemented. It is issued **before** the first line of identity code
 deliberately, because four of its clauses (§6) are **unfixable after the first attributed record
 is written** and are free today.
 
@@ -696,8 +705,8 @@ favour and reads as caution.** Every row below is a negative about our own tree,
 | **8.1** | A model of six objects, three survivors, four ledgers | **ZERO CODE. ZERO TYPES. ZERO FIXTURE PERSONS.** No `Person`, no `SubjectBinding`, no `BusinessRole`, no ledger, no minting rule. This issue is a model and its preconditions, and it must never read as a seam that exists |
 | **8.2** | ⚠️ **D-ID-7: a stamp carries `personId` ONLY** (§5.5) | ✅ **DISCHARGED — Amendment 1, 2026-09-24.** `ActingPerson` is now `{ readonly personId: string }`; `displayName` is DELETED from the type and from `asActorAttribution`'s boundary, which rebuilds the person field by field so a caller-supplied name cannot pass through. The label is resolved at read from the person registry. **It was spent in the only window it had:** the same branch records this platform's first `RESOLVED` attributions, so the correction landed BEFORE the first stamp, exactly as this row required. Held by `personLabelGuard.test.ts` (no surface prints a person except through the one resolver) |
 | **8.3** | Attribution comes from the SESSION and a payload-supplied `RESOLVED` actor is refused (§6.2) | ✅ **DISCHARGED — Amendment 1, 2026-09-24.** `setBy` has left `requiredFields` on every flow and is taken from `scope.actor`; so has `grantedBy`, which was a LIVE product path (`useGrantRole` forwarded `identity.actor` through the payload). The refusal is **generalised to every verb** and lives in the DISPATCHER (`ACTOR_IN_PAYLOAD`), not in a policy hook per flow — a per-flow hook is a list, and a list decays each time a flow is added. **Refused BY KEY, never by value-shape**, over a population pinned bilaterally to the fields declared `ActorAttribution` (`attributionKeys.test.ts`). An `UNATTRIBUTED` session actor stays legal. ⚠️ **The pin immediately found two keys the hand-written first draft had missed, one of them `approvedBy` — the very key whose one-verb hook this generalises** |
-| **8.4** | `TransitionEvent` carries optional attribution (§6.4) | **It does not.** The event carries `actor: string` and nothing else about who acted (C3). The sink is still in-memory, which is the only reason this is still fixable |
-| **8.5** | `PersonaType` is tenancy only (§3.1) | **It is the authorisation object.** `PERSONA_ROLES` grants 60+ transition-roles to a seat and `capabilitiesFor` derives every capability from it (`roles.ts:18-123`). Unchanged by this contract, which is docs-only |
+| **8.4** | `TransitionEvent` carries optional attribution (§6.4) | ✅ **DISCHARGED IN CODE — ERRATUM 2026-10-02, not yet ratified.** `TransitionEvent.attribution?: ActorAttribution` exists (`src/services/transitions/events.ts`) and the dispatcher fills it from the session on `user`-trigger transitions (`attributionFor`, `src/services/transitions/dispatcher.ts`); C3 documents the field. The sink is still in-memory. *This row read: "**It does not.** The event carries `actor: string` and nothing else about who acted (C3). The sink is still in-memory, which is the only reason this is still fixable" — and it was already false when Amendment 1 was ratified.* |
+| **8.5** | `PersonaType` is tenancy only (§3.1) | ✅ **DISCHARGED IN CODE — ERRATUM 2026-10-02, not yet ratified.** `PERSONA_ROLES` is a DERIVED tenancy view and says so in its own header (*"IS NO LONGER THE AUTHORISATION SOURCE"*, `src/services/transitions/roles.ts`); the dispatcher resolves the seat's `businessRoles` through `atomsForSeat` (`src/services/transitions/customRoles.ts`), and a command scope without `businessRoles` is refused (`src/services/transitions/businessRoles.test.ts`). *This row read: "**It is the authorisation object.** `PERSONA_ROLES` grants 60+ transition-roles to a seat and `capabilitiesFor` derives every capability from it (`roles.ts:18-123`). Unchanged by this contract, which is docs-only".* |
 | **8.6** | A `sim-usr-*` namespace, pinned by test (§6.3) | ✅ **CLOSED — and it was closed BEFORE this amendment, which is the part worth recording.** The namespace (`context/noPerson.ts`) and its pin (`context/simUsrNamespace.test.ts`) shipped earlier; this row went on declaring *"No namespace, no pin"* regardless. **That is `C9-STALE-BY-FIX-01` (C9 §7.13) reproducing in C10: a contract that OVERSTATES our conformance is caught by anyone who reads the code, and one that UNDERSTATES it is caught by nobody, because the discrepancy is in our favour and reads as caution.** Amendment 1 also extends the pin: the namespace must now be spelled ONLY in the modules entitled to spell it, and every stored attribution must resolve to a roster row |
 | **8.7** | Ten capabilities wait on identity (§2.4) | **The count is the external census's, carried as a DISCLOSURE and NOT re-derived by us** (C9 §3.4). Six are anchored in code-truth in §2.4; the remaining four are **not verified in this tree** and this contract does not assert them |
 | **8.8** | `TransitionRole` is the sole permission atom (§3.3) | **True today and structurally unguarded.** `catalogRoles()` derives from the registry, but **nothing forbids a second permission table from being added tomorrow** — the rule is a contract clause, not yet a mechanism. Recorded so it is not read as enforced |
@@ -747,7 +756,26 @@ D-ID-5 (§7.2) stay OPEN.
 ## Provenance
 
 Every claim about the tree in §2 and §8 is anchored to a `file:line` at `main` `df585c5` and was
-read there, not recalled. The count in §2.4 is the external census's and is carried as a
+read there, not recalled — except the §8.4 and §8.5 rows and the status line, which the errata
+below re-read at `main` `5826c9f`. The count in §2.4 is the external census's and is carried as a
 disclosure with its status attached. **The model in §3–§4 is Seat 3's, ratified, with one
 override recorded at §5.5 and its reason stated.** Nothing in this document is implemented; the
 backend remains greenfield and the portal remains fixture-first behind `mockDataService`.
+
+---
+
+## Errata record
+
+**Errata — 2026-10-02 (H1, the handover batch). Corrections of FACT about the tree, re-read at
+`main` `5826c9f`. NOT a ratified amendment:** §9 says a text change requires a new SHA and a new
+ratification, and whether these are ratified as Amendment 2 is the operator's and the Technical
+Lead's call. No model object, no ruling and no clause of §3–§7 changes.
+
+| Where | Correction | Source |
+|---|---|---|
+| Status line and the opening sentence | "ZERO FIXTURE PERSONS" and "Nothing in this document is implemented" were false after Amendment 1; qualified, the old text quoted in place | `docs/handover/D8_CORRECTIONS.md` §3.1–§3.2 |
+| **§8.4** | attribution on the event exists and is filled on `user`-trigger transitions — DISCHARGED in code | D8 §3.4 |
+| **§8.5** | `PersonaType` is no longer the authorisation object — DISCHARGED in code | D8 §3.3 |
+
+D8 §3.5–§3.7 (the §2.3 surface notes and §8.7) are **not** applied here: they are history or an
+open verification, not a false statement of current state.
