@@ -153,7 +153,9 @@ describe('the builders: an absence stays an absence', () => {
 
   it('a typed zero is PRESERVED — emptiness is the defect, not zero', () => {
     const line = SAMPLE_INTAKE_LINES[0];
-    const zeroed = { ...line, estimatedValue: 0 };
+    // PLN-1 · a priced line is valued from its unit price, so the stated zero is
+    // stated in BOTH places — the claim under test is unchanged: zero survives.
+    const zeroed = { ...line, estimatedValue: 0, unitPrice: 0 };
     const out = buildPrCreatePayload(zeroed, zeroed.suggestedQty, '');
     expect('estimatedValue' in out).toBe(true);
     expect(out.estimatedValue).toBe(0);

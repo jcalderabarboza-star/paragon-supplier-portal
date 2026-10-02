@@ -53,11 +53,12 @@ beforeEach(() => {
   purchaseRequisitionStore.reset();
 });
 
-describe('PLN-1 · the PR value follows the committed quantity', () => {
-  it('a generated line committed BELOW its suggestion is priced pro-rata — and not at the suggestion', async () => {
+describe('PLN-1 · the PR value is the unit price × the quantity committed', () => {
+  it('a generated line committed BELOW its suggestion is priced at the committed quantity — and not at the suggestion', async () => {
     const line = generated('SIM-RM-0001', 1);
+    expect(typeof line.unitPrice).toBe('number');
     const qty = Math.round(line.suggestedQty * 0.1);
-    const expected = Math.round((line.estimatedValue * qty) / line.suggestedQty);
+    const expected = Math.round(line.unitPrice! * qty);
     // the control that makes this spec able to fail: the two readings differ
     expect(expected).not.toBe(line.estimatedValue);
 
@@ -66,43 +67,59 @@ describe('PLN-1 · the PR value follows the committed quantity', () => {
     expect(pr).toMatchObject({ quantity: qty, estimatedValue: expected });
   });
 
-  it('a generated line committed ABOVE its suggestion is priced up, pro-rata', async () => {
+  it('a generated line committed ABOVE its suggestion is priced up', async () => {
     const line = generated('SIM-RM-0003', 2);
     const qty = line.suggestedQty * 2;
     expect((await commit(line.id, qty, 'Launch build')).status).not.toBe('failed');
-    expect(prFrom(line.id)[0]).toMatchObject({ quantity: qty, estimatedValue: Math.round(line.estimatedValue * 2) });
+    expect(prFrom(line.id)[0]).toMatchObject({ quantity: qty, estimatedValue: Math.round(line.unitPrice! * qty) });
   });
 
-  it('a line committed AT its suggestion keeps its value exactly — the rescale is the identity there', async () => {
+  it('a generated line committed AT its suggestion is priced at its own line total', async () => {
     const line = generated('SIM-RM-0005', 3);
+    expect(line.estimatedValue).toBe(line.unitPrice! * line.suggestedQty);
     expect((await commit(line.id, line.suggestedQty)).status).not.toBe('failed');
     expect(prFrom(line.id)[0]).toMatchObject({ quantity: line.suggestedQty, estimatedValue: line.estimatedValue });
   });
 
-  it('the C7 fixture line SOMO trimmed (5,000 → 4,500) commits as delivered at 4,500 and is priced for 4,500', async () => {
+  it('NAMED: pil-somo-002 (SOMO trimmed 5,000 → 4,500) commits as delivered and is priced for 4,500 at 198,000/KG', async () => {
     const line = intakeLineById('pil-somo-002')!;
-    expect(line).toMatchObject({ suggestedQty: 5000, acceptedQty: 4500, estimatedValue: 990_000_000 });
+    expect(line).toMatchObject({ suggestedQty: 5000, acceptedQty: 4500, estimatedValue: 990_000_000, unitPrice: 198_000 });
     expect((await commit(line.id, 4500)).status).not.toBe('failed');
     expect(prFrom(line.id)[0]).toMatchObject({ quantity: 4500, estimatedValue: 891_000_000 });
+  });
+
+  it('NAMED: pil-grid-002 — its line total is the DELIVERED quantity’s, which is why a total is never rescaled', async () => {
+    const line = intakeLineById('pil-grid-002')!;
+    // 90,000 × 900 = 81,000,000: a rescale of the total off the SUGGESTION
+    // (80,000) would have priced the delivered 90,000 at 91,125,000.
+    expect(line).toMatchObject({ suggestedQty: 80_000, acceptedQty: 90_000, estimatedValue: 81_000_000, unitPrice: 900 });
+    expect((await commit(line.id, 90_000)).status).not.toBe('failed');
+    expect(prFrom(line.id)[0]).toMatchObject({ quantity: 90_000, estimatedValue: 81_000_000 });
   });
 });
 
 describe('PLN-1 · committedValue — the rule, both ways', () => {
-  const base = { estimatedValue: 1_000_000, suggestedQty: 100 } as PrIntakeLine;
+  const base = { estimatedValue: 1_000_000, suggestedQty: 100, unitPrice: 10_000 } as PrIntakeLine;
 
-  it('pro-rata off the suggestion; identity at the suggestion', () => {
+  it('priced from the unit price at any quantity', () => {
     expect(committedValue(base, 50)).toBe(500_000);
     expect(committedValue(base, 100)).toBe(1_000_000);
     expect(committedValue(base, 250)).toBe(2_500_000);
   });
 
-  it('no suggestion to divide by → the value is OMITTED, never carried as if it fitted', () => {
-    expect(committedValue({ ...base, suggestedQty: 0 }, 50)).toBeUndefined();
-    // …but committing exactly the (zero) suggestion is still the line's own value
-    expect(committedValue({ ...base, suggestedQty: 0 }, 0)).toBe(1_000_000);
+  it('NO unit price: the line total stands only for its own suggested quantity; any other is OMITTED, never guessed', () => {
+    const noPrice = { estimatedValue: 1_000_000, suggestedQty: 100 } as PrIntakeLine;
+    expect(committedValue(noPrice, 100)).toBe(1_000_000);
+    expect(committedValue(noPrice, 50)).toBeUndefined();
   });
 
-  it('a stated zero value stays zero at any quantity — zero is a figure, not an absence', () => {
-    expect(committedValue({ ...base, estimatedValue: 0 }, 70)).toBe(0);
+  it('a stated zero price stays zero — zero is a figure, not an absence', () => {
+    expect(committedValue({ ...base, unitPrice: 0 }, 70)).toBe(0);
+  });
+
+  it('every C7 fixture line carries an authored unit price', () => {
+    for (const id of ['pil-somo-001', 'pil-somo-002', 'pil-grid-001', 'pil-grid-002']) {
+      expect(typeof intakeLineById(id)?.unitPrice, id).toBe('number');
+    }
   });
 });

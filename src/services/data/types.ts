@@ -1161,7 +1161,18 @@ export interface PrIntakeLine {
    * specific day nobody entered.
    */
   readonly periodBucket: BucketId;
+  /** The producer's line total, IDR. Its quantity basis is NOT declared (C7 §2.3) — never rescale it. */
   readonly estimatedValue: number;
+  /**
+   * PLN-1 · the price of ONE unit of the line's `uom`, IDR (operator ruling,
+   * 2026-10-02 — a C7 touch). A requisition is priced as `unitPrice ×` the
+   * quantity COMMITTED, never by rescaling `estimatedValue`: that total's basis
+   * is undeclared (the fixture holds one line priced at its suggestion and one
+   * at its delivered quantity), and arithmetic on it is what the §69 net refuses.
+   * OPTIONAL — a peer producer may not send one; then a PR committed at any
+   * quantity other than the suggestion carries no value rather than a wrong one.
+   */
+  readonly unitPrice?: number;
   readonly source: PrSource;
   /** C7 §2 recommend-first rationale — the "why" a review triages on. Nullable. */
   readonly deficit?: string;

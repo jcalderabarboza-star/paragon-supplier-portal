@@ -214,6 +214,8 @@ describe('B3 · the generated SOMO intake lines — what a grid cell commits aga
       uom: 'KG',
       periodBucket: '2026-08',
       estimatedValue: 2_123_550_000,
+      // PLN-1 · the price travels with the line: 11,700 × 181,500 = the total above.
+      unitPrice: 181_500,
       source: 'SOMO',
     });
     expect(generatedIntakeLine(somoIntakeLineId('SIM-PM-0002', '2026-W36'))?.acceptedQty).toBe(190850);

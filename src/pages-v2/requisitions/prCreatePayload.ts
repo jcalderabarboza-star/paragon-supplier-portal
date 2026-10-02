@@ -124,26 +124,25 @@ export interface PrCreatePayload {
 
 /**
  * PLN-1 · the requisition's value at the quantity COMMITTED, never the
- * suggestion's.
+ * suggestion's (R-PLN P0 #4, operator ruling 2026-10-02).
  *
- * ⚠️ AN INTAKE LINE'S `estimatedValue` IS A LINE TOTAL FOR ITS `suggestedQty`
- * (C7 §2.3 — `pil-somo-002`: 5,000 KG / 990,000,000; the generator computes
- * `suggested × unit price`). It was copied to the requisition unchanged, so a
- * planner who committed 9,000 KG of a 10,950 KG suggestion raised a PR priced
- * for 10,950 — and a 1,090 KG PR carried Rp 1.5B (R-PLN P0 #4, measured). The
+ * ⚠️ THE DEFECT: the line's `estimatedValue` was copied to the requisition
+ * unchanged, so a planner who committed 9,000 KG of a 10,950 KG suggestion
+ * raised a PR priced for 10,950 — and a 1,090 KG PR carried Rp 1.5B. The
  * approver read a budget for a quantity nobody was asking for.
  *
- * The rescale is pro-rata on the line's own unit value. Where that value cannot
- * be derived — no suggestion to divide by — the field is OMITTED, never carried
- * as if it fitted: a budget for the wrong quantity is the defect, and absence
- * is the field's documented "nobody said".
+ * ⚠️ AND THE REMEDY IS A PRICE, NOT A RESCALE. A line total's quantity basis is
+ * undeclared (C7 §2.3) and differs row to row in this very fixture; and
+ * arithmetic on `estimatedValue` is exactly what the §69 approval-band net
+ * refuses. So the line carries `unitPrice`, and the value is `unitPrice ×
+ * committed`. With no price, the line's own total stands only for its own
+ * suggested quantity; any other quantity carries NO value — absence is the
+ * field's documented "nobody said", and a wrong budget is the defect.
  */
 export function committedValue(line: PrIntakeLine, committedQty: number): number | undefined {
-  const { estimatedValue, suggestedQty } = line;
-  if (!Number.isFinite(estimatedValue) || !Number.isFinite(committedQty)) return undefined;
-  if (committedQty === suggestedQty) return estimatedValue;
-  if (!(suggestedQty > 0)) return undefined;
-  return Math.round((estimatedValue * committedQty) / suggestedQty);
+  if (!Number.isFinite(committedQty)) return undefined;
+  if (typeof line.unitPrice === 'number' && Number.isFinite(line.unitPrice)) return Math.round(line.unitPrice * committedQty);
+  return committedQty === line.suggestedQty ? line.estimatedValue : undefined;
 }
 
 /**
