@@ -75,8 +75,9 @@ export const CASCADES: Record<string, readonly CascadeLink[]> = {
   t_intake_commit: [
     { targetEntity: 'purchaseRequisition', targetTransitionId: 't_pr_create' },
   ],
-  // A3 — a supplier's revision retires the version it revises.
-  t_requirementresponse_revise: [
+  // A3 — a supplier's revision retires the version it revises — SDC-3: when the
+  // revision is SENT (promote), never when it is drafted.
+  t_requirementresponse_promote: [
     { targetEntity: 'requirementResponse', targetTransitionId: 't_requirementresponse_supersede' },
   ],
   // B4a — publishing retires the previous publication of the same grain.

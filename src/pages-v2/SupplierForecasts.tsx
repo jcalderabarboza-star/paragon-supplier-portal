@@ -552,7 +552,10 @@ const REVISABLE_FROM: ReadonlySet<string> = new Set(
 );
 
 /** A3 — the supplier's OPEN answer for a line, across publications: every state
- *  but `Superseded` (the same set `rr_submit_no_open_sibling` refuses over). */
+ *  but `Superseded` (the same set `rr_submit_no_open_sibling` refuses over).
+ *  SDC-3 · and on a COMMITMENT line an acknowledgment is not that answer — it
+ *  commits nothing, the guard no longer counts it, and counting it here hid
+ *  Confirm behind a pointer to an answer that cannot be revised. */
 const openAnswerFor = (
   responses: readonly RequirementResponse[],
   line: ForecastLine,
@@ -562,7 +565,8 @@ const openAnswerFor = (
       (r) =>
         r.materialCode === line.materialCode &&
         r.periodBucket === line.periodBucket &&
-        r.status !== 'Superseded',
+        r.status !== 'Superseded' &&
+        !(r.acknowledgment && line.commitmentClass !== 'visibility-only'),
     )
     .reduce<RequirementResponse | undefined>(
       (best, r) => (!best || r.submissionVersion > best.submissionVersion ? r : best),
@@ -649,6 +653,8 @@ const ResponsesTab: React.FC<{
   // draft-then-send segregation between two people. Recorded, not worked
   // around: splitting it is a FLOW change (§76d's shape, one tenancy over).
   const promoteAvailability = useVerbAvailability('requirementresponse:submit');
+  const draftRevisionOf = (r: RequirementResponse): RequirementResponse | undefined =>
+    responses.find((d) => d.status === 'Draft' && d.supersedes === r.id);
   if (responses.length === 0) {
     return (
       <div className="bg-bg-surface border border-border-subtle rounded-lg py-12 px-6 text-center">
@@ -710,7 +716,16 @@ const ResponsesTab: React.FC<{
               {/* A3 — the supplier's exit from a buyer's decision. Same atom as
                   the draft and the promote (`requirementresponse:submit`), so the
                   same availability answers for it. */}
+              {/* SDC-3 · the prior stays in force until its revision is SENT, so an
+                  answer already answered by a draft says so instead of offering a
+                  second revise (`rr_revise_no_open_draft` refuses one by name). */}
+              {REVISABLE_FROM.has(r.status) && draftRevisionOf(r) && (
+                <span className="text-xs text-text-tertiary" data-testid="sdcsup-response-revision-drafted">
+                  {t('sdcSup.responses.revisionDrafted', { id: draftRevisionOf(r)!.id })}
+                </span>
+              )}
               {REVISABLE_FROM.has(r.status) &&
+                !draftRevisionOf(r) &&
                 r.forecastConfirmation &&
                 onRevise &&
                 canRevise(r) &&
@@ -1385,7 +1400,18 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
     if (!target) return;
     setRevising(r);
     setPanelLine(target);
-    setForm(emptyForm);
+    // ⚠️ SDC-3 · R-SDC P1 — A REVISION STARTS FROM WHAT THE SUPPLIER ALREADY SAID. It
+    // opened empty, and the target copies only what the payload carries, so a
+    // quantity-only revision silently dropped the committed date, the capacity
+    // constraint and the root cause. Every field is shown, and stays editable.
+    const fc = r.forecastConfirmation;
+    setForm({
+      confirmedQty: fc ? String(fc.confirmedQty) : '',
+      committedDate: fc?.committedDate ?? '',
+      capacityConstraint: fc?.capacityConstraint ?? '',
+      rootCauseLevel1: r.rootCause?.level1 ?? '',
+      rootCauseNote: r.rootCause?.note ?? '',
+    });
   };
   const closePanel = () => {
     setPanelLine(null);
@@ -1466,6 +1492,11 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
           ? {
               rootCause: {
                 level1: form.rootCauseLevel1,
+                // SDC-3 · the form has no level-2 field (the L2 taxonomy is unruled, D3);
+                // a level 2 the prior carried is kept while its level 1 is kept.
+                ...(revising.rootCause?.level2 && revising.rootCause.level1 === form.rootCauseLevel1
+                  ? { level2: revising.rootCause.level2 }
+                  : {}),
                 ...(form.rootCauseNote ? { note: form.rootCauseNote } : {}),
               },
             }

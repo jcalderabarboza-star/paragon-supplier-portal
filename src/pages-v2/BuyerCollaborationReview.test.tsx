@@ -31,9 +31,17 @@ import i18n from '../lib/i18n';
 import type { CurrentIdentity } from '../context/CurrentIdentityContext';
 import { PERSONA_SYSTEM_ROLES } from '../services/transitions/businessRoles';
 import { NO_PERSON } from '../context/noPerson';
+import { SAMPLE_PEOPLE } from '../services/identity/sampleRoster';
 
+// SDC-3 · operator ruling: accept and dispute require an ATTRIBUTED actor, so the seat
+// that takes them names the planning sample person. The assertions are unchanged;
+// the refusal of an unattributed seat is pinned in `sdc3RevisionOnSend.test.ts`.
+const PLANNING_PERSON = {
+  kind: 'RESOLVED' as const,
+  person: { personId: SAMPLE_PEOPLE.find((p) => p.role === 'planning' && p.ordinal === 1)!.personId },
+};
 /** A seat holding the planning lane — the lane all three atoms sit in. */
-const PLANNING: CurrentIdentity = { ...BUYER, businessRoles: ['planning'] };
+const PLANNING: CurrentIdentity = { ...BUYER, businessRoles: ['planning'], actor: PLANNING_PERSON };
 /** The same buyer with that lane REMOVED. Not a different persona: a narrowing. */
 const NO_PLANNING: CurrentIdentity = { ...BUYER, businessRoles: ['finance'] };
 
@@ -157,7 +165,7 @@ describe('wave C — held and withheld, for each of the three verbs', () => {
    */
   const growOneUnderReview = async () => {
     const res = await mockDataService.commands.dispatch(
-      { personaType: 'buyer', supplierId: null, businessRoles: ['planning'], actor: NO_PERSON },
+      { personaType: 'buyer', supplierId: null, businessRoles: ['planning'], actor: PLANNING_PERSON },
       {
         transitionId: 't_requirementresponse_review',
         entity: 'requirementResponse',
@@ -320,7 +328,7 @@ describe('wave C — the walk: UnderReview → dispute, with the words it requir
       personaType: 'buyer' as const,
       supplierId: null,
       businessRoles: ['planning'],
-      actor: NO_PERSON,
+      actor: PLANNING_PERSON,
     };
     await mockDataService.commands.dispatch(scope, {
       transitionId: 't_requirementresponse_review',

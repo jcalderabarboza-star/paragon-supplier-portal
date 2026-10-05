@@ -216,7 +216,8 @@ export const requirementResponseFlow: FlowDefinition = {
       trigger: 'user',
       requiredRole: 'requirementresponse:accept',
       requiredFields: [],
-      policyHooks: [],
+      // SDC-3 · operator ruling: a person accepts, never a seat with nobody in it.
+      policyHooks: [POLICY_HOOKS.RR_REVIEW_ACTOR_ATTRIBUTED],
       surfaceable: { surfaced: true },
       version: 1,
     },
@@ -245,7 +246,8 @@ export const requirementResponseFlow: FlowDefinition = {
       trigger: 'user',
       requiredRole: 'requirementresponse:dispute',
       requiredFields: ['disputeReason'],
-      policyHooks: [POLICY_HOOKS.RR_DISPUTE_TEXT_AUTHORED],
+      // SDC-3 · operator ruling: a person disputes; the words come from somebody.
+      policyHooks: [POLICY_HOOKS.RR_REVIEW_ACTOR_ATTRIBUTED, POLICY_HOOKS.RR_DISPUTE_TEXT_AUTHORED],
       surfaceable: { surfaced: true },
       version: 1,
     },
@@ -314,20 +316,26 @@ export const requirementResponseFlow: FlowDefinition = {
         POLICY_HOOKS.RR_SUBMIT_QTY_AGREES,
         // Cutting an ACCEPTED quantity requires a root cause (SDC-R5).
         POLICY_HOOKS.RR_REVISE_ROOT_CAUSE_WHEN_CUT,
+        // SDC-3 · the prior stays open until the revision is sent: one draft answers it.
+        POLICY_HOOKS.RR_REVISE_NO_OPEN_DRAFT,
       ],
       surfaceable: { surfaced: true },
       version: 1,
     },
     {
       // ⚠️ A3 — THE CONSEQUENCE, NOT AN ACT. Fired only by the cascade from
-      // `t_requirementresponse_revise`, under the automation grant, on the prior
-      // version. The target stamps `supersededFrom` from the pre-transition
+      // `t_requirementresponse_promote` of a REVISION (SDC-3 — it fired on
+      // `_revise`, so an unsent draft retired the dispute or the accepted figure
+      // it answered), under the automation grant, on the prior version.
+      // `UnderReview` is a from-state since SDC-3: the buyer may resolve the
+      // dispute while the revision is still a draft, and the sent revision then
+      // replaces the answer under review. The target stamps `supersededFrom` from the pre-transition
       // status and, when that was `Disputed`, appends a store-minted
       // `superseded-by-revision` ledger entry — so the dispute reads as answered
       // BY THE SUPPLIER, distinct from resolved by the buyer and from never
       // answered.
       id: 't_requirementresponse_supersede',
-      from: ['Disputed', 'Accepted'],
+      from: ['Disputed', 'Accepted', 'UnderReview'],
       to: 'Superseded',
       trigger: 'cascade',
       requiredRole: 'requirementresponse:supersede',
@@ -337,8 +345,8 @@ export const requirementResponseFlow: FlowDefinition = {
         surfaced: false,
         because: 'computed',
         why:
-          'Raised by the revise cascade. It is the consequence of a supplier ' +
-          'revising, derived by the platform, not something anybody declares.',
+          'Raised by the cascade from sending a revision. It is the consequence of a ' +
+          'supplier revising, derived by the platform, not something anybody declares.',
       },
       version: 1,
     },

@@ -1275,13 +1275,32 @@ bindPolicyHook(POLICY_HOOKS.RR_SUBMIT_NO_OPEN_SIBLING, ({ payload }) => {
       String(payload.materialCode),
       String(payload.periodBucket),
     )
-    .filter((r) => r.status !== 'Superseded');
+    // ⚠️ SDC-3 · R-SDC P0 #5 — AN ACKNOWLEDGMENT IS NOT AN ANSWER TO A COMMITMENT.
+    // It commits nothing (invariant #11) and cannot be revised, so counting it
+    // here blocked the supplier for good once the horizon rolled a visibility
+    // line into a firm or semi-firm period. A newer commitment is the line's
+    // answer by the consolidation's own recency rule.
+    .filter((r) => r.status !== 'Superseded' && !r.acknowledgment);
   if (open.length === 0) return { ok: true };
   const named = open.map((r) => `${r.id} v${r.submissionVersion} ${r.status}`).join(', ');
   return {
     ok: false,
     reason: `an answer is already open for this line (${named}) — revise it, or submit the draft; a second creation would bury it`,
   };
+});
+
+// SDC-3 — ONE DRAFT REVISION PER ANSWER. The prior stays open until the
+// revision is sent, so a second revise would mint a second draft answering it.
+bindPolicyHook(POLICY_HOOKS.RR_REVISE_NO_OPEN_DRAFT, ({ entityId }) => {
+  const drafted = requirementResponseStore
+    .all()
+    .find((r) => r.status === 'Draft' && r.supersedes === entityId);
+  return drafted
+    ? {
+        ok: false,
+        reason: `RR_REVISION_ALREADY_DRAFTED: ${entityId} is already answered by draft ${drafted.id} — submit or continue that draft`,
+      }
+    : { ok: true };
 });
 
 // A3 — only a COMMITMENT is revised (invariant #11's XOR, from the revise side).
@@ -2836,13 +2855,18 @@ const resolveCascades = (ctx: CascadeContext): CascadeCommand[] => {
   }
   // — A3 · a supplier's revision retires the version it revises ————————————
   //
-  // `ctx.entityId` is the PRIOR (the revise is dispatched against it), and the
-  // resolver confirms it still exists and still sits in a state the supersede
-  // may leave before handing it back — the `if (!gr) return []` discipline, so
-  // the fan-out's `catch {}` has nothing traceless to swallow.
-  if (ctx.entity === 'requirementResponse' && ctx.transitionId === 't_requirementresponse_revise') {
-    const prior = requirementResponseStore.get(ctx.entityId);
-    if (!prior || (prior.status !== 'Disputed' && prior.status !== 'Accepted')) return [];
+  // ⚠️ SDC-3 · R-SDC P0 #4 — WHEN IT IS SENT. This fired on `_revise`, so a
+  // revision saved as a DRAFT retired the dispute (or the accepted figure) it
+  // answered: the dispute left the buyer's queue, the line read awaiting, and the
+  // supplier's card said "you answered it with a revision" — before anything was
+  // sent. Now `ctx.entityId` is the PROMOTED draft; the resolver follows its
+  // `supersedes` link to the prior and confirms it still sits in a state the
+  // supersede may leave — the `if (!gr) return []` discipline, so the fan-out's
+  // `catch {}` has nothing traceless to swallow. A first answer (no link) is `[]`.
+  if (ctx.entity === 'requirementResponse' && ctx.transitionId === 't_requirementresponse_promote') {
+    const sent = requirementResponseStore.get(ctx.entityId);
+    const prior = sent?.supersedes ? requirementResponseStore.get(sent.supersedes) : undefined;
+    if (!prior || (prior.status !== 'Disputed' && prior.status !== 'Accepted' && prior.status !== 'UnderReview')) return [];
     return cascadesFor(ctx.transitionId).map((link) => ({
       entity: link.targetEntity,
       entityId: prior.id,

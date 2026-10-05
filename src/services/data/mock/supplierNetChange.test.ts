@@ -41,7 +41,10 @@ const seat = (roles: readonly SystemRoleId[], personId?: string): QueryScope => 
 });
 const PLANNER = seat(['planning']);
 const PROCUREMENT_NAMED = seat(['procurement'], personFor('procurement'));
-const BUYER = seat(PERSONA_SYSTEM_ROLES.buyer);
+// SDC-3 · operator ruling: accept and dispute require an ATTRIBUTED actor, so the seat
+// that takes them names the planning sample person. The assertions are unchanged;
+// the refusal of an unattributed seat is pinned in `sdc3RevisionOnSend.test.ts`.
+const BUYER = seat(PERSONA_SYSTEM_ROLES.buyer, personFor('planning'));
 const SUP002: QueryScope = { personaType: 'supplier', supplierId: 'sup-002', businessRoles: PERSONA_SYSTEM_ROLES.supplier };
 
 const [R1, R2] = FORECAST_PUBLICATIONS;

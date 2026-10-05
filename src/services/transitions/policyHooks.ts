@@ -200,6 +200,22 @@ export const POLICY_HOOKS = {
    * UP, or revising a Disputed answer, owes nothing here.
    */
   RR_REVISE_ROOT_CAUSE_WHEN_CUT: 'rr_revise_root_cause_when_cut',
+  /**
+   * SDC-3 · RR revise — ONE DRAFT REVISION PER ANSWER. A revision now retires
+   * its prior when it is SENT (`t_requirementresponse_promote`), not when it is
+   * drafted, so the prior stays Disputed / Accepted while the draft waits — and
+   * a second revise of the same prior would mint a second draft answering it.
+   * Refused by name, with the draft that already answers it.
+   */
+  RR_REVISE_NO_OPEN_DRAFT: 'rr_revise_no_open_draft',
+  /**
+   * SDC-3 · operator ruling — ACCEPT AND DISPUTE ARE A PERSON'S DECISION. An
+   * accept commits a supplier to a line; a dispute sends them words to answer.
+   * Neither is recorded against nobody: an unattributed seat is refused by
+   * name with the remedy stated — the `DELIVERY_ACTOR_ATTRIBUTED` shape. A
+   * sample person is admitted (the act is a portal record).
+   */
+  RR_REVIEW_ACTOR_ATTRIBUTED: 'rr_review_actor_attributed',
   /** Inventory declare (SDC-3a, total-first): when batch detail is present,
    *  Σ batch qty must equal totalQty — a total that disagrees with its own
    *  detail is a fabricated number. */

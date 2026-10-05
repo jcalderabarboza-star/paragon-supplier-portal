@@ -49,6 +49,8 @@ import type { VerbAvailability } from '../services/transitions/handoff';
 import { useToast } from '../hooks/useToast';
 import type { RequirementResponse, DisputeEntry } from '../services/sdc';
 import { useRefusalText } from '../hooks/useRefusalText';
+import { useCurrentIdentity } from '../context/CurrentIdentityContext';
+import { sdcRefusalKey } from '../lib/sdcRefusal';
 import type { CommandResult } from '../services/data/types';
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -417,6 +419,11 @@ const BuyerCollaboration: React.FC = () => {
   const reviewAvailability = useVerbAvailability('requirementresponse:review');
   const acceptAvailability = useVerbAvailability('requirementresponse:accept');
   const disputeAvailability = useVerbAvailability('requirementresponse:dispute');
+  // ⚠️ SDC-3 · operator ruling — ACCEPT AND DISPUTE ARE A PERSON'S DECISION. The machine
+  // refuses an unattributed seat by name (`rr_review_actor_attributed`); the surface
+  // says so BEFORE the act rather than after a refusal, the publication sign's shape.
+  const { identity } = useCurrentIdentity();
+  const named = identity.actor.kind === 'RESOLVED';
 
   const closeDispute = () => {
     setDisputing(null);
@@ -462,7 +469,8 @@ const BuyerCollaboration: React.FC = () => {
     return {
       onSuccess: (res: CommandResult) => {
         if (res.status === 'failed') {
-          failed(refusalText(res.reason) ?? res.reason);
+          const key = sdcRefusalKey(res.reason);
+          failed(key ? t(key) : (refusalText(res.reason) ?? res.reason));
           return;
         }
         toast({
@@ -1061,6 +1069,11 @@ const BuyerCollaboration: React.FC = () => {
         <div className="mb-3 flex flex-col gap-2">
           <HandoffNotice availability={acceptAvailability} testId="handoff-sdc-accept" />
           <HandoffNotice availability={disputeAvailability} testId="handoff-sdc-dispute" />
+          {!named && (acceptAvailability.kind === 'held' || disputeAvailability.kind === 'held') && (
+            <p className="text-xs text-warning-hover" data-testid="sdc-review-needs-person">
+              {t('sdc.review.needsPerson')}
+            </p>
+          )}
         </div>
         {underReviewRows.length === 0 ? (
           <p className="text-sm text-text-tertiary">{t('sdc.underReview.none')}</p>
@@ -1085,7 +1098,7 @@ const BuyerCollaboration: React.FC = () => {
                       <button
                         type="button"
                         data-testid="sdc-accept-cta"
-                        disabled={acceptMutation.isPending}
+                        disabled={acceptMutation.isPending || !named}
                         title={t('sdc.accept.ctaTitle', {
                           material: row.line.materialCode,
                           period: row.line.periodBucket,
@@ -1106,6 +1119,7 @@ const BuyerCollaboration: React.FC = () => {
                         <button
                           type="button"
                           data-testid="sdc-dispute-cta"
+                          disabled={!named}
                           title={t('sdc.dispute.ctaTitle', {
                             material: row.line.materialCode,
                             period: row.line.periodBucket,
@@ -1114,7 +1128,7 @@ const BuyerCollaboration: React.FC = () => {
                             setDisputing(row);
                             setObjection('');
                           }}
-                          className="rounded-md border border-border-subtle bg-transparent px-3 py-1.5 text-xs font-medium text-text-secondary transition-colors hover:bg-bg-hover"
+                          className="rounded-md border border-border-subtle bg-transparent px-3 py-1.5 text-xs font-medium text-text-secondary transition-colors hover:bg-bg-hover disabled:opacity-50"
                         >
                           {t('sdc.dispute.cta')}
                         </button>

@@ -1463,6 +1463,25 @@ const deliveryActorAttributed: PolicyHookFn = ({ scope }) => {
 bindPolicyHook(POLICY_HOOKS.DELIVERY_ACTOR_ATTRIBUTED, deliveryActorAttributed);
 
 /**
+ * SDC-3 · operator ruling — accept and dispute of a supplier's response are a
+ * PERSON's decision. The delivery-release shape: an unattributed seat is refused
+ * by name with the remedy stated; a sample person is admitted (a portal record).
+ */
+const reviewActorAttributed: PolicyHookFn = ({ scope }) => {
+  const actor = asActorAttribution(scope.actor);
+  if (actor && isAttributed(actor)) return { ok: true };
+  return {
+    ok: false,
+    reason:
+      'RR_REVIEW_ACTOR_UNATTRIBUTED: this seat carries no person, and accepting or ' +
+      'disputing commits a supplier or sends them words to answer. Adopt a sample ' +
+      'user on the identity panel, then take the act again.',
+  };
+};
+
+bindPolicyHook(POLICY_HOOKS.RR_REVIEW_ACTOR_ATTRIBUTED, reviewActorAttributed);
+
+/**
  * Is this ISO day on or after the declared present? A line due TODAY is
  * releasable — the rule refuses the PAST, not the present.
  *

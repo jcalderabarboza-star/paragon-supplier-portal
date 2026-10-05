@@ -31,9 +31,17 @@ import { MockCommandService } from './MockCommandService';
 import { requirementResponseStore } from './stores/requirementResponseStore';
 import { getTransition } from '../../transitions';
 import type { QueryScope } from '../types';
+import { SAMPLE_PEOPLE } from '../../identity/sampleRoster';
 import { PERSONA_SYSTEM_ROLES } from '../../../services/transitions/businessRoles';
 
-const buyer: QueryScope = { personaType: 'buyer', supplierId: null, businessRoles: PERSONA_SYSTEM_ROLES.buyer };
+// SDC-3 · operator ruling: accept and dispute require an ATTRIBUTED actor, so the seat
+// that takes them names the planning sample person. The assertions are unchanged;
+// the refusal of an unattributed seat is pinned in `sdc3RevisionOnSend.test.ts`.
+const PLANNING_PERSON = {
+  kind: 'RESOLVED' as const,
+  person: { personId: SAMPLE_PEOPLE.find((p) => p.role === 'planning' && p.ordinal === 1)!.personId },
+};
+const buyer: QueryScope = { personaType: 'buyer', supplierId: null, businessRoles: PERSONA_SYSTEM_ROLES.buyer, actor: PLANNING_PERSON };
 const svc = new MockCommandService();
 
 /** The fixture in 'Submitted' — the one state a review is legal from. */

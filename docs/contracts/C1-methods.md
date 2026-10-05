@@ -94,6 +94,17 @@ targets). They measure different things; this file keeps them separate.
 > **71**, catalog 126 → **127** across 27 → **28** flows, wired targets 21 → **22**. Moved by the
 > pin going red.
 
+> **RE-HARVEST (2026-10-05, SDC-3).** The requirement-response machine gained TWO policy hooks and
+> moved ONE cascade; no transition, no target and no service method moved.
+> `rr_review_actor_attributed` (operator ruling) refuses `t_requirementresponse_accept` and
+> `t_requirementresponse_dispute` from a seat carrying no person — `POLICY_REJECTED:rr_review_actor_attributed:
+> RR_REVIEW_ACTOR_UNATTRIBUTED`, the `delivery_actor_attributed` shape; a sample person is admitted.
+> `rr_revise_no_open_draft` refuses a second `t_requirementresponse_revise` of an answer a draft revision
+> already answers — `POLICY_REJECTED:rr_revise_no_open_draft:RR_REVISION_ALREADY_DRAFTED`. The
+> `t_requirementresponse_supersede` cascade is now fired by `t_requirementresponse_promote` of a revision
+> (it was fired by `_revise`, so an unsent draft retired the answer it revised), and its from-states gain
+> `UnderReview`. `rr_submit_no_open_sibling` no longer counts an acknowledgment as an open answer.
+
 Source of truth: `src/services/data/types.ts` (service + command types),
 `src/services/transitions/` (schema, dispatcher, flows).
 
