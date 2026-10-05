@@ -70,12 +70,18 @@ const renderRows = (...ids: string[]) =>
   );
 
 describe('intake-review view — honest render (SIMULATED × PLANNED, green unreachable)', () => {
+  // ⚠️ PLN-4 · AN EXPLICIT 15 s TIMEOUT, BY OPERATOR RULING (2026-10-05). This is
+  // the file's FIRST render of the view over the whole 15,416-line intake
+  // population, and under full-suite load it measured 3.3–4.4 s on PLN-3's runs
+  // and 5,054 ms once at PLN-4 — over vitest's 5 s default, with no assertion
+  // failing. The assertions are unchanged; making that first render cheaper is
+  // the product fix, and it is PLN-5's.
   it('renders the SIMULATED page pill from the registry — never Live', async () => {
     expect(isLive('purchaseRequisitions')).toBe(false);
     renderView();
     expect(await screen.findByText(/awaiting live PR producer/i)).toBeInTheDocument();
     expect(screen.queryByText(/^Live$/)).not.toBeInTheDocument();
-  });
+  }, 15000);
 
   it('renders the recommend-first honesty banner — simulated push, RECORDED triage', async () => {
     renderView();
