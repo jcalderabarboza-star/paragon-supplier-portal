@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import {
   ClipboardList,
   FileText,
@@ -43,6 +43,7 @@ import {
   useRequisitionReject,
   useRequisitionSubmit,
   useRequisitionRevise,
+  useRequisitionBatch,
 } from '../services/query/commandHooks';
 import { useVerbAvailabilities, useNextAct } from '../hooks/useVerbAvailability';
 import { HandoffNotice } from '../components/ui-v2/HandoffNotice';
@@ -53,6 +54,9 @@ import { normalizeQty, type QtyRefusalReason } from '../lib/localeNumber';
 import { useNavigate } from 'react-router-dom';
 import type { PurchaseRequisition, PRStatus } from '../services/data/types';
 import { buildNewPrPayload } from './requisitions/prCreatePayload';
+import { BULK_VERB_OF_STATUS, isBulkEligible, isSetInSap, prOrigin, type SetInSapField } from './requisitions/prFieldDisplay';
+import { ROLE_LABEL_KEY } from '../services/transitions/handoff';
+import type { CommandResult } from '../services/data/types';
 import type { ActorAttribution, UnattributedReason } from '../lib/enforcement';
 // GL-1 - the glossary destination for this surface's refusals.
 import GlossaryTermChip from '../components/ui-v2/GlossaryTermChip';
@@ -245,6 +249,20 @@ const BuyerRequisitions: React.FC = () => {
   const rejectPr = useRequisitionReject();
   const submitPr = useRequisitionSubmit();
   const revisePr = useRequisitionRevise();
+  // ── PLN-4 · R3 · BULK SUBMIT / BULK APPROVE ──────────────────────────────
+  // Each selected requisition is its own dispatch of its own verb, so the role
+  // gate decides per document; the lists refresh once, after the last.
+  const batch = useRequisitionBatch();
+  const batchRef = useRef(batch);
+  batchRef.current = batch;
+  const [picked, setPicked] = useState<ReadonlySet<string>>(new Set());
+  const [bulkProgress, setBulkProgress] = useState<{ verb: 't_pr_submit' | 't_pr_approve'; done: number; total: number } | null>(null);
+  const [bulkResult, setBulkResult] = useState<{
+    verb: 't_pr_submit' | 't_pr_approve';
+    done: number;
+    refused: readonly (readonly [string, number])[];
+    total: number;
+  } | null>(null);
 
   // ⚠️ **THE SELECTED ROW IS DERIVED FROM THE LIST, NOT HELD AS A SNAPSHOT.**
   // The row captured on click is the PRE-transition record; after an approve
@@ -331,7 +349,7 @@ const BuyerRequisitions: React.FC = () => {
       if (search) {
         const q = search.toLowerCase();
         const hay =
-          `${pr.prNumber} ${pr.material} ${pr.category} ${pr.requestor} ${pr.linkedDoc}`.toLowerCase();
+          `${pr.prNumber} ${pr.material} ${pr.category} ${pr.requestor} ${pr.linkedDoc} ${pr.periodBucket ?? ''} ${pr.intakeLineId ?? ''}`.toLowerCase();
         if (!hay.includes(q)) return false;
       }
       return true;
@@ -369,6 +387,70 @@ const BuyerRequisitions: React.FC = () => {
   // the store (store-assigned PR-2026-9xx), invalidation makes the real Draft
   // list-visible, and both failure channels surface honestly. Fresh authoring —
   // not a quantity override, so no C6-LOCK reason-gate here.
+  // PLN-4 · R3 · a field no producer here supplies says where it is set.
+  const orSap = (pr: PurchaseRequisition, field: SetInSapField, render: (v: string) => React.ReactNode = (v) => v) =>
+    isSetInSap(pr, field) ? (
+      <span className="text-text-tertiary italic" data-testid={`pr-set-in-sap-${field}`}>
+        {t('requisitions.setInSap')}
+      </span>
+    ) : (
+      render(pr[field] ?? '')
+    );
+  /** The requestor a person typed, else the lane that raised it (derived), else where it is set. */
+  const requestorOf = (pr: PurchaseRequisition): React.ReactNode =>
+    pr.requestor ? (
+      pr.requestor
+    ) : pr.requestorRole ? (
+      <span data-testid="pr-requestor-role">{t('requisitions.requestorRole', { role: t(ROLE_LABEL_KEY[pr.requestorRole]) })}</span>
+    ) : (
+      <span className="text-text-tertiary italic">{t('requisitions.setInSap')}</span>
+    );
+
+  const pickedRows = prs.filter((p) => picked.has(p.id));
+  const pickedOf = (verb: 't_pr_submit' | 't_pr_approve') =>
+    pickedRows.filter((p) => isBulkEligible(p) && BULK_VERB_OF_STATUS[p.status] === verb);
+
+  /**
+   * PLN-4 · R3 · one verb over the selected requisitions it applies to, in
+   * order, under ONE anchor, with a pause between documents so the page stays a
+   * page. A refusal stops nothing: the summary names how many went and why the
+   * rest did not, and the lists refresh once at the end.
+   */
+  const runBulk = async (verb: 't_pr_submit' | 't_pr_approve') => {
+    const rows = pickedOf(verb);
+    if (rows.length === 0 || bulkProgress) return;
+    const b = batchRef.current;
+    const refused = new Map<string, number>();
+    let done = 0;
+    let anchor: string | undefined;
+    setBulkResult(null);
+    setBulkProgress({ verb, done: 0, total: rows.length });
+    try {
+      for (const [i, pr] of rows.entries()) {
+        if (i > 0) {
+          setBulkProgress({ verb, done: i, total: rows.length });
+          await new Promise<void>((resolve) => setTimeout(resolve, 0));
+        }
+        let result: CommandResult | null = null;
+        let reason: string | null = null;
+        try {
+          result = await b.dispatch(verb, pr.id, anchor);
+          anchor ??= result.correlationId;
+          if (result.status === 'failed') reason = refusalText(result.reason) ?? result.reason ?? 'failed';
+        } catch (e) {
+          reason = describeThrown(e, t('requisitions.bulk.failed'));
+        }
+        if (reason === null) done++;
+        else refused.set(reason, (refused.get(reason) ?? 0) + 1);
+      }
+    } finally {
+      b.refresh();
+      setBulkProgress(null);
+      setBulkResult({ verb, done, refused: [...refused.entries()], total: rows.length });
+      setPicked(new Set());
+    }
+  };
+
   const submitNewPR = async () => {
     // Re-checked at the click (belt-and-suspenders beside the disabled button):
     // an unreadable quantity short-circuits here, so nothing reaches the spine.
@@ -716,13 +798,98 @@ const BuyerRequisitions: React.FC = () => {
         />
       </div>
 
+      {/* ── PLN-4 · R3 · the bulk acts, over the rows ticked below ────────── */}
+      {(pickedRows.length > 0 || bulkProgress || bulkResult) && (
+        <div
+          className="mb-3 flex flex-wrap items-center gap-3 rounded-lg border border-info/30 bg-info-soft px-4 py-2.5 text-sm"
+          data-testid="pr-bulk-bar"
+        >
+          {bulkProgress ? (
+            <span className="font-semibold text-info" role="status" aria-live="polite" data-testid="pr-bulk-progress">
+              {t(bulkProgress.verb === 't_pr_approve' ? 'requisitions.bulk.approving' : 'requisitions.bulk.submitting', {
+                done: formatNumber(Math.min(bulkProgress.done + 1, bulkProgress.total)),
+                total: formatNumber(bulkProgress.total),
+              })}
+            </span>
+          ) : pickedRows.length > 0 ? (
+            <>
+              <span className="font-semibold text-text-primary" data-testid="pr-bulk-count">
+                {t('requisitions.bulk.selected', { count: pickedRows.length, n: formatNumber(pickedRows.length) })}
+              </span>
+              {pickedOf('t_pr_submit').length > 0 &&
+                (submitAvailability.kind === 'held' ? (
+                  <Button variant="outline" onClick={() => void runBulk('t_pr_submit')} data-testid="pr-bulk-submit">
+                    {t('requisitions.bulk.submit', { n: formatNumber(pickedOf('t_pr_submit').length) })}
+                  </Button>
+                ) : (
+                  <HandoffNotice availability={submitAvailability} testId="handoff-pr-bulk-submit" />
+                ))}
+              {/* ⚠️ SEGREGATION, PINNED: bulk approve is offered only to a seat
+                  holding `pr:approve` — procurement's — and every document is
+                  still gated on its own at the dispatcher. */}
+              {pickedOf('t_pr_approve').length > 0 &&
+                (approveAvailability.kind === 'held' ? (
+                  <Button variant="outline" onClick={() => void runBulk('t_pr_approve')} data-testid="pr-bulk-approve">
+                    {t('requisitions.bulk.approve', { n: formatNumber(pickedOf('t_pr_approve').length) })}
+                  </Button>
+                ) : (
+                  <HandoffNotice availability={approveAvailability} testId="handoff-pr-bulk-approve" />
+                ))}
+              <button
+                type="button"
+                className="text-text-secondary hover:underline"
+                onClick={() => setPicked(new Set())}
+                data-testid="pr-bulk-clear"
+              >
+                {t('requisitions.bulk.clear')}
+              </button>
+            </>
+          ) : null}
+          {bulkResult && !bulkProgress && (
+            <div className="flex w-full items-start justify-between gap-3" role="status" data-testid="pr-bulk-result">
+              <div>
+                <span className="font-semibold text-text-primary">
+                  {t(bulkResult.verb === 't_pr_approve' ? 'requisitions.bulk.approved' : 'requisitions.bulk.submitted', {
+                    done: formatNumber(bulkResult.done),
+                    refused: formatNumber(bulkResult.total - bulkResult.done),
+                    total: formatNumber(bulkResult.total),
+                  })}
+                </span>
+                {bulkResult.refused.length > 0 && (
+                  <ul className="mt-0.5 text-xs text-danger" data-testid="pr-bulk-refusals">
+                    {bulkResult.refused.map(([reason, n]) => (
+                      <li key={reason}>{t('requisitions.bulk.refusedLine', { n: formatNumber(n), reason })}</li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+              <button type="button" className="text-text-secondary hover:underline" onClick={() => setBulkResult(null)}>
+                {t('requisitions.bulk.dismiss')}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
       <div className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm overflow-hidden">
         <Table>
           <TableHeader>
+            <TableHeaderCell>
+              <input
+                type="checkbox"
+                aria-label={t('requisitions.bulk.selectAll')}
+                data-testid="pr-select-all"
+                disabled={!!bulkProgress || !filtered.some(isBulkEligible)}
+                checked={filtered.some(isBulkEligible) && filtered.filter(isBulkEligible).every((p) => picked.has(p.id))}
+                onChange={(e) => setPicked(e.target.checked ? new Set(filtered.filter(isBulkEligible).map((p) => p.id)) : new Set())}
+              />
+            </TableHeaderCell>
             <TableHeaderCell>{t('requisitions.table.col.pr')}</TableHeaderCell>
             <TableHeaderCell>{t('requisitions.table.col.material')}</TableHeaderCell>
             <TableHeaderCell>{t('requisitions.table.col.category')}</TableHeaderCell>
             <TableHeaderCell className="text-right">{t('requisitions.table.col.qty')}</TableHeaderCell>
+            <TableHeaderCell>{t('requisitions.table.col.bucket')}</TableHeaderCell>
+            <TableHeaderCell>{t('requisitions.table.col.origin')}</TableHeaderCell>
             <TableHeaderCell>{t('requisitions.table.col.required')}</TableHeaderCell>
             <TableHeaderCell className="text-right">{t('requisitions.table.col.estValue')}</TableHeaderCell>
             <TableHeaderCell>{t('requisitions.table.col.requestor')}</TableHeaderCell>
@@ -741,6 +908,26 @@ const BuyerRequisitions: React.FC = () => {
                   onClick={() => setSelectedRow(pr)}
                 >
                   <TableCell>
+                    {isBulkEligible(pr) && (
+                      <input
+                        type="checkbox"
+                        aria-label={t('requisitions.bulk.selectRow', { number: pr.prNumber })}
+                        data-testid={`pr-select-${pr.id}`}
+                        disabled={!!bulkProgress}
+                        checked={picked.has(pr.id)}
+                        onClick={(e) => e.stopPropagation()}
+                        onChange={(e) =>
+                          setPicked((cur) => {
+                            const next = new Set(cur);
+                            if (e.target.checked) next.add(pr.id);
+                            else next.delete(pr.id);
+                            return next;
+                          })
+                        }
+                      />
+                    )}
+                  </TableCell>
+                  <TableCell>
                     <Data as="div" className="text-xs font-semibold text-text-primary">
                       {pr.prNumber}
                     </Data>
@@ -752,21 +939,33 @@ const BuyerRequisitions: React.FC = () => {
                   </TableCell>
                   <TableCell>
                     <span className="text-sm text-text-secondary">
-                      {pr.category}
+                      {orSap(pr, 'category')}
                     </span>
                   </TableCell>
                   <TableCell className="text-right whitespace-nowrap text-sm text-text-primary">
                     <Data>{formatNumber(pr.quantity)} {pr.uom}</Data>
                   </TableCell>
+                  {/* PLN-4 · R3 · the planning bucket the requirement sits in — a
+                      grain, never a day, so it is its own column beside Required. */}
+                  <TableCell className="whitespace-nowrap text-sm text-text-secondary" data-testid={`pr-bucket-${pr.id}`}>
+                    <Data>{pr.periodBucket ?? '—'}</Data>
+                  </TableCell>
+                  <TableCell className="whitespace-nowrap" data-testid={`pr-origin-${pr.id}`}>
+                    <span title={pr.intakeLineId}>
+                      <StatusPill variant="neutral">
+                        {t(prOrigin(pr) === 'intake' ? 'requisitions.origin.intake' : 'requisitions.origin.manual')}
+                      </StatusPill>
+                    </span>
+                  </TableCell>
                   <TableCell className="whitespace-nowrap text-sm text-text-secondary">
-                    <Data>{formatDate(pr.requiredDate)}</Data>
+                    {orSap(pr, 'requiredDate', (v) => <Data>{formatDate(v)}</Data>)}
                   </TableCell>
                   <TableCell className="text-right font-semibold text-text-primary whitespace-nowrap">
                     <Data>{formatIDR(pr.estimatedValue, { compact: true })}</Data>
                   </TableCell>
                   <TableCell>
                     <span className="text-sm text-text-secondary">
-                      {pr.requestor}
+                      {requestorOf(pr)}
                     </span>
                   </TableCell>
                   <TableCell>
@@ -775,9 +974,14 @@ const BuyerRequisitions: React.FC = () => {
                     </StatusPill>
                   </TableCell>
                   <TableCell>
-                    <StatusPill variant={hasPIR ? 'success' : 'warning'}>
-                      {hasPIR ? 'PIR' : t('requisitions.source.none')}
-                    </StatusPill>
+                    {/* PLN-4 · R3 · an EMPTY source is not "None" — nobody has said. */}
+                    {isSetInSap(pr, 'sourceOfSupply') ? (
+                      orSap(pr, 'sourceOfSupply')
+                    ) : (
+                      <StatusPill variant={hasPIR ? 'success' : 'warning'}>
+                        {hasPIR ? 'PIR' : t('requisitions.source.none')}
+                      </StatusPill>
+                    )}
                   </TableCell>
                   <TableCell>
                     <Data
@@ -800,7 +1004,7 @@ const BuyerRequisitions: React.FC = () => {
             {filtered.length === 0 && (
               <tr>
                 <td
-                  colSpan={11}
+                  colSpan={14}
                   className="text-center text-sm text-text-tertiary py-10"
                 >
                   {t('requisitions.table.empty')}
@@ -1200,7 +1404,7 @@ const BuyerRequisitions: React.FC = () => {
                 <div>
                   <dt className="text-text-tertiary">{t('requisitions.panel.field.category')}</dt>
                   <dd className="text-text-primary font-medium">
-                    {selectedPR.category}
+                    {orSap(selectedPR, 'category')}
                   </dd>
                 </div>
                 <div>
@@ -1211,9 +1415,9 @@ const BuyerRequisitions: React.FC = () => {
                 </div>
                 <div>
                   <dt className="text-text-tertiary">{t('requisitions.panel.field.requiredDate')}</dt>
-                  <Data as="dd" className="text-text-primary font-medium">
-                    {formatDate(selectedPR.requiredDate)}
-                  </Data>
+                  <dd className="text-text-primary font-medium">
+                    {orSap(selectedPR, 'requiredDate', (v) => <Data>{formatDate(v)}</Data>)}
+                  </dd>
                 </div>
                 <div>
                   <dt className="text-text-tertiary">{t('requisitions.panel.field.estValue')}</dt>
@@ -1236,13 +1440,13 @@ const BuyerRequisitions: React.FC = () => {
                 <div>
                   <dt className="text-text-tertiary">{t('requisitions.panel.field.requestor')}</dt>
                   <dd className="text-text-primary font-medium">
-                    {selectedPR.requestor}
+                    {requestorOf(selectedPR)}
                   </dd>
                 </div>
                 <div>
                   <dt className="text-text-tertiary">{t('requisitions.panel.field.costCenter')}</dt>
                   <dd className="text-text-primary font-medium">
-                    {selectedPR.costCenter}
+                    {orSap(selectedPR, 'costCenter')}
                   </dd>
                 </div>
                 {/* ⚠️ §68 LABELLED IT A DESTINATION; §69 SAYS WHERE THE
@@ -1389,6 +1593,12 @@ const BuyerRequisitions: React.FC = () => {
               <h3 className="text-label text-text-tertiary uppercase mb-3">
                 {t('requisitions.panel.source.title')}
               </h3>
+              {isSetInSap(selectedPR, 'sourceOfSupply') ? (
+                <div className="border-l-2 border-border-subtle rounded bg-bg-subtle px-3 py-3 text-sm" data-testid="pr-source-set-in-sap">
+                  <div className="font-semibold text-text-primary">{t('requisitions.setInSap')}</div>
+                  <div className="text-text-secondary mt-1">{t('requisitions.panel.source.setInSap')}</div>
+                </div>
+              ) : (
               <div
                 className={`border-l-2 rounded px-3 py-3 text-sm ${
                   selectedPR.sourceOfSupply === 'PIR exists'
@@ -1407,6 +1617,7 @@ const BuyerRequisitions: React.FC = () => {
                     : t('requisitions.panel.source.noPir', { material: selectedPR.material })}
                 </div>
               </div>
+              )}
               {selectedPR.linkedDoc && (
                 <div className="mt-3 text-sm text-text-secondary">
                   {t('requisitions.panel.linkedDocument')}{' '}
@@ -1422,7 +1633,7 @@ const BuyerRequisitions: React.FC = () => {
                 {t('requisitions.panel.justification')}
               </h3>
               <p className="text-sm text-text-secondary leading-relaxed">
-                {selectedPR.justification}
+                {orSap(selectedPR, 'justification')}
               </p>
             </section>
           </div>

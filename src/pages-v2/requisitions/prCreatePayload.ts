@@ -73,6 +73,10 @@
 
 import type { PrIntakeLine, PRPriority } from '../../services/data/types';
 import type { BucketId } from '../../services/planning/bucket';
+import type { MaterialType } from '../../services/sdc/types';
+import type { SystemRoleId } from '../../services/transitions/businessRoles';
+import { planningMaster } from '../../services/planning/somoFixture';
+import { parseSomoIntakeLineId } from '../../services/planning/somoIntake';
 import { isQtyAdjusted } from '../plan-grid/planGridModel';
 
 /**
@@ -112,6 +116,8 @@ export interface PrCreatePayload {
    */
   readonly estimatedValue?: number;
   readonly requestor?: string;
+  /** PLN-4 · R3 · the lane that raised it, derived from the act — never typed. */
+  readonly requestorRole?: SystemRoleId;
   readonly costCenter?: string;
   /** ⚠️ OMITTED WHEN NOBODY CHOSE. Never `'Medium'`. */
   readonly priority?: PRPriority;
@@ -145,11 +151,31 @@ export function committedValue(line: PrIntakeLine, committedQty: number): number
   return committedQty === line.suggestedQty ? line.estimatedValue : undefined;
 }
 
+/** PLN-4 · R3 · the master's type, as the requisition names its category. TOTAL over `MaterialType`. */
+export const CATEGORY_OF_TYPE: Readonly<Record<MaterialType, string>> = Object.freeze({
+  ROH: 'Raw material',
+  VERP: 'Packaging',
+});
+
+/**
+ * ⚠️ PLN-4 · R3 · THE CATEGORY, DERIVED FROM THE MATERIAL MASTER — or absent.
+ * A generated SOMO line names its material code in its id, and the planning
+ * master answers its type and group: `Packaging · SIM-PACK`. An authored C7
+ * line carries a display label and no code (GG-4 — a label join is a guess,
+ * `facts.ts`), so it gets NO category rather than a guessed one, and the page
+ * says where the value is set.
+ */
+export function intakeCategory(line: Pick<PrIntakeLine, 'id'>): string | undefined {
+  const parts = parseSomoIntakeLineId(line.id);
+  const entry = parts ? planningMaster()[parts.materialCode] : undefined;
+  return entry ? `${CATEGORY_OF_TYPE[entry.materialType]} · ${entry.materialGroup}` : undefined;
+}
+
 /**
  * The payload a pushed intake line dispatches (plan grid · Intake Review).
  *
- * It supplies `source`, and `estimatedValue` AT THE COMMITTED QUANTITY
- * (`committedValue`, PLN-1). What changed earlier is the TYPE it returns and the fact that the fields
+ * It supplies `source`, `estimatedValue` AT THE COMMITTED QUANTITY
+ * (`committedValue`, PLN-1), and the `category` the master answers (PLN-4). What changed earlier is the TYPE it returns and the fact that the fields
  * it does not supply (`costCenter`, `priority`, `justification`, `requestor`,
  * `category`) are now absences the target records as absences.
  */
@@ -159,10 +185,12 @@ export function buildPrCreatePayload(
   reason: string,
 ): PrCreatePayload {
   const estimatedValue = committedValue(line, acceptedQty);
+  const category = intakeCategory(line);
   return {
     material: line.material,
     quantity: acceptedQty,
     uom: line.uom,
+    ...(category === undefined ? {} : { category }),
     ...(estimatedValue === undefined ? {} : { estimatedValue }),
     // ⚠️ **NO `requiredDate`. THE BUCKET GOES TO `periodBucket`** (A1-R1) —
     // this line used to read `requiredDate: line.period`, which is how a

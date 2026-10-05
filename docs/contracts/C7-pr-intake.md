@@ -253,6 +253,48 @@ committed line. Overlap is half-open (`[start, end)`): a week opening on the 1st
 month only. A dismissed line blocks nothing; a same-grain repeat is legality's and replay's, not this
 rule's. An authored line names no material code (GG-4), so the rule does not see it. **Batch:** PLN-2.
 
+## Amendment 3 (2026-10-05) — what a committed requisition carries, and acting on many at once
+
+**Recorded by PLN-4 (R-PLN P1; operator ruling R3), WITH its code.** No new refusal is introduced:
+the push at volume, the bulk reason and the bulk submit/approve all dispatch the verbs this contract
+already names, one document at a time, and every refusal they can meet is one Amendment 2 and §1
+already record. The operator's standing rule (a new refusal lands in its guide and here) therefore
+has nothing to add this batch, and says so rather than staying silent.
+
+### A3-R1 · The cascade fills what the intake line and the material master can answer
+
+`t_intake_commit` → `t_pr_create` now also writes:
+
+| Field | From | When absent |
+|---|---|---|
+| `category` | the planning master's type and group for the line's material code — `Packaging · SIM-PACK`, `Raw material · SIM-RAW` (`intakeCategory`, `prCreatePayload.ts`) | an authored line names no material code (GG-4), so it carries **no** category — never one guessed from its label |
+| `requestorRole` | the committing seat's lane that holds `intake:triage` — read off the act (`ctx.scope`), never a constant | a seat holding no such lane cannot reach the cascade |
+| `periodBucket` | the line's bucket (A1-R1, unchanged) | — |
+
+`requestorRole?: SystemRoleId` is a new optional field on `PurchaseRequisition`; the target keeps it
+only when it is a recognised system role (the `source` rule: recognised or nothing). The payload keys
+of §3.1 are otherwise unchanged; `category` moves from *read but never supplied by the intake* to
+*supplied when the master can answer*.
+
+### A3-R2 · A field no producer here supplies says where it is set
+
+A requisition raised from an intake line carries no required DAY, no cost centre, no source of
+supply and no header text — nobody in this portal supplies them, and S/4 sets them when the
+requisition is converted. The requisitions list and drawer render each such empty field as **"Set in
+SAP" / "Diisi di SAP"** rather than a blank, and an empty source of supply no longer reads *"None"*
+(a claim nobody made). `priority` and `approvalLevel` keep their own labels (*Not set*, *Not
+assigned*): those name a choice not yet made here, not a value set elsewhere.
+
+### A3-R3 · Bulk acts are N single acts — segregation is enforced per document
+
+The requisitions list offers **bulk submit** (`t_pr_submit`, gated on `pr:submit` — the
+requisitioner lane today) and **bulk approve** (`t_pr_approve`, gated on `pr:approve` — procurement
+only). Each selected requisition is its own dispatch of its own verb under its own atom, grouped by
+one causation anchor, with the lists refreshed once at the end. A seat without the atom is offered no
+control and reads who acts (*"Awaiting Procurement"*); at the dispatcher a planning seat's approve is
+refused **`ROLE_NOT_PERMITTED:pr:approve`** document by document (`pln4PushAtVolume.test.tsx`). The
+grid's push at volume follows the same rule: one `t_intake_commit` per row, one anchor, one refresh.
+
 ---
 
 ## 0. Seam scope — RM/PM requirements only (the boundary)
@@ -754,6 +796,9 @@ co-design so the two published shapes converge (Reply "Agreed next joint step" �
 | **A2-R1** | Intake triage is the planning lane's (`intake:triage`); the cascade raises the PR; approval stays procurement's. Refusals `ROLE_NOT_PERMITTED:intake:triage` / `:pr:approve`. | **RATIFIED — operator ruling R1. CODE LANDED AT PLN-3** (Amendment 2) |
 | **A2-R2** | One intake population: the queue lists every line the grid commits; a dismissal reads everywhere; Intake Review is a view of the Plan Grid. | **RATIFIED — Design 1 D8. CODE LANDED AT PLN-3** (Amendment 2) |
 | **A2-R3** | `INTAKE_ONE_GRAIN` — one material × period commits at most once across grains; refused `POLICY_REJECTED:intake_one_grain`. | **CODE LANDED AT PLN-2; RECORDED HERE AT PLN-3** (Amendment 2) |
+| **A3-R1** | The cascade writes `category` (from the planning master, or absent for a code-less authored line) and `requestorRole` (the committing lane, read off the act). | **RATIFIED — operator ruling R3. CODE LANDED AT PLN-4** (Amendment 3) |
+| **A3-R2** | An empty field no producer here supplies renders "Set in SAP"; an empty source of supply is no longer "None". | **RATIFIED — operator ruling R3. CODE LANDED AT PLN-4** (Amendment 3) |
+| **A3-R3** | Bulk submit / bulk approve are N single dispatches, each gated on its own atom; approve is procurement's only. No new refusal. | **RATIFIED — operator ruling R3. CODE LANDED AT PLN-4** (Amendment 3) |
 
 ---
 

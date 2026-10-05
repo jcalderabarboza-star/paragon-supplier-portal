@@ -8,7 +8,8 @@
 //   PlanDraft.entries  (seamRef-keyed; NOT the query cache, NOT browser storage)
 //        │  a pasted value carries origin PASTE → the EXTERNAL marker until pushed
 //        ▼
-//   push (row · selection · all) ─► one `t_intake_commit` per row, one anchor
+//   push (row · selection · all) ─► one `t_intake_commit` per row, one anchor,
+//        │  ONE refresh at the end, a pause between rows (PLN-4 — push at volume)
 //        │  a reason is demanded, per row and BEFORE dispatch, only where the
 //        │  planner left the producer's baseline (A2's rule — A1-R2)
 //        │  refusal (thrown OR returned) → the row stays PLANNED with its reason
@@ -374,11 +375,28 @@ export type PushOutcome =
  * returned `status: 'failed'` are each a `failed` outcome with a reason, and
  * the row stays PLANNED. Neither is swallowed into `dispatched`.
  */
+export interface PushProgress {
+  /** Rows the push has finished with — dispatched, refused or held. */
+  readonly done: number;
+  readonly total: number;
+}
+
+/**
+ * PLN-4 · how a push at volume stays a page: told after each row how far it has
+ * got, and handed a pause between rows so the browser can paint and take input.
+ * Both optional — a one-row push and the pure specs need neither.
+ */
+export interface PushOptions {
+  readonly onProgress?: (p: PushProgress) => void;
+  readonly yieldBetween?: () => Promise<void>;
+}
+
 export async function pushEntries(
   entries: readonly PlanDraftEntry[],
   commit: (vars: CommitVars) => Promise<CommandResult>,
   convention: NumberConvention,
   allocate?: (vars: AllocateVars) => Promise<CommandResult>,
+  opts: PushOptions = {},
 ): Promise<readonly PushOutcome[]> {
   const out: PushOutcome[] = [];
   let anchor: string | undefined;
@@ -392,7 +410,12 @@ export async function pushEntries(
     ...entries.filter((e) => !isAlloc(e)),
     ...entries.filter(isAlloc).sort((a, b) => delta(a) - delta(b)),
   ];
+  const total = ordered.length;
   for (const e of ordered) {
+    if (out.length > 0) {
+      opts.onProgress?.({ done: out.length, total });
+      await opts.yieldBetween?.();
+    }
     const held = blockedBy(e);
     if (held) {
       out.push({ seamRef: e.seamRef, kind: 'blocked', reason: held });
@@ -430,7 +453,64 @@ export async function pushEntries(
       out.push({ seamRef: e.seamRef, kind: 'failed', reason: err instanceof DataError ? err.code : 'ERROR' });
     }
   }
+  opts.onProgress?.({ done: out.length, total });
   return out;
+}
+
+/** PLN-4 · what one push did: how many rows went in, how many did not, and why. */
+export interface PushSummary {
+  readonly total: number;
+  readonly committed: number;
+  readonly refused: number;
+  /** Each refusal reason with how many rows it held back, most frequent first. */
+  readonly reasons: readonly (readonly [reason: string, count: number])[];
+}
+
+/**
+ * PLN-4 · the final summary of a push — "N committed, M refused with reasons".
+ * A row held before dispatch (no reason, an unconfirmed magnitude) is refused
+ * too: it did not go in, and the planner is owed the reason in the same line.
+ */
+export function summarizePush(outcomes: readonly PushOutcome[]): PushSummary {
+  const counts = new Map<string, number>();
+  let committed = 0;
+  for (const o of outcomes) {
+    if (o.kind === 'dispatched') committed++;
+    else counts.set(o.reason, (counts.get(o.reason) ?? 0) + 1);
+  }
+  return {
+    total: outcomes.length,
+    committed,
+    refused: outcomes.length - committed,
+    reasons: [...counts.entries()].sort((a, b) => b[1] - a[1]),
+  };
+}
+
+/**
+ * PLN-4 · "apply this reason to selected". The ONE reason is written onto EACH
+ * selected row that owes one, as that row's own reason — the record still
+ * carries one reason per committed row (each commit sends its own
+ * `overrideReason`, and each requisition its own `decision.reason`). A row that
+ * owes none (it holds the producer's figure, or it is an allocation) is left as
+ * it is: a reason on a change nobody made is not a record of anything. A row
+ * already PUSHING is not rewritten under its own dispatch.
+ */
+export function applyReasonToRows(
+  draft: PlanDraft,
+  seamRefs: readonly string[],
+  reason: string,
+): { draft: PlanDraft; applied: number } {
+  const text = reason.trim();
+  if (text === '') return { draft, applied: 0 };
+  const entries = new Map(draft.entries);
+  let applied = 0;
+  for (const ref of seamRefs) {
+    const e = entries.get(ref);
+    if (!e || e.planState !== 'PLANNED' || !reasonOwed(e)) continue;
+    entries.set(ref, { ...e, reason: text });
+    applied++;
+  }
+  return applied === 0 ? { draft, applied } : { draft: { entries, refusals: draft.refusals }, applied };
 }
 
 /** Fold push outcomes into the draft: dispatched → PUSHING, else PLANNED + reason. */

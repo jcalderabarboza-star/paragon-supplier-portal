@@ -1092,6 +1092,26 @@ export function useRequisitionSubmit() {
 }
 
 /**
+ * ⚠️ PLN-4 · R3 · BULK SUBMIT AND BULK APPROVE — each requisition its own
+ * dispatch of its own verb, under its own atom, and the lists refreshed ONCE.
+ *
+ * Nothing is batched at the spine: a bulk approve is N `t_pr_approve`
+ * dispatches, each passing the role gate, legality and `PR_APPROVAL_ATTRIBUTED`
+ * on its own, so a seat without `pr:approve` is refused N times by name — the
+ * segregation the bundles express is enforced per document, never per batch.
+ */
+export function useRequisitionBatch() {
+  const svc = useDataService();
+  const scope = useScope();
+  const invalidate = useInvalidateProcurement();
+  return {
+    dispatch: (verb: 't_pr_submit' | 't_pr_approve', prId: string, causationId?: string): Promise<CommandResult> =>
+      svc.commands.dispatch(scope, { transitionId: verb, entity: 'purchaseRequisition', entityId: prId }, causationId),
+    refresh: () => invalidate(scope),
+  };
+}
+
+/**
  * Return a rejected requisition to Draft, WITH THE NOTE THE VERB REQUIRES
  * (`pr:revise`).
  *
@@ -1890,6 +1910,25 @@ export interface IntakeCommitVars {
   readonly causationId?: string;
 }
 
+/**
+ * PLN-4 · the ONE `t_intake_commit` command a vars object becomes — the single
+ * commit (`useIntakeCommit`) and the batched grid push (`useIntakeCommitBatch`)
+ * build it here, so the two cannot send different payloads for one act.
+ */
+export function intakeCommitCommand({ lineId, acceptedQty, acceptedQtyRaw, overrideReason, numberConvention }: IntakeCommitVars) {
+  return {
+    transitionId: 't_intake_commit',
+    entity: 'intakeLine',
+    entityId: lineId,
+    payload: {
+      acceptedQty,
+      acceptedQtyRaw,
+      ...(numberConvention ? { numberConvention } : {}),
+      ...(overrideReason && overrideReason.trim() !== '' ? { overrideReason: overrideReason.trim() } : {}),
+    },
+  };
+}
+
 /** Commit an intake line into the sourcing workload (cascades to `t_pr_create`). */
 export function useIntakeCommit() {
   const svc = useDataService();
@@ -1898,24 +1937,7 @@ export function useIntakeCommit() {
   const qc = useQueryClient();
 
   return useMutation<CommandResult, Error, IntakeCommitVars>({
-    mutationFn: ({ lineId, acceptedQty, acceptedQtyRaw, overrideReason, numberConvention, causationId }) =>
-      svc.commands.dispatch(
-        scope,
-        {
-          transitionId: 't_intake_commit',
-          entity: 'intakeLine',
-          entityId: lineId,
-          payload: {
-            acceptedQty,
-            acceptedQtyRaw,
-            ...(numberConvention ? { numberConvention } : {}),
-            ...(overrideReason && overrideReason.trim() !== ''
-              ? { overrideReason: overrideReason.trim() }
-              : {}),
-          },
-        },
-        causationId,
-      ),
+    mutationFn: (vars) => svc.commands.dispatch(scope, intakeCommitCommand(vars), vars.causationId),
     onSuccess: (result) => {
       if (result.status === 'failed') return;
       invalidate(scope);
@@ -1998,6 +2020,53 @@ export interface AllocateCommandVars {
   readonly causationId?: string;
 }
 
+/** PLN-4 · the ONE `t_publication_allocate` command — single and batched pushes both build it here. */
+export function allocateCommand({ publicationId, causationId: _anchor, numberConvention, ...line }: AllocateCommandVars) {
+  return {
+    transitionId: 't_publication_allocate',
+    entity: 'forecastPublication',
+    entityId: publicationId,
+    payload: { ...line, basis: 'planner-split', ...(numberConvention ? { numberConvention } : {}) },
+  };
+}
+
+/**
+ * ⚠️ PLN-4 · THE GRID PUSH AT VOLUME — every row dispatched under ONE anchor,
+ * and the reads refreshed ONCE, at the end (R-PLN P1, ruling R3).
+ *
+ * `useIntakeCommit` / `usePublicationAllocate` refresh on every success, which
+ * is right for one act and was the cost of a push: measured on built main, 50
+ * rows took 9.5 s and the page painted nothing for 9.4 s of it, because every
+ * row re-derived the whole planning read and every procurement list. These two
+ * dispatchers send the SAME commands (`intakeCommitCommand` / `allocateCommand`)
+ * and leave the refresh to `refresh`, which the caller runs once when the batch
+ * is done — with or without a refusal in it, because a refused row beside
+ * committed ones still changed the reads the committed ones touched.
+ *
+ * Not a mutation: a mutation's per-call state would re-render its owner on every
+ * row, and the owner of a grid push is the grid.
+ */
+export function useIntakeCommitBatch() {
+  const svc = useDataService();
+  const scope = useScope();
+  const invalidate = useInvalidateProcurement();
+  const invalidatePublications = useInvalidatePublications();
+  const qc = useQueryClient();
+  return {
+    commit: (vars: IntakeCommitVars): Promise<CommandResult> =>
+      svc.commands.dispatch(scope, intakeCommitCommand(vars), vars.causationId),
+    allocate: (vars: AllocateCommandVars): Promise<CommandResult> =>
+      svc.commands.dispatch(scope, allocateCommand(vars), vars.causationId),
+    refresh: (touched: { readonly intake: boolean; readonly allocate: boolean }) => {
+      if (touched.intake) {
+        invalidate(scope);
+        qc.invalidateQueries({ queryKey: ['planning'] });
+      }
+      if (touched.allocate) invalidatePublications();
+    },
+  };
+}
+
 /**
  * One supplier's share of one material-period total, on the open draft
  * (`t_publication_allocate`). The basis is `planner-split`: a grid edit IS the
@@ -2009,17 +2078,7 @@ export function usePublicationAllocate() {
   const scope = useScope();
   const invalidate = useInvalidatePublications();
   return useMutation<CommandResult, Error, AllocateCommandVars>({
-    mutationFn: ({ publicationId, causationId, numberConvention, ...line }) =>
-      svc.commands.dispatch(
-        scope,
-        {
-          transitionId: 't_publication_allocate',
-          entity: 'forecastPublication',
-          entityId: publicationId,
-          payload: { ...line, basis: 'planner-split', ...(numberConvention ? { numberConvention } : {}) },
-        },
-        causationId,
-      ),
+    mutationFn: (vars) => svc.commands.dispatch(scope, allocateCommand(vars), vars.causationId),
     onSuccess: (result) => {
       if (result.status !== 'failed') invalidate();
     },

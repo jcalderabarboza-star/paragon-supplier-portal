@@ -53,7 +53,7 @@ import { somoHorizon } from '../../services/planning/facts';
 import { planningSupplierName } from '../../services/planning/somoFixture';
 import { visibleMeasures } from './visibleMeasures';
 import { usePlanDraft } from './PlanDraftProvider';
-import PlannedChangesPanel, { cellRefusalText } from './PlannedChangesPanel';
+import { PlannedChangesBar, PlannedChangesDetails, cellRefusalText } from './PlannedChangesPanel';
 import PublicationPanel, { draftOfGrain } from './PublicationPanel';
 import { cellKey, magnitudeFlag, routePaste, type CellRefusal, type EditContext, type PlanDraftEntry } from './planDraft';
 import {
@@ -331,6 +331,9 @@ const TimePhasedGrid: React.FC<{
     [],
   );
   const [filter, setFilter] = useState<PlanFilter>({ ...DEFAULT_PLAN_FILTER, exceptionsOnly: lockedExceptions });
+  // PLN-4 · the planned-changes list, below the grid — open until the planner folds it.
+  const [changesOpen, setChangesOpen] = useState(true);
+  const changesRef = useRef<HTMLDivElement>(null);
   const [sort, setSort] = useState<PlanSort>(DEFAULT_PLAN_SORT);
   // PLN-1 · a paste note describes the rows it was made against; a new filter
   // or order is a different set of rows, so the note goes.
@@ -555,7 +558,6 @@ const TimePhasedGrid: React.FC<{
           {t('planGrid.edit.hint', { measures: editableLabels })}
         </p>
       )}
-      <PlannedChangesPanel selectedRefs={selectedRefs} />
       {pasteNote && (
         <p className="mb-2 text-xs text-text-secondary" data-testid="tp-paste-note">
           {t('planGrid.edit.pasteNote', {
@@ -692,6 +694,23 @@ const TimePhasedGrid: React.FC<{
           />
         </div>
       )}
+
+      {/* ⚠️ PLN-4 · THE PLANNED CHANGES SIT BELOW THE GRID AND IN A STICKY BAR,
+          NEVER ABOVE IT. Above, fifty rows pushed the grid 2,743 px down the
+          page (measured on built main); here the grid keeps its place whatever
+          is planned, the bar stays in sight, and the list folds away. */}
+      <div ref={changesRef}>
+        <PlannedChangesDetails open={changesOpen} />
+      </div>
+      <PlannedChangesBar
+        selectedRefs={selectedRefs}
+        open={changesOpen}
+        onToggle={() => {
+          const opening = !changesOpen;
+          setChangesOpen(opening);
+          if (opening) requestAnimationFrame(() => changesRef.current?.scrollIntoView?.({ block: 'start', behavior: 'smooth' }));
+        }}
+      />
     </div>
   );
 };
