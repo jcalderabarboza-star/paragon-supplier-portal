@@ -19,7 +19,7 @@ import { mockSuppliers } from '../data/mockSuppliers';
 import {
   // CP-2 · B1 — the ONE master lookup; a label miss ECHOES the code.
   labelOf,
-  currentPublication,
+  currentPublications,
   SDC_SIMULATED_NOW,
   type ConsolidationRow,
   type SupplierCoverageEntry,
@@ -91,6 +91,11 @@ const SIMULATED_ASOF = SDC_SIMULATED_NOW;
 // a planner can publish (and supersede) from the grid, so a module-scope read
 // would pin this page to the seed forever. It is `usePublications()` now, in
 // the component, like every other read here.
+//
+// ⚠️ SDC-1 · AND IT IS ONE PER GRAIN. The monthly RM plan and the weekly PM plan
+// are both current; the header names both versions and the period bar lists
+// both horizons (months, then weeks). Reading one "latest across grains" here
+// emptied the page's queues the moment a weekly line was published.
 
 // Fixed DSG height (px) — same one-source-of-truth pattern as PlanGrid: the
 // `height` prop AND the `--plan-dsg-h` pin (anti-trembling, planGrid.css).
@@ -154,9 +159,10 @@ const CLASS_LABEL_KEY: Record<CommitmentClass, string> = {
 
 /** The PERIOD-level commitment class (period-global firm, design §3.1): one
  *  class per bucket in the fixtures; 'mixed' only if a bucket ever splits. */
-function periodClass(current: ForecastPublication | null, bucket: string): CommitmentClass | 'mixed' {
+function periodClass(currents: readonly ForecastPublication[], bucket: string): CommitmentClass | 'mixed' {
   const classes = new Set(
-    (current?.lines ?? [])
+    currents
+      .flatMap((c) => c.lines)
       .filter((l) => l.periodBucket === bucket)
       .map((l) => l.commitmentClass),
   );
@@ -476,7 +482,7 @@ const BuyerCollaboration: React.FC = () => {
   // fed by the shared sdcClock). Buyer-gated: a supplier persona resolves [].
   const { data: rows = [] } = useConsolidationRows();
   const { data: publicationsPage } = usePublications();
-  const CURRENT = useMemo(() => currentPublication(publicationsPage?.items ?? []), [publicationsPage]);
+  const CURRENTS = useMemo(() => currentPublications(publicationsPage?.items ?? []), [publicationsPage]);
   const { data: workspace } = usePublicationWorkspace();
   const { data: coverage = [] } = useCoverageEntries();
   const { data: chase = [] } = useChaseEntries();
@@ -806,7 +812,7 @@ const BuyerCollaboration: React.FC = () => {
     [t, carriedToken],
   );
 
-  const horizon = CURRENT?.horizon ?? [];
+  const horizon = CURRENTS.flatMap((c) => c.horizon);
   const CRUMB = [t('sdc.crumb.page')];
 
   return (
@@ -822,7 +828,7 @@ const BuyerCollaboration: React.FC = () => {
         {t('sdc.meta.summary', {
           lines: rows.length,
           suppliers: rollups.length,
-          planVersion: CURRENT?.planVersion ?? t('sdc.empty.dash'),
+          planVersion: CURRENTS.length > 0 ? CURRENTS.map((c) => c.planVersion).join(' · ') : t('sdc.empty.dash'),
           asOf: formatDate(SIMULATED_ASOF),
         })}
       </PageMetaLine>
@@ -862,14 +868,14 @@ const BuyerCollaboration: React.FC = () => {
               }`}
             >
               <Data className="text-xs">{bucket}</Data>
-              {periodClass(CURRENT, bucket) === 'firm' && <Lock size={12} aria-hidden="true" />}
+              {periodClass(CURRENTS, bucket) === 'firm' && <Lock size={12} aria-hidden="true" />}
             </button>
           ))}
         </div>
         {/* The period-level commitmentClass badges — per-line chips only ECHO these */}
         <div className="mt-2 flex flex-wrap gap-2">
           {horizon.map((bucket) => {
-            const cls = periodClass(CURRENT, bucket);
+            const cls = periodClass(CURRENTS, bucket);
             return (
               <span key={bucket} className={CHIP_NEUTRAL}>
                 {cls === 'firm' ? (

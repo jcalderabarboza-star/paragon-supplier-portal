@@ -26,12 +26,11 @@ import { asnStore } from './stores/asnStore';
 import {
   SUPPLIER_MATERIAL_RELATIONSHIPS,
   supplierVisiblePublications,
-  currentPublication,
   currentDeclarations,
   consolidationRows,
   supplierCoverageEntries,
   supplierRollups,
-  chaseList,
+  chaseListAcrossGrains,
   asnTrackingFor,
   sdcClock,
 } from '../../sdc';
@@ -196,10 +195,9 @@ export class MockCollaborationService implements ICollaborationService {
    *  Buyer-only. */
   async getChase(scope: QueryScope): Promise<Page<ChaseEntry>> {
     if (!buyerOnly(scope)) return { items: [] };
-    const current = currentPublication(published());
-    if (current === null) return { items: [] };
+    // SDC-1 · each grain chased against its OWN plan's deadline, one entry per supplier.
     const rows = consolidationRows(published(), requirementResponseStore.all());
-    return { items: [...chaseList(current, rows, sdcClock.now())] };
+    return { items: [...chaseListAcrossGrains(published(), rows, sdcClock.now())] };
   }
 
   /** The per-supplier response rollups (responded / partial / silent). Buyer-only. */

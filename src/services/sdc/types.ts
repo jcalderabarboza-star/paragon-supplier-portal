@@ -327,6 +327,13 @@ export interface ForecastPublication {
    * OVERDUE IS DERIVED AT READ (`isResponseOverdue`), never stored.
    */
   readonly responseDueAt?: string;
+  /**
+   * SDC-1 · the publication that superseded this one, when one has — the STATE
+   * a reader of published snapshots needs, so that "current" never falls back
+   * to a superseded plan by date (e.g. after the latest is withdrawn). Absent on
+   * the Published one. Stamped by the store from its record, never by a caller.
+   */
+  readonly supersededBy?: string;
 }
 
 // ─── B4b · the publication as the BUYER sees it — draft, state and ledger ─────

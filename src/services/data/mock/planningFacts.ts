@@ -30,6 +30,7 @@ import {
   SUPPLIER_MATERIAL_RELATIONSHIPS,
   consolidationRows,
   currentPublication,
+  publicationGrain,
   declarationRecency,
   isKnownMaterial,
   requireUom,
@@ -153,12 +154,16 @@ export function derivePlanningFacts(q: PlanningFactsQuery): PlanningFactsOutcome
   // — The real stores (the 42 real codes). Monthly only where the source is
   //   bucket-native at month grain; dated sources map into either grain. —
   const publications = forecastPublicationStore.publications();
-  const pub = currentPublication(publications);
+  // ⚠️ SDC-1 · THE MONTHLY GRID READS THE MONTHLY PLAN. "Current" is per grain:
+  // this read took the latest publication across both, so publishing one weekly
+  // line took the monthly plan's published allocation and demand off the monthly
+  // grid. The weekly grid still emits no fact from a publication (as before):
+  // its allocation is the generator's or the open draft's.
+  const pub = grain === 'month' ? currentPublication(publications, 'month') : null;
   if (pub) {
     const demandBy = new Map<string, number>();
     for (const line of pub.lines) {
-      const bucket = grain === 'month' ? line.periodBucket : null;
-      if (bucket === null) continue; // publication buckets are months; no week fact is invented
+      const bucket = line.periodBucket;
       if (!draftKeys.has(totalKey(line.materialCode, bucket))) {
         push('allocation', line.materialCode, line.supplierId, bucket, line.forecastQty, pub.planVersion, pub.provenance.liveness);
       }
@@ -169,8 +174,12 @@ export function derivePlanningFacts(q: PlanningFactsQuery): PlanningFactsOutcome
       const [code, bucket] = k.split('|');
       push('demand', code, null, bucket, total, pub.planVersion, pub.provenance.liveness);
     }
-    if (grain === 'month') {
-      for (const row of consolidationRows(publications, requirementResponseStore.all())) {
+    {
+      // Only the monthly plan's rows: the consolidation is the union of every grain's.
+      const monthly = consolidationRows(publications, requirementResponseStore.all()).filter(
+        (r) => publicationGrain({ horizon: [r.line.periodBucket] }) === 'month',
+      );
+      for (const row of monthly) {
         const s = row.state;
         const response = 'response' in s ? s.response : null;
         const confirmed = response?.forecastConfirmation?.confirmedQty ?? null;

@@ -7,8 +7,8 @@
 // that moved from the constant to this store reads the SAME objects it read
 // before — the move changes where the answer comes from, not what it is. The
 // latest seed by `publishedAt` is `Published`; every earlier one is
-// `Superseded` by the next, which is exactly what `currentPublication` already
-// concluded from the dates.
+// `Superseded` by the next, and is handed out carrying that `supersededBy`
+// (SDC-1) so `currentPublication` reads the state, not only the dates.
 //
 // ⚠️ A DRAFT IS NOT A PUBLICATION. It has no `publishedAt` and must never reach
 // `currentPublication`, the consolidation or a supplier; `publications()` hands
@@ -75,9 +75,22 @@ let rows: PublicationRecord[] = seedRecords();
 const seedSeq = (): number => Math.max(0, ...rows.flatMap((r) => r.ledger.map((e) => e.seq)));
 let lastSeq = seedSeq();
 
+// SDC-1 · a seed superseded IN SESSION (the latest seed, once the planner
+// publishes) is handed out as its frozen object plus the `supersededBy` stamp —
+// one wrapper per seed object, so a reader's identity stays stable across reads.
+// A seed the fixture already states as superseded is its own object, unwrapped.
+const supersededSeeds = new WeakMap<ForecastPublication, ForecastPublication>();
+
 /** A published record as the `ForecastPublication` every reader already takes. */
 export function asPublication(r: PublicationRecord): ForecastPublication {
-  if (r.seed) return r.seed;
+  if (r.seed) {
+    if (r.state !== 'Superseded' || !r.supersededBy || r.seed.supersededBy === r.supersededBy) return r.seed;
+    const kept = supersededSeeds.get(r.seed);
+    if (kept && kept.supersededBy === r.supersededBy) return kept;
+    const stamped = Object.freeze({ ...r.seed, supersededBy: r.supersededBy });
+    supersededSeeds.set(r.seed, stamped);
+    return stamped;
+  }
   return Object.freeze({
     publicationId: r.publicationId,
     planVersion: r.planVersion,
@@ -86,6 +99,7 @@ export function asPublication(r: PublicationRecord): ForecastPublication {
     lines: r.lines,
     provenance: r.provenance,
     ...(r.responseDueAt ? { responseDueAt: r.responseDueAt } : {}),
+    ...(r.state === 'Superseded' && r.supersededBy ? { supersededBy: r.supersededBy } : {}),
   });
 }
 

@@ -113,7 +113,7 @@ describe('net change (Design 2 §10) — carried iff quantity AND class are unch
     const id = await publishRevision({ sup: 'sup-002', code: 'RM-EMUL-3310', bucket: '2026-08', qty: 5500 });
     const page = await collab.getPublications(SUP002, { includeSimulatedSample: true });
     expect(page.sample).toBe(true);
-    const cur = currentPublication(page.items)!;
+    const cur = currentPublication(page.items, 'month')!;
     const prev = previousPublication(page.items, cur)!;
     expect([cur.publicationId, prev.publicationId]).toEqual([id, R2.publicationId]);
     // sup-002: 3310 moved 6 000 → 5 500 (changed); 3320 carried at 2 600
@@ -150,8 +150,8 @@ describe('a frozen clock gives two revisions ONE instant — the recorded order 
     // CONTROL: the premise — both carry the SAME instant
     const at = (id: string) => pubs.find((p) => p.publicationId === id)!.publishedAt;
     expect(at(first)).toBe(at(second));
-    expect(currentPublication(pubs)?.publicationId).toBe(second);
-    expect(previousPublication(pubs, currentPublication(pubs))?.publicationId).toBe(first);
+    expect(currentPublication(pubs, 'month')?.publicationId).toBe(second);
+    expect(previousPublication(pubs, currentPublication(pubs, 'month'))?.publicationId).toBe(first);
     // and the store agrees by STATE, which is what the planner's panel reads
     expect(forecastPublicationStore.get(first)!.state).toBe('Superseded');
     expect(forecastPublicationStore.get(second)!.state).toBe('Published');
