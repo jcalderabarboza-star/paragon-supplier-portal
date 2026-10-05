@@ -254,9 +254,12 @@ export const PlannedChangesBar: React.FC<{
                   total: formatNumber(progress.total),
                 })}
               </div>
+              {/* No width transition: a row lands every few milliseconds, and a
+                  150 ms transition restarted on each one left the bar at 2% while
+                  the line read "Pushing 32 of 50…" (browser QA, PLN-4). */}
               <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-info/15">
                 <div
-                  className="h-full rounded-full bg-info transition-[width]"
+                  className="h-full rounded-full bg-info"
                   style={{ width: `${progress.total === 0 ? 0 : Math.round((progress.done / progress.total) * 100)}%` }}
                 />
               </div>
