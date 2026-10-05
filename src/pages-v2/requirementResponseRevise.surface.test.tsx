@@ -21,6 +21,7 @@ import type { CurrentIdentity } from '../context/CurrentIdentityContext';
 import type { QueryScope } from '../services/data/types';
 import { PERSONA_SYSTEM_ROLES } from '../services/transitions/businessRoles';
 import { NO_PERSON } from '../context/noPerson';
+import { SAMPLE_PEOPLE } from '../services/identity/sampleRoster';
 
 const supplierSeat = (supplierId: string): CurrentIdentity => ({
   personaType: 'supplier',
@@ -31,7 +32,14 @@ const supplierSeat = (supplierId: string): CurrentIdentity => ({
 });
 const SUP002 = supplierSeat('sup-002');
 const SUP005 = supplierSeat('sup-005');
-const BUYER_SCOPE: QueryScope = { personaType: 'buyer', supplierId: null, businessRoles: PERSONA_SYSTEM_ROLES.buyer };
+// SDC-3 · operator ruling: accept and dispute require an ATTRIBUTED actor, so the seat that
+// accepts here names the planning sample person. The assertions are unchanged.
+const BUYER_SCOPE: QueryScope = {
+  personaType: 'buyer',
+  supplierId: null,
+  businessRoles: PERSONA_SYSTEM_ROLES.buyer,
+  actor: { kind: 'RESOLVED', person: { personId: SAMPLE_PEOPLE.find((p) => p.role === 'planning' && p.ordinal === 1)!.personId } },
+};
 const PLANNING: CurrentIdentity = { ...BUYER_IDENTITY, businessRoles: ['planning'] };
 
 const svc = new MockCommandService();
@@ -64,7 +72,11 @@ describe('A3 · the supplier revises a DISPUTED answer (Probe A, on the surface)
     expect(within(rowFor(list, 'rr-0001')).queryByTestId('sdcsup-response-revise')).toBeNull();
   });
 
-  it('Revise → panel names what it replaces → the dispute is answered, and both rows say so', async () => {
+  // ⚠️ RE-PINNED BY SDC-3 (R-SDC P0 #4). This awaited `Superseded` straight after **Save draft** —
+  // the defect: an unsent draft retired the dispute. The draft now leaves the dispute standing and
+  // says so on its row; **Submit to buyer** retires it. Every assertion the case made is kept, after
+  // the send; the draft-time half is new.
+  it('Revise → panel names what it replaces → the draft leaves the dispute standing → SENT, it is answered, and both rows say so', async () => {
     const list = await openResponses(SUP005);
     fireEvent.click(within(rowFor(list, 'rr-0002')).getByTestId('sdcsup-response-revise'));
 
@@ -74,9 +86,14 @@ describe('A3 · the supplier revises a DISPUTED answer (Probe A, on the surface)
     fireEvent.change(screen.getByLabelText(/Confirmed quantity/), { target: { value: '3500' } });
     fireEvent.click(screen.getByRole('button', { name: /Save draft/ }));
 
-    await waitFor(() => expect(requirementResponseStore.get('rr-0002')!.status).toBe('Superseded'));
+    await waitFor(() => expect(revisionOf('rr-0002')?.status).toBe('Draft'));
     const next = revisionOf('rr-0002')!;
-    expect(next.status).toBe('Draft');
+    expect(requirementResponseStore.get('rr-0002')!.status).toBe('Disputed');
+    const drafted = await screen.findByTestId('sdcsup-responses');
+    expect(within(rowFor(drafted, 'rr-0002')).getByTestId('sdcsup-response-revision-drafted')).toBeInTheDocument();
+    fireEvent.click(within(rowFor(drafted, next.id)).getByRole('button', { name: /Submit to buyer/ }));
+    await waitFor(() => expect(requirementResponseStore.get('rr-0002')!.status).toBe('Superseded'));
+    expect(requirementResponseStore.get(next.id)!.status).toBe('Submitted');
 
     const after = await screen.findByTestId('sdcsup-responses');
     // The new version names what it revises …
@@ -118,6 +135,8 @@ describe('A3 · the supplier revises a DISPUTED answer (Probe A, on the surface)
       confirmedQty: 3500,
       confirmedQtyRaw: '3500',
     });
+    // SDC-3 · the answer is recorded when the revision is SENT, not when it is drafted.
+    await act(scopeOf(SUP005), 't_requirementresponse_promote', revisionOf('rr-0002')!.id);
     await i18n.changeLanguage('id');
     const list = await openResponses(SUP005);
     expect(within(rowFor(list, 'rr-0002')).getByText('Anda menjawabnya dengan revisi')).toBeInTheDocument();
@@ -146,8 +165,13 @@ describe('A3 · the supplier revises an ACCEPTED answer (Probe B, on the surface
 
     fireEvent.change(screen.getByLabelText(/Category/), { target: { value: 'capacity' } });
     fireEvent.click(screen.getByRole('button', { name: /Save draft/ }));
-    await waitFor(() => expect(requirementResponseStore.get('rr-0001')!.status).toBe('Superseded'));
+    // ⚠️ RE-PINNED BY SDC-3 (R-SDC P0 #4): saved, the cut is a DRAFT and the accepted 6 000 stands;
+    // it was awaited as `Superseded` here, which is the defect. Sent, it retires the accepted figure.
+    await waitFor(() => expect(revisionOf('rr-0001')?.status).toBe('Draft'));
+    expect(requirementResponseStore.get('rr-0001')!.status).toBe('Accepted');
     expect(revisionOf('rr-0001')!.forecastConfirmation!.confirmedQty).toBe(100);
+    await act(scopeOf(SUP002), 't_requirementresponse_promote', revisionOf('rr-0001')!.id);
+    expect(requirementResponseStore.get('rr-0001')!.status).toBe('Superseded');
   });
 
   it('Accepted reads "nothing needed" — an option to revise is not a turn', async () => {
