@@ -139,6 +139,13 @@ export const sdcConsolidationEn: Record<string, string> = {
   'sdc.review.revisedAfterDispute': 'Revised in answer to your dispute — review v{{version}}',
   'sdc.review.revisedAfterAccept': 'Revised after you accepted — review v{{version}}',
   'sdc.review.cta': 'Start review',
+  // SDC-3 · operator ruling: accept and dispute are a person's decision.
+  'sdc.review.needsPerson':
+    'Accepting or disputing commits a supplier or sends them words to answer, so a person takes it — adopt a sample user in the identity panel first.',
+  'sdc.refusal.reviewActorUnattributed':
+    'No person is named on this seat. Accepting or disputing is a person’s decision — adopt a sample user in the identity panel, then try again.',
+  'sdc.refusal.revisionAlreadyDrafted':
+    'A revision of this answer is already drafted — submit or continue that draft instead of starting another.',
   'sdc.review.ctaTitle': 'Take this response under review — {{material}} · {{period}}',
   'sdc.review.done.title': 'Under review — {{material}}',
   'sdc.review.done.body': '{{supplier}} can see that you have taken their response up.',
@@ -295,6 +302,12 @@ export const sdcConsolidationId: Record<string, string> = {
   'sdc.review.revisedAfterDispute': 'Direvisi untuk menjawab sanggahan Anda — telaah v{{version}}',
   'sdc.review.revisedAfterAccept': 'Direvisi setelah Anda setujui — telaah v{{version}}',
   'sdc.review.cta': 'Mulai telaah',
+  'sdc.review.needsPerson':
+    'Menerima atau menyanggah mengikat pemasok atau mengirimi mereka kata-kata untuk dijawab, jadi seorang pengguna yang melakukannya — pilih pengguna sampel di panel identitas terlebih dahulu.',
+  'sdc.refusal.reviewActorUnattributed':
+    'Tidak ada orang yang tercatat pada kursi ini. Menerima atau menyanggah adalah keputusan seseorang — pilih pengguna sampel di panel identitas, lalu coba lagi.',
+  'sdc.refusal.revisionAlreadyDrafted':
+    'Revisi atas jawaban ini sudah dibuat sebagai draf — kirim atau lanjutkan draf itu alih-alih memulai yang baru.',
   'sdc.review.ctaTitle': 'Ambil tanggapan ini untuk ditelaah — {{material}} · {{period}}',
   'sdc.review.done.title': 'Sedang ditelaah — {{material}}',
   'sdc.review.done.body': '{{supplier}} dapat melihat bahwa Anda sudah menerima tanggapan mereka.',

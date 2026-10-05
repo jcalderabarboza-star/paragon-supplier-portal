@@ -29,6 +29,7 @@ import type { CurrentIdentity } from '../context/CurrentIdentityContext';
 import type { QueryScope } from '../services/data/types';
 import { PERSONA_SYSTEM_ROLES } from '../services/transitions/businessRoles';
 import { NO_PERSON } from '../context/noPerson';
+import { SAMPLE_PEOPLE } from '../services/identity/sampleRoster';
 
 const SUP002: CurrentIdentity = {
   personaType: 'supplier',
@@ -37,7 +38,14 @@ const SUP002: CurrentIdentity = {
   businessRoles: PERSONA_SYSTEM_ROLES.supplier,
   actor: NO_PERSON,
 };
-const BUYER: QueryScope = { personaType: 'buyer', supplierId: null, businessRoles: PERSONA_SYSTEM_ROLES.buyer };
+// SDC-3 · operator ruling: accept and dispute require an ATTRIBUTED actor, so the seat
+// that takes them names the planning sample person. The assertions are unchanged;
+// the refusal of an unattributed seat is pinned in `sdc3RevisionOnSend.test.ts`.
+const PLANNING_PERSON = {
+  kind: 'RESOLVED' as const,
+  person: { personId: SAMPLE_PEOPLE.find((p) => p.role === 'planning' && p.ordinal === 1)!.personId },
+};
+const BUYER: QueryScope = { personaType: 'buyer', supplierId: null, businessRoles: PERSONA_SYSTEM_ROLES.buyer, actor: PLANNING_PERSON };
 
 beforeEach(() => requirementResponseStore.reset());
 afterEach(async () => {

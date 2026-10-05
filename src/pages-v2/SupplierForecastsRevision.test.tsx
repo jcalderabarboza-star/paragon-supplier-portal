@@ -190,7 +190,8 @@ describe('a revision published from the grid', () => {
 
 describe('the receipt — the buyer’s accept, dated, in My responses', () => {
   it('after review → accept, My responses shows "Accepted by the buyer on …"; before, nothing claims it', async () => {
-    const buyer = seat(PERSONA_SYSTEM_ROLES.buyer);
+    // SDC-3 · operator ruling: accept needs an attributed actor — the seat names the planning person.
+    const buyer = seat(PERSONA_SYSTEM_ROLES.buyer, 'planning');
     await commands.dispatch(buyer, { transitionId: 't_requirementresponse_review', entity: 'requirementResponse', entityId: 'rr-0001', payload: {} });
     sdcClock.set('2026-09-02T09:00:00.000Z');
     await commands.dispatch(buyer, { transitionId: 't_requirementresponse_accept', entity: 'requirementResponse', entityId: 'rr-0001', payload: {} });

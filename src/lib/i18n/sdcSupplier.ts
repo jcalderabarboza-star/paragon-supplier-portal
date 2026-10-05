@@ -78,6 +78,7 @@ export const sdcSupplierEn: Record<string, string> = {
   'sdcSup.responses.actor.revisable': 'Nothing needed from you — revise it only if your commitment changes',
   'sdcSup.responses.actor.buyerOrRevise': 'Awaiting Paragon — or revise your answer yourself',
   'sdcSup.responses.revise': 'Revise',
+  'sdcSup.responses.revisionDrafted': 'Revision {{id}} is drafted — submit it to answer this',
   'sdcSup.responses.revises': 'Revises {{id}}',
   'sdcSup.responses.submitDraft': 'Submit to buyer',
   'sdcSup.responses.submitting': 'Submitting…',
@@ -167,7 +168,8 @@ export const sdcSupplierEn: Record<string, string> = {
   'sdcSup.toast.missingRootCause.body': 'You are confirming below the requested quantity — select a root-cause category.',
   'sdcSup.toast.draftSaved.title': 'Draft saved — {{material}}',
   'sdcSup.toast.revised.title': 'Revision saved as a draft — {{material}}',
-  'sdcSup.toast.revised.body': 'Submit it from the responses tab. {{id}} is kept as history.',
+  // SDC-3 · the revision replaces nothing until it is sent.
+  'sdcSup.toast.revised.body': 'Submit it from the responses tab — {{id}} stays in force until you do, then is kept as history.',
   'sdcSup.toast.draftSaved.body':
     'Not sent yet. Review it under My responses, then submit it to the buyer.',
   'sdcSup.toast.promoted.title': '{{responseId}} submitted',
@@ -463,6 +465,7 @@ export const sdcSupplierId: Record<string, string> = {
   'sdcSup.responses.actor.revisable': 'Tidak ada yang perlu Anda lakukan — revisi hanya jika komitmen Anda berubah',
   'sdcSup.responses.actor.buyerOrRevise': 'Menunggu Paragon — atau revisi jawaban Anda sendiri',
   'sdcSup.responses.revise': 'Revisi',
+  'sdcSup.responses.revisionDrafted': 'Revisi {{id}} sudah menjadi draf — kirim untuk menjawab ini',
   'sdcSup.responses.revises': 'Merevisi {{id}}',
   'sdcSup.responses.submitDraft': 'Kirim ke pembeli',
   'sdcSup.responses.submitting': 'Mengirim…',
@@ -544,7 +547,7 @@ export const sdcSupplierId: Record<string, string> = {
   'sdcSup.toast.missingRootCause.body': 'Anda mengonfirmasi di bawah kuantitas yang diminta — pilih kategori akar masalah.',
   'sdcSup.toast.draftSaved.title': 'Draf disimpan — {{material}}',
   'sdcSup.toast.revised.title': 'Revisi disimpan sebagai draf — {{material}}',
-  'sdcSup.toast.revised.body': 'Kirim dari tab respons. {{id}} disimpan sebagai riwayat.',
+  'sdcSup.toast.revised.body': 'Kirim dari tab respons — {{id}} tetap berlaku sampai Anda mengirimnya, lalu disimpan sebagai riwayat.',
   'sdcSup.toast.draftSaved.body':
     'Belum dikirim. Tinjau di Respons Saya, lalu kirim ke pembeli.',
   'sdcSup.toast.promoted.title': '{{responseId}} terkirim',

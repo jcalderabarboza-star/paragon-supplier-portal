@@ -23,6 +23,7 @@ import { MockCommandService } from './MockCommandService';
 import { requirementResponseStore } from './stores/requirementResponseStore';
 import { DataError } from '../types';
 import type { QueryScope } from '../types';
+import { SAMPLE_PEOPLE } from '../../identity/sampleRoster';
 import { PERSONA_SYSTEM_ROLES, AUTOMATION_ATOMS } from '../../transitions/businessRoles';
 import { getFlow, personaCan } from '../../transitions';
 import {
@@ -35,7 +36,14 @@ import {
 } from '../../sdc';
 import { severityOf } from '../../chase/unifiedChase';
 
-const BUYER: QueryScope = { personaType: 'buyer', supplierId: null, businessRoles: PERSONA_SYSTEM_ROLES.buyer };
+// SDC-3 · operator ruling: accept and dispute require an ATTRIBUTED actor, so the seat
+// that takes them names the planning sample person. The assertions are unchanged;
+// the refusal of an unattributed seat is pinned in `sdc3RevisionOnSend.test.ts`.
+const PLANNING_PERSON = {
+  kind: 'RESOLVED' as const,
+  person: { personId: SAMPLE_PEOPLE.find((p) => p.role === 'planning' && p.ordinal === 1)!.personId },
+};
+const BUYER: QueryScope = { personaType: 'buyer', supplierId: null, businessRoles: PERSONA_SYSTEM_ROLES.buyer, actor: PLANNING_PERSON };
 const SUP002: QueryScope = { personaType: 'supplier', supplierId: 'sup-002', businessRoles: PERSONA_SYSTEM_ROLES.supplier };
 const SUP005: QueryScope = { personaType: 'supplier', supplierId: 'sup-005', businessRoles: PERSONA_SYSTEM_ROLES.supplier };
 const SUP007: QueryScope = { personaType: 'supplier', supplierId: 'sup-007', businessRoles: PERSONA_SYSTEM_ROLES.supplier };
@@ -124,9 +132,18 @@ describe('PROBE A re-run — a supplier answers a dispute by REVISING it', () =>
     expect(requirementResponseStore.all().length).toBe(before);
   });
 
-  it('revise → the dispute is retired to `Superseded`, ANSWERED BY THE SUPPLIER, and the new version links to it', async () => {
+  // ⚠️ RE-PINNED BY SDC-3 (R-SDC P0 #4). This read "revise → the dispute is retired", and that was
+  // the defect: an unsent DRAFT retired the dispute, so it left the buyer's queue and the line read
+  // awaiting before the supplier had sent anything. The retirement now happens when the revision is
+  // SENT; every assertion the old case made is kept, after the send, and the draft-time half is new.
+  it('revise DRAFTS the answer and retires nothing; SENDING it retires the dispute, ANSWERED BY THE SUPPLIER', async () => {
     const res = await revise(SUP005, 'rr-0002', { confirmedQty: 3500, confirmedQtyRaw: '3500' });
     expect(res.status).toBe('done');
+    // the draft answers nothing yet: the dispute stands, its ledger untouched
+    expect(requirementResponseStore.get('rr-0002')!.status).toBe('Disputed');
+    expect(requirementResponseStore.get('rr-0002')!.disputeResponse?.map((e) => e.kind)).toEqual(['raised']);
+    expect(requirementResponseStore.get('rr-0002')!.supersededFrom).toBeUndefined();
+    expect((await promote(SUP005, revisionOf('rr-0002')!.id)).status).toBe('done');
 
     const prior = requirementResponseStore.get('rr-0002')!;
     expect(prior.status).toBe('Superseded');
@@ -137,8 +154,8 @@ describe('PROBE A re-run — a supplier answers a dispute by REVISING it', () =>
     expect(prior.disputeResponse?.[1].text).toBe('');
 
     const next = revisionOf('rr-0002')!;
-    expect(next.status).toBe('Draft');
-    expect(next.submittedAt).toBeUndefined();
+    expect(next.status).toBe('Submitted');
+    expect(next.submittedAt).toBe(sdcClock.now());
     expect(next.supplierId).toBe('sup-005');
     expect(next.forecastConfirmation?.confirmedQty).toBe(3500);
     // SDC-R6: the thread spans publications — v2, not a second v1 — and the
@@ -163,15 +180,27 @@ describe('PROBE A re-run — a supplier answers a dispute by REVISING it', () =>
     ).not.toContain('Disputed');
   });
 
-  it('with the revision still a draft, the buyer reads the LAST SUBMITTED answer — never the draft', async () => {
+  // ⚠️ RE-PINNED BY SDC-3 (R-SDC P0 #4). This asserted `awaiting` — the line forgot the dispute
+  // the moment a draft existed. The last SUBMITTED answer is still rr-0002, and it is still disputed.
+  it('with the revision still a draft, the buyer reads the LAST SUBMITTED answer — the disputed one, never the draft', async () => {
     await revise(SUP005, 'rr-0002', { confirmedQty: 3500, confirmedQtyRaw: '3500' });
     const row = rowFor('sup-005|RM-EMUL-3310|2026-08');
-    // rr-0002 is Superseded and the revision is a Draft: neither is an answer.
-    expect(row.state.kind).toBe('awaiting');
+    expect('response' in row.state && row.state.response.id).toBe('rr-0002');
+    expect('response' in row.state && row.state.response.status).toBe('Disputed');
+    expect(row.state.kind).not.toBe('awaiting');
   });
 
-  it('a second revise on the retired version is ILLEGAL — `Superseded` is an ending', async () => {
+  // ⚠️ EXTENDED BY SDC-3: the prior now stays open while its revision is a draft, so a second
+  // revise BEFORE the send is refused by name (one draft answers it); AFTER the send it is
+  // illegal exactly as before — `Superseded` is an ending.
+  it('a second revise is refused while the first is a draft, and ILLEGAL once it is sent', async () => {
     await revise(SUP005, 'rr-0002', { confirmedQty: 3500, confirmedQtyRaw: '3500' });
+    const draft = revisionOf('rr-0002')!;
+    const early = await revise(SUP005, 'rr-0002', { confirmedQty: 3400, confirmedQtyRaw: '3400' });
+    expect(early.status).toBe('failed');
+    expect(early.reason).toMatch(/^POLICY_REJECTED:rr_revise_no_open_draft:RR_REVISION_ALREADY_DRAFTED: rr-0002 is already answered by draft /);
+    expect(early.reason).toContain(draft.id);
+    await promote(SUP005, draft.id);
     const again = await revise(SUP005, 'rr-0002', { confirmedQty: 3400, confirmedQtyRaw: '3400' });
     expect(again.status).toBe('failed');
     expect(again.reason).toBe('ILLEGAL_TRANSITION:Superseded->Draft');
@@ -214,15 +243,17 @@ describe('PROBE B re-run — an ACCEPTED commitment is not cut silently', () => 
       rootCause: { level1: 'capacity', note: 'Line down for retooling.' },
     });
     expect(res.status).toBe('done');
+    // ⚠️ RE-PINNED BY SDC-3 (R-SDC P0 #4): while the cut is a DRAFT the accepted figure stands —
+    // the buyer is still planning on 6 000 until the supplier SENDS the cut.
+    expect(requirementResponseStore.get('rr-0001')!.status).toBe('Accepted');
+    const next = revisionOf('rr-0001')!;
+    expect(next.rootCause).toEqual({ level1: 'capacity', note: 'Line down for retooling.' });
+    await promote(SUP002, next.id);
     const prior = requirementResponseStore.get('rr-0001')!;
     expect(prior.status).toBe('Superseded');
     expect(prior.supersededFrom).toBe('Accepted');
     // An Accepted prior had no dispute: its ledger stays untouched.
     expect(prior.disputeResponse).toBeUndefined();
-
-    const next = revisionOf('rr-0001')!;
-    expect(next.rootCause).toEqual({ level1: 'capacity', note: 'Line down for retooling.' });
-    await promote(SUP002, next.id);
 
     const row = rowFor('sup-002|RM-EMUL-3310|2026-08');
     expect(row.state).toMatchObject({ kind: 'revised-after-accept', acceptedQty: 6000, cutQty: 5900 });
