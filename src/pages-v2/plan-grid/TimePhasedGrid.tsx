@@ -248,7 +248,7 @@ const ReadOnlyBucketCell: React.FC<{ row: PlanRow; bucket: string; derived: bool
  * `GridEditRequest` (origin TYPED) to the overlay — never `setRowData`.
  * Escape abandons the edit.
  */
-const EditableBucketCell: React.FC<{
+export const EditableBucketCell: React.FC<{
   row: PlanRow;
   bucket: string;
   focus: boolean;
@@ -274,6 +274,15 @@ const EditableBucketCell: React.FC<{
       textRef.current = initial;
       setText(initial);
       cancelled.current = false;
+      // ⚠️ PLN-5 · THE FIELD HOLDS TODAY'S FIGURE BEFORE IT IS SELECTED. `text` is
+      // state from the last time this cell was open; when its planned change
+      // went away since (an undo, a Delete, a push that cleared it) the field
+      // still held the old token, `select()` selected THAT, and React then wrote
+      // the new one in — which drops the selection. The first key typed was then
+      // APPENDED to the seam's figure: typing 6000 over 189,950 planned
+      // 1,899,506,000 (browser QA). Writing the value first makes React's write a
+      // no-op, so the selection — and the replace — survive.
+      if (inputRef.current) inputRef.current.value = initial;
       inputRef.current?.focus();
       inputRef.current?.select();
     }
@@ -635,8 +644,9 @@ const TimePhasedGrid: React.FC<{
       if (!active || typingElsewhere(wrapRef.current)) return;
       const focused = document.activeElement;
       if (focused instanceof HTMLInputElement && wrapRef.current?.contains(focused)) return;
-      const sel = selectionRef.current;
-      const n = sel ? (sel.r1 - sel.r0 + 1) * (sel.c1 - sel.c0 + 1) : 1;
+      // The engine's own selection, read at the moment of the copy — what it copies.
+      const sel = gridRef.current?.selection;
+      const n = sel ? (sel.max.row - sel.min.row + 1) * (sel.max.col - sel.min.col + 1) : 1;
       setKeyNote({ kind: 'copied', n });
     };
     document.addEventListener('copy', onCopy, true);

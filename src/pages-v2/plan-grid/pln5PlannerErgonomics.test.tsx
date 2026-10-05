@@ -22,7 +22,7 @@ import { screen, fireEvent, act, within } from '@testing-library/react';
 import { renderWithProviders, BUYER } from '../../test/test-utils';
 import i18n from '../../lib/i18n';
 import PlanGrid from '../PlanGrid';
-import TimePhasedGrid, { PlanBucketCell, PlanRowLabel } from './TimePhasedGrid';
+import TimePhasedGrid, { EditableBucketCell, PlanBucketCell, PlanRowLabel } from './TimePhasedGrid';
 import { PlanDraftProvider, usePlanDraft, type PlanDraftApi } from './PlanDraftProvider';
 import PublicationPanel from './PublicationPanel';
 import { buildPlanBlocks, exceptionReasons, isPlanException, type PlanExceptions, type PlanRow } from './planGridModel';
@@ -195,6 +195,40 @@ describe('PLN-5 · the provider: one undo step per act, newest first', () => {
     expect(api!.draft.entries.size).toBe(0);
     act(() => void (n = api!.undo())); // nothing left
     expect(n).toBe(0);
+  });
+});
+
+describe('PLN-5 · an editor opens on TODAY’s figure, selected — a typed key replaces it', () => {
+  it('after an undo took its planned change away, the field holds the seam figure, all of it selected', () => {
+    const row = accepted('SIM-PM-0024');
+    const b = HORIZON[run3(row)];
+    const seam = String(row.cells[b]);
+    const ctxOf = () => ({ rows: [row], totalOf: () => undefined });
+    // The engine's focus prop, driven from outside — `rerender` would drop the providers.
+    let setFocus: (f: boolean) => void = () => {};
+    const Host: React.FC = () => {
+      const [focus, set] = React.useState(false);
+      setFocus = set;
+      return <EditableBucketCell row={row} bucket={b} focus={focus} editContext={ctxOf} />;
+    };
+    renderWithProviders(
+      <PlanDraftProvider>
+        <Capture />
+        <Host />
+      </PlanDraftProvider>,
+      { identity: { ...BUYER, businessRoles: ['planning'] } },
+    );
+    act(() => api!.edit(row, b, '6000', 'TYPED'));
+    act(() => setFocus(true));
+    expect((screen.getByTestId('tp-cell-input') as HTMLInputElement).value).toBe('6000');
+    act(() => setFocus(false));
+    act(() => void api!.undo());
+    expect(api!.draft.entries.size).toBe(0);
+    act(() => setFocus(true));
+    const input = screen.getByTestId('tp-cell-input') as HTMLInputElement;
+    expect(input.value).toBe(seam);
+    // the whole figure is selected, so the first key typed REPLACES it (it was appended: 189,950 + 6000)
+    expect([input.selectionStart, input.selectionEnd]).toEqual([0, seam.length]);
   });
 });
 
