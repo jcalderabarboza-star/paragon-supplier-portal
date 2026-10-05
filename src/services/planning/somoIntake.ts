@@ -31,7 +31,7 @@
 // ────────────────────────────────────────────────────────────────────────────
 
 import type { PrIntakeLine } from '../data/types';
-import { parseBucket, type BucketId } from './bucket';
+import { parseBucket, type BucketGrain, type BucketId } from './bucket';
 import { somoHorizon } from './facts';
 import {
   PLANNING_MATERIALS,
@@ -68,6 +68,23 @@ export function generatedIntakeLine(id: string): PrIntakeLine | null {
   const bucket = parseBucket(parts.bucket);
   if (!bucket.ok || bucket.bucket.id !== parts.bucket) return null;
   if (!somoHorizon(bucket.bucket.grain).includes(parts.bucket)) return null;
+  return lineOf(parts.materialCode, parts.bucket);
+}
+
+/**
+ * The line SOMO proposed for a material in a bucket ALREADY KNOWN to be on the
+ * fixture horizon, or null where it proposed nothing.
+ *
+ * ⚠️ PLN-5 · SPLIT OUT SO THE ENUMERATION ASKS FOR THE HORIZON ONCE PER GRAIN,
+ * NOT ONCE PER LINE. `somoHorizon` re-derives the horizon from the SDC clock on
+ * every call (it is deliberately not cached: a shifted clock must move it), and
+ * `generatedIntakeLine` asked it again for each of ~15,000 lines — measured at
+ * 1.0–1.6 s of the intake view's 1.8 s first build. The by-id path above still
+ * asks, because a single id carries no horizon of its own.
+ */
+function lineOf(materialCode: string, bucket: BucketId): PrIntakeLine | null {
+  const id = somoIntakeLineId(materialCode, bucket);
+  const parts = { materialCode, bucket };
   const suggested = generatedSuggested(parts.materialCode, parts.bucket);
   if (suggested === null) return null;
   const entry = planningMaster()[parts.materialCode];
@@ -101,12 +118,16 @@ let generatedPopulation: readonly PrIntakeLine[] | null = null;
 export function generatedIntakeLines(): readonly PrIntakeLine[] {
   if (generatedPopulation) return generatedPopulation;
   const out: PrIntakeLine[] = [];
+  // The horizon is read ONCE PER GRAIN here, and every bucket in it is on it by
+  // construction — `lineOf` skips the by-id path's re-derivation (PLN-5).
+  const horizonOf = new Map<BucketGrain, readonly BucketId[]>();
   for (const code of PLANNING_MATERIALS) {
     if (!isGeneratedMaterial(code)) continue;
     const grain = planningGrainOf(code);
     if (grain === null) continue;
-    for (const bucket of somoHorizon(grain)) {
-      const line = generatedIntakeLine(somoIntakeLineId(code, bucket));
+    if (!horizonOf.has(grain)) horizonOf.set(grain, somoHorizon(grain));
+    for (const bucket of horizonOf.get(grain)!) {
+      const line = lineOf(code, bucket);
       if (line) out.push(line);
     }
   }

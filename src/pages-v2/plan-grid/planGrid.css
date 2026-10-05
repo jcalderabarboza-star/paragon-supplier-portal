@@ -24,3 +24,16 @@
   background: #ffffff;
   z-index: 2;
 }
+
+/* PLN-5 · the engine's header text is rgb(157,166,171) — 2.5:1 on white, under
+ * the 4.5:1 a header needs. Every plan grid reads its headers in the portal's
+ * secondary text colour (#354A5F, 9.6:1) and the active one in navy. The active
+ * cell's ring is the action blue on an editable cell and the secondary colour on
+ * a read-only one (the engine's grey #9da6ab was 2.5:1, under the 3:1 a focus
+ * indicator needs), so the planner can always see where the keyboard is. */
+.plan-dsg {
+  --dsg-header-text-color: #354a5f;
+  --dsg-header-active-text-color: #0d1b2a;
+  --dsg-selection-border-color: #0070f2;
+  --dsg-selection-disabled-border-color: #354a5f;
+}

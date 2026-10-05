@@ -368,6 +368,20 @@ export interface PlanBlock {
 /** The exception rule — ONE predicate, mutation-probed. */
 export const isPlanException = (e: PlanExceptions): boolean => e.shortfall || e.awaiting || e.stale;
 
+/** PLN-5 · why a block is an exception, in the order the reason column states it. */
+export type PlanExceptionReason = 'short' | 'awaiting' | 'stale';
+
+/**
+ * PLN-5 · the exception reason column — EVERY reason the block holds, read off
+ * the same flags `isPlanException` reads, so the column can never call a row an
+ * exception the filter does not, or the reverse.
+ */
+export const exceptionReasons = (e: PlanExceptions): PlanExceptionReason[] => [
+  ...(e.shortfall ? (['short'] as const) : []),
+  ...(e.awaiting ? (['awaiting'] as const) : []),
+  ...(e.stale ? (['stale'] as const) : []),
+];
+
 /** The null rule — the ONE place a planning value becomes text. */
 export function planCellText(value: number | null | undefined, format: (n: number) => string): string {
   return value === null || value === undefined ? '—' : format(value);

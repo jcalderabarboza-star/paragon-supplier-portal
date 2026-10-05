@@ -30,7 +30,9 @@ describe('B2 · the tab set', () => {
   it('ID — every tab label is Indonesian', async () => {
     await i18n.changeLanguage('id');
     renderWithProviders(<PlanGrid />, { route: '/buyer/plan-grid' });
-    expect(tabs()).toEqual(['Bahan baku', 'Kemasan', 'Pengecualian', 'Simulasi penghargaan', 'Tinjauan asupan']);
+    // ⚠️ PLN-5 · RE-PINNED BY RULING: "penghargaan" (an honour, not an award
+    // decision) → "Simulasi penetapan pemenang"; "asupan" → "usulan".
+    expect(tabs()).toEqual(['Bahan baku', 'Kemasan', 'Pengecualian', 'Simulasi penetapan pemenang', 'Tinjauan usulan']);
   });
 
   it('Raw materials is the landing view, behind the SIMULATED banner', async () => {
@@ -73,11 +75,19 @@ describe('B2 · the bucket cell — the null rule and the marker rule', () => {
     expect(screen.getByTestId('tp-cell').textContent).toBe('0');
   });
 
-  it('a DERIVED cell always carries its Σ marker — even when it has no figure', () => {
+  // ⚠️ PLN-5 · REVERSED BY RULING. This read "a DERIVED cell always carries its Σ
+  // marker — even when it has no figure", and the marker sat on every dash and
+  // zero of a shortfall row. The ruling: the Σ is small, never over the figure,
+  // and ABSENT on zero and dash — the ROW label now says the measure is modeled,
+  // so an empty modeled cell is still read as computed (pinned below).
+  it('a DERIVED cell carries its Σ on a figure — and not on a dash or a zero', () => {
     renderWithProviders(<PlanBucketCell value={500} derived />);
     expect(within(screen.getByTestId('tp-cell')).getByText('Modeled')).toBeInTheDocument();
     renderWithProviders(<PlanBucketCell value={null} derived />);
-    expect(screen.getAllByText('Modeled')).toHaveLength(2);
+    renderWithProviders(<PlanBucketCell value={0} derived />);
+    expect(screen.getAllByText('Modeled')).toHaveLength(1);
+    const cells = screen.getAllByTestId('tp-cell');
+    expect(cells.map((c) => c.textContent)).toEqual(['Modeled500', '—', '0']);
   });
 
   it('an AUTHORED cell carries no Σ marker', () => {

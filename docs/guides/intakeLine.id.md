@@ -1,7 +1,7 @@
 ---
 entity: intakeLine
 locale: id
-title: Baris asupan (triase kebutuhan)
+title: Baris usulan (triase kebutuhan)
 wired: true
 owner: portal
 source_sha: 08e00f854463fde2d0bd333ec5c89e1e845c1746
@@ -14,13 +14,13 @@ transitions:
 <!-- section:summary -->
 ## 1 · Apa proses ini
 
-Kebutuhan yang diusulkan perencanaan dan belum diputuskan siapa pun — antrean tempat perencana menentukan kebutuhan mana yang masuk beban kerja pembelian dan mana yang dikesampingkan. Setiap baris asupan dipancarkan oleh sebuah produsen, yaitu SOMO atau grid perencanaan internal (*Grid Internal*), dan membawa material, jumlah yang disarankan, jumlah yang benar-benar dikirim produsen, periode perencanaan, dan alasan dari produsen (*Alasan (defisit)*). Paragon tidak mengarang baris itu; Paragon hanya mencatat apa yang diputuskan perencana atasnya.
+Kebutuhan yang diusulkan perencanaan dan belum diputuskan siapa pun — antrean tempat perencana menentukan kebutuhan mana yang masuk beban kerja pembelian dan mana yang dikesampingkan. Setiap baris usulan dipancarkan oleh sebuah produsen, yaitu SOMO atau grid perencanaan internal (*Grid Internal*), dan membawa material, jumlah yang disarankan, jumlah yang benar-benar dikirim produsen, periode perencanaan, dan alasan dari produsen (*Alasan (defisit)*). Paragon tidak mengarang baris itu; Paragon hanya mencatat apa yang diputuskan perencana atasnya.
 
 Satu peran yang memutuskan. Ketiga tindakan — mengesampingkan baris, mengembalikannya, mengomitnya — memerlukan izin `intake:triage`, yang berada di jalur **perencanaan** (planning): perencana yang memutuskan rencana yang mengomitnya (ketetapan R1, PLN-3). Mengabaikan dianggap sama konsekuensialnya dengan mengomit, sehingga ketiganya berbagi satu izin. Kursi yang tidak memegangnya melihat *"Menunggu Perencanaan"* alih-alih tombol. Permintaan yang dibuat oleh komit disetujui oleh **pengadaan**, tidak pernah oleh perencanaan.
 
 Baris lahir dalam keadaan **Pending** (menunggu) — tidak ada langkah pembuatan, karena produsen sudah memancarkannya. Dari Pending perencana **mengabaikannya** (→ **Dismissed**, diabaikan, yang dapat dibatalkan dengan **Pulihkan**) atau **mengomitnya** (→ **Committed**, dikomit, final). Mengomit adalah satu-satunya cara kebutuhan terencana menjadi permintaan sungguhan: tindakan ini otomatis membuat permintaan pembelian Draft melalui `t_pr_create`, paling banyak sekali per baris. Mengubah jumlah lebih dulu bukan langkah tersendiri — itu bagian dari komit, dan meninggalkan jumlah yang dikirim produsen memerlukan alasan tertulis.
 
-Penanda kejujuran. Datanya **SIMULASI**: grid perencanaan membawa pil *"Sampel — menunggu produsen PR live (SOMO / Grid)"*, dan empat baris yang ditulis tangan serta usulan SOMO hasil generasi — semuanya terdaftar di tampilan *Tinjauan asupan* grid — adalah data sampel — baris yang dikomit tidak pernah menjadi instruksi pengadaan langsung. Setiap tindakan dicatat dan bertahan setelah muat ulang (triase disimpan di peramban dengan kunci `paragon.intakeTriage`), tetapi permintaan yang dihasilkannya hidup di store dalam memori yang di-seed ulang saat muat ulang, sehingga setelah muat ulang baris yang dikomit dapat menampilkan *"Dikomit — permintaannya tidak ada di penyimpanan sesi ini"*. Tidak ada orang yang masuk sesi, sehingga tindakan diatribusikan ke kursi, bukan ke orang yang disebut namanya. Tidak ada yang diberitahukan ke hulu: produsen tidak diberi tahu tentang pengabaian.
+Penanda kejujuran. Datanya **SIMULASI**: grid perencanaan membawa pil *"Sampel — menunggu produsen PR live (SOMO / Grid)"*, dan empat baris yang ditulis tangan serta usulan SOMO hasil generasi — semuanya terdaftar di tampilan *Tinjauan usulan* grid — adalah data sampel — baris yang dikomit tidak pernah menjadi instruksi pengadaan langsung. Setiap tindakan dicatat dan bertahan setelah muat ulang (triase disimpan di peramban dengan kunci `paragon.intakeTriage`), tetapi permintaan yang dihasilkannya hidup di store dalam memori yang di-seed ulang saat muat ulang, sehingga setelah muat ulang baris yang dikomit dapat menampilkan *"Dikomit — permintaannya tidak ada di penyimpanan sesi ini"*. Tidak ada orang yang masuk sesi, sehingga tindakan diatribusikan ke kursi, bukan ke orang yang disebut namanya. Tidak ada yang diberitahukan ke hulu: produsen tidak diberi tahu tentang pengabaian.
 <!-- src: src/services/transitions/flows/intakeLine.flow.ts:1-73; src/services/transitions/flows/intakeLine.flow.ts:82-86; src/services/transitions/flows/intakeLine.flow.ts:139; src/lib/i18n/processFlowPurpose.ts:603-611; src/services/transitions/businessRoles.ts:389-391; src/services/transitions/cascades.ts:75-77; src/services/data/mock/stores/intakeLineStore.ts:64; src/pages-v2/plan-grid/IntakeReviewView.tsx; src/lib/i18n/intakeReview.ts:64-65; src/lib/i18n/intakeReview.ts:93-94; src/lib/i18n/widget.ts:206; src/services/liveness/registry.ts:281-284; src/lib/i18n/roles.ts:269; src/lib/i18n/roles.ts:277 -->
 
 <!-- section:lifecycle -->
@@ -48,7 +48,7 @@ Penanda kejujuran. Datanya **SIMULASI**: grid perencanaan membawa pil *"Sampel �
 - **Jenis langkah:** tindakan operator
 - **Peran:** buyer · planning (izin `intake:triage`)
 - **Dari → ke:** Pending → Dismissed
-- **Operator — di mana:** `/buyer/plan-grid` → tab **Tinjauan asupan** (tautan lama `/buyer/intake-review` mendarat di sini) → baris yang menunggu, ditemukan lewat *Tampilkan: Menunggu* dan kotak pencarian (material, kode, atau periode) → sel *Triase*-nya → **Abaikan**. Setiap baris terdaftar di sana — empat baris yang ditulis tangan dan setiap baris SOMO hasil generasi yang dikomit tab perencanaan.
+- **Operator — di mana:** `/buyer/plan-grid` → tab **Tinjauan usulan** (tautan lama `/buyer/intake-review` mendarat di sini) → baris yang menunggu, ditemukan lewat *Tampilkan: Menunggu* dan kotak pencarian (material, kode, atau periode) → sel *Triase*-nya → **Abaikan**. Setiap baris terdaftar di sana — empat baris yang ditulis tangan dan setiap baris SOMO hasil generasi yang dikomit tab perencanaan.
 - **Operator — lakukan:** kesampingkan kebutuhan itu agar tidak ada yang bertindak atasnya sekarang. Baris tetap ada di antrean, diredupkan, dengan chip *Diabaikan*, sehingga rekan yang membuka antrean yang sama tahu ada orang yang sudah menilainya. Produsen tidak diberi tahu.
 - **Operator — isi:** tidak ada yang diisi.
 - **Penguji — status yang diharapkan:** Dismissed
@@ -64,7 +64,7 @@ Penanda kejujuran. Datanya **SIMULASI**: grid perencanaan membawa pil *"Sampel �
 - **Jenis langkah:** tindakan operator
 - **Peran:** buyer · planning (izin `intake:triage`)
 - **Dari → ke:** Dismissed → Pending
-- **Operator — di mana:** `/buyer/plan-grid` → tab **Tinjauan asupan** → *Tampilkan: Diabaikan* → sel *Triase* baris → **Pulihkan**.
+- **Operator — di mana:** `/buyer/plan-grid` → tab **Tinjauan usulan** → *Tampilkan: Diabaikan* → sel *Triase* baris → **Pulihkan**.
 - **Operator — lakukan:** kembalikan kebutuhan yang dikesampingkan ke antrean — pilihan yang keliru tidak boleh menjadi jalan buntu. Ini kebalikan persis dari abaikan.
 - **Operator — isi:** tidak ada yang diisi.
 - **Penguji — status yang diharapkan:** Pending
@@ -81,13 +81,13 @@ Penanda kejujuran. Datanya **SIMULASI**: grid perencanaan membawa pil *"Sampel �
 - **Peran:** buyer · planning (izin `intake:triage`, ketetapan R1). Permintaan yang dihasilkannya dibuat di bawah hibah otomasi (`pr:create`); menyetujui permintaan itu tetap milik **pengadaan** — kursi perencanaan tidak dapat menyetujuinya.
 - **Dari → ke:** Pending → Committed (dan, melalui kaskade, ∅ → Draft pada permintaan pembelian baru)
 - **Operator — di mana:** tiga pintu masuk, semuanya memicu verba yang sama.
-  1. `/buyer/plan-grid` → tab **Tinjauan asupan** → baris yang menunggu → **Terima sesuai kiriman**. Mengomit jumlah yang dikirim produsen; tidak ada yang ditanyakan.
-  2. `/buyer/plan-grid` → tab **Tinjauan asupan** → **Sesuaikan** pada sebuah baris → bagian *Sesuaikan & kirim — baris terpilih* → ubah *Diterima* bila perlu (dan *Alasan* bila berbeda) → **Kirim ke PR**.
+  1. `/buyer/plan-grid` → tab **Tinjauan usulan** → baris yang menunggu → **Terima sesuai kiriman**. Mengomit jumlah yang dikirim produsen; tidak ada yang ditanyakan.
+  2. `/buyer/plan-grid` → tab **Tinjauan usulan** → **Sesuaikan** pada sebuah baris → bagian *Sesuaikan & kirim — baris terpilih* → ubah *Diterima* bila perlu (dan *Alasan* bila berbeda) → **Kirim ke PR**.
   3. `/buyer/plan-grid` → tab **Bahan baku** atau **Kemasan** → ketik atau tempel jumlah yang diterima ke sebuah sel → panel perubahan terencana di atas grid → **Kirim** pada barisnya, **Kirim pilihan (n)** atau **Kirim semua (n)**. Sel-sel ini adalah usulan SOMO hasil generasi; satu komit dikirim per baris, dikelompokkan di bawah satu jangkar kausalitas.
 - **Operator — lakukan:** ubah usulan kebutuhan menjadi permintaan sungguhan bagi tim pembelian, pada angka yang berani Anda pertanggungjawabkan — dan hanya sekali, agar satu kebutuhan tidak pernah menjadi beberapa permintaan. Menerima jumlah yang dikirim tidak membawa keputusan dan tidak perlu alasan; mengubahnya adalah keputusan Anda sendiri dan wajib menyebut alasannya.
 - **Operator — isi:** jumlah yang diterima — angka saja, tanpa pemisah ribuan (misalnya 4500). Yang wajib di balik layar: angkanya dan teks persis yang Anda ketik, yang dibaca ulang platform untuk memastikan keduanya sepakat. **Alasan** wajib hanya bila jumlahnya berbeda dari yang dikirim produsen (*"Alasan diperlukan untuk mengirim override"*). Di grid, perubahan terencana menampilkan *"Sesuai kiriman — tidak perlu alasan"* bila jumlahnya sama.
 - **Penguji — status yang diharapkan:** Committed (dan permintaan baru dalam Draft)
-- **Penguji — konfirmasi:** di tampilan *Tinjauan asupan* sel *Triase* berbunyi *"Dikomit → PR-2026-9xx"* dan *Asal* berbunyi *Dikomit*; di laci, kaki bagian berbunyi *"Terkirim → PR-2026-9xx"* dan tombolnya nonaktif; pada tab perencanaan sel terbaca dikomit dan perubahan terencananya hilang. Di `/buyer/purchase-requisition` Draft baru menampilkan *Dari baris asupan* = id baris, *Ember perencanaan* = periode baris, dan — hanya bila Anda mengubah jumlahnya — *Penyesuaian jumlah* dengan dari → ke dan alasan Anda. Di jejak audit, peristiwa `t_pr_create` membawa `causationId` yang sama dengan `correlationId` komit ini.
+- **Penguji — konfirmasi:** di tampilan *Tinjauan usulan* sel *Triase* berbunyi *"Dikomit → PR-2026-9xx"* dan *Asal* berbunyi *Dikomit*; di laci, kaki bagian berbunyi *"Terkirim → PR-2026-9xx"* dan tombolnya nonaktif; pada tab perencanaan sel terbaca dikomit dan perubahan terencananya hilang. Di `/buyer/purchase-requisition` Draft baru menampilkan *Dari baris usulan* = id baris, *Ember perencanaan* = periode baris, dan — hanya bila Anda mengubah jumlahnya — *Penyesuaian jumlah* dengan dari → ke dan alasan Anda. Di jejak audit, peristiwa `t_pr_create` membawa `causationId` yang sama dengan `correlationId` komit ini.
 - **Penguji — peristiwa pemicu:** `t_intake_commit`
 - **Pemeriksaan yang dapat menolak:**
   - kolom wajib `acceptedQty` dan `acceptedQtyRaw` harus ada (`MISSING_FIELDS`);
@@ -116,16 +116,16 @@ Penanda kejujuran. Datanya **SIMULASI**: grid perencanaan membawa pil *"Sampel �
 
 | Penanda | Jenis | Berlaku di | Kapan muncul | Di mana ditampilkan |
 |---|---|---|---|---|
-| SIMULASI — *"Sampel — menunggu produsen PR live (SOMO / Grid)"* | eksternal (registri liveness) | semua status | selalu, sampai produsen asupan sungguhan tiba | pil kepala halaman `/buyer/plan-grid`; *Simulasi* di kolom *Asal* |
-| *Direncanakan* / *Dikomit* | diturunkan saat dibaca (dari status) | Pending dan Dismissed terbaca *Direncanakan*; Committed terbaca *Dikomit* | selalu | kolom *Asal* di tampilan *Tinjauan asupan* grid perencanaan |
-| *"{producer} menyesuaikan {from} → {to}"* | diturunkan saat dibaca (dikirim ≠ disarankan) | semua status | produsen mengirim jumlah yang berbeda dari sarannya | di bawah jumlah yang dikirim di tampilan *Tinjauan asupan*; *Dikirim produsen* di laci |
-| *Diabaikan* | diangkat operator, dicatat | Dismissed | setelah `t_intake_dismiss` | kolom *Triase* di tampilan *Tinjauan asupan*; sel baris di tab Bahan baku / Kemasan (hanya-baca) |
-| *"Dikomit → {pr}"* / *"Terkirim → {pr}"* | diturunkan saat dibaca (permintaan yang menyebut baris) | Committed | setelah komit, selama permintaannya ada di store sesi ini | kolom *Triase* *Tinjauan asupan*; kaki laci |
+| SIMULASI — *"Sampel — menunggu produsen PR live (SOMO / Grid)"* | eksternal (registri liveness) | semua status | selalu, sampai produsen usulan sungguhan tiba | pil kepala halaman `/buyer/plan-grid`; *Simulasi* di kolom *Asal* |
+| *Direncanakan* / *Dikomit* | diturunkan saat dibaca (dari status) | Pending dan Dismissed terbaca *Direncanakan*; Committed terbaca *Dikomit* | selalu | kolom *Asal* di tampilan *Tinjauan usulan* grid perencanaan |
+| *"{producer} menyesuaikan {from} → {to}"* | diturunkan saat dibaca (dikirim ≠ disarankan) | semua status | produsen mengirim jumlah yang berbeda dari sarannya | di bawah jumlah yang dikirim di tampilan *Tinjauan usulan*; *Dikirim produsen* di laci |
+| *Diabaikan* | diangkat operator, dicatat | Dismissed | setelah `t_intake_dismiss` | kolom *Triase* di tampilan *Tinjauan usulan*; sel baris di tab Bahan baku / Kemasan (hanya-baca) |
+| *"Dikomit → {pr}"* / *"Terkirim → {pr}"* | diturunkan saat dibaca (permintaan yang menyebut baris) | Committed | setelah komit, selama permintaannya ada di store sesi ini | kolom *Triase* *Tinjauan usulan*; kaki laci |
 | *"Dikomit — permintaannya tidak ada di penyimpanan sesi ini"* | diturunkan saat dibaca | Committed | setelah muat ulang — triase tersimpan, store permintaan tidak | tempat yang sama |
-| *"Menunggu Perencanaan"* | diturunkan saat dibaca (kursi vs. izin) | Pending, Dismissed | kursi tidak memegang `intake:triage` | kepala tampilan *Tinjauan asupan*; kaki laci; panel perubahan terencana |
+| *"Menunggu Perencanaan"* | diturunkan saat dibaca (kursi vs. izin) | Pending, Dismissed | kursi tidak memegang `intake:triage` | kepala tampilan *Tinjauan usulan*; kaki laci; panel perubahan terencana |
 | *"Dinonaktifkan — Perencanaan"* | diangkat operator (sakelar modul) | semua status | modul PLN dinonaktifkan | slot yang sama seperti di atas; halaman tetap dapat dibaca |
 | *Direncanakan* / *Eksternal* (lapisan grid) | diangkat operator, hanya di halaman | Pending | sel diketik (*Direncanakan*) atau ditempel dari luar portal (*Eksternal*) dan belum dikirim | panel perubahan terencana dan sel pada tab perencanaan |
-| *"Ditolak: {alasan}"* / *"Pengiriman gagal: {alasan}"* | diturunkan saat dibaca (penolakan terakhir, hanya di halaman) | Pending, Dismissed | sebuah dispatch ditolak | di bawah baris di tampilan *Tinjauan asupan*; kaki laci; panel perubahan terencana |
+| *"Ditolak: {alasan}"* / *"Pengiriman gagal: {alasan}"* | diturunkan saat dibaca (penolakan terakhir, hanya di halaman) | Pending, Dismissed | sebuah dispatch ditolak | di bawah baris di tampilan *Tinjauan usulan*; kaki laci; panel perubahan terencana |
 <!-- src: src/lib/i18n/widget.ts:206; src/pages-v2/plan-grid/IntakeReviewView.tsx; src/pages-v2/plan-grid/TimePhasedGrid.tsx; src/pages-v2/PlanGrid.tsx:333; src/pages-v2/plan-grid/PlanCellMarker.tsx:44-55; src/pages-v2/plan-grid/IntakeAdjustDrawer.tsx:296-318; src/pages-v2/plan-grid/PlannedChangesPanel.tsx:89-104; src/pages-v2/plan-grid/PlannedChangesPanel.tsx:148-160; src/components/ui-v2/HandoffNotice.tsx:41-45; src/services/modules/registry.ts:179-184; src/lib/i18n/modules.ts:164; src/lib/i18n/modules.ts:225-226; src/lib/i18n/planGrid.ts:465-466; src/lib/i18n/intakeReview.ts:92-96 -->
 
 <!-- section:linked -->
@@ -137,7 +137,7 @@ Penanda kejujuran. Datanya **SIMULASI**: grid perencanaan membawa pil *"Sampel �
 |---|---|---|
 | Baris produsen | `id` (fixture `PR_INTAKE_LINES`, atau id SOMO hasil generasi `pil-somo-<material>@<bucket>`) | Hanya-baca. Baris produsen tidak pernah disalin atau disunting; kumpulan baris yang dipancarkan produsen yang menentukan id mana yang ada. |
 | Catatan triase | `lineId` di store peramban `paragon.intakeTriage` | Hanya memuat hasil tindakan: status, jumlah yang dikomit, alasan (hanya bila jumlahnya diubah) dan saat komit. Satu catatan per baris, diganti di tempat. |
-| Permintaan pembelian | `intakeLineId` pada permintaan = id baris ini | Nomor permintaan baris **diturunkan** dengan mencari permintaan yang menyebut baris itu — tidak pernah disimpan pada baris. Ditampilkan pada permintaan sebagai *Dari baris asupan*. |
+| Permintaan pembelian | `intakeLineId` pada permintaan = id baris ini | Nomor permintaan baris **diturunkan** dengan mencari permintaan yang menyebut baris itu — tidak pernah disimpan pada baris. Ditampilkan pada permintaan sebagai *Dari baris usulan*. |
 | Tanda produsen | `source` permintaan = `SOMO` atau `INTERNAL_GRID` | Disalin dari baris ke permintaan oleh kaskade. |
 | Ember perencanaan | `periodBucket` permintaan = periode baris | Bulan (`2026-08`) atau minggu ISO (`2026-W36`), bukan tanggal wajib. |
 | Penyesuaian jumlah | `decision` permintaan (dari → ke, alasan) | Hanya ada bila perencana meninggalkan jumlah yang dikirim; platform yang menghitung apakah jumlahnya disesuaikan. Ditampilkan sebagai *Penyesuaian jumlah*. |
@@ -148,16 +148,16 @@ Penanda kejujuran. Datanya **SIMULASI**: grid perencanaan membawa pil *"Sampel �
 <!-- section:history -->
 ## 7 · Riwayat status
 
-Setiap dispatch menulis satu `TransitionEvent`: `event` = id transisi, `actor` = `buyer:all` untuk setiap kursi pembeli (kursinya, bukan orang), `ts`, `outcome`, satu `correlationId` per perintah, `subject` = {`entity`: `intakeLine`, `entityId`: id baris, `from`, `to`}, dan pada kaskade sebuah `causationId` yang menunjuk perintah penyebabnya. Ketiga verba asupan adalah tindakan pengguna, sehingga peristiwanya juga membawa `attribution` dari sesi — hari ini tanpa atribusi kecuali identitas contoh dipilih. Penyesuaian jumlah dicatat sebagai `decision` pada peristiwa `t_pr_create` hasil kaskade, bukan pada peristiwa komit. Perintah yang ditolak juga dicatat, beserta alasannya. Lahir dalam Pending tidak menulis peristiwa: produsen memancarkan baris dan belum ada yang bertindak.
+Setiap dispatch menulis satu `TransitionEvent`: `event` = id transisi, `actor` = `buyer:all` untuk setiap kursi pembeli (kursinya, bukan orang), `ts`, `outcome`, satu `correlationId` per perintah, `subject` = {`entity`: `intakeLine`, `entityId`: id baris, `from`, `to`}, dan pada kaskade sebuah `causationId` yang menunjuk perintah penyebabnya. Ketiga verba usulan adalah tindakan pengguna, sehingga peristiwanya juga membawa `attribution` dari sesi — hari ini tanpa atribusi kecuali identitas contoh dipilih. Penyesuaian jumlah dicatat sebagai `decision` pada peristiwa `t_pr_create` hasil kaskade, bukan pada peristiwa komit. Perintah yang ditolak juga dicatat, beserta alasannya. Lahir dalam Pending tidak menulis peristiwa: produsen memancarkan baris dan belum ada yang bertindak.
 
-Urutan kerja untuk `pil-somo-002` sebagaimana dihasilkan penguji di `/buyer/plan-grid` → *Tinjauan asupan*:
+Urutan kerja untuk `pil-somo-002` sebagaimana dihasilkan penguji di `/buyer/plan-grid` → *Tinjauan usulan*:
 
 | Waktu | Dari → ke | Aktor (peran) | Pemicu | Peristiwa |
 |---|---|---|---|---|
 | T+0 | ∅ → Pending | — (dipancarkan SOMO) | seed — tanpa peristiwa | — |
-| T+1 | Pending → Dismissed | planning (`buyer:all`) | **Abaikan** di tampilan *Tinjauan asupan* | `t_intake_dismiss` |
-| T+2 | Dismissed → Pending | planning (`buyer:all`) | **Pulihkan** di tampilan *Tinjauan asupan* | `t_intake_restore` |
-| T+3 | Pending → Committed | planning (`buyer:all`) | tampilan *Tinjauan asupan* grid perencanaan → **Sesuaikan** → *Diterima* 4000, sebuah alasan → **Kirim ke PR** | `t_intake_commit` |
+| T+1 | Pending → Dismissed | planning (`buyer:all`) | **Abaikan** di tampilan *Tinjauan usulan* | `t_intake_dismiss` |
+| T+2 | Dismissed → Pending | planning (`buyer:all`) | **Pulihkan** di tampilan *Tinjauan usulan* | `t_intake_restore` |
+| T+3 | Pending → Committed | planning (`buyer:all`) | tampilan *Tinjauan usulan* grid perencanaan → **Sesuaikan** → *Diterima* 4000, sebuah alasan → **Kirim ke PR** | `t_intake_commit` |
 | T+3 | ∅ → Draft (permintaan pembelian) | automation (`buyer:all`), `causationId` = `correlationId` komit | kaskade; `decision` dari 4500 ke 4000 beserta alasannya | `t_pr_create` |
 
 Penguji yang menekan **Kirim ke PR** lagi di T+4 akan mendapati tombolnya nonaktif; komit kedua yang dibuat tangan dicatat sebagai `t_intake_commit` yang gagal dengan `ILLEGAL_TRANSITION`.
@@ -168,7 +168,7 @@ Penguji yang menekan **Kirim ke PR** lagi di T+4 akan mendapati tombolnya nonakt
 
 | Gejala | Cara mengenali | Kemungkinan penyebab | Penyelesaian |
 |---|---|---|---|
-| Tidak ada **Terima sesuai kiriman** / **Abaikan** / **Pulihkan**; kepala menampilkan *"Menunggu Perencanaan"* | notis serah-terima di kepala tampilan *Tinjauan asupan* (juga di kaki laci dan panel perubahan terencana) | kursi tidak memegang `intake:triage` — sejak PLN-3 kursi yang hanya pemohon tidak lagi memegangnya (R1) | bertindak dari kursi yang memegang jalur perencanaan (mis. pilih orang contoh perencanaan di panel identitas) |
+| Tidak ada **Terima sesuai kiriman** / **Abaikan** / **Pulihkan**; kepala menampilkan *"Menunggu Perencanaan"* | notis serah-terima di kepala tampilan *Tinjauan usulan* (juga di kaki laci dan panel perubahan terencana) | kursi tidak memegang `intake:triage` — sejak PLN-3 kursi yang hanya pemohon tidak lagi memegangnya (R1) | bertindak dari kursi yang memegang jalur perencanaan (mis. pilih orang contoh perencanaan di panel identitas) |
 | Ditolak dengan menyebut `intake:triage` | `ROLE_NOT_PERMITTED:intake:triage` | dispatch buatan tangan dari kursi tanpa jalur perencanaan — permukaan menyembunyikan tombolnya | bertindak dari kursi perencanaan |
 | *"Dinonaktifkan — Perencanaan"* menggantikan tombol; dispatch ditolak dengan menyebut `PLN` | `MODULE_INACTIVE:PLN` | modul Perencanaan dinonaktifkan; halaman tetap dapat dibaca | aktifkan kembali modulnya (`/buyer/platform/modules/admin`); tidak ada hal lain yang membantu, apa pun perannya |
 | **Kirim ke PR** tetap nonaktif dengan *"Alasan diperlukan untuk mengirim override"* | kotak *Alasan* di bawah *Diterima* kosong | jumlah yang diterima berbeda dari yang dikirim produsen | tulis alasannya, atau kembalikan jumlah yang dikirim |
@@ -178,11 +178,11 @@ Penguji yang menekan **Kirim ke PR** lagi di T+4 akan mendapati tombolnya nonakt
 | Ditolak dengan menyebut `intake_override_reasoned` | `POLICY_REJECTED:intake_override_reasoned` | jumlah yang diubah tanpa alasan, dikirim memutari permukaan | sertakan alasannya |
 | *"Tidak dikirim — alasan wajib…"* di panel perubahan terencana | baris tetap *Direncanakan* | perubahan grid berbeda dari jumlah yang dikirim dan *Alasan*-nya kosong — tidak ada yang dikirim | isi alasannya, lalu kirim lagi |
 | *"Tidak terkirim — {material} sudah dikomit untuk {periode}, yang tumpang tindih dengan {minggu atau bulan} — …"* di panel perubahan terencana | `POLICY_REJECTED:intake_one_grain` (jejak pengembang menyebut baris yang dikomit) | material dan periode yang sama sudah dikomit pada grain lain (PLN-2) | tidak ada yang perlu dikirim: kebutuhannya sudah punya permintaan. Bila harus berubah, revisi permintaan itu |
-| Ditolak sebagai *"tidak berada dalam status yang memungkinkan tindakan ini"* | `ILLEGAL_TRANSITION:Committed->Committed` atau `Dismissed->Committed` | baris sudah dikomit, atau baris yang diabaikan dikirim dari laci grid perencanaan | tidak ada yang perlu dilakukan untuk baris yang dikomit; pulihkan baris yang diabaikan di tampilan *Tinjauan asupan* lebih dulu |
-| Sel tab perencanaan berbunyi *Diabaikan* dan tidak terbuka untuk disunting | judul sel menyebut baris itu disisihkan di Tinjauan asupan | baris asupannya diabaikan — di antrean, oleh siapa pun | pulihkan baris itu di tampilan *Tinjauan asupan* (*Tampilkan: Diabaikan*), lalu rencanakan |
+| Ditolak sebagai *"tidak berada dalam status yang memungkinkan tindakan ini"* | `ILLEGAL_TRANSITION:Committed->Committed` atau `Dismissed->Committed` | baris sudah dikomit, atau baris yang diabaikan dikirim dari laci grid perencanaan | tidak ada yang perlu dilakukan untuk baris yang dikomit; pulihkan baris yang diabaikan di tampilan *Tinjauan usulan* lebih dulu |
+| Sel tab perencanaan berbunyi *Diabaikan* dan tidak terbuka untuk disunting | judul sel menyebut baris itu disisihkan di Tinjauan usulan | baris usulannya diabaikan — di antrean, oleh siapa pun | pulihkan baris itu di tampilan *Tinjauan usulan* (*Tampilkan: Diabaikan*), lalu rencanakan |
 | *"Dikomit — permintaannya tidak ada di penyimpanan sesi ini"* | baris Committed tetapi tidak menampilkan nomor PR | halaman dimuat ulang: triase tersimpan, permintaan dalam memori di-seed ulang | wajar dalam demo; permintaannya sudah dibuat, sesi ini tidak lagi menyimpannya |
 | Perubahan grid terencana hilang | panel perubahan terencana tidak ada | muat ulang menghapus setiap perubahan yang belum dikirim | masukkan lagi lalu kirim |
-| *"Ditolak: NOT_FOUND"* / *"Ditolak: SCOPE_DENIED"* | dilempar sebelum aturan apa pun berjalan | id baris tidak menyebut apa pun yang dipancarkan produsen, atau kursi pemasok mencapai verba | baris asupan bersifat internal pembeli; gunakan baris yang terdaftar |
+| *"Ditolak: NOT_FOUND"* / *"Ditolak: SCOPE_DENIED"* | dilempar sebelum aturan apa pun berjalan | id baris tidak menyebut apa pun yang dipancarkan produsen, atau kursi pemasok mencapai verba | baris usulan bersifat internal pembeli; gunakan baris yang terdaftar |
 <!-- src: src/services/transitions/refusals.ts:61-114; src/services/transitions/dispatcher.ts:612-637; src/services/transitions/dispatcher.ts:735-737; src/services/transitions/dispatcher.ts:798; src/services/transitions/policies.ts:1777-1894; src/services/data/mock/MockCommandService.ts:2597-2609; src/pages-v2/plan-grid/IntakeReviewView.tsx; src/services/data/mock/intakeLines.ts; src/pages-v2/plan-grid/PlannedChangesPanel.tsx; src/pages-v2/plan-grid/IntakeAdjustDrawer.tsx:58-62; src/pages-v2/plan-grid/IntakeAdjustDrawer.tsx:309-318; src/lib/glossary/refusals.glossary.ts:47-50; src/lib/i18n/planGrid.ts:341; src/lib/i18n/planGrid.ts:346-356; src/lib/i18n/planGrid.ts:454; src/lib/i18n/planGrid.ts:484; src/lib/i18n/modules.ts:225-226; src/router/AppRouter.tsx:167 -->
 
 <!-- section:testdata -->
@@ -191,8 +191,8 @@ Penguji yang menekan **Kirim ke PR** lagi di T+4 akan mendapati tombolnya nonakt
 | Status | Id fixture | Nomor | Catatan |
 |---|---|---|---|
 | Pending | `pil-somo-001`; `pil-somo-002`; `pil-grid-001`; `pil-grid-002` | — | setiap baris dibuka dalam Pending karena store triase dimulai kosong. SOMO · Glycerin USP (Halal) 12.000 KG dikirim sesuai saran; SOMO · Niacinamide USP 5.000 disarankan / 4.500 KG dikirim (dipangkas produsen); Grid Internal · PET Bottle 200ml 200.000 PCS sesuai saran; Grid Internal · Folding Carton 80.000 disarankan / 90.000 PCS dikirim, satu-satunya baris berperiode minggu (2026-W36) |
-| Dismissed | — | — | tidak ada fixture — tekan **Abaikan** pada baris yang menunggu mana pun di `/buyer/plan-grid` → *Tinjauan asupan* |
-| Committed | — | — | tidak ada fixture — tekan **Terima sesuai kiriman** di tampilan *Tinjauan asupan*, atau **Kirim ke PR** di lacinya; kaskade membuat permintaan Draft dengan nomor yang ditetapkan store dalam rentang PR-2026-9xx |
+| Dismissed | — | — | tidak ada fixture — tekan **Abaikan** pada baris yang menunggu mana pun di `/buyer/plan-grid` → *Tinjauan usulan* |
+| Committed | — | — | tidak ada fixture — tekan **Terima sesuai kiriman** di tampilan *Tinjauan usulan*, atau **Kirim ke PR** di lacinya; kaskade membuat permintaan Draft dengan nomor yang ditetapkan store dalam rentang PR-2026-9xx |
 
-Semua baris adalah data sampel SIMULASI. Tab perencanaan Bahan baku dan Kemasan juga memuat baris SOMO hasil generasi yang id-nya dibentuk dari kode material dan periode; baris-baris itu tidak dienumerasi di fixture mana pun, tetapi setiap baris terdaftar di tampilan *Tinjauan asupan* (cari dengan kode, mis. `SIM-PM-0068`) dan dapat diabaikan, dipulihkan, atau dikomit di sana. Id baris tidak punya nomor dokumen. Triase disimpan di peramban, jadi hapus entri `paragon.intakeTriage` untuk mengembalikan setiap baris ke Pending.
+Semua baris adalah data sampel SIMULASI. Tab perencanaan Bahan baku dan Kemasan juga memuat baris SOMO hasil generasi yang id-nya dibentuk dari kode material dan periode; baris-baris itu tidak dienumerasi di fixture mana pun, tetapi setiap baris terdaftar di tampilan *Tinjauan usulan* (cari dengan kode, mis. `SIM-PM-0068`) dan dapat diabaikan, dipulihkan, atau dikomit di sana. Id baris tidak punya nomor dokumen. Triase disimpan di peramban, jadi hapus entri `paragon.intakeTriage` untuk mengembalikan setiap baris ke Pending.
 <!-- src: src/services/data/mock/fixtures/prIntake.ts:43-102; src/services/data/mock/stores/intakeLineStore.ts:64; src/services/data/mock/stores/intakeLineStore.ts:249-260; src/services/data/mock/MockProcurementService.ts:546-570; src/services/planning/somoIntake.ts:21-27; src/services/planning/somoIntake.ts:90-115; src/services/data/mock/stores/purchaseRequisitionStore.ts:41-45 -->

@@ -311,7 +311,7 @@ export const requisitionsId: Record<string, string> = {
   // — PLN-4 · R3 —
   'requisitions.table.col.bucket': 'Periode',
   'requisitions.table.col.origin': 'Asal',
-  'requisitions.origin.intake': 'Baris asupan',
+  'requisitions.origin.intake': 'Baris usulan',
   'requisitions.origin.manual': 'Manual',
   'requisitions.setInSap': 'Diisi di SAP',
   'requisitions.requestorRole': 'Jalur {{role}}',
@@ -397,7 +397,7 @@ export const requisitionsId: Record<string, string> = {
   'requisitions.panel.field.periodBucket': 'Ember perencanaan',
   'requisitions.panel.periodBucket.note':
     'Satuan perencanaan — bulan atau minggu ISO, bukan tanggal wajib.',
-  'requisitions.panel.field.intakeLine': 'Dari baris asupan',
+  'requisitions.panel.field.intakeLine': 'Dari baris usulan',
   'requisitions.panel.field.decision': 'Penyesuaian jumlah',
   'requisitions.panel.decision.baseline':
     'Diukur dari jumlah yang dikirim produsen — perubahan perencana sendiri.',

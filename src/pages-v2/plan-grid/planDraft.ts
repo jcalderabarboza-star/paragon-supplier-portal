@@ -33,11 +33,18 @@
 //  · No reason is owed: the split IS the planner's act, with no producer
 //    baseline to depart from (the registry's edit spec says so).
 //
-// ⚠️ SE-14, NOT HERE: the fill handle, range delete and the engine's undo. A
-// fill is a batch of `GridEditRequest`s with origin FILL (§5.4) and needs range
-// selection the installed engine does not give; a range delete must refuse
-// `acceptedQty` ("a blank is not a quantity"); undo before push is removing the
-// entry, which the remove control already does.
+// ⚠️ SE-14, NOT HERE: the fill handle. A fill is a batch of `GridEditRequest`s
+// with origin FILL (§5.4) and needs range selection the installed engine does
+// not give.
+//
+// ── PLN-5 · DELETE AND UNDO ACT ON THE OVERLAY, NEVER ON THE SEAM ────────────
+// Delete over a selection REMOVES the planned changes in it (`removeEntries`) —
+// it never blanks a seam figure ("a blank is not a quantity"), and a selection
+// with nothing planned in it is said to have nothing to delete. Ctrl+Z undoes
+// the last change TO THE OVERLAY (an edit, a paste, a delete or a remove —
+// `diffEntries` records one step per act, `applyUndo` takes it back), and only
+// where that change still stands: a row since pushed, re-typed or reconciled
+// is past undoing, and is left alone rather than rolled back over.
 // ────────────────────────────────────────────────────────────────────────────
 
 import { normalizeQty, type NumberConvention, type QtyRefusalReason } from '../../lib/localeNumber';
@@ -576,3 +583,69 @@ export type PasteRoute = 'grid' | 'field';
  */
 export const routePaste = (text: string, editorOpen: boolean): PasteRoute =>
   editorOpen && !isMultiCell(text) ? 'field' : 'grid';
+
+// ─── PLN-5 · delete and undo, on the overlay only ───────────────────────────
+
+/**
+ * Remove the PLANNED changes among `seamRefs` — Delete over a selection. A ref
+ * with no entry, or one already PUSHING (it is the dispatcher's now), is left;
+ * `removed` says how many went, so "nothing planned here" is said, not implied.
+ */
+export function removeEntries(draft: PlanDraft, seamRefs: readonly string[]): { draft: PlanDraft; removed: number } {
+  const entries = new Map(draft.entries);
+  let removed = 0;
+  for (const ref of new Set(seamRefs)) {
+    if (entries.get(ref)?.planState !== 'PLANNED') continue;
+    entries.delete(ref);
+    removed++;
+  }
+  return removed === 0 ? { draft, removed } : { draft: { entries, refusals: draft.refusals }, removed };
+}
+
+/** One act's change to the overlay: each touched row, before and after. */
+export interface UndoStep {
+  readonly changes: readonly { readonly seamRef: string; readonly before?: PlanDraftEntry; readonly after?: PlanDraftEntry }[];
+}
+
+/**
+ * The overlay rows an act changed — the step Ctrl+Z takes back — or null when
+ * it changed none (a refused edit, a re-entry of the same value). Refusals are
+ * not recorded: they are reports about an act, not planned changes.
+ */
+export function diffEntries(before: PlanDraft, after: PlanDraft): UndoStep | null {
+  if (before.entries === after.entries) return null;
+  const changes: { seamRef: string; before?: PlanDraftEntry; after?: PlanDraftEntry }[] = [];
+  for (const ref of new Set([...before.entries.keys(), ...after.entries.keys()])) {
+    const b = before.entries.get(ref);
+    const a = after.entries.get(ref);
+    if (b === a) continue;
+    if (b && a && b.raw === a.raw && b.value === a.value && b.planState === a.planState) continue;
+    changes.push({ seamRef: ref, ...(b ? { before: b } : {}), ...(a ? { after: a } : {}) });
+  }
+  return changes.length === 0 ? null : { changes };
+}
+
+/** Does the overlay still hold what the step left there — the same figure, still PLANNED? */
+const stillStands = (cur: PlanDraftEntry | undefined, after: PlanDraftEntry | undefined): boolean =>
+  after === undefined
+    ? cur === undefined
+    : cur !== undefined && cur.planState === 'PLANNED' && cur.raw === after.raw && cur.value === after.value;
+
+/**
+ * Take one step back. A row is restored only where the step's result still
+ * stands; anything since pushed, re-typed or cleared by the seam is past undoing
+ * and is left as it is. A reason written AFTER the act is kept on the restored
+ * row — it is the planner's later work, not part of the act being undone.
+ */
+export function applyUndo(draft: PlanDraft, step: UndoStep): { draft: PlanDraft; restored: number } {
+  const entries = new Map(draft.entries);
+  let restored = 0;
+  for (const c of step.changes) {
+    const cur = entries.get(c.seamRef);
+    if (!stillStands(cur, c.after)) continue;
+    if (c.before === undefined) entries.delete(c.seamRef);
+    else entries.set(c.seamRef, cur ? { ...c.before, reason: cur.reason } : c.before);
+    restored++;
+  }
+  return restored === 0 ? { draft, restored } : { draft: { entries, refusals: draft.refusals }, restored };
+}

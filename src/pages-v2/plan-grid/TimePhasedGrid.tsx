@@ -31,16 +31,35 @@
 // OPEN DRAFT publication (`editAnchor`); its edit is measured against SOMO's
 // total at the cell and pushes as `t_publication_allocate`. The publication
 // panel (plain DOM) sits above the grid on the plan views.
+//
+// ── PLN-5 · ERGONOMICS (R-PLN P1, the last Planning batch) ─────────────────
+//  · THE GRID IS ABOVE THE FOLD AND IS THE ONE SCROLLER. The chrome above it is
+//    summarised (`CompactNotice`, the publication panel folds to one line), and
+//    the grid's height is FITTED to what is left of the viewport (`useFitHeight`)
+//    so the page does not scroll to work the plan — the rows scroll inside the
+//    grid, one scrollbar rather than two.
+//  · KEYBOARD TRUTH (`keyRef`, capture phase, before the engine's own handler):
+//    an editor opened by typing or Enter is in ENTER mode — ←/→ commit it and
+//    move, exactly as a spreadsheet does, so "Enter, →, type" can never write
+//    into the cell just left; F2 or a click opens CARET mode, where ←/→ move the
+//    caret. Typing into a read-only or committed cell is REFUSED WITH ITS REASON
+//    at the cell and on the key line, never swallowed. Delete and Ctrl+Z act on
+//    PLANNED changes only (`removeMany` / `undo`); a seam figure is never blanked.
+//    Ctrl+C copies what the cells DISPLAY (the planned value where one is
+//    planned) as TSV, through the engine's own copy (`copyValue`).
+//  · The material label is never truncated: the code is stated ONCE, on the
+//    block's first row, and the measure is a sub-label (`PlanRowLabel`).
 // ────────────────────────────────────────────────────────────────────────────
 
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { Sigma } from 'lucide-react';
 import { DataSheetGrid, type CellProps, type Column, type DataSheetGridRef } from 'react-datasheet-grid';
 import 'react-datasheet-grid/dist/style.css';
 import './planGrid.css';
 import { useTranslation } from 'react-i18next';
 import Data from '../../components/ui-v2/Data';
-import ModelMarker from '../../components/ui-v2/ModelMarker';
 import LivenessPill from '../../components/ui-v2/LivenessPill';
+import CompactNotice from './CompactNotice';
 import { formatNumber } from '../../lib/format';
 import { usePlanningFacts } from '../../services/query/planningHooks';
 import { useConsolidationRows, usePublicationWorkspace } from '../../services/query/sdcBuyerHooks';
@@ -55,7 +74,10 @@ import { visibleMeasures } from './visibleMeasures';
 import { usePlanDraft } from './PlanDraftProvider';
 import { PlannedChangesBar, PlannedChangesDetails, cellRefusalText } from './PlannedChangesPanel';
 import PublicationPanel, { draftOfGrain } from './PublicationPanel';
-import { cellKey, magnitudeFlag, routePaste, type CellRefusal, type EditContext, type PlanDraftEntry } from './planDraft';
+import { EMPTY_DRAFT, applyEdit, cellKey, magnitudeFlag, routePaste, type CellRefusal, type EditContext, type PlanDraftEntry } from './planDraft';
+import { useFitHeight } from './useFitHeight';
+import { useGridRoles } from './useGridRoles';
+import { copyText, decideKey, type EditMode } from './gridKeys';
 import {
   DEFAULT_PLAN_FILTER,
   DEFAULT_PLAN_SORT,
@@ -64,6 +86,7 @@ import {
   buildPlanBlocks,
   flattenPlanRows,
   isEditableCell,
+  exceptionReasons,
   isPlanException,
   planCellText,
   staleKey,
@@ -76,18 +99,42 @@ import {
 
 const ROW_H = 30;
 // PLN-2 · fits the longest planning-master supplier name on one line (measured in the browser).
+// PLN-5 · and the longest material label, now that the label has the gutter's width to itself.
 const GUTTER_W = 420;
+/** PLN-5 · the grid's height when nothing can be measured (jsdom), and its floor in a short window. */
 const GRID_H = 560;
+const GRID_MIN_H = 300;
+/** PLN-5 · the horizon totals: four figures and the exception reason, each labelled. */
+const AGG_W = 400;
 
 // PLN-2 · the supplier's NAME, from the planning supplier master — never its id.
 const supplierLabel = planningSupplierName;
 
 /**
+ * PLN-5 · THE Σ ON A MODELED FIGURE — a small glyph BEFORE the figure in a slot
+ * of its own, so it can never overlap the number. The word ("Modeled") is the
+ * glyph's accessible name and its title explains it. Exported for the row
+ * label, which marks a modeled MEASURE even where every cell is a dash.
+ */
+export const ModeledMark: React.FC = () => {
+  const { t } = useTranslation();
+  return (
+    <span className="inline-flex w-3 shrink-0 justify-center text-text-tertiary" title={t('planGrid.tp.modeledTitle')} data-testid="tp-modeled">
+      <Sigma size={10} aria-hidden="true" />
+      <span className="sr-only">{t('planGrid.tp.modeled')}</span>
+    </span>
+  );
+};
+
+/**
  * ONE bucket cell. Exported so the null rule and the marker rule are testable
  * without the virtualised engine (which lays out no rows under jsdom).
  *
- * ⚠️ A DERIVED CELL CARRIES ITS MARKER EVEN WHEN IT IS EMPTY: "the portal would
- * compute this, and has nothing to compute from" is still a computed cell.
+ * ⚠️ PLN-5 · REVERSED BY RULING: A DERIVED CELL CARRIES ITS Σ ONLY ON A FIGURE.
+ * It carried a "MODELED" pill even when empty, which put the word on every dash
+ * and zero of a shortfall row and over the figures beside it. The ROW now says
+ * the measure is modeled (`PlanRowLabel`), so a dash or a zero there is still
+ * read as computed; the cell marks only a figure the model actually produced.
  */
 export const PlanBucketCell: React.FC<{
   value: number | null | undefined;
@@ -100,7 +147,9 @@ export const PlanBucketCell: React.FC<{
   committed?: boolean;
   /** PLN-3 · the cell's intake line was DISMISSED in the intake view. */
   dismissed?: boolean;
-}> = ({ value, derived, planned, refusal, committed, dismissed }) => {
+  /** PLN-5 · a SHORTFALL figure: above zero it is the variance, coloured as such. */
+  shortfall?: boolean;
+}> = ({ value, derived, planned, refusal, committed, dismissed, shortfall }) => {
   const { t } = useTranslation();
   // ⚠️ THE OVERLAY IS SHOWN, NEVER MERGED: the seam value stays in the row and
   // the planned one is read from the draft by seamRef, marked as PLANNED.
@@ -112,6 +161,9 @@ export const PlanBucketCell: React.FC<{
     ? t('planGrid.edit.reading', { raw: planned.raw, value: formatNumber(planned.value), uom: planned.uom })
     : '';
   const flagged = planned ? magnitudeFlag(planned) && planned.magnitudeConfirmed !== true : false;
+  const shown = planned ? planned.value : value;
+  const modeled = derived && typeof shown === 'number' && shown !== 0;
+  const short = shortfall === true && typeof shown === 'number' && shown > 0;
   return (
     <div
       className={`flex w-full items-center justify-end gap-1 px-2 ${planned ? 'bg-info-soft' : ''} ${refusal ? 'ring-1 ring-inset ring-danger/60' : flagged ? 'ring-1 ring-inset ring-warning' : ''}`}
@@ -132,9 +184,7 @@ export const PlanBucketCell: React.FC<{
           ×?
         </span>
       )}
-      {derived && (
-        <ModelMarker label={t('planGrid.tp.modeled')} title={t('planGrid.tp.modeledTitle')} />
-      )}
+      {modeled && <ModeledMark />}
       {refusal && (
         <span className="text-[10px] font-semibold text-danger" data-testid="tp-cell-refusal" aria-label={refusalText}>
           !
@@ -166,7 +216,9 @@ export const PlanBucketCell: React.FC<{
       {text === '—' ? (
         <span className="text-xs text-text-tertiary">{text}</span>
       ) : (
-        <Data className="text-xs">{text}</Data>
+        <Data className={`text-xs ${short ? 'font-semibold !text-danger' : ''}`} data-testid={short ? 'tp-cell-short' : undefined}>
+          {text}
+        </Data>
       )}
     </div>
   );
@@ -184,6 +236,8 @@ const ReadOnlyBucketCell: React.FC<{ row: PlanRow; bucket: string; derived: bool
       committed={row.committedCells?.[bucket]}
       // PLN-3 · and a dismissed one says it was set aside.
       dismissed={row.dismissedCells?.[bucket]}
+      // PLN-5 · the shortfall row's figures are the variance.
+      shortfall={row.measureId === 'confirmedDeficit'}
     />
   );
 };
@@ -266,36 +320,76 @@ const EditableBucketCell: React.FC<{
 /**
  * The row's key-column label — exported so it is tested directly (the
  * virtualised body lays out no rows under jsdom; `PlanBucketCell`'s precedent).
+ *
+ * ⚠️ PLN-5 · THE LABEL IS NEVER TRUNCATED, AND THE CODE IS SAID ONCE. Every row
+ * carried the code, the unit and "measure — label" on one `truncate`d line, so a
+ * long label ("Mono-Carton Box 70x40x180mm — Wardah Moisturizing Lotion") lost
+ * its end on every row of its block. The block's FIRST row now states the label
+ * on a line of its own with the code, unit and measure under it; every other
+ * row states only what tells it apart — its measure (and its supplier).
  */
 export const PlanRowLabel: React.FC<{ row: PlanRow }> = ({ row }) => {
   const { t } = useTranslation();
+  const spec = measureOf(row.measureId);
+  const measure = t(spec.labelKey);
+  const modeled = spec.derivation === 'derived' ? <ModeledMark /> : null;
+  const supplier = row.supplierId ? supplierLabel(row.supplierId) : null;
+  if (row.blockHead) {
+    return (
+      <div className="flex w-full min-w-0 flex-col justify-center px-2 leading-[13px]" data-testid="tp-row-label" data-head="true">
+        <span className="whitespace-nowrap text-xs font-medium text-text-primary" data-testid="tp-material-label">
+          {row.materialLabel}
+        </span>
+        <span className="flex items-center gap-1 whitespace-nowrap text-[11px] text-text-tertiary">
+          <Data className="text-[11px] font-semibold">{row.materialCode}</Data>
+          <span>· {row.uom} ·</span>
+          <span data-testid="tp-measure">{measure}</span>
+          {modeled}
+          {supplier && <span data-testid="tp-supplier-name">· {supplier}</span>}
+        </span>
+      </div>
+    );
+  }
+  if (supplier) {
+    return (
+      <span
+        className="flex w-full min-w-0 flex-col justify-center pl-5 pr-2 leading-[13px] text-text-secondary"
+        data-testid="tp-supplier-row-label"
+        title={t('planGrid.tp.supplierRow', { measure, supplier })}
+      >
+        <span className="flex items-center gap-1 text-[11px] text-text-tertiary">
+          <span data-testid="tp-measure">{measure}</span>
+          {modeled}
+        </span>
+        <span className="whitespace-nowrap text-xs" data-testid="tp-supplier-name">
+          {supplier}
+        </span>
+      </span>
+    );
+  }
   return (
-    <div className="flex w-full min-w-0 items-center gap-2 px-2 text-xs">
-      <Data className={`w-28 shrink-0 ${row.blockHead ? 'font-semibold' : 'text-text-tertiary'}`}>
-        {row.materialCode}
-      </Data>
-      <span className="w-10 shrink-0 text-text-tertiary">{row.uom}</span>
-      {row.supplierId ? (
-        <span
-          className="flex min-w-0 flex-col leading-[13px] text-text-secondary"
-          data-testid="tp-supplier-row-label"
-          title={t('planGrid.tp.supplierRow', {
-            measure: t(measureOf(row.measureId).labelKey),
-            supplier: supplierLabel(row.supplierId),
-          })}
-        >
-          <span className="text-[11px] text-text-tertiary">{t(measureOf(row.measureId).labelKey)}</span>
-          <span className="whitespace-nowrap" data-testid="tp-supplier-name">
-            {supplierLabel(row.supplierId)}
-          </span>
-        </span>
-      ) : (
-        <span className="min-w-0 truncate text-text-secondary" title={row.materialLabel}>
-          {`${t(measureOf(row.measureId).labelKey)} — ${row.materialLabel}`}
-        </span>
-      )}
+    <div className="flex w-full min-w-0 items-center gap-1 pl-5 pr-2 text-xs text-text-secondary" data-testid="tp-row-label">
+      <span className="whitespace-nowrap" data-testid="tp-measure">{measure}</span>
+      {modeled}
     </div>
   );
+};
+
+/** PLN-5 · what the last keystroke did, said on the key line (role=status). */
+type KeyNote =
+  | { readonly kind: 'refused'; readonly refusal: CellRefusal }
+  | { readonly kind: 'deleted'; readonly n: number }
+  | { readonly kind: 'nothingToDelete' }
+  | { readonly kind: 'undone'; readonly n: number }
+  | { readonly kind: 'nothingToUndo' }
+  | { readonly kind: 'copied'; readonly n: number };
+
+/** PLN-5 · is focus in a text field OUTSIDE the grid (search, a reason box)? Then keys are that field's. */
+const typingElsewhere = (wrap: HTMLElement | null): boolean => {
+  const el = document.activeElement;
+  if (!(el instanceof HTMLElement)) return false;
+  const field = el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement || el instanceof HTMLSelectElement || el.isContentEditable;
+  return field && !(wrap?.contains(el) ?? false);
 };
 
 const TimePhasedGrid: React.FC<{
@@ -315,6 +409,13 @@ const TimePhasedGrid: React.FC<{
   const wrapRef = useRef<HTMLDivElement>(null);
   const [selection, setSelection] = useState<{ r0: number; r1: number; c0: number; c1: number } | null>(null);
   const [pasteNote, setPasteNote] = useState<{ planned: number; refused: number; outside: number } | null>(null);
+  const [keyNote, setKeyNote] = useState<KeyNote | null>(null);
+  /** PLN-5 · how the open editor was opened: typing/Enter → ENTER mode (←/→ move), F2/click → CARET mode. */
+  const editModeRef = useRef<EditMode>('enter');
+  const viewRef = useRef<HTMLDivElement>(null);
+  const hasDraft = draftApi !== null;
+  const draftRef = useRef(draftApi);
+  draftRef.current = draftApi;
   const consolidation = useConsolidationRows();
   // B4b · the open draft of this grain — SOMO's totals an allocation is measured against.
   const workspace = usePublicationWorkspace();
@@ -336,8 +437,13 @@ const TimePhasedGrid: React.FC<{
   const changesRef = useRef<HTMLDivElement>(null);
   const [sort, setSort] = useState<PlanSort>(DEFAULT_PLAN_SORT);
   // PLN-1 · a paste note describes the rows it was made against; a new filter
-  // or order is a different set of rows, so the note goes.
-  useEffect(() => setPasteNote(null), [filter, sort]);
+  // or order is a different set of rows, so the note goes — and so does a key note.
+  useEffect(() => {
+    setPasteNote(null);
+    setKeyNote(null);
+  }, [filter, sort]);
+  // PLN-5 · the publication panel folds to one line; open, it is the panel it always was.
+  const [publicationOpen, setPublicationOpen] = useState(false);
 
   // PLN-1 · THE HINT NAMES WHAT IS EDITABLE BY ASKING THE REGISTRY. It said
   // "accepted quantity is the one figure you can change" after B4b made
@@ -404,17 +510,20 @@ const TimePhasedGrid: React.FC<{
   }, [seamIndex]);
 
   // B3 · the grid selection, as seam rows — what "Push selection" acts on.
-  const selectedRefs = useMemo(() => {
-    if (!selection) return [];
+  const refsIn = (sel: typeof selection): string[] => {
+    if (!sel) return [];
     const out: string[] = [];
-    for (let r = selection.r0; r <= selection.r1; r++) {
-      for (let c = selection.c0; c <= selection.c1; c++) {
+    for (let r = sel.r0; r <= sel.r1; r++) {
+      for (let c = sel.c0; c <= sel.c1; c++) {
         const ref = rows[r]?.seamRefs?.[horizon[c]];
         if (ref) out.push(ref);
       }
     }
     return out;
-  }, [selection, rows, horizon]);
+  };
+  const selectedRefs = useMemo(() => refsIn(selection), [selection, rows, horizon]);
+  const selectionRef = useRef(selection);
+  selectionRef.current = selection;
 
   // B3 · the paste, judged cell by cell. Intercepted in the CAPTURE phase so
   // the engine's own handler (which would skip a read-only cell in silence and
@@ -449,6 +558,91 @@ const TimePhasedGrid: React.FC<{
     return () => document.removeEventListener('paste', onPaste, true);
   }, []);
 
+  // ── PLN-5 · KEYBOARD TRUTH ────────────────────────────────────────────────
+  // Capture phase, so it decides before the engine's own document handler.
+  const keyRef = useRef<(e: KeyboardEvent) => void>(() => {});
+  keyRef.current = (e: KeyboardEvent) => {
+    const api = draftRef.current;
+    const wrap = wrapRef.current;
+    if (!api || !wrap || e.isComposing || typingElsewhere(wrap)) return;
+    const focused = document.activeElement;
+    const editorOpen = focused instanceof HTMLInputElement && wrap.contains(focused);
+    const active = gridRef.current?.activeCell;
+    const col = active ? horizon.indexOf((active.colId ?? '').replace(/^bucket:/, '')) : -1;
+    const row = active ? rows[active.row] : undefined;
+    const bucket = col >= 0 ? horizon[col] : undefined;
+    const action = decideKey(
+      { key: e.key, ctrl: e.ctrlKey, meta: e.metaKey, alt: e.altKey, shift: e.shiftKey },
+      { editorOpen, mode: editModeRef.current, editable: row !== undefined && bucket !== undefined && isEditableCell(row, bucket) },
+    );
+    if (action.kind === 'pass') return;
+    if (action.kind === 'mode') {
+      editModeRef.current = action.mode;
+      return; // the engine opens the editor; the key lands in it
+    }
+    if (action.kind === 'undo') {
+      // Ctrl+Z needs no active cell: it is about the overlay, not about a cell.
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      const n = api.undo();
+      setKeyNote(n > 0 ? { kind: 'undone', n } : { kind: 'nothingToUndo' });
+      return;
+    }
+    if (!active || !row || bucket === undefined) return;
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    if (action.kind === 'commitMove') {
+      const next = Math.max(0, Math.min(horizon.length - 1, col + action.dir));
+      // Leaving the cell is what commits it (the cell's own focus-out); the engine then sits on the next one.
+      gridRef.current?.setActiveCell({ col: `bucket:${horizon[next]}`, row: active.row });
+      return;
+    }
+    if (action.kind === 'delete') {
+      const sel = selectionRef.current ?? { r0: active.row, r1: active.row, c0: col, c1: col };
+      const n = api.removeMany(refsIn(sel));
+      setKeyNote(n > 0 ? { kind: 'deleted', n } : { kind: 'nothingToDelete' });
+      return;
+    }
+    // refuse — a read-only or committed cell. The reason is the overlay's own
+    // rule (`applyEdit`), asked directly: the provider's state lands on the next
+    // render, and the line must not wait for it.
+    editModeRef.current = 'enter';
+    const refusal = applyEdit(EMPTY_DRAFT, row, bucket, e.key, 'TYPED', api.convention, editContextRef.current).refusals.get(
+      cellKey(row.id, bucket),
+    );
+    api.edit(row, bucket, e.key, 'TYPED', editContextRef.current);
+    if (refusal) setKeyNote({ kind: 'refused', refusal });
+  };
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => keyRef.current(e);
+    document.addEventListener('keydown', onKey, true);
+    return () => document.removeEventListener('keydown', onKey, true);
+  }, []);
+  // A click opens an editor in CARET mode — the planner pointed into the text.
+  useEffect(() => {
+    const wrap = wrapRef.current;
+    if (!wrap) return;
+    const onDown = () => {
+      editModeRef.current = 'caret';
+    };
+    wrap.addEventListener('mousedown', onDown, true);
+    return () => wrap.removeEventListener('mousedown', onDown, true);
+  });
+  // Ctrl+C says what it copied (the engine's own copy writes the TSV — `copyValue`).
+  useEffect(() => {
+    const onCopy = () => {
+      const active = gridRef.current?.activeCell;
+      if (!active || typingElsewhere(wrapRef.current)) return;
+      const focused = document.activeElement;
+      if (focused instanceof HTMLInputElement && wrapRef.current?.contains(focused)) return;
+      const sel = selectionRef.current;
+      const n = sel ? (sel.r1 - sel.r0 + 1) * (sel.c1 - sel.c0 + 1) : 1;
+      setKeyNote({ kind: 'copied', n });
+    };
+    document.addEventListener('copy', onCopy, true);
+    return () => document.removeEventListener('copy', onCopy, true);
+  }, []);
+
   // The bucket columns are GENERATED (B1) — once per measure, so each cell reads
   // the governance of ITS measure's column (`b:<measure>:<bucket>`).
   const generated = useMemo(() => {
@@ -468,10 +662,14 @@ const TimePhasedGrid: React.FC<{
         title: <Data className="text-xs">{bucket}</Data>,
         // THE REGISTRY DECIDES: only a cell `isEditableCell` admits can enter
         // edit mode, and only while a draft exists to receive the edit.
-        disabled: ({ rowData }: { rowData: PlanRow }) => !draftApi || !isEditableCell(rowData, bucket),
+        disabled: ({ rowData }: { rowData: PlanRow }) => !hasDraft || !isEditableCell(rowData, bucket),
         minWidth: 112,
+        // PLN-5 · Ctrl+C copies what the cell DISPLAYS: the planned value where
+        // one is planned, else the seam's, formatted as shown; a dash is no
+        // value, so it copies as an empty cell rather than as "—".
+        copyValue: ({ rowData }: { rowData: PlanRow }) => copyText(rowData, bucket, draftRef.current?.draft.entries),
         component: ({ rowData, focus }: CellProps<PlanRow>) =>
-          draftApi && isEditableCell(rowData, bucket) ? (
+          hasDraft && isEditableCell(rowData, bucket) ? (
             <EditableBucketCell row={rowData} bucket={bucket} focus={focus} editContext={() => editContextRef.current} />
           ) : (
             <ReadOnlyBucketCell
@@ -485,7 +683,10 @@ const TimePhasedGrid: React.FC<{
             />
           ),
       })),
-    [horizon, generated, draftApi],
+    // ⚠️ PLN-5 · NOT `draftApi`: it is a new object on every overlay change, and a
+    // new column set re-mounts every cell — an editor open at that moment lost
+    // what was typed into it. The cells read the overlay from its context.
+    [horizon, generated, hasDraft],
   );
 
   const gutter = useMemo(
@@ -511,29 +712,50 @@ const TimePhasedGrid: React.FC<{
     [t],
   );
 
+  // PLN-5 · the horizon totals, each sub-column LABELLED in the header (they were
+  // four bare figures under one run-on title), and the exception's REASON beside
+  // them — short, awaiting or stale — so an exception row says why it is one.
   const aggregates = useMemo(
     () => ({
       title: (
-        <span className="flex items-center gap-1 px-2 text-xs">
-          {t('planGrid.tp.aggregates')}
-          <ModelMarker label={t('planGrid.tp.modeled')} title={t('planGrid.tp.modeledTitle')} />
-        </span>
+        <div className="grid w-full grid-cols-[1fr_1fr_1fr_1fr_76px] gap-1 px-2 text-right text-[10px] leading-[12px]" data-testid="tp-agg-header" title={t('planGrid.tp.aggregates')}>
+          <span>{t('planGrid.tp.agg.demand')}</span>
+          <span>{t('planGrid.tp.agg.confirmed')}</span>
+          <span className="inline-flex items-center justify-end gap-0.5">
+            <ModeledMark />
+            {t('planGrid.tp.agg.shortfall')}
+          </span>
+          <span>{t('planGrid.tp.agg.firstShort')}</span>
+          <span className="text-left">{t('planGrid.tp.agg.exception')}</span>
+        </div>
       ),
-      basis: 330,
-      minWidth: 330,
+      basis: AGG_W,
+      minWidth: AGG_W,
       grow: 0,
       shrink: 0,
       component: ({ rowData }: { rowData: PlanRow }) => {
         const b = rowData.blockHead ? blockOf.get(rowData.materialCode) : undefined;
         if (!b) return <span />;
+        const reasons = exceptionReasons(b.exceptions);
         return (
-          <div className="grid w-full grid-cols-4 gap-1 px-2 text-right text-xs" data-testid="tp-aggregates">
+          <div className="grid w-full grid-cols-[1fr_1fr_1fr_1fr_76px] items-center gap-1 px-2 text-right text-xs" data-testid="tp-aggregates">
             <Data>{planCellText(b.agg.demand, formatNumber)}</Data>
             <Data>{planCellText(b.agg.confirmed, formatNumber)}</Data>
-            <Data className={(b.agg.deficit ?? 0) > 0 ? 'text-danger' : ''}>
+            <Data className={(b.agg.deficit ?? 0) > 0 ? 'font-semibold !text-danger' : ''}>
               {planCellText(b.agg.deficit, formatNumber)}
             </Data>
             <Data>{b.agg.firstShortBucket ?? '—'}</Data>
+            <span className="truncate text-left text-[11px]" data-testid="tp-exception-reason" title={reasons.map((r) => t(`planGrid.tp.exc.${r}Title`)).join(' · ') || undefined}>
+              {reasons.length === 0 ? (
+                <span className="text-text-tertiary">—</span>
+              ) : (
+                reasons.map((r) => (
+                  <span key={r} className={`mr-1 ${r === 'short' ? 'font-semibold text-danger' : 'text-warning-hover'}`}>
+                    {t(`planGrid.tp.exc.${r}`)}
+                  </span>
+                ))
+              )}
+            </span>
           </div>
         );
       },
@@ -541,25 +763,45 @@ const TimePhasedGrid: React.FC<{
     [t, blockOf],
   );
 
-  return (
-    <div data-testid={`tp-view-${viewId}`} data-grain={grain}>
-      {/* SIMULATED while the SOMO fixture feeds it — said before any number. */}
-      <div className="mb-4 flex items-start justify-between gap-3 rounded-lg border border-warning/40 bg-warning-soft px-4 py-3 text-sm">
-        <div>
-          <div className="font-semibold text-warning-hover">{t('planGrid.tp.banner.title')}</div>
-          <p className="mt-0.5 text-text-secondary">{t('planGrid.tp.banner.body')}</p>
-        </div>
-        <LivenessPill capability="forecastPublications" />
-      </div>
+  // PLN-5 · the grid fills what the viewport has left below the chrome, so the
+  // page does not scroll to work the plan: the rows scroll inside the grid.
+  const gridH = useFitHeight(wrapRef, { fallback: GRID_H, min: GRID_MIN_H, reserveSelector: '[data-testid=plan-draft-bar]', scope: viewRef });
+  useGridRoles(wrapRef, { label: t(`planGrid.view.${viewId}`), rowCount: rows.length });
 
-      {viewId !== 'exceptions' && <PublicationPanel grain={grain} />}
+  const keyNoteText = (n: KeyNote): string => {
+    switch (n.kind) {
+      case 'refused':
+        return t('planGrid.edit.key.refused', { raw: n.refusal.raw, reason: cellRefusalText(t, n.refusal) });
+      case 'deleted':
+        return t('planGrid.edit.key.deleted', { count: n.n, n: formatNumber(n.n) });
+      case 'nothingToDelete':
+        return t('planGrid.edit.key.nothingToDelete');
+      case 'undone':
+        return t('planGrid.edit.key.undone', { count: n.n, n: formatNumber(n.n) });
+      case 'nothingToUndo':
+        return t('planGrid.edit.key.nothingToUndo');
+      case 'copied':
+        return t('planGrid.edit.key.copied', { count: n.n, n: formatNumber(n.n) });
+    }
+  };
+
+  return (
+    <div ref={viewRef} data-testid={`tp-view-${viewId}`} data-grain={grain}>
+      {/* SIMULATED while the SOMO fixture feeds it — said before any number, in
+          one line (PLN-5); the whole statement is one click away and in the DOM. */}
+      <CompactNotice
+        tone="warning"
+        title={t('planGrid.tp.banner.title')}
+        body={t('planGrid.tp.banner.body')}
+        aside={<LivenessPill capability="forecastPublications" />}
+        testId="tp-banner"
+      />
+
       {viewId !== 'exceptions' && (
-        <p className="mb-2 text-xs text-text-tertiary" data-testid="tp-edit-hint">
-          {t('planGrid.edit.hint', { measures: editableLabels })}
-        </p>
+        <PublicationPanel grain={grain} collapsible open={publicationOpen} onToggle={() => setPublicationOpen((o) => !o)} />
       )}
       {pasteNote && (
-        <p className="mb-2 text-xs text-text-secondary" data-testid="tp-paste-note">
+        <p className="mb-1.5 text-xs text-text-secondary" data-testid="tp-paste-note">
           {t('planGrid.edit.pasteNote', {
             planned: formatNumber(pasteNote.planned),
             refused: formatNumber(pasteNote.refused),
@@ -568,7 +810,7 @@ const TimePhasedGrid: React.FC<{
         </p>
       )}
 
-      <div className="mb-3 flex flex-wrap items-end gap-3 text-sm">
+      <div className="mb-1.5 flex flex-wrap items-end gap-3 text-sm">
         {materialType && (
           <div className="flex flex-col gap-1">
             <span className="text-label uppercase text-text-tertiary">{t('planGrid.tp.filter.type')}</span>
@@ -630,16 +872,35 @@ const TimePhasedGrid: React.FC<{
           />
           <span>{t('planGrid.tp.exceptions')}</span>
         </label>
+        <p className="ml-auto pb-1.5 text-xs text-text-tertiary" data-testid="tp-summary">
+          {t('planGrid.tp.summary', {
+            materials: formatNumber(visible.length),
+            rows: formatNumber(rows.length),
+            exceptions: formatNumber(exceptionCount),
+          })}
+          {filter.exceptionsOnly ? ` · ${t('planGrid.tp.exceptionsOrder')}` : ''}
+        </p>
       </div>
 
-      <p className="mb-2 text-xs text-text-tertiary" data-testid="tp-summary">
-        {t('planGrid.tp.summary', {
-          materials: formatNumber(visible.length),
-          rows: formatNumber(rows.length),
-          exceptions: formatNumber(exceptionCount),
-        })}
-        {filter.exceptionsOnly ? ` · ${t('planGrid.tp.exceptionsOrder')}` : ''}
-      </p>
+      {/* PLN-5 · ONE line under the filters: what is editable and how, or what
+          the last key did — a refusal, a delete, an undo, a copy — with its reason. */}
+      <div className="mb-1.5 flex min-h-[18px] flex-wrap items-baseline gap-x-3 text-xs">
+        {viewId !== 'exceptions' && !keyNote && (
+          <p className="text-text-tertiary" data-testid="tp-edit-hint">
+            {t('planGrid.edit.hint', { measures: editableLabels })}
+          </p>
+        )}
+        {keyNote && (
+          <p
+            className={keyNote.kind === 'refused' ? 'font-medium text-danger' : 'text-text-secondary'}
+            data-testid="tp-key-note"
+            data-kind={keyNote.kind}
+            role="status"
+          >
+            {keyNoteText(keyNote)}
+          </p>
+        )}
+      </div>
 
       {factsQuery.data?.horizonRefusal || !generated.ok ? (
         <p className="text-sm text-danger" data-testid="tp-refused">
@@ -660,11 +921,14 @@ const TimePhasedGrid: React.FC<{
           ref={wrapRef}
           className="plan-dsg tp-grid overflow-hidden rounded-lg border border-border-subtle bg-bg-surface"
           data-testid="tp-grid"
-          style={{ '--plan-dsg-h': `${GRID_H}px` } as React.CSSProperties}
+          data-fit-height={gridH}
+          style={{ '--plan-dsg-h': `${gridH}px` } as React.CSSProperties}
         >
           <DataSheetGrid<PlanRow>
             ref={gridRef}
             onActiveCellChange={({ cell }) => {
+              // PLN-5 · a key note speaks of the cell it was made in; moving on retires it.
+              setKeyNote((n) => (n?.kind === 'copied' ? n : null));
               const i = cell ? horizon.indexOf((cell.colId ?? '').replace(/^bucket:/, '')) : -1;
               setSelection(cell && i >= 0 ? { r0: cell.row, r1: cell.row, c0: i, c1: i } : null);
             }}
@@ -690,7 +954,7 @@ const TimePhasedGrid: React.FC<{
             disableContextMenu
             rowHeight={ROW_H}
             headerRowHeight={36}
-            height={GRID_H}
+            height={gridH}
           />
         </div>
       )}

@@ -14,6 +14,13 @@
 // seat holding `publication:approve`; any other seat reads the handoff naming
 // the lane that does. A seat that holds it but names no person is told so
 // BEFORE it clicks: the signature is a person's (PUB_ACTOR_ATTRIBUTED).
+//
+// PLN-5 · ON THE GRID IT FOLDS TO ONE LINE. Open, it stood 280 px tall above the
+// grid and was most of why the grid began below the fold at 1600×900. Folded
+// (`collapsible`, the grid's default) it states the draft in one line — which
+// draft is open, how much is split, how many firm lines await a signature — or
+// that none is, with what is published now; "Open" unfolds the whole panel.
+// Mounted on its own it is the full panel it always was.
 // ────────────────────────────────────────────────────────────────────────────
 
 import React, { useMemo, useState } from 'react';
@@ -58,7 +65,13 @@ export function allocationCoverage(d: PublicationDocument): { allocated: number;
   return { allocated: keys.filter((k) => split.has(k)).length, total: keys.length };
 }
 
-const PublicationPanel: React.FC<{ grain: BucketGrain }> = ({ grain }) => {
+const PublicationPanel: React.FC<{
+  grain: BucketGrain;
+  /** PLN-5 · fold to a one-line summary, unfolded by `onToggle`. */
+  collapsible?: boolean;
+  open?: boolean;
+  onToggle?: () => void;
+}> = ({ grain, collapsible = false, open = true, onToggle }) => {
   const { t } = useTranslation();
   const refusalText = useRefusalText();
   const ws = usePublicationWorkspace();
@@ -146,10 +159,48 @@ const PublicationPanel: React.FC<{ grain: BucketGrain }> = ({ grain }) => {
 
   if (ws.isLoading) return null;
 
+  const toggle = collapsible ? (
+    <button
+      type="button"
+      className="shrink-0 text-xs font-medium text-action hover:underline"
+      aria-expanded={open}
+      onClick={onToggle}
+      data-testid="publication-toggle"
+    >
+      {open ? t('planGrid.publication.fold') : t('planGrid.publication.unfold')}
+    </button>
+  ) : null;
+
+  if (collapsible && !open) {
+    const cover = draft ? allocationCoverage(draft) : null;
+    return (
+      <section
+        className="mb-2 flex items-center gap-3 rounded-md border border-border-subtle bg-bg-surface px-3 py-1.5 text-xs"
+        data-testid="publication-panel"
+        data-open="false"
+      >
+        <h3 className="shrink-0 font-semibold text-text-primary">{t('planGrid.publication.title')}</h3>
+        <span className="min-w-0 flex-1 truncate text-text-secondary" data-testid="publication-summary">
+          {draft && cover
+            ? t('planGrid.publication.summaryDraft', {
+                id: draft.publicationId,
+                allocated: formatNumber(cover.allocated),
+                total: formatNumber(cover.total),
+                firm: formatNumber(unsignedFirmLines(draft.lines).length),
+              })
+            : t('planGrid.publication.summaryNoDraft')}
+          {current && <> · {t('planGrid.publication.current', { id: current.publicationId, version: current.planVersion })}</>}
+        </span>
+        {toggle}
+      </section>
+    );
+  }
+
   return (
-    <section className="mb-3 rounded-lg border border-border-subtle bg-bg-surface px-4 py-3 text-sm" data-testid="publication-panel">
+    <section className="mb-3 rounded-lg border border-border-subtle bg-bg-surface px-4 py-3 text-sm" data-testid="publication-panel" data-open="true">
       <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
         <h3 className="font-semibold text-text-primary">{t('planGrid.publication.title')}</h3>
+        {toggle}
         {current && (
           <span className="text-xs text-text-secondary" data-testid="publication-current">
             {t('planGrid.publication.current', { id: current.publicationId, version: current.planVersion })}

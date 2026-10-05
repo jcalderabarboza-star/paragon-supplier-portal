@@ -389,7 +389,10 @@ describe('PLN-4 · R3 — the list shows bucket and origin, and says where an un
     expect(within(screen.getByTestId('pr-origin-pr-004').closest('tr')!).queryByText('Set in SAP')).toBeNull();
   });
 
-  it('ID: Periode · Asal · Baris asupan · Jalur Perencanaan · Diisi di SAP', async () => {
+  // ⚠️ PLN-5 · RE-PINNED BY RULING: "asupan" (intake) became the planner's term
+  // "usulan" across the ID copy, so the origin reads "Baris usulan" — and the old
+  // word is asserted GONE from the row, not merely not looked for.
+  it('ID: Periode · Asal · Baris usulan · Jalur Perencanaan · Diisi di SAP', async () => {
     await i18n.changeLanguage('id');
     const line = nextLine();
     await commitAs(scopeOf(['planning'], PLANNING_1_ID), line.id, line.qty);
@@ -399,7 +402,8 @@ describe('PLN-4 · R3 — the list shows bucket and origin, and says where an un
     expect(screen.getByText('Periode')).toBeInTheDocument();
     expect(screen.getByText('Asal')).toBeInTheDocument();
     const row = screen.getByTestId(`pr-origin-${pr.id}`).closest('tr')!;
-    expect(within(row).getByText('Baris asupan')).toBeInTheDocument();
+    expect(within(row).getByText('Baris usulan')).toBeInTheDocument();
+    expect(row.textContent).not.toMatch(/asupan/i);
     expect(within(row).getByText('Jalur Perencanaan')).toBeInTheDocument();
     expect(within(row).getAllByText('Diisi di SAP').length).toBe(2);
   });

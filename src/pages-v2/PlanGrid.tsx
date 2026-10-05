@@ -1,5 +1,4 @@
 import React, { useMemo, useState } from 'react';
-import { Info } from 'lucide-react';
 import {
   DataSheetGrid,
   keyColumn,
@@ -18,6 +17,7 @@ import Data from '../components/ui-v2/Data';
 import LivenessPill from '../components/ui-v2/LivenessPill';
 import { dataCell, textCell } from './plan-grid/cells';
 import IntakeReviewView from './plan-grid/IntakeReviewView';
+import CompactNotice from './plan-grid/CompactNotice';
 import FullScreenSection from './plan-grid/FullScreenSection';
 import SubTabs from '../components/ui-v2/SubTabs';
 import TimePhasedGrid from './plan-grid/TimePhasedGrid';
@@ -204,14 +204,18 @@ const PlanGrid: React.FC = () => {
 
   return (
     <AppShellV2>
+      {/* PLN-5 · the chrome is summarised so the grid starts above the fold at
+          1600×900 (it began at 929 px on built main): a compact header, the
+          sandbox notice in one line, tight tabs. Nothing is removed. */}
       <PageHeader
+        compact
         breadcrumb={PLAN_CRUMB}
         title={t('planGrid.header.title')}
         subtitle={t('planGrid.header.subtitle')}
         actions={<LivenessPill capability="purchaseRequisitions" />}
       />
 
-      <PageMetaLine className="-mt-6 mb-6">
+      <PageMetaLine className="mb-2">
         {/* PLN-1 · it read "3 quotations, 4 intake lines" — two counts from the
             two SECONDARY tabs, standing over a 1,200-material plan. It names
             the tabs by their own labels now, and counts nothing: each view's
@@ -223,16 +227,10 @@ const PlanGrid: React.FC = () => {
       </PageMetaLine>
 
       {/* Honest framing: read-only sandbox, SIMULATED, nothing pushed */}
-      <div className="mb-6 flex items-start gap-2 rounded-lg border border-info/30 bg-info-soft px-4 py-3 text-sm text-text-primary">
-        <Info size={16} className="mt-0.5 shrink-0 text-info" />
-        <div>
-          <div className="font-semibold text-info">{t('planGrid.honesty.title')}</div>
-          <p className="mt-0.5 text-text-secondary">{t('planGrid.honesty.body')}</p>
-        </div>
-      </div>
+      <CompactNotice tone="info" title={t('planGrid.honesty.title')} body={t('planGrid.honesty.body')} testId="plan-honesty" />
 
       <SubTabs<PlanTab>
-        className="mb-6"
+        className="mb-3"
         value={tab}
         onChange={setTab}
         options={[
