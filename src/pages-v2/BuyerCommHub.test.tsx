@@ -121,7 +121,10 @@ describe('BuyerCommHub — the buyer/planner Communication Hub (C4a)', () => {
     renderWithProviders(<BuyerCommHub />);
 
     // All three derived statuses render.
-    expect(screen.getByText('Awaiting reply')).toBeInTheDocument();
+    // ⚠️ RE-PINNED BY SDC-2 (R-SDC P1): `awaiting` is the supplier who REPLIED since the ask
+    // (sup-005 above has a fresh reply). It read "Awaiting reply" — the opposite of the fact.
+    expect(screen.getByText('Replied since the ask')).toBeInTheDocument();
+    expect(screen.queryByText('Awaiting reply')).not.toBeInTheDocument();
     expect(screen.getByText('To compose')).toBeInTheDocument();
     expect(screen.getByText('No reply yet')).toBeInTheDocument();
 

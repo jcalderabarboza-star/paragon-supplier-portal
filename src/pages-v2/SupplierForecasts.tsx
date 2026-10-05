@@ -72,7 +72,10 @@ import {
   netChangeOf,
   netChangeSummary,
   publicationGrain,
+  responseDueAtOf,
+  consolidationRows,
   sdcClock,
+  type LineResponseState,
   type CommitmentClass,
   type DisputeEntry,
   type ForecastLine,
@@ -316,10 +319,17 @@ const LineCard: React.FC<{
   latest?: RequirementResponse;
   /** A3 — an answer already open on this line (any publication). */
   openAnswer?: RequirementResponse;
+  /**
+   * SDC-2 · the line's state by the BUYER's rule (`consolidationRows` over this
+   * supplier's own publications and responses): `awaiting` is a line the buyer
+   * is still waiting on. It decides what the net-change pill may promise and
+   * whether a passed deadline makes THIS line overdue.
+   */
+  answerState: LineResponseState['kind'];
   onConfirm: (line: ForecastLine) => void;
   onRevise: (response: RequirementResponse, line: ForecastLine) => void;
   onAcknowledge: (line: ForecastLine) => void;
-}> = ({ line, publication, previous, responses, latest, openAnswer, onConfirm, onRevise, onAcknowledge }) => {
+}> = ({ line, publication, previous, responses, latest, openAnswer, answerState, onConfirm, onRevise, onAcknowledge }) => {
   // ⚠️ **THE SHARPEST PAIR IN THE SPLIT, AND IT IS ONE ENTITY.** A commitment
   // line is COMMERCIAL's; a visibility-only line's acknowledgment is BACK
   // OFFICE's — the flow header is explicit that the latter "carries NO
@@ -338,7 +348,13 @@ const LineCard: React.FC<{
   const net = netChangeOf(line, previous);
   const carriedAnswer = net === 'carried' ? carriedAnswerFor(responses, previous, line) : undefined;
   const prior = counterpartIn(previous, line);
-  const overdue = isResponseOverdue(publication, sdcClock.now());
+  // ⚠️ SDC-2 · R-SDC P1 — OVERDUE IS A LINE STILL OWED, NOT A PLAN PAST ITS DATE.
+  // It read the publication alone, so once the window closed every card said
+  // "Overdue" — including the lines answered on time — while the buyer's chase
+  // counts only the lines it is still waiting on.
+  const awaiting = answerState === 'awaiting';
+  const overdue = awaiting && isResponseOverdue(publication, sdcClock.now());
+  const dueAt = responseDueAtOf(publication);
   return (
     <div className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm border-l-2 border-l-teal p-5">
       <div className="flex items-start justify-between gap-3 flex-wrap">
@@ -350,9 +366,15 @@ const LineCard: React.FC<{
               {t(CLASS_LABEL_KEY[line.commitmentClass])}
             </span>
             {previous && (
-              <span className={CHIP} data-testid="sdcsup-line-net" data-net={net}>
+              <span className={CHIP} data-testid="sdcsup-line-net" data-net={net} data-awaiting={awaiting ? 'true' : 'false'}>
+                {/* ⚠️ SDC-2 · R-SDC P0 #2 — "no re-confirmation needed" ONLY WHEN AN ANSWER
+                    STILL COUNTS. Unchanged is a fact about the line; whether anything is
+                    needed is a fact about the answer, and on a line nobody answered the
+                    pill told the supplier to skip a commitment the buyer was chasing. */}
                 {net === 'carried'
-                  ? t('sdcSup.net.carried')
+                  ? awaiting
+                    ? t(confirmable ? 'sdcSup.net.unchangedAwaiting' : 'sdcSup.net.unchangedAwaitingAck')
+                    : t('sdcSup.net.carried')
                   : prior
                     ? t('sdcSup.net.changedFrom', { qty: formatNumber(prior.forecastQty), uom: prior.uom })
                     : t('sdcSup.net.new')}
@@ -438,14 +460,10 @@ const LineCard: React.FC<{
           <dt className="text-label text-text-tertiary uppercase mb-0.5">
             {t('sdcSup.line.respondBy')}
           </dt>
-          {publication.responseDueAt ? (
-            <dd className="text-sm font-semibold">
-              <Data>{formatDate(publication.responseDueAt)}</Data>
-              {overdue && <span className="ml-2 text-xs font-semibold text-danger">{t('sdcSup.deadline.overdue')}</span>}
-            </dd>
-          ) : (
-            <dd className="text-sm text-text-tertiary">{t('sdcSup.deadline.none')}</dd>
-          )}
+          <dd className="text-sm font-semibold">
+            <Data>{formatDate(dueAt)}</Data>
+            {overdue && <span className="ml-2 text-xs font-semibold text-danger">{t('sdcSup.deadline.overdue')}</span>}
+          </dd>
         </div>
       </dl>
 
@@ -1264,6 +1282,8 @@ interface WorkspaceProps {
   supplierName: string;
   /** SDC-1 · every grain's current plan this supplier answers in (monthly first). */
   plans: readonly OwnPlan[];
+  /** SDC-2 · every publication this scope reads — the input of the buyer's own join. */
+  publications: readonly ForecastPublication[];
   liveFeed: boolean;
   responses: readonly RequirementResponse[];
   materials: readonly CollaboratedMaterialView[];
@@ -1276,6 +1296,7 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
   supplierId,
   supplierName,
   plans,
+  publications,
   liveFeed,
   responses,
   materials,
@@ -1297,6 +1318,15 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
     for (const p of plans) for (const l of p.lines) m.set(l, p);
     return (line: ForecastLine): OwnPlan => m.get(line) ?? plans[0];
   }, [plans]);
+  // ⚠️ SDC-2 · THE BUYER'S RULE, RUN ON THE SUPPLIER'S OWN DATA. The consolidation
+  // join is pure and keyed per supplier × material × period, so over this scope's
+  // publications and responses it yields exactly the states the buyer's page shows
+  // for these lines — one rule, so the two seats cannot disagree about a line.
+  const stateOf = useMemo(() => {
+    const m = new Map(consolidationRows(publications, responses).map((r) => [r.id, r.state.kind] as const));
+    return (line: ForecastLine): LineResponseState['kind'] =>
+      m.get(`${line.supplierId}|${line.materialCode}|${line.periodBucket}`) ?? 'awaiting';
+  }, [publications, responses]);
   const submitMutation = useRequirementResponseSubmit();
   const acknowledgeMutation = useRequirementResponseAcknowledge();
   // PF-1b — the promotion of a saved draft into a real submission.
@@ -1800,16 +1830,22 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
 
   // B4b-2 · the deadline in the tab header, and the net change the banner states.
   // SDC-1 · with a plan per grain the tab names the EARLIEST deadline of them.
-  const dated = plans
+  // SDC-2 · and only plans that still OWE something speak: the earliest plan
+  // overdue with a line still awaiting, else the earliest one still open; with
+  // nothing owed anywhere the tab says so rather than calling answered lines late.
+  const now = sdcClock.now();
+  const owing = plans
+    .filter((p) => p.lines.some((l) => stateOf(l) === 'awaiting'))
     .map((p) => p.publication)
-    .filter((p) => p.responseDueAt !== undefined)
-    .sort((a, b) => Date.parse(a.responseDueAt!) - Date.parse(b.responseDueAt!));
-  const soonest = dated[0];
-  const deadlineLabel = soonest
-    ? isResponseOverdue(soonest, sdcClock.now())
-      ? t('sdcSup.deadline.overdueSince', { date: formatDate(soonest.responseDueAt!) })
-      : t('sdcSup.deadline.dueOn', { date: formatDate(soonest.responseDueAt!) })
-    : t('sdcSup.deadline.noneShort');
+    .sort((a, b) => Date.parse(responseDueAtOf(a)) - Date.parse(responseDueAtOf(b)));
+  const late = owing.find((p) => isResponseOverdue(p, now));
+  const open = owing.find((p) => !isResponseOverdue(p, now));
+  const earliest = plans.map((p) => responseDueAtOf(p.publication)).sort()[0];
+  const deadlineLabel = late
+    ? t('sdcSup.deadline.overdueSince', { date: formatDate(responseDueAtOf(late)) })
+    : open
+      ? t('sdcSup.deadline.dueOn', { date: formatDate(responseDueAtOf(open)) })
+      : t('sdcSup.deadline.allAnswered', { date: formatDate(earliest) });
 
   const sohUom = sohForm.materialCode ? materialUom(sohForm.materialCode) : '';
   const shipUom = shipForm.materialCode ? materialUom(shipForm.materialCode) : '';
@@ -1908,6 +1944,7 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
                 previous={planOf(line).previous}
                 responses={responses}
                 latest={latestResponseFor(responses, planOf(line).publication, line)}
+                answerState={stateOf(line)}
                 openAnswer={openAnswerFor(responses, line)}
                 onConfirm={openConfirm}
                 onRevise={openRevise}
@@ -2682,6 +2719,7 @@ const SupplierForecasts: React.FC = () => {
       supplierId={supplierId}
       supplierName={mySupplier.name}
       plans={read.plans}
+      publications={read.publications}
       liveFeed={read.liveFeed}
       responses={responses}
       materials={materialsQuery.data ?? []}

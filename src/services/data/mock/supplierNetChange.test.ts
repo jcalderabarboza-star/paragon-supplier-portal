@@ -22,6 +22,7 @@ import {
   netChangeOf,
   netChangeSummary,
   previousPublication,
+  responseDueAtOf,
   sdcClock,
   type ForecastLine,
   type ForecastPublication,
@@ -163,7 +164,7 @@ describe('the deadline — stamped at publish, OVERDUE derived at read', () => {
     const id = await publishRevision();
     const due = forecastPublicationStore.get(id)!.responseDueAt!;
     expect(due).toBe('2026-09-07T12:00:00.000Z');
-    const pub = { responseDueAt: due };
+    const pub = { publishedAt: forecastPublicationStore.get(id)!.publishedAt!, responseDueAt: due };
     expect(isResponseOverdue(pub, sdcClock.now())).toBe(false);
     sdcClock.set('2026-09-08T00:00:00.000Z');
     expect(isResponseOverdue(pub, sdcClock.now())).toBe(true);
@@ -171,9 +172,17 @@ describe('the deadline — stamped at publish, OVERDUE derived at read', () => {
     expect(Object.keys(forecastPublicationStore.get(id)!)).not.toContain('overdue');
   });
 
-  it('the seeds were never published through the verb and claim no deadline', () => {
+  // ⚠️ RE-PINNED BY SDC-2 (R-SDC P0 #3). This read "…and claim no deadline", asserting a seed is
+  // never overdue. The buyer's chase has always held the seed to publishedAt + RESPONSE_DUE_DAYS
+  // (the sample clock is set past it on purpose), so the two seats disagreed about one plan.
+  it('the seeds carry no stamp, and are due by the SAME policy the chase reads', async () => {
     expect(R2.responseDueAt).toBeUndefined();
-    expect(isResponseOverdue(R2, '2030-01-01T00:00:00.000Z')).toBe(false);
+    expect(responseDueAtOf(R2)).toBe('2026-08-22T00:00:00.000Z');
+    expect(isResponseOverdue(R2, '2026-08-21T23:59:59.000Z')).toBe(false);
+    expect(isResponseOverdue(R2, '2026-08-22T00:00:01.000Z')).toBe(true);
+    const chase = new MockCollaborationService();
+    const entry = (await chase.getChase({ personaType: 'buyer', supplierId: null })).items.find((e) => e.supplierId === 'sup-007');
+    expect(entry?.dueAt).toBe(responseDueAtOf(R2));
   });
 });
 

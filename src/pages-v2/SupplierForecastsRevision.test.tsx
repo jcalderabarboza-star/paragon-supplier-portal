@@ -98,11 +98,19 @@ describe('the seeds, as sup-002 reads them (R2 superseded R1)', () => {
     expect(within(changed).queryByTestId('sdcsup-line-carried-answer')).toBeNull();
   });
 
-  it('a seed publication claims no deadline, and says so in the tab header and on the line', async () => {
+  // ⚠️ RE-PINNED BY SDC-2 (R-SDC P0 #3 and P1). This read "a seed publication claims no deadline"
+  // and pinned "No deadline set" — while the buyer's chase held the SAME plan overdue since 22 Aug.
+  // The seed is due by the policy the stamp is written from; and OVERDUE marks only a line still owed.
+  it('a seed publication is due by the policy the chase reads; only the line still owed is overdue', async () => {
     renderPage();
-    const carried = await cardFor('RM-EMUL-3310');
-    expect(within(carried).getByTestId('sdcsup-line-deadline').textContent).toBe('Respond byNo deadline set');
-    expect(screen.getByRole('tab', { name: /Published lines · no deadline set/ })).toBeInTheDocument();
+    const carried = await cardFor('RM-EMUL-3310'); // answered on R1 and unchanged → its answer counts
+    expect(within(carried).getByTestId('sdcsup-line-deadline').textContent).toBe('Respond by22 Aug 2026');
+    expect(within(carried).getByTestId('sdcsup-line-deadline').dataset.overdue).toBe('false');
+    const owed = await cardFor('RM-EMUL-3320'); // changed, unanswered → owed, and past the date
+    expect(within(owed).getByTestId('sdcsup-line-deadline').textContent).toBe('Respond by22 Aug 2026Overdue');
+    expect(within(owed).getByTestId('sdcsup-line-deadline').dataset.overdue).toBe('true');
+    expect(screen.getByRole('tab', { name: /Published lines · overdue since 22 Aug 2026/ })).toBeInTheDocument();
+    expect(screen.queryByText(/no deadline set/i)).not.toBeInTheDocument();
   });
 
   it('ID — the banner, the net-change copy and the numbers are Indonesian', async () => {

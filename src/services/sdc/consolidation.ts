@@ -47,6 +47,20 @@ import type { BucketGrain } from '../planning/bucket';
 export const RESPONSE_DUE_DAYS = 7;
 
 /**
+ * ⚠️ SDC-2 · R-SDC P0 #3 — THE ONE ANSWER TO "WHEN IS THIS PLAN DUE?", READ BY
+ * BOTH SEATS. The publish verb stamps `responseDueAt` from `RESPONSE_DUE_DAYS`;
+ * a publication without the stamp (the seeds, never published through the verb)
+ * is bound by the SAME policy — `publishedAt + RESPONSE_DUE_DAYS` — which is
+ * what the buyer's chase always applied. Before this, the chase said
+ * "Overdue · due 22 Aug 2026" while the supplier's page, reading only the
+ * stamp, said "No deadline set" for the same plan (measured in R-SDC, e1/e2).
+ * A stamp wins when present, so a governed setting (SE-18) changes one input.
+ */
+export function responseDueAtOf(pub: Pick<ForecastPublication, 'publishedAt' | 'responseDueAt'>): string {
+  return pub.responseDueAt ?? addDaysIso(pub.publishedAt, RESPONSE_DUE_DAYS);
+}
+
+/**
  * The at-risk floor for the supplier-coverage indicator: coverage ratio ≥ 1 is
  * covered; ≥ this floor is at-risk; below it is uncovered. A display-layer
  * banding knob (like RESPONSE_DUE_DAYS), tuned at the real-planner validation
@@ -526,7 +540,7 @@ export function chaseList(
   rows: readonly ConsolidationRow[],
   now: string,
 ): readonly ChaseEntry[] {
-  const dueAt = addDaysIso(publication.publishedAt, RESPONSE_DUE_DAYS);
+  const dueAt = responseDueAtOf(publication);
   const overdue = Date.parse(now) > Date.parse(dueAt);
   const entries: ChaseEntry[] = [];
   // ⚠️ A3 · SDC-R5 — CHASED HARD. A supplier with an accepted commitment cut by
