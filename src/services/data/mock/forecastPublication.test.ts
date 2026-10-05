@@ -248,7 +248,7 @@ describe('t_publication_publish — the gates, the stamps, and the supersede cas
     const sup = commandAuditSink.byEvent('t_publication_supersede').filter((e) => e.causationId === r.correlationId);
     expect(sup.length).toBeGreaterThanOrEqual(1);
     // and every reader's "current" is the new one
-    expect(currentPublication(forecastPublicationStore.publications())?.publicationId).toBe(id);
+    expect(currentPublication(forecastPublicationStore.publications(), 'month')?.publicationId).toBe(id);
   });
 
   it('overdue is DERIVED at read from the stamped deadline — never stored', () => {

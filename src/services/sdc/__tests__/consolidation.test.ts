@@ -102,13 +102,13 @@ const SYNTHETIC_DISTRIBUTOR: SupplierMaterialRelationship = {
 
 describe('currentPublication — the latest governed snapshot', () => {
   it('picks the mid-cycle republication (latest publishedAt), not the first', () => {
-    const current = currentPublication(FORECAST_PUBLICATIONS);
+    const current = currentPublication(FORECAST_PUBLICATIONS, 'month');
     expect(current?.publicationId).toBe('PUB-2026-08-RM-R2');
     expect(current?.planVersion).toBe('PV-2026-08.2');
   });
 
   it('returns null on an empty input', () => {
-    expect(currentPublication([])).toBeNull();
+    expect(currentPublication([], 'month')).toBeNull();
   });
 });
 
@@ -118,7 +118,7 @@ describe('consolidationRows — demand vs confirmation per line', () => {
   const rows = consolidationRows(FORECAST_PUBLICATIONS, REQUIREMENT_RESPONSES);
 
   it('derives one row per current-publication line', () => {
-    const current = currentPublication(FORECAST_PUBLICATIONS)!;
+    const current = currentPublication(FORECAST_PUBLICATIONS, 'month')!;
     expect(rows).toHaveLength(current.lines.length);
   });
 
@@ -204,7 +204,7 @@ describe('consolidationRows — demand vs confirmation per line', () => {
   it('flags stale (answeredQty null) when the answered snapshot cannot be located', () => {
     // Feed ONLY the current publication: rr-0004's answered snapshot is missing
     // → carry-forward cannot be verified → honest stale, not presumed valid.
-    const current = currentPublication(FORECAST_PUBLICATIONS)!;
+    const current = currentPublication(FORECAST_PUBLICATIONS, 'month')!;
     const state = rowById(
       consolidationRows([current], REQUIREMENT_RESPONSES),
       'sup-005|PK-PETB-8810|2026-09',
@@ -255,7 +255,7 @@ describe('supplierRollups', () => {
 // ─── chaseList — the pre-scheduler manual chase ───────────────────────────────
 
 describe('chaseList (RESPONSE_DUE_DAYS interim policy)', () => {
-  const current = currentPublication(FORECAST_PUBLICATIONS)!;
+  const current = currentPublication(FORECAST_PUBLICATIONS, 'month')!;
   const rows = consolidationRows(FORECAST_PUBLICATIONS, REQUIREMENT_RESPONSES);
 
   it('exposes the named policy constant (pre-SDC-5 interim, not schema)', () => {

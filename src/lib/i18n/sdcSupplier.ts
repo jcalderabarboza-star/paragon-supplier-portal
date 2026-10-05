@@ -21,6 +21,9 @@ export const sdcSupplierEn: Record<string, string> = {
   'sdcSup.version.banner_one': 'Plan {{version}} published {{date}} — {{changed}} line changed, {{carried}} carried',
   'sdcSup.version.banner_other': 'Plan {{version}} published {{date}} — {{changed}} lines changed, {{carried}} carried',
   'sdcSup.version.first': 'Plan {{version}} published {{date}} — {{n}} lines, the first plan you have been sent',
+  // SDC-1 · the grain is named once two plans stand (monthly RM, weekly PM).
+  'sdcSup.version.grain.month': 'Monthly plan',
+  'sdcSup.version.grain.week': 'Weekly plan',
   'sdcSup.net.carried': 'Carried — no re-confirmation needed',
   'sdcSup.net.changedFrom': 'Changed — was {{qty}} {{uom}}',
   'sdcSup.net.new': 'Changed — new in this plan',
@@ -408,6 +411,8 @@ export const sdcSupplierId: Record<string, string> = {
   // — B4b-2 · batas waktu, spanduk versi, perubahan bersih, tanda terima —
   'sdcSup.version.banner_other': 'Rencana {{version}} terbit {{date}} — {{changed}} baris berubah, {{carried}} terbawa',
   'sdcSup.version.first': 'Rencana {{version}} terbit {{date}} — {{n}} baris, rencana pertama yang dikirim kepada Anda',
+  'sdcSup.version.grain.month': 'Rencana bulanan',
+  'sdcSup.version.grain.week': 'Rencana mingguan',
   'sdcSup.net.carried': 'Terbawa — tidak perlu konfirmasi ulang',
   'sdcSup.net.changedFrom': 'Berubah — sebelumnya {{qty}} {{uom}}',
   'sdcSup.net.new': 'Berubah — baru di rencana ini',

@@ -894,6 +894,8 @@ export const FORECAST_PUBLICATIONS: readonly ForecastPublication[] = Object.free
     planVersion: 'PV-2026-08.1',
     publishedAt: '2026-08-01T00:00:00.000Z',
     horizon: Object.freeze(['2026-08', '2026-09', '2026-10']),
+    // SDC-1 · the seed STATES what the store derives from the dates: R2 superseded it.
+    supersededBy: 'PUB-2026-08-RM-R2',
     provenance: PROV_SOMO_SEED,
     lines: Object.freeze([
       // 2026-08 LOCKED → firm. Glycerin total 10 000 kg fanned to two suppliers

@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Boxes,
@@ -51,6 +51,7 @@ import {
   useIncomingShipmentCancel,
   type CollaboratedMaterialView,
   type IncomingShipmentView,
+  type OwnPlan,
 } from '../services/query/sdcSupplierHooks';
 import {
   // CP-2 · B1 — the ONE master lookup; this page no longer indexes the master.
@@ -70,6 +71,7 @@ import {
   isResponseOverdue,
   netChangeOf,
   netChangeSummary,
+  publicationGrain,
   sdcClock,
   type CommitmentClass,
   type DisputeEntry,
@@ -1260,10 +1262,8 @@ const ShipmentsTab: React.FC<{
 interface WorkspaceProps {
   supplierId: string;
   supplierName: string;
-  publication: ForecastPublication;
-  /** B4b-2 · the publication `publication` superseded (net change is measured against it). */
-  previous: ForecastPublication | null;
-  lines: readonly ForecastLine[];
+  /** SDC-1 · every grain's current plan this supplier answers in (monthly first). */
+  plans: readonly OwnPlan[];
   liveFeed: boolean;
   responses: readonly RequirementResponse[];
   materials: readonly CollaboratedMaterialView[];
@@ -1275,9 +1275,7 @@ interface WorkspaceProps {
 const ForecastWorkspace: React.FC<WorkspaceProps> = ({
   supplierId,
   supplierName,
-  publication,
-  previous,
-  lines,
+  plans,
   liveFeed,
   responses,
   materials,
@@ -1289,6 +1287,16 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
   const refusalText = useRefusalText();
   const { toast } = useToast();
   const crumb = [t('sdcSup.crumb.page')];
+  // ⚠️ SDC-1 · A LINE KEEPS ITS OWN PLAN. Every line is rendered, answered and
+  // acknowledged against the publication it was published in — its deadline,
+  // its net change and the snapshot its answer binds to — never against
+  // whichever plan of the other grain happens to be newer.
+  const lines = useMemo(() => plans.flatMap((p) => p.lines), [plans]);
+  const planOf = useMemo(() => {
+    const m = new Map<ForecastLine, OwnPlan>();
+    for (const p of plans) for (const l of p.lines) m.set(l, p);
+    return (line: ForecastLine): OwnPlan => m.get(line) ?? plans[0];
+  }, [plans]);
   const submitMutation = useRequirementResponseSubmit();
   const acknowledgeMutation = useRequirementResponseAcknowledge();
   // PF-1b — the promotion of a saved draft into a real submission.
@@ -1461,7 +1469,7 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
       }
       return;
     }
-    const payload = buildRequirementResponsePayload(publication, panelLine, supplierId, {
+    const payload = buildRequirementResponsePayload(planOf(panelLine).publication, panelLine, supplierId, {
       // The SAME parsed value the gate above judged — the builder can no longer
       // re-read the string and reach a different number (CP-0 §4).
       confirmedQty: confirmQty.value,
@@ -1550,7 +1558,7 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
   const submitAcknowledgment = async () => {
     if (!ackPanelLine) return;
     const payload = buildRequirementAcknowledgePayload(
-      publication,
+      planOf(ackPanelLine).publication,
       ackPanelLine,
       supplierId,
       ackNote,
@@ -1791,11 +1799,16 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
   };
 
   // B4b-2 · the deadline in the tab header, and the net change the banner states.
-  const changeSummary = netChangeSummary(lines, previous);
-  const deadlineLabel = publication.responseDueAt
-    ? isResponseOverdue(publication, sdcClock.now())
-      ? t('sdcSup.deadline.overdueSince', { date: formatDate(publication.responseDueAt) })
-      : t('sdcSup.deadline.dueOn', { date: formatDate(publication.responseDueAt) })
+  // SDC-1 · with a plan per grain the tab names the EARLIEST deadline of them.
+  const dated = plans
+    .map((p) => p.publication)
+    .filter((p) => p.responseDueAt !== undefined)
+    .sort((a, b) => Date.parse(a.responseDueAt!) - Date.parse(b.responseDueAt!));
+  const soonest = dated[0];
+  const deadlineLabel = soonest
+    ? isResponseOverdue(soonest, sdcClock.now())
+      ? t('sdcSup.deadline.overdueSince', { date: formatDate(soonest.responseDueAt!) })
+      : t('sdcSup.deadline.dueOn', { date: formatDate(soonest.responseDueAt!) })
     : t('sdcSup.deadline.noneShort');
 
   const sohUom = sohForm.materialCode ? materialUom(sohForm.materialCode) : '';
@@ -1814,7 +1827,7 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
         {t('sdcSup.meta.summary', {
           lines: lines.length,
           responses: responses.length,
-          planVersion: publication.planVersion,
+          planVersion: plans.map((p) => p.publication.planVersion).join(' · '),
         })}
       </PageMetaLine>
 
@@ -1830,25 +1843,37 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
         </div>
       )}
 
-      {/* B4b-2 · THE VERSION BANNER: which plan, when, and how much of it moved. */}
-      <div
-        className="mb-4 rounded-lg border border-border-subtle bg-bg-surface px-4 py-3 text-sm text-text-primary"
-        data-testid="sdcsup-version-banner"
-      >
-        {previous
-          ? t('sdcSup.version.banner', {
-              version: publication.planVersion,
-              date: formatDate(publication.publishedAt),
-              changed: formatNumber(changeSummary.changed),
-              carried: formatNumber(changeSummary.carried),
-              count: changeSummary.changed,
-            })
-          : t('sdcSup.version.first', {
-              version: publication.planVersion,
-              date: formatDate(publication.publishedAt),
-              n: formatNumber(lines.length),
-            })}
-      </div>
+      {/* B4b-2 · THE VERSION BANNER: which plan, when, and how much of it moved.
+          SDC-1 · one per grain's plan; the grain is named once there are two. */}
+      {plans.map(({ publication, previous, lines: planLines }) => {
+        const changeSummary = netChangeSummary(planLines, previous);
+        const grain = publicationGrain(publication);
+        return (
+          <div
+            key={publication.publicationId}
+            className="mb-4 rounded-lg border border-border-subtle bg-bg-surface px-4 py-3 text-sm text-text-primary"
+            data-testid="sdcsup-version-banner"
+            data-grain={grain}
+          >
+            {plans.length > 1 && (
+              <span className="font-semibold">{t(`sdcSup.version.grain.${grain}`)} · </span>
+            )}
+            {previous
+              ? t('sdcSup.version.banner', {
+                  version: publication.planVersion,
+                  date: formatDate(publication.publishedAt),
+                  changed: formatNumber(changeSummary.changed),
+                  carried: formatNumber(changeSummary.carried),
+                  count: changeSummary.changed,
+                })
+              : t('sdcSup.version.first', {
+                  version: publication.planVersion,
+                  date: formatDate(publication.publishedAt),
+                  n: formatNumber(planLines.length),
+                })}
+          </div>
+        );
+      })}
 
       <SubTabs<TabKey>
         options={[
@@ -1879,10 +1904,10 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
               <LineCard
                 key={`${line.materialCode}|${line.periodBucket}`}
                 line={line}
-                publication={publication}
-                previous={previous}
+                publication={planOf(line).publication}
+                previous={planOf(line).previous}
                 responses={responses}
-                latest={latestResponseFor(responses, publication, line)}
+                latest={latestResponseFor(responses, planOf(line).publication, line)}
                 openAnswer={openAnswerFor(responses, line)}
                 onConfirm={openConfirm}
                 onRevise={openRevise}
@@ -2642,7 +2667,7 @@ const SupplierForecasts: React.FC = () => {
 
   const read = linesQuery.data;
   const responses = responsesQuery.data ?? [];
-  if (!read?.publication)
+  if (!read || read.plans.length === 0)
     return (
       <EmptyState
         breadcrumb={crumb}
@@ -2656,9 +2681,7 @@ const SupplierForecasts: React.FC = () => {
     <ForecastWorkspace
       supplierId={supplierId}
       supplierName={mySupplier.name}
-      publication={read.publication}
-      previous={read.previous}
-      lines={read.lines}
+      plans={read.plans}
       liveFeed={read.liveFeed}
       responses={responses}
       materials={materialsQuery.data ?? []}

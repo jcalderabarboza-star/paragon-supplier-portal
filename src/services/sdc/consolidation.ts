@@ -32,6 +32,7 @@ import type {
   Uom,
 } from './types';
 import { declarationGranularity, declarationRecency } from './inventory';
+import type { BucketGrain } from '../planning/bucket';
 
 // ─── Policy constants (P2 display layer — NOT schema) ─────────────────────────
 
@@ -74,16 +75,46 @@ function daysUntil(nowIso: string, endMs: number): number {
   return Math.floor((endMs - Date.parse(nowIso)) / DAY_MS);
 }
 
-// ─── The current publication ──────────────────────────────────────────────────
+// ─── The current publication — ONE PER GRAIN ──────────────────────────────────
 
 /**
- * The publication the planner consolidates AGAINST: the latest governed snapshot
- * by `publishedAt`. Older publications stay in the input — they are the record
- * of what each supplier answered (we are the SoR for what the supplier saw,
- * design §3.2), which is exactly what staleness detection reads.
+ * The grain a publication is published at: a week id carries a `W`, a month id
+ * does not (A1's vocabulary). A horizon is one grain by construction
+ * (`parseHorizon` refuses a mixed one), so its first bucket decides.
+ */
+export function publicationGrain(p: Pick<ForecastPublication, 'horizon'>): BucketGrain {
+  return (p.horizon[0] ?? '').includes('W') ? 'week' : 'month';
+}
+
+/** The grains in the order every reader lists them: monthly RM first, weekly PM after. */
+export const PUBLICATION_GRAINS: readonly BucketGrain[] = ['month', 'week'];
+
+/**
+ * The publication the planner consolidates AGAINST at one grain: the latest
+ * governed snapshot of THAT grain by `publishedAt`. Older publications stay in
+ * the input — they are the record of what each supplier answered (we are the
+ * SoR for what the supplier saw, design §3.2), which is exactly what staleness
+ * detection reads.
+ *
+ * ⚠️ SDC-1 · R-SDC P0 #1 — "CURRENT" IS PER GRAIN, NEVER ACROSS GRAINS. A
+ * monthly raw-material plan and a weekly packaging plan are two plans, each
+ * superseded only by the next of its own grain (`t_publication_supersede`
+ * cascades within a grain). This read took the latest across BOTH, so one
+ * weekly line published from the packaging view made the whole monthly plan
+ * — its lines, its open responses, the buyer's review / accept / resolve
+ * queues and the packaging supplier's page — disappear, while the monthly
+ * panel still said it was published (measured in R-SDC browser QA, e13).
+ *
+ * ⚠️ AND A SUPERSEDED PUBLICATION IS NEVER CURRENT, WHATEVER ITS DATE. A
+ * withdrawal takes the latest out of `publications()`; by date alone the plan
+ * it had superseded would then read as current again — for the consolidation
+ * and for suppliers — while the planner's panel (which reads state) said no
+ * plan was. `supersededBy` is the state the read carries, so a grain whose
+ * latest was withdrawn has NO current plan until the planner publishes one.
  */
 export function currentPublication(
   publications: readonly ForecastPublication[],
+  grain: BucketGrain,
 ): ForecastPublication | null {
   // ⚠️ B4b-2 · A TIE GOES TO THE ONE RECORDED LATER (`>=`, not `>`). The SDC
   // clock is a frozen present, so two revisions published in one session carry
@@ -94,11 +125,21 @@ export function currentPublication(
   // the order it recorded them, which is the order they were published.
   let latest: ForecastPublication | null = null;
   for (const p of publications) {
+    if (publicationGrain(p) !== grain || p.supersededBy !== undefined) continue;
     if (latest === null || Date.parse(p.publishedAt) >= Date.parse(latest.publishedAt)) {
       latest = p;
     }
   }
   return latest;
+}
+
+/** Every grain's current publication, monthly first — at most one per grain. */
+export function currentPublications(
+  publications: readonly ForecastPublication[],
+): readonly ForecastPublication[] {
+  return PUBLICATION_GRAINS.map((g) => currentPublication(publications, g)).filter(
+    (p): p is ForecastPublication => p !== null,
+  );
 }
 
 // ─── Line response states (the discriminated union) ───────────────────────────
@@ -319,17 +360,27 @@ function answeredState(
 }
 
 /**
- * The consolidation join: every line of the CURRENT publication, each with its
- * derived response state. Pure; the inputs are never mutated.
+ * The consolidation join: every line of EVERY GRAIN'S current publication
+ * (monthly first, then weekly — SDC-1), each with its derived response state.
+ * Pure; the inputs are never mutated.
  */
 export function consolidationRows(
   publications: readonly ForecastPublication[],
   responses: readonly RequirementResponse[],
 ): readonly ConsolidationRow[] {
-  const current = currentPublication(publications);
-  if (current === null) return [];
   const submitted = latestSubmittedByLine(publications, responses);
+  return currentPublications(publications).flatMap((current) =>
+    rowsOf(current, publications, responses, submitted),
+  );
+}
 
+/** One current publication's rows — the join the union above repeats per grain. */
+function rowsOf(
+  current: ForecastPublication,
+  publications: readonly ForecastPublication[],
+  responses: readonly RequirementResponse[],
+  submitted: ReturnType<typeof latestSubmittedByLine>,
+): readonly ConsolidationRow[] {
   return current.lines.map((line): ConsolidationRow => {
     const k = lineKey(line.supplierId, line.materialCode, line.periodBucket);
     const response = submitted.get(k);
@@ -506,6 +557,53 @@ export function chaseList(
   );
 }
 
+const CHASE_RANK: Readonly<Record<ChaseReason, number>> = {
+  'revised-after-accept': 0,
+  overdue: 1,
+  'partial-response': 2,
+};
+
+/**
+ * SDC-1 · the chase list over EVERY grain's current plan. Each grain is chased
+ * against its OWN publication's deadline (`chaseList` per grain, rows split by
+ * the grain of their bucket); a supplier owing lines in both grains gets ONE
+ * entry — the most urgent reason, its earliest deadline, and every awaiting line
+ * of both plans counted, so neither plan's silence hides the other's.
+ */
+export function chaseListAcrossGrains(
+  publications: readonly ForecastPublication[],
+  rows: readonly ConsolidationRow[],
+  now: string,
+): readonly ChaseEntry[] {
+  const perGrain = currentPublications(publications).map((pub) => {
+    const grain = publicationGrain(pub);
+    const own = rows.filter((r) => publicationGrain({ horizon: [r.line.periodBucket] }) === grain);
+    return { entries: chaseList(pub, own, now), rollups: supplierRollups(own) };
+  });
+  const awaiting = new Map<string, number>();
+  for (const g of perGrain)
+    for (const r of g.rollups) awaiting.set(r.supplierId, (awaiting.get(r.supplierId) ?? 0) + r.awaitingLines);
+  const best = new Map<string, ChaseEntry>();
+  for (const g of perGrain)
+    for (const e of g.entries) {
+      const held = best.get(e.supplierId);
+      if (
+        !held ||
+        CHASE_RANK[e.reason] < CHASE_RANK[held.reason] ||
+        (CHASE_RANK[e.reason] === CHASE_RANK[held.reason] && Date.parse(e.dueAt) < Date.parse(held.dueAt))
+      )
+        best.set(e.supplierId, e);
+    }
+  return [...best.values()]
+    .map((e) => ({ ...e, awaitingLines: awaiting.get(e.supplierId) ?? e.awaitingLines }))
+    .sort(
+      (a, b) =>
+        CHASE_RANK[a.reason] - CHASE_RANK[b.reason] ||
+        b.awaitingLines - a.awaitingLines ||
+        a.supplierId.localeCompare(b.supplierId),
+    );
+}
+
 // ─── The supplier-coverage indicator (addendum §6 — the ONE projection ours) ──
 
 /**
@@ -580,15 +678,17 @@ export function supplierCoverageEntries(
   relationships: readonly SupplierMaterialRelationship[],
   now: string,
 ): readonly SupplierCoverageEntry[] {
-  const current = currentPublication(publications);
-  if (current === null) return [];
+  // SDC-1 · every grain's current plan — a pair's committed demand is read from
+  // whichever plan carries it, never from one grain's plan standing for both.
+  const currents = currentPublications(publications);
+  if (currents.length === 0) return [];
 
   // Group the pair's committed lines: demand total + the latest committed bucket.
   const pairs = new Map<
     string,
     { supplierId: string; materialCode: string; demand: number; uom: Uom; lastBucket: string }
   >();
-  for (const line of current.lines) {
+  for (const line of currents.flatMap((c) => c.lines)) {
     if (line.commitmentClass === 'visibility-only') continue;
     const k = `${line.supplierId}|${line.materialCode}`;
     const p = pairs.get(k);

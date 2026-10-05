@@ -145,7 +145,7 @@ describe('PROBE A re-run — a supplier answers a dispute by REVISING it', () =>
     // revision answers the CURRENT publication, not the one the prior bound.
     expect(next.submissionVersion).toBe(2);
     expect(prior.publicationId).toBe('PUB-2026-08-RM');
-    expect(next.publicationId).toBe(currentPublication(FORECAST_PUBLICATIONS)!.publicationId);
+    expect(next.publicationId).toBe(currentPublication(FORECAST_PUBLICATIONS, 'month')!.publicationId);
   });
 
   it('once promoted, the buyer\'s row reads the revision AS an answer to the dispute', async () => {
@@ -228,7 +228,7 @@ describe('PROBE B re-run — an ACCEPTED commitment is not cut silently', () => 
     expect(row.state).toMatchObject({ kind: 'revised-after-accept', acceptedQty: 6000, cutQty: 5900 });
     expect(row.revisionOf).toBe('Accepted');
 
-    const pub = currentPublication(FORECAST_PUBLICATIONS)!;
+    const pub = currentPublication(FORECAST_PUBLICATIONS, 'month')!;
     const rows = consolidationRows(FORECAST_PUBLICATIONS, requirementResponseStore.all());
     const chase = chaseList(pub, rows, sdcClock.now());
     expect(chase[0]).toMatchObject({ supplierId: 'sup-002', reason: 'revised-after-accept' });

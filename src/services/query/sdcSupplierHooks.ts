@@ -32,7 +32,7 @@ import { useCurrentIdentity } from '../../context/CurrentIdentityContext';
 import { useServiceQuery, scopeKey } from './useServiceQuery';
 import {
   SUPPLIER_MATERIAL_RELATIONSHIPS,
-  currentPublication,
+  currentPublications,
   previousPublication,
   ownCollaboratedMaterials,
   // CP-2 · B1 — the ONE master lookup; no page re-derives its own join.
@@ -53,9 +53,10 @@ import type {
 } from '../sdc';
 import type { ASN, CommandResult, QueryScope } from '../data/types';
 
-export interface OwnForecastLinesRead {
-  /** The current governed snapshot rendered (null when nothing to show). */
-  publication: ForecastPublication | null;
+/** One grain's current plan as this supplier sees it (own lines only). */
+export interface OwnPlan {
+  /** The grain's current governed snapshot. */
+  publication: ForecastPublication;
   /** ONLY this supplier's fanned lines of that publication. */
   lines: readonly ForecastLine[];
   /**
@@ -64,6 +65,18 @@ export interface OwnForecastLinesRead {
    * and where a carried line's prior answer was given. Null on a first plan.
    */
   previous: ForecastPublication | null;
+}
+
+export interface OwnForecastLinesRead {
+  /**
+   * ⚠️ SDC-1 · ONE PLAN PER GRAIN, NEVER ONE ACROSS GRAINS. The monthly RM plan
+   * and the weekly PM plan are each current at their own grain; a supplier
+   * answering lines in both sees both. A plan in which this supplier holds no
+   * line is not shown — unless no plan holds one, when the latest is kept so
+   * the page can say "no lines were published to you" against a real plan.
+   * Empty only when nothing at all is published.
+   */
+  plans: readonly OwnPlan[];
   /**
    * FLAG-2 verdict for the render path: `!page.sample` — true only when the
    * service answered from LIVE publications. False = the sample the page asked
@@ -72,8 +85,35 @@ export interface OwnForecastLinesRead {
   liveFeed: boolean;
 }
 
-/** The supplier's own fanned lines of the current publication, read through
- *  the FLAG-2 gate (LIVE-only governed lane; SIMULATED sample fallback). */
+const byBucketThenCode = (a: ForecastLine, b: ForecastLine) =>
+  a.periodBucket.localeCompare(b.periodBucket) || a.materialCode.localeCompare(b.materialCode);
+
+/**
+ * SDC-1 · the plans a supplier sees, from the publications its scope reads:
+ * every grain's current plan in which it holds a line (monthly first) — or, when
+ * it holds none anywhere, the latest current plan alone, so the page can state
+ * "no lines were published to you" against a real plan. Pure; exported so the
+ * spec reaches the rule without React.
+ */
+export function ownPlansOf(
+  publications: readonly ForecastPublication[],
+  supplierId: string | null,
+): readonly OwnPlan[] {
+  const all: OwnPlan[] = currentPublications(publications).map((publication) => ({
+    publication,
+    previous: previousPublication(publications, publication),
+    lines: supplierId
+      ? publication.lines.filter((l) => l.supplierId === supplierId).slice().sort(byBucketThenCode)
+      : [],
+  }));
+  const held = all.filter((p) => p.lines.length > 0);
+  if (held.length > 0) return held;
+  const latest = all.slice().sort((a, b) => Date.parse(b.publication.publishedAt) - Date.parse(a.publication.publishedAt))[0];
+  return latest ? [latest] : [];
+}
+
+/** The supplier's own fanned lines of each grain's current publication, read
+ *  through the FLAG-2 gate (LIVE-only governed lane; SIMULATED sample fallback). */
 export function useOwnForecastLines() {
   return useServiceQuery<OwnForecastLinesRead>(
     ['sdc', 'ownForecastLines'],
@@ -83,21 +123,7 @@ export function useOwnForecastLines() {
       // asked for BY NAME, and `sample` — not a guess made here — is what the
       // page's honesty banner is keyed to.
       const page = await svc.collaboration.getPublications(scope, { includeSimulatedSample: true });
-      const liveFeed = !page.sample;
-      const publication = currentPublication(page.items);
-      const previous = previousPublication(page.items, publication);
-      const lines =
-        publication && scope.supplierId
-          ? publication.lines
-              .filter((l) => l.supplierId === scope.supplierId)
-              .slice()
-              .sort(
-                (a, b) =>
-                  a.periodBucket.localeCompare(b.periodBucket) ||
-                  a.materialCode.localeCompare(b.materialCode),
-              )
-          : [];
-      return { publication, lines, previous, liveFeed };
+      return { plans: ownPlansOf(page.items, scope.supplierId), liveFeed: !page.sample };
     },
   );
 }

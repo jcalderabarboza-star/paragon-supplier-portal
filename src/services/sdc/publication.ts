@@ -11,7 +11,7 @@ import type { CommitmentClass, ForecastLine, ForecastPublication } from './types
 // `RESPONSE_DUE_DAYS`, which the chase already reads. A second constant here
 // would be a second answer to "when is it due?" (Design 2 §5.3 makes it a
 // GOVERNED setting with a ledger — SE-18; until then this is the one place).
-import { RESPONSE_DUE_DAYS, sameCommitment } from './consolidation';
+import { RESPONSE_DUE_DAYS, publicationGrain, sameCommitment } from './consolidation';
 
 const DAY_MS = 86_400_000;
 
@@ -147,8 +147,8 @@ export const counterpartIn = (pub: ForecastPublication | null, line: ForecastLin
 
 /**
  * The publication `current` superseded: the one published just before it over
- * the same grain. A horizon's grain is read from its first bucket — a week id
- * carries a `W`, a month id does not (A1's vocabulary).
+ * the same grain (`publicationGrain` — the ONE grain rule `currentPublication`
+ * reads too, SDC-1).
  *
  * ⚠️ ORDERED BY `publishedAt`, THEN BY THE ORDER THE PUBLICATIONS ARRIVE — the
  * same tie-break `currentPublication` uses. The SDC clock is frozen, so two
@@ -160,10 +160,10 @@ export function previousPublication(
   current: ForecastPublication | null,
 ): ForecastPublication | null {
   if (!current) return null;
-  const weekly = (p: ForecastPublication) => (p.horizon[0] ?? '').includes('W');
+  const grain = publicationGrain(current);
   const ordered = publications
     .map((p, i) => ({ p, i }))
-    .filter(({ p }) => weekly(p) === weekly(current))
+    .filter(({ p }) => publicationGrain(p) === grain)
     .sort((a, b) => Date.parse(a.p.publishedAt) - Date.parse(b.p.publishedAt) || a.i - b.i);
   const k = ordered.findIndex(({ p }) => p.publicationId === current.publicationId);
   return k > 0 ? ordered[k - 1].p : null;
