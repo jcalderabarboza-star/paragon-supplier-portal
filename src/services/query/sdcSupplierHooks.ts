@@ -78,6 +78,12 @@ export interface OwnForecastLinesRead {
    */
   plans: readonly OwnPlan[];
   /**
+   * SDC-2 · every publication this scope reads (own lines only) — what the
+   * buyer's consolidation join reads too, so the supplier's page derives a
+   * line's state ("awaiting" or answered) by the SAME rule the buyer sees.
+   */
+  publications: readonly ForecastPublication[];
+  /**
    * FLAG-2 verdict for the render path: `!page.sample` — true only when the
    * service answered from LIVE publications. False = the sample the page asked
    * for by name — the page MUST render its honest sample marking.
@@ -123,7 +129,7 @@ export function useOwnForecastLines() {
       // asked for BY NAME, and `sample` — not a guess made here — is what the
       // page's honesty banner is keyed to.
       const page = await svc.collaboration.getPublications(scope, { includeSimulatedSample: true });
-      return { plans: ownPlansOf(page.items, scope.supplierId), liveFeed: !page.sample };
+      return { plans: ownPlansOf(page.items, scope.supplierId), publications: page.items, liveFeed: !page.sample };
     },
   );
 }

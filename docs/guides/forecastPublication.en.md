@@ -166,8 +166,8 @@ Honesty markers. Every plan version on offer is SIMULATED: the seed publications
 | Awaiting Planning / Awaiting Procurement | role handoff | any control | the seat does not hold the verb's atom | in the control's own slot (publication panel; planned-changes panel for allocation pushes) |
 | {date} if published now | time-driven, derived at read | Draft | always — shared clock + 7 days | publication panel, *Response deadline* |
 | no open draft covers this figure / over SOMO's total | derived at read (cell refusal) | Draft (or no draft) | an Allocation cell edit with no open draft, or a split above SOMO's total | the grid cell and the planned-changes panel |
-| Respond by {date} / Overdue / No deadline set | time-driven, derived at read | Published | a deadline was stamped at publish (seed publications have none); past it on the shared clock | `/supplier/forecasts` line cards and the **Published lines** tab label |
-| Carried — no re-confirmation needed / Changed — was {qty} {uom} / Changed — new in this plan | derived at read | Published (against the one it superseded) | a line's quantity and class equal, differ from, or are absent in the previous publication | `/supplier/forecasts` line cards; counts in the version banner |
+| Respond by {date} / Overdue | time-driven, derived at read | Published | the deadline stamped at publish — or, on a publication without a stamp (the seeds), published date + 7 days, the same date the buyer's chase reads; **Overdue** marks only a line still awaiting an answer once the date has passed | `/supplier/forecasts` line cards and the **Published lines** tab label (*respond by* / *overdue since* / *all answered*) |
+| Carried — no re-confirmation needed / Unchanged — awaiting your confirmation (or acknowledgment) / Changed — was {qty} {uom} / Changed — new in this plan | derived at read | Published (against the one it superseded) | a line's quantity and class equal, differ from, or are absent in the previous publication; an unchanged line reads *Carried* only while an answer to it still counts by the buyer's own rule, otherwise *Unchanged — awaiting…* | `/supplier/forecasts` line cards; counts in the version banner |
 | Sample record — not published through the portal | SAMPLE marker | Published, Superseded (seeds) | the ledger row was seeded, not written by a verb | **Publication history** |
 | No person named | derived at read | any ledger row by a person's lane | the seat named nobody when it acted | **Publication history**, *Person* |
 | Sample SOMO plan — simulated / Sample forecast — no live publication yet / Sample — awaiting SOMO C8 feed | SIMULATED marker | whole page | every plan version is SIMULATED | `/buyer/plan-grid` banner; `/supplier/forecasts` banner; liveness pill on both |
@@ -189,7 +189,7 @@ Honesty markers. Every plan version on offer is SIMULATED: the seed publications
 | Requirement responses | `publicationId` + `planVersion` on each response | `rr-0005` (sup-007's acknowledgment) binds this publication; `rr-0001` to `rr-0004` bind `PUB-2026-08-RM` and are read against this one as carried or stale |
 | Material master / planning master | `materialCode` | a line's unit is copied from the master at allocation; an unknown code is refused |
 | Publication ledger | `ledger[]` | open, publish, supersede and withdraw rows only — allocations and signatures are not ledger rows |
-| Response deadline | `responseDueAt` | absent on both seeds (never published through the verb), so the supplier page says *no deadline set* |
+| Response deadline | `responseDueAt` | absent on both seeds (never published through the verb); both seats then read published date + 7 days — 22 Aug 2026 for `PUB-2026-08-RM-R2` |
 
 Display-only: `provenance` (`SOMO` · `SIMULATED` · `PLANNED`) is carried on the publication and every line; `segment` and `suggestedSource` on some seed lines are SOMO's planning annotations, and no verb writes them.
 
@@ -237,7 +237,7 @@ Seeded history of `PUB-2026-08-RM-R2`: **Published** 2026-08-15 (seq 3, seeded);
 | `SCOPE_DENIED` | thrown for a supplier seat | a supplier never acts on a publication; the check runs before the role check | suppliers read and answer on `/supplier/forecasts` |
 | `STALE_STATE` | never produced on these surfaces | the panel and grid send no expected state | n/a — reported for completeness |
 | Supplier still sees *Sample forecast — no live publication yet* after a publish | the banner on `/supplier/forecasts` | every publication is SIMULATED; a live supplier sees only LIVE publications | none in this build — the real SOMO feed has not landed |
-| Supplier sees *no deadline set* | **Published lines** tab label | the seed publications were never published through the verb, so no deadline was stamped | publish a new revision; it stamps one |
+| Supplier sees *overdue since 22 Aug 2026* on a seed plan | **Published lines** tab label | the seed carries no stamp, so its deadline is published date + 7 days — the date the buyer's chase has always used; a line still awaiting an answer is overdue | answer the lines marked **Overdue**; once every line is answered the tab reads *all answered* |
 | The draft is gone after a page reload | panel shows *No draft is open for this grain…* | the publication store is in memory and re-seeds on reload | reopen the draft; push and publish in one session |
 | No way to withdraw a published plan | no control on any page | `t_publication_withdraw` has no caller | not available in the portal today |
 

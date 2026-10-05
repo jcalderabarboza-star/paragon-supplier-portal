@@ -11,7 +11,7 @@ import type { CommitmentClass, ForecastLine, ForecastPublication } from './types
 // `RESPONSE_DUE_DAYS`, which the chase already reads. A second constant here
 // would be a second answer to "when is it due?" (Design 2 §5.3 makes it a
 // GOVERNED setting with a ledger — SE-18; until then this is the one place).
-import { RESPONSE_DUE_DAYS, publicationGrain, sameCommitment } from './consolidation';
+import { RESPONSE_DUE_DAYS, publicationGrain, responseDueAtOf, sameCommitment } from './consolidation';
 
 const DAY_MS = 86_400_000;
 
@@ -22,10 +22,11 @@ export const responseDueAtFor = (publishedAt: string): string =>
 /**
  * Is the response window past? DERIVED at read, never stored — a stored
  * "overdue" is a clock-state frozen at the instant somebody wrote it (law 0.5).
- * A publication with no deadline is never overdue: nobody set one.
+ * SDC-2 · the window is `responseDueAtOf` — the stamp, or the policy the stamp
+ * is written from — so every publication has one, and both seats read the same.
  */
-export function isResponseOverdue(pub: Pick<ForecastPublication, 'responseDueAt'>, now: string): boolean {
-  return pub.responseDueAt !== undefined && Date.parse(now) > Date.parse(pub.responseDueAt);
+export function isResponseOverdue(pub: Pick<ForecastPublication, 'publishedAt' | 'responseDueAt'>, now: string): boolean {
+  return Date.parse(now) > Date.parse(responseDueAtOf(pub));
 }
 
 /**

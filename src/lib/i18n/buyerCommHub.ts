@@ -20,7 +20,10 @@ export const buyerCommHubEn: Record<string, string> = {
   'buyerCommHub.outbound.neverAsked': 'Not yet asked',
   'buyerCommHub.outbound.channel': 'via {{channel}}',
   'buyerCommHub.status.composed': 'To compose',
-  'buyerCommHub.status.awaiting': 'Awaiting reply',
+  // ⚠️ SDC-2 · R-SDC P1 — `awaiting` is the status of a supplier who REPLIED since the
+  // ask (`outbound.ts`: a reply arrived → responsive, nothing to send). It read
+  // "Awaiting reply", naming a responsive supplier as one still being waited on.
+  'buyerCommHub.status.awaiting': 'Replied since the ask',
   'buyerCommHub.status.stale': 'No reply yet',
   'buyerCommHub.severity.hard': 'Urgent',
   'buyerCommHub.severity.soft': 'Advisory',
@@ -98,7 +101,7 @@ export const buyerCommHubId: Record<string, string> = {
   'buyerCommHub.outbound.neverAsked': 'Belum ditanya',
   'buyerCommHub.outbound.channel': 'via {{channel}}',
   'buyerCommHub.status.composed': 'Perlu disusun',
-  'buyerCommHub.status.awaiting': 'Menunggu balasan',
+  'buyerCommHub.status.awaiting': 'Sudah dibalas sejak diminta',
   'buyerCommHub.status.stale': 'Belum ada balasan',
   'buyerCommHub.severity.hard': 'Mendesak',
   'buyerCommHub.severity.soft': 'Anjuran',

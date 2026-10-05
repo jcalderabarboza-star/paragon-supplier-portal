@@ -252,10 +252,20 @@ describe('t_publication_publish — the gates, the stamps, and the supersede cas
   });
 
   it('overdue is DERIVED at read from the stamped deadline — never stored', () => {
-    const pub = { responseDueAt: '2026-09-10T00:00:00.000Z' } as Pick<ForecastPublication, 'responseDueAt'>;
+    const pub = { publishedAt: '2026-08-01T00:00:00.000Z', responseDueAt: '2026-09-10T00:00:00.000Z' } as Pick<
+      ForecastPublication,
+      'publishedAt' | 'responseDueAt'
+    >;
     expect(isResponseOverdue(pub, '2026-09-09T23:59:59.000Z')).toBe(false);
     expect(isResponseOverdue(pub, '2026-09-10T00:00:01.000Z')).toBe(true);
-    expect(isResponseOverdue({}, '2030-01-01T00:00:00.000Z')).toBe(false);
+    // ⚠️ RE-PINNED BY SDC-2 (R-SDC P0 #3). This line read
+    // `expect(isResponseOverdue({}, '2030-…')).toBe(false)` — "no stamp, never overdue". That rule
+    // is what made the supplier read "No deadline set" while the buyer's chase read the SAME plan
+    // as overdue. A plan without a stamp is due by the policy the stamp is written from
+    // (`publishedAt + RESPONSE_DUE_DAYS`) — pinned both sides of the instant, as the stamp is.
+    const unstamped = { publishedAt: '2026-09-01T00:00:00.000Z' };
+    expect(isResponseOverdue(unstamped, '2026-09-07T23:59:59.000Z')).toBe(false);
+    expect(isResponseOverdue(unstamped, '2026-09-08T00:00:01.000Z')).toBe(true);
   });
 });
 

@@ -124,12 +124,12 @@ describe('SDC-1 · the supplier’s page after one weekly line is published', ()
     expect(banners.map((b) => b.dataset.grain)).toEqual(['month', 'week']);
     expect(banners[0].textContent).toMatch(/^Monthly plan · Plan PV-2026-08\.2 published 15 Aug 2026/);
     expect(banners[1].textContent).toMatch(/^Weekly plan · Plan PV-SIM-\S+ published 31 Aug 2026 — 1 lines, the first plan/);
-    // each line keeps its OWN plan's deadline: the seed claims none, the weekly plan's is stamped
+    // each line keeps its OWN plan's deadline: the seed's by policy (SDC-2), the weekly plan's stamped
     const card = (code: string) => within(lines).getAllByText(code)[0].closest('div.bg-bg-surface') as HTMLElement;
-    expect(within(card('RM-EMUL-3310')).getByTestId('sdcsup-line-deadline').textContent).toBe('Respond byNo deadline set');
+    expect(within(card('RM-EMUL-3310')).getByTestId('sdcsup-line-deadline').textContent).toBe('Respond by22 Aug 2026');
     expect(within(card('SIM-PM-0002')).getByTestId('sdcsup-line-deadline').textContent).toBe('Respond by07 Sept 2026');
-    // the tab names the EARLIEST deadline stated — the weekly plan's (the seed has none)
-    expect(screen.getByRole('tab', { name: /Published lines · respond by 07 Sept 2026/ })).toBeInTheDocument();
+    // the tab names the EARLIEST plan still owed and late — the monthly one (RM-EMUL-3320 is unanswered)
+    expect(screen.getByRole('tab', { name: /Published lines · overdue since 22 Aug 2026/ })).toBeInTheDocument();
   });
 
   it('ID — the grain is named in Indonesian, and the English words are gone', async () => {
