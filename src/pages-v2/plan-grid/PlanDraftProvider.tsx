@@ -15,6 +15,12 @@
 // through a SEPARATE context (`usePushStatus`). Separate because progress
 // changes on every row, and the overlay's context is read by the grid: a
 // per-row change there would re-render the grid fifty times per push.
+//
+// PLN-5 · UNDO. Every act that changes the overlay — an edit, a paste, a
+// Delete, a remove — goes through `update(.., record)`, which keeps the step
+// (`diffEntries`) on a stack; `undo()` takes back the newest step that still
+// stands (`applyUndo`). The latest draft is held in a ref as well as in state,
+// so two acts in one tick each see the other's result.
 // ────────────────────────────────────────────────────────────────────────────
 
 import React, { createContext, useCallback, useContext, useMemo, useRef, useState } from 'react';
@@ -30,9 +36,12 @@ import {
   applyPaste,
   applyPushOutcomes,
   conventionOf,
+  applyUndo,
+  diffEntries,
   dismissRefusal,
   pushEntries,
   reconcile,
+  removeEntries,
   removeEntry,
   setMagnitudeConfirmed,
   setReason,
@@ -43,6 +52,7 @@ import {
   type PushProgress,
   type PushSummary,
   type SeamCell,
+  type UndoStep,
 } from './planDraft';
 
 export interface PlanDraftApi {
@@ -64,6 +74,10 @@ export interface PlanDraftApi {
   /** R2 · confirm (or withdraw) a value the magnitude gate holds. */
   confirmMagnitude(seamRef: string, confirmed: boolean): void;
   remove(seamRef: string): void;
+  /** PLN-5 · Delete over a selection: removes the PLANNED changes among them; returns how many. */
+  removeMany(seamRefs: readonly string[]): number;
+  /** PLN-5 · Ctrl+Z: takes back the newest overlay change that still stands; returns how many rows. */
+  undo(): number;
   dismissRefusal(key: string): void;
   push(seamRefs: readonly string[]): Promise<void>;
   reconcile(seam: (seamRef: string) => SeamCell | undefined): void;
@@ -94,23 +108,39 @@ export const PlanDraftProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const batch = useIntakeCommitBatch();
   const batchRef = useRef(batch);
   batchRef.current = batch;
-  const [draft, setDraft] = useState<PlanDraft>(EMPTY_DRAFT);
+  const [draft, setDraftState] = useState<PlanDraft>(EMPTY_DRAFT);
+  const draftRef = useRef<PlanDraft>(EMPTY_DRAFT);
+  const undoStack = useRef<UndoStep[]>([]);
+  /** The one way the overlay changes; `record` keeps the act on the undo stack. */
+  const update = useCallback((fn: (d: PlanDraft) => PlanDraft, record = false): PlanDraft => {
+    const before = draftRef.current;
+    const next = fn(before);
+    if (next === before) return before;
+    if (record) {
+      const step = diffEntries(before, next);
+      if (step) undoStack.current.push(step);
+    }
+    draftRef.current = next;
+    setDraftState(next);
+    return next;
+  }, []);
+  const setDraft = (fn: (d: PlanDraft) => PlanDraft) => update(fn);
   const [pushing, setPushing] = useState(false);
   const [progress, setProgress] = useState<PushProgress | null>(null);
   const [last, setLast] = useState<PushSummary | null>(null);
 
   const edit = useCallback<PlanDraftApi['edit']>(
-    (row, bucket, raw, origin, ctx) => setDraft((d) => applyEdit(d, row, bucket, raw, origin, convention, ctx)),
-    [convention],
+    (row, bucket, raw, origin, ctx) => void update((d) => applyEdit(d, row, bucket, raw, origin, convention, ctx), true),
+    [convention, update],
   );
 
   const paste = useCallback<PlanDraftApi['paste']>(
     (rows, horizon, anchor, text, totalOf) => {
-      const r = applyPaste(draft, rows, horizon, anchor, text, convention, totalOf);
-      setDraft(r.draft);
+      const r = applyPaste(draftRef.current, rows, horizon, anchor, text, convention, totalOf);
+      update(() => r.draft, true);
       return { planned: r.planned, refused: r.refused, outside: r.outside };
     },
-    [draft, convention],
+    [convention, update],
   );
 
   const push = useCallback<PlanDraftApi['push']>(
@@ -149,17 +179,34 @@ export const PlanDraftProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       paste,
       setReason: (ref, reason) => setDraft((d) => setReason(d, ref, reason)),
       applyReason: (refs, reason) => {
-        const r = applyReasonToRows(draft, refs, reason);
-        setDraft(r.draft);
+        const r = applyReasonToRows(draftRef.current, refs, reason);
+        update(() => r.draft);
         return r.applied;
       },
       confirmMagnitude: (ref, confirmed) => setDraft((d) => setMagnitudeConfirmed(d, ref, confirmed)),
-      remove: (ref) => setDraft((d) => removeEntry(d, ref)),
+      remove: (ref) => void update((d) => removeEntry(d, ref), true),
+      removeMany: (refs) => {
+        const r = removeEntries(draftRef.current, refs);
+        update(() => r.draft, true);
+        return r.removed;
+      },
+      undo: () => {
+        // The newest step that still stands; a step wholly past undoing is dropped.
+        while (undoStack.current.length > 0) {
+          const step = undoStack.current.pop()!;
+          const r = applyUndo(draftRef.current, step);
+          if (r.restored > 0) {
+            update(() => r.draft);
+            return r.restored;
+          }
+        }
+        return 0;
+      },
       dismissRefusal: (key) => setDraft((d) => dismissRefusal(d, key)),
       push,
       reconcile: (seam) => setDraft((d) => reconcile(d, seam)),
     }),
-    [draft, convention, pushing, edit, paste, push],
+    [draft, convention, pushing, edit, paste, push, update],
   );
 
   const status = useMemo<PushStatus>(() => ({ progress, last, dismissLast: () => setLast(null) }), [progress, last]);

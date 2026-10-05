@@ -63,7 +63,7 @@ export const intakeReviewId: Record<string, string> = {
     'Perencanaan mengusulkan; Anda yang memutuskan. Menerima baris mengomit jumlah yang dikirim produsen dan membuat permintaan Draft — tanpa produsen live tetap simulasi, bukan instruksi pengadaan langsung. Setiap keputusan di sini dicatat: pengabaian tersimpan, bertahan setelah muat ulang, dan terlihat oleh rekan Anda, dan Pulihkan mengembalikan barisnya. Tidak ada yang ditolak di hulu — produsen tidak diberi tahu.',
   'intakeReview.adjustHint':
     'Perlu jumlah berbeda? Tekan Sesuaikan pada baris itu dan kirim dari panel di bawah daftar.',
-  'intakeReview.search.label': 'Cari baris asupan',
+  'intakeReview.search.label': 'Cari baris usulan',
   'intakeReview.search.placeholder': 'Material, kode, atau periode…',
   'intakeReview.filter.state': 'Tampilkan',
   'intakeReview.filter.Pending': 'Menunggu',
