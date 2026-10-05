@@ -80,16 +80,35 @@ describe('ProcessFlows — the page draws the derivation, not a copy of it', () 
     expect(drawnStates(container)).toEqual(first.states.map((s) => s.name));
   });
 
-  it('selecting a flow redraws it — for every flow in the catalog', async () => {
-    const { container } = renderWithProviders(<ProcessFlows />, {
-      route: '/buyer/process-flows',
-    });
-    await title();
-    for (const flow of catalog.flows) {
-      pick(flow.entity);
-      expect(drawnStates(container), flow.entity).toEqual(flow.states.map((s) => s.name));
-    }
+  // ⚠️ SDC-2 · ONE MOUNT PER CHUNK OF FLOWS, NOT ONE FOR THE WHOLE CATALOG. This ran every
+  // flow through ONE mounted page: ~0.9–1.2 s alone and 2.6–3.3 s inside a full run, and it
+  // crossed the 5 s timeout once under load. The cost is the page re-rendering on each
+  // selection (~27 ms a switch; the diagram itself is ~6 ms) and it grows with every flow
+  // the registry gains. Same assertion, same population — every flow is still selected
+  // THROUGH THE RAIL on the real page — split so no single test carries the whole catalog.
+  const CHUNK = 7;
+  const chunks = Array.from({ length: Math.ceil(catalog.flows.length / CHUNK) }, (_, i) =>
+    catalog.flows.slice(i * CHUNK, (i + 1) * CHUNK),
+  );
+
+  it('precondition: the chunks are the catalog — every flow once, in order', () => {
+    expect(chunks.flat().map((f) => f.entity)).toEqual(catalog.flows.map((f) => f.entity));
+    expect(chunks.length).toBeGreaterThan(1);
   });
+
+  it.each(chunks.map((c, i) => [i + 1, c.map((f) => f.entity).join(', '), c] as const))(
+    'selecting a flow redraws it — for every flow in the catalog (chunk %i: %s)',
+    async (_i, _names, flows) => {
+      const { container } = renderWithProviders(<ProcessFlows />, {
+        route: '/buyer/process-flows',
+      });
+      await title();
+      for (const flow of flows) {
+        pick(flow.entity);
+        expect(drawnStates(container), flow.entity).toEqual(flow.states.map((s) => s.name));
+      }
+    },
+  );
 
   it('the transitions table lists every declared transition of the selected flow', async () => {
     renderWithProviders(<ProcessFlows />, { route: '/buyer/process-flows' });
