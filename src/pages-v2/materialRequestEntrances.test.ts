@@ -227,11 +227,16 @@ describe('⚠️ PROBE — the same matcher at `t_pr_create`, where the drift is
     // entrance is the unit, so it is named here rather than absorbed.
     // PLN-3 · `IntakeReview.tsx` is retired; its Accept moved, with the page,
     // into the grid's intake-review view.
+    // ⚠️ PLN-4 · THE GRID'S ENTRANCE IS STILL HERE, THROUGH ITS BATCH HOOK.
+    // `PlanDraftProvider` dispatches `t_intake_commit` through
+    // `useIntakeCommitBatch` (one refresh per push, not per row), so it leaves
+    // this hook's callers and is named under the batch hook in the SAME run —
+    // a departure with its replacement asserted, not a matcher that went blind.
     expect(callersOf('useIntakeCommit').sort()).toEqual([
       'pages-v2/plan-grid/IntakeAdjustDrawer.tsx',
       'pages-v2/plan-grid/IntakeReviewView.tsx',
-      'pages-v2/plan-grid/PlanDraftProvider.tsx',
     ]);
+    expect(callersOf('useIntakeCommitBatch')).toEqual(['pages-v2/plan-grid/PlanDraftProvider.tsx']);
 
     // ⚠️ **THE DRIFT THIS PROBE WAS AIMED AT IS NOW CLOSED, AND THE ASSERTION
     // IS INVERTED RATHER THAN DELETED.** It used to read

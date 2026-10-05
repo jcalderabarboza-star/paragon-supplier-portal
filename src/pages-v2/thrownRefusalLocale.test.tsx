@@ -186,13 +186,18 @@ describe('PR2 · the population — six converted, two deliberately NOT', () => 
   const read = (rel: string) =>
     readFileSync(path.resolve(__dirname, rel), 'utf-8');
 
-  it('all five BuyerRequisitions sites route through the helper, and none renders `e.message` raw', () => {
+  // ⚠️ PLN-4 · FIVE BECAME SIX, AND THE SIXTH ARRIVED THROUGH THE HELPER. The
+  // bulk submit/approve (R3) catches a thrown refusal per document and renders
+  // it in the summary line — `describeThrown(e, t('requisitions.bulk.failed'))`,
+  // the same shape as the five. The count rises because the population did; a
+  // sixth site rendering `e.message` raw would still fail the line below it.
+  it('all six BuyerRequisitions sites route through the helper, and none renders `e.message` raw', () => {
     const src = read('BuyerRequisitions.tsx');
     // CONTROL — the matcher matches something, and a known-absent does not.
     expect(src).toContain('useDataErrorText');
     expect(src).not.toContain('useNonexistentErrorHook');
 
-    expect(src.match(/describeThrown\(e, t\(/g)).toHaveLength(5);
+    expect(src.match(/describeThrown\(e, t\(/g)).toHaveLength(6);
     // The pre-batch shape must be gone from every one of them.
     expect(src).not.toMatch(/description: e instanceof DataError \? e\.message/);
   });

@@ -1080,6 +1080,14 @@ export interface PurchaseRequisition {
   /** The `intakeLine` this requisition was committed from. Absent on a New PR form row. */
   intakeLineId?: string;
   /**
+   * ⚠️ PLN-4 · R3 · THE LANE THAT RAISED IT — derived, never typed. On a
+   * requisition committed from an intake line it is the committing seat's lane
+   * that holds the commit atom (`intake:triage` → `planning`); the cascade reads
+   * it off the act, so a document cannot claim a lane its raiser did not hold.
+   * Absent on a New PR form row, whose `requestor` the person types.
+   */
+  requestorRole?: import('../transitions/businessRoles').SystemRoleId;
+  /**
    * The planning bucket the requirement sits in — `'YYYY-MM'` or `'YYYY-Www'`,
    * parsed by `parseBucket` (`services/planning/bucket.ts`).
    *

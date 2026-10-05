@@ -173,15 +173,11 @@ export const STORED_FIELD_ALLOWLIST: readonly Exemption[] = Object.freeze([
       'which may be the whole reason, and that is a ruling, not a derivation.',
     since: D_F,
   },
-  {
-    key: 'MaterialMasterEntry.materialGroup',
-    reason: 'unadjudicated',
-    why:
-      'The 2B-1 registry group. 34 reads and not one outside a spec — the largest test-only read count ' +
-      'in the population, which makes it the clearest case that a suite can exercise a field thoroughly ' +
-      'while no product surface ever asks for it.',
-    since: D_F,
-  },
+  // ⚠️ PLN-4 · `MaterialMasterEntry.materialGroup` WAS HERE, AND ITS EXEMPTION
+  // OUTLIVED ITS SUBJECT. The row read "34 reads and not one outside a spec";
+  // R3 gave it a product reader — `intakeCategory` names a requisition's
+  // category from the master's type and group — and the gate said so on the
+  // first run. Deleted, not re-worded: the list can only shrink truthfully.
   // ⚠️ §68 — `ActorAttribution.person` WAS HERE AND ITS EXEMPTION OUTLIVED ITS
   // SUBJECT, WHICH IS THE GATE DOING THE ONE THING A ONE-DIRECTIONAL LIST
   // CANNOT. The row read: unreachable by construction, nothing can produce a

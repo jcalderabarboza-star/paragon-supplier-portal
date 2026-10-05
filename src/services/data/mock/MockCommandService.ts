@@ -78,12 +78,14 @@ import {
   type EnforcementMode,
   type GovernedCheckId,
 } from '../../../lib/enforcement';
+import { INTAKE_TRIAGE_ATOM } from '../../transitions/flows/intakeLine.flow';
 import {
   createDispatcher,
   InMemoryAuditSink,
   atomsForSeat,
   customRoleStore,
   isSystemRole,
+  rolesHolding,
   SYSTEM_ROLES,
   resolvePolicyHook,
   bindPolicyHook,
@@ -823,6 +825,10 @@ const purchaseRequisitionTarget: CommandTarget = {
       // lands here is the value the DISPATCHER derived from the pair beside it.
       ...(typeof payload.intakeLineId === 'string' && payload.intakeLineId !== ''
         ? { intakeLineId: payload.intakeLineId }
+        : {}),
+      // PLN-4 · R3 · a recognised system role or nothing — the `source` rule.
+      ...(typeof payload.requestorRole === 'string' && isSystemRole(payload.requestorRole)
+        ? { requestorRole: payload.requestorRole }
         : {}),
       ...(typeof payload.periodBucket === 'string' && payload.periodBucket !== ''
         ? { periodBucket: payload.periodBucket }
@@ -2771,6 +2777,9 @@ const resolveCascades = (ctx: CascadeContext): CascadeCommand[] => {
     // dispatcher's derivation would in that case compute `wasAdjusted: false`
     // over a decision that should not exist at all.
     const planner = qty !== line.acceptedQty;
+    const holders = rolesHolding(INTAKE_TRIAGE_ATOM);
+    const requestorRole =
+      holders.find((r) => ctx.scope.businessRoles?.includes(r)) ?? (holders.length === 1 ? holders[0] : undefined);
     return cascadesFor(ctx.transitionId).map((link) => ({
       entity: link.targetEntity,
       // No `entityId`: `t_pr_create` is a CREATION and the store assigns the
@@ -2784,6 +2793,11 @@ const resolveCascades = (ctx: CascadeContext): CascadeCommand[] => {
         // `01 Sept 2026` for a month nobody dated.
         intakeLineId: line.id,
         periodBucket: line.periodBucket,
+        // ⚠️ PLN-4 · R3 · WHO RAISED IT, READ OFF THE ACT — the committing
+        // seat's lane that holds the commit atom. Never a constant: the day a
+        // second lane holds `intake:triage`, the document names the one that
+        // acted. A seat holding no such lane could not have reached here.
+        ...(requestorRole ? { requestorRole } : {}),
       },
       // ONE LINE → AT MOST ONE REQUISITION, by replay as well as by legality.
       // The key is the line's own id (A1-R3): it is stable across a retry, a
