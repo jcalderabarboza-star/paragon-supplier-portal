@@ -134,6 +134,10 @@ Worked sequence for `inv-0001`'s material (sup-002 × RM-EMUL-3310) as a tester 
 
 | Symptom | How to tell | Likely cause | Resolve |
 |---|---|---|---|
+| Toast *Batch row {n} cannot be recorded* / *This row has a quantity or an expiry date but no batch number…* | the line under the batches names the same row; nothing is declared | a batch row with a quantity or an expiry but no number (before SDC-4 it was dropped silently, and the Σ check then misreported the sum) | enter the batch number, or clear the row completely |
+| **Confirm & record** greyed out, with *Every row needs a material and a total before anything is recorded…* | a row's material reads *Select the material…*, or its total is blank | the reply named something that is not one of your materials, or a line carried no quantity | pick the material, or press **Remove row** — no row is left out without that act |
+| Toast *Recorded {n} of {m} rows* / *… rows were not recorded — each one says why below.* | the result lines list every row; a refused one carries its reason | a row's quantity or material was refused at the gate | correct that row and record it again |
+| `/supplier/inventory` shows a different figure from **Stock (SOH)** | the page's first section, *Stock you declared to Paragon*, lists your latest declaration per material; the table below it is a separate sample feed | two sources on one page, each labelled | the declared section is the figure Paragon plans with |
 | No **Declare stock** / **Bulk stock entry**, only *Awaiting Supplier Fulfilment* | handoff notice in the buttons' slot | the supplier seat does not hold `inventorydeclaration:declare` (fulfilment) | a seat holding the fulfilment lane declares (`ROLE_NOT_PERMITTED` if forced) |
 | No **Confirm & record** on the triage panel, only *Awaiting Planning* | handoff notice under the rows | the buyer seat lacks `inventorydeclaration:record` (planning) | switch to a planning seat |
 | Toast *Total quantity required* with a "read two ways" message | typed `2.400` or `2,400` | `AMBIGUOUS_QTY` — the one parser refuses rather than guesses | type `2400` |

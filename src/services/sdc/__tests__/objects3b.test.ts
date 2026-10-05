@@ -25,11 +25,15 @@ import type {
 // strings → numbers + honest refusal, and the builder is pure assembly that
 // CANNOT fabricate a value because it never sees a string.
 describe('normalizeInventoryDeclarationDraft (the ONE parse)', () => {
-  it('coerces unambiguous quantities and drops blank-numbered batch rows', () => {
+  // ⚠️ RE-PINNED BY SDC-4 (R-SDC P1). The dropped row here read `{ batchNumber: '  ', qty: '500' }`
+  // and was called "an unfilled form row" — it was not: it held a quantity, and dropping it is the
+  // defect (the panel then misreported the Σ, or lost the expiry under a success toast). A WHOLLY
+  // blank row is still dropped; a row with a quantity and no number now refuses (`sdc4NothingDropped`).
+  it('coerces unambiguous quantities and drops WHOLLY blank batch rows', () => {
     const r = normalizeInventoryDeclarationDraft({
       totalQty: '4000',
       batches: [
-        { batchNumber: '  ', qty: '500' }, // an unfilled form row — dropped, not an error
+        { batchNumber: '  ', qty: '  ' }, // an unfilled form row — dropped, not an error
         { batchNumber: 'A', qty: '1800', expiryDate: '2027-06-30' },
         { batchNumber: 'B', qty: '2200' },
       ],

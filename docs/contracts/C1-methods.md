@@ -105,6 +105,12 @@ targets). They measure different things; this file keeps them separate.
 > (it was fired by `_revise`, so an unsent draft retired the answer it revised), and its from-states gain
 > `UnderReview`. `rr_submit_no_open_sibling` no longer counts an acknowledgment as an open answer.
 
+> **RE-HARVEST (2026-10-05, SDC-4).** No verb, hook, target or service method moved. One refusal is
+> new, and it is a DRAFT refusal, before any dispatch: `normalizeInventoryDeclarationDraft` refuses a batch
+> row that carries a quantity or an expiry but no batch number with `MISSING_BATCH_NUMBER` (the code the
+> ingest adapter already used), where it used to drop the row. The channel-reply parser emits one row per
+> body line of a multi-line reply; its single-line output is unchanged.
+
 Source of truth: `src/services/data/types.ts` (service + command types),
 `src/services/transitions/` (schema, dispatcher, flows).
 

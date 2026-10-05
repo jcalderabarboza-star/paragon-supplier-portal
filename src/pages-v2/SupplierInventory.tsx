@@ -34,7 +34,9 @@ import LoadingState from '../components/ui-v2/LoadingState';
 import ErrorState from '../components/ui-v2/ErrorState';
 import EmptyState from '../components/ui-v2/EmptyState';
 import { useInventory } from '../services/query/hooks';
-import { formatNumber } from '../lib/format';
+import { useOwnInventoryDeclarations } from '../services/query/sdcSupplierHooks';
+import { labelOf } from '../services/sdc';
+import { formatDate, formatNumber } from '../lib/format';
 
 const STATUS_VARIANT: Record<StockStatus, 'success' | 'warning' | 'danger' | 'neutral'> = {
   [StockStatus.CRITICAL]: 'danger',
@@ -130,6 +132,13 @@ const SupplierInventory: React.FC = () => {
   const { supplierId } = identity;
   const inventoryQuery = useInventory();
   const myInventory = inventoryQuery.data?.items ?? [];
+  // ⚠️ SDC-4 · R-SDC P1 — THE STOCK THE SUPPLIER DECLARED IS SHOWN WHERE THEY LOOK FOR
+  // THEIR STOCK. This page read only its own sample feed, so a declaration made on
+  // Forecasts → Stock (SOH) — the figure Paragon plans with — never appeared here and
+  // the two pages showed two different stock truths. It reads the SAME declaration
+  // store now, labelled by its source; the sample feed below stays as it was, marked.
+  const declaredQuery = useOwnInventoryDeclarations();
+  const declared = declaredQuery.data ?? [];
   const [filterStatus, setFilterStatus] = useState<StatusFilter>('All');
   const [search, setSearch] = useState('');
 
@@ -248,6 +257,53 @@ const SupplierInventory: React.FC = () => {
             specific waiting state (a live supplier feed, F1). */}
         <ProvenanceMarker capability="inventory" className="ml-3 align-middle" />
       </PageMetaLine>
+
+      <section className="mb-6 rounded-lg border border-border-subtle bg-bg-surface px-4 py-3" data-testid="inventory-declared">
+        <h2 className="text-base font-semibold text-text-primary">{t('supplierInventory.declared.title')}</h2>
+        <p className="mb-3 text-sm text-text-secondary">{t('supplierInventory.declared.subtitle')}</p>
+        {declared.length === 0 ? (
+          <p className="text-sm text-text-tertiary" data-testid="inventory-declared-none">
+            {t('supplierInventory.declared.none')}
+          </p>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableHeaderCell>{t('supplierInventory.declared.col.material')}</TableHeaderCell>
+              <TableHeaderCell>{t('supplierInventory.declared.col.total')}</TableHeaderCell>
+              <TableHeaderCell>{t('supplierInventory.declared.col.batches')}</TableHeaderCell>
+              <TableHeaderCell>{t('supplierInventory.declared.col.asOf')}</TableHeaderCell>
+            </TableHeader>
+            <tbody>
+              {declared.map((d) => {
+                const expiries = (d.batches ?? []).map((b) => b.expiryDate).filter((e): e is string => !!e).sort();
+                return (
+                  <TableRow key={d.id} data-testid={`inventory-declared-${d.materialCode}`}>
+                    <TableCell>
+                      <Data className="text-xs">{d.materialCode}</Data>
+                      <div className="text-xs text-text-secondary">{labelOf(d.materialCode)}</div>
+                    </TableCell>
+                    <TableCell>
+                      <Data>{formatNumber(d.totalQty)} {d.uom}</Data>
+                    </TableCell>
+                    <TableCell className="text-xs text-text-secondary">
+                      {d.batches && d.batches.length > 0
+                        ? t('supplierInventory.declared.batches', {
+                            count: d.batches.length,
+                            n: formatNumber(d.batches.length),
+                            expiry: expiries[0] ? formatDate(expiries[0]) : '—',
+                          })
+                        : t('supplierInventory.declared.totalOnly')}
+                    </TableCell>
+                    <TableCell>
+                      <Data className="text-xs">{formatDate(d.declaredAt)}</Data>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </tbody>
+          </Table>
+        )}
+      </section>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-5 mb-6">
         <KpiCard

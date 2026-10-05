@@ -219,6 +219,10 @@ export const sdcSupplierEn: Record<string, string> = {
   'sdcSup.stock.toast.missingMaterial.title': 'Material required',
   'sdcSup.stock.toast.missingMaterial.body': 'Select the material you are declaring stock for.',
   'sdcSup.stock.toast.missingTotal.title': 'Total quantity required',
+  // SDC-4 · a batch row refused, named by its position on the form.
+  'sdcSup.stock.toast.batchRow.title': 'Batch row {{n}} cannot be recorded',
+  'sdcSup.stock.batch.refused.missingNumber':
+    'This row has a quantity or an expiry date but no batch number. Enter the batch number, or clear the row — it is never dropped silently.',
   'sdcSup.stock.toast.missingTotal.body': 'Enter your total stock on hand for this material.',
   'sdcSup.stock.toast.batchMismatch.title': 'Batches do not sum to the total',
   'sdcSup.stock.toast.batchMismatch.body': 'Your batches sum to {{sum}} but the declared total is {{total}} — a total that disagrees with its own detail cannot be recorded.',
@@ -597,6 +601,9 @@ export const sdcSupplierId: Record<string, string> = {
   'sdcSup.stock.toast.missingMaterial.title': 'Material wajib diisi',
   'sdcSup.stock.toast.missingMaterial.body': 'Pilih material yang stoknya Anda deklarasikan.',
   'sdcSup.stock.toast.missingTotal.title': 'Total kuantitas wajib diisi',
+  'sdcSup.stock.toast.batchRow.title': 'Baris batch {{n}} tidak dapat dicatat',
+  'sdcSup.stock.batch.refused.missingNumber':
+    'Baris ini memiliki kuantitas atau tanggal kedaluwarsa tetapi tanpa nomor batch. Isi nomor batch, atau kosongkan barisnya — baris tidak pernah dibuang diam-diam.',
   'sdcSup.stock.toast.missingTotal.body': 'Masukkan total stok di tangan Anda untuk material ini.',
   'sdcSup.stock.toast.batchMismatch.title': 'Batch tidak berjumlah sama dengan total',
   'sdcSup.stock.toast.batchMismatch.body': 'Batch Anda berjumlah {{sum}} tetapi total yang dideklarasikan {{total}} — total yang tidak sesuai dengan rinciannya tidak dapat dicatat.',

@@ -63,6 +63,7 @@ import {
   buildInventoryDeclarationPayload,
   normalizeInventoryDeclarationDraft,
   type NormalizedInventoryDeclaration,
+  type DraftRefusalReason,
   buildIncomingShipmentPayload,
   declarationGranularity,
   openSubmissionSession,
@@ -255,6 +256,13 @@ const SOH_REFUSAL_KEY: Record<QtyRefusalReason, string> = {
   NOT_NUMERIC: 'sdcSup.stock.qty.refused.notNumeric',
   AMBIGUOUS_QTY: 'sdcSup.stock.qty.refused.ambiguous',
 };
+// SDC-4 · the declaration draft refuses one more thing than a quantity: a batch row
+// with a quantity or an expiry but no number. Kept OUT of the quantity map above —
+// that map is a `QtyRefusalReason` refusal site the glossary gate reads, and this
+// code belongs to no registered vocabulary, so it carries no glossary chip.
+const SOH_MISSING_BATCH_NUMBER_KEY = 'sdcSup.stock.batch.refused.missingNumber';
+const sohRefusalKey = (reason: DraftRefusalReason): string =>
+  reason === 'MISSING_BATCH_NUMBER' ? SOH_MISSING_BATCH_NUMBER_KEY : SOH_REFUSAL_KEY[reason];
 
 // CP-0 · W1 · PR-2d — the shipment quantity. NO CONVENTION HINT, for exactly
 // the reasons written above the confirm map: this surface has no carrier, and
@@ -1665,7 +1673,8 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
   //
   // Now there is ONE normalisation of the whole draft, and the gate, the banner
   // and the payload all read it. They cannot disagree.
-  const sohBatches = sohForm.batches.filter((b) => b.batchNumber.trim() !== '');
+  // SDC-4 · every row goes to the ONE parse; it alone decides which rows are blank.
+  const sohBatches = sohForm.batches;
   const sohNormalized = normalizeInventoryDeclarationDraft({
     totalQty: sohForm.totalQty,
     ...(sohBatches.length > 0
@@ -1701,10 +1710,17 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
     // An unreadable quantity refuses BEFORE the Σ check: "we cannot read your
     // total" must never be reported as "your batches do not add up".
     if (!sohNormalized.ok) {
+      // SDC-4 · the title names the field that refused: the total, or the batch
+      // row (by its position on the form) — a batch's blank quantity was reported
+      // as "Total quantity required".
+      const f = sohNormalized.field;
       toast({
         variant: 'error',
-        title: t('sdcSup.stock.toast.missingTotal.title'),
-        description: t(SOH_REFUSAL_KEY[sohNormalized.reason]),
+        title:
+          f.kind === 'totalQty'
+            ? t('sdcSup.stock.toast.missingTotal.title')
+            : t('sdcSup.stock.toast.batchRow.title', { n: formatNumber(f.index + 1) }),
+        description: t(sohRefusalKey(sohNormalized.reason)),
       });
       return;
     }
@@ -2464,10 +2480,15 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
                     </>
                   ) : (
                     <>
-                      {t(SOH_REFUSAL_KEY[sohNormalized.reason])}{' '}
-                      <GlossaryTermChip
-                        refTo={{ sourceType: 'QtyRefusalReason', term: sohNormalized.reason }}
-                      />
+                      {/* SDC-4 · a refused batch row is named by its position, here as in the toast. */}
+                      {sohNormalized.field.kind !== 'totalQty' &&
+                        `${t('sdcSup.stock.toast.batchRow.title', { n: formatNumber(sohNormalized.field.index + 1) })} — `}
+                      {t(sohRefusalKey(sohNormalized.reason))}{' '}
+                      {sohNormalized.reason !== 'MISSING_BATCH_NUMBER' && (
+                        <GlossaryTermChip
+                          refTo={{ sourceType: 'QtyRefusalReason', term: sohNormalized.reason }}
+                        />
+                      )}
                     </>
                   )}
                 </div>
