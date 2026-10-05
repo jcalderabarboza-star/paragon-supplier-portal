@@ -152,7 +152,8 @@ describe('PLN-4 · a push of 50 rows — one anchor, one refresh, a page that ke
     const anchors: (string | undefined)[] = [];
     const commit = async (v: { causationId?: string }): Promise<CommandResult> => {
       anchors.push(v.causationId);
-      return { correlationId: `c-${anchors.length}`, status: 'accepted' } as CommandResult;
+      const r: CommandResult = { correlationId: `c-${anchors.length}`, transitionId: 't_intake_commit', status: 'done' };
+      return r;
     };
     const out = await pushEntries(rows, commit, 'en', undefined, { onProgress: (p) => seen.push(p), yieldBetween: pauses });
     expect(out.every((o) => o.kind === 'dispatched')).toBe(true);
