@@ -50,12 +50,18 @@ export interface InventoryDeclarationDraft {
  *  rather than reject the whole form anonymously. */
 export type DeclarationField =
   | { readonly kind: 'totalQty' }
-  | { readonly kind: 'batchQty'; readonly index: number; readonly batchNumber: string };
+  | { readonly kind: 'batchQty'; readonly index: number; readonly batchNumber: string }
+  // SDC-4 · a batch row that carries a quantity or an expiry but no batch number.
+  | { readonly kind: 'batchNumber'; readonly index: number };
+
+/** Why a draft refused: an unreadable quantity, or (SDC-4) a batch row with no
+ *  number — the same code the bulk grid's ingest already refuses with. */
+export type DraftRefusalReason = QtyRefusalReason | 'MISSING_BATCH_NUMBER';
 
 /** A normalisation result — honest silence carries the reason AND the field. */
 export type DraftOutcome<T> =
   | { readonly ok: true; readonly value: T }
-  | { readonly ok: false; readonly reason: QtyRefusalReason; readonly field: DeclarationField };
+  | { readonly ok: false; readonly reason: DraftRefusalReason; readonly field: DeclarationField };
 
 /** A batch whose qty has already been through the one legal parse. */
 export interface NormalizedInventoryBatch {
@@ -73,9 +79,16 @@ export interface NormalizedInventoryDeclaration {
 /**
  * Normalise a declaration draft's quantities — THE single parse for this object.
  *
- * Blank-NUMBERED batch rows are dropped first (a form legitimately carries empty
+ * Wholly BLANK batch rows are dropped first (a form legitimately carries empty
  * add-rows), so an unfilled row never refuses; every SURVIVING row must then
- * carry a readable qty. `hint` resolves a cross-convention ambiguity for TYPED
+ * carry a batch number and a readable qty.
+ *
+ * ⚠️ SDC-4 · R-SDC P1 — A ROW WITH A QUANTITY OR AN EXPIRY IS NOT UNFILLED. The
+ * filter was "blank batch NUMBER", so a row holding 1 200 and an expiry but no
+ * number vanished: the Σ banner then accused the supplier of batches summing to
+ * half the total, or — when the rest still summed — the declaration landed
+ * total-only under a success toast and the expiry was lost. It refuses by name
+ * now (`MISSING_BATCH_NUMBER`, the bulk grid's own code), at the row. `hint` resolves a cross-convention ambiguity for TYPED
  * entry only — callers whose rows come from a sheet or a message of unknown
  * origin pass none, so an ambiguous cell refuses instead of being guessed
  * (CP-0 §5a).
@@ -87,11 +100,16 @@ export function normalizeInventoryDeclarationDraft(
   const total = normalizeQty(draft.totalQty, hint);
   if (!total.ok) return { ok: false, reason: total.reason, field: { kind: 'totalQty' } };
 
-  const rows = (draft.batches ?? []).filter((b) => b.batchNumber.trim() !== '');
+  const all = draft.batches ?? [];
   const batches: NormalizedInventoryBatch[] = [];
-  for (let index = 0; index < rows.length; index++) {
-    const b = rows[index];
+  for (let index = 0; index < all.length; index++) {
+    const b = all[index];
     const batchNumber = b.batchNumber.trim();
+    const blank = batchNumber === '' && b.qty.trim() === '' && !b.expiryDate;
+    if (blank) continue;
+    if (batchNumber === '') {
+      return { ok: false, reason: 'MISSING_BATCH_NUMBER', field: { kind: 'batchNumber', index } };
+    }
     const qty = normalizeQty(b.qty, hint);
     if (!qty.ok) {
       return { ok: false, reason: qty.reason, field: { kind: 'batchQty', index, batchNumber } };

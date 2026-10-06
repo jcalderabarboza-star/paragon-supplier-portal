@@ -271,15 +271,6 @@ export const STORED_FIELD_ALLOWLIST: readonly Exemption[] = Object.freeze([
     since: D_F,
   },
   {
-    key: 'ChannelReplyDiagnostics.materialMatch',
-    reason: 'unadjudicated',
-    why:
-      'How a supplier reply\'s material token was matched. Five spec reads and no surface read, on a ' +
-      'diagnostics type whose whole purpose is to be shown to a triaging human — the Comm Hub renders ' +
-      'the qty diagnosis and not this one.',
-    since: D_F,
-  },
-  {
     key: 'ScoringOutcome.basis',
     reason: 'unadjudicated',
     why:
@@ -311,14 +302,6 @@ export const STORED_FIELD_ALLOWLIST: readonly Exemption[] = Object.freeze([
     why:
       'The refusal vocabulary member for a PO confirm. One spec read. GL-1 attached a glossary chip at ' +
       'the refusal SITES; this outcome field is a separate carrier that no site reads.',
-    since: D_F,
-  },
-  {
-    key: 'DraftOutcome.field',
-    reason: 'unadjudicated',
-    why:
-      'Which field of an SDC draft submission was refused. Zero reads. Same shape as ' +
-      'PoConfirmQtysOutcome.line: the refusal knows where it happened and nothing asks.',
     since: D_F,
   },
   {

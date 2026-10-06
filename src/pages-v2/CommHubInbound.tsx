@@ -222,8 +222,17 @@ const CommHubInbound: React.FC = () => {
   const uomOf = (materialCode: string): string =>
     materials.find((m) => m.materialCode === materialCode)?.uom ?? '';
 
-  const dispatchableRows = rows.filter((r) => r.materialCode !== '' && r.totalQty.trim() !== '');
-  const canConfirm = dispatchableRows.length > 0 && !declareMutation.isPending;
+  // ⚠️ SDC-4 · R-SDC P1 — NO ROW IS DROPPED SILENTLY. A row with no material picked or
+  // no total was filtered out here, so confirming recorded the other rows and the toast
+  // said the reply was recorded. Now confirm waits until EVERY row is complete (the
+  // existing "blocks confirm until mapped" rule, extended from all rows to each row);
+  // a row the reader will not record is REMOVED by an explicit act, and a row the
+  // dispatch refuses is counted in the toast as N of M.
+  const complete = (r: EditRow) => r.materialCode !== '' && r.totalQty.trim() !== '';
+  const dispatchableRows = rows;
+  const incomplete = rows.some((r) => !complete(r));
+  const canConfirm = rows.length > 0 && !incomplete && !declareMutation.isPending;
+  const removeRow = (i: number) => setRows((prev) => prev.filter((_, j) => j !== i));
 
   // ── Gate 3 → confirm: STRIP the wrapper, hand the spine bare rows ────────────
   const confirm = async () => {
@@ -244,7 +253,7 @@ const CommHubInbound: React.FC = () => {
     const results: DispatchOutcome[] = [];
     for (let i = 0; i < units.length; i++) {
       const unit = units[i];
-      const material = dispatchableRows[i]?.materialCode ?? '';
+      const material = dispatchableRows[i]?.materialCode || dispatchableRows[i]?.rawMaterial || '';
       if (!unit.ok) {
         // Honest silence — parseGrid refused this row; surface its reason.
         results.push({ ok: false, material, reasonKey: REASON_KEY[unit.reason] });
@@ -270,11 +279,17 @@ const CommHubInbound: React.FC = () => {
 
     setOutcomes(results);
     const landed = results.filter((r) => r.ok).length;
-    if (landed > 0) {
+    if (landed > 0 && landed === results.length) {
       toast({
         variant: 'success',
         title: t('commHub.toast.landed.title', { channel: t(`commHub.channel.${channel}`) }),
         description: t('commHub.toast.landed.body'),
+      });
+    } else if (landed > 0) {
+      toast({
+        variant: 'warning',
+        title: t('commHub.toast.partial.title', { landed: formatNumber(landed), total: formatNumber(results.length) }),
+        description: t('commHub.toast.partial.body', { count: results.length - landed, n: formatNumber(results.length - landed) }),
       });
     } else {
       toast({
@@ -572,9 +587,19 @@ const CommHubInbound: React.FC = () => {
                       parsed.diagnostics.uom.toUpperCase() !== masterUom.toUpperCase();
                     return (
                       <div key={i} className="rounded-md border border-border-subtle bg-bg-hover p-3 flex flex-col gap-2">
-                        <div className="text-xs text-text-tertiary">
-                          {t('commHub.row.supplierWrote')}:{' '}
-                          <Data className="text-text-secondary">{row.rawMaterial || '—'}</Data>
+                        <div className="flex items-start justify-between gap-2 text-xs text-text-tertiary">
+                          <span>
+                            {t('commHub.row.supplierWrote')}:{' '}
+                            <Data className="text-text-secondary">{row.rawMaterial || '—'}</Data>
+                          </span>
+                          <button
+                            type="button"
+                            className="shrink-0 font-medium text-action hover:underline"
+                            onClick={() => removeRow(i)}
+                            data-testid={`commhub-row-remove-${i}`}
+                          >
+                            {t('commHub.row.remove')}
+                          </button>
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                           <div>
@@ -622,6 +647,11 @@ const CommHubInbound: React.FC = () => {
                   })}
 
                   <p className="text-xs text-text-tertiary">{t('commHub.confirm.hint')}</p>
+                  {incomplete && (
+                    <p className="text-xs text-warning-hover" data-testid="commhub-confirm-blocked">
+                      {t('commHub.confirm.blocked')}
+                    </p>
+                  )}
                   <div className="flex justify-end">
                     {declareAvailability.kind === 'held' ? (
                       <Button

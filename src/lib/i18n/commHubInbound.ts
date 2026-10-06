@@ -65,6 +65,14 @@ export const commHubInboundEn: Record<string, string> = {
   'commHub.toast.landed.body': 'The supplier reply was recorded as a governed declaration.',
   'commHub.toast.blocked.title': 'Nothing recorded',
   'commHub.toast.blocked.body': 'No confirmable update in this message.',
+  // SDC-4 · some rows landed and some did not — never reported as "recorded".
+  'commHub.toast.partial.title': 'Recorded {{landed}} of {{total}} rows',
+  'commHub.toast.partial.body_one': '{{n}} row was not recorded — it says why below.',
+  'commHub.toast.partial.body_other': '{{n}} rows were not recorded — each one says why below.',
+  // SDC-4 · a row is removed by an act, never dropped; confirm waits for every row.
+  'commHub.row.remove': 'Remove row',
+  'commHub.confirm.blocked':
+    'Every row needs a material and a total before anything is recorded — complete it, or remove a row you will not record.',
   'commHub.toast.failed.title': 'Could not record',
   'commHub.toast.failed.body': 'The update was rejected.',
   'commHub.gate.title': 'Supplier context',
@@ -142,6 +150,11 @@ export const commHubInboundId: Record<string, string> = {
   'commHub.toast.landed.body': 'Balasan pemasok dicatat sebagai deklarasi terkelola.',
   'commHub.toast.blocked.title': 'Tidak ada yang dicatat',
   'commHub.toast.blocked.body': 'Tidak ada pembaruan yang dapat dikonfirmasi dalam pesan ini.',
+  'commHub.toast.partial.title': 'Tercatat {{landed}} dari {{total}} baris',
+  'commHub.toast.partial.body_other': '{{n}} baris tidak tercatat — setiap baris menyebut alasannya di bawah.',
+  'commHub.row.remove': 'Hapus baris',
+  'commHub.confirm.blocked':
+    'Setiap baris memerlukan material dan total sebelum apa pun dicatat — lengkapi, atau hapus baris yang tidak akan Anda catat.',
   'commHub.toast.failed.title': 'Tidak dapat mencatat',
   'commHub.toast.failed.body': 'Pembaruan ditolak.',
   'commHub.gate.title': 'Konteks pemasok',

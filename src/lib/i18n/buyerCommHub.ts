@@ -77,6 +77,10 @@ export const buyerCommHubEn: Record<string, string> = {
   'buyerCommHub.triage.honestyNote':
     'Operator-fed — no live channel; nothing is sent or received here. Recorded by Paragon under the buyer’s identity, honestly distinct from a supplier’s own submission.',
   'buyerCommHub.triage.toast.landed.title': 'Recorded from {{channel}}',
+  // SDC-4 · some rows landed and some did not — never reported as "recorded".
+  'buyerCommHub.triage.toast.partial.title': 'Recorded {{landed}} of {{total}} rows',
+  'buyerCommHub.triage.toast.partial.body_one': '{{n}} row was not recorded — it says why below.',
+  'buyerCommHub.triage.toast.partial.body_other': '{{n}} rows were not recorded — each one says why below.',
   'buyerCommHub.triage.toast.landed.body': 'The supplier’s reply was recorded by Paragon as a governed declaration.',
   'buyerCommHub.triage.toast.failed.title': 'Nothing recorded',
   'buyerCommHub.triage.toast.failed.body': 'No confirmable update was recorded from this message.',
@@ -151,6 +155,8 @@ export const buyerCommHubId: Record<string, string> = {
   'buyerCommHub.triage.honestyNote':
     'Diisi operator — tanpa kanal langsung; tidak ada yang dikirim atau diterima di sini. Dicatat oleh Paragon di bawah identitas pembeli, jujur berbeda dari kiriman mandiri pemasok.',
   'buyerCommHub.triage.toast.landed.title': 'Tercatat dari {{channel}}',
+  'buyerCommHub.triage.toast.partial.title': 'Tercatat {{landed}} dari {{total}} baris',
+  'buyerCommHub.triage.toast.partial.body_other': '{{n}} baris tidak tercatat — setiap baris menyebut alasannya di bawah.',
   'buyerCommHub.triage.toast.landed.body': 'Balasan pemasok dicatat oleh Paragon sebagai deklarasi terkelola.',
   'buyerCommHub.triage.toast.failed.title': 'Tidak ada yang dicatat',
   'buyerCommHub.triage.toast.failed.body': 'Tidak ada pembaruan yang dapat dikonfirmasi tercatat dari pesan ini.',

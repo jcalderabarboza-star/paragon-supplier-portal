@@ -164,6 +164,54 @@ export function parseChannelReply(
   rawText: string,
   options: ParseChannelReplyOptions = {},
 ): ChannelParseResult {
+  // ⚠️ SDC-4 · R-SDC P1 — A REPLY OF SEVERAL LINES IS SEVERAL ROWS. The parser read
+  // one material and one quantity from the whole text, so "Stock update:" followed by
+  // three lines proposed ONE row, reported 90% confidence, and the confirm toast said
+  // the reply was recorded while two quantities sat in "did not parse" (measured in
+  // R-SDC browser QA, e16). Each body line now goes through the SAME single-line
+  // classifier — the command it falls under is the first line's — and confidence
+  // falls with the share of quantity-bearing lines it could not read. A single-line
+  // reply takes exactly the path it always took.
+  const lines = rawText.split(/\r?\n/).map((l) => l.trim()).filter((l) => l !== '');
+  const head = (lines[0]?.split(/\s+/)[0] ?? '').toUpperCase();
+  if (lines.length <= 1 || !INVENTORY_COMMANDS.has(head)) return parseSingle(rawText, options);
+  const command = lines[0].split(/\s+/)[0];
+  const bodies = [lines[0].split(/\s+/).slice(1).join(' '), ...lines.slice(1)].filter((b) => b !== '');
+  const results = bodies.map((line) => ({ line, r: parseSingle(`${command} ${line}`, options) }));
+  const proposedRows = results.flatMap(({ r }) => r.proposedRows);
+  const unparsedRemainder = results
+    .map(({ line, r }) => (r.proposedRows.length > 0 ? r.diagnostics.unparsedRemainder : line))
+    .filter((x) => x !== '')
+    .join('\n');
+  const matchedTokens = [command, ...results.flatMap(({ r }) => r.diagnostics.matchedTokens.slice(1))];
+  const withRow = results.filter(({ r }) => r.proposedRows.length > 0);
+  const candidates = results.filter(({ line, r }) => r.proposedRows.length > 0 || line.split(/\s+/).some(isQtyLike));
+  const qtyReason = results.find(({ r }) => r.diagnostics.qtyReason)?.r.diagnostics.qtyReason;
+  const uom = withRow.find(({ r }) => r.diagnostics.uom)?.r.diagnostics.uom;
+  const confidence =
+    withRow.length === 0
+      ? qtyReason
+        ? 0.3
+        : 0.2
+      : (Math.min(...withRow.map(({ r }) => r.diagnostics.confidence)) * withRow.length) / candidates.length;
+  const membership = withRow.length > 0 && withRow.every(({ r }) => r.diagnostics.materialMatch === 'membership');
+  const anyMaterial = withRow.some(({ r }) => r.diagnostics.materialMatch !== undefined);
+  return {
+    proposedRows,
+    specHint: { kind: 'InventoryDeclaration', mode: 'import' },
+    diagnostics: {
+      matchedTokens,
+      unparsedRemainder,
+      confidence,
+      ...(qtyReason ? { qtyReason } : {}),
+      ...(uom ? { uom } : {}),
+      ...(anyMaterial ? { materialMatch: membership ? ('membership' as const) : ('shape' as const) } : {}),
+    },
+  };
+}
+
+/** The single-line classifier — the whole of this parser before SDC-4, unchanged. */
+function parseSingle(rawText: string, options: ParseChannelReplyOptions): ChannelParseResult {
   const hint = options.numberFormatHint;
   const trimmed = rawText.trim();
   const tokens = trimmed === '' ? [] : trimmed.split(/\s+/);

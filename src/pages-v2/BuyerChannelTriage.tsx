@@ -246,8 +246,17 @@ const BuyerChannelTriage: React.FC<BuyerChannelTriageProps> = ({ onRecorded }) =
   const setRow = (i: number, patch: Partial<EditRow>) =>
     setRows((prev) => prev.map((r, j) => (j === i ? { ...r, ...patch } : r)));
 
-  const dispatchableRows = rows.filter((r) => r.materialCode !== '' && r.totalQty.trim() !== '');
-  const canConfirm = subjectSupplierId !== '' && dispatchableRows.length > 0 && !recordMutation.isPending;
+  // ⚠️ SDC-4 · R-SDC P1 — NO ROW IS DROPPED SILENTLY. A row with no material picked or
+  // no total was filtered out here, so confirming recorded the other rows and the toast
+  // said the reply was recorded. Now confirm waits until EVERY row is complete (the
+  // existing "blocks confirm until mapped" rule, extended from all rows to each row);
+  // a row the reader will not record is REMOVED by an explicit act, and a row the
+  // dispatch refuses is counted in the toast as N of M.
+  const complete = (r: EditRow) => r.materialCode !== '' && r.totalQty.trim() !== '';
+  const dispatchableRows = rows;
+  const incomplete = rows.some((r) => !complete(r));
+  const canConfirm = subjectSupplierId !== '' && rows.length > 0 && !incomplete && !recordMutation.isPending;
+  const removeRow = (i: number) => setRows((prev) => prev.filter((_, j) => j !== i));
 
   // ── Gate 3 → confirm: STRIP the wrapper, dispatch the RECORD verb ────────────
   const confirm = async () => {
@@ -266,7 +275,7 @@ const BuyerChannelTriage: React.FC<BuyerChannelTriageProps> = ({ onRecorded }) =
     const results: DispatchOutcome[] = [];
     for (let i = 0; i < units.length; i++) {
       const unit = units[i];
-      const material = dispatchableRows[i]?.materialCode ?? '';
+      const material = dispatchableRows[i]?.materialCode || dispatchableRows[i]?.rawMaterial || '';
       if (!unit.ok) {
         results.push({ ok: false, material, reasonKey: REASON_KEY[unit.reason] });
         continue;
@@ -314,12 +323,18 @@ const BuyerChannelTriage: React.FC<BuyerChannelTriageProps> = ({ onRecorded }) =
 
     setOutcomes(results);
     const landed = results.filter((r) => r.ok).length;
-    if (landed > 0) {
-      onRecorded?.(); // let the parent refresh its channel-sourced audit trail
+    if (landed > 0) onRecorded?.(); // let the parent refresh its channel-sourced audit trail
+    if (landed > 0 && landed === results.length) {
       toast({
         variant: 'success',
         title: t('buyerCommHub.triage.toast.landed.title', { channel: t(`buyerCommHub.channel.${channel}`) }),
         description: t('buyerCommHub.triage.toast.landed.body'),
+      });
+    } else if (landed > 0) {
+      toast({
+        variant: 'warning',
+        title: t('buyerCommHub.triage.toast.partial.title', { landed: formatNumber(landed), total: formatNumber(results.length) }),
+        description: t('buyerCommHub.triage.toast.partial.body', { count: results.length - landed, n: formatNumber(results.length - landed) }),
       });
     } else {
       toast({
@@ -522,9 +537,19 @@ const BuyerChannelTriage: React.FC<BuyerChannelTriageProps> = ({ onRecorded }) =
                         parsed.diagnostics.uom.toUpperCase() !== masterUom.toUpperCase();
                       return (
                         <div key={i} className="rounded-md border border-border-subtle bg-bg-hover p-3 flex flex-col gap-2">
-                          <div className="text-xs text-text-tertiary">
-                            {t('commHub.row.supplierWrote')}:{' '}
-                            <Data className="text-text-secondary">{row.rawMaterial || '—'}</Data>
+                          <div className="flex items-start justify-between gap-2 text-xs text-text-tertiary">
+                            <span>
+                              {t('commHub.row.supplierWrote')}:{' '}
+                              <Data className="text-text-secondary">{row.rawMaterial || '—'}</Data>
+                            </span>
+                            <button
+                              type="button"
+                              className="shrink-0 font-medium text-action hover:underline"
+                              onClick={() => removeRow(i)}
+                              data-testid={`triage-row-remove-${i}`}
+                            >
+                              {t('commHub.row.remove')}
+                            </button>
                           </div>
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                             <div>
@@ -571,6 +596,11 @@ const BuyerChannelTriage: React.FC<BuyerChannelTriageProps> = ({ onRecorded }) =
                       );
                     })}
 
+                    {incomplete && (
+                      <p className="text-xs text-warning-hover" data-testid="triage-confirm-blocked">
+                        {t('commHub.confirm.blocked')}
+                      </p>
+                    )}
                     <div className="flex items-center justify-between gap-2">
                       <p className="text-xs text-text-tertiary">{t('buyerCommHub.triage.confirmHint')}</p>
                       {recordAvailability.kind === 'held' ? (

@@ -33,6 +33,18 @@ export const supplierInventoryEn: Record<string, string> = {
   'supplierInventory.meta.materials.one': '{{count}} material',
   'supplierInventory.meta.materials.other': '{{count}} materials',
   'supplierInventory.meta.lastSync': 'last sync',
+  // SDC-4 · the stock the supplier declared on Forecasts, shown where they look for their stock.
+  'supplierInventory.declared.title': 'Stock you declared to Paragon',
+  'supplierInventory.declared.subtitle':
+    'Your latest declaration per material, from Forecasts → Stock (SOH) — the figures Paragon plans with. The table further down is a separate sample feed.',
+  'supplierInventory.declared.none': 'You have not declared stock yet — declare it on Forecasts → Stock (SOH).',
+  'supplierInventory.declared.col.material': 'Material',
+  'supplierInventory.declared.col.total': 'Declared total',
+  'supplierInventory.declared.col.batches': 'Batches',
+  'supplierInventory.declared.col.asOf': 'Declared on',
+  'supplierInventory.declared.batches_one': '{{n}} batch · earliest expiry {{expiry}}',
+  'supplierInventory.declared.batches_other': '{{n}} batches · earliest expiry {{expiry}}',
+  'supplierInventory.declared.totalOnly': 'Total only — no batch detail',
   // — KPI cards —
   'supplierInventory.kpi.critical.eyebrow': 'Critical stock',
   'supplierInventory.kpi.low.eyebrow': 'Low stock',
@@ -96,6 +108,16 @@ export const supplierInventoryId: Record<string, string> = {
   'supplierInventory.meta.materials.one': '{{count}} material',
   'supplierInventory.meta.materials.other': '{{count}} material',
   'supplierInventory.meta.lastSync': 'sinkronisasi terakhir',
+  'supplierInventory.declared.title': 'Stok yang Anda deklarasikan kepada Paragon',
+  'supplierInventory.declared.subtitle':
+    'Deklarasi terbaru Anda per material, dari Prakiraan → Stok (SOH) — angka yang dipakai Paragon untuk perencanaan. Tabel di bawah adalah umpan sampel terpisah.',
+  'supplierInventory.declared.none': 'Anda belum mendeklarasikan stok — deklarasikan di Prakiraan → Stok (SOH).',
+  'supplierInventory.declared.col.material': 'Material',
+  'supplierInventory.declared.col.total': 'Total dideklarasikan',
+  'supplierInventory.declared.col.batches': 'Batch',
+  'supplierInventory.declared.col.asOf': 'Dideklarasikan pada',
+  'supplierInventory.declared.batches_other': '{{n}} batch · kedaluwarsa paling awal {{expiry}}',
+  'supplierInventory.declared.totalOnly': 'Hanya total — tanpa rincian batch',
   // — KPI cards —
   'supplierInventory.kpi.critical.eyebrow': 'Stok kritis',
   'supplierInventory.kpi.low.eyebrow': 'Stok rendah',
