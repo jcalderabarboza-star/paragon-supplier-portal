@@ -110,3 +110,27 @@ export function asnTrackingFor(
   if (!shipment.asnRef || linkedAsnStatus === null) return null;
   return { asnRef: shipment.asnRef, asnStatus: linkedAsnStatus };
 }
+
+/**
+ * ⚠️ SDC-5 · IS THIS LEG STILL ON ITS WAY? The one question the buyer's coverage
+ * and the planning grid's "incoming" fact ask of a leg.
+ *
+ * A leg counts while the supplier's DECLARED state is in flight (Booked or
+ * Shipped) — and, for a to-paragon leg, while Paragon has not already received
+ * it. Departure and arrival of a to-paragon leg are deliberately NOT the
+ * supplier's to declare (the ASN is the tracker of record, design §2.3), so its
+ * declared state never leaves `Booked` by an act of the supplier's; read alone,
+ * it counted goods Paragon had already taken in as "incoming" for good, and a
+ * supplier's coverage stayed flattered by a delivery that had happened.
+ *
+ * ⚠️ THIS IS NOT THE DELETED TRANSLATOR. `asnStatusToLifecycle` rewrote the leg's
+ * state in the ASN's words and was removed so neither axis could stand in for
+ * the other. This returns a boolean, writes nothing, and reads ONE ASN word —
+ * `Delivered`, the only one that says the goods are no longer in transit. The
+ * card still shows both axes side by side, each in its own vocabulary.
+ */
+export function stillIncoming(view: IncomingShipmentView): boolean {
+  const declared = view.shipment.lifecycle;
+  if (declared !== 'Booked' && declared !== 'Shipped') return false;
+  return view.asnTracking?.asnStatus !== 'Delivered';
+}

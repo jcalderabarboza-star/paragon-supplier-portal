@@ -10,6 +10,7 @@ transitions:
   - t_publication_allocate
   - t_publication_approve_firm
   - t_publication_publish
+  - t_publication_discard
   - t_publication_supersede
   - t_publication_withdraw
 ---
@@ -21,9 +22,9 @@ A forecast publication is the plan suppliers are asked to answer: which material
 
 Two buyer lanes touch it, and the split between them is deliberate. The planner (the `planning` lane) opens a draft from a SOMO plan version, splits the totals to suppliers in the plan grid and publishes. Procurement (the `procurement` lane) signs every Firm split before it can go out, because a Firm line is what a supplier builds stock on — the planner splits, somebody else signs. Publishing retires the previous publication of the same grain automatically (a cascade nobody presses). Suppliers never act on a publication; they read their own lines of it on `/supplier/forecasts` and answer them (see the requirement-response guide). The default buyer seat holds both lanes, so in the demo one seat can split and sign; the two lanes make narrowing possible, they do not enforce it.
 
-A publication starts as a **Draft**, holding SOMO's totals and — unless the planner chose to start from the current publication's split — no supplier lines. **Published** is the plan suppliers answer. **Superseded** (replaced by the next publication) and **Withdrawn** (taken back with a reason) are both endings; neither is re-opened, and the next plan is a new draft. There is no verb that discards a draft. **One plan is current per grain:** the monthly raw-material plan and the weekly packaging plan stand side by side, and publishing at one grain supersedes only the previous plan of that grain — the other grain's plan, its lines and its open responses stay where they are, on `/buyer/collaboration` and on each supplier's page. A withdrawn plan brings back nothing: its grain has no current plan until the next publish.
+A publication starts as a **Draft**, holding SOMO's totals and — unless the planner chose to start from the current publication's split — no supplier lines. **Published** is the plan suppliers answer. **Superseded** (replaced by the next publication) and **Withdrawn** (taken back with a reason) are both endings; neither is re-opened, and the next plan is a new draft. **Discarded** is the ending of a draft that was never sent: the planner discards it, and the next draft of its grain can then be opened. **One plan is current per grain:** the monthly raw-material plan and the weekly packaging plan stand side by side, and publishing at one grain supersedes only the previous plan of that grain — the other grain's plan, its lines and its open responses stay where they are, on `/buyer/collaboration` and on each supplier's page. A withdrawn plan brings back nothing: its grain has no current plan until the next publish.
 
-Honesty markers. Every plan version on offer is SIMULATED: the seed publications and the generated SOMO fixture are sample data, so the plan grid carries **Sample SOMO plan — simulated** and the liveness pill reads *Sample — awaiting SOMO C8 feed*. A SIMULATED publication is never shown to a live supplier; the supplier page renders the sample set only under **Sample forecast — no live publication yet**. All six verbs belong to the portal's own command spine — nothing here is S/4HANA's, TMS's or the bank's. The publications live in an in-memory store: a page reload re-seeds it, so a draft opened in a session is gone after a reload. Timestamps come from one shared simulated clock (the app's "today" is 31 Aug 2026, 12:00 UTC), never the wall clock. Withdraw is modelled and wired but no screen offers it.
+Honesty markers. Every plan version on offer is SIMULATED: the seed publications and the generated SOMO fixture are sample data, so the plan grid carries **Sample SOMO plan — simulated** and the liveness pill reads *Sample — awaiting SOMO C8 feed*. A SIMULATED publication is never shown to a live supplier; the supplier page renders the sample set only under **Sample forecast — no live publication yet**. All seven verbs belong to the portal's own command spine — nothing here is S/4HANA's, TMS's or the bank's. The publications live in an in-memory store: a page reload re-seeds it, so a draft opened in a session is gone after a reload. Timestamps come from one shared simulated clock (the app's "today" is 31 Aug 2026, 12:00 UTC), never the wall clock. Withdraw is modelled and wired but no screen offers it.
 
 <!-- src: src/lib/i18n/processFlowPurpose.ts:237-251; src/services/transitions/flows/forecastPublication.flow.ts:1-65; src/services/transitions/businessRoles.ts:156-162; src/services/transitions/businessRoles.ts:381-386; src/services/transitions/businessRoles.ts:747-758; src/services/sdc/publication.ts:40-42; src/services/data/mock/stores/forecastPublicationStore.ts:1-20; src/services/data/mock/MockCollaborationService.ts:126-155; src/services/liveness/registry.ts:340-347; src/lib/i18n/planGrid.ts:169-170; src/lib/i18n/sdcSupplier.ts:15; src/lib/i18n/widget.ts:42; src/services/sdc/clock.ts:55 -->
 
@@ -36,12 +37,13 @@ Honesty markers. Every plan version on offer is SIMULATED: the seed publications
 | 2 | Draft → Draft (same state) | operator action, state-preserving, repeatable | buyer · planning | `t_publication_allocate` |
 | 3 | Draft → Draft (same state) | operator action, state-preserving, one per Firm line | buyer · procurement | `t_publication_approve_firm` |
 | 4 | Draft → Published | operator action | buyer · planning | `t_publication_publish` |
-| 5 | Published → Superseded | cascade (raised by the next publish of the same grain) | automation | `t_publication_supersede` |
-| 6 | Published → Withdrawn | not active (no caller) | buyer · planning | `t_publication_withdraw` |
+| 5 | Draft → Discarded | operator action | buyer · planning | `t_publication_discard` |
+| 6 | Published → Superseded | cascade (raised by the next publish of the same grain) | automation | `t_publication_supersede` |
+| 7 | Published → Withdrawn | not active (no caller) | buyer · planning | `t_publication_withdraw` |
 
 **Forks**
 
-- **At Draft:** `t_publication_allocate` — planner — as often as needed while splitting; `t_publication_approve_firm` — procurement — once per Firm line, after its split is final; `t_publication_publish` — planner — the one exit, only when every Firm line is signed.
+- **At Draft:** `t_publication_allocate` — planner — as often as needed while splitting; `t_publication_approve_firm` — procurement — once per Firm line, after its split is final; `t_publication_publish` — planner — only when every Firm line is signed; `t_publication_discard` — planner — when the draft will not be sent.
 - **At Published:** `t_publication_supersede` — automation — when a newer publication of the same grain is published; `t_publication_withdraw` — planner — when a sent plan must be taken back (no screen offers it today).
 
 <!-- src: src/services/transitions/flows/forecastPublication.flow.ts:37-170; src/services/transitions/cascades.ts:82-85 -->
@@ -113,6 +115,22 @@ Honesty markers. Every plan version on offer is SIMULATED: the seed publications
 - **Honesty:** The published plan is still SIMULATED, so a live supplier still sees no publication; the supplier page shows it only inside the sample banner. The deadline offset (7 days) is a constant shared with the chase list, not yet a governed setting. A seat without the planning lane sees *Awaiting Planning* in place of the button.
 <!-- src: src/services/transitions/flows/forecastPublication.flow.ts:123-139; src/services/data/mock/publicationTarget.ts:118-127; src/services/data/mock/publicationTarget.ts:328-371; src/services/sdc/publication.ts:10-20; src/services/sdc/publication.ts:51-88; src/services/sdc/consolidation.ts:46; src/pages-v2/plan-grid/PublicationPanel.tsx:130-160; src/pages-v2/plan-grid/PublicationPanel.tsx:296-315; src/lib/i18n/planGrid.ts:233-234; src/lib/i18n/planGrid.ts:251-254; src/pages-v2/SupplierForecasts.tsx:336-357; src/pages-v2/SupplierForecasts.tsx:436-461; src/pages-v2/SupplierForecasts.tsx:1793-1859; src/lib/i18n/sdcSupplier.ts:20-35; src/services/data/mock/MockCollaborationService.ts:143-155; src/services/query/commandHooks.ts:2064-2075 -->
 
+### t_publication_discard — Discard a draft <!-- transition:t_publication_discard -->
+
+- **Step kind:** operator action
+- **Role:** buyer · planning (the same permission as opening a draft)
+- **From → to:** Draft → Discarded
+- **Operator — where:** `/buyer/plan-grid` → tab **Raw materials** or **Packaging** → panel **Forecast publication** → **Discard draft** → **Discard it**
+- **Operator — do:** End a draft that will not be sent — opened from the wrong plan version, or abandoned — so the next draft of the same grain can be opened. No supplier ever saw a draft, so nothing a supplier answered is touched.
+- **Operator — fill:** nothing to fill. The panel asks once more before it acts (*Discard {id}? Nothing in it has been sent to a supplier. Its split is not carried to the next draft.*); **Keep the draft** steps back.
+- **Tester — expected state:** Discarded
+- **Tester — confirm:** the panel returns to *No draft is open for this grain…* with **Open draft** offered again; **Publication history** gains **Draft discarded** with role *Planning* and the person who did it. The publication that was Published before is still the one suppliers answer — nothing on `/supplier/forecasts` or `/buyer/collaboration` changes. The next draft opened at the grain takes the next revision number.
+- **Tester — trigger event:** `t_publication_discard`
+- **Checks that can refuse:** none beyond role and legality — only a Draft can be discarded, and no field is required.
+- **Glossary:** `ILLEGAL_TRANSITION`; `ROLE_NOT_PERMITTED`.
+- **Honesty:** A discard cannot be undone, and the split made in the draft is not carried forward — a new draft starts from the current publication's split or from nothing. A seat without the planning lane sees *Awaiting Planning* in place of the button.
+<!-- src: src/services/transitions/flows/forecastPublication.flow.ts:140-159; src/services/data/mock/publicationTarget.ts:149-158; src/services/data/mock/publicationTarget.ts:383-393; src/services/data/mock/stores/forecastPublicationStore.ts:127; src/services/query/commandHooks.ts:2134-2141; src/pages-v2/plan-grid/PublicationPanel.tsx:155-159; src/pages-v2/plan-grid/PublicationPanel.tsx:384-404; src/lib/i18n/planGrid.ts:312-316; src/lib/i18n/planGrid.ts:332 -->
+
 ### t_publication_supersede — Superseded by the next publication <!-- transition:t_publication_supersede -->
 
 - **Step kind:** cascade (raised by `t_publication_publish`)
@@ -151,7 +169,7 @@ Honesty markers. Every plan version on offer is SIMULATED: the seed publications
 - **Start empty or start from the current split (at open).** Branch A — `t_publication_open` with the carry box ticked — **When:** a publication of the grain is Published and most of its split still holds; lines are copied without signatures and marked *carried-forward*. Branch B — `t_publication_open` unticked (or no current publication) — **When:** the plan should be split from scratch; the draft starts with no lines.
 - **Split, then sign, then publish (inside Draft).** `t_publication_allocate` — **When:** a supplier's share must be set or changed; changing a signed Firm line removes its signature. `t_publication_approve_firm` — **When:** every Firm split is final; procurement signs. `t_publication_publish` — **When:** the panel lists no *Not yet* reason.
 - **Replace or take back (at Published).** Branch A — a new draft published over it, which fires `t_publication_supersede` — **When:** the plan changed and suppliers should answer the new version; answers that did not move are carried. Branch B — `t_publication_withdraw` — **When:** the plan must not be answered at all; not offered by any screen today.
-- **A draft that is no longer wanted.** No transition removes or discards a draft, and a second draft of the same grain is refused while one is open (`pub_one_open_draft`). The only exit is to publish it; in this build a page reload also clears it, because the store re-seeds.
+- **A draft that is no longer wanted.** `t_publication_discard` — **When:** the draft was opened from the wrong plan version or will not be sent. A second draft of the same grain is refused while one is open (`pub_one_open_draft`), so discarding is what frees the grain; the discarded draft's split is not carried.
 
 <!-- src: src/services/transitions/flows/forecastPublication.flow.ts:60-168; src/services/data/mock/publicationTarget.ts:153-179; src/services/data/mock/publicationTarget.ts:373-382; src/services/sdc/publication.ts:90-130; src/services/data/mock/stores/forecastPublicationStore.ts:18-19 -->
 
@@ -188,7 +206,7 @@ Honesty markers. Every plan version on offer is SIMULATED: the seed publications
 | Superseded publication `PUB-2026-08-RM` | its `supersededBy` | `PV-2026-08.1`, published 2026-08-01; RM-EMUL-3320 and PK-PETB-8810 in 2026-09 moved between the two versions (2 000 → 2 600 KG; 120 000 → 150 000 PCS) |
 | Requirement responses | `publicationId` + `planVersion` on each response | `rr-0005` (sup-007's acknowledgment) binds this publication; `rr-0001` to `rr-0004` bind `PUB-2026-08-RM` and are read against this one as carried or stale |
 | Material master / planning master | `materialCode` | a line's unit is copied from the master at allocation; an unknown code is refused |
-| Publication ledger | `ledger[]` | open, publish, supersede and withdraw rows only — allocations and signatures are not ledger rows |
+| Publication ledger | `ledger[]` | open, publish, discard, supersede and withdraw rows only — allocations and signatures are not ledger rows |
 | Response deadline | `responseDueAt` | absent on both seeds (never published through the verb); both seats then read published date + 7 days — 22 Aug 2026 for `PUB-2026-08-RM-R2` |
 
 Display-only: `provenance` (`SOMO` · `SIMULATED` · `PLANNED`) is carried on the publication and every line; `segment` and `suggestedSource` on some seed lines are SOMO's planning annotations, and no verb writes them.
@@ -200,7 +218,7 @@ Display-only: `provenance` (`SOMO` · `SIMULATED` · `PLANNED`) is carried on th
 
 Every dispatch writes one `TransitionEvent`: `event` = the transition id, `actor` = `buyer:all` for the buyer seat, `ts` from the shared clock, `outcome` (done / failed, with the refusal as `reason` on a failure), a `correlationId`, and `subject` = {`entity` `forecastPublication`, `entityId`, `from`, `to`} — for allocate and sign, `to` is the same state. A user act also carries `attribution` (the session's person, if one was named); the supersede, being a cascade, carries the publish's `correlationId` as its `causationId` and no person. Signing several Firm lines in one press groups them the same way: the first signature's `correlationId` is the later ones' `causationId`.
 
-The publication keeps its own ledger beside the events: one row each for opened, published, superseded and withdrawn, with `at`, a monotonic `seq` (the shared clock is frozen, so an open, its publish and the supersede it causes can share one instant — `seq` orders them), `personId` (or none) and, for a withdrawal, the reason. The role is not stored; **Publication history** derives it from the lane holding each verb. The seed rows are marked as seeded.
+The publication keeps its own ledger beside the events: one row each for opened, published, discarded, superseded and withdrawn, with `at`, a monotonic `seq` (the shared clock is frozen, so an open, its publish and the supersede it causes can share one instant — `seq` orders them), `personId` (or none) and, for a withdrawal, the reason. The role is not stored; **Publication history** derives it from the lane holding each verb. The seed rows are marked as seeded.
 
 Seeded history of `PUB-2026-08-RM-R2`: **Published** 2026-08-15 (seq 3, seeded); `PUB-2026-08-RM` shows **Published** 2026-08-01 (seq 1) and **Superseded** 2026-08-15 (seq 4). Worked sequence a tester produces from there on the **Raw materials** tab:
 
@@ -224,7 +242,7 @@ Seeded history of `PUB-2026-08-RM-R2`: **Published** 2026-08-15 (seq 3, seeded);
 | **Sign firm lines** disabled with *A firm split is signed by a person…* | warning text beside the button | the session names no person; `POLICY_REJECTED:pub_actor_attributed` if forced | adopt a person in the identity panel (avatar), then sign |
 | **Publish** disabled with *Not yet: …* lines | the reasons listed beside the button | nothing allocated, unsigned Firm lines, or a line without a class | allocate, have procurement sign, then publish |
 | *SOMO has emitted no plan version at this grain.* | no plan-version list in the panel | no feed version has a horizon at this grain | switch tab (monthly / weekly) |
-| `POLICY_REJECTED:pub_one_open_draft` | refusal under the panel naming the open draft | a draft of this grain is already open (e.g. opened in another tab) | publish that draft; there is no discard verb (a reload re-seeds the store) |
+| `POLICY_REJECTED:pub_one_open_draft` | refusal under the panel naming the open draft | a draft of this grain is already open (e.g. opened in another tab) | publish that draft, or discard it with **Discard draft** in the panel |
 | `POLICY_REJECTED:pub_carry_from_current` / `pub_planversion_known` / `pub_horizon_one_grain` | refusal under the panel | the carry source is not the current publication, or the version / emission / horizon does not match SOMO's feed | reopen from the panel so the keys come from the offer shown |
 | Cell refused: *no open draft covers this figure…* | refusal at the Allocation cell | no draft is open for this grain | open a draft in the publication panel first |
 | Cell refused: *over SOMO's total — the suppliers would hold {sum} of {total}* | refusal at the cell; at dispatch `POLICY_REJECTED:pub_alloc_within_total` | the suppliers' shares would exceed SOMO's material-period total | lower this or another supplier's share |
@@ -251,6 +269,7 @@ Seeded history of `PUB-2026-08-RM-R2`: **Published** 2026-08-15 (seq 3, seeded);
 | Draft | — | — | no fixture; reach it with **Open draft** on `/buyer/plan-grid` (Raw materials tab, `PV-2026-08.2`, carry ticked → `PUB-month-PV-2026-08.2-r2` with 7 carried lines, 3 Firm unsigned) |
 | Published | `PUB-2026-08-RM-R2` | — | `PV-2026-08.2`, published 2026-08-15, horizon 2026-08 / 2026-09 / 2026-10, 7 lines; seeded ledger row; no response deadline; the current monthly publication |
 | Superseded | `PUB-2026-08-RM` | — | `PV-2026-08.1`, published 2026-08-01, superseded by `PUB-2026-08-RM-R2`; four seed responses (`rr-0001` to `rr-0004`) still bind it |
+| Discarded | — | — | no fixture; reach it with **Open draft** then **Discard draft** → **Discard it** on `/buyer/plan-grid` |
 | Withdrawn | — | — | no fixture and no screen reaches it; only a direct dispatch of `t_publication_withdraw` on a Published record |
 
 Context for the tester: the store seeds from the two fixture publications — the latest by publish date is Published, the earlier one Superseded. Both are SIMULATED and monthly; no weekly publication exists at seed, so the **Packaging** tab's panel starts with no current publication. The plan versions on offer are the two seed versions and the generated SOMO fixture's version (`PV-SIM-…`). A new draft's ledger rows continue from seq 5. The demo buyer seat holds planning and procurement; signing also needs a person adopted in the identity panel.

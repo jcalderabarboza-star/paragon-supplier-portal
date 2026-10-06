@@ -2102,11 +2102,12 @@ export type PublicationActVars =
       readonly supplierId: string;
       readonly causationId?: string;
     }
-  | { readonly kind: 'publish'; readonly publicationId: string };
+  | { readonly kind: 'publish'; readonly publicationId: string }
+  | { readonly kind: 'discard'; readonly publicationId: string };
 
 /**
- * Open a draft, sign one firm line, or publish — the panel's three acts. The
- * signature is the session's actor, written by the target; nothing here puts a
+ * Open a draft, sign one firm line, publish, or discard the draft — the panel's
+ * acts. The signature is the session's actor, written by the target; nothing here puts a
  * person in the payload (C10 §6.2).
  */
 export function usePublicationAct() {
@@ -2130,6 +2131,14 @@ export function usePublicationAct() {
           { transitionId: 't_publication_approve_firm', entity: 'forecastPublication', entityId: publicationId, payload: line },
           causationId,
         );
+      }
+      if (v.kind === 'discard') {
+        return svc.commands.dispatch(scope, {
+          transitionId: 't_publication_discard',
+          entity: 'forecastPublication',
+          entityId: v.publicationId,
+          payload: {},
+        });
       }
       return svc.commands.dispatch(scope, {
         transitionId: 't_publication_publish',

@@ -63,11 +63,11 @@ Honesty markers. Seeded legs are SIMULATED and the page sits under the banner *S
 - **Step kind:** operator action
 - **Role:** supplier · fulfilment (the supplier's logistics contact)
 - **From → to:** Booked → Shipped
-- **Operator — where:** `/supplier/forecasts` → tab **Shipments** → on a **Booked** card → **Mark shipped**. On a To-Paragon leg the button is replaced by the line *Departure is tracked by ASN {asn} — mark it shipped there.*
+- **Operator — where:** `/supplier/forecasts` → tab **Shipments** → on a **Booked** card → **Mark shipped**. On a To-Paragon leg the button is replaced by the line *Departure is tracked by ASN {asn} — Paragon records it from the notice; there is nothing to mark here.*
 - **Operator — do:** Record that the leg has departed; the landing date stops being a plan and becomes a travel estimate.
 - **Operator — fill:** nothing to fill.
 - **Tester — expected state:** Shipped
-- **Tester — confirm:** toast *Shipment {id} marked shipped*; the card's state pill reads **Shipped** and now offers **Mark arrived** and **Cancel shipment**. The buyer's coverage is unchanged — Booked and Shipped both count as incoming.
+- **Tester — confirm:** toast *Shipment {id} marked shipped*; the card's state pill reads **Shipped** and now offers **Mark arrived** and **Cancel shipment**. The buyer's coverage is unchanged — Booked and Shipped both count as incoming. A To-Paragon leg stops counting once its ASN reads **Delivered**: Paragon has received it, whatever the leg's own pill says.
 - **Tester — trigger event:** `t_incomingshipment_ship`
 - **Checks that can refuse:** none beyond role, legality and required fields (`ILLEGAL_TRANSITION` from any state but Booked; another supplier's leg is `SCOPE_DENIED`).
 - **Glossary:** `ILLEGAL_TRANSITION`; `SCOPE_DENIED`; `ROLE_NOT_PERMITTED`.
@@ -79,7 +79,7 @@ Honesty markers. Seeded legs are SIMULATED and the page sits under the banner *S
 - **Step kind:** operator action (terminal)
 - **Role:** supplier · fulfilment (the supplier's logistics contact)
 - **From → to:** Shipped → Arrived
-- **Operator — where:** `/supplier/forecasts` → tab **Shipments** → on a **Shipped** card → **Mark arrived**. On a To-Paragon leg the button is replaced by *Arrival is tracked by ASN {asn} — mark it arrived there.*
+- **Operator — where:** `/supplier/forecasts` → tab **Shipments** → on a **Shipped** card → **Mark arrived**. On a To-Paragon leg the button is replaced by *Arrival is tracked by ASN {asn} — Paragon records it at receipt; there is nothing to mark here.*
 - **Operator — do:** Record that the leg has landed. For a supply-assurance (Principal → distributor) leg this is where Paragon's exposure eases.
 - **Operator — fill:** nothing to fill.
 - **Tester — expected state:** Arrived (terminal)

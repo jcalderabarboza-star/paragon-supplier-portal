@@ -47,7 +47,7 @@ import { collaborationIndex } from './publicationFeed';
 import { allocationAnchor } from '../../planning/allocationAnchor';
 import { somoIntakeLineId } from '../../planning/somoIntake';
 import { inventoryDeclarationStore } from './stores/inventoryDeclarationStore';
-import { incomingShipmentStore } from './stores/incomingShipmentStore';
+import { legsStillIncoming } from './incomingLegs';
 import { purchaseOrderStore } from './stores/purchaseOrderStore';
 import { goodsReceiptStore } from './stores/goodsReceiptStore';
 import { schedulingAgreementStore } from '../../delivery/stores/schedulingAgreementStore';
@@ -209,8 +209,9 @@ export function derivePlanningFacts(q: PlanningFactsQuery): PlanningFactsOutcome
   for (const d of latestDecl.values()) push('supplierSoh', d.materialCode, d.supplierId, current, d.totalQty, d.id, d.provenance.liveness);
 
   // Incoming shipments in flight, by ETA bucket.
-  for (const sh of incomingShipmentStore.all()) {
-    if ((sh.lifecycle !== 'Booked' && sh.lifecycle !== 'Shipped') || !sh.eta) continue;
+  // SDC-5 · `legsStillIncoming` — a leg Paragon has already received is not in flight.
+  for (const sh of legsStillIncoming()) {
+    if (!sh.eta) continue;
     push('incoming', sh.materialCode, sh.supplierId, bucketOf(sh.eta, grain), sh.qty, sh.id, sh.provenance.liveness);
   }
 
@@ -246,7 +247,7 @@ export function derivePlanningFacts(q: PlanningFactsQuery): PlanningFactsOutcome
     for (const e of supplierCoverageEntries(
       publications,
       inventoryDeclarationStore.all(),
-      incomingShipmentStore.all(),
+      legsStillIncoming(),
       SUPPLIER_MATERIAL_RELATIONSHIPS,
       sdcClock.now(),
     )) {

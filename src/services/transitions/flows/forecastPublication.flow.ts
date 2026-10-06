@@ -39,6 +39,7 @@ export const FORECAST_PUBLICATION_STATES = Object.freeze([
   'Published',
   'Superseded',
   'Withdrawn',
+  'Discarded',
 ] as const);
 
 export const PUBLICATION_OPEN_FIELDS = Object.freeze(['planVersion', 'grain', 'horizon', 'sourceRef'] as const);
@@ -60,9 +61,10 @@ export const forecastPublicationFlow: FlowDefinition = {
   /**
    * Superseded and Withdrawn are both endings: a superseded publication was
    * replaced by the next one, a withdrawn one was taken back with a reason.
-   * Neither is re-opened — the next plan is a new draft.
+   * Neither is re-opened — the next plan is a new draft. Discarded is the
+   * ending of a draft nobody was ever sent (SDC-5).
    */
-  terminals: ['Superseded', 'Withdrawn'],
+  terminals: ['Superseded', 'Withdrawn', 'Discarded'],
   transitions: [
     {
       // The draft comes into existence from a SOMO plan version, with the
@@ -134,6 +136,25 @@ export const forecastPublicationFlow: FlowDefinition = {
         POLICY_HOOKS.PUB_FIRM_LINES_APPROVED,
         POLICY_HOOKS.PUB_CLASS_PROJECTION_PRESENT,
       ],
+      surfaceable: { surfaced: true },
+      version: 1,
+    },
+    {
+      // ⚠️ SDC-5 · THE DRAFT'S OTHER WAY OUT. Publish was the ONE exit from
+      // Draft, and `PUB_ONE_OPEN_DRAFT` refuses a second draft at the grain —
+      // so a draft opened from the wrong plan version, or abandoned, blocked
+      // every later draft of its grain for good (R-SDC P1). Discarding ends it
+      // and frees the grain. No supplier was ever sent a draft, so nothing a
+      // supplier answered is touched and no reason is owed to anyone outside;
+      // the ledger still records who discarded it. It is the opener's own atom:
+      // the lane that may start a draft may abandon one.
+      id: 't_publication_discard',
+      from: ['Draft'],
+      to: 'Discarded',
+      trigger: 'user',
+      requiredRole: 'publication:draft',
+      requiredFields: [],
+      policyHooks: [],
       surfaceable: { surfaced: true },
       version: 1,
     },

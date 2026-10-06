@@ -40,6 +40,8 @@ export const sdcConsolidationEn: Record<string, string> = {
     'Every line of the current publication joined to its supplier response. Filter by period above.',
   'sdc.col.supplier': 'Supplier',
   'sdc.col.material': 'Material',
+  // SDC-5 · a generated sample material, marked wherever it is named.
+  'sdc.material.sample': 'Sample material',
   'sdc.col.period': 'Period',
   'sdc.col.class': 'Class',
   'sdc.col.demand': 'Demand',
@@ -210,6 +212,8 @@ export const sdcConsolidationId: Record<string, string> = {
     'Setiap baris publikasi saat ini digabung dengan respons pemasoknya. Saring per periode di atas.',
   'sdc.col.supplier': 'Pemasok',
   'sdc.col.material': 'Material',
+  // SDC-5 · a generated sample material, marked wherever it is named.
+  'sdc.material.sample': 'Material sampel',
   'sdc.col.period': 'Periode',
   'sdc.col.class': 'Kelas',
   'sdc.col.demand': 'Permintaan',

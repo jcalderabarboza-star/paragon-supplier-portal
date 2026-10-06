@@ -18,7 +18,6 @@ import { statusLabelKey } from '../lib/statusLabel';
 import { mockSuppliers } from '../data/mockSuppliers';
 import {
   // CP-2 · B1 — the ONE master lookup; a label miss ECHOES the code.
-  labelOf,
   currentPublications,
   SDC_SIMULATED_NOW,
   type ConsolidationRow,
@@ -48,6 +47,8 @@ import { useVerbAvailability } from '../hooks/useVerbAvailability';
 import type { VerbAvailability } from '../services/transitions/handoff';
 import { useToast } from '../hooks/useToast';
 import type { RequirementResponse, DisputeEntry } from '../services/sdc';
+import { publishedLabelOf } from '../services/planning/publishedMaterial';
+import SampleMaterialTag from '../components/ui-v2/SampleMaterialTag';
 import { useRefusalText } from '../hooks/useRefusalText';
 import { useCurrentIdentity } from '../context/CurrentIdentityContext';
 import { sdcRefusalKey } from '../lib/sdcRefusal';
@@ -586,8 +587,9 @@ const BuyerCollaboration: React.FC = () => {
           <div className="w-full truncate px-2 text-sm">
             <Data className="text-xs">{rowData.line.materialCode}</Data>{' '}
             <span className="text-xs text-text-secondary">
-              {labelOf(rowData.line.materialCode)}
-            </span>
+              {publishedLabelOf(rowData.line.materialCode)}
+            </span>{' '}
+            <SampleMaterialTag materialCode={rowData.line.materialCode} />
           </div>
         ),
       },

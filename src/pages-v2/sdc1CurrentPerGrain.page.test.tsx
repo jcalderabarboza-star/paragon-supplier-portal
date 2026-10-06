@@ -118,12 +118,14 @@ describe('SDC-1 · the supplier’s page after one weekly line is published', ()
     renderWithProviders(<SupplierForecasts />, { identity: FATS, route: '/supplier/forecasts' });
     const lines = await screen.findByTestId('sdcsup-lines');
     expect(within(lines).getByText('RM-EMUL-3310')).toBeInTheDocument();
-    // a synthetic code has no master label, so the code also stands as the label: at least one.
+    // SDC-5 · a generated code resolves in the master its line was published from: it
+    // carries its sample label, and is marked as a sample material.
     expect(within(lines).getAllByText('SIM-PM-0002').length).toBeGreaterThan(0);
+    expect(within(lines).getByText('Sample packaging 0002')).toBeInTheDocument();
     const banners = screen.getAllByTestId('sdcsup-version-banner');
     expect(banners.map((b) => b.dataset.grain)).toEqual(['month', 'week']);
     expect(banners[0].textContent).toMatch(/^Monthly plan · Plan PV-2026-08\.2 published 15 Aug 2026/);
-    expect(banners[1].textContent).toMatch(/^Weekly plan · Plan PV-SIM-\S+ published 31 Aug 2026 — 1 lines, the first plan/);
+    expect(banners[1].textContent).toMatch(/^Weekly plan · Plan PV-SIM-\S+ published 31 Aug 2026 — 1 line, the first plan/);
     // each line keeps its OWN plan's deadline: the seed's by policy (SDC-2), the weekly plan's stamped
     const card = (code: string) => within(lines).getAllByText(code)[0].closest('div.bg-bg-surface') as HTMLElement;
     expect(within(card('RM-EMUL-3310')).getByTestId('sdcsup-line-deadline').textContent).toBe('Respond by22 Aug 2026');

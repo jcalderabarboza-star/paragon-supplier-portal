@@ -249,6 +249,8 @@ export const processFlowPurposeEn: Record<string, string> = {
     'Marks an older plan as replaced, so suppliers answer the current one while earlier answers stay readable against what they answered.',
   'processFlows.purpose.t_publication_withdraw':
     'Takes a sent plan back and says why, so no supplier answers a plan that no longer stands.',
+  'processFlows.purpose.t_publication_discard':
+    'Ends a plan that was being prepared and will not be sent, so the next one for the same period can be started — no supplier ever saw it.',
 
   // ── moduleActivation (M1) ─────────────────────────────────────
   'processFlows.purpose.entity.moduleActivation':
@@ -625,6 +627,8 @@ export const processFlowPurposeId: Record<string, string> = {
     'Menandai rencana lama sebagai sudah diganti, agar pemasok menjawab rencana yang berlaku sementara jawaban sebelumnya tetap terbaca terhadap apa yang mereka jawab.',
   'processFlows.purpose.t_publication_withdraw':
     'Menarik kembali rencana yang sudah dikirim beserta penjelasannya, agar tidak ada pemasok yang menjawab rencana yang tidak berlaku lagi.',
+  'processFlows.purpose.t_publication_discard':
+    'Mengakhiri rencana yang sedang disiapkan dan tidak akan dikirim, agar rencana berikutnya untuk periode yang sama dapat dimulai — tidak ada pemasok yang pernah melihatnya.',
 
   // ── moduleActivation (M1) ─────────────────────────────────────
   'processFlows.purpose.entity.moduleActivation':

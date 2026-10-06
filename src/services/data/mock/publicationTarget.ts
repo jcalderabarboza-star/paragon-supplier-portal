@@ -146,6 +146,16 @@ export const forecastPublicationTarget: CommandTarget = {
       });
       return;
     }
+    if (toState === 'Discarded') {
+      // SDC-5 · the draft ends; its split is kept on the record, read by nobody
+      // as a plan (`draftFor` and `currentFor` both pass it over).
+      forecastPublicationStore.put({
+        ...r,
+        state: 'Discarded',
+        ledger: withRow(r, { verb: 't_publication_discard', at: now, personId: personOf(scope) }),
+      });
+      return;
+    }
     const verb = publicationVerbFor(toState, payload);
     const code = str(payload.materialCode);
     const bucket = str(payload.periodBucket);
@@ -377,7 +387,7 @@ bindPolicyHook(POLICY_HOOKS.PUB_ONE_OPEN_DRAFT, ({ payload }) => {
     ok: false,
     reason:
       `PUB_ONE_OPEN_DRAFT: ${open.publicationId} is already open for the ${String(payload.grain)} grain — ` +
-      'publish it (or let it be) before opening another',
+      'publish it or discard it before opening another',
   };
 });
 

@@ -147,8 +147,9 @@ describe('SDC-1 · a weekly publish supersedes only the weekly plan (R-SDC e13, 
     const monthlyOnly = (await collab.getChase(BUYER)).items.find((e) => e.supplierId === 'sup-002')!;
     // the population this case needs: sup-002 is OVERDUE on the monthly plan (its deadline passed)
     expect(monthlyOnly).toMatchObject({ reason: 'overdue', dueAt: '2026-08-22T00:00:00.000Z' });
-    // A weekly plan of two REAL-material lines for sup-002 (a generated SIM code cannot be
-    // answered — it is not in the material master), put Published beside the monthly one.
+    // A weekly plan of two REAL-material lines for sup-002, put Published beside the monthly
+    // one. (Written when a generated SIM code could not be answered; SDC-5 made it answerable,
+    // and `sdc5EveryStateHasAWayOut.test.ts` answers one end to end.)
     const seedLine = forecastPublicationStore.get(MONTHLY)!.lines.find((l) => l.supplierId === 'sup-002')!;
     const weeklyLines = ['2026-W36', '2026-W37'].map((periodBucket) => ({ ...seedLine, periodBucket }));
     forecastPublicationStore.put({

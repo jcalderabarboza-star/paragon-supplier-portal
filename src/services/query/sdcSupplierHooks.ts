@@ -36,13 +36,12 @@ import {
   previousPublication,
   ownCollaboratedMaterials,
   // CP-2 · B1 — the ONE master lookup; no page re-derives its own join.
-  labelOf,
-  uomOf,
   type CollaboratedMaterial,
 } from '../sdc';
 // SDC-4c — the P1 own-shipments view type is the shared SDC one (promoted in
 // SDC-4b); re-exported so callers keep importing it from this hooks module.
 export type { IncomingShipmentView } from '../sdc';
+import { publishedLabelOf, publishedUomOf } from '../planning/publishedMaterial';
 import type {
   ForecastLine,
   ForecastPublication,
@@ -343,10 +342,10 @@ export function useOwnCollaboratedMaterials() {
         page.items,
         scope.supplierId,
       ).map((m) => {
-        const unit = uomOf(m.materialCode);
+        const unit = publishedUomOf(m.materialCode);
         return {
           ...m,
-          label: labelOf(m.materialCode),
+          label: publishedLabelOf(m.materialCode),
           uom: unit.ok ? unit.uom : null,
         };
       });

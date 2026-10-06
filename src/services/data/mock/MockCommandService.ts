@@ -133,6 +133,7 @@ import {
 // hooks on import.
 import { forecastPublicationStore } from './stores/forecastPublicationStore';
 import { forecastPublicationTarget, previouslyPublished } from './publicationTarget';
+import { publishedMaterialMaster } from '../../planning/publishedMaterial';
 import { moduleActivationTarget, moduleGate } from './moduleActivationTarget';
 import type {
   Acknowledgment,
@@ -936,7 +937,7 @@ const mintRevision = (prior: RequirementResponse, payload: Record<string, unknow
     status: 'Draft',
     forecastConfirmation: {
       confirmedQty: payload.confirmedQty as number,
-      uom: requireUom(prior.materialCode),
+      uom: requireUom(prior.materialCode, publishedMaterialMaster()),
       ...(str('committedDate') ? { committedDate: str('committedDate') } : {}),
       ...(str('capacityConstraint') ? { capacityConstraint: str('capacityConstraint') } : {}),
     },
@@ -1060,7 +1061,8 @@ const requirementResponseTarget: CommandTarget = {
     // runs, so `requireUom` is an unreachable-by-construction assertion — and,
     // unlike a `??` chain, it can never silently invent a unit if that hook is
     // ever unwired.
-    const uom = requireUom(materialCode);
+    // SDC-5 · in the master the line was PUBLISHED from (see the hook below).
+    const uom = requireUom(materialCode, publishedMaterialMaster());
     const rootCause = rootCauseFrom(payload);
     const id = requirementResponseStore.nextNumber();
     // SDC-2b-EXT — the response KIND branches on the fanned line's PUBLISHED
@@ -1405,7 +1407,13 @@ bindPolicyHook(POLICY_HOOKS.SDC_MATERIAL_KNOWN, ({ payload, entityId, target }) 
   const entity = entityId ? (target.readEntity(entityId) as { materialCode?: unknown } | null) : null;
   const source = entity ? entity.materialCode : payload.materialCode;
   const materialCode = typeof source === 'string' ? source : '';
-  return isKnownMaterial(materialCode)
+  // ⚠️ SDC-5 · THE MASTER THE LINE WAS PUBLISHED FROM, NOT THE REAL ENTRIES ALONE.
+  // `PUB_MATERIAL_KNOWN` admits a code the PLANNING master names, so a line on a
+  // generated sample material was published to a supplier — and this hook then
+  // refused that supplier's answer as an unknown material. The question and the
+  // answer are now asked of one master. A code NEITHER master names is refused
+  // exactly as before, and the unit it would have carried is still never invented.
+  return isKnownMaterial(materialCode, publishedMaterialMaster())
     ? { ok: true }
     : {
         ok: false,
@@ -1448,7 +1456,7 @@ const inventoryDeclarationTarget: CommandTarget = {
     // invariant #2 — uom is master-owned, never the caller's. CP-2 · B1: the
     // `?? 'KG'` default is gone; `SDC_MATERIAL_KNOWN` already refused an
     // unresolvable code by name.
-    const uom: Uom = requireUom(materialCode);
+    const uom: Uom = requireUom(materialCode, publishedMaterialMaster());
     const totalQty = typeof payload.totalQty === 'number' ? payload.totalQty : 0;
     // Optional batch-grain detail — each batch's uom is master-copied too
     // (the caller can no more pick a batch unit than the total's). Malformed
@@ -1529,7 +1537,7 @@ const incomingShipmentTarget: CommandTarget = {
     // CP-2 · B1 — master-owned, refused by name upstream (SDC_MATERIAL_KNOWN),
     // never defaulted: a PCS material stamped 'KG' poisons the coverage sum and
     // the fulfilment drawdown with no surface saying a unit was invented.
-    const uom: Uom = requireUom(materialCode);
+    const uom: Uom = requireUom(materialCode, publishedMaterialMaster());
     const id = incomingShipmentStore.nextNumber();
     const shipment: IncomingShipment = {
       id,

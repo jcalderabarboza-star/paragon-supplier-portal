@@ -339,14 +339,15 @@ export interface ForecastPublication {
 // ─── B4b · the publication as the BUYER sees it — draft, state and ledger ─────
 
 /** The machine's states (`forecastPublication.flow.ts`), one vocabulary. */
-export type PublicationState = 'Draft' | 'Published' | 'Superseded' | 'Withdrawn';
+export type PublicationState = 'Draft' | 'Published' | 'Superseded' | 'Withdrawn' | 'Discarded';
 
 /** The four acts a publication's ledger records (Design 2 §2.3). */
 export type PublicationLedgerVerb =
   | 't_publication_open'
   | 't_publication_publish'
   | 't_publication_supersede'
-  | 't_publication_withdraw';
+  | 't_publication_withdraw'
+  | 't_publication_discard';
 
 /**
  * One row of a publication's history. The ROLE is not stored: it is the lane

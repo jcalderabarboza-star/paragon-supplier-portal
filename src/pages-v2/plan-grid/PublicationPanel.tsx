@@ -21,6 +21,11 @@
 // draft is open, how much is split, how many firm lines await a signature — or
 // that none is, with what is published now; "Open" unfolds the whole panel.
 // Mounted on its own it is the full panel it always was.
+//
+// SDC-5 · A DRAFT CAN BE DISCARDED. Publish was the only way out of a draft, and
+// one open draft per grain is the rule — so a wrong or abandoned draft blocked
+// every later one. "Discard draft" asks once more before it acts (it cannot be
+// undone) and is the opener's own atom, `publication:draft`.
 // ────────────────────────────────────────────────────────────────────────────
 
 import React, { useMemo, useState } from 'react';
@@ -147,6 +152,12 @@ const PublicationPanel: React.FC<{
       return r.status === 'failed' ? (r.reason ?? 'failed') : null;
     });
 
+  const discard = (publicationId: string) =>
+    run(async () => {
+      const r = await act.mutateAsync({ kind: 'discard', publicationId });
+      return r.status === 'failed' ? (r.reason ?? 'failed') : null;
+    });
+
   const blockerText = (b: PublishBlocker): string => {
     if (b.kind === 'NO_LINES') return t('planGrid.publication.blocker.NO_LINES');
     const lines = b.lines
@@ -258,6 +269,7 @@ const PublicationPanel: React.FC<{
           blockerText={blockerText}
           onSign={(lines) => void signFirm(lines, draft.publicationId)}
           onPublish={() => void publish(draft.publicationId)}
+          onDiscard={() => void discard(draft.publicationId)}
         />
       )}
 
@@ -282,8 +294,11 @@ const DraftBody: React.FC<{
   blockerText: (b: PublishBlocker) => string;
   onSign: (lines: readonly ForecastLine[]) => void;
   onPublish: () => void;
-}> = ({ draft, busy, named, avail, blockerText, onSign, onPublish }) => {
+  onDiscard: () => void;
+}> = ({ draft, busy, named, avail, blockerText, onSign, onPublish, onDiscard }) => {
   const { t } = useTranslation();
+  // SDC-5 · a discard is asked twice — it ends the draft and cannot be undone.
+  const [asking, setAsking] = useState(false);
   const cover = allocationCoverage(draft);
   const unsigned = unsignedFirmLines(draft.lines);
   const blockers = publishBlockers(draft.lines);
@@ -363,6 +378,28 @@ const DraftBody: React.FC<{
           </>
         ) : (
           <HandoffNotice availability={avail.publish} testId="handoff-publication-publish" />
+        )}
+      </div>
+
+      <div className="mt-2 flex flex-wrap items-center gap-3" data-testid="publication-discard-row">
+        {avail.open.kind !== 'held' ? (
+          <HandoffNotice availability={avail.open} testId="handoff-publication-discard" />
+        ) : asking ? (
+          <>
+            <span className="text-xs text-text-primary" data-testid="publication-discard-ask">
+              {t('planGrid.publication.discardAsk', { id: draft.publicationId })}
+            </span>
+            <Button variant="outline" disabled={busy} onClick={onDiscard} data-testid="publication-discard-yes">
+              {t('planGrid.publication.discardYes')}
+            </Button>
+            <Button variant="secondary" disabled={busy} onClick={() => setAsking(false)} data-testid="publication-discard-no">
+              {t('planGrid.publication.discardNo')}
+            </Button>
+          </>
+        ) : (
+          <Button variant="secondary" disabled={busy} onClick={() => setAsking(true)} data-testid="publication-discard">
+            {t('planGrid.publication.discard')}
+          </Button>
         )}
       </div>
     </div>
