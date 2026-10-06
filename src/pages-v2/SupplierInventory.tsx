@@ -35,7 +35,7 @@ import ErrorState from '../components/ui-v2/ErrorState';
 import EmptyState from '../components/ui-v2/EmptyState';
 import { useInventory } from '../services/query/hooks';
 import { useOwnInventoryDeclarations } from '../services/query/sdcSupplierHooks';
-import { labelOf } from '../services/sdc';
+import { publishedLabelOf } from '../services/planning/publishedMaterial';
 import { formatDate, formatNumber } from '../lib/format';
 
 const STATUS_VARIANT: Record<StockStatus, 'success' | 'warning' | 'danger' | 'neutral'> = {
@@ -280,7 +280,7 @@ const SupplierInventory: React.FC = () => {
                   <TableRow key={d.id} data-testid={`inventory-declared-${d.materialCode}`}>
                     <TableCell>
                       <Data className="text-xs">{d.materialCode}</Data>
-                      <div className="text-xs text-text-secondary">{labelOf(d.materialCode)}</div>
+                      <div className="text-xs text-text-secondary">{publishedLabelOf(d.materialCode)}</div>
                     </TableCell>
                     <TableCell>
                       <Data>{formatNumber(d.totalQty)} {d.uom}</Data>

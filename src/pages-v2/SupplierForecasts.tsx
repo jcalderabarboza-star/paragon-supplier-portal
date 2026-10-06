@@ -55,8 +55,6 @@ import {
 } from '../services/query/sdcSupplierHooks';
 import {
   // CP-2 · B1 — the ONE master lookup; this page no longer indexes the master.
-  labelOf,
-  uomOf,
   type Uom,
   buildRequirementResponsePayload,
   buildRequirementAcknowledgePayload,
@@ -95,6 +93,8 @@ import { formatDate, formatNumber } from '../lib/format';
 import { statusLabelKey } from '../lib/statusLabel';
 import { statusTone } from '../lib/statusTone';
 import BulkStockEntryGrid from './BulkStockEntryGrid';
+import { publishedLabelOf, publishedUomOf } from '../services/planning/publishedMaterial';
+import SampleMaterialTag from '../components/ui-v2/SampleMaterialTag';
 // GL-1 - the glossary destination for this surface's refusals.
 import GlossaryTermChip from '../components/ui-v2/GlossaryTermChip';
 import { useRefusalText, useDataErrorText } from '../hooks/useRefusalText';
@@ -209,9 +209,12 @@ const emptyShipmentForm: ShipmentForm = {
 // label. A PCS material shown as KG is a fabricated claim with arithmetic
 // consequences, and nothing on the surface said a unit had been invented. It now
 // returns null, and every render site's existing `|| '—'` becomes honest absence.
-const materialLabel = (code: string): string => labelOf(code);
+// SDC-5 · resolved in the master the line was PUBLISHED from, so a generated
+// sample material carries its label and unit here as it does on the planner's
+// grid (`planning/publishedMaterial.ts`).
+const materialLabel = (code: string): string => publishedLabelOf(code);
 const materialUom = (code: string): Uom | null => {
-  const unit = uomOf(code);
+  const unit = publishedUomOf(code);
   return unit.ok ? unit.uom : null;
 };
 
@@ -389,8 +392,9 @@ const LineCard: React.FC<{
               </span>
             )}
           </div>
-          <div className="text-base font-semibold text-text-primary mt-1">
+          <div className="text-base font-semibold text-text-primary mt-1 flex items-center gap-2 flex-wrap">
             {materialLabel(line.materialCode)}
+            <SampleMaterialTag materialCode={line.materialCode} />
           </div>
         </div>
         {confirmable ? (
@@ -1953,6 +1957,7 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
                   version: publication.planVersion,
                   date: formatDate(publication.publishedAt),
                   n: formatNumber(planLines.length),
+                  count: planLines.length,
                 })}
           </div>
         );

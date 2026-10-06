@@ -203,6 +203,7 @@ export const TRANSITION_PURPOSE: FlowAnnotations = Object.freeze({
   t_publication_publish: { purposeKey: 'processFlows.purpose.t_publication_publish' },
   t_publication_supersede: { purposeKey: 'processFlows.purpose.t_publication_supersede' },
   t_publication_withdraw: { purposeKey: 'processFlows.purpose.t_publication_withdraw' },
+  t_publication_discard: { purposeKey: 'processFlows.purpose.t_publication_discard' },
 
   // M1 · module activation.
   t_module_set: { purposeKey: 'processFlows.purpose.t_module_set' },

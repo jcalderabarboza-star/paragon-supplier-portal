@@ -20,7 +20,9 @@ export const sdcSupplierEn: Record<string, string> = {
   // — B4b-2 · deadline, version banner, net change, receipt —
   'sdcSup.version.banner_one': 'Plan {{version}} published {{date}} — {{changed}} line changed, {{carried}} carried',
   'sdcSup.version.banner_other': 'Plan {{version}} published {{date}} — {{changed}} lines changed, {{carried}} carried',
-  'sdcSup.version.first': 'Plan {{version}} published {{date}} — {{n}} lines, the first plan you have been sent',
+  // SDC-5 · counted, like the banner above: a one-line first plan read "1 lines".
+  'sdcSup.version.first_one': 'Plan {{version}} published {{date}} — {{n}} line, the first plan you have been sent',
+  'sdcSup.version.first_other': 'Plan {{version}} published {{date}} — {{n}} lines, the first plan you have been sent',
   // SDC-1 · the grain is named once two plans stand (monthly RM, weekly PM).
   'sdcSup.version.grain.month': 'Monthly plan',
   'sdcSup.version.grain.week': 'Weekly plan',
@@ -337,10 +339,13 @@ export const sdcSupplierEn: Record<string, string> = {
   // means cancelled, so there is nothing to duplicate), while departure and
   // arrival stay with the ASN. Rewording one string to cover both answers
   // would have made it vague enough to say nothing.
+  // ⚠️ SDC-5 · THE COPY SAID "mark it shipped there", AND THERE IS NO "there":
+  // the ASN's departure and arrival are `system` verbs no surface dispatches, so
+  // the line sent the supplier to look for a control that does not exist.
   'sdcSup.ship.advance.viaAsn.ship':
-    'Departure is tracked by ASN {{asn}} — mark it shipped there.',
+    'Departure is tracked by ASN {{asn}} — Paragon records it from the notice; there is nothing to mark here.',
   'sdcSup.ship.advance.viaAsn.arrive':
-    'Arrival is tracked by ASN {{asn}} — mark it arrived there.',
+    'Arrival is tracked by ASN {{asn}} — Paragon records it at receipt; there is nothing to mark here.',
   'sdcSup.ship.advance.terminal': 'This leg has finished — no further updates.',
   'sdcSup.ship.advance.shipped.title': 'Shipment {{id}} marked shipped',
   'sdcSup.ship.advance.arrived.title': 'Shipment {{id}} marked arrived',
@@ -419,7 +424,7 @@ export const sdcSupplierId: Record<string, string> = {
   'sdcSup.tab.lines': 'Baris terbit',
   // — B4b-2 · batas waktu, spanduk versi, perubahan bersih, tanda terima —
   'sdcSup.version.banner_other': 'Rencana {{version}} terbit {{date}} — {{changed}} baris berubah, {{carried}} terbawa',
-  'sdcSup.version.first': 'Rencana {{version}} terbit {{date}} — {{n}} baris, rencana pertama yang dikirim kepada Anda',
+  'sdcSup.version.first_other': 'Rencana {{version}} terbit {{date}} — {{n}} baris, rencana pertama yang dikirim kepada Anda',
   'sdcSup.version.grain.month': 'Rencana bulanan',
   'sdcSup.version.grain.week': 'Rencana mingguan',
   'sdcSup.net.carried': 'Terbawa — tidak perlu konfirmasi ulang',
@@ -704,9 +709,9 @@ export const sdcSupplierId: Record<string, string> = {
   'sdcSup.ship.advance.arrive': 'Tandai tiba',
   'sdcSup.ship.advance.cancel': 'Batalkan pengiriman',
   'sdcSup.ship.advance.viaAsn.ship':
-    'Keberangkatan dilacak oleh ASN {{asn}} — tandai dikirim di sana.',
+    'Keberangkatan dilacak oleh ASN {{asn}} — Paragon mencatatnya dari pemberitahuan; tidak ada yang perlu ditandai di sini.',
   'sdcSup.ship.advance.viaAsn.arrive':
-    'Kedatangan dilacak oleh ASN {{asn}} — tandai tiba di sana.',
+    'Kedatangan dilacak oleh ASN {{asn}} — Paragon mencatatnya saat penerimaan; tidak ada yang perlu ditandai di sini.',
   'sdcSup.ship.advance.terminal': 'Rute ini telah selesai — tidak ada pembaruan lagi.',
   'sdcSup.ship.advance.shipped.title': 'Pengiriman {{id}} ditandai dikirim',
   'sdcSup.ship.advance.arrived.title': 'Pengiriman {{id}} ditandai tiba',

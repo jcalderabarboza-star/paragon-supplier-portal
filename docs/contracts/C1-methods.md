@@ -1,6 +1,6 @@
 # C1 — Method Surface
 
-Three distinct axes. **71** (service surface) · **127** (transition catalog) · **22** (wired
+Three distinct axes. **71** (service surface) · **128** (transition catalog) · **22** (wired
 targets). They measure different things; this file keeps them separate.
 
 > ⚠️ **THIS DOCUMENT IS PINNED TO THE TREE, AND THE PIN IS WHY THE NUMBERS ABOVE ARE ALLOWED TO
@@ -111,6 +111,15 @@ targets). They measure different things; this file keeps them separate.
 > ingest adapter already used), where it used to drop the row. The channel-reply parser emits one row per
 > body line of a multi-line reply; its single-line output is unchanged.
 
+> **RE-HARVEST (2026-10-06, SDC-5).** The forecast publication gained ONE transition and ONE state:
+> `t_publication_discard` (Draft → **Discarded**, terminal; atom `publication:draft`, no required field, no
+> policy hook) — the draft's second way out, so `pub_one_open_draft` no longer holds a grain behind a draft
+> nobody will publish. Catalog 127 → **128**; no flow, target or service method moved. No refusal is new.
+> `sdc_material_known` now asks the master a plan line is PUBLISHED from (`publishedMaterialMaster`: the
+> material master ∪ the generated sample materials), the same master `pub_material_known` asks — a code
+> neither names is still `UNKNOWN_MATERIAL`. The buyer's coverage and the planning `incoming` fact read
+> `stillIncoming`: a to-paragon leg whose ASN is `Delivered` is no longer counted.
+
 Source of truth: `src/services/data/types.ts` (service + command types),
 `src/services/transitions/` (schema, dispatcher, flows).
 
@@ -175,7 +184,7 @@ the string, because those are different claims and only the first is the contrac
 
 ---
 
-## Axis 2 — the 127-transition catalog (28 flows)
+## Axis 2 — the 128-transition catalog (28 flows)
 
 Every authored state-machine edge across the registered flows (`id: 't_<entity>_<verb>'`). Derived
 from `getKnownFlows()` — the seeded registry — never from a grep over the flow files, because a
@@ -210,9 +219,9 @@ transition id can be assembled at a call site rather than written as a literal (
 | `pslCapSetting.flow.ts` | `pslCapSetting` | 1 | `t_psl_cap_set` | **wired** |
 | `deliveryRelease.flow.ts` | `deliveryRelease` | 3 | `t_delivery_release`, `t_delivery_adjust`, `t_delivery_confirm` | **wired** |
 | `deliveryPolicy.flow.ts` | `deliveryPolicy` | 1 | `t_delivery_policy_set` | **wired** |
-| `forecastPublication.flow.ts` | `forecastPublication` | 6 | `t_publication_open`, `t_publication_allocate`, `t_publication_approve_firm`, `t_publication_publish`, `t_publication_supersede`, `t_publication_withdraw` | **wired** |
+| `forecastPublication.flow.ts` | `forecastPublication` | 7 | `t_publication_open`, `t_publication_allocate`, `t_publication_approve_firm`, `t_publication_publish`, `t_publication_discard`, `t_publication_supersede`, `t_publication_withdraw` | **wired** |
 | `moduleActivation.flow.ts` | `moduleActivation` | 1 | `t_module_set` | **wired** |
-| **TOTAL** | | **127** | | |
+| **TOTAL** | | **128** | | |
 
 **Flow shape** (`schema.ts`, `FlowDefinition` / `TransitionDef`): each transition declares
 `from[]` / `to` / `trigger` / `requiredRole` / `requiredFields[]` / `policyHooks[]` /

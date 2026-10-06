@@ -23,6 +23,7 @@ import { requirementResponseStore } from './stores/requirementResponseStore';
 import { inventoryDeclarationStore } from './stores/inventoryDeclarationStore';
 import { incomingShipmentStore } from './stores/incomingShipmentStore';
 import { asnStore } from './stores/asnStore';
+import { incomingShipmentView, legsStillIncoming } from './incomingLegs';
 import {
   SUPPLIER_MATERIAL_RELATIONSHIPS,
   supplierVisiblePublications,
@@ -31,7 +32,6 @@ import {
   supplierCoverageEntries,
   supplierRollups,
   chaseListAcrossGrains,
-  asnTrackingFor,
   sdcClock,
 } from '../../sdc';
 import type {
@@ -103,16 +103,7 @@ export class MockCollaborationService implements ICollaborationService {
   ): Promise<Page<IncomingShipmentView>> {
     const own = applySupplierScope(scope, incomingShipmentStore.all());
     const items = own
-      .map((shipment) => {
-        // THE TWO AXES. `shipment` carries the supplier's DECLARED lifecycle
-        // untouched; `asnTracking` carries Paragon's inbound observation. The
-        // second never overwrites the first — see `sdc/shipment.ts`.
-        const asnStatus =
-          shipment.direction === 'to-paragon' && shipment.asnRef
-            ? (asnStore.get(shipment.asnRef)?.status ?? null)
-            : null;
-        return { shipment, asnTracking: asnTrackingFor(shipment, asnStatus) };
-      })
+      .map(incomingShipmentView)
       .sort((a, b) => b.shipment.id.localeCompare(a.shipment.id));
     return { items };
   }
@@ -183,7 +174,8 @@ export class MockCollaborationService implements ICollaborationService {
         ...supplierCoverageEntries(
           published(),
           inventoryDeclarationStore.all(),
-          incomingShipmentStore.all(),
+          // SDC-5 · a to-paragon leg Paragon has already received is not incoming.
+          legsStillIncoming(),
           SUPPLIER_MATERIAL_RELATIONSHIPS,
           sdcClock.now(),
         ),

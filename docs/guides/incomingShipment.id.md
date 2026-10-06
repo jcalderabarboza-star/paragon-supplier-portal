@@ -63,11 +63,11 @@ Penanda kejujuran. Rute yang diunggah bersifat SIMULATED dan halaman berada di b
 - **Jenis langkah:** tindakan operator
 - **Peran:** pemasok · fulfilment (kontak logistik pemasok)
 - **Dari → ke:** Booked → Shipped
-- **Operator — di mana:** `/supplier/forecasts` → tab **Pengiriman** → pada kartu **Dipesan** → **Tandai dikirim**. Pada rute Ke Paragon tombol digantikan baris *Keberangkatan dilacak oleh ASN {asn} — tandai dikirim di sana.*
+- **Operator — di mana:** `/supplier/forecasts` → tab **Pengiriman** → pada kartu **Dipesan** → **Tandai dikirim**. Pada rute Ke Paragon tombol digantikan baris *Keberangkatan dilacak oleh ASN {asn} — Paragon mencatatnya dari pemberitahuan; tidak ada yang perlu ditandai di sini.*
 - **Operator — lakukan:** Catat bahwa rute telah berangkat; tanggal tibanya berhenti menjadi rencana dan berubah menjadi perkiraan perjalanan.
 - **Operator — isi:** tidak ada yang diisi.
 - **Penguji — status yang diharapkan:** Shipped
-- **Penguji — konfirmasi:** toast *Pengiriman {id} ditandai dikirim*; pil status kartu terbaca **Dikirim** dan kini menawarkan **Tandai tiba** dan **Batalkan pengiriman**. Cakupan pembeli tidak berubah — Booked dan Shipped sama-sama dihitung sebagai masuk.
+- **Penguji — konfirmasi:** toast *Pengiriman {id} ditandai dikirim*; pil status kartu terbaca **Dikirim** dan kini menawarkan **Tandai tiba** dan **Batalkan pengiriman**. Cakupan pembeli tidak berubah — Booked dan Shipped sama-sama dihitung sebagai masuk. Rute Ke Paragon berhenti dihitung begitu ASN-nya terbaca **Delivered**: Paragon sudah menerimanya, apa pun yang tertulis pada pil rute itu sendiri.
 - **Penguji — peristiwa pemicu:** `t_incomingshipment_ship`
 - **Pemeriksaan yang dapat menolak:** tidak ada selain peran, legalitas, dan kolom wajib (`ILLEGAL_TRANSITION` dari status selain Booked; rute milik pemasok lain adalah `SCOPE_DENIED`).
 - **Glosarium:** `ILLEGAL_TRANSITION`; `SCOPE_DENIED`; `ROLE_NOT_PERMITTED`.
@@ -79,7 +79,7 @@ Penanda kejujuran. Rute yang diunggah bersifat SIMULATED dan halaman berada di b
 - **Jenis langkah:** tindakan operator (akhir)
 - **Peran:** pemasok · fulfilment (kontak logistik pemasok)
 - **Dari → ke:** Shipped → Arrived
-- **Operator — di mana:** `/supplier/forecasts` → tab **Pengiriman** → pada kartu **Dikirim** → **Tandai tiba**. Pada rute Ke Paragon tombol digantikan *Kedatangan dilacak oleh ASN {asn} — tandai tiba di sana.*
+- **Operator — di mana:** `/supplier/forecasts` → tab **Pengiriman** → pada kartu **Dikirim** → **Tandai tiba**. Pada rute Ke Paragon tombol digantikan *Kedatangan dilacak oleh ASN {asn} — Paragon mencatatnya saat penerimaan; tidak ada yang perlu ditandai di sini.*
 - **Operator — lakukan:** Catat bahwa rute telah mendarat. Untuk rute penjaminan pasokan (Prinsipal → distributor), di sinilah risiko Paragon mengendur.
 - **Operator — isi:** tidak ada yang diisi.
 - **Penguji — status yang diharapkan:** Arrived (akhir)
