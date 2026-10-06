@@ -32,6 +32,9 @@ export const rfqsEn: Record<string, string> = {
   // RFQ card
   'rfqs.card.daysRemaining': '{{count}} days remaining',
   'rfqs.card.daysToDeadline': '{{count}} days to deadline',
+  'rfqs.card.deadlinePassed': 'Response deadline passed',
+  'rfqs.card.deadlinePassed.note':
+    'The response deadline ({{date}}) has passed. Quotations are no longer taken on this event.',
   'rfqs.card.sampleDetail': 'Sample detail',
   'rfqs.card.via': 'via {{channel}}',
   'rfqs.card.received': 'Received {{date}}',
@@ -129,6 +132,17 @@ export const rfqsEn: Record<string, string> = {
   'rfqs.panel.leadTime.sameDay.ack':
     'I confirm this quotation offers same-day delivery.',
   'rfqs.panel.validUntil': 'Quote valid until *',
+  'rfqs.panel.validUntil.past':
+    'This date has already passed (today is {{today}}). A quotation must still be valid on the day it is made.',
+  'rfqs.toast.validityRefused.title': 'Validity date has passed',
+  'rfqs.refusal.eventNotOpen':
+    'This sourcing event is no longer open, so quotations are not taken on it. Your quotation was not submitted.',
+  'rfqs.refusal.deadlinePassed':
+    'The response deadline of this event has passed. Your quotation was not submitted.',
+  'rfqs.refusal.alreadySubmitted':
+    'You have already submitted a quotation on this event. One quotation per event; a submitted quotation cannot be revised or replaced.',
+  'rfqs.refusal.validityPast':
+    'The valid-until date has already passed. Choose a date from today onwards and submit again.',
   // — CP-0 · W1 · 2e-b-2 — the minimum order quantity: OPTIONAL, blank means
   //   "same as the RFQ quantity", and (as of this batch) a stated value is
   //   actually kept. The "leave blank" sentence moved out of the placeholder and
@@ -147,8 +161,13 @@ export const rfqsEn: Record<string, string> = {
   'rfqs.unit.weeks': 'weeks',
   'rfqs.panel.step3.eyebrow': 'Step 3',
   'rfqs.panel.step3.title': 'Compliance documents',
-  'rfqs.panel.step3.desc': 'Documents already on file will be submitted with this quote.',
-  'rfqs.panel.onFile': '— On file',
+  'rfqs.panel.step3.desc':
+    'Your halal, BPOM and quality documents as they stand on My Documents today. Paragon reads them from there; nothing is copied into this quotation.',
+  'rfqs.panel.certs.loading': 'Reading your documents…',
+  'rfqs.panel.certs.error': 'Your documents could not be read. This does not stop the quotation.',
+  'rfqs.panel.certs.none':
+    'No halal, BPOM or quality document is on file. Add them on My Documents.',
+  'rfqs.panel.certs.expires': 'expires {{date}}',
   'rfqs.panel.step4.eyebrow': 'Step 4',
   'rfqs.panel.step4.title': 'Notes & samples',
   'rfqs.panel.step4.desc': 'Optional context and sample availability.',
@@ -162,6 +181,10 @@ export const rfqsEn: Record<string, string> = {
   'rfqs.panel.sampleLeadPlaceholder': 'e.g. 5 days',
   'rfqs.panel.pdf': 'Quotation PDF (optional)',
   'rfqs.panel.pdfDrop': 'Click to attach quotation PDF or drag & drop',
+  'rfqs.panel.pdfChosen': 'Attached: {{name}}',
+  'rfqs.panel.pdfRemove': 'Remove the attachment',
+  'rfqs.panel.pdfNote':
+    'Only the file name is recorded with your quotation. This portal does not hold the file, so send the document to Paragon procurement as well.',
   // wrapper empty state
   'rfqs.empty.title': 'No sourcing events yet',
   'rfqs.empty.subtitle': 'No RFQ invitations on file for {{supplier, stop}}.',
@@ -225,6 +248,9 @@ export const rfqsId: Record<string, string> = {
   // RFQ card
   'rfqs.card.daysRemaining': '{{count}} hari tersisa',
   'rfqs.card.daysToDeadline': '{{count}} hari menuju tenggat',
+  'rfqs.card.deadlinePassed': 'Tenggat tanggapan telah lewat',
+  'rfqs.card.deadlinePassed.note':
+    'Tenggat tanggapan ({{date}}) telah lewat. Penawaran tidak lagi diterima untuk acara ini.',
   'rfqs.card.sampleDetail': 'Detail contoh',
   'rfqs.card.via': 'melalui {{channel}}',
   'rfqs.card.received': 'Diterima {{date}}',
@@ -314,6 +340,17 @@ export const rfqsId: Record<string, string> = {
   'rfqs.panel.leadTime.sameDay.ack':
     'Saya konfirmasi penawaran ini menawarkan pengiriman di hari yang sama.',
   'rfqs.panel.validUntil': 'Penawaran berlaku hingga *',
+  'rfqs.panel.validUntil.past':
+    'Tanggal ini sudah lewat (hari ini {{today}}). Penawaran harus masih berlaku pada hari penawaran dibuat.',
+  'rfqs.toast.validityRefused.title': 'Tanggal berlaku sudah lewat',
+  'rfqs.refusal.eventNotOpen':
+    'Acara sourcing ini tidak lagi terbuka, sehingga penawaran tidak diterima. Penawaran Anda tidak dikirim.',
+  'rfqs.refusal.deadlinePassed':
+    'Tenggat tanggapan acara ini telah lewat. Penawaran Anda tidak dikirim.',
+  'rfqs.refusal.alreadySubmitted':
+    'Anda sudah mengirim penawaran untuk acara ini. Satu penawaran per acara; penawaran yang sudah dikirim tidak dapat direvisi atau diganti.',
+  'rfqs.refusal.validityPast':
+    'Tanggal berlaku-hingga sudah lewat. Pilih tanggal mulai hari ini lalu kirim lagi.',
   'rfqs.panel.moq': 'Kuantitas pesanan minimum (opsional)',
   'rfqs.panel.moqPlaceholder': 'mis. 10000',
   'rfqs.panel.moq.hint':
@@ -328,8 +365,13 @@ export const rfqsId: Record<string, string> = {
   'rfqs.unit.weeks': 'minggu',
   'rfqs.panel.step3.eyebrow': 'Langkah 3',
   'rfqs.panel.step3.title': 'Dokumen kepatuhan',
-  'rfqs.panel.step3.desc': 'Dokumen yang sudah ada di berkas akan dikirim bersama penawaran ini.',
-  'rfqs.panel.onFile': '— Ada di berkas',
+  'rfqs.panel.step3.desc':
+    'Dokumen halal, BPOM, dan mutu Anda sebagaimana tercatat di Dokumen Saya hari ini. Paragon membacanya dari sana; tidak ada yang disalin ke penawaran ini.',
+  'rfqs.panel.certs.loading': 'Membaca dokumen Anda…',
+  'rfqs.panel.certs.error': 'Dokumen Anda tidak dapat dibaca. Hal ini tidak menghalangi penawaran.',
+  'rfqs.panel.certs.none':
+    'Belum ada dokumen halal, BPOM, atau mutu di berkas. Tambahkan di Dokumen Saya.',
+  'rfqs.panel.certs.expires': 'berakhir {{date}}',
   'rfqs.panel.step4.eyebrow': 'Langkah 4',
   'rfqs.panel.step4.title': 'Catatan & sampel',
   'rfqs.panel.step4.desc': 'Konteks opsional dan ketersediaan sampel.',
@@ -343,6 +385,10 @@ export const rfqsId: Record<string, string> = {
   'rfqs.panel.sampleLeadPlaceholder': 'mis. 5 hari',
   'rfqs.panel.pdf': 'PDF Penawaran (opsional)',
   'rfqs.panel.pdfDrop': 'Klik untuk melampirkan PDF penawaran atau seret & lepas',
+  'rfqs.panel.pdfChosen': 'Terlampir: {{name}}',
+  'rfqs.panel.pdfRemove': 'Hapus lampiran',
+  'rfqs.panel.pdfNote':
+    'Hanya nama berkas yang dicatat bersama penawaran Anda. Portal ini tidak menyimpan berkasnya, jadi kirimkan juga dokumennya ke tim pengadaan Paragon.',
   // wrapper empty state
   'rfqs.empty.title': 'Belum ada acara sourcing',
   'rfqs.empty.subtitle': 'Tidak ada undangan RFQ di berkas untuk {{supplier, stop}}.',

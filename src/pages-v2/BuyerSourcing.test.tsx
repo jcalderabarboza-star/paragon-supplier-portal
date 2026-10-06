@@ -141,7 +141,7 @@ describe('BuyerSourcing — the minimum order quantity reaches the comparison', 
           currency: 'IDR', // required since 2e-c-2
           leadTimeDays: 6,
           moq: 100_000,
-          validUntil: '2026-06-30',
+          validUntil: '2026-12-31', // SRC-2 — not past; a June date is refused now
         },
       },
     );
@@ -269,11 +269,14 @@ describe('BuyerSourcing — dates localise (COS-04, the en-GB hardcode)', () => 
     await i18n.changeLanguage('id');
     try {
       renderWithProviders(<BuyerSourcing />);
-      // rfq-001's response deadline is 2026-05-20. id-ID abbreviates May as
-      // "Mei"; the retired local formatter printed "May" in both languages.
-      expect((await screen.findAllByText(/20 Mei 2026/)).length).toBeGreaterThan(0);
-      // The retired output. Nothing on this surface may still say "May" in ID.
-      expect(screen.queryAllByText(/20 May 2026/)).toHaveLength(0);
+      // SRC-2 — the events are re-timed to the declared present, so rfq-001's
+      // deadline is no longer in May (it reads 2 Sep, and "Sep" is spelled the
+      // same in both locales — an assertion that could not fail). rfq-010's is
+      // 2026-08-28: id-ID abbreviates August as "Agu"; the retired local
+      // formatter printed "Aug" in both languages.
+      expect((await screen.findAllByText(/28 Agu 2026/)).length).toBeGreaterThan(0);
+      // The retired output. Nothing on this surface may still say "Aug" in ID.
+      expect(screen.queryAllByText(/28 Aug 2026/)).toHaveLength(0);
     } finally {
       await i18n.changeLanguage('en');
     }
@@ -281,8 +284,8 @@ describe('BuyerSourcing — dates localise (COS-04, the en-GB hardcode)', () => 
 
   it('POSITIVE TWIN — English output is unchanged (en-GB day-month-year kept)', async () => {
     renderWithProviders(<BuyerSourcing />);
-    expect((await screen.findAllByText(/20 May 2026/)).length).toBeGreaterThan(0);
-    expect(screen.queryAllByText(/20 Mei 2026/)).toHaveLength(0);
+    expect((await screen.findAllByText(/28 Aug 2026/)).length).toBeGreaterThan(0);
+    expect(screen.queryAllByText(/28 Agu 2026/)).toHaveLength(0);
   });
 });
 

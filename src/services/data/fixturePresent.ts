@@ -214,7 +214,9 @@ export type FixtureFamily =
   | 'contract'
   | 'obligation'
   | 'invoice'
-  | 'psl';
+  | 'psl'
+  | 'rfq'
+  | 'quotation';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ⚠️ `contract` AND `obligation` ARE NOW ANCHORED, AND THEY SHARE ONE ANCHOR.
@@ -281,6 +283,18 @@ export const SHARED_ANCHOR_INTERSECTION: readonly [string, string] = [
   '2026-05-17',
   '2026-06-01',
 ];
+
+/**
+ * SRC-2 · ONE ANCHOR HELD BY THE SOURCING EVENTS AND THEIR QUOTATIONS. A
+ * quotation's `submittedAt` is read against its event's `responseDeadline`, so
+ * the two corpora move by the same number of days or a quotation lands on the
+ * wrong side of its own deadline. Named once so no second literal exists.
+ *
+ * The value is EVIDENCED, the `shipment` treatment: `BuyerSourcing`'s retired
+ * page pin read `REFERENCE_TODAY = new Date('2026-05-18')` (`a3d942b`), and the
+ * latest act the RFQ corpus records is `rfq-014`'s `createdAt`, the same day.
+ */
+export const SOURCING_ANCHOR = '2026-05-18';
 
 export interface FamilyAnchor {
   /** The instant this family's rows were authored for. */
@@ -474,6 +488,28 @@ export const FAMILY_ANCHORS: Readonly<Record<FixtureFamily, FamilyAnchor>> = {
     window: ['2026-05-04', '2026-06-22'],
     toleranceDays: 20,
     why: 'the band where the corpus’ own authored intent holds under the shipped pslDisplayStatus — early edge psl-005 (must have STARTED, not Scheduled), late edge psl-004 (must read Listed, not Expiring); reuses SHARED_CONTRACT_ANCHOR by reference so no second literal exists, but is NOT intersection-constrained because P1 compares a listing date against no other family',
+  },
+  // SRC-2 · THE SOURCING EVENTS. Until this batch the RFQ dates were raw
+  // literals read against `DECLARED_PRESENT` on the buyer board, so every Open
+  // event read about a hundred days past its response deadline — and a rule
+  // that refuses a quotation after the deadline would have refused every
+  // fixture event. No stored clock state to solve for (an event's status is a
+  // lifecycle fact), so the anchor is evidenced, not swept.
+  //
+  // At the anchor exactly ONE Open event is past its response deadline —
+  // `rfq-010`, three days — and that is the board the retired pin showed.
+  // `src2SupplierSide.test.ts` pins it by name.
+  rfq: {
+    anchor: SOURCING_ANCHOR,
+    window: null,
+    toleranceDays: null,
+    why: 'the retired BuyerSourcing page pin (REFERENCE_TODAY 2026-05-18) and max(createdAt) of the corpus (rfq-014) read the same day',
+  },
+  quotation: {
+    anchor: SOURCING_ANCHOR,
+    window: null,
+    toleranceDays: null,
+    why: 'the rfq anchor by reference: a quotation’s submittedAt and validUntil are read against its own event’s dates, so the two corpora move together',
   },
 };
 

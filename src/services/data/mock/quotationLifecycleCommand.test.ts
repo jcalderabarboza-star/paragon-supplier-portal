@@ -28,7 +28,10 @@ import { PERSONA_SYSTEM_ROLES } from '../../../services/transitions/businessRole
 
 const buyer: QueryScope = { personaType: 'buyer', supplierId: null, businessRoles: PERSONA_SYSTEM_ROLES.buyer };
 // rfq-001 invited sup-005/006/009/011; sup-001 is invited to rfq-003, NOT rfq-001.
-const invited: QueryScope = { personaType: 'supplier', supplierId: 'sup-005', businessRoles: PERSONA_SYSTEM_ROLES.supplier };
+// SRC-2 — the submitting supplier is sup-006, the invitee that holds NO seeded
+// quotation on rfq-001. It was sup-005, which already holds qt-001a there, and
+// a second quotation from one supplier is refused now (`QUOTE_ALREADY_SUBMITTED`).
+const invited: QueryScope = { personaType: 'supplier', supplierId: 'sup-006', businessRoles: PERSONA_SYSTEM_ROLES.supplier };
 const notInvited: QueryScope = { personaType: 'supplier', supplierId: 'sup-001', businessRoles: PERSONA_SYSTEM_ROLES.supplier };
 
 const svc = new MockCommandService();
@@ -38,7 +41,7 @@ const submit = (overrides: Record<string, unknown> = {}) => ({
   entity: 'quotation',
   payload: {
     rfqId: 'rfq-001',
-    supplierId: 'sup-005',
+    supplierId: 'sup-006',
     unitPrice: 190_000,
     // REQUIRED since 2e-c-2 — a price without a currency no longer mints.
     // Overridable, so the refusal cases below can hand it a bad one.
@@ -63,7 +66,7 @@ describe('t_quotation_submit — supplier-owned creation (ASN-faithful scope)', 
     const q = quotationStore.get(res.entityId!)!;
     expect(q.status).toBe('Submitted');
     expect(q.rfqId).toBe('rfq-001');
-    expect(q.supplierId).toBe('sup-005');
+    expect(q.supplierId).toBe('sup-006');
     expect(q.unitPrice).toBe(190_000);
     expect(q.leadTimeDays).toBe(30);
     expect(q.paymentTermsOffered).toBe('Net 30');
@@ -87,9 +90,9 @@ describe('t_quotation_submit — supplier-owned creation (ASN-faithful scope)', 
   });
 
   it('a supplier cannot submit AS another supplier (owner ≠ scope → SCOPE_DENIED)', async () => {
-    // sup-006 IS invited to rfq-001, but the caller is sup-005 — spoof rejected.
+    // sup-009 IS invited to rfq-001, but the caller is sup-006 — spoof rejected.
     await expect(
-      svc.dispatch(invited, submit({ supplierId: 'sup-006' })),
+      svc.dispatch(invited, submit({ supplierId: 'sup-009' })),
     ).rejects.toBeInstanceOf(DataError);
   });
 
@@ -287,7 +290,11 @@ describe('t_quotation_submit — the bid currency is a fact, not a decoration', 
 
   it('the currency the supplier chose is the currency stored — for each permitted one', async () => {
     for (const currency of BID_CURRENCIES) {
+      // SRC-2 — one quotation per supplier per event, so each currency is tried
+      // on a fresh store rather than as a second and third quotation.
+      quotationStore.reset();
       const res = await svc.dispatch(invited, submit({ currency }));
+      expect(res.status, res.reason).toBe('done');
       expect(quotationStore.get(res.entityId!)!.currency).toBe(currency);
     }
   });

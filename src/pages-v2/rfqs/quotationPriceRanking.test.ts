@@ -108,7 +108,8 @@ const submitTypedPrice = async (typed: string) => {
       //   the raw-text lead time above, one field over. `null` is the honest value
       //   here ("supplier stated no minimum"), and stating it is the point.
       moq: null,
-      validUntil: '2026-06-30',
+      // SRC-2 — a validity that has not passed; a June date is refused now.
+      validUntil: '2026-12-31',
     }),
   });
 };
@@ -195,7 +196,7 @@ describe('BLAST RADIUS — a refused bid price never enters the award ranking', 
         leadTimeDays: 18, // was '18' — see the helper above; same defect, same fix
         // was absent — see the first draft above; same defect, same fix
         moq: null,
-        validUntil: '2026-06-30',
+        validUntil: '2026-12-31',
       }),
     });
 

@@ -59,6 +59,7 @@
 import { mockSuppliers } from '../../data/mockSuppliers';
 import { SupplierStatus } from '../../types/supplier.types';
 import { quotationStore } from './mock/stores/quotationStore';
+import { rfqStore } from './mock/stores/rfqStore';
 import { BASE_CURRENCY, type BidCurrency } from '../../lib/currencyPolicy';
 import { pslStore } from './mock/stores/pslStore';
 import { pslStatusFor, suspendsCompetitiveBidding } from './pslSourcingSeam';
@@ -448,6 +449,29 @@ export function rosterStatusOf(supplierId: string): SupplierStatus | null {
  * fixture — a quotation raised at runtime must be checkable too, and the
  * fixture stops being the whole population the moment a supplier submits.
  */
+/** SRC-2 · what the quotation-submit hooks read of the event being answered. */
+export interface QuotedEvent {
+  readonly rfqNumber: string;
+  readonly status: string;
+  readonly responseDeadline: string;
+}
+
+/** The event a quotation names, or `null` when no such event exists. */
+export function quotedEventOf(rfqId: string): QuotedEvent | null {
+  const rfq = rfqStore.get(rfqId);
+  return rfq
+    ? { rfqNumber: rfq.rfqNumber, status: rfq.status, responseDeadline: rfq.responseDeadline }
+    : null;
+}
+
+/**
+ * The quotation `supplierId` already holds on `rfqId`, whatever became of it,
+ * or `null`. Any state counts: a supplier has answered an event once.
+ */
+export function quotationHeldBy(rfqId: string, supplierId: string): string | null {
+  return quotationStore.forRfq(rfqId).find((q) => q.supplierId === supplierId)?.id ?? null;
+}
+
 export function quotationOwnerOf(quotationId: string): string | null {
   return quotationStore.get(quotationId)?.supplierId ?? null;
 }

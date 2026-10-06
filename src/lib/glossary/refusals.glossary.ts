@@ -252,10 +252,10 @@ export const SOURCING_REFUSAL_GLOSSARY = {
   },
   AWARDEE_NOT_INVITED: {
     en: 'The supplier named as the winner was never invited to this event, so the award would give the business to someone who was never asked to compete for it. Nothing was recorded.',
-    id: 'Pemasok yang disebut sebagai pemenang tidak pernah diundang ke acara ini, sehingga penghargaan akan memberikan bisnis kepada pihak yang tidak pernah diminta bersaing untuk itu. Tidak ada yang dicatat.',
+    id: 'Pemasok yang disebut sebagai pemenang tidak pernah diundang ke acara ini, sehingga pemenangan akan memberikan bisnis kepada pihak yang tidak pernah diminta bersaing untuk itu. Tidak ada yang dicatat.',
   },
   AWARDEE_NOT_THE_QUOTING_SUPPLIER: {
     en: 'The winning supplier and the winning quotation name different suppliers, so the award does not say who actually won. This is refused rather than resolved in either direction: the two fields are recorded independently, and guessing which one is right would put an unverifiable award on the record.',
-    id: 'Pemasok pemenang dan penawaran pemenang menyebut pemasok yang berbeda, sehingga penghargaan tidak menyatakan siapa yang sebenarnya menang. Ini ditolak alih-alih diselesaikan ke salah satu arah: kedua kolom dicatat secara terpisah, dan menebak mana yang benar akan mencatatkan penghargaan yang tidak dapat diverifikasi.',
+    id: 'Pemasok pemenang dan penawaran pemenang menyebut pemasok yang berbeda, sehingga pemenangan tidak menyatakan siapa yang sebenarnya menang. Ini ditolak alih-alih diselesaikan ke salah satu arah: kedua kolom dicatat secara terpisah, dan menebak mana yang benar akan mencatatkan pemenangan yang tidak dapat diverifikasi.',
   },
 } satisfies GlossaryOf<SourcingRefusalReason>;

@@ -135,6 +135,27 @@ targets). They measure different things; this file keeps them separate.
 > (`rfqResponses.respondedSupplierIdsOf`), and the fixture authors none. `RFQ.awardedAt` is new and
 > store-assigned at `t_rfq_award` (the day of the act). No service method moved.
 
+> **RE-HARVEST (2026-10-06, SRC-2).** No transition, state or service method moved; the catalog is
+> unchanged. **Four refusals are new on `t_quotation_submit`**, all `POLICY_REJECTED`, evaluated after
+> `quotation_submit_currency_permitted` in this order:
+> `QUOTE_EVENT_NOT_OPEN` (hook `quotation_submit_event_open`) — the event the payload names is not `Open`;
+> `QUOTE_DEADLINE_PASSED` (hook `quotation_submit_before_deadline`) — its `responseDeadline` is before the
+> declared present, compared by day; the deadline day itself is admitted;
+> `QUOTE_ALREADY_SUBMITTED` (hook `quotation_submit_one_per_supplier`) — the submitting supplier already
+> holds a quotation on the event, in any state. A second quotation is REFUSED, not taken as a revision:
+> no field links a quotation to one it replaces;
+> `QUOTE_VALIDITY_PAST` (hook `quotation_submit_validity_current`) — a stated `validUntil` is before the
+> declared present or is not a date. An absent `validUntil` is admitted (it is not a required field).
+> **`Quotation` gains three OPTIONAL fields**, written only when the payload states them:
+> `sampleBatch` (`'yes' | 'no'`), `sampleLeadTime` (free text, kept only beside `'yes'`) and
+> `attachmentName` (the NAME of an attached document; no file crosses the boundary).
+> **`getRFQs` under a SUPPLIER scope now returns a projection** (`rfqSupplierView.toSupplierRfqView`), an
+> allowlist: `invitedSupplierIds` and `respondedSupplierIds` hold the reader's own id or nothing,
+> `awardedSupplierId` / `awardedQuotationId` are present only for the winner, and `fxPins` and
+> `estimatedValue` are never present. The method's signature and its buyer-scope answer are unchanged.
+> The RFQ and quotation fixtures are anchored to the declared present (families `rfq` and `quotation`,
+> one anchor), so their dates are no longer the authored literals.
+
 Source of truth: `src/services/data/types.ts` (service + command types),
 `src/services/transitions/` (schema, dispatcher, flows).
 

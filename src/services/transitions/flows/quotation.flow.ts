@@ -51,7 +51,18 @@ export const quotationFlow: FlowDefinition = {
       // Membership, not merely presence: `requiredFields` only proves the field
       // is non-empty, so without this an arbitrary token ('CNY', 'Rp', 'usd')
       // would satisfy the floor and be stored as a currency nobody permits.
-      policyHooks: [POLICY_HOOKS.QUOTATION_SUBMIT_CURRENCY_PERMITTED],
+      //
+      // SRC-2 — then the event (Open), its response deadline, one quotation
+      // per supplier, and a validity that has not passed. In that order: a
+      // supplier is told the event is over before being told its second
+      // quotation is one too many, and a validity is the one thing it can fix.
+      policyHooks: [
+        POLICY_HOOKS.QUOTATION_SUBMIT_CURRENCY_PERMITTED,
+        POLICY_HOOKS.QUOTATION_SUBMIT_EVENT_OPEN,
+        POLICY_HOOKS.QUOTATION_SUBMIT_BEFORE_DEADLINE,
+        POLICY_HOOKS.QUOTATION_SUBMIT_ONE_PER_SUPPLIER,
+        POLICY_HOOKS.QUOTATION_SUBMIT_VALIDITY_CURRENT,
+      ],
       surfaceable: { surfaced: true },
       version: 1,
     },

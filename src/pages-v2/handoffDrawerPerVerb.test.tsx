@@ -39,15 +39,16 @@ const REVIEW_RFQ = 'RFQ-2026-011'; //  Open, and its qt-011a is the tree's ONE
 const AWARD_RFQ = 'RFQ-2026-009'; //   Open + ALL invited suppliers responded —
 //                                      the award slot's own condition.
 //
-// ⚠️ **AND THEY ARE TWO FIXTURES BECAUSE THE TREE HAS NO ONE FIXTURE.** The
-// award slot needs `Open && isAllResponded && quotes>0` (RFQ-2026-003 / -009 /
-// -012 / -013); move-to-review needs a `Submitted` quotation (RFQ-2026-011
-// alone, and it is 1-of-2 responded, so it never shows the award slot).
-// **`quotation:review` and `rfq:award` are not co-reachable on any RFQ in this
-// tree** — measured, not assumed, and it is the sharpest argument against the
-// `handoff-rfq-drawer` group this batch retires: that notice took its
-// availability from `review` and rendered in the AWARD slot, so on every
-// awardable RFQ it named the owner of an act that was not on the screen.
+// ⚠️ **THE PARAGRAPH THAT STOOD HERE IS RETRACTED (SRC-2), QUOTED, NOT EDITED.**
+// It read: *"THEY ARE TWO FIXTURES BECAUSE THE TREE HAS NO ONE FIXTURE … the
+// award slot needs `Open && isAllResponded && quotes>0` … `quotation:review`
+// and `rfq:award` are not co-reachable on any RFQ in this tree"*. False since
+// SRC-1: the award commits from Open or Closed whenever a quotation exists, so
+// both acts are afforded on RFQ-2026-011, and the spec below asserts the two
+// notices there, each in its own slot. Two fixtures are kept because each
+// still shows its act alone on the screen it was chosen for. What the retired
+// `handoff-rfq-drawer` group did wrong stands: it took its availability from
+// `review` and rendered in the AWARD slot.
 
 const openRfq = async (rfqNumber: string) => {
   fireEvent.click(await screen.findByText(rfqNumber));

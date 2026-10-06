@@ -96,6 +96,16 @@ export interface QuotationSubmitDraft {
   validUntil: string;
   paymentTermsOffered?: string;
   notes?: string;
+  /**
+   * SRC-2 — the sample-batch answer, how long a sample takes, and the name of
+   * the attached quotation document. The form has always asked for all three
+   * and this draft had no field for any of them, so they were discarded between
+   * the supplier answering and the quotation being minted (the `moq` defect,
+   * three more times).
+   */
+  sampleBatch?: 'yes' | 'no';
+  sampleLeadTime?: string;
+  attachmentName?: string;
 }
 
 /** Build the `t_quotation_submit` payload from the quote draft. The price is
@@ -128,5 +138,12 @@ export function buildQuotationSubmitPayload(
     validUntil: draft.validUntil,
     paymentTermsOffered: draft.paymentTermsOffered ?? '',
     ...(draft.notes ? { notes: draft.notes } : {}),
+    ...(draft.sampleBatch ? { sampleBatch: draft.sampleBatch } : {}),
+    // A sample lead time belongs to a "yes"; typed and then answered "no", it
+    // is not sent.
+    ...(draft.sampleBatch === 'yes' && draft.sampleLeadTime?.trim()
+      ? { sampleLeadTime: draft.sampleLeadTime.trim() }
+      : {}),
+    ...(draft.attachmentName ? { attachmentName: draft.attachmentName } : {}),
   };
 }

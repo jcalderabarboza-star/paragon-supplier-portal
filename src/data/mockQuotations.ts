@@ -1,4 +1,5 @@
 import type { BidCurrency } from '../lib/currencyPolicy';
+import { shiftFields } from '../services/data/fixturePresent';
 
 export type QuotationStatus =
   | 'Submitted'
@@ -48,9 +49,24 @@ export interface Quotation {
   aiRecommended: boolean;
   status: QuotationStatus;
   notes?: string;
+  // SRC-2 — three answers the quote form has always asked for and the
+  // quotation never kept. All OPTIONAL and additive: every seeded quotation is
+  // honestly absent (the answers were collected and dropped, so there is no
+  // historical value to backfill), and absent is "not stated", never "no".
+  /** Can the supplier provide a sample batch? */
+  sampleBatch?: 'yes' | 'no';
+  /** The supplier's own words for how long a sample takes. Only with `yes`. */
+  sampleLeadTime?: string;
+  /**
+   * The NAME of the quotation document the supplier attached. The name only:
+   * this build holds no file store, and the surfaces that show it say so.
+   */
+  attachmentName?: string;
 }
 
-export const mockQuotations: Quotation[] = [
+// SRC-2 · authored as of 2026-05-18 (`SOURCING_ANCHOR`) and re-timed with the
+// events they answer at the foot of this file.
+const mockQuotationsRaw: Quotation[] = [
   // RFQ-2026-001 — Niacinamide USP (Open)
   {
     id: 'qt-001a',
@@ -579,3 +595,8 @@ export const mockQuotations: Quotation[] = [
     notes: 'Imported ex-works, quoted in US dollars.',
   },
 ];
+
+export const mockQuotations: Quotation[] = shiftFields(mockQuotationsRaw, 'quotation', [
+  'submittedAt',
+  'validUntil',
+]);

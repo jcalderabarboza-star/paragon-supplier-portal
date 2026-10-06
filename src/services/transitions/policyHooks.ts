@@ -59,6 +59,30 @@ export const POLICY_HOOKS = {
    *  proves membership, so an off-list token is refused BY NAME rather than
    *  coerced to the base currency or stored as an unrecognised denomination. */
   QUOTATION_SUBMIT_CURRENCY_PERMITTED: 'quotation_submit_currency_permitted',
+  // SRC-2 · FOUR HOOKS, SPLIT BY REMEDY (`RFQ_PUBLISH_*`'s ruling): a supplier
+  // who reads one refusal for four causes cannot act on it. Before this batch
+  // the submit verb read neither the event's state nor its dates, so a
+  // hand-made dispatch quoted a closed event, a deadline long gone, and the
+  // same event twice.
+  /** Quotation submit: the event named must be `Open`. */
+  QUOTATION_SUBMIT_EVENT_OPEN: 'quotation_submit_event_open',
+  /** Quotation submit: the event's response deadline must not have passed, at
+   *  the declared present. The deadline day itself is still open. */
+  QUOTATION_SUBMIT_BEFORE_DEADLINE: 'quotation_submit_before_deadline',
+  /**
+   * Quotation submit: ONE QUOTATION PER SUPPLIER PER EVENT. A second one is
+   * REFUSED, not taken as a revision. A revision needs three things the
+   * machine does not have: a link from the new row to the one it replaces, a
+   * state for the replaced row, and a rule for which of the two the comparison
+   * and the award read. Without them a second row is a second awardable offer
+   * from one supplier — two columns, two scores, and an award that rejects the
+   * winner's own other quotation. Revisions belong to the staged event (RFx).
+   */
+  QUOTATION_SUBMIT_ONE_PER_SUPPLIER: 'quotation_submit_one_per_supplier',
+  /** Quotation submit: a stated `validUntil` must be a date that has not
+   *  passed, at the declared present. An offer that expired before it was made
+   *  is not an offer the buyer can award. */
+  QUOTATION_SUBMIT_VALIDITY_CURRENT: 'quotation_submit_validity_current',
   /** RFQ FX pin (2e-c-3): the recorded basis must be WELL-FORMED — a permitted
    *  non-base quote currency, a finite positive rate, a readable vintage and a
    *  known source. A malformed pin is worse than no pin: an absent one refuses

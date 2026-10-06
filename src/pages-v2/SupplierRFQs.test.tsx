@@ -2,6 +2,8 @@ import { screen, fireEvent, waitFor } from '@testing-library/react';
 import { renderWithProviders, SUPPLIER } from '../test/test-utils';
 import { mockDataService } from '../services/data/mock/mockDataService';
 import { quotationStore } from '../services/data/mock/stores/quotationStore';
+import { rfqStore } from '../services/data/mock/stores/rfqStore';
+import { DECLARED_PRESENT } from '../services/data/fixturePresent';
 import { withChaos } from '../services/data/mock/withChaos';
 import type { IDataService } from '../services/data/types';
 import SupplierRFQs from './SupplierRFQs';
@@ -21,6 +23,19 @@ const nothing: IDataService = {
     },
   }),
 };
+
+// SRC-2 — `rfq-010`'s seeded response deadline has passed at the declared
+// present: it is the tree's specimen of an event that takes no more quotations
+// (`src2SupplierSide.page.test.tsx` holds it as seeded). Every spec below is
+// about the quote FORM, on an event that still takes one, and has always used
+// `rfq-010` — the first card on the page. So each starts with that event due
+// today, still Open. Nothing they assert is changed; the validity they type
+// moved from a June date, now past, to one that is not.
+beforeEach(() => {
+  rfqStore.reset();
+  rfqStore.update('rfq-010', (r) => ({ ...r, responseDeadline: DECLARED_PRESENT }));
+});
+afterAll(() => rfqStore.reset());
 
 describe('SupplierRFQs — four honest states + wired reads', () => {
   it('data: real quotations drive My-Quotes and prune already-quoted RFQs from Open (Task 3b)', async () => {
@@ -177,7 +192,7 @@ describe('SupplierRFQs — the lead time is read once, in four honest states', (
     // time, and the price gate fires first.
     fireEvent.change(screen.getByLabelText('Unit price'), { target: { value: '15000' } });
     fireEvent.change(screen.getByLabelText('Quote valid until'), {
-      target: { value: '2026-06-30' },
+      target: { value: '2026-12-31' },
     });
     return screen.getByLabelText('Lead time');
   };
@@ -354,7 +369,7 @@ describe('SupplierRFQs — the minimum order quantity stops being dropped', () =
     fireEvent.change(screen.getByLabelText('Unit price'), { target: { value: '15000' } });
     fireEvent.change(screen.getByLabelText('Lead time'), { target: { value: '14' } });
     fireEvent.change(screen.getByLabelText('Quote valid until'), {
-      target: { value: '2026-06-30' },
+      target: { value: '2026-12-31' },
     });
     return screen.getByLabelText('Minimum order quantity');
   };
@@ -527,7 +542,7 @@ describe('SupplierRFQs — display consistency (2e-b-3)', () => {
     fireEvent.change(screen.getByLabelText('Unit price'), { target: { value: '15000' } });
     fireEvent.change(screen.getByLabelText('Lead time'), { target: { value: '1' } });
     fireEvent.change(screen.getByLabelText('Quote valid until'), {
-      target: { value: '2026-06-30' },
+      target: { value: '2026-12-31' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Submit quotation' }));
 
@@ -575,7 +590,7 @@ describe('SupplierRFQs — the bid currency survives, end to end (2e-c-2)', () =
     fireEvent.change(screen.getByLabelText('Unit price'), { target: { value: '3' } });
     fireEvent.change(screen.getByLabelText('Lead time'), { target: { value: '14' } });
     fireEvent.change(screen.getByLabelText('Quote valid until'), {
-      target: { value: '2026-06-30' },
+      target: { value: '2026-12-31' },
     });
   };
 

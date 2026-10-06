@@ -145,6 +145,7 @@ import type { Supplier } from '../services/data/types';
 import GlossaryTermChip from '../components/ui-v2/GlossaryTermChip';
 import { useRefusalText } from '../hooks/useRefusalText';
 import { DECLARED_PRESENT } from '../services/data/fixturePresent';
+import { categoryLabel } from './sourcing/categoryLabel';
 import PslGateNotice from '../components/v2-features/PslGateNotice';
 import { decideSourcing, rosterStatusOf } from '../services/data/rfqSourcingGate';
 import { usePslListings } from '../services/query/hooks';
@@ -196,19 +197,8 @@ const TODAY = DECLARED_PRESENT;
 
 type GroupTab = 'all' | 'open' | 'pending' | 'awarded' | 'closed';
 
-// Category label keys — the RFQCategory enum stays the logic value; only the
-// rendered label is localized (mirrors the type-label precedent in contracts.ts).
-const CATEGORY_LABEL_KEY: Record<RFQCategory, string> = {
-  Fragrance: 'sourcing.category.fragrance',
-  'Active Ingredients': 'sourcing.category.activeIngredients',
-  Packaging: 'sourcing.category.packaging',
-  Emulsifiers: 'sourcing.category.emulsifiers',
-  Botanical: 'sourcing.category.botanical',
-  Other: 'sourcing.category.other',
-};
-
-const categoryLabel = (t: TFunction, c: RFQCategory): string =>
-  t(CATEGORY_LABEL_KEY[c]);
+// Category labels — `sourcing/categoryLabel.ts` (shared with the material-request
+// page since SRC-2).
 
 // C.2 — the vocabulary moved to `sourcing/requisitionPrefill.ts` so the
 // membership check that decides whether a requisition's category can be carried
@@ -3731,6 +3721,86 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                         {pricedQuotes.map((q) => (
                           <ComparisonCell key={q.id} highlight={q.id === topRankedId}>
                             {q.paymentTermsOffered}
+                          </ComparisonCell>
+                        ))}
+                      </ComparisonRow>
+                      {/* SRC-2 — what the supplier said beside the numbers. The
+                          quote form has always asked for all of it; the validity
+                          was kept and never shown, and the sample answer, the
+                          sample lead time and the attached document were dropped
+                          before the payload. Read-only facts, never scored. An
+                          answer nobody gave reads "Not stated": absent is not
+                          "no". */}
+                      <ComparisonRow label={t('sourcing.cmp.row.validUntil')}>
+                        {pricedQuotes.map((q) => (
+                          <ComparisonCell key={q.id} highlight={q.id === topRankedId}>
+                            {q.validUntil ? (
+                              <Data as="span" className="whitespace-nowrap" data-testid={`cmp-valid-${q.id}`}>
+                                {formatDate(q.validUntil)}
+                              </Data>
+                            ) : (
+                              <span className="text-text-tertiary">{t('sourcing.cmp.notStated')}</span>
+                            )}
+                          </ComparisonCell>
+                        ))}
+                      </ComparisonRow>
+                      <ComparisonRow label={t('sourcing.cmp.row.sample')}>
+                        {pricedQuotes.map((q) => (
+                          <ComparisonCell key={q.id} highlight={q.id === topRankedId}>
+                            <span
+                              data-testid={`cmp-sample-${q.id}`}
+                              className={q.sampleBatch ? undefined : 'text-text-tertiary'}
+                            >
+                              {q.sampleBatch === 'yes'
+                                ? t('sourcing.cmp.sample.yes')
+                                : q.sampleBatch === 'no'
+                                  ? t('sourcing.cmp.sample.no')
+                                  : t('sourcing.cmp.notStated')}
+                            </span>
+                          </ComparisonCell>
+                        ))}
+                      </ComparisonRow>
+                      <ComparisonRow label={t('sourcing.cmp.row.sampleLead')}>
+                        {pricedQuotes.map((q) => (
+                          <ComparisonCell key={q.id} highlight={q.id === topRankedId}>
+                            <span
+                              data-testid={`cmp-sample-lead-${q.id}`}
+                              className={q.sampleLeadTime ? undefined : 'text-text-tertiary'}
+                            >
+                              {q.sampleLeadTime ?? t('sourcing.cmp.notStated')}
+                            </span>
+                          </ComparisonCell>
+                        ))}
+                      </ComparisonRow>
+                      <ComparisonRow label={t('sourcing.cmp.row.notes')}>
+                        {pricedQuotes.map((q) => (
+                          <ComparisonCell key={q.id} highlight={q.id === topRankedId}>
+                            <span
+                              data-testid={`cmp-notes-${q.id}`}
+                              className={`block max-w-[16rem] whitespace-normal break-words ${
+                                q.notes ? '' : 'text-text-tertiary'
+                              }`}
+                            >
+                              {q.notes ?? t('sourcing.cmp.notStated')}
+                            </span>
+                          </ComparisonCell>
+                        ))}
+                      </ComparisonRow>
+                      <ComparisonRow
+                        label={t('sourcing.cmp.row.attachment')}
+                        tag={t('sourcing.cmp.attachment.nameOnly')}
+                        tagTitle={t('sourcing.cmp.attachment.nameOnlyTitle')}
+                      >
+                        {pricedQuotes.map((q) => (
+                          <ComparisonCell key={q.id} highlight={q.id === topRankedId}>
+                            <span
+                              data-testid={`cmp-attachment-${q.id}`}
+                              className={`block max-w-[16rem] whitespace-normal break-words ${
+                                q.attachmentName ? '' : 'text-text-tertiary'
+                              }`}
+                            >
+                              {q.attachmentName ?? t('sourcing.cmp.attachment.none')}
+                            </span>
                           </ComparisonCell>
                         ))}
                       </ComparisonRow>

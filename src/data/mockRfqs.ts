@@ -1,4 +1,5 @@
 import type { FxPin } from '../lib/fxPin';
+import { shiftFields, shiftIso } from '../services/data/fixturePresent';
 import { mockQuotations } from './mockQuotations';
 import { respondedSupplierIdsOf } from './rfqResponses';
 
@@ -106,7 +107,10 @@ export interface RFQ {
 /** An event as it is authored: everything but the derived response list. */
 export type RfqSeed = Omit<RFQ, 'respondedSupplierIds'>;
 
-const RFQ_SEED: RfqSeed[] = [
+// SRC-2 · THE LITERALS BELOW ARE THE AUTHORED DATES, AS OF 2026-05-18
+// (`SOURCING_ANCHOR`). They are re-timed to the declared present at the foot of
+// this file, so read them as "days before / after the anchor".
+const RFQ_SEED_RAW: RfqSeed[] = [
   {
     id: 'rfq-001',
     rfqNumber: 'RFQ-2026-001',
@@ -514,8 +518,8 @@ const RFQ_SEED: RfqSeed[] = [
     //     another one).
     //   · no quotation names it: a Draft has been shown to nobody, so anybody
     //     having responded to it would be a contradiction in the data.
-    //   · dates follow this file's own literal convention (RFQ is not a
-    //     `FixtureFamily` — no anchor, no shift).
+    //   · dates follow this file's own literal convention and move with the
+    //     `rfq` family (SRC-2).
     id: 'rfq-014',
     rfqNumber: 'RFQ-2026-014',
     title: 'Niacinamide USP with Glycerin base — combined Q4 active buy',
@@ -535,6 +539,31 @@ const RFQ_SEED: RfqSeed[] = [
     paymentTerms: 'Net 45',
   },
 ];
+
+/**
+ * SRC-2 · the events re-timed to the declared present. The rate ledger moves
+ * with its event (`shiftFields` is flat, so the nested dates are shifted here):
+ * a rate recorded before its event was created is not a story the board can
+ * tell. `rfq-013`'s vintages stay older than the declared present, so against
+ * any clock at or after it they still read stale, as its own note intends.
+ */
+const RFQ_SEED: RfqSeed[] = shiftFields(RFQ_SEED_RAW, 'rfq', [
+  'createdAt',
+  'responseDeadline',
+  'awardDeadline',
+  'awardedAt',
+]).map((r) =>
+  r.fxPins
+    ? {
+        ...r,
+        fxPins: r.fxPins.map((p) => ({
+          ...p,
+          asOf: shiftIso(p.asOf, 'rfq'),
+          pinnedAt: shiftIso(p.pinnedAt, 'rfq'),
+        })),
+      }
+    : r,
+);
 
 /**
  * The seeded events, each with its response list derived from the quotation

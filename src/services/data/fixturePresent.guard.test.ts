@@ -471,7 +471,8 @@ describe('⚠️ EVERY ANCHOR SITS INSIDE ITS OWN FAMILY’S COHERENT WINDOW', (
     expect(declared).toEqual(
       // `psl` joined at the PSL P1 batch — a new anchored family, so this
       // bilateral list grows with it. That is the gate working, not a hole.
-      ['contract', 'goodsReceipt', 'inventory', 'invoice', 'obligation', 'psl', 'shipment', 'supplierDocument'],
+      // `quotation` and `rfq` joined at SRC-2, on one anchor between them.
+      ['contract', 'goodsReceipt', 'inventory', 'invoice', 'obligation', 'psl', 'quotation', 'rfq', 'shipment', 'supplierDocument'],
     );
     for (const f of declared as FixtureFamily[]) {
       expect(FAMILY_ANCHORS[f].anchor, f).toMatch(/^\d{4}-\d{2}-\d{2}$/);

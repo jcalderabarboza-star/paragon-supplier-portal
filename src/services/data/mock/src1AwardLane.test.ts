@@ -260,7 +260,8 @@ describe('4 · a mixed-currency event without a recorded rate is not awarded', (
   });
 
   it('KNOWN-GOOD — a recorded rate that has gone stale is a recorded basis (rfq-013)', async () => {
-    expect(rfqStore.get('rfq-013')!.fxPins!.map((p) => p.asOf)).toEqual(['2026-05-09', '2026-05-16']);
+    // SRC-2 — the rate ledger is re-timed with its event (authored 05-09 / 05-16).
+    expect(rfqStore.get('rfq-013')!.fxPins!.map((p) => p.asOf)).toEqual(['2026-08-22', '2026-08-29']);
     const res = await award(named, 'rfq-013', 'qt-013b', 'sup-006');
     expect(res.status, res.reason).toBe('done');
   });
@@ -324,7 +325,7 @@ describe('9 · the award is dated the day it is made', () => {
   it('THE DEFECT, THEN THE FIX — not the deadline the buyer typed weeks earlier', async () => {
     const before = rfqStore.get('rfq-003')!;
     expect(before.awardedAt).toBeUndefined();
-    expect(before.awardDeadline).toBe('2026-05-26');
+    expect(before.awardDeadline).toBe('2026-09-08'); // authored 05-26, re-timed (SRC-2)
     await award(named, 'rfq-003', 'qt-003a', 'sup-001');
     const after = rfqStore.get('rfq-003')!;
     expect(after.awardedAt).toBe(today());
@@ -345,9 +346,11 @@ describe('9 · the award is dated the day it is made', () => {
     expect(rfqStore.get('rfq-001')!.awardedAt).toBeUndefined();
   });
 
-  it('the two seeded awards keep the day their panel has always shown', () => {
-    expect(rfqStore.get('rfq-006')!.awardedAt).toBe('2026-03-11');
-    expect(rfqStore.get('rfq-007')!.awardedAt).toBe('2026-02-23');
+  it('the two seeded awards are dated by the fixture, re-timed with their events', () => {
+    // SRC-2 — authored 03-11 and 02-23 against the 05-18 anchor; the corpus
+    // moves 105 days to the declared present and these two move with it.
+    expect(rfqStore.get('rfq-006')!.awardedAt).toBe('2026-06-24');
+    expect(rfqStore.get('rfq-007')!.awardedAt).toBe('2026-06-08');
   });
 });
 
