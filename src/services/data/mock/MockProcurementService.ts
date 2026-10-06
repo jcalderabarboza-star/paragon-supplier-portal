@@ -5,6 +5,7 @@ import { mockContracts } from '../../../data/mockContracts';
 import { mockObligations } from '../../../data/mockObligations';
 import { applySupplierScope } from '../scoping';
 import { rfqStore } from './stores/rfqStore';
+import { toSupplierRfqView } from '../rfqSupplierView';
 import { quotationStore } from './stores/quotationStore';
 import { asnStore } from './stores/asnStore';
 import { goodsReceiptStore } from './stores/goodsReceiptStore';
@@ -315,9 +316,13 @@ export class MockProcurementService implements IProcurementService {
       // event would have been on the supplier's board before the buyer published
       // it, and `t_rfq_publish` would have changed a label and nothing else.
       // Reported as a finding before it was fixed (`PF1A-DRAFT-RFQ-VISIBLE-01`).
-      rows = rows.filter(
-        (r) => r.status !== 'Draft' && r.invitedSupplierIds.includes(scope.supplierId!),
-      );
+      // SRC-2 — and what it reads of each is its own view: no other supplier's
+      // id, no rate ledger, no budget (`rfqSupplierView.ts`). Projected AFTER
+      // the membership filter, which needs the full invite list to decide.
+      const reader = scope.supplierId;
+      rows = rows
+        .filter((r) => r.status !== 'Draft' && r.invitedSupplierIds.includes(reader))
+        .map((r) => toSupplierRfqView(r, reader));
     }
     if (filter?.status) rows = rows.filter((r) => matchesList(r.status, filter.status));
     if (filter?.category)

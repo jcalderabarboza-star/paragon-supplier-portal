@@ -356,7 +356,7 @@ export const pslId: Record<string, string> = {
   'psl.toast.publishUnderFloor':
     'Acara ini tidak memiliki cukup pemasok yang memenuhi syarat untuk bersaing. Acara tidak dapat diterbitkan seperti sekarang.',
   'psl.toast.awardIntegrity':
-    'Penghargaan tidak menyebut pemasok yang mengajukan penawaran pemenang, atau menyebut pemasok yang tidak pernah diundang. Tidak ada yang dicatat.',
+    'Pemenangan tidak menyebut pemasok yang mengajukan penawaran pemenang, atau menyebut pemasok yang tidak pernah diundang. Tidak ada yang dicatat.',
 
   // ── P3 · Antrean ──────────────────────────────────────────────────────────
   'psl.queue.title': 'Pemasok preferensi',

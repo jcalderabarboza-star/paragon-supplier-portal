@@ -6,7 +6,7 @@
 // second ask says, what a cancelled event's supplier reads.
 // ────────────────────────────────────────────────────────────────────────────
 
-import { screen, fireEvent, waitFor, within, configure, getConfig } from '@testing-library/react';
+import { screen, fireEvent, waitFor, within } from '@testing-library/react';
 import { renderWithProviders, BUYER, BUYER_NAMED, SUPPLIER } from '../test/test-utils';
 import { MockCommandService } from '../services/data/mock/MockCommandService';
 import { quotationStore } from '../services/data/mock/stores/quotationStore';
@@ -60,14 +60,6 @@ const openRfq = async (rfqNumber: string) => {
 };
 const pick = (nth: number) => fireEvent.click(screen.getAllByRole('radio', { name: /Award|Menangkan/ })[nth]);
 const rowOf = async (rfqNumber: string) => (await screen.findByText(rfqNumber)).closest('tr')!;
-
-// Every spec here mounts the whole sourcing board and opens a panel on it. Under
-// the full suite's load a first paint can pass the library's 1 s default, which
-// reads as a failed assertion about the product. The wait is widened for this
-// file only and put back after it; no assertion is changed by it.
-const defaultAsyncTimeout = getConfig().asyncUtilTimeout;
-beforeAll(() => configure({ asyncUtilTimeout: 5000 }));
-afterAll(() => configure({ asyncUtilTimeout: defaultAsyncTimeout }));
 
 beforeEach(() => {
   quotationStore.reset();
@@ -262,7 +254,9 @@ describe('9 · the award date is the day of the act', () => {
   it('the summary, the history row and the quarter count all read the day it was made', async () => {
     const before = renderWithProviders(<Sourcing />, { identity: BUYER_NAMED });
     const kpi = async () => (await screen.findByText('Awarded (Quarter)')).closest('div')!.parentElement!;
-    expect(await kpi()).toHaveTextContent(/Awarded \(Quarter\)\s*0/);
+    // SRC-2 — the two seeded awards are re-timed into the last 90 days, so the
+    // count starts at 2; the award below is still what adds one.
+    expect(await kpi()).toHaveTextContent(/Awarded \(Quarter\)\s*2/);
     before.unmount();
 
     await svc.dispatch(named, {
@@ -270,17 +264,18 @@ describe('9 · the award date is the day of the act', () => {
       payload: { awardedQuotationId: 'qt-003a', awardedSupplierId: 'sup-001' },
     });
     renderWithProviders(<Sourcing />, { identity: BUYER_NAMED });
-    expect(await kpi()).toHaveTextContent(/Awarded \(Quarter\)\s*1/);
+    expect(await kpi()).toHaveTextContent(/Awarded \(Quarter\)\s*3/);
     await openRfq('RFQ-2026-003');
     expect(screen.getByTestId('rfq-award-date')).toHaveTextContent(formatDate(today()));
     // the deadline it used to show is still on the panel, as the deadline
-    expect(screen.getByTestId('rfq-award-date')).not.toHaveTextContent('26 May 2026');
+    expect(screen.getByTestId('rfq-award-date')).not.toHaveTextContent('8 Sep 2026');
   });
 
   it('a seeded award keeps its date', async () => {
     renderWithProviders(<Sourcing />, { identity: BUYER_NAMED });
     await openRfq('RFQ-2026-006');
-    expect(screen.getByTestId('rfq-award-date')).toHaveTextContent('11 Mar 2026');
+    // authored 11 Mar against the 05-18 anchor, re-timed with its event (SRC-2)
+    expect(screen.getByTestId('rfq-award-date')).toHaveTextContent('24 Jun 2026');
   });
 });
 

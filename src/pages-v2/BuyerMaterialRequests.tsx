@@ -108,6 +108,7 @@ import { DataError } from '../services/data/types';
 import type { MaterialRequest, MaterialRequestStatus } from '../services/data/types';
 import type { ActorAttribution, UnattributedReason } from '../lib/enforcement';
 import { RFQ_CATEGORIES, type RFQCategory } from '../data/mockRfqs';
+import { categoryLabel } from './sourcing/categoryLabel';
 import { CODE_LESS_REASONS } from '../data/materialCatalogReason';
 import {
   buildMaterialRequestPayload,
@@ -240,10 +241,12 @@ const BuyerMaterialRequests: React.FC = () => {
       return (
         r.requestNumber.toLowerCase().includes(q) ||
         r.requestedLabel.toLowerCase().includes(q) ||
-        r.category.toLowerCase().includes(q)
+        r.category.toLowerCase().includes(q) ||
+        // SRC-2 — and by the label the reader actually sees.
+        categoryLabel(t, r.category).toLowerCase().includes(q)
       );
     });
-  }, [requests, tab, search]);
+  }, [requests, tab, search, t]);
 
   const closePanel = () => {
     setSelectedId(null);
@@ -575,7 +578,7 @@ const BuyerMaterialRequests: React.FC = () => {
                     </TableCell>
                     {/* i18n-defer: the material's name in the buyer's own words. */}
                     <TableCell>{r.requestedLabel}</TableCell>
-                    <TableCell>{r.category}</TableCell>
+                    <TableCell>{categoryLabel(t, r.category)}</TableCell>
                     <TableCell>{originLabel(r)}</TableCell>
                     <TableCell>
                       <StatusPill variant={STATUS_VARIANT[r.status]}>
@@ -640,7 +643,7 @@ const BuyerMaterialRequests: React.FC = () => {
                       control by being added to `RFQ_CATEGORIES`. */}
                   {RFQ_CATEGORIES.map((c) => (
                     <option key={c} value={c}>
-                      {c}
+                      {categoryLabel(t, c)}
                     </option>
                   ))}
                 </select>
@@ -756,7 +759,7 @@ const BuyerMaterialRequests: React.FC = () => {
                   <dt className="text-label text-text-tertiary uppercase">
                     {t('materialRequests.col.category')}
                   </dt>
-                  <dd className="text-text-primary">{selected.category}</dd>
+                  <dd className="text-text-primary">{categoryLabel(t, selected.category)}</dd>
                 </div>
                 <div>
                   <dt className="text-label text-text-tertiary uppercase">

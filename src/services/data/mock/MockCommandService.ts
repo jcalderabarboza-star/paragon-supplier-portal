@@ -674,6 +674,16 @@ const quotationTarget: CommandTarget = {
       aiRecommended: false,
       status: toState as QuotationStatus, // 'Submitted'
       ...(str('notes') ? { notes: str('notes') } : {}),
+      // SRC-2 — kept ONLY when stated. A sample lead time rides the "yes" it
+      // qualifies: one typed and then answered "no" is not a fact about a
+      // sample the supplier will not send.
+      ...(payload.sampleBatch === 'yes' || payload.sampleBatch === 'no'
+        ? { sampleBatch: payload.sampleBatch }
+        : {}),
+      ...(payload.sampleBatch === 'yes' && str('sampleLeadTime')
+        ? { sampleLeadTime: str('sampleLeadTime') }
+        : {}),
+      ...(str('attachmentName') ? { attachmentName: str('attachmentName') } : {}),
     };
     quotationStore.add(quotation);
     return { entityId: quoteNumber };

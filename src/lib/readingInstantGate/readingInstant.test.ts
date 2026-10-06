@@ -81,6 +81,13 @@ const EXPECTED: Readonly<Record<FixtureFamily, FamilyInstant>> = {
   // `BuyerContracts` states — the corpus is anchored, so a wall-clock read
   // would decay on a calendar day with no commit involved.
   psl: 'P',
+  // SRC-2. Both sourcing surfaces read `DECLARED_PRESENT`, but they hand the
+  // day-count a single date string (`daysUntil(r.responseDeadline, TODAY)`),
+  // never the event itself, so no projection call site is ATTRIBUTED to either
+  // family. The supplier page's wall-clock read is gone all the same: the
+  // "no wall-read projection call site" claim below would name it otherwise.
+  rfq: 'NO-CALL-SITES',
+  quotation: 'NO-CALL-SITES',
 };
 
 describe('POPULATION GUARD — the instrument is looking at the shipped tree', () => {

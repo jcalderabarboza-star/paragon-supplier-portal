@@ -9,11 +9,14 @@ import type { PurchaseOrder, Invoice, IntakeLine } from '../data/types';
 import { RFQ_CATEGORIES, isRfqCategoryMember, type RFQ } from '../../data/mockRfqs';
 import { CODE_LESS_REASONS, isCodeLessReason } from '../../data/materialCatalogReason';
 import { DECLARED_PRESENT } from '../data/fixturePresent';
+import { responseDeadlinePassed, validityAlreadyPast } from '../data/quotationSubmitGate';
 import {
   awardIntegrity,
   decideSourcing,
   quotationCurrenciesOf,
+  quotationHeldBy,
   quotationOwnerOf,
+  quotedEventOf,
   rosterStatusOf,
   COMPETITION_FLOOR_INVITEES,
 } from '../data/rfqSourcingGate';
@@ -204,6 +207,69 @@ bindPolicyHook(
   POLICY_HOOKS.QUOTATION_SUBMIT_CURRENCY_PERMITTED,
   quotationSubmitCurrencyPermitted,
 );
+
+// — Quotation submit: the event, its deadline, one per supplier, the validity —
+//
+// SRC-2. A creation verb has no entity to read, so each hook reads the event
+// the PAYLOAD names through the sourcing seam. An event that does not exist is
+// not these hooks' answer: `creationOwner` has already refused it at scope.
+// The instant is `DECLARED_PRESENT`, as it is for every dated rule in this
+// file — the corpus is anchored there, and a payload-supplied "today" would let
+// a supplier back-date past its own deadline.
+const payloadText = (payload: Record<string, unknown>, key: string): string =>
+  typeof payload[key] === 'string' ? (payload[key] as string) : '';
+
+bindPolicyHook(POLICY_HOOKS.QUOTATION_SUBMIT_EVENT_OPEN, ({ payload }) => {
+  const event = quotedEventOf(payloadText(payload, 'rfqId'));
+  if (event === null || event.status === 'Open') return { ok: true };
+  return {
+    ok: false,
+    reason:
+      `QUOTE_EVENT_NOT_OPEN: ${event.rfqNumber} is ${event.status}. Quotations are taken ` +
+      'only while a sourcing event is Open.',
+  };
+});
+
+bindPolicyHook(POLICY_HOOKS.QUOTATION_SUBMIT_BEFORE_DEADLINE, ({ payload }) => {
+  const event = quotedEventOf(payloadText(payload, 'rfqId'));
+  if (event === null || !responseDeadlinePassed(event.responseDeadline, DECLARED_PRESENT)) {
+    return { ok: true };
+  }
+  return {
+    ok: false,
+    reason:
+      `QUOTE_DEADLINE_PASSED: the response deadline of ${event.rfqNumber} was ` +
+      `${event.responseDeadline} (today is ${DECLARED_PRESENT}). Quotations are not taken ` +
+      'after the response deadline.',
+  };
+});
+
+bindPolicyHook(POLICY_HOOKS.QUOTATION_SUBMIT_ONE_PER_SUPPLIER, ({ payload }) => {
+  const rfqId = payloadText(payload, 'rfqId');
+  const supplierId = payloadText(payload, 'supplierId');
+  const held = quotationHeldBy(rfqId, supplierId);
+  if (held === null) return { ok: true };
+  return {
+    ok: false,
+    reason:
+      `QUOTE_ALREADY_SUBMITTED: ${supplierId} already holds quotation ${held} on this event. ` +
+      'One quotation per supplier per event; a submitted quotation is not revised or replaced.',
+  };
+});
+
+bindPolicyHook(POLICY_HOOKS.QUOTATION_SUBMIT_VALIDITY_CURRENT, ({ payload }) => {
+  const validUntil = payloadText(payload, 'validUntil');
+  // Not on the flow's required floor: a quotation that states no validity is
+  // judged by the fields it does state. One that states a validity states a
+  // real one.
+  if (validUntil === '' || !validityAlreadyPast(validUntil, DECLARED_PRESENT)) return { ok: true };
+  return {
+    ok: false,
+    reason:
+      `QUOTE_VALIDITY_PAST: the quotation is stated valid until '${validUntil}', which is not a ` +
+      `date on or after today (${DECLARED_PRESENT}). State a validity that has not passed.`,
+  };
+});
 
 // — RFQ FX pin: the recorded basis must be WELL-FORMED (CP-0 · 2e-c-3) ————————
 //

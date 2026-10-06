@@ -16,6 +16,8 @@ import { formatDate } from '../../lib/format';
 import { useCurrentIdentity } from '../../context/CurrentIdentityContext';
 import { useRFQs } from '../../services/query/hooks';
 import type { RFQ } from '../../services/data/types';
+import { DECLARED_PRESENT } from '../../services/data/fixturePresent';
+import { responseDeadlinePassed } from '../../services/data/quotationSubmitGate';
 
 // Supplier RFQ-to-respond — LIVE from the RFQ store (PR #41). The service already
 // scopes the read to RFQs this supplier was invited to; we surface the Open ones
@@ -38,9 +40,10 @@ const SupplierRfqToRespondWidget: React.FC = () => {
     [query.data, supplierId],
   );
   const count = open.length;
-  const now = new Date();
+  // SRC-2 — "past deadline" by the rule the submit verb refuses on, at the
+  // declared present. It read the wall clock, so every seeded event was late.
   const late = useMemo(
-    () => open.filter((r) => new Date(r.responseDeadline).getTime() < now.getTime()).length,
+    () => open.filter((r) => responseDeadlinePassed(r.responseDeadline, DECLARED_PRESENT)).length,
     [open],
   );
   const severity: FlagSeverity =

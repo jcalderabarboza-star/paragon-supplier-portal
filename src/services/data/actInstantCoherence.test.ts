@@ -107,6 +107,8 @@ import { mockInventory } from '../../data/mockInventory';
 import { mockObligations } from '../../data/mockObligations';
 import { mockContracts } from '../../data/mockContracts';
 import { PSL_ANCHORED_VALIDITY, PSL_SEEDS_RAW } from './mock/pslSeed';
+import { mockRfqs } from '../../data/mockRfqs';
+import { mockQuotations } from '../../data/mockQuotations';
 
 const BACKSLASH = String.fromCharCode(92);
 const norm = (p: string): string => p.split(BACKSLASH).join('/');
@@ -261,6 +263,10 @@ const CORPORA: Readonly<Record<string, readonly Record<string, unknown>[]>> = {
   // re-timed, which are the only two fields `shiftFields(…, 'psl', …)` names
   // and the only two anything here would read.
   psl: PSL_ANCHORED_VALIDITY as unknown as Record<string, unknown>[],
+  // SRC-2 — the sourcing events and their quotations joined as two families
+  // on one anchor. Both are exported fixture arrays.
+  rfq: mockRfqs as unknown as Record<string, unknown>[],
+  quotation: mockQuotations as unknown as Record<string, unknown>[],
 };
 
 /**
@@ -269,7 +275,16 @@ const CORPORA: Readonly<Record<string, readonly Record<string, unknown>[]>> = {
  * shifted family goes red here until somebody names it — which is the point. It
  * is never consulted when deciding what to check.
  */
-const EXPECTED_POPULATION = ['invoice.paymentDate', 'supplierDocument.rejectedAt'];
+const EXPECTED_POPULATION = [
+  'invoice.paymentDate',
+  // SRC-2 — three act instants the sourcing families carry: a quotation's
+  // submission, an event's creation and its award are each minted from a clock
+  // by their own verb, so a seeded one claims the act already happened.
+  'quotation.submittedAt',
+  'rfq.awardedAt',
+  'rfq.createdAt',
+  'supplierDocument.rejectedAt',
+];
 
 const program = buildRepoProgram(norm(process.cwd()));
 const shifted = deriveShiftedFields(program);

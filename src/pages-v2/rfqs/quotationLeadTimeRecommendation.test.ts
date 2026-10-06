@@ -94,7 +94,8 @@ const submitTypedLeadTime = async (typed: string, unit: 'days' | 'weeks' = 'days
       //   the raw-text lead time above, one field over. `null` is the honest value
       //   here ("supplier stated no minimum"), and stating it is the point.
       moq: null,
-      validUntil: '2026-06-30',
+      // SRC-2 — a validity that has not passed; a June date is refused now.
+      validUntil: '2026-12-31',
     }),
   });
 };
@@ -212,7 +213,7 @@ describe('FIND-05 — the award recommendation is decided by lead time, honestly
         leadTimeDays: 3, // ← the truncation artifact
         // was absent — see the first draft above; same defect, same fix
         moq: null,
-        validUntil: '2026-06-30',
+        validUntil: '2026-12-31',
       }),
     });
 
@@ -237,7 +238,7 @@ describe('FIND-05 — the award recommendation is decided by lead time, honestly
         leadTimeDays: 0, // ← what `Number("abc") || 0` produced
         // was absent — see the first draft above; same defect, same fix
         moq: null,
-        validUntil: '2026-06-30',
+        validUntil: '2026-12-31',
       }),
     });
 

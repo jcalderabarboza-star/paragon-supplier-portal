@@ -37,6 +37,7 @@ import ErrorState from '../components/ui-v2/ErrorState';
 import EmptyState from '../components/ui-v2/EmptyState';
 import {
   useCurrentSupplier,
+  useDocuments,
   useRFQs,
   useQuotations,
 } from '../services/query/hooks';
@@ -61,10 +62,60 @@ import {
 } from './rfqs/quotationLeadTime';
 import { readMoq, type MoqRefusalReason } from './rfqs/quotationMoq';
 import { daysUntil } from '../services/data/dayProjection';
+import { DECLARED_PRESENT } from '../services/data/fixturePresent';
+import {
+  responseDeadlinePassed,
+  validityAlreadyPast,
+} from '../services/data/quotationSubmitGate';
+import {
+  documentDisplayState,
+  DISPLAY_STATE_LABEL_KEY,
+  DISPLAY_STATE_TONE,
+} from '../services/data/documentDisplayState';
+import { POLICY_HOOKS } from '../services/transitions/policyHooks';
+import { refusedByPolicy } from '../services/transitions/refusalMessage';
+import type { SupplierDocumentCategory } from '../services/data/types';
 import type { RFQ, Quotation, Supplier } from '../services/data/types';
 import { CHART_SERIES } from '../lib/chartPalette';
 import { formatDate, formatMoney, formatNumber } from '../lib/format';
 import { useRefusalText } from '../hooks/useRefusalText';
+
+// SRC-2 — THE PAGE READS THE DECLARED PRESENT, as `BuyerSourcing` does. It read
+// the wall clock while the buyer's board read `DECLARED_PRESENT`, so one
+// deadline gave two day-counts depending on who was looking; and the submit
+// verb now refuses a quotation after the deadline AT the declared present, so a
+// card that counted from any other instant would promise days the machine does
+// not give.
+const TODAY = DECLARED_PRESENT;
+
+// SRC-2 — the documents a quotation's reader cares about. The step listed three
+// hard-coded names, "on file", for every supplier, whatever it actually held.
+const QUOTE_CERTIFICATE_CATEGORIES: readonly SupplierDocumentCategory[] = [
+  'Halal Compliance',
+  'BPOM Regulatory',
+  'Quality',
+];
+
+/**
+ * SRC-2 — the four submit refusals in the supplier's own words. Keyed on the
+ * HOOK (`refusedByPolicy`), never on the text inside its reason: the machine's
+ * sentence names ids and is for the audit trail.
+ */
+function quoteRefusalKey(reason: string | undefined): string | null {
+  if (refusedByPolicy(reason, POLICY_HOOKS.QUOTATION_SUBMIT_EVENT_OPEN)) {
+    return 'rfqs.refusal.eventNotOpen';
+  }
+  if (refusedByPolicy(reason, POLICY_HOOKS.QUOTATION_SUBMIT_BEFORE_DEADLINE)) {
+    return 'rfqs.refusal.deadlinePassed';
+  }
+  if (refusedByPolicy(reason, POLICY_HOOKS.QUOTATION_SUBMIT_ONE_PER_SUPPLIER)) {
+    return 'rfqs.refusal.alreadySubmitted';
+  }
+  if (refusedByPolicy(reason, POLICY_HOOKS.QUOTATION_SUBMIT_VALIDITY_CURRENT)) {
+    return 'rfqs.refusal.validityPast';
+  }
+  return null;
+}
 
 interface OpenRFQ {
   id: string;
@@ -79,6 +130,8 @@ interface OpenRFQ {
   requestedDelivery: string;
   deadline: string;
   daysRemaining: number;
+  /** SRC-2 — the response deadline has gone; the event takes no quotation. */
+  deadlinePassed: boolean;
   specialRequirements: string;
   evaluationCriteria: {
     price: number;
@@ -272,6 +325,8 @@ interface QuoteForm {
   notes: string;
   canSample: 'yes' | 'no';
   sampleLeadTime: string;
+  /** SRC-2 — the NAME of the attached quotation document; '' when none. */
+  attachmentName: string;
 }
 
 const emptyQuoteForm: QuoteForm = {
@@ -285,6 +340,7 @@ const emptyQuoteForm: QuoteForm = {
   notes: '',
   canSample: 'yes',
   sampleLeadTime: '',
+  attachmentName: '',
 };
 
 const EvalBar: React.FC<{ criteria: OpenRFQ['evaluationCriteria'] }> = ({
@@ -349,11 +405,15 @@ const RFQCard: React.FC<RFQCardProps> = ({
         <Data className="text-sm font-bold text-text-primary">
           {rfq.rfqNumber}
         </Data>
-        <StatusPill variant={urgent ? 'warning' : 'info'}>
-          {urgent
-            ? t('rfqs.card.daysRemaining', { count: rfq.daysRemaining })
-            : t('rfqs.card.daysToDeadline', { count: rfq.daysRemaining })}
-        </StatusPill>
+        {rfq.deadlinePassed ? (
+          <StatusPill variant="danger">{t('rfqs.card.deadlinePassed')}</StatusPill>
+        ) : (
+          <StatusPill variant={urgent ? 'warning' : 'info'}>
+            {urgent
+              ? t('rfqs.card.daysRemaining', { count: rfq.daysRemaining })
+              : t('rfqs.card.daysToDeadline', { count: rfq.daysRemaining })}
+          </StatusPill>
+        )}
         <StatusPill variant="neutral">{t('rfqs.card.sampleDetail')}</StatusPill>
         <span className="ml-auto inline-flex items-center gap-1 text-xs text-text-tertiary">
           <Icon size={12} />
@@ -439,7 +499,20 @@ const RFQCard: React.FC<RFQCardProps> = ({
               commit stays unreachable behind one statement rather than two.
               Asking a question is UNGOVERNED and stays live beside it: a lane
               that cannot quote can still talk to procurement. */}
-          {quoteAvailability.kind === 'held' ? (
+          {/* SRC-2 — AN EVENT PAST ITS RESPONSE DEADLINE OFFERS NO WAY IN, for any
+              seat. The machine refuses the quotation (`QUOTE_DEADLINE_PASSED`);
+              the card says so in the slot the button occupied rather than
+              letting a supplier fill a form to be told at the end. It comes
+              before the lane notice: "awaiting Supplier Commercial" on an event
+              nobody can answer would send the wrong person looking. */}
+          {rfq.deadlinePassed ? (
+            <span
+              data-testid="rfq-deadline-passed"
+              className="text-xs text-danger font-semibold"
+            >
+              {t('rfqs.card.deadlinePassed.note', { date: formatDate(rfq.deadline) })}
+            </span>
+          ) : quoteAvailability.kind === 'held' ? (
             <Button variant="outline" onClick={() => onSubmitQuote(rfq)}>
               {t('rfqs.card.submitQuote')}
             </Button>
@@ -716,13 +789,14 @@ const SAMPLE_EVAL: OpenRFQ['evaluationCriteria'] = {
 // looking. `now` is injected from the component and the arithmetic lives in
 // `services/data/dayProjection`.
 //
-// ⚠️ **THE `Math.max(0, …)` CLAMP IS PRESERVED VERBATIM AND IS NOT DEFENDED.**
-// It is behaviour this batch did not rule on, and changing it here would hide a
-// second defect inside a clock fix. With the pin gone the clamp is now visible
-// for what it is: a deadline 111 days past renders "0 days remaining", which
-// reads as *due today*. Filed, not fixed.
+// SRC-2 — THE CLAMP NO LONGER SPEAKS FOR A PAST DEADLINE. `Math.max(0, …)` made
+// a deadline 111 days gone read "0 days remaining", which is *due today*. A
+// deadline that has passed is now its own fact (`deadlinePassed`) and the card
+// says it in words; the clamp is left only as the floor of a count that is
+// never shown for such an event.
 const toOpenRfq = (r: RFQ, nowIso: string): OpenRFQ => {
   const daysRemaining = Math.max(0, daysUntil(r.responseDeadline, nowIso) ?? 0);
+  const deadlinePassed = responseDeadlinePassed(r.responseDeadline, nowIso);
   return {
     id: r.id,
     rfqNumber: r.rfqNumber,
@@ -742,6 +816,7 @@ const toOpenRfq = (r: RFQ, nowIso: string): OpenRFQ => {
     requestedDelivery: r.awardDeadline,
     deadline: r.responseDeadline,
     daysRemaining,
+    deadlinePassed,
     specialRequirements:
       'Full RFQ specifics arrive with the Paragon sourcing packet (illustrative sample).',
     evaluationCriteria: SAMPLE_EVAL,
@@ -796,6 +871,17 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
   const effectiveQuotePanelRFQ =
     quoteAvailability.kind === 'held' ? quotePanelRFQ : null;
   const [form, setForm] = useState<QuoteForm>(emptyQuoteForm);
+  // SRC-2 — the supplier's OWN documents (the read is scoped to this seat), for
+  // the quote form's certificate step. A failed read does not stop a quotation:
+  // nothing in the payload depends on it.
+  const docsQuery = useDocuments();
+  const certificateDocs = useMemo(
+    () =>
+      (docsQuery.data?.items ?? []).filter((d) =>
+        QUOTE_CERTIFICATE_CATEGORIES.includes(d.category),
+      ),
+    [docsQuery.data],
+  );
 
   // The supplier's OWN submitted quotations (real read) drive My-Quotes AND prune
   // the open list — an RFQ this supplier has already quoted drops from "Open" (the
@@ -877,7 +963,13 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
   // would otherwise fall back to.
   const moq = readMoq(form.moq);
 
-  const submitBlocked = !leadTime.ok || sameDayAckOwed || !moq.ok;
+  // SRC-2 — a validity that has already passed is refused by the machine
+  // (`QUOTE_VALIDITY_PAST`); the field says so the moment it is typed, by the
+  // same comparison at the same instant.
+  const validityPast =
+    form.validUntil.trim() !== '' && validityAlreadyPast(form.validUntil, TODAY);
+
+  const submitBlocked = !leadTime.ok || sameDayAckOwed || !moq.ok || validityPast;
 
   // A price nobody can read has no total. The preview is only ASKABLE of a price
   // that exists — it never renders a product of a guessed value. The RFQ quantity
@@ -970,6 +1062,14 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
       });
       return;
     }
+    if (validityPast) {
+      toast({
+        variant: 'error',
+        title: t('rfqs.toast.validityRefused.title'),
+        description: t('rfqs.panel.validUntil.past', { today: formatDate(TODAY) }),
+      });
+      return;
+    }
     const payload = buildQuotationSubmitPayload({
       rfqId: effectiveQuotePanelRFQ.id,
       supplierId,
@@ -993,10 +1093,16 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
       moq: moq.moq,
       validUntil: form.validUntil,
       notes: form.notes,
+      // SRC-2 — asked for on this form since it was built, and dropped here.
+      sampleBatch: form.canSample,
+      sampleLeadTime: form.sampleLeadTime,
+      attachmentName: form.attachmentName,
     });
     try {
       const res = await submitMutation.mutateAsync({ payload });
       if (res.status === 'failed') {
+        // SRC-2 — the four submit refusals read in the supplier's own words.
+        const refusalKey = quoteRefusalKey(res.reason);
         toast({
           variant: 'error',
           title: t('rfqs.toast.submitFailed.title'),
@@ -1012,7 +1118,9 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
                 currency: form.currency,
                 permitted: BID_CURRENCIES.join(', '),
               })
-            : (refusalText(res.reason) ?? res.reason ?? t('rfqs.toast.submitFailed.body')),
+            : refusalKey
+              ? t(refusalKey)
+              : (refusalText(res.reason) ?? res.reason ?? t('rfqs.toast.submitFailed.body')),
         });
         return;
       }
@@ -1350,12 +1458,25 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
                 <input
                   type="date"
                   aria-label={t('rfqs.field.validUntil')}
+                  aria-invalid={validityPast}
+                  // The picker greys out the days that have gone; the line
+                  // below is what refuses one that is typed.
+                  min={TODAY}
                   value={form.validUntil}
                   onChange={(e) =>
                     setForm({ ...form, validUntil: e.target.value })
                   }
                   className={inputClass}
                 />
+                {validityPast && (
+                  <div
+                    role="alert"
+                    data-testid="quote-validity-refusal"
+                    className="mt-1 text-[11px] text-danger"
+                  >
+                    {t('rfqs.panel.validUntil.past', { today: formatDate(TODAY) })}
+                  </div>
+                )}
               </div>
               <div>
                 <label className={labelClass}>
@@ -1400,20 +1521,47 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
               title={t('rfqs.panel.step3.title')}
               description={t('rfqs.panel.step3.desc')}
             >
-              <div className="bg-success-soft border-l-2 border-success rounded px-3 py-2 text-xs text-text-secondary flex flex-col gap-1">
-                {['Halal Certificate', 'ISO 9001', 'BPOM Registration'].map(
-                  (d) => (
-                    <div
-                      key={d}
-                      className="inline-flex items-center gap-2"
-                    >
-                      <span className="text-success font-bold">✓</span>
-                      <span className="font-semibold text-text-primary">
-                        {d}
-                      </span>
-                      <span className="text-text-tertiary">{t('rfqs.panel.onFile')}</span>
-                    </div>
-                  ),
+              {/* SRC-2 — THE SUPPLIER'S OWN DOCUMENTS, EACH IN THE STATE IT IS IN
+                  TODAY. This was three hard-coded names with a green tick and
+                  "On file", for every supplier — including one whose halal
+                  certificate had lapsed, and one holding none of the three. The
+                  state is the one My Documents shows (`documentDisplayState`,
+                  same instant), so the two pages cannot disagree. */}
+              <div
+                data-testid="quote-certificates"
+                className="border border-border-subtle rounded px-3 py-2 text-xs text-text-secondary flex flex-col gap-1.5"
+              >
+                {docsQuery.isPending ? (
+                  <span className="text-text-tertiary">{t('rfqs.panel.certs.loading')}</span>
+                ) : docsQuery.isError ? (
+                  <span className="text-warning-hover" data-testid="quote-certificates-error">
+                    {t('rfqs.panel.certs.error')}
+                  </span>
+                ) : certificateDocs.length === 0 ? (
+                  <span className="text-text-tertiary" data-testid="quote-certificates-none">
+                    {t('rfqs.panel.certs.none')}
+                  </span>
+                ) : (
+                  certificateDocs.map((doc) => {
+                    const state = documentDisplayState(doc, TODAY);
+                    return (
+                      <div
+                        key={doc.id}
+                        data-testid={`quote-cert-${doc.id}`}
+                        className="flex items-center gap-2 flex-wrap"
+                      >
+                        <span className="font-semibold text-text-primary">{doc.name}</span>
+                        <StatusPill variant={DISPLAY_STATE_TONE[state]}>
+                          {t(DISPLAY_STATE_LABEL_KEY[state])}
+                        </StatusPill>
+                        {doc.expiryDate && (
+                          <span className="text-text-tertiary">
+                            {t('rfqs.panel.certs.expires', { date: formatDate(doc.expiryDate) })}
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })
                 )}
               </div>
             </FormSection>
@@ -1478,9 +1626,44 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
                 <label className={labelClass}>
                   {t('rfqs.panel.pdf')}
                 </label>
-                <div className="border-2 border-dashed border-border-input rounded-md p-4 text-center text-xs text-text-tertiary bg-bg-hover">
+                {/* SRC-2 — THE DROP ZONE TAKES A FILE NOW. It was a dashed box with
+                    no input behind it: "click to attach" attached nothing. The
+                    input covers the box, so a click and a drop both land on it.
+                    What is kept is the file's NAME — this build has nowhere to
+                    put the bytes, and the line under the box says so before the
+                    supplier relies on it. */}
+                <div className="relative border-2 border-dashed border-border-input rounded-md p-4 text-center text-xs text-text-tertiary bg-bg-hover">
                   <Upload size={20} className="text-teal mx-auto mb-1" />
-                  {t('rfqs.panel.pdfDrop')}
+                  {form.attachmentName ? (
+                    <span className="font-semibold text-text-primary" data-testid="quote-attachment-name">
+                      {t('rfqs.panel.pdfChosen', { name: form.attachmentName })}
+                    </span>
+                  ) : (
+                    t('rfqs.panel.pdfDrop')
+                  )}
+                  <input
+                    type="file"
+                    accept="application/pdf,.pdf"
+                    aria-label={t('rfqs.panel.pdf')}
+                    data-testid="quote-attachment-input"
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    onChange={(e) =>
+                      setForm({ ...form, attachmentName: e.target.files?.[0]?.name ?? '' })
+                    }
+                  />
+                </div>
+                {form.attachmentName && (
+                  <button
+                    type="button"
+                    data-testid="quote-attachment-remove"
+                    onClick={() => setForm({ ...form, attachmentName: '' })}
+                    className="mt-1 text-xs font-semibold text-teal hover:text-teal-hover"
+                  >
+                    {t('rfqs.panel.pdfRemove')}
+                  </button>
+                )}
+                <div className="mt-1 text-[11px] text-text-tertiary" data-testid="quote-attachment-note">
+                  {t('rfqs.panel.pdfNote')}
                 </div>
               </div>
             </FormSection>
@@ -1505,12 +1688,8 @@ const SupplierRFQs: React.FC = () => {
   const supplierQuery = useCurrentSupplier();
   const rfqsQuery = useRFQs();
   const quotationsQuery = useQuotations();
-  // ONE clock read, captured once — the replacement for the deleted
-  // `RFQ_TODAY_MS` pin. ⚠️ It sits ABOVE every early return deliberately: this
-  // component returns early four ways, and a hook below them is a CONDITIONAL
-  // hook ("Rendered more hooks than during the previous render"), which is how
-  // the first draft of this change took 44 specs down.
-  const nowIso = useMemo(() => new Date().toISOString(), []);
+  // SRC-2 — the declared present (see `TODAY`), no longer a wall-clock read.
+  const nowIso = TODAY;
 
   if (!supplierId) return <NoSupplierIdentity />;
   if (
