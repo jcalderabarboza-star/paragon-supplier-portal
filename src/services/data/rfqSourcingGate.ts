@@ -59,6 +59,7 @@
 import { mockSuppliers } from '../../data/mockSuppliers';
 import { SupplierStatus } from '../../types/supplier.types';
 import { quotationStore } from './mock/stores/quotationStore';
+import { BASE_CURRENCY, type BidCurrency } from '../../lib/currencyPolicy';
 import { pslStore } from './mock/stores/pslStore';
 import { pslStatusFor, suspendsCompetitiveBidding } from './pslSourcingSeam';
 import type { PslListing } from './pslListing';
@@ -449,4 +450,19 @@ export function rosterStatusOf(supplierId: string): SupplierStatus | null {
  */
 export function quotationOwnerOf(quotationId: string): string | null {
   return quotationStore.get(quotationId)?.supplierId ?? null;
+}
+
+/**
+ * SRC-1 · the currencies an event's quotations are priced in, once each. Read
+ * from the STORE for the reason `quotationOwnerOf` is: a quotation submitted at
+ * runtime is part of the comparison the award is made on. An absent `currency`
+ * is the base currency (the fixture's legacy default).
+ */
+export function quotationCurrenciesOf(rfqId: string): BidCurrency[] {
+  const seen: BidCurrency[] = [];
+  for (const q of quotationStore.forRfq(rfqId)) {
+    const currency = q.currency ?? BASE_CURRENCY;
+    if (!seen.includes(currency)) seen.push(currency);
+  }
+  return seen;
 }

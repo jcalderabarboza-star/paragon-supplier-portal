@@ -68,6 +68,7 @@ import { getKnownFlows, getFlow } from './registry';
 import './index';
 import { COMMAND_REFUSALS } from './refusals';
 import { NO_PERSON } from '../../context/noPerson';
+import { SAMPLE_ACTORS } from '../identity/sampleActors';
 import type { QueryScope } from '../data/types';
 import { purchaseOrderStore } from '../data/mock/stores/purchaseOrderStore';
 import { asnStore } from '../data/mock/stores/asnStore';
@@ -91,7 +92,9 @@ const seat = (...businessRoles: string[]): QueryScope => ({
   businessRoles,
   actor: NO_PERSON,
 });
-const procurement = seat('procurement');
+// SRC-1 · operator ruling — publish, cancel and award of a sourcing event need a
+// NAMED person (`rfq_actor_attributed`), so the buyer seat here carries a sample one.
+const procurement: QueryScope = { ...seat('procurement'), actor: SAMPLE_ACTORS.procurement1 };
 const requisitioner = seat('requisitioner');
 /** Holds no atoms — used to prove the precondition sits AFTER the role gate. */
 const roleless = seat();

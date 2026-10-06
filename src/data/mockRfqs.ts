@@ -1,4 +1,6 @@
 import type { FxPin } from '../lib/fxPin';
+import { mockQuotations } from './mockQuotations';
+import { respondedSupplierIdsOf } from './rfqResponses';
 
 export type RFQStatus =
   | 'Draft'
@@ -58,6 +60,12 @@ export interface RFQ {
   responseDeadline: string;
   awardDeadline: string;
   invitedSupplierIds: string[];
+  /**
+   * SRC-1 · DERIVED AT READ, NEVER STORED — the suppliers holding a quotation on
+   * this event (`rfqResponses.respondedSupplierIdsOf`). `rfqStore` computes it
+   * from the quotation store on every read and drops it on every write, so it
+   * cannot disagree with the quotations. It was an authored list nothing wrote.
+   */
   respondedSupplierIds: string[];
   totalQty: number;
   uom: 'KG' | 'PCS' | 'L' | 'MT';
@@ -74,6 +82,13 @@ export interface RFQ {
   awardedSupplierId?: string;
   awardedQuotationId?: string;
   /**
+   * SRC-1 · THE DAY THE AWARD WAS MADE (`YYYY-MM-DD`), store-assigned when
+   * `t_rfq_award` lands and never payload-supplied. The award date used to be
+   * read off `awardDeadline`, so an award made in October read "28 May". Absent
+   * on every event that has not been awarded.
+   */
+  awardedAt?: string;
+  /**
    * The recorded FX bases this RFQ's multi-currency comparison is ranked against
    * (2e-c-3). An APPEND-ONLY LEDGER, not a map: superseding a rate appends a new
    * pin and the prior one stays, which is how D-1's "prior basis preserved,
@@ -88,7 +103,10 @@ export interface RFQ {
   fxPins?: readonly FxPin[];
 }
 
-export const mockRfqs: RFQ[] = [
+/** An event as it is authored: everything but the derived response list. */
+export type RfqSeed = Omit<RFQ, 'respondedSupplierIds'>;
+
+const RFQ_SEED: RfqSeed[] = [
   {
     id: 'rfq-001',
     rfqNumber: 'RFQ-2026-001',
@@ -101,7 +119,6 @@ export const mockRfqs: RFQ[] = [
     responseDeadline: '2026-05-20',
     awardDeadline: '2026-05-27',
     invitedSupplierIds: ['sup-005', 'sup-006', 'sup-009', 'sup-011'],
-    respondedSupplierIds: ['sup-005', 'sup-009', 'sup-011'],
     totalQty: 5000,
     uom: 'KG',
     estimatedValue: 1_100_000_000,
@@ -128,7 +145,6 @@ export const mockRfqs: RFQ[] = [
     responseDeadline: '2026-05-22',
     awardDeadline: '2026-05-29',
     invitedSupplierIds: ['sup-007', 'sup-008', 'sup-012'],
-    respondedSupplierIds: ['sup-007', 'sup-008'],
     totalQty: 200_000,
     uom: 'PCS',
     estimatedValue: 260_000_000,
@@ -148,7 +164,6 @@ export const mockRfqs: RFQ[] = [
     responseDeadline: '2026-05-19',
     awardDeadline: '2026-05-26',
     invitedSupplierIds: ['sup-001', 'sup-002', 'sup-010'],
-    respondedSupplierIds: ['sup-001', 'sup-002', 'sup-010'],
     totalQty: 12_000,
     uom: 'KG',
     estimatedValue: 540_000_000,
@@ -168,7 +183,6 @@ export const mockRfqs: RFQ[] = [
     responseDeadline: '2026-03-26',
     awardDeadline: '2026-04-02',
     invitedSupplierIds: ['sup-003', 'sup-004'],
-    respondedSupplierIds: ['sup-003', 'sup-004'],
     totalQty: 400,
     uom: 'KG',
     estimatedValue: 880_000_000,
@@ -188,7 +202,6 @@ export const mockRfqs: RFQ[] = [
     responseDeadline: '2026-03-22',
     awardDeadline: '2026-03-29',
     invitedSupplierIds: ['sup-007', 'sup-008'],
-    respondedSupplierIds: ['sup-007', 'sup-008'],
     totalQty: 300_000,
     uom: 'PCS',
     estimatedValue: 78_000_000,
@@ -208,7 +221,6 @@ export const mockRfqs: RFQ[] = [
     responseDeadline: '2026-03-04',
     awardDeadline: '2026-03-11',
     invitedSupplierIds: ['sup-001', 'sup-010', 'sup-009'],
-    respondedSupplierIds: ['sup-001', 'sup-010', 'sup-009'],
     totalQty: 300,
     uom: 'KG',
     estimatedValue: 67_000_000,
@@ -217,6 +229,7 @@ export const mockRfqs: RFQ[] = [
     paymentTerms: 'Net 30',
     awardedSupplierId: 'sup-001',
     awardedQuotationId: 'qt-006a',
+    awardedAt: '2026-03-11',
   },
   {
     id: 'rfq-007',
@@ -230,7 +243,6 @@ export const mockRfqs: RFQ[] = [
     responseDeadline: '2026-02-16',
     awardDeadline: '2026-02-23',
     invitedSupplierIds: ['sup-005', 'sup-006', 'sup-009'],
-    respondedSupplierIds: ['sup-005', 'sup-006', 'sup-009'],
     totalQty: 200,
     uom: 'KG',
     estimatedValue: 600_000_000,
@@ -239,6 +251,7 @@ export const mockRfqs: RFQ[] = [
     paymentTerms: 'Net 45',
     awardedSupplierId: 'sup-005',
     awardedQuotationId: 'qt-007a',
+    awardedAt: '2026-02-23',
   },
   {
     id: 'rfq-008',
@@ -252,7 +265,6 @@ export const mockRfqs: RFQ[] = [
     responseDeadline: '2026-05-30',
     awardDeadline: '2026-06-06',
     invitedSupplierIds: [],
-    respondedSupplierIds: [],
     totalQty: 30_000,
     uom: 'PCS',
     estimatedValue: 75_000_000,
@@ -282,7 +294,6 @@ export const mockRfqs: RFQ[] = [
     responseDeadline: '2026-05-21',
     awardDeadline: '2026-05-28',
     invitedSupplierIds: ['sup-006', 'sup-005'],
-    respondedSupplierIds: ['sup-006', 'sup-005'],
     totalQty: 8_000,
     uom: 'KG',
     estimatedValue: 360_000_000,
@@ -309,7 +320,6 @@ export const mockRfqs: RFQ[] = [
     responseDeadline: '2026-05-15',
     awardDeadline: '2026-05-25',
     invitedSupplierIds: ['sup-007', 'sup-008'],
-    respondedSupplierIds: [],
     totalQty: 120_000,
     uom: 'PCS',
     estimatedValue: 540_000_000,
@@ -344,7 +354,6 @@ export const mockRfqs: RFQ[] = [
     responseDeadline: '2026-05-20',
     awardDeadline: '2026-05-30',
     invitedSupplierIds: ['sup-005', 'sup-007'],
-    respondedSupplierIds: ['sup-005'],
     totalQty: 80_000,
     uom: 'PCS',
     estimatedValue: 1_200_000_000,
@@ -390,7 +399,6 @@ export const mockRfqs: RFQ[] = [
     responseDeadline: '2026-05-25',
     awardDeadline: '2026-06-01',
     invitedSupplierIds: ['sup-002', 'sup-006'],
-    respondedSupplierIds: ['sup-002', 'sup-006'],
     totalQty: 6_000,
     uom: 'KG',
     estimatedValue: 165_000_000,
@@ -435,7 +443,6 @@ export const mockRfqs: RFQ[] = [
     responseDeadline: '2026-05-25',
     awardDeadline: '2026-06-01',
     invitedSupplierIds: ['sup-002', 'sup-006'],
-    respondedSupplierIds: ['sup-002', 'sup-006'],
     totalQty: 6_000,
     uom: 'KG',
     estimatedValue: 165_000_000,
@@ -505,8 +512,8 @@ export const mockRfqs: RFQ[] = [
     //     (operator ruling: it is an honest specimen of a draft that cannot be
     //     published, and the step-1 mirror exists to stop a buyer creating
     //     another one).
-    //   · `respondedSupplierIds` is empty: a Draft has been shown to nobody, so
-    //     anybody having responded to it would be a contradiction in the data.
+    //   · no quotation names it: a Draft has been shown to nobody, so anybody
+    //     having responded to it would be a contradiction in the data.
     //   · dates follow this file's own literal convention (RFQ is not a
     //     `FixtureFamily` — no anchor, no shift).
     id: 'rfq-014',
@@ -520,7 +527,6 @@ export const mockRfqs: RFQ[] = [
     responseDeadline: '2026-06-05',
     awardDeadline: '2026-06-12',
     invitedSupplierIds: ['sup-005', 'sup-006', 'sup-009'],
-    respondedSupplierIds: [],
     totalQty: 3_200,
     uom: 'KG',
     estimatedValue: 720_000_000,
@@ -529,3 +535,12 @@ export const mockRfqs: RFQ[] = [
     paymentTerms: 'Net 45',
   },
 ];
+
+/**
+ * The seeded events, each with its response list derived from the quotation
+ * fixture — the same derivation `rfqStore` runs against the live store.
+ */
+export const mockRfqs: RFQ[] = RFQ_SEED.map((r) => ({
+  ...r,
+  respondedSupplierIds: respondedSupplierIdsOf(r.id, mockQuotations),
+}));

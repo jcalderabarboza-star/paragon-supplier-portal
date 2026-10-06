@@ -78,6 +78,7 @@ import { DataError } from '../data/types';
 import type { QueryScope } from '../data/types';
 import type { TransitionDef } from './schema';
 import { NO_PERSON } from '../../context/noPerson';
+import { SAMPLE_ACTORS } from '../identity/sampleActors';
 import { GOVERNED_CHECK_IDS } from '../../lib/enforcement';
 import {
   PSL_SETTING_IDS,
@@ -612,9 +613,12 @@ describe('THE LEGITIMATE PATHS — the half a "refuse everyone" fix would break'
     const draftRfq = rfqStore
       .all()
       .find((r) => r.status === 'Draft' && r.invitedSupplierIds.length > 1)!;
-    const rfqRes = await svc.dispatch(buyerSeat('procurement'), {
-      transitionId: 't_rfq_publish', entity: 'rfq', entityId: draftRfq.id,
-    });
+    // SRC-1 · operator ruling — publishing needs a NAMED person, so this holder
+    // seat carries a sample one. The claim is unchanged: a holder LANDS the verb.
+    const rfqRes = await svc.dispatch(
+      { ...buyerSeat('procurement'), actor: SAMPLE_ACTORS.procurement1 },
+      { transitionId: 't_rfq_publish', entity: 'rfq', entityId: draftRfq.id },
+    );
     expect(rfqRes.status, rfqRes.reason).toBe('done');
     expect(rfqStore.get(draftRfq.id)!.status).toBe('Open');
 

@@ -9,6 +9,7 @@ import { rfqStore } from '../services/data/mock/stores/rfqStore';
 import i18n from '../lib/i18n';
 import BuyerSourcing from './BuyerSourcing';
 import { PERSONA_SYSTEM_ROLES } from '../services/transitions/businessRoles';
+import { SAMPLE_ACTORS } from '../services/identity/sampleActors';
 
 const alwaysFails = withChaos(mockDataService, { minMs: 0, maxMs: 0, failureRate: 1 });
 const alwaysPending = withChaos(mockDataService, { minMs: 1e7, maxMs: 1e7, failureRate: 0 });
@@ -908,7 +909,13 @@ describe('BuyerSourcing — the award summary states the currency it was awarded
     // recording what Paragon actually committed to renamed a $22,800 contract
     // as Rp 22.800. The last place a currency may be assumed.
     await new MockCommandService().dispatch(
-      { personaType: 'buyer', supplierId: null, businessRoles: PERSONA_SYSTEM_ROLES.buyer },
+      // SRC-1 · operator ruling — an award needs a NAMED person.
+      {
+        personaType: 'buyer',
+        supplierId: null,
+        businessRoles: PERSONA_SYSTEM_ROLES.buyer,
+        actor: SAMPLE_ACTORS.procurement1,
+      },
       {
         transitionId: 't_rfq_award',
         entity: 'rfq',

@@ -518,6 +518,25 @@ export function useRfqPublish() {
   });
 }
 
+/** Close bidding on an open RFQ (fires `t_rfq_close`, Open → Closed) — SRC-1. */
+export function useRfqClose() {
+  const svc = useDataService();
+  const scope = useScope();
+  const invalidate = useInvalidateProcurement();
+
+  return useMutation<CommandResult, Error, RfqLifecycleVars>({
+    mutationFn: ({ rfqId }) =>
+      svc.commands.dispatch(scope, {
+        transitionId: 't_rfq_close',
+        entity: 'rfq',
+        entityId: rfqId,
+      }),
+    onSuccess: (result) => {
+      if (result.status !== 'failed') invalidate(scope);
+    },
+  });
+}
+
 /** Reopen a closed RFQ for further responses (fires `t_rfq_reopen`, Closed → Open). */
 export function useRfqReopen() {
   const svc = useDataService();

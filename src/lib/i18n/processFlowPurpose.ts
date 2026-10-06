@@ -165,6 +165,8 @@ export const processFlowPurposeEn: Record<string, string> = {
     'This offer won. It follows from the buying decision on the request, and is never entered against a single supplier by hand.',
   'processFlows.purpose.t_quotation_reject':
     'This offer did not win. It lands at the same moment as the winning one, so nobody is left wondering and no one has to be told individually.',
+  'processFlows.purpose.t_quotation_withdraw':
+    'Buying called the event off before choosing anyone, so the request is taken back for every offer still being weighed. The supplier reads that the event ended, not that they lost.',
 
   // ── shipment ───────────────────────────────────────────────────────────────
   'processFlows.purpose.entity.shipment':
@@ -543,6 +545,8 @@ export const processFlowPurposeId: Record<string, string> = {
     'Penawaran ini menang. Ia mengikuti keputusan pembelian atas permintaannya, dan tidak pernah dimasukkan satu per satu secara manual.',
   'processFlows.purpose.t_quotation_reject':
     'Penawaran ini tidak menang. Ia jatuh pada saat yang sama dengan yang menang, sehingga tak ada yang dibiarkan menerka dan tak seorang pun perlu dikabari satu per satu.',
+  'processFlows.purpose.t_quotation_withdraw':
+    'Pembelian membatalkan acaranya sebelum memilih siapa pun, sehingga permintaannya ditarik kembali untuk setiap penawaran yang masih ditimbang. Pemasok membaca bahwa acaranya berakhir, bukan bahwa mereka kalah.',
 
   // ── shipment ───────────────────────────────────────────────────────────────
   'processFlows.purpose.entity.shipment':

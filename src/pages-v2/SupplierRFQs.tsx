@@ -163,7 +163,7 @@ const buildSubmittedQuotes = (
 interface AwardRow {
   rfqNumber: string;
   material: string;
-  result: 'Awarded' | 'Not Awarded';
+  result: 'Awarded' | 'Not Awarded' | 'Event Cancelled';
   awardDate: string;
   contractValue: string;
   poIssued: string;
@@ -178,15 +178,18 @@ const buildAwardRows = (
   rfqById: Map<string, RFQ>,
 ): AwardRow[] =>
   quotations
-    .filter((q) => q.status === 'Awarded' || q.status === 'Rejected')
+    // SRC-1 — a quotation `Withdrawn` with a cancelled event is history too,
+    // and it is NOT a lost decision: nobody compared it with anything.
+    .filter((q) => q.status === 'Awarded' || q.status === 'Rejected' || q.status === 'Withdrawn')
     .map((q) => {
       const rfq = rfqById.get(q.rfqId);
       const won = q.status === 'Awarded';
       return {
         rfqNumber: rfq?.rfqNumber ?? q.rfqId,
         material: rfq?.title ?? '—',
-        result: won ? 'Awarded' : 'Not Awarded',
-        awardDate: rfq ? formatDate(rfq.awardDeadline) : '—',
+        result: won ? 'Awarded' : q.status === 'Withdrawn' ? 'Event Cancelled' : 'Not Awarded',
+        // SRC-1 — the day the award was made, never the deadline it was due by.
+        awardDate: rfq?.awardedAt ? formatDate(rfq.awardedAt) : '—',
         // COS-05, same leg: an awarded foreign quote's contract value is stated
         // in the currency it was awarded in. Rupiah here would misprice the
         // award itself, which is the row a supplier is most likely to act on.
@@ -581,10 +584,12 @@ const MyQuotesTab: React.FC<{ quotes: SubmittedQuote[] }> = ({ quotes }) => {
 const AwardsTab: React.FC<{ rows: AwardRow[] }> = ({ rows }) => {
   const { t } = useTranslation();
   const awarded = rows.filter((r) => r.result === 'Awarded').length;
-  const total = rows.length;
+  // SRC-1 — the win rate is over DECIDED events. A cancelled event decided
+  // nothing, so it is listed below and counted in neither half.
+  const total = rows.filter((r) => r.result !== 'Event Cancelled').length;
   const pct = total > 0 ? Math.round((awarded / total) * 100) : 0;
 
-  if (total === 0) {
+  if (rows.length === 0) {
     return (
       <div className="bg-bg-surface border border-border-subtle rounded-lg py-12 px-6 text-center">
         <div className="inline-flex w-12 h-12 rounded-full bg-bg-hover items-center justify-center mb-3">
@@ -651,7 +656,13 @@ const AwardsTab: React.FC<{ rows: AwardRow[] }> = ({ rows }) => {
                   <Data>{row.poIssued}</Data>
                 </TableCell>
                 <TableCell className="text-xs text-text-secondary max-w-[16rem]">
-                  {t(row.result === 'Awarded' ? 'rfqs.awards.note.won' : 'rfqs.awards.note.lost')}
+                  {t(
+                    row.result === 'Awarded'
+                      ? 'rfqs.awards.note.won'
+                      : row.result === 'Event Cancelled'
+                        ? 'rfqs.awards.note.cancelled'
+                        : 'rfqs.awards.note.lost',
+                  )}
                 </TableCell>
               </TableRow>
             ))}
@@ -789,9 +800,9 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
   // The supplier's OWN submitted quotations (real read) drive My-Quotes AND prune
   // the open list — an RFQ this supplier has already quoted drops from "Open" (the
   // honest replacement for the retired local-state fake; after a real submit the
-  // invalidated useQuotations re-read re-derives both). respondedSupplierIds on
-  // the RFQ is NOT synced this batch (3b-D, registered finding) — the open-list
-  // prune reads the supplier's own quotes, not the RFQ roster.
+  // invalidated useQuotations re-read re-derives both). The open-list prune
+  // reads the supplier's own quotes; the RFQ's `respondedSupplierIds` is derived
+  // from the same quotations at read (SRC-1), so the two cannot disagree.
   const submittedQuotes = useMemo(
     () => buildSubmittedQuotes(quotations, rfqById, t),
     [quotations, rfqById, t],
@@ -1033,8 +1044,8 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
       <PageMetaLine className="-mt-6 mb-6">
         {openCount}{' '}
         {t(openCount !== 1 ? 'rfqs.meta.event.other' : 'rfqs.meta.event.one')} ·{' '}
-        {submittedCount}{' '}
-        {t(submittedCount !== 1 ? 'rfqs.meta.quote.other' : 'rfqs.meta.quote.one')}
+        {awaitingCount}{' '}
+        {t(awaitingCount !== 1 ? 'rfqs.meta.quote.other' : 'rfqs.meta.quote.one')}
         {/* D-CENSUS-8 — PARTLY REAL, both axes. Quotation submit dispatches through
             the wired `quotation` target and drives the real RFQ→award cascade; the
             RFQs being answered are fixtures. */}

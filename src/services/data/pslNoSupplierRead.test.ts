@@ -36,6 +36,7 @@ import { rfqFlow } from '../transitions/flows/rfq.flow';
 import { POLICY_HOOKS } from '../transitions/policyHooks';
 import { PERSONA_SYSTEM_ROLES } from '../transitions/businessRoles';
 import { NO_PERSON } from '../../context/noPerson';
+import { SAMPLE_ACTORS } from '../identity/sampleActors';
 import { seedPslListings } from './mock/pslSeed';
 import { pslStore } from './mock/stores/pslStore';
 import type { PslListing } from './pslListing';
@@ -676,11 +677,13 @@ describe('⚠️ NO SUPPLIER SEAT CAN REACH THE VERBS WHOSE HOOKS READ THE PSL',
     businessRoles: PERSONA_SYSTEM_ROLES.supplier,
     actor: NO_PERSON,
   };
+  // SRC-1 · operator ruling — publish and award need a NAMED person, and that
+  // hook runs before the PSL hooks this control must reach.
   const buyerSeat: QueryScope = {
     personaType: 'buyer',
     supplierId: null,
     businessRoles: PERSONA_SYSTEM_ROLES.buyer,
-    actor: NO_PERSON,
+    actor: SAMPLE_ACTORS.procurement1,
   };
 
   beforeEach(() => {

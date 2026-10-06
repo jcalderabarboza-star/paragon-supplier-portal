@@ -208,7 +208,11 @@ describe('⚠️ THE ORDERING — eligibility decides, THEN the count is taken',
     // The dispatcher runs `policyHooks` in array order, so this array IS the
     // ordering. Pinned position for position: swapping the two reddens here.
     const publish = rfqFlow.transitions.find((t) => t.id === 't_rfq_publish')!;
+    // SRC-1 — `RFQ_ACTOR_ATTRIBUTED` now leads the array (a seat with nobody
+    // named is refused before anything is judged). The pinned claim is intact
+    // and still position for position: eligibility sits before the count.
     expect([...publish.policyHooks]).toEqual([
+      POLICY_HOOKS.RFQ_ACTOR_ATTRIBUTED,
       POLICY_HOOKS.RFQ_PUBLISH_INVITEES_ELIGIBLE,
       POLICY_HOOKS.RFQ_PUBLISH_COMPETITION,
     ]);

@@ -23,7 +23,7 @@ import { MockCommandService } from '../data/mock/MockCommandService';
 import { rfqStore } from '../data/mock/stores/rfqStore';
 import { quotationStore } from '../data/mock/stores/quotationStore';
 import { PERSONA_SYSTEM_ROLES } from './businessRoles';
-import { NO_PERSON } from '../../context/noPerson';
+import { SAMPLE_ACTORS } from '../identity/sampleActors';
 import { POLICY_HOOKS } from './policyHooks';
 import { refusedByPolicy } from './refusalMessage';
 import { SOURCING_REFUSAL_GLOSSARY } from '../../lib/glossary';
@@ -53,11 +53,14 @@ beforeAll(async () => {
 
 
 const svc = new MockCommandService();
+// SRC-1 · operator ruling — publish and award need a NAMED person
+// (`rfq_actor_attributed`, which runs first), so the seat that reaches the PSL
+// hooks carries a sample one.
 const buyer: QueryScope = {
   personaType: 'buyer',
   supplierId: null,
   businessRoles: PERSONA_SYSTEM_ROLES.buyer,
-  actor: NO_PERSON,
+  actor: SAMPLE_ACTORS.procurement1,
 };
 
 const publish = (entityId: string) =>

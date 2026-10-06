@@ -149,7 +149,7 @@ const LANE_BUNDLES = Object.freeze({
     // carried it would put the threshold back inside the role, where it cannot
     // vary by value, plant, category or date without minting a role per band.
     procurement: Object.freeze([
-      'rfq:create', 'rfq:publish', 'rfq:award', 'rfq:fx-pin', 'rfq:cancel', 'rfq:reopen',
+      'rfq:create', 'rfq:publish', 'rfq:close', 'rfq:award', 'rfq:fx-pin', 'rfq:cancel', 'rfq:reopen',
       'quotation:review',
       'contract:draft', 'contract:activate', 'contract:renew', 'contract:terminate',
       'obligation:track', 'obligation:complete',
@@ -624,8 +624,7 @@ export const AUTOMATION_ATOMS: readonly TransitionRole[] = Object.freeze([
   'po:issue', 'po:fulfil', 'po:close',
   'asn:carry', 'asn:flag',
   'invoice:match', 'invoice:pay',
-  'rfq:close',
-  'quotation:award', 'quotation:reject',
+  'quotation:award', 'quotation:reject', 'quotation:withdraw',
   // ⚠️ **`pr:create` IS A HUMAN VERB AND IT IS GRANTED HERE ANYWAY (A2), SO
   // THE REASON MUST TRAVEL WITH IT — IT IS NOT THE `supplierdoc:verify`
   // MISTAKE REPEATED.** That removal's ground was that NO CASCADE TARGETED

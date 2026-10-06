@@ -4,7 +4,10 @@ export type QuotationStatus =
   | 'Submitted'
   | 'Under Review'
   | 'Awarded'
-  | 'Rejected';
+  | 'Rejected'
+  // SRC-1 — the event this quotation answered was cancelled before any award.
+  // Paragon withdrew the request; nobody judged the quotation.
+  | 'Withdrawn';
 
 export interface Quotation {
   id: string;

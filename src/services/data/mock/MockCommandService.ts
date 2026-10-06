@@ -499,6 +499,10 @@ const rfqTarget: CommandTarget = {
         typeof payload.awardedQuotationId === 'string' ? payload.awardedQuotationId : r.awardedQuotationId,
       awardedSupplierId:
         typeof payload.awardedSupplierId === 'string' ? payload.awardedSupplierId : r.awardedSupplierId,
+      // SRC-1 — the award is dated THE DAY IT IS MADE, store-assigned (a caller
+      // that could set it could backdate its own award). It used to be read off
+      // `awardDeadline`, a date the buyer typed weeks earlier.
+      ...(toState === 'Awarded' ? { awardedAt: new Date().toISOString().slice(0, 10) } : {}),
       // 2e-c-3 — THE D-1 FREEZE, made structural. A pin is APPENDED; there is no
       // branch here that finds an existing pin for the currency and replaces it,
       // and there is deliberately never going to be one. Superseding a rate is
@@ -566,6 +570,7 @@ const rfqTarget: CommandTarget = {
       responseDeadline: str('responseDeadline'),
       awardDeadline: str('awardDeadline'),
       invitedSupplierIds: strArr('invitedSupplierIds'),
+      // Derived at read from the quotations (SRC-1); `rfqStore.add` drops it.
       respondedSupplierIds: [],
       // Required by the flow's `requiredFields` since 2e-b-4a, so `num()`'s 0
       // fallback is unreachable here — an absent quantity fails MISSING_FIELDS
@@ -2978,6 +2983,18 @@ const resolveCascades = (ctx: CascadeContext): CascadeCommand[] => {
         payload: { linkedRfq: ctx.entityId },
       }));
     }
+    // SRC-1 · RFQ cancelled → every quotation still being weighed is withdrawn.
+    // Only the live ones are named: a quotation already at an ending would be
+    // refused by legality and leave a refusal on the trail for nothing.
+    if (ctx.transitionId === 't_rfq_cancel') {
+      return cascadesFor(ctx.transitionId).flatMap((link) =>
+        quotationStore
+          .forRfq(ctx.entityId)
+          .filter((q) => q.status === 'Submitted' || q.status === 'Under Review')
+          .map((q) => ({ entity: link.targetEntity, entityId: q.id, transitionId: link.targetTransitionId })),
+      );
+    }
+    if (ctx.transitionId !== 't_rfq_award') return [];
     const winnerId =
       typeof ctx.payload.awardedQuotationId === 'string' ? ctx.payload.awardedQuotationId : '';
     const siblings = quotationStore.forRfq(ctx.entityId);

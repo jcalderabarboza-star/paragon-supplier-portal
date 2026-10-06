@@ -88,6 +88,7 @@ export const rfqFlow: FlowDefinition = {
       requiredRole: 'rfq:publish',
       requiredFields: [],
       policyHooks: [
+        POLICY_HOOKS.RFQ_ACTOR_ATTRIBUTED,
         POLICY_HOOKS.RFQ_PUBLISH_INVITEES_ELIGIBLE,
         POLICY_HOOKS.RFQ_PUBLISH_COMPETITION,
       ],
@@ -95,24 +96,21 @@ export const rfqFlow: FlowDefinition = {
       version: 1,
     },
     {
-      // Response window ends (a Paragon-side boundary event, not a clock state).
-      // Authored-unwired until the sourcing boundary lands.
+      // SRC-1 — A PERSON CLOSES BIDDING. This was `system` / `computed` ("the
+      // deadline elapsing") with no caller, and law 0.5 forbids the clock as a
+      // trigger — so no event ever closed, and an event with one silent invitee
+      // sat `Open` until it was cancelled. The deadline stays a date the board
+      // projects; closing is the buyer saying "no more quotations", and a
+      // scheduler may fire this same verb later (Design 3 §3.9). Award commits
+      // from Open and from Closed, so closing is never a precondition of it.
       id: 't_rfq_close',
       from: ['Open'],
       to: 'Closed',
-      trigger: 'system',
+      trigger: 'user',
       requiredRole: 'rfq:close',
       requiredFields: [],
       policyHooks: [],
-      surfaceable: {
-        surfaced: false,
-        because: 'computed',
-        why:
-          'The award deadline elapsing. Nobody initiates it; law 0.5 forbids ' +
-          'a `clock` trigger, so it is modelled `system` — and nothing fires ' +
-          'it today, which is why the surface offers Award from Open AND ' +
-          'Closed.',
-      },
+      surfaceable: { surfaced: true },
       version: 1,
     },
     {
@@ -130,7 +128,11 @@ export const rfqFlow: FlowDefinition = {
       // payload by the target, so nothing stopped a dispatch recording one
       // supplier as the awardee of another supplier's quotation. This hook is
       // the cross-check `requiredFields` cannot make: presence is not agreement.
-      policyHooks: [POLICY_HOOKS.RFQ_AWARD_AWARDEE_INTEGRITY],
+      policyHooks: [
+        POLICY_HOOKS.RFQ_ACTOR_ATTRIBUTED,
+        POLICY_HOOKS.RFQ_AWARD_AWARDEE_INTEGRITY,
+        POLICY_HOOKS.RFQ_AWARD_FX_BASIS,
+      ],
       surfaceable: { surfaced: true },
       version: 1,
     },
@@ -176,7 +178,7 @@ export const rfqFlow: FlowDefinition = {
       trigger: 'user',
       requiredRole: 'rfq:cancel',
       requiredFields: [],
-      policyHooks: [],
+      policyHooks: [POLICY_HOOKS.RFQ_ACTOR_ATTRIBUTED],
       surfaceable: { surfaced: true },
       version: 1,
     },

@@ -70,6 +70,7 @@ const STATUS_ID: Record<string, string> = {
   'Price Variance': 'Varians Harga',
   Suspended: 'Ditangguhkan',
   'Not Awarded': 'Tidak Dimenangkan',
+  'Event Cancelled': 'Acara Dibatalkan',
   // info
   Confirmed: 'Dikonfirmasi',
   Acknowledged: 'Diakui',

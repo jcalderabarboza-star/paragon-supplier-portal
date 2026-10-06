@@ -19,10 +19,10 @@ import { POLICY_HOOKS } from '../policyHooks';
 export const quotationFlow: FlowDefinition = {
   entity: 'quotation',
   version: 1,
-  states: ['Submitted', 'Under Review', 'Awarded', 'Rejected'],
+  states: ['Submitted', 'Under Review', 'Awarded', 'Rejected', 'Withdrawn'],
   initial: 'Submitted',
   /** PF-0 · D-2 — both cascade outcomes are endings. */
-  terminals: ['Awarded', 'Rejected'],
+  terminals: ['Awarded', 'Rejected', 'Withdrawn'],
   transitions: [
     {
       // Supplier submits a quotation against an invited RFQ. Creation-shape
@@ -100,6 +100,31 @@ export const quotationFlow: FlowDefinition = {
         why:
           'A consequence of the buyer awarding the RFQ (cascade). Losing ' +
           'quotes are not rejected one by one.',
+      },
+      version: 1,
+    },
+    // SRC-1 — THE EVENT WAS CANCELLED, SO THE REQUEST IS WITHDRAWN. Cancelling
+    // an event used to leave its quotations `Under Review` for good: the
+    // supplier read "awaiting award" on an event that would never be awarded.
+    //
+    // ⚠️ `Withdrawn`, NOT `Rejected`. `Rejected` says a buyer compared this
+    // quotation and chose another, and the supplier's history counts it as a
+    // lost decision. A cancelled event decided nothing about any quotation, so
+    // it gets its own ending and stays out of the win rate.
+    {
+      id: 't_quotation_withdraw',
+      from: ['Submitted', 'Under Review'],
+      to: 'Withdrawn',
+      trigger: 'cascade',
+      requiredRole: 'quotation:withdraw',
+      requiredFields: [],
+      policyHooks: [],
+      surfaceable: {
+        surfaced: false,
+        because: 'computed',
+        why:
+          'A consequence of the buyer cancelling the RFQ (cascade). The ' +
+          'request is withdrawn for every quotation on it at once.',
       },
       version: 1,
     },

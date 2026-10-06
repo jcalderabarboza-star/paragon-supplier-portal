@@ -18,8 +18,11 @@ import { quotationStore } from './stores/quotationStore';
 import { purchaseOrderStore } from './stores/purchaseOrderStore';
 import type { QueryScope } from '../types';
 import { PERSONA_SYSTEM_ROLES } from '../../../services/transitions/businessRoles';
+import { SAMPLE_ACTORS } from '../../../services/identity/sampleActors';
 
-const buyer: QueryScope = { personaType: 'buyer', supplierId: null, businessRoles: PERSONA_SYSTEM_ROLES.buyer };
+// SRC-1 · operator ruling — publish, cancel and award of a sourcing event need a
+// NAMED person (`rfq_actor_attributed`), so the buyer seat here carries a sample one.
+const buyer: QueryScope = { personaType: 'buyer', supplierId: null, businessRoles: PERSONA_SYSTEM_ROLES.buyer, actor: SAMPLE_ACTORS.procurement1 };
 const supplier: QueryScope = { personaType: 'supplier', supplierId: 'sup-001', businessRoles: PERSONA_SYSTEM_ROLES.supplier };
 const svc = new MockCommandService();
 
@@ -94,22 +97,30 @@ describe('RFQ reopen — Closed → Open (Closed only)', () => {
 });
 
 describe('RFQ lifecycle — HONEST-BY-CONSTRUCTION: no cascade, no artifact', () => {
-  it('cancel touches only the RFQ — no quotation fan-out, no PO minted', async () => {
+  // ⚠️ SRC-1 · CORRECTED, WITH THE REASON. This spec was named "cancel touches
+  // only the RFQ — no quotation fan-out" and asserted the quotations came back
+  // UNCHANGED. That was the defect R-SRC measured in the browser: a cancelled
+  // event's quotations stayed `Under Review`, and their suppliers read "awaiting
+  // award" for good. Cancel now WITHDRAWS them (`t_quotation_withdraw`). What the
+  // spec was right about is kept and still asserted: a cancel ADJUDICATES
+  // nothing — no quotation is awarded or rejected — and mints no PO.
+  it('cancel withdraws the quotations — it adjudicates none, and mints no PO', async () => {
     const poCountBefore = purchaseOrderStore.all().length;
-    // rfq-003 carries three live (Under Review) quotations — a cancel must NOT
-    // adjudicate them (no cascade is declared for t_rfq_cancel).
+    // rfq-003 carries three live (Under Review) quotations.
     const quotesBefore = quotationStore
       .forRfq('rfq-003')
       .map((q) => q.status);
+    expect(quotesBefore).toEqual(['Under Review', 'Under Review', 'Under Review']);
 
     const res = await cancel(buyer, 'rfq-003');
     expect(res.status).toBe('done');
     expect(res.entityId).toBe('rfq-003');
 
-    // Quotations are untouched (no t_quotation_award / t_quotation_reject fired).
-    expect(quotationStore.forRfq('rfq-003').map((q) => q.status)).toEqual(
-      quotesBefore,
-    );
+    // Every one is withdrawn; none is awarded and none is rejected.
+    expect(quotationStore.forRfq('rfq-003').map((q) => q.status)).toEqual([
+      'Withdrawn', 'Withdrawn', 'Withdrawn',
+    ]);
+    expect(commandAuditSink.byEvent('t_quotation_withdraw')).toHaveLength(3);
     expect(commandAuditSink.byEvent('t_quotation_award')).toHaveLength(0);
     expect(commandAuditSink.byEvent('t_quotation_reject')).toHaveLength(0);
     // No PO fabricated, and the RFQ carries no award metadata.

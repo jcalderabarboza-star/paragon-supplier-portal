@@ -211,6 +211,35 @@ export const sourcingEn: Record<string, string> = {
   'sourcing.award.selectPrompt': 'Select a quote above to enable the award action.',
   'sourcing.award.submit': 'Award to selected',
   'sourcing.award.submitting': 'Awarding…',
+  // SRC-1 — the award commits from Open and Closed; it asks a second time.
+  'sourcing.award.unanswered':
+    '{{responded}} of {{total}} invited suppliers have answered. You can award on the quotations received.',
+  'sourcing.award.fxBlocked':
+    'This event cannot be awarded yet: quotations are priced in {{currencies}} and no exchange rate is recorded. Record the rate above, then award.',
+  'sourcing.award.ask.none':
+    'Award {{rfqNumber}} to {{name}} for {{value}}? This cannot be undone. No other quotation was received on this event.',
+  'sourcing.award.ask.one':
+    'Award {{rfqNumber}} to {{name}} for {{value}}? This cannot be undone: the other quotation is rejected and its supplier is told.',
+  'sourcing.award.ask.other':
+    'Award {{rfqNumber}} to {{name}} for {{value}}? This cannot be undone: the other {{count}} quotations are rejected and their suppliers are told.',
+  'sourcing.award.ask.yes': 'Yes, award',
+  'sourcing.award.ask.no': 'Not yet',
+  'sourcing.cancel.ask.none':
+    'Cancel {{rfqNumber}}? This cannot be undone. No quotation has been received on it.',
+  'sourcing.cancel.ask.one':
+    'Cancel {{rfqNumber}}? This cannot be undone: the 1 quotation on it is withdrawn and its supplier reads that the event was cancelled.',
+  'sourcing.cancel.ask.other':
+    'Cancel {{rfqNumber}}? This cannot be undone: the {{count}} quotations on it are withdrawn and their suppliers read that the event was cancelled.',
+  'sourcing.cancel.ask.yes': 'Yes, cancel the event',
+  'sourcing.cancel.ask.no': 'Keep the event',
+  'sourcing.close.submit': 'Close bidding',
+  'sourcing.close.submitting': 'Closing…',
+  'sourcing.unattributed.note':
+    'Publishing, cancelling and awarding are recorded against a person, and this seat carries none. Adopt a sample user on the identity panel first.',
+  'sourcing.refusal.actorUnattributed':
+    'Nothing was recorded. Publishing, cancelling or awarding a sourcing event is recorded against the person who decided it, and this seat carries none. Adopt a sample user on the identity panel, then take the act again.',
+  'sourcing.refusal.awardFxUnpinned':
+    'Not awarded. Quotations on this event are priced in a foreign currency and no exchange rate is recorded for it. Record the rate on the comparison, then award.',
   // — Lifecycle actions (cancel / reopen) —
   'sourcing.lifecycle.actions': 'Lifecycle actions',
   'sourcing.publish.submit': 'Publish RFQ',
@@ -389,6 +418,11 @@ export const sourcingEn: Record<string, string> = {
   'sourcing.toast.reviewFailed.default': 'The quote could not be moved to review.',
   'sourcing.toast.cancelled.title': '{{rfqNumber}} cancelled',
   'sourcing.toast.cancelled.desc': 'The sourcing event was cancelled.',
+  'sourcing.toast.closed.title': '{{rfqNumber}} closed to new quotations',
+  'sourcing.toast.closed.desc': 'Bidding is closed. Award on the quotations received, reopen, or cancel.',
+  'sourcing.toast.closeFailed.title': 'Close failed',
+  'sourcing.toast.closeFailed.default': 'Bidding could not be closed.',
+  'sourcing.toast.closeFailed.dispatch': 'The close could not be dispatched.',
   'sourcing.toast.cancelFailed.title': 'Cancel failed',
   'sourcing.toast.cancelFailed.default': 'The RFQ could not be cancelled.',
   'sourcing.toast.cancelFailed.dispatch': 'The cancel could not be dispatched.',
@@ -607,6 +641,34 @@ export const sourcingId: Record<string, string> = {
   'sourcing.award.selected': 'Dipilih: {{name}}',
   'sourcing.award.selectPrompt': 'Pilih penawaran di atas untuk mengaktifkan tindakan pemenangan.',
   'sourcing.award.submit': 'Menangkan yang dipilih',
+  'sourcing.award.unanswered':
+    '{{responded}} dari {{total}} pemasok yang diundang telah menjawab. Anda dapat menetapkan pemenang dari penawaran yang diterima.',
+  'sourcing.award.fxBlocked':
+    'Acara ini belum dapat dimenangkan: penawaran dihargai dalam {{currencies}} dan belum ada kurs yang dicatat. Catat kurs di atas, lalu tetapkan pemenang.',
+  'sourcing.award.ask.none':
+    'Menangkan {{rfqNumber}} untuk {{name}} senilai {{value}}? Ini tidak dapat diurungkan. Tidak ada penawaran lain yang diterima pada acara ini.',
+  'sourcing.award.ask.one':
+    'Menangkan {{rfqNumber}} untuk {{name}} senilai {{value}}? Ini tidak dapat diurungkan: penawaran lainnya ditolak dan pemasoknya diberi tahu.',
+  'sourcing.award.ask.other':
+    'Menangkan {{rfqNumber}} untuk {{name}} senilai {{value}}? Ini tidak dapat diurungkan: {{count}} penawaran lainnya ditolak dan pemasoknya diberi tahu.',
+  'sourcing.award.ask.yes': 'Ya, menangkan',
+  'sourcing.award.ask.no': 'Belum',
+  'sourcing.cancel.ask.none':
+    'Batalkan {{rfqNumber}}? Ini tidak dapat diurungkan. Belum ada penawaran yang diterima.',
+  'sourcing.cancel.ask.one':
+    'Batalkan {{rfqNumber}}? Ini tidak dapat diurungkan: 1 penawaran di dalamnya ditarik dan pemasoknya membaca bahwa acara dibatalkan.',
+  'sourcing.cancel.ask.other':
+    'Batalkan {{rfqNumber}}? Ini tidak dapat diurungkan: {{count}} penawaran di dalamnya ditarik dan pemasoknya membaca bahwa acara dibatalkan.',
+  'sourcing.cancel.ask.yes': 'Ya, batalkan acara',
+  'sourcing.cancel.ask.no': 'Pertahankan acara',
+  'sourcing.close.submit': 'Tutup penawaran',
+  'sourcing.close.submitting': 'Menutup…',
+  'sourcing.unattributed.note':
+    'Menerbitkan, membatalkan, dan menetapkan pemenang dicatat atas nama seseorang, dan kursi ini tidak memilikinya. Pilih pengguna contoh di panel identitas terlebih dahulu.',
+  'sourcing.refusal.actorUnattributed':
+    'Tidak ada yang dicatat. Menerbitkan, membatalkan, atau menetapkan pemenang acara sumber dicatat atas nama orang yang memutuskannya, dan kursi ini tidak memilikinya. Pilih pengguna contoh di panel identitas, lalu ulangi tindakan.',
+  'sourcing.refusal.awardFxUnpinned':
+    'Tidak dimenangkan. Penawaran pada acara ini dihargai dalam mata uang asing dan belum ada kurs yang dicatat. Catat kurs pada perbandingan, lalu tetapkan pemenang.',
   'sourcing.award.submitting': 'Memenangkan…',
   // — Lifecycle actions (batal / buka kembali) —
   'sourcing.lifecycle.actions': 'Tindakan siklus hidup',
@@ -751,6 +813,11 @@ export const sourcingId: Record<string, string> = {
   'sourcing.toast.reviewFailed.default': 'Penawaran tidak dapat dipindahkan ke tinjauan.',
   'sourcing.toast.cancelled.title': '{{rfqNumber}} dibatalkan',
   'sourcing.toast.cancelled.desc': 'Acara sumber telah dibatalkan.',
+  'sourcing.toast.closed.title': '{{rfqNumber}} ditutup untuk penawaran baru',
+  'sourcing.toast.closed.desc': 'Penawaran ditutup. Tetapkan pemenang dari penawaran yang diterima, buka kembali, atau batalkan.',
+  'sourcing.toast.closeFailed.title': 'Penutupan gagal',
+  'sourcing.toast.closeFailed.default': 'Penawaran tidak dapat ditutup.',
+  'sourcing.toast.closeFailed.dispatch': 'Penutupan tidak dapat dikirim.',
   'sourcing.toast.cancelFailed.title': 'Pembatalan gagal',
   'sourcing.toast.cancelFailed.default': 'RFQ tidak dapat dibatalkan.',
   'sourcing.toast.cancelFailed.dispatch': 'Pembatalan tidak dapat dikirim.',
