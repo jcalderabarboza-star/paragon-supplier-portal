@@ -95,6 +95,7 @@ import { quotationStore } from '../data/mock/stores/quotationStore';
 import { purchaseRequisitionStore } from '../data/mock/stores/purchaseRequisitionStore';
 import { requirementResponseStore } from '../data/mock/stores/requirementResponseStore';
 import { inventoryDeclarationStore } from '../data/mock/stores/inventoryDeclarationStore';
+import { stageResponseStore } from '../data/mock/stores/stageResponseStore';
 import { PR_INTAKE_LINES } from '../data/mock/fixtures/prIntake';
 import { intakeLineStore } from '../data/mock/stores/intakeLineStore';
 import { forecastPublicationStore } from '../data/mock/stores/forecastPublicationStore';
@@ -212,6 +213,8 @@ async function realIds(): Promise<Record<string, string | null>> {
     forecastPublication: forecastPublicationStore.all()[0]?.publicationId ?? null,
     requirementResponse: requirementResponseStore.all()[0]?.id ?? null,
     inventoryDeclaration: inventoryDeclarationStore.all()[0]?.id ?? null,
+    // RFx-1 — a seeded answer on `rfq-018`.
+    stageResponse: stageResponseStore.all()[0]?.id ?? null,
     incomingShipment: incomingShipmentStore.all()[0]?.id ?? null,
     enforcement: GOVERNED_CHECK_IDS[0],
     role: 'receiving',
@@ -347,6 +350,7 @@ async function ownerlessWalks(): Promise<Walk[]> {
 }
 
 const resetAll = () => {
+  stageResponseStore.reset();
   schedulingAgreementStore.reset();
   rfqStore.reset();
   purchaseRequisitionStore.reset();
@@ -427,7 +431,8 @@ describe('POPULATION — nothing below means anything without this', () => {
     );
     // `inventoryDeclaration` declares no non-creation transition, so it has no
     // verb this leak could ride. Stated rather than silently absent.
-    expect(unprobeable).toEqual(['inventoryDeclaration']);
+    // RFx-1 — `stageResponse` joins it for the same reason: one creation verb.
+    expect(unprobeable).toEqual(['stageResponse', 'inventoryDeclaration']);
   });
 
   it('CONTROL — the walk lands every probe in one of its verb\'s from-states', async () => {

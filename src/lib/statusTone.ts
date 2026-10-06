@@ -166,6 +166,9 @@ const STATUS_TONE: Record<string, StatusTone> = {
   // SRC-1 — a supplier's history row for a quotation whose event Paragon
   // cancelled. Not a loss and not an alarm.
   'Event Cancelled': 'neutral',
+  // RFx-1 — ended with nobody chosen. Not a loss and not an alarm.
+  Concluded: 'neutral',
+  'No Award': 'neutral',
 };
 
 // The canonical status vocabulary, in declaration order. Consumed by the

@@ -90,6 +90,7 @@ export const GUIDE_LIST_ROUTE: Readonly<Record<string, string>> = Object.freeze(
   rfq: '/buyer/sourcing',
   role: '/buyer/roles',
   shipment: '/buyer/shipments',
+  stageResponse: '/buyer/sourcing',
   supplierApplication: '/buyer/supplier-applications',
   supplierDocument: '/buyer/compliance',
 });

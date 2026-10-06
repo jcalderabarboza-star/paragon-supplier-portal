@@ -143,6 +143,53 @@ export const rfqsEn: Record<string, string> = {
     'You have already submitted a quotation on this event. One quotation per event; a submitted quotation cannot be revised or replaced.',
   'rfqs.refusal.validityPast':
     'The valid-until date has already passed. Choose a date from today onwards and submit again.',
+  // — RFx-1 · stages: interest at RFI / RFP, not shortlisted, payment terms —
+  'rfqs.refusal.stageNotRfq':
+    'This event is not at its RFQ stage yet, so it takes no quotation. Record your interest on the event instead.',
+  'rfqs.refusal.interestEventNotOpen':
+    'This sourcing event is no longer open, so responses are not taken on it. Your interest was not recorded.',
+  'rfqs.refusal.interestDeadlinePassed':
+    'The response deadline of this stage has passed. Your interest was not recorded.',
+  'rfqs.refusal.stageTakesQuotations':
+    'This event is at its RFQ stage, which is answered with a quotation. Use Submit quote.',
+  'rfqs.refusal.interestAlreadyRecorded':
+    'Your interest is already recorded at this stage of the event. One response per stage.',
+  'rfqs.toast.interestFailed.title':
+    'Interest not recorded',
+  'rfqs.toast.interestFailed.default':
+    'Your response could not be recorded. Nothing was sent.',
+  'rfqs.toast.interestRecorded.title':
+    'Interest recorded on {{rfq}}',
+  'rfqs.toast.interestRecorded.body':
+    'Paragon can now consider you for the shortlist of the {{stage}} stage.',
+  'rfqs.panel.paymentTerms':
+    'Payment terms offered',
+  'rfqs.field.paymentTerms':
+    'Payment terms offered',
+  'rfqs.panel.paymentTerms.note':
+    'Paragon asked for “{{terms}}”. Change it if you offer different terms.',
+  'rfqs.notShortlisted.pill':
+    'Not shortlisted',
+  'rfqs.notShortlisted.line':
+    'You were not carried from {{from}} to {{to}} when Paragon advanced this event on',
+  'rfqs.notShortlisted.reasonLabel':
+    'Reason given by Paragon:',
+  'rfqs.notShortlisted.noReason':
+    'No reason was recorded.',
+  'rfqs.card.stage':
+    '{{stage}} stage',
+  'rfqs.card.stages':
+    'Stages',
+  'rfqs.interest.contentNote':
+    'At the {{stage}} stage you record your interest and a note, and nothing else. The questionnaire and the proposal are not built in this portal yet.',
+  'rfqs.interest.note':
+    'Note to Paragon (optional)',
+  'rfqs.interest.open':
+    'Record interest',
+  'rfqs.interest.confirm':
+    'Record interest at {{stage}}',
+  'rfqs.interest.recorded':
+    'Interest recorded at {{stage}} on {{date}}',
   // — CP-0 · W1 · 2e-b-2 — the minimum order quantity: OPTIONAL, blank means
   //   "same as the RFQ quantity", and (as of this batch) a stated value is
   //   actually kept. The "leave blank" sentence moved out of the placeholder and
@@ -351,6 +398,53 @@ export const rfqsId: Record<string, string> = {
     'Anda sudah mengirim penawaran untuk acara ini. Satu penawaran per acara; penawaran yang sudah dikirim tidak dapat direvisi atau diganti.',
   'rfqs.refusal.validityPast':
     'Tanggal berlaku-hingga sudah lewat. Pilih tanggal mulai hari ini lalu kirim lagi.',
+  // — RFx-1 · tahap —
+  'rfqs.refusal.stageNotRfq':
+    'Acara ini belum sampai pada tahap RFQ, sehingga belum menerima penawaran. Catat minat Anda pada acara ini.',
+  'rfqs.refusal.interestEventNotOpen':
+    'Acara sourcing ini tidak lagi terbuka, sehingga tanggapan tidak diterima. Minat Anda tidak dicatat.',
+  'rfqs.refusal.interestDeadlinePassed':
+    'Tenggat tanggapan tahap ini sudah lewat. Minat Anda tidak dicatat.',
+  'rfqs.refusal.stageTakesQuotations':
+    'Acara ini berada pada tahap RFQ, yang dijawab dengan penawaran. Gunakan Kirim penawaran.',
+  'rfqs.refusal.interestAlreadyRecorded':
+    'Minat Anda sudah tercatat pada tahap ini. Satu tanggapan per tahap.',
+  'rfqs.toast.interestFailed.title':
+    'Minat tidak tercatat',
+  'rfqs.toast.interestFailed.default':
+    'Tanggapan Anda tidak dapat dicatat. Tidak ada yang dikirim.',
+  'rfqs.toast.interestRecorded.title':
+    'Minat tercatat pada {{rfq}}',
+  'rfqs.toast.interestRecorded.body':
+    'Paragon kini dapat mempertimbangkan Anda untuk daftar pendek pada tahap {{stage}} ini.',
+  'rfqs.panel.paymentTerms':
+    'Syarat pembayaran yang ditawarkan',
+  'rfqs.field.paymentTerms':
+    'Syarat pembayaran yang ditawarkan',
+  'rfqs.panel.paymentTerms.note':
+    'Paragon meminta “{{terms}}”. Ubah jika Anda menawarkan syarat lain.',
+  'rfqs.notShortlisted.pill':
+    'Tidak masuk daftar pendek',
+  'rfqs.notShortlisted.line':
+    'Anda tidak dilanjutkan dari {{from}} ke {{to}} ketika Paragon melanjutkan acara ini pada',
+  'rfqs.notShortlisted.reasonLabel':
+    'Alasan dari Paragon:',
+  'rfqs.notShortlisted.noReason':
+    'Tidak ada alasan yang dicatat.',
+  'rfqs.card.stage':
+    'Tahap {{stage}}',
+  'rfqs.card.stages':
+    'Tahap',
+  'rfqs.interest.contentNote':
+    'Pada tahap {{stage}} Anda hanya mencatat minat dan satu catatan. Kuesioner dan proposal belum dibangun di portal ini.',
+  'rfqs.interest.note':
+    'Catatan untuk Paragon (opsional)',
+  'rfqs.interest.open':
+    'Catat minat',
+  'rfqs.interest.confirm':
+    'Catat minat pada {{stage}}',
+  'rfqs.interest.recorded':
+    'Minat tercatat pada {{stage}} tanggal {{date}}',
   'rfqs.panel.moq': 'Kuantitas pesanan minimum (opsional)',
   'rfqs.panel.moqPlaceholder': 'mis. 10000',
   'rfqs.panel.moq.hint':

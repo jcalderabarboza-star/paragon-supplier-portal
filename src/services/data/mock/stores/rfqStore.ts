@@ -16,7 +16,9 @@
 import { mockRfqs } from '../../../../data/mockRfqs';
 import type { RFQ, RfqSeed } from '../../../../data/mockRfqs';
 import { respondedSupplierIdsOf } from '../../../../data/rfqResponses';
+import { stageOf, stageRespondersOf } from '../../../../data/rfqStage';
 import { quotationStore } from './quotationStore';
+import { stageResponseStore } from './stageResponseStore';
 
 // SRC-1 — THE STORE HOLDS NO RESPONSE LIST. A row is an `RfqSeed`; every read
 // hands back an `RFQ` whose `respondedSupplierIds` is computed from the
@@ -24,12 +26,25 @@ import { quotationStore } from './quotationStore';
 // caller carried. One fact, one place: a quotation submitted a second ago is in
 // the next read, and no write site has to remember to say so.
 function strip(r: RFQ | RfqSeed): RfqSeed {
-  const { respondedSupplierIds: _derived, ...seed } = r as RFQ;
+  const { respondedSupplierIds: _derived, stageResponses: _answers, ...seed } = r as RFQ;
   return { ...seed, materialIds: [...seed.materialIds], invitedSupplierIds: [...seed.invitedSupplierIds] };
 }
 
+// RFx-1 — WHO HAS ANSWERED DEPENDS ON THE STAGE. At RFQ an answer is a
+// quotation, as it always was. At RFI and RFP it is a stage response recorded
+// AT THAT STAGE: an answer to the RFI is not an answer to the RFP that follows
+// it, so the list empties when the event advances and fills again.
 function project(r: RfqSeed): RFQ {
-  return { ...r, respondedSupplierIds: respondedSupplierIdsOf(r.id, quotationStore.all()) };
+  const stage = stageOf(r);
+  const answers = stageResponseStore.forRfq(r.id);
+  return {
+    ...r,
+    respondedSupplierIds:
+      stage === 'RFQ'
+        ? respondedSupplierIdsOf(r.id, quotationStore.all())
+        : stageRespondersOf(answers, r.id, stage),
+    stageResponses: answers,
+  };
 }
 
 let rows: RfqSeed[] = mockRfqs.map(strip);

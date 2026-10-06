@@ -285,13 +285,13 @@ describe('10 · a seat with nobody named', () => {
     renderWithProviders(<Sourcing />, { identity: BUYER });
     await openRfq('RFQ-2026-002');
     expect(screen.getByTestId('rfq-unattributed-note')).toHaveTextContent(
-      'Publishing, cancelling and awarding are recorded against a person, and this seat carries none.',
+      'Publishing, advancing, concluding, cancelling and awarding are recorded against a person, and this seat carries none.',
     );
     fireEvent.click(screen.getByTestId('rfq-cancel'));
     fireEvent.click(await screen.findByTestId('rfq-cancel-yes'));
     await waitFor(() =>
       expect(screen.getByTestId('toast-spy')).toHaveTextContent(
-        'Nothing was recorded. Publishing, cancelling or awarding a sourcing event is recorded against the person who decided it',
+        'Nothing was recorded. Publishing, advancing, concluding, cancelling or awarding a sourcing event is recorded against the person who decided it',
       ),
     );
     expect(rfqStore.get('rfq-002')!.status).toBe('Open');
@@ -307,7 +307,7 @@ describe('10 · a seat with nobody named', () => {
     fireEvent.click(screen.getByTestId('rfq-award'));
     fireEvent.click(await screen.findByTestId('rfq-award-yes'));
     await waitFor(() =>
-      expect(screen.getByTestId('toast-spy')).toHaveTextContent('Nothing was recorded. Publishing, cancelling or awarding'),
+      expect(screen.getByTestId('toast-spy')).toHaveTextContent('Nothing was recorded. Publishing, advancing, concluding, cancelling or awarding'),
     );
     expect(rfqStore.get('rfq-003')!.status).toBe('Open');
   });
@@ -405,7 +405,7 @@ describe('ID — the buyer side', () => {
     fireEvent.click(await screen.findByTestId('rfq-cancel-yes'));
     await waitFor(() =>
       expect(screen.getByTestId('toast-spy')).toHaveTextContent(
-        'Tidak ada yang dicatat. Menerbitkan, membatalkan, atau menetapkan pemenang',
+        'Tidak ada yang dicatat. Menerbitkan, melanjutkan, mengakhiri, membatalkan, atau menetapkan pemenang',
       ),
     );
     expect(rfqStore.get('rfq-002')!.status).toBe('Open');

@@ -32,6 +32,7 @@ import { goodsReceiptStore } from '../services/data/mock/stores/goodsReceiptStor
 import { invoiceStore } from '../services/data/mock/stores/invoiceStore';
 import { rfqStore } from '../services/data/mock/stores/rfqStore';
 import { quotationStore } from '../services/data/mock/stores/quotationStore';
+import { stageResponseStore } from '../services/data/mock/stores/stageResponseStore';
 import { purchaseRequisitionStore } from '../services/data/mock/stores/purchaseRequisitionStore';
 import { requirementResponseStore } from '../services/data/mock/stores/requirementResponseStore';
 import { inventoryDeclarationStore } from '../services/data/mock/stores/inventoryDeclarationStore';
@@ -103,6 +104,7 @@ const FIXTURE_IDS: Readonly<Record<string, () => readonly string[]>> = {
   invoice: () => ids(invoiceStore.all()),
   rfq: () => ids(rfqStore.all()),
   quotation: () => ids(quotationStore.all()),
+  stageResponse: () => ids(stageResponseStore.all()),
   purchaseRequisition: () => ids(purchaseRequisitionStore.all()),
   requirementResponse: () => ids(requirementResponseStore.all()),
   inventoryDeclaration: () => ids(inventoryDeclarationStore.all()),

@@ -151,6 +151,10 @@ export const processFlowPurposeEn: Record<string, string> = {
     'Records the exchange basis foreign offers are being compared on, so a decision taken today can still be explained a year from now.',
   'processFlows.purpose.t_rfq_cancel':
     'Buying calls the event off before picking anyone — the requirement changed, or the budget went. The suppliers get told rather than left waiting.',
+  'processFlows.purpose.t_rfq_advance':
+    'Buying narrows the field and moves on: the suppliers worth hearing more from are asked the next, harder question, and the rest are told why they are not.',
+  'processFlows.purpose.t_rfq_conclude':
+    'The event ran and nobody was chosen — no one was able, or every price was too high. Buying says why and ends it, so the suppliers are not left waiting on a decision that is not coming.',
   'processFlows.purpose.t_rfq_reopen':
     'Reopens a finished event for further responses — too few answers, or a requirement that moved. It reuses the request rather than starting a new one.',
 
@@ -166,7 +170,12 @@ export const processFlowPurposeEn: Record<string, string> = {
   'processFlows.purpose.t_quotation_reject':
     'This offer did not win. It lands at the same moment as the winning one, so nobody is left wondering and no one has to be told individually.',
   'processFlows.purpose.t_quotation_withdraw':
-    'Buying called the event off before choosing anyone, so the request is taken back for every offer still being weighed. The supplier reads that the event ended, not that they lost.',
+    'Buying ended the event before choosing anyone — called it off, or closed it with no winner — so the request is taken back for every offer still being weighed. The supplier reads that the event ended, not that they lost.',
+  // ── stageResponse ─────────────────────────────────────────────────────
+  'processFlows.purpose.entity.stageResponse':
+    'A supplier’s answer at an early stage of a sourcing event, before prices are asked for — today, a statement that it is interested, with a note.',
+  'processFlows.purpose.t_stageresponse_submit':
+    'The supplier says it wants to be considered. Buying picks its shortlist only from the suppliers who said so, which is what makes saying so worth doing.',
 
   // ── shipment ───────────────────────────────────────────────────────────────
   'processFlows.purpose.entity.shipment':
@@ -531,6 +540,10 @@ export const processFlowPurposeId: Record<string, string> = {
     'Mencatat dasar kurs yang dipakai membandingkan penawaran bermata uang asing, agar keputusan hari ini masih bisa dijelaskan setahun kemudian.',
   'processFlows.purpose.t_rfq_cancel':
     'Pembelian membatalkan acaranya sebelum memilih siapa pun — kebutuhannya berubah, atau anggarannya hilang. Para pemasok diberi tahu, bukan dibiarkan menunggu.',
+  'processFlows.purpose.t_rfq_advance':
+    'Pembelian mempersempit pilihan dan melangkah maju: pemasok yang layak didengar lebih jauh diberi pertanyaan berikutnya yang lebih berat, dan yang lain diberi tahu mengapa mereka tidak.',
+  'processFlows.purpose.t_rfq_conclude':
+    'Acaranya berjalan dan tidak ada yang dipilih — tidak ada yang mampu, atau semua harga terlalu tinggi. Pembelian menyebut alasannya dan mengakhirinya, agar para pemasok tidak menunggu keputusan yang tidak akan datang.',
   'processFlows.purpose.t_rfq_reopen':
     'Membuka kembali acara yang sudah berakhir untuk tanggapan tambahan — jawabannya terlalu sedikit, atau kebutuhannya bergeser. Permintaan yang sama dipakai ulang alih-alih membuat yang baru.',
 
@@ -546,7 +559,12 @@ export const processFlowPurposeId: Record<string, string> = {
   'processFlows.purpose.t_quotation_reject':
     'Penawaran ini tidak menang. Ia jatuh pada saat yang sama dengan yang menang, sehingga tak ada yang dibiarkan menerka dan tak seorang pun perlu dikabari satu per satu.',
   'processFlows.purpose.t_quotation_withdraw':
-    'Pembelian membatalkan acaranya sebelum memilih siapa pun, sehingga permintaannya ditarik kembali untuk setiap penawaran yang masih ditimbang. Pemasok membaca bahwa acaranya berakhir, bukan bahwa mereka kalah.',
+    'Pembelian mengakhiri acaranya sebelum memilih siapa pun — membatalkannya, atau menutupnya tanpa pemenang — sehingga permintaannya ditarik kembali untuk setiap penawaran yang masih ditimbang. Pemasok membaca bahwa acaranya berakhir, bukan bahwa mereka kalah.',
+  // ── stageResponse ─────────────────────────────────────────────────────
+  'processFlows.purpose.entity.stageResponse':
+    'Jawaban seorang pemasok pada tahap awal suatu acara pengadaan, sebelum harga diminta — saat ini berupa pernyataan bahwa ia berminat, disertai catatan.',
+  'processFlows.purpose.t_stageresponse_submit':
+    'Pemasok menyatakan ingin dipertimbangkan. Pembelian memilih daftar pendeknya hanya dari pemasok yang menyatakannya, dan itulah yang membuat pernyataan itu berarti.',
 
   // ── shipment ───────────────────────────────────────────────────────────────
   'processFlows.purpose.entity.shipment':

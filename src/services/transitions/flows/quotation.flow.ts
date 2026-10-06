@@ -59,6 +59,10 @@ export const quotationFlow: FlowDefinition = {
       policyHooks: [
         POLICY_HOOKS.QUOTATION_SUBMIT_CURRENCY_PERMITTED,
         POLICY_HOOKS.QUOTATION_SUBMIT_EVENT_OPEN,
+        // RFx-1 — after "is it open", before "is it late": a supplier told the
+        // deadline has gone on an RFI would look for a quote form that the
+        // stage never offered.
+        POLICY_HOOKS.QUOTATION_SUBMIT_AT_RFQ_STAGE,
         POLICY_HOOKS.QUOTATION_SUBMIT_BEFORE_DEADLINE,
         POLICY_HOOKS.QUOTATION_SUBMIT_ONE_PER_SUPPLIER,
         POLICY_HOOKS.QUOTATION_SUBMIT_VALIDITY_CURRENT,

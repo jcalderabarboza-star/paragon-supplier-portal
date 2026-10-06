@@ -1,6 +1,9 @@
 import type { FxPin } from '../lib/fxPin';
+import type { RfqStage, StageAdvance, StageResponse } from './rfqStage';
 import { shiftFields, shiftIso } from '../services/data/fixturePresent';
 import { mockQuotations } from './mockQuotations';
+import { mockStageResponses } from './mockStageResponses';
+import { stageOf, stageRespondersOf } from './rfqStage';
 import { respondedSupplierIdsOf } from './rfqResponses';
 
 export type RFQStatus =
@@ -8,6 +11,9 @@ export type RFQStatus =
   | 'Open'
   | 'Closed'
   | 'Awarded'
+  // RFx-1 — ended by a person with no award made. Not `Cancelled`: a cancelled
+  // event was called off, a concluded one ran and nobody was chosen.
+  | 'Concluded'
   | 'Cancelled';
 
 export type RFQCategory =
@@ -102,10 +108,33 @@ export interface RFQ {
    * rate nobody chose. A single-currency RFQ never needs one.
    */
   fxPins?: readonly FxPin[];
+  /**
+   * RFx-1 · THE STAGE THE EVENT IS AT (`rfqStage.ts`). OPTIONAL: an event that
+   * states none is at RFQ, which is every event authored before stages existed.
+   * Read it through `stageOf`, never directly.
+   */
+  stage?: RfqStage;
+  /**
+   * RFx-1 · every advance this event has made, oldest first. APPEND-ONLY: the
+   * shortlist a stage ended on stays readable after the next one narrows it.
+   * Absent on an event that has never advanced.
+   */
+  stageHistory?: readonly StageAdvance[];
+  /** RFx-1 · the day the event was concluded without an award. Store-assigned. */
+  concludedAt?: string;
+  /** RFx-1 · why it was concluded without an award, in the buyer's words. */
+  concludeReason?: string;
+  /**
+   * RFx-1 · DERIVED AT READ, NEVER STORED — the answers suppliers recorded at
+   * this event's RFI and RFP stages (`stageResponseStore`). `rfqStore` attaches
+   * them on every read and drops them on every write. A supplier's read carries
+   * its own only (`rfqSupplierView.ts`).
+   */
+  stageResponses?: readonly StageResponse[];
 }
 
-/** An event as it is authored: everything but the derived response list. */
-export type RfqSeed = Omit<RFQ, 'respondedSupplierIds'>;
+/** An event as it is authored: everything but the two lists derived at read. */
+export type RfqSeed = Omit<RFQ, 'respondedSupplierIds' | 'stageResponses'>;
 
 // SRC-2 · THE LITERALS BELOW ARE THE AUTHORED DATES, AS OF 2026-05-18
 // (`SOURCING_ANCHOR`). They are re-timed to the declared present at the foot of
@@ -538,6 +567,115 @@ const RFQ_SEED_RAW: RfqSeed[] = [
     incoterms: 'CIF Jakarta',
     paymentTerms: 'Net 45',
   },
+  // RFx-1 · ONE EVENT EACH THAT SAMPLE SUPPLIERS 1 AND 2 CAN STILL QUOTE.
+  // After SRC-2 only supplier 3 (`sup-007`, on `rfq-011`) had an Open event
+  // inside its deadline and no quotation on it, so two of the three supplier
+  // seats opened on a quote form nobody could reach. Each event below is Open,
+  // three weeks inside its response deadline at the declared present, and holds
+  // no quotation. Materials and invitees repeat `rfq-003` and `rfq-007`, whose
+  // rosters already pass the publish checks, and each title keeps its
+  // material's head (ONE CODE, ONE MEANING — `materialMasterAuthoring.test`).
+  {
+    id: 'rfq-015',
+    rfqNumber: 'RFQ-2026-015',
+    title: 'Halal Glycerin 99.5% Kosher — Q4 2026 top-up',
+    materialCategory: 'Emulsifiers',
+    materialIds: ['RM-EMUL-3310'],
+    buyerId: 'buyer-001',
+    status: 'Open',
+    createdAt: '2026-05-12',
+    responseDeadline: '2026-06-08',
+    awardDeadline: '2026-06-15',
+    invitedSupplierIds: ['sup-002', 'sup-001', 'sup-010'],
+    totalQty: 4_000,
+    uom: 'KG',
+    estimatedValue: 180_000_000,
+    currency: 'IDR',
+    incoterms: 'DDP Jakarta',
+    paymentTerms: 'Net 30',
+  },
+  {
+    id: 'rfq-016',
+    rfqNumber: 'RFQ-2026-016',
+    title: 'Sodium Hyaluronate HMW — Q4 2026 top-up',
+    materialCategory: 'Active Ingredients',
+    materialIds: ['AI-HYALU-6610'],
+    buyerId: 'buyer-001',
+    status: 'Open',
+    createdAt: '2026-05-12',
+    responseDeadline: '2026-06-08',
+    awardDeadline: '2026-06-15',
+    invitedSupplierIds: ['sup-005', 'sup-006', 'sup-009'],
+    totalQty: 1_500,
+    uom: 'KG',
+    estimatedValue: 330_000_000,
+    currency: 'IDR',
+    incoterms: 'CIF Jakarta',
+    paymentTerms: 'Net 45',
+  },
+  // RFx-1 · A DRAFT LEFT PAST ITS RESPONSE DEADLINE — the specimen of the one
+  // way such a draft still comes to exist. The wizard refuses a deadline that
+  // has passed, so a new one cannot be raised; a draft that sat unpublished
+  // until its deadline went by can. Its roster would publish (two Active
+  // invitees), so the ONLY thing refusing it is the date: eight days gone at
+  // the declared present. No verb edits a deadline, so its one exit is cancel.
+  {
+    id: 'rfq-017',
+    rfqNumber: 'RFQ-2026-017',
+    title: 'Shipper Box — Emina 24-pack — left in draft',
+    materialCategory: 'Packaging',
+    materialIds: ['PK-CART-9910'],
+    buyerId: 'buyer-001',
+    status: 'Draft',
+    createdAt: '2026-04-20',
+    responseDeadline: '2026-05-10',
+    awardDeadline: '2026-05-17',
+    invitedSupplierIds: ['sup-007', 'sup-008'],
+    totalQty: 60_000,
+    uom: 'PCS',
+    estimatedValue: 150_000_000,
+    currency: 'IDR',
+    incoterms: 'DDP Jakarta',
+    paymentTerms: 'Net 30',
+  },
+  // RFx-1 · THE ONE SEEDED EVENT THAT HAS STAGES. Started at RFI, advanced to
+  // RFP a week before the anchor with a shortlist of two, and Open at RFP now.
+  // Its three RFI invitees are the three sample supplier seats, so each seat
+  // opens on a different fact (`mockStageResponses.ts`): `sup-002` was not
+  // carried forward and reads why; `sup-005` has answered the RFP; `sup-007`
+  // has not yet. It names a real master code, as every seeded event does
+  // (`materialRequestSeed.test` holds that no seeded event is code-less) — the
+  // one `rfq-010` already sources, in its unit and under its title head, so
+  // no material pin moves and no listing exempts the event.
+  {
+    id: 'rfq-018',
+    rfqNumber: 'RFQ-2026-018',
+    title: 'PET Bottle 250ml Flip-Top — refill programme, new formats',
+    materialCategory: 'Packaging',
+    materialIds: ['PK-PETB-8825'],
+    buyerId: 'buyer-001',
+    status: 'Open',
+    createdAt: '2026-04-27',
+    responseDeadline: '2026-06-01',
+    awardDeadline: '2026-06-22',
+    invitedSupplierIds: ['sup-005', 'sup-007'],
+    totalQty: 250_000,
+    uom: 'PCS',
+    currency: 'IDR',
+    incoterms: 'DDP Jakarta',
+    paymentTerms: 'Net 45',
+    stage: 'RFP',
+    stageHistory: [
+      {
+        from: 'RFI',
+        to: 'RFP',
+        advancedAt: '2026-05-11',
+        shortlistedSupplierIds: ['sup-005', 'sup-007'],
+        notShortlistedSupplierIds: ['sup-002'],
+        reason: 'Supply would be subcontracted; this programme needs an in-house source.',
+      },
+    ],
+  },
 ];
 
 /**
@@ -552,18 +690,31 @@ const RFQ_SEED: RfqSeed[] = shiftFields(RFQ_SEED_RAW, 'rfq', [
   'responseDeadline',
   'awardDeadline',
   'awardedAt',
-]).map((r) =>
-  r.fxPins
-    ? {
-        ...r,
-        fxPins: r.fxPins.map((p) => ({
-          ...p,
-          asOf: shiftIso(p.asOf, 'rfq'),
-          pinnedAt: shiftIso(p.pinnedAt, 'rfq'),
-        })),
-      }
-    : r,
-);
+])
+  .map((r) =>
+    r.fxPins
+      ? {
+          ...r,
+          fxPins: r.fxPins.map((p) => ({
+            ...p,
+            asOf: shiftIso(p.asOf, 'rfq'),
+            pinnedAt: shiftIso(p.pinnedAt, 'rfq'),
+          })),
+        }
+      : r,
+  )
+  // RFx-1 — the day of each advance moves with its event, for the same reason.
+  .map((r) =>
+    r.stageHistory
+      ? {
+          ...r,
+          stageHistory: r.stageHistory.map((a) => ({
+            ...a,
+            advancedAt: shiftIso(a.advancedAt, 'rfq'),
+          })),
+        }
+      : r,
+  );
 
 /**
  * The seeded events, each with its response list derived from the quotation
@@ -571,5 +722,9 @@ const RFQ_SEED: RfqSeed[] = shiftFields(RFQ_SEED_RAW, 'rfq', [
  */
 export const mockRfqs: RFQ[] = RFQ_SEED.map((r) => ({
   ...r,
-  respondedSupplierIds: respondedSupplierIdsOf(r.id, mockQuotations),
+  // RFx-1 — at RFI and RFP the answer is a stage response, not a quotation.
+  respondedSupplierIds:
+    stageOf(r) === 'RFQ'
+      ? respondedSupplierIdsOf(r.id, mockQuotations)
+      : stageRespondersOf(mockStageResponses, r.id, stageOf(r)),
 }));

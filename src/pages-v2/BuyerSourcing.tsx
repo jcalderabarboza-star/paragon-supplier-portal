@@ -19,6 +19,8 @@ import {
   Ban,
   RotateCcw,
   ArrowLeftRight,
+  FastForward,
+  Flag,
 } from 'lucide-react';
 import AppShellV2 from '../components/layout-v2/AppShellV2';
 import PageHeader from '../components/ui-v2/PageHeader';
@@ -75,6 +77,8 @@ import {
   useRfqClose,
   useRfqPublish,
   useRfqReopen,
+  useRfqAdvance,
+  useRfqConclude,
   useQuotationReview,
 } from '../services/query/commandHooks';
 import {
@@ -151,9 +155,12 @@ import { decideSourcing, rosterStatusOf } from '../services/data/rfqSourcingGate
 import { usePslListings } from '../services/query/hooks';
 import { isPublished } from '../services/data/pslListing';
 import type { SourcingDecision } from '../services/data/rfqSourcingGate';
-import { refusedByPolicy } from '../services/transitions/refusalMessage';
+import { refusedByPolicy, type PolicyHookId } from '../services/transitions/refusalMessage';
 import { useCurrentIdentity } from '../context/CurrentIdentityContext';
 import { POLICY_HOOKS } from '../services/transitions/policyHooks';
+import { RFQ_STAGES, nextStageOf, stageOf, stagePathOf, type RfqStage } from '../data/rfqStage';
+import { responseDeadlinePassed } from '../services/data/quotationSubmitGate';
+import StageTimeline from './sourcing/StageTimeline';
 
 /**
  * ⚠️ **B-R1 · HAS THE SUPPLIER BEEN TOLD ABOUT THE LISTING THAT EXEMPTS THIS
@@ -339,8 +346,26 @@ function sourcingRefusalKey(reason: string | undefined): string | null {
   if (refusedByPolicy(reason, POLICY_HOOKS.RFQ_AWARD_FX_BASIS)) {
     return 'sourcing.refusal.awardFxUnpinned';
   }
+  // RFx-1 — the staged event's refusals, one sentence per hook.
+  for (const [hook, key] of STAGE_REFUSAL_KEYS) {
+    if (refusedByPolicy(reason, hook)) return key;
+  }
   return null;
 }
+
+/** RFx-1 — each stage hook to the buyer's sentence for it. */
+const STAGE_REFUSAL_KEYS: readonly (readonly [PolicyHookId, string])[] = [
+  [POLICY_HOOKS.RFQ_CREATE_STAGE_KNOWN, 'sourcing.refusal.stageUnknown'],
+  [POLICY_HOOKS.RFQ_PUBLISH_DEADLINE_CURRENT, 'sourcing.refusal.publishDeadlinePast'],
+  [POLICY_HOOKS.RFQ_AWARD_AT_RFQ_STAGE, 'sourcing.refusal.awardStageNotRfq'],
+  [POLICY_HOOKS.RFQ_ADVANCE_HAS_NEXT_STAGE, 'sourcing.refusal.stageIsFinal'],
+  [POLICY_HOOKS.RFQ_ADVANCE_SHORTLIST_STATED, 'sourcing.refusal.shortlistEmpty'],
+  [POLICY_HOOKS.RFQ_ADVANCE_SHORTLIST_RESPONDED, 'sourcing.refusal.shortlistNotResponder'],
+  [POLICY_HOOKS.RFQ_ADVANCE_SHORTLIST_COMPETITIVE, 'sourcing.refusal.shortlistUnderFloor'],
+  [POLICY_HOOKS.RFQ_ADVANCE_REASON_STATED, 'sourcing.refusal.shortlistReasonMissing'],
+  [POLICY_HOOKS.RFQ_ADVANCE_DEADLINE_CURRENT, 'sourcing.refusal.stageDeadlinePast'],
+  [POLICY_HOOKS.RFQ_CONCLUDE_REASON_STATED, 'sourcing.refusal.concludeReasonMissing'],
+];
 
 /** May an award be committed on this event? The flow's own `from`, and a quote to pick. */
 const isAwardable = (r: RFQ, quoteCount: number): boolean =>
@@ -364,6 +389,8 @@ const STATUS_VARIANT: Record<
   Open: 'info',
   Closed: 'neutral',
   Awarded: 'success',
+  // RFx-1 — ended with no award. Neutral: nothing went wrong, nobody was chosen.
+  Concluded: 'neutral',
   Cancelled: 'danger',
 };
 
@@ -377,6 +404,16 @@ const STATUS_VARIANT: Record<
 const isAllResponded = (r: RFQ): boolean =>
   r.invitedSupplierIds.length > 0 &&
   r.respondedSupplierIds.length === r.invitedSupplierIds.length;
+
+// RFx-1 — "READY TO AWARD" IS AN RFQ-STAGE FACT. An RFI every invitee has
+// answered is ready to be advanced, not awarded; counting it here would put an
+// event with no quotation under "Pending award".
+const awaitsAward = (r: RFQ): boolean =>
+  r.status === 'Open' && stageOf(r) === 'RFQ' && isAllResponded(r);
+
+/** The three endings that are not an award: bidding closed, concluded, cancelled. */
+const isClosedOut = (r: RFQ): boolean =>
+  r.status === 'Closed' || r.status === 'Concluded' || r.status === 'Cancelled';
 
 // ── 2e-b-3 (COS-04) — the shadowing locals are retired ───────────────────────
 //
@@ -649,7 +686,7 @@ const buildTimeline = (r: RFQ, t: TFunction): TimelineEvent[] => {
   const isDraft = r.status === 'Draft';
   const isOpen = r.status === 'Open';
   const isAwarded = r.status === 'Awarded';
-  const isClosed = r.status === 'Closed' || r.status === 'Cancelled';
+  const isClosed = isClosedOut(r);
 
   return [
     {
@@ -893,11 +930,10 @@ const ComparisonCell: React.FC<{
 
 const matchesGroup = (r: RFQ, group: GroupTab): boolean => {
   if (group === 'all') return true;
-  if (group === 'open') return r.status === 'Open' && !isAllResponded(r);
-  if (group === 'pending') return r.status === 'Open' && isAllResponded(r);
+  if (group === 'open') return r.status === 'Open' && !awaitsAward(r);
+  if (group === 'pending') return awaitsAward(r);
   if (group === 'awarded') return r.status === 'Awarded';
-  if (group === 'closed')
-    return r.status === 'Closed' || r.status === 'Cancelled';
+  if (group === 'closed') return isClosedOut(r);
   return true;
 };
 
@@ -924,6 +960,8 @@ interface DraftRfq {
   paymentTerms: string;
   currency: 'IDR' | 'USD';
   invitedSupplierIds: string[];
+  /** RFx-1 — the stage the event STARTS at. RFQ unless the buyer chooses. */
+  stage: RfqStage;
   /** C.2 — set ONLY when the buyer started from a requisition. */
   sourceRequisitionId?: string;
 }
@@ -967,7 +1005,18 @@ const EMPTY_DRAFT: DraftRfq = {
   paymentTerms: 'Net 30',
   currency: 'IDR',
   invitedSupplierIds: [],
+  stage: 'RFQ',
 };
+
+/** RFx-1 — what the buyer decides when advancing an event. */
+interface AdvanceDraft {
+  shortlist: string[];
+  reason: string;
+  responseDeadline: string;
+  awardDeadline: string;
+}
+
+const EMPTY_ADVANCE: AdvanceDraft = { shortlist: [], reason: '', responseDeadline: '', awardDeadline: '' };
 
 interface SourcingWorkspaceProps {
   baseRfqs: RFQ[];
@@ -1108,6 +1157,8 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
     reopen: 'rfq:reopen',
     cancel: 'rfq:cancel',
     award: 'rfq:award',
+    advance: 'rfq:advance',
+    conclude: 'rfq:conclude',
     review: 'quotation:review',
     fxPin: 'rfq:fx-pin',
   } as const);
@@ -1126,7 +1177,14 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
   // rejects every other quotation, a cancel withdraws the request from every
   // supplier who answered. The question names that consequence, and the first
   // press commits nothing.
-  const [asking, setAsking] = useState<'award' | 'cancel' | null>(null);
+  const [asking, setAsking] = useState<'award' | 'cancel' | 'advance' | 'conclude' | null>(null);
+  // RFx-1 — the two stage verbs carry what the buyer decides: who goes
+  // forward, why the others do not, and when the next stage is due; or why
+  // nobody was chosen. Both are held here until the second press commits them.
+  const advanceMutation = useRfqAdvance();
+  const concludeMutation = useRfqConclude();
+  const [advanceDraft, setAdvanceDraft] = useState<AdvanceDraft>(EMPTY_ADVANCE);
+  const [concludeReason, setConcludeReason] = useState('');
   // SRC-1 · operator ruling — publish, cancel and award are a person's
   // decision. The machine refuses a seat with nobody named
   // (`rfq_actor_attributed`); the surface says so BEFORE the act.
@@ -1416,6 +1474,9 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
   const handleClose = () => {
     if (!selectedRfq) return;
     const rfqNumber = selectedRfq.rfqNumber;
+    // RFx-1 — what closing leads to depends on the stage: an award at RFQ, a
+    // shortlist at RFI and RFP.
+    const stage = stageOf(selectedRfq);
     closeMutation.mutate(
       { rfqId: selectedRfq.id },
       {
@@ -1431,8 +1492,14 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
           }
           toast({
             variant: 'success',
-            title: t('sourcing.toast.closed.title', { rfqNumber }),
-            description: t('sourcing.toast.closed.desc'),
+            title: t(
+              stage === 'RFQ' ? 'sourcing.toast.closed.title' : 'sourcing.toast.closed.titleStage',
+              { rfqNumber },
+            ),
+            description:
+              stage === 'RFQ'
+                ? t('sourcing.toast.closed.desc')
+                : t('sourcing.toast.closed.descStage', { stage }),
           });
         },
         onError: () =>
@@ -1449,6 +1516,90 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
     setSelectedRfqId(null);
     setSelectedQuoteId(null);
     setAsking(null);
+  };
+
+  // RFx-1 — advance to the next stage with a shortlist (fires t_rfq_advance).
+  // The panel stays open: the event is the same event, one stage on.
+  const handleAdvance = () => {
+    if (!selectedRfq) return;
+    const rfqNumber = selectedRfq.rfqNumber;
+    const to = nextStageOf(stageOf(selectedRfq));
+    const count = advanceDraft.shortlist.length;
+    advanceMutation.mutate(
+      {
+        rfqId: selectedRfq.id,
+        shortlistSupplierIds: advanceDraft.shortlist,
+        ...(advanceDraft.reason.trim() ? { shortlistReason: advanceDraft.reason.trim() } : {}),
+        responseDeadline: advanceDraft.responseDeadline,
+        ...(advanceDraft.awardDeadline ? { awardDeadline: advanceDraft.awardDeadline } : {}),
+      },
+      {
+        onSuccess: (result) => {
+          if (result.status === 'failed') {
+            toast({
+              variant: 'error',
+              title: t('sourcing.toast.advanceFailed.title'),
+              description: sourcingRefusalKey(result.reason)
+                ? t(sourcingRefusalKey(result.reason)!)
+                : (refusalText(result.reason) ?? result.reason ?? t('sourcing.toast.advanceFailed.default')),
+            });
+            return;
+          }
+          toast({
+            variant: 'success',
+            title: t('sourcing.toast.advanced.title', { rfqNumber, stage: to ?? '' }),
+            description: t(
+              count === 1 ? 'sourcing.toast.advanced.desc.one' : 'sourcing.toast.advanced.desc.other',
+              { count },
+            ),
+          });
+          setAsking(null);
+        },
+        onError: () =>
+          toast({
+            variant: 'error',
+            title: t('sourcing.toast.advanceFailed.title'),
+            description: t('sourcing.toast.advanceFailed.dispatch'),
+          }),
+      },
+    );
+  };
+
+  // RFx-1 — conclude without an award (fires t_rfq_conclude). An ending: the
+  // panel closes, as it does after an award or a cancel.
+  const handleConclude = () => {
+    if (!selectedRfq) return;
+    const rfqNumber = selectedRfq.rfqNumber;
+    concludeMutation.mutate(
+      { rfqId: selectedRfq.id, concludeReason: concludeReason.trim() },
+      {
+        onSuccess: (result) => {
+          if (result.status === 'failed') {
+            toast({
+              variant: 'error',
+              title: t('sourcing.toast.concludeFailed.title'),
+              description: sourcingRefusalKey(result.reason)
+                ? t(sourcingRefusalKey(result.reason)!)
+                : (refusalText(result.reason) ?? result.reason ?? t('sourcing.toast.concludeFailed.default')),
+            });
+            setAsking(null);
+            return;
+          }
+          toast({
+            variant: 'success',
+            title: t('sourcing.toast.concluded.title', { rfqNumber }),
+            description: t('sourcing.toast.concluded.desc'),
+          });
+          closePanel();
+        },
+        onError: () =>
+          toast({
+            variant: 'error',
+            title: t('sourcing.toast.concludeFailed.title'),
+            description: t('sourcing.toast.concludeFailed.dispatch'),
+          }),
+      },
+    );
   };
 
   // `Export comparison` held no handler at all, so a press produced nothing —
@@ -1470,6 +1621,53 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
     if (!selectedRfq) return [];
     return quotations.filter((q) => q.rfqId === selectedRfq.id);
   }, [selectedRfq, quotations]);
+
+  // RFx-1 — the selected event's stage, and the advance the buyer is building.
+  // Every "may this be committed" below is the machine's own rule, read before
+  // the act: the shortlist is non-empty, competitive under the publish
+  // decision, explained when it leaves anyone out, and due on a day that has
+  // not passed. The machine refuses the same five; this says which one first.
+  const selectedStage = selectedRfq ? stageOf(selectedRfq) : 'RFQ';
+  const nextStage = nextStageOf(selectedStage);
+  const stageAnswers = selectedRfq?.stageResponses ?? [];
+  const advanceLeftOut = selectedRfq
+    ? selectedRfq.invitedSupplierIds.filter((id) => !advanceDraft.shortlist.includes(id))
+    : [];
+  const advanceBlocked: string | null = !selectedRfq
+    ? null
+    : selectedRfq.respondedSupplierIds.length === 0
+      ? 'sourcing.advance.blocked.noResponders'
+      : advanceDraft.shortlist.length === 0
+        ? 'sourcing.advance.blocked.empty'
+        : decideSourcing(
+              { invitedSupplierIds: advanceDraft.shortlist, materialIds: selectedRfq.materialIds },
+              TODAY,
+              rosterStatusOf,
+            ).competition.kind === 'UNDER_FLOOR'
+          ? 'sourcing.advance.blocked.underFloor'
+          : advanceLeftOut.length > 0 && advanceDraft.reason.trim() === ''
+            ? 'sourcing.advance.blocked.reasonMissing'
+            : advanceDraft.responseDeadline === ''
+              ? 'sourcing.advance.blocked.deadlineMissing'
+              : responseDeadlinePassed(advanceDraft.responseDeadline, TODAY)
+                ? 'sourcing.advance.blocked.deadlinePast'
+                : advanceDraft.awardDeadline !== '' &&
+                    advanceDraft.awardDeadline <= advanceDraft.responseDeadline
+                  ? 'sourcing.wizard.awardAfterResponse'
+                  : null;
+  const openAdvance = () => {
+    if (!selectedRfq) return;
+    // Everybody who answered starts on the list; the buyer takes names off.
+    setAdvanceDraft({ ...EMPTY_ADVANCE, shortlist: [...selectedRfq.respondedSupplierIds] });
+    setAsking('advance');
+  };
+  const toggleShortlisted = (supplierId: string) =>
+    setAdvanceDraft((d) => ({
+      ...d,
+      shortlist: d.shortlist.includes(supplierId)
+        ? d.shortlist.filter((id) => id !== supplierId)
+        : [...d.shortlist, supplierId],
+    }));
 
   // 2e-c-4 — the currency is resolved ONCE, here, and every consumer reads the
   // resolved value. It used to be re-derived per cell (`q.currency ??
@@ -1772,6 +1970,9 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
     }
     if (step === 2) {
       if (!draft.responseDeadline || !draft.awardDeadline) return false;
+      // RFx-1 — the mirror of `rfq_publish_deadline_current`. No verb edits an
+      // event's deadline, so a draft raised past it could only be cancelled.
+      if (responseDeadlinePassed(draft.responseDeadline, TODAY)) return false;
       return new Date(draft.awardDeadline) > new Date(draft.responseDeadline);
     }
     return true;
@@ -1815,7 +2016,9 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
             toast({
               variant: 'error',
               title: t('sourcing.toast.createFailed.title'),
-              description: refusalText(result.reason) ?? result.reason ?? t('sourcing.toast.createFailed.default'),
+              description: sourcingRefusalKey(result.reason)
+                ? t(sourcingRefusalKey(result.reason)!)
+                : (refusalText(result.reason) ?? result.reason ?? t('sourcing.toast.createFailed.default')),
             });
             // ⚠️ R8 · THE FAILURE PATH, SAID PLAINLY. The RFQ was refused, so
             // the marked request NEVER DISPATCHED and nothing was recorded.
@@ -1965,6 +2168,47 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
               path and cascades onto nothing. Choosing one fills the fields it
               can carry and sets `sourceRequisitionId`, which is the payload key
               the dispatcher's cascade resolver reads. */}
+          <div>
+            <div className="text-label text-text-tertiary uppercase block mb-1.5">
+              {t('sourcing.wizard.field.stage')}
+            </div>
+            {/* RFx-1 — THE START STAGE. An event moves RFI → RFP → RFQ and may
+                start at any of the three; RFQ is the event every buyer already
+                knows, so it is the default. */}
+            <div
+              className="grid grid-cols-1 md:grid-cols-3 gap-2"
+              role="radiogroup"
+              aria-label={t('sourcing.wizard.field.stage')}
+            >
+              {RFQ_STAGES.map((s) => (
+                <label
+                  key={s}
+                  className={`border rounded-md px-3 py-2 cursor-pointer ${
+                    draft.stage === s ? 'border-action bg-action-soft/40' : 'border-border-subtle'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="rfq-start-stage"
+                    value={s}
+                    checked={draft.stage === s}
+                    onChange={() => updateDraft('stage', s)}
+                    className="accent-teal mr-2"
+                    data-testid={`rfq-start-stage-${s}`}
+                  />
+                  <span className="text-sm font-semibold text-text-primary">{s}</span>
+                  <span className="block text-xs text-text-tertiary mt-0.5">
+                    {t(`sourcing.wizard.stage.${s}`)}
+                  </span>
+                </label>
+              ))}
+            </div>
+            {draft.stage !== 'RFQ' && (
+              <p className="text-xs text-text-tertiary mt-1.5" data-testid="rfq-start-stage-note">
+                {t('sourcing.interest.contentNote')}
+              </p>
+            )}
+          </div>
           <div>
             <label
               htmlFor="rfq-source-requisition"
@@ -2462,6 +2706,11 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                 }
                 className="w-full bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-action"
               />
+              {draft.responseDeadline && responseDeadlinePassed(draft.responseDeadline, TODAY) && (
+                <p className="text-xs text-danger mt-1" data-testid="rfq-deadline-past">
+                  {t('sourcing.wizard.deadlinePast')}
+                </p>
+              )}
             </div>
             <div>
               <label className="text-label text-text-tertiary uppercase block mb-1.5">
@@ -2587,6 +2836,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                     ],
                   ] as [string, React.ReactNode][])
                 : []),
+              [t('sourcing.wizard.review.row.stage'), draft.stage],
               [t('sourcing.wizard.review.row.title'), draft.title || '—'],
               [
                 t('sourcing.wizard.review.row.category'),
@@ -2681,16 +2931,10 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
   );
 
   const counts = useMemo(() => {
-    const open = rfqs.filter(
-      (r) => r.status === 'Open' && !isAllResponded(r),
-    ).length;
-    const pending = rfqs.filter(
-      (r) => r.status === 'Open' && isAllResponded(r),
-    ).length;
+    const open = rfqs.filter((r) => r.status === 'Open' && !awaitsAward(r)).length;
+    const pending = rfqs.filter(awaitsAward).length;
     const awarded = rfqs.filter((r) => r.status === 'Awarded').length;
-    const closed = rfqs.filter(
-      (r) => r.status === 'Closed' || r.status === 'Cancelled',
-    ).length;
+    const closed = rfqs.filter(isClosedOut).length;
     return {
       all: rfqs.length,
       open,
@@ -2709,9 +2953,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
       if (d === null) return false;
       return d <= 7 && d >= 0;
     }).length;
-    const readyToAward = rfqs.filter(
-      (r) => r.status === 'Open' && isAllResponded(r),
-    ).length;
+    const readyToAward = rfqs.filter(awaitsAward).length;
     const awardedQuarter = rfqs.filter((r) => {
       if (r.status !== 'Awarded') return false;
       // SRC-1 — counted by the day the award was MADE. It read `createdAt`, so
@@ -2950,6 +3192,16 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                     <Data as="div" className="font-semibold text-text-primary">
                       {r.rfqNumber}
                     </Data>
+                    {/* RFx-1 — only on an event that has stages. An event
+                        raised as a plain RFQ reads as it always did. */}
+                    {stagePathOf(r).length > 1 && (
+                      <span
+                        className="inline-block text-[10px] font-semibold text-text-secondary border border-border-subtle rounded px-1 mt-0.5"
+                        data-testid={`rfq-row-stage-${r.id}`}
+                      >
+                        {t('sourcing.stage.rowChip', { stage: stageOf(r) })}
+                      </span>
+                    )}
                     <div className="text-xs text-text-tertiary mt-0.5 max-w-[20rem] truncate">
                       {r.title}
                     </div>
@@ -3244,6 +3496,38 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
               </section>
             )}
 
+            {/* RFx-1 — CONCLUDED WITHOUT AN AWARD: when, at which stage, and
+                why, in the buyer's own words. */}
+            {selectedRfq.status === 'Concluded' && (
+              <section
+                className="bg-bg-hover border border-border-subtle rounded-md p-4"
+                data-testid="rfq-concluded-summary"
+              >
+                <div className="flex items-center gap-2 mb-3">
+                  <Flag size={16} className="text-text-secondary" />
+                  <h3 className="text-section text-text-primary">{t('sourcing.concluded.title')}</h3>
+                </div>
+                <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
+                  <div>
+                    <dt className="text-text-tertiary">{t('sourcing.concluded.date')}</dt>
+                    <Data as="dd" className="text-text-primary font-medium">
+                      {selectedRfq.concludedAt ? formatDate(selectedRfq.concludedAt) : '—'}
+                    </Data>
+                  </div>
+                  <div>
+                    <dt className="text-text-tertiary">{t('sourcing.concluded.stage')}</dt>
+                    <dd className="text-text-primary font-medium">{selectedStage}</dd>
+                  </div>
+                  <div className="col-span-2">
+                    <dt className="text-text-tertiary">{t('sourcing.concluded.reason')}</dt>
+                    <dd className="text-text-primary" data-testid="rfq-concluded-reason">
+                      {selectedRfq.concludeReason || '—'}
+                    </dd>
+                  </div>
+                </dl>
+              </section>
+            )}
+
             {/* ⚠️ PSL P2 — THE VERDICT ON A REAL EVENT.
                 ⚠️ **THE SENTENCE THAT STOOD HERE IS RETIRED BECAUSE THIS BATCH
                 FALSIFIED IT.** It read that the wizard *"writes MATERIAL NAMES
@@ -3359,6 +3643,43 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
               </dl>
             </section>
 
+            {/* RFx-1 — WHERE THE EVENT IS ON ITS PATH, and what each advance
+                carried. The names are the buyer's to read; a supplier's copy of
+                this timeline names nobody (`rfqSupplierView.ts`). */}
+            <section data-testid="rfq-stage-section">
+              <h3 className="text-label text-text-tertiary uppercase mb-3">
+                {t('sourcing.stage.title')}
+              </h3>
+              <StageTimeline event={selectedRfq} testId="rfq-stage-timeline" />
+              {(selectedRfq.stageHistory ?? []).map((a) => (
+                <div
+                  key={a.from}
+                  className="text-xs text-text-secondary mt-2"
+                  data-testid={`rfq-stage-advance-${a.from}`}
+                >
+                  <div>
+                    {t('sourcing.stage.advanceLine', {
+                      from: a.from,
+                      to: a.to,
+                      names: a.shortlistedSupplierIds
+                        .map((id) => supplierNameById.get(id) ?? id)
+                        .join(', '),
+                    })}
+                  </div>
+                  {a.notShortlistedSupplierIds.length > 0 && (
+                    <div>
+                      {t('sourcing.stage.notCarriedLine', {
+                        names: a.notShortlistedSupplierIds
+                          .map((id) => supplierNameById.get(id) ?? id)
+                          .join(', '),
+                        reason: a.reason ?? '',
+                      })}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </section>
+
             {/* Lifecycle actions (F0.3): the non-award sourcing verbs, gated on
                 the machine's legal from-states — cancel from Draft/Open/Closed
                 (not a terminal Awarded/Cancelled), reopen from Closed only. */}
@@ -3388,8 +3709,23 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                       exists, and reads nothing on an Open RFQ, where it does
                       not. A notice outside the from-state would advertise a
                       wait for an act the machine would refuse anyway. */}
+                  {/* RFx-1 — A DRAFT PAST ITS RESPONSE DEADLINE OFFERS NO
+                      PUBLISH, for any seat: the machine refuses it
+                      (`PUBLISH_DEADLINE_PAST`), and the slot says so rather
+                      than letting the press find out. */}
                   {selectedRfq.status === 'Draft' &&
-                    (rfqVerbs.publish.kind === 'held' ? (
+                    (responseDeadlinePassed(selectedRfq.responseDeadline, TODAY) ? (
+                      <span
+                        className="text-xs text-danger font-semibold self-center"
+                        data-testid="rfq-publish-deadline-past"
+                      >
+                        {selectedRfq.responseDeadline
+                          ? t('sourcing.publish.deadlinePast', {
+                              date: formatDate(selectedRfq.responseDeadline),
+                            })
+                          : t('sourcing.publish.deadlineMissing')}
+                      </span>
+                    ) : rfqVerbs.publish.kind === 'held' ? (
                       <Button
                         variant="outline"
                         icon={Send}
@@ -3444,6 +3780,50 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                         testId="handoff-rfq-reopen"
                       />
                     ))}
+                  {/* RFx-1 · ADVANCE — Closed only, while a stage follows: the
+                      shortlist is chosen once the answers have stopped. On an
+                      Open event the slot says so, beside Close bidding. The
+                      press opens the shortlist; nothing is committed by it. */}
+                  {selectedRfq.status === 'Open' && nextStage !== null && (
+                    <span className="text-xs text-text-tertiary self-center" data-testid="rfq-advance-needs-close">
+                      {t('sourcing.advance.needsClose', { stage: nextStage })}
+                    </span>
+                  )}
+                  {selectedRfq.status === 'Closed' &&
+                    nextStage !== null &&
+                    (rfqVerbs.advance.kind === 'held' ? (
+                      <Button
+                        variant="outline"
+                        icon={FastForward}
+                        disabled={advanceMutation.isPending || asking === 'advance'}
+                        onClick={openAdvance}
+                        data-testid="rfq-advance"
+                      >
+                        {t('sourcing.advance.submit', { stage: nextStage })}
+                      </Button>
+                    ) : (
+                      <HandoffNotice availability={rfqVerbs.advance} testId="handoff-rfq-advance" />
+                    ))}
+                  {/* RFx-1 · CONCLUDE WITHOUT AWARD — Open or Closed, at every
+                      stage. An ending, so it asks a second time and takes the
+                      reason there. */}
+                  {(selectedRfq.status === 'Open' || selectedRfq.status === 'Closed') &&
+                    (rfqVerbs.conclude.kind === 'held' ? (
+                      <Button
+                        variant="secondary"
+                        icon={Flag}
+                        disabled={concludeMutation.isPending || asking === 'conclude'}
+                        onClick={() => {
+                          setConcludeReason('');
+                          setAsking('conclude');
+                        }}
+                        data-testid="rfq-conclude"
+                      >
+                        {t('sourcing.conclude.submit')}
+                      </Button>
+                    ) : (
+                      <HandoffNotice availability={rfqVerbs.conclude} testId="handoff-rfq-conclude" />
+                    ))}
                   {/* CANCEL — legal from all three of this section's states,
                       so its notice is the one a withheld seat always reads
                       here, beside whichever of publish/reopen applies. */}
@@ -3497,6 +3877,162 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                     </div>
                   </div>
                 )}
+                {/* RFx-1 — THE SHORTLIST. Gated on the atom as the button is. */}
+                {asking === 'advance' && rfqVerbs.advance.kind === 'held' && nextStage !== null && (
+                  <div
+                    className="mt-3 border border-border-subtle bg-bg-surface rounded-md p-3"
+                    data-testid="rfq-advance-form"
+                  >
+                    <p className="text-sm text-text-primary mb-3">
+                      {t('sourcing.advance.intro', {
+                        rfqNumber: selectedRfq.rfqNumber,
+                        from: selectedStage,
+                        to: nextStage,
+                      })}
+                    </p>
+                    <div className="text-label text-text-tertiary uppercase mb-1.5">
+                      {t('sourcing.advance.shortlist')}
+                    </div>
+                    <ul className="space-y-1 mb-3">
+                      {selectedRfq.invitedSupplierIds.map((id) => {
+                        const answered = selectedRfq.respondedSupplierIds.includes(id);
+                        return (
+                          <li key={id}>
+                            <label className="flex items-center gap-2 text-sm text-text-primary">
+                              <input
+                                type="checkbox"
+                                className="accent-teal"
+                                disabled={!answered}
+                                checked={advanceDraft.shortlist.includes(id)}
+                                onChange={() => toggleShortlisted(id)}
+                                data-testid={`rfq-advance-pick-${id}`}
+                              />
+                              <span>{supplierNameById.get(id) ?? id}</span>
+                              {!answered && (
+                                <span className="text-xs text-text-tertiary">
+                                  {t('sourcing.advance.didNotRespond', { stage: selectedStage })}
+                                </span>
+                              )}
+                            </label>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                    <label className="text-label text-text-tertiary uppercase block mb-1.5" htmlFor="rfq-advance-reason">
+                      {t('sourcing.advance.reason')}
+                    </label>
+                    <textarea
+                      id="rfq-advance-reason"
+                      rows={2}
+                      value={advanceDraft.reason}
+                      onChange={(e) => setAdvanceDraft((d) => ({ ...d, reason: e.target.value }))}
+                      className="w-full bg-white border border-border-input rounded-md px-3 py-2 text-sm focus:outline-none focus:border-action"
+                      data-testid="rfq-advance-reason"
+                    />
+                    <p className="text-xs text-text-tertiary mt-1 mb-3" data-testid="rfq-advance-left-out">
+                      {advanceLeftOut.length === 0
+                        ? t('sourcing.advance.leftOut.none')
+                        : t('sourcing.advance.leftOut.some', {
+                            names: advanceLeftOut.map((id) => supplierNameById.get(id) ?? id).join(', '),
+                          })}
+                    </p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+                      <div>
+                        <label className="text-label text-text-tertiary uppercase block mb-1.5" htmlFor="rfq-advance-deadline">
+                          {t('sourcing.advance.responseDeadline', { stage: nextStage })}
+                        </label>
+                        <input
+                          id="rfq-advance-deadline"
+                          type="date"
+                          value={advanceDraft.responseDeadline}
+                          onChange={(e) => setAdvanceDraft((d) => ({ ...d, responseDeadline: e.target.value }))}
+                          className="w-full bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-action"
+                          data-testid="rfq-advance-deadline"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-label text-text-tertiary uppercase block mb-1.5" htmlFor="rfq-advance-award-deadline">
+                          {t('sourcing.advance.awardDeadline')}
+                        </label>
+                        <input
+                          id="rfq-advance-award-deadline"
+                          type="date"
+                          value={advanceDraft.awardDeadline}
+                          onChange={(e) => setAdvanceDraft((d) => ({ ...d, awardDeadline: e.target.value }))}
+                          className="w-full bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-action"
+                          data-testid="rfq-advance-award-deadline"
+                        />
+                      </div>
+                    </div>
+                    {advanceBlocked && (
+                      <p className="text-xs text-warning-hover mb-3" data-testid="rfq-advance-blocked">
+                        {t(advanceBlocked, { stage: selectedStage })}
+                      </p>
+                    )}
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        variant="outline"
+                        disabled={advanceBlocked !== null || advanceMutation.isPending}
+                        onClick={handleAdvance}
+                        data-testid="rfq-advance-yes"
+                      >
+                        {t(
+                          advanceDraft.shortlist.length === 1
+                            ? 'sourcing.advance.yes.one'
+                            : 'sourcing.advance.yes.other',
+                          { stage: nextStage, count: advanceDraft.shortlist.length },
+                        )}
+                      </Button>
+                      <Button variant="secondary" onClick={() => setAsking(null)} data-testid="rfq-advance-no">
+                        {t('sourcing.advance.no')}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+                {/* RFx-1 — CONCLUDE, ASKED A SECOND TIME, WITH THE REASON. */}
+                {asking === 'conclude' && rfqVerbs.conclude.kind === 'held' && (
+                  <div
+                    className="mt-3 border border-danger/30 bg-danger-soft rounded-md p-3"
+                    data-testid="rfq-conclude-ask"
+                  >
+                    <p className="text-sm text-text-primary mb-3">
+                      {t(
+                        quotesForSelected.length === 0
+                          ? 'sourcing.conclude.ask.none'
+                          : quotesForSelected.length === 1
+                            ? 'sourcing.conclude.ask.one'
+                            : 'sourcing.conclude.ask.other',
+                        { rfqNumber: selectedRfq.rfqNumber, count: quotesForSelected.length },
+                      )}
+                    </p>
+                    <label className="text-label text-text-tertiary uppercase block mb-1.5" htmlFor="rfq-conclude-reason">
+                      {t('sourcing.conclude.reason')}
+                    </label>
+                    <textarea
+                      id="rfq-conclude-reason"
+                      rows={2}
+                      value={concludeReason}
+                      onChange={(e) => setConcludeReason(e.target.value)}
+                      className="w-full bg-white border border-border-input rounded-md px-3 py-2 text-sm focus:outline-none focus:border-action"
+                      data-testid="rfq-conclude-reason"
+                    />
+                    <p className="text-xs text-text-tertiary mt-1 mb-3">{t('sourcing.conclude.reasonNote')}</p>
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        variant="outline"
+                        className="text-danger border-danger"
+                        disabled={concludeReason.trim() === '' || concludeMutation.isPending}
+                        onClick={handleConclude}
+                        data-testid="rfq-conclude-yes"
+                      >
+                        {t('sourcing.conclude.ask.yes')}
+                      </Button>
+                      <Button variant="secondary" onClick={() => setAsking(null)} data-testid="rfq-conclude-no">
+                        {t('sourcing.conclude.ask.no')}
+                      </Button>
+                    </div>
+                  </div>
+                )}
                 {!named && (
                   <p className="text-xs text-text-tertiary mt-3" data-testid="rfq-unattributed-note">
                     {t('sourcing.unattributed.note')}
@@ -3511,6 +4047,61 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
               </h3>
               <Timeline events={buildTimeline(selectedRfq, t)} />
             </section>
+
+            {/* RFx-1 — WHO ANSWERED AT RFI AND RFP. Shown while the event is at
+                one of those stages and kept after it moves on, because the
+                shortlist was chosen from these. The sentence above the list is
+                the honest limit of this batch: interest and a note, nothing
+                more, until the questionnaire and the proposal are built. */}
+            {(selectedStage !== 'RFQ' || stageAnswers.length > 0) && (
+              <section data-testid="rfq-stage-responses">
+                <h3 className="text-label text-text-tertiary uppercase mb-3">
+                  {t('sourcing.interest.title')}
+                </h3>
+                <p className="text-xs text-text-tertiary mb-3" data-testid="rfq-stage-content-note">
+                  {t('sourcing.interest.contentNote')}
+                </p>
+                {selectedStage !== 'RFQ' && (
+                  <p className="text-sm text-text-primary mb-2" data-testid="rfq-stage-response-count">
+                    {t('sourcing.interest.count', {
+                      responded: selectedRfq.respondedSupplierIds.length,
+                      total: selectedRfq.invitedSupplierIds.length,
+                      stage: selectedStage,
+                    })}
+                  </p>
+                )}
+                {stageAnswers.length === 0 ? (
+                  <div className="text-sm text-text-tertiary p-4 border border-border-subtle rounded-md text-center">
+                    {t('sourcing.interest.empty')}
+                  </div>
+                ) : (
+                  <ul className="divide-y divide-border-subtle border border-border-subtle rounded-md">
+                    {stageAnswers.map((a) => (
+                      <li
+                        key={a.id}
+                        className="px-3 py-2 text-sm"
+                        data-testid={`rfq-stage-response-${a.stage}-${a.supplierId}`}
+                      >
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="font-semibold text-text-primary">
+                            {supplierNameById.get(a.supplierId) ?? a.supplierId}
+                          </span>
+                          <span className="text-xs font-semibold text-text-secondary border border-border-subtle rounded px-1">
+                            {a.stage}
+                          </span>
+                          <Data className="text-xs text-text-tertiary ml-auto">
+                            {formatDate(a.respondedAt)}
+                          </Data>
+                        </div>
+                        <div className="text-xs text-text-secondary mt-1">
+                          {a.note ?? t('sourcing.interest.noNote')}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </section>
+            )}
 
             <section>
               <h3 className="text-label text-text-tertiary uppercase mb-3">
@@ -3567,7 +4158,8 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
               )}
               {quotesForSelected.length === 0 ? (
                 <div className="text-sm text-text-tertiary p-4 border border-border-subtle rounded-md text-center">
-                  {t('sourcing.cmp.empty')}
+                  {/* RFx-1 — at RFI and RFP no quotation can exist yet. */}
+                  {selectedStage === 'RFQ' ? t('sourcing.cmp.empty') : t('sourcing.cmp.emptyBeforeRfq')}
                 </div>
               ) : (
                 <div className="overflow-x-auto -mx-6 px-6">

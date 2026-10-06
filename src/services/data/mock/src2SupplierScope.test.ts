@@ -56,12 +56,16 @@ const sourcingReads = async (scope: QueryScope) => ({
 });
 
 /** The fields a supplier's view of an event may carry. The whole list. */
+// RFx-1 — four fields joined, each named in `rfqSupplierView.ts` and each
+// narrowed to the reader where it could name a supplier (`rfx1Stages.test.ts`
+// reads them as every supplier on a staged event).
 const SUPPLIER_VIEW_FIELDS = [
   'awardDeadline',
   'awardedAt',
   'awardedQuotationId',
   'awardedSupplierId',
   'buyerId',
+  'concludedAt',
   'createdAt',
   'currency',
   'id',
@@ -73,6 +77,9 @@ const SUPPLIER_VIEW_FIELDS = [
   'respondedSupplierIds',
   'responseDeadline',
   'rfqNumber',
+  'stage',
+  'stageHistory',
+  'stageResponses',
   'status',
   'title',
   'totalQty',

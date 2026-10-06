@@ -76,8 +76,8 @@ number seen three ways.
 | Count | Axis | What it measures | Where |
 |---|---|---|---|
 | **71** | C1 Axis 1 | The `IDataService` **service surface** — every method of the composed service contract, per sub-service. | `src/services/data/types.ts`; C1 Axis 1 |
-| **129** | C1 Axis 2 | The **transition catalog** — every authored state-machine edge across the registered flows (`getKnownFlows()`). This is the *verb* surface, distinct from the service surface. | `src/services/transitions/flows/*.ts`; C1 Axis 2 |
-| **22** | C1 Axis 3 | The **wired CommandTargets** — entities with a live per-entity adapter the dispatcher writes through. The list is `WIRED_COMMAND_TARGETS`, not a sentence. | `src/services/data/mock/MockCommandService.ts`; C1 Axis 3 |
+| **132** | C1 Axis 2 | The **transition catalog** — every authored state-machine edge across the registered flows (`getKnownFlows()`). This is the *verb* surface, distinct from the service surface. | `src/services/transitions/flows/*.ts`; C1 Axis 2 |
+| **23** | C1 Axis 3 | The **wired CommandTargets** — entities with a live per-entity adapter the dispatcher writes through. The list is `WIRED_COMMAND_TARGETS`, not a sentence. | `src/services/data/mock/MockCommandService.ts`; C1 Axis 3 |
 
 **The three numbers are C1's, at `5826c9f`, and they are pinned twice:** C1 to the tree by
 `src/services/contracts/__tests__/c1MethodSurface.contract.test.ts`, and this table to C1 by

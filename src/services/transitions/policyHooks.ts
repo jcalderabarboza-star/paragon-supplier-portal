@@ -83,6 +83,25 @@ export const POLICY_HOOKS = {
    *  passed, at the declared present. An offer that expired before it was made
    *  is not an offer the buyer can award. */
   QUOTATION_SUBMIT_VALIDITY_CURRENT: 'quotation_submit_validity_current',
+  /** RFx-1 · Quotation submit: the event must be at its RFQ stage. An RFI or an
+   *  RFP asks for interest, not for a price; a quotation taken there would sit
+   *  on an event whose comparison and award do not exist yet. */
+  QUOTATION_SUBMIT_AT_RFQ_STAGE: 'quotation_submit_at_rfq_stage',
+  // RFx-1 · THE STAGE RESPONSE — a supplier's answer at an RFI or RFP stage.
+  // Four hooks, split by remedy as the quotation's are, and reading the same
+  // three facts of the event (state, stage, deadline) through the same seam.
+  /** Stage response: the event named must be `Open`. */
+  STAGE_RESPONSE_EVENT_OPEN: 'stage_response_event_open',
+  /** Stage response: the event must be at RFI or RFP. At RFQ the answer is a
+   *  quotation, and an "interest" recorded there would count as a response on
+   *  an event that wants a price. */
+  STAGE_RESPONSE_STAGE_TAKES_INTEREST: 'stage_response_stage_takes_interest',
+  /** Stage response: the stage's response deadline must not have passed, at the
+   *  declared present. The deadline day itself is still open. */
+  STAGE_RESPONSE_BEFORE_DEADLINE: 'stage_response_before_deadline',
+  /** Stage response: one per supplier per STAGE. An answer to the RFI does not
+   *  stop the same supplier answering the RFP that follows. */
+  STAGE_RESPONSE_ONE_PER_STAGE: 'stage_response_one_per_stage',
   /** RFQ FX pin (2e-c-3): the recorded basis must be WELL-FORMED — a permitted
    *  non-base quote currency, a finite positive rate, a readable vintage and a
    *  known source. A malformed pin is worse than no pin: an absent one refuses
@@ -521,6 +540,46 @@ export const POLICY_HOOKS = {
    * is admitted; only the absence of one refuses.
    */
   RFQ_AWARD_FX_BASIS: 'rfq_award_fx_basis',
+  // RFx-1 · THE STAGED EVENT. One hook per remedy, on the ruling above.
+  /** RFQ create: a stated `stage` must be RFI, RFP or RFQ. An absent one is
+   *  RFQ. A stated token that is none of the three is refused by name rather
+   *  than read as RFQ: the buyer asked for something and would get another. */
+  RFQ_CREATE_STAGE_KNOWN: 'rfq_create_stage_known',
+  /** RFQ publish: the response deadline must not already have passed, at the
+   *  declared present. A published event past its deadline is shown to
+   *  suppliers who are refused the moment they answer it. An event that states
+   *  no deadline is refused with the past ones. */
+  RFQ_PUBLISH_DEADLINE_CURRENT: 'rfq_publish_deadline_current',
+  /** RFQ award: only at the RFQ stage. RFI and RFP end in a shortlist. */
+  RFQ_AWARD_AT_RFQ_STAGE: 'rfq_award_at_rfq_stage',
+  /** RFQ advance: the event must have a stage after this one. RFQ is the last. */
+  RFQ_ADVANCE_HAS_NEXT_STAGE: 'rfq_advance_has_next_stage',
+  /** RFQ advance: the shortlist names at least one supplier. */
+  RFQ_ADVANCE_SHORTLIST_STATED: 'rfq_advance_shortlist_stated',
+  /** RFQ advance: every shortlisted supplier answered at the stage being left.
+   *  A supplier who said nothing is not carried forward on the buyer's say. */
+  RFQ_ADVANCE_SHORTLIST_RESPONDED: 'rfq_advance_shortlist_responded',
+  /** RFQ advance: the shortlist is the next stage's invite list, so it meets
+   *  the competition floor publishing does, with the same exemptions
+   *  (`decideSourcing`). Otherwise narrowing would be the way round the floor. */
+  RFQ_ADVANCE_SHORTLIST_COMPETITIVE: 'rfq_advance_shortlist_competitive',
+  /** RFQ advance: when any invited supplier is left out, the reason is stated.
+   *  It is what that supplier reads. */
+  RFQ_ADVANCE_REASON_STATED: 'rfq_advance_reason_stated',
+  /** RFQ advance: the next stage's response deadline has not already passed. */
+  RFQ_ADVANCE_DEADLINE_CURRENT: 'rfq_advance_deadline_current',
+  /** RFQ conclude: the reason is words, not whitespace. `requiredFields` proves
+   *  presence only. */
+  RFQ_CONCLUDE_REASON_STATED: 'rfq_conclude_reason_stated',
+  /**
+   * RFQ reopen: THE PAYLOAD CARRIES NO SHORTLIST. Reopen and advance are the
+   * two verbs on the Closed → Open edge, and the target cannot see which verb
+   * is being applied — only the edge and the payload. An advance is marked by
+   * its shortlist, so a reopen that carried one would be applied as an advance
+   * with none of the advance's six checks run. `rfx1Stages.test.ts` derives the
+   * verbs on that edge from the flow, so a third one cannot arrive unguarded.
+   */
+  RFQ_REOPEN_NOT_AN_ADVANCE: 'rfq_reopen_not_an_advance',
 
   // ── PSL P3 · THE GOVERNANCE VERBS ─────────────────────────────────────────
   //

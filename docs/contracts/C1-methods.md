@@ -1,6 +1,6 @@
 # C1 — Method Surface
 
-Three distinct axes. **71** (service surface) · **129** (transition catalog) · **22** (wired
+Three distinct axes. **71** (service surface) · **132** (transition catalog) · **23** (wired
 targets). They measure different things; this file keeps them separate.
 
 > ⚠️ **THIS DOCUMENT IS PINNED TO THE TREE, AND THE PIN IS WHY THE NUMBERS ABOVE ARE ALLOWED TO
@@ -156,6 +156,47 @@ targets). They measure different things; this file keeps them separate.
 > The RFQ and quotation fixtures are anchored to the declared present (families `rfq` and `quotation`,
 > one anchor), so their dates are no longer the authored literals.
 
+> **RE-HARVEST (2026-10-06, RFx-1).** The sourcing event gained stages (design A: ONE event, a `stage`
+> field — `RFI` | `RFP` | `RFQ`; an event that states none is at `RFQ`). Catalog 129 → **132** across
+> 28 → **29** flows, wired targets 22 → **23**. Moved by the pin going red.
+> **`rfq` gained TWO transitions and ONE state.** `t_rfq_advance` (Closed → Open; atom `rfq:advance`,
+> procurement; required `shortlistSupplierIds`, `responseDeadline`; optional `shortlistReason`,
+> `awardDeadline`) moves the event to its next stage, replaces `invitedSupplierIds` with the shortlist and
+> appends to `RFQ.stageHistory`. `t_rfq_conclude` (Open | Closed → **Concluded**, terminal; atom
+> `rfq:conclude`, procurement; required `concludeReason`) ends the event with no award and cascades
+> `t_quotation_withdraw` onto every quotation still Submitted or Under Review (a NEW cascade link).
+> **`stageResponse` is a NEW flow and wired target**: one state `Submitted`, one creation verb
+> `t_stageresponse_submit` (atom `stageresponse:submit`, supplier commercial; required `rfqId`; payload
+> `supplierId`, optional `note`). The stage is store-assigned from the event, never payload-supplied.
+> **Sixteen refusals are new, all `POLICY_REJECTED`:**
+> on `t_rfq_create` — `STAGE_UNKNOWN` (hook `rfq_create_stage_known`): a stated `stage` is none of the three;
+> on `t_rfq_publish`, evaluated last — `PUBLISH_DEADLINE_PAST` (hook `rfq_publish_deadline_current`): the
+> `responseDeadline` is before the declared present, by day, or is not stated;
+> on `t_rfq_award`, evaluated second — `AWARD_STAGE_NOT_RFQ` (hook `rfq_award_at_rfq_stage`);
+> on `t_rfq_advance`, after `rfq_actor_attributed`, in this order — `STAGE_IS_FINAL`
+> (`rfq_advance_has_next_stage`), `SHORTLIST_EMPTY` (`rfq_advance_shortlist_stated`),
+> `SHORTLIST_NOT_A_RESPONDER` (`rfq_advance_shortlist_responded`), `SHORTLIST_UNDER_FLOOR`
+> (`rfq_advance_shortlist_competitive` — the publish decision over the shortlist),
+> `SHORTLIST_REASON_MISSING` (`rfq_advance_reason_stated` — required when an invited supplier is left out),
+> `STAGE_DEADLINE_PAST` (`rfq_advance_deadline_current`);
+> on `t_rfq_conclude` — `CONCLUDE_REASON_MISSING` (hook `rfq_conclude_reason_stated`): whitespace only;
+> on `t_rfq_reopen` — `REOPEN_CARRIES_SHORTLIST` (hook `rfq_reopen_not_an_advance`): the payload carries
+> `shortlistSupplierIds`. Reopen and advance share the Closed → Open edge and the target applies an
+> advance by that edge plus the shortlist, so the other verb on the edge refuses one;
+> on `t_quotation_submit`, evaluated third — `QUOTE_STAGE_NOT_RFQ` (hook `quotation_submit_at_rfq_stage`);
+> on `t_stageresponse_submit`, in this order — `INTEREST_EVENT_NOT_OPEN` (`stage_response_event_open`),
+> `INTEREST_STAGE_TAKES_QUOTATIONS` (`stage_response_stage_takes_interest`), `INTEREST_DEADLINE_PASSED`
+> (`stage_response_before_deadline`), `INTEREST_ALREADY_RECORDED` (`stage_response_one_per_stage`).
+> `rfq_actor_attributed` now also guards `t_rfq_advance` and `t_rfq_conclude`.
+> **`RFQ` gains four OPTIONAL stored fields** — `stage`, `stageHistory` (append-only: `from`, `to`,
+> `advancedAt`, `shortlistedSupplierIds`, `notShortlistedSupplierIds`, `reason?`), `concludedAt`,
+> `concludeReason` — **and one field derived at read**, `stageResponses`. `respondedSupplierIds` is now
+> stage-aware: quotation holders at `RFQ`, stage responders at the current stage otherwise.
+> **`getRFQs` under a SUPPLIER scope** now also returns an event the reader was left off at an advance
+> (`rfqSupplierView.supplierMayRead`), and the projection carries `stage`, `stageHistory` narrowed to the
+> reader (`reason` only when the reader is the one left out), `concludedAt` (never `concludeReason`) and
+> the reader's own `stageResponses`. No service method was added.
+
 Source of truth: `src/services/data/types.ts` (service + command types),
 `src/services/transitions/` (schema, dispatcher, flows).
 
@@ -220,7 +261,7 @@ the string, because those are different claims and only the first is the contrac
 
 ---
 
-## Axis 2 — the 129-transition catalog (28 flows)
+## Axis 2 — the 132-transition catalog (29 flows)
 
 Every authored state-machine edge across the registered flows (`id: 't_<entity>_<verb>'`). Derived
 from `getKnownFlows()` — the seeded registry — never from a grep over the flow files, because a
@@ -235,8 +276,9 @@ transition id can be assembled at a call site rather than written as a literal (
 | `goodsReceiptLine.flow.ts` | `goodsReceiptLine` | 6 | `t_grline_inspect`, `t_grline_accept`, `t_grline_reject`, `t_grline_quarantine`, `t_grline_release`, `t_grline_return` | sub-flow (rollup) |
 | `invoice.flow.ts` | `invoice` | 8 | `t_invoice_create`, `t_invoice_submit`, `t_invoice_match`, `t_invoice_approve`, `t_invoice_release_payment`, `t_invoice_remit`, `t_invoice_dispute`, `t_invoice_resolve` | **wired** |
 | `invoiceMatch.flow.ts` | `invoiceMatch` | 4 | `t_invmatch_await_gr`, `t_invmatch_matched`, `t_invmatch_qty_variance`, `t_invmatch_price_variance` | sub-flow (rollup) |
-| `rfq.flow.ts` | `rfq` | 7 | `t_rfq_create`, `t_rfq_publish`, `t_rfq_close`, `t_rfq_award`, `t_rfq_fx_pin`, `t_rfq_cancel`, `t_rfq_reopen` | **wired** |
+| `rfq.flow.ts` | `rfq` | 9 | `t_rfq_create`, `t_rfq_publish`, `t_rfq_close`, `t_rfq_award`, `t_rfq_fx_pin`, `t_rfq_advance`, `t_rfq_conclude`, `t_rfq_cancel`, `t_rfq_reopen` | **wired** |
 | `quotation.flow.ts` | `quotation` | 5 | `t_quotation_submit`, `t_quotation_review`, `t_quotation_award`, `t_quotation_reject`, `t_quotation_withdraw` | **wired** |
+| `stageResponse.flow.ts` | `stageResponse` | 1 | `t_stageresponse_submit` | **wired** |
 | `shipment.flow.ts` | `shipment` | 8 | `t_shipment_create`, `t_shipment_asn_received`, `t_shipment_depart`, `t_shipment_arrive_port`, `t_shipment_customs`, `t_shipment_dock`, `t_shipment_unload`, `t_shipment_deliver` | inert |
 | `contract.flow.ts` | `contract` | 4 | `t_contract_draft`, `t_contract_activate`, `t_contract_renew`, `t_contract_terminate` | inert |
 | `obligation.flow.ts` | `obligation` | 2 | `t_obligation_track`, `t_obligation_complete` | inert |
@@ -257,7 +299,7 @@ transition id can be assembled at a call site rather than written as a literal (
 | `deliveryPolicy.flow.ts` | `deliveryPolicy` | 1 | `t_delivery_policy_set` | **wired** |
 | `forecastPublication.flow.ts` | `forecastPublication` | 7 | `t_publication_open`, `t_publication_allocate`, `t_publication_approve_firm`, `t_publication_publish`, `t_publication_discard`, `t_publication_supersede`, `t_publication_withdraw` | **wired** |
 | `moduleActivation.flow.ts` | `moduleActivation` | 1 | `t_module_set` | **wired** |
-| **TOTAL** | | **129** | | |
+| **TOTAL** | | **132** | | |
 
 **Flow shape** (`schema.ts`, `FlowDefinition` / `TransitionDef`): each transition declares
 `from[]` / `to` / `trigger` / `requiredRole` / `requiredFields[]` / `policyHooks[]` /
@@ -273,12 +315,12 @@ system reference is minted only on `settle` (see C5, SAP boundary).
 
 ---
 
-## Axis 3 — the 22 wired CommandTargets
+## Axis 3 — the 23 wired CommandTargets
 
-A `CommandTarget` is the per-entity adapter the dispatcher reads/writes through. **22 exist**, the
+A `CommandTarget` is the per-entity adapter the dispatcher reads/writes through. **23 exist**, the
 runtime export `WIRED_COMMAND_TARGETS` (`MockCommandService.ts` `TARGETS`):
 
-- **wired:** `purchaseOrder`, `advanceShipNotice`, `goodsReceipt`, `invoice`, `rfq`, `quotation`, `purchaseRequisition`, `intakeLine`, `supplierDocument`, `requirementResponse`, `inventoryDeclaration`, `incomingShipment`, `enforcement`, `role`, `supplierApplication`, `materialRequest`, `psl`, `pslCapSetting`, `deliveryRelease`, `deliveryPolicy`, `forecastPublication`, `moduleActivation`
+- **wired:** `purchaseOrder`, `advanceShipNotice`, `goodsReceipt`, `invoice`, `rfq`, `quotation`, `stageResponse`, `purchaseRequisition`, `intakeLine`, `supplierDocument`, `requirementResponse`, `inventoryDeclaration`, `incomingShipment`, `enforcement`, `role`, `supplierApplication`, `materialRequest`, `psl`, `pslCapSetting`, `deliveryRelease`, `deliveryPolicy`, `forecastPublication`, `moduleActivation`
 
 The interface is **7 members** (`dispatcher.ts`, `CommandTarget`):
 
@@ -311,9 +353,9 @@ pre-A2 target ignores the parameter.
 compare"** (§86). The dispatcher's supplier arm compares `owner !== scope.supplierId`
 unconditionally; a target that wants a supplier to reach a verb must NAME that supplier.
 
-### Wiring census (28 flows → 3 states)
+### Wiring census (29 flows → 3 states)
 
-- **22 behavior-wired** — have a `CommandTarget`, dispatch runs against in-memory stores. Named
+- **23 behavior-wired** — have a `CommandTarget`, dispatch runs against in-memory stores. Named
   above.
 - **2 rolled-up sub-flows** — authored, participate via terminal rollup (`grRollup.ts` /
   `invoiceRollup.ts`), **no standalone target**: `goodsReceiptLine`, `invoiceMatch`.

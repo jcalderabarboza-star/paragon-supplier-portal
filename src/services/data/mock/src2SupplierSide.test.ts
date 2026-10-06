@@ -154,11 +154,14 @@ describe('B · the two day comparisons', () => {
 
 // ─────────────────────────────────────────────────────────────────────────────
 describe('C · what the submit verb refuses', () => {
+  // RFx-1 — a sixth check joined, third in the order (the event's stage). The
+  // five SRC-2 checks are where they were relative to one another.
   it('the machine: five checks on submit, in this order', () => {
     const submit = getFlow('quotation')!.transitions.find((t) => t.id === 't_quotation_submit')!;
     expect(submit.policyHooks).toEqual([
       POLICY_HOOKS.QUOTATION_SUBMIT_CURRENCY_PERMITTED,
       POLICY_HOOKS.QUOTATION_SUBMIT_EVENT_OPEN,
+      POLICY_HOOKS.QUOTATION_SUBMIT_AT_RFQ_STAGE,
       POLICY_HOOKS.QUOTATION_SUBMIT_BEFORE_DEADLINE,
       POLICY_HOOKS.QUOTATION_SUBMIT_ONE_PER_SUPPLIER,
       POLICY_HOOKS.QUOTATION_SUBMIT_VALIDITY_CURRENT,

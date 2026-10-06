@@ -64,6 +64,11 @@ export const CASCADES: Record<string, readonly CascadeLink[]> = {
   t_rfq_cancel: [
     { targetEntity: 'quotation', targetTransitionId: 't_quotation_withdraw' },
   ],
+  // RFx-1 — concluding without an award ends the event for every quotation
+  // still being weighed, exactly as a cancel does.
+  t_rfq_conclude: [
+    { targetEntity: 'quotation', targetTransitionId: 't_quotation_withdraw' },
+  ],
   // A2 · the intake commit mints the requisition. **This is the only link in
   // this registry that carries an IDEMPOTENCY KEY** — the resolver sets it to
   // the intake line's own id, so a redelivered commit returns the FIRST

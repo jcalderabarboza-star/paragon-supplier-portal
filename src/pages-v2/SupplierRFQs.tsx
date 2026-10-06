@@ -41,7 +41,7 @@ import {
   useRFQs,
   useQuotations,
 } from '../services/query/hooks';
-import { useQuotationSubmit } from '../services/query/commandHooks';
+import { useQuotationSubmit, useStageResponseSubmit } from '../services/query/commandHooks';
 import { useVerbAvailability } from '../hooks/useVerbAvailability';
 import { HandoffNotice } from '../components/ui-v2/HandoffNotice';
 import {
@@ -79,6 +79,8 @@ import type { RFQ, Quotation, Supplier } from '../services/data/types';
 import { CHART_SERIES } from '../lib/chartPalette';
 import { formatDate, formatMoney, formatNumber } from '../lib/format';
 import { useRefusalText } from '../hooks/useRefusalText';
+import { notShortlistedAdvanceOf, stageOf, stagePathOf, type RfqStage } from '../data/rfqStage';
+import StageTimeline from './sourcing/StageTimeline';
 
 // SRC-2 — THE PAGE READS THE DECLARED PRESENT, as `BuyerSourcing` does. It read
 // the wall clock while the buyer's board read `DECLARED_PRESENT`, so one
@@ -114,6 +116,27 @@ function quoteRefusalKey(reason: string | undefined): string | null {
   if (refusedByPolicy(reason, POLICY_HOOKS.QUOTATION_SUBMIT_VALIDITY_CURRENT)) {
     return 'rfqs.refusal.validityPast';
   }
+  // RFx-1 — a quotation offered to an event that is still at RFI or RFP.
+  if (refusedByPolicy(reason, POLICY_HOOKS.QUOTATION_SUBMIT_AT_RFQ_STAGE)) {
+    return 'rfqs.refusal.stageNotRfq';
+  }
+  return null;
+}
+
+/** RFx-1 — the four refusals of a stage response, in the supplier's own words. */
+function interestRefusalKey(reason: string | undefined): string | null {
+  if (refusedByPolicy(reason, POLICY_HOOKS.STAGE_RESPONSE_EVENT_OPEN)) {
+    return 'rfqs.refusal.interestEventNotOpen';
+  }
+  if (refusedByPolicy(reason, POLICY_HOOKS.STAGE_RESPONSE_STAGE_TAKES_INTEREST)) {
+    return 'rfqs.refusal.stageTakesQuotations';
+  }
+  if (refusedByPolicy(reason, POLICY_HOOKS.STAGE_RESPONSE_BEFORE_DEADLINE)) {
+    return 'rfqs.refusal.interestDeadlinePassed';
+  }
+  if (refusedByPolicy(reason, POLICY_HOOKS.STAGE_RESPONSE_ONE_PER_STAGE)) {
+    return 'rfqs.refusal.interestAlreadyRecorded';
+  }
   return null;
 }
 
@@ -132,6 +155,14 @@ interface OpenRFQ {
   daysRemaining: number;
   /** SRC-2 — the response deadline has gone; the event takes no quotation. */
   deadlinePassed: boolean;
+  /** RFx-1 — the stage the event is at. At RFI and RFP the answer is interest. */
+  stage: RfqStage;
+  /** RFx-1 — the event itself, for the stage timeline. */
+  event: RFQ;
+  /** RFx-1 — the day this supplier answered the CURRENT stage, if it has. */
+  interestRecordedAt?: string;
+  /** RFx-1 — the payment terms the buyer asked for; the quote form starts from them. */
+  paymentTerms: string;
   specialRequirements: string;
   evaluationCriteria: {
     price: number;
@@ -216,7 +247,7 @@ const buildSubmittedQuotes = (
 interface AwardRow {
   rfqNumber: string;
   material: string;
-  result: 'Awarded' | 'Not Awarded' | 'Event Cancelled';
+  result: 'Awarded' | 'Not Awarded' | 'Event Cancelled' | 'No Award';
   awardDate: string;
   contractValue: string;
   poIssued: string;
@@ -240,7 +271,15 @@ const buildAwardRows = (
       return {
         rfqNumber: rfq?.rfqNumber ?? q.rfqId,
         material: rfq?.title ?? '—',
-        result: won ? 'Awarded' : q.status === 'Withdrawn' ? 'Event Cancelled' : 'Not Awarded',
+        // RFx-1 — a quotation is withdrawn when its event is cancelled AND
+        // when it is concluded with no award. The event says which.
+        result: won
+          ? 'Awarded'
+          : q.status !== 'Withdrawn'
+            ? 'Not Awarded'
+            : rfq?.status === 'Concluded'
+              ? 'No Award'
+              : 'Event Cancelled',
         // SRC-1 — the day the award was made, never the deadline it was due by.
         awardDate: rfq?.awardedAt ? formatDate(rfq.awardedAt) : '—',
         // COS-05, same leg: an awarded foreign quote's contract value is stated
@@ -321,6 +360,8 @@ interface QuoteForm {
   /** The same-day (0-day) acknowledgement — see `requiresSameDayAck`. */
   sameDayAck: boolean;
   validUntil: string;
+  /** RFx-1 — the payment terms the supplier offers. Starts as the buyer's. */
+  paymentTerms: string;
   moq: string;
   notes: string;
   canSample: 'yes' | 'no';
@@ -336,6 +377,7 @@ const emptyQuoteForm: QuoteForm = {
   leadTimeUnit: 'days',
   sameDayAck: false,
   validUntil: '',
+  paymentTerms: '',
   moq: '',
   notes: '',
   canSample: 'yes',
@@ -379,6 +421,7 @@ const EvalBar: React.FC<{ criteria: OpenRFQ['evaluationCriteria'] }> = ({
 interface RFQCardProps {
   rfq: OpenRFQ;
   onSubmitQuote: (rfq: OpenRFQ) => void;
+  onRecordInterest: (rfq: OpenRFQ, note: string) => Promise<boolean>;
   onDecline: (rfqNumber: string) => void;
   onAskQuestion: (rfqNumber: string) => void;
 }
@@ -386,11 +429,26 @@ interface RFQCardProps {
 const RFQCard: React.FC<RFQCardProps> = ({
   rfq,
   onSubmitQuote,
+  onRecordInterest,
   onDecline,
   onAskQuestion,
 }) => {
   const { t } = useTranslation();
   const quoteAvailability = useVerbAvailability('quotation:submit');
+  // RFx-1 — at RFI and RFP the answer is interest and a note, its own verb.
+  const interestAvailability = useVerbAvailability('stageresponse:submit');
+  const takesInterest = rfq.stage !== 'RFQ';
+  const [interestOpen, setInterestOpen] = useState(false);
+  const [interestNote, setInterestNote] = useState('');
+  const [interestSending, setInterestSending] = useState(false);
+  // The form is gated on the atom, not only the button that opens it: a seat
+  // narrowed while it stands open loses it (`ENTRANCE-IS-THE-UNIT-01`).
+  const interestFormShown =
+    takesInterest &&
+    interestOpen &&
+    interestAvailability.kind === 'held' &&
+    rfq.interestRecordedAt === undefined &&
+    !rfq.deadlinePassed;
   const [expanded, setExpanded] = useState(false);
   const urgent = rfq.daysRemaining <= 7;
   const Icon = CHANNEL_ICON[rfq.receivedVia] ?? Inbox;
@@ -413,6 +471,10 @@ const RFQCard: React.FC<RFQCardProps> = ({
               ? t('rfqs.card.daysRemaining', { count: rfq.daysRemaining })
               : t('rfqs.card.daysToDeadline', { count: rfq.daysRemaining })}
           </StatusPill>
+        )}
+        {/* RFx-1 — only on an event that has stages; a plain RFQ reads as before. */}
+        {stagePathOf(rfq.event).length > 1 && (
+          <StatusPill variant="neutral">{t('rfqs.card.stage', { stage: rfq.stage })}</StatusPill>
         )}
         <StatusPill variant="neutral">{t('rfqs.card.sampleDetail')}</StatusPill>
         <span className="ml-auto inline-flex items-center gap-1 text-xs text-text-tertiary">
@@ -492,6 +554,57 @@ const RFQCard: React.FC<RFQCardProps> = ({
           <EvalBar criteria={rfq.evaluationCriteria} />
         </div>
 
+        {stagePathOf(rfq.event).length > 1 && (
+          <div className="mb-4">
+            <div className="text-label text-text-tertiary uppercase mb-2">{t('rfqs.card.stages')}</div>
+            <StageTimeline event={rfq.event} testId={`rfq-stage-timeline-${rfq.id}`} />
+          </div>
+        )}
+        {/* RFx-1 — WHAT THIS STAGE ASKS FOR, SAID HONESTLY: interest and a note.
+            The questionnaire and the proposal are not built yet. */}
+        {takesInterest && (
+          <p className="text-xs text-text-tertiary mb-3" data-testid={`rfq-stage-content-note-${rfq.id}`}>
+            {t('rfqs.interest.contentNote', { stage: rfq.stage })}
+          </p>
+        )}
+        {interestFormShown && (
+          <div
+            className="border border-border-subtle bg-bg-hover rounded-md p-3 mb-3"
+            data-testid={`rfq-interest-form-${rfq.id}`}
+          >
+            <label className={labelClass} htmlFor={`rfq-interest-note-${rfq.id}`}>
+              {t('rfqs.interest.note')}
+            </label>
+            <textarea
+              id={`rfq-interest-note-${rfq.id}`}
+              rows={2}
+              value={interestNote}
+              onChange={(e) => setInterestNote(e.target.value)}
+              className={`${inputClass} h-auto py-2`}
+              data-testid={`rfq-interest-note-${rfq.id}`}
+            />
+            <div className="flex flex-wrap gap-2 mt-2">
+              <Button
+                variant="outline"
+                icon={Send}
+                disabled={interestSending}
+                onClick={async () => {
+                  setInterestSending(true);
+                  const ok = await onRecordInterest(rfq, interestNote);
+                  setInterestSending(false);
+                  if (ok) setInterestOpen(false);
+                }}
+                data-testid={`rfq-interest-yes-${rfq.id}`}
+              >
+                {t('rfqs.interest.confirm', { stage: rfq.stage })}
+              </Button>
+              <Button variant="secondary" onClick={() => setInterestOpen(false)}>
+                {t('rfqs.panel.cancel')}
+              </Button>
+            </div>
+          </div>
+        )}
+
         <div className="flex items-center gap-3 flex-wrap">
           {/* ⚠️ `quotation:submit` IS COMMERCIAL'S. A fulfilment or back-office
               seat reads the wait with the lane named, in the slot the button
@@ -512,6 +625,35 @@ const RFQCard: React.FC<RFQCardProps> = ({
             >
               {t('rfqs.card.deadlinePassed.note', { date: formatDate(rfq.deadline) })}
             </span>
+          ) : takesInterest ? (
+            // RFx-1 — the RFI / RFP slot: answered, or the way in, or the lane
+            // that holds the verb. Never the quote button: the machine refuses
+            // a quotation at these stages (`QUOTE_STAGE_NOT_RFQ`).
+            rfq.interestRecordedAt !== undefined ? (
+              <span
+                className="text-xs text-success font-semibold"
+                data-testid={`rfq-interest-recorded-${rfq.id}`}
+              >
+                {t('rfqs.interest.recorded', {
+                  stage: rfq.stage,
+                  date: formatDate(rfq.interestRecordedAt),
+                })}
+              </span>
+            ) : interestAvailability.kind === 'held' ? (
+              <Button
+                variant="outline"
+                disabled={interestOpen}
+                onClick={() => setInterestOpen(true)}
+                data-testid={`rfq-interest-open-${rfq.id}`}
+              >
+                {t('rfqs.interest.open')}
+              </Button>
+            ) : (
+              <HandoffNotice
+                availability={interestAvailability}
+                testId="handoff-stageresponse-submit"
+              />
+            )
           ) : quoteAvailability.kind === 'held' ? (
             <Button variant="outline" onClick={() => onSubmitQuote(rfq)}>
               {t('rfqs.card.submitQuote')}
@@ -542,14 +684,53 @@ const RFQCard: React.FC<RFQCardProps> = ({
   );
 };
 
+/**
+ * RFx-1 — AN EVENT THIS SUPPLIER WAS NOT CARRIED FORWARD ON. It says which
+ * stage ended for it, on what day, and the reason the buyer gave — the buyer's
+ * words, unedited. No action: the event is not open to this supplier any more.
+ * Who WAS carried is not this supplier's to read, and the read does not send it.
+ */
+const NotShortlistedCard: React.FC<{ rfq: RFQ; supplierId: string }> = ({ rfq, supplierId }) => {
+  const { t } = useTranslation();
+  const advance = notShortlistedAdvanceOf(rfq, supplierId);
+  if (advance === null) return null;
+  return (
+    <div
+      className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm mb-4 border-l-2 border-l-border-subtle overflow-hidden"
+      data-testid={`rfq-not-shortlisted-${rfq.id}`}
+    >
+      <div className="flex items-center gap-3 px-4 py-3 border-b border-border-subtle flex-wrap">
+        <Data className="text-sm font-bold text-text-primary">{rfq.rfqNumber}</Data>
+        <StatusPill variant="neutral">{t('rfqs.notShortlisted.pill')}</StatusPill>
+      </div>
+      <div className="px-4 py-4">
+        <div className="text-base font-bold text-text-primary mb-2">{rfq.title}</div>
+        <p className="text-sm text-text-secondary mb-1">
+          {t('rfqs.notShortlisted.line', { from: advance.from, to: advance.to })}{' '}
+          <Data>{formatDate(advance.advancedAt)}</Data>
+        </p>
+        <p className="text-sm text-text-primary mb-3" data-testid={`rfq-not-shortlisted-reason-${rfq.id}`}>
+          <span className="text-text-tertiary">{t('rfqs.notShortlisted.reasonLabel')}</span>{' '}
+          {advance.reason ?? t('rfqs.notShortlisted.noReason')}
+        </p>
+        <StageTimeline event={rfq} testId={`rfq-stage-timeline-${rfq.id}`} />
+      </div>
+    </div>
+  );
+};
+
 const OpenRFQsTab: React.FC<{
   rfqs: OpenRFQ[];
+  notShortlisted: RFQ[];
   onSubmitQuote: (rfq: OpenRFQ) => void;
+  onRecordInterest: (rfq: OpenRFQ, note: string) => Promise<boolean>;
   onDecline: (rfqNumber: string) => void;
   onAskQuestion: (rfqNumber: string) => void;
-}> = ({ rfqs, onSubmitQuote, onDecline, onAskQuestion }) => {
+}> = ({ rfqs, notShortlisted, onSubmitQuote, onRecordInterest, onDecline, onAskQuestion }) => {
   const { t } = useTranslation();
-  if (rfqs.length === 0) {
+  const { identity } = useCurrentIdentity();
+  const supplierId = identity.supplierId ?? '';
+  if (rfqs.length === 0 && notShortlisted.length === 0) {
     return (
       <div className="bg-bg-surface border border-border-subtle rounded-lg py-12 px-6 text-center">
         <div className="inline-flex w-12 h-12 rounded-full bg-bg-hover items-center justify-center mb-3">
@@ -571,9 +752,13 @@ const OpenRFQsTab: React.FC<{
           key={rfq.id}
           rfq={rfq}
           onSubmitQuote={onSubmitQuote}
+          onRecordInterest={onRecordInterest}
           onDecline={onDecline}
           onAskQuestion={onAskQuestion}
         />
+      ))}
+      {notShortlisted.map((rfq) => (
+        <NotShortlistedCard key={rfq.id} rfq={rfq} supplierId={supplierId} />
       ))}
     </div>
   );
@@ -817,6 +1002,11 @@ const toOpenRfq = (r: RFQ, nowIso: string): OpenRFQ => {
     deadline: r.responseDeadline,
     daysRemaining,
     deadlinePassed,
+    stage: stageOf(r),
+    event: r,
+    // The read carries this supplier's own answers only (`rfqSupplierView`).
+    interestRecordedAt: (r.stageResponses ?? []).find((a) => a.stage === stageOf(r))?.respondedAt,
+    paymentTerms: r.paymentTerms,
     specialRequirements:
       'Full RFQ specifics arrive with the Paragon sourcing packet (illustrative sample).',
     evaluationCriteria: SAMPLE_EVAL,
@@ -830,6 +1020,8 @@ interface RfqWorkspaceProps {
   mySupplier: Supplier;
   supplierId: string;
   initialRfqs: OpenRFQ[];
+  /** RFx-1 — events an advance left this supplier off. */
+  notShortlisted: RFQ[];
   quotations: Quotation[];
   rfqById: Map<string, RFQ>;
   awardRows: AwardRow[];
@@ -839,6 +1031,7 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
   mySupplier,
   supplierId,
   initialRfqs,
+  notShortlisted,
   quotations,
   rfqById,
   awardRows,
@@ -902,7 +1095,10 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
     [initialRfqs, quotedRfqIds],
   );
 
-  const openCount = openRFQs.length;
+  // RFx-1 — an RFI or RFP this supplier has already answered stays on the
+  // list (there is no quotation to move it to "My Quotes"), but it no longer
+  // counts as waiting for an answer.
+  const openCount = openRFQs.filter((r) => r.interestRecordedAt === undefined).length;
   const submittedCount = submittedQuotes.length;
   // 2e-b-3 (COS-03) — DERIVED, not a literal. This was `= 1`: a hardcoded
   // number rendered as a live KPI reading "Awaiting Award · Decision pending".
@@ -926,7 +1122,46 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
 
   const handleSubmitQuote = (rfq: OpenRFQ) => {
     setQuotePanelRFQ(rfq);
-    setForm(emptyQuoteForm);
+    // RFx-1 — the payment terms start as the ones the buyer asked for: the
+    // field was never on this form, so every quotation made here reached the
+    // comparison with a blank Payment Terms cell.
+    setForm({ ...emptyQuoteForm, paymentTerms: rfq.paymentTerms });
+  };
+
+  // RFx-1 — record interest at an RFI or RFP stage (fires
+  // t_stageresponse_submit). The stage is the event's own; the payload names
+  // the event and this supplier, and carries the note if one was typed.
+  const interestMutation = useStageResponseSubmit();
+  const handleRecordInterest = async (rfq: OpenRFQ, note: string): Promise<boolean> => {
+    try {
+      const res = await interestMutation.mutateAsync({
+        payload: { rfqId: rfq.id, supplierId, ...(note.trim() ? { note: note.trim() } : {}) },
+      });
+      if (res.status === 'failed') {
+        const key = interestRefusalKey(res.reason);
+        toast({
+          variant: 'error',
+          title: t('rfqs.toast.interestFailed.title'),
+          description: key
+            ? t(key)
+            : (refusalText(res.reason) ?? res.reason ?? t('rfqs.toast.interestFailed.default')),
+        });
+        return false;
+      }
+      toast({
+        variant: 'success',
+        title: t('rfqs.toast.interestRecorded.title', { rfq: rfq.rfqNumber }),
+        description: t('rfqs.toast.interestRecorded.body', { stage: rfq.stage }),
+      });
+      return true;
+    } catch {
+      toast({
+        variant: 'error',
+        title: t('rfqs.toast.interestFailed.title'),
+        description: t('rfqs.toast.interestFailed.default'),
+      });
+      return false;
+    }
   };
 
   const handleDecline = (rfqNumber: string) => {
@@ -1092,6 +1327,7 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
       // been given it, so the minimum a supplier stated died here.
       moq: moq.moq,
       validUntil: form.validUntil,
+      paymentTermsOffered: form.paymentTerms.trim(),
       notes: form.notes,
       // SRC-2 — asked for on this form since it was built, and dropped here.
       sampleBatch: form.canSample,
@@ -1195,7 +1431,9 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
       {activeTab === 'open' && (
         <OpenRFQsTab
           rfqs={openRFQs}
+          notShortlisted={notShortlisted}
           onSubmitQuote={handleSubmitQuote}
+          onRecordInterest={handleRecordInterest}
           onDecline={handleDecline}
           onAskQuestion={handleAskQuestion}
         />
@@ -1479,6 +1717,20 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
                 )}
               </div>
               <div>
+                <label className={labelClass}>{t('rfqs.panel.paymentTerms')}</label>
+                <input
+                  type="text"
+                  aria-label={t('rfqs.field.paymentTerms')}
+                  value={form.paymentTerms}
+                  onChange={(e) => setForm({ ...form, paymentTerms: e.target.value })}
+                  className={inputClass}
+                  data-testid="quote-payment-terms"
+                />
+                <div className="mt-1 text-[11px] text-text-tertiary" data-testid="quote-payment-terms-note">
+                  {t('rfqs.panel.paymentTerms.note', { terms: effectiveQuotePanelRFQ.paymentTerms })}
+                </div>
+              </div>
+              <div>
                 <label className={labelClass}>
                   {t('rfqs.panel.moq')}
                 </label>
@@ -1719,6 +1971,7 @@ const SupplierRFQs: React.FC = () => {
   const rfqs = rfqsQuery.data?.items ?? [];
   const quotations = quotationsQuery.data?.items ?? [];
   const quoteCount = quotations.length;
+  // (an event this supplier was left off is in `rfqs`, so the page still opens)
   if (rfqs.length === 0 && quoteCount === 0)
     return (
       <EmptyState
@@ -1729,8 +1982,13 @@ const SupplierRFQs: React.FC = () => {
       />
     );
 
+  // RFx-1 — an advance narrows the invite list to the shortlist, and a supplier
+  // left off still reads the event (`supplierMayRead`), to be told so. Those
+  // events are not open to it: they go to their own list, with the reason.
+  const leftOff = (r: RFQ): boolean => notShortlistedAdvanceOf(r, supplierId) !== null;
+  const notShortlisted = rfqs.filter(leftOff);
   const initialRfqs = rfqs
-    .filter((r) => r.status === 'Open')
+    .filter((r) => r.status === 'Open' && !leftOff(r))
     .map((r) => toOpenRfq(r, nowIso));
 
   // Award outcome is a real read: the supplier's terminal quotations joined to
@@ -1744,6 +2002,7 @@ const SupplierRFQs: React.FC = () => {
       mySupplier={mySupplier}
       supplierId={supplierId}
       initialRfqs={initialRfqs}
+      notShortlisted={notShortlisted}
       quotations={quotations}
       rfqById={rfqById}
       awardRows={awardRows}

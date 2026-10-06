@@ -16,9 +16,18 @@
 // invited", "have I answered", "did I win") and get their own answer only.
 // `src2SupplierScope.test.ts` fails if any other supplier's id reaches a
 // supplier scope through a sourcing read.
+//
+// RFx-1 · THE STAGED EVENT, UNDER THE SAME RULE. The stage and the dates of
+// each advance are the event's facts and cross. Who was carried and who was
+// left out are narrowed to the reader, as the invite list is: a supplier reads
+// that IT was shortlisted or that IT was not — and the reason only when it is
+// the one left out, since the reason is about those suppliers. The stage
+// responses are the reader's own. The reason an event was concluded without an
+// award stays with the buyer; the day it ended crosses.
 // ────────────────────────────────────────────────────────────────────────────
 
 import type { RFQ } from '../../data/mockRfqs';
+import { notShortlistedAdvanceOf } from '../../data/rfqStage';
 
 export function toSupplierRfqView(rfq: RFQ, supplierId: string): RFQ {
   const mine = (ids: readonly string[]): string[] => (ids.includes(supplierId) ? [supplierId] : []);
@@ -42,8 +51,39 @@ export function toSupplierRfqView(rfq: RFQ, supplierId: string): RFQ {
     incoterms: rfq.incoterms,
     paymentTerms: rfq.paymentTerms,
     // The day an award was made is the event's fact; who won is the winner's.
+    ...(rfq.stage ? { stage: rfq.stage } : {}),
+    ...(rfq.stageHistory
+      ? {
+          stageHistory: rfq.stageHistory.map((a) => {
+            const leftOut = a.notShortlistedSupplierIds.includes(supplierId);
+            return {
+              from: a.from,
+              to: a.to,
+              advancedAt: a.advancedAt,
+              shortlistedSupplierIds: mine(a.shortlistedSupplierIds),
+              notShortlistedSupplierIds: mine(a.notShortlistedSupplierIds),
+              ...(leftOut && a.reason ? { reason: a.reason } : {}),
+            };
+          }),
+        }
+      : {}),
+    ...(rfq.concludedAt ? { concludedAt: rfq.concludedAt } : {}),
+    stageResponses: (rfq.stageResponses ?? []).filter((r) => r.supplierId === supplierId),
     ...(rfq.awardedAt ? { awardedAt: rfq.awardedAt } : {}),
     ...(won && rfq.awardedSupplierId ? { awardedSupplierId: rfq.awardedSupplierId } : {}),
     ...(won && rfq.awardedQuotationId ? { awardedQuotationId: rfq.awardedQuotationId } : {}),
   };
+}
+
+/**
+ * RFx-1 · MAY THIS SUPPLIER READ THE EVENT AT ALL? It is on the invite list, or
+ * it was on it and an advance left it out. The second half is what lets a
+ * supplier read "not shortlisted" with the reason: the invite list narrows to
+ * the shortlist, so membership alone would make the event vanish from the
+ * board of exactly the suppliers who are owed the explanation.
+ */
+export function supplierMayRead(rfq: RFQ, supplierId: string): boolean {
+  return (
+    rfq.invitedSupplierIds.includes(supplierId) || notShortlistedAdvanceOf(rfq, supplierId) !== null
+  );
 }

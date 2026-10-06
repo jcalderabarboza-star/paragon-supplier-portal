@@ -556,6 +556,92 @@ export function useRfqReopen() {
   });
 }
 
+export interface RfqAdvanceVars {
+  rfqId: string;
+  /** Who is carried into the next stage. Each must have answered this one. */
+  shortlistSupplierIds: string[];
+  /** Why the list was narrowed — required when any invited supplier is left out. */
+  shortlistReason?: string;
+  /** The next stage's response deadline (`YYYY-MM-DD`). */
+  responseDeadline: string;
+  awardDeadline?: string;
+}
+
+/**
+ * RFx-1 — move the event to its next stage with a shortlist (fires
+ * `t_rfq_advance`, Open/Closed → Open). The invite list becomes the shortlist.
+ */
+export function useRfqAdvance() {
+  const svc = useDataService();
+  const scope = useScope();
+  const invalidate = useInvalidateProcurement();
+
+  return useMutation<CommandResult, Error, RfqAdvanceVars>({
+    mutationFn: ({ rfqId, ...payload }) =>
+      svc.commands.dispatch(scope, {
+        transitionId: 't_rfq_advance',
+        entity: 'rfq',
+        entityId: rfqId,
+        payload,
+      }),
+    onSuccess: (result) => {
+      if (result.status !== 'failed') invalidate(scope);
+    },
+  });
+}
+
+export interface RfqConcludeVars {
+  rfqId: string;
+  concludeReason: string;
+}
+
+/** RFx-1 — end the event with no award (fires `t_rfq_conclude`, Open/Closed → Concluded). */
+export function useRfqConclude() {
+  const svc = useDataService();
+  const scope = useScope();
+  const invalidate = useInvalidateProcurement();
+
+  return useMutation<CommandResult, Error, RfqConcludeVars>({
+    mutationFn: ({ rfqId, concludeReason }) =>
+      svc.commands.dispatch(scope, {
+        transitionId: 't_rfq_conclude',
+        entity: 'rfq',
+        entityId: rfqId,
+        payload: { concludeReason },
+      }),
+    onSuccess: (result) => {
+      if (result.status !== 'failed') invalidate(scope);
+    },
+  });
+}
+
+export interface StageResponseSubmitVars {
+  /** `rfqId` + `supplierId`, and an optional `note`. The stage is the event's own. */
+  payload: Record<string, unknown>;
+}
+
+/**
+ * RFx-1 — a supplier records its interest at an RFI or RFP stage (fires the
+ * `creation` verb `t_stageresponse_submit`).
+ */
+export function useStageResponseSubmit() {
+  const svc = useDataService();
+  const scope = useScope();
+  const invalidate = useInvalidateProcurement();
+
+  return useMutation<CommandResult, Error, StageResponseSubmitVars>({
+    mutationFn: ({ payload }) =>
+      svc.commands.dispatch(scope, {
+        transitionId: 't_stageresponse_submit',
+        entity: 'stageResponse',
+        payload,
+      }),
+    onSuccess: (result) => {
+      if (result.status !== 'failed') invalidate(scope);
+    },
+  });
+}
+
 // ─── Quotation lifecycle (Task 3b — the last sourcing-spine piece) ───────────
 // t_quotation_submit is the ONE supplier-owned CREATION verb: the invited
 // supplier answers an RFQ through the SAME dispatcher creation mechanism as

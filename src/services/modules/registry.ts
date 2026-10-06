@@ -207,7 +207,7 @@ function buildModules(): readonly ModuleSpec[] {
     {
       code: 'SRC', nameKey: name('SRC'), descriptionKey: desc('SRC'), scope: 'cross-cutting',
       routes: ['/buyer/sourcing', '/supplier/rfqs'],
-      flows: ['rfq', 'quotation'],
+      flows: ['rfq', 'quotation', 'stageResponse'],
       capabilities: ['rfqs'],
       dependsOn: [hard('SUP'), soft('PSL'), soft('REQ'), soft('MAT')],
       parts: [part('fxPin', ['t_rfq_fx_pin'])],
