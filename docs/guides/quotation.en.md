@@ -10,6 +10,7 @@ transitions:
   - t_quotation_review
   - t_quotation_award
   - t_quotation_reject
+  - t_quotation_withdraw
 ---
 
 <!-- section:summary -->
@@ -19,7 +20,7 @@ A supplier's offer against one sourcing request — the price and the delivery p
 
 Two roles touch it, one on each side. The supplier's **sales contact** (lane `commercial`) makes the offer from the supplier portal, against an event it was invited to; that is the only supplier-owned creation verb in the sourcing lane. Paragon's **buyer** (lane `procurement`) reads every quotation on an event side by side, may move a freshly submitted one into evaluation, and decides the event on the RFQ. Nobody presses the last two steps: when the buyer awards the RFQ, the platform marks the chosen quotation **Awarded** and every other quotation on that event **Rejected**, under its automation grant, in the same act.
 
-It starts at **Submitted** — the document is born submitted; there is no supplier-side draft — passes through **Under Review** when the buyer takes it into evaluation, and ends at **Awarded** or **Rejected**, the two terminal states. Both endings are consequences of the RFQ award; neither can be entered by hand against a single quotation. There is no verb to withdraw, revise or decline a quotation.
+It starts at **Submitted** — the document is born submitted; there is no supplier-side draft — passes through **Under Review** when the buyer takes it into evaluation, and ends at **Awarded**, **Rejected** or **Withdrawn**, the three terminal states. Awarded and Rejected are consequences of the RFQ award; Withdrawn is the consequence of the RFQ being cancelled. None can be entered by hand against a single quotation, and there is no verb for a supplier to withdraw, revise or decline a quotation.
 
 Honesty markers a reader needs before using this guide. The seeded quotations are **SIMULATED** fixtures against SIMULATED RFQs. A quotation created at runtime is stored with a flat **SIMULATED baseline of 50** for its compliance and reliability scores — no live compliance or on-time-delivery source exists — and its price, lead-time and composite scores are computed by the buyer's comparison at read, never stored; the comparison labels those axes "Simulated" and the lead time "Estimated". The supplier sees only its own quotations and only their facts and status — never a score, a rank, or a rival's bid. An award creates no purchase order; the supplier's award history says "PO issued —". The "Decline RFQ" and "Ask question" controls beside the submit button are toasts that say nothing was declined and nothing was sent. Every human act is recorded without a named person.
 
@@ -32,13 +33,14 @@ Honesty markers a reader needs before using this guide. The seeded quotations ar
 | 2 | Submitted → Under Review | operator action | buyer · procurement | `t_quotation_review` |
 | 3 | Submitted, Under Review → Awarded | cascade (from `t_rfq_award`, the chosen quotation) | automation | `t_quotation_award` |
 | 4 | Submitted, Under Review → Rejected | cascade (from `t_rfq_award`, every other quotation on the event) | automation | `t_quotation_reject` |
+| 5 | Submitted, Under Review → Withdrawn | cascade (from `t_rfq_cancel`, every quotation still being weighed) | automation | `t_quotation_withdraw` |
 
 <!-- src: src/services/transitions/flows/quotation.flow.ts:215-303; src/services/transitions/cascades.ts:57-60 -->
 
 **Forks**
 
-- **At Submitted:** `t_quotation_review` — procurement — when the buyer starts evaluating this offer; `t_quotation_award` — automation — when the buyer awards the RFQ to this quotation; `t_quotation_reject` — automation — when the buyer awards the RFQ to a different quotation on the same event. Review is optional: a Submitted quotation can be awarded or rejected directly.
-- **At Under Review:** `t_quotation_award` — automation — this quotation was chosen on the RFQ; `t_quotation_reject` — automation — another quotation was chosen. There is no exit back to Submitted and no buyer-side reject of one quotation.
+- **At Submitted:** `t_quotation_review` — procurement — when the buyer starts evaluating this offer; `t_quotation_award` — automation — when the buyer awards the RFQ to this quotation; `t_quotation_reject` — automation — when the buyer awards the RFQ to a different quotation on the same event; `t_quotation_withdraw` — automation — when the buyer cancels the RFQ. Review is optional: a Submitted quotation can be awarded, rejected or withdrawn directly.
+- **At Under Review:** `t_quotation_award` — automation — this quotation was chosen on the RFQ; `t_quotation_reject` — automation — another quotation was chosen; `t_quotation_withdraw` — automation — the RFQ was cancelled. There is no exit back to Submitted and no buyer-side reject of one quotation.
 
 <!-- section:steps -->
 ## 3 · Step by step
@@ -104,15 +106,31 @@ Honesty markers a reader needs before using this guide. The seeded quotations ar
 - **Tester — trigger event:** `t_quotation_reject` (one event per losing quotation, each with `causationId` = the award's correlationId)
 - **Checks that can refuse:** none beyond role, legality and required fields. A sibling already Awarded or Rejected is refused `ILLEGAL_TRANSITION` — recorded, and the award stands.
 - **Glossary:** `ILLEGAL_TRANSITION`; status labels "Rejected" (buyer) and "Not Awarded" (supplier's result column).
-- **Honesty:** Losing quotations are not rejected one by one and cannot be: there is no buyer-side verb that rejects a single quotation, and no supplier-side verb that withdraws one. Cancelling an RFQ does **not** fire this — a quotation on a cancelled event stays Submitted or Under Review. The supplier is not notified; the result appears on their next read.
+- **Honesty:** Losing quotations are not rejected one by one and cannot be: there is no buyer-side verb that rejects a single quotation, and no supplier-side verb that withdraws one. Cancelling an RFQ does **not** fire this — it fires `t_quotation_withdraw`, and the quotation ends Withdrawn, not Rejected. The supplier is not notified; the result appears on their next read.
 <!-- src: src/services/transitions/flows/quotation.flow.ts:286-301; src/services/transitions/cascades.ts:24-86; src/services/data/mock/MockCommandService.ts:2935-2953; src/services/transitions/dispatcher.ts:838-907; src/pages-v2/BuyerSourcing.tsx:3673-3686; src/pages-v2/SupplierRFQs.tsx:163-195; src/lib/i18n/rfqs.ts:83-84; src/lib/statusLabel.ts:60; src/lib/statusLabel.ts:72; src/data/mockQuotations.ts:301-336; src/data/mockQuotations.ts:357-392 -->
+
+### t_quotation_withdraw — Request withdrawn (cascade) <!-- transition:t_quotation_withdraw -->
+
+- **Step kind:** cascade (system-driven); fired by `t_rfq_cancel`
+- **Role:** automation (atom `quotation:withdraw`; no human lane holds it)
+- **From → to:** Submitted, Under Review → Withdrawn
+- **Operator — where:** nobody presses this against a quotation. It follows from the buyer cancelling the RFQ at `/buyer/sourcing` (**Cancel RFQ**, then **Yes, cancel the event**).
+- **Operator — do:** Paragon called the event off before choosing anyone, so the request is taken back for every offer still being weighed. No offer is judged; the supplier reads that the event ended, not that they lost.
+- **Operator — fill:** nothing to fill.
+- **Tester — expected state:** Withdrawn
+- **Tester — confirm:** on the supplier side the quotation leaves the "Awaiting Award" KPI and the "quotes pending evaluation" count; **My Quotes** shows the pill **Withdrawn**; **Awards & history** lists the RFQ with result **Event Cancelled**, award date "—", contract value "—" and the note "Paragon cancelled this event — no decision was made on your quotation". The win rate is unchanged: it counts decided events only.
+- **Tester — trigger event:** `t_quotation_withdraw` (one event per quotation that was Submitted or Under Review, each with `causationId` = the cancel's correlationId)
+- **Checks that can refuse:** none beyond role, legality and required fields. Only quotations still Submitted or Under Review are named by the cascade, so an Awarded or Rejected one is never asked.
+- **Glossary:** status labels "Withdrawn" (the quotation) and "Event Cancelled" (the supplier's result column).
+- **Honesty:** Withdrawn is not Rejected. Rejected says a buyer compared the offer and chose another; a cancelled event compared nothing. The word is Paragon's act, not the supplier's: a supplier still has no verb to withdraw an offer. The supplier is not notified; the result appears on their next read.
+<!-- src: src/services/transitions/flows/quotation.flow.ts; src/services/transitions/cascades.ts; src/services/data/mock/MockCommandService.ts; src/pages-v2/SupplierRFQs.tsx; src/lib/i18n/rfqs.ts; src/lib/statusLabel.ts -->
 
 <!-- section:forks -->
 ## 4 · Decision forks and exception paths
 
-- **Review or decide (at Submitted).** Branch A — `t_quotation_review` — **When:** the buyer wants to mark this offer as read; optional. Branch B — `t_quotation_award` — **When:** the buyer awards the RFQ to this quotation; the award panel appears on the RFQ only when it is Open, every invited supplier is recorded as responded and at least one quotation exists. Branch C — `t_quotation_reject` — **When:** the buyer awards the RFQ to another quotation on the same event.
+- **Review or decide (at Submitted).** Branch A — `t_quotation_review` — **When:** the buyer wants to mark this offer as read; optional. Branch B — `t_quotation_award` — **When:** the buyer awards the RFQ to this quotation; the award panel appears on the RFQ when it is Open or Closed and at least one quotation exists; who has answered is derived from the quotations themselves. Branch C — `t_quotation_reject` — **When:** the buyer awards the RFQ to another quotation on the same event.
 - **Decide (at Under Review).** Branch A — `t_quotation_award` — **When:** chosen on the RFQ. Branch B — `t_quotation_reject` — **When:** not chosen. No other exit exists.
-- **The event is cancelled instead.** No branch: `t_rfq_cancel` has no cascade onto quotations, so the offer keeps its state (Submitted or Under Review) indefinitely and the supplier's "Awaiting Award" KPI keeps counting it.
+- **The event is cancelled instead.** `t_quotation_withdraw` — **When:** the buyer cancels the RFQ. Every quotation still Submitted or Under Review ends **Withdrawn**: it leaves the supplier's "Awaiting Award" KPI and appears under **Awards & history** as *Event Cancelled*, outside the win rate.
 - **The offer cannot be made at all.** A supplier not on the RFQ's invited list is refused at scope; an unpublished (Draft) RFQ is not shown to any supplier; an event the supplier has already quoted is pruned from Open events, so a second quotation on the same event is not offered by the surface (the machine itself does not forbid one — not measured beyond that).
 - **The form refuses before the machine does.** Price, lead time, minimum quantity and currency each have their own refusal sentence on the supplier form; only the currency rule is also a policy hook, and its toast names the permitted set.
 
@@ -171,7 +189,8 @@ Every dispatch writes one `TransitionEvent`: `event` = the transition id, `actor
 | T+1 | `qt-003c`: Under Review → Rejected | automation (`buyer:all`, cascade) | fan-out of the award | `t_quotation_reject` (same `causationId`) |
 | (a fresh offer) T+0′ | ∅ → Submitted (`QUO-2026-901` on RFQ-2026-010) | supplier · commercial (`supplier:sup-007`) | **Submit quote** → **Submit quotation** | `t_quotation_submit` |
 | (a fresh offer) T+1′ | Submitted → Under Review | buyer · procurement (`buyer:all`) | **Move to review** | `t_quotation_review` |
-| (a fresh offer) — | no further step from the surface | — | RFQ-2026-010's responded list is not updated by the submit, so its award panel does not appear | — |
+| (a fresh offer) T+2′ | RFQ-2026-010: Open → Awarded; `QUO-2026-901` → Awarded | buyer · procurement, a named person | the board reads 1 / 2 the moment the offer lands; tick **Award** → **Award to selected** → **Yes, award** | `t_rfq_award`, then `t_quotation_award` |
+| (a cancelled event) | RFQ-2026-002: Open → Cancelled; `qt-002a`, `qt-002b`: Under Review → Withdrawn | buyer · procurement, a named person; then automation (cascade) | **Cancel RFQ** → **Yes, cancel the event** | `t_rfq_cancel`, then `t_quotation_withdraw` ×2 (`causationId` = the cancel's correlationId) |
 
 <!-- src: src/services/transitions/events.ts:26-61; src/services/transitions/events.ts:127-129; src/services/transitions/dispatcher.ts:453-532; src/services/transitions/dispatcher.ts:838-907; src/services/data/mock/MockCommandService.ts:2935-2953; src/pages-v2/BuyerSourcing.tsx:366-368; src/pages-v2/SupplierRFQs.tsx:786-796 -->
 
@@ -193,7 +212,8 @@ Every dispatch writes one `TransitionEvent`: `event` = the transition id, `actor
 | "Move to review" is missing on the buyer comparison | the Status cell shows a pill without the link | the quotation is not Submitted (already Under Review, Awarded or Rejected) | nothing to do; review is only from Submitted |
 | "Move to review" is replaced by "Awaiting Procurement" | a notice in the Status cell | the buyer seat lacks `quotation:review` | a procurement seat does it |
 | "Review failed" | toast with the refusal | `ILLEGAL_TRANSITION` — the quotation moved while the panel was open | reopen the RFQ panel |
-| The quotation never becomes Awarded or Rejected | it stays Under Review for months | the RFQ was not awarded (no award panel until every invitee is recorded as responded; a runtime submit does not update that list), or the RFQ was cancelled (no cascade) | award from an RFQ where all responded; there is no per-quotation decision |
+| The quotation never becomes Awarded or Rejected | it stays Under Review for months | the RFQ has not been awarded or cancelled yet | the buyer awards from the RFQ (Open or Closed, any quotation received) or cancels it, which withdraws the quotation; there is no per-quotation decision |
+| The quotation reads **Withdrawn** and the supplier did not withdraw it | My Quotes pill "Withdrawn"; Awards & history row *Event Cancelled* | Paragon cancelled the RFQ before any award (`t_quotation_withdraw`, a cascade) | nothing to do; no decision was made on the offer and it does not count in the win rate |
 | A losing supplier's quote still says Under Review after an award | My Quotes tab | the cascade for that sibling was refused `ILLEGAL_TRANSITION` (already terminal) or the quotation id was not in the store at fan-out | read the audit sink for the award's `causationId`; not reachable from seeded data |
 | "Decline RFQ" / "Ask question" do nothing | toasts "RFQ decline not available yet — … was not declined." / "Message not sent…" | not wired to any verb or channel | not a fault; use outside channels |
 | "0 days remaining" on every card | the card pill | deadlines are before the browser date and the count is clamped at 0 | not a fault; the buyer board shows the true "Nd overdue" |

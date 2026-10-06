@@ -14,6 +14,7 @@ import {
   Sparkles,
   ClipboardCheck,
   Trophy,
+  Lock,
   Archive,
   Ban,
   RotateCcw,
@@ -71,6 +72,7 @@ import {
   useRfqAward,
   useRfqFxPin,
   useRfqCancel,
+  useRfqClose,
   useRfqPublish,
   useRfqReopen,
   useQuotationReview,
@@ -149,6 +151,7 @@ import { usePslListings } from '../services/query/hooks';
 import { isPublished } from '../services/data/pslListing';
 import type { SourcingDecision } from '../services/data/rfqSourcingGate';
 import { refusedByPolicy } from '../services/transitions/refusalMessage';
+import { useCurrentIdentity } from '../context/CurrentIdentityContext';
 import { POLICY_HOOKS } from '../services/transitions/policyHooks';
 
 /**
@@ -334,6 +337,24 @@ function pslPublishRemedy(reason: string | undefined): string | null {
   }
   return null;
 }
+
+/**
+ * SRC-1 — the two refusals this batch added, each to its own sentence. Keyed on
+ * the HOOK (`refusedByPolicy`), never on the code inside its reason.
+ */
+function sourcingRefusalKey(reason: string | undefined): string | null {
+  if (refusedByPolicy(reason, POLICY_HOOKS.RFQ_ACTOR_ATTRIBUTED)) {
+    return 'sourcing.refusal.actorUnattributed';
+  }
+  if (refusedByPolicy(reason, POLICY_HOOKS.RFQ_AWARD_FX_BASIS)) {
+    return 'sourcing.refusal.awardFxUnpinned';
+  }
+  return null;
+}
+
+/** May an award be committed on this event? The flow's own `from`, and a quote to pick. */
+const isAwardable = (r: RFQ, quoteCount: number): boolean =>
+  (r.status === 'Open' || r.status === 'Closed') && quoteCount > 0;
 
 const UOM_OPTIONS = RFQ_UOM_OPTIONS; // C.2 — shared with the prefill membership check
 const INCOTERMS_OPTIONS = ['FOB', 'CIF', 'EXW', 'DDP', 'FCA'];
@@ -692,7 +713,7 @@ const buildTimeline = (r: RFQ, t: TFunction): TimelineEvent[] => {
     {
       id: 'awarded',
       title: t('sourcing.timeline.awarded'),
-      timestamp: isAwarded ? formatDate(r.awardDeadline) : undefined,
+      timestamp: isAwarded && r.awardedAt ? formatDate(r.awardedAt) : undefined,
       status: isAwarded ? 'completed' : isClosed ? 'pending' : 'pending',
       icon: Trophy,
     },
@@ -1093,6 +1114,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
   // independent resolution per atom, and the group was imposed on top of it.
   const rfqVerbs = useVerbAvailabilities({
     publish: 'rfq:publish',
+    close: 'rfq:close',
     reopen: 'rfq:reopen',
     cancel: 'rfq:cancel',
     award: 'rfq:award',
@@ -1108,7 +1130,18 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
   const createMutation = useRfqCreate();
   const awardMutation = useRfqAward();
   const cancelMutation = useRfqCancel();
+  const closeMutation = useRfqClose();
   const reopenMutation = useRfqReopen();
+  // SRC-1 — AWARD AND CANCEL ASK A SECOND TIME. Both are endings: an award
+  // rejects every other quotation, a cancel withdraws the request from every
+  // supplier who answered. The question names that consequence, and the first
+  // press commits nothing.
+  const [asking, setAsking] = useState<'award' | 'cancel' | null>(null);
+  // SRC-1 · operator ruling — publish, cancel and award are a person's
+  // decision. The machine refuses a seat with nobody named
+  // (`rfq_actor_attributed`); the surface says so BEFORE the act.
+  const { identity } = useCurrentIdentity();
+  const named = identity.actor.kind === 'RESOLVED';
   const publishMutation = useRfqPublish();
   const reviewMutation = useQuotationReview();
   const fxPinMutation = useRfqFxPin();
@@ -1116,6 +1149,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
   const openRfq = (r: RFQ) => {
     setSelectedRfqId(r.id);
     setSelectedQuoteId(null);
+    setAsking(null);
   };
 
   // Award the selected quotation (fires the cascade source t_rfq_award): the
@@ -1197,10 +1231,13 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
               title: t('sourcing.toast.awardFailed.title'),
               description: refusedByPolicy(result.reason, POLICY_HOOKS.RFQ_AWARD_AWARDEE_INTEGRITY)
                 ? t('psl.toast.awardIntegrity')
-                : (refusalText(result.reason) ??
-                   result.reason ??
-                   t('sourcing.toast.awardFailed.default')),
+                : sourcingRefusalKey(result.reason)
+                  ? t(sourcingRefusalKey(result.reason)!)
+                  : (refusalText(result.reason) ??
+                     result.reason ??
+                     t('sourcing.toast.awardFailed.default')),
             });
+            setAsking(null);
             return;
           }
           toast({
@@ -1280,8 +1317,8 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
               // structurally unsatisfiable — the exact defect two shipped
               // surfaces carried until `refusedByPolicy` was built. The prefix
               // is assembled FROM the hook constant, never retyped.
-              description: pslPublishRemedy(result.reason)
-                ? t(pslPublishRemedy(result.reason)!)
+              description: (pslPublishRemedy(result.reason) ?? sourcingRefusalKey(result.reason))
+                ? t((pslPublishRemedy(result.reason) ?? sourcingRefusalKey(result.reason))!)
                 : (refusalText(result.reason) ??
                    result.reason ??
                    t('sourcing.toast.publishFailed.default')),
@@ -1326,9 +1363,11 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
             toast({
               variant: 'error',
               title: t('sourcing.toast.cancelFailed.title'),
-              description:
-                refusalText(result.reason) ?? result.reason ?? t('sourcing.toast.cancelFailed.default'),
+              description: sourcingRefusalKey(result.reason)
+                ? t(sourcingRefusalKey(result.reason)!)
+                : (refusalText(result.reason) ?? result.reason ?? t('sourcing.toast.cancelFailed.default')),
             });
+            setAsking(null);
             return;
           }
           toast({
@@ -1382,9 +1421,44 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
     );
   };
 
+  // SRC-1 — close bidding (fires t_rfq_close, Open → Closed). The panel stays
+  // open: the buyer's next move — award, reopen, cancel — is on this same event.
+  const handleClose = () => {
+    if (!selectedRfq) return;
+    const rfqNumber = selectedRfq.rfqNumber;
+    closeMutation.mutate(
+      { rfqId: selectedRfq.id },
+      {
+        onSuccess: (result) => {
+          if (result.status === 'failed') {
+            toast({
+              variant: 'error',
+              title: t('sourcing.toast.closeFailed.title'),
+              description:
+                refusalText(result.reason) ?? result.reason ?? t('sourcing.toast.closeFailed.default'),
+            });
+            return;
+          }
+          toast({
+            variant: 'success',
+            title: t('sourcing.toast.closed.title', { rfqNumber }),
+            description: t('sourcing.toast.closed.desc'),
+          });
+        },
+        onError: () =>
+          toast({
+            variant: 'error',
+            title: t('sourcing.toast.closeFailed.title'),
+            description: t('sourcing.toast.closeFailed.dispatch'),
+          }),
+      },
+    );
+  };
+
   const closePanel = () => {
     setSelectedRfqId(null);
     setSelectedQuoteId(null);
+    setAsking(null);
   };
 
   // `Export comparison` held no handler at all, so a press produced nothing —
@@ -1423,6 +1497,23 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
   const awardedQuote = useMemo(() => {
     if (!selectedRfq || selectedRfq.status !== 'Awarded') return null;
     return pricedQuotes.find((q) => q.id === selectedRfq.awardedQuotationId) ?? null;
+  }, [selectedRfq, pricedQuotes]);
+
+  // SRC-1 — the quotation the buyer has picked, with its resolved currency (the
+  // second ask names its value), and the foreign currencies on this event that
+  // have no recorded rate (the award is refused while any remain).
+  const selectedPricedQuote = useMemo(
+    () => pricedQuotes.find((q) => q.id === selectedQuoteId) ?? null,
+    [pricedQuotes, selectedQuoteId],
+  );
+  const awardFxMissing = useMemo(() => {
+    if (!selectedRfq) return [];
+    const currencies = [...new Set(pricedQuotes.map((q) => q.currency))];
+    // One currency throughout is compared in that currency and needs no rate.
+    if (currencies.length <= 1) return [];
+    return currencies.filter(
+      (c) => c !== BASE_CURRENCY && effectivePin(selectedRfq.fxPins, c) === undefined,
+    );
   }, [selectedRfq, pricedQuotes]);
 
   // Governed derived scores (F0.3 quote-scoring primitive): the drawer COMPUTES
@@ -2633,7 +2724,9 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
     ).length;
     const awardedQuarter = rfqs.filter((r) => {
       if (r.status !== 'Awarded') return false;
-      const d = daysUntil(r.createdAt, nowIso);
+      // SRC-1 — counted by the day the award was MADE. It read `createdAt`, so
+      // an event raised in spring and awarded today was never "this quarter".
+      const d = r.awardedAt ? daysUntil(r.awardedAt, nowIso) : null;
       if (d === null) return false;
       return -d <= 90;
     }).length;
@@ -3010,7 +3103,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                       : '—'}
                   </TableCell>
                   <TableCell className="text-sm text-text-secondary whitespace-nowrap">
-                    <Data>{formatDate(r.awardDeadline)}</Data>
+                    <Data>{r.awardedAt ? formatDate(r.awardedAt) : '—'}</Data>
                   </TableCell>
                   <TableCell className="text-right font-semibold text-text-primary whitespace-nowrap">
                     <Data>{formatIDR(r.estimatedValue)}</Data>
@@ -3146,8 +3239,8 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                     <dt className="text-text-tertiary">
                       {t('sourcing.panel.awardDate')}
                     </dt>
-                    <Data as="dd" className="text-text-primary font-medium">
-                      {formatDate(selectedRfq.awardDeadline)}
+                    <Data as="dd" className="text-text-primary font-medium" data-testid="rfq-award-date">
+                      {selectedRfq.awardedAt ? formatDate(selectedRfq.awardedAt) : '—'}
                     </Data>
                   </div>
                   <div>
@@ -3323,6 +3416,24 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                         testId="handoff-rfq-publish"
                       />
                     ))}
+                  {/* SRC-1 · CLOSE BIDDING — Open only. A person says "no more
+                      quotations"; nothing else ever moved an event to Closed. */}
+                  {selectedRfq.status === 'Open' &&
+                    (rfqVerbs.close.kind === 'held' ? (
+                      <Button
+                        variant="outline"
+                        icon={Lock}
+                        disabled={closeMutation.isPending}
+                        onClick={handleClose}
+                        data-testid="rfq-close"
+                      >
+                        {closeMutation.isPending
+                          ? t('sourcing.close.submitting')
+                          : t('sourcing.close.submit')}
+                      </Button>
+                    ) : (
+                      <HandoffNotice availability={rfqVerbs.close} testId="handoff-rfq-close" />
+                    ))}
                   {/* REOPEN — Closed only, state-exclusive with publish. Two
                       acts, two notices, and never both on one RFQ. */}
                   {selectedRfq.status === 'Closed' &&
@@ -3351,8 +3462,9 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                       variant="secondary"
                       icon={Ban}
                       className="text-danger"
-                      disabled={cancelMutation.isPending}
-                      onClick={handleCancel}
+                      disabled={cancelMutation.isPending || asking === 'cancel'}
+                      onClick={() => setAsking('cancel')}
+                      data-testid="rfq-cancel"
                     >
                       {cancelMutation.isPending
                         ? t('sourcing.cancel.submitting')
@@ -3362,6 +3474,44 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                     <HandoffNotice availability={rfqVerbs.cancel} testId="handoff-rfq-cancel" />
                   )}
                 </div>
+                {/* SRC-1 — THE SECOND ASK. Gated on the atom as the button is:
+                    a seat narrowed while the question stands open loses it. */}
+                {asking === 'cancel' && rfqVerbs.cancel.kind === 'held' && (
+                  <div
+                    className="mt-3 border border-danger/30 bg-danger-soft rounded-md p-3"
+                    data-testid="rfq-cancel-ask"
+                  >
+                    <p className="text-sm text-text-primary mb-3">
+                      {t(
+                        quotesForSelected.length === 0
+                          ? 'sourcing.cancel.ask.none'
+                          : quotesForSelected.length === 1
+                            ? 'sourcing.cancel.ask.one'
+                            : 'sourcing.cancel.ask.other',
+                        { rfqNumber: selectedRfq.rfqNumber, count: quotesForSelected.length },
+                      )}
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        variant="outline"
+                        className="text-danger border-danger"
+                        disabled={cancelMutation.isPending}
+                        onClick={handleCancel}
+                        data-testid="rfq-cancel-yes"
+                      >
+                        {t('sourcing.cancel.ask.yes')}
+                      </Button>
+                      <Button variant="secondary" onClick={() => setAsking(null)} data-testid="rfq-cancel-no">
+                        {t('sourcing.cancel.ask.no')}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+                {!named && (
+                  <p className="text-xs text-text-tertiary mt-3" data-testid="rfq-unattributed-note">
+                    {t('sourcing.unattributed.note')}
+                  </p>
+                )}
               </section>
             )}
 
@@ -3753,10 +3903,13 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
               )}
             </section>
 
-            {selectedRfq.status === 'Open' &&
-              isAllResponded(selectedRfq) &&
-              quotesForSelected.length > 0 && (
-                <section className="bg-teal-soft border border-teal/20 rounded-md p-4">
+            {/* SRC-1 — THE AWARD COMMITS FROM OPEN AND FROM CLOSED, as the flow
+                allows, whenever there is a quotation to pick. It used to need
+                `Open` AND every invitee answered: a Closed event and an event
+                with one silent invitee showed the "Award" choice with nothing
+                to commit it. */}
+            {isAwardable(selectedRfq, quotesForSelected.length) && (
+                <section className="bg-teal-soft border border-teal/20 rounded-md p-4" data-testid="rfq-award-section">
                   <h3 className="text-section text-text-primary mb-2">
                     {t('sourcing.award.title')}
                   </h3>
@@ -3772,6 +3925,22 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                         })
                       : t('sourcing.award.selectPrompt')}
                   </p>
+                  {/* Who has not answered, said where the decision is taken. */}
+                  {!isAllResponded(selectedRfq) && (
+                    <p className="text-xs text-text-secondary mb-3" data-testid="rfq-award-unanswered">
+                      {t('sourcing.award.unanswered', {
+                        responded: selectedRfq.respondedSupplierIds.length,
+                        total: selectedRfq.invitedSupplierIds.length,
+                      })}
+                    </p>
+                  )}
+                  {/* The FX basis, mirrored BEFORE the act (`rfq_award_fx_basis`
+                      refuses the same thing): a disabled commit says why. */}
+                  {awardFxMissing.length > 0 && (
+                    <p className="text-sm text-warning-hover mb-3" data-testid="rfq-award-fx-blocked">
+                      {t('sourcing.award.fxBlocked', { currencies: awardFxMissing.join(', ') })}
+                    </p>
+                  )}
                   <div className="flex flex-wrap items-center gap-2">
                     {/* AWARD — the drawer's own act, and the last one. Its
                         notice replaces its button in place; it no longer
@@ -3781,8 +3950,14 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                       <Button
                         variant="outline"
                         icon={Trophy}
-                        disabled={!selectedQuoteId || awardMutation.isPending}
-                        onClick={handleAward}
+                        disabled={
+                          !selectedQuoteId ||
+                          awardMutation.isPending ||
+                          awardFxMissing.length > 0 ||
+                          asking === 'award'
+                        }
+                        onClick={() => setAsking('award')}
+                        data-testid="rfq-award"
                       >
                         {awardMutation.isPending
                           ? t('sourcing.award.submitting')
@@ -3792,6 +3967,44 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                       <HandoffNotice availability={rfqVerbs.award} testId="handoff-rfq-award" />
                     )}
                   </div>
+                  {asking === 'award' && rfqVerbs.award.kind === 'held' && selectedPricedQuote && (
+                    <div
+                      className="mt-3 border border-border-subtle bg-bg-surface rounded-md p-3"
+                      data-testid="rfq-award-ask"
+                    >
+                      <p className="text-sm text-text-primary mb-3">
+                        {t(
+                          quotesForSelected.length - 1 === 0
+                            ? 'sourcing.award.ask.none'
+                            : quotesForSelected.length - 1 === 1
+                              ? 'sourcing.award.ask.one'
+                              : 'sourcing.award.ask.other',
+                          {
+                            rfqNumber: selectedRfq.rfqNumber,
+                            name: supplierNameById.get(selectedPricedQuote.supplierId) ?? '—',
+                            value: formatMoney(selectedPricedQuote.totalPrice, selectedPricedQuote.currency),
+                            count: quotesForSelected.length - 1,
+                          },
+                        )}
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        <Button
+                          variant="outline"
+                          icon={Trophy}
+                          disabled={awardMutation.isPending}
+                          onClick={handleAward}
+                          data-testid="rfq-award-yes"
+                        >
+                          {awardMutation.isPending
+                            ? t('sourcing.award.submitting')
+                            : t('sourcing.award.ask.yes')}
+                        </Button>
+                        <Button variant="secondary" onClick={() => setAsking(null)} data-testid="rfq-award-no">
+                          {t('sourcing.award.ask.no')}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                 </section>
               )}
           </div>

@@ -1,6 +1,6 @@
 # C1 — Method Surface
 
-Three distinct axes. **71** (service surface) · **128** (transition catalog) · **22** (wired
+Three distinct axes. **71** (service surface) · **129** (transition catalog) · **22** (wired
 targets). They measure different things; this file keeps them separate.
 
 > ⚠️ **THIS DOCUMENT IS PINNED TO THE TREE, AND THE PIN IS WHY THE NUMBERS ABOVE ARE ALLOWED TO
@@ -120,6 +120,21 @@ targets). They measure different things; this file keeps them separate.
 > neither names is still `UNKNOWN_MATERIAL`. The buyer's coverage and the planning `incoming` fact read
 > `stillIncoming`: a to-paragon leg whose ASN is `Delivered` is no longer counted.
 
+> **RE-HARVEST (2026-10-06, SRC-1).** The quotation gained ONE transition and ONE state:
+> `t_quotation_withdraw` (Submitted | Under Review → **Withdrawn**, terminal; `cascade`, atom
+> `quotation:withdraw` on the automation grant) — fired by a NEW cascade link from `t_rfq_cancel`, onto
+> every quotation of the cancelled event still Submitted or Under Review. Catalog 128 → **129**.
+> `t_rfq_close` is re-declared: `trigger: 'user'`, `surfaced: true`, and its atom `rfq:close` moves from
+> the automation grant to the `procurement` lane (it had no caller). **Two refusals are new**, both
+> `POLICY_REJECTED`:
+> `RFQ_ACTOR_UNATTRIBUTED` (hook `rfq_actor_attributed`, first in `policyHooks` on `t_rfq_publish`,
+> `t_rfq_cancel` and `t_rfq_award`) — the seat carries no person; a sample person is admitted — and
+> `AWARD_FX_UNPINNED` (hook `rfq_award_fx_basis` on `t_rfq_award`) — the event's quotations are priced in
+> more than one currency and a foreign one has no recorded rate; a stale recorded rate is admitted.
+> `RFQ.respondedSupplierIds` is no longer stored: it is derived from the quotations on every read
+> (`rfqResponses.respondedSupplierIdsOf`), and the fixture authors none. `RFQ.awardedAt` is new and
+> store-assigned at `t_rfq_award` (the day of the act). No service method moved.
+
 Source of truth: `src/services/data/types.ts` (service + command types),
 `src/services/transitions/` (schema, dispatcher, flows).
 
@@ -184,7 +199,7 @@ the string, because those are different claims and only the first is the contrac
 
 ---
 
-## Axis 2 — the 128-transition catalog (28 flows)
+## Axis 2 — the 129-transition catalog (28 flows)
 
 Every authored state-machine edge across the registered flows (`id: 't_<entity>_<verb>'`). Derived
 from `getKnownFlows()` — the seeded registry — never from a grep over the flow files, because a
@@ -200,7 +215,7 @@ transition id can be assembled at a call site rather than written as a literal (
 | `invoice.flow.ts` | `invoice` | 8 | `t_invoice_create`, `t_invoice_submit`, `t_invoice_match`, `t_invoice_approve`, `t_invoice_release_payment`, `t_invoice_remit`, `t_invoice_dispute`, `t_invoice_resolve` | **wired** |
 | `invoiceMatch.flow.ts` | `invoiceMatch` | 4 | `t_invmatch_await_gr`, `t_invmatch_matched`, `t_invmatch_qty_variance`, `t_invmatch_price_variance` | sub-flow (rollup) |
 | `rfq.flow.ts` | `rfq` | 7 | `t_rfq_create`, `t_rfq_publish`, `t_rfq_close`, `t_rfq_award`, `t_rfq_fx_pin`, `t_rfq_cancel`, `t_rfq_reopen` | **wired** |
-| `quotation.flow.ts` | `quotation` | 4 | `t_quotation_submit`, `t_quotation_review`, `t_quotation_award`, `t_quotation_reject` | **wired** |
+| `quotation.flow.ts` | `quotation` | 5 | `t_quotation_submit`, `t_quotation_review`, `t_quotation_award`, `t_quotation_reject`, `t_quotation_withdraw` | **wired** |
 | `shipment.flow.ts` | `shipment` | 8 | `t_shipment_create`, `t_shipment_asn_received`, `t_shipment_depart`, `t_shipment_arrive_port`, `t_shipment_customs`, `t_shipment_dock`, `t_shipment_unload`, `t_shipment_deliver` | inert |
 | `contract.flow.ts` | `contract` | 4 | `t_contract_draft`, `t_contract_activate`, `t_contract_renew`, `t_contract_terminate` | inert |
 | `obligation.flow.ts` | `obligation` | 2 | `t_obligation_track`, `t_obligation_complete` | inert |
@@ -221,7 +236,7 @@ transition id can be assembled at a call site rather than written as a literal (
 | `deliveryPolicy.flow.ts` | `deliveryPolicy` | 1 | `t_delivery_policy_set` | **wired** |
 | `forecastPublication.flow.ts` | `forecastPublication` | 7 | `t_publication_open`, `t_publication_allocate`, `t_publication_approve_firm`, `t_publication_publish`, `t_publication_discard`, `t_publication_supersede`, `t_publication_withdraw` | **wired** |
 | `moduleActivation.flow.ts` | `moduleActivation` | 1 | `t_module_set` | **wired** |
-| **TOTAL** | | **128** | | |
+| **TOTAL** | | **129** | | |
 
 **Flow shape** (`schema.ts`, `FlowDefinition` / `TransitionDef`): each transition declares
 `from[]` / `to` / `trigger` / `requiredRole` / `requiredFields[]` / `policyHooks[]` /

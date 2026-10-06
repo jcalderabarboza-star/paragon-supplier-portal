@@ -12,6 +12,7 @@ import { DECLARED_PRESENT } from '../data/fixturePresent';
 import {
   awardIntegrity,
   decideSourcing,
+  quotationCurrenciesOf,
   quotationOwnerOf,
   rosterStatusOf,
   COMPETITION_FLOOR_INVITEES,
@@ -32,7 +33,7 @@ import { normalizeQty, type NumberConvention } from '../../lib/localeNumber';
 import type { DrawdownEnforcement, TolerancePolicy } from '../delivery/types';
 import { isMatched } from './invoiceRollup';
 import { BASE_CURRENCY, BID_CURRENCIES, isBidCurrency } from '../../lib/currencyPolicy';
-import { isUsableRate } from '../../lib/fxPin';
+import { effectivePin, isUsableRate } from '../../lib/fxPin';
 import {
   ENFORCEMENT_MODES,
   GOVERNED_CHECK_IDS,
@@ -1018,6 +1019,47 @@ bindPolicyHook(POLICY_HOOKS.RFQ_AWARD_AWARDEE_INTEGRITY, ({ entityId, payload, t
     reason:
       `AWARDEE_NOT_THE_QUOTING_SUPPLIER: the award names ${verdict.supplierId}, but ` +
       `${verdict.quotationId} was submitted by ${verdict.quotingSupplierId || '(no such quotation)'}`,
+  };
+});
+
+// — Award: every foreign currency quoted on the event has a recorded rate ——————
+//
+// The quotations come from the store through `quotationCurrenciesOf`, the pin
+// in force from `effectivePin` over the event's own ledger. No clock is read:
+// a stale pin is still a recorded basis (see the hook's declaration).
+bindPolicyHook(POLICY_HOOKS.RFQ_AWARD_FX_BASIS, ({ entityId, target }) => {
+  const rfq = readRfq(target, entityId);
+  if (rfq === null) return { ok: true };
+  // The comparison's own rule (`quoteScore`): quotations all in ONE currency are
+  // compared in it and need no rate; only a mixed set converts to the base.
+  const present = quotationCurrenciesOf(entityId);
+  if (present.length <= 1) return { ok: true };
+  const unpinned = present.filter(
+    (currency) => currency !== BASE_CURRENCY && effectivePin(rfq.fxPins, currency) === undefined,
+  );
+  if (unpinned.length === 0) return { ok: true };
+  return {
+    ok: false,
+    reason:
+      `AWARD_FX_UNPINNED: quotations on this event are priced in ${unpinned.join(', ')} and no ` +
+      `exchange rate is recorded for ${unpinned.length === 1 ? 'it' : 'them'}. Record the rate ` +
+      'on the comparison, then award.',
+  };
+});
+
+// — Publish, cancel, award: a named person ————————————————————————————————————
+//
+// SRC-1 · operator ruling. The SDC-3 shape (`reviewActorAttributed`): refused by
+// name with the remedy; a sample person is admitted.
+bindPolicyHook(POLICY_HOOKS.RFQ_ACTOR_ATTRIBUTED, ({ scope }) => {
+  const actor = asActorAttribution(scope.actor);
+  if (actor && isAttributed(actor)) return { ok: true };
+  return {
+    ok: false,
+    reason:
+      'RFQ_ACTOR_UNATTRIBUTED: this seat carries no person, and publishing, cancelling or ' +
+      'awarding a sourcing event is recorded against the person who decided it. Adopt a ' +
+      'sample user on the identity panel, then take the act again.',
   };
 });
 

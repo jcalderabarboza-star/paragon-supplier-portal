@@ -58,6 +58,12 @@ export const CASCADES: Record<string, readonly CascadeLink[]> = {
     { targetEntity: 'quotation', targetTransitionId: 't_quotation_award' },
     { targetEntity: 'quotation', targetTransitionId: 't_quotation_reject' },
   ],
+  // SRC-1 — cancelling an event withdraws the request for every quotation still
+  // being weighed on it. Without this a cancelled event's quotations stayed
+  // `Under Review` and its suppliers read "awaiting award" for good.
+  t_rfq_cancel: [
+    { targetEntity: 'quotation', targetTransitionId: 't_quotation_withdraw' },
+  ],
   // A2 · the intake commit mints the requisition. **This is the only link in
   // this registry that carries an IDEMPOTENCY KEY** — the resolver sets it to
   // the intake line's own id, so a redelivered commit returns the FIRST

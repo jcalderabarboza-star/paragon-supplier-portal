@@ -17,8 +17,11 @@ import { rfqStore } from './stores/rfqStore';
 import { quotationStore } from './stores/quotationStore';
 import type { QueryScope } from '../types';
 import { PERSONA_SYSTEM_ROLES } from '../../../services/transitions/businessRoles';
+import { SAMPLE_ACTORS } from '../../../services/identity/sampleActors';
 
-const buyer: QueryScope = { personaType: 'buyer', supplierId: null, businessRoles: PERSONA_SYSTEM_ROLES.buyer };
+// SRC-1 · operator ruling — publish, cancel and award of a sourcing event need a
+// NAMED person (`rfq_actor_attributed`), so the buyer seat here carries a sample one.
+const buyer: QueryScope = { personaType: 'buyer', supplierId: null, businessRoles: PERSONA_SYSTEM_ROLES.buyer, actor: SAMPLE_ACTORS.procurement1 };
 const supplier: QueryScope = { personaType: 'supplier', supplierId: 'sup-005', businessRoles: PERSONA_SYSTEM_ROLES.supplier };
 
 const svc = new MockCommandService();

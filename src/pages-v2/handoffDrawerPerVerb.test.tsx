@@ -176,10 +176,24 @@ describe('§76 · the grouping is GONE, and cannot come back quietly', () => {
     // DIFFERENT documents because the tree affords them on different documents
     // — which is the finding, not a workaround: one notice could never have
     // been right for both.
+    //
+    // ⚠️ SRC-1 · CORRECTED, WITH THE REASON. The first half asserted that the
+    // award notice was ABSENT on the review RFQ, because the award section then
+    // needed every invitee to have answered and this event has one silent
+    // invitee. That condition was the R-SRC P1 dead end and is gone: an award
+    // commits on the quotations received, so this event now affords BOTH acts.
+    // The claim the spec exists for is unchanged and is asserted more directly
+    // than before — two acts on one document read as TWO notices, each in its
+    // own slot, never one speaking for both.
     const { unmount } = renderWithProviders(<BuyerSourcing />, { identity: RECEIVING });
     await openRfq(REVIEW_RFQ);
-    expect(await screen.findByTestId('handoff-rfq-review')).toBeInTheDocument();
-    expect(screen.queryByTestId('handoff-rfq-award')).not.toBeInTheDocument();
+    const review = await screen.findByTestId('handoff-rfq-review');
+    const award = screen.getByTestId('handoff-rfq-award');
+    expect(review).not.toBe(award);
+    expect(review.contains(award)).toBe(false);
+    expect(award.contains(review)).toBe(false);
+    expect(screen.getByTestId('rfq-award-section').contains(award)).toBe(true);
+    expect(screen.getByTestId('rfq-award-section').contains(review)).toBe(false);
     unmount();
 
     renderWithProviders(<BuyerSourcing />, { identity: RECEIVING });

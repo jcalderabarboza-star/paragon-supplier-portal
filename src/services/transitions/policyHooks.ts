@@ -477,6 +477,26 @@ export const POLICY_HOOKS = {
    * `creationOwner` makes one impossible to raise.
    */
   RFQ_AWARD_AWARDEE_INTEGRITY: 'rfq_award_awardee_integrity',
+  /**
+   * SRC-1 · operator ruling — PUBLISHING, CANCELLING AND AWARDING A SOURCING
+   * EVENT ARE A PERSON'S DECISION. Publishing shows the event to suppliers,
+   * cancelling withdraws it from them, awarding picks one and rejects the rest;
+   * none is recorded against nobody. An unattributed seat is refused by name
+   * with the remedy stated — the `RR_REVIEW_ACTOR_ATTRIBUTED` shape. A sample
+   * person is admitted (the act is a portal record). Creating a draft, closing
+   * bidding, reopening and recording a rate stay open to the seat as it opens.
+   */
+  RFQ_ACTOR_ATTRIBUTED: 'rfq_actor_attributed',
+  /**
+   * SRC-1 · RFQ award: ON A MIXED-CURRENCY EVENT, EVERY FOREIGN CURRENCY HAS A
+   * RECORDED RATE. Quotations all in one currency are compared in it and need
+   * none. A comparison across currencies with no rate is "not ranked" on the surface,
+   * and the award committed anyway — a choice between a rupiah bid and a dollar
+   * bid with no stated basis for the choice. Refused by name with the currency
+   * and the remedy. A recorded rate that has gone stale is a recorded basis and
+   * is admitted; only the absence of one refuses.
+   */
+  RFQ_AWARD_FX_BASIS: 'rfq_award_fx_basis',
 
   // ── PSL P3 · THE GOVERNANCE VERBS ─────────────────────────────────────────
   //

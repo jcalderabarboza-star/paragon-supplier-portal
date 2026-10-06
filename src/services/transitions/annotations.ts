@@ -167,6 +167,7 @@ export const TRANSITION_PURPOSE: FlowAnnotations = Object.freeze({
   t_quotation_review: { purposeKey: 'processFlows.purpose.t_quotation_review' },
   t_quotation_award: { purposeKey: 'processFlows.purpose.t_quotation_award' },
   t_quotation_reject: { purposeKey: 'processFlows.purpose.t_quotation_reject' },
+  t_quotation_withdraw: { purposeKey: 'processFlows.purpose.t_quotation_withdraw' },
 
   // ── shipment ───────────────────────────────────────────────────────────────
   t_shipment_create: { purposeKey: 'processFlows.purpose.t_shipment_create' },

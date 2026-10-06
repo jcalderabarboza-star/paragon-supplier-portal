@@ -14,31 +14,44 @@
 // ────────────────────────────────────────────────────────────────────────────
 
 import { mockRfqs } from '../../../../data/mockRfqs';
-import type { RFQ } from '../../../../data/mockRfqs';
+import type { RFQ, RfqSeed } from '../../../../data/mockRfqs';
+import { respondedSupplierIdsOf } from '../../../../data/rfqResponses';
+import { quotationStore } from './quotationStore';
 
-function clone(r: RFQ): RFQ {
-  return { ...r, materialIds: [...r.materialIds], invitedSupplierIds: [...r.invitedSupplierIds], respondedSupplierIds: [...r.respondedSupplierIds] };
+// SRC-1 — THE STORE HOLDS NO RESPONSE LIST. A row is an `RfqSeed`; every read
+// hands back an `RFQ` whose `respondedSupplierIds` is computed from the
+// quotation store at that moment, and every write drops whatever list the
+// caller carried. One fact, one place: a quotation submitted a second ago is in
+// the next read, and no write site has to remember to say so.
+function strip(r: RFQ | RfqSeed): RfqSeed {
+  const { respondedSupplierIds: _derived, ...seed } = r as RFQ;
+  return { ...seed, materialIds: [...seed.materialIds], invitedSupplierIds: [...seed.invitedSupplierIds] };
 }
 
-let rows: RFQ[] = mockRfqs.map(clone);
+function project(r: RfqSeed): RFQ {
+  return { ...r, respondedSupplierIds: respondedSupplierIdsOf(r.id, quotationStore.all()) };
+}
+
+let rows: RfqSeed[] = mockRfqs.map(strip);
 let seq = 0;
 
 export const rfqStore = {
-  /** All RFQs (the mutable source reads resolve from). */
+  /** All RFQs, each with its response list derived from the quotations. */
   all(): readonly RFQ[] {
-    return rows;
+    return rows.map(project);
   },
   /** One RFQ by id, or undefined. */
   get(id: string): RFQ | undefined {
-    return rows.find((r) => r.id === id);
+    const row = rows.find((r) => r.id === id);
+    return row ? project(row) : undefined;
   },
   /** IMMUTABLE update — swap in a new RFQ + new array (see purchaseOrderStore). */
   update(id: string, next: (r: RFQ) => RFQ): void {
-    rows = rows.map((r) => (r.id === id ? next(r) : r));
+    rows = rows.map((r) => (r.id === id ? strip(next(project(r))) : r));
   },
   /** Add a newly-created RFQ (creation). New array reference. */
   add(rfq: RFQ): void {
-    rows = [rfq, ...rows];
+    rows = [strip(rfq), ...rows];
   },
   /** Store-assigned RFQ number for a creation (distinct 9xx range, as asnStore). */
   nextNumber(): string {
@@ -47,7 +60,7 @@ export const rfqStore = {
   },
   /** Restore the fixture seed (test isolation). */
   reset(): void {
-    rows = mockRfqs.map(clone);
+    rows = mockRfqs.map(strip);
     seq = 0;
   },
 };

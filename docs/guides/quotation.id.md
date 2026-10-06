@@ -10,6 +10,7 @@ transitions:
   - t_quotation_review
   - t_quotation_award
   - t_quotation_reject
+  - t_quotation_withdraw
 ---
 
 <!-- section:summary -->
@@ -19,7 +20,7 @@ Penawaran seorang pemasok atas satu permintaan pengadaan — harga dan janji pen
 
 Dua peran menyentuhnya, satu di tiap sisi. **Kontak penjualan** pemasok (jalur `commercial`) mengajukan penawaran dari portal pemasok, atas acara yang mengundangnya; itulah satu-satunya verba pembuatan milik pemasok di jalur pengadaan. **Pembeli** Paragon (jalur `procurement`) membaca setiap penawaran pada satu acara berdampingan, dapat memindahkan penawaran yang baru dikirim ke tahap evaluasi, dan memutuskan acara itu pada RFQ. Tidak ada yang menekan dua langkah terakhir: ketika pembeli memenangkan RFQ, platform menandai penawaran terpilih **Awarded** dan setiap penawaran lain pada acara itu **Rejected**, di bawah grant otomasinya, dalam tindakan yang sama.
 
-Prosesnya dimulai di **Submitted** — dokumen lahir sudah terkirim; tidak ada draf di sisi pemasok — melewati **Under Review** ketika pembeli membawanya ke evaluasi, dan berakhir di **Awarded** atau **Rejected**, dua status terminal. Kedua akhir adalah konsekuensi pemenangan RFQ; tak satu pun dapat dimasukkan secara manual pada satu penawaran. Tidak ada verba untuk menarik, merevisi, atau menolak penawaran.
+Prosesnya dimulai di **Submitted** — dokumen lahir sudah terkirim; tidak ada draf di sisi pemasok — melewati **Under Review** ketika pembeli membawanya ke evaluasi, dan berakhir di **Awarded**, **Rejected**, atau **Withdrawn**, tiga status terminal. Awarded dan Rejected adalah konsekuensi pemenangan RFQ; Withdrawn adalah konsekuensi pembatalan RFQ. Tak satu pun dapat dimasukkan secara manual pada satu penawaran, dan tidak ada verba bagi pemasok untuk menarik, merevisi, atau menolak penawaran.
 
 Penanda kejujuran yang perlu diketahui pembaca sebelum memakai panduan ini. Penawaran yang di-seed adalah fixture **SIMULASI** atas RFQ SIMULASI. Penawaran yang dibuat saat runtime disimpan dengan **baseline SIMULASI datar sebesar 50** untuk skor kepatuhan dan keandalannya — tidak ada sumber kepatuhan atau ketepatan pengiriman yang hidup — dan skor harga, waktu tunggu, dan kompositnya dihitung oleh perbandingan pembeli saat dibaca, tidak pernah disimpan; perbandingan menandai sumbu-sumbu itu "Simulasi" dan waktu tunggu "Perkiraan". Pemasok hanya melihat penawarannya sendiri dan hanya fakta serta statusnya — tidak pernah skor, peringkat, atau penawaran pesaing. Pemenangan tidak membuat purchase order; riwayat pemenangan pemasok berbunyi "PO diterbitkan —". Kontrol "Tolak RFQ" dan "Ajukan pertanyaan" di samping tombol kirim adalah toast yang menyatakan tidak ada yang ditolak dan tidak ada yang dikirim. Setiap tindakan manusia dicatat tanpa nama orang.
 
@@ -32,13 +33,14 @@ Penanda kejujuran yang perlu diketahui pembaca sebelum memakai panduan ini. Pena
 | 2 | Submitted → Under Review | tindakan operator | buyer · procurement | `t_quotation_review` |
 | 3 | Submitted, Under Review → Awarded | kaskade (dari `t_rfq_award`, penawaran terpilih) | automation | `t_quotation_award` |
 | 4 | Submitted, Under Review → Rejected | kaskade (dari `t_rfq_award`, setiap penawaran lain pada acara itu) | automation | `t_quotation_reject` |
+| 5 | Submitted, Under Review → Withdrawn | kaskade (dari `t_rfq_cancel`, setiap penawaran yang masih ditimbang) | automation | `t_quotation_withdraw` |
 
 <!-- src: src/services/transitions/flows/quotation.flow.ts:215-303; src/services/transitions/cascades.ts:57-60 -->
 
 **Percabangan**
 
-- **Di Submitted:** `t_quotation_review` — procurement — ketika pembeli mulai mengevaluasi penawaran ini; `t_quotation_award` — automation — ketika pembeli memenangkan RFQ untuk penawaran ini; `t_quotation_reject` — automation — ketika pembeli memenangkan RFQ untuk penawaran lain pada acara yang sama. Tinjauan bersifat opsional: penawaran Submitted dapat langsung dimenangkan atau ditolak.
-- **Di Under Review:** `t_quotation_award` — automation — penawaran ini dipilih pada RFQ; `t_quotation_reject` — automation — penawaran lain yang dipilih. Tidak ada jalan kembali ke Submitted dan tidak ada penolakan satu penawaran di sisi pembeli.
+- **Di Submitted:** `t_quotation_review` — procurement — ketika pembeli mulai mengevaluasi penawaran ini; `t_quotation_award` — automation — ketika pembeli memenangkan RFQ untuk penawaran ini; `t_quotation_reject` — automation — ketika pembeli memenangkan RFQ untuk penawaran lain pada acara yang sama; `t_quotation_withdraw` — automation — ketika pembeli membatalkan RFQ. Tinjauan bersifat opsional: penawaran Submitted dapat langsung dimenangkan, ditolak, atau ditarik.
+- **Di Under Review:** `t_quotation_award` — automation — penawaran ini dipilih pada RFQ; `t_quotation_reject` — automation — penawaran lain yang dipilih; `t_quotation_withdraw` — automation — RFQ dibatalkan. Tidak ada jalan kembali ke Submitted dan tidak ada penolakan satu penawaran di sisi pembeli.
 
 <!-- section:steps -->
 ## 3 · Langkah demi langkah
@@ -104,15 +106,31 @@ Penanda kejujuran yang perlu diketahui pembaca sebelum memakai panduan ini. Pena
 - **Penguji — peristiwa pemicu:** `t_quotation_reject` (satu event per penawaran yang kalah, masing-masing dengan `causationId` = correlationId pemenangan)
 - **Pemeriksaan yang dapat menolak:** tidak ada selain peran, legalitas, dan kolom wajib. Saudara yang sudah Awarded atau Rejected ditolak `ILLEGAL_TRANSITION` — tercatat, dan pemenangan tetap berlaku.
 - **Glosarium:** `ILLEGAL_TRANSITION`; label status "Rejected" (Ditolak, pembeli) dan "Not Awarded" (Tidak Dimenangkan, kolom hasil pemasok).
-- **Kejujuran:** Penawaran yang kalah tidak ditolak satu per satu dan memang tidak bisa: tidak ada verba di sisi pembeli yang menolak satu penawaran, dan tidak ada verba di sisi pemasok yang menariknya. Membatalkan RFQ **tidak** memicu ini — penawaran pada acara yang dibatalkan tetap Submitted atau Under Review. Pemasok tidak diberi tahu; hasilnya muncul pada pembacaan berikutnya.
+- **Kejujuran:** Penawaran yang kalah tidak ditolak satu per satu dan memang tidak bisa: tidak ada verba di sisi pembeli yang menolak satu penawaran, dan tidak ada verba di sisi pemasok yang menariknya. Membatalkan RFQ **tidak** memicu ini — pembatalan memicu `t_quotation_withdraw`, dan penawaran berakhir Withdrawn, bukan Rejected. Pemasok tidak diberi tahu; hasilnya muncul pada pembacaan berikutnya.
 <!-- src: src/services/transitions/flows/quotation.flow.ts:286-301; src/services/transitions/cascades.ts:24-86; src/services/data/mock/MockCommandService.ts:2935-2953; src/services/transitions/dispatcher.ts:838-907; src/pages-v2/BuyerSourcing.tsx:3673-3686; src/pages-v2/SupplierRFQs.tsx:163-195; src/lib/i18n/rfqs.ts:272-273; src/lib/statusLabel.ts:60; src/lib/statusLabel.ts:72; src/data/mockQuotations.ts:301-336; src/data/mockQuotations.ts:357-392 -->
+
+### t_quotation_withdraw — Permintaan ditarik (kaskade) <!-- transition:t_quotation_withdraw -->
+
+- **Jenis langkah:** kaskade (digerakkan sistem); dipicu oleh `t_rfq_cancel`
+- **Peran:** automation (atom `quotation:withdraw`; tidak ada jalur manusia yang memegangnya)
+- **Dari → ke:** Submitted, Under Review → Withdrawn
+- **Operator — di mana:** tidak ada yang menekan ini pada sebuah penawaran. Ia mengikuti pembatalan RFQ oleh pembeli di `/buyer/sourcing` (**Batalkan RFQ**, lalu **Ya, batalkan acara**).
+- **Operator — lakukan:** Paragon membatalkan acaranya sebelum memilih siapa pun, sehingga permintaannya ditarik kembali untuk setiap penawaran yang masih ditimbang. Tidak ada penawaran yang dinilai; pemasok membaca bahwa acaranya berakhir, bukan bahwa mereka kalah.
+- **Operator — isi:** tidak ada yang diisi.
+- **Penguji — status yang diharapkan:** Withdrawn
+- **Penguji — konfirmasi:** di sisi pemasok penawaran keluar dari KPI "Menunggu Pemenangan" dan dari hitungan "penawaran menunggu evaluasi"; **Penawaran Saya** menampilkan pil **Ditarik**; **Pemenangan & riwayat** mencantumkan RFQ dengan hasil **Acara Dibatalkan**, tanggal pemenangan "—", nilai kontrak "—", dan catatan "Paragon membatalkan acara ini — tidak ada keputusan atas penawaran Anda". Tingkat kemenangan tidak berubah: hanya acara yang diputuskan yang dihitung.
+- **Penguji — peristiwa pemicu:** `t_quotation_withdraw` (satu event per penawaran yang Submitted atau Under Review, masing-masing dengan `causationId` = correlationId pembatalan)
+- **Pemeriksaan yang dapat menolak:** tidak ada selain peran, legalitas, dan kolom wajib. Hanya penawaran yang masih Submitted atau Under Review yang disebut oleh kaskade, sehingga yang sudah Awarded atau Rejected tidak pernah ditanya.
+- **Glosarium:** label status "Withdrawn" (Ditarik, penawaran) dan "Event Cancelled" (Acara Dibatalkan, kolom hasil pemasok).
+- **Kejujuran:** Withdrawn bukan Rejected. Rejected berarti pembeli membandingkan penawaran itu dan memilih yang lain; acara yang dibatalkan tidak membandingkan apa pun. Kata itu adalah tindakan Paragon, bukan pemasok: pemasok tetap tidak punya verba untuk menarik penawaran. Pemasok tidak diberi tahu; hasilnya muncul pada pembacaan berikutnya.
+<!-- src: src/services/transitions/flows/quotation.flow.ts; src/services/transitions/cascades.ts; src/services/data/mock/MockCommandService.ts; src/pages-v2/SupplierRFQs.tsx; src/lib/i18n/rfqs.ts; src/lib/statusLabel.ts -->
 
 <!-- section:forks -->
 ## 4 · Percabangan keputusan dan jalur pengecualian
 
-- **Tinjau atau putuskan (di Submitted).** Cabang A — `t_quotation_review` — **Kapan:** pembeli ingin menandai penawaran ini sudah dibaca; opsional. Cabang B — `t_quotation_award` — **Kapan:** pembeli memenangkan RFQ untuk penawaran ini; panel pemenangan muncul pada RFQ hanya bila berstatus Open, setiap pemasok yang diundang tercatat telah merespons, dan minimal ada satu penawaran. Cabang C — `t_quotation_reject` — **Kapan:** pembeli memenangkan RFQ untuk penawaran lain pada acara yang sama.
+- **Tinjau atau putuskan (di Submitted).** Cabang A — `t_quotation_review` — **Kapan:** pembeli ingin menandai penawaran ini sudah dibaca; opsional. Cabang B — `t_quotation_award` — **Kapan:** pembeli memenangkan RFQ untuk penawaran ini; panel pemenangan muncul pada RFQ bila berstatus Open atau Closed dan minimal ada satu penawaran; siapa yang sudah menjawab diturunkan dari penawaran itu sendiri. Cabang C — `t_quotation_reject` — **Kapan:** pembeli memenangkan RFQ untuk penawaran lain pada acara yang sama.
 - **Putuskan (di Under Review).** Cabang A — `t_quotation_award` — **Kapan:** dipilih pada RFQ. Cabang B — `t_quotation_reject` — **Kapan:** tidak dipilih. Tidak ada jalan keluar lain.
-- **Acaranya dibatalkan.** Tanpa cabang: `t_rfq_cancel` tidak berkaskade ke penawaran, sehingga penawaran mempertahankan statusnya (Submitted atau Under Review) tanpa batas dan KPI "Menunggu Pemenangan" pemasok terus menghitungnya.
+- **Acaranya dibatalkan.** `t_quotation_withdraw` — **Kapan:** pembeli membatalkan RFQ. Setiap penawaran yang masih Submitted atau Under Review berakhir **Withdrawn**: keluar dari KPI "Menunggu Pemenangan" pemasok dan muncul di **Pemenangan & riwayat** sebagai *Acara Dibatalkan*, di luar tingkat kemenangan.
 - **Penawaran sama sekali tidak bisa diajukan.** Pemasok yang tidak ada di daftar undangan RFQ ditolak di cakupan; RFQ yang belum diterbitkan (Draft) tidak ditampilkan ke pemasok mana pun; acara yang sudah ditawar pemasok dipangkas dari Acara terbuka, sehingga penawaran kedua pada acara yang sama tidak ditawarkan permukaan (mesinnya sendiri tidak melarang — tidak diukur lebih jauh).
 - **Formulir menolak sebelum mesin.** Harga, waktu tunggu, kuantitas minimum, dan mata uang masing-masing punya kalimat penolakannya sendiri di formulir pemasok; hanya aturan mata uang yang juga merupakan hook kebijakan, dan toast-nya menyebut himpunan yang diizinkan.
 
@@ -171,7 +189,8 @@ Setiap dispatch menulis satu `TransitionEvent`: `event` = id transisi, `actor` =
 | T+1 | `qt-003c`: Under Review → Rejected | automation (`buyer:all`, kaskade) | penyebaran pemenangan | `t_quotation_reject` (`causationId` sama) |
 | (penawaran baru) T+0′ | ∅ → Submitted (`QUO-2026-901` pada RFQ-2026-010) | supplier · commercial (`supplier:sup-007`) | **Kirim penawaran** → **Kirim penawaran** | `t_quotation_submit` |
 | (penawaran baru) T+1′ | Submitted → Under Review | buyer · procurement (`buyer:all`) | **Pindahkan ke tinjauan** | `t_quotation_review` |
-| (penawaran baru) — | tidak ada langkah lanjutan dari permukaan | — | daftar respons RFQ-2026-010 tidak diperbarui oleh pengiriman, sehingga panel pemenangannya tidak muncul | — |
+| (penawaran baru) T+2′ | RFQ-2026-010: Open → Awarded; `QUO-2026-901` → Awarded | buyer · procurement, orang yang bernama | papan berbunyi 1 / 2 begitu penawaran masuk; centang **Menangkan** → **Menangkan yang dipilih** → **Ya, menangkan** | `t_rfq_award`, lalu `t_quotation_award` |
+| (acara yang dibatalkan) | RFQ-2026-002: Open → Cancelled; `qt-002a`, `qt-002b`: Under Review → Withdrawn | buyer · procurement, orang yang bernama; lalu automation (kaskade) | **Batalkan RFQ** → **Ya, batalkan acara** | `t_rfq_cancel`, lalu `t_quotation_withdraw` ×2 (`causationId` = correlationId pembatalan) |
 
 <!-- src: src/services/transitions/events.ts:26-61; src/services/transitions/events.ts:127-129; src/services/transitions/dispatcher.ts:453-532; src/services/transitions/dispatcher.ts:838-907; src/services/data/mock/MockCommandService.ts:2935-2953; src/pages-v2/BuyerSourcing.tsx:366-368; src/pages-v2/SupplierRFQs.tsx:786-796 -->
 
@@ -193,7 +212,8 @@ Setiap dispatch menulis satu `TransitionEvent`: `event` = id transisi, `actor` =
 | "Pindahkan ke tinjauan" tidak ada di perbandingan pembeli | sel Status menampilkan pil tanpa tautan | penawaran bukan Submitted (sudah Under Review, Awarded, atau Rejected) | tidak ada yang perlu dilakukan; tinjauan hanya dari Submitted |
 | "Pindahkan ke tinjauan" diganti oleh "Menunggu Pengadaan" | pemberitahuan di sel Status | kursi pembeli tidak memegang `quotation:review` | kursi procurement yang melakukannya |
 | "Tinjauan gagal" | toast dengan penolakan | `ILLEGAL_TRANSITION` — penawaran berpindah saat panel terbuka | buka kembali panel RFQ |
-| Penawaran tidak pernah menjadi Awarded atau Rejected | tetap Under Review berbulan-bulan | RFQ tidak dimenangkan (tidak ada panel pemenangan sampai setiap undangan tercatat merespons; pengiriman runtime tidak memperbarui daftar itu), atau RFQ dibatalkan (tanpa kaskade) | menangkan dari RFQ yang semua merespons; tidak ada keputusan per penawaran |
+| Penawaran tidak pernah menjadi Awarded atau Rejected | tetap Under Review berbulan-bulan | RFQ belum dimenangkan atau dibatalkan | pembeli menetapkan pemenang dari RFQ (Open atau Closed, penawaran apa pun yang diterima) atau membatalkannya, yang menarik penawaran; tidak ada keputusan per penawaran |
+| Penawaran berbunyi **Withdrawn** padahal pemasok tidak menariknya | pil "Ditarik" di Penawaran Saya; baris *Acara Dibatalkan* di Pemenangan & riwayat | Paragon membatalkan RFQ sebelum ada pemenang (`t_quotation_withdraw`, kaskade) | tidak ada yang perlu dilakukan; tidak ada keputusan atas penawaran dan tidak dihitung dalam tingkat kemenangan |
 | Penawaran pemasok yang kalah masih berbunyi Sedang Ditinjau setelah pemenangan | tab Penawaran Saya | kaskade untuk saudara itu ditolak `ILLEGAL_TRANSITION` (sudah terminal) atau id penawaran tidak ada di store saat penyebaran | baca audit sink untuk `causationId` pemenangan; tidak dapat dicapai dari data seed |
 | "Tolak RFQ" / "Ajukan pertanyaan" tidak melakukan apa pun | toast "Penolakan RFQ belum tersedia — … tidak ditolak." / "Pesan tidak terkirim…" | tidak tersambung ke verba atau kanal apa pun | bukan kesalahan; gunakan kanal di luar |
 | "0 hari tersisa" pada setiap kartu | pil kartu | tenggat sebelum tanggal peramban dan hitungannya dibatasi di 0 | bukan kesalahan; papan pembeli menampilkan "Nh terlambat" yang sebenarnya |
