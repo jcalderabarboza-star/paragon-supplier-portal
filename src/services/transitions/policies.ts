@@ -7,6 +7,7 @@
 
 import type { PurchaseOrder, Invoice, IntakeLine } from '../data/types';
 import { RFQ_CATEGORIES, isRfqCategoryMember, type RFQ } from '../../data/mockRfqs';
+import { RFQ_STAGES, isRfqStage, nextStageOf, stageOf } from '../../data/rfqStage';
 import { CODE_LESS_REASONS, isCodeLessReason } from '../../data/materialCatalogReason';
 import { DECLARED_PRESENT } from '../data/fixturePresent';
 import { responseDeadlinePassed, validityAlreadyPast } from '../data/quotationSubmitGate';
@@ -15,6 +16,7 @@ import {
   decideSourcing,
   quotationCurrenciesOf,
   quotationHeldBy,
+  stageResponseHeldBy,
   quotationOwnerOf,
   quotedEventOf,
   rosterStatusOf,
@@ -230,6 +232,17 @@ bindPolicyHook(POLICY_HOOKS.QUOTATION_SUBMIT_EVENT_OPEN, ({ payload }) => {
   };
 });
 
+bindPolicyHook(POLICY_HOOKS.QUOTATION_SUBMIT_AT_RFQ_STAGE, ({ payload }) => {
+  const event = quotedEventOf(payloadText(payload, 'rfqId'));
+  if (event === null || event.stage === 'RFQ') return { ok: true };
+  return {
+    ok: false,
+    reason:
+      `QUOTE_STAGE_NOT_RFQ: ${event.rfqNumber} is at its ${event.stage} stage. Quotations are ` +
+      'taken at the RFQ stage; at RFI and RFP a supplier records its interest instead.',
+  };
+});
+
 bindPolicyHook(POLICY_HOOKS.QUOTATION_SUBMIT_BEFORE_DEADLINE, ({ payload }) => {
   const event = quotedEventOf(payloadText(payload, 'rfqId'));
   if (event === null || !responseDeadlinePassed(event.responseDeadline, DECLARED_PRESENT)) {
@@ -268,6 +281,63 @@ bindPolicyHook(POLICY_HOOKS.QUOTATION_SUBMIT_VALIDITY_CURRENT, ({ payload }) => 
     reason:
       `QUOTE_VALIDITY_PAST: the quotation is stated valid until '${validUntil}', which is not a ` +
       `date on or after today (${DECLARED_PRESENT}). State a validity that has not passed.`,
+  };
+});
+
+// — Stage response: the event, its stage, its deadline, one per stage ————————
+//
+// RFx-1. The quotation hooks' shape over the same seam and the same instant.
+// A response at RFI or RFP is an acknowledgement of interest and a note; the
+// stage it is recorded against is the event's own, read here and written by the
+// store, never taken from the payload.
+bindPolicyHook(POLICY_HOOKS.STAGE_RESPONSE_EVENT_OPEN, ({ payload }) => {
+  const event = quotedEventOf(payloadText(payload, 'rfqId'));
+  if (event === null || event.status === 'Open') return { ok: true };
+  return {
+    ok: false,
+    reason:
+      `INTEREST_EVENT_NOT_OPEN: ${event.rfqNumber} is ${event.status}. A response is taken ` +
+      'only while a sourcing event is Open.',
+  };
+});
+
+bindPolicyHook(POLICY_HOOKS.STAGE_RESPONSE_STAGE_TAKES_INTEREST, ({ payload }) => {
+  const event = quotedEventOf(payloadText(payload, 'rfqId'));
+  if (event === null || event.stage !== 'RFQ') return { ok: true };
+  return {
+    ok: false,
+    reason:
+      `INTEREST_STAGE_TAKES_QUOTATIONS: ${event.rfqNumber} is at its RFQ stage, which is ` +
+      'answered with a quotation. Interest is recorded at the RFI and RFP stages only.',
+  };
+});
+
+bindPolicyHook(POLICY_HOOKS.STAGE_RESPONSE_BEFORE_DEADLINE, ({ payload }) => {
+  const event = quotedEventOf(payloadText(payload, 'rfqId'));
+  if (event === null || !responseDeadlinePassed(event.responseDeadline, DECLARED_PRESENT)) {
+    return { ok: true };
+  }
+  return {
+    ok: false,
+    reason:
+      `INTEREST_DEADLINE_PASSED: the ${event.stage} response deadline of ${event.rfqNumber} was ` +
+      `${event.responseDeadline} (today is ${DECLARED_PRESENT}). Responses are not taken after ` +
+      'the response deadline.',
+  };
+});
+
+bindPolicyHook(POLICY_HOOKS.STAGE_RESPONSE_ONE_PER_STAGE, ({ payload }) => {
+  const rfqId = payloadText(payload, 'rfqId');
+  const supplierId = payloadText(payload, 'supplierId');
+  const event = quotedEventOf(rfqId);
+  if (event === null) return { ok: true };
+  const held = stageResponseHeldBy(rfqId, event.stage, supplierId);
+  if (held === null) return { ok: true };
+  return {
+    ok: false,
+    reason:
+      `INTEREST_ALREADY_RECORDED: ${supplierId} already holds response ${held} at the ` +
+      `${event.stage} stage of this event. One response per supplier per stage.`,
   };
 });
 
@@ -1113,19 +1183,188 @@ bindPolicyHook(POLICY_HOOKS.RFQ_AWARD_FX_BASIS, ({ entityId, target }) => {
   };
 });
 
-// — Publish, cancel, award: a named person ————————————————————————————————————
+// ── RFx-1 · THE STAGED EVENT ────────────────────────────────────────────────
 //
-// SRC-1 · operator ruling. The SDC-3 shape (`reviewActorAttributed`): refused by
-// name with the remedy; a sample person is admitted.
+// The stage is a field on the event (`data/rfqStage.ts`), so every hook below
+// reads it through `stageOf` — an event that states none is at RFQ. The instant
+// is `DECLARED_PRESENT`, as for every dated rule in this file.
+
+/** The strings in a payload list, once each, in the order they were given. */
+function payloadIds(payload: Record<string, unknown>, key: string): string[] {
+  const raw = payload[key];
+  if (!Array.isArray(raw)) return [];
+  const seen: string[] = [];
+  for (const v of raw) if (typeof v === 'string' && v !== '' && !seen.includes(v)) seen.push(v);
+  return seen;
+}
+
+// — Create: a stated stage is one of the three ————————————————————————————————
+bindPolicyHook(POLICY_HOOKS.RFQ_CREATE_STAGE_KNOWN, ({ payload }) => {
+  if (payload.stage === undefined || isRfqStage(payload.stage)) return { ok: true };
+  return {
+    ok: false,
+    reason:
+      `STAGE_UNKNOWN: '${String(payload.stage)}' is not a sourcing stage ` +
+      `(${RFQ_STAGES.join(', ')}). State one of the three, or none to start at RFQ.`,
+  };
+});
+
+// — Publish: the response deadline is still ahead ————————————————————————————
+bindPolicyHook(POLICY_HOOKS.RFQ_PUBLISH_DEADLINE_CURRENT, ({ entityId, target }) => {
+  const rfq = readRfq(target, entityId);
+  if (rfq === null || !responseDeadlinePassed(rfq.responseDeadline, DECLARED_PRESENT)) {
+    return { ok: true };
+  }
+  return {
+    ok: false,
+    reason:
+      `PUBLISH_DEADLINE_PAST: the response deadline of ${rfq.rfqNumber} is ` +
+      `'${rfq.responseDeadline}', which is not a date on or after today (${DECLARED_PRESENT}). ` +
+      'No supplier could answer it. Raise the event again with a deadline that has not passed.',
+  };
+});
+
+// — Award: at the RFQ stage only ——————————————————————————————————————————————
+bindPolicyHook(POLICY_HOOKS.RFQ_AWARD_AT_RFQ_STAGE, ({ entityId, target }) => {
+  const rfq = readRfq(target, entityId);
+  if (rfq === null || stageOf(rfq) === 'RFQ') return { ok: true };
+  return {
+    ok: false,
+    reason:
+      `AWARD_STAGE_NOT_RFQ: ${rfq.rfqNumber} is at its ${stageOf(rfq)} stage. An award is made ` +
+      'at the RFQ stage; advance the event with a shortlist, or conclude it without an award.',
+  };
+});
+
+// — Advance (1 of 6): there is a stage to advance to ——————————————————————————
+bindPolicyHook(POLICY_HOOKS.RFQ_ADVANCE_HAS_NEXT_STAGE, ({ entityId, target }) => {
+  const rfq = readRfq(target, entityId);
+  if (rfq === null || nextStageOf(stageOf(rfq)) !== null) return { ok: true };
+  return {
+    ok: false,
+    reason:
+      `STAGE_IS_FINAL: ${rfq.rfqNumber} is at its RFQ stage, the last one. It ends in an ` +
+      'award, or is concluded without one.',
+  };
+});
+
+// — Advance (2 of 6): the shortlist names somebody ————————————————————————————
+bindPolicyHook(POLICY_HOOKS.RFQ_ADVANCE_SHORTLIST_STATED, ({ payload }) => {
+  if (payloadIds(payload, 'shortlistSupplierIds').length > 0) return { ok: true };
+  return {
+    ok: false,
+    reason:
+      'SHORTLIST_EMPTY: the shortlist names no supplier. An event with nobody to carry ' +
+      'forward is concluded without an award, not advanced.',
+  };
+});
+
+// — Advance (3 of 6): everybody on it answered this stage —————————————————————
+//
+// `respondedSupplierIds` is derived at read for the stage the event is AT
+// (`rfqStore.project`), so this is "answered the stage being left".
+bindPolicyHook(POLICY_HOOKS.RFQ_ADVANCE_SHORTLIST_RESPONDED, ({ entityId, payload, target }) => {
+  const rfq = readRfq(target, entityId);
+  if (rfq === null) return { ok: true };
+  const silent = payloadIds(payload, 'shortlistSupplierIds').filter(
+    (id) => !rfq.respondedSupplierIds.includes(id),
+  );
+  if (silent.length === 0) return { ok: true };
+  return {
+    ok: false,
+    reason:
+      `SHORTLIST_NOT_A_RESPONDER: ${silent.join(', ')} did not respond at the ` +
+      `${stageOf(rfq)} stage of ${rfq.rfqNumber}. Only a supplier that responded is shortlisted.`,
+  };
+});
+
+// — Advance (4 of 6): the shortlist is competitive, or does not need to be ————
+//
+// The publish decision over the shortlist instead of the invite list: same
+// eligibility, same exemptions, same floor.
+bindPolicyHook(POLICY_HOOKS.RFQ_ADVANCE_SHORTLIST_COMPETITIVE, ({ entityId, payload, target }) => {
+  const rfq = readRfq(target, entityId);
+  if (rfq === null) return { ok: true };
+  const shortlist = payloadIds(payload, 'shortlistSupplierIds');
+  const { competition } = decideSourcing(
+    { invitedSupplierIds: shortlist, materialIds: rfq.materialIds },
+    DECLARED_PRESENT,
+    rosterStatusOf,
+  );
+  if (competition.kind !== 'UNDER_FLOOR') return { ok: true };
+  return {
+    ok: false,
+    reason:
+      `SHORTLIST_UNDER_FLOOR: ${competition.eligible} eligible supplier(s) shortlisted, the ` +
+      `next stage needs at least ${COMPETITION_FLOOR_INVITEES}`,
+  };
+});
+
+// — Advance (5 of 6): a supplier left out is told why —————————————————————————
+bindPolicyHook(POLICY_HOOKS.RFQ_ADVANCE_REASON_STATED, ({ entityId, payload, target }) => {
+  const rfq = readRfq(target, entityId);
+  if (rfq === null) return { ok: true };
+  const shortlist = payloadIds(payload, 'shortlistSupplierIds');
+  const leftOut = rfq.invitedSupplierIds.filter((id) => !shortlist.includes(id));
+  if (leftOut.length === 0 || payloadText(payload, 'shortlistReason').trim() !== '') {
+    return { ok: true };
+  }
+  return {
+    ok: false,
+    reason:
+      `SHORTLIST_REASON_MISSING: ${leftOut.join(', ')} would not be carried to the next stage ` +
+      'and no reason is stated. The reason is what a supplier left out reads.',
+  };
+});
+
+// — Advance (6 of 6): the next stage can still be answered ————————————————————
+bindPolicyHook(POLICY_HOOKS.RFQ_ADVANCE_DEADLINE_CURRENT, ({ payload }) => {
+  const deadline = payloadText(payload, 'responseDeadline');
+  if (!responseDeadlinePassed(deadline, DECLARED_PRESENT)) return { ok: true };
+  return {
+    ok: false,
+    reason:
+      `STAGE_DEADLINE_PAST: the next stage's response deadline is '${deadline}', which is not a ` +
+      `date on or after today (${DECLARED_PRESENT}). State a deadline that has not passed.`,
+  };
+});
+
+// — Conclude: the reason is words ————————————————————————————————————————————
+bindPolicyHook(POLICY_HOOKS.RFQ_CONCLUDE_REASON_STATED, ({ payload }) => {
+  if (payloadText(payload, 'concludeReason').trim() !== '') return { ok: true };
+  return {
+    ok: false,
+    reason:
+      'CONCLUDE_REASON_MISSING: no reason is stated. An event concluded without an award ' +
+      'records why nobody was chosen.',
+  };
+});
+
+// — Reopen: not an advance in disguise ————————————————————————————————————————
+bindPolicyHook(POLICY_HOOKS.RFQ_REOPEN_NOT_AN_ADVANCE, ({ payload }) => {
+  if (payload.shortlistSupplierIds === undefined) return { ok: true };
+  return {
+    ok: false,
+    reason:
+      'REOPEN_CARRIES_SHORTLIST: reopening takes more answers at the same stage and carries no ' +
+      'shortlist. To move the event to its next stage with a shortlist, advance it.',
+  };
+});
+
+// — Publish, advance, conclude, cancel, award: a named person —————————————————
+//
+// SRC-1 · operator ruling, extended to the two stage verbs at RFx-1. The SDC-3
+// shape (`reviewActorAttributed`): refused by name with the remedy; a sample
+// person is admitted.
 bindPolicyHook(POLICY_HOOKS.RFQ_ACTOR_ATTRIBUTED, ({ scope }) => {
   const actor = asActorAttribution(scope.actor);
   if (actor && isAttributed(actor)) return { ok: true };
   return {
     ok: false,
     reason:
-      'RFQ_ACTOR_UNATTRIBUTED: this seat carries no person, and publishing, cancelling or ' +
-      'awarding a sourcing event is recorded against the person who decided it. Adopt a ' +
-      'sample user on the identity panel, then take the act again.',
+      'RFQ_ACTOR_UNATTRIBUTED: this seat carries no person, and publishing, advancing, ' +
+      'concluding, cancelling or awarding a sourcing event is recorded against the person who ' +
+      'decided it. Adopt a sample user on the identity panel, then take the act again.',
   };
 });
 

@@ -63,6 +63,7 @@ import { deliveryShipmentPoolFor } from '../../delivery/pool';
 import { schedulingAgreementStore } from '../../delivery/stores/schedulingAgreementStore';
 import type { DrawdownEnforcement, SchedulingAgreementItem } from '../../delivery/types';
 import type { RFQ, RFQStatus, RFQCategory } from '../../../data/mockRfqs';
+import { isRfqStage, nextStageOf, stageOf } from '../../../data/rfqStage';
 import type { CodeLessReason } from '../../../data/materialCatalogReason';
 import type { Quotation, QuotationStatus } from '../../../data/mockQuotations';
 import { BASE_CURRENCY, type BidCurrency } from '../../../lib/currencyPolicy';
@@ -105,6 +106,7 @@ import { goodsReceiptStore } from './stores/goodsReceiptStore';
 import { invoiceStore } from './stores/invoiceStore';
 import { rfqStore } from './stores/rfqStore';
 import { quotationStore } from './stores/quotationStore';
+import { stageResponseStore } from './stores/stageResponseStore';
 import { purchaseRequisitionStore } from './stores/purchaseRequisitionStore';
 import { requirementResponseStore } from './stores/requirementResponseStore';
 import { inventoryDeclarationStore } from './stores/inventoryDeclarationStore';
@@ -485,6 +487,42 @@ const RFQ_CATEGORIES: readonly RFQCategory[] = [
 ];
 const RFQ_UOMS: readonly RFQ['uom'][] = ['KG', 'PCS', 'L', 'MT'];
 
+/**
+ * RFx-1 · what an advance writes on the event, or nothing for any other verb.
+ * The stage moves forward by one; the invite list BECOMES the shortlist (kept in
+ * the event's own invite order); the next stage takes its own deadline; and the
+ * advance is APPENDED to the ledger with who was carried and who was not.
+ */
+function advanceOf(r: RFQ, payload: Record<string, unknown>): Partial<RFQ> {
+  if (!Array.isArray(payload.shortlistSupplierIds)) return {};
+  const from = stageOf(r);
+  const to = nextStageOf(from);
+  if (to === null) return {};
+  const named = payload.shortlistSupplierIds.filter((x): x is string => typeof x === 'string');
+  const shortlisted = r.invitedSupplierIds.filter((id) => named.includes(id));
+  const notShortlisted = r.invitedSupplierIds.filter((id) => !named.includes(id));
+  const reason = typeof payload.shortlistReason === 'string' ? payload.shortlistReason.trim() : '';
+  return {
+    stage: to,
+    invitedSupplierIds: shortlisted,
+    responseDeadline: String(payload.responseDeadline),
+    ...(typeof payload.awardDeadline === 'string' && payload.awardDeadline !== ''
+      ? { awardDeadline: payload.awardDeadline }
+      : {}),
+    stageHistory: [
+      ...(r.stageHistory ?? []),
+      {
+        from,
+        to,
+        advancedAt: new Date().toISOString().slice(0, 10),
+        shortlistedSupplierIds: shortlisted,
+        notShortlistedSupplierIds: notShortlisted,
+        ...(reason ? { reason } : {}),
+      },
+    ],
+  };
+}
+
 const rfqTarget: CommandTarget = {
   readState: (id) => rfqStore.get(id)?.status ?? null,
   readScopeOwner: () => null,
@@ -503,6 +541,21 @@ const rfqTarget: CommandTarget = {
       // that could set it could backdate its own award). It used to be read off
       // `awardDeadline`, a date the buyer typed weeks earlier.
       ...(toState === 'Awarded' ? { awardedAt: new Date().toISOString().slice(0, 10) } : {}),
+      // RFx-1 — CONCLUDED WITHOUT AN AWARD: the day and the reason, on the
+      // event. The day is store-assigned for the reason the award's is.
+      ...(toState === 'Concluded'
+        ? {
+            concludedAt: new Date().toISOString().slice(0, 10),
+            concludeReason: String(payload.concludeReason ?? '').trim(),
+          }
+        : {}),
+      // RFx-1 — AN ADVANCE: the Closed → Open edge with a shortlist in the
+      // payload. This target is not told which verb it is applying, so the edge
+      // is read here and the one other verb on it (`t_rfq_reopen`) refuses a
+      // payload that carries a shortlist. The six advance hooks have already
+      // proved the list non-empty, made of responders, competitive, explained
+      // and datable.
+      ...(r.status === 'Closed' && toState === 'Open' ? advanceOf(r, payload) : {}),
       // 2e-c-3 — THE D-1 FREEZE, made structural. A pin is APPENDED; there is no
       // branch here that finds an existing pin for the currency and replaces it,
       // and there is deliberately never going to be one. Superseding a rate is
@@ -588,9 +641,49 @@ const rfqTarget: CommandTarget = {
       currency: 'IDR',
       incoterms: str('incoterms'),
       paymentTerms: str('paymentTerms'),
+      // RFx-1 — the stage the buyer chose to start at, written only when the
+      // payload states one (`rfq_create_stage_known` has refused any other
+      // token). An event that states none is at RFQ, as every earlier one is.
+      ...(isRfqStage(payload.stage) ? { stage: payload.stage } : {}),
     };
     rfqStore.add(rfq);
     return { entityId: rfqNumber };
+  },
+};
+
+// — Stage-response target (RFx-1) — a supplier's answer at an RFI or RFP stage.
+//   CREATION ONLY, supplier-owned, on the quotation target's own scope rule:
+//   the owner is the submitting supplier, valid ONLY while it is on the event's
+//   invite list — so a supplier left off a shortlist resolves owner=null and is
+//   denied at scope on the next stage. A single-state record: no verb leaves
+//   `Submitted`, so `applyTransition` has nothing to write.
+const stageResponseTarget: CommandTarget = {
+  readState: (id) => (stageResponseStore.get(id) ? 'Submitted' : null),
+  readScopeOwner: (id) => stageResponseStore.get(id)?.supplierId ?? null,
+  readEntity: (id) => stageResponseStore.get(id) ?? null,
+  applyTransition: () => {
+    /* no-op — an answer is a record; nothing edits it. */
+  },
+  creationOwner: (payload) => {
+    const rfq = rfqStore.get(String(payload.rfqId));
+    const sid = String(payload.supplierId);
+    return rfq && rfq.invitedSupplierIds.includes(sid) ? sid : null;
+  },
+  create: (payload) => {
+    const id = stageResponseStore.nextNumber();
+    const rfqId = String(payload.rfqId);
+    const rfq = rfqStore.get(rfqId);
+    const note = typeof payload.note === 'string' ? payload.note.trim() : '';
+    stageResponseStore.add({
+      id,
+      rfqId,
+      // The event's own stage at this moment, never the payload's.
+      stage: rfq ? stageOf(rfq) : 'RFQ',
+      supplierId: String(payload.supplierId),
+      ...(note ? { note } : {}),
+      respondedAt: new Date().toISOString().slice(0, 10),
+    });
+    return { entityId: id };
   },
 };
 
@@ -2699,6 +2792,7 @@ const TARGETS: Record<string, CommandTarget> = {
   invoice: invoiceTarget,
   rfq: rfqTarget,
   quotation: quotationTarget,
+  stageResponse: stageResponseTarget,
   purchaseRequisition: purchaseRequisitionTarget,
   // A2 — the intake triage machine. Ships in the same commit as its flow so
   // the entity never joins the target-less set, not even for one merge: a
@@ -2996,7 +3090,8 @@ const resolveCascades = (ctx: CascadeContext): CascadeCommand[] => {
     // SRC-1 · RFQ cancelled → every quotation still being weighed is withdrawn.
     // Only the live ones are named: a quotation already at an ending would be
     // refused by legality and leave a refusal on the trail for nothing.
-    if (ctx.transitionId === 't_rfq_cancel') {
+    // RFx-1 — concluding without an award withdraws the same set, the same way.
+    if (ctx.transitionId === 't_rfq_cancel' || ctx.transitionId === 't_rfq_conclude') {
       return cascadesFor(ctx.transitionId).flatMap((link) =>
         quotationStore
           .forRfq(ctx.entityId)

@@ -71,6 +71,10 @@ const STATUS_ID: Record<string, string> = {
   Suspended: 'Ditangguhkan',
   'Not Awarded': 'Tidak Dimenangkan',
   'Event Cancelled': 'Acara Dibatalkan',
+  // RFx-1 — an event ended by a person with no award, and a supplier's history
+  // row for a quotation on one.
+  Concluded: 'Diakhiri',
+  'No Award': 'Tanpa Pemenang',
   // info
   Confirmed: 'Dikonfirmasi',
   Acknowledged: 'Diakui',

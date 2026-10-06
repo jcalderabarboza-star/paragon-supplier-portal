@@ -20,10 +20,14 @@ import { POLICY_HOOKS } from '../policyHooks';
 export const rfqFlow: FlowDefinition = {
   entity: 'rfq',
   version: 1,
-  states: ['Draft', 'Open', 'Closed', 'Awarded', 'Cancelled'],
+  // RFx-1 — THE STAGE IS NOT A STATE. An event at RFI, RFP or RFQ is Draft,
+  // Open or Closed in each of them; the stage is a field the advance verb moves
+  // (`data/rfqStage.ts`). Folding it into this list would triple the states and
+  // every legality row with them.
+  states: ['Draft', 'Open', 'Closed', 'Awarded', 'Concluded', 'Cancelled'],
   initial: 'Draft',
-  /** PF-0 · D-2 — an awarded or cancelled RFQ is done. */
-  terminals: ['Awarded', 'Cancelled'],
+  /** PF-0 · D-2 — an awarded, concluded or cancelled RFQ is done. */
+  terminals: ['Awarded', 'Concluded', 'Cancelled'],
   transitions: [
     {
       // CREATION verb (Phase A/2, WIRED). Buyer raises a sourcing event. Mirrors
@@ -61,7 +65,9 @@ export const rfqFlow: FlowDefinition = {
       trigger: 'creation',
       requiredRole: 'rfq:create',
       requiredFields: ['title', 'materialCategory', 'totalQty'],
-      policyHooks: [],
+      // RFx-1 — the buyer chooses the stage the event STARTS at. Not required:
+      // an event that states none starts at RFQ.
+      policyHooks: [POLICY_HOOKS.RFQ_CREATE_STAGE_KNOWN],
       surfaceable: { surfaced: true },
       version: 1,
     },
@@ -91,6 +97,9 @@ export const rfqFlow: FlowDefinition = {
         POLICY_HOOKS.RFQ_ACTOR_ATTRIBUTED,
         POLICY_HOOKS.RFQ_PUBLISH_INVITEES_ELIGIBLE,
         POLICY_HOOKS.RFQ_PUBLISH_COMPETITION,
+        // RFx-1 — last, so the three positions above stay where
+        // `rfqSourcingGate.test.ts` pins them.
+        POLICY_HOOKS.RFQ_PUBLISH_DEADLINE_CURRENT,
       ],
       surfaceable: { surfaced: true },
       version: 1,
@@ -128,8 +137,12 @@ export const rfqFlow: FlowDefinition = {
       // payload by the target, so nothing stopped a dispatch recording one
       // supplier as the awardee of another supplier's quotation. This hook is
       // the cross-check `requiredFields` cannot make: presence is not agreement.
+      // RFx-1 — the stage is read BEFORE the awardee: an event at RFI or RFP
+      // holds no quotation, so awardee integrity would refuse first with "no
+      // such quotation" and the buyer would never read the real reason.
       policyHooks: [
         POLICY_HOOKS.RFQ_ACTOR_ATTRIBUTED,
+        POLICY_HOOKS.RFQ_AWARD_AT_RFQ_STAGE,
         POLICY_HOOKS.RFQ_AWARD_AWARDEE_INTEGRITY,
         POLICY_HOOKS.RFQ_AWARD_FX_BASIS,
       ],
@@ -171,6 +184,53 @@ export const rfqFlow: FlowDefinition = {
       version: 1,
     },
     {
+      // RFx-1 — THE BUYER MOVES THE EVENT TO ITS NEXT STAGE, CARRYING A
+      // SHORTLIST. One act does four things, which is why it is one verb: the
+      // stage moves forward by one, the invite list becomes the shortlist, the
+      // next stage gets its own response deadline, and the event is Open again.
+      // The advance is appended to the event's `stageHistory`, so who was
+      // carried and who was left out — and why — stays readable; a supplier
+      // left out reads the reason on its own card.
+      //
+      // FROM `Closed` ONLY. A shortlist is chosen from the suppliers who
+      // answered, so the answers have to have stopped arriving: the buyer
+      // closes bidding on the stage (`t_rfq_close`), then advances. That also
+      // makes this a real state change (Closed → Open) rather than a verb that
+      // leaves Open as Open, which a caller's `expectedState` could not see.
+      id: 't_rfq_advance',
+      from: ['Closed'],
+      to: 'Open',
+      trigger: 'user',
+      requiredRole: 'rfq:advance',
+      requiredFields: ['shortlistSupplierIds', 'responseDeadline'],
+      policyHooks: [
+        POLICY_HOOKS.RFQ_ACTOR_ATTRIBUTED,
+        POLICY_HOOKS.RFQ_ADVANCE_HAS_NEXT_STAGE,
+        POLICY_HOOKS.RFQ_ADVANCE_SHORTLIST_STATED,
+        POLICY_HOOKS.RFQ_ADVANCE_SHORTLIST_RESPONDED,
+        POLICY_HOOKS.RFQ_ADVANCE_SHORTLIST_COMPETITIVE,
+        POLICY_HOOKS.RFQ_ADVANCE_REASON_STATED,
+        POLICY_HOOKS.RFQ_ADVANCE_DEADLINE_CURRENT,
+      ],
+      surfaceable: { surfaced: true },
+      version: 1,
+    },
+    {
+      // RFx-1 — THE BUYER ENDS THE EVENT WITH NO AWARD, AND SAYS WHY. Legal at
+      // every stage: an RFI that found nobody capable ends here, and so does an
+      // RFQ whose quotations were all too dear. Not a cancel — the event ran.
+      // Quotations still being weighed are withdrawn by cascade, as on cancel.
+      id: 't_rfq_conclude',
+      from: ['Open', 'Closed'],
+      to: 'Concluded',
+      trigger: 'user',
+      requiredRole: 'rfq:conclude',
+      requiredFields: ['concludeReason'],
+      policyHooks: [POLICY_HOOKS.RFQ_ACTOR_ATTRIBUTED, POLICY_HOOKS.RFQ_CONCLUDE_REASON_STATED],
+      surfaceable: { surfaced: true },
+      version: 1,
+    },
+    {
       // Buyer cancels a sourcing event before award. Authored-unwired.
       id: 't_rfq_cancel',
       from: ['Draft', 'Open', 'Closed'],
@@ -190,7 +250,9 @@ export const rfqFlow: FlowDefinition = {
       trigger: 'user',
       requiredRole: 'rfq:reopen',
       requiredFields: [],
-      policyHooks: [],
+      // RFx-1 — reopen shares the Closed → Open edge with `t_rfq_advance`; see
+      // the hook for why it refuses a payload that carries a shortlist.
+      policyHooks: [POLICY_HOOKS.RFQ_REOPEN_NOT_AN_ADVANCE],
       surfaceable: { surfaced: true },
       version: 1,
     },

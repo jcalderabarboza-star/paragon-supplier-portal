@@ -64,6 +64,9 @@ const rfqCreate = () =>
       materialCategory: 'Emulsifiers',
       totalQty: 1000,
       invitedSupplierIds: ['sup-002', 'sup-005'],
+      // RFx-1 — a draft that states no response deadline no longer publishes
+      // (`rfq_publish_deadline_current`); this probe is about Draft and Open.
+      responseDeadline: '2026-12-31',
     },
   });
 

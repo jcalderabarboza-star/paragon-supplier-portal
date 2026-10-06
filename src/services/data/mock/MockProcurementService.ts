@@ -5,7 +5,7 @@ import { mockContracts } from '../../../data/mockContracts';
 import { mockObligations } from '../../../data/mockObligations';
 import { applySupplierScope } from '../scoping';
 import { rfqStore } from './stores/rfqStore';
-import { toSupplierRfqView } from '../rfqSupplierView';
+import { supplierMayRead, toSupplierRfqView } from '../rfqSupplierView';
 import { quotationStore } from './stores/quotationStore';
 import { asnStore } from './stores/asnStore';
 import { goodsReceiptStore } from './stores/goodsReceiptStore';
@@ -321,7 +321,9 @@ export class MockProcurementService implements IProcurementService {
       // the membership filter, which needs the full invite list to decide.
       const reader = scope.supplierId;
       rows = rows
-        .filter((r) => r.status !== 'Draft' && r.invitedSupplierIds.includes(reader))
+        // RFx-1 — and an event the reader was left off at an advance: it
+        // reads "not shortlisted" there, with the reason (`supplierMayRead`).
+        .filter((r) => r.status !== 'Draft' && supplierMayRead(r, reader))
         .map((r) => toSupplierRfqView(r, reader));
     }
     if (filter?.status) rows = rows.filter((r) => matchesList(r.status, filter.status));

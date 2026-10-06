@@ -35,6 +35,9 @@ const SupplierRfqToRespondWidget: React.FC = () => {
         (r: RFQ) =>
           r.status === 'Open' &&
           !!supplierId &&
+          // RFx-1 — still invited. A supplier left off a shortlist keeps
+          // reading the event (to be told so) and has nothing to respond to.
+          r.invitedSupplierIds.includes(supplierId) &&
           !r.respondedSupplierIds.includes(supplierId),
       ),
     [query.data, supplierId],

@@ -247,11 +247,172 @@ export const sourcingEn: Record<string, string> = {
   'sourcing.close.submit': 'Close bidding',
   'sourcing.close.submitting': 'Closing…',
   'sourcing.unattributed.note':
-    'Publishing, cancelling and awarding are recorded against a person, and this seat carries none. Adopt a sample user on the identity panel first.',
+    'Publishing, advancing, concluding, cancelling and awarding are recorded against a person, and this seat carries none. Adopt a sample user on the identity panel first.',
   'sourcing.refusal.actorUnattributed':
-    'Nothing was recorded. Publishing, cancelling or awarding a sourcing event is recorded against the person who decided it, and this seat carries none. Adopt a sample user on the identity panel, then take the act again.',
+    'Nothing was recorded. Publishing, advancing, concluding, cancelling or awarding a sourcing event is recorded against the person who decided it, and this seat carries none. Adopt a sample user on the identity panel, then take the act again.',
   'sourcing.refusal.awardFxUnpinned':
     'Not awarded. Quotations on this event are priced in a foreign currency and no exchange rate is recorded for it. Record the rate on the comparison, then award.',
+  // — RFx-1 · the staged event: stages, advance with a shortlist, conclude —
+  'sourcing.stage.title':
+    'Stages',
+  'sourcing.stage.name.RFI':
+    'Request for information',
+  'sourcing.stage.name.RFP':
+    'Request for proposal',
+  'sourcing.stage.name.RFQ':
+    'Request for quotation',
+  'sourcing.stage.left':
+    'Advanced on',
+  'sourcing.stage.state.done':
+    'Done',
+  'sourcing.stage.state.current':
+    'Current stage',
+  'sourcing.stage.state.upcoming':
+    'Not started',
+  'sourcing.stage.outcome.Awarded':
+    'Awarded at the {{stage}} stage',
+  'sourcing.stage.outcome.Concluded':
+    'Concluded without an award at the {{stage}} stage',
+  'sourcing.stage.outcome.Cancelled':
+    'Cancelled at the {{stage}} stage',
+  'sourcing.stage.rowChip':
+    '{{stage}} stage',
+  'sourcing.stage.advanceLine':
+    '{{from}} to {{to}} — carried forward: {{names}}',
+  'sourcing.stage.notCarriedLine':
+    'Not carried: {{names}} — reason given: “{{reason}}”',
+  'sourcing.wizard.field.stage':
+    'Start at stage',
+  'sourcing.wizard.stage.RFI':
+    'Ask who is interested and able. Ends in a shortlist.',
+  'sourcing.wizard.stage.RFP':
+    'Ask the shortlist how they would do it. Ends in a shortlist.',
+  'sourcing.wizard.stage.RFQ':
+    'Ask for a price. Ends in an award.',
+  'sourcing.wizard.deadlinePast':
+    'This date has already passed. An event past its response deadline cannot be published.',
+  'sourcing.wizard.review.row.stage':
+    'Start stage',
+  'sourcing.interest.title':
+    'Responses at RFI and RFP',
+  'sourcing.interest.contentNote':
+    'At the RFI and RFP stages a supplier records its interest and a note, and nothing else. The questionnaire, the proposal and their scoring are not built yet.',
+  'sourcing.interest.count':
+    '{{responded}} of {{total}} invited suppliers have responded at the {{stage}} stage',
+  'sourcing.interest.empty':
+    'No supplier has responded yet.',
+  'sourcing.interest.noNote':
+    'No note.',
+  'sourcing.cmp.emptyBeforeRfq':
+    'Quotations are taken at the RFQ stage. This event has not reached it.',
+  'sourcing.publish.deadlinePast':
+    'Cannot be published: the response deadline ({{date}}) has passed. Cancel this draft and raise the event again.',
+  'sourcing.publish.deadlineMissing':
+    'Cannot be published: this draft states no response deadline. Cancel it and raise the event again.',
+  'sourcing.advance.submit':
+    'Advance to {{stage}}',
+  'sourcing.advance.needsClose':
+    'Close bidding to advance to {{stage}}',
+  'sourcing.advance.intro':
+    'Advance {{rfqNumber}} from the {{from}} stage to the {{to}} stage. The suppliers you tick are invited to the next stage; the others are told they were not shortlisted, with your reason.',
+  'sourcing.advance.shortlist':
+    'Shortlist',
+  'sourcing.advance.didNotRespond':
+    'did not respond at {{stage}}',
+  'sourcing.advance.reason':
+    'Reason for the suppliers left out',
+  'sourcing.advance.leftOut.none':
+    'Every invited supplier is carried forward, so no reason is needed.',
+  'sourcing.advance.leftOut.some':
+    'They read this reason. Not carried: {{names}}',
+  'sourcing.advance.responseDeadline':
+    '{{stage}} response deadline',
+  'sourcing.advance.awardDeadline':
+    'Award deadline (optional)',
+  'sourcing.advance.blocked.noResponders':
+    'No supplier has responded at the {{stage}} stage, so nobody can be shortlisted. Conclude the event without an award instead.',
+  'sourcing.advance.blocked.empty':
+    'Tick at least one supplier.',
+  'sourcing.advance.blocked.underFloor':
+    'The next stage needs at least two eligible suppliers.',
+  'sourcing.advance.blocked.reasonMissing':
+    'State the reason for the suppliers left out.',
+  'sourcing.advance.blocked.deadlineMissing':
+    'Set the response deadline of the next stage.',
+  'sourcing.advance.blocked.deadlinePast':
+    'The response deadline has already passed. Choose a date from today onwards.',
+  'sourcing.advance.yes.one':
+    'Advance to {{stage}} with 1 supplier',
+  'sourcing.advance.yes.other':
+    'Advance to {{stage}} with {{count}} suppliers',
+  'sourcing.advance.no':
+    'Not now',
+  'sourcing.conclude.submit':
+    'Conclude without award',
+  'sourcing.conclude.ask.none':
+    'Conclude {{rfqNumber}} without an award? This cannot be undone. Its suppliers read that the event ended with nobody chosen.',
+  'sourcing.conclude.ask.one':
+    'Conclude {{rfqNumber}} without an award? This cannot be undone: the 1 quotation on it is withdrawn and its supplier reads that nobody was chosen.',
+  'sourcing.conclude.ask.other':
+    'Conclude {{rfqNumber}} without an award? This cannot be undone: the {{count}} quotations on it are withdrawn and their suppliers read that nobody was chosen.',
+  'sourcing.conclude.reason':
+    'Reason',
+  'sourcing.conclude.reasonNote':
+    'Kept on the event. Suppliers are told it ended without an award; they do not read this reason.',
+  'sourcing.conclude.ask.yes':
+    'Yes, conclude without award',
+  'sourcing.conclude.ask.no':
+    'Keep the event',
+  'sourcing.concluded.title':
+    'Concluded without an award',
+  'sourcing.concluded.date':
+    'Concluded on',
+  'sourcing.concluded.stage':
+    'At stage',
+  'sourcing.concluded.reason':
+    'Reason',
+  'sourcing.toast.advanced.title':
+    '{{rfqNumber}} is now at {{stage}}',
+  'sourcing.toast.advanced.desc.one':
+    '1 supplier is invited to the next stage.',
+  'sourcing.toast.advanced.desc.other':
+    '{{count}} suppliers are invited to the next stage.',
+  'sourcing.toast.advanceFailed.title':
+    'Not advanced',
+  'sourcing.toast.advanceFailed.default':
+    'The event could not be advanced. Nothing was recorded.',
+  'sourcing.toast.advanceFailed.dispatch':
+    'The advance could not be sent. Nothing was recorded.',
+  'sourcing.toast.concluded.title':
+    '{{rfqNumber}} concluded without an award',
+  'sourcing.toast.concluded.desc':
+    'The reason is kept on the event.',
+  'sourcing.toast.concludeFailed.title':
+    'Not concluded',
+  'sourcing.toast.concludeFailed.default':
+    'The event could not be concluded. Nothing was recorded.',
+  'sourcing.toast.concludeFailed.dispatch':
+    'The act could not be sent. Nothing was recorded.',
+  'sourcing.refusal.stageUnknown':
+    'Not created. The start stage is not one of RFI, RFP or RFQ.',
+  'sourcing.refusal.publishDeadlinePast':
+    'Not published. The response deadline of this draft has already passed, so no supplier could answer it. Cancel the draft and raise the event again with a later deadline.',
+  'sourcing.refusal.awardStageNotRfq':
+    'Not awarded. An award is made at the RFQ stage, and this event has not reached it. Advance it with a shortlist, or conclude it without an award.',
+  'sourcing.refusal.stageIsFinal':
+    'Not advanced. RFQ is the last stage: the event ends in an award, or is concluded without one.',
+  'sourcing.refusal.shortlistEmpty':
+    'Not advanced. The shortlist names no supplier. An event with nobody to carry forward is concluded without an award.',
+  'sourcing.refusal.shortlistNotResponder':
+    'Not advanced. A supplier on the shortlist did not respond at this stage. Only a supplier that responded is shortlisted.',
+  'sourcing.refusal.shortlistUnderFloor':
+    'Not advanced. The next stage needs at least two eligible suppliers, and the shortlist has fewer.',
+  'sourcing.refusal.shortlistReasonMissing':
+    'Not advanced. The shortlist leaves a supplier out and no reason is stated. The reason is what that supplier reads.',
+  'sourcing.refusal.stageDeadlinePast':
+    'Not advanced. The response deadline of the next stage has already passed. Choose a date from today onwards.',
+  'sourcing.refusal.concludeReasonMissing':
+    'Not concluded. State why the event ends without an award.',
   // — Lifecycle actions (cancel / reopen) —
   'sourcing.lifecycle.actions': 'Lifecycle actions',
   'sourcing.publish.submit': 'Publish RFQ',
@@ -432,6 +593,10 @@ export const sourcingEn: Record<string, string> = {
   'sourcing.toast.cancelled.desc': 'The sourcing event was cancelled.',
   'sourcing.toast.closed.title': '{{rfqNumber}} closed to new quotations',
   'sourcing.toast.closed.desc': 'Bidding is closed. Award on the quotations received, reopen, or cancel.',
+  // RFx-1 — at RFI and RFP there is no quotation and no award to make.
+  'sourcing.toast.closed.titleStage': '{{rfqNumber}} closed to new responses',
+  'sourcing.toast.closed.descStage':
+    'The {{stage}} stage is closed. Advance with a shortlist, reopen, or conclude without an award.',
   'sourcing.toast.closeFailed.title': 'Close failed',
   'sourcing.toast.closeFailed.default': 'Bidding could not be closed.',
   'sourcing.toast.closeFailed.dispatch': 'The close could not be dispatched.',
@@ -688,11 +853,172 @@ export const sourcingId: Record<string, string> = {
   'sourcing.close.submit': 'Tutup penawaran',
   'sourcing.close.submitting': 'Menutup…',
   'sourcing.unattributed.note':
-    'Menerbitkan, membatalkan, dan menetapkan pemenang dicatat atas nama seseorang, dan kursi ini tidak memilikinya. Pilih pengguna contoh di panel identitas terlebih dahulu.',
+    'Menerbitkan, melanjutkan, mengakhiri, membatalkan, dan menetapkan pemenang dicatat atas nama seseorang, dan kursi ini tidak memilikinya. Pilih pengguna contoh di panel identitas terlebih dahulu.',
   'sourcing.refusal.actorUnattributed':
-    'Tidak ada yang dicatat. Menerbitkan, membatalkan, atau menetapkan pemenang acara sumber dicatat atas nama orang yang memutuskannya, dan kursi ini tidak memilikinya. Pilih pengguna contoh di panel identitas, lalu ulangi tindakan.',
+    'Tidak ada yang dicatat. Menerbitkan, melanjutkan, mengakhiri, membatalkan, atau menetapkan pemenang acara sumber dicatat atas nama orang yang memutuskannya, dan kursi ini tidak memilikinya. Pilih pengguna contoh di panel identitas, lalu ulangi tindakan.',
   'sourcing.refusal.awardFxUnpinned':
     'Tidak dimenangkan. Penawaran pada acara ini dihargai dalam mata uang asing dan belum ada kurs yang dicatat. Catat kurs pada perbandingan, lalu tetapkan pemenang.',
+  // — RFx-1 · acara bertahap —
+  'sourcing.stage.title':
+    'Tahap',
+  'sourcing.stage.name.RFI':
+    'Permintaan informasi',
+  'sourcing.stage.name.RFP':
+    'Permintaan proposal',
+  'sourcing.stage.name.RFQ':
+    'Permintaan penawaran harga',
+  'sourcing.stage.left':
+    'Dilanjutkan pada',
+  'sourcing.stage.state.done':
+    'Selesai',
+  'sourcing.stage.state.current':
+    'Tahap saat ini',
+  'sourcing.stage.state.upcoming':
+    'Belum dimulai',
+  'sourcing.stage.outcome.Awarded':
+    'Dimenangkan pada tahap {{stage}}',
+  'sourcing.stage.outcome.Concluded':
+    'Diakhiri tanpa pemenang pada tahap {{stage}}',
+  'sourcing.stage.outcome.Cancelled':
+    'Dibatalkan pada tahap {{stage}}',
+  'sourcing.stage.rowChip':
+    'Tahap {{stage}}',
+  'sourcing.stage.advanceLine':
+    '{{from}} ke {{to}} — dilanjutkan: {{names}}',
+  'sourcing.stage.notCarriedLine':
+    'Tidak dilanjutkan: {{names}} — alasan yang diberikan: “{{reason}}”',
+  'sourcing.wizard.field.stage':
+    'Mulai dari tahap',
+  'sourcing.wizard.stage.RFI':
+    'Tanyakan siapa yang berminat dan mampu. Berakhir dengan daftar pendek.',
+  'sourcing.wizard.stage.RFP':
+    'Tanyakan kepada daftar pendek cara mereka mengerjakannya. Berakhir dengan daftar pendek.',
+  'sourcing.wizard.stage.RFQ':
+    'Minta harga. Berakhir dengan penetapan pemenang.',
+  'sourcing.wizard.deadlinePast':
+    'Tanggal ini sudah lewat. Acara yang melewati tenggat tanggapannya tidak dapat diterbitkan.',
+  'sourcing.wizard.review.row.stage':
+    'Tahap awal',
+  'sourcing.interest.title':
+    'Tanggapan pada RFI dan RFP',
+  'sourcing.interest.contentNote':
+    'Pada tahap RFI dan RFP, pemasok hanya mencatat minatnya dan satu catatan. Kuesioner, proposal, dan penilaiannya belum dibangun.',
+  'sourcing.interest.count':
+    '{{responded}} dari {{total}} pemasok yang diundang telah menanggapi pada tahap {{stage}}',
+  'sourcing.interest.empty':
+    'Belum ada pemasok yang menanggapi.',
+  'sourcing.interest.noNote':
+    'Tanpa catatan.',
+  'sourcing.cmp.emptyBeforeRfq':
+    'Penawaran diterima pada tahap RFQ. Acara ini belum sampai ke sana.',
+  'sourcing.publish.deadlinePast':
+    'Tidak dapat diterbitkan: tenggat tanggapan ({{date}}) sudah lewat. Batalkan draf ini dan buat acaranya lagi.',
+  'sourcing.publish.deadlineMissing':
+    'Tidak dapat diterbitkan: draf ini tidak menyebut tenggat tanggapan. Batalkan dan buat acaranya lagi.',
+  'sourcing.advance.submit':
+    'Lanjutkan ke {{stage}}',
+  'sourcing.advance.needsClose':
+    'Tutup penawaran untuk melanjutkan ke {{stage}}',
+  'sourcing.advance.intro':
+    'Lanjutkan {{rfqNumber}} dari tahap {{from}} ke tahap {{to}}: pemasok yang Anda centang diundang ke tahap berikutnya; yang lain diberi tahu bahwa mereka tidak masuk daftar pendek, beserta alasan Anda.',
+  'sourcing.advance.shortlist':
+    'Daftar pendek',
+  'sourcing.advance.didNotRespond':
+    'tidak menanggapi pada {{stage}}',
+  'sourcing.advance.reason':
+    'Alasan untuk pemasok yang tidak dilanjutkan',
+  'sourcing.advance.leftOut.none':
+    'Semua pemasok yang diundang dilanjutkan, sehingga alasan tidak diperlukan.',
+  'sourcing.advance.leftOut.some':
+    'Mereka membaca alasan ini. Tidak dilanjutkan: {{names}}',
+  'sourcing.advance.responseDeadline':
+    'Tenggat tanggapan {{stage}}',
+  'sourcing.advance.awardDeadline':
+    'Tenggat pemenangan (opsional)',
+  'sourcing.advance.blocked.noResponders':
+    'Belum ada pemasok yang menanggapi pada tahap {{stage}}, sehingga tidak ada yang dapat masuk daftar pendek. Akhiri acara tanpa pemenang.',
+  'sourcing.advance.blocked.empty':
+    'Centang setidaknya satu pemasok.',
+  'sourcing.advance.blocked.underFloor':
+    'Tahap berikutnya memerlukan setidaknya dua pemasok yang memenuhi syarat.',
+  'sourcing.advance.blocked.reasonMissing':
+    'Sebutkan alasan untuk pemasok yang tidak dilanjutkan.',
+  'sourcing.advance.blocked.deadlineMissing':
+    'Tetapkan tenggat tanggapan tahap berikutnya.',
+  'sourcing.advance.blocked.deadlinePast':
+    'Tenggat tanggapan sudah lewat. Pilih tanggal mulai hari ini.',
+  'sourcing.advance.yes.one':
+    'Lanjutkan ke {{stage}} dengan 1 pemasok',
+  'sourcing.advance.yes.other':
+    'Lanjutkan ke {{stage}} dengan {{count}} pemasok',
+  'sourcing.advance.no':
+    'Nanti saja',
+  'sourcing.conclude.submit':
+    'Akhiri tanpa pemenang',
+  'sourcing.conclude.ask.none':
+    'Akhiri {{rfqNumber}} tanpa pemenang? Ini tidak dapat diurungkan. Pemasoknya membaca bahwa acara berakhir tanpa ada yang dipilih.',
+  'sourcing.conclude.ask.one':
+    'Akhiri {{rfqNumber}} tanpa pemenang? Ini tidak dapat diurungkan: 1 penawaran di dalamnya ditarik dan pemasoknya membaca bahwa tidak ada yang dipilih.',
+  'sourcing.conclude.ask.other':
+    'Akhiri {{rfqNumber}} tanpa pemenang? Ini tidak dapat diurungkan: {{count}} penawaran di dalamnya ditarik dan pemasoknya membaca bahwa tidak ada yang dipilih.',
+  'sourcing.conclude.reason':
+    'Alasan',
+  'sourcing.conclude.reasonNote':
+    'Disimpan pada acara. Pemasok diberi tahu bahwa acara berakhir tanpa pemenang; mereka tidak membaca alasan ini.',
+  'sourcing.conclude.ask.yes':
+    'Ya, akhiri tanpa pemenang',
+  'sourcing.conclude.ask.no':
+    'Pertahankan acara',
+  'sourcing.concluded.title':
+    'Diakhiri tanpa pemenang',
+  'sourcing.concluded.date':
+    'Diakhiri pada',
+  'sourcing.concluded.stage':
+    'Pada tahap',
+  'sourcing.concluded.reason':
+    'Alasan',
+  'sourcing.toast.advanced.title':
+    '{{rfqNumber}} kini pada tahap {{stage}}',
+  'sourcing.toast.advanced.desc.one':
+    '1 pemasok diundang ke tahap berikutnya.',
+  'sourcing.toast.advanced.desc.other':
+    '{{count}} pemasok diundang ke tahap berikutnya.',
+  'sourcing.toast.advanceFailed.title':
+    'Tidak dilanjutkan',
+  'sourcing.toast.advanceFailed.default':
+    'Acara tidak dapat dilanjutkan. Tidak ada yang dicatat.',
+  'sourcing.toast.advanceFailed.dispatch':
+    'Tindakan tidak dapat dikirim. Tidak ada yang dicatat.',
+  'sourcing.toast.concluded.title':
+    '{{rfqNumber}} diakhiri tanpa pemenang',
+  'sourcing.toast.concluded.desc':
+    'Alasannya disimpan pada acara.',
+  'sourcing.toast.concludeFailed.title':
+    'Tidak diakhiri',
+  'sourcing.toast.concludeFailed.default':
+    'Acara tidak dapat diakhiri. Tidak ada yang dicatat.',
+  'sourcing.toast.concludeFailed.dispatch':
+    'Tindakan tidak dapat dikirim. Tidak ada yang dicatat.',
+  'sourcing.refusal.stageUnknown':
+    'Tidak dibuat. Tahap awal bukan salah satu dari RFI, RFP, atau RFQ.',
+  'sourcing.refusal.publishDeadlinePast':
+    'Tidak diterbitkan. Tenggat tanggapan draf ini sudah lewat, sehingga tidak ada pemasok yang dapat menjawabnya. Batalkan draf dan buat acaranya lagi dengan tenggat yang lebih lambat.',
+  'sourcing.refusal.awardStageNotRfq':
+    'Tidak dimenangkan. Pemenang ditetapkan pada tahap RFQ, dan acara ini belum sampai ke sana. Lanjutkan dengan daftar pendek, atau akhiri tanpa pemenang.',
+  'sourcing.refusal.stageIsFinal':
+    'Tidak dilanjutkan. RFQ adalah tahap terakhir: acara berakhir dengan pemenang, atau diakhiri tanpa pemenang.',
+  'sourcing.refusal.shortlistEmpty':
+    'Tidak dilanjutkan. Daftar pendek tidak menyebut pemasok mana pun. Acara tanpa pemasok untuk dilanjutkan diakhiri tanpa pemenang.',
+  'sourcing.refusal.shortlistNotResponder':
+    'Tidak dilanjutkan. Ada pemasok di daftar pendek yang tidak menanggapi pada tahap ini. Hanya pemasok yang menanggapi yang masuk daftar pendek.',
+  'sourcing.refusal.shortlistUnderFloor':
+    'Tidak dilanjutkan. Tahap berikutnya memerlukan setidaknya dua pemasok yang memenuhi syarat, dan daftar pendeknya kurang dari itu.',
+  'sourcing.refusal.shortlistReasonMissing':
+    'Tidak dilanjutkan. Daftar pendek meninggalkan seorang pemasok dan alasannya tidak disebut. Alasan itulah yang dibaca pemasok tersebut.',
+  'sourcing.refusal.stageDeadlinePast':
+    'Tidak dilanjutkan. Tenggat tanggapan tahap berikutnya sudah lewat. Pilih tanggal mulai hari ini.',
+  'sourcing.refusal.concludeReasonMissing':
+    'Tidak diakhiri. Sebutkan mengapa acara berakhir tanpa pemenang.',
   'sourcing.award.submitting': 'Memenangkan…',
   // — Lifecycle actions (batal / buka kembali) —
   'sourcing.lifecycle.actions': 'Tindakan siklus hidup',
@@ -839,6 +1165,9 @@ export const sourcingId: Record<string, string> = {
   'sourcing.toast.cancelled.desc': 'Acara sumber telah dibatalkan.',
   'sourcing.toast.closed.title': '{{rfqNumber}} ditutup untuk penawaran baru',
   'sourcing.toast.closed.desc': 'Penawaran ditutup. Tetapkan pemenang dari penawaran yang diterima, buka kembali, atau batalkan.',
+  'sourcing.toast.closed.titleStage': '{{rfqNumber}} ditutup untuk tanggapan baru',
+  'sourcing.toast.closed.descStage':
+    'Tahap {{stage}} ditutup. Lanjutkan dengan daftar pendek, buka kembali, atau akhiri tanpa pemenang.',
   'sourcing.toast.closeFailed.title': 'Penutupan gagal',
   'sourcing.toast.closeFailed.default': 'Penawaran tidak dapat ditutup.',
   'sourcing.toast.closeFailed.dispatch': 'Penutupan tidak dapat dikirim.',

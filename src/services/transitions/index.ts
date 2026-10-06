@@ -30,6 +30,7 @@ export { invoiceFlow } from './flows/invoice.flow';
 export { invoiceMatchFlow } from './flows/invoiceMatch.flow';
 export { rfqFlow } from './flows/rfq.flow';
 export { quotationFlow } from './flows/quotation.flow';
+export { stageResponseFlow } from './flows/stageResponse.flow';
 export { shipmentFlow } from './flows/shipment.flow';
 export { contractFlow } from './flows/contract.flow';
 export { obligationFlow } from './flows/obligation.flow';
@@ -73,6 +74,7 @@ import { invoiceFlow } from './flows/invoice.flow';
 import { invoiceMatchFlow } from './flows/invoiceMatch.flow';
 import { rfqFlow } from './flows/rfq.flow';
 import { quotationFlow } from './flows/quotation.flow';
+import { stageResponseFlow } from './flows/stageResponse.flow';
 import { shipmentFlow } from './flows/shipment.flow';
 import { contractFlow } from './flows/contract.flow';
 import { obligationFlow } from './flows/obligation.flow';
@@ -103,6 +105,7 @@ flowRegistry.register(invoiceFlow); // Step 4 (iii) — Invoice (DR-7 canonical)
 flowRegistry.register(invoiceMatchFlow); // Step 4 (iii) — Invoice match sub-flow (census G2)
 flowRegistry.register(rfqFlow); // Step 4 (iv) — RFQ (cascade source: t_rfq_award)
 flowRegistry.register(quotationFlow); // Step 4 (iv) — Quotation (cascade targets: award/reject)
+flowRegistry.register(stageResponseFlow); // RFx-1 — a supplier's answer at an RFI / RFP stage
 // F0.4 — the 5 remaining lifecycle machines (census #2/#7/#8/#9/#10). Author-
 // unwired: inert registry data, NO CommandTarget, wired per Stage-2 surface
 // (FORK-2 hybrid). Phase 2′ exit: contract-complete, not behavior-complete.

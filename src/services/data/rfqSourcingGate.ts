@@ -60,6 +60,8 @@ import { mockSuppliers } from '../../data/mockSuppliers';
 import { SupplierStatus } from '../../types/supplier.types';
 import { quotationStore } from './mock/stores/quotationStore';
 import { rfqStore } from './mock/stores/rfqStore';
+import { stageResponseStore } from './mock/stores/stageResponseStore';
+import { stageOf, type RfqStage } from '../../data/rfqStage';
 import { BASE_CURRENCY, type BidCurrency } from '../../lib/currencyPolicy';
 import { pslStore } from './mock/stores/pslStore';
 import { pslStatusFor, suspendsCompetitiveBidding } from './pslSourcingSeam';
@@ -454,14 +456,37 @@ export interface QuotedEvent {
   readonly rfqNumber: string;
   readonly status: string;
   readonly responseDeadline: string;
+  /** RFx-1 — the stage the event is at (`stageOf`: RFQ when it states none). */
+  readonly stage: RfqStage;
 }
 
 /** The event a quotation names, or `null` when no such event exists. */
 export function quotedEventOf(rfqId: string): QuotedEvent | null {
   const rfq = rfqStore.get(rfqId);
   return rfq
-    ? { rfqNumber: rfq.rfqNumber, status: rfq.status, responseDeadline: rfq.responseDeadline }
+    ? {
+        rfqNumber: rfq.rfqNumber,
+        status: rfq.status,
+        responseDeadline: rfq.responseDeadline,
+        stage: stageOf(rfq),
+      }
     : null;
+}
+
+/**
+ * RFx-1 · the stage response `supplierId` already holds on `rfqId` AT `stage`,
+ * or `null`. Per stage: an answer to the RFI is not an answer to the RFP.
+ */
+export function stageResponseHeldBy(
+  rfqId: string,
+  stage: RfqStage,
+  supplierId: string,
+): string | null {
+  return (
+    stageResponseStore
+      .forRfq(rfqId)
+      .find((r) => r.stage === stage && r.supplierId === supplierId)?.id ?? null
+  );
 }
 
 /**

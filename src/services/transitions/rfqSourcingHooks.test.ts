@@ -85,6 +85,9 @@ const draftWith = async (invitedSupplierIds: string[], materialIds: string[] = [
       totalQty: 100,
       invitedSupplierIds,
       materialIds,
+      // RFx-1 — a draft with no response deadline is no longer publishable
+      // (`rfq_publish_deadline_current`); these probes are about the invitees.
+      responseDeadline: '2026-12-31',
     },
   });
   expect(res.status, res.reason).toBe('done');

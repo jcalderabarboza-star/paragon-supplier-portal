@@ -73,6 +73,8 @@ export interface RfqCreateDraft {
   incoterms: string;
   paymentTerms: string;
   invitedSupplierIds: string[];
+  /** RFx-1 — the stage the event starts at. Absent = RFQ (`rfqStage.stageOf`). */
+  stage?: string;
   /**
    * C.2 — the requisition this RFQ is being raised FROM, when the buyer started
    * the wizard from one. **Optional, and the ABSENT case is the common one:**
@@ -242,6 +244,7 @@ export function buildRfqCreatePayload(
       : { estimatedValue: numbers.estimatedValue }),
     incoterms: terms.incoterms,
     paymentTerms: terms.paymentTerms,
+    ...(terms.stage ? { stage: terms.stage } : {}),
     // ⚠️ C.2 — EMITTED ONLY WHEN PRESENT, the same conditional shape as
     // `estimatedValue` above and for a sharper reason: C.1's resolver branches on
     // whether this key is a non-empty string, and an RFQ raised from no

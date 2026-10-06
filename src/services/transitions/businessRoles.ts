@@ -150,6 +150,10 @@ const LANE_BUNDLES = Object.freeze({
     // vary by value, plant, category or date without minting a role per band.
     procurement: Object.freeze([
       'rfq:create', 'rfq:publish', 'rfq:close', 'rfq:award', 'rfq:fx-pin', 'rfq:cancel', 'rfq:reopen',
+      // RFx-1 — narrowing the field and ending an event with no award are the
+      // same authority as awarding it (operator ruling: the stage verbs are
+      // procurement's).
+      'rfq:advance', 'rfq:conclude',
       'quotation:review',
       'contract:draft', 'contract:activate', 'contract:renew', 'contract:terminate',
       'obligation:track', 'obligation:complete',
@@ -429,6 +433,8 @@ const LANE_BUNDLES = Object.freeze({
     // talks to.
     commercial: Object.freeze([
       'quotation:submit',
+      // RFx-1 — answering an RFI or an RFP is the same person's act as quoting.
+      'stageresponse:submit',
       'requirementresponse:submit',
     ]),
     // ── FULFILMENT — everything downstream of a placed order ────────────────

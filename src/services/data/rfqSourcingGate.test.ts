@@ -215,6 +215,8 @@ describe('⚠️ THE ORDERING — eligibility decides, THEN the count is taken',
       POLICY_HOOKS.RFQ_ACTOR_ATTRIBUTED,
       POLICY_HOOKS.RFQ_PUBLISH_INVITEES_ELIGIBLE,
       POLICY_HOOKS.RFQ_PUBLISH_COMPETITION,
+      // RFx-1 — appended, so the three positions above are where they were.
+      POLICY_HOOKS.RFQ_PUBLISH_DEADLINE_CURRENT,
     ]);
   });
 });
