@@ -231,6 +231,15 @@ export const RfpRanking: React.FC<{
             <tr className="bg-bg-hover text-left">
               <th scope="col" className={th}>{t('sourcing.rfp.ranking.rank')}</th>
               <th scope="col" className={`${th} border-l`}>{t('sourcing.rfi.matrix.supplier')}</th>
+              {/* The total sits beside the name: it is what the row is read
+                  for, and the criteria scroll under a narrow panel. */}
+              <th scope="col" className={`${th} border-l`}>{t('sourcing.rfp.ranking.total')}</th>
+              {grouped &&
+                RFP_CRITERION_GROUPS.map((g) => (
+                  <th key={g} scope="col" className={`${th} border-l`}>
+                    {t(`sourcing.rfp.group.${g}`)}
+                  </th>
+                ))}
               {criteria.map((c, i) => (
                 <th
                   key={c.id}
@@ -246,13 +255,6 @@ export const RfpRanking: React.FC<{
                   </span>
                 </th>
               ))}
-              {grouped &&
-                RFP_CRITERION_GROUPS.map((g) => (
-                  <th key={g} scope="col" className={`${th} border-l`}>
-                    {t(`sourcing.rfp.group.${g}`)}
-                  </th>
-                ))}
-              <th scope="col" className={`${th} border-l`}>{t('sourcing.rfp.ranking.total')}</th>
             </tr>
           </thead>
           <tbody>
@@ -279,14 +281,11 @@ export const RfpRanking: React.FC<{
                     )}
                   </span>
                 </th>
-                {criteria.map((c) => {
-                  const avg = criterionAverageOf(sheets, r.supplierId, c.id);
-                  return (
-                    <td key={c.id} className={td} data-testid={`rfp-ranking-cell-${r.supplierId}-${c.id}`}>
-                      <span className="font-mono text-data-navy">{avg === null ? '—' : scoreText(avg)}</span>
-                    </td>
-                  );
-                })}
+                <td className={`${td} font-semibold`} data-testid={`rfp-ranking-total-${r.supplierId}`}>
+                  <span className="font-mono text-data-navy">
+                    {r.total === null ? '—' : scoreText(r.total)}
+                  </span>
+                </td>
                 {grouped &&
                   RFP_CRITERION_GROUPS.map((g) => {
                     const part = groupTotalOf(criteria, sheets, r.supplierId, g);
@@ -296,11 +295,14 @@ export const RfpRanking: React.FC<{
                       </td>
                     );
                   })}
-                <td className={`${td} font-semibold`} data-testid={`rfp-ranking-total-${r.supplierId}`}>
-                  <span className="font-mono text-data-navy">
-                    {r.total === null ? '—' : scoreText(r.total)}
-                  </span>
-                </td>
+                {criteria.map((c) => {
+                  const avg = criterionAverageOf(sheets, r.supplierId, c.id);
+                  return (
+                    <td key={c.id} className={td} data-testid={`rfp-ranking-cell-${r.supplierId}-${c.id}`}>
+                      <span className="font-mono text-data-navy">{avg === null ? '—' : scoreText(avg)}</span>
+                    </td>
+                  );
+                })}
               </tr>
             ))}
           </tbody>
