@@ -17,6 +17,7 @@ import {
   type RfiAnswers,
   type RfiQuestion,
 } from '../../data/rfiQuestionnaire';
+import { criterionLabel, type RfpCriterion } from '../../data/rfpEvaluation';
 
 /**
  * What the form holds per question while it is being typed: the ticked options
@@ -87,11 +88,17 @@ export const namedQuestions = (
   some: readonly RfiQuestion[],
 ): string => some.map((q) => `${questionLabel(all.indexOf(q) + 1)} “${q.prompt}”`).join('; ');
 
+/** `C2 “Quality system”` for each criterion, as a refusal names them (RFx-3). */
+export const namedCriteria = (
+  all: readonly RfpCriterion[],
+  some: readonly RfpCriterion[],
+): string => some.map((c) => `${criterionLabel(all.indexOf(c) + 1)} “${c.name}”`).join('; ');
+
 /**
  * The refusals of a stage response, in the supplier's own words. Keyed on the
  * HOOK (`refusedByPolicy`), never on the text inside its reason: the machine's
- * sentence names ids and is for the audit trail. The four RFx-1 checks and the
- * three RFx-2 ones, one sentence each.
+ * sentence names ids and is for the audit trail. The four RFx-1 checks, the
+ * three RFx-2 ones and the two RFx-3 ones, one sentence each.
  */
 export function interestRefusalKey(reason: string | undefined): string | null {
   if (refusedByPolicy(reason, POLICY_HOOKS.STAGE_RESPONSE_EVENT_OPEN)) {
@@ -115,8 +122,18 @@ export function interestRefusalKey(reason: string | undefined): string | null {
   if (refusedByPolicy(reason, POLICY_HOOKS.STAGE_RESPONSE_REQUIRED_ANSWERED)) {
     return 'rfqs.refusal.requiredUnanswered';
   }
+  if (refusedByPolicy(reason, POLICY_HOOKS.STAGE_RESPONSE_PROPOSAL_WELL_FORMED)) {
+    return 'rfqs.refusal.proposalInvalid';
+  }
+  if (refusedByPolicy(reason, POLICY_HOOKS.STAGE_RESPONSE_CRITERIA_ANSWERED)) {
+    return 'rfqs.refusal.criteriaUnanswered';
+  }
   return null;
 }
+
+/** Was this the "a required criterion has no response" refusal? The form marks them. */
+export const refusedForCriteria = (reason: string | undefined): boolean =>
+  refusedByPolicy(reason, POLICY_HOOKS.STAGE_RESPONSE_CRITERIA_ANSWERED);
 
 /** Was this the "a required question is unanswered" refusal? The form marks them. */
 export const refusedForRequired = (reason: string | undefined): boolean =>

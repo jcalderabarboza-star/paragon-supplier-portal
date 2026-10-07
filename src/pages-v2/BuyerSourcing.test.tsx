@@ -193,7 +193,7 @@ describe('BuyerSourcing — the minimum order quantity reaches the comparison', 
 describe('BuyerSourcing — the RFQ wizard numerics are text, so the parser is load-bearing', () => {
   const openWizard = async () => {
     renderWithProviders(<BuyerSourcing />);
-    fireEvent.click(await screen.findByText('New RFQ'));
+    fireEvent.click(await screen.findByText('New sourcing event'));
     return {
       qty: await screen.findByLabelText('Total quantity'),
       budget: await screen.findByLabelText('Estimated budget (IDR)'),

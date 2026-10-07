@@ -13,6 +13,7 @@
 // ────────────────────────────────────────────────────────────────────────────
 
 import type { RfiAnswers } from './rfiQuestionnaire';
+import type { RfpProposal } from './rfpEvaluation';
 
 export type RfqStage = 'RFI' | 'RFP' | 'RFQ';
 
@@ -76,6 +77,10 @@ export interface StageResponse {
   readonly status?: StageResponseStatus;
   /** RFx-2 · the answers to the event's RFI questionnaire, keyed by question id. */
   readonly answers?: RfiAnswers;
+  /** RFx-3 · the proposal at an RFP that sets criteria: one text per criterion id. */
+  readonly proposal?: RfpProposal;
+  /** RFx-3 · the NAMES of the documents the proposal refers to. No file is kept. */
+  readonly documents?: readonly string[];
 }
 
 /** RFx-2 · is this row an answer the buyer reads? A row that states no status is. */

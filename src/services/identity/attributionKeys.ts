@@ -90,6 +90,11 @@ export const ATTRIBUTION_KEYS: readonly string[] = Object.freeze([
   'publishedBy',
   'rejectedBy',
   'releasedBy',
+  // RFx-3 — `ProposalScoreSheet.scoredBy`, the evaluator of a score sheet. The
+  // RFQ target writes it from `scope.actor`; a payload carrying it is a caller
+  // naming whose sheet to write, which is how one evaluator would reach
+  // another's scores.
+  'scoredBy',
   'setBy',
   'submittedBy',
 ]);

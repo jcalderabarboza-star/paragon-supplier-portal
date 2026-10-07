@@ -115,6 +115,16 @@ export const POLICY_HOOKS = {
   /** Stage response, at submit only: every REQUIRED question of the event's
    *  RFI questionnaire is answered. The refusal names each one left out. */
   STAGE_RESPONSE_REQUIRED_ANSWERED: 'stage_response_required_answered',
+  // RFx-3 · THE PROPOSAL, at an RFP that sets criteria. The two above, one
+  // stage on: the same split of "is it well-formed" (a draft too) from "is it
+  // complete" (at submit only).
+  /** Stage response: every stated proposal response answers a criterion of the
+   *  event and is text, and the documents are a list of names. At a stage that
+   *  sets no criteria, a response or a document name is refused. */
+  STAGE_RESPONSE_PROPOSAL_WELL_FORMED: 'stage_response_proposal_well_formed',
+  /** Stage response, at submit only: every REQUIRED criterion of the event's
+   *  RFP has a response. The refusal names each one left out. */
+  STAGE_RESPONSE_CRITERIA_ANSWERED: 'stage_response_criteria_answered',
   /** RFQ FX pin (2e-c-3): the recorded basis must be WELL-FORMED — a permitted
    *  non-base quote currency, a finite positive rate, a readable vintage and a
    *  known source. A malformed pin is worse than no pin: an absent one refuses
@@ -604,6 +614,34 @@ export const POLICY_HOOKS = {
    *  takes one, naming one of the question's own answers, on a required
    *  question. An empty list is well-formed: it removes the questionnaire. */
   RFQ_QUESTIONNAIRE_WELL_FORMED: 'rfq_questionnaire_well_formed',
+  // RFx-3 · THE RFP EVALUATION CRITERIA, on a draft event.
+  /** RFQ criteria: the event's path has an RFP stage (it starts at RFI or at
+   *  RFP). An event that starts at RFQ never weighs a proposal. */
+  RFQ_CRITERIA_ON_RFP_PATH: 'rfq_criteria_on_rfp_path',
+  /** RFQ criteria: `criteria` is a list a proposal can be weighed on — each
+   *  with an id of its own, a name, a weight above 0 and at most 100, and a
+   *  group that is technical, commercial or absent. An empty list is
+   *  well-formed: it removes the criteria. The SUM is the next hook's. */
+  RFQ_CRITERIA_WELL_FORMED: 'rfq_criteria_well_formed',
+  /** RFQ criteria: the weights sum to exactly 100. Split from well-formedness
+   *  because the remedy differs: nothing is wrong with any one criterion. */
+  RFQ_CRITERIA_WEIGHTS_TOTAL: 'rfq_criteria_weights_total',
+  // RFx-3 · SCORING A PROPOSAL. Five hooks, one remedy each, in the order a
+  // reader needs them: who, whether scoring is still open, whether this is the
+  // stage, whether there is a proposal, whether the sheet is whole.
+  /** RFQ score: the seat names a person. A score is an evaluator's judgement
+   *  and is kept against the person who made it. */
+  RFQ_SCORE_EVALUATOR_NAMED: 'rfq_score_evaluator_named',
+  /** RFQ score: the event has not advanced past its RFP stage. Once it has,
+   *  the scores are what the shortlist was chosen on and do not move. */
+  RFQ_SCORE_NOT_LOCKED: 'rfq_score_not_locked',
+  /** RFQ score: the event is at its RFP stage. */
+  RFQ_SCORE_AT_RFP_STAGE: 'rfq_score_at_rfp_stage',
+  /** RFQ score: the supplier named submitted a proposal at this RFP stage. */
+  RFQ_SCORE_PROPOSAL_HELD: 'rfq_score_proposal_held',
+  /** RFQ score: the sheet is whole — every criterion of the event scored once,
+   *  each a whole number from 1 to 5, a comment being text. */
+  RFQ_SCORE_SHEET_WELL_FORMED: 'rfq_score_sheet_well_formed',
 
   // ── PSL P3 · THE GOVERNANCE VERBS ─────────────────────────────────────────
   //

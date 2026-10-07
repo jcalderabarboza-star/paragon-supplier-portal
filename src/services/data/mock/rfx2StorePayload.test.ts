@@ -134,6 +134,22 @@ const GUARDED: readonly Guarded[] = [
     foreign: { questions: [{ id: 'q1', prompt: 'Smuggled?', type: 'yes_no', required: true }] },
     read: (r) => r.questionnaire,
   },
+  {
+    // RFx-3 — the RFP criteria are written on a Draft only, by their own verb.
+    name: 'the evaluation criteria',
+    owner: 't_rfq_criteria_set',
+    foreign: { criteria: [{ id: 'c1', name: 'Smuggled', weight: 100, required: true }] },
+    read: (r) => r.criteria,
+  },
+  {
+    // RFx-3 — a score sheet is written by the score verb only. The foreign
+    // sheet is a whole, well-formed one for the walk's own criterion, so only
+    // the verb — not a malformed payload — is what keeps it out.
+    name: 'the score sheets',
+    owner: 't_rfq_proposal_score',
+    foreign: { supplierId: 'sup-002', scores: [{ criterionId: 'c1', score: 1 }] },
+    read: (r) => r.proposalScores,
+  },
 ];
 
 // ── One walk per verb: an event the verb is legal on, and its own payload ───
@@ -166,8 +182,34 @@ const closedRfi = async (): Promise<string> => {
   return id;
 };
 
+/** A closed RFP with one criterion and a proposal from each of the three. */
+const closedRfp = async (): Promise<string> => {
+  const id = await raise('RFP');
+  await ok(rfqVerb('t_rfq_criteria_set', id, { criteria: [{ id: 'c1', name: 'Fit', weight: 100, required: true }] }));
+  await ok(rfqVerb('t_rfq_publish', id));
+  for (const s of THREE) {
+    await ok(
+      svc.dispatch(supplier(s), {
+        transitionId: 't_stageresponse_submit',
+        entity: 'stageResponse',
+        payload: { rfqId: id, supplierId: s, proposal: { c1: 'We fit.' } },
+      }),
+    );
+  }
+  await ok(rfqVerb('t_rfq_close', id));
+  return id;
+};
+
 let quotedId = '';
 const WALKS: Readonly<Record<string, Walk>> = {
+  t_rfq_criteria_set: {
+    setup: () => raise('RFP'),
+    payload: () => ({ criteria: [{ id: 'c1', name: 'Fit', weight: 100, required: true }] }),
+  },
+  t_rfq_proposal_score: {
+    setup: closedRfp,
+    payload: () => ({ supplierId: 'sup-005', scores: [{ criterionId: 'c1', score: 4 }] }),
+  },
   t_rfq_questionnaire_set: {
     setup: () => raise('RFI'),
     payload: () => ({

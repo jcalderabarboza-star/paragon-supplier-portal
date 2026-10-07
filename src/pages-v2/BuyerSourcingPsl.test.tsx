@@ -88,7 +88,7 @@ const openInviteStep = async (material = 'PET Bottle 100ml'): Promise<void> => {
   fireEvent.click(screen.getByRole('button', { name: nextLabel }));
 };
 
-let newRfqLabel = 'New RFQ';
+let newRfqLabel = 'New sourcing event';
 let qtyLabel: RegExp = /Total quantity/i;
 let nextLabel: RegExp = /^Next$/i;
 
@@ -190,14 +190,14 @@ describe('⚠️ BuyerSourcing — NOTHING IS GATED. P1 informs; P2 decides.', (
 describe('BuyerSourcing — the invite step shows PSL (ID)', () => {
   afterEach(async () => {
     await i18n.changeLanguage('en');
-    newRfqLabel = 'New RFQ';
+    newRfqLabel = 'New sourcing event';
     qtyLabel = /Total quantity/i;
     nextLabel = /^Next$/i;
   });
 
   it('⚠️ the hint and the cells localise, with no EN literal left', async () => {
     await i18n.changeLanguage('id');
-    newRfqLabel = 'RFQ Baru';
+    newRfqLabel = 'Acara sumber baru';
     qtyLabel = /Total kuantitas/i;
     nextLabel = /^Berikutnya$/i;
     await openInviteStep();

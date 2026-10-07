@@ -1,6 +1,7 @@
 import type { FxPin } from '../lib/fxPin';
 import type { RfqStage, StageAdvance, StageResponse } from './rfqStage';
 import type { RfiQuestion } from './rfiQuestionnaire';
+import type { ProposalScoreSheet, RfpCriterion } from './rfpEvaluation';
 import { shiftFields, shiftIso } from '../services/data/fixturePresent';
 import { mockQuotations } from './mockQuotations';
 import { mockStageResponses } from './mockStageResponses';
@@ -141,6 +142,19 @@ export interface RFQ {
    * A supplier's read carries the questions without their knock-out answers.
    */
   questionnaire?: readonly RfiQuestion[];
+  /**
+   * RFx-3 · THE RFP EVALUATION CRITERIA (`rfpEvaluation.ts`) — what a proposal
+   * is weighed on at this event's RFP stage, each with a weight; the weights
+   * sum to 100. Written by `t_rfq_criteria_set` while the event is a Draft and
+   * by nothing else. Absent = the RFP takes interest and a note, as at RFx-1.
+   */
+  criteria?: readonly RfpCriterion[];
+  /**
+   * RFx-3 · THE EVALUATORS' SCORE SHEETS — one per (supplier, evaluator),
+   * written by `t_rfq_proposal_score` and by nothing else. THE BUYER'S ONLY:
+   * a supplier's read never carries it (`rfqSupplierView.ts`).
+   */
+  proposalScores?: readonly ProposalScoreSheet[];
   /**
    * RFx-2 · DERIVED AT READ, NEVER STORED, AND ON A SUPPLIER'S READ ONLY — the
    * reader's own unsent draft at the stage the event is at. The buyer's read

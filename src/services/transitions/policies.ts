@@ -7,7 +7,28 @@
 
 import type { PurchaseOrder, Invoice, IntakeLine } from '../data/types';
 import { RFQ_CATEGORIES, isRfqCategoryMember, type RFQ } from '../../data/mockRfqs';
-import { RFQ_STAGES, isRfqStage, nextStageOf, stageOf, startStageOf } from '../../data/rfqStage';
+import {
+  RFQ_STAGES,
+  isRfqStage,
+  nextStageOf,
+  stageOf,
+  stagePathOf,
+  startStageOf,
+} from '../../data/rfqStage';
+import {
+  SCORE_MAX,
+  SCORE_MIN,
+  criteriaProblemOf,
+  criterionLabel,
+  normalizeProposal,
+  proposalProblemOf,
+  scoresProblemOf,
+  unansweredCriteriaOf,
+  weightsProblemOf,
+  type CriterionProblemCode,
+  type ProposalProblemCode,
+  type ScoreProblemCode,
+} from '../../data/rfpEvaluation';
 import {
   answersProblemOf,
   normalizeAnswers,
@@ -27,6 +48,7 @@ import {
   stageResponseHeldBy,
   stageResponseById,
   rfiQuestionsFor,
+  rfpCriteriaFor,
   quotationOwnerOf,
   quotedEventOf,
   rosterStatusOf,
@@ -1272,6 +1294,54 @@ bindPolicyHook(POLICY_HOOKS.STAGE_RESPONSE_REQUIRED_ANSWERED, (ctx) => {
   };
 });
 
+// — Stage response (RFx-3): the proposal, and the required criteria ————————————
+//
+// The criteria are `rfpCriteriaFor(event)`: the event's criteria while it is at
+// RFP, none at any other stage. So at RFI — and at an RFP that sets none — both
+// hooks pass a response that states no proposal, which is every response RFx-1
+// and RFx-2 ever recorded.
+const PROPOSAL_PROBLEM_TEXT: Readonly<Record<Exclude<ProposalProblemCode, 'UNKNOWN_CRITERION' | 'NOT_TEXT'>, string>> = {
+  NOT_A_MAP: 'the proposal is not a map of criterion id to response.',
+  DOCUMENTS_NOT_A_LIST: '`documents` is not a list of document names.',
+  DOCUMENT_NOT_A_NAME: 'a document is stated as something other than its name.',
+  DOCUMENTS_NOT_TAKEN: 'document names are stated, and the event takes no proposal at this stage.',
+};
+
+bindPolicyHook(POLICY_HOOKS.STAGE_RESPONSE_PROPOSAL_WELL_FORMED, (ctx) => {
+  const rfqId = responseRfqIdOf(ctx);
+  const criteria = rfpCriteriaFor(rfqId);
+  const problem = proposalProblemOf(criteria, ctx.payload.proposal, ctx.payload.documents);
+  if (problem === null) return { ok: true };
+  const event = quotedEventOf(rfqId);
+  const where = event ? event.rfqNumber : rfqId;
+  const detail =
+    problem.code === 'UNKNOWN_CRITERION'
+      ? criteria.length === 0
+        ? `'${problem.criterionId}' answers a criterion, and ${where} sets no criteria at this stage.`
+        : `'${problem.criterionId}' is not a criterion of ${where}.`
+      : problem.code === 'NOT_TEXT'
+        ? `the response to ${criterionLabel(problem.number)} ("${criteria[problem.number - 1].name}") is not text.`
+        : PROPOSAL_PROBLEM_TEXT[problem.code];
+  return { ok: false, reason: `PROPOSAL_INVALID: ${detail}` };
+});
+
+bindPolicyHook(POLICY_HOOKS.STAGE_RESPONSE_CRITERIA_ANSWERED, (ctx) => {
+  const criteria = rfpCriteriaFor(responseRfqIdOf(ctx));
+  // The proposal as the store would keep it: a blank is not a response.
+  const missing = unansweredCriteriaOf(criteria, normalizeProposal(criteria, ctx.payload.proposal));
+  if (missing.length === 0) return { ok: true };
+  const named = missing
+    .map((c) => `${criterionLabel(criteria.indexOf(c) + 1)} ("${c.name}")`)
+    .join(', ');
+  return {
+    ok: false,
+    reason:
+      `PROPOSAL_CRITERION_REQUIRED: ${named} ${missing.length === 1 ? 'is' : 'are'} required and ` +
+      'not answered. A proposal is submitted with a response to every required criterion; an ' +
+      'unfinished one is saved as a draft.',
+  };
+});
+
 // ── RFx-1 · THE STAGED EVENT ────────────────────────────────────────────────
 //
 // The stage is a field on the event (`data/rfqStage.ts`), so every hook below
@@ -1337,6 +1407,139 @@ bindPolicyHook(POLICY_HOOKS.RFQ_QUESTIONNAIRE_WELL_FORMED, ({ payload }) => {
     reason:
       `QUESTIONNAIRE_MALFORMED: ${problem.number === 0 ? '' : `${questionLabel(problem.number)} — `}` +
       `${problem.code}: ${QUESTION_PROBLEM_TEXT[problem.code]}`,
+  };
+});
+
+// — Criteria (RFx-3): on an event that has an RFP stage, well-formed, 100% ——————
+//
+// The verb is legal on a Draft only, so the event's path is the path from the
+// stage it STARTS at.
+bindPolicyHook(POLICY_HOOKS.RFQ_CRITERIA_ON_RFP_PATH, ({ entityId, target }) => {
+  const rfq = readRfq(target, entityId);
+  if (rfq === null || stagePathOf(rfq).includes('RFP')) return { ok: true };
+  return {
+    ok: false,
+    reason:
+      `CRITERIA_NO_RFP_STAGE: ${rfq.rfqNumber} starts at its ${startStageOf(rfq)} stage and has ` +
+      'no RFP stage. Evaluation criteria are what the RFP stage weighs a proposal on; raise the ' +
+      'event at RFI or RFP to set them.',
+  };
+});
+
+const CRITERION_PROBLEM_TEXT: Readonly<Record<CriterionProblemCode, string>> = {
+  NOT_A_LIST: '`criteria` is not a list. State the criteria, or an empty list to set none.',
+  ID_MISSING: 'it has no id. A proposal and a score are kept against the id.',
+  ID_DUPLICATE: 'its id is already used by an earlier criterion.',
+  NAME_MISSING: 'it has no name. A supplier cannot answer a criterion that names nothing.',
+  WEIGHT_INVALID:
+    'its weight is not a percentage above 0 and at most 100, stated to two decimals at most.',
+  GROUP_UNKNOWN: 'its group is not technical or commercial. State one of the two, or none.',
+};
+
+bindPolicyHook(POLICY_HOOKS.RFQ_CRITERIA_WELL_FORMED, ({ payload }) => {
+  const problem = criteriaProblemOf(payload.criteria);
+  if (problem === null) return { ok: true };
+  return {
+    ok: false,
+    reason:
+      `CRITERIA_MALFORMED: ${problem.number === 0 ? '' : `${criterionLabel(problem.number)} — `}` +
+      `${problem.code}: ${CRITERION_PROBLEM_TEXT[problem.code]}`,
+  };
+});
+
+bindPolicyHook(POLICY_HOOKS.RFQ_CRITERIA_WEIGHTS_TOTAL, ({ payload }) => {
+  // A malformed list is the hook above's to refuse; a sum over it means nothing.
+  if (!Array.isArray(payload.criteria) || criteriaProblemOf(payload.criteria) !== null) {
+    return { ok: true };
+  }
+  const problem = weightsProblemOf(payload.criteria);
+  if (problem === null) return { ok: true };
+  return {
+    ok: false,
+    reason:
+      `CRITERIA_WEIGHTS_NOT_100: the weights of the ${payload.criteria.length} criteria sum to ` +
+      `${problem.sum}%, not 100%. Change the weights until they sum to 100%.`,
+  };
+});
+
+// — Score (RFx-3): who, still open, this stage, a proposal, a whole sheet ——————
+bindPolicyHook(POLICY_HOOKS.RFQ_SCORE_EVALUATOR_NAMED, ({ scope }) => {
+  const actor = asActorAttribution(scope.actor);
+  if (actor && isAttributed(actor)) return { ok: true };
+  return {
+    ok: false,
+    reason:
+      'SCORE_EVALUATOR_UNATTRIBUTED: this seat carries no person, and a score is kept against ' +
+      'the evaluator who gave it. Adopt a sample user on the identity panel, then score again.',
+  };
+});
+
+bindPolicyHook(POLICY_HOOKS.RFQ_SCORE_NOT_LOCKED, ({ entityId, target }) => {
+  const rfq = readRfq(target, entityId);
+  const advance = rfq === null ? undefined : (rfq.stageHistory ?? []).find((a) => a.from === 'RFP');
+  if (rfq === null || advance === undefined) return { ok: true };
+  return {
+    ok: false,
+    reason:
+      `SCORES_LOCKED: ${rfq.rfqNumber} advanced from its RFP stage on ${advance.advancedAt}. ` +
+      'The scores are what that shortlist was chosen on and are locked.',
+  };
+});
+
+bindPolicyHook(POLICY_HOOKS.RFQ_SCORE_AT_RFP_STAGE, ({ entityId, target }) => {
+  const rfq = readRfq(target, entityId);
+  if (rfq === null || stageOf(rfq) === 'RFP') return { ok: true };
+  return {
+    ok: false,
+    reason:
+      `SCORE_STAGE_NOT_RFP: ${rfq.rfqNumber} is at its ${stageOf(rfq)} stage. Proposals are ` +
+      'scored at the RFP stage, once bidding on it is closed.',
+  };
+});
+
+bindPolicyHook(POLICY_HOOKS.RFQ_SCORE_PROPOSAL_HELD, ({ entityId, payload, target }) => {
+  const rfq = readRfq(target, entityId);
+  if (rfq === null) return { ok: true };
+  const supplierId = payloadText(payload, 'supplierId');
+  const held = (rfq.stageResponses ?? []).some(
+    (r) => r.stage === 'RFP' && r.supplierId === supplierId,
+  );
+  if (held) return { ok: true };
+  return {
+    ok: false,
+    reason:
+      `SCORE_NO_PROPOSAL: ${supplierId} submitted no proposal at the RFP stage of ` +
+      `${rfq.rfqNumber}. Only a submitted proposal is scored.`,
+  };
+});
+
+const SCORE_PROBLEM_TEXT: Readonly<Record<ScoreProblemCode, string>> = {
+  NO_CRITERIA: 'the event sets no evaluation criteria, so there is nothing to score against.',
+  NOT_A_LIST: '`scores` is not a list of one score per criterion.',
+  NOT_A_SCORE: 'an entry is not a score (a criterion id and a score).',
+  UNKNOWN_CRITERION: 'it scores a criterion the event does not set.',
+  CRITERION_TWICE: 'the criterion is scored twice on one sheet.',
+  OUT_OF_RANGE: `the score is not a whole number from ${SCORE_MIN} to ${SCORE_MAX}.`,
+  COMMENT_NOT_TEXT: 'the comment is not text.',
+  CRITERION_UNSCORED:
+    'the criterion has no score. A sheet scores every criterion; a total over some of them ' +
+    'cannot be compared with a total over all.',
+};
+
+bindPolicyHook(POLICY_HOOKS.RFQ_SCORE_SHEET_WELL_FORMED, ({ entityId, payload, target }) => {
+  const rfq = readRfq(target, entityId);
+  if (rfq === null) return { ok: true };
+  const problem = scoresProblemOf(rfq.criteria ?? [], payload.scores);
+  if (problem === null) return { ok: true };
+  const named =
+    problem.number > 0
+      ? `${criterionLabel(problem.number)} ("${(rfq.criteria ?? [])[problem.number - 1].name}") — `
+      : problem.criterionId !== ''
+        ? `'${problem.criterionId}' — `
+        : '';
+  return {
+    ok: false,
+    reason: `SCORE_SHEET_INVALID: ${named}${problem.code}: ${SCORE_PROBLEM_TEXT[problem.code]}`,
   };
 });
 
@@ -1427,7 +1630,9 @@ bindPolicyHook(POLICY_HOOKS.RFQ_ADVANCE_SHORTLIST_COMPETITIVE, ({ entityId, payl
     ok: false,
     reason:
       `SHORTLIST_UNDER_FLOOR: ${competition.eligible} eligible supplier(s) shortlisted, the ` +
-      `next stage needs at least ${COMPETITION_FLOOR_INVITEES}`,
+      `next stage needs at least ${COMPETITION_FLOOR_INVITEES}. Shortlist another supplier that ` +
+      'responded, reopen the stage so more of the invited suppliers can respond, or conclude the ' +
+      'event without an award. A supplier that was never invited is invited on a new event.',
   };
 });
 

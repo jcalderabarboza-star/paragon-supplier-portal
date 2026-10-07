@@ -593,7 +593,7 @@ describe('4 · the supplier answers the questionnaire', () => {
     renderWithProviders(<Rfqs />, { identity: as('sup-005') });
     const c = await card(ID);
     expect(within(c).getByTestId(`rfq-stage-content-note-${ID}`)).toHaveTextContent(
-      'At the RFP stage you record your interest and a note, and nothing else. The proposal is not built in this portal yet.',
+      'This event sets no evaluation criteria at its RFP stage. You record your interest and a note, and nothing else.',
     );
     expect(within(c).getByTestId(`rfq-interest-open-${ID}`)).toHaveTextContent('Record interest');
     fireEvent.click(within(c).getByTestId(`rfq-interest-open-${ID}`));

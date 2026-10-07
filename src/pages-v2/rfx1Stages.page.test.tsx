@@ -133,10 +133,11 @@ afterEach(async () => {
 describe('1 · the buyer’s board and panel show where an event is on its path', () => {
   it('a staged event carries its stage on the row; an event with no stages reads as it always did', async () => {
     renderWithProviders(<Sourcing />, { identity: BUYER_NAMED });
-    expect(within(await rowOf('RFQ-2026-018')).getByTestId('rfq-row-stage-rfq-018')).toHaveTextContent('RFP stage');
+    expect(within(await rowOf('RFQ-2026-018')).getByTestId('rfq-row-stage-rfq-018')).toHaveTextContent(/^RFP$/);
     expect(await rowOf('RFQ-2026-018')).toHaveTextContent('1 / 2');
-    // known-good control: a plain RFQ has no chip
-    expect(within(await rowOf('RFQ-2026-003')).queryByTestId('rfq-row-stage-rfq-003')).not.toBeInTheDocument();
+    // RFx-3 — the stage is a column on EVERY row: a plain RFQ says RFQ, where
+    // it used to say nothing. The control is that the two rows differ.
+    expect(within(await rowOf('RFQ-2026-003')).getByTestId('rfq-row-stage-rfq-003')).toHaveTextContent(/^RFQ$/);
   });
 
   it('the timeline: RFI done with the day it was left, RFP current, RFQ not started', async () => {
@@ -186,7 +187,7 @@ describe('1 · the buyer’s board and panel show where an event is on its path'
     const list = screen.getByTestId('rfq-stage-responses');
     expect(within(list).getByTestId('rfq-stage-content-note')).toHaveTextContent(
       // RFx-2 — the RFI questionnaire is built; the sentence says what is still not.
-      'At the RFI stage a supplier answers the event’s questionnaire — or, when the event asks none, records its interest and a note. At the RFP stage it records its interest and a note; the proposal and its scoring are not built yet.',
+      'At the RFI stage a supplier answers the event’s questionnaire — or, when the event asks none, records its interest and a note. At the RFP stage it submits a proposal against the event’s evaluation criteria — or, when the event sets none, records its interest and a note.',
     );
     expect(within(list).getByTestId('rfq-stage-response-count')).toHaveTextContent(
       '1 of 2 invited suppliers have responded at the RFP stage',
@@ -442,7 +443,7 @@ describe('5 · the wizard: the start stage, and a deadline that has passed', () 
   /** Fill step 1 and walk to the terms step. */
   const toTerms = async () => {
     renderWithProviders(<Sourcing />, { identity: BUYER_NAMED });
-    fireEvent.click(await screen.findByText('New RFQ'));
+    fireEvent.click(await screen.findByText('New sourcing event'));
     const selects = await screen.findAllByRole('combobox');
     const category = selects.find((el) =>
       Array.from((el as HTMLSelectElement).options).some((o) => o.value === 'Active Ingredients'),
@@ -529,8 +530,8 @@ describe('6 · the supplier: interest at RFI and RFP', () => {
     expect(within(c).getByText('RFP stage')).toBeInTheDocument();
     expect(within(c).getByTestId('rfq-stage-timeline-rfq-018-RFP')).toHaveAttribute('data-state', 'current');
     expect(within(c).getByTestId('rfq-stage-content-note-rfq-018')).toHaveTextContent(
-      // RFx-2 — at RFP the proposal is what is not built; the questionnaire is an RFI matter.
-      'At the RFP stage you record your interest and a note, and nothing else. The proposal is not built in this portal yet.',
+      // RFx-3 — the seeded RFP sets no criteria, and the card says that.
+      'This event sets no evaluation criteria at its RFP stage. You record your interest and a note, and nothing else.',
     );
     expect(within(c).getByTestId('rfq-interest-open-rfq-018')).toHaveTextContent('Record interest');
     // never the quote button: the machine refuses a quotation at this stage
@@ -696,14 +697,14 @@ describe('ID — the same surfaces in Indonesian', () => {
 
   it('the buyer’s panel: timeline, responses, the advance slot', async () => {
     renderWithProviders(<Sourcing />, { identity: BUYER_NAMED });
-    expect(within(await rowOf('RFQ-2026-018')).getByTestId('rfq-row-stage-rfq-018')).toHaveTextContent('Tahap RFP');
+    expect(within(await rowOf('RFQ-2026-018')).getByTestId('rfq-row-stage-rfq-018')).toHaveTextContent(/^RFP$/);
     await openRfq('RFQ-2026-018');
     expect(screen.getByTestId('rfq-stage-timeline-RFI')).toHaveTextContent('Permintaan informasi');
     expect(screen.getByTestId('rfq-stage-timeline-RFI')).toHaveTextContent('Dilanjutkan pada 24 Agu 2026');
     expect(screen.getByTestId('rfq-stage-timeline-RFP')).toHaveTextContent('Tahap saat ini');
     expect(screen.getByTestId('rfq-stage-advance-RFI')).toHaveTextContent('Tidak dilanjutkan:');
     expect(screen.getByTestId('rfq-stage-content-note')).toHaveTextContent(
-      'Pada tahap RFI, pemasok menjawab kuesioner acaranya — atau, bila acaranya tidak mengajukan kuesioner, mencatat minatnya dan satu catatan. Pada tahap RFP ia mencatat minatnya dan satu catatan; proposal dan penilaiannya belum dibangun.',
+      'Pada tahap RFI, pemasok menjawab kuesioner acaranya — atau, bila acaranya tidak mengajukan kuesioner, mencatat minatnya dan satu catatan. Pada tahap RFP ia mengirim proposal atas kriteria evaluasi acaranya — atau, bila acaranya tidak menetapkan kriteria, mencatat minatnya dan satu catatan.',
     );
     expect(screen.getByTestId('rfq-stage-response-count')).toHaveTextContent(
       '1 dari 2 pemasok yang diundang telah menanggapi pada tahap RFP',
@@ -757,7 +758,7 @@ describe('ID — the same surfaces in Indonesian', () => {
     const c = await card('RFQ-2026-018');
     expect(within(c).getByText('Tahap RFP')).toBeInTheDocument();
     expect(within(c).getByTestId('rfq-stage-content-note-rfq-018')).toHaveTextContent(
-      'Pada tahap RFP Anda hanya mencatat minat dan satu catatan. Proposal belum dibangun di portal ini.',
+      'Acara ini tidak menetapkan kriteria evaluasi pada tahap RFP. Anda hanya mencatat minat dan satu catatan.',
     );
     expect(within(c).getByTestId('rfq-interest-open-rfq-018')).toHaveTextContent('Catat minat');
     first.unmount();

@@ -66,7 +66,7 @@ const openMaterialStep = async (
   material = 'PET Bottle 100ml',
 ): Promise<void> => {
   renderWithProviders(<BuyerSourcing />, { identity });
-  fireEvent.click(await screen.findByText('New RFQ'));
+  fireEvent.click(await screen.findByText('New sourcing event'));
   const selects = await screen.findAllByRole('combobox');
   const select = selects.find((el) =>
     Array.from((el as HTMLSelectElement).options).some((o) => o.value === category),
@@ -168,7 +168,7 @@ describe('the offer is gated on its own atom', () => {
     // stops it first, which is the correct order.
     renderWithProviders(<BuyerSourcing />, { identity: NO_PROCUREMENT });
     expect(await screen.findByTestId('handoff-rfq-create')).toBeInTheDocument();
-    expect(screen.queryByText('New RFQ')).not.toBeInTheDocument();
+    expect(screen.queryByText('New sourcing event')).not.toBeInTheDocument();
     expect(screen.queryByTestId('material-request-offer')).not.toBeInTheDocument();
   });
 });

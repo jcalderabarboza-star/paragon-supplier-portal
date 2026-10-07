@@ -66,7 +66,14 @@ import type { RFQ, RFQStatus, RFQCategory } from '../../../data/mockRfqs';
 import { isRfqStage, nextStageOf, stageOf, stageResponseStatusOf } from '../../../data/rfqStage';
 import type { StageResponse } from '../../../data/rfqStage';
 import { normalizeAnswers, normalizeQuestionnaire } from '../../../data/rfiQuestionnaire';
-import { rfiQuestionsFor } from '../rfqSourcingGate';
+import {
+  evaluatorIdOf,
+  normalizeCriteria,
+  normalizeDocuments,
+  normalizeProposal,
+  normalizeScores,
+} from '../../../data/rfpEvaluation';
+import { rfiQuestionsFor, rfpCriteriaFor } from '../rfqSourcingGate';
 import type { CodeLessReason } from '../../../data/materialCatalogReason';
 import type { Quotation, QuotationStatus } from '../../../data/mockQuotations';
 import { BASE_CURRENCY, type BidCurrency } from '../../../lib/currencyPolicy';
@@ -544,6 +551,58 @@ function withQuestionnaire(
   return questions.length === 0 ? rest : { ...rest, questionnaire: questions };
 }
 
+/**
+ * RFx-3 · what `t_rfq_criteria_set` writes on the event, and the event
+ * untouched for every other verb. The two criteria hooks have already proved
+ * the list well-formed and its weights 100; it is stored normalised. An EMPTY
+ * list removes the field, as an empty questionnaire does.
+ */
+function withCriteria(verb: string | undefined, payload: Record<string, unknown>, next: RFQ): RFQ {
+  if (verb !== 't_rfq_criteria_set' || !Array.isArray(payload.criteria)) return next;
+  const { criteria: _replaced, ...rest } = next;
+  const criteria = normalizeCriteria(payload.criteria);
+  return criteria.length === 0 ? rest : { ...rest, criteria };
+}
+
+/**
+ * RFx-3 · what `t_rfq_proposal_score` writes on the event, and the event
+ * untouched for every other verb.
+ *
+ * THE SHEET IS FOUND BY WHO IS ACTING. The evaluator is `scope.actor` — the
+ * seat's own person, never a payload value — and the sheet replaced is the one
+ * that person already wrote for this supplier. No other sheet is read for
+ * writing, so an evaluator cannot change another's score by any payload: there
+ * is no key that names one. A seat that names nobody writes nothing (the
+ * evaluator hook has already refused it).
+ */
+function withScoreSheet(
+  verb: string | undefined,
+  payload: Record<string, unknown>,
+  scope: QueryScope,
+  next: RFQ,
+): RFQ {
+  if (verb !== 't_rfq_proposal_score' || !Array.isArray(payload.scores)) return next;
+  const actor = asActorAttribution(scope.actor);
+  if (!actor || actor.kind !== 'RESOLVED') return next;
+  const supplierId = String(payload.supplierId);
+  const evaluatorId = actor.person.personId;
+  const others = (next.proposalScores ?? []).filter(
+    (s) => !(s.supplierId === supplierId && evaluatorIdOf(s) === evaluatorId),
+  );
+  return {
+    ...next,
+    proposalScores: [
+      ...others,
+      {
+        supplierId,
+        scoredBy: actor,
+        scoredAt: new Date().toISOString().slice(0, 10),
+        scores: normalizeScores(next.criteria ?? [], payload.scores),
+      },
+    ],
+  };
+}
+
 const rfqTarget: CommandTarget = {
   readState: (id) => rfqStore.get(id)?.status ?? null,
   readScopeOwner: () => null,
@@ -558,8 +617,8 @@ const rfqTarget: CommandTarget = {
   // the branch of the verb whose hooks have just passed. An unnamed verb writes
   // the state and nothing else. `rfx2StorePayload.test.ts` derives every
   // (verb, field) pair from the flow.
-  applyTransition: (id, toState, payload, _scope, verb) => {
-    rfqStore.update(id, (r) => withQuestionnaire(verb, payload, {
+  applyTransition: (id, toState, payload, scope, verb) => {
+    rfqStore.update(id, (r) => withScoreSheet(verb, payload, scope, withCriteria(verb, payload, withQuestionnaire(verb, payload, {
       ...r,
       status: toState as RFQStatus,
       // Award records the chosen quote + supplier ONLY. Nothing downstream is
@@ -621,7 +680,7 @@ const rfqTarget: CommandTarget = {
               },
             ],
           }),
-    }));
+    }))));
   },
   // Creation (Phase A/2 — retires extraRfqs). Buyer-only: `creationOwner: () =>
   // null` ⇒ a buyer passes creation-scope (the dispatcher only scopes suppliers)
@@ -698,12 +757,20 @@ const rfqTarget: CommandTarget = {
 function responseContentOf(
   rfqId: string,
   payload: Record<string, unknown>,
-): Pick<StageResponse, 'note' | 'answers'> {
+): Pick<StageResponse, 'note' | 'answers' | 'proposal' | 'documents'> {
   const note = typeof payload.note === 'string' ? payload.note.trim() : '';
   const answers = normalizeAnswers(rfiQuestionsFor(rfqId), payload.answers);
+  // RFx-3 — the proposal, against the criteria the event sets at this moment
+  // (`rfpCriteriaFor`: none unless it is at RFP). Document names are kept only
+  // where a proposal is taken; the proposal hook has refused them elsewhere.
+  const criteria = rfpCriteriaFor(rfqId);
+  const proposal = normalizeProposal(criteria, payload.proposal);
+  const documents = criteria.length > 0 ? normalizeDocuments(payload.documents) : [];
   return {
     ...(note ? { note } : {}),
     ...(Object.keys(answers).length > 0 ? { answers } : {}),
+    ...(Object.keys(proposal).length > 0 ? { proposal } : {}),
+    ...(documents.length > 0 ? { documents } : {}),
   };
 }
 

@@ -103,6 +103,32 @@ export const rfqFlow: FlowDefinition = {
       version: 1,
     },
     {
+      // RFx-3 — THE BUYER SETS THE RFP EVALUATION CRITERIA ON A DRAFT. The
+      // whole list is stated each time (`criteria`); an empty list takes them
+      // off. STATE-PRESERVING and from `Draft` ONLY, for the questionnaire's
+      // reason: once the event is published suppliers are proposing against
+      // these, and a weight changed under them would rank proposals on a rule
+      // nobody was shown. It carries `rfq:create`, as the questionnaire does.
+      id: 't_rfq_criteria_set',
+      from: ['Draft'],
+      to: 'Draft',
+      statePreserving: true,
+      trigger: 'user',
+      requiredRole: 'rfq:create',
+      // Not a required field, for the reason `questions` is not: an empty list
+      // is how the criteria are removed, and `isEmpty` reads it as missing.
+      requiredFields: [],
+      // The ORDER is the order a reader needs: a list that is not a list of
+      // criteria is named before its sum is, since a sum over it means nothing.
+      policyHooks: [
+        POLICY_HOOKS.RFQ_CRITERIA_ON_RFP_PATH,
+        POLICY_HOOKS.RFQ_CRITERIA_WELL_FORMED,
+        POLICY_HOOKS.RFQ_CRITERIA_WEIGHTS_TOTAL,
+      ],
+      surfaceable: { surfaced: true },
+      version: 1,
+    },
+    {
       // Buyer publishes a drafted RFQ to its invited suppliers.
       //
       // ⚠️ PF-1a — WIRED, and it is the verb that now makes a sourcing event
@@ -211,6 +237,40 @@ export const rfqFlow: FlowDefinition = {
       // distinction an auditor cares about.
       requiredFields: ['quote', 'rate', 'asOf', 'source'],
       policyHooks: [POLICY_HOOKS.RFQ_FX_PIN_WELL_FORMED],
+      surfaceable: { surfaced: true },
+      version: 1,
+    },
+    {
+      // RFx-3 — AN EVALUATOR SCORES ONE SUPPLIER'S PROPOSAL. The payload is the
+      // supplier and a WHOLE sheet (`scores`: one per criterion, 1 to 5, with a
+      // comment). WHO scored is the seat's own person, written by the target
+      // from the session: the payload cannot name an evaluator (`scoredBy` is
+      // an attribution key the dispatcher refuses), so a person replaces their
+      // own sheet and reaches nobody else's.
+      //
+      // FROM `Closed` ONLY, on the advance's own ground: proposals are weighed
+      // once they have stopped arriving, so no evaluator scores a field that is
+      // still filling. STATE-PRESERVING — a score is not a step in the machine.
+      // Once the event advances, `rfq_score_not_locked` refuses: the scores are
+      // what the shortlist was chosen on.
+      //
+      // A role of its own (`rfq:evaluate`): judging a proposal and deciding who
+      // goes forward are different authorities, as recording a rate and
+      // awarding are.
+      id: 't_rfq_proposal_score',
+      from: ['Closed'],
+      to: 'Closed',
+      statePreserving: true,
+      trigger: 'user',
+      requiredRole: 'rfq:evaluate',
+      requiredFields: ['supplierId', 'scores'],
+      policyHooks: [
+        POLICY_HOOKS.RFQ_SCORE_EVALUATOR_NAMED,
+        POLICY_HOOKS.RFQ_SCORE_NOT_LOCKED,
+        POLICY_HOOKS.RFQ_SCORE_AT_RFP_STAGE,
+        POLICY_HOOKS.RFQ_SCORE_PROPOSAL_HELD,
+        POLICY_HOOKS.RFQ_SCORE_SHEET_WELL_FORMED,
+      ],
       surfaceable: { surfaced: true },
       version: 1,
     },

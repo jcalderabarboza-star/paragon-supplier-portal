@@ -9,24 +9,25 @@
 // by StatusPill via statusLabel.ts and are NOT re-declared here.
 export const sourcingEn: Record<string, string> = {
   // — Breadcrumb —
-  'sourcing.crumb.sourcing': 'SOURCING & RFQ',
+  'sourcing.crumb.sourcing': 'SOURCING EVENTS',
   // — Page header —
-  'sourcing.header.title': 'Sourcing & RFQ',
-  'sourcing.header.subtitle': 'Active sourcing events, quote evaluation, and award history.',
+  'sourcing.header.title': 'Sourcing events',
+  'sourcing.header.subtitle': 'RFI · RFP · RFQ',
   // — Header actions —
   'sourcing.action.export': 'Export',
-  'sourcing.action.templates': 'Templates',
-  'sourcing.action.newRfq': 'New RFQ',
+  'sourcing.action.templates': 'Event templates',
+  'sourcing.action.newRfq': 'New sourcing event',
   // — Meta line —
   'sourcing.meta.summary.one': '{{count}} active RFQ · last updated {{date}}',
   'sourcing.meta.summary.other': '{{count}} active RFQs · last updated {{date}}',
   // — KPI cards —
-  'sourcing.kpi.active.eyebrow': 'Active RFQs',
+  'sourcing.kpi.active.eyebrow': 'Active events',
+  'sourcing.kpi.byStage': 'RFI {{RFI}} · RFP {{RFP}} · RFQ {{RFQ}}',
   'sourcing.kpi.active.subtitle': 'Open for response',
   'sourcing.kpi.awaiting.eyebrow': 'Awaiting Response',
   'sourcing.kpi.awaiting.subtitle': 'Deadline within 7 days',
   'sourcing.kpi.ready.eyebrow': 'Ready to Award',
-  'sourcing.kpi.ready.subtitle': 'All suppliers responded',
+  'sourcing.kpi.ready.subtitle': 'At the RFQ stage, all suppliers responded',
   'sourcing.kpi.awarded.eyebrow': 'Awarded (Quarter)',
   'sourcing.kpi.awarded.subtitle': 'Last 90 days',
   // — Group tabs —
@@ -35,8 +36,10 @@ export const sourcingEn: Record<string, string> = {
   'sourcing.tab.pending': 'Pending Award',
   'sourcing.tab.awarded': 'Awarded',
   'sourcing.tab.closed': 'Closed',
+  'sourcing.tab.concluded': 'Concluded',
   // — Filter / search —
   'sourcing.filter.byCategory': 'Filter by category',
+  'sourcing.filter.byStage': 'Filter by stage',
   'sourcing.search.placeholder': 'Search by RFQ number, title, or material…',
   // — Category labels (value stays the RFQCategory enum for logic) —
   'sourcing.category.fragrance': 'Fragrance',
@@ -48,6 +51,7 @@ export const sourcingEn: Record<string, string> = {
   // — Active table —
   'sourcing.table.col.rfq': 'RFQ #',
   'sourcing.table.col.category': 'Category',
+  'sourcing.table.col.stage': 'Stage',
   'sourcing.table.col.responses': 'Responses',
   'sourcing.table.col.qty': 'Qty',
   'sourcing.table.col.estValue': 'Est. Value',
@@ -275,8 +279,6 @@ export const sourcingEn: Record<string, string> = {
     'Concluded without an award at the {{stage}} stage',
   'sourcing.stage.outcome.Cancelled':
     'Cancelled at the {{stage}} stage',
-  'sourcing.stage.rowChip':
-    '{{stage}} stage',
   'sourcing.stage.advanceLine':
     '{{from}} to {{to}} — carried forward: {{names}}',
   'sourcing.stage.notCarriedLine':
@@ -296,10 +298,173 @@ export const sourcingEn: Record<string, string> = {
   'sourcing.interest.title':
     'Responses at RFI and RFP',
   'sourcing.interest.contentNote':
-    'At the RFI stage a supplier answers the event’s questionnaire — or, when the event asks none, records its interest and a note. At the RFP stage it records its interest and a note; the proposal and its scoring are not built yet.',
+    'At the RFI stage a supplier answers the event’s questionnaire — or, when the event asks none, records its interest and a note. At the RFP stage it submits a proposal against the event’s evaluation criteria — or, when the event sets none, records its interest and a note.',
   // — RFx-2 · the RFI questionnaire —
   'sourcing.wizard.stage.questionnaireHint':
     'The questionnaire is written on the draft, after this form and before you publish: open the draft and use “Write questionnaire”.',
+  // — RFx-3 · the RFP: criteria, proposals, scores —
+  'sourcing.wizard.stage.criteriaHint':
+    'The RFP evaluation criteria and their weights are set on the draft, after this form and before you publish: open the draft and use “Set criteria”.',
+  'sourcing.rfp.title':
+    'RFP evaluation criteria',
+  'sourcing.rfp.none':
+    'This draft sets no evaluation criteria. Published like this, suppliers record their interest and a note at the RFP stage, and nothing is scored.',
+  'sourcing.rfp.write':
+    'Set criteria',
+  'sourcing.rfp.edit':
+    'Edit criteria',
+  'sourcing.rfp.group.technical':
+    'Technical',
+  'sourcing.rfp.group.commercial':
+    'Commercial',
+  'sourcing.rfp.editor.empty':
+    'No criteria yet. Add the first one, or save the empty list to set none.',
+  'sourcing.rfp.editor.name':
+    'Criterion',
+  'sourcing.rfp.editor.weight':
+    'Weight (%)',
+  'sourcing.rfp.editor.group':
+    'Part',
+  'sourcing.rfp.editor.groupNone':
+    'Neither',
+  'sourcing.rfp.editor.required':
+    'A response is required',
+  'sourcing.rfp.editor.add':
+    'Add criterion',
+  'sourcing.rfp.editor.save':
+    'Save criteria',
+  'sourcing.rfp.editor.cancel':
+    'Cancel',
+  'sourcing.rfp.editor.moveUp':
+    'Move {{criterion}} up',
+  'sourcing.rfp.editor.moveDown':
+    'Move {{criterion}} down',
+  'sourcing.rfp.editor.remove':
+    'Remove {{criterion}}',
+  'sourcing.rfp.editor.sumWhole':
+    'The weights sum to {{sum}}%.',
+  'sourcing.rfp.editor.sumNot':
+    'The weights sum to {{sum}}%, and must sum to 100%.',
+  'sourcing.rfp.problem.NOT_A_LIST':
+    'The criteria could not be read as a list.',
+  'sourcing.rfp.problem.ID_MISSING':
+    '{{criterion}} has no id.',
+  'sourcing.rfp.problem.ID_DUPLICATE':
+    '{{criterion}} repeats the id of an earlier criterion.',
+  'sourcing.rfp.problem.NAME_MISSING':
+    '{{criterion}} has no name.',
+  'sourcing.rfp.problem.WEIGHT_INVALID':
+    '{{criterion}} needs a weight above 0 and at most 100, with two decimals at most.',
+  'sourcing.rfp.problem.GROUP_UNKNOWN':
+    '{{criterion}} is in a part that is not technical or commercial.',
+  'sourcing.rfp.toast.saved.title':
+    'Criteria saved on {{rfqNumber}}',
+  'sourcing.rfp.toast.saved.none':
+    'The draft now sets no criteria.',
+  'sourcing.rfp.toast.saved.one':
+    'The draft weighs proposals on {{count}} criterion.',
+  'sourcing.rfp.toast.saved.other':
+    'The draft weighs proposals on {{count}} criteria.',
+  'sourcing.rfp.toast.saveFailed.title':
+    'Criteria not saved',
+  'sourcing.rfp.toast.saveFailed.default':
+    'The request could not be completed. Nothing was changed.',
+  'sourcing.refusal.criteriaWeightsNot100':
+    'Not saved. The weights sum to {{sum}}%, not 100%. Change the weights until they sum to 100%.',
+  'sourcing.refusal.criteriaNoRfpStage':
+    'Not saved. This event starts at its RFQ stage and has no RFP stage, so no proposal is ever weighed. Raise the event at RFI or RFP to set criteria.',
+  'sourcing.refusal.criteriaMalformed':
+    'Not saved. One of the criteria is incomplete: each needs a name and a weight above 0. Correct it and save again.',
+  'sourcing.rfp.proposals.title':
+    'Proposals',
+  'sourcing.rfp.proposals.empty':
+    'No supplier has submitted a proposal at the RFP stage yet.',
+  'sourcing.rfp.proposals.notYet':
+    'Proposals are submitted at the RFP stage, which this event has not reached.',
+  'sourcing.rfp.proposals.noResponse':
+    'No response',
+  'sourcing.rfp.proposals.noDocuments':
+    'No documents named.',
+  'sourcing.rfp.proposals.documents':
+    'Documents named:',
+  'sourcing.rfp.proposals.documentsNote':
+    'names only; no file is kept by this portal.',
+  'sourcing.rfp.score.title':
+    'Your scores',
+  'sourcing.rfp.score.yoursNew':
+    'Scoring as {{person, stop}}. Give each criterion a score from 1 to 5.',
+  'sourcing.rfp.score.yoursSaved':
+    'Scoring as {{person, stop}}. Your scores are saved; saving again replaces them, and only them.',
+  'sourcing.rfp.score.pick':
+    'Score',
+  'sourcing.rfp.score.comment':
+    'Comment',
+  'sourcing.rfp.score.commentFor':
+    'Comment for {{criterion}}',
+  'sourcing.rfp.score.incomplete':
+    'Score every criterion to save. A sheet is saved whole.',
+  'sourcing.rfp.score.save':
+    'Save my scores',
+  'sourcing.rfp.score.toast.saved.title':
+    'Scores saved for {{supplier}}',
+  'sourcing.rfp.score.toast.saved.desc':
+    'Only your own scores were written. They can be changed until the event advances.',
+  'sourcing.rfp.score.toast.failed.title':
+    'Scores not saved',
+  'sourcing.rfp.score.locked':
+    'Scores were locked when the event advanced on {{date, stop}}.',
+  'sourcing.rfp.score.notYetRfp':
+    'Proposals are scored at the RFP stage.',
+  'sourcing.rfp.score.stillOpen':
+    'Scoring opens once bidding on this stage is closed, so no proposal is scored while others are still arriving.',
+  'sourcing.rfp.score.ended':
+    'This event has ended. Its scores are as they stood.',
+  'sourcing.rfp.score.unnamed':
+    'A score is kept against the evaluator who gave it, and this seat names nobody. Adopt a sample user on the identity panel to score.',
+  'sourcing.refusal.scoreEvaluatorUnattributed':
+    'Not saved. A score is kept against the evaluator who gave it, and this seat names nobody. Adopt a sample user on the identity panel, then score again.',
+  'sourcing.refusal.scoresLocked':
+    'Not saved. The event has advanced from its RFP stage; the scores are what that shortlist was chosen on and are locked.',
+  'sourcing.refusal.scoreStageNotRfp':
+    'Not saved. Proposals are scored at the RFP stage, once bidding on it is closed.',
+  'sourcing.refusal.scoreNoProposal':
+    'Not saved. This supplier submitted no proposal at the RFP stage. Only a submitted proposal is scored.',
+  'sourcing.refusal.scoreSheetInvalid':
+    'Not saved. A score sheet gives every criterion one whole score from 1 to 5.',
+  'sourcing.rfp.ranking.title':
+    'Ranking',
+  'sourcing.rfp.ranking.empty':
+    'No proposal to rank yet.',
+  'sourcing.rfp.ranking.rank':
+    'Rank',
+  'sourcing.rfp.ranking.total':
+    'Weighted total',
+  'sourcing.rfp.ranking.unranked':
+    '—',
+  'sourcing.rfp.ranking.notScored':
+    'Not scored yet',
+  'sourcing.rfp.ranking.evaluators.one':
+    '{{count}} evaluator',
+  'sourcing.rfp.ranking.evaluators.other':
+    '{{count}} evaluators',
+  'sourcing.rfp.ranking.note':
+    'Each cell is the average of the scores given, from 1 to 5. The weighted total is the average of each evaluator’s weighted total. The ranking informs the shortlist; it does not decide it. Suppliers see none of it.',
+  'sourcing.rfp.ranking.scoredBy':
+    'Scored by: {{people}}',
+  'sourcing.advance.rank.note':
+    'The shortlist can start from the ranking. Either button below ticks suppliers for you; every supplier that responded stays tickable, and nothing is committed until you advance.',
+  'sourcing.advance.rank.top':
+    'How many from the top',
+  'sourcing.advance.rank.topApply':
+    'Tick the top ranked',
+  'sourcing.advance.rank.min':
+    'Weighted total at or above',
+  'sourcing.advance.rank.minApply':
+    'Tick those at or above',
+  'sourcing.advance.rank.line':
+    'Rank {{rank}} · {{total}}',
+  'sourcing.advance.rank.unscored':
+    'Not scored',
   'sourcing.rfi.title':
     'RFI questionnaire',
   'sourcing.rfi.none':
@@ -491,7 +656,7 @@ export const sourcingEn: Record<string, string> = {
   'sourcing.advance.blocked.empty':
     'Tick at least one supplier.',
   'sourcing.advance.blocked.underFloor':
-    'The next stage needs at least two eligible suppliers.',
+    'The next stage needs at least two eligible suppliers. Tick another supplier that responded, reopen the stage so more invited suppliers can respond, or conclude the event without an award.',
   'sourcing.advance.blocked.reasonMissing':
     'State the reason for the suppliers left out.',
   'sourcing.advance.blocked.deadlineMissing':
@@ -563,7 +728,7 @@ export const sourcingEn: Record<string, string> = {
   'sourcing.refusal.shortlistNotResponder':
     'Not advanced. A supplier on the shortlist did not respond at this stage. Only a supplier that responded is shortlisted.',
   'sourcing.refusal.shortlistUnderFloor':
-    'Not advanced. The next stage needs at least two eligible suppliers, and the shortlist has fewer.',
+    'Not advanced. The next stage needs at least two eligible suppliers, and the shortlist has fewer. Shortlist another supplier that responded, reopen the stage so more invited suppliers can respond, or conclude the event without an award. A supplier that was never invited is invited on a new event.',
   'sourcing.refusal.shortlistReasonMissing':
     'Not advanced. The shortlist leaves a supplier out and no reason is stated. The reason is what that supplier reads.',
   'sourcing.refusal.stageDeadlinePast':
@@ -785,33 +950,34 @@ export const sourcingEn: Record<string, string> = {
   'sourcing.state.empty.subtitle': 'No RFQs are on file.',
   'sourcing.state.empty.message': 'Sourcing events and quote evaluations appear here once RFQs are raised.',
   'sourcing.toast.exportUnavailable.title': 'Export not available yet',
-  'sourcing.toast.templatesUnavailable.title': 'Templates not available yet',
+  'sourcing.toast.templatesUnavailable.title': 'Event templates not available yet',
   'sourcing.toast.exportUnavailable.desc':
     'No file was generated — export is not wired to a real system.',
   'sourcing.toast.templatesUnavailable.desc':
-    'No template was downloaded — the template library is not wired to a real system.',
+    'No event template was opened. Saving a whole sourcing event as a template is not built. Questionnaire templates are kept on the RFI questionnaire editor.',
 };
 
 export const sourcingId: Record<string, string> = {
   // — Breadcrumb —
-  'sourcing.crumb.sourcing': 'SUMBER & RFQ',
+  'sourcing.crumb.sourcing': 'ACARA SUMBER',
   // — Page header —
-  'sourcing.header.title': 'Sumber & RFQ',
-  'sourcing.header.subtitle': 'Acara sumber aktif, evaluasi penawaran, dan riwayat pemenangan.',
+  'sourcing.header.title': 'Acara sumber',
+  'sourcing.header.subtitle': 'RFI · RFP · RFQ',
   // — Header actions —
   'sourcing.action.export': 'Ekspor',
-  'sourcing.action.templates': 'Templat',
-  'sourcing.action.newRfq': 'RFQ Baru',
+  'sourcing.action.templates': 'Templat acara',
+  'sourcing.action.newRfq': 'Acara sumber baru',
   // — Meta line —
   'sourcing.meta.summary.one': '{{count}} RFQ aktif · terakhir diperbarui {{date}}',
   'sourcing.meta.summary.other': '{{count}} RFQ aktif · terakhir diperbarui {{date}}',
   // — KPI cards —
-  'sourcing.kpi.active.eyebrow': 'RFQ Aktif',
+  'sourcing.kpi.active.eyebrow': 'Acara aktif',
+  'sourcing.kpi.byStage': 'RFI {{RFI}} · RFP {{RFP}} · RFQ {{RFQ}}',
   'sourcing.kpi.active.subtitle': 'Terbuka untuk respons',
   'sourcing.kpi.awaiting.eyebrow': 'Menunggu Respons',
   'sourcing.kpi.awaiting.subtitle': 'Tenggat dalam 7 hari',
   'sourcing.kpi.ready.eyebrow': 'Siap Dimenangkan',
-  'sourcing.kpi.ready.subtitle': 'Semua pemasok merespons',
+  'sourcing.kpi.ready.subtitle': 'Pada tahap RFQ, semua pemasok merespons',
   'sourcing.kpi.awarded.eyebrow': 'Dimenangkan (Kuartal)',
   'sourcing.kpi.awarded.subtitle': '90 hari terakhir',
   // — Group tabs —
@@ -820,8 +986,10 @@ export const sourcingId: Record<string, string> = {
   'sourcing.tab.pending': 'Menunggu Pemenangan',
   'sourcing.tab.awarded': 'Dimenangkan',
   'sourcing.tab.closed': 'Ditutup',
+  'sourcing.tab.concluded': 'Diakhiri',
   // — Filter / search —
   'sourcing.filter.byCategory': 'Saring menurut kategori',
+  'sourcing.filter.byStage': 'Saring menurut tahap',
   'sourcing.search.placeholder': 'Cari berdasarkan nomor RFQ, judul, atau material…',
   // — Category labels —
   'sourcing.category.fragrance': 'Pewangi',
@@ -833,6 +1001,7 @@ export const sourcingId: Record<string, string> = {
   // — Active table —
   'sourcing.table.col.rfq': 'No. RFQ',
   'sourcing.table.col.category': 'Kategori',
+  'sourcing.table.col.stage': 'Tahap',
   'sourcing.table.col.responses': 'Respons',
   'sourcing.table.col.qty': 'Jml',
   'sourcing.table.col.estValue': 'Nilai Est.',
@@ -1038,8 +1207,6 @@ export const sourcingId: Record<string, string> = {
     'Diakhiri tanpa pemenang pada tahap {{stage}}',
   'sourcing.stage.outcome.Cancelled':
     'Dibatalkan pada tahap {{stage}}',
-  'sourcing.stage.rowChip':
-    'Tahap {{stage}}',
   'sourcing.stage.advanceLine':
     '{{from}} ke {{to}} — dilanjutkan: {{names}}',
   'sourcing.stage.notCarriedLine':
@@ -1059,10 +1226,173 @@ export const sourcingId: Record<string, string> = {
   'sourcing.interest.title':
     'Tanggapan pada RFI dan RFP',
   'sourcing.interest.contentNote':
-    'Pada tahap RFI, pemasok menjawab kuesioner acaranya — atau, bila acaranya tidak mengajukan kuesioner, mencatat minatnya dan satu catatan. Pada tahap RFP ia mencatat minatnya dan satu catatan; proposal dan penilaiannya belum dibangun.',
+    'Pada tahap RFI, pemasok menjawab kuesioner acaranya — atau, bila acaranya tidak mengajukan kuesioner, mencatat minatnya dan satu catatan. Pada tahap RFP ia mengirim proposal atas kriteria evaluasi acaranya — atau, bila acaranya tidak menetapkan kriteria, mencatat minatnya dan satu catatan.',
   // — RFx-2 · the RFI questionnaire —
   'sourcing.wizard.stage.questionnaireHint':
     'Kuesioner ditulis pada draf, setelah formulir ini dan sebelum Anda menerbitkannya: buka drafnya lalu gunakan “Tulis kuesioner”.',
+  // — RFx-3 · the RFP: criteria, proposals, scores —
+  'sourcing.wizard.stage.criteriaHint':
+    'Kriteria evaluasi RFP dan bobotnya ditetapkan pada draf, setelah formulir ini dan sebelum Anda menerbitkan: buka draf dan gunakan “Tetapkan kriteria”.',
+  'sourcing.rfp.title':
+    'Kriteria evaluasi RFP',
+  'sourcing.rfp.none':
+    'Draf ini tidak menetapkan kriteria evaluasi. Bila diterbitkan seperti ini, pemasok mencatat minat dan satu catatan pada tahap RFP, dan tidak ada yang dinilai.',
+  'sourcing.rfp.write':
+    'Tetapkan kriteria',
+  'sourcing.rfp.edit':
+    'Ubah kriteria',
+  'sourcing.rfp.group.technical':
+    'Teknis',
+  'sourcing.rfp.group.commercial':
+    'Komersial',
+  'sourcing.rfp.editor.empty':
+    'Belum ada kriteria. Tambahkan yang pertama, atau simpan daftar kosong untuk tidak menetapkan apa pun.',
+  'sourcing.rfp.editor.name':
+    'Kriteria',
+  'sourcing.rfp.editor.weight':
+    'Bobot (%)',
+  'sourcing.rfp.editor.group':
+    'Bagian',
+  'sourcing.rfp.editor.groupNone':
+    'Bukan keduanya',
+  'sourcing.rfp.editor.required':
+    'Tanggapan wajib diisi',
+  'sourcing.rfp.editor.add':
+    'Tambah kriteria',
+  'sourcing.rfp.editor.save':
+    'Simpan kriteria',
+  'sourcing.rfp.editor.cancel':
+    'Batal',
+  'sourcing.rfp.editor.moveUp':
+    'Naikkan {{criterion}}',
+  'sourcing.rfp.editor.moveDown':
+    'Turunkan {{criterion}}',
+  'sourcing.rfp.editor.remove':
+    'Hapus {{criterion}}',
+  'sourcing.rfp.editor.sumWhole':
+    'Jumlah bobot {{sum}}%.',
+  'sourcing.rfp.editor.sumNot':
+    'Jumlah bobot {{sum}}%, dan harus berjumlah 100%.',
+  'sourcing.rfp.problem.NOT_A_LIST':
+    'Kriteria tidak dapat dibaca sebagai daftar.',
+  'sourcing.rfp.problem.ID_MISSING':
+    '{{criterion}} tidak memiliki id.',
+  'sourcing.rfp.problem.ID_DUPLICATE':
+    '{{criterion}} mengulang id kriteria sebelumnya.',
+  'sourcing.rfp.problem.NAME_MISSING':
+    '{{criterion}} tidak memiliki nama.',
+  'sourcing.rfp.problem.WEIGHT_INVALID':
+    '{{criterion}} memerlukan bobot di atas 0 dan paling banyak 100, dengan paling banyak dua desimal.',
+  'sourcing.rfp.problem.GROUP_UNKNOWN':
+    '{{criterion}} berada di bagian yang bukan teknis atau komersial.',
+  'sourcing.rfp.toast.saved.title':
+    'Kriteria disimpan pada {{rfqNumber}}',
+  'sourcing.rfp.toast.saved.none':
+    'Draf ini kini tidak menetapkan kriteria.',
+  'sourcing.rfp.toast.saved.one':
+    'Draf ini menimbang proposal atas {{count}} kriteria.',
+  'sourcing.rfp.toast.saved.other':
+    'Draf ini menimbang proposal atas {{count}} kriteria.',
+  'sourcing.rfp.toast.saveFailed.title':
+    'Kriteria tidak disimpan',
+  'sourcing.rfp.toast.saveFailed.default':
+    'Permintaan tidak dapat diselesaikan. Tidak ada yang diubah.',
+  'sourcing.refusal.criteriaWeightsNot100':
+    'Tidak disimpan. Jumlah bobot {{sum}}%, bukan 100%. Ubah bobot sampai berjumlah 100%.',
+  'sourcing.refusal.criteriaNoRfpStage':
+    'Tidak disimpan. Acara ini dimulai pada tahap RFQ dan tidak memiliki tahap RFP, sehingga tidak ada proposal yang ditimbang. Buat acara pada tahap RFI atau RFP untuk menetapkan kriteria.',
+  'sourcing.refusal.criteriaMalformed':
+    'Tidak disimpan. Salah satu kriteria belum lengkap: masing-masing memerlukan nama dan bobot di atas 0. Perbaiki lalu simpan lagi.',
+  'sourcing.rfp.proposals.title':
+    'Proposal',
+  'sourcing.rfp.proposals.empty':
+    'Belum ada pemasok yang mengirim proposal pada tahap RFP.',
+  'sourcing.rfp.proposals.notYet':
+    'Proposal dikirim pada tahap RFP, yang belum dicapai acara ini.',
+  'sourcing.rfp.proposals.noResponse':
+    'Tidak ada tanggapan',
+  'sourcing.rfp.proposals.noDocuments':
+    'Tidak ada dokumen yang disebut.',
+  'sourcing.rfp.proposals.documents':
+    'Dokumen yang disebut:',
+  'sourcing.rfp.proposals.documentsNote':
+    'hanya nama; tidak ada berkas yang disimpan portal ini.',
+  'sourcing.rfp.score.title':
+    'Skor Anda',
+  'sourcing.rfp.score.yoursNew':
+    'Menilai sebagai {{person, stop}}. Beri setiap kriteria skor dari 1 sampai 5.',
+  'sourcing.rfp.score.yoursSaved':
+    'Menilai sebagai {{person, stop}}. Skor Anda tersimpan; menyimpan lagi menggantinya, dan hanya skor Anda.',
+  'sourcing.rfp.score.pick':
+    'Skor',
+  'sourcing.rfp.score.comment':
+    'Komentar',
+  'sourcing.rfp.score.commentFor':
+    'Komentar untuk {{criterion}}',
+  'sourcing.rfp.score.incomplete':
+    'Beri skor pada setiap kriteria untuk menyimpan. Lembar skor disimpan utuh.',
+  'sourcing.rfp.score.save':
+    'Simpan skor saya',
+  'sourcing.rfp.score.toast.saved.title':
+    'Skor disimpan untuk {{supplier}}',
+  'sourcing.rfp.score.toast.saved.desc':
+    'Hanya skor Anda sendiri yang ditulis. Skor dapat diubah sampai acara dilanjutkan.',
+  'sourcing.rfp.score.toast.failed.title':
+    'Skor tidak disimpan',
+  'sourcing.rfp.score.locked':
+    'Skor dikunci saat acara dilanjutkan pada {{date, stop}}.',
+  'sourcing.rfp.score.notYetRfp':
+    'Proposal dinilai pada tahap RFP.',
+  'sourcing.rfp.score.stillOpen':
+    'Penilaian dibuka setelah penawaran pada tahap ini ditutup, agar tidak ada proposal yang dinilai selagi yang lain masih masuk.',
+  'sourcing.rfp.score.ended':
+    'Acara ini telah berakhir. Skornya tetap seperti adanya.',
+  'sourcing.rfp.score.unnamed':
+    'Skor dicatat atas nama penilai yang memberikannya, dan kursi ini tidak menyebut siapa pun. Pilih pengguna contoh di panel identitas untuk menilai.',
+  'sourcing.refusal.scoreEvaluatorUnattributed':
+    'Tidak disimpan. Skor dicatat atas nama penilai yang memberikannya, dan kursi ini tidak menyebut siapa pun. Pilih pengguna contoh di panel identitas, lalu nilai lagi.',
+  'sourcing.refusal.scoresLocked':
+    'Tidak disimpan. Acara telah dilanjutkan dari tahap RFP; skor itulah dasar daftar pendeknya dan kini terkunci.',
+  'sourcing.refusal.scoreStageNotRfp':
+    'Tidak disimpan. Proposal dinilai pada tahap RFP, setelah penawaran pada tahap itu ditutup.',
+  'sourcing.refusal.scoreNoProposal':
+    'Tidak disimpan. Pemasok ini tidak mengirim proposal pada tahap RFP. Hanya proposal yang dikirim yang dinilai.',
+  'sourcing.refusal.scoreSheetInvalid':
+    'Tidak disimpan. Lembar skor memberi setiap kriteria satu skor bulat dari 1 sampai 5.',
+  'sourcing.rfp.ranking.title':
+    'Peringkat',
+  'sourcing.rfp.ranking.empty':
+    'Belum ada proposal untuk diperingkat.',
+  'sourcing.rfp.ranking.rank':
+    'Peringkat',
+  'sourcing.rfp.ranking.total':
+    'Total tertimbang',
+  'sourcing.rfp.ranking.unranked':
+    '—',
+  'sourcing.rfp.ranking.notScored':
+    'Belum dinilai',
+  'sourcing.rfp.ranking.evaluators.one':
+    '{{count}} penilai',
+  'sourcing.rfp.ranking.evaluators.other':
+    '{{count}} penilai',
+  'sourcing.rfp.ranking.note':
+    'Setiap sel adalah rata-rata skor yang diberikan, dari 1 sampai 5. Total tertimbang adalah rata-rata total tertimbang tiap penilai. Peringkat menjadi masukan bagi daftar pendek; bukan penentunya. Pemasok tidak melihat satu pun dari ini.',
+  'sourcing.rfp.ranking.scoredBy':
+    'Dinilai oleh: {{people}}',
+  'sourcing.advance.rank.note':
+    'Daftar pendek dapat dimulai dari peringkat. Kedua tombol di bawah mencentang pemasok untuk Anda; setiap pemasok yang menanggapi tetap dapat dicentang, dan tidak ada yang ditetapkan sampai Anda melanjutkan.',
+  'sourcing.advance.rank.top':
+    'Berapa banyak dari atas',
+  'sourcing.advance.rank.topApply':
+    'Centang peringkat teratas',
+  'sourcing.advance.rank.min':
+    'Total tertimbang minimal',
+  'sourcing.advance.rank.minApply':
+    'Centang yang memenuhi minimal',
+  'sourcing.advance.rank.line':
+    'Peringkat {{rank}} · {{total}}',
+  'sourcing.advance.rank.unscored':
+    'Belum dinilai',
   'sourcing.rfi.title':
     'Kuesioner RFI',
   'sourcing.rfi.none':
@@ -1254,7 +1584,7 @@ export const sourcingId: Record<string, string> = {
   'sourcing.advance.blocked.empty':
     'Centang setidaknya satu pemasok.',
   'sourcing.advance.blocked.underFloor':
-    'Tahap berikutnya memerlukan setidaknya dua pemasok yang memenuhi syarat.',
+    'Tahap berikutnya memerlukan setidaknya dua pemasok yang memenuhi syarat. Centang pemasok lain yang menanggapi, buka kembali tahap ini agar lebih banyak pemasok yang diundang dapat menanggapi, atau akhiri acara tanpa pemenang.',
   'sourcing.advance.blocked.reasonMissing':
     'Sebutkan alasan untuk pemasok yang tidak dilanjutkan.',
   'sourcing.advance.blocked.deadlineMissing':
@@ -1326,7 +1656,7 @@ export const sourcingId: Record<string, string> = {
   'sourcing.refusal.shortlistNotResponder':
     'Tidak dilanjutkan. Ada pemasok di daftar pendek yang tidak menanggapi pada tahap ini. Hanya pemasok yang menanggapi yang masuk daftar pendek.',
   'sourcing.refusal.shortlistUnderFloor':
-    'Tidak dilanjutkan. Tahap berikutnya memerlukan setidaknya dua pemasok yang memenuhi syarat, dan daftar pendeknya kurang dari itu.',
+    'Tidak dilanjutkan. Tahap berikutnya memerlukan setidaknya dua pemasok yang memenuhi syarat, dan daftar pendeknya kurang dari itu. Masukkan pemasok lain yang menanggapi, buka kembali tahap ini agar lebih banyak pemasok yang diundang dapat menanggapi, atau akhiri acara tanpa pemenang. Pemasok yang belum pernah diundang diundang pada acara baru.',
   'sourcing.refusal.shortlistReasonMissing':
     'Tidak dilanjutkan. Daftar pendek meninggalkan seorang pemasok dan alasannya tidak disebut. Alasan itulah yang dibaca pemasok tersebut.',
   'sourcing.refusal.stageDeadlinePast':
@@ -1515,9 +1845,9 @@ export const sourcingId: Record<string, string> = {
   'sourcing.state.empty.subtitle': 'Belum ada RFQ yang tercatat.',
   'sourcing.state.empty.message': 'Acara sumber dan evaluasi penawaran muncul di sini setelah RFQ diajukan.',
   'sourcing.toast.exportUnavailable.title': 'Ekspor belum tersedia',
-  'sourcing.toast.templatesUnavailable.title': 'Templat belum tersedia',
+  'sourcing.toast.templatesUnavailable.title': 'Templat acara belum tersedia',
   'sourcing.toast.exportUnavailable.desc':
     'Tidak ada berkas yang dibuat — ekspor belum tersambung ke sistem nyata.',
   'sourcing.toast.templatesUnavailable.desc':
-    'Tidak ada templat yang diunduh — pustaka templat belum tersambung ke sistem nyata.',
+    'Tidak ada templat acara yang dibuka. Menyimpan satu acara pengadaan utuh sebagai templat belum dibangun. Templat kuesioner disimpan di penyunting kuesioner RFI.',
 };
