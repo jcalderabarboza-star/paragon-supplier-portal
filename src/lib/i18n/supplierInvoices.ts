@@ -24,7 +24,7 @@ export const supplierInvoicesEn: Record<string, string> = {
   'supplierInvoices.meta.summary.one': '{{count}} invoice · last submitted',
   'supplierInvoices.meta.summary.other': '{{count}} invoices · last submitted',
   // — KPI cards —
-  'supplierInvoices.kpi.received.eyebrow': 'Payments Received',
+  'supplierInvoices.kpi.received.eyebrow': 'Payments Released',
   'supplierInvoices.kpi.pending.eyebrow': 'Pending Payment',
   'supplierInvoices.kpi.disputed.eyebrow': 'Disputed',
   'supplierInvoices.kpi.invoiceCount.one': '{{count}} invoice',
@@ -32,7 +32,7 @@ export const supplierInvoicesEn: Record<string, string> = {
   // — Dispute banner (label <strong> · <Data> numbers · body) —
   'supplierInvoices.banner.dispute.label': 'Invoice dispute: ',
   'supplierInvoices.banner.dispute.body':
-    '— Quantity mismatch. Credit note required before payment can be released.',
+    '— payment is held until Paragon finance resolves the dispute. Open the invoice to read the reason.',
   // — Table columns —
   'supplierInvoices.table.invoiceNo': 'Invoice #',
   'supplierInvoices.table.poRef': 'PO ref',
@@ -43,7 +43,7 @@ export const supplierInvoicesEn: Record<string, string> = {
   'supplierInvoices.table.action': 'Action',
   'supplierInvoices.table.via': 'via {{channel}}',
   // — Row actions —
-  'supplierInvoices.action.remittance': 'Remittance',
+  'supplierInvoices.action.remittance': 'Payment details',
   'supplierInvoices.action.resolve': 'Resolve',
   'supplierInvoices.action.view': 'View',
   // — Inline scaffolding toasts (mutation toasts stay under invoice.*) —
@@ -60,12 +60,12 @@ export const supplierInvoicesEn: Record<string, string> = {
   // — Side panel (detail) —
   'supplierInvoices.panel.detail.title': 'Invoice {{invoiceNumber}}',
   'supplierInvoices.panel.close': 'Close',
-  'supplierInvoices.panel.viewRemittance': 'View remittance',
+  'supplierInvoices.panel.viewRemittance': 'View payment details',
   'supplierInvoices.panel.downloadPdf': 'Download PDF',
   // — Section headings —
   'supplierInvoices.section.keyFacts': 'Key facts',
   'supplierInvoices.section.lifecycle': 'Payment lifecycle',
-  'supplierInvoices.section.remittance': 'Remittance advice',
+  'supplierInvoices.section.remittance': 'Payment details',
   // — Payment-lifecycle timeline (event titles + step timestamps) —
   'supplierInvoices.timeline.submitted': 'Invoice submitted',
   'supplierInvoices.timeline.pending': 'Pending approval',
@@ -89,16 +89,24 @@ export const supplierInvoicesEn: Record<string, string> = {
   'supplierInvoices.field.pending': '— pending —',
   // — Detail state notes —
   'supplierInvoices.note.disputed':
-    'This invoice is disputed. Contact Paragon Finance Controller to resolve before payment can be released.',
+    'This invoice is disputed. Payment is held until Paragon finance resolves it.',
+  'supplierInvoices.note.disputeReason':
+    'Paragon’s reason: {{reason}}',
+  'supplierInvoices.note.disputeNoReason':
+    'Paragon recorded no reason.',
   'supplierInvoices.note.overdue':
-    'Payment is overdue. Paragon Finance has been escalated.',
+    'Payment is past its due date. Nothing in the portal escalates it — contact your Paragon Finance Controller.',
   // — Remittance section —
   'supplierInvoices.remittance.processed':
-    'Payment has been processed and credited to your account.',
+    'The bank has confirmed remittance of this payment.',
+  'supplierInvoices.remittance.released':
+    'Paragon has released this payment. The bank has not confirmed remittance yet, so this is not a record that the money has reached your account.',
+  'supplierInvoices.remittance.bankUnknown':
+    'Not held in the portal',
   'supplierInvoices.remittance.invoiceNo': 'Invoice no',
-  'supplierInvoices.remittance.amountPaid': 'Amount paid',
-  'supplierInvoices.remittance.paymentDate': 'Payment date',
-  'supplierInvoices.remittance.bankCredited': 'Bank credited',
+  'supplierInvoices.remittance.amountPaid': 'Amount',
+  'supplierInvoices.remittance.paymentDate': 'Released on',
+  'supplierInvoices.remittance.bankCredited': 'Bank account',
   'supplierInvoices.remittance.reference': 'Reference',
   'supplierInvoices.remittance.paymentNote': 'Payment note:',
   // — New-invoice panel —
@@ -144,7 +152,7 @@ export const supplierInvoicesId: Record<string, string> = {
   'supplierInvoices.meta.summary.one': '{{count}} faktur · terakhir diajukan',
   'supplierInvoices.meta.summary.other': '{{count}} faktur · terakhir diajukan',
   // — KPI cards —
-  'supplierInvoices.kpi.received.eyebrow': 'Pembayaran Diterima',
+  'supplierInvoices.kpi.received.eyebrow': 'Pembayaran Dirilis',
   'supplierInvoices.kpi.pending.eyebrow': 'Menunggu Pembayaran',
   'supplierInvoices.kpi.disputed.eyebrow': 'Disengketakan',
   'supplierInvoices.kpi.invoiceCount.one': '{{count}} faktur',
@@ -152,7 +160,7 @@ export const supplierInvoicesId: Record<string, string> = {
   // — Dispute banner —
   'supplierInvoices.banner.dispute.label': 'Sengketa faktur: ',
   'supplierInvoices.banner.dispute.body':
-    '— Ketidaksesuaian kuantitas. Nota kredit diperlukan sebelum pembayaran dapat dirilis.',
+    '— pembayaran ditahan sampai keuangan Paragon menyelesaikan sengketa. Buka faktur untuk membaca alasannya.',
   // — Table columns —
   'supplierInvoices.table.invoiceNo': 'No. Faktur',
   'supplierInvoices.table.poRef': 'Ref PO',
@@ -163,7 +171,7 @@ export const supplierInvoicesId: Record<string, string> = {
   'supplierInvoices.table.action': 'Tindakan',
   'supplierInvoices.table.via': 'via {{channel}}',
   // — Row actions —
-  'supplierInvoices.action.remittance': 'Bukti Pembayaran',
+  'supplierInvoices.action.remittance': 'Rincian pembayaran',
   'supplierInvoices.action.resolve': 'Selesaikan',
   'supplierInvoices.action.view': 'Lihat',
   // — Inline scaffolding toasts —
@@ -180,12 +188,12 @@ export const supplierInvoicesId: Record<string, string> = {
   // — Side panel (detail) —
   'supplierInvoices.panel.detail.title': 'Faktur {{invoiceNumber}}',
   'supplierInvoices.panel.close': 'Tutup',
-  'supplierInvoices.panel.viewRemittance': 'Lihat bukti pembayaran',
+  'supplierInvoices.panel.viewRemittance': 'Lihat rincian pembayaran',
   'supplierInvoices.panel.downloadPdf': 'Unduh PDF',
   // — Section headings —
   'supplierInvoices.section.keyFacts': 'Fakta utama',
   'supplierInvoices.section.lifecycle': 'Siklus hidup pembayaran',
-  'supplierInvoices.section.remittance': 'Bukti pembayaran',
+  'supplierInvoices.section.remittance': 'Rincian pembayaran',
   // — Payment-lifecycle timeline —
   'supplierInvoices.timeline.submitted': 'Faktur diajukan',
   'supplierInvoices.timeline.pending': 'Menunggu persetujuan',
@@ -209,16 +217,24 @@ export const supplierInvoicesId: Record<string, string> = {
   'supplierInvoices.field.pending': '— menunggu —',
   // — Detail state notes —
   'supplierInvoices.note.disputed':
-    'Faktur ini disengketakan. Hubungi Pengawas Keuangan Paragon untuk menyelesaikannya sebelum pembayaran dapat dirilis.',
+    'Faktur ini disengketakan. Pembayaran ditahan sampai keuangan Paragon menyelesaikannya.',
+  'supplierInvoices.note.disputeReason':
+    'Alasan Paragon: {{reason}}',
+  'supplierInvoices.note.disputeNoReason':
+    'Paragon tidak mencatat alasan.',
   'supplierInvoices.note.overdue':
-    'Pembayaran telah jatuh tempo. Keuangan Paragon telah dieskalasi.',
+    'Pembayaran melewati tanggal jatuh tempo. Tidak ada eskalasi dari portal — hubungi Finance Controller Paragon Anda.',
   // — Remittance section —
   'supplierInvoices.remittance.processed':
-    'Pembayaran telah diproses dan dikreditkan ke rekening Anda.',
+    'Bank telah mengonfirmasi pengiriman dana pembayaran ini.',
+  'supplierInvoices.remittance.released':
+    'Paragon telah merilis pembayaran ini. Bank belum mengonfirmasi pengiriman dana, sehingga ini bukan catatan bahwa dana telah masuk ke rekening Anda.',
+  'supplierInvoices.remittance.bankUnknown':
+    'Tidak disimpan di portal',
   'supplierInvoices.remittance.invoiceNo': 'No. faktur',
-  'supplierInvoices.remittance.amountPaid': 'Jumlah dibayar',
-  'supplierInvoices.remittance.paymentDate': 'Tanggal pembayaran',
-  'supplierInvoices.remittance.bankCredited': 'Bank dikreditkan',
+  'supplierInvoices.remittance.amountPaid': 'Jumlah',
+  'supplierInvoices.remittance.paymentDate': 'Dirilis pada',
+  'supplierInvoices.remittance.bankCredited': 'Rekening bank',
   'supplierInvoices.remittance.reference': 'Referensi',
   'supplierInvoices.remittance.paymentNote': 'Catatan pembayaran:',
   // — New-invoice panel —

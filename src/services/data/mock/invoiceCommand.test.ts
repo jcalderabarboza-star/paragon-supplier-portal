@@ -162,7 +162,7 @@ describe('Invoice release payment — Option B submitted-interim → settle-fina
 });
 
 describe('Invoice dispute / resolve', () => {
-  it('dispute honestly requires a reason, then flips to Disputed; resolve returns to Submitted', async () => {
+  it('dispute honestly requires a reason, then flips to Disputed; resolve returns it to Submitted, where it is matched again', async () => {
     // inv-mus-0214 is Submitted.
     const noReason = await fire(buyer, 't_invoice_dispute', 'inv-mus-0214');
     expect(noReason.status).toBe('failed');
@@ -176,6 +176,11 @@ describe('Invoice dispute / resolve', () => {
 
     const resolved = await fire(buyer, 't_invoice_resolve', 'inv-mus-0214');
     expect(resolved.status).toBe('done');
-    expect(invoiceStore.get('inv-mus-0214')!.status).toBe('Submitted');
+    // OPS-1 — `Disputed → Submitted` is the resolve; Submitted is then matched
+    // against the receipt already posted on PO-2025-00102 (GR-2026-014, 8,000
+    // accepted = the invoice's Rp 875M), so the header advances.
+    expect(invoiceStore.get('inv-mus-0214')!.status).toBe('Matched');
+    expect(invoiceStore.get('inv-mus-0214')!.matchBasis!.cause).toBe('WITHIN');
+    expect(invoiceStore.get('inv-mus-0214')!.disputeReason).toBe('Qty mismatch vs GR');
   });
 });

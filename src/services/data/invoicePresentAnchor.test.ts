@@ -39,7 +39,10 @@ import { mockGoodsReceipts } from '../../data/mockGoodsReceipts';
 import { mockPurchaseOrders } from '../../data/mockPurchaseOrders';
 import {
   invoicesForReceipt,
-  deriveMatchVerdict,
+  deriveMatchCause,
+  orderedValueOf,
+  receivedValueOf,
+  INVOICE_CLAIMING_STATES,
   INVOICE_AWAITING_MATCH,
 } from '../transitions/invoiceRollup';
 import { getKnownFlows } from '../transitions/registry';
@@ -180,15 +183,22 @@ describe('⚠️ A MATCHED-REACHABLE PATH EXISTS — by property, never by fixtu
       if (isOverdue(inv, NOW)) return false; // else it renders Overdue, not Pending Match
       const po = mockPurchaseOrders.find((p) => p.poNumber === inv.poNumber);
       if (!po) return false; // `resolveCascades` returns [] on an unknown PO
-      const expected = po.lineItems.reduce(
-        (sum, li) => sum + li.confirmedQty * li.unitPrice,
-        0,
-      );
+      // OPS-1 — the match reads what the receipt ACCEPTED, at PO prices, and
+      // what is already invoiced on the PO; asked here for this one receipt.
+      const alreadyInvoiced = INVOICES.filter(
+        (o) => o.poNumber === inv.poNumber && INVOICE_CLAIMING_STATES.includes(o.status),
+      ).reduce((sum, o) => sum + o.amount, 0);
       return mockGoodsReceipts.some((gr) => {
         if (gr.poNumber !== inv.poNumber) return false;
         if (!from.includes(gr.status)) return false;
-        const rejects = gr.inspectionResults.some((r) => r.qtyRejected > 0);
-        return deriveMatchVerdict(expected, inv.amount, rejects) === 'Matched';
+        return (
+          deriveMatchCause({
+            orderedValue: orderedValueOf(po.lineItems),
+            receivedValue: receivedValueOf(po.lineItems, gr.inspectionResults),
+            alreadyInvoiced,
+            invoiced: inv.amount,
+          }) === 'WITHIN'
+        );
       });
     });
 

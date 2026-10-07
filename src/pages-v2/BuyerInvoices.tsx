@@ -49,7 +49,12 @@ import type {
   BuyerInvoice,
   BuyerInvoiceStatus as InvStatus,
   InvoiceMatchStatus as MatchStatus,
+  InvoiceMatchCause,
 } from '../services/data/types';
+import type { ActorAttribution, UnattributedReason } from '../lib/enforcement';
+import { personLabel } from '../services/identity/personLabel';
+import { personNamingRefusalKey } from './personNamingRefusal';
+import { poTotalDisagrees } from '../services/transitions/invoiceRollup';
 import { useTranslation } from 'react-i18next';
 import { statusLabelKey } from '../lib/statusLabel';
 import { useBuyerInvoices } from '../services/query/hooks';
@@ -155,6 +160,21 @@ const MATCH_DESC_KEY: Record<MatchStatus, string> = {
 // Compact tiles use the shared jt/B/T scale; full amounts and dates delegate
 // to the locale utility directly (see call sites).
 const fmtCompact = (n: number): string => formatIDR(n, { compact: true });
+
+// OPS-1 — the sentence for each match cause, when the row carries the figures
+// the verdict was computed from. A TOTAL `Record`: a fifth cause fails to
+// compile here until somebody writes its sentence.
+const MATCH_CAUSE_KEY: Record<InvoiceMatchCause, string> = {
+  WITHIN: 'buyerInvoices.match.cause.WITHIN',
+  EXCEEDS_RECEIVED: 'buyerInvoices.match.cause.EXCEEDS_RECEIVED',
+  ALREADY_INVOICED: 'buyerInvoices.match.cause.ALREADY_INVOICED',
+  EXCEEDS_ORDER: 'buyerInvoices.match.cause.EXCEEDS_ORDER',
+};
+
+const UNATTRIBUTED_KEY: Record<UnattributedReason, string> = {
+  NO_PERSON_IN_SESSION: 'buyerInvoices.attribution.noPerson',
+  IDENTITY_PROVIDER_UNAVAILABLE: 'buyerInvoices.attribution.idpDown',
+};
 
 // DP2-PALETTE-01: chart/UI colour sourced from the central palette (SSoT),
 // not page-local hex. Values unchanged — pure de-dup.
@@ -479,6 +499,21 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
   // primary slot for a withheld seat — but a handler that trusted the surface
   // to have filtered correctly is the shape `SupplierOrders` shipped a live
   // commit behind (ENTRANCE-IS-THE-UNIT-01), so it is guarded here too.
+  // OPS-1 — an actor is rendered through `personLabel`, the one read-time
+  // resolver, so the SAMPLE marker comes with the label.
+  const renderAttribution = (actor: ActorAttribution): string =>
+    actor.kind === 'RESOLVED'
+      ? personLabel(actor.person.personId, t)
+      : t(UNATTRIBUTED_KEY[actor.reason]);
+
+  // A refusal that names a person is rendered from its own key, with the label
+  // of the person the STORE recorded — never the id in the developer sentence.
+  const releaseRefusalCopy = (reason: string | undefined, inv: BuyerInvoice): string => {
+    const key = personNamingRefusalKey(reason);
+    if (key !== null && inv.approvedBy) return t(key, { person: renderAttribution(inv.approvedBy) });
+    return refusalText(reason) ?? t('invoice.pay.failed.desc', { reason: reason ?? '' });
+  };
+
   const handleApprove = () => {
     if (!selected) return;
     const inv = selected;
@@ -500,7 +535,13 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
           toast({
             variant: 'success',
             title: t('invoice.approve.done.title', { invoiceNumber: inv.invoiceNumber }),
-            description: t('invoice.approve.done.desc'),
+            // OPS-1 — this said "no person is resolved in this session" to a
+            // seat that WAS acting as a named person. It now says who the store
+            // recorded, and keeps the unnamed sentence for the unnamed seat.
+            description:
+              identity.actor.kind === 'RESOLVED'
+                ? t('invoice.approve.done.descNamed', { person: renderAttribution(identity.actor) })
+                : t('invoice.approve.done.desc'),
           });
         },
       },
@@ -523,7 +564,7 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
             toast({
               variant: 'warning',
               title: t('invoice.pay.failed.title', { invoiceNumber: inv.invoiceNumber }),
-              description: refusalText(res.reason) ?? t('invoice.pay.failed.desc', { reason: res.reason ?? '' }),
+              description: releaseRefusalCopy(res.reason, inv),
             });
             return;
           }
@@ -1241,10 +1282,18 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
                 </div>
                 <div>
                   <dt className="text-text-tertiary">{t('buyerInvoices.field.approver')}</dt>
-                  <dd className="text-text-primary font-medium">
-                    {selected.approver}
+                  <dd className="text-text-primary font-medium" data-testid="invoice-approver">
+                    {selected.approvedBy ? renderAttribution(selected.approvedBy) : selected.approver}
                   </dd>
                 </div>
+                {selected.releasedBy && (
+                  <div>
+                    <dt className="text-text-tertiary">{t('buyerInvoices.field.releasedBy')}</dt>
+                    <dd className="text-text-primary font-medium" data-testid="invoice-releaser">
+                      {renderAttribution(selected.releasedBy)}
+                    </dd>
+                  </div>
+                )}
                 <div>
                   <dt className="text-text-tertiary">{t('buyerInvoices.field.status')}</dt>
                   <dd>
@@ -1284,11 +1333,62 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
                     return k ? t(k) : selected.matchStatus;
                   })()}
                 </div>
-                <div className="text-text-secondary mt-1">
-                  {t(MATCH_DESC_KEY[selected.matchStatus])}
+                <div className="text-text-secondary mt-1" data-testid="invoice-match-desc">
+                  {selected.matchBasis
+                    ? t(MATCH_CAUSE_KEY[selected.matchBasis.cause], {
+                        invoiced: formatIDR(selected.matchBasis.invoiced),
+                        ordered: formatIDR(selected.matchBasis.orderedValue),
+                        already: formatIDR(selected.matchBasis.alreadyInvoiced),
+                        payable: formatIDR(
+                          Math.max(0, selected.matchBasis.receivedValue - selected.matchBasis.alreadyInvoiced),
+                        ),
+                      })
+                    : t(MATCH_DESC_KEY[selected.matchStatus])}
                 </div>
               </div>
+              {/* OPS-1 — the figures the verdict rests on, beside the verdict. */}
+              {selected.matchBasis && (
+                <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm mt-3" data-testid="invoice-match-figures">
+                  {(
+                    [
+                      ['ordered', selected.matchBasis.orderedValue],
+                      ['received', selected.matchBasis.receivedValue],
+                      ['already', selected.matchBasis.alreadyInvoiced],
+                      ['invoiced', selected.matchBasis.invoiced],
+                    ] as const
+                  ).map(([k, v]) => (
+                    <div key={k}>
+                      <dt className="text-text-tertiary">{t(`buyerInvoices.match.figure.${k}`)}</dt>
+                      <Data as="dd" className="text-text-primary font-medium">
+                        {formatIDR(v)}
+                      </Data>
+                    </div>
+                  ))}
+                </dl>
+              )}
+              {selected.matchBasis && poTotalDisagrees(selected.matchBasis) && (
+                <div
+                  className="mt-3 bg-warning-soft border-l-2 border-warning rounded px-3 py-2 text-xs text-warning-hover"
+                  data-testid="invoice-po-total-disagrees"
+                >
+                  {t('buyerInvoices.match.poTotalDisagrees', {
+                    stated: formatIDR(selected.matchBasis.poStatedTotal),
+                    lines: formatIDR(selected.matchBasis.poLineTotal),
+                  })}
+                </div>
+              )}
             </section>
+
+            {selected.lifecycleState === 'Disputed' && (
+              <section data-testid="invoice-dispute-reason">
+                <h3 className="text-label text-text-tertiary uppercase mb-3">
+                  {t('buyerInvoices.section.disputeReason')}
+                </h3>
+                <p className="text-sm text-text-primary">
+                  {selected.disputeReason || t('buyerInvoices.dispute.noReason')}
+                </p>
+              </section>
+            )}
 
             <section>
               <h3 className="text-label text-text-tertiary uppercase mb-3">
@@ -1327,9 +1427,13 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
               <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
                 <div>
                   <dt className="text-text-tertiary">{t('buyerInvoices.field.bankAccount')}</dt>
-                  <Data as="dd" className="text-text-primary font-medium">
-                    {selected.bankAccount}
-                  </Data>
+                  {selected.bankAccount ? (
+                    <Data as="dd" className="text-text-primary font-medium">
+                      {selected.bankAccount}
+                    </Data>
+                  ) : (
+                    <dd className="text-text-secondary">{t('buyerInvoices.field.bankUnknown')}</dd>
+                  )}
                 </div>
                 <div>
                   <dt className="text-text-tertiary">{t('buyerInvoices.field.paymentDate')}</dt>
@@ -1348,11 +1452,19 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
                   <Data as="strong" className="text-text-primary">
                     {formatIDR(selected.amount)}
                   </Data>
-                  {t('buyerInvoices.confirm.body.mid')}
-                  <Data as="strong" className="text-text-primary">
-                    {selected.bankAccount}
-                  </Data>
-                  {t('buyerInvoices.confirm.body.post')}
+                  {/* OPS-1 — an invoice raised in the portal carries no bank
+                      account, and the sentence used to end "transferred to ." */}
+                  {selected.bankAccount ? (
+                    <>
+                      {t('buyerInvoices.confirm.body.mid')}
+                      <Data as="strong" className="text-text-primary">
+                        {selected.bankAccount}
+                      </Data>
+                      {t('buyerInvoices.confirm.body.post')}
+                    </>
+                  ) : (
+                    t('buyerInvoices.confirm.body.midUnknown')
+                  )}
                 </div>
                 <div className="mt-2 pt-2 border-t border-warning/30 text-xs text-text-secondary">
                   {t('buyerInvoices.confirm.simulatedSettle')}

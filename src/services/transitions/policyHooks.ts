@@ -135,6 +135,9 @@ export const POLICY_HOOKS = {
   /** Invoice match: the match sub-flow must have rolled up to a clean Matched
    *  before the header can advance Submitted → Matched (census G2). */
   INVOICE_ROLLUP_MATCHED: 'invoice_rollup_matched',
+  /** OPS-1 — release payment: the person releasing is not the person who
+   *  approved the invoice. Approving and paying are two authorities. */
+  INVOICE_RELEASER_NOT_APPROVER: 'invoice_releaser_not_approver',
   /** RR submit (SDC-2a): payload.planVersion must be the referenced
    *  publication's own planVersion — the snapshot binding is un-falsifiable. */
   RR_SUBMIT_PLANVERSION_BOUND: 'rr_submit_planversion_bound',

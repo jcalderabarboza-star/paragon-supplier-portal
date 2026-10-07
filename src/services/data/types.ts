@@ -586,6 +586,44 @@ export interface Invoice {
   paymentTerms: string;
   buyerContact: string;
   remittanceNote: string | null;
+  /**
+   * OPS-1 — what the match verdict was computed FROM: the order's value at its
+   * own prices, the value received and accepted, what earlier invoices on the
+   * PO already claimed, and which of those this invoice ran over. Written with
+   * `matchStatus`, by the same resolver, so a verdict is never shown without
+   * the numbers behind it. Absent on a row the match has not run for.
+   */
+  matchBasis?: InvoiceMatchBasis;
+  /** OPS-1 — who approved it, stamped from the session by the store. */
+  approvedBy?: ActorAttribution;
+  /** OPS-1 — who released its payment, stamped from the session by the store. */
+  releasedBy?: ActorAttribution;
+  /** OPS-1 — the reason finance wrote when it disputed the invoice; both sides read it. */
+  disputeReason?: string;
+}
+
+/** OPS-1 — why an invoice is, or is not, within what may be paid on its PO. */
+export type InvoiceMatchCause =
+  | 'WITHIN'
+  | 'EXCEEDS_RECEIVED'
+  | 'ALREADY_INVOICED'
+  | 'EXCEEDS_ORDER';
+
+/** OPS-1 — the figures a match verdict rests on. All in the PO's currency. */
+export interface InvoiceMatchBasis {
+  /** Σ confirmed quantity × PO unit price. */
+  orderedValue: number;
+  /** Σ accepted quantity (capped at confirmed) × PO unit price, over posted receipts. */
+  receivedValue: number;
+  /** Σ of the other invoices on this PO that are matched or further along. */
+  alreadyInvoiced: number;
+  /** This invoice's amount when the verdict was computed. */
+  invoiced: number;
+  cause: InvoiceMatchCause;
+  /** The total the PO states, kept so a disagreement with its lines can be flagged. */
+  poStatedTotal: number;
+  /** Σ ordered quantity × PO unit price — what the PO's own lines come to. */
+  poLineTotal: number;
 }
 
 export interface SupplierInvoice {
@@ -604,6 +642,8 @@ export interface SupplierInvoice {
   channel: InvoiceChannel;
   buyerContact: string;
   remittanceNote: string | null;
+  /** OPS-1 — the reason Paragon finance wrote, while the invoice is disputed. */
+  disputeReason?: string;
 }
 
 /** BUYER-persona projection labels of `InvoiceStatus` (+ computed Overdue). */
@@ -657,6 +697,10 @@ export interface BuyerInvoice {
   daysOutstanding: number;
   bankAccount: string;
   channel: InvoiceChannel;
+  matchBasis?: InvoiceMatchBasis;
+  approvedBy?: ActorAttribution;
+  releasedBy?: ActorAttribution;
+  disputeReason?: string;
 }
 
 export type AsnStatus =

@@ -96,6 +96,8 @@ export const identityEn: Record<string, string> = {
   // drawdown-tolerance editor started dispatching a verb whose hook emits it.
   'identity.refusal.sampleCannotLoosen':
     '{{person}} is a sample identity and may not relax a governed setting. Accepting that risk needs a real signed-in person, and Paragon has no sign-in yet — tightening is still available.',
+  'identity.refusal.releaserIsApprover':
+    '{{person}} approved this invoice and may not also release its payment. Approving an invoice and releasing its money are two authorities — somebody else releases it.',
 };
 
 export const identityId: Record<string, string> = {
@@ -140,4 +142,6 @@ export const identityId: Record<string, string> = {
     '{{person}} mengajukan permintaan ini dan tidak boleh sekaligus memutuskannya. Mengajukan permintaan material dan memutuskannya adalah dua kewenangan — alihkan kepada orang lain.',
   'identity.refusal.sampleCannotLoosen':
     '{{person}} adalah identitas contoh dan tidak boleh melonggarkan pengaturan yang diatur. Menerima risiko itu memerlukan orang sungguhan yang telah masuk, dan Paragon belum memiliki proses masuk — memperketat tetap tersedia.',
+  'identity.refusal.releaserIsApprover':
+    '{{person}} menyetujui faktur ini dan tidak boleh juga merilis pembayarannya. Menyetujui faktur dan merilis dananya adalah dua kewenangan — orang lain yang merilisnya.',
 };

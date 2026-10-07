@@ -110,6 +110,7 @@ export function toSupplierInvoice(inv: Invoice, nowIso: string): SupplierInvoice
     channel: inv.channel,
     buyerContact: inv.buyerContact,
     remittanceNote: inv.remittanceNote,
+    ...(inv.status === 'Disputed' && inv.disputeReason ? { disputeReason: inv.disputeReason } : {}),
   };
 }
 
@@ -138,6 +139,10 @@ export function toBuyerInvoice(inv: Invoice, nowIso: string): BuyerInvoice {
     approver: inv.approver,
     paymentTerms: inv.paymentTerms,
     daysOutstanding: daysOutstanding(inv, nowIso),
+    ...(inv.matchBasis ? { matchBasis: inv.matchBasis } : {}),
+    ...(inv.approvedBy ? { approvedBy: inv.approvedBy } : {}),
+    ...(inv.releasedBy ? { releasedBy: inv.releasedBy } : {}),
+    ...(inv.status === 'Disputed' && inv.disputeReason ? { disputeReason: inv.disputeReason } : {}),
     bankAccount: inv.bankAccount,
     channel: inv.channel,
   };

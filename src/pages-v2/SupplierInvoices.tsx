@@ -750,8 +750,14 @@ const SupplierInvoices: React.FC = () => {
                 </h3>
                 <Timeline events={buildTimeline(selected, t)} />
                 {selected.status === 'Disputed' && (
-                  <div className="mt-3 bg-danger-soft border-l-2 border-danger rounded px-3 py-2 text-xs text-danger">
-                    {t('supplierInvoices.note.disputed')}
+                  <div
+                    className="mt-3 bg-danger-soft border-l-2 border-danger rounded px-3 py-2 text-xs text-danger"
+                    data-testid="supplier-invoice-dispute-note"
+                  >
+                    {t('supplierInvoices.note.disputed')}{' '}
+                    {selected.disputeReason
+                      ? t('supplierInvoices.note.disputeReason', { reason: selected.disputeReason })
+                      : t('supplierInvoices.note.disputeNoReason')}
                   </div>
                 )}
                 {selected.status === 'Overdue' && (
@@ -767,10 +773,26 @@ const SupplierInvoices: React.FC = () => {
                 <h3 className="text-label text-text-tertiary uppercase mb-3">
                   {t('supplierInvoices.section.remittance')}
                 </h3>
-                <div className="bg-success-soft border-l-2 border-success rounded px-4 py-3 mb-3 text-sm text-success font-semibold flex items-center gap-2">
-                  <CheckCircle2 size={14} />
-                  {t('supplierInvoices.remittance.processed')}
-                </div>
+                {/* OPS-1 — "processed and credited to your account" was shown at
+                    Payment Released, where the bank has confirmed nothing. The
+                    credited sentence is kept for the state the bank's fact
+                    produces, and only for it. */}
+                {selected.status === 'Remittance Received' ? (
+                  <div
+                    className="bg-success-soft border-l-2 border-success rounded px-4 py-3 mb-3 text-sm text-success font-semibold flex items-center gap-2"
+                    data-testid="supplier-remittance-confirmed"
+                  >
+                    <CheckCircle2 size={14} />
+                    {t('supplierInvoices.remittance.processed')}
+                  </div>
+                ) : (
+                  <div
+                    className="bg-bg-hover border-l-2 border-border-subtle rounded px-4 py-3 mb-3 text-sm text-text-secondary"
+                    data-testid="supplier-payment-released"
+                  >
+                    {t('supplierInvoices.remittance.released')}
+                  </div>
+                )}
                 <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
                   <div>
                     <dt className="text-text-tertiary">{t('supplierInvoices.remittance.invoiceNo')}</dt>
@@ -793,7 +815,7 @@ const SupplierInvoices: React.FC = () => {
                   <div>
                     <dt className="text-text-tertiary">{t('supplierInvoices.remittance.bankCredited')}</dt>
                     <dd className="text-text-primary font-medium">
-                      {selected.bankAccount}
+                      {selected.bankAccount || t('supplierInvoices.remittance.bankUnknown')}
                     </dd>
                   </div>
                   <div className="col-span-2">

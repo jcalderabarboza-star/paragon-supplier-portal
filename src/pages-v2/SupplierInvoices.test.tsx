@@ -24,7 +24,7 @@ describe('SupplierInvoices — four honest states', () => {
   it('data: renders the scoped invoice workspace for the seeded supplier', async () => {
     renderWithProviders(<SupplierInvoices />, { identity: SUPPLIER });
     expect(await screen.findByText('My Invoices')).toBeInTheDocument();
-    expect(await screen.findByText('Payments Received')).toBeInTheDocument();
+    expect(await screen.findByText('Payments Released')).toBeInTheDocument();
   });
 
   it('loading: shows LoadingState while the reads are pending', () => {
@@ -33,7 +33,7 @@ describe('SupplierInvoices — four honest states', () => {
       service: alwaysPending,
     });
     expect(screen.getByText('Loading…')).toBeInTheDocument();
-    expect(screen.queryByText('Payments Received')).not.toBeInTheDocument();
+    expect(screen.queryByText('Payments Released')).not.toBeInTheDocument();
   });
 
   it('error: shows ErrorState when a read throws', async () => {

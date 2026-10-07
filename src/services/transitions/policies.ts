@@ -2594,3 +2594,45 @@ bindPolicyHook(POLICY_HOOKS.INTAKE_OVERRIDE_REASONED, ({ payload, target, entity
   }
   return { ok: true };
 });
+
+// ── OPS-1 · INVOICE APPROVAL AND PAYMENT RELEASE — WHO DECIDED ──────────────
+//
+// Approving an invoice and releasing its payment recorded nobody: the store
+// kept no actor, and the surface told a seat that WAS acting as a named person
+// that "no person is resolved in this session". The invoice target now stamps
+// `approvedBy` / `releasedBy` from the scope's actor — a named person, or the
+// honest UNATTRIBUTED. There is deliberately NO hook requiring an actor: every
+// caller that existed before this batch is still admitted, and a scope that
+// carries no actor at all simply leaves the stamp absent.
+//
+// ⚠️ **SEGREGATION, AND IT IS A PROPERTY OF THE PAIR.** One finance seat holds
+// both `invoice:approve` and `invoice:pay`, so the role gate cannot keep the two
+// acts apart — only the record of who approved can. A NAMED person who approved
+// an invoice is refused when they try to release its payment, by name.
+//
+// ⚠️ **IT CAN ONLY COMPARE TWO NAMES.** When either act is UNATTRIBUTED there is
+// nobody to compare and the release is admitted — the same direction every
+// four-eyes check in this file takes (it gets stricter when an actor resolves),
+// and the surface says the act was recorded without a named person. Refusing it
+// would close payment release for the unattributed seat altogether.
+bindPolicyHook(POLICY_HOOKS.INVOICE_RELEASER_NOT_APPROVER, ({ entityId, target, scope }) => {
+  const inv = target.readEntity(entityId) as { approvedBy?: unknown } | null;
+  const approver = asActorAttribution(inv?.approvedBy);
+  const releaser = asActorAttribution(scope.actor);
+  if (
+    approver &&
+    releaser &&
+    isAttributed(approver) &&
+    isAttributed(releaser) &&
+    approver.person.personId === releaser.person.personId
+  ) {
+    return {
+      ok: false,
+      reason:
+        `INVOICE_RELEASER_IS_APPROVER: the approver ` +
+        `(${personRefusalToken(approver.person.personId)}) may not also release this ` +
+        'payment — approving an invoice and releasing its money are two authorities',
+    };
+  }
+  return { ok: true };
+});
