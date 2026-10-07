@@ -12,6 +12,8 @@
 // the next stage" has one answer.
 // ────────────────────────────────────────────────────────────────────────────
 
+import type { RfiAnswers } from './rfiQuestionnaire';
+
 export type RfqStage = 'RFI' | 'RFP' | 'RFQ';
 
 /** The three, in the only order an event moves through them. */
@@ -47,9 +49,16 @@ export interface StageAdvance {
 }
 
 /**
- * A supplier's answer at an RFI or RFP stage. In this batch it is an
- * acknowledgement of interest and an optional note — the questionnaire and the
- * proposal are RFx-2 and RFx-3.
+ * RFx-2 · where a stage response is. A `Draft` is the supplier's own work in
+ * progress: the buyer does not read it and it is not an answer. Absent on a
+ * row = `Submitted`, which is every row authored before drafts existed.
+ */
+export type StageResponseStatus = 'Draft' | 'Submitted';
+
+/**
+ * A supplier's answer at an RFI or RFP stage: an acknowledgement of interest,
+ * an optional note and — at an RFI that carries a questionnaire (RFx-2) — the
+ * answers to it. The RFP proposal is RFx-3.
  */
 export interface StageResponse {
   readonly id: string;
@@ -58,9 +67,24 @@ export interface StageResponse {
   readonly stage: RfqStage;
   readonly supplierId: string;
   readonly note?: string;
-  /** The day of the act (`YYYY-MM-DD`), store-assigned. */
+  /**
+   * The day of the act (`YYYY-MM-DD`), store-assigned: the day it was
+   * submitted, or — on a Draft — the day it was last saved.
+   */
   readonly respondedAt: string;
+  /** RFx-2 · read it through `isSubmittedResponse`, never directly. */
+  readonly status?: StageResponseStatus;
+  /** RFx-2 · the answers to the event's RFI questionnaire, keyed by question id. */
+  readonly answers?: RfiAnswers;
 }
+
+/** RFx-2 · is this row an answer the buyer reads? A row that states no status is. */
+export const isSubmittedResponse = (r: Pick<StageResponse, 'status'>): boolean =>
+  r.status !== 'Draft';
+
+/** RFx-2 · the state the machine reads off a row. */
+export const stageResponseStatusOf = (r: Pick<StageResponse, 'status'>): StageResponseStatus =>
+  r.status ?? 'Submitted';
 
 interface StagedEvent {
   readonly stage?: RfqStage;
@@ -86,7 +110,11 @@ export function notShortlistedAdvanceOf(
   );
 }
 
-/** The suppliers who answered at `stage`, once each, in the order they answered. */
+/**
+ * The suppliers who answered at `stage`, once each, in the order they answered.
+ * RFx-2 — a Draft is not an answer: a supplier that saved one and never
+ * submitted it has not responded, and cannot be shortlisted on it.
+ */
 export function stageRespondersOf(
   responses: readonly StageResponse[],
   rfqId: string,
@@ -94,7 +122,14 @@ export function stageRespondersOf(
 ): string[] {
   const seen: string[] = [];
   for (const r of responses) {
-    if (r.rfqId === rfqId && r.stage === stage && !seen.includes(r.supplierId)) seen.push(r.supplierId);
+    if (
+      r.rfqId === rfqId &&
+      r.stage === stage &&
+      isSubmittedResponse(r) &&
+      !seen.includes(r.supplierId)
+    ) {
+      seen.push(r.supplierId);
+    }
   }
   return seen;
 }

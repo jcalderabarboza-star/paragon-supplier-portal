@@ -1,5 +1,6 @@
 import type { FxPin } from '../lib/fxPin';
 import type { RfqStage, StageAdvance, StageResponse } from './rfqStage';
+import type { RfiQuestion } from './rfiQuestionnaire';
 import { shiftFields, shiftIso } from '../services/data/fixturePresent';
 import { mockQuotations } from './mockQuotations';
 import { mockStageResponses } from './mockStageResponses';
@@ -131,6 +132,21 @@ export interface RFQ {
    * its own only (`rfqSupplierView.ts`).
    */
   stageResponses?: readonly StageResponse[];
+  /**
+   * RFx-2 · THE RFI QUESTIONNAIRE (`rfiQuestionnaire.ts`) — what the buyer asks
+   * at this event's RFI stage. Written by `t_rfq_questionnaire_set` while the
+   * event is a Draft and by nothing else; once the event is published the
+   * questions do not move, so every supplier answers the same ones. Absent = the
+   * event asks none, and its RFI takes interest and a note as it did at RFx-1.
+   * A supplier's read carries the questions without their knock-out answers.
+   */
+  questionnaire?: readonly RfiQuestion[];
+  /**
+   * RFx-2 · DERIVED AT READ, NEVER STORED, AND ON A SUPPLIER'S READ ONLY — the
+   * reader's own unsent draft at the stage the event is at. The buyer's read
+   * never carries one: a draft is not an answer (`rfqSupplierView.ts`).
+   */
+  myStageDraft?: StageResponse;
 }
 
 /** An event as it is authored: everything but the two lists derived at read. */

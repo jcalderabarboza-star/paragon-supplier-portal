@@ -89,6 +89,14 @@ export interface CommandTarget {
     toState: string,
     payload: Record<string, unknown>,
     scope: QueryScope,
+    /**
+     * The id of the transition being applied (RFx-2). A target that writes
+     * different fields for different verbs reads WHICH VERB here, never the
+     * shape of the payload: a payload key is something any caller can add, and
+     * a field written because a key was present is written without the checks
+     * of the verb that guards it. Every earlier target ignores the parameter.
+     */
+    transitionId?: string,
   ): void;
   /**
    * Creation scope: the intended owner derived from the payload's parent
@@ -817,6 +825,7 @@ export function createDispatcher(deps: DispatcherDeps): Dispatcher {
         transition.statePreserving ? currentState! : transition.to,
         payload,
         scope,
+        transition.id,
       );
       result = fin(scope, transition.id, outcome, undefined, input.entityId);
     }

@@ -642,6 +642,105 @@ export function useStageResponseSubmit() {
   });
 }
 
+export interface RfqQuestionnaireSetVars {
+  rfqId: string;
+  /** The whole questionnaire as it now stands. An empty list removes it. */
+  questions: readonly unknown[];
+}
+
+/**
+ * RFx-2 — the buyer writes the RFI questionnaire on a draft event (fires
+ * `t_rfq_questionnaire_set`, Draft → Draft).
+ */
+export function useRfqQuestionnaireSet() {
+  const svc = useDataService();
+  const scope = useScope();
+  const invalidate = useInvalidateProcurement();
+
+  return useMutation<CommandResult, Error, RfqQuestionnaireSetVars>({
+    mutationFn: ({ rfqId, questions }) =>
+      svc.commands.dispatch(scope, {
+        transitionId: 't_rfq_questionnaire_set',
+        entity: 'rfq',
+        entityId: rfqId,
+        payload: { questions },
+      }),
+    onSuccess: (result) => {
+      if (result.status !== 'failed') invalidate(scope);
+    },
+  });
+}
+
+/**
+ * RFx-2 — a supplier keeps its unfinished answers (fires the `creation` verb
+ * `t_stageresponse_save`, ∅ → Draft). The payload is `rfqId`, `supplierId`,
+ * and the `answers` and `note` so far.
+ */
+export function useStageResponseSave() {
+  const svc = useDataService();
+  const scope = useScope();
+  const invalidate = useInvalidateProcurement();
+
+  return useMutation<CommandResult, Error, StageResponseSubmitVars>({
+    mutationFn: ({ payload }) =>
+      svc.commands.dispatch(scope, {
+        transitionId: 't_stageresponse_save',
+        entity: 'stageResponse',
+        payload,
+      }),
+    onSuccess: (result) => {
+      if (result.status !== 'failed') invalidate(scope);
+    },
+  });
+}
+
+export interface StageResponseDraftVars {
+  /** The draft being saved again or submitted. */
+  responseId: string;
+  /** The whole draft as it now stands: `answers` and `note`. */
+  payload: Record<string, unknown>;
+}
+
+/** RFx-2 — save a draft again (fires `t_stageresponse_resave`, Draft → Draft). */
+export function useStageResponseResave() {
+  const svc = useDataService();
+  const scope = useScope();
+  const invalidate = useInvalidateProcurement();
+
+  return useMutation<CommandResult, Error, StageResponseDraftVars>({
+    mutationFn: ({ responseId, payload }) =>
+      svc.commands.dispatch(scope, {
+        transitionId: 't_stageresponse_resave',
+        entity: 'stageResponse',
+        entityId: responseId,
+        payload,
+      }),
+    onSuccess: (result) => {
+      if (result.status !== 'failed') invalidate(scope);
+    },
+  });
+}
+
+/** RFx-2 — submit a draft (fires `t_stageresponse_send`, Draft → Submitted). */
+export function useStageResponseSend() {
+  const svc = useDataService();
+  const scope = useScope();
+  const invalidate = useInvalidateProcurement();
+
+  return useMutation<CommandResult, Error, StageResponseDraftVars>({
+    mutationFn: ({ responseId, payload }) =>
+      svc.commands.dispatch(scope, {
+        transitionId: 't_stageresponse_send',
+        entity: 'stageResponse',
+        entityId: responseId,
+        payload,
+      }),
+    onSuccess: (result) => {
+      if (result.status !== 'failed') invalidate(scope);
+    },
+  });
+}
+
 // ─── Quotation lifecycle (Task 3b — the last sourcing-spine piece) ───────────
 // t_quotation_submit is the ONE supplier-owned CREATION verb: the invited
 // supplier answers an RFQ through the SAME dispatcher creation mechanism as

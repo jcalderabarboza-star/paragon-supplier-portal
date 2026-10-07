@@ -81,6 +81,9 @@ import { formatDate, formatMoney, formatNumber } from '../lib/format';
 import { useRefusalText } from '../hooks/useRefusalText';
 import { notShortlistedAdvanceOf, stageOf, stagePathOf, type RfqStage } from '../data/rfqStage';
 import StageTimeline from './sourcing/StageTimeline';
+import RfiAnswerForm from './rfqs/RfiAnswerForm';
+import { answerText, interestRefusalKey, yesNoWords } from './rfqs/rfiAnswerModel';
+import { questionLabel } from '../data/rfiQuestionnaire';
 
 // SRC-2 — THE PAGE READS THE DECLARED PRESENT, as `BuyerSourcing` does. It read
 // the wall clock while the buyer's board read `DECLARED_PRESENT`, so one
@@ -123,22 +126,8 @@ function quoteRefusalKey(reason: string | undefined): string | null {
   return null;
 }
 
-/** RFx-1 — the four refusals of a stage response, in the supplier's own words. */
-function interestRefusalKey(reason: string | undefined): string | null {
-  if (refusedByPolicy(reason, POLICY_HOOKS.STAGE_RESPONSE_EVENT_OPEN)) {
-    return 'rfqs.refusal.interestEventNotOpen';
-  }
-  if (refusedByPolicy(reason, POLICY_HOOKS.STAGE_RESPONSE_STAGE_TAKES_INTEREST)) {
-    return 'rfqs.refusal.stageTakesQuotations';
-  }
-  if (refusedByPolicy(reason, POLICY_HOOKS.STAGE_RESPONSE_BEFORE_DEADLINE)) {
-    return 'rfqs.refusal.interestDeadlinePassed';
-  }
-  if (refusedByPolicy(reason, POLICY_HOOKS.STAGE_RESPONSE_ONE_PER_STAGE)) {
-    return 'rfqs.refusal.interestAlreadyRecorded';
-  }
-  return null;
-}
+// RFx-2 — the stage response's refusals moved to `rfqs/rfiAnswerModel.ts`
+// (`interestRefusalKey`): the answer form reads the same map this page does.
 
 interface OpenRFQ {
   id: string;
@@ -438,6 +427,14 @@ const RFQCard: React.FC<RFQCardProps> = ({
   // RFx-1 — at RFI and RFP the answer is interest and a note, its own verb.
   const interestAvailability = useVerbAvailability('stageresponse:submit');
   const takesInterest = rfq.stage !== 'RFQ';
+  // RFx-2 — AT AN RFI THAT ASKS A QUESTIONNAIRE the answer is the answers to
+  // it, and the note form below gives way to the answer form. The questions
+  // are the event's own; an RFP, and an RFI that asks none, read as at RFx-1.
+  const { identity } = useCurrentIdentity();
+  const questions = rfq.stage === 'RFI' ? (rfq.event.questionnaire ?? []) : [];
+  const asksQuestionnaire = questions.length > 0;
+  const draft = rfq.event.myStageDraft;
+  const submittedAnswers = (rfq.event.stageResponses ?? []).find((a) => a.stage === rfq.stage)?.answers;
   const [interestOpen, setInterestOpen] = useState(false);
   const [interestNote, setInterestNote] = useState('');
   const [interestSending, setInterestSending] = useState(false);
@@ -564,10 +561,38 @@ const RFQCard: React.FC<RFQCardProps> = ({
             The questionnaire and the proposal are not built yet. */}
         {takesInterest && (
           <p className="text-xs text-text-tertiary mb-3" data-testid={`rfq-stage-content-note-${rfq.id}`}>
-            {t('rfqs.interest.contentNote', { stage: rfq.stage })}
+            {asksQuestionnaire
+              ? t(
+                  questions.length === 1
+                    ? 'rfqs.interest.contentNote.questionnaire.one'
+                    : 'rfqs.interest.contentNote.questionnaire.other',
+                  { count: questions.length },
+                )
+              : t(rfq.stage === 'RFI' ? 'rfqs.interest.contentNote.rfi' : 'rfqs.interest.contentNote.rfp')}
           </p>
         )}
-        {interestFormShown && (
+        {/* RFx-2 — the supplier's own submitted answers, read back. */}
+        {asksQuestionnaire && rfq.interestRecordedAt !== undefined && (
+          <ol className="mb-3 space-y-1" data-testid={`rfi-own-answers-${rfq.id}`}>
+            {questions.map((q, i) => (
+              <li key={q.id} className="text-xs text-text-secondary">
+                <span className="font-mono mr-1.5">{questionLabel(i + 1)}</span>
+                {q.prompt}{' '}
+                <span className="text-text-primary font-semibold">
+                  {answerText(q, submittedAnswers?.[q.id], yesNoWords(t)) ?? t('rfqs.rfi.notAnswered')}
+                </span>
+              </li>
+            ))}
+          </ol>
+        )}
+        {interestFormShown && asksQuestionnaire && (
+          <RfiAnswerForm
+            rfq={rfq.event}
+            supplierId={identity.supplierId ?? ''}
+            onClose={() => setInterestOpen(false)}
+          />
+        )}
+        {interestFormShown && !asksQuestionnaire && (
           <div
             className="border border-border-subtle bg-bg-hover rounded-md p-3 mb-3"
             data-testid={`rfq-interest-form-${rfq.id}`}
@@ -634,20 +659,35 @@ const RFQCard: React.FC<RFQCardProps> = ({
                 className="text-xs text-success font-semibold"
                 data-testid={`rfq-interest-recorded-${rfq.id}`}
               >
-                {t('rfqs.interest.recorded', {
+                {t(asksQuestionnaire ? 'rfqs.rfi.submittedOn' : 'rfqs.interest.recorded', {
                   stage: rfq.stage,
                   date: formatDate(rfq.interestRecordedAt),
                 })}
               </span>
             ) : interestAvailability.kind === 'held' ? (
-              <Button
-                variant="outline"
-                disabled={interestOpen}
-                onClick={() => setInterestOpen(true)}
-                data-testid={`rfq-interest-open-${rfq.id}`}
-              >
-                {t('rfqs.interest.open')}
-              </Button>
+              <>
+                <Button
+                  variant="outline"
+                  disabled={interestOpen}
+                  onClick={() => setInterestOpen(true)}
+                  data-testid={`rfq-interest-open-${rfq.id}`}
+                >
+                  {t(
+                    !asksQuestionnaire
+                      ? 'rfqs.interest.open'
+                      : draft
+                        ? 'rfqs.rfi.continue'
+                        : 'rfqs.rfi.open',
+                  )}
+                </Button>
+                {/* RFx-2 — a saved draft is the supplier's own. Said here so
+                    nobody takes "saved" to mean "sent". */}
+                {asksQuestionnaire && draft && (
+                  <span className="text-xs text-text-tertiary" data-testid={`rfi-draft-saved-${rfq.id}`}>
+                    {t('rfqs.rfi.draftSaved', { date: formatDate(draft.respondedAt) })}
+                  </span>
+                )}
+              </>
             ) : (
               <HandoffNotice
                 availability={interestAvailability}

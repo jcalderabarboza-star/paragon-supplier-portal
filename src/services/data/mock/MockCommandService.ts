@@ -63,7 +63,10 @@ import { deliveryShipmentPoolFor } from '../../delivery/pool';
 import { schedulingAgreementStore } from '../../delivery/stores/schedulingAgreementStore';
 import type { DrawdownEnforcement, SchedulingAgreementItem } from '../../delivery/types';
 import type { RFQ, RFQStatus, RFQCategory } from '../../../data/mockRfqs';
-import { isRfqStage, nextStageOf, stageOf } from '../../../data/rfqStage';
+import { isRfqStage, nextStageOf, stageOf, stageResponseStatusOf } from '../../../data/rfqStage';
+import type { StageResponse } from '../../../data/rfqStage';
+import { normalizeAnswers, normalizeQuestionnaire } from '../../../data/rfiQuestionnaire';
+import { rfiQuestionsFor } from '../rfqSourcingGate';
 import type { CodeLessReason } from '../../../data/materialCatalogReason';
 import type { Quotation, QuotationStatus } from '../../../data/mockQuotations';
 import { BASE_CURRENCY, type BidCurrency } from '../../../lib/currencyPolicy';
@@ -523,39 +526,67 @@ function advanceOf(r: RFQ, payload: Record<string, unknown>): Partial<RFQ> {
   };
 }
 
+/**
+ * RFx-2 · what `t_rfq_questionnaire_set` writes on the event, and the event
+ * untouched for every other verb. `rfq_questionnaire_well_formed` has already
+ * proved the list one a supplier can be asked; it is stored normalised. An
+ * EMPTY list removes the field: an event that asks nothing states no
+ * questionnaire, exactly as one that never had one.
+ */
+function withQuestionnaire(
+  verb: string | undefined,
+  payload: Record<string, unknown>,
+  next: RFQ,
+): RFQ {
+  if (verb !== 't_rfq_questionnaire_set' || !Array.isArray(payload.questions)) return next;
+  const { questionnaire: _replaced, ...rest } = next;
+  const questions = normalizeQuestionnaire(payload.questions);
+  return questions.length === 0 ? rest : { ...rest, questionnaire: questions };
+}
+
 const rfqTarget: CommandTarget = {
   readState: (id) => rfqStore.get(id)?.status ?? null,
   readScopeOwner: () => null,
   readEntity: (id) => rfqStore.get(id) ?? null,
-  applyTransition: (id, toState, payload) => {
-    rfqStore.update(id, (r) => ({
+  // RFx-2 — EVERY GUARDED FIELD IS WRITTEN FOR ITS OWN VERB AND FOR NO OTHER.
+  // This target used to decide what to write from the SHAPE of the payload: a
+  // `quote` key appended a rate, an `awardedSupplierId` key recorded an
+  // awardee. The checks on a rate and on an awardee hang on `t_rfq_fx_pin` and
+  // `t_rfq_award`, so any other verb carrying those keys was written with none
+  // of them run — a hand-made close could record a malformed rate and a winner.
+  // The verb now arrives as `verb`, and a field below is reached only through
+  // the branch of the verb whose hooks have just passed. An unnamed verb writes
+  // the state and nothing else. `rfx2StorePayload.test.ts` derives every
+  // (verb, field) pair from the flow.
+  applyTransition: (id, toState, payload, _scope, verb) => {
+    rfqStore.update(id, (r) => withQuestionnaire(verb, payload, {
       ...r,
       status: toState as RFQStatus,
       // Award records the chosen quote + supplier ONLY. Nothing downstream is
       // fabricated here — PO issuance is a separate buyer verb (future batch).
-      awardedQuotationId:
-        typeof payload.awardedQuotationId === 'string' ? payload.awardedQuotationId : r.awardedQuotationId,
-      awardedSupplierId:
-        typeof payload.awardedSupplierId === 'string' ? payload.awardedSupplierId : r.awardedSupplierId,
       // SRC-1 — the award is dated THE DAY IT IS MADE, store-assigned (a caller
       // that could set it could backdate its own award). It used to be read off
       // `awardDeadline`, a date the buyer typed weeks earlier.
-      ...(toState === 'Awarded' ? { awardedAt: new Date().toISOString().slice(0, 10) } : {}),
+      ...(verb === 't_rfq_award'
+        ? {
+            awardedQuotationId: String(payload.awardedQuotationId),
+            awardedSupplierId: String(payload.awardedSupplierId),
+            awardedAt: new Date().toISOString().slice(0, 10),
+          }
+        : {}),
       // RFx-1 — CONCLUDED WITHOUT AN AWARD: the day and the reason, on the
       // event. The day is store-assigned for the reason the award's is.
-      ...(toState === 'Concluded'
+      ...(verb === 't_rfq_conclude'
         ? {
             concludedAt: new Date().toISOString().slice(0, 10),
             concludeReason: String(payload.concludeReason ?? '').trim(),
           }
         : {}),
-      // RFx-1 — AN ADVANCE: the Closed → Open edge with a shortlist in the
-      // payload. This target is not told which verb it is applying, so the edge
-      // is read here and the one other verb on it (`t_rfq_reopen`) refuses a
-      // payload that carries a shortlist. The six advance hooks have already
-      // proved the list non-empty, made of responders, competitive, explained
-      // and datable.
-      ...(r.status === 'Closed' && toState === 'Open' ? advanceOf(r, payload) : {}),
+      // RFx-1 — AN ADVANCE. The six advance hooks have already proved the list
+      // non-empty, made of responders, competitive, explained and datable.
+      // (`t_rfq_reopen` still refuses a payload that carries a shortlist: the
+      // caller asked for one thing and named another.)
+      ...(verb === 't_rfq_advance' ? advanceOf(r, payload) : {}),
       // 2e-c-3 — THE D-1 FREEZE, made structural. A pin is APPENDED; there is no
       // branch here that finds an existing pin for the currency and replaces it,
       // and there is deliberately never going to be one. Superseding a rate is
@@ -566,7 +597,7 @@ const rfqTarget: CommandTarget = {
       // The payload is already gated by `rfq_fx_pin_well_formed` (permitted
       // non-base currency, finite positive rate, readable vintage, known
       // source), so the reads below cannot mint a malformed basis.
-      ...(payload.quote === undefined
+      ...(verb !== 't_rfq_fx_pin'
         ? {}
         : {
             fxPins: [
@@ -651,37 +682,74 @@ const rfqTarget: CommandTarget = {
   },
 };
 
-// — Stage-response target (RFx-1) — a supplier's answer at an RFI or RFP stage.
-//   CREATION ONLY, supplier-owned, on the quotation target's own scope rule:
-//   the owner is the submitting supplier, valid ONLY while it is on the event's
-//   invite list — so a supplier left off a shortlist resolves owner=null and is
-//   denied at scope on the next stage. A single-state record: no verb leaves
-//   `Submitted`, so `applyTransition` has nothing to write.
+// — Stage-response target (RFx-1, RFx-2) — a supplier's answer at an RFI or RFP
+//   stage. Supplier-owned, on the quotation target's own scope rule: a creation
+//   is owned by the submitting supplier ONLY while it is on the event's invite
+//   list — so a supplier left off a shortlist resolves owner=null and is denied
+//   at scope on the next stage. A row is born `Submitted`, or born a `Draft`
+//   its supplier re-saves and submits; nothing leaves `Submitted`.
+
+/**
+ * RFx-2 · what a response HOLDS, from a payload: the note, and the answers to
+ * the questions the event asks at this moment (`rfiQuestionsFor`), normalised.
+ * The answer hooks have already run on this same payload, so what they checked
+ * is what is written. A blank note and an empty answer set are not stored.
+ */
+function responseContentOf(
+  rfqId: string,
+  payload: Record<string, unknown>,
+): Pick<StageResponse, 'note' | 'answers'> {
+  const note = typeof payload.note === 'string' ? payload.note.trim() : '';
+  const answers = normalizeAnswers(rfiQuestionsFor(rfqId), payload.answers);
+  return {
+    ...(note ? { note } : {}),
+    ...(Object.keys(answers).length > 0 ? { answers } : {}),
+  };
+}
+
 const stageResponseTarget: CommandTarget = {
-  readState: (id) => (stageResponseStore.get(id) ? 'Submitted' : null),
+  readState: (id) => {
+    const row = stageResponseStore.get(id);
+    return row ? stageResponseStatusOf(row) : null;
+  },
   readScopeOwner: (id) => stageResponseStore.get(id)?.supplierId ?? null,
   readEntity: (id) => stageResponseStore.get(id) ?? null,
-  applyTransition: () => {
-    /* no-op — an answer is a record; nothing edits it. */
+  // The two verbs on a Draft, BY NAME (see `rfqTarget.applyTransition`): the
+  // payload is the whole draft as it now stands, so the row's content is
+  // replaced, never patched. The event, the stage and the supplier are the
+  // row's own and no payload moves them.
+  applyTransition: (id, toState, payload, _scope, verb) => {
+    if (verb !== 't_stageresponse_resave' && verb !== 't_stageresponse_send') return;
+    stageResponseStore.update(id, (r) => ({
+      id: r.id,
+      rfqId: r.rfqId,
+      stage: r.stage,
+      supplierId: r.supplierId,
+      ...responseContentOf(r.rfqId, payload),
+      respondedAt: new Date().toISOString().slice(0, 10),
+      ...(toState === 'Draft' ? { status: 'Draft' as const } : {}),
+    }));
   },
   creationOwner: (payload) => {
     const rfq = rfqStore.get(String(payload.rfqId));
     const sid = String(payload.supplierId);
     return rfq && rfq.invitedSupplierIds.includes(sid) ? sid : null;
   },
-  create: (payload) => {
+  create: (payload, toState) => {
     const id = stageResponseStore.nextNumber();
     const rfqId = String(payload.rfqId);
     const rfq = rfqStore.get(rfqId);
-    const note = typeof payload.note === 'string' ? payload.note.trim() : '';
     stageResponseStore.add({
       id,
       rfqId,
       // The event's own stage at this moment, never the payload's.
       stage: rfq ? stageOf(rfq) : 'RFQ',
       supplierId: String(payload.supplierId),
-      ...(note ? { note } : {}),
+      ...responseContentOf(rfqId, payload),
       respondedAt: new Date().toISOString().slice(0, 10),
+      // RFx-2 — `t_stageresponse_save` mints a Draft. A submitted row states
+      // no status, as every row before drafts existed.
+      ...(toState === 'Draft' ? { status: 'Draft' as const } : {}),
     });
     return { entityId: id };
   },

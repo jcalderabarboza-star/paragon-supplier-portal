@@ -5,6 +5,8 @@ import { mockContracts } from '../../../data/mockContracts';
 import { mockObligations } from '../../../data/mockObligations';
 import { applySupplierScope } from '../scoping';
 import { rfqStore } from './stores/rfqStore';
+import { stageResponseStore } from './stores/stageResponseStore';
+import { isSubmittedResponse } from '../../../data/rfqStage';
 import { supplierMayRead, toSupplierRfqView } from '../rfqSupplierView';
 import { quotationStore } from './stores/quotationStore';
 import { asnStore } from './stores/asnStore';
@@ -324,7 +326,17 @@ export class MockProcurementService implements IProcurementService {
         // RFx-1 — and an event the reader was left off at an advance: it
         // reads "not shortlisted" there, with the reason (`supplierMayRead`).
         .filter((r) => r.status !== 'Draft' && supplierMayRead(r, reader))
-        .map((r) => toSupplierRfqView(r, reader));
+        // RFx-2 — the reader's own unsent draft, asked of the response store:
+        // the event row holds submitted answers only (`rfqStore.project`).
+        .map((r) =>
+          toSupplierRfqView(
+            r,
+            reader,
+            stageResponseStore
+              .forRfq(r.id)
+              .find((a) => a.supplierId === reader && !isSubmittedResponse(a)),
+          ),
+        );
     }
     if (filter?.status) rows = rows.filter((r) => matchesList(r.status, filter.status));
     if (filter?.category)

@@ -61,7 +61,8 @@ import { SupplierStatus } from '../../types/supplier.types';
 import { quotationStore } from './mock/stores/quotationStore';
 import { rfqStore } from './mock/stores/rfqStore';
 import { stageResponseStore } from './mock/stores/stageResponseStore';
-import { stageOf, type RfqStage } from '../../data/rfqStage';
+import { stageOf, type RfqStage, type StageResponse } from '../../data/rfqStage';
+import type { RfiQuestion } from '../../data/rfiQuestionnaire';
 import { BASE_CURRENCY, type BidCurrency } from '../../lib/currencyPolicy';
 import { pslStore } from './mock/stores/pslStore';
 import { pslStatusFor, suspendsCompetitiveBidding } from './pslSourcingSeam';
@@ -487,6 +488,22 @@ export function stageResponseHeldBy(
       .forRfq(rfqId)
       .find((r) => r.stage === stage && r.supplierId === supplierId)?.id ?? null
   );
+}
+
+/**
+ * RFx-2 · THE QUESTIONS A RESPONSE RECORDED ON `rfqId` NOW MUST ANSWER: the
+ * event's questionnaire while it is at RFI, and none at any other stage. One
+ * place, so the hooks that check the answers and the store that writes them
+ * read the same list.
+ */
+export function rfiQuestionsFor(rfqId: string): readonly RfiQuestion[] {
+  const rfq = rfqStore.get(rfqId);
+  return rfq && stageOf(rfq) === 'RFI' ? (rfq.questionnaire ?? []) : [];
+}
+
+/** RFx-2 · a stage response by id, draft or submitted, or `null`. */
+export function stageResponseById(id: string): StageResponse | null {
+  return stageResponseStore.get(id) ?? null;
 }
 
 /**

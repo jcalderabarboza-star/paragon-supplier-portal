@@ -180,8 +180,65 @@ export const rfqsEn: Record<string, string> = {
     '{{stage}} stage',
   'rfqs.card.stages':
     'Stages',
-  'rfqs.interest.contentNote':
-    'At the {{stage}} stage you record your interest and a note, and nothing else. The questionnaire and the proposal are not built in this portal yet.',
+  // — RFx-2 · the RFI questionnaire —
+  'rfqs.interest.contentNote.rfp':
+    'At the RFP stage you record your interest and a note, and nothing else. The proposal is not built in this portal yet.',
+  'rfqs.interest.contentNote.rfi':
+    'This event asks no questionnaire at its RFI stage. You record your interest and a note, and nothing else.',
+  'rfqs.interest.contentNote.questionnaire.one':
+    'At its RFI stage this event asks a questionnaire of {{count}} question. You can save a draft, and you submit once every required question is answered.',
+  'rfqs.interest.contentNote.questionnaire.other':
+    'At its RFI stage this event asks a questionnaire of {{count}} questions. You can save a draft, and you submit once every required question is answered.',
+  'rfqs.rfi.open':
+    'Answer the questionnaire',
+  'rfqs.rfi.continue':
+    'Continue your answers',
+  'rfqs.rfi.draftSaved':
+    'Draft saved on {{date, stop}}. Not submitted — Paragon does not see a draft.',
+  'rfqs.rfi.submittedOn':
+    'Answers submitted at {{stage}} on {{date}}',
+  'rfqs.rfi.form.intro':
+    'Answer what you can and save a draft; Paragon sees nothing until you submit. Once submitted, your answers cannot be changed.',
+  'rfqs.rfi.required':
+    'Required',
+  'rfqs.rfi.optional':
+    'Optional',
+  'rfqs.rfi.yes':
+    'Yes',
+  'rfqs.rfi.no':
+    'No',
+  'rfqs.rfi.missing':
+    'This question is required and has no answer yet.',
+  'rfqs.rfi.notAnswered':
+    'Not answered',
+  'rfqs.rfi.document.recorded':
+    'File name recorded:',
+  'rfqs.rfi.document.note':
+    'Only the name of the file is recorded. The file itself is not uploaded or kept by this portal — send it to your Paragon buyer separately.',
+  'rfqs.rfi.submit':
+    'Submit answers',
+  'rfqs.rfi.saveDraft':
+    'Save draft',
+  'rfqs.rfi.toast.saved.title':
+    'Draft saved on {{rfq}}',
+  'rfqs.rfi.toast.saved.body':
+    'Paragon does not see a draft. Submit it before the response deadline.',
+  'rfqs.rfi.toast.submitted.title':
+    'Answers submitted on {{rfq}}',
+  'rfqs.rfi.toast.submitted.body':
+    'Paragon can now read your answers and consider you for the shortlist.',
+  'rfqs.rfi.toast.saveFailed.title':
+    'Draft not saved',
+  'rfqs.rfi.toast.submitFailed.title':
+    'Answers not submitted',
+  'rfqs.rfi.toast.failed.default':
+    'The request could not be completed. Nothing was changed.',
+  'rfqs.refusal.requiredUnanswered':
+    'Required and not answered: {{questions, stop}}. Answer them and submit again, or save a draft.',
+  'rfqs.refusal.answerInvalid':
+    'One of the answers is not of the kind its question asks for — a number where a number is asked, one of the listed choices where choices are listed. Correct it and try again.',
+  'rfqs.refusal.draftStageOver':
+    'This draft was written for a stage the event has since left. It can no longer be submitted.',
   'rfqs.interest.note':
     'Note to Paragon (optional)',
   'rfqs.interest.open':
@@ -435,8 +492,65 @@ export const rfqsId: Record<string, string> = {
     'Tahap {{stage}}',
   'rfqs.card.stages':
     'Tahap',
-  'rfqs.interest.contentNote':
-    'Pada tahap {{stage}} Anda hanya mencatat minat dan satu catatan. Kuesioner dan proposal belum dibangun di portal ini.',
+  // — RFx-2 · the RFI questionnaire —
+  'rfqs.interest.contentNote.rfp':
+    'Pada tahap RFP Anda hanya mencatat minat dan satu catatan. Proposal belum dibangun di portal ini.',
+  'rfqs.interest.contentNote.rfi':
+    'Acara ini tidak mengajukan kuesioner pada tahap RFI. Anda hanya mencatat minat dan satu catatan.',
+  'rfqs.interest.contentNote.questionnaire.one':
+    'Pada tahap RFI acara ini mengajukan kuesioner berisi {{count}} pertanyaan. Anda dapat menyimpan draf, dan mengirimkannya setelah setiap pertanyaan wajib dijawab.',
+  'rfqs.interest.contentNote.questionnaire.other':
+    'Pada tahap RFI acara ini mengajukan kuesioner berisi {{count}} pertanyaan. Anda dapat menyimpan draf, dan mengirimkannya setelah setiap pertanyaan wajib dijawab.',
+  'rfqs.rfi.open':
+    'Jawab kuesioner',
+  'rfqs.rfi.continue':
+    'Lanjutkan jawaban Anda',
+  'rfqs.rfi.draftSaved':
+    'Draf disimpan pada {{date, stop}}. Belum dikirim — Paragon tidak melihat draf.',
+  'rfqs.rfi.submittedOn':
+    'Jawaban dikirim pada tahap {{stage}} tanggal {{date}}',
+  'rfqs.rfi.form.intro':
+    'Jawab yang Anda bisa lalu simpan sebagai draf; Paragon tidak melihat apa pun sampai Anda mengirimkannya. Setelah dikirim, jawaban Anda tidak dapat diubah.',
+  'rfqs.rfi.required':
+    'Wajib',
+  'rfqs.rfi.optional':
+    'Opsional',
+  'rfqs.rfi.yes':
+    'Ya',
+  'rfqs.rfi.no':
+    'Tidak',
+  'rfqs.rfi.missing':
+    'Pertanyaan ini wajib dan belum dijawab.',
+  'rfqs.rfi.notAnswered':
+    'Tidak dijawab',
+  'rfqs.rfi.document.recorded':
+    'Nama berkas tercatat:',
+  'rfqs.rfi.document.note':
+    'Hanya nama berkas yang dicatat. Berkasnya sendiri tidak diunggah maupun disimpan oleh portal ini — kirimkan kepada pembeli Paragon Anda secara terpisah.',
+  'rfqs.rfi.submit':
+    'Kirim jawaban',
+  'rfqs.rfi.saveDraft':
+    'Simpan draf',
+  'rfqs.rfi.toast.saved.title':
+    'Draf disimpan pada {{rfq}}',
+  'rfqs.rfi.toast.saved.body':
+    'Paragon tidak melihat draf. Kirimkan sebelum tenggat tanggapan.',
+  'rfqs.rfi.toast.submitted.title':
+    'Jawaban dikirim pada {{rfq}}',
+  'rfqs.rfi.toast.submitted.body':
+    'Paragon kini dapat membaca jawaban Anda dan mempertimbangkan Anda untuk daftar pendek.',
+  'rfqs.rfi.toast.saveFailed.title':
+    'Draf tidak tersimpan',
+  'rfqs.rfi.toast.submitFailed.title':
+    'Jawaban tidak terkirim',
+  'rfqs.rfi.toast.failed.default':
+    'Permintaan tidak dapat diselesaikan. Tidak ada yang berubah.',
+  'rfqs.refusal.requiredUnanswered':
+    'Wajib dan belum dijawab: {{questions, stop}}. Jawab lalu kirim lagi, atau simpan sebagai draf.',
+  'rfqs.refusal.answerInvalid':
+    'Salah satu jawaban tidak sesuai dengan jenis yang diminta pertanyaannya — angka bila angka yang diminta, salah satu pilihan yang tercantum bila pilihannya tercantum. Perbaiki lalu coba lagi.',
+  'rfqs.refusal.draftStageOver':
+    'Draf ini ditulis untuk tahap yang sudah ditinggalkan acaranya. Draf ini tidak dapat lagi dikirim.',
   'rfqs.interest.note':
     'Catatan untuk Paragon (opsional)',
   'rfqs.interest.open':

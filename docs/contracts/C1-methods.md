@@ -1,6 +1,6 @@
 # C1 — Method Surface
 
-Three distinct axes. **71** (service surface) · **132** (transition catalog) · **23** (wired
+Three distinct axes. **71** (service surface) · **136** (transition catalog) · **23** (wired
 targets). They measure different things; this file keeps them separate.
 
 > ⚠️ **THIS DOCUMENT IS PINNED TO THE TREE, AND THE PIN IS WHY THE NUMBERS ABOVE ARE ALLOWED TO
@@ -197,6 +197,62 @@ targets). They measure different things; this file keeps them separate.
 > reader (`reason` only when the reader is the one left out), `concludedAt` (never `concludeReason`) and
 > the reader's own `stageResponses`. No service method was added.
 
+> **RE-HARVEST (2026-10-07, RFx-2).** The RFI stage gained a questionnaire. Catalog 132 → **136**; the
+> flow count (29) and the wired-target count (23) are unchanged. Moved by the pin going red.
+> **`CommandTarget.applyTransition` gained a FIFTH, OPTIONAL parameter, `transitionId`** — the id of the
+> verb being applied. The dispatcher passes it on every non-creation apply. **The `rfq` target now
+> writes a guarded field ONLY for the verb that guards it** — the awardee and `awardedAt` for
+> `t_rfq_award`, a rate for `t_rfq_fx_pin`, the stage / invite list / advance ledger for `t_rfq_advance`,
+> the conclude reason and day for `t_rfq_conclude`, the questionnaire for `t_rfq_questionnaire_set` —
+> and never from the shape of the payload. Before this, a `quote` key on ANY rfq verb appended a rate
+> and an `awardedSupplierId` key on any verb recorded an awardee, with none of the owning verb's hooks
+> run. `rfx2StorePayload.test.ts` derives every (verb, field group) pair from the flow. No refusal was
+> added for it: a foreign key is ignored, not refused. `REOPEN_CARRIES_SHORTLIST` still refuses.
+> **`rfq` gained ONE transition and no state.** `t_rfq_questionnaire_set` (Draft → Draft,
+> state-preserving; atom `rfq:create`, procurement; no required field; payload `questions`, the whole
+> list — an empty list removes the questionnaire). Legal on a Draft only, so a published event's
+> questions do not move.
+> **`stageResponse` gained ONE state and THREE transitions**, all on the atom `stageresponse:submit`.
+> States `Draft`, `Submitted` (initial `Draft`; `Submitted` the only terminal). `t_stageresponse_save`
+> (creation, ∅ → Draft; required `rfqId`; payload `supplierId`, optional `answers`, `note`),
+> `t_stageresponse_resave` (Draft → Draft, state-preserving; payload `answers`, `note` — the whole draft,
+> not a patch) and `t_stageresponse_send` (Draft → Submitted; payload `answers`, `note` — what is checked
+> is what is stored, never the draft as last saved). `t_stageresponse_submit` now also takes `answers`.
+> On the two verbs that act on a draft the event is the DRAFT'S OWN, read from the row; an `rfqId` in the
+> payload is not read. A CREATION is judged on the event its payload names: which of the two applies is
+> decided by whether the dispatch has a current state, so an `entityId` carried beside a creation is not read.
+> **Five refusals are new, all `POLICY_REJECTED`:**
+> on `t_rfq_questionnaire_set`, in this order — `QUESTIONNAIRE_STAGE_NOT_RFI`
+> (hook `rfq_questionnaire_at_rfi`): the event does not start at RFI; `QUESTIONNAIRE_MALFORMED`
+> (hook `rfq_questionnaire_well_formed`): names the question (`Q<n>`) and one of `NOT_A_LIST`,
+> `ID_MISSING`, `ID_DUPLICATE`, `PROMPT_MISSING`, `TYPE_UNKNOWN`, `OPTIONS_TOO_FEW`, `UNIT_MISSING`,
+> `KNOCKOUT_NOT_TAKEN`, `KNOCKOUT_NOT_AN_ANSWER`, `KNOCKOUT_NOT_REQUIRED`;
+> on `t_stageresponse_resave` and `t_stageresponse_send`, evaluated second — `RESPONSE_DRAFT_STAGE_OVER`
+> (hook `stage_response_draft_stage_current`): the event has left the stage the draft was written at;
+> on all four stage-response verbs — `RESPONSE_ANSWER_INVALID`
+> (hook `stage_response_answers_well_formed`): `answers` is not a map, names a question the event does not
+> ask at this stage, or holds an answer not of its question's kind;
+> on `t_stageresponse_submit` and `t_stageresponse_send`, evaluated last — `RESPONSE_QUESTION_REQUIRED`
+> (hook `stage_response_required_answered`): names each unanswered required question by `Q<n>` and wording.
+> The four RFx-1 stage-response refusals are unchanged; `stage_response_event_open` and
+> `stage_response_before_deadline` now also guard the two verbs on a draft, and
+> `INTEREST_ALREADY_RECORDED` now also refuses a second row beside a Draft.
+> **A knock-out answer is NOT a refusal.** It is a fact the buyer reads (`rfiQuestionnaire.
+> knockoutFailuresOf`); no verb refuses a response or an advance on it.
+> **`RFQ` gains ONE optional stored field**, `questionnaire` — a list of `RfiQuestion`
+> (`id`, `prompt`, `type`: `yes_no` | `single_choice` | `multi_choice` | `number` | `text` | `document`,
+> `required`, `options?`, `unit?`, `knockout?`) — **and one field derived at read on a SUPPLIER read
+> only**, `myStageDraft`. **`StageResponse` gains two optional stored fields**: `status` (`Draft`; absent =
+> `Submitted`) and `answers` (question id → `yes` | `no`, an option, a list of options, a number, text, or
+> — for a document question — the FILE NAME ONLY; no file is uploaded or stored).
+> **`RFQ.stageResponses` and `respondedSupplierIds` carry SUBMITTED responses only**: a Draft is filtered
+> out in `rfqStore`, so no buyer read holds one. **`getRFQs` under a SUPPLIER scope** now carries
+> `questionnaire` with every question's `knockout` REMOVED (an allowlist per question,
+> `rfqSupplierView.toSupplierQuestion`) and the reader's own unsent draft at the current stage as
+> `myStageDraft`. No service method was added.
+> **Questionnaire templates are NOT in this contract.** They are a browser-local list
+> (`localStorage`, key `paragon.rfiTemplates`): no flow, no verb, no target, no event.
+
 Source of truth: `src/services/data/types.ts` (service + command types),
 `src/services/transitions/` (schema, dispatcher, flows).
 
@@ -261,7 +317,7 @@ the string, because those are different claims and only the first is the contrac
 
 ---
 
-## Axis 2 — the 132-transition catalog (29 flows)
+## Axis 2 — the 136-transition catalog (29 flows)
 
 Every authored state-machine edge across the registered flows (`id: 't_<entity>_<verb>'`). Derived
 from `getKnownFlows()` — the seeded registry — never from a grep over the flow files, because a
@@ -276,9 +332,9 @@ transition id can be assembled at a call site rather than written as a literal (
 | `goodsReceiptLine.flow.ts` | `goodsReceiptLine` | 6 | `t_grline_inspect`, `t_grline_accept`, `t_grline_reject`, `t_grline_quarantine`, `t_grline_release`, `t_grline_return` | sub-flow (rollup) |
 | `invoice.flow.ts` | `invoice` | 8 | `t_invoice_create`, `t_invoice_submit`, `t_invoice_match`, `t_invoice_approve`, `t_invoice_release_payment`, `t_invoice_remit`, `t_invoice_dispute`, `t_invoice_resolve` | **wired** |
 | `invoiceMatch.flow.ts` | `invoiceMatch` | 4 | `t_invmatch_await_gr`, `t_invmatch_matched`, `t_invmatch_qty_variance`, `t_invmatch_price_variance` | sub-flow (rollup) |
-| `rfq.flow.ts` | `rfq` | 9 | `t_rfq_create`, `t_rfq_publish`, `t_rfq_close`, `t_rfq_award`, `t_rfq_fx_pin`, `t_rfq_advance`, `t_rfq_conclude`, `t_rfq_cancel`, `t_rfq_reopen` | **wired** |
+| `rfq.flow.ts` | `rfq` | 10 | `t_rfq_create`, `t_rfq_questionnaire_set`, `t_rfq_publish`, `t_rfq_close`, `t_rfq_award`, `t_rfq_fx_pin`, `t_rfq_advance`, `t_rfq_conclude`, `t_rfq_cancel`, `t_rfq_reopen` | **wired** |
 | `quotation.flow.ts` | `quotation` | 5 | `t_quotation_submit`, `t_quotation_review`, `t_quotation_award`, `t_quotation_reject`, `t_quotation_withdraw` | **wired** |
-| `stageResponse.flow.ts` | `stageResponse` | 1 | `t_stageresponse_submit` | **wired** |
+| `stageResponse.flow.ts` | `stageResponse` | 4 | `t_stageresponse_submit`, `t_stageresponse_save`, `t_stageresponse_resave`, `t_stageresponse_send` | **wired** |
 | `shipment.flow.ts` | `shipment` | 8 | `t_shipment_create`, `t_shipment_asn_received`, `t_shipment_depart`, `t_shipment_arrive_port`, `t_shipment_customs`, `t_shipment_dock`, `t_shipment_unload`, `t_shipment_deliver` | inert |
 | `contract.flow.ts` | `contract` | 4 | `t_contract_draft`, `t_contract_activate`, `t_contract_renew`, `t_contract_terminate` | inert |
 | `obligation.flow.ts` | `obligation` | 2 | `t_obligation_track`, `t_obligation_complete` | inert |
@@ -299,7 +355,7 @@ transition id can be assembled at a call site rather than written as a literal (
 | `deliveryPolicy.flow.ts` | `deliveryPolicy` | 1 | `t_delivery_policy_set` | **wired** |
 | `forecastPublication.flow.ts` | `forecastPublication` | 7 | `t_publication_open`, `t_publication_allocate`, `t_publication_approve_firm`, `t_publication_publish`, `t_publication_discard`, `t_publication_supersede`, `t_publication_withdraw` | **wired** |
 | `moduleActivation.flow.ts` | `moduleActivation` | 1 | `t_module_set` | **wired** |
-| **TOTAL** | | **132** | | |
+| **TOTAL** | | **136** | | |
 
 **Flow shape** (`schema.ts`, `FlowDefinition` / `TransitionDef`): each transition declares
 `from[]` / `to` / `trigger` / `requiredRole` / `requiredFields[]` / `policyHooks[]` /

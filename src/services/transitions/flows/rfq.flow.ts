@@ -72,6 +72,37 @@ export const rfqFlow: FlowDefinition = {
       version: 1,
     },
     {
+      // RFx-2 — THE BUYER WRITES THE RFI QUESTIONNAIRE ON A DRAFT. The whole
+      // list is stated each time (`questions`); an empty list takes the
+      // questionnaire off. STATE-PRESERVING: authoring the questions is not a
+      // step in the sourcing machine.
+      //
+      // FROM `Draft` ONLY, and that is the rule that matters: once the event is
+      // published suppliers are answering, and a question changed under them
+      // would leave answers to a question nobody was asked. Legality refuses it
+      // on every other state.
+      //
+      // It carries `rfq:create`: writing what a draft asks is drafting it. No
+      // named person is required, as none is to raise the draft — publishing
+      // is the act that is recorded against one.
+      id: 't_rfq_questionnaire_set',
+      from: ['Draft'],
+      to: 'Draft',
+      statePreserving: true,
+      trigger: 'user',
+      requiredRole: 'rfq:create',
+      // `questions` is NOT a required field: `isEmpty` reads an empty list as
+      // missing, and an empty list is how a questionnaire is removed. The
+      // well-formed hook refuses an absent one by name instead.
+      requiredFields: [],
+      policyHooks: [
+        POLICY_HOOKS.RFQ_QUESTIONNAIRE_AT_RFI,
+        POLICY_HOOKS.RFQ_QUESTIONNAIRE_WELL_FORMED,
+      ],
+      surfaceable: { surfaced: true },
+      version: 1,
+    },
+    {
       // Buyer publishes a drafted RFQ to its invited suppliers.
       //
       // ⚠️ PF-1a — WIRED, and it is the verb that now makes a sourcing event

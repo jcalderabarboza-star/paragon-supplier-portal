@@ -2,9 +2,10 @@
 // Stage-response store (RFx-1).
 //
 // A supplier's answers at the RFI and RFP stages of a sourcing event. Same
-// contract as `quotationStore`: reads resolve FROM here, a creation ADDS a row
-// with a store-assigned number, and nothing edits a row afterwards — an answer
-// is a record, and the machine has one state for it.
+// contract as `quotationStore`: reads resolve FROM here and a creation ADDS a
+// row with a store-assigned number. RFx-2 — a row may be born a `Draft`, which
+// its supplier re-saves and then submits (`update`, immutable); a `Submitted`
+// row is a record and nothing edits it.
 //
 // Seeded from `mockStageResponses` — the answers on the one seeded event that
 // has stages (`rfq-018`). `reset()` restores the seed (test isolation).
@@ -32,6 +33,10 @@ export const stageResponseStore = {
   /** Add a newly-recorded response (creation). New array reference. */
   add(response: StageResponse): void {
     rows = [...rows, response];
+  },
+  /** IMMUTABLE update — swap in a new row + new array (see `rfqStore.update`). */
+  update(id: string, next: (r: StageResponse) => StageResponse): void {
+    rows = rows.map((r) => (r.id === id ? next(r) : r));
   },
   /** Store-assigned number for a response (the 9xx range, as `quotationStore`). */
   nextNumber(): string {

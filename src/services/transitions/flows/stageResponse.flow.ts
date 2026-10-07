@@ -1,20 +1,25 @@
 // ────────────────────────────────────────────────────────────────────────────
-// Stage response flow — RFx-1.
+// Stage response flow — RFx-1, RFx-2.
 //
-// A supplier's answer at the RFI or RFP stage of a sourcing event. In this
-// batch the answer is an ACKNOWLEDGEMENT OF INTEREST and an optional note; the
-// questionnaire (RFI) and the proposal with its scoring (RFP) are RFx-2 and
-// RFx-3, and they add content to this row rather than a second machine.
+// A supplier's answer at the RFI or RFP stage of a sourcing event: an
+// acknowledgement of interest, an optional note, and — at an RFI that carries a
+// questionnaire (RFx-2) — the answers to it. The RFP proposal and its scoring
+// are RFx-3, and they add content to this row rather than a second machine.
 //
-// A SINGLE-STATE MACHINE, as `inventoryDeclaration` is: the answer is born
-// `Submitted` and nothing leaves it. Whether the supplier was then shortlisted
-// is a fact about the EVENT (`RFQ.stageHistory`), read from there — storing it
-// here too would be one fact in two places.
+// TWO STATES. A response is born `Submitted` in one act, or born a `Draft` that
+// its supplier re-saves and then submits. Nothing leaves `Submitted`: an answer
+// is a record. A Draft is the supplier's own — the buyer's read does not carry
+// it and it does not count as a response (`rfqStage.stageRespondersOf`).
+// Whether the supplier was then shortlisted is a fact about the EVENT
+// (`RFQ.stageHistory`), read from there.
 //
 // It is its own entity, not a verb on `rfq`, because the event is the buyer's:
 // `rfqTarget.readScopeOwner` is null, which denies every supplier scope. A
 // supplier's business with an event runs through a row the supplier owns, as it
 // does for a quotation.
+//
+// All four verbs carry ONE atom, `stageresponse:submit`: drafting an answer and
+// submitting it are the same person's work.
 // ────────────────────────────────────────────────────────────────────────────
 
 import type { FlowDefinition } from '../schema';
@@ -23,15 +28,19 @@ import { POLICY_HOOKS } from '../policyHooks';
 export const stageResponseFlow: FlowDefinition = {
   entity: 'stageResponse',
   version: 1,
-  states: ['Submitted'],
-  initial: 'Submitted',
-  /** The answer is born where it rests. */
+  states: ['Draft', 'Submitted'],
+  initial: 'Draft',
+  /** A submitted answer rests. */
   terminals: ['Submitted'],
   transitions: [
     {
       // CREATION, supplier-owned. The stage is NOT a payload field: the store
       // writes the stage the event is at, so an answer cannot be recorded
       // against a stage that is over or one that has not begun.
+      //
+      // RFx-2 — at an RFI that carries a questionnaire the payload carries
+      // `answers`, and the last two hooks read them: every answer is one its
+      // question takes, and every required question is answered.
       id: 't_stageresponse_submit',
       from: [],
       to: 'Submitted',
@@ -43,6 +52,72 @@ export const stageResponseFlow: FlowDefinition = {
         POLICY_HOOKS.STAGE_RESPONSE_STAGE_TAKES_INTEREST,
         POLICY_HOOKS.STAGE_RESPONSE_BEFORE_DEADLINE,
         POLICY_HOOKS.STAGE_RESPONSE_ONE_PER_STAGE,
+        POLICY_HOOKS.STAGE_RESPONSE_ANSWERS_WELL_FORMED,
+        POLICY_HOOKS.STAGE_RESPONSE_REQUIRED_ANSWERED,
+      ],
+      surfaceable: { surfaced: true },
+      version: 1,
+    },
+    {
+      // RFx-2 — CREATION AS A DRAFT. The supplier keeps what it has answered so
+      // far. Everything the submit checks is checked here EXCEPT the required
+      // questions: an unfinished answer is what a draft is. An answer that is
+      // not one its question takes is refused even in a draft — a draft holds
+      // unfinished work, not wrong work.
+      id: 't_stageresponse_save',
+      from: [],
+      to: 'Draft',
+      trigger: 'creation',
+      requiredRole: 'stageresponse:submit',
+      requiredFields: ['rfqId'],
+      policyHooks: [
+        POLICY_HOOKS.STAGE_RESPONSE_EVENT_OPEN,
+        POLICY_HOOKS.STAGE_RESPONSE_STAGE_TAKES_INTEREST,
+        POLICY_HOOKS.STAGE_RESPONSE_BEFORE_DEADLINE,
+        POLICY_HOOKS.STAGE_RESPONSE_ONE_PER_STAGE,
+        POLICY_HOOKS.STAGE_RESPONSE_ANSWERS_WELL_FORMED,
+      ],
+      surfaceable: { surfaced: true },
+      version: 1,
+    },
+    {
+      // RFx-2 — THE SUPPLIER SAVES ITS DRAFT AGAIN. The payload is the whole
+      // draft as it now stands (`answers`, `note`), not a patch.
+      // STATE-PRESERVING. The event and the stage are the draft's own, read
+      // from the row: the payload cannot move a draft to another event.
+      id: 't_stageresponse_resave',
+      from: ['Draft'],
+      to: 'Draft',
+      statePreserving: true,
+      trigger: 'user',
+      requiredRole: 'stageresponse:submit',
+      requiredFields: [],
+      policyHooks: [
+        POLICY_HOOKS.STAGE_RESPONSE_EVENT_OPEN,
+        POLICY_HOOKS.STAGE_RESPONSE_DRAFT_STAGE_CURRENT,
+        POLICY_HOOKS.STAGE_RESPONSE_BEFORE_DEADLINE,
+        POLICY_HOOKS.STAGE_RESPONSE_ANSWERS_WELL_FORMED,
+      ],
+      surfaceable: { surfaced: true },
+      version: 1,
+    },
+    {
+      // RFx-2 — THE SUPPLIER SUBMITS ITS DRAFT. The payload carries the answers
+      // BEING SUBMITTED (`answers`, `note`), and those are what the two answer
+      // hooks read and what the store writes — never the draft as last saved,
+      // so what was checked and what was recorded cannot differ.
+      id: 't_stageresponse_send',
+      from: ['Draft'],
+      to: 'Submitted',
+      trigger: 'user',
+      requiredRole: 'stageresponse:submit',
+      requiredFields: [],
+      policyHooks: [
+        POLICY_HOOKS.STAGE_RESPONSE_EVENT_OPEN,
+        POLICY_HOOKS.STAGE_RESPONSE_DRAFT_STAGE_CURRENT,
+        POLICY_HOOKS.STAGE_RESPONSE_BEFORE_DEADLINE,
+        POLICY_HOOKS.STAGE_RESPONSE_ANSWERS_WELL_FORMED,
+        POLICY_HOOKS.STAGE_RESPONSE_REQUIRED_ANSWERED,
       ],
       surfaceable: { surfaced: true },
       version: 1,

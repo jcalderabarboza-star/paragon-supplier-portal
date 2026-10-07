@@ -267,12 +267,18 @@ describe('C · publishing an event whose response deadline has passed', () => {
 });
 
 describe('D · a supplier’s answer at RFI and RFP: interest and a note', () => {
-  it('the machine: one state, one creation verb, four checks in this order', () => {
+  // RFx-2 — the response gained a Draft state, three verbs on it and two
+  // checks on the answers (`rfx2Questionnaire.test.ts` pins all of that). What
+  // RFx-1 fixed is unchanged and still asserted here: Submitted is the one
+  // resting state, the one-act submit is the first verb, and its four RFx-1
+  // checks are its first four, in this order.
+  it('the machine: Submitted is terminal, and the submit runs these four checks first, in this order', () => {
     const flow = getFlow('stageResponse')!;
-    expect(flow.states).toEqual(['Submitted']);
+    expect(flow.states).toContain('Submitted');
     expect(flow.terminals).toEqual(['Submitted']);
-    expect(flow.transitions.map((t) => t.id)).toEqual(['t_stageresponse_submit']);
-    expect(flow.transitions[0].policyHooks).toEqual([
+    expect(flow.transitions[0].id).toBe('t_stageresponse_submit');
+    expect(flow.transitions[0].to).toBe('Submitted');
+    expect(flow.transitions[0].policyHooks.slice(0, 4)).toEqual([
       POLICY_HOOKS.STAGE_RESPONSE_EVENT_OPEN,
       POLICY_HOOKS.STAGE_RESPONSE_STAGE_TAKES_INTEREST,
       POLICY_HOOKS.STAGE_RESPONSE_BEFORE_DEADLINE,

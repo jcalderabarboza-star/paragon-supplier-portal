@@ -296,7 +296,164 @@ export const sourcingEn: Record<string, string> = {
   'sourcing.interest.title':
     'Responses at RFI and RFP',
   'sourcing.interest.contentNote':
-    'At the RFI and RFP stages a supplier records its interest and a note, and nothing else. The questionnaire, the proposal and their scoring are not built yet.',
+    'At the RFI stage a supplier answers the event’s questionnaire — or, when the event asks none, records its interest and a note. At the RFP stage it records its interest and a note; the proposal and its scoring are not built yet.',
+  // — RFx-2 · the RFI questionnaire —
+  'sourcing.wizard.stage.questionnaireHint':
+    'The questionnaire is written on the draft, after this form and before you publish: open the draft and use “Write questionnaire”.',
+  'sourcing.rfi.title':
+    'RFI questionnaire',
+  'sourcing.rfi.none':
+    'This draft asks no questionnaire. Published like this, suppliers record their interest and a note at the RFI stage.',
+  'sourcing.rfi.write':
+    'Write questionnaire',
+  'sourcing.rfi.edit':
+    'Edit questionnaire',
+  'sourcing.rfi.type.yes_no':
+    'Yes / No',
+  'sourcing.rfi.type.single_choice':
+    'Single choice',
+  'sourcing.rfi.type.multi_choice':
+    'Multiple choice',
+  'sourcing.rfi.type.number':
+    'Number with unit',
+  'sourcing.rfi.type.text':
+    'Text',
+  'sourcing.rfi.type.document':
+    'Document requested',
+  'sourcing.rfi.required':
+    'Required',
+  'sourcing.rfi.optional':
+    'Optional',
+  'sourcing.rfi.yes':
+    'Yes',
+  'sourcing.rfi.no':
+    'No',
+  'sourcing.rfi.knockoutIs':
+    'Knock-out answer: {{answer}}',
+  'sourcing.rfi.editor.prompt':
+    'Question',
+  'sourcing.rfi.editor.type':
+    'Answer type',
+  'sourcing.rfi.editor.unit':
+    'Unit',
+  'sourcing.rfi.editor.options':
+    'Choices (one per line)',
+  'sourcing.rfi.editor.knockout':
+    'Knock-out answer',
+  'sourcing.rfi.editor.knockoutNone':
+    'None — this question knocks nobody out',
+  'sourcing.rfi.editor.required':
+    'Required',
+  'sourcing.rfi.editor.requiredByKnockout':
+    '(a question with a knock-out answer is always required)',
+  'sourcing.rfi.editor.add':
+    'Add question',
+  'sourcing.rfi.editor.save':
+    'Save questionnaire',
+  'sourcing.rfi.editor.cancel':
+    'Cancel',
+  'sourcing.rfi.editor.empty':
+    'No questions yet. Add one, or load a template.',
+  'sourcing.rfi.editor.moveUp':
+    'Move {{question}} up',
+  'sourcing.rfi.editor.moveDown':
+    'Move {{question}} down',
+  'sourcing.rfi.editor.remove':
+    'Remove {{question}}',
+  'sourcing.rfi.problem.NOT_A_LIST':
+    'The questionnaire could not be read.',
+  'sourcing.rfi.problem.ID_MISSING':
+    '{{question}} has no identifier. Remove it and add it again.',
+  'sourcing.rfi.problem.ID_DUPLICATE':
+    '{{question}} shares its identifier with an earlier question. Remove it and add it again.',
+  'sourcing.rfi.problem.PROMPT_MISSING':
+    '{{question}} has no wording yet.',
+  'sourcing.rfi.problem.TYPE_UNKNOWN':
+    '{{question}} has no answer type.',
+  'sourcing.rfi.problem.OPTIONS_TOO_FEW':
+    '{{question}} needs at least two different choices.',
+  'sourcing.rfi.problem.UNIT_MISSING':
+    '{{question}} needs the unit the number is asked in.',
+  'sourcing.rfi.problem.KNOCKOUT_NOT_TAKEN':
+    '{{question}}: a knock-out answer is taken on a Yes / No or a choice question only.',
+  'sourcing.rfi.problem.KNOCKOUT_NOT_AN_ANSWER':
+    '{{question}}: its knock-out answer is no longer one of its choices.',
+  'sourcing.rfi.problem.KNOCKOUT_NOT_REQUIRED':
+    '{{question}} has a knock-out answer, so it must be required.',
+  'sourcing.rfi.toast.saved.title':
+    'Questionnaire saved on {{rfqNumber}}',
+  'sourcing.rfi.toast.saved.none':
+    'The draft now asks no questionnaire.',
+  'sourcing.rfi.toast.saved.one':
+    '{{count}} question. Suppliers answer it once the event is published.',
+  'sourcing.rfi.toast.saved.other':
+    '{{count}} questions. Suppliers answer them once the event is published.',
+  'sourcing.rfi.toast.saveFailed.title':
+    'Questionnaire not saved',
+  'sourcing.rfi.toast.saveFailed.default':
+    'The request could not be completed. Nothing was changed.',
+  'sourcing.refusal.questionnaireStageNotRfi':
+    'This event does not start at RFI, so it has no stage that asks a questionnaire.',
+  'sourcing.refusal.questionnaireMalformed':
+    'The questionnaire is not complete: one of its questions is missing its wording, its choices or its unit. Nothing was saved.',
+  'sourcing.rfi.template.title':
+    'Templates',
+  'sourcing.rfi.template.local':
+    'Templates are kept in this browser only. They are not governed, not shared with colleagues and not recorded in the audit trail.',
+  'sourcing.rfi.template.pick':
+    'Saved templates',
+  'sourcing.rfi.template.choose':
+    'Choose a template',
+  'sourcing.rfi.template.noneSaved':
+    'No template saved yet',
+  'sourcing.rfi.template.load':
+    'Load into editor',
+  'sourcing.rfi.template.remove':
+    'Delete template',
+  'sourcing.rfi.template.name':
+    'Save these questions as',
+  'sourcing.rfi.template.save':
+    'Save as template',
+  'sourcing.rfi.template.unreadable':
+    'The saved templates could not be read from this browser.',
+  'sourcing.rfi.template.rejected':
+    'Some saved entries ({{count}}) were not valid questionnaires and are not listed.',
+  'sourcing.rfi.template.toast.saved':
+    'Template “{{name}}” saved',
+  'sourcing.rfi.template.toast.failed':
+    'Template not saved',
+  'sourcing.rfi.template.refused.NAME_MISSING':
+    'Give the template a name.',
+  'sourcing.rfi.template.refused.NO_QUESTIONS':
+    'There are no questions to save.',
+  'sourcing.rfi.template.refused.MALFORMED':
+    'Complete the questions first.',
+  'sourcing.rfi.template.refused.NOT_STORED':
+    'This browser would not store the template.',
+  'sourcing.rfi.matrix.title':
+    'Answers',
+  'sourcing.rfi.matrix.supplier':
+    'Supplier',
+  'sourcing.rfi.matrix.empty':
+    'No supplier has submitted answers yet.',
+  'sourcing.rfi.matrix.knockoutIs':
+    'Knock-out: {{answer}}',
+  'sourcing.rfi.matrix.passed':
+    'Passed every knock-out',
+  'sourcing.rfi.matrix.failed':
+    'Failed a knock-out: {{questions}}',
+  'sourcing.rfi.matrix.knockedOut':
+    'Knock-out answer',
+  'sourcing.rfi.matrix.noAnswer':
+    'Not answered',
+  'sourcing.rfi.matrix.note':
+    'A knock-out answer removes nobody by itself: you choose the shortlist when you advance the event, where the suppliers who passed every knock-out are pre-selected.',
+  'sourcing.rfi.matrix.noteNoKnockout':
+    'This questionnaire has no knock-out question. You choose the shortlist when you advance the event.',
+  'sourcing.advance.preselected':
+    'Pre-selected: the suppliers who passed every knock-out. The list is yours — tick or untick any supplier who answered.',
+  'sourcing.advance.failedKnockout':
+    'Failed a knock-out: {{questions}}',
   'sourcing.interest.count':
     '{{responded}} of {{total}} invited suppliers have responded at the {{stage}} stage',
   'sourcing.interest.empty':
@@ -902,7 +1059,164 @@ export const sourcingId: Record<string, string> = {
   'sourcing.interest.title':
     'Tanggapan pada RFI dan RFP',
   'sourcing.interest.contentNote':
-    'Pada tahap RFI dan RFP, pemasok hanya mencatat minatnya dan satu catatan. Kuesioner, proposal, dan penilaiannya belum dibangun.',
+    'Pada tahap RFI, pemasok menjawab kuesioner acaranya — atau, bila acaranya tidak mengajukan kuesioner, mencatat minatnya dan satu catatan. Pada tahap RFP ia mencatat minatnya dan satu catatan; proposal dan penilaiannya belum dibangun.',
+  // — RFx-2 · the RFI questionnaire —
+  'sourcing.wizard.stage.questionnaireHint':
+    'Kuesioner ditulis pada draf, setelah formulir ini dan sebelum Anda menerbitkannya: buka drafnya lalu gunakan “Tulis kuesioner”.',
+  'sourcing.rfi.title':
+    'Kuesioner RFI',
+  'sourcing.rfi.none':
+    'Draf ini tidak mengajukan kuesioner. Bila diterbitkan seperti ini, pemasok mencatat minat dan satu catatan pada tahap RFI.',
+  'sourcing.rfi.write':
+    'Tulis kuesioner',
+  'sourcing.rfi.edit':
+    'Ubah kuesioner',
+  'sourcing.rfi.type.yes_no':
+    'Ya / Tidak',
+  'sourcing.rfi.type.single_choice':
+    'Pilihan tunggal',
+  'sourcing.rfi.type.multi_choice':
+    'Pilihan ganda',
+  'sourcing.rfi.type.number':
+    'Angka dengan satuan',
+  'sourcing.rfi.type.text':
+    'Teks',
+  'sourcing.rfi.type.document':
+    'Dokumen diminta',
+  'sourcing.rfi.required':
+    'Wajib',
+  'sourcing.rfi.optional':
+    'Opsional',
+  'sourcing.rfi.yes':
+    'Ya',
+  'sourcing.rfi.no':
+    'Tidak',
+  'sourcing.rfi.knockoutIs':
+    'Jawaban gugur: {{answer}}',
+  'sourcing.rfi.editor.prompt':
+    'Pertanyaan',
+  'sourcing.rfi.editor.type':
+    'Jenis jawaban',
+  'sourcing.rfi.editor.unit':
+    'Satuan',
+  'sourcing.rfi.editor.options':
+    'Pilihan (satu per baris)',
+  'sourcing.rfi.editor.knockout':
+    'Jawaban gugur',
+  'sourcing.rfi.editor.knockoutNone':
+    'Tidak ada — pertanyaan ini tidak menggugurkan siapa pun',
+  'sourcing.rfi.editor.required':
+    'Wajib',
+  'sourcing.rfi.editor.requiredByKnockout':
+    '(pertanyaan dengan jawaban gugur selalu wajib)',
+  'sourcing.rfi.editor.add':
+    'Tambah pertanyaan',
+  'sourcing.rfi.editor.save':
+    'Simpan kuesioner',
+  'sourcing.rfi.editor.cancel':
+    'Batal',
+  'sourcing.rfi.editor.empty':
+    'Belum ada pertanyaan. Tambahkan satu, atau muat templat.',
+  'sourcing.rfi.editor.moveUp':
+    'Naikkan {{question}}',
+  'sourcing.rfi.editor.moveDown':
+    'Turunkan {{question}}',
+  'sourcing.rfi.editor.remove':
+    'Hapus {{question}}',
+  'sourcing.rfi.problem.NOT_A_LIST':
+    'Kuesioner tidak dapat dibaca.',
+  'sourcing.rfi.problem.ID_MISSING':
+    '{{question}} tidak memiliki pengenal. Hapus lalu tambahkan lagi.',
+  'sourcing.rfi.problem.ID_DUPLICATE':
+    '{{question}} memakai pengenal yang sama dengan pertanyaan sebelumnya. Hapus lalu tambahkan lagi.',
+  'sourcing.rfi.problem.PROMPT_MISSING':
+    '{{question}} belum memiliki kalimat pertanyaan.',
+  'sourcing.rfi.problem.TYPE_UNKNOWN':
+    '{{question}} belum memiliki jenis jawaban.',
+  'sourcing.rfi.problem.OPTIONS_TOO_FEW':
+    '{{question}} memerlukan sedikitnya dua pilihan yang berbeda.',
+  'sourcing.rfi.problem.UNIT_MISSING':
+    '{{question}} memerlukan satuan untuk angkanya.',
+  'sourcing.rfi.problem.KNOCKOUT_NOT_TAKEN':
+    '{{question}}: jawaban gugur hanya berlaku pada pertanyaan Ya / Tidak atau pertanyaan pilihan.',
+  'sourcing.rfi.problem.KNOCKOUT_NOT_AN_ANSWER':
+    '{{question}}: jawaban gugurnya tidak lagi termasuk pilihannya.',
+  'sourcing.rfi.problem.KNOCKOUT_NOT_REQUIRED':
+    '{{question}} memiliki jawaban gugur, sehingga harus wajib.',
+  'sourcing.rfi.toast.saved.title':
+    'Kuesioner disimpan pada {{rfqNumber}}',
+  'sourcing.rfi.toast.saved.none':
+    'Draf ini sekarang tidak mengajukan kuesioner.',
+  'sourcing.rfi.toast.saved.one':
+    '{{count}} pertanyaan. Pemasok menjawabnya setelah acara diterbitkan.',
+  'sourcing.rfi.toast.saved.other':
+    '{{count}} pertanyaan. Pemasok menjawabnya setelah acara diterbitkan.',
+  'sourcing.rfi.toast.saveFailed.title':
+    'Kuesioner tidak tersimpan',
+  'sourcing.rfi.toast.saveFailed.default':
+    'Permintaan tidak dapat diselesaikan. Tidak ada yang berubah.',
+  'sourcing.refusal.questionnaireStageNotRfi':
+    'Acara ini tidak dimulai pada tahap RFI, sehingga tidak memiliki tahap yang mengajukan kuesioner.',
+  'sourcing.refusal.questionnaireMalformed':
+    'Kuesioner belum lengkap: salah satu pertanyaannya belum memiliki kalimat, pilihan, atau satuannya. Tidak ada yang disimpan.',
+  'sourcing.rfi.template.title':
+    'Templat',
+  'sourcing.rfi.template.local':
+    'Templat hanya disimpan di peramban ini. Templat tidak diatur, tidak dibagikan kepada rekan kerja, dan tidak tercatat dalam jejak audit.',
+  'sourcing.rfi.template.pick':
+    'Templat tersimpan',
+  'sourcing.rfi.template.choose':
+    'Pilih templat',
+  'sourcing.rfi.template.noneSaved':
+    'Belum ada templat tersimpan',
+  'sourcing.rfi.template.load':
+    'Muat ke penyunting',
+  'sourcing.rfi.template.remove':
+    'Hapus templat',
+  'sourcing.rfi.template.name':
+    'Simpan pertanyaan ini sebagai',
+  'sourcing.rfi.template.save':
+    'Simpan sebagai templat',
+  'sourcing.rfi.template.unreadable':
+    'Templat tersimpan tidak dapat dibaca dari peramban ini.',
+  'sourcing.rfi.template.rejected':
+    'Sebagian entri tersimpan ({{count}}) bukan kuesioner yang sah dan tidak ditampilkan.',
+  'sourcing.rfi.template.toast.saved':
+    'Templat “{{name}}” disimpan',
+  'sourcing.rfi.template.toast.failed':
+    'Templat tidak tersimpan',
+  'sourcing.rfi.template.refused.NAME_MISSING':
+    'Beri nama templatnya.',
+  'sourcing.rfi.template.refused.NO_QUESTIONS':
+    'Tidak ada pertanyaan untuk disimpan.',
+  'sourcing.rfi.template.refused.MALFORMED':
+    'Lengkapi dulu pertanyaannya.',
+  'sourcing.rfi.template.refused.NOT_STORED':
+    'Peramban ini tidak dapat menyimpan templat.',
+  'sourcing.rfi.matrix.title':
+    'Jawaban',
+  'sourcing.rfi.matrix.supplier':
+    'Pemasok',
+  'sourcing.rfi.matrix.empty':
+    'Belum ada pemasok yang mengirimkan jawaban.',
+  'sourcing.rfi.matrix.knockoutIs':
+    'Gugur: {{answer}}',
+  'sourcing.rfi.matrix.passed':
+    'Lolos semua pertanyaan gugur',
+  'sourcing.rfi.matrix.failed':
+    'Gagal pada pertanyaan gugur: {{questions}}',
+  'sourcing.rfi.matrix.knockedOut':
+    'Jawaban gugur',
+  'sourcing.rfi.matrix.noAnswer':
+    'Tidak dijawab',
+  'sourcing.rfi.matrix.note':
+    'Jawaban gugur tidak menyingkirkan siapa pun dengan sendirinya: Anda memilih daftar pendek saat melanjutkan acara, dan di sana pemasok yang lolos semua pertanyaan gugur sudah terpilih lebih dulu.',
+  'sourcing.rfi.matrix.noteNoKnockout':
+    'Kuesioner ini tidak memiliki pertanyaan gugur. Anda memilih daftar pendek saat melanjutkan acara.',
+  'sourcing.advance.preselected':
+    'Terpilih lebih dulu: pemasok yang lolos semua pertanyaan gugur. Daftarnya milik Anda — centang atau hapus centang pemasok mana pun yang menjawab.',
+  'sourcing.advance.failedKnockout':
+    'Gagal pada pertanyaan gugur: {{questions}}',
   'sourcing.interest.count':
     '{{responded}} dari {{total}} pemasok yang diundang telah menanggapi pada tahap {{stage}}',
   'sourcing.interest.empty':

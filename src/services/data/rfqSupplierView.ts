@@ -24,12 +24,46 @@
 // the one left out, since the reason is about those suppliers. The stage
 // responses are the reader's own. The reason an event was concluded without an
 // award stays with the buyer; the day it ended crosses.
+//
+// RFx-2 · THE QUESTIONNAIRE, UNDER THE SAME RULE. The questions cross — the
+// supplier has to read them to answer them — but each question is itself an
+// allowlist, and THE KNOCK-OUT ANSWER IS NOT ON IT: which answer takes a
+// supplier out of consideration is the buyer's, and a supplier that could read
+// it would simply not give it. The reader's own unsent draft is handed in by
+// the caller (the event row never holds a draft) and is checked to be the
+// reader's, a draft, and of the stage the event is at.
 // ────────────────────────────────────────────────────────────────────────────
 
 import type { RFQ } from '../../data/mockRfqs';
-import { notShortlistedAdvanceOf } from '../../data/rfqStage';
+import {
+  isSubmittedResponse,
+  notShortlistedAdvanceOf,
+  stageOf,
+  type StageResponse,
+} from '../../data/rfqStage';
+import type { RfiQuestion } from '../../data/rfiQuestionnaire';
 
-export function toSupplierRfqView(rfq: RFQ, supplierId: string): RFQ {
+/** One question as a supplier reads it. Named fields only; no knock-out. */
+export function toSupplierQuestion(q: RfiQuestion): RfiQuestion {
+  return {
+    id: q.id,
+    prompt: q.prompt,
+    type: q.type,
+    required: q.required,
+    ...(q.options ? { options: [...q.options] } : {}),
+    ...(q.unit !== undefined ? { unit: q.unit } : {}),
+  };
+}
+
+export function toSupplierRfqView(rfq: RFQ, supplierId: string, ownDraft?: StageResponse): RFQ {
+  const draft =
+    ownDraft &&
+    ownDraft.rfqId === rfq.id &&
+    ownDraft.supplierId === supplierId &&
+    !isSubmittedResponse(ownDraft) &&
+    ownDraft.stage === stageOf(rfq)
+      ? ownDraft
+      : undefined;
   const mine = (ids: readonly string[]): string[] => (ids.includes(supplierId) ? [supplierId] : []);
   const won = rfq.awardedSupplierId === supplierId;
   return {
@@ -69,6 +103,8 @@ export function toSupplierRfqView(rfq: RFQ, supplierId: string): RFQ {
       : {}),
     ...(rfq.concludedAt ? { concludedAt: rfq.concludedAt } : {}),
     stageResponses: (rfq.stageResponses ?? []).filter((r) => r.supplierId === supplierId),
+    ...(rfq.questionnaire ? { questionnaire: rfq.questionnaire.map(toSupplierQuestion) } : {}),
+    ...(draft ? { myStageDraft: draft } : {}),
     ...(rfq.awardedAt ? { awardedAt: rfq.awardedAt } : {}),
     ...(won && rfq.awardedSupplierId ? { awardedSupplierId: rfq.awardedSupplierId } : {}),
     ...(won && rfq.awardedQuotationId ? { awardedQuotationId: rfq.awardedQuotationId } : {}),

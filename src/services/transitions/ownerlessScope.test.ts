@@ -431,8 +431,10 @@ describe('POPULATION — nothing below means anything without this', () => {
     );
     // `inventoryDeclaration` declares no non-creation transition, so it has no
     // verb this leak could ride. Stated rather than silently absent.
-    // RFx-1 — `stageResponse` joins it for the same reason: one creation verb.
-    expect(unprobeable).toEqual(['stageResponse', 'inventoryDeclaration']);
+    // RFx-1 — `stageResponse` joined it for the same reason: one creation verb.
+    // RFx-2 — and left it: a response may now be a Draft, which two verbs act
+    // on, so it is probed like every other supplier-owned entity.
+    expect(unprobeable).toEqual(['inventoryDeclaration']);
   });
 
   it('CONTROL — the walk lands every probe in one of its verb\'s from-states', async () => {
