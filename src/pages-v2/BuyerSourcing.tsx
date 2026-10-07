@@ -158,7 +158,21 @@ import type { SourcingDecision } from '../services/data/rfqSourcingGate';
 import { refusedByPolicy, type PolicyHookId } from '../services/transitions/refusalMessage';
 import { useCurrentIdentity } from '../context/CurrentIdentityContext';
 import { POLICY_HOOKS } from '../services/transitions/policyHooks';
-import { RFQ_STAGES, nextStageOf, stageOf, stagePathOf, type RfqStage } from '../data/rfqStage';
+import {
+  RFQ_STAGES,
+  nextStageOf,
+  stageOf,
+  stagePathOf,
+  startStageOf,
+  type RfqStage,
+} from '../data/rfqStage';
+import { hasKnockouts } from '../data/rfiQuestionnaire';
+import RfiQuestionnaireEditor, { RfiQuestionList } from './sourcing/RfiQuestionnaireEditor';
+import RfiAnswerMatrix, {
+  failedKnockoutLabels,
+  passedEveryKnockout,
+  rfiAnswersOf,
+} from './sourcing/RfiAnswerMatrix';
 import { responseDeadlinePassed } from '../services/data/quotationSubmitGate';
 import StageTimeline from './sourcing/StageTimeline';
 
@@ -1655,10 +1669,21 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                     advanceDraft.awardDeadline <= advanceDraft.responseDeadline
                   ? 'sourcing.wizard.awardAfterResponse'
                   : null;
+  // RFx-2 — leaving an RFI whose questionnaire carries a knock-out, the list
+  // STARTS as the suppliers who gave no knock-out answer. A starting point,
+  // not a rule: every responder stays tickable and the machine refuses nothing
+  // on this ground. With no knock-out it is everybody who answered, as before.
+  const advancePreselectsOnKnockouts =
+    !!selectedRfq && selectedStage === 'RFI' && hasKnockouts(selectedRfq.questionnaire ?? []);
   const openAdvance = () => {
     if (!selectedRfq) return;
     // Everybody who answered starts on the list; the buyer takes names off.
-    setAdvanceDraft({ ...EMPTY_ADVANCE, shortlist: [...selectedRfq.respondedSupplierIds] });
+    setAdvanceDraft({
+      ...EMPTY_ADVANCE,
+      shortlist: advancePreselectsOnKnockouts
+        ? passedEveryKnockout(selectedRfq, selectedRfq.respondedSupplierIds)
+        : [...selectedRfq.respondedSupplierIds],
+    });
     setAsking('advance');
   };
   const toggleShortlisted = (supplierId: string) =>
@@ -2206,6 +2231,13 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
             {draft.stage !== 'RFQ' && (
               <p className="text-xs text-text-tertiary mt-1.5" data-testid="rfq-start-stage-note">
                 {t('sourcing.interest.contentNote')}
+              </p>
+            )}
+            {/* RFx-2 — where the questionnaire is written: on the draft, after
+                this wizard, before publishing. */}
+            {draft.stage === 'RFI' && (
+              <p className="text-xs text-text-tertiary mt-1" data-testid="rfq-start-stage-questionnaire-hint">
+                {t('sourcing.wizard.stage.questionnaireHint')}
               </p>
             )}
           </div>
@@ -3680,6 +3712,33 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
               ))}
             </section>
 
+            {/* RFx-2 — THE RFI QUESTIONNAIRE. On a Draft that starts at RFI
+                the buyer writes it here; once the event is published the
+                questions are fixed and this section reads them back with the
+                answers suppliers submitted. An event that starts at RFP or RFQ
+                has no RFI stage and shows nothing. */}
+            {startStageOf(selectedRfq) === 'RFI' &&
+              (selectedRfq.status === 'Draft' || (selectedRfq.questionnaire ?? []).length > 0) && (
+                <section data-testid="rfq-questionnaire-section">
+                  <h3 className="text-label text-text-tertiary uppercase mb-3">
+                    {t('sourcing.rfi.title')}
+                  </h3>
+                  {selectedRfq.status === 'Draft' ? (
+                    // Keyed by the event: another draft opened in this panel
+                    // starts from its own questions, not the last one's edits.
+                    <RfiQuestionnaireEditor key={selectedRfq.id} rfq={selectedRfq} />
+                  ) : (
+                    <>
+                      <RfiQuestionList questions={selectedRfq.questionnaire ?? []} />
+                      <h4 className="text-label text-text-tertiary uppercase mt-4 mb-2">
+                        {t('sourcing.rfi.matrix.title')}
+                      </h4>
+                      <RfiAnswerMatrix rfq={selectedRfq} supplierNameById={supplierNameById} />
+                    </>
+                  )}
+                </section>
+              )}
+
             {/* Lifecycle actions (F0.3): the non-award sourcing verbs, gated on
                 the machine's legal from-states — cancel from Draft/Open/Closed
                 (not a terminal Awarded/Cancelled), reopen from Closed only. */}
@@ -3893,6 +3952,11 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                     <div className="text-label text-text-tertiary uppercase mb-1.5">
                       {t('sourcing.advance.shortlist')}
                     </div>
+                    {advancePreselectsOnKnockouts && (
+                      <p className="text-xs text-text-tertiary mb-2" data-testid="rfq-advance-preselect-note">
+                        {t('sourcing.advance.preselected')}
+                      </p>
+                    )}
                     <ul className="space-y-1 mb-3">
                       {selectedRfq.invitedSupplierIds.map((id) => {
                         const answered = selectedRfq.respondedSupplierIds.includes(id);
@@ -3913,6 +3977,26 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                                   {t('sourcing.advance.didNotRespond', { stage: selectedStage })}
                                 </span>
                               )}
+                              {/* RFx-2 — said beside the name, and the box
+                                  stays live: the buyer may still carry it. */}
+                              {answered &&
+                                advancePreselectsOnKnockouts &&
+                                failedKnockoutLabels(
+                                  selectedRfq.questionnaire ?? [],
+                                  rfiAnswersOf(selectedRfq).find((a) => a.supplierId === id),
+                                ) !== '' && (
+                                  <span
+                                    className="text-xs text-danger font-semibold"
+                                    data-testid={`rfq-advance-knockout-${id}`}
+                                  >
+                                    {t('sourcing.advance.failedKnockout', {
+                                      questions: failedKnockoutLabels(
+                                        selectedRfq.questionnaire ?? [],
+                                        rfiAnswersOf(selectedRfq).find((a) => a.supplierId === id),
+                                      ),
+                                    })}
+                                  </span>
+                                )}
                             </label>
                           </li>
                         );

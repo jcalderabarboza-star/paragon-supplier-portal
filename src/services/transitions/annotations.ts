@@ -155,6 +155,7 @@ export const TRANSITION_PURPOSE: FlowAnnotations = Object.freeze({
 
   // ── rfq ────────────────────────────────────────────────────────────────────
   t_rfq_create: { purposeKey: 'processFlows.purpose.t_rfq_create' },
+  t_rfq_questionnaire_set: { purposeKey: 'processFlows.purpose.t_rfq_questionnaire_set' },
   t_rfq_publish: { purposeKey: 'processFlows.purpose.t_rfq_publish' },
   t_rfq_close: { purposeKey: 'processFlows.purpose.t_rfq_close' },
   t_rfq_award: { purposeKey: 'processFlows.purpose.t_rfq_award' },
@@ -172,6 +173,9 @@ export const TRANSITION_PURPOSE: FlowAnnotations = Object.freeze({
   t_quotation_withdraw: { purposeKey: 'processFlows.purpose.t_quotation_withdraw' },
   // ── stageResponse ──────────────────────────────────────────────────────
   t_stageresponse_submit: { purposeKey: 'processFlows.purpose.t_stageresponse_submit' },
+  t_stageresponse_save: { purposeKey: 'processFlows.purpose.t_stageresponse_save' },
+  t_stageresponse_resave: { purposeKey: 'processFlows.purpose.t_stageresponse_resave' },
+  t_stageresponse_send: { purposeKey: 'processFlows.purpose.t_stageresponse_send' },
 
   // ── shipment ───────────────────────────────────────────────────────────────
   t_shipment_create: { purposeKey: 'processFlows.purpose.t_shipment_create' },

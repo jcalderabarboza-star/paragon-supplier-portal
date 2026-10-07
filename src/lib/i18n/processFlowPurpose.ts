@@ -151,6 +151,8 @@ export const processFlowPurposeEn: Record<string, string> = {
     'Records the exchange basis foreign offers are being compared on, so a decision taken today can still be explained a year from now.',
   'processFlows.purpose.t_rfq_cancel':
     'Buying calls the event off before picking anyone — the requirement changed, or the budget went. The suppliers get told rather than left waiting.',
+  'processFlows.purpose.t_rfq_questionnaire_set':
+    'Buying writes down what it wants to know before it asks anyone for a price — can you make this, are you certified, how much can you supply. Every supplier is then asked the same questions.',
   'processFlows.purpose.t_rfq_advance':
     'Buying narrows the field and moves on: the suppliers worth hearing more from are asked the next, harder question, and the rest are told why they are not.',
   'processFlows.purpose.t_rfq_conclude':
@@ -173,9 +175,15 @@ export const processFlowPurposeEn: Record<string, string> = {
     'Buying ended the event before choosing anyone — called it off, or closed it with no winner — so the request is taken back for every offer still being weighed. The supplier reads that the event ended, not that they lost.',
   // ── stageResponse ─────────────────────────────────────────────────────
   'processFlows.purpose.entity.stageResponse':
-    'A supplier’s answer at an early stage of a sourcing event, before prices are asked for — today, a statement that it is interested, with a note.',
+    'A supplier’s answer at an early stage of a sourcing event, before prices are asked for — a statement that it is interested, a note, and its answers to the questionnaire when the event asks one.',
   'processFlows.purpose.t_stageresponse_submit':
-    'The supplier says it wants to be considered. Buying picks its shortlist only from the suppliers who said so, which is what makes saying so worth doing.',
+    'The supplier says it wants to be considered and answers what was asked. Buying picks its shortlist only from the suppliers who answered, which is what makes answering worth doing.',
+  'processFlows.purpose.t_stageresponse_save':
+    'The supplier keeps what it has answered so far. A questionnaire often needs a colleague or a document that is not to hand, and nobody should have to start again.',
+  'processFlows.purpose.t_stageresponse_resave':
+    'The supplier saves its unfinished answers again after adding to them. Buying sees nothing until the supplier sends them in.',
+  'processFlows.purpose.t_stageresponse_send':
+    'The supplier finishes its saved answers and submits them. From here they are a record: buying reads them, and they are not changed.',
 
   // ── shipment ───────────────────────────────────────────────────────────────
   'processFlows.purpose.entity.shipment':
@@ -540,6 +548,8 @@ export const processFlowPurposeId: Record<string, string> = {
     'Mencatat dasar kurs yang dipakai membandingkan penawaran bermata uang asing, agar keputusan hari ini masih bisa dijelaskan setahun kemudian.',
   'processFlows.purpose.t_rfq_cancel':
     'Pembelian membatalkan acaranya sebelum memilih siapa pun — kebutuhannya berubah, atau anggarannya hilang. Para pemasok diberi tahu, bukan dibiarkan menunggu.',
+  'processFlows.purpose.t_rfq_questionnaire_set':
+    'Pembelian menuliskan apa yang ingin diketahuinya sebelum meminta harga dari siapa pun — sanggupkah Anda membuatnya, bersertifikatkah Anda, berapa banyak yang dapat Anda pasok. Setiap pemasok lalu diberi pertanyaan yang sama.',
   'processFlows.purpose.t_rfq_advance':
     'Pembelian mempersempit pilihan dan melangkah maju: pemasok yang layak didengar lebih jauh diberi pertanyaan berikutnya yang lebih berat, dan yang lain diberi tahu mengapa mereka tidak.',
   'processFlows.purpose.t_rfq_conclude':
@@ -562,9 +572,15 @@ export const processFlowPurposeId: Record<string, string> = {
     'Pembelian mengakhiri acaranya sebelum memilih siapa pun — membatalkannya, atau menutupnya tanpa pemenang — sehingga permintaannya ditarik kembali untuk setiap penawaran yang masih ditimbang. Pemasok membaca bahwa acaranya berakhir, bukan bahwa mereka kalah.',
   // ── stageResponse ─────────────────────────────────────────────────────
   'processFlows.purpose.entity.stageResponse':
-    'Jawaban seorang pemasok pada tahap awal suatu acara pengadaan, sebelum harga diminta — saat ini berupa pernyataan bahwa ia berminat, disertai catatan.',
+    'Jawaban seorang pemasok pada tahap awal suatu acara pengadaan, sebelum harga diminta — pernyataan bahwa ia berminat, catatan, dan jawabannya atas kuesioner bila acaranya mengajukan kuesioner.',
   'processFlows.purpose.t_stageresponse_submit':
-    'Pemasok menyatakan ingin dipertimbangkan. Pembelian memilih daftar pendeknya hanya dari pemasok yang menyatakannya, dan itulah yang membuat pernyataan itu berarti.',
+    'Pemasok menyatakan ingin dipertimbangkan dan menjawab apa yang ditanyakan. Pembelian memilih daftar pendeknya hanya dari pemasok yang menjawab, dan itulah yang membuat jawaban itu berarti.',
+  'processFlows.purpose.t_stageresponse_save':
+    'Pemasok menyimpan apa yang sudah dijawabnya sejauh ini. Kuesioner sering memerlukan rekan kerja atau dokumen yang belum ada di tangan, dan tak seorang pun perlu mengulang dari awal.',
+  'processFlows.purpose.t_stageresponse_resave':
+    'Pemasok menyimpan kembali jawabannya yang belum selesai setelah menambahkannya. Pembelian tidak melihat apa pun sampai jawabannya dikirim.',
+  'processFlows.purpose.t_stageresponse_send':
+    'Pemasok menyelesaikan jawaban yang tersimpan dan mengirimkannya. Sejak saat itu jawaban tersebut menjadi catatan: pembelian membacanya, dan jawaban itu tidak diubah.',
 
   // ── shipment ───────────────────────────────────────────────────────────────
   'processFlows.purpose.entity.shipment':

@@ -7,7 +7,15 @@
 
 import type { PurchaseOrder, Invoice, IntakeLine } from '../data/types';
 import { RFQ_CATEGORIES, isRfqCategoryMember, type RFQ } from '../../data/mockRfqs';
-import { RFQ_STAGES, isRfqStage, nextStageOf, stageOf } from '../../data/rfqStage';
+import { RFQ_STAGES, isRfqStage, nextStageOf, stageOf, startStageOf } from '../../data/rfqStage';
+import {
+  answersProblemOf,
+  normalizeAnswers,
+  questionLabel,
+  questionnaireProblemOf,
+  unansweredRequiredOf,
+  type QuestionProblemCode,
+} from '../../data/rfiQuestionnaire';
 import { CODE_LESS_REASONS, isCodeLessReason } from '../../data/materialCatalogReason';
 import { DECLARED_PRESENT } from '../data/fixturePresent';
 import { responseDeadlinePassed, validityAlreadyPast } from '../data/quotationSubmitGate';
@@ -17,6 +25,8 @@ import {
   quotationCurrenciesOf,
   quotationHeldBy,
   stageResponseHeldBy,
+  stageResponseById,
+  rfiQuestionsFor,
   quotationOwnerOf,
   quotedEventOf,
   rosterStatusOf,
@@ -290,8 +300,17 @@ bindPolicyHook(POLICY_HOOKS.QUOTATION_SUBMIT_VALIDITY_CURRENT, ({ payload }) => 
 // A response at RFI or RFP is an acknowledgement of interest and a note; the
 // stage it is recorded against is the event's own, read here and written by the
 // store, never taken from the payload.
-bindPolicyHook(POLICY_HOOKS.STAGE_RESPONSE_EVENT_OPEN, ({ payload }) => {
-  const event = quotedEventOf(payloadText(payload, 'rfqId'));
+//
+// RFx-2 — THE EVENT IS THE ROW'S OWN WHEN THERE IS A ROW. A draft is re-saved
+// and submitted by id, and the event those two verbs are about is the one the
+// draft was written on. Read from the payload there, a caller could name any
+// open event to pass "is the event open" for a draft on a closed one. A
+// creation has no row yet (`entityId` is empty), so it names its event.
+const responseRfqIdOf = (ctx: { entityId: string; payload: Record<string, unknown> }): string =>
+  stageResponseById(ctx.entityId)?.rfqId ?? payloadText(ctx.payload, 'rfqId');
+
+bindPolicyHook(POLICY_HOOKS.STAGE_RESPONSE_EVENT_OPEN, (ctx) => {
+  const event = quotedEventOf(responseRfqIdOf(ctx));
   if (event === null || event.status === 'Open') return { ok: true };
   return {
     ok: false,
@@ -312,8 +331,8 @@ bindPolicyHook(POLICY_HOOKS.STAGE_RESPONSE_STAGE_TAKES_INTEREST, ({ payload }) =
   };
 });
 
-bindPolicyHook(POLICY_HOOKS.STAGE_RESPONSE_BEFORE_DEADLINE, ({ payload }) => {
-  const event = quotedEventOf(payloadText(payload, 'rfqId'));
+bindPolicyHook(POLICY_HOOKS.STAGE_RESPONSE_BEFORE_DEADLINE, (ctx) => {
+  const event = quotedEventOf(responseRfqIdOf(ctx));
   if (event === null || !responseDeadlinePassed(event.responseDeadline, DECLARED_PRESENT)) {
     return { ok: true };
   }
@@ -1183,6 +1202,62 @@ bindPolicyHook(POLICY_HOOKS.RFQ_AWARD_FX_BASIS, ({ entityId, target }) => {
   };
 });
 
+// — Stage response (RFx-2): the draft's stage, the answers, the required ones ——
+//
+// The questions are `rfiQuestionsFor(event)`: the event's questionnaire while
+// it is at RFI, none at any other stage. So at RFP — and at an RFI that asks no
+// questionnaire — the three hooks below pass a response that states no answers,
+// which is every response RFx-1 ever recorded.
+bindPolicyHook(POLICY_HOOKS.STAGE_RESPONSE_DRAFT_STAGE_CURRENT, ({ entityId }) => {
+  const draft = stageResponseById(entityId);
+  if (draft === null) return { ok: true };
+  const event = quotedEventOf(draft.rfqId);
+  if (event === null || event.stage === draft.stage) return { ok: true };
+  return {
+    ok: false,
+    reason:
+      `RESPONSE_DRAFT_STAGE_OVER: draft ${draft.id} was written at the ${draft.stage} stage of ` +
+      `${event.rfqNumber}, which is now at its ${event.stage} stage. A draft answers the stage ` +
+      'it was written at.',
+  };
+});
+
+bindPolicyHook(POLICY_HOOKS.STAGE_RESPONSE_ANSWERS_WELL_FORMED, (ctx) => {
+  const rfqId = responseRfqIdOf(ctx);
+  const questions = rfiQuestionsFor(rfqId);
+  const problem = answersProblemOf(questions, ctx.payload.answers);
+  if (problem === null) return { ok: true };
+  const event = quotedEventOf(rfqId);
+  const where = event ? event.rfqNumber : rfqId;
+  const detail =
+    problem.code === 'NOT_A_MAP'
+      ? 'the answers are not a map of question id to answer.'
+      : problem.code === 'UNKNOWN_QUESTION'
+        ? questions.length === 0
+          ? `'${problem.questionId}' answers a question, and ${where} asks no questionnaire at this stage.`
+          : `'${problem.questionId}' is not a question on the questionnaire of ${where}.`
+        : `the answer to ${questionLabel(problem.number)} ("${questions[problem.number - 1].prompt}") ` +
+          `is not one a ${questions[problem.number - 1].type} question takes.`;
+  return { ok: false, reason: `RESPONSE_ANSWER_INVALID: ${detail}` };
+});
+
+bindPolicyHook(POLICY_HOOKS.STAGE_RESPONSE_REQUIRED_ANSWERED, (ctx) => {
+  const questions = rfiQuestionsFor(responseRfqIdOf(ctx));
+  // The answers as the store would keep them: a blank is not an answer.
+  const missing = unansweredRequiredOf(questions, normalizeAnswers(questions, ctx.payload.answers));
+  if (missing.length === 0) return { ok: true };
+  const named = missing
+    .map((q) => `${questionLabel(questions.indexOf(q) + 1)} ("${q.prompt}")`)
+    .join(', ');
+  return {
+    ok: false,
+    reason:
+      `RESPONSE_QUESTION_REQUIRED: ${named} ${missing.length === 1 ? 'is' : 'are'} required and ` +
+      'not answered. A response is submitted with every required question answered; an ' +
+      'unfinished one is saved as a draft.',
+  };
+});
+
 // ── RFx-1 · THE STAGED EVENT ────────────────────────────────────────────────
 //
 // The stage is a field on the event (`data/rfqStage.ts`), so every hook below
@@ -1206,6 +1281,48 @@ bindPolicyHook(POLICY_HOOKS.RFQ_CREATE_STAGE_KNOWN, ({ payload }) => {
     reason:
       `STAGE_UNKNOWN: '${String(payload.stage)}' is not a sourcing stage ` +
       `(${RFQ_STAGES.join(', ')}). State one of the three, or none to start at RFQ.`,
+  };
+});
+
+// — Questionnaire (RFx-2): on an event that has an RFI stage, and well-formed ——
+//
+// The verb is legal on a Draft only, so the stage the event is AT is the stage
+// it STARTS at; `startStageOf` says which is meant.
+bindPolicyHook(POLICY_HOOKS.RFQ_QUESTIONNAIRE_AT_RFI, ({ entityId, target }) => {
+  const rfq = readRfq(target, entityId);
+  if (rfq === null || startStageOf(rfq) === 'RFI') return { ok: true };
+  return {
+    ok: false,
+    reason:
+      `QUESTIONNAIRE_STAGE_NOT_RFI: ${rfq.rfqNumber} starts at its ${startStageOf(rfq)} stage. ` +
+      'A questionnaire is what the RFI stage asks; raise the event at RFI to ask one.',
+  };
+});
+
+const QUESTION_PROBLEM_TEXT: Readonly<Record<QuestionProblemCode, string>> = {
+  NOT_A_LIST: '`questions` is not a list. State the questions, or an empty list to ask none.',
+  ID_MISSING: 'it has no id. Answers are kept against the id.',
+  ID_DUPLICATE: 'its id is already used by an earlier question.',
+  PROMPT_MISSING: 'it has no wording. A supplier cannot answer a question that asks nothing.',
+  TYPE_UNKNOWN:
+    'its type is not one of yes_no, single_choice, multi_choice, number, text, document.',
+  OPTIONS_TOO_FEW: 'a choice question needs at least two different options.',
+  UNIT_MISSING: 'a number question states the unit the number is asked in.',
+  KNOCKOUT_NOT_TAKEN:
+    'a knock-out answer is taken on a yes/no or a choice question only.',
+  KNOCKOUT_NOT_AN_ANSWER: 'its knock-out answer is not one of its own answers.',
+  KNOCKOUT_NOT_REQUIRED:
+    'a question with a knock-out answer is required: left optional, it is passed by skipping it.',
+};
+
+bindPolicyHook(POLICY_HOOKS.RFQ_QUESTIONNAIRE_WELL_FORMED, ({ payload }) => {
+  const problem = questionnaireProblemOf(payload.questions);
+  if (problem === null) return { ok: true };
+  return {
+    ok: false,
+    reason:
+      `QUESTIONNAIRE_MALFORMED: ${problem.number === 0 ? '' : `${questionLabel(problem.number)} — `}` +
+      `${problem.code}: ${QUESTION_PROBLEM_TEXT[problem.code]}`,
   };
 });
 

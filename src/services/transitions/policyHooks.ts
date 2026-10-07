@@ -102,6 +102,19 @@ export const POLICY_HOOKS = {
   /** Stage response: one per supplier per STAGE. An answer to the RFI does not
    *  stop the same supplier answering the RFP that follows. */
   STAGE_RESPONSE_ONE_PER_STAGE: 'stage_response_one_per_stage',
+  // RFx-2 · THE ANSWERS, AND THE DRAFT. Three more, one remedy each.
+  /** Stage response, on a saved draft: the draft was written at the stage the
+   *  event is STILL at. A draft left over from a stage the event has moved past
+   *  is not an answer to the stage it has moved to. */
+  STAGE_RESPONSE_DRAFT_STAGE_CURRENT: 'stage_response_draft_stage_current',
+  /** Stage response: every stated answer is one its question takes — a known
+   *  question, and an answer of that question's kind (yes or no; one of its
+   *  options; a number; text; a file name). Checked on a draft too: a draft
+   *  holds unfinished work, not wrong work. */
+  STAGE_RESPONSE_ANSWERS_WELL_FORMED: 'stage_response_answers_well_formed',
+  /** Stage response, at submit only: every REQUIRED question of the event's
+   *  RFI questionnaire is answered. The refusal names each one left out. */
+  STAGE_RESPONSE_REQUIRED_ANSWERED: 'stage_response_required_answered',
   /** RFQ FX pin (2e-c-3): the recorded basis must be WELL-FORMED — a permitted
    *  non-base quote currency, a finite positive rate, a readable vintage and a
    *  known source. A malformed pin is worse than no pin: an absent one refuses
@@ -580,6 +593,17 @@ export const POLICY_HOOKS = {
    * verbs on that edge from the flow, so a third one cannot arrive unguarded.
    */
   RFQ_REOPEN_NOT_AN_ADVANCE: 'rfq_reopen_not_an_advance',
+  // RFx-2 · THE RFI QUESTIONNAIRE, on a draft event.
+  /** RFQ questionnaire: the event starts at RFI. The questionnaire is what the
+   *  RFI stage asks; an event that starts at RFP or RFQ has no stage that would
+   *  ever show it to a supplier. */
+  RFQ_QUESTIONNAIRE_AT_RFI: 'rfq_questionnaire_at_rfi',
+  /** RFQ questionnaire: `questions` is a list a supplier can be asked — each
+   *  with an id of its own, a prompt, a known type, two options or more on a
+   *  choice, a unit on a number, and a knock-out answer only where the type
+   *  takes one, naming one of the question's own answers, on a required
+   *  question. An empty list is well-formed: it removes the questionnaire. */
+  RFQ_QUESTIONNAIRE_WELL_FORMED: 'rfq_questionnaire_well_formed',
 
   // ── PSL P3 · THE GOVERNANCE VERBS ─────────────────────────────────────────
   //

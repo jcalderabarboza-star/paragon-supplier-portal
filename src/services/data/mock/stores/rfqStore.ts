@@ -16,7 +16,7 @@
 import { mockRfqs } from '../../../../data/mockRfqs';
 import type { RFQ, RfqSeed } from '../../../../data/mockRfqs';
 import { respondedSupplierIdsOf } from '../../../../data/rfqResponses';
-import { stageOf, stageRespondersOf } from '../../../../data/rfqStage';
+import { isSubmittedResponse, stageOf, stageRespondersOf } from '../../../../data/rfqStage';
 import { quotationStore } from './quotationStore';
 import { stageResponseStore } from './stageResponseStore';
 
@@ -26,7 +26,12 @@ import { stageResponseStore } from './stageResponseStore';
 // caller carried. One fact, one place: a quotation submitted a second ago is in
 // the next read, and no write site has to remember to say so.
 function strip(r: RFQ | RfqSeed): RfqSeed {
-  const { respondedSupplierIds: _derived, stageResponses: _answers, ...seed } = r as RFQ;
+  const {
+    respondedSupplierIds: _derived,
+    stageResponses: _answers,
+    myStageDraft: _draft,
+    ...seed
+  } = r as RFQ;
   return { ...seed, materialIds: [...seed.materialIds], invitedSupplierIds: [...seed.invitedSupplierIds] };
 }
 
@@ -34,9 +39,14 @@ function strip(r: RFQ | RfqSeed): RfqSeed {
 // quotation, as it always was. At RFI and RFP it is a stage response recorded
 // AT THAT STAGE: an answer to the RFI is not an answer to the RFP that follows
 // it, so the list empties when the event advances and fills again.
+//
+// RFx-2 — ONLY SUBMITTED ANSWERS ARE ATTACHED. A supplier's draft is its own
+// work in progress; it is filtered out HERE, so no read built on this store —
+// the buyer's board, a policy hook, a widget — can hold one. The supplier reads
+// its own draft through `rfqSupplierView`, which asks the response store.
 function project(r: RfqSeed): RFQ {
   const stage = stageOf(r);
-  const answers = stageResponseStore.forRfq(r.id);
+  const answers = stageResponseStore.forRfq(r.id).filter(isSubmittedResponse);
   return {
     ...r,
     respondedSupplierIds:

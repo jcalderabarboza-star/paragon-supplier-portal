@@ -185,7 +185,8 @@ describe('1 · the buyer’s board and panel show where an event is on its path'
     await openRfq('RFQ-2026-018');
     const list = screen.getByTestId('rfq-stage-responses');
     expect(within(list).getByTestId('rfq-stage-content-note')).toHaveTextContent(
-      'At the RFI and RFP stages a supplier records its interest and a note, and nothing else. The questionnaire, the proposal and their scoring are not built yet.',
+      // RFx-2 — the RFI questionnaire is built; the sentence says what is still not.
+      'At the RFI stage a supplier answers the event’s questionnaire — or, when the event asks none, records its interest and a note. At the RFP stage it records its interest and a note; the proposal and its scoring are not built yet.',
     );
     expect(within(list).getByTestId('rfq-stage-response-count')).toHaveTextContent(
       '1 of 2 invited suppliers have responded at the RFP stage',
@@ -469,10 +470,19 @@ describe('5 · the wizard: the start stage, and a deadline that has passed', () 
     await toTerms();
     expect(screen.getByTestId('rfq-start-stage-RFQ')).toBeChecked();
     expect(screen.queryByTestId('rfq-start-stage-note')).not.toBeInTheDocument();
+    // RFx-2 — the questionnaire hint is an RFI matter: absent at RFQ and at RFP.
+    expect(screen.queryByTestId('rfq-start-stage-questionnaire-hint')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByTestId('rfq-start-stage-RFP'));
+    expect(screen.queryByTestId('rfq-start-stage-questionnaire-hint')).not.toBeInTheDocument();
     fireEvent.click(screen.getByTestId('rfq-start-stage-RFI'));
     expect(screen.getByTestId('rfq-start-stage-RFI')).toBeChecked();
+    // RFx-2 — at RFI a supplier now answers a questionnaire; the note says so
+    // and the wizard says where the buyer writes it.
     expect(screen.getByTestId('rfq-start-stage-note')).toHaveTextContent(
-      'a supplier records its interest and a note, and nothing else',
+      'At the RFI stage a supplier answers the event’s questionnaire — or, when the event asks none, records its interest and a note.',
+    );
+    expect(screen.getByTestId('rfq-start-stage-questionnaire-hint')).toHaveTextContent(
+      'The questionnaire is written on the draft, after this form and before you publish',
     );
   });
 
@@ -519,7 +529,8 @@ describe('6 · the supplier: interest at RFI and RFP', () => {
     expect(within(c).getByText('RFP stage')).toBeInTheDocument();
     expect(within(c).getByTestId('rfq-stage-timeline-rfq-018-RFP')).toHaveAttribute('data-state', 'current');
     expect(within(c).getByTestId('rfq-stage-content-note-rfq-018')).toHaveTextContent(
-      'At the RFP stage you record your interest and a note, and nothing else. The questionnaire and the proposal are not built in this portal yet.',
+      // RFx-2 — at RFP the proposal is what is not built; the questionnaire is an RFI matter.
+      'At the RFP stage you record your interest and a note, and nothing else. The proposal is not built in this portal yet.',
     );
     expect(within(c).getByTestId('rfq-interest-open-rfq-018')).toHaveTextContent('Record interest');
     // never the quote button: the machine refuses a quotation at this stage
@@ -692,7 +703,7 @@ describe('ID — the same surfaces in Indonesian', () => {
     expect(screen.getByTestId('rfq-stage-timeline-RFP')).toHaveTextContent('Tahap saat ini');
     expect(screen.getByTestId('rfq-stage-advance-RFI')).toHaveTextContent('Tidak dilanjutkan:');
     expect(screen.getByTestId('rfq-stage-content-note')).toHaveTextContent(
-      'Pada tahap RFI dan RFP, pemasok hanya mencatat minatnya dan satu catatan. Kuesioner, proposal, dan penilaiannya belum dibangun.',
+      'Pada tahap RFI, pemasok menjawab kuesioner acaranya — atau, bila acaranya tidak mengajukan kuesioner, mencatat minatnya dan satu catatan. Pada tahap RFP ia mencatat minatnya dan satu catatan; proposal dan penilaiannya belum dibangun.',
     );
     expect(screen.getByTestId('rfq-stage-response-count')).toHaveTextContent(
       '1 dari 2 pemasok yang diundang telah menanggapi pada tahap RFP',
@@ -746,7 +757,7 @@ describe('ID — the same surfaces in Indonesian', () => {
     const c = await card('RFQ-2026-018');
     expect(within(c).getByText('Tahap RFP')).toBeInTheDocument();
     expect(within(c).getByTestId('rfq-stage-content-note-rfq-018')).toHaveTextContent(
-      'Pada tahap RFP Anda hanya mencatat minat dan satu catatan. Kuesioner dan proposal belum dibangun di portal ini.',
+      'Pada tahap RFP Anda hanya mencatat minat dan satu catatan. Proposal belum dibangun di portal ini.',
     );
     expect(within(c).getByTestId('rfq-interest-open-rfq-018')).toHaveTextContent('Catat minat');
     first.unmount();
