@@ -102,8 +102,9 @@ import {
   bindPolicyHook,
   POLICY_HOOKS,
   cascadesFor,
-  deriveMatchVerdict,
-  invoicesForReceipt,
+  matchInvoicesOnPo,
+  receiptsForInvoice,
+  RECEIPT_MATCHABLE_STATES,
   type CommandTarget,
   type CascadeCommand,
   type CascadeContext,
@@ -396,7 +397,12 @@ const invoiceTarget: CommandTarget = {
   readState: (id) => invoiceStore.get(id)?.status ?? null,
   readScopeOwner: (id) => invoiceStore.get(id)?.supplierId ?? null,
   readEntity: (id) => invoiceStore.get(id) ?? null,
-  applyTransition: (id, toState, payload) => {
+  applyTransition: (id, toState, payload, scope, verb) => {
+    // OPS-1 — WHO DECIDED IS STAMPED HERE, FROM THE SESSION. `approvedBy` and
+    // `releasedBy` are refused in a payload by the dispatcher (`ACTOR_IN_PAYLOAD`),
+    // so the store is the only writer. An UNATTRIBUTED actor is stamped as such:
+    // "nobody could be named" is a fact worth keeping, and the surface says it.
+    const actor = asActorAttribution(scope.actor);
     invoiceStore.update(id, (inv) => ({
       ...inv,
       status: toState as InvoiceStatus,
@@ -405,6 +411,13 @@ const invoiceTarget: CommandTarget = {
         toState === 'Submitted' && typeof payload.amount === 'number'
           ? payload.amount
           : inv.amount,
+      ...(verb === 't_invoice_approve' && actor ? { approvedBy: actor } : {}),
+      ...(verb === 't_invoice_release_payment' && actor ? { releasedBy: actor } : {}),
+      // The reason finance wrote is KEPT. It used to be required, sent and
+      // dropped here, so neither side could read why an invoice was disputed.
+      ...(verb === 't_invoice_dispute'
+        ? { disputeReason: String(payload.disputeReason ?? '').trim() }
+        : {}),
     }));
   },
   // Creation scope: a supplier may draft an invoice only against its OWN PO
@@ -472,6 +485,41 @@ const invoiceTarget: CommandTarget = {
     return { entityId: invoiceNumber };
   },
 };
+
+// ── OPS-1 · THE MATCH, RUN FOR ONE PURCHASE ORDER ───────────────────────────
+//
+// Both directions call this: a receipt posting (`t_gr_post`) and an invoice
+// arriving at `Submitted` (`t_invoice_submit`, `t_invoice_resolve`). It reads
+// EVERY posted receipt on the PO and EVERY invoice on it, writes the verdict and
+// the figures it rests on to each invoice awaiting one, and returns the ids that
+// came out Matched — the caller turns those into `t_invoice_match` commands.
+//
+// The receipts read are those posting or posted (`RECEIPT_MATCHABLE_STATES`).
+// `landing` is the receipt whose own posting is running this; it is named so the
+// receipt direction does not depend on its state having been written yet.
+//
+// With no posted receipt on the PO nothing is written: the invoice keeps
+// `Pending`, which is the truth — there is nothing to match against yet.
+function matchInvoicesForPo(poNumber: string, landing?: GoodsReceipt): string[] {
+  const po = findPoByNumber(poNumber);
+  if (!po) return [];
+  const posted = receiptsForInvoice(
+    { poNumber, status: 'Submitted' },
+    goodsReceiptStore.all(),
+    RECEIPT_MATCHABLE_STATES,
+  ).filter((g) => g.id !== landing?.id);
+  const receipts = landing ? [...posted, landing] : posted;
+  if (receipts.length === 0) return [];
+  const results = matchInvoicesOnPo(
+    { lines: po.lineItems, statedTotal: po.totalValue },
+    receipts.flatMap((g) => g.inspectionResults),
+    invoiceStore.all().filter((i) => i.poNumber === poNumber),
+  );
+  for (const r of results) {
+    invoiceStore.update(r.invoiceId, (i) => ({ ...i, matchStatus: r.verdict, matchBasis: r.basis }));
+  }
+  return results.filter((r) => r.verdict === 'Matched').map((r) => r.invoiceId);
+}
 
 // Invoice create legality (mock layer — cross-entity read): the parent PO must
 // be Confirmed before its invoice can be drafted (same shape as ASN create).
@@ -3139,34 +3187,14 @@ const resolveCascades = (ctx: CascadeContext): CascadeCommand[] => {
     // at A2, where this same `deriveMatchVerdict` is called from the read layer.
     if (ctx.transitionId === 't_gr_post') {
       const [link] = cascadesFor(ctx.transitionId);
-      const po = findPoByNumber(gr.poNumber);
-      if (!link || !po) return [];
-      const expectedValue = po.lineItems.reduce(
-        (sum, li) => sum + li.confirmedQty * li.unitPrice,
-        0,
-      );
-      const grHasRejects = gr.inspectionResults.some((r) => r.qtyRejected > 0);
-      const cmds: CascadeCommand[] = [];
-      // ⚠️ **THE PAIRING, NAMED.** This was an inline `continue` clause reading
-      // `inv.poNumber !== gr.poNumber || inv.status !== 'Submitted'`. It IS the
-      // PO×state relation between a receipt and an invoice, and while it lived
-      // here it could only be asked in this one direction — which is why an
-      // invoice arriving AFTER its receipt is matched by nothing. Same predicate,
-      // same rows, now named in `invoiceRollup.ts` so the mirror is askable and
-      // testable. `invoiceMatchPairing.test.ts` pins that this direction is
-      // byte-for-byte the behaviour it replaced.
-      for (const inv of invoicesForReceipt(gr, invoiceStore.all())) {
-        const verdict = deriveMatchVerdict(expectedValue, inv.amount, grHasRejects);
-        invoiceStore.update(inv.id, (i) => ({ ...i, matchStatus: verdict }));
-        if (verdict === 'Matched') {
-          cmds.push({
-            entity: link.targetEntity,
-            entityId: inv.id,
-            transitionId: link.targetTransitionId,
-          });
-        }
-      }
-      return cmds;
+      if (!link) return [];
+      // OPS-1 — the verdict reads every posted receipt on the PO (this one
+      // included) and every invoice on it; see `matchInvoicesForPo`.
+      return matchInvoicesForPo(gr.poNumber, gr).map((invoiceId) => ({
+        entity: link.targetEntity,
+        entityId: invoiceId,
+        transitionId: link.targetTransitionId,
+      }));
     }
     // GR mismatch disposition (reject / partial approve) → ASN discrepancy (batch ii).
     return cascadesFor(ctx.transitionId).map((link) => ({
@@ -3179,6 +3207,24 @@ const resolveCascades = (ctx: CascadeContext): CascadeCommand[] => {
   // two declared links — the winner (from the award payload) is awarded, every
   // OTHER sibling is rejected. Best-effort: a sibling already terminal simply
   // no-ops (illegal transition), never breaking the source award.
+  // OPS-1 — INVOICE → RECEIPTS. An invoice that reaches `Submitted` after its
+  // receipt posted is matched here; before this, only a receipt posting ran the
+  // match, so such an invoice waited for a posting that had already happened.
+  // Both entrances to `Submitted` are sources: the supplier's submit and
+  // finance's resolve.
+  if (
+    ctx.entity === 'invoice' &&
+    (ctx.transitionId === 't_invoice_submit' || ctx.transitionId === 't_invoice_resolve')
+  ) {
+    const [link] = cascadesFor(ctx.transitionId);
+    const inv = invoiceStore.get(ctx.entityId);
+    if (!link || !inv) return [];
+    return matchInvoicesForPo(inv.poNumber).map((invoiceId) => ({
+      entity: link.targetEntity,
+      entityId: invoiceId,
+      transitionId: link.targetTransitionId,
+    }));
+  }
   if (ctx.entity === 'rfq') {
     // ── C.1 · RFQ raised → the approved PR it came from enters Sourcing Event ──
     // ⚠️ **THE COMMON PATH IS THE NEGATIVE ONE, AND IT IS HANDLED FIRST FOR THAT

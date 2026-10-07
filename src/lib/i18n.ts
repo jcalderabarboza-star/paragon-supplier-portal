@@ -601,6 +601,8 @@ export const resources = {
       // person the platform cannot resolve.
       'invoice.approve.done.title': '{{invoiceNumber}} — approved for payment',
       'invoice.approve.done.desc': 'Recorded without a named approver — no person is resolved in this session. Payment can now be released.',
+      'invoice.approve.done.descNamed':
+        'Approved by {{person, stop}}. The payment is released by somebody else.',
       'invoice.approve.failed.title': 'Could not approve {{invoiceNumber}}',
       'invoice.approve.failed.desc': 'Approval was rejected ({{reason}}).',
       'invoice.pay.releasing.title': '{{invoiceNumber}} — releasing payment',
@@ -615,7 +617,7 @@ export const resources = {
       'invoice.settle.retried.desc': 'SAP assigned the FI document. The invoice is now released.',
       'invoice.match.deferred.title': 'Awaiting 3-way match',
       'invoice.match.deferred.desc':
-        'Nothing was changed here. The 3-way match completes when the goods receipt is posted in SAP.',
+        'Nothing was changed here. The match runs by itself when a receipt is posted on the purchase order and when an invoice is submitted or returned from a dispute.',
       'invoice.remittance.generated.title': 'Remittance advice not available yet',
       'invoice.remittance.generated.desc':
         'Nothing was generated and nothing was sent to the supplier via {{channel, stop}}.',
@@ -1089,6 +1091,8 @@ export const resources = {
       // jadi teksnya tidak pernah menyebut orang yang tidak dapat dikenali.
       'invoice.approve.done.title': '{{invoiceNumber}} — disetujui untuk pembayaran',
       'invoice.approve.done.desc': 'Dicatat tanpa nama penyetuju — tidak ada orang yang dikenali dalam sesi ini. Pembayaran kini dapat dirilis.',
+      'invoice.approve.done.descNamed':
+        'Disetujui oleh {{person, stop}}. Pembayarannya dirilis oleh orang lain.',
       'invoice.approve.failed.title': 'Tidak dapat menyetujui {{invoiceNumber}}',
       'invoice.approve.failed.desc': 'Persetujuan ditolak ({{reason}}).',
       'invoice.pay.releasing.title': '{{invoiceNumber}} — merilis pembayaran',
@@ -1103,7 +1107,7 @@ export const resources = {
       'invoice.settle.retried.desc': 'SAP menetapkan dokumen FI. Faktur kini dirilis.',
       'invoice.match.deferred.title': 'Menunggu pencocokan 3 arah',
       'invoice.match.deferred.desc':
-        'Tidak ada yang berubah di sini. Pencocokan 3 arah selesai saat penerimaan barang diposting di SAP.',
+        'Tidak ada yang berubah di sini. Pencocokan berjalan sendiri saat penerimaan diposting pada pesanan pembelian dan saat faktur diajukan atau dikembalikan dari sengketa.',
       'invoice.remittance.generated.title': 'Bukti pembayaran belum tersedia',
       'invoice.remittance.generated.desc':
         'Tidak ada yang dibuat dan tidak ada yang dikirim ke pemasok melalui {{channel, stop}}.',

@@ -36,6 +36,15 @@ export const CASCADES: Record<string, readonly CascadeLink[]> = {
   t_gr_post: [
     { targetEntity: 'invoice', targetTransitionId: 't_invoice_match' },
   ],
+  // OPS-1 — the same match, from the invoice's side: an invoice reaching
+  // `Submitted` (submitted, or returned from a dispute) is matched against the
+  // receipts already posted on its PO.
+  t_invoice_submit: [
+    { targetEntity: 'invoice', targetTransitionId: 't_invoice_match' },
+  ],
+  t_invoice_resolve: [
+    { targetEntity: 'invoice', targetTransitionId: 't_invoice_match' },
+  ],
   // RFQ award fans out onto its quotations (batch iv): the winner is awarded,
   // every other is rejected. Both target the `quotation` machine; the adapter
   // resolver splits the sibling set (winner ← payload, losers ← the store) across

@@ -141,6 +141,8 @@ export const invoiceFlow: FlowDefinition = {
       trigger: 'user',
       requiredRole: 'invoice:approve',
       requiredFields: [],
+      // OPS-1 — who approved is stamped by the store from the session; no hook,
+      // because the store records whatever actor the scope carries.
       policyHooks: [],
       surfaceable: { surfaced: true },
       version: 1,
@@ -155,7 +157,9 @@ export const invoiceFlow: FlowDefinition = {
       trigger: 'user',
       requiredRole: 'invoice:pay',
       requiredFields: [],
-      policyHooks: [],
+      // OPS-1 — who released is stamped by the store from the session, and a
+      // named person may not release the payment of an invoice they approved.
+      policyHooks: [POLICY_HOOKS.INVOICE_RELEASER_NOT_APPROVER],
       sapBoundary: true,
       // PF-0 · D-2 — the settlement advance, declared. See the GR twin.
       settlesTo: 'Payment Released',

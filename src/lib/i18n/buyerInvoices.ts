@@ -44,7 +44,7 @@ export const buyerInvoicesEn: Record<string, string> = {
   // — Dispute banner (invoice numbers interleaved as data) —
   'buyerInvoices.banner.dispute.label': 'Invoice dispute: ',
   'buyerInvoices.banner.dispute.body':
-    ' — Quantity mismatch on PT Sample Packaging. Credit note required before payment.',
+    ' — payment is held until each dispute is resolved. Open an invoice to read its reason.',
   // — Tabs —
   'buyerInvoices.tab.queue': 'Invoice Queue',
   'buyerInvoices.tab.analytics': 'Spend Analytics',
@@ -138,14 +138,48 @@ export const buyerInvoicesEn: Record<string, string> = {
   'buyerInvoices.field.pending': '— pending —',
   // — 3-way match explanations (keyed off matchStatus) —
   'buyerInvoices.match.matched':
-    'PO, GR and invoice quantities + prices all reconcile.',
+    'Recorded as matched. This row carries no match figures.',
   'buyerInvoices.match.pendingGr':
     'Awaiting goods receipt posting in SAP before match can complete.',
-  'buyerInvoices.match.pending': 'Match not yet started.',
+  'buyerInvoices.match.pending': 'Not matched yet: no receipt is posted on this purchase order.',
   'buyerInvoices.match.qtyMismatch':
-    'Delivered quantity does not match invoiced quantity. Credit note required.',
+    'Recorded as a quantity mismatch. This row carries no match figures.',
   'buyerInvoices.match.priceVariance':
-    'Invoice unit price exceeds PO price by more than tolerance.',
+    'Recorded as a price variance. This row carries no match figures.',
+  'buyerInvoices.match.cause.WITHIN':
+    'The invoice is within what was received and accepted on the purchase order, after earlier invoices.',
+  'buyerInvoices.match.cause.EXCEEDS_RECEIVED':
+    'Invoiced for more than was received and accepted: {{invoiced}} is invoiced and {{payable}} is payable on what was received.',
+  'buyerInvoices.match.cause.ALREADY_INVOICED':
+    'Earlier invoices on this purchase order already claim what was received: {{already}} is already invoiced and {{payable}} is left to pay.',
+  'buyerInvoices.match.cause.EXCEEDS_ORDER':
+    'The invoice is above the whole order at purchase-order prices: {{invoiced}} invoiced against {{ordered}} ordered. An invoice carries a total and no lines, so the portal cannot say which price or quantity differs.',
+  'buyerInvoices.match.figure.ordered':
+    'Ordered (confirmed quantity × PO price)',
+  'buyerInvoices.match.figure.received':
+    'Received and accepted',
+  'buyerInvoices.match.figure.already':
+    'Already invoiced',
+  'buyerInvoices.match.figure.invoiced':
+    'This invoice',
+  'buyerInvoices.match.poTotalDisagrees':
+    'The purchase order states a total of {{stated}}, but its lines come to {{lines}}; the match uses the lines.',
+  'buyerInvoices.field.releasedBy':
+    'Payment released by',
+  'buyerInvoices.attribution.noPerson':
+    'Not recorded — no person in session',
+  'buyerInvoices.attribution.idpDown':
+    'Not recorded — identity provider unavailable',
+  'buyerInvoices.field.bankUnknown':
+    'Not held in the portal',
+  'buyerInvoices.release.refused.unnamed':
+    'This invoice was approved by a named person, so its payment must be released by a named person who is not the approver. Pick a sample user on the identity panel, then try again.',
+  'buyerInvoices.confirm.body.midUnknown':
+    ' will be released. The supplier’s bank account is not held in the portal — SAP pays to the account on the vendor record.',
+  'buyerInvoices.section.disputeReason':
+    'Dispute reason',
+  'buyerInvoices.dispute.noReason':
+    'No reason was recorded for this dispute.',
   // — Confirm-release warning (interleaved <Data> amount + bank) —
   'buyerInvoices.confirm.title': 'Confirm payment release',
   'buyerInvoices.confirm.body.pre': 'This action cannot be undone. Payment of ',
@@ -212,7 +246,7 @@ export const buyerInvoicesId: Record<string, string> = {
   // — Dispute banner —
   'buyerInvoices.banner.dispute.label': 'Sengketa faktur: ',
   'buyerInvoices.banner.dispute.body':
-    ' — Ketidaksesuaian kuantitas pada PT Sample Packaging. Nota kredit diperlukan sebelum pembayaran.',
+    ' — pembayaran ditahan sampai setiap sengketa diselesaikan. Buka faktur untuk membaca alasannya.',
   // — Tabs —
   'buyerInvoices.tab.queue': 'Antrean Faktur',
   'buyerInvoices.tab.analytics': 'Analitik Belanja',
@@ -303,14 +337,48 @@ export const buyerInvoicesId: Record<string, string> = {
   'buyerInvoices.field.pending': '— menunggu —',
   // — 3-way match explanations —
   'buyerInvoices.match.matched':
-    'Kuantitas + harga PO, GR, dan faktur semuanya cocok.',
+    'Tercatat cocok. Baris ini tidak memuat angka pencocokan.',
   'buyerInvoices.match.pendingGr':
     'Menunggu pencatatan penerimaan barang di SAP sebelum pencocokan dapat selesai.',
-  'buyerInvoices.match.pending': 'Pencocokan belum dimulai.',
+  'buyerInvoices.match.pending': 'Belum dicocokkan: belum ada penerimaan yang diposting untuk pesanan pembelian ini.',
   'buyerInvoices.match.qtyMismatch':
-    'Kuantitas yang dikirim tidak cocok dengan kuantitas yang difakturkan. Nota kredit diperlukan.',
+    'Tercatat sebagai ketidaksesuaian kuantitas. Baris ini tidak memuat angka pencocokan.',
   'buyerInvoices.match.priceVariance':
-    'Harga satuan faktur melebihi harga PO di atas ambang toleransi.',
+    'Tercatat sebagai selisih harga. Baris ini tidak memuat angka pencocokan.',
+  'buyerInvoices.match.cause.WITHIN':
+    'Faktur berada dalam nilai yang diterima dan disetujui pada pesanan pembelian, setelah faktur sebelumnya.',
+  'buyerInvoices.match.cause.EXCEEDS_RECEIVED':
+    'Ditagih melebihi yang diterima dan disetujui: {{invoiced}} ditagih dan {{payable}} dapat dibayar atas yang diterima.',
+  'buyerInvoices.match.cause.ALREADY_INVOICED':
+    'Faktur sebelumnya pada pesanan pembelian ini sudah menagih yang diterima: {{already}} sudah ditagih dan {{payable}} tersisa untuk dibayar.',
+  'buyerInvoices.match.cause.EXCEEDS_ORDER':
+    'Faktur melebihi seluruh pesanan pada harga pesanan pembelian: {{invoiced}} ditagih terhadap {{ordered}} dipesan. Faktur memuat total tanpa baris, sehingga portal tidak dapat menyebutkan harga atau kuantitas mana yang berbeda.',
+  'buyerInvoices.match.figure.ordered':
+    'Dipesan (kuantitas dikonfirmasi × harga PO)',
+  'buyerInvoices.match.figure.received':
+    'Diterima dan disetujui',
+  'buyerInvoices.match.figure.already':
+    'Sudah ditagih',
+  'buyerInvoices.match.figure.invoiced':
+    'Faktur ini',
+  'buyerInvoices.match.poTotalDisagrees':
+    'Pesanan pembelian menyatakan total {{stated}}, tetapi baris-barisnya berjumlah {{lines}}; pencocokan memakai baris.',
+  'buyerInvoices.field.releasedBy':
+    'Pembayaran dirilis oleh',
+  'buyerInvoices.attribution.noPerson':
+    'Tidak tercatat — tidak ada orang dalam sesi',
+  'buyerInvoices.attribution.idpDown':
+    'Tidak tercatat — penyedia identitas tidak tersedia',
+  'buyerInvoices.field.bankUnknown':
+    'Tidak disimpan di portal',
+  'buyerInvoices.release.refused.unnamed':
+    'Faktur ini disetujui oleh orang yang bernama, sehingga pembayarannya harus dirilis oleh orang bernama yang bukan penyetujunya. Pilih pengguna contoh pada panel identitas, lalu coba lagi.',
+  'buyerInvoices.confirm.body.midUnknown':
+    ' akan dirilis. Rekening bank pemasok tidak disimpan di portal — SAP membayar ke rekening pada data vendor.',
+  'buyerInvoices.section.disputeReason':
+    'Alasan sengketa',
+  'buyerInvoices.dispute.noReason':
+    'Tidak ada alasan yang dicatat untuk sengketa ini.',
   // — Confirm-release warning —
   'buyerInvoices.confirm.title': 'Konfirmasi pelepasan pembayaran',
   'buyerInvoices.confirm.body.pre':

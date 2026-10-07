@@ -2594,3 +2594,57 @@ bindPolicyHook(POLICY_HOOKS.INTAKE_OVERRIDE_REASONED, ({ payload, target, entity
   }
   return { ok: true };
 });
+
+// ── OPS-1 · INVOICE APPROVAL AND PAYMENT RELEASE — WHO DECIDED ──────────────
+//
+// Approving an invoice and releasing its payment recorded nobody: the store
+// kept no actor, and the surface told a seat that WAS acting as a named person
+// that "no person is resolved in this session". The invoice target now stamps
+// `approvedBy` / `releasedBy` from the scope's actor — a named person, or the
+// honest UNATTRIBUTED. There is deliberately NO hook requiring an actor: every
+// caller that existed before this batch is still admitted, and a scope that
+// carries no actor at all simply leaves the stamp absent.
+//
+// ⚠️ **SEGREGATION, AND IT IS A PROPERTY OF THE PAIR.** One finance seat holds
+// both `invoice:approve` and `invoice:pay`, so the role gate cannot keep the two
+// acts apart — only the record of who approved can. A NAMED person who approved
+// an invoice is refused when they try to release its payment, by name.
+//
+// ⚠️ **ONCE THE APPROVAL IS NAMED, THE RELEASE MUST BE NAMED TOO.** Comparing
+// only when both actors resolve would leave the obvious way round it: approve as
+// a named person, drop to no sample user, release. So an invoice whose approval
+// carries a person is released only by a seat that names a DIFFERENT person; an
+// unnamed releaser is refused (`INVOICE_RELEASER_UNNAMED`), without naming
+// anybody, because there is nobody to name.
+//
+// ⚠️ **AND THE LIMIT, STATED: AN UNNAMED APPROVAL IS NOT GUARDED.** An invoice
+// approved with nobody seated (or a seeded one, which records no approver)
+// carries no name to compare against, and its release is admitted from any seat
+// holding the atom. That keeps every path that existed before this batch, and it
+// is the same direction every four-eyes check in this file takes — stricter when
+// an actor resolves. Closing it means refusing unattributed approval itself,
+// which is a ruling about whether the unattributed seat may decide money at all.
+bindPolicyHook(POLICY_HOOKS.INVOICE_RELEASER_NOT_APPROVER, ({ entityId, target, scope }) => {
+  const inv = target.readEntity(entityId) as { approvedBy?: unknown } | null;
+  const approver = asActorAttribution(inv?.approvedBy);
+  if (!approver || !isAttributed(approver)) return { ok: true };
+  const releaser = asActorAttribution(scope.actor);
+  if (!releaser || !isAttributed(releaser)) {
+    return {
+      ok: false,
+      reason:
+        'INVOICE_RELEASER_UNNAMED: this invoice was approved by a named person, so its payment ' +
+        'is released by a named person who is not the approver — this seat names nobody',
+    };
+  }
+  if (approver.person.personId === releaser.person.personId) {
+    return {
+      ok: false,
+      reason:
+        `INVOICE_RELEASER_IS_APPROVER: the approver ` +
+        `(${personRefusalToken(approver.person.personId)}) may not also release this ` +
+        'payment — approving an invoice and releasing its money are two authorities',
+    };
+  }
+  return { ok: true };
+});

@@ -281,8 +281,11 @@ describe('C.2 — entityVerbOf qualifies a cascade source with its entity', () =
     // B4a added a second same-entity member, on the same shape: the publication
     // supersede is fired by `forecastPublication:publish`, whose bare verb names
     // a transition in the very flow it fires into.
+    // OPS-1 added a third same-entity member: the header match is now also
+    // fired by `invoice:submit` and `invoice:resolve`, verbs of its own flow.
     expect(rows.filter((r) => r.ambiguous).map((r) => r.key).sort()).toEqual([
       'forecastPublication.t_publication_supersede',
+      'invoice.t_invoice_match',
       'purchaseRequisition.t_pr_source',
       'quotation.t_quotation_award',
       'quotation.t_quotation_reject',

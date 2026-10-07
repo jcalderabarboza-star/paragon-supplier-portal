@@ -82,6 +82,8 @@ export const PERSON_NAMING_REFUSAL_KEYS: Readonly<Record<string, string>> = Obje
   // shape this module exists to make impossible, arriving through the door the
   // module held open for itself.
   SAMPLE_ACTOR_CANNOT_LOOSEN: 'identity.refusal.sampleCannotLoosen',
+  // OPS-1 — a named person who approved an invoice tries to release its payment.
+  INVOICE_RELEASER_IS_APPROVER: 'identity.refusal.releaserIsApprover',
 });
 
 /**

@@ -363,13 +363,22 @@ const mockGoodsReceiptsRaw: GoodsReceipt[] = [
     receivedDate: '2026-05-10',
     receivedBy: 'QC Inspector',
     status: 'Approved',
+    // OPS-1 — THIS RECEIPT NOW CARRIES ITS OWN PURCHASE ORDER'S LINE. It read
+    // `FR-EMIN-4420` × 900, a material PO-2025-00104 does not hold (the PO is
+    // `FR-MKOV-5510` × 200). That was invisible while the match compared an
+    // invoice total to the order's value and nothing else; once the match reads
+    // what was RECEIVED, a receipt of some other material is worth nothing
+    // against the order, and this is the one seeded receipt whose posting is
+    // the portal's click path to `Matched` (`fixtures/invoices.ts`). Six other
+    // seeded receipts carry a material their PO does not hold and are left as
+    // they are — `ops1Money.test.ts` names them.
     inspectionResults: [
       {
-        materialCode: 'FR-EMIN-4420',
-        description: 'Emina Fresh Citrus Accord',
-        qtyExpected: 900,
-        qtyReceived: 900,
-        qtyAccepted: 900,
+        materialCode: 'FR-MKOV-5510',
+        description: 'Make Over Long-Wear Musk Base',
+        qtyExpected: 200,
+        qtyReceived: 200,
+        qtyAccepted: 200,
         qtyRejected: 0,
         visualCheck: 'Pass',
         packagingCheck: 'Pass',

@@ -120,6 +120,11 @@ describe('GR-post → invoice-match cascade — the verdict is computed, never f
   });
 
   it('QTY MISMATCH: GR carries a rejection → matchStatus Qty Mismatch, header does NOT fire', async () => {
+    // OPS-1 — the match pools every posted receipt on the PO, and the fixtures
+    // already hold one (GR-2026-014, 8,000 accepted). It is taken back to
+    // inspected here so that THIS receipt is the only one posted, and the
+    // rejected 1,000 is what makes the invoice run over.
+    goodsReceiptStore.update('gr-014', (g) => ({ ...g, status: 'Approved' }));
     asnStore.add(asnOn('ASN-QTY', 'PO-2025-00102'));
     // Mixed line (accepted + rejected) rolls up Partially Approved — still postable.
     const grId = (await createGr('ASN-QTY', [line(7000, 1000)])).entityId!;
