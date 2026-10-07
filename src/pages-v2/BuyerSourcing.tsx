@@ -2261,24 +2261,12 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                 </label>
               ))}
             </div>
-            {draft.stage !== 'RFQ' && (
-              <p className="text-xs text-text-tertiary mt-1.5" data-testid="rfq-start-stage-note">
-                {t('sourcing.interest.contentNote')}
-              </p>
-            )}
-            {/* RFx-2 — where the questionnaire is written: on the draft, after
-                this wizard, before publishing. */}
-            {draft.stage === 'RFI' && (
-              <p className="text-xs text-text-tertiary mt-1" data-testid="rfq-start-stage-questionnaire-hint">
-                {t('sourcing.wizard.stage.questionnaireHint')}
-              </p>
-            )}
-            {/* RFx-3 — and where the RFP criteria are set: the same place. */}
-            {draft.stage !== 'RFQ' && (
-              <p className="text-xs text-text-tertiary mt-1" data-testid="rfq-start-stage-criteria-hint">
-                {t('sourcing.wizard.stage.criteriaHint')}
-              </p>
-            )}
+            {/* RFx-3 — ONE LINE PER STAGE, beside its choice above, each saying
+                what the stage asks and where it is written. The detail is the
+                guide's; three paragraphs under a radio group were not read. */}
+            <p className="text-xs text-text-tertiary mt-1.5" data-testid="rfq-start-stage-note">
+              {t('sourcing.wizard.stage.guide')}
+            </p>
           </div>
           <div>
             <label

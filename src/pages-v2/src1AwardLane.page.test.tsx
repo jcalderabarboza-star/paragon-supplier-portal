@@ -109,7 +109,7 @@ describe('2 · the award commits from Open and from Closed; a person closes bidd
     renderWithProviders(<Sourcing />, { identity: BUYER_NAMED });
     await openRfq('RFQ-2026-004');
     expect(screen.getByTestId('rfq-award-section')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Reopen RFQ' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Reopen event' })).toBeInTheDocument();
     // every invitee answered here, so the "who has answered" line has nothing to say
     expect(screen.queryByTestId('rfq-award-unanswered')).not.toBeInTheDocument();
   });
@@ -128,7 +128,7 @@ describe('2 · the award commits from Open and from Closed; a person closes bidd
     expect(await screen.findByTestId('toast-spy')).toHaveTextContent('RFQ-2026-001 closed to new quotations');
     // the panel stays open on the same event: closed now, still awardable
     await waitFor(() => expect(screen.queryByTestId('rfq-close')).not.toBeInTheDocument());
-    expect(screen.getByRole('button', { name: 'Reopen RFQ' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Reopen event' })).toBeInTheDocument();
     expect(screen.getByTestId('rfq-award-section')).toBeInTheDocument();
   });
 

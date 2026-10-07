@@ -40,7 +40,7 @@ export const sourcingEn: Record<string, string> = {
   // — Filter / search —
   'sourcing.filter.byCategory': 'Filter by category',
   'sourcing.filter.byStage': 'Filter by stage',
-  'sourcing.search.placeholder': 'Search by RFQ number, title, or material…',
+  'sourcing.search.placeholder': 'Search by event number, title, or material…',
   // — Category labels (value stays the RFQCategory enum for logic) —
   'sourcing.category.fragrance': 'Fragrance',
   'sourcing.category.activeIngredients': 'Active Ingredients',
@@ -49,7 +49,7 @@ export const sourcingEn: Record<string, string> = {
   'sourcing.category.botanical': 'Botanical',
   'sourcing.category.other': 'Other',
   // — Active table —
-  'sourcing.table.col.rfq': 'RFQ #',
+  'sourcing.table.col.rfq': 'Event #',
   'sourcing.table.col.category': 'Category',
   'sourcing.table.col.stage': 'Stage',
   'sourcing.table.col.responses': 'Responses',
@@ -58,24 +58,24 @@ export const sourcingEn: Record<string, string> = {
   'sourcing.table.col.responseDeadline': 'Response deadline',
   'sourcing.table.col.status': 'Status',
   'sourcing.table.col.actions': 'Actions',
-  'sourcing.table.empty': 'No RFQs match the current filters.',
+  'sourcing.table.empty': 'No events match the current filters.',
   // — Deadline compact labels —
   'sourcing.deadline.overdue': '{{count}}d overdue',
   'sourcing.deadline.dueToday': 'Due today',
   'sourcing.deadline.remaining': '{{count}}d remaining',
   // — Awards history —
   'sourcing.awards.title': 'Awards History',
-  'sourcing.awards.count.one': '{{count}} awarded RFQ',
-  'sourcing.awards.count.other': '{{count}} awarded RFQs',
-  'sourcing.awards.col.rfq': 'RFQ #',
+  'sourcing.awards.count.one': '{{count}} awarded event',
+  'sourcing.awards.count.other': '{{count}} awarded events',
+  'sourcing.awards.col.rfq': 'Event #',
   'sourcing.awards.col.title': 'Title',
   'sourcing.awards.col.supplier': 'Awarded supplier',
   'sourcing.awards.col.date': 'Award date',
   'sourcing.awards.col.value': 'Award value',
   'sourcing.awards.col.actions': 'Actions',
-  'sourcing.awards.empty': 'No awarded RFQs yet.',
+  'sourcing.awards.empty': 'No awarded events yet.',
   // — Side panel —
-  'sourcing.panel.title': 'RFQ {{number}} — {{title}}',
+  'sourcing.panel.title': '{{number}} — {{title}}',
   'sourcing.panel.exportComparison': 'Export comparison',
   'sourcing.panel.awardSummary': 'Award summary',
   'sourcing.panel.awardedTo': 'Awarded to',
@@ -103,12 +103,12 @@ export const sourcingEn: Record<string, string> = {
   // — 2e-c-3 FX refusals. Both name the currencies and both name the REMEDY:
   //   a refusal a buyer cannot act on is only half a refusal.
   'sourcing.cmp.fx.refused.FX_UNPINNED':
-    'Not ranked — quotes are priced in {{currencies}} and no exchange rate has been recorded for this RFQ. Record a rate to compare them; the bids below are shown as quoted.',
+    'Not ranked — quotes are priced in {{currencies}} and no exchange rate has been recorded for this event. Record a rate to compare them; the bids below are shown as quoted.',
   // 2e-c-4 — a STALE refusal names the vintage it is judging. "Too old" without
   // saying how old leaves a buyer unable to tell this morning's rate from
   // January's.
   'sourcing.cmp.fx.refused.FX_STALE':
-    'Not ranked — the recorded exchange rate for {{currencies}} (as of {{asOf}}) is older than this comparison allows. Record a current rate; the previous one is kept on the RFQ.',
+    'Not ranked — the recorded exchange rate for {{currencies}} (as of {{asOf}}) is older than this comparison allows. Record a current rate; the previous one is kept on the event.',
   // — 2e-c-4 · the recorded FX basis, on screen. A buyer must be able to answer
   //   "what rate ranked this, and how old is it?" without an audit query.
   'sourcing.cmp.fx.basis.title': 'Exchange rate basis',
@@ -128,9 +128,9 @@ export const sourcingEn: Record<string, string> = {
   'sourcing.fx.dialog.title.record': 'Record the {{currency}} exchange rate',
   'sourcing.fx.dialog.title.supersede': 'Supersede the {{currency}} exchange rate',
   'sourcing.fx.dialog.body.record':
-    'This rate is what Paragon will compare {{currency}} bids against. It is recorded on the RFQ and kept with the award decision.',
+    'This rate is what Paragon will compare {{currency}} bids against. It is recorded on the event and kept with the award decision.',
   'sourcing.fx.dialog.body.supersede':
-    'This records a NEW {{currency}} rate. The existing one is not changed or deleted — it stays on the RFQ, so the basis every earlier comparison used remains on record.',
+    'This records a NEW {{currency}} rate. The existing one is not changed or deleted — it stays on the event, so the basis every earlier comparison used remains on record.',
   'sourcing.fx.dialog.prior': 'Currently in force:',
   'sourcing.fx.dialog.rate': 'Rate — {{base}} per 1 {{currency}}',
   'sourcing.fx.dialog.rateHint': 'Digits only — no thousands separators (e.g. 17250)',
@@ -165,7 +165,7 @@ export const sourcingEn: Record<string, string> = {
   'sourcing.toast.fxPinned.desc': 'The comparison now ranks against it.',
   'sourcing.toast.fxSuperseded.title': 'New {{currency}} rate recorded',
   'sourcing.toast.fxSuperseded.desc':
-    'The previous rate is kept on the RFQ; comparisons now use the new one.',
+    'The previous rate is kept on the event; comparisons now use the new one.',
   'sourcing.toast.fxPinFailed.title': 'Rate not recorded',
   'sourcing.toast.fxPinFailed.default': 'Please try again.',
   'sourcing.cmp.simulated': 'Simulated',
@@ -286,11 +286,13 @@ export const sourcingEn: Record<string, string> = {
   'sourcing.wizard.field.stage':
     'Start at stage',
   'sourcing.wizard.stage.RFI':
-    'Ask who is interested and able. Ends in a shortlist.',
+    'Ask who is able: a questionnaire you write on the draft. Ends in a shortlist.',
   'sourcing.wizard.stage.RFP':
-    'Ask the shortlist how they would do it. Ends in a shortlist.',
+    'Ask how they would do it: proposals scored on criteria you set on the draft. Ends in a shortlist.',
   'sourcing.wizard.stage.RFQ':
-    'Ask for a price. Ends in an award.',
+    'Ask for a price: quotations. Ends in an award.',
+  'sourcing.wizard.stage.guide':
+    'The sourcing events guide describes each stage in full.',
   'sourcing.wizard.deadlinePast':
     'This date has already passed. An event past its response deadline cannot be published.',
   'sourcing.wizard.review.row.stage':
@@ -300,11 +302,7 @@ export const sourcingEn: Record<string, string> = {
   'sourcing.interest.contentNote':
     'At the RFI stage a supplier answers the event’s questionnaire — or, when the event asks none, records its interest and a note. At the RFP stage it submits a proposal against the event’s evaluation criteria — or, when the event sets none, records its interest and a note.',
   // — RFx-2 · the RFI questionnaire —
-  'sourcing.wizard.stage.questionnaireHint':
-    'The questionnaire is written on the draft, after this form and before you publish: open the draft and use “Write questionnaire”.',
   // — RFx-3 · the RFP: criteria, proposals, scores —
-  'sourcing.wizard.stage.criteriaHint':
-    'The RFP evaluation criteria and their weights are set on the draft, after this form and before you publish: open the draft and use “Set criteria”.',
   'sourcing.rfp.title':
     'RFP evaluation criteria',
   'sourcing.rfp.none':
@@ -737,17 +735,17 @@ export const sourcingEn: Record<string, string> = {
     'Not concluded. State why the event ends without an award.',
   // — Lifecycle actions (cancel / reopen) —
   'sourcing.lifecycle.actions': 'Lifecycle actions',
-  'sourcing.publish.submit': 'Publish RFQ',
+  'sourcing.publish.submit': 'Publish event',
   'sourcing.publish.submitting': 'Publishing…',
-  'sourcing.cancel.submit': 'Cancel RFQ',
+  'sourcing.cancel.submit': 'Cancel event',
   'sourcing.cancel.submitting': 'Cancelling…',
-  'sourcing.reopen.submit': 'Reopen RFQ',
+  'sourcing.reopen.submit': 'Reopen event',
   'sourcing.reopen.submitting': 'Reopening…',
   // The five `sourcing.footer.*` labels were deleted with the handler-less
   // side-panel button that rendered them. Four named acts this tree has no
   // verb for; the fifth duplicated the live Award control in the same panel.
   // — Lifecycle timeline —
-  'sourcing.timeline.drafted': 'RFQ Drafted',
+  'sourcing.timeline.drafted': 'Event drafted',
   'sourcing.timeline.sentTo.one': 'Sent to {{count}} supplier',
   'sourcing.timeline.sentTo.other': 'Sent to {{count}} suppliers',
   'sourcing.timeline.responses': 'Responses Received ({{responded}}/{{total}})',
@@ -758,7 +756,7 @@ export const sourcingEn: Record<string, string> = {
   // — Wizard: chrome —
   // PF-1a — IT DOES NOT SEND. Creation births a Draft (D-1); publishing is a
   // second, deliberate act, and the label said otherwise.
-  'sourcing.wizard.complete': 'Save RFQ draft',
+  'sourcing.wizard.complete': 'Save event draft',
   'sourcing.wizard.step.scope.title': 'Define Scope',
   'sourcing.wizard.step.scope.short': 'Scope',
   'sourcing.wizard.step.scope.desc': 'What are you sourcing and how much?',
@@ -779,10 +777,10 @@ export const sourcingEn: Record<string, string> = {
   'sourcing.wizard.field.sourceRequisition': 'Raise from requisition',
   'sourcing.wizard.sourceRequisition.placeholder': 'Not from a requisition',
   'sourcing.wizard.sourceRequisition.help':
-    'Optional. Choosing an approved requisition fills in what it can and moves it to Sourcing Event when this RFQ is raised.',
+    'Optional. Choosing an approved requisition fills in what it can and moves it to Sourcing Event when this event is raised.',
   'sourcing.wizard.sourceRequisition.none':
-    'No approved requisition is waiting. A sourcing event can be raised from an approved requisition; you can also raise this RFQ on its own.',
-  'sourcing.wizard.field.title': 'RFQ title',
+    'No approved requisition is waiting. A sourcing event can be raised from an approved requisition; you can also raise this event on its own.',
+  'sourcing.wizard.field.title': 'Event title',
   'sourcing.wizard.placeholder.title': 'e.g. Q3 2026 Fragrance Sourcing — Floral Compounds',
   'sourcing.wizard.field.category': 'Material category',
   'sourcing.wizard.select.category': 'Select a category…',
@@ -808,7 +806,7 @@ export const sourcingEn: Record<string, string> = {
   // verb edits an RFQ's materials after creation.
   'sourcing.wizard.materials.requestOffer': 'Ask for these to be created in the material master',
   'sourcing.wizard.materials.requestOffer.marked':
-    'A material request will be raised for: {{materials, stop}}. This does not change the event — the RFQ goes ahead and will still require competitive bidding.',
+    'A material request will be raised for: {{materials, stop}}. This does not change the event — the event goes ahead and will still require competitive bidding.',
   'sourcing.wizard.materials.requestOffer.undo': 'Do not raise a request',
   'sourcing.wizard.materials.requestNeed': 'Why these are needed (for master data)',
   'sourcing.wizard.materials.requestNeed.hint':
@@ -840,7 +838,7 @@ export const sourcingEn: Record<string, string> = {
   'sourcing.detail.materialRequest.pending':
     'A material request is pending for: {{materials, stop}}. This event is unchanged and will still require competitive bidding.',
   'sourcing.detail.materialRequest.decided':
-    'A material request for {{materials}} was decided ({{status}}). This event is unchanged either way — an RFQ’s materials cannot be edited after it is created.',
+    'A material request for {{materials}} was decided ({{status}}). This event is unchanged either way — an event’s materials cannot be edited after it is created.',
   'sourcing.wizard.field.totalQty': 'Total quantity',
   // 2e-b-4a — was "0". A placeholder must never model a value the field treats
   // specially: this one modelled the exact number a blank must NOT become.
@@ -848,7 +846,7 @@ export const sourcingEn: Record<string, string> = {
   'sourcing.wizard.field.uom': 'UoM',
   // — Wizard: the numeric refusals (CP-0 · W1 · 2e-b-4a) —
   'sourcing.wizard.qty.refused.empty':
-    'Enter the total quantity you are sourcing — suppliers quote a unit price against it, so an RFQ without it cannot be answered.',
+    'Enter the total quantity you are sourcing — suppliers quote a unit price against it, so an event without it cannot be answered.',
   'sourcing.wizard.qty.refused.notNumeric':
     'That is not a quantity — type digits only, e.g. 2400.',
   'sourcing.wizard.qty.refused.ambiguous':
@@ -923,12 +921,12 @@ export const sourcingEn: Record<string, string> = {
   'sourcing.toast.closeFailed.default': 'Bidding could not be closed.',
   'sourcing.toast.closeFailed.dispatch': 'The close could not be dispatched.',
   'sourcing.toast.cancelFailed.title': 'Cancel failed',
-  'sourcing.toast.cancelFailed.default': 'The RFQ could not be cancelled.',
+  'sourcing.toast.cancelFailed.default': 'The event could not be cancelled.',
   'sourcing.toast.cancelFailed.dispatch': 'The cancel could not be dispatched.',
   'sourcing.toast.reopened.title': '{{rfqNumber}} reopened',
   'sourcing.toast.reopened.desc': 'The sourcing event is open for responses again.',
   'sourcing.toast.reopenFailed.title': 'Reopen failed',
-  'sourcing.toast.reopenFailed.default': 'The RFQ could not be reopened.',
+  'sourcing.toast.reopenFailed.default': 'The event could not be reopened.',
   'sourcing.toast.reopenFailed.dispatch': 'The reopen could not be dispatched.',
   'sourcing.toast.created.title': '{{rfqNumber}} saved as a draft',
   'sourcing.toast.created.desc.one':
@@ -939,16 +937,16 @@ export const sourcingEn: Record<string, string> = {
   'sourcing.toast.published.desc.one': 'Now open to {{count}} invited supplier.',
   'sourcing.toast.published.desc.other': 'Now open to {{count}} invited suppliers.',
   'sourcing.toast.publishFailed.title': 'Publish failed',
-  'sourcing.toast.publishFailed.default': 'The RFQ could not be published.',
+  'sourcing.toast.publishFailed.default': 'The event could not be published.',
   'sourcing.toast.publishFailed.dispatch': 'The publish could not be dispatched.',
   'sourcing.toast.createFailed.title': 'Create failed',
-  'sourcing.toast.createFailed.default': 'The RFQ could not be created.',
-  'sourcing.toast.createFailed.dispatch': 'The RFQ could not be dispatched.',
-  'sourcing.toast.numberRefused.title': 'RFQ not created — check the numbers',
+  'sourcing.toast.createFailed.default': 'The event could not be created.',
+  'sourcing.toast.createFailed.dispatch': 'The event could not be dispatched.',
+  'sourcing.toast.numberRefused.title': 'Event not created — check the numbers',
   // — Empty state (wrapper) —
   'sourcing.state.empty.title': 'No sourcing events yet',
-  'sourcing.state.empty.subtitle': 'No RFQs are on file.',
-  'sourcing.state.empty.message': 'Sourcing events and quote evaluations appear here once RFQs are raised.',
+  'sourcing.state.empty.subtitle': 'No events are on file.',
+  'sourcing.state.empty.message': 'Sourcing events and quote evaluations appear here once events are raised.',
   'sourcing.toast.exportUnavailable.title': 'Export not available yet',
   'sourcing.toast.templatesUnavailable.title': 'Event templates not available yet',
   'sourcing.toast.exportUnavailable.desc':
@@ -990,7 +988,7 @@ export const sourcingId: Record<string, string> = {
   // — Filter / search —
   'sourcing.filter.byCategory': 'Saring menurut kategori',
   'sourcing.filter.byStage': 'Saring menurut tahap',
-  'sourcing.search.placeholder': 'Cari berdasarkan nomor RFQ, judul, atau material…',
+  'sourcing.search.placeholder': 'Cari berdasarkan nomor acara, judul, atau material…',
   // — Category labels —
   'sourcing.category.fragrance': 'Pewangi',
   'sourcing.category.activeIngredients': 'Bahan Aktif',
@@ -999,7 +997,7 @@ export const sourcingId: Record<string, string> = {
   'sourcing.category.botanical': 'Botani',
   'sourcing.category.other': 'Lainnya',
   // — Active table —
-  'sourcing.table.col.rfq': 'No. RFQ',
+  'sourcing.table.col.rfq': 'No. acara',
   'sourcing.table.col.category': 'Kategori',
   'sourcing.table.col.stage': 'Tahap',
   'sourcing.table.col.responses': 'Respons',
@@ -1008,24 +1006,24 @@ export const sourcingId: Record<string, string> = {
   'sourcing.table.col.responseDeadline': 'Tenggat respons',
   'sourcing.table.col.status': 'Status',
   'sourcing.table.col.actions': 'Tindakan',
-  'sourcing.table.empty': 'Tidak ada RFQ yang cocok dengan filter saat ini.',
+  'sourcing.table.empty': 'Tidak ada acara yang cocok dengan filter saat ini.',
   // — Deadline compact labels —
   'sourcing.deadline.overdue': '{{count}}h terlambat',
   'sourcing.deadline.dueToday': 'Jatuh tempo hari ini',
   'sourcing.deadline.remaining': '{{count}}h tersisa',
   // — Awards history —
   'sourcing.awards.title': 'Riwayat Pemenangan',
-  'sourcing.awards.count.one': '{{count}} RFQ dimenangkan',
-  'sourcing.awards.count.other': '{{count}} RFQ dimenangkan',
-  'sourcing.awards.col.rfq': 'No. RFQ',
+  'sourcing.awards.count.one': '{{count}} acara dimenangkan',
+  'sourcing.awards.count.other': '{{count}} acara dimenangkan',
+  'sourcing.awards.col.rfq': 'No. acara',
   'sourcing.awards.col.title': 'Judul',
   'sourcing.awards.col.supplier': 'Pemasok pemenang',
   'sourcing.awards.col.date': 'Tanggal pemenangan',
   'sourcing.awards.col.value': 'Nilai pemenangan',
   'sourcing.awards.col.actions': 'Tindakan',
-  'sourcing.awards.empty': 'Belum ada RFQ yang dimenangkan.',
+  'sourcing.awards.empty': 'Belum ada acara yang dimenangkan.',
   // — Side panel —
-  'sourcing.panel.title': 'RFQ {{number}} — {{title}}',
+  'sourcing.panel.title': '{{number}} — {{title}}',
   'sourcing.panel.exportComparison': 'Ekspor perbandingan',
   'sourcing.panel.awardSummary': 'Ringkasan pemenangan',
   'sourcing.panel.awardedTo': 'Dimenangkan oleh',
@@ -1051,9 +1049,9 @@ export const sourcingId: Record<string, string> = {
   'sourcing.cmp.criterion': 'Kriteria',
   'sourcing.cmp.topRanked': 'Peringkat teratas',
   'sourcing.cmp.fx.refused.FX_UNPINNED':
-    'Tidak diperingkat — penawaran dihargai dalam {{currencies}} dan belum ada kurs yang dicatat untuk RFQ ini. Catat kurs untuk membandingkannya; penawaran di bawah ditampilkan sesuai yang diajukan.',
+    'Tidak diperingkat — penawaran dihargai dalam {{currencies}} dan belum ada kurs yang dicatat untuk acara ini. Catat kurs untuk membandingkannya; penawaran di bawah ditampilkan sesuai yang diajukan.',
   'sourcing.cmp.fx.refused.FX_STALE':
-    'Tidak diperingkat — kurs tercatat untuk {{currencies}} (per {{asOf}}) lebih lama daripada yang diizinkan perbandingan ini. Catat kurs terkini; kurs sebelumnya tetap tersimpan pada RFQ.',
+    'Tidak diperingkat — kurs tercatat untuk {{currencies}} (per {{asOf}}) lebih lama daripada yang diizinkan perbandingan ini. Catat kurs terkini; kurs sebelumnya tetap tersimpan pada acara.',
   // — 2e-c-4 · dasar kurs yang tercatat —
   'sourcing.cmp.fx.basis.title': 'Dasar kurs',
   'sourcing.cmp.fx.basis.asOf': 'per {{date}}',
@@ -1068,9 +1066,9 @@ export const sourcingId: Record<string, string> = {
   'sourcing.fx.dialog.title.record': 'Catat kurs {{currency}}',
   'sourcing.fx.dialog.title.supersede': 'Ganti kurs {{currency}}',
   'sourcing.fx.dialog.body.record':
-    'Kurs ini yang dipakai Paragon untuk membandingkan penawaran {{currency, stop}}. Kurs dicatat pada RFQ dan disimpan bersama keputusan pemenangan.',
+    'Kurs ini yang dipakai Paragon untuk membandingkan penawaran {{currency, stop}}. Kurs dicatat pada acara dan disimpan bersama keputusan pemenangan.',
   'sourcing.fx.dialog.body.supersede':
-    'Ini mencatat kurs {{currency}} BARU. Kurs yang ada tidak diubah atau dihapus — kurs lama tetap tersimpan pada RFQ, sehingga dasar yang dipakai setiap perbandingan sebelumnya tetap tercatat.',
+    'Ini mencatat kurs {{currency}} BARU. Kurs yang ada tidak diubah atau dihapus — kurs lama tetap tersimpan pada acara, sehingga dasar yang dipakai setiap perbandingan sebelumnya tetap tercatat.',
   'sourcing.fx.dialog.prior': 'Yang berlaku saat ini:',
   'sourcing.fx.dialog.rate': 'Kurs — {{base}} per 1 {{currency}}',
   'sourcing.fx.dialog.rateHint': 'Angka saja — tanpa pemisah ribuan (mis. 17250)',
@@ -1102,7 +1100,7 @@ export const sourcingId: Record<string, string> = {
   'sourcing.toast.fxPinned.desc': 'Perbandingan kini diperingkat berdasarkan kurs itu.',
   'sourcing.toast.fxSuperseded.title': 'Kurs {{currency}} baru tercatat',
   'sourcing.toast.fxSuperseded.desc':
-    'Kurs sebelumnya tetap tersimpan pada RFQ; perbandingan kini memakai kurs baru.',
+    'Kurs sebelumnya tetap tersimpan pada acara; perbandingan kini memakai kurs baru.',
   'sourcing.toast.fxPinFailed.title': 'Kurs tidak tercatat',
   'sourcing.toast.fxPinFailed.default': 'Silakan coba lagi.',
   'sourcing.cmp.simulated': 'Simulasi',
@@ -1214,11 +1212,13 @@ export const sourcingId: Record<string, string> = {
   'sourcing.wizard.field.stage':
     'Mulai dari tahap',
   'sourcing.wizard.stage.RFI':
-    'Tanyakan siapa yang berminat dan mampu. Berakhir dengan daftar pendek.',
+    'Tanyakan siapa yang mampu: kuesioner yang Anda tulis pada draf. Berakhir dengan daftar pendek.',
   'sourcing.wizard.stage.RFP':
-    'Tanyakan kepada daftar pendek cara mereka mengerjakannya. Berakhir dengan daftar pendek.',
+    'Tanyakan cara mereka mengerjakannya: proposal yang dinilai atas kriteria yang Anda tetapkan pada draf. Berakhir dengan daftar pendek.',
   'sourcing.wizard.stage.RFQ':
-    'Minta harga. Berakhir dengan penetapan pemenang.',
+    'Minta harga: penawaran. Berakhir dengan penetapan pemenang.',
+  'sourcing.wizard.stage.guide':
+    'Panduan acara sumber menjelaskan tiap tahap selengkapnya.',
   'sourcing.wizard.deadlinePast':
     'Tanggal ini sudah lewat. Acara yang melewati tenggat tanggapannya tidak dapat diterbitkan.',
   'sourcing.wizard.review.row.stage':
@@ -1228,11 +1228,7 @@ export const sourcingId: Record<string, string> = {
   'sourcing.interest.contentNote':
     'Pada tahap RFI, pemasok menjawab kuesioner acaranya — atau, bila acaranya tidak mengajukan kuesioner, mencatat minatnya dan satu catatan. Pada tahap RFP ia mengirim proposal atas kriteria evaluasi acaranya — atau, bila acaranya tidak menetapkan kriteria, mencatat minatnya dan satu catatan.',
   // — RFx-2 · the RFI questionnaire —
-  'sourcing.wizard.stage.questionnaireHint':
-    'Kuesioner ditulis pada draf, setelah formulir ini dan sebelum Anda menerbitkannya: buka drafnya lalu gunakan “Tulis kuesioner”.',
   // — RFx-3 · the RFP: criteria, proposals, scores —
-  'sourcing.wizard.stage.criteriaHint':
-    'Kriteria evaluasi RFP dan bobotnya ditetapkan pada draf, setelah formulir ini dan sebelum Anda menerbitkan: buka draf dan gunakan “Tetapkan kriteria”.',
   'sourcing.rfp.title':
     'Kriteria evaluasi RFP',
   'sourcing.rfp.none':
@@ -1666,16 +1662,16 @@ export const sourcingId: Record<string, string> = {
   'sourcing.award.submitting': 'Memenangkan…',
   // — Lifecycle actions (batal / buka kembali) —
   'sourcing.lifecycle.actions': 'Tindakan siklus hidup',
-  'sourcing.publish.submit': 'Terbitkan RFQ',
+  'sourcing.publish.submit': 'Terbitkan acara',
   'sourcing.publish.submitting': 'Menerbitkan…',
-  'sourcing.cancel.submit': 'Batalkan RFQ',
+  'sourcing.cancel.submit': 'Batalkan acara',
   'sourcing.cancel.submitting': 'Membatalkan…',
-  'sourcing.reopen.submit': 'Buka kembali RFQ',
+  'sourcing.reopen.submit': 'Buka kembali acara',
   'sourcing.reopen.submitting': 'Membuka kembali…',
   // The five `sourcing.footer.*` labels were deleted with the handler-less
   // side-panel button that rendered them (see the EN bundle).
   // — Lifecycle timeline —
-  'sourcing.timeline.drafted': 'RFQ Dibuat',
+  'sourcing.timeline.drafted': 'Acara dibuat',
   'sourcing.timeline.sentTo.one': 'Dikirim ke {{count}} pemasok',
   'sourcing.timeline.sentTo.other': 'Dikirim ke {{count}} pemasok',
   'sourcing.timeline.responses': 'Respons Diterima ({{responded}}/{{total}})',
@@ -1684,7 +1680,7 @@ export const sourcingId: Record<string, string> = {
   'sourcing.timeline.awarded': 'Dimenangkan',
   'sourcing.timeline.closed': 'Ditutup',
   // — Wizard: chrome —
-  'sourcing.wizard.complete': 'Simpan draf RFQ',
+  'sourcing.wizard.complete': 'Simpan draf acara',
   'sourcing.wizard.step.scope.title': 'Tentukan Cakupan',
   'sourcing.wizard.step.scope.short': 'Cakupan',
   'sourcing.wizard.step.scope.desc': 'Apa yang Anda sumberkan dan berapa banyak?',
@@ -1701,10 +1697,10 @@ export const sourcingId: Record<string, string> = {
   'sourcing.wizard.field.sourceRequisition': 'Ajukan dari permintaan',
   'sourcing.wizard.sourceRequisition.placeholder': 'Bukan dari permintaan',
   'sourcing.wizard.sourceRequisition.help':
-    'Opsional. Memilih permintaan yang disetujui akan mengisi data yang bisa dibawa dan memindahkannya ke Acara Sourcing saat RFQ ini diajukan.',
+    'Opsional. Memilih permintaan yang disetujui akan mengisi data yang bisa dibawa dan memindahkannya ke Acara Sourcing saat acara ini diajukan.',
   'sourcing.wizard.sourceRequisition.none':
-    'Tidak ada permintaan disetujui yang menunggu. Acara sourcing dapat diajukan dari permintaan yang disetujui; Anda juga bisa mengajukan RFQ ini secara mandiri.',
-  'sourcing.wizard.field.title': 'Judul RFQ',
+    'Tidak ada permintaan disetujui yang menunggu. Acara sourcing dapat diajukan dari permintaan yang disetujui; Anda juga bisa mengajukan acara ini secara mandiri.',
+  'sourcing.wizard.field.title': 'Judul acara',
   'sourcing.wizard.placeholder.title': 'mis. Sumber Pewangi Q3 2026 — Senyawa Floral',
   'sourcing.wizard.field.category': 'Kategori material',
   'sourcing.wizard.select.category': 'Pilih kategori…',
@@ -1717,7 +1713,7 @@ export const sourcingId: Record<string, string> = {
   // — R8 · penawaran permintaan material di wizard —
   'sourcing.wizard.materials.requestOffer': 'Minta ini dibuatkan di master material',
   'sourcing.wizard.materials.requestOffer.marked':
-    'Permintaan material akan diajukan untuk: {{materials, stop}}. Ini tidak mengubah acara — RFQ tetap berjalan dan akan tetap memerlukan tender kompetitif.',
+    'Permintaan material akan diajukan untuk: {{materials, stop}}. Ini tidak mengubah acara — acara tetap berjalan dan akan tetap memerlukan tender kompetitif.',
   'sourcing.wizard.materials.requestOffer.undo': 'Jangan ajukan permintaan',
   'sourcing.wizard.materials.requestNeed': 'Mengapa ini dibutuhkan (untuk master data)',
   'sourcing.wizard.materials.requestNeed.hint':
@@ -1736,12 +1732,12 @@ export const sourcingId: Record<string, string> = {
   'sourcing.detail.materialRequest.pending':
     'Permintaan material tertunda untuk: {{materials, stop}}. Acara ini tidak berubah dan akan tetap memerlukan tender kompetitif.',
   'sourcing.detail.materialRequest.decided':
-    'Permintaan material untuk {{materials}} telah diputuskan ({{status}}). Acara ini tidak berubah dalam kedua kasus — material sebuah RFQ tidak dapat diubah setelah dibuat.',
+    'Permintaan material untuk {{materials}} telah diputuskan ({{status}}). Acara ini tidak berubah dalam kedua kasus — material sebuah acara tidak dapat diubah setelah dibuat.',
   'sourcing.wizard.field.totalQty': 'Total kuantitas',
   'sourcing.wizard.placeholder.qty': 'mis. 2400',
   // — Wizard: penolakan numerik (CP-0 · W1 · 2e-b-4a) —
   'sourcing.wizard.qty.refused.empty':
-    'Masukkan total kuantitas yang Anda cari — pemasok menawarkan harga satuan terhadap angka ini, jadi RFQ tanpa kuantitas tidak dapat dijawab.',
+    'Masukkan total kuantitas yang Anda cari — pemasok menawarkan harga satuan terhadap angka ini, jadi acara tanpa kuantitas tidak dapat dijawab.',
   'sourcing.wizard.qty.refused.notNumeric':
     'Itu bukan kuantitas — ketik angka saja, misalnya 2400.',
   'sourcing.wizard.qty.refused.ambiguous':
@@ -1816,12 +1812,12 @@ export const sourcingId: Record<string, string> = {
   'sourcing.toast.closeFailed.default': 'Penawaran tidak dapat ditutup.',
   'sourcing.toast.closeFailed.dispatch': 'Penutupan tidak dapat dikirim.',
   'sourcing.toast.cancelFailed.title': 'Pembatalan gagal',
-  'sourcing.toast.cancelFailed.default': 'RFQ tidak dapat dibatalkan.',
+  'sourcing.toast.cancelFailed.default': 'Acara tidak dapat dibatalkan.',
   'sourcing.toast.cancelFailed.dispatch': 'Pembatalan tidak dapat dikirim.',
   'sourcing.toast.reopened.title': '{{rfqNumber}} dibuka kembali',
   'sourcing.toast.reopened.desc': 'Acara sumber kembali terbuka untuk penawaran.',
   'sourcing.toast.reopenFailed.title': 'Pembukaan kembali gagal',
-  'sourcing.toast.reopenFailed.default': 'RFQ tidak dapat dibuka kembali.',
+  'sourcing.toast.reopenFailed.default': 'Acara tidak dapat dibuka kembali.',
   'sourcing.toast.reopenFailed.dispatch': 'Pembukaan kembali tidak dapat dikirim.',
   'sourcing.toast.created.title': '{{rfqNumber}} disimpan sebagai draf',
   'sourcing.toast.created.desc.one':
@@ -1834,16 +1830,16 @@ export const sourcingId: Record<string, string> = {
   'sourcing.toast.published.desc.other':
     'Kini terbuka untuk {{count}} pemasok yang diundang.',
   'sourcing.toast.publishFailed.title': 'Penerbitan gagal',
-  'sourcing.toast.publishFailed.default': 'RFQ tidak dapat diterbitkan.',
+  'sourcing.toast.publishFailed.default': 'Acara tidak dapat diterbitkan.',
   'sourcing.toast.publishFailed.dispatch': 'Penerbitan tidak dapat dikirim.',
   'sourcing.toast.createFailed.title': 'Pembuatan gagal',
-  'sourcing.toast.createFailed.default': 'RFQ tidak dapat dibuat.',
-  'sourcing.toast.createFailed.dispatch': 'RFQ tidak dapat dikirim.',
-  'sourcing.toast.numberRefused.title': 'RFQ tidak dibuat — periksa angkanya',
+  'sourcing.toast.createFailed.default': 'Acara tidak dapat dibuat.',
+  'sourcing.toast.createFailed.dispatch': 'Acara tidak dapat dikirim.',
+  'sourcing.toast.numberRefused.title': 'Acara tidak dibuat — periksa angkanya',
   // — Empty state (wrapper) —
   'sourcing.state.empty.title': 'Belum ada acara sumber',
-  'sourcing.state.empty.subtitle': 'Belum ada RFQ yang tercatat.',
-  'sourcing.state.empty.message': 'Acara sumber dan evaluasi penawaran muncul di sini setelah RFQ diajukan.',
+  'sourcing.state.empty.subtitle': 'Belum ada acara yang tercatat.',
+  'sourcing.state.empty.message': 'Acara sumber dan evaluasi penawaran muncul di sini setelah acara diajukan.',
   'sourcing.toast.exportUnavailable.title': 'Ekspor belum tersedia',
   'sourcing.toast.templatesUnavailable.title': 'Templat acara belum tersedia',
   'sourcing.toast.exportUnavailable.desc':

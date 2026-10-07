@@ -190,7 +190,7 @@ Urutan contoh untuk `sup-005` pada `rfq-018`:
 | "Draf tidak tersimpan" / "Jawaban tidak terkirim" dengan "Salah satu jawaban tidak sesuai dengan jenis yang diminta pertanyaannya…" | isian angka berisi sesuatu yang bukan angka | `RESPONSE_ANSWER_INVALID` | perbaiki jawabannya |
 | "Draf ini ditulis untuk tahap yang sudah ditinggalkan acaranya…" | kartu menampilkan acara pada tahap berikutnya, atau sebagai "Tidak masuk daftar pendek" | `RESPONSE_DRAFT_STAGE_OVER` — draf tidak pernah dikirim dan pembeli melanjutkan acaranya | tidak ada yang dapat dilakukan; draf bukan jawaban |
 | Pembeli tidak melihat jawabannya | kartu terbaca "Draf disimpan … Belum dikirim" | tanggapan masih Draft | **Lanjutkan jawaban Anda** → **Kirim jawaban** |
-| Tindakan pada alur ini ditolak untuk setiap kursi, apa pun perannya | penolakan menyebut `MODULE_INACTIVE:SRC`; bila permukaan memeriksa lebih dahulu, kontrol terbaca *"Dimatikan — Sourcing & RFQ"* | modul Sourcing & RFQ dimatikan; halamannya tetap dapat dibaca | minta dinyalakan kembali di `/buyer/platform/modules/admin`; perubahan peran tidak membantu, karena pemeriksaan modul berjalan sebelum pemeriksaan peran |
+| Tindakan pada alur ini ditolak untuk setiap kursi, apa pun perannya | penolakan menyebut `MODULE_INACTIVE:SRC`; bila permukaan memeriksa lebih dahulu, kontrol terbaca *"Dimatikan — Acara sumber"* | modul Acara sumber dimatikan; halamannya tetap dapat dibaca | minta dinyalakan kembali di `/buyer/platform/modules/admin`; perubahan peran tidak membantu, karena pemeriksaan modul berjalan sebelum pemeriksaan peran |
 
 <!-- src: src/services/transitions/refusals.ts:61-114; src/services/transitions/policies.ts:286-342; src/pages-v2/SupplierRFQs.tsx:127-143; src/lib/i18n/rfqs.ts:147-188 -->
 

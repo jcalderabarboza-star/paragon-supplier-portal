@@ -865,7 +865,7 @@ describe('BuyerSourcing — a supersede reads as a NEW RECORDED ACT (2e-c-4)', (
   it('says the existing rate is KEPT, not replaced', async () => {
     await withExistingPin();
     expect(screen.getByTestId('fx-pin-dialog')).toHaveTextContent(
-      /is not changed or deleted — it stays on the RFQ/i,
+      /is not changed or deleted — it stays on the event/i,
     );
   });
 

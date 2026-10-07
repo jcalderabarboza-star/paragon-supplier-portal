@@ -442,7 +442,7 @@ describe('⚠️ END TO END — WHAT THE WIZARD ACTUALLY MINTS', () => {
     fireEvent.change(dates[0], { target: { value: '2026-10-01' } });
     fireEvent.change(dates[1], { target: { value: '2026-10-15' } });
     fireEvent.click(screen.getByRole('button', { name: nextLabel })); // -> review
-    fireEvent.click(await screen.findByRole('button', { name: /Save RFQ draft/i }));
+    fireEvent.click(await screen.findByRole('button', { name: /Save event draft/i }));
   };
 
   it('⚠️ A CODED PICK MINTS A MASTER CODE — the defect, inverted', async () => {

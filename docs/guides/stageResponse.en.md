@@ -190,7 +190,7 @@ Worked sequence for `sup-005` on `rfq-018`:
 | "Draft not saved" / "Answers not submitted" with "One of the answers is not of the kind its question asks for…" | a number field holds something that is not a number | `RESPONSE_ANSWER_INVALID` | correct the answer |
 | "This draft was written for a stage the event has since left…" | the card shows the event at a later stage, or as "Not shortlisted" | `RESPONSE_DRAFT_STAGE_OVER` — the draft was never submitted and the buyer advanced the event | nothing to do; a draft is not an answer |
 | The buyer does not see the answers | the card reads "Draft saved … Not submitted" | the response is still a Draft | **Continue your answers** → **Submit answers** |
-| An action on this flow is refused for every seat, whatever the role | the refusal names `MODULE_INACTIVE:SRC`; where the surface checks first, the control reads *"Switched off — Sourcing & RFQ"* | the Sourcing & RFQ module is switched off; its pages stay readable | have it switched back on at `/buyer/platform/modules/admin`; no role change helps, because the module check runs before the role check |
+| An action on this flow is refused for every seat, whatever the role | the refusal names `MODULE_INACTIVE:SRC`; where the surface checks first, the control reads *"Switched off — Sourcing events"* | the Sourcing events module is switched off; its pages stay readable | have it switched back on at `/buyer/platform/modules/admin`; no role change helps, because the module check runs before the role check |
 
 <!-- src: src/services/transitions/refusals.ts:61-114; src/services/transitions/policies.ts:286-342; src/pages-v2/SupplierRFQs.tsx:127-143; src/lib/i18n/rfqs.ts:147-188 -->
 

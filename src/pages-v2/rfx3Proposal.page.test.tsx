@@ -304,14 +304,14 @@ describe('1 · the buyer sets the criteria on a draft', () => {
     expect(read).toHaveTextContent('100%');
   });
 
-  it('the wizard says where the criteria are set, for an event with an RFP stage', async () => {
+  it('the wizard says, in the RFP’s one line, that proposals are scored on criteria set on the draft', async () => {
     renderWithProviders(<Sourcing />, { identity: BUYER_NAMED });
     fireEvent.click(await screen.findByText('New sourcing event'));
-    expect(screen.queryByTestId('rfq-start-stage-criteria-hint')).not.toBeInTheDocument();
-    fireEvent.click(screen.getByTestId('rfq-start-stage-RFP'));
-    expect(screen.getByTestId('rfq-start-stage-criteria-hint')).toHaveTextContent(
-      'The RFP evaluation criteria and their weights are set on the draft, after this form and before you publish: open the draft and use “Set criteria”.',
-    );
+    expect(
+      screen.getByText('Ask how they would do it: proposals scored on criteria you set on the draft. Ends in a shortlist.'),
+    ).toBeInTheDocument();
+    expect(screen.getByText('Event title')).toBeInTheDocument();
+    expect(screen.queryByText(/RFQ title/i)).not.toBeInTheDocument();
   });
 });
 
@@ -701,6 +701,21 @@ describe('5 · the sourcing list says which stage every event is at', () => {
     expect(screen.queryByRole('button', { name: /^New RFQ$/ })).not.toBeInTheDocument();
   });
 
+  it('"RFQ" is the stage; the thing itself is an event — sidebar, table header, search, the draft’s buttons', async () => {
+    await draftEvent('RFP');
+    renderWithProviders(<Sourcing />, { identity: BUYER_NAMED });
+    expect(await within(screen.getByRole('navigation')).findByText('Sourcing events')).toBeInTheDocument();
+    expect(screen.queryByText('Sourcing & RFQ')).not.toBeInTheDocument();
+    expect((await screen.findAllByRole('columnheader', { name: 'Event #' })).length).toBeGreaterThan(0);
+    expect(screen.queryByRole('columnheader', { name: 'RFQ #' })).not.toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Search by event number, title, or material…')).toBeInTheDocument();
+    await openRfq(ID);
+    expect(screen.getByRole('button', { name: 'Publish event' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Cancel event' })).toBeInTheDocument();
+    // The stage keeps its name.
+    expect(within(await rowOf('RFQ-2026-003')).getByTestId('rfq-row-stage-rfq-003')).toHaveTextContent(/^RFQ$/);
+  });
+
   it('the header’s older button is "Event templates", and still says it is not available', async () => {
     renderWithProviders(<Sourcing />, { identity: BUYER_NAMED });
     fireEvent.click(await screen.findByRole('button', { name: /Event templates/ }));
@@ -783,6 +798,9 @@ describe('ID — the same surfaces in Indonesian', () => {
     expect(screen.getByRole('button', { name: /Acara sumber baru/ })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Templat acara/ })).toBeInTheDocument();
     expect(screen.getByRole('columnheader', { name: 'Tahap' })).toBeInTheDocument();
+    expect(within(screen.getByRole('navigation')).getByText('Acara sumber')).toBeInTheDocument();
+    expect(screen.getAllByRole('columnheader', { name: 'No. acara' }).length).toBeGreaterThan(0);
+    expect(screen.getByPlaceholderText('Cari berdasarkan nomor acara, judul, atau material…')).toBeInTheDocument();
     expect(screen.getByTestId('rfq-stage-filter')).toHaveTextContent('Saring menurut tahap');
     expect(screen.getByRole('tab', { name: /^Diakhiri/ })).toBeInTheDocument();
     expect(screen.getByText('Acara aktif')).toBeInTheDocument();
