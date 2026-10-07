@@ -114,7 +114,7 @@ Honesty markers a reader needs before using this guide. The seeded quotations ar
 - **Step kind:** cascade (system-driven); fired by `t_rfq_cancel` and by `t_rfq_conclude`
 - **Role:** automation (atom `quotation:withdraw`; no human lane holds it)
 - **From → to:** Submitted, Under Review → Withdrawn
-- **Operator — where:** nobody presses this against a quotation. It follows from the buyer cancelling the RFQ at `/buyer/sourcing` (**Cancel RFQ**, then **Yes, cancel the event**).
+- **Operator — where:** nobody presses this against a quotation. It follows from the buyer cancelling the RFQ at `/buyer/sourcing` (**Cancel event**, then **Yes, cancel the event**).
 - **Operator — do:** Paragon called the event off before choosing anyone, so the request is taken back for every offer still being weighed. No offer is judged; the supplier reads that the event ended, not that they lost.
 - **Operator — fill:** nothing to fill.
 - **Tester — expected state:** Withdrawn
@@ -191,7 +191,7 @@ Every dispatch writes one `TransitionEvent`: `event` = the transition id, `actor
 | (a fresh offer) T+0′ | ∅ → Submitted (`QUO-2026-901` on RFQ-2026-011) | supplier · commercial (`supplier:sup-007`) | **Submit quote** → **Submit quotation** | `t_quotation_submit` |
 | (a fresh offer) T+1′ | Submitted → Under Review | buyer · procurement (`buyer:all`) | **Move to review** | `t_quotation_review` |
 | (a fresh offer) T+2′ | RFQ-2026-011: Open → Awarded; `QUO-2026-901` → Awarded | buyer · procurement, a named person | the board reads 2 / 2 the moment the offer lands; tick **Award** → **Award to selected** → **Yes, award** | `t_rfq_award`, then `t_quotation_award` |
-| (a cancelled event) | RFQ-2026-002: Open → Cancelled; `qt-002a`, `qt-002b`: Under Review → Withdrawn | buyer · procurement, a named person; then automation (cascade) | **Cancel RFQ** → **Yes, cancel the event** | `t_rfq_cancel`, then `t_quotation_withdraw` ×2 (`causationId` = the cancel's correlationId) |
+| (a cancelled event) | RFQ-2026-002: Open → Cancelled; `qt-002a`, `qt-002b`: Under Review → Withdrawn | buyer · procurement, a named person; then automation (cascade) | **Cancel event** → **Yes, cancel the event** | `t_rfq_cancel`, then `t_quotation_withdraw` ×2 (`causationId` = the cancel's correlationId) |
 
 <!-- src: src/services/transitions/events.ts:26-61; src/services/transitions/events.ts:127-129; src/services/transitions/dispatcher.ts:453-532; src/services/transitions/dispatcher.ts:838-907; src/services/data/mock/MockCommandService.ts:2935-2953; src/pages-v2/BuyerSourcing.tsx:366-368; src/pages-v2/SupplierRFQs.tsx:786-796 -->
 
@@ -224,7 +224,7 @@ Every dispatch writes one `TransitionEvent`: `event` = the transition id, `actor
 | "This date has already passed (today is 31 Aug 2026)…" under Quote valid until, and Submit quotation is greyed | the red line on the field | the valid-until date is before the declared present; the machine refuses the same (`QUOTE_VALIDITY_PAST`) | choose today or a later date |
 | Step 3 says "No halal, BPOM or quality document is on file" | the line in the Compliance documents step | this supplier holds no document in those three categories | it does not stop the quotation; add them on My Documents |
 | `STALE_STATE` | refusal names the expected and found states | a caller supplied `expectedState` and the document moved | no quotation screen supplies it today; re-open and decide again |
-| An action on this flow is refused for every seat, whatever the role | the refusal names `MODULE_INACTIVE:SRC`; where the surface checks first, the control reads *"Switched off — Sourcing & RFQ"* | the Sourcing & RFQ module is switched off; its pages stay readable | have it switched back on at `/buyer/platform/modules/admin`; no role change helps, because the module check runs before the role check |
+| An action on this flow is refused for every seat, whatever the role | the refusal names `MODULE_INACTIVE:SRC`; where the surface checks first, the control reads *"Switched off — Sourcing events"* | the Sourcing events module is switched off; its pages stay readable | have it switched back on at `/buyer/platform/modules/admin`; no role change helps, because the module check runs before the role check |
 
 <!-- src: src/services/transitions/refusals.ts:61-114; src/lib/glossary/refusals.glossary.ts:32-130; src/pages-v2/SupplierRFQs.tsx:766-796; src/pages-v2/SupplierRFQs.tsx:830-1025; src/pages-v2/SupplierRFQs.tsx:1543; src/pages-v2/BuyerSourcing.tsx:1227-1258; src/pages-v2/BuyerSourcing.tsx:3688-3728; src/pages-v2/BuyerSourcing.tsx:3756-3759; src/services/transitions/policies.ts:189-206; src/services/data/mock/MockCommandService.ts:618-622; src/services/data/mock/MockProcurementService.ts:299-328; src/lib/i18n/rfqs.ts:169-190 -->
 

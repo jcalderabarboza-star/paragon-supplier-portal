@@ -156,6 +156,8 @@ export const TRANSITION_PURPOSE: FlowAnnotations = Object.freeze({
   // ── rfq ────────────────────────────────────────────────────────────────────
   t_rfq_create: { purposeKey: 'processFlows.purpose.t_rfq_create' },
   t_rfq_questionnaire_set: { purposeKey: 'processFlows.purpose.t_rfq_questionnaire_set' },
+  t_rfq_criteria_set: { purposeKey: 'processFlows.purpose.t_rfq_criteria_set' },
+  t_rfq_proposal_score: { purposeKey: 'processFlows.purpose.t_rfq_proposal_score' },
   t_rfq_publish: { purposeKey: 'processFlows.purpose.t_rfq_publish' },
   t_rfq_close: { purposeKey: 'processFlows.purpose.t_rfq_close' },
   t_rfq_award: { purposeKey: 'processFlows.purpose.t_rfq_award' },

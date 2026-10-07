@@ -671,6 +671,65 @@ export function useRfqQuestionnaireSet() {
   });
 }
 
+export interface RfqCriteriaSetVars {
+  rfqId: string;
+  /** The whole list of criteria as it now stands. An empty list removes it. */
+  criteria: readonly unknown[];
+}
+
+/**
+ * RFx-3 — the buyer sets the RFP evaluation criteria on a draft event (fires
+ * `t_rfq_criteria_set`, Draft → Draft).
+ */
+export function useRfqCriteriaSet() {
+  const svc = useDataService();
+  const scope = useScope();
+  const invalidate = useInvalidateProcurement();
+
+  return useMutation<CommandResult, Error, RfqCriteriaSetVars>({
+    mutationFn: ({ rfqId, criteria }) =>
+      svc.commands.dispatch(scope, {
+        transitionId: 't_rfq_criteria_set',
+        entity: 'rfq',
+        entityId: rfqId,
+        payload: { criteria },
+      }),
+    onSuccess: (result) => {
+      if (result.status !== 'failed') invalidate(scope);
+    },
+  });
+}
+
+export interface RfqProposalScoreVars {
+  rfqId: string;
+  supplierId: string;
+  /** A whole sheet: one score per criterion. Who scored is the seat's person. */
+  scores: readonly { criterionId: string; score: unknown; comment?: string }[];
+}
+
+/**
+ * RFx-3 — an evaluator scores one supplier's proposal (fires
+ * `t_rfq_proposal_score`, Closed → Closed).
+ */
+export function useRfqProposalScore() {
+  const svc = useDataService();
+  const scope = useScope();
+  const invalidate = useInvalidateProcurement();
+
+  return useMutation<CommandResult, Error, RfqProposalScoreVars>({
+    mutationFn: ({ rfqId, supplierId, scores }) =>
+      svc.commands.dispatch(scope, {
+        transitionId: 't_rfq_proposal_score',
+        entity: 'rfq',
+        entityId: rfqId,
+        payload: { supplierId, scores },
+      }),
+    onSuccess: (result) => {
+      if (result.status !== 'failed') invalidate(scope);
+    },
+  });
+}
+
 /**
  * RFx-2 — a supplier keeps its unfinished answers (fires the `creation` verb
  * `t_stageresponse_save`, ∅ → Draft). The payload is `rfqId`, `supplierId`,

@@ -182,13 +182,58 @@ export const rfqsEn: Record<string, string> = {
     'Stages',
   // — RFx-2 · the RFI questionnaire —
   'rfqs.interest.contentNote.rfp':
-    'At the RFP stage you record your interest and a note, and nothing else. The proposal is not built in this portal yet.',
+    'This event sets no evaluation criteria at its RFP stage. You record your interest and a note, and nothing else.',
   'rfqs.interest.contentNote.rfi':
     'This event asks no questionnaire at its RFI stage. You record your interest and a note, and nothing else.',
   'rfqs.interest.contentNote.questionnaire.one':
     'At its RFI stage this event asks a questionnaire of {{count}} question. You can save a draft, and you submit once every required question is answered.',
   'rfqs.interest.contentNote.questionnaire.other':
     'At its RFI stage this event asks a questionnaire of {{count}} questions. You can save a draft, and you submit once every required question is answered.',
+  // — RFx-3 · the RFP proposal —
+  'rfqs.interest.contentNote.proposal.one':
+    'At its RFP stage this event asks a proposal against {{count}} criterion. You can save a draft, and you submit once every required criterion has a response.',
+  'rfqs.interest.contentNote.proposal.other':
+    'At its RFP stage this event asks a proposal against {{count}} criteria. You can save a draft, and you submit once every required criterion has a response.',
+  'rfqs.rfp.open':
+    'Write your proposal',
+  'rfqs.rfp.continue':
+    'Continue your proposal',
+  'rfqs.rfp.submittedOn':
+    'Proposal submitted at {{stage}} on {{date}}',
+  'rfqs.rfp.form.intro':
+    'Respond to each criterion and save a draft; Paragon sees nothing until you submit. Once submitted, your proposal cannot be changed.',
+  'rfqs.rfp.weight':
+    '{{weight}}% of the evaluation',
+  'rfqs.rfp.group.technical':
+    'Technical',
+  'rfqs.rfp.group.commercial':
+    'Commercial',
+  'rfqs.rfp.missing':
+    'This criterion is required and has no response yet.',
+  'rfqs.rfp.notAnswered':
+    'No response',
+  'rfqs.rfp.documents.label':
+    'Documents your proposal refers to (optional)',
+  'rfqs.rfp.documents.note':
+    'Only the names of the files are recorded. The files themselves are not uploaded or kept by this portal — send them to your Paragon buyer separately.',
+  'rfqs.rfp.documents.remove':
+    'Remove {{name}}',
+  'rfqs.rfp.documents.named':
+    'Documents named:',
+  'rfqs.rfp.submit':
+    'Submit proposal',
+  'rfqs.rfp.toast.submitted.title':
+    'Proposal submitted on {{rfq}}',
+  'rfqs.rfp.toast.submitted.body':
+    'Paragon can now read your proposal and consider you for the shortlist.',
+  'rfqs.rfp.toast.submitFailed.title':
+    'Proposal not submitted',
+  'rfqs.rfp.scoresNote':
+    'Paragon scores proposals after the stage closes. Scores, rankings and other suppliers’ proposals are not shown in this portal.',
+  'rfqs.refusal.proposalInvalid':
+    'One of the responses could not be read as text, or answers a criterion this event does not set. Correct it and try again.',
+  'rfqs.refusal.criteriaUnanswered':
+    'Required and without a response: {{criteria, stop}}. Write them and submit again, or save a draft.',
   'rfqs.rfi.open':
     'Answer the questionnaire',
   'rfqs.rfi.continue':
@@ -494,13 +539,58 @@ export const rfqsId: Record<string, string> = {
     'Tahap',
   // — RFx-2 · the RFI questionnaire —
   'rfqs.interest.contentNote.rfp':
-    'Pada tahap RFP Anda hanya mencatat minat dan satu catatan. Proposal belum dibangun di portal ini.',
+    'Acara ini tidak menetapkan kriteria evaluasi pada tahap RFP. Anda hanya mencatat minat dan satu catatan.',
   'rfqs.interest.contentNote.rfi':
     'Acara ini tidak mengajukan kuesioner pada tahap RFI. Anda hanya mencatat minat dan satu catatan.',
   'rfqs.interest.contentNote.questionnaire.one':
     'Pada tahap RFI acara ini mengajukan kuesioner berisi {{count}} pertanyaan. Anda dapat menyimpan draf, dan mengirimkannya setelah setiap pertanyaan wajib dijawab.',
   'rfqs.interest.contentNote.questionnaire.other':
     'Pada tahap RFI acara ini mengajukan kuesioner berisi {{count}} pertanyaan. Anda dapat menyimpan draf, dan mengirimkannya setelah setiap pertanyaan wajib dijawab.',
+  // — RFx-3 · the RFP proposal —
+  'rfqs.interest.contentNote.proposal.one':
+    'Pada tahap RFP, acara ini meminta proposal atas {{count}} kriteria. Anda dapat menyimpan draf, dan mengirim setelah setiap kriteria wajib memiliki tanggapan.',
+  'rfqs.interest.contentNote.proposal.other':
+    'Pada tahap RFP, acara ini meminta proposal atas {{count}} kriteria. Anda dapat menyimpan draf, dan mengirim setelah setiap kriteria wajib memiliki tanggapan.',
+  'rfqs.rfp.open':
+    'Tulis proposal Anda',
+  'rfqs.rfp.continue':
+    'Lanjutkan proposal Anda',
+  'rfqs.rfp.submittedOn':
+    'Proposal dikirim pada tahap {{stage}} tanggal {{date}}',
+  'rfqs.rfp.form.intro':
+    'Tanggapi setiap kriteria dan simpan draf; Paragon tidak melihat apa pun sampai Anda mengirim. Setelah dikirim, proposal Anda tidak dapat diubah.',
+  'rfqs.rfp.weight':
+    '{{weight}}% dari evaluasi',
+  'rfqs.rfp.group.technical':
+    'Teknis',
+  'rfqs.rfp.group.commercial':
+    'Komersial',
+  'rfqs.rfp.missing':
+    'Kriteria ini wajib dan belum memiliki tanggapan.',
+  'rfqs.rfp.notAnswered':
+    'Tidak ada tanggapan',
+  'rfqs.rfp.documents.label':
+    'Dokumen yang dirujuk proposal Anda (opsional)',
+  'rfqs.rfp.documents.note':
+    'Hanya nama berkas yang dicatat. Berkasnya sendiri tidak diunggah atau disimpan portal ini — kirimkan kepada pembeli Paragon Anda secara terpisah.',
+  'rfqs.rfp.documents.remove':
+    'Hapus {{name}}',
+  'rfqs.rfp.documents.named':
+    'Dokumen yang disebut:',
+  'rfqs.rfp.submit':
+    'Kirim proposal',
+  'rfqs.rfp.toast.submitted.title':
+    'Proposal dikirim pada {{rfq}}',
+  'rfqs.rfp.toast.submitted.body':
+    'Paragon kini dapat membaca proposal Anda dan mempertimbangkan Anda untuk daftar pendek.',
+  'rfqs.rfp.toast.submitFailed.title':
+    'Proposal tidak dikirim',
+  'rfqs.rfp.scoresNote':
+    'Paragon menilai proposal setelah tahap ditutup. Skor, peringkat, dan proposal pemasok lain tidak ditampilkan di portal ini.',
+  'rfqs.refusal.proposalInvalid':
+    'Salah satu tanggapan tidak dapat dibaca sebagai teks, atau menjawab kriteria yang tidak ditetapkan acara ini. Perbaiki lalu coba lagi.',
+  'rfqs.refusal.criteriaUnanswered':
+    'Wajib dan belum ditanggapi: {{criteria, stop}}. Tulis tanggapannya lalu kirim lagi, atau simpan draf.',
   'rfqs.rfi.open':
     'Jawab kuesioner',
   'rfqs.rfi.continue':

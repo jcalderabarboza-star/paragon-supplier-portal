@@ -42,6 +42,7 @@ import {
   type StageResponse,
 } from '../../data/rfqStage';
 import type { RfiQuestion } from '../../data/rfiQuestionnaire';
+import type { RfpCriterion } from '../../data/rfpEvaluation';
 
 /** One question as a supplier reads it. Named fields only; no knock-out. */
 export function toSupplierQuestion(q: RfiQuestion): RfiQuestion {
@@ -52,6 +53,24 @@ export function toSupplierQuestion(q: RfiQuestion): RfiQuestion {
     required: q.required,
     ...(q.options ? { options: [...q.options] } : {}),
     ...(q.unit !== undefined ? { unit: q.unit } : {}),
+  };
+}
+
+/**
+ * RFx-3 · one criterion as a supplier reads it: what it is called, what it
+ * weighs, which part it belongs to and whether a response is required. The
+ * weights are SHOWN — a supplier writes a better proposal knowing what counts.
+ * What is never shown is on the event, not on a criterion: `proposalScores` is
+ * not on the allowlist below, so no score, no total, no rank and no evaluator
+ * reaches a supplier, its own included.
+ */
+export function toSupplierCriterion(c: RfpCriterion): RfpCriterion {
+  return {
+    id: c.id,
+    name: c.name,
+    weight: c.weight,
+    required: c.required,
+    ...(c.group ? { group: c.group } : {}),
   };
 }
 
@@ -104,6 +123,11 @@ export function toSupplierRfqView(rfq: RFQ, supplierId: string, ownDraft?: Stage
     ...(rfq.concludedAt ? { concludedAt: rfq.concludedAt } : {}),
     stageResponses: (rfq.stageResponses ?? []).filter((r) => r.supplierId === supplierId),
     ...(rfq.questionnaire ? { questionnaire: rfq.questionnaire.map(toSupplierQuestion) } : {}),
+    // RFx-3 — the criteria, from the RFP stage on: at an RFI that precedes it
+    // they are not yet what the supplier is asked.
+    ...(rfq.criteria && stageOf(rfq) !== 'RFI'
+      ? { criteria: rfq.criteria.map(toSupplierCriterion) }
+      : {}),
     ...(draft ? { myStageDraft: draft } : {}),
     ...(rfq.awardedAt ? { awardedAt: rfq.awardedAt } : {}),
     ...(won && rfq.awardedSupplierId ? { awardedSupplierId: rfq.awardedSupplierId } : {}),

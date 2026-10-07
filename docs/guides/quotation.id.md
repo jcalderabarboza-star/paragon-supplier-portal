@@ -114,7 +114,7 @@ Penanda kejujuran yang perlu diketahui pembaca sebelum memakai panduan ini. Pena
 - **Jenis langkah:** kaskade (digerakkan sistem); dipicu oleh `t_rfq_cancel` dan oleh `t_rfq_conclude`
 - **Peran:** automation (atom `quotation:withdraw`; tidak ada jalur manusia yang memegangnya)
 - **Dari → ke:** Submitted, Under Review → Withdrawn
-- **Operator — di mana:** tidak ada yang menekan ini pada sebuah penawaran. Ia mengikuti pembatalan RFQ oleh pembeli di `/buyer/sourcing` (**Batalkan RFQ**, lalu **Ya, batalkan acara**).
+- **Operator — di mana:** tidak ada yang menekan ini pada sebuah penawaran. Ia mengikuti pembatalan RFQ oleh pembeli di `/buyer/sourcing` (**Batalkan acara**, lalu **Ya, batalkan acara**).
 - **Operator — lakukan:** Paragon membatalkan acaranya sebelum memilih siapa pun, sehingga permintaannya ditarik kembali untuk setiap penawaran yang masih ditimbang. Tidak ada penawaran yang dinilai; pemasok membaca bahwa acaranya berakhir, bukan bahwa mereka kalah.
 - **Operator — isi:** tidak ada yang diisi.
 - **Penguji — status yang diharapkan:** Withdrawn
@@ -191,7 +191,7 @@ Setiap dispatch menulis satu `TransitionEvent`: `event` = id transisi, `actor` =
 | (penawaran baru) T+0′ | ∅ → Submitted (`QUO-2026-901` pada RFQ-2026-011) | supplier · commercial (`supplier:sup-007`) | **Kirim penawaran** → **Kirim penawaran** | `t_quotation_submit` |
 | (penawaran baru) T+1′ | Submitted → Under Review | buyer · procurement (`buyer:all`) | **Pindahkan ke tinjauan** | `t_quotation_review` |
 | (penawaran baru) T+2′ | RFQ-2026-011: Open → Awarded; `QUO-2026-901` → Awarded | buyer · procurement, orang yang bernama | papan berbunyi 2 / 2 begitu penawaran masuk; centang **Menangkan** → **Menangkan yang dipilih** → **Ya, menangkan** | `t_rfq_award`, lalu `t_quotation_award` |
-| (acara yang dibatalkan) | RFQ-2026-002: Open → Cancelled; `qt-002a`, `qt-002b`: Under Review → Withdrawn | buyer · procurement, orang yang bernama; lalu automation (kaskade) | **Batalkan RFQ** → **Ya, batalkan acara** | `t_rfq_cancel`, lalu `t_quotation_withdraw` ×2 (`causationId` = correlationId pembatalan) |
+| (acara yang dibatalkan) | RFQ-2026-002: Open → Cancelled; `qt-002a`, `qt-002b`: Under Review → Withdrawn | buyer · procurement, orang yang bernama; lalu automation (kaskade) | **Batalkan acara** → **Ya, batalkan acara** | `t_rfq_cancel`, lalu `t_quotation_withdraw` ×2 (`causationId` = correlationId pembatalan) |
 
 <!-- src: src/services/transitions/events.ts:26-61; src/services/transitions/events.ts:127-129; src/services/transitions/dispatcher.ts:453-532; src/services/transitions/dispatcher.ts:838-907; src/services/data/mock/MockCommandService.ts:2935-2953; src/pages-v2/BuyerSourcing.tsx:366-368; src/pages-v2/SupplierRFQs.tsx:786-796 -->
 
@@ -224,7 +224,7 @@ Setiap dispatch menulis satu `TransitionEvent`: `event` = id transisi, `actor` =
 | "Tanggal ini sudah lewat (hari ini 31 Agu 2026)…" di bawah Penawaran berlaku hingga, dan Kirim penawaran berwarna abu-abu | baris merah pada kolom | tanggal berlaku-hingga sebelum masa kini yang dinyatakan; mesin menolak hal yang sama (`QUOTE_VALIDITY_PAST`) | pilih hari ini atau tanggal sesudahnya |
 | Langkah 3 berbunyi "Belum ada dokumen halal, BPOM, atau mutu di berkas" | baris pada langkah Dokumen kepatuhan | pemasok ini tidak memiliki dokumen dalam ketiga kategori itu | tidak menghalangi penawaran; tambahkan di Dokumen Saya |
 | `STALE_STATE` | penolakan menyebut status yang diharapkan dan yang ditemukan | pemanggil memasok `expectedState` dan dokumen berpindah | tidak ada layar penawaran yang memasoknya hari ini; buka kembali dan putuskan lagi |
-| Tindakan pada alur ini ditolak untuk setiap kursi, apa pun perannya | penolakan menyebut `MODULE_INACTIVE:SRC`; bila permukaan memeriksa lebih dulu, kontrol terbaca *"Dinonaktifkan — Pengadaan & RFQ"* | modul Pengadaan & RFQ dinonaktifkan; halamannya tetap dapat dibaca | minta modul diaktifkan kembali di `/buyer/platform/modules/admin`; perubahan peran tidak membantu, karena pemeriksaan modul berjalan sebelum pemeriksaan peran |
+| Tindakan pada alur ini ditolak untuk setiap kursi, apa pun perannya | penolakan menyebut `MODULE_INACTIVE:SRC`; bila permukaan memeriksa lebih dulu, kontrol terbaca *"Dinonaktifkan — Acara sumber"* | modul Acara sumber dinonaktifkan; halamannya tetap dapat dibaca | minta modul diaktifkan kembali di `/buyer/platform/modules/admin`; perubahan peran tidak membantu, karena pemeriksaan modul berjalan sebelum pemeriksaan peran |
 
 <!-- src: src/services/transitions/refusals.ts:61-114; src/lib/glossary/refusals.glossary.ts:32-130; src/pages-v2/SupplierRFQs.tsx:766-796; src/pages-v2/SupplierRFQs.tsx:830-1025; src/pages-v2/SupplierRFQs.tsx:1543; src/pages-v2/BuyerSourcing.tsx:1227-1258; src/pages-v2/BuyerSourcing.tsx:3688-3728; src/pages-v2/BuyerSourcing.tsx:3756-3759; src/services/transitions/policies.ts:189-206; src/services/data/mock/MockCommandService.ts:618-622; src/services/data/mock/MockProcurementService.ts:299-328; src/lib/i18n/rfqs.ts:350-369 -->
 

@@ -1,10 +1,12 @@
 // ────────────────────────────────────────────────────────────────────────────
-// Stage response flow — RFx-1, RFx-2.
+// Stage response flow — RFx-1, RFx-2, RFx-3.
 //
 // A supplier's answer at the RFI or RFP stage of a sourcing event: an
-// acknowledgement of interest, an optional note, and — at an RFI that carries a
-// questionnaire (RFx-2) — the answers to it. The RFP proposal and its scoring
-// are RFx-3, and they add content to this row rather than a second machine.
+// acknowledgement of interest, an optional note, at an RFI that carries a
+// questionnaire (RFx-2) the answers to it, and at an RFP that sets criteria
+// (RFx-3) the proposal — a response per criterion and the names of its
+// documents. The proposal is content on this row, not a second machine; its
+// SCORES are the buyer's and live on the event (`t_rfq_proposal_score`).
 //
 // TWO STATES. A response is born `Submitted` in one act, or born a `Draft` that
 // its supplier re-saves and then submits. Nothing leaves `Submitted`: an answer
@@ -54,6 +56,11 @@ export const stageResponseFlow: FlowDefinition = {
         POLICY_HOOKS.STAGE_RESPONSE_ONE_PER_STAGE,
         POLICY_HOOKS.STAGE_RESPONSE_ANSWERS_WELL_FORMED,
         POLICY_HOOKS.STAGE_RESPONSE_REQUIRED_ANSWERED,
+        // RFx-3 — at an RFP that sets criteria the payload carries `proposal`
+        // and `documents`; the same pair of checks, one stage on. Appended, so
+        // the six positions above stay where RFx-1 and RFx-2 pin them.
+        POLICY_HOOKS.STAGE_RESPONSE_PROPOSAL_WELL_FORMED,
+        POLICY_HOOKS.STAGE_RESPONSE_CRITERIA_ANSWERED,
       ],
       surfaceable: { surfaced: true },
       version: 1,
@@ -76,6 +83,7 @@ export const stageResponseFlow: FlowDefinition = {
         POLICY_HOOKS.STAGE_RESPONSE_BEFORE_DEADLINE,
         POLICY_HOOKS.STAGE_RESPONSE_ONE_PER_STAGE,
         POLICY_HOOKS.STAGE_RESPONSE_ANSWERS_WELL_FORMED,
+        POLICY_HOOKS.STAGE_RESPONSE_PROPOSAL_WELL_FORMED,
       ],
       surfaceable: { surfaced: true },
       version: 1,
@@ -97,6 +105,7 @@ export const stageResponseFlow: FlowDefinition = {
         POLICY_HOOKS.STAGE_RESPONSE_DRAFT_STAGE_CURRENT,
         POLICY_HOOKS.STAGE_RESPONSE_BEFORE_DEADLINE,
         POLICY_HOOKS.STAGE_RESPONSE_ANSWERS_WELL_FORMED,
+        POLICY_HOOKS.STAGE_RESPONSE_PROPOSAL_WELL_FORMED,
       ],
       surfaceable: { surfaced: true },
       version: 1,
@@ -118,6 +127,8 @@ export const stageResponseFlow: FlowDefinition = {
         POLICY_HOOKS.STAGE_RESPONSE_BEFORE_DEADLINE,
         POLICY_HOOKS.STAGE_RESPONSE_ANSWERS_WELL_FORMED,
         POLICY_HOOKS.STAGE_RESPONSE_REQUIRED_ANSWERED,
+        POLICY_HOOKS.STAGE_RESPONSE_PROPOSAL_WELL_FORMED,
+        POLICY_HOOKS.STAGE_RESPONSE_CRITERIA_ANSWERED,
       ],
       surfaceable: { surfaced: true },
       version: 1,

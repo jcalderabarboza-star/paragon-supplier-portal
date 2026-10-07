@@ -173,6 +173,10 @@ import RfiAnswerMatrix, {
   passedEveryKnockout,
   rfiAnswersOf,
 } from './sourcing/RfiAnswerMatrix';
+import RfpCriteriaEditor, { RfpCriteriaList } from './sourcing/RfpCriteriaEditor';
+import RfpEvaluation from './sourcing/RfpEvaluation';
+import { rfpRankingOf, scoreText } from './sourcing/rfpEvaluationModel';
+import { atOrAbove, topRanked } from '../data/rfpEvaluation';
 import { responseDeadlinePassed } from '../services/data/quotationSubmitGate';
 import StageTimeline from './sourcing/StageTimeline';
 
@@ -216,7 +220,7 @@ function supplierInformedOf(
 // tell the reader their own action happened weeks ago.
 const TODAY = DECLARED_PRESENT;
 
-type GroupTab = 'all' | 'open' | 'pending' | 'awarded' | 'closed';
+type GroupTab = 'all' | 'open' | 'pending' | 'awarded' | 'closed' | 'concluded';
 
 // Category labels — `sourcing/categoryLabel.ts` (shared with the material-request
 // page since SRC-2).
@@ -425,9 +429,21 @@ const isAllResponded = (r: RFQ): boolean =>
 const awaitsAward = (r: RFQ): boolean =>
   r.status === 'Open' && stageOf(r) === 'RFQ' && isAllResponded(r);
 
-/** The three endings that are not an award: bidding closed, concluded, cancelled. */
-const isClosedOut = (r: RFQ): boolean =>
-  r.status === 'Closed' || r.status === 'Concluded' || r.status === 'Cancelled';
+/**
+ * Bidding closed, or cancelled. RFx-3 — an event CONCLUDED without an award has
+ * a tab of its own (`isConcluded`): it ran and ended with a stated reason, which
+ * is a different thing to look for than one waiting on the buyer or withdrawn.
+ * One event, one tab.
+ */
+const isClosedOut = (r: RFQ): boolean => r.status === 'Closed' || r.status === 'Cancelled';
+const isConcluded = (r: RFQ): boolean => r.status === 'Concluded';
+
+/** The events in `rows` at each stage: `{ RFI, RFP, RFQ }`. */
+const countByStage = (rows: readonly RFQ[]): Record<RfqStage, number> => ({
+  RFI: rows.filter((r) => stageOf(r) === 'RFI').length,
+  RFP: rows.filter((r) => stageOf(r) === 'RFP').length,
+  RFQ: rows.filter((r) => stageOf(r) === 'RFQ').length,
+});
 
 // ── 2e-b-3 (COS-04) — the shadowing locals are retired ───────────────────────
 //
@@ -948,6 +964,7 @@ const matchesGroup = (r: RFQ, group: GroupTab): boolean => {
   if (group === 'pending') return awaitsAward(r);
   if (group === 'awarded') return r.status === 'Awarded';
   if (group === 'closed') return isClosedOut(r);
+  if (group === 'concluded') return isConcluded(r);
   return true;
 };
 
@@ -1056,6 +1073,8 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
   );
   const [group, setGroup] = useState<GroupTab>('all');
   const [selectedCats, setSelectedCats] = useState<RFQCategory[]>([]);
+  // RFx-3 — the stage filter, beside the category one. None ticked = every stage.
+  const [selectedStages, setSelectedStages] = useState<RfqStage[]>([]);
   const [search, setSearch] = useState('');
   // 2e-c-4 — the panel holds the selected RFQ's ID, and the RFQ itself is
   // DERIVED from the live query result. It used to hold the RFQ OBJECT, which
@@ -1198,6 +1217,9 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
   const advanceMutation = useRfqAdvance();
   const concludeMutation = useRfqConclude();
   const [advanceDraft, setAdvanceDraft] = useState<AdvanceDraft>(EMPTY_ADVANCE);
+  // RFx-3 — the two ranking pre-selections, as typed.
+  const [rankTop, setRankTop] = useState('2');
+  const [rankMin, setRankMin] = useState('');
   const [concludeReason, setConcludeReason] = useState('');
   // SRC-1 · operator ruling — publish, cancel and award are a person's
   // decision. The machine refuses a seat with nobody named
@@ -1686,6 +1708,17 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
     });
     setAsking('advance');
   };
+  // RFx-3 — leaving an RFP whose proposals were scored, the list can START
+  // from the ranking: the top N, or everyone at or above a weighted total. The
+  // buyer names the rule and presses; nothing is pre-ticked on a rule the buyer
+  // did not choose, and every responder stays tickable afterwards.
+  const advanceRanking =
+    selectedRfq && selectedStage === 'RFP' && (selectedRfq.criteria ?? []).length > 0
+      ? rfpRankingOf(selectedRfq)
+      : [];
+  const advanceRanked = advanceRanking.some((r) => r.total !== null);
+  const preselectFromRanking = (ids: readonly string[]) =>
+    setAdvanceDraft((d) => ({ ...d, shortlist: [...ids] }));
   const toggleShortlisted = (supplierId: string) =>
     setAdvanceDraft((d) => ({
       ...d,
@@ -2228,18 +2261,12 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                 </label>
               ))}
             </div>
-            {draft.stage !== 'RFQ' && (
-              <p className="text-xs text-text-tertiary mt-1.5" data-testid="rfq-start-stage-note">
-                {t('sourcing.interest.contentNote')}
-              </p>
-            )}
-            {/* RFx-2 — where the questionnaire is written: on the draft, after
-                this wizard, before publishing. */}
-            {draft.stage === 'RFI' && (
-              <p className="text-xs text-text-tertiary mt-1" data-testid="rfq-start-stage-questionnaire-hint">
-                {t('sourcing.wizard.stage.questionnaireHint')}
-              </p>
-            )}
+            {/* RFx-3 — ONE LINE PER STAGE, beside its choice above, each saying
+                what the stage asks and where it is written. The detail is the
+                guide's; three paragraphs under a radio group were not read. */}
+            <p className="text-xs text-text-tertiary mt-1.5" data-testid="rfq-start-stage-note">
+              {t('sourcing.wizard.stage.guide')}
+            </p>
           </div>
           <div>
             <label
@@ -2967,24 +2994,28 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
     const pending = rfqs.filter(awaitsAward).length;
     const awarded = rfqs.filter((r) => r.status === 'Awarded').length;
     const closed = rfqs.filter(isClosedOut).length;
+    const concluded = rfqs.filter(isConcluded).length;
     return {
       all: rfqs.length,
       open,
       pending,
       awarded,
       closed,
+      concluded,
     };
   }, [rfqs]);
 
   const kpis = useMemo(() => {
-    const active = rfqs.filter((r) => r.status === 'Open').length;
-    const awaiting = rfqs.filter((r) => {
+    const activeRows = rfqs.filter((r) => r.status === 'Open');
+    const active = activeRows.length;
+    const awaitingRows = rfqs.filter((r) => {
       if (r.status !== 'Open') return false;
       const d = daysUntil(r.responseDeadline, nowIso);
       // An unreadable deadline is not evidence a response is due this week.
       if (d === null) return false;
       return d <= 7 && d >= 0;
-    }).length;
+    });
+    const awaiting = awaitingRows.length;
     const readyToAward = rfqs.filter(awaitsAward).length;
     const awardedQuarter = rfqs.filter((r) => {
       if (r.status !== 'Awarded') return false;
@@ -2994,7 +3025,16 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
       if (d === null) return false;
       return -d <= 90;
     }).length;
-    return { active, awaiting, readyToAward, awardedQuarter };
+    return {
+      active,
+      awaiting,
+      readyToAward,
+      awardedQuarter,
+      // RFx-3 — "open" means three different asks by stage: answers, proposals,
+      // prices. The two cards that count open events say how many of each.
+      activeByStage: countByStage(activeRows),
+      awaitingByStage: countByStage(awaitingRows),
+    };
   }, [rfqs, nowIso]);
 
   const activeFiltered = useMemo(() => {
@@ -3006,6 +3046,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
           ? true
           : selectedCats.includes(r.materialCategory),
       )
+      .filter((r) => (selectedStages.length === 0 ? true : selectedStages.includes(stageOf(r))))
       .filter((r) => {
         if (!search) return true;
         const q = search.toLowerCase();
@@ -3015,7 +3056,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
           r.materialIds.join(' ').toLowerCase().includes(q)
         );
       });
-  }, [rfqs, group, selectedCats, search]);
+  }, [rfqs, group, selectedCats, selectedStages, search]);
 
   const awarded = useMemo(
     () => rfqs.filter((r) => r.status === 'Awarded'),
@@ -3025,6 +3066,11 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
   const toggleCategory = (cat: RFQCategory) =>
     setSelectedCats((prev) =>
       prev.includes(cat) ? prev.filter((c) => c !== cat) : [...prev, cat],
+    );
+
+  const toggleStage = (stage: RfqStage) =>
+    setSelectedStages((prev) =>
+      prev.includes(stage) ? prev.filter((s) => s !== stage) : [...prev, stage],
     );
 
   return (
@@ -3103,13 +3149,27 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
         <KpiCard
           eyebrow={t('sourcing.kpi.active.eyebrow')}
           value={kpis.active.toString()}
-          subtitle={t('sourcing.kpi.active.subtitle')}
+          subtitle={
+            <>
+              {t('sourcing.kpi.active.subtitle')}
+              <span className="block font-mono" data-testid="kpi-active-by-stage">
+                {t('sourcing.kpi.byStage', kpis.activeByStage)}
+              </span>
+            </>
+          }
           icon={FileText}
         />
         <KpiCard
           eyebrow={t('sourcing.kpi.awaiting.eyebrow')}
           value={kpis.awaiting.toString()}
-          subtitle={t('sourcing.kpi.awaiting.subtitle')}
+          subtitle={
+            <>
+              {t('sourcing.kpi.awaiting.subtitle')}
+              <span className="block font-mono" data-testid="kpi-awaiting-by-stage">
+                {t('sourcing.kpi.byStage', kpis.awaitingByStage)}
+              </span>
+            </>
+          }
           icon={Clock}
         />
         <KpiCard
@@ -3145,6 +3205,11 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
             label: t('sourcing.tab.closed'),
             count: counts.closed,
           },
+          {
+            id: 'concluded',
+            label: t('sourcing.tab.concluded'),
+            count: counts.concluded,
+          },
         ]}
         value={group}
         onChange={setGroup}
@@ -3166,6 +3231,17 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
             multiSelect
           />
         </div>
+        <div data-testid="rfq-stage-filter">
+          <div className="text-label text-text-tertiary uppercase mb-2">
+            {t('sourcing.filter.byStage')}
+          </div>
+          <FilterChipsBar
+            options={RFQ_STAGES.map((s) => ({ id: s, label: s }))}
+            value={selectedStages}
+            onChange={toggleStage}
+            multiSelect
+          />
+        </div>
       </div>
 
       <div className="mb-4">
@@ -3183,6 +3259,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
             <TableHeaderCell>
               {t('sourcing.table.col.category')}
             </TableHeaderCell>
+            <TableHeaderCell>{t('sourcing.table.col.stage')}</TableHeaderCell>
             <TableHeaderCell>
               {t('sourcing.table.col.responses')}
             </TableHeaderCell>
@@ -3224,22 +3301,21 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                     <Data as="div" className="font-semibold text-text-primary">
                       {r.rfqNumber}
                     </Data>
-                    {/* RFx-1 — only on an event that has stages. An event
-                        raised as a plain RFQ reads as it always did. */}
-                    {stagePathOf(r).length > 1 && (
-                      <span
-                        className="inline-block text-[10px] font-semibold text-text-secondary border border-border-subtle rounded px-1 mt-0.5"
-                        data-testid={`rfq-row-stage-${r.id}`}
-                      >
-                        {t('sourcing.stage.rowChip', { stage: stageOf(r) })}
-                      </span>
-                    )}
                     <div className="text-xs text-text-tertiary mt-0.5 max-w-[20rem] truncate">
                       {r.title}
                     </div>
                   </TableCell>
                   <TableCell className="text-sm text-text-secondary">
                     {categoryLabel(t, r.materialCategory)}
+                  </TableCell>
+                  {/* RFx-3 — THE STAGE, ON EVERY ROW. It was a chip under the
+                      number on staged events only, so a plain RFQ said nothing
+                      and the reader could not tell "at RFQ" from "not staged".
+                      The stage is a token, the same in both languages. */}
+                  <TableCell>
+                    <span data-testid={`rfq-row-stage-${r.id}`}>
+                      <StatusPill variant="neutral">{stageOf(r)}</StatusPill>
+                    </span>
                   </TableCell>
                   <TableCell>
                     <div className="text-sm text-text-primary font-medium">
@@ -3301,7 +3377,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
             {activeFiltered.length === 0 && (
               <tr>
                 <td
-                  colSpan={8}
+                  colSpan={9}
                   className="text-center text-sm text-text-tertiary py-10"
                 >
                   {t('sourcing.table.empty')}
@@ -3739,6 +3815,28 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                 </section>
               )}
 
+            {/* RFx-3 — THE RFP: CRITERIA, PROPOSALS, SCORES. On a Draft whose
+                path has an RFP stage the buyer sets the criteria here; once the
+                event is published they are fixed and this section reads them
+                back with the proposals, the score sheets and the ranking. An
+                event that starts at RFQ has no RFP stage and shows nothing. */}
+            {stagePathOf(selectedRfq).includes('RFP') &&
+              (selectedRfq.status === 'Draft' || (selectedRfq.criteria ?? []).length > 0) && (
+                <section data-testid="rfq-criteria-section">
+                  <h3 className="text-label text-text-tertiary uppercase mb-3">
+                    {t('sourcing.rfp.title')}
+                  </h3>
+                  {selectedRfq.status === 'Draft' ? (
+                    <RfpCriteriaEditor key={selectedRfq.id} rfq={selectedRfq} />
+                  ) : (
+                    <>
+                      <RfpCriteriaList criteria={selectedRfq.criteria ?? []} />
+                      <RfpEvaluation rfq={selectedRfq} supplierNameById={supplierNameById} />
+                    </>
+                  )}
+                </section>
+              )}
+
             {/* Lifecycle actions (F0.3): the non-award sourcing verbs, gated on
                 the machine's legal from-states — cancel from Draft/Open/Closed
                 (not a terminal Awarded/Cancelled), reopen from Closed only. */}
@@ -3957,6 +4055,62 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                         {t('sourcing.advance.preselected')}
                       </p>
                     )}
+                    {advanceRanked && (
+                      <div
+                        className="border border-border-subtle bg-bg-hover rounded-md p-2 mb-2"
+                        data-testid="rfq-advance-rank-preselect"
+                      >
+                        <p className="text-xs text-text-tertiary mb-2">{t('sourcing.advance.rank.note')}</p>
+                        <div className="flex flex-wrap items-end gap-2">
+                          <div>
+                            <label className="text-label text-text-tertiary uppercase block mb-1" htmlFor="rfq-advance-rank-top">
+                              {t('sourcing.advance.rank.top')}
+                            </label>
+                            <input
+                              id="rfq-advance-rank-top"
+                              type="text"
+                              inputMode="numeric"
+                              value={rankTop}
+                              onChange={(e) => setRankTop(e.target.value)}
+                              className="w-20 bg-white border border-border-input rounded-md px-2 h-9 text-sm font-mono focus:outline-none focus:border-action"
+                              data-testid="rfq-advance-rank-top"
+                            />
+                          </div>
+                          <Button
+                            variant="secondary"
+                            disabled={!/^[1-9]\d*$/.test(rankTop.trim())}
+                            onClick={() => preselectFromRanking(topRanked(advanceRanking, Number(rankTop.trim())))}
+                            data-testid="rfq-advance-rank-top-apply"
+                          >
+                            {t('sourcing.advance.rank.topApply')}
+                          </Button>
+                          <div className="ml-2">
+                            <label className="text-label text-text-tertiary uppercase block mb-1" htmlFor="rfq-advance-rank-min">
+                              {t('sourcing.advance.rank.min')}
+                            </label>
+                            <input
+                              id="rfq-advance-rank-min"
+                              type="text"
+                              inputMode="decimal"
+                              value={rankMin}
+                              onChange={(e) => setRankMin(e.target.value)}
+                              className="w-20 bg-white border border-border-input rounded-md px-2 h-9 text-sm font-mono focus:outline-none focus:border-action"
+                              data-testid="rfq-advance-rank-min"
+                            />
+                          </div>
+                          <Button
+                            variant="secondary"
+                            disabled={!/^\d+([.,]\d+)?$/.test(rankMin.trim())}
+                            onClick={() =>
+                              preselectFromRanking(atOrAbove(advanceRanking, Number(rankMin.trim().replace(',', '.'))))
+                            }
+                            data-testid="rfq-advance-rank-min-apply"
+                          >
+                            {t('sourcing.advance.rank.minApply')}
+                          </Button>
+                        </div>
+                      </div>
+                    )}
                     <ul className="space-y-1 mb-3">
                       {selectedRfq.invitedSupplierIds.map((id) => {
                         const answered = selectedRfq.respondedSupplierIds.includes(id);
@@ -3975,6 +4129,20 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                               {!answered && (
                                 <span className="text-xs text-text-tertiary">
                                   {t('sourcing.advance.didNotRespond', { stage: selectedStage })}
+                                </span>
+                              )}
+                              {/* RFx-3 — the rank and weighted total, beside the name. */}
+                              {answered && advanceRanked && (
+                                <span
+                                  className="text-xs text-text-tertiary font-mono"
+                                  data-testid={`rfq-advance-rank-${id}`}
+                                >
+                                  {(() => {
+                                    const r = advanceRanking.find((x) => x.supplierId === id);
+                                    return r && r.total !== null && r.rank !== null
+                                      ? t('sourcing.advance.rank.line', { rank: r.rank, total: scoreText(r.total) })
+                                      : t('sourcing.advance.rank.unscored');
+                                  })()}
                                 </span>
                               )}
                               {/* RFx-2 — said beside the name, and the box

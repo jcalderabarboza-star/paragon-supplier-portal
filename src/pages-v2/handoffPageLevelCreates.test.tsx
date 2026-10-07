@@ -64,14 +64,14 @@ describe('BuyerSourcing — the New RFQ entry is guarded', () => {
   it('HELD: a procurement seat keeps the button, no notice', async () => {
     renderWithProviders(<BuyerSourcing />, { identity: PROCUREMENT });
     await screen.findByText('RFQ-2026-001');
-    expect(screen.getByRole('button', { name: /New RFQ/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /New sourcing event/i })).toBeInTheDocument();
     expect(screen.queryByTestId('handoff-rfq-create')).not.toBeInTheDocument();
   });
 
   it('WITHHELD: a receiving seat loses the button and reads the owner', async () => {
     renderWithProviders(<BuyerSourcing />, { identity: RECEIVING });
     await screen.findByText('RFQ-2026-001');
-    expect(screen.queryByRole('button', { name: /New RFQ/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /New sourcing event/i })).not.toBeInTheDocument();
     const notice = screen.getByTestId('handoff-rfq-create');
     expect(notice).toHaveAttribute('data-handoff', 'withheld');
     expect(notice).toHaveTextContent('Awaiting Procurement');
@@ -80,7 +80,7 @@ describe('BuyerSourcing — the New RFQ entry is guarded', () => {
   it('the full buyer seat is unchanged — every demo path still works', async () => {
     renderWithProviders(<BuyerSourcing />, { identity: BUYER });
     await screen.findByText('RFQ-2026-001');
-    expect(screen.getByRole('button', { name: /New RFQ/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /New sourcing event/i })).toBeInTheDocument();
     expect(screen.queryByTestId('handoff-rfq-create')).not.toBeInTheDocument();
   });
 });

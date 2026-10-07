@@ -193,7 +193,7 @@ describe('BuyerSourcing — the minimum order quantity reaches the comparison', 
 describe('BuyerSourcing — the RFQ wizard numerics are text, so the parser is load-bearing', () => {
   const openWizard = async () => {
     renderWithProviders(<BuyerSourcing />);
-    fireEvent.click(await screen.findByText('New RFQ'));
+    fireEvent.click(await screen.findByText('New sourcing event'));
     return {
       qty: await screen.findByLabelText('Total quantity'),
       budget: await screen.findByLabelText('Estimated budget (IDR)'),
@@ -865,7 +865,7 @@ describe('BuyerSourcing — a supersede reads as a NEW RECORDED ACT (2e-c-4)', (
   it('says the existing rate is KEPT, not replaced', async () => {
     await withExistingPin();
     expect(screen.getByTestId('fx-pin-dialog')).toHaveTextContent(
-      /is not changed or deleted — it stays on the RFQ/i,
+      /is not changed or deleted — it stays on the event/i,
     );
   });
 

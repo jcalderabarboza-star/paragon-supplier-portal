@@ -360,24 +360,30 @@ describe('C · the response machine: a draft, and a submitted answer', () => {
     expect([...new Set(flow.transitions.map((t) => t.requiredRole))]).toEqual(['stageresponse:submit']);
   });
 
+  // RFx-3 appended the two proposal checks after these. The lists stay pinned
+  // WHOLE and in order — the RFx-2 positions first, the RFx-3 ones after them.
   it('the checks, per verb, in order: only the two that submit read the required questions', () => {
     const hooks = (id: string) => getFlow('stageResponse')!.transitions.find((t) => t.id === id)!.policyHooks;
     const H = POLICY_HOOKS;
     expect(hooks('t_stageresponse_submit')).toEqual([
       H.STAGE_RESPONSE_EVENT_OPEN, H.STAGE_RESPONSE_STAGE_TAKES_INTEREST, H.STAGE_RESPONSE_BEFORE_DEADLINE,
       H.STAGE_RESPONSE_ONE_PER_STAGE, H.STAGE_RESPONSE_ANSWERS_WELL_FORMED, H.STAGE_RESPONSE_REQUIRED_ANSWERED,
+      H.STAGE_RESPONSE_PROPOSAL_WELL_FORMED, H.STAGE_RESPONSE_CRITERIA_ANSWERED,
     ]);
     expect(hooks('t_stageresponse_save')).toEqual([
       H.STAGE_RESPONSE_EVENT_OPEN, H.STAGE_RESPONSE_STAGE_TAKES_INTEREST, H.STAGE_RESPONSE_BEFORE_DEADLINE,
       H.STAGE_RESPONSE_ONE_PER_STAGE, H.STAGE_RESPONSE_ANSWERS_WELL_FORMED,
+      H.STAGE_RESPONSE_PROPOSAL_WELL_FORMED,
     ]);
     expect(hooks('t_stageresponse_resave')).toEqual([
       H.STAGE_RESPONSE_EVENT_OPEN, H.STAGE_RESPONSE_DRAFT_STAGE_CURRENT, H.STAGE_RESPONSE_BEFORE_DEADLINE,
       H.STAGE_RESPONSE_ANSWERS_WELL_FORMED,
+      H.STAGE_RESPONSE_PROPOSAL_WELL_FORMED,
     ]);
     expect(hooks('t_stageresponse_send')).toEqual([
       H.STAGE_RESPONSE_EVENT_OPEN, H.STAGE_RESPONSE_DRAFT_STAGE_CURRENT, H.STAGE_RESPONSE_BEFORE_DEADLINE,
       H.STAGE_RESPONSE_ANSWERS_WELL_FORMED, H.STAGE_RESPONSE_REQUIRED_ANSWERED,
+      H.STAGE_RESPONSE_PROPOSAL_WELL_FORMED, H.STAGE_RESPONSE_CRITERIA_ANSWERED,
     ]);
   });
 });

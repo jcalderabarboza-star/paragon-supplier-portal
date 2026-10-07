@@ -58,7 +58,7 @@ describe('§76 · the drawer — publish (Draft only)', () => {
   it('HELD: a procurement seat keeps Publish RFQ and reads no notice', async () => {
     renderWithProviders(<BuyerSourcing />, { identity: PROCUREMENT });
     await openRfq(DRAFT_RFQ);
-    expect(await screen.findByRole('button', { name: /Publish RFQ/i })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: /Publish event/i })).toBeInTheDocument();
     expect(screen.queryByTestId('handoff-rfq-publish')).not.toBeInTheDocument();
   });
 
@@ -68,7 +68,7 @@ describe('§76 · the drawer — publish (Draft only)', () => {
     expect(await screen.findByTestId('handoff-rfq-publish')).toHaveTextContent(
       'Awaiting Procurement',
     );
-    expect(screen.queryByRole('button', { name: /Publish RFQ/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Publish event/i })).not.toBeInTheDocument();
   });
 
   it('and the publish notice does NOT appear on an Open RFQ — the act is not there', async () => {
@@ -87,7 +87,7 @@ describe('§76 · the drawer — reopen (Closed only)', () => {
   it('HELD: a procurement seat keeps Reopen RFQ and reads no notice', async () => {
     renderWithProviders(<BuyerSourcing />, { identity: PROCUREMENT });
     await openRfq(CLOSED_RFQ);
-    expect(await screen.findByRole('button', { name: /Reopen RFQ/i })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: /Reopen event/i })).toBeInTheDocument();
     expect(screen.queryByTestId('handoff-rfq-reopen')).not.toBeInTheDocument();
   });
 
@@ -100,8 +100,8 @@ describe('§76 · the drawer — reopen (Closed only)', () => {
       'Awaiting Procurement',
     );
     expect(screen.getByTestId('handoff-rfq-cancel')).toHaveTextContent('Awaiting Procurement');
-    expect(screen.queryByRole('button', { name: /Reopen RFQ/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /Cancel RFQ/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Reopen event/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Cancel event/i })).not.toBeInTheDocument();
   });
 });
 
@@ -109,7 +109,7 @@ describe('§76 · the drawer — cancel', () => {
   it('HELD: a procurement seat keeps Cancel RFQ and reads no notice', async () => {
     renderWithProviders(<BuyerSourcing />, { identity: PROCUREMENT });
     await openRfq(OPEN_RFQ);
-    expect(await screen.findByRole('button', { name: /Cancel RFQ/i })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: /Cancel event/i })).toBeInTheDocument();
     expect(screen.queryByTestId('handoff-rfq-cancel')).not.toBeInTheDocument();
   });
 
@@ -119,7 +119,7 @@ describe('§76 · the drawer — cancel', () => {
     expect(await screen.findByTestId('handoff-rfq-cancel')).toHaveTextContent(
       'Awaiting Procurement',
     );
-    expect(screen.queryByRole('button', { name: /Cancel RFQ/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Cancel event/i })).not.toBeInTheDocument();
   });
 });
 

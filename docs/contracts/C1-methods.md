@@ -1,6 +1,6 @@
 # C1 — Method Surface
 
-Three distinct axes. **71** (service surface) · **136** (transition catalog) · **23** (wired
+Three distinct axes. **71** (service surface) · **138** (transition catalog) · **23** (wired
 targets). They measure different things; this file keeps them separate.
 
 > ⚠️ **THIS DOCUMENT IS PINNED TO THE TREE, AND THE PIN IS WHY THE NUMBERS ABOVE ARE ALLOWED TO
@@ -252,6 +252,58 @@ targets). They measure different things; this file keeps them separate.
 > `myStageDraft`. No service method was added.
 > **Questionnaire templates are NOT in this contract.** They are a browser-local list
 > (`localStorage`, key `paragon.rfiTemplates`): no flow, no verb, no target, no event.
+>
+> **RE-HARVEST (2026-10-07, RFx-3).** The RFP stage gained criteria, a proposal and scores. Catalog
+> 136 → **138**; the flow count (29) and the wired-target count (23) are unchanged. Moved by the pin
+> going red.
+> **`rfq` gained TWO transitions and no state.** `t_rfq_criteria_set` (Draft → Draft, state-preserving;
+> atom `rfq:create`, procurement; no required field; payload `criteria`, the whole list — an empty list
+> removes them). Legal on a Draft only. `t_rfq_proposal_score` (Closed → Closed, state-preserving; atom
+> **`rfq:evaluate`, NEW, procurement**; required `supplierId`, `scores`; payload `scores` is a WHOLE
+> sheet, one `{ criterionId, score, comment? }` per criterion). Legal on Closed only.
+> **WHO SCORED IS NOT A PAYLOAD FIELD.** The `rfq` target writes `scoredBy` from `scope.actor`, and
+> `scoredBy` joined `ATTRIBUTION_KEYS`: a payload carrying it is refused `ACTOR_IN_PAYLOAD` by the
+> dispatcher before any hook. A sheet is found by (supplier, acting person), so a person replaces their
+> own sheet and no request reaches another's. `CommandTarget.applyTransition`'s fourth parameter, the
+> scope, is now read by the `rfq` target for that one write.
+> **The `rfq` target writes `criteria` only for `t_rfq_criteria_set` and `proposalScores` only for
+> `t_rfq_proposal_score`** — the RFx-2 rule, two fields on; `rfx2StorePayload.test.ts` derives the pairs.
+> **Ten refusals are new, all `POLICY_REJECTED`:**
+> on `t_rfq_criteria_set`, in this order — `CRITERIA_NO_RFP_STAGE` (hook `rfq_criteria_on_rfp_path`):
+> the event starts at RFQ; `CRITERIA_MALFORMED` (hook `rfq_criteria_well_formed`): names the criterion
+> (`C<n>`) and one of `NOT_A_LIST`, `ID_MISSING`, `ID_DUPLICATE`, `NAME_MISSING`, `WEIGHT_INVALID`,
+> `GROUP_UNKNOWN`; `CRITERIA_WEIGHTS_NOT_100` (hook `rfq_criteria_weights_total`): states the sum;
+> on `t_rfq_proposal_score`, in this order — `SCORE_EVALUATOR_UNATTRIBUTED`
+> (hook `rfq_score_evaluator_named`): the seat names nobody (a sample person is admitted);
+> `SCORES_LOCKED` (hook `rfq_score_not_locked`): the event has advanced from its RFP stage;
+> `SCORE_STAGE_NOT_RFP` (hook `rfq_score_at_rfp_stage`); `SCORE_NO_PROPOSAL`
+> (hook `rfq_score_proposal_held`): the supplier named holds no SUBMITTED response at this RFP stage;
+> `SCORE_SHEET_INVALID` (hook `rfq_score_sheet_well_formed`): names the criterion and one of
+> `NO_CRITERIA`, `NOT_A_LIST`, `NOT_A_SCORE`, `UNKNOWN_CRITERION`, `CRITERION_TWICE`, `OUT_OF_RANGE`
+> (a score is a whole number from 1 to 5), `COMMENT_NOT_TEXT`, `CRITERION_UNSCORED`;
+> on all four stage-response verbs, appended after the RFx-2 hooks — `PROPOSAL_INVALID`
+> (hook `stage_response_proposal_well_formed`): `proposal` is not a map, names a criterion the event
+> does not set at this stage, holds a response that is not text, or `documents` is not a list of names
+> (or names a document at a stage that takes no proposal);
+> on `t_stageresponse_submit` and `t_stageresponse_send`, evaluated last — `PROPOSAL_CRITERION_REQUIRED`
+> (hook `stage_response_criteria_answered`): names each required criterion with no response by `C<n>`
+> and name.
+> **`SHORTLIST_UNDER_FLOOR` is unchanged in when it refuses; its reason now names the remedy** —
+> shortlist another supplier that responded, reopen the stage, or conclude without an award.
+> **A rank is NOT a refusal.** No verb refuses an advance on a score; the top-N and at-or-above
+> pre-selections are surface conveniences over `rfpEvaluation.rankingOf`.
+> **`RFQ` gains TWO optional stored fields**: `criteria` — a list of `RfpCriterion` (`id`, `name`,
+> `weight` a percentage above 0, the weights of an event summing to 100, `required`, `group?`:
+> `technical` | `commercial`) — and `proposalScores` — a list of sheets (`supplierId`, `scoredBy` an
+> `ActorAttribution`, `scoredAt`, `scores`). **`StageResponse` gains two optional stored fields**:
+> `proposal` (criterion id → text) and `documents` (FILE NAMES ONLY; no file is uploaded or stored).
+> **A supplier's weighted total is the average, over the evaluators who scored it, of each evaluator's
+> own weighted total**, on the 1–5 scale, to two decimals; equal totals share a rank. Derived at read,
+> never stored.
+> **`getRFQs` under a SUPPLIER scope** carries `criteria` from the RFP stage on (an allowlist per
+> criterion, `rfqSupplierView.toSupplierCriterion`: weights are shown) and **never `proposalScores`** —
+> the field is not on the supplier allowlist, so no score, total, rank or evaluator crosses, the
+> reader's own included. No service method was added.
 
 Source of truth: `src/services/data/types.ts` (service + command types),
 `src/services/transitions/` (schema, dispatcher, flows).
@@ -317,7 +369,7 @@ the string, because those are different claims and only the first is the contrac
 
 ---
 
-## Axis 2 — the 136-transition catalog (29 flows)
+## Axis 2 — the 138-transition catalog (29 flows)
 
 Every authored state-machine edge across the registered flows (`id: 't_<entity>_<verb>'`). Derived
 from `getKnownFlows()` — the seeded registry — never from a grep over the flow files, because a
@@ -332,7 +384,7 @@ transition id can be assembled at a call site rather than written as a literal (
 | `goodsReceiptLine.flow.ts` | `goodsReceiptLine` | 6 | `t_grline_inspect`, `t_grline_accept`, `t_grline_reject`, `t_grline_quarantine`, `t_grline_release`, `t_grline_return` | sub-flow (rollup) |
 | `invoice.flow.ts` | `invoice` | 8 | `t_invoice_create`, `t_invoice_submit`, `t_invoice_match`, `t_invoice_approve`, `t_invoice_release_payment`, `t_invoice_remit`, `t_invoice_dispute`, `t_invoice_resolve` | **wired** |
 | `invoiceMatch.flow.ts` | `invoiceMatch` | 4 | `t_invmatch_await_gr`, `t_invmatch_matched`, `t_invmatch_qty_variance`, `t_invmatch_price_variance` | sub-flow (rollup) |
-| `rfq.flow.ts` | `rfq` | 10 | `t_rfq_create`, `t_rfq_questionnaire_set`, `t_rfq_publish`, `t_rfq_close`, `t_rfq_award`, `t_rfq_fx_pin`, `t_rfq_advance`, `t_rfq_conclude`, `t_rfq_cancel`, `t_rfq_reopen` | **wired** |
+| `rfq.flow.ts` | `rfq` | 12 | `t_rfq_create`, `t_rfq_questionnaire_set`, `t_rfq_criteria_set`, `t_rfq_publish`, `t_rfq_close`, `t_rfq_award`, `t_rfq_fx_pin`, `t_rfq_proposal_score`, `t_rfq_advance`, `t_rfq_conclude`, `t_rfq_cancel`, `t_rfq_reopen` | **wired** |
 | `quotation.flow.ts` | `quotation` | 5 | `t_quotation_submit`, `t_quotation_review`, `t_quotation_award`, `t_quotation_reject`, `t_quotation_withdraw` | **wired** |
 | `stageResponse.flow.ts` | `stageResponse` | 4 | `t_stageresponse_submit`, `t_stageresponse_save`, `t_stageresponse_resave`, `t_stageresponse_send` | **wired** |
 | `shipment.flow.ts` | `shipment` | 8 | `t_shipment_create`, `t_shipment_asn_received`, `t_shipment_depart`, `t_shipment_arrive_port`, `t_shipment_customs`, `t_shipment_dock`, `t_shipment_unload`, `t_shipment_deliver` | inert |
@@ -355,7 +407,7 @@ transition id can be assembled at a call site rather than written as a literal (
 | `deliveryPolicy.flow.ts` | `deliveryPolicy` | 1 | `t_delivery_policy_set` | **wired** |
 | `forecastPublication.flow.ts` | `forecastPublication` | 7 | `t_publication_open`, `t_publication_allocate`, `t_publication_approve_firm`, `t_publication_publish`, `t_publication_discard`, `t_publication_supersede`, `t_publication_withdraw` | **wired** |
 | `moduleActivation.flow.ts` | `moduleActivation` | 1 | `t_module_set` | **wired** |
-| **TOTAL** | | **136** | | |
+| **TOTAL** | | **138** | | |
 
 **Flow shape** (`schema.ts`, `FlowDefinition` / `TransitionDef`): each transition declares
 `from[]` / `to` / `trigger` / `requiredRole` / `requiredFields[]` / `policyHooks[]` /

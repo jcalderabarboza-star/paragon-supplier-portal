@@ -154,6 +154,10 @@ const LANE_BUNDLES = Object.freeze({
       // same authority as awarding it (operator ruling: the stage verbs are
       // procurement's).
       'rfq:advance', 'rfq:conclude',
+      // RFx-3 — scoring a proposal. Its own atom (judging is not deciding who
+      // goes forward), held by this lane because it is the only one that reads
+      // a sourcing event's responses at all.
+      'rfq:evaluate',
       'quotation:review',
       'contract:draft', 'contract:activate', 'contract:renew', 'contract:terminate',
       'obligation:track', 'obligation:complete',

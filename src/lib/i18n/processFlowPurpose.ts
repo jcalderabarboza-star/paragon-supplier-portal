@@ -153,6 +153,10 @@ export const processFlowPurposeEn: Record<string, string> = {
     'Buying calls the event off before picking anyone — the requirement changed, or the budget went. The suppliers get told rather than left waiting.',
   'processFlows.purpose.t_rfq_questionnaire_set':
     'Buying writes down what it wants to know before it asks anyone for a price — can you make this, are you certified, how much can you supply. Every supplier is then asked the same questions.',
+  'processFlows.purpose.t_rfq_criteria_set':
+    'Buying decides what a proposal will be weighed on, and how heavily each thing counts, before any supplier writes one. Every supplier is then judged on the same scale, and can see what matters most.',
+  'processFlows.purpose.t_rfq_proposal_score':
+    'A named evaluator reads one supplier’s proposal and marks it against each thing the event weighs. Several people can mark the same proposal; each keeps their own marks, and the supplier’s standing is the average of them.',
   'processFlows.purpose.t_rfq_advance':
     'Buying narrows the field and moves on: the suppliers worth hearing more from are asked the next, harder question, and the rest are told why they are not.',
   'processFlows.purpose.t_rfq_conclude':
@@ -550,6 +554,10 @@ export const processFlowPurposeId: Record<string, string> = {
     'Pembelian membatalkan acaranya sebelum memilih siapa pun — kebutuhannya berubah, atau anggarannya hilang. Para pemasok diberi tahu, bukan dibiarkan menunggu.',
   'processFlows.purpose.t_rfq_questionnaire_set':
     'Pembelian menuliskan apa yang ingin diketahuinya sebelum meminta harga dari siapa pun — sanggupkah Anda membuatnya, bersertifikatkah Anda, berapa banyak yang dapat Anda pasok. Setiap pemasok lalu diberi pertanyaan yang sama.',
+  'processFlows.purpose.t_rfq_criteria_set':
+    'Pembelian memutuskan atas dasar apa sebuah proposal ditimbang, dan seberapa berat tiap hal dihitung, sebelum ada pemasok yang menulisnya. Setiap pemasok lalu dinilai dengan ukuran yang sama, dan dapat melihat apa yang paling penting.',
+  'processFlows.purpose.t_rfq_proposal_score':
+    'Seorang penilai yang disebut namanya membaca proposal satu pemasok dan menilainya terhadap tiap hal yang ditimbang acaranya. Beberapa orang dapat menilai proposal yang sama; masing-masing memegang nilainya sendiri, dan kedudukan pemasok adalah rata-ratanya.',
   'processFlows.purpose.t_rfq_advance':
     'Pembelian mempersempit pilihan dan melangkah maju: pemasok yang layak didengar lebih jauh diberi pertanyaan berikutnya yang lebih berat, dan yang lain diberi tahu mengapa mereka tidak.',
   'processFlows.purpose.t_rfq_conclude':

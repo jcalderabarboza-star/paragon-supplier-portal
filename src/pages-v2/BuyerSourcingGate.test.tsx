@@ -77,7 +77,7 @@ const eligibleIn = (category: string): string[] =>
 const PACKAGING_OK = eligibleIn('Packaging');
 const ACTIVE_ING_OK = eligibleIn('Active Ingredient');
 
-let newRfqLabel = 'New RFQ';
+let newRfqLabel = 'New sourcing event';
 let qtyLabel: RegExp = /Total quantity/i;
 let nextLabel: RegExp = /^Next$/i;
 
@@ -299,14 +299,14 @@ describe('⚠️ THE EXEMPTION SENTENCE, ON A REAL EVENT (EN)', () => {
 describe('⚠️ THE GATE SPEAKS INDONESIAN', () => {
   afterEach(async () => {
     await i18n.changeLanguage('en');
-    newRfqLabel = 'New RFQ';
+    newRfqLabel = 'New sourcing event';
     qtyLabel = /Total quantity/i;
     nextLabel = /^Next$/i;
   });
 
   const toId = async () => {
     await i18n.changeLanguage('id');
-    newRfqLabel = 'RFQ Baru';
+    newRfqLabel = 'Acara sumber baru';
     qtyLabel = /Total kuantitas/i;
     nextLabel = /^Berikutnya$/i;
   };
@@ -373,7 +373,7 @@ describe('⚠️ THE GATE SPEAKS INDONESIAN', () => {
 describe('⚠️ THE PICKER RENDERS THE SAME 23 LABELS IN BOTH LOCALES', () => {
   afterEach(async () => {
     await i18n.changeLanguage('en');
-    newRfqLabel = 'New RFQ';
+    newRfqLabel = 'New sourcing event';
     qtyLabel = /Total quantity/i;
     nextLabel = /^Next$/i;
   });
@@ -411,7 +411,7 @@ describe('⚠️ THE PICKER RENDERS THE SAME 23 LABELS IN BOTH LOCALES', () => {
       cleanup();
 
       await i18n.changeLanguage('id');
-      newRfqLabel = 'RFQ Baru';
+      newRfqLabel = 'Acara sumber baru';
       await openPicker(category);
       expect(chipFaces().sort()).toEqual([...expected].sort());
     });
@@ -442,7 +442,7 @@ describe('⚠️ END TO END — WHAT THE WIZARD ACTUALLY MINTS', () => {
     fireEvent.change(dates[0], { target: { value: '2026-10-01' } });
     fireEvent.change(dates[1], { target: { value: '2026-10-15' } });
     fireEvent.click(screen.getByRole('button', { name: nextLabel })); // -> review
-    fireEvent.click(await screen.findByRole('button', { name: /Save RFQ draft/i }));
+    fireEvent.click(await screen.findByRole('button', { name: /Save event draft/i }));
   };
 
   it('⚠️ A CODED PICK MINTS A MASTER CODE — the defect, inverted', async () => {

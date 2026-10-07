@@ -63,6 +63,7 @@ import { rfqStore } from './mock/stores/rfqStore';
 import { stageResponseStore } from './mock/stores/stageResponseStore';
 import { stageOf, type RfqStage, type StageResponse } from '../../data/rfqStage';
 import type { RfiQuestion } from '../../data/rfiQuestionnaire';
+import type { RfpCriterion } from '../../data/rfpEvaluation';
 import { BASE_CURRENCY, type BidCurrency } from '../../lib/currencyPolicy';
 import { pslStore } from './mock/stores/pslStore';
 import { pslStatusFor, suspendsCompetitiveBidding } from './pslSourcingSeam';
@@ -499,6 +500,16 @@ export function stageResponseHeldBy(
 export function rfiQuestionsFor(rfqId: string): readonly RfiQuestion[] {
   const rfq = rfqStore.get(rfqId);
   return rfq && stageOf(rfq) === 'RFI' ? (rfq.questionnaire ?? []) : [];
+}
+
+/**
+ * RFx-3 · THE CRITERIA A RESPONSE RECORDED ON `rfqId` NOW MUST ANSWER: the
+ * event's criteria while it is at RFP, and none at any other stage. One place,
+ * for the reason `rfiQuestionsFor` is.
+ */
+export function rfpCriteriaFor(rfqId: string): readonly RfpCriterion[] {
+  const rfq = rfqStore.get(rfqId);
+  return rfq && stageOf(rfq) === 'RFP' ? (rfq.criteria ?? []) : [];
 }
 
 /** RFx-2 · a stage response by id, draft or submitted, or `null`. */

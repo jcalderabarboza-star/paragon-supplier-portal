@@ -82,6 +82,8 @@ import { useRefusalText } from '../hooks/useRefusalText';
 import { notShortlistedAdvanceOf, stageOf, stagePathOf, type RfqStage } from '../data/rfqStage';
 import StageTimeline from './sourcing/StageTimeline';
 import RfiAnswerForm from './rfqs/RfiAnswerForm';
+import RfpProposalForm from './rfqs/RfpProposalForm';
+import { criterionLabel } from '../data/rfpEvaluation';
 import { answerText, interestRefusalKey, yesNoWords } from './rfqs/rfiAnswerModel';
 import { questionLabel } from '../data/rfiQuestionnaire';
 
@@ -434,7 +436,13 @@ const RFQCard: React.FC<RFQCardProps> = ({
   const questions = rfq.stage === 'RFI' ? (rfq.event.questionnaire ?? []) : [];
   const asksQuestionnaire = questions.length > 0;
   const draft = rfq.event.myStageDraft;
-  const submittedAnswers = (rfq.event.stageResponses ?? []).find((a) => a.stage === rfq.stage)?.answers;
+  const submitted = (rfq.event.stageResponses ?? []).find((a) => a.stage === rfq.stage);
+  const submittedAnswers = submitted?.answers;
+  // RFx-3 — AT AN RFP THAT SETS CRITERIA the answer is a proposal against them,
+  // on the same footing: its own form, a draft, a submit. An RFP that sets
+  // none reads as at RFx-1.
+  const criteria = rfq.stage === 'RFP' ? (rfq.event.criteria ?? []) : [];
+  const asksProposal = criteria.length > 0;
   const [interestOpen, setInterestOpen] = useState(false);
   const [interestNote, setInterestNote] = useState('');
   const [interestSending, setInterestSending] = useState(false);
@@ -548,7 +556,27 @@ const RFQCard: React.FC<RFQCardProps> = ({
           <div className="text-label text-text-tertiary uppercase mb-2">
             {t('rfqs.card.evalCriteria')}
           </div>
-          <EvalBar criteria={rfq.evaluationCriteria} />
+          {/* RFx-3 — the event's OWN criteria and weights where it sets them;
+              the sample bar stands only where it sets none. Two "evaluation
+              criteria" on one card, one of them a sample, would be a lie. */}
+          {asksProposal ? (
+            <ol className="space-y-1" data-testid={`rfp-own-criteria-${rfq.id}`}>
+              {criteria.map((c, i) => (
+                <li key={c.id} className="text-xs text-text-secondary flex items-baseline gap-2">
+                  <span className="font-mono">{criterionLabel(i + 1)}</span>
+                  <span className="flex-1 text-text-primary">
+                    {c.name}
+                    {c.group ? (
+                      <span className="text-text-tertiary"> · {t(`rfqs.rfp.group.${c.group}`)}</span>
+                    ) : null}
+                  </span>
+                  <span className="font-mono text-data-navy">{formatNumber(c.weight)}%</span>
+                </li>
+              ))}
+            </ol>
+          ) : (
+            <EvalBar criteria={rfq.evaluationCriteria} />
+          )}
         </div>
 
         {stagePathOf(rfq.event).length > 1 && (
@@ -568,8 +596,44 @@ const RFQCard: React.FC<RFQCardProps> = ({
                     : 'rfqs.interest.contentNote.questionnaire.other',
                   { count: questions.length },
                 )
-              : t(rfq.stage === 'RFI' ? 'rfqs.interest.contentNote.rfi' : 'rfqs.interest.contentNote.rfp')}
+              : asksProposal
+                ? t(
+                    criteria.length === 1
+                      ? 'rfqs.interest.contentNote.proposal.one'
+                      : 'rfqs.interest.contentNote.proposal.other',
+                    { count: criteria.length },
+                  )
+                : t(rfq.stage === 'RFI' ? 'rfqs.interest.contentNote.rfi' : 'rfqs.interest.contentNote.rfp')}
           </p>
+        )}
+        {/* RFx-3 — said before the supplier writes anything: what it will and
+            will not be shown. */}
+        {asksProposal && (
+          <p className="text-xs text-text-tertiary mb-3" data-testid={`rfp-scores-note-${rfq.id}`}>
+            {t('rfqs.rfp.scoresNote')}
+          </p>
+        )}
+        {/* RFx-3 — the supplier's own submitted proposal, read back. */}
+        {asksProposal && rfq.interestRecordedAt !== undefined && (
+          <div className="mb-3" data-testid={`rfp-own-proposal-${rfq.id}`}>
+            <ol className="space-y-1">
+              {criteria.map((c, i) => (
+                <li key={c.id} className="text-xs text-text-secondary">
+                  <span className="font-mono mr-1.5">{criterionLabel(i + 1)}</span>
+                  {c.name}{' '}
+                  <span className="text-text-primary font-semibold whitespace-pre-wrap">
+                    {submitted?.proposal?.[c.id] ?? t('rfqs.rfp.notAnswered')}
+                  </span>
+                </li>
+              ))}
+            </ol>
+            {(submitted?.documents ?? []).length > 0 && (
+              <div className="text-xs text-text-secondary mt-1">
+                {t('rfqs.rfp.documents.named')}{' '}
+                <span className="font-mono text-text-primary">{(submitted?.documents ?? []).join(', ')}</span>
+              </div>
+            )}
+          </div>
         )}
         {/* RFx-2 — the supplier's own submitted answers, read back. */}
         {asksQuestionnaire && rfq.interestRecordedAt !== undefined && (
@@ -592,7 +656,14 @@ const RFQCard: React.FC<RFQCardProps> = ({
             onClose={() => setInterestOpen(false)}
           />
         )}
-        {interestFormShown && !asksQuestionnaire && (
+        {interestFormShown && asksProposal && (
+          <RfpProposalForm
+            rfq={rfq.event}
+            supplierId={identity.supplierId ?? ''}
+            onClose={() => setInterestOpen(false)}
+          />
+        )}
+        {interestFormShown && !asksQuestionnaire && !asksProposal && (
           <div
             className="border border-border-subtle bg-bg-hover rounded-md p-3 mb-3"
             data-testid={`rfq-interest-form-${rfq.id}`}
@@ -659,10 +730,17 @@ const RFQCard: React.FC<RFQCardProps> = ({
                 className="text-xs text-success font-semibold"
                 data-testid={`rfq-interest-recorded-${rfq.id}`}
               >
-                {t(asksQuestionnaire ? 'rfqs.rfi.submittedOn' : 'rfqs.interest.recorded', {
-                  stage: rfq.stage,
-                  date: formatDate(rfq.interestRecordedAt),
-                })}
+                {t(
+                  asksQuestionnaire
+                    ? 'rfqs.rfi.submittedOn'
+                    : asksProposal
+                      ? 'rfqs.rfp.submittedOn'
+                      : 'rfqs.interest.recorded',
+                  {
+                    stage: rfq.stage,
+                    date: formatDate(rfq.interestRecordedAt),
+                  },
+                )}
               </span>
             ) : interestAvailability.kind === 'held' ? (
               <>
@@ -673,16 +751,20 @@ const RFQCard: React.FC<RFQCardProps> = ({
                   data-testid={`rfq-interest-open-${rfq.id}`}
                 >
                   {t(
-                    !asksQuestionnaire
-                      ? 'rfqs.interest.open'
-                      : draft
-                        ? 'rfqs.rfi.continue'
-                        : 'rfqs.rfi.open',
+                    asksProposal
+                      ? draft
+                        ? 'rfqs.rfp.continue'
+                        : 'rfqs.rfp.open'
+                      : !asksQuestionnaire
+                        ? 'rfqs.interest.open'
+                        : draft
+                          ? 'rfqs.rfi.continue'
+                          : 'rfqs.rfi.open',
                   )}
                 </Button>
                 {/* RFx-2 — a saved draft is the supplier's own. Said here so
                     nobody takes "saved" to mean "sent". */}
-                {asksQuestionnaire && draft && (
+                {(asksQuestionnaire || asksProposal) && draft && (
                   <span className="text-xs text-text-tertiary" data-testid={`rfi-draft-saved-${rfq.id}`}>
                     {t('rfqs.rfi.draftSaved', { date: formatDate(draft.respondedAt) })}
                   </span>
