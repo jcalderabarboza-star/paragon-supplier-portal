@@ -159,6 +159,8 @@ describe('OPS-1 · finance reads what the verdict rests on', () => {
     expect(figures).toHaveTextContent('Received and acceptedRp 2.000.000.000');
     expect(figures).toHaveTextContent('Already invoicedRp 2.000.000.000');
     expect(figures).toHaveTextContent('This invoiceRp 2.000.000.000');
+    // not disputed: no dispute section, and so no "no reason was recorded" on an invoice nobody disputed
+    expect(within(held).queryByTestId('invoice-dispute-reason')).not.toBeInTheDocument();
     // held: nothing to approve
     expect(within(held).queryByRole('button', { name: 'Approve for payment' })).not.toBeInTheDocument();
     // the stated total disagrees with the lines, and the drawer says which one was used
