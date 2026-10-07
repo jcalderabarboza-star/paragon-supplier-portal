@@ -454,6 +454,34 @@ describe('3 · the buyer reads, scores and ranks the proposals', () => {
     expect(scoreRefusalKey('POLICY_REJECTED:rfq_actor_attributed:x')).toBeNull();
   });
 
+  it('on an event that came from an RFI, the proposals are the RFP responses only — an RFI answer is not one', async () => {
+    const id = await draftEvent('RFI');
+    await ok(rfqVerb('t_rfq_criteria_set', id, { criteria: FOUR }));
+    await ok(rfqVerb('t_rfq_publish', id));
+    for (const s of THREE) {
+      await ok(
+        svc.dispatch(supplierScope(s), {
+          transitionId: 't_stageresponse_submit',
+          entity: 'stageResponse',
+          payload: { rfqId: id, supplierId: s },
+        }),
+      );
+    }
+    await ok(rfqVerb('t_rfq_close', id));
+    await ok(rfqVerb('t_rfq_advance', id, { shortlistSupplierIds: THREE, responseDeadline: '2026-10-20' }));
+    await propose('sup-005', id);
+    const rfq = rfqStore.get(id)!;
+    // KNOWN-GOOD — the event holds four responses: three at RFI, one at RFP.
+    expect(rfq.stageResponses).toHaveLength(4);
+    expect(rfpProposalsOf(rfq).map((p) => [p.supplierId, p.stage])).toEqual([['sup-005', 'RFP']]);
+    expect(rfpRankingOf(rfq).map((r) => r.supplierId)).toEqual(['sup-005']);
+    renderWithProviders(<Sourcing />, { identity: BUYER_NAMED });
+    await openRfq(ID);
+    expect(screen.getByTestId('rfp-proposal-sup-005')).toBeInTheDocument();
+    expect(screen.queryByTestId('rfp-proposal-sup-002')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('rfp-ranking-row-sup-007')).not.toBeInTheDocument();
+  });
+
   it('while bidding is open the proposals are read and nothing is scored — the line says why', async () => {
     const id = await openRfp();
     await propose('sup-002', id, { documents: ['proposal.pdf'] });

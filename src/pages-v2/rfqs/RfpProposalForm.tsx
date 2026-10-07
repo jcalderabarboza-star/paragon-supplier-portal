@@ -34,7 +34,6 @@ import type { CommandResult, RFQ } from '../../services/data/types';
 import {
   criterionLabel,
   normalizeDocuments,
-  normalizeProposal,
   unansweredCriteriaOf,
   type RfpCriterion,
 } from '../../data/rfpEvaluation';
@@ -72,9 +71,10 @@ const RfpProposalForm: React.FC<Props> = ({ rfq, supplierId, onClose }) => {
   const send = useStageResponseSend();
   const busy = submitNew.isPending || saveNew.isPending || resave.isPending || send.isPending;
 
-  const proposal = normalizeProposal(criteria, values);
-  const missing = unansweredCriteriaOf(criteria, proposal);
-  const content = { proposal, documents, ...(note.trim() ? { note: note.trim() } : {}) };
+  // Sent as typed: the store trims and drops a blank, and the rule that names
+  // a missing criterion reads a blank as no response.
+  const missing = unansweredCriteriaOf(criteria, values);
+  const content = { proposal: values, documents, ...(note.trim() ? { note: note.trim() } : {}) };
 
   const refused = (titleKey: string, res: CommandResult) => {
     const key = interestRefusalKey(res.reason);

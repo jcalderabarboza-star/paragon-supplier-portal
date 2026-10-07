@@ -476,6 +476,17 @@ describe('C · a supplier proposes at the RFP stage', () => {
     expect(rfqStore.get(id)!.respondedSupplierIds).toEqual(['sup-002']);
   });
 
+  it('the proposal is stored as it reads: trimmed, a blank dropped, in the criteria’s order', async () => {
+    const id = await openRfp();
+    const res = await respond('t_stageresponse_submit', 'sup-002', id, {
+      proposal: { c4: '   ', c3: '  Net 45.  ', c2: 'ISO 9001.', c1: ' Line 4. ' },
+    });
+    expect(res.status, res.reason).toBe('done');
+    const stored = stageResponseStore.get(res.entityId!)!.proposal!;
+    expect(stored).toEqual({ c1: 'Line 4.', c2: 'ISO 9001.', c3: 'Net 45.' });
+    expect(Object.keys(stored)).toEqual(['c1', 'c2', 'c3']);
+  });
+
   it('a required criterion left out is refused by name, and nothing is recorded', async () => {
     const id = await openRfp();
     const res = await respond('t_stageresponse_submit', 'sup-002', id, {
@@ -601,6 +612,24 @@ describe('D · evaluators score the proposals', () => {
     expect(s.scoredAt).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     expect(s.scores.map((x) => x.score)).toEqual([5, 4, 3, 2]);
     expect(s.scores[0].comment).toBe('Scored on the proposal as read.');
+  });
+
+  it('a sheet is stored as it reads: in the criteria’s order, a comment trimmed, a blank comment dropped', async () => {
+    const id = await closedRfp();
+    await ok(
+      score(id, 'sup-002', [
+        { criterionId: 'c4', score: 2, comment: '   ' },
+        { criterionId: 'c3', score: 3 },
+        { criterionId: 'c2', score: 4, comment: '  Thin on audits.  ', internal: 'dropped' },
+        { criterionId: 'c1', score: 5, comment: 'Clear.' },
+      ]),
+    );
+    expect(rfqStore.get(id)!.proposalScores![0].scores).toEqual([
+      { criterionId: 'c1', score: 5, comment: 'Clear.' },
+      { criterionId: 'c2', score: 4, comment: 'Thin on audits.' },
+      { criterionId: 'c3', score: 3 },
+      { criterionId: 'c4', score: 2 },
+    ]);
   });
 
   it('two evaluators score; the total is the average of theirs; the ranking follows', async () => {

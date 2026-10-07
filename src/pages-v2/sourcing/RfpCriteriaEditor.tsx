@@ -61,17 +61,16 @@ const rowOf = (c: RfpCriterion): Row => ({
 });
 
 /**
- * A row as the payload states it. A weight that reads as a number is sent as
- * one and AS TYPED when it does not — so the machine names "lots" as an invalid
- * weight rather than this function quietly dropping it.
+ * A row as the payload states it. A weight that does not read as a number —
+ * blank, or "lots" — is NaN, which the rule names as an invalid weight in its
+ * row; it is never read as 0.
  */
 const criterionOf = (r: Row) => {
   const text = r.weightText.trim();
-  const n = Number(text);
   return {
     id: r.id,
     name: r.name,
-    weight: text !== '' && Number.isFinite(n) ? n : text,
+    weight: text === '' ? Number.NaN : Number(text),
     required: r.required,
     group: r.group,
   };
@@ -120,7 +119,7 @@ const RfpCriteriaEditor: React.FC<{ rfq: RFQ }> = ({ rfq }) => {
   const problem = criteriaProblemOf(criteria);
   // The running total, over the weights that read as numbers.
   const sum = weightSumOf(
-    criteria.map((c) => ({ weight: typeof c.weight === 'number' ? c.weight : 0 })),
+    criteria.map((c) => ({ weight: Number.isFinite(c.weight) ? c.weight : 0 })),
   );
   const sumIsWhole = rows.length === 0 || sum === WEIGHT_TOTAL;
 
