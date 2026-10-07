@@ -218,6 +218,24 @@ describe('1 · the buyer sets the criteria on a draft', () => {
     expect(screen.queryByTestId('rfp-criteria-edit')).not.toBeInTheDocument();
   });
 
+  it('THE MODE IS GATED, NOT THE DOOR — a seat narrowed while the criteria editor stands open loses it', async () => {
+    await draftEvent('RFP');
+    renderWithProviders(<Sourcing />, {
+      identity: { ...BUYER_NAMED, businessRoles: ['procurement', 'finance'] },
+    });
+    await openRfq(ID);
+    fireEvent.click(screen.getByTestId('rfp-criteria-edit'));
+    expect(screen.getByTestId('rfp-editor-save')).toBeInTheDocument();
+    fireEvent.click(await screen.findByTestId('identity-avatar'));
+    const idPanel = await screen.findByTestId('identity-panel');
+    fireEvent.click(within(idPanel).getByTestId('identity-roles-trigger'));
+    await screen.findByTestId('identity-roles-list');
+    fireEvent.click(within(idPanel).getByTestId('identity-role-procurement'));
+    expect(await screen.findByTestId('handoff-rfq-criteria')).toBeInTheDocument();
+    expect(screen.queryByTestId('rfp-editor-save')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('rfp-criteria-editor')).not.toBeInTheDocument();
+  });
+
   it('THE WEIGHTS-NOT-100 REFUSAL — the running total says it, the press is refused by the machine with the sum, and nothing is stored; corrected, it saves', async () => {
     const id = await draftEvent('RFP');
     renderWithProviders(<Sourcing />, { identity: BUYER_NAMED });
@@ -534,6 +552,24 @@ describe('3 · the buyer reads, scores and ranks the proposals', () => {
     );
     expect(rfqStore.get(id)!.proposalScores).toHaveLength(6);
     expect(rfqStore.get(id)!.proposalScores!.filter((s) => evaluatorIdOf(s) !== E2)).toEqual(firstBefore);
+  });
+
+  it('THE MODE IS GATED, NOT THE DOOR — a seat narrowed while a score sheet stands open loses it', async () => {
+    await closedRfp();
+    renderWithProviders(<Sourcing />, {
+      identity: { ...BUYER_NAMED, businessRoles: ['procurement', 'finance'] },
+    });
+    await openRfq(ID);
+    type('rfp-score-sup-002-c1', '5');
+    expect(screen.getByTestId('rfp-score-save-sup-002')).toBeInTheDocument();
+    fireEvent.click(await screen.findByTestId('identity-avatar'));
+    const idPanel = await screen.findByTestId('identity-panel');
+    fireEvent.click(within(idPanel).getByTestId('identity-roles-trigger'));
+    await screen.findByTestId('identity-roles-list');
+    fireEvent.click(within(idPanel).getByTestId('identity-role-procurement'));
+    expect(await screen.findByTestId('handoff-rfq-evaluate')).toBeInTheDocument();
+    expect(screen.queryByTestId('rfp-score-save-sup-002')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('rfp-score-sheet-sup-002')).not.toBeInTheDocument();
   });
 
   it('a seat that names nobody is told so and gets no sheet; a seat without procurement reads who scores', async () => {

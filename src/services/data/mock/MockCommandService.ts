@@ -761,11 +761,10 @@ function responseContentOf(
   const note = typeof payload.note === 'string' ? payload.note.trim() : '';
   const answers = normalizeAnswers(rfiQuestionsFor(rfqId), payload.answers);
   // RFx-3 — the proposal, against the criteria the event sets at this moment
-  // (`rfpCriteriaFor`: none unless it is at RFP). Document names are kept only
-  // where a proposal is taken; the proposal hook has refused them elsewhere.
-  const criteria = rfpCriteriaFor(rfqId);
-  const proposal = normalizeProposal(criteria, payload.proposal);
-  const documents = criteria.length > 0 ? normalizeDocuments(payload.documents) : [];
+  // (`rfpCriteriaFor`: none unless it is at RFP). A document name where no
+  // proposal is taken never arrives here: the proposal hook refuses it.
+  const proposal = normalizeProposal(rfpCriteriaFor(rfqId), payload.proposal);
+  const documents = normalizeDocuments(payload.documents);
   return {
     ...(note ? { note } : {}),
     ...(Object.keys(answers).length > 0 ? { answers } : {}),
