@@ -305,9 +305,23 @@ bindPolicyHook(POLICY_HOOKS.QUOTATION_SUBMIT_VALIDITY_CURRENT, ({ payload }) => 
 // and submitted by id, and the event those two verbs are about is the one the
 // draft was written on. Read from the payload there, a caller could name any
 // open event to pass "is the event open" for a draft on a closed one. A
-// creation has no row yet (`entityId` is empty), so it names its event.
-const responseRfqIdOf = (ctx: { entityId: string; payload: Record<string, unknown> }): string =>
-  stageResponseById(ctx.entityId)?.rfqId ?? payloadText(ctx.payload, 'rfqId');
+// creation has no row yet, so it names its event.
+//
+// ⚠️ WHICH OF THE TWO IS DECIDED BY THE DISPATCH, NEVER BY WHAT IT CARRIES. A
+// creation has no current state (`currentState` is empty: the dispatcher reads
+// none); a verb on a row always has one. Deciding by "does `entityId` resolve"
+// was the same defect one layer up: a hand-made CREATION carrying the id of a
+// response on ANOTHER event had its checks run against that event — open, in
+// time, asking nothing — while `create` wrote to the event the payload named,
+// closed or not. The check and the write must read the same event.
+const responseRfqIdOf = (ctx: {
+  entityId: string;
+  currentState: string;
+  payload: Record<string, unknown>;
+}): string =>
+  ctx.currentState === ''
+    ? payloadText(ctx.payload, 'rfqId')
+    : (stageResponseById(ctx.entityId)?.rfqId ?? '');
 
 bindPolicyHook(POLICY_HOOKS.STAGE_RESPONSE_EVENT_OPEN, (ctx) => {
   const event = quotedEventOf(responseRfqIdOf(ctx));
@@ -1208,8 +1222,8 @@ bindPolicyHook(POLICY_HOOKS.RFQ_AWARD_FX_BASIS, ({ entityId, target }) => {
 // it is at RFI, none at any other stage. So at RFP — and at an RFI that asks no
 // questionnaire — the three hooks below pass a response that states no answers,
 // which is every response RFx-1 ever recorded.
-bindPolicyHook(POLICY_HOOKS.STAGE_RESPONSE_DRAFT_STAGE_CURRENT, ({ entityId }) => {
-  const draft = stageResponseById(entityId);
+bindPolicyHook(POLICY_HOOKS.STAGE_RESPONSE_DRAFT_STAGE_CURRENT, ({ entityId, currentState }) => {
+  const draft = currentState === '' ? null : stageResponseById(entityId);
   if (draft === null) return { ok: true };
   const event = quotedEventOf(draft.rfqId);
   if (event === null || event.stage === draft.stage) return { ok: true };

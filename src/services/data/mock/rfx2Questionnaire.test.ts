@@ -612,6 +612,36 @@ describe('E · save a draft, save it again, submit it', () => {
     expect(stageResponseStore.get(draft)!.rfqId).toBe(closed);
   });
 
+  it('A CREATION IS JUDGED ON THE EVENT IT NAMES — an `entityId` pointing at a response on another event changes nothing', async () => {
+    // The two verbs on a draft read the event off the row. A creation has no
+    // row of its own, so an id carried beside it must not be read as one: the
+    // checks would judge that row's event and the store would write to this one.
+    const open = await openRfi(null); // open, asks nothing
+    const elsewhere = (await respond('t_stageresponse_submit', 'sup-005', open)).entityId!;
+    const closed = await openRfi(); // asks the six questions
+    await rfqVerb('t_rfq_close', closed);
+    for (const verb of ['t_stageresponse_submit', 't_stageresponse_save'] as const) {
+      const res = await svc.dispatch(supplier('sup-005'), {
+        transitionId: verb,
+        entity: 'stageResponse',
+        entityId: elsewhere,
+        payload: { rfqId: closed, supplierId: 'sup-005' },
+      });
+      refusedBy(res, POLICY_HOOKS.STAGE_RESPONSE_EVENT_OPEN, 'INTEREST_EVENT_NOT_OPEN');
+    }
+    expect(stageResponseStore.forRfq(closed)).toEqual([]);
+    // and on an OPEN event the required questions are the named event's, not the other row's
+    const asks = await openRfi();
+    const res = await svc.dispatch(supplier('sup-005'), {
+      transitionId: 't_stageresponse_submit',
+      entity: 'stageResponse',
+      entityId: elsewhere,
+      payload: { rfqId: asks, supplierId: 'sup-005' },
+    });
+    refusedBy(res, POLICY_HOOKS.STAGE_RESPONSE_REQUIRED_ANSWERED, 'RESPONSE_QUESTION_REQUIRED');
+    expect(stageResponseStore.forRfq(asks)).toEqual([]);
+  });
+
   it('THE REFUSAL — after the stage’s deadline a draft is not saved, re-saved or submitted', async () => {
     const id = await openRfi();
     const draft = (await respond('t_stageresponse_save', 'sup-005', id, { answers: GOOD })).entityId!;

@@ -219,7 +219,8 @@ targets). They measure different things; this file keeps them separate.
 > not a patch) and `t_stageresponse_send` (Draft → Submitted; payload `answers`, `note` — what is checked
 > is what is stored, never the draft as last saved). `t_stageresponse_submit` now also takes `answers`.
 > On the two verbs that act on a draft the event is the DRAFT'S OWN, read from the row; an `rfqId` in the
-> payload is not read.
+> payload is not read. A CREATION is judged on the event its payload names: which of the two applies is
+> decided by whether the dispatch has a current state, so an `entityId` carried beside a creation is not read.
 > **Five refusals are new, all `POLICY_REJECTED`:**
 > on `t_rfq_questionnaire_set`, in this order — `QUESTIONNAIRE_STAGE_NOT_RFI`
 > (hook `rfq_questionnaire_at_rfi`): the event does not start at RFI; `QUESTIONNAIRE_MALFORMED`
