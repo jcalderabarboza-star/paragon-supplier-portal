@@ -172,6 +172,8 @@ export const buyerInvoicesEn: Record<string, string> = {
     'Not recorded — identity provider unavailable',
   'buyerInvoices.field.bankUnknown':
     'Not held in the portal',
+  'buyerInvoices.release.refused.unnamed':
+    'This invoice was approved by a named person, so its payment must be released by a named person who is not the approver. Pick a sample user on the identity panel, then try again.',
   'buyerInvoices.confirm.body.midUnknown':
     ' will be released. The supplier’s bank account is not held in the portal — SAP pays to the account on the vendor record.',
   'buyerInvoices.section.disputeReason':
@@ -369,6 +371,8 @@ export const buyerInvoicesId: Record<string, string> = {
     'Tidak tercatat — penyedia identitas tidak tersedia',
   'buyerInvoices.field.bankUnknown':
     'Tidak disimpan di portal',
+  'buyerInvoices.release.refused.unnamed':
+    'Faktur ini disetujui oleh orang yang bernama, sehingga pembayarannya harus dirilis oleh orang bernama yang bukan penyetujunya. Pilih pengguna contoh pada panel identitas, lalu coba lagi.',
   'buyerInvoices.confirm.body.midUnknown':
     ' akan dirilis. Rekening bank pemasok tidak disimpan di portal — SAP membayar ke rekening pada data vendor.',
   'buyerInvoices.section.disputeReason':

@@ -2610,22 +2610,34 @@ bindPolicyHook(POLICY_HOOKS.INTAKE_OVERRIDE_REASONED, ({ payload, target, entity
 // acts apart — only the record of who approved can. A NAMED person who approved
 // an invoice is refused when they try to release its payment, by name.
 //
-// ⚠️ **IT CAN ONLY COMPARE TWO NAMES.** When either act is UNATTRIBUTED there is
-// nobody to compare and the release is admitted — the same direction every
-// four-eyes check in this file takes (it gets stricter when an actor resolves),
-// and the surface says the act was recorded without a named person. Refusing it
-// would close payment release for the unattributed seat altogether.
+// ⚠️ **ONCE THE APPROVAL IS NAMED, THE RELEASE MUST BE NAMED TOO.** Comparing
+// only when both actors resolve would leave the obvious way round it: approve as
+// a named person, drop to no sample user, release. So an invoice whose approval
+// carries a person is released only by a seat that names a DIFFERENT person; an
+// unnamed releaser is refused (`INVOICE_RELEASER_UNNAMED`), without naming
+// anybody, because there is nobody to name.
+//
+// ⚠️ **AND THE LIMIT, STATED: AN UNNAMED APPROVAL IS NOT GUARDED.** An invoice
+// approved with nobody seated (or a seeded one, which records no approver)
+// carries no name to compare against, and its release is admitted from any seat
+// holding the atom. That keeps every path that existed before this batch, and it
+// is the same direction every four-eyes check in this file takes — stricter when
+// an actor resolves. Closing it means refusing unattributed approval itself,
+// which is a ruling about whether the unattributed seat may decide money at all.
 bindPolicyHook(POLICY_HOOKS.INVOICE_RELEASER_NOT_APPROVER, ({ entityId, target, scope }) => {
   const inv = target.readEntity(entityId) as { approvedBy?: unknown } | null;
   const approver = asActorAttribution(inv?.approvedBy);
+  if (!approver || !isAttributed(approver)) return { ok: true };
   const releaser = asActorAttribution(scope.actor);
-  if (
-    approver &&
-    releaser &&
-    isAttributed(approver) &&
-    isAttributed(releaser) &&
-    approver.person.personId === releaser.person.personId
-  ) {
+  if (!releaser || !isAttributed(releaser)) {
+    return {
+      ok: false,
+      reason:
+        'INVOICE_RELEASER_UNNAMED: this invoice was approved by a named person, so its payment ' +
+        'is released by a named person who is not the approver — this seat names nobody',
+    };
+  }
+  if (approver.person.personId === releaser.person.personId) {
     return {
       ok: false,
       reason:

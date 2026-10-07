@@ -454,11 +454,22 @@ describe('OPS-1 · approval and payment release record who decided, and keep the
     expect(inv(id).releasedBy).toEqual(FINANCE);
   });
 
-  it('a named approver followed by an unnamed releaser is admitted — nobody to compare', async () => {
+  it('a named approval cannot be released by a seat that names nobody — with no person, or with no actor at all', async () => {
     const id = await matched();
     await ok(act(finance(FINANCE), 't_invoice_approve', id));
-    const release = await ok(act(finance(NO_PERSON), 't_invoice_release_payment', id));
-    expect(release.status).toBe('submitted');
+    const bare: QueryScope = { personaType: 'buyer', supplierId: null, businessRoles: ['finance'] as QueryScope['businessRoles'] };
+    for (const scope of [finance(NO_PERSON), bare]) {
+      const release = await act(scope, 't_invoice_release_payment', id);
+      expect(release.status).toBe('failed');
+      expect(refusedByPolicy(release.reason, POLICY_HOOKS.INVOICE_RELEASER_NOT_APPROVER), release.reason).toBe(true);
+      expect(release.reason).toContain('INVOICE_RELEASER_UNNAMED:');
+      expect(inv(id).status).toBe('Approved');
+    }
+    // the refusal names nobody: there is nobody to name
+    const release = await act(finance(NO_PERSON), 't_invoice_release_payment', id);
+    expect(SAMPLE_PEOPLE.some((p) => release.reason!.includes(p.personId))).toBe(false);
+    // …and a named, different person still releases it
+    expect((await ok(act(finance(EVERY_ROLE), 't_invoice_release_payment', id))).status).toBe('submitted');
   });
 
   it('a scope that carries no actor at all is still admitted, and stamps nothing', async () => {
@@ -486,6 +497,43 @@ describe('OPS-1 · approval and payment release record who decided, and keep the
     const hooks = (id: string) => flow.transitions.find((t) => t.id === id)!.policyHooks;
     expect(hooks('t_invoice_approve')).toEqual([]);
     expect(hooks('t_invoice_release_payment')).toEqual([POLICY_HOOKS.INVOICE_RELEASER_NOT_APPROVER]);
+  });
+});
+
+describe('OPS-1 · an amount that is not a positive number is never matched and never counted', () => {
+  const mk = (id: string, amount: number, status: Invoice['status'] = 'Submitted') => ({
+    id, invoiceNumber: id, status, amount, submittedDate: '2026-01-01',
+  });
+  const order = { lines: [{ materialCode: 'A', quantity: 10, confirmedQty: 10, unitPrice: 100 }], statedTotal: 1000 };
+  const full = [{ materialCode: 'A', qtyAccepted: 10 }];
+
+  it.each([0, -1000, Number.NaN, Number.POSITIVE_INFINITY])('an awaiting invoice of %s gets no verdict', (amount) => {
+    expect(matchInvoicesOnPo(order, full, [mk('bad', amount)])).toEqual([]);
+  });
+
+  it('a negative invoice does not make room for a second full invoice', () => {
+    // matched-or-later with a negative amount: it must not reduce what is already invoiced
+    const res = matchInvoicesOnPo(order, full, [mk('paid', 1000, 'Payment Released'), mk('neg', -1000, 'Matched'), mk('again', 1000)]);
+    expect(res.map((r) => [r.invoiceId, r.basis.cause, r.basis.alreadyInvoiced])).toEqual([['again', 'ALREADY_INVOICED', 1000]]);
+    // and an awaiting negative one is skipped, so the next is judged as if it were not there
+    const res2 = matchInvoicesOnPo(order, full, [mk('a-neg', -1000), mk('b-first', 1000), mk('c-second', 1000)]);
+    expect(res2.map((r) => [r.invoiceId, r.basis.cause])).toEqual([['b-first', 'WITHIN'], ['c-second', 'ALREADY_INVOICED']]);
+  });
+
+  it('through the dispatcher: a negative amount submitted by hand stays unmatched and frees nothing', async () => {
+    await confirmPo();
+    await receiveAndPost([line(NIAC, 5000), line(HYAL, 300)]);
+    const created = await ok(
+      svc.dispatch(supplier, { transitionId: 't_invoice_create', entity: 'invoice', payload: { poReference: PO, amount: -2 * B } }),
+    );
+    const neg = created.entityId!;
+    await svc.dispatch(supplier, { transitionId: 't_invoice_submit', entity: 'invoice', entityId: neg, payload: { amount: -2 * B } });
+    expect(inv(neg).status).not.toBe('Matched');
+    const a = await invoice(2 * B);
+    const b = await invoice(2 * B);
+    expect(inv(a).status).toBe('Matched');
+    expect(inv(b).status).toBe('Submitted');
+    expect(inv(neg).status).not.toBe('Matched');
   });
 });
 

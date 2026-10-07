@@ -511,6 +511,7 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
   const releaseRefusalCopy = (reason: string | undefined, inv: BuyerInvoice): string => {
     const key = personNamingRefusalKey(reason);
     if (key !== null && inv.approvedBy) return t(key, { person: renderAttribution(inv.approvedBy) });
+    if (reason?.includes('INVOICE_RELEASER_UNNAMED:')) return t('buyerInvoices.release.refused.unnamed');
     return refusalText(reason) ?? t('invoice.pay.failed.desc', { reason: reason ?? '' });
   };
 

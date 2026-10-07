@@ -196,11 +196,19 @@ export function matchInvoicesOnPo(
   const orderedValue = orderedValueOf(order.lines);
   const receivedValue = receivedValueOf(order.lines, receiptLines);
   const poLineTotal = poLineTotalOf(order.lines);
+  // ⚠️ **AN AMOUNT THAT IS NOT A POSITIVE NUMBER IS NEVER MATCHED AND NEVER
+  // COUNTED.** The submit verb requires `amount` and checks nothing about it, so
+  // a caller that bypasses the form can submit zero, a negative or `NaN`. A
+  // negative amount would fit inside any ceiling, come out `Matched`, and then
+  // REDUCE what is already invoiced — making room for a second invoice the PO
+  // has no goods for. Such an invoice is given no verdict (it keeps what it
+  // had), and a claiming invoice adds nothing below zero.
+  const payable = (amount: number): boolean => Number.isFinite(amount) && amount > 0;
   let alreadyInvoiced = invoices
-    .filter((i) => INVOICE_CLAIMING_STATES.includes(i.status))
+    .filter((i) => INVOICE_CLAIMING_STATES.includes(i.status) && payable(i.amount))
     .reduce((sum, i) => sum + i.amount, 0);
   const awaiting = invoices
-    .filter((i) => i.status === INVOICE_AWAITING_MATCH)
+    .filter((i) => i.status === INVOICE_AWAITING_MATCH && payable(i.amount))
     .slice()
     .sort(
       (a, b) =>

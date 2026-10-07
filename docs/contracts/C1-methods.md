@@ -290,6 +290,43 @@ targets). They measure different things; this file keeps them separate.
 > and name.
 > **`SHORTLIST_UNDER_FLOOR` is unchanged in when it refuses; its reason now names the remedy** —
 > shortlist another supplier that responded, reopen the stage, or conclude without an award.
+>
+> **RE-HARVEST (2026-10-07, OPS-1).** The invoice match and who decides on an invoice. Catalog (138),
+> flows (29) and wired targets (23) are unchanged: no transition, state or atom was added.
+> **THE MATCH READS THREE FIGURES, AT THE PO'S OWN UNIT PRICES** (`invoiceRollup.matchInvoicesOnPo`):
+> *ordered* = Σ confirmed quantity × unit price; *received* = Σ accepted quantity × unit price over
+> every receipt on the PO in `Posting to SAP` or `Posted to SAP`, accepted quantity pooled per
+> material and each PO line capped at its confirmed quantity; *already invoiced* = Σ of the other
+> invoices on the PO in `Matched`, `Approved`, `Releasing Payment`, `Payment Released` or
+> `Remittance Received`. An invoice is `Matched` only while its amount is within
+> *received − already invoiced*, with a tolerance of 1% of *ordered*. It used to compare the invoice
+> total to *ordered* alone, and to read the receipt only for "any line rejected".
+> **Four causes, three verdicts:** `WITHIN` → `Matched`; `EXCEEDS_RECEIVED` → `Qty Mismatch`;
+> `ALREADY_INVOICED` → `Qty Mismatch`; `EXCEEDS_ORDER` (the amount is above *ordered*) →
+> `Price Variance`. A rejected quantity is not payable and no longer forces a verdict by itself; an
+> invoice for less than what is payable is matched. Awaiting invoices are taken oldest first
+> (submitted date, then invoice number) and a matched one claims its amount before the next.
+> **`Invoice` gained four fields, all written by the store:** `matchBasis` (the figures and the cause,
+> written with `matchStatus`; it also carries the PO's stated total and the sum of its lines so a
+> disagreement can be flagged — the match uses the lines), `approvedBy` and `releasedBy` (stamped from
+> `scope.actor` on `t_invoice_approve` / `t_invoice_release_payment`; both are in `ATTRIBUTION_KEYS`,
+> so a payload carrying either is refused `ACTOR_IN_PAYLOAD`), and `disputeReason` (the required
+> field of `t_invoice_dispute`, which the target used to drop). The buyer read carries all four; the
+> supplier read carries `disputeReason` only, and only while the invoice is `Disputed`.
+> **TWO CASCADE SOURCES ARE NEW:** `t_invoice_submit` and `t_invoice_resolve` each fan out to
+> `invoice.t_invoice_match`, as `t_gr_post` does. Every entrance to `Submitted` now runs the match, so
+> an invoice that arrives after its receipt is matched. With no posting or posted receipt on the PO
+> the resolver writes nothing and the invoice keeps `Pending`.
+> **An amount that is not a finite number above zero is given no verdict and counts as nothing
+> already invoiced** — `t_invoice_submit` requires `amount` and checks nothing about it.
+> **Two refusals are new, both `POLICY_REJECTED` from hook `invoice_releaser_not_approver` on
+> `t_invoice_release_payment`**, and both apply only when the invoice's `approvedBy` is a RESOLVED
+> actor: `INVOICE_RELEASER_UNNAMED` — the releasing scope carries no RESOLVED actor (it is
+> `UNATTRIBUTED`, or carries none); it names nobody. `INVOICE_RELEASER_IS_APPROVER` — the releasing
+> actor is the approver; the reason names the approver's `personId` for the trail, and a surface
+> renders it from the head, through the person resolver. **An invoice whose approval is
+> `UNATTRIBUTED`, or that records no approver, is not guarded:** its release is admitted from any
+> seat holding `invoice:pay`. Approval itself has no new refusal.
 > **A rank is NOT a refusal.** No verb refuses an advance on a score; the top-N and at-or-above
 > pre-selections are surface conveniences over `rfpEvaluation.rankingOf`.
 > **`RFQ` gains TWO optional stored fields**: `criteria` — a list of `RfpCriterion` (`id`, `name`,
