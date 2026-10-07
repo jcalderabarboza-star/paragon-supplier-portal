@@ -18,8 +18,8 @@ export const sourcingEn: Record<string, string> = {
   'sourcing.action.templates': 'Event templates',
   'sourcing.action.newRfq': 'New sourcing event',
   // — Meta line —
-  'sourcing.meta.summary.one': '{{count}} active RFQ · last updated {{date}}',
-  'sourcing.meta.summary.other': '{{count}} active RFQs · last updated {{date}}',
+  'sourcing.meta.summary.one': '{{count}} active event · last updated {{date}}',
+  'sourcing.meta.summary.other': '{{count}} active events · last updated {{date}}',
   // — KPI cards —
   'sourcing.kpi.active.eyebrow': 'Active events',
   'sourcing.kpi.byStage': 'RFI {{RFI}} · RFP {{RFP}} · RFQ {{RFQ}}',
@@ -968,8 +968,8 @@ export const sourcingId: Record<string, string> = {
   'sourcing.action.templates': 'Templat acara',
   'sourcing.action.newRfq': 'Acara sumber baru',
   // — Meta line —
-  'sourcing.meta.summary.one': '{{count}} RFQ aktif · terakhir diperbarui {{date}}',
-  'sourcing.meta.summary.other': '{{count}} RFQ aktif · terakhir diperbarui {{date}}',
+  'sourcing.meta.summary.one': '{{count}} acara aktif · terakhir diperbarui {{date}}',
+  'sourcing.meta.summary.other': '{{count}} acara aktif · terakhir diperbarui {{date}}',
   // — KPI cards —
   'sourcing.kpi.active.eyebrow': 'Acara aktif',
   'sourcing.kpi.byStage': 'RFI {{RFI}} · RFP {{RFP}} · RFQ {{RFQ}}',
