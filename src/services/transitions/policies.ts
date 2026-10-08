@@ -2900,3 +2900,10 @@ bindPolicyHook(
     "recording a supplier's stock for them is recorded against the person who entered it",
   ),
 );
+bindPolicyHook(
+  POLICY_HOOKS.PSL_CAP_SETTER_NAMED,
+  namedSeatHook(
+    'PSL_CAP_SETTER_UNATTRIBUTED',
+    'setting the portal default validity cap is recorded against the person who set it',
+  ),
+);
