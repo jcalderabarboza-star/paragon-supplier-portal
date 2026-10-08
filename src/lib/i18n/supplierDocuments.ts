@@ -127,6 +127,7 @@ export const supplierDocumentsEn: Record<string, string> = {
   // blank where a name would go. Copy follows the shipped precedent at
   // `roles.ts:207` — the platform says what it cannot know, in plain words.
   'supplierDocuments.refusal.label': 'Refused',
+  'supplierDocuments.confirmedOn': 'Confirmed by Paragon on',
   'supplierDocuments.refusal.on': 'Refused on {{date}}',
   'supplierDocuments.refusal.reasonLabel': 'Reason',
   'supplierDocuments.refusal.unattributed':
@@ -249,6 +250,7 @@ export const supplierDocumentsId: Record<string, string> = {
   // — Empty state (all-empty early return) —
   // — Penolakan (satu baris Rejected) —
   'supplierDocuments.refusal.label': 'Ditolak',
+  'supplierDocuments.confirmedOn': 'Dikonfirmasi oleh Paragon pada',
   'supplierDocuments.refusal.on': 'Ditolak pada {{date}}',
   'supplierDocuments.refusal.reasonLabel': 'Alasan',
   'supplierDocuments.refusal.unattributed':

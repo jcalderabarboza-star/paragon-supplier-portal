@@ -33,7 +33,7 @@ import { isPublished, PSL_LIFECYCLES, PSL_STATUSES } from '../pslListing';
 import { SYSTEM_ROLES } from '../../transitions/businessRoles';
 import { MATERIAL_MASTER } from '../../sdc/fixtures';
 import { mockSuppliers } from '../../../data/mockSuppliers';
-import { isSampleActor } from '../../identity/sampleRoster';
+import { isSampleActor, SAMPLE_PEOPLE } from '../../identity/sampleRoster';
 
 const P = DECLARED_PRESENT;
 
@@ -188,7 +188,17 @@ describe('⚠️ THE SCOPES ARE LANE-CORRECT — the seed obeys the rules it dem
     });
     expect(proposed.status).not.toBe('failed');
 
-    const granted = await commands.dispatch(wide, {
+    // SUP-1: a decision needs a named person, so the same wide seat decides as
+    // a named sample person. The proposal above stays unnamed, so the four-eyes
+    // check has nobody to compare and the seat check is what answers.
+    const wideNamed = {
+      ...wide,
+      actor: {
+        kind: 'RESOLVED' as const,
+        person: { personId: SAMPLE_PEOPLE.find((p) => p.role === 'compliance')!.personId },
+      },
+    };
+    const granted = await commands.dispatch(wideNamed, {
       transitionId: 't_psl_grant',
       entity: 'psl',
       entityId: proposed.entityId!,
@@ -198,7 +208,7 @@ describe('⚠️ THE SCOPES ARE LANE-CORRECT — the seed obeys the rules it dem
     expect(granted.reason).toMatch(/PSL_SEAT_HOLDS_BOTH_AUTHORITIES/);
 
     // ⚠️ KNOWN-GOOD, the other direction: the NARROW deciding seat is admitted.
-    const narrow = { ...wide, businessRoles: ['compliance'] };
+    const narrow = { ...wideNamed, businessRoles: ['compliance'] };
     const ok = await commands.dispatch(narrow, {
       transitionId: 't_psl_grant',
       entity: 'psl',

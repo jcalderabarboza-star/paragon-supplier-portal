@@ -988,6 +988,27 @@ export const POLICY_HOOKS = {
   /** On a PRODUCTION deployment (no environment badge) a sample person is
    *  refused — D3: the demo admits sample people, production needs a real one. */
   MODULE_SET_NOT_SAMPLE_IN_PROD: 'module_set_not_sample_in_prod',
+  // ── SUP-1 · A NAMED PERSON DECIDES (operator ruling) ───────────────────────
+  //
+  // Six hooks, one per lane, each the `INVOICE_APPROVER_NAMED` shape: the seat
+  // must name a person, an unattributed seat is refused by name with the remedy
+  // stated, and a sample person is admitted (the act is a portal record). One
+  // per lane rather than one shared hook because each refusal says what the act
+  // is recorded for, and each surface owns the copy for its own head. Proposing,
+  // raising and picking up stay open to the seat as it opens.
+  /** Application approve / reject. */
+  APPLICATION_DECIDER_NAMED: 'application_decider_named',
+  /** Supplier document request / verify / reject (the buyer's three acts). */
+  SUPPLIERDOC_ACTOR_NAMED: 'supplierdoc_actor_named',
+  /** Every preferred-supplier act after the proposal: grant, reject, change
+   *  status, renew, withdraw, publish, cap override. */
+  PSL_DECIDER_NAMED: 'psl_decider_named',
+  /** Material-request approve / reject. */
+  MATERIALREQUEST_DECIDER_NAMED: 'materialrequest_decider_named',
+  /** Role grant: a privilege is granted by somebody. */
+  ROLE_GRANTER_NAMED: 'role_granter_named',
+  /** A buyer recording a supplier's stock on the supplier's behalf. */
+  INVENTORY_RECORDER_NAMED: 'inventory_recorder_named',
 } as const;
 
 for (const name of Object.values(POLICY_HOOKS)) registerPolicyHook(name);

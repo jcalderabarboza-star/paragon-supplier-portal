@@ -15,7 +15,7 @@ import React from 'react';
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { screen, fireEvent, waitFor, within } from '@testing-library/react';
 
-import { renderWithProviders } from '../test/test-utils';
+import { renderWithProviders, BUYER_NAMED_COMPLIANCE } from '../test/test-utils';
 import BuyerPreferredSuppliers from './BuyerPreferredSuppliers';
 import i18n from '../lib/i18n';
 import { MockCommandService, commandAuditSink } from '../services/data/mock/MockCommandService';
@@ -47,6 +47,17 @@ const FULL = seat([
 const PROCUREMENT_ONLY = seat(['procurement']);
 /** Decides but cannot raise — the seat a restrictive designation needs. */
 const COMPLIANCE_ONLY = seat(['compliance']);
+/**
+ * `COMPLIANCE_ONLY`, acting as a named sample person.
+ *
+ * SUP-1: granting or refusing a listing needs a named person, so the two specs
+ * that COMMIT a decision render under this seat. Everything that only reads the
+ * panel keeps the unnamed seat, which is what the page opens as.
+ */
+const COMPLIANCE_ONLY_NAMED: CurrentIdentity = {
+  ...COMPLIANCE_ONLY,
+  actor: BUYER_NAMED_COMPLIANCE.actor,
+};
 /**
  * Decides, cannot raise, and has a SECOND lane to fall back to.
  *
@@ -117,6 +128,18 @@ describe('BuyerPreferredSuppliers — the queue (EN)', () => {
     renderWithProviders(<BuyerPreferredSuppliers />, { identity: COMPLIANCE_ONLY });
     fireEvent.click(await screen.findByTestId('psl-queue-row-psl-008'));
     expect(await screen.findByTestId('psl-unattributed')).toBeInTheDocument();
+    // SUP-1: and what it states is that the decision will be refused.
+    expect(screen.getByTestId('psl-pre-act-panel')).toHaveTextContent(/names nobody/i);
+    expect(screen.queryByTestId('psl-pre-act-panel-sample')).toBeNull();
+  });
+
+  it('SUP-1 — a named seat reads whose name the decision carries', async () => {
+    renderWithProviders(<BuyerPreferredSuppliers />, { identity: COMPLIANCE_ONLY_NAMED });
+    fireEvent.click(await screen.findByTestId('psl-queue-row-psl-008'));
+    expect(await screen.findByTestId('psl-pre-act-panel-sample')).toHaveTextContent(
+      /recorded against/i,
+    );
+    expect(screen.queryByTestId('psl-pre-act-panel')).toBeNull();
   });
 });
 
@@ -219,7 +242,7 @@ describe('⚠️ THE VERBS DISPATCH END TO END — the store moves, not just a t
   it('⚠️ GRANT REACHES `t_psl_grant` AND THE ROW BECOMES `Listed`', async () => {
     // ⚠️ **THE `BuyerRequisitions` DEFECT IS WHAT THIS ASSERTS AGAINST**: a
     // `variant:'success'` toast on no dispatch at all. The STORE is the oracle.
-    renderWithProviders(<BuyerPreferredSuppliers />, { identity: COMPLIANCE_ONLY });
+    renderWithProviders(<BuyerPreferredSuppliers />, { identity: COMPLIANCE_ONLY_NAMED });
     fireEvent.click(await screen.findByTestId('psl-queue-row-psl-008'));
     fireEvent.change(await screen.findByTestId('psl-decide-reason'), {
       target: { value: 'exclusivity evidence accepted' },
@@ -248,7 +271,7 @@ describe('⚠️ THE VERBS DISPATCH END TO END — the store moves, not just a t
   });
 
   it('⚠️ REJECT REACHES `t_psl_reject`, AND THE ENDING IS TERMINAL', async () => {
-    renderWithProviders(<BuyerPreferredSuppliers />, { identity: COMPLIANCE_ONLY });
+    renderWithProviders(<BuyerPreferredSuppliers />, { identity: COMPLIANCE_ONLY_NAMED });
     fireEvent.click(await screen.findByTestId('psl-queue-row-psl-008'));
     fireEvent.change(await screen.findByTestId('psl-decide-reason'), {
       target: { value: 'a second qualified source exists' },

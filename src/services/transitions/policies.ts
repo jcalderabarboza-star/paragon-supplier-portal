@@ -2839,3 +2839,64 @@ bindPolicyHook(POLICY_HOOKS.INVOICE_REAPPROVAL_OWED, ({ entityId, target }) => {
       'approval would overwrite who decided it',
   };
 });
+
+// ── SUP-1 · A NAMED PERSON DECIDES (operator ruling) ────────────────────────
+//
+// The review walked an unattributed seat through approving a supplier
+// application and confirming a supplier's certificate; both were recorded
+// against nobody. Six lanes, one refusal each, on `INVOICE_APPROVER_NAMED`'s
+// shape. Every head ends `_UNATTRIBUTED` and no reason names a person, so a
+// surface keys its own copy on the head (`lib/namedSeatRefusal.ts`).
+const namedSeatHook = (head: string, why: string): PolicyHookFn => ({ scope }) => {
+  const actor = asActorAttribution(scope.actor);
+  if (actor && isAttributed(actor)) return { ok: true };
+  return {
+    ok: false,
+    reason:
+      `${head}: this seat carries no person, and ${why}. Adopt a sample user on the ` +
+      'identity panel, then take the act again.',
+  };
+};
+
+bindPolicyHook(
+  POLICY_HOOKS.APPLICATION_DECIDER_NAMED,
+  namedSeatHook(
+    'APPLICATION_DECIDER_UNATTRIBUTED',
+    'approving or refusing a supplier application is recorded against the person who decided it',
+  ),
+);
+bindPolicyHook(
+  POLICY_HOOKS.SUPPLIERDOC_ACTOR_NAMED,
+  namedSeatHook(
+    'SUPPLIERDOC_ACTOR_UNATTRIBUTED',
+    'asking a supplier for a document, confirming one or refusing one is recorded against the person who did it',
+  ),
+);
+bindPolicyHook(
+  POLICY_HOOKS.PSL_DECIDER_NAMED,
+  namedSeatHook(
+    'PSL_DECIDER_UNATTRIBUTED',
+    'a decision on a preferred-supplier listing is recorded against the person who took it',
+  ),
+);
+bindPolicyHook(
+  POLICY_HOOKS.MATERIALREQUEST_DECIDER_NAMED,
+  namedSeatHook(
+    'MATERIALREQUEST_DECIDER_UNATTRIBUTED',
+    'accepting or declining a material request is recorded against the person who decided it',
+  ),
+);
+bindPolicyHook(
+  POLICY_HOOKS.ROLE_GRANTER_NAMED,
+  namedSeatHook(
+    'ROLE_GRANTER_UNATTRIBUTED',
+    'granting a role gives a seat authority, which is recorded against the person who granted it',
+  ),
+);
+bindPolicyHook(
+  POLICY_HOOKS.INVENTORY_RECORDER_NAMED,
+  namedSeatHook(
+    'INVENTORY_RECORDER_UNATTRIBUTED',
+    "recording a supplier's stock for them is recorded against the person who entered it",
+  ),
+);

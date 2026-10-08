@@ -91,7 +91,7 @@ export const supplierDocumentFlow: FlowDefinition = {
       trigger: 'creation',
       requiredRole: 'supplierdoc:request',
       requiredFields: ['supplierId', 'category'],
-      policyHooks: [],
+      policyHooks: [POLICY_HOOKS.SUPPLIERDOC_ACTOR_NAMED],
       surfaceable: { surfaced: true },
       version: 1,
     },
@@ -133,7 +133,7 @@ export const supplierDocumentFlow: FlowDefinition = {
       trigger: 'user',
       requiredRole: 'supplierdoc:verify',
       requiredFields: [],
-      policyHooks: [],
+      policyHooks: [POLICY_HOOKS.SUPPLIERDOC_ACTOR_NAMED],
       surfaceable: { surfaced: true },
       version: 2,
     },
@@ -151,7 +151,10 @@ export const supplierDocumentFlow: FlowDefinition = {
       // `requiredFields` catches ABSENT; the hook catches BLANK. The dispatcher's
       // emptiness check admits a string of spaces, and this text is rendered to
       // the supplier verbatim.
-      policyHooks: [POLICY_HOOKS.SUPPLIERDOC_REFUSAL_AUTHORED],
+      policyHooks: [
+        POLICY_HOOKS.SUPPLIERDOC_ACTOR_NAMED,
+        POLICY_HOOKS.SUPPLIERDOC_REFUSAL_AUTHORED,
+      ],
       surfaceable: { surfaced: true },
       version: 2,
     },

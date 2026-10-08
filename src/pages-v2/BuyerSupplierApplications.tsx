@@ -110,6 +110,7 @@ import {
   type ApplicationDeclarationKind,
 } from '../services/transitions/flows/supplierApplication.flow';
 import ActorPreActNotice from '../components/ui-v2/ActorPreActNotice';
+import { namedSeatRefusalKey } from '../lib/namedSeatRefusal';
 
 /**
  * The empty declaration draft: every permitted subject, no reference yet.
@@ -163,6 +164,12 @@ const BuyerSupplierApplications: React.FC = () => {
   const { t } = useTranslation();
   const { toast } = useToast();
   const refusalText = useRefusalText();
+  // SUP-1 - approve and refuse need a named person; that refusal has its own
+  // sentence, in the reader's language.
+  const decisionRefusal = (reason: string | undefined): string | null => {
+    const key = namedSeatRefusalKey(reason);
+    return key ? t(key) : null;
+  };
   const dataErrorText = useDataErrorText();
 
   /**
@@ -277,7 +284,7 @@ const BuyerSupplierApplications: React.FC = () => {
           variant: 'error',
           title: t('applications.toast.raiseFailed.title'),
           description:
-            refusalText(result.reason) ?? result.reason ?? t('applications.toast.actionFailed.desc'),
+            decisionRefusal(result.reason) ?? refusalText(result.reason) ?? result.reason ?? t('applications.toast.actionFailed.desc'),
         });
         return;
       }
@@ -385,7 +392,7 @@ const BuyerSupplierApplications: React.FC = () => {
             number: selected.applicationNumber,
           }),
           description:
-            refusalText(result.reason) ?? result.reason ?? t('applications.toast.actionFailed.desc'),
+            decisionRefusal(result.reason) ?? refusalText(result.reason) ?? result.reason ?? t('applications.toast.actionFailed.desc'),
         });
         return;
       }
@@ -418,7 +425,7 @@ const BuyerSupplierApplications: React.FC = () => {
             number: selected.applicationNumber,
           }),
           description:
-            refusalText(result.reason) ?? result.reason ?? t('applications.toast.actionFailed.desc'),
+            decisionRefusal(result.reason) ?? refusalText(result.reason) ?? result.reason ?? t('applications.toast.actionFailed.desc'),
         });
         return;
       }
@@ -455,7 +462,7 @@ const BuyerSupplierApplications: React.FC = () => {
             number: selected.applicationNumber,
           }),
           description:
-            refusalText(result.reason) ?? result.reason ?? t('applications.toast.actionFailed.desc'),
+            decisionRefusal(result.reason) ?? refusalText(result.reason) ?? result.reason ?? t('applications.toast.actionFailed.desc'),
         });
         return;
       }
@@ -946,6 +953,11 @@ const BuyerSupplierApplications: React.FC = () => {
               </div>
             )}
 
+            {/* SUP-1 - said before the act: whose name the decision carries, or
+                that this seat names nobody and will be refused. */}
+            {selected.status === 'Under Review' && decideAvailability.kind === 'held' && (
+              <ActorPreActNotice unattributedKey="identity.preAct.namedRequired" testId="application-decide-pre-act" />
+            )}
             {selected.status === 'Under Review' && pending === null && (
               <div className="flex items-center gap-3">
                 {decideAvailability.kind === 'held' ? (

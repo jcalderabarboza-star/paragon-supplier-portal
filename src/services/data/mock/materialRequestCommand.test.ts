@@ -14,6 +14,7 @@ import { MockCommandService, commandAuditSink } from './MockCommandService';
 import { materialRequestStore } from './stores/materialRequestStore';
 import { rfqStore } from './stores/rfqStore';
 import { NO_PERSON } from '../../../context/noPerson';
+import { SAMPLE_PEOPLE } from '../../identity/sampleRoster';
 import type { QueryScope } from '../types';
 import type { ActorAttribution } from '../../../lib/enforcement';
 
@@ -30,6 +31,15 @@ const PLANNING: QueryScope = {
   businessRoles: ['planning'],
   actor: NO_PERSON,
 };
+
+// SUP-1: accepting or declining a request needs a named person, so the two
+// decision verbs are dispatched from the planning seat acting as the roster's
+// planning sample user. Raising and starting review stay open to `PLANNING`.
+const PLANNING_PERSON: ActorAttribution = {
+  kind: 'RESOLVED',
+  person: { personId: SAMPLE_PEOPLE.find((p) => p.role === 'planning')!.personId },
+};
+const PLANNING_NAMED: QueryScope = { ...PLANNING, actor: PLANNING_PERSON };
 
 const SUPPLIER: QueryScope = {
   personaType: 'supplier',
@@ -320,7 +330,7 @@ describe('the decisions', () => {
   it('⚠️ APPROVE RECORDS A DECISION AND MINTS NOTHING', async () => {
     const id = await walkToReview();
     const before = rfqStore.all().length;
-    const r = await svc.dispatch(PLANNING, {
+    const r = await svc.dispatch(PLANNING_NAMED, {
       transitionId: 't_materialrequest_approve',
       entity: 'materialRequest',
       entityId: id,
@@ -330,7 +340,8 @@ describe('the decisions', () => {
     const row = materialRequestStore.get(id)!;
     expect(row.status).toBe('Approved');
     expect(row.decidedAt).not.toBeNull();
-    expect(row.decidedBy).toEqual(NO_PERSON);
+    // SUP-1: the decision is recorded against the named person who took it.
+    expect(row.decidedBy).toEqual(PLANNING_PERSON);
     // NOTHING ELSE MOVED: no code on the row, no RFQ created or changed, and no
     // cascade fanned out.
     expect(row.materialCode).toBeNull();
@@ -341,7 +352,7 @@ describe('the decisions', () => {
 
   it('reject requires a justification, and spaces are not one', async () => {
     const id = await walkToReview();
-    const blank = await svc.dispatch(PLANNING, {
+    const blank = await svc.dispatch(PLANNING_NAMED, {
       transitionId: 't_materialrequest_reject',
       entity: 'materialRequest',
       entityId: id,
@@ -351,7 +362,7 @@ describe('the decisions', () => {
     expect(blank.reason).toContain('justification is blank');
     expect(materialRequestStore.get(id)!.status).toBe('Under Review');
 
-    const ok = await svc.dispatch(PLANNING, {
+    const ok = await svc.dispatch(PLANNING_NAMED, {
       transitionId: 't_materialrequest_reject',
       entity: 'materialRequest',
       entityId: id,
@@ -365,7 +376,7 @@ describe('the decisions', () => {
 
   it('⚠️ BOTH ENDINGS ARE TERMINAL AT THE DISPATCHER, not only in the table', async () => {
     const id = await walkToReview();
-    await svc.dispatch(PLANNING, {
+    await svc.dispatch(PLANNING_NAMED, {
       transitionId: 't_materialrequest_approve',
       entity: 'materialRequest',
       entityId: id,
@@ -377,7 +388,7 @@ describe('the decisions', () => {
       't_materialrequest_approve',
       't_materialrequest_reject',
     ]) {
-      const r = await svc.dispatch(PLANNING, {
+      const r = await svc.dispatch(PLANNING_NAMED, {
         transitionId: verb,
         entity: 'materialRequest',
         entityId: id,
@@ -390,7 +401,7 @@ describe('the decisions', () => {
 
   it('a decision cannot be taken on a Submitted row — legality holds', async () => {
     const created = await raise();
-    const r = await svc.dispatch(PLANNING, {
+    const r = await svc.dispatch(PLANNING_NAMED, {
       transitionId: 't_materialrequest_approve',
       entity: 'materialRequest',
       entityId: created.entityId!,

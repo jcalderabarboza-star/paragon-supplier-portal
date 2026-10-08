@@ -33,23 +33,26 @@
 import { describe, it, expect, beforeEach, afterAll } from 'vitest';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
-import { screen, fireEvent, waitFor } from '@testing-library/react';
-import { renderWithProviders } from '../test/test-utils';
+import { screen, fireEvent, waitFor, within } from '@testing-library/react';
+import { renderWithProviders, BUYER_NAMED_COMPLIANCE } from '../test/test-utils';
 import type { CurrentIdentity } from '../context/CurrentIdentityContext';
 import { NO_PERSON } from '../context/noPerson';
+import { personLabel } from '../services/identity/personLabel';
 import { supplierDocumentStore } from '../services/data/mock/stores/supplierDocumentStore';
 import i18n from '../lib/i18n';
 import BuyerCompliance from './BuyerCompliance';
 import SupplierDocuments from './SupplierDocuments';
 import Toaster from '../components/ui-v2/Toaster';
 
-/** The buyer's compliance officer — the lane that holds `supplierdoc:request`. */
+/** The buyer's compliance officer — the lane that holds `supplierdoc:request`.
+ *  SUP-1: asking a supplier for a document needs a named person, so the seat
+ *  acts as the roster's compliance sample user. */
 const COMPLIANCE: CurrentIdentity = {
   personaType: 'buyer',
   supplierId: null,
   supplierName: null,
   businessRoles: ['compliance'],
-  actor: NO_PERSON,
+  actor: BUYER_NAMED_COMPLIANCE.actor,
 };
 
 /**
@@ -61,6 +64,7 @@ const COMPLIANCE: CurrentIdentity = {
 const NO_COMPLIANCE: CurrentIdentity = {
   ...COMPLIANCE,
   businessRoles: ['procurement', 'receiving', 'finance', 'planning', 'requisitioner'],
+  actor: NO_PERSON,
 };
 
 const supplierSeat = (supplierId: string, supplierName: string): CurrentIdentity => ({
@@ -292,8 +296,15 @@ describe('WAVE E · confirm-before-commit — the operator sees all three fields
     expect(panel).toHaveTextContent(/sup-002/);
     expect(panel).toHaveTextContent(/Quality/);
     expect(panel).toHaveTextContent(new RegExp(NOTE.slice(0, 30)));
-    // …and it says whose act it is recorded as, before the act.
-    expect(panel).toHaveTextContent(/not against a named person/i);
+    // …and it says whose act it is recorded as, before the act. SUP-1: a request
+    // needs a named person, so the line names the sample user, marker included.
+    const actor = BUYER_NAMED_COMPLIANCE.actor;
+    if (actor.kind !== 'RESOLVED') throw new Error('the named seat must carry a person');
+    const recorded = within(panel).getByTestId('supplierdoc-request-pre-act-sample');
+    expect(recorded).toHaveTextContent(
+      `recorded against ${personLabel(actor.person.personId, i18n.t.bind(i18n))}`,
+    );
+    expect(recorded).toHaveTextContent(/\(SAMPLE\)/);
 
     // NOTHING HAS COMMITTED YET — the review step is a step, not a label.
     expect(supplierDocumentStore.all().length).toBe(before);

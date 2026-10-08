@@ -104,7 +104,11 @@ export const inventoryDeclarationFlow: FlowDefinition = {
       trigger: 'creation',
       requiredRole: 'inventorydeclaration:record',
       requiredFields: ['materialCode', 'totalQty'],
-      policyHooks: [POLICY_HOOKS.SDC_MATERIAL_KNOWN, POLICY_HOOKS.INV_DECLARE_BATCH_TOTAL],
+      policyHooks: [
+        POLICY_HOOKS.INVENTORY_RECORDER_NAMED,
+        POLICY_HOOKS.SDC_MATERIAL_KNOWN,
+        POLICY_HOOKS.INV_DECLARE_BATCH_TOTAL,
+      ],
       surfaceable: { surfaced: true },
       version: 1,
     },

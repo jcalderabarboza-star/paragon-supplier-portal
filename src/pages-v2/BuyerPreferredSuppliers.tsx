@@ -68,6 +68,7 @@ import {
 import { atomsForSeat } from '../services/transitions/customRoles';
 import { restrictiveDecisionVerdict } from '../services/data/pslLeadCheck';
 import { pslRefusalKey } from './psl/pslRefusal';
+import { namedSeatRefusalKey } from '../lib/namedSeatRefusal';
 import {
   pslDisplayStatus,
   pslScopeCodes,
@@ -245,6 +246,7 @@ const BuyerPreferredSuppliers: React.FC = () => {
 
   /** A refusal the dispatcher RETURNED, in the reader's language. */
   const describeRefused = (result: CommandResult): string =>
+    (namedSeatRefusalKey(result.reason) ? t(namedSeatRefusalKey(result.reason)!) : null) ??
     (pslRefusalKey(result.reason) ? t(pslRefusalKey(result.reason)!) : null) ??
     refusalText(result.reason) ??
     result.reason ??
@@ -530,7 +532,7 @@ const BuyerPreferredSuppliers: React.FC = () => {
                     nobody BEFORE they commit — `t_role_grant`'s surface makes
                     the same call. */}
                 <p className="text-xs text-text-tertiary" data-testid="psl-unattributed">
-                  <ActorPreActNotice unattributedKey="psl.notice.unattributed" testId="psl-pre-act-panel" />
+                  <ActorPreActNotice unattributedKey="identity.preAct.namedRequired" testId="psl-pre-act-panel" />
                 </p>
 
                 {decideAvailability.kind !== 'held' ? (

@@ -116,6 +116,7 @@ import {
   type MaterialRequestInput,
 } from './sourcing/materialRequest';
 import ActorPreActNotice from '../components/ui-v2/ActorPreActNotice';
+import { namedSeatRefusalKey } from '../lib/namedSeatRefusal';
 
 /**
  * EXHAUSTIVE over the unattributed vocabulary, deliberately: widening it must
@@ -302,6 +303,9 @@ const BuyerMaterialRequests: React.FC = () => {
     row: MaterialRequest | null,
     fallback: string,
   ): string => {
+    // SUP-1 - accept and decline need a named person.
+    const seatKey = namedSeatRefusalKey(reason);
+    if (seatKey !== null) return t(seatKey);
     const key = personNamingRefusalKey(reason);
     if (key !== null) return t(key, { person: renderAttribution(row?.submittedBy ?? null) });
     return refusalText(reason) ?? reason ?? fallback;
@@ -898,6 +902,9 @@ const BuyerMaterialRequests: React.FC = () => {
                 />
               ))}
 
+            {selected.status === 'Under Review' && decideAvailability.kind === 'held' && (
+              <ActorPreActNotice unattributedKey="identity.preAct.namedRequired" testId="materialrequest-decide-pre-act" />
+            )}
             {selected.status === 'Under Review' &&
               (decideAvailability.kind !== 'held' ? (
                 <HandoffNotice

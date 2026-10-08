@@ -24,6 +24,7 @@ import { pslStore } from './stores/pslStore';
 import { pslCapSettingStore, PSL_DEFAULT_CAP_SETTING_ID } from './stores/pslCapSettingStore';
 import { DECLARED_PRESENT } from '../fixturePresent';
 import { NO_PERSON } from '../../../context/noPerson';
+import { SAMPLE_PEOPLE } from '../../identity/sampleRoster';
 import {
   PSL_CAP_CEILING_DAYS,
   effectiveCap,
@@ -53,6 +54,27 @@ const COMPLIANCE: QueryScope = {
   supplierId: null,
   businessRoles: ['compliance'],
   actor: NO_PERSON,
+};
+// ⚠️ SUP-1: a decision on a listing needs a NAMED person (`PSL_DECIDER_NAMED`
+// runs first on the seven deciding verbs), so those verbs are dispatched from
+// the two seats below. The roles are the lanes' own, unchanged; only the actor
+// differs, and it is read off the roster. `PROCUREMENT` and `COMPLIANCE` stay
+// unnamed for the proposal and for `t_psl_cap_set`, which the hook is not on.
+/** The deciding lane, acting as a named sample person. */
+const DECIDER: QueryScope = {
+  ...COMPLIANCE,
+  actor: {
+    kind: 'RESOLVED',
+    person: { personId: SAMPLE_PEOPLE.find((p) => p.role === 'compliance')!.personId },
+  },
+};
+/** The publishing lane, acting as a named sample person. */
+const PUBLISHER: QueryScope = {
+  ...PROCUREMENT,
+  actor: {
+    kind: 'RESOLVED',
+    person: { personId: SAMPLE_PEOPLE.find((p) => p.role === 'procurement')!.personId },
+  },
 };
 
 let commands: MockCommandService;
@@ -86,7 +108,7 @@ async function raise(over: Record<string, unknown> = {}): Promise<string> {
 /** Raise and grant, returning the id. */
 async function listed(over: Record<string, unknown> = {}): Promise<string> {
   const id = await raise(over);
-  const g = await commands.dispatch(COMPLIANCE, {
+  const g = await commands.dispatch(DECIDER, {
     transitionId: 't_psl_grant',
     entity: 'psl',
     entityId: id,
@@ -191,7 +213,7 @@ describe('t_psl_grant / t_psl_reject — the decision', () => {
   it('⚠️ KNOWN-GOOD — a grant moves the row, writes the decider, appends the ledger', async () => {
     const id = await raise();
     const before = pslStore.get(id)!.statusHistory.length;
-    const r = await commands.dispatch(COMPLIANCE, {
+    const r = await commands.dispatch(DECIDER, {
       transitionId: 't_psl_grant',
       entity: 'psl',
       entityId: id,
@@ -209,7 +231,7 @@ describe('t_psl_grant / t_psl_reject — the decision', () => {
     const a = await raise();
     expect(
       (
-        await commands.dispatch(COMPLIANCE, {
+        await commands.dispatch(DECIDER, {
           transitionId: 't_psl_grant',
           entity: 'psl',
           entityId: a,
@@ -221,7 +243,7 @@ describe('t_psl_grant / t_psl_reject — the decision', () => {
     const b = await raise();
     expect(
       (
-        await commands.dispatch(COMPLIANCE, {
+        await commands.dispatch(DECIDER, {
           transitionId: 't_psl_reject',
           entity: 'psl',
           entityId: b,
@@ -233,7 +255,7 @@ describe('t_psl_grant / t_psl_reject — the decision', () => {
 
   it('⚠️ BOTH ENDINGS ARE TERMINAL — a rejected listing cannot be granted later', async () => {
     const id = await raise();
-    const rejected = await commands.dispatch(COMPLIANCE, {
+    const rejected = await commands.dispatch(DECIDER, {
       transitionId: 't_psl_reject',
       entity: 'psl',
       entityId: id,
@@ -242,7 +264,7 @@ describe('t_psl_grant / t_psl_reject — the decision', () => {
     expect(rejected.status, rejected.reason ?? '').not.toBe('failed');
 
     // Ruling (f): a second attempt is a NEW record through `t_psl_propose`.
-    const again = await commands.dispatch(COMPLIANCE, {
+    const again = await commands.dispatch(DECIDER, {
       transitionId: 't_psl_grant',
       entity: 'psl',
       entityId: id,
@@ -253,13 +275,13 @@ describe('t_psl_grant / t_psl_reject — the decision', () => {
 
     // And a WITHDRAWN one likewise.
     const w = await listed();
-    await commands.dispatch(COMPLIANCE, {
+    await commands.dispatch(DECIDER, {
       transitionId: 't_psl_withdraw',
       entity: 'psl',
       entityId: w,
       payload: { reason: 'tooling change not re-qualified' },
     });
-    const revive = await commands.dispatch(COMPLIANCE, {
+    const revive = await commands.dispatch(DECIDER, {
       transitionId: 't_psl_change_status',
       entity: 'psl',
       entityId: w,
@@ -272,13 +294,17 @@ describe('t_psl_grant / t_psl_reject — the decision', () => {
 // ─────────────────────────────────────────────────────────────────────────────
 describe('⚠️ FOUR-EYES — BUILT, TYPED FOR, AND UNABLE TO FIRE TODAY', () => {
   it('⚠️ IT ADMITS ON THE REAL TREE — and its green is NOT a working check', async () => {
-    // Every actor is `UNATTRIBUTED: NO_PERSON_IN_SESSION`, so `isAttributed` is
-    // false on both sides, the comparison never happens and the hook returns
+    // The PROPOSER is `UNATTRIBUTED: NO_PERSON_IN_SESSION`, so `isAttributed`
+    // is false on that side, the comparison never happens and the hook returns
     // ok. That direction is CORRECT — an unattributed act is not evidence of
     // self-approval — and this assertion exists to record that the green means
     // exactly that and nothing more.
+    //
+    // SUP-1: the DECIDER is no longer unattributed — a decision needs a named
+    // person, so the grant comes from the named deciding seat and the row
+    // records that person.
     const id = await raise();
-    const r = await commands.dispatch(COMPLIANCE, {
+    const r = await commands.dispatch(DECIDER, {
       transitionId: 't_psl_grant',
       entity: 'psl',
       entityId: id,
@@ -286,6 +312,7 @@ describe('⚠️ FOUR-EYES — BUILT, TYPED FOR, AND UNABLE TO FIRE TODAY', () =
     });
     expect(r.status, r.reason ?? '').not.toBe('failed');
     expect(pslStore.get(id)!.proposedBy.kind).toBe('UNATTRIBUTED');
+    expect(pslStore.get(id)!.decidedBy).toEqual(DECIDER.actor);
   });
 
   it('⚠️ AND IT REFUSES A SYNTHETIC RESOLVED PAIR, BY NAME — the half that proves it can fire', async () => {
@@ -333,7 +360,7 @@ describe('⚠️ FOUR-EYES — BUILT, TYPED FOR, AND UNABLE TO FIRE TODAY', () =
 describe('t_psl_change_status and t_psl_renew — the appends on Listed', () => {
   it('⚠️ KNOWN-GOOD — a change moves the designation and appends `from → to`', async () => {
     const id = await listed();
-    const r = await commands.dispatch(COMPLIANCE, {
+    const r = await commands.dispatch(DECIDER, {
       transitionId: 't_psl_change_status',
       entity: 'psl',
       entityId: id,
@@ -350,7 +377,7 @@ describe('t_psl_change_status and t_psl_renew — the appends on Listed', () => 
 
   it('PSL_STATUS_ACTUALLY_CHANGES — a no-op change is refused', async () => {
     const id = await listed();
-    const r = await commands.dispatch(COMPLIANCE, {
+    const r = await commands.dispatch(DECIDER, {
       transitionId: 't_psl_change_status',
       entity: 'psl',
       entityId: id,
@@ -361,7 +388,7 @@ describe('t_psl_change_status and t_psl_renew — the appends on Listed', () => 
 
   it('⚠️ A STATUS CHANGE DOES NOT TOUCH `publishedAt` (operator ruling c)', async () => {
     const id = await listed();
-    await commands.dispatch(PROCUREMENT, {
+    await commands.dispatch(PUBLISHER, {
       transitionId: 't_psl_publish',
       entity: 'psl',
       entityId: id,
@@ -370,7 +397,7 @@ describe('t_psl_change_status and t_psl_renew — the appends on Listed', () => 
     const publishedAt = pslStore.get(id)!.publishedAt;
     expect(publishedAt).not.toBeNull();
 
-    await commands.dispatch(COMPLIANCE, {
+    await commands.dispatch(DECIDER, {
       transitionId: 't_psl_change_status',
       entity: 'psl',
       entityId: id,
@@ -388,7 +415,7 @@ describe('t_psl_change_status and t_psl_renew — the appends on Listed', () => 
     const id = await listed({ validFrom: P, validUntil: '2026-10-01' });
     const current = effectiveValidUntil(pslStore.get(id)!)!;
 
-    const backwards = await commands.dispatch(COMPLIANCE, {
+    const backwards = await commands.dispatch(DECIDER, {
       transitionId: 't_psl_renew',
       entity: 'psl',
       entityId: id,
@@ -400,7 +427,7 @@ describe('t_psl_change_status and t_psl_renew — the appends on Listed', () => 
     const forward = new Date(Date.parse(current) + 10 * 86_400_000)
       .toISOString()
       .slice(0, 10);
-    const ok = await commands.dispatch(COMPLIANCE, {
+    const ok = await commands.dispatch(DECIDER, {
       transitionId: 't_psl_renew',
       entity: 'psl',
       entityId: id,
@@ -419,7 +446,7 @@ describe('t_psl_change_status and t_psl_renew — the appends on Listed', () => 
     const beyond = new Date(Date.parse(P) + (cap.days + 30) * 86_400_000)
       .toISOString()
       .slice(0, 10);
-    const r = await commands.dispatch(COMPLIANCE, {
+    const r = await commands.dispatch(DECIDER, {
       transitionId: 't_psl_renew',
       entity: 'psl',
       entityId: id,
@@ -437,7 +464,7 @@ describe('t_psl_change_status and t_psl_renew — the appends on Listed', () => 
 describe('t_psl_publish — the disclosure', () => {
   it('⚠️ KNOWN-GOOD — it writes BOTH fields, from the store and the session', async () => {
     const id = await listed();
-    const r = await commands.dispatch(PROCUREMENT, {
+    const r = await commands.dispatch(PUBLISHER, {
       transitionId: 't_psl_publish',
       entity: 'psl',
       entityId: id,
@@ -456,7 +483,7 @@ describe('t_psl_publish — the disclosure', () => {
   it('⚠️ IT APPENDS NO LEDGER ENTRY — a publication is not a designation', async () => {
     const id = await listed();
     const before = pslStore.get(id)!.statusHistory.length;
-    await commands.dispatch(PROCUREMENT, {
+    await commands.dispatch(PUBLISHER, {
       transitionId: 't_psl_publish',
       entity: 'psl',
       entityId: id,
@@ -467,14 +494,14 @@ describe('t_psl_publish — the disclosure', () => {
 
   it('PSL_NOT_ALREADY_PUBLISHED — the second publish is refused, and the instant is kept', async () => {
     const id = await listed();
-    await commands.dispatch(PROCUREMENT, {
+    await commands.dispatch(PUBLISHER, {
       transitionId: 't_psl_publish',
       entity: 'psl',
       entityId: id,
       payload: {},
     });
     const first = pslStore.get(id)!.publishedAt;
-    const again = await commands.dispatch(PROCUREMENT, {
+    const again = await commands.dispatch(PUBLISHER, {
       transitionId: 't_psl_publish',
       entity: 'psl',
       entityId: id,
@@ -487,7 +514,7 @@ describe('t_psl_publish — the disclosure', () => {
 
   it('⚠️ A `Proposed` LISTING CANNOT BE PUBLISHED — nothing has been decided to disclose', async () => {
     const id = await raise();
-    const r = await commands.dispatch(PROCUREMENT, {
+    const r = await commands.dispatch(PUBLISHER, {
       transitionId: 't_psl_publish',
       entity: 'psl',
       entityId: id,
@@ -513,7 +540,7 @@ describe('t_psl_cap_override — the per-listing cap, and the ceiling BOTH WAYS'
     // acceptance. A verb that refused everything would pass a refusal-only
     // probe.
     const id = await listed({ validUntil: '2099-01-01' });
-    const r = await commands.dispatch(COMPLIANCE, {
+    const r = await commands.dispatch(DECIDER, {
       transitionId: 't_psl_cap_override',
       entity: 'psl',
       entityId: id,
@@ -533,7 +560,7 @@ describe('t_psl_cap_override — the per-listing cap, and the ceiling BOTH WAYS'
 
   it('⚠️ AND 731 IS REFUSED BY NAME — one day over the ceiling', async () => {
     const id = await listed({ validUntil: '2099-01-01' });
-    const r = await commands.dispatch(COMPLIANCE, {
+    const r = await commands.dispatch(DECIDER, {
       transitionId: 't_psl_cap_override',
       entity: 'psl',
       entityId: id,
@@ -554,7 +581,7 @@ describe('t_psl_cap_override — the per-listing cap, and the ceiling BOTH WAYS'
   it('PSL_CAP_NOT_A_DURATION — zero, negative and fractional are all refused', async () => {
     const id = await listed();
     for (const days of [0, -5, 12.5]) {
-      const r = await commands.dispatch(COMPLIANCE, {
+      const r = await commands.dispatch(DECIDER, {
         transitionId: 't_psl_cap_override',
         entity: 'psl',
         entityId: id,
@@ -566,7 +593,7 @@ describe('t_psl_cap_override — the per-listing cap, and the ceiling BOTH WAYS'
 
   it('PSL_CAP_JUSTIFICATION_AUTHORED — whitespace is refused', async () => {
     const id = await listed();
-    const r = await commands.dispatch(COMPLIANCE, {
+    const r = await commands.dispatch(DECIDER, {
       transitionId: 't_psl_cap_override',
       entity: 'psl',
       entityId: id,
@@ -653,7 +680,7 @@ describe('t_psl_cap_set — the PORTAL DEFAULT, and what it makes true', () => {
 describe('⚠️ THE LANE GATE — a seat without the atom is refused at the ROLE gate', () => {
   it('procurement cannot decide, and compliance cannot publish', async () => {
     const id = await raise();
-    const wrongDecide = await commands.dispatch(PROCUREMENT, {
+    const wrongDecide = await commands.dispatch(PUBLISHER, {
       transitionId: 't_psl_grant',
       entity: 'psl',
       entityId: id,
@@ -662,7 +689,7 @@ describe('⚠️ THE LANE GATE — a seat without the atom is refused at the ROL
     expect(wrongDecide.reason).toMatch(/ROLE_NOT_PERMITTED/);
 
     const listedId = await listed();
-    const wrongPublish = await commands.dispatch(COMPLIANCE, {
+    const wrongPublish = await commands.dispatch(DECIDER, {
       transitionId: 't_psl_publish',
       entity: 'psl',
       entityId: listedId,
@@ -672,7 +699,7 @@ describe('⚠️ THE LANE GATE — a seat without the atom is refused at the ROL
 
     // ⚠️ KNOWN-GOOD both ways, so the refusals above are about the ATOM and not
     // about the lanes being broken.
-    const rightPublish = await commands.dispatch(PROCUREMENT, {
+    const rightPublish = await commands.dispatch(PUBLISHER, {
       transitionId: 't_psl_publish',
       entity: 'psl',
       entityId: listedId,
@@ -719,7 +746,7 @@ describe('⚠️ THE PROBES — each aimed at a defect this tree really had', ()
 
     // Renew it — a legitimate act on a Listed row.
     const later = new Date(Date.parse(P) + 400 * 86_400_000).toISOString().slice(0, 10);
-    const r = await commands.dispatch(COMPLIANCE, {
+    const r = await commands.dispatch(DECIDER, {
       transitionId: 't_psl_renew',
       entity: 'psl',
       entityId: id,
@@ -754,7 +781,7 @@ describe('⚠️ THE PROBES — each aimed at a defect this tree really had', ()
     const id = await listed({ status: 'Mandatory', validUntil: '2026-10-01' });
     const later = new Date(Date.parse(P) + 60 * 86_400_000).toISOString().slice(0, 10);
     const WIDE: QueryScope = {
-      ...COMPLIANCE,
+      ...DECIDER,
       businessRoles: ['procurement', 'compliance'],
     };
     const refused = await commands.dispatch(WIDE, {
@@ -767,7 +794,7 @@ describe('⚠️ THE PROBES — each aimed at a defect this tree really had', ()
     expect(refused.reason).toMatch(/PSL_SEAT_HOLDS_BOTH_AUTHORITIES/);
 
     // ⚠️ KNOWN-GOOD: the narrow deciding seat renews the same row.
-    const ok = await commands.dispatch(COMPLIANCE, {
+    const ok = await commands.dispatch(DECIDER, {
       transitionId: 't_psl_renew',
       entity: 'psl',
       entityId: id,

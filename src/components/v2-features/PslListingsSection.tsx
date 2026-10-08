@@ -31,6 +31,7 @@ import { useCurrentIdentity } from '../../context/CurrentIdentityContext';
 import { atomsForSeat } from '../../services/transitions/customRoles';
 import { restrictiveDecisionVerdict } from '../../services/data/pslLeadCheck';
 import { pslRefusalKey } from '../../pages-v2/psl/pslRefusal';
+import { namedSeatRefusalKey } from '../../lib/namedSeatRefusal';
 import {
   usePslChangeStatus,
   usePslRenew,
@@ -158,6 +159,8 @@ const PslListingCard: React.FC<{ listing: PslListing; nowIso: string; highlighte
 
   /** A refusal the dispatcher RETURNED, in the reader's language. */
   const describeRefused = (result: CommandResult): string => {
+    const seatKey = namedSeatRefusalKey(result.reason);
+    if (seatKey) return t(seatKey);
     const key = pslRefusalKey(result.reason);
     return (
       (key ? t(key, { ceiling: PSL_CAP_CEILING_DAYS }) : null) ??
@@ -366,7 +369,7 @@ const PslListingCard: React.FC<{ listing: PslListing; nowIso: string; highlighte
           {/* ⚠️ BEFORE THE ACT, NEVER AFTER IT. Every verb here records against
               `UNATTRIBUTED: NO_PERSON_IN_SESSION`, and a person should meet
               that before they commit rather than discover it in a ledger. */}
-          <ActorPreActNotice unattributedKey="psl.notice.unattributed" testId="psl-pre-act" />
+          <ActorPreActNotice unattributedKey="identity.preAct.namedRequired" testId="psl-pre-act" />
 
           {/* ── PUBLISH — its own atom, its own lane (`procurement`) ───────
               ⚠️ ONCE ONLY AND NEVER UNDONE (rulings b and c). When the listing

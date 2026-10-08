@@ -14,6 +14,8 @@ import {
 } from '../../services/transitions/businessRoles';
 import { atomsOfSide } from '../../services/transitions/customRoles';
 import { useRefusalText } from '../../hooks/useRefusalText';
+import ActorPreActNotice from '../../components/ui-v2/ActorPreActNotice';
+import { namedSeatRefusalKey } from '../../lib/namedSeatRefusal';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // DUPLICATE-AND-NARROW — AND THE FIRST ROLE-GATED SURFACE IN THIS PLATFORM.
@@ -143,7 +145,10 @@ const CreateRolePanel: React.FC<{ onGranted: () => void }> = ({ onGranted }) => 
       // a remedy — this one names the atom, the side or the field.
       toast({
         variant: 'error',
-        title: refusalText(result.reason) ?? t('roles.page.createRefused', { reason: result.reason ?? '' }),
+        title:
+          (namedSeatRefusalKey(result.reason) ? t(namedSeatRefusalKey(result.reason)!) : null) ??
+          refusalText(result.reason) ??
+          t('roles.page.createRefused', { reason: result.reason ?? '' }),
       });
       return;
     }
@@ -247,12 +252,20 @@ const CreateRolePanel: React.FC<{ onGranted: () => void }> = ({ onGranted }) => 
           )}
         </Field>
 
-        {/* ⚠️ THE ATTRIBUTION, STATED BEFORE THE ACT RATHER THAN DISCOVERED
-            AFTER IT. The grant is recorded against an explicit absence, and the
-            absence is the reason it does not survive a reload. */}
-        <p className="text-[11px] text-text-tertiary leading-relaxed" data-testid="role-create-actor">
-          {t('roles.page.createGrantedBy')}
+        {/* THE ATTRIBUTION, STATED BEFORE THE ACT. SUP-1: a grant is recorded
+            against the person who made it, and a seat that names nobody is
+            refused - so the line says which of the two this seat is. */}
+        <p
+          className="text-[11px] text-text-tertiary leading-relaxed"
+          data-testid="role-create-persistence"
+        >
+          {t('roles.page.createPersistence')}
         </p>
+        <ActorPreActNotice
+          unattributedKey="identity.preAct.namedRequired"
+          className="text-[11px] text-text-tertiary leading-relaxed"
+          testId="role-create-actor"
+        />
 
         <div>
           {/* DP2-BUTTON-01: OUTLINE. Creating a session-scoped role is reversible

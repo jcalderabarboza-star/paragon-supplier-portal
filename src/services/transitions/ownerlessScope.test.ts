@@ -664,7 +664,9 @@ describe('THE LEGITIMATE PATHS — the half a "refuse everyone" fix would break'
     expect(enfRes.status, enfRes.reason).toBe('done');
     expect(enforcementSettingStore.all()).toHaveLength(1);
 
-    const roleRes = await svc.dispatch(buyerSeat('compliance'), {
+    // SUP-1 — a grant needs a named person, so this holder seat carries a
+    // sample one. The claim is unchanged: a holder LANDS the verb.
+    const roleRes = await svc.dispatch(named('compliance'), {
       transitionId: 't_role_grant', entity: 'role', entityId: 'receiving',
       payload: {
         roleId: 'ownerless-gate-probe',
@@ -730,7 +732,8 @@ describe('THE LEGITIMATE PATHS — the half a "refuse everyone" fix would break'
       },
     });
     expect(proposed.status, proposed.reason).toBe('done');
-    const granted = await svc.dispatch(buyerSeat('compliance'), {
+    // SUP-1 — a listing decision needs a named person; the deciding seat carries one.
+    const granted = await svc.dispatch(named('compliance'), {
       transitionId: 't_psl_grant', entity: 'psl', entityId: proposed.entityId!,
       payload: { reason: 'an ownerless-scope probe' },
     });

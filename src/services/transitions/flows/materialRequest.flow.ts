@@ -156,7 +156,10 @@ export const materialRequestFlow: FlowDefinition = {
       trigger: 'user',
       requiredRole: 'materialrequest:decide',
       requiredFields: [],
-      policyHooks: [POLICY_HOOKS.MATERIALREQUEST_DECIDER_NOT_REQUESTER],
+      policyHooks: [
+        POLICY_HOOKS.MATERIALREQUEST_DECIDER_NAMED,
+        POLICY_HOOKS.MATERIALREQUEST_DECIDER_NOT_REQUESTER,
+      ],
       surfaceable: { surfaced: true },
       version: 1,
     },
@@ -176,6 +179,7 @@ export const materialRequestFlow: FlowDefinition = {
       requiredRole: 'materialrequest:decide',
       requiredFields: ['justification'],
       policyHooks: [
+        POLICY_HOOKS.MATERIALREQUEST_DECIDER_NAMED,
         POLICY_HOOKS.MATERIALREQUEST_REFUSAL_AUTHORED,
         POLICY_HOOKS.MATERIALREQUEST_DECIDER_NOT_REQUESTER,
       ],

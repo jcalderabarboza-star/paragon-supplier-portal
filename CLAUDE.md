@@ -347,8 +347,12 @@ mechanisms whose success signals said nothing about the damage they did.
 > refused ON READ by name. **The read fails honestly:** absent, corrupt and
 > unparseable are distinguished from empty (`readState().unreadable`), every row
 > is re-validated through the SAME predicates the verb calls, and refusals are
-> rendered rather than absorbed. A grant is still recorded against
-> `UNATTRIBUTED: NO_PERSON_IN_SESSION`, and the surface says so before the act. **Every SEAT resolves through `atomsForSeat`, never
+> rendered rather than absorbed. ⚠️ **RETRACTED 2026-10-08 (SUP-1), QUOTED
+> RATHER THAN EDITED.** It read: *"A grant is still recorded against `UNATTRIBUTED:
+> NO_PERSON_IN_SESSION`, and the surface says so before the act."* By operator ruling a grant now
+> needs a named person (`ROLE_GRANTER_NAMED`); a seat that names nobody is refused, and the surface
+> says that before the act. **Derive which verbs refuse an unnamed seat from the flows'
+> `policyHooks`, never from a sentence here** — `sup1NamedSeat.test.ts` holds the list both ways. **Every SEAT resolves through `atomsForSeat`, never
 > `atomsFor`** — the call sites are derived from source and allowlisted
 > bilaterally in `businessRoles.test.ts`. **ASSIGNING a custom role to a seat is
 > NOT built** (§66k): `rolesFromStorage` would silently re-widen such a seat to

@@ -23,7 +23,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { screen, fireEvent, waitFor, within } from '@testing-library/react';
 
 import BuyerSupplierApplications from './BuyerSupplierApplications';
-import { renderWithProviders, SUPPLIER } from '../test/test-utils';
+import { renderWithProviders, SUPPLIER, BUYER_NAMED_COMPLIANCE } from '../test/test-utils';
 import { supplierApplicationStore } from '../services/data/mock/stores/supplierApplicationStore';
 import { mockSuppliers } from '../data/mockSuppliers';
 import { seedSupplierApplications } from '../services/data/mock/applicationSeed';
@@ -58,13 +58,15 @@ const PROCUREMENT_SEAT: CurrentIdentity = {
   actor: NO_PERSON,
 };
 
-/** The lane that reviews AND decides — compliance holds both atoms. */
+/** The lane that reviews AND decides — compliance holds both atoms. SUP-1: a
+ *  decision needs a named person, so the seat acts as the roster's compliance
+ *  sample user. */
 const COMPLIANCE_SEAT: CurrentIdentity = {
   personaType: 'buyer',
   supplierId: null,
   supplierName: null,
   businessRoles: ['compliance'],
-  actor: NO_PERSON,
+  actor: BUYER_NAMED_COMPLIANCE.actor,
 };
 
 /**
@@ -143,7 +145,7 @@ const complianceScope: QueryScope = {
   personaType: 'buyer',
   supplierId: null,
   businessRoles: ['compliance'],
-  actor: NO_PERSON,
+  actor: BUYER_NAMED_COMPLIANCE.actor,
 };
 
 /** Walk one seeded row to `Under Review` through the real verb. */
@@ -259,6 +261,24 @@ describe('the walk — pick it up, then decide it', () => {
     );
   });
 
+  it('SUP-1 — the panel says, before the act, whose name a decision carries', async () => {
+    const number = await pickUpFirst();
+    const unnamed = renderWithProviders(<BuyerSupplierApplications />, {
+      identity: { ...COMPLIANCE_SEAT, actor: NO_PERSON },
+    });
+    await openRow(number);
+    expect(await screen.findByTestId('application-decide-pre-act')).toHaveTextContent(/names nobody/i);
+    expect(screen.queryByTestId('application-decide-pre-act-sample')).toBeNull();
+    unnamed.unmount();
+
+    renderWithProviders(<BuyerSupplierApplications />, { identity: COMPLIANCE_SEAT });
+    await openRow(number);
+    expect(await screen.findByTestId('application-decide-pre-act-sample')).toHaveTextContent(
+      /recorded against/i,
+    );
+    expect(screen.queryByTestId('application-decide-pre-act')).toBeNull();
+  });
+
   it('Under Review → Approved, behind a confirmation, with no reason box', async () => {
     const number = await pickUpFirst();
     renderWithProviders(<BuyerSupplierApplications />, { identity: COMPLIANCE_SEAT });
@@ -278,7 +298,8 @@ describe('the walk — pick it up, then decide it', () => {
       ).toBe('Approved'),
     );
     const row = supplierApplicationStore.all().find((a) => a.applicationNumber === number)!;
-    expect(row.decidedBy).toEqual(NO_PERSON);
+    // SUP-1: the decision is recorded against the named person who took it.
+    expect(row.decidedBy).toEqual(BUYER_NAMED_COMPLIANCE.actor);
     expect(row.decidedAt).toBeTruthy();
     // Terminal in v1: the decision is recorded and NOTHING is minted.
     expect(row.supplierId).toBeNull();

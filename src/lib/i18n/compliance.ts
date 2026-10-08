@@ -226,6 +226,9 @@ export const complianceEn: Record<string, string> = {
   'compliance.queue.reject.hint':
     'The supplier reads this text word for word on their own documents page, so write it to them.',
   'compliance.queue.toast.verified': 'Certificate confirmed',
+  'compliance.confirmed.title': 'Certificates confirmed',
+  'compliance.confirmed.by': 'Confirmed by {{person}} on',
+  'compliance.confirmed.nobody': 'nobody named',
   'compliance.queue.toast.rejected': 'Refusal recorded',
   'compliance.queue.toast.rejectedDesc':
     'The supplier sees the reason and the date on their documents page, and can declare again.',
@@ -281,8 +284,6 @@ export const complianceEn: Record<string, string> = {
   'compliance.request.action.send': 'Open the request',
   'compliance.request.confirm.lead':
     'This lands in that supplier’s queue and records that Paragon is asking them for it. Check the company before you open it — the platform can tell a supplier that does not exist from one that does, but not the wrong supplier from the right one.',
-  'compliance.request.confirm.unattributed':
-    'Recorded against this seat, not against a named person — nobody is signed in to this platform.',
   'compliance.request.toast.sent': 'Request opened',
   'compliance.request.toast.sentDesc':
     '{{supplier}} sees it on their documents page, awaiting their declaration.',
@@ -491,6 +492,9 @@ export const complianceId: Record<string, string> = {
   'compliance.queue.reject.hint':
     'Pemasok membaca teks ini kata demi kata di halaman dokumen mereka, jadi tulislah untuk mereka.',
   'compliance.queue.toast.verified': 'Sertifikat dikonfirmasi',
+  'compliance.confirmed.title': 'Sertifikat yang dikonfirmasi',
+  'compliance.confirmed.by': 'Dikonfirmasi oleh {{person}} pada',
+  'compliance.confirmed.nobody': 'tanpa nama',
   'compliance.queue.toast.rejected': 'Penolakan tercatat',
   'compliance.queue.toast.rejectedDesc':
     'Pemasok melihat alasan dan tanggalnya di halaman dokumen mereka, dan dapat menyatakan ulang.',
@@ -541,8 +545,6 @@ export const complianceId: Record<string, string> = {
   'compliance.request.action.send': 'Buka permintaan',
   'compliance.request.confirm.lead':
     'Ini masuk ke antrean pemasok tersebut dan mencatat bahwa Paragon memintanya. Periksa nama perusahaannya sebelum Anda membukanya — platform dapat membedakan pemasok yang tidak ada dari yang ada, tetapi tidak pemasok yang keliru dari yang tepat.',
-  'compliance.request.confirm.unattributed':
-    'Dicatat atas kursi ini, bukan atas nama orang tertentu — tidak ada yang masuk ke platform ini.',
   'compliance.request.toast.sent': 'Permintaan dibuka',
   'compliance.request.toast.sentDesc':
     '{{supplier}} melihatnya di halaman dokumen mereka, menunggu pernyataan mereka.',

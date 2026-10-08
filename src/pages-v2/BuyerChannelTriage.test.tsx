@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { screen, waitFor, within, fireEvent } from '@testing-library/react';
-import { renderWithProviders } from '../test/test-utils';
+import { renderWithProviders, BUYER_NAMED } from '../test/test-utils';
 import BuyerChannelTriage from './BuyerChannelTriage';
 import { commandAuditSink } from '../services/data/mock/MockCommandService';
 import { inventoryDeclarationStore } from '../services/data/mock/stores/inventoryDeclarationStore';
@@ -13,6 +13,10 @@ import i18n from '../lib/i18n';
 // is the C4c RECORDING verb (t_inventorydeclaration_record) — actor = the buyer,
 // truthfully. Default identity is BUYER (renderWithProviders), so the record verb
 // passes its role gate; sup-007 (PT Sample Packaging) collaborates PK-PETB-8810 (uom PCS).
+//
+// SUP-1: a recorded stock figure needs a named person, so every test that
+// LANDS a record renders as BUYER_NAMED — the same seat, acting as a sample
+// person. A seat that names nobody is told so before the act and is refused.
 //
 // NB the tests render the panel against the REAL MockCommandService (through
 // useInventoryRecord), so the dispatch, the store mint, and the DR-10 event are
@@ -100,7 +104,7 @@ describe('BuyerChannelTriage — the confirm gate + the RECORD verb', () => {
   });
 
   it('on confirm it dispatches the RECORD verb (not declare) and the object lands', async () => {
-    renderWithProviders(<BuyerChannelTriage />);
+    renderWithProviders(<BuyerChannelTriage />, { identity: BUYER_NAMED });
     await recordOne('STOK PK-PETB-8810 2.400 KG');
     // The declaration landed in the governed store, master uom, locale-correct qty.
     const minted = inventoryDeclarationStore.latestFor(SUBJECT, MAT)!;
@@ -112,15 +116,37 @@ describe('BuyerChannelTriage — the confirm gate + the RECORD verb', () => {
   });
 
   it('THE C4c CRUX AT THE SURFACE: the DR-10 actor is the BUYER, not the supplier', async () => {
-    renderWithProviders(<BuyerChannelTriage />);
+    renderWithProviders(<BuyerChannelTriage />, { identity: BUYER_NAMED });
     await recordOne();
     const ev = commandAuditSink.byEvent('t_inventorydeclaration_record')[0];
     expect(ev.actor).toBe('buyer:all');
     expect(ev.scope.personaType).toBe('buyer');
   });
 
-  it('records channel-side provenance after dispatch (never in the payload)', async () => {
+  it('SUP-1: a seat that names nobody is told before the act, refused, and nothing lands', async () => {
     renderWithProviders(<BuyerChannelTriage />);
+    const base = countFor(MAT);
+    await pickSupplier(SUBJECT);
+    typeMessage('STOK PK-PETB-8810 2400 KG');
+    clickParse();
+    await selectMaterial(MAT);
+    // Stated BEFORE the act, above the confirm button.
+    const notice = screen.getByTestId('triage-record-pre-act');
+    expect(notice).toHaveTextContent(i18n.t('identity.preAct.namedRequired'));
+    expect(notice).toHaveTextContent(/names nobody/i);
+    clickConfirm();
+    const result = await screen.findByTestId('triage-result');
+    expect(result).toHaveTextContent(i18n.t('identity.refused.namedRequired'));
+    const ev = commandAuditSink.byEvent('t_inventorydeclaration_record');
+    expect(ev).toHaveLength(1);
+    expect(ev[0].outcome).toBe('failed');
+    expect(ev[0].reason).toContain('INVENTORY_RECORDER_UNATTRIBUTED');
+    expect(countFor(MAT)).toBe(base);
+    expect(channelProvenanceStore.all()).toHaveLength(0);
+  });
+
+  it('records channel-side provenance after dispatch (never in the payload)', async () => {
+    renderWithProviders(<BuyerChannelTriage />, { identity: BUYER_NAMED });
     expect(channelProvenanceStore.all()).toHaveLength(0);
     await recordOne();
     await waitFor(() => expect(channelProvenanceStore.all()).toHaveLength(1));
@@ -133,7 +159,7 @@ describe('BuyerChannelTriage — the confirm gate + the RECORD verb', () => {
 
 describe('BuyerChannelTriage — honesty: recorded-by-Paragon, blocks + honest silence', () => {
   it('the result reads "Recorded by Paragon", never "submitted by the supplier"', async () => {
-    renderWithProviders(<BuyerChannelTriage />);
+    renderWithProviders(<BuyerChannelTriage />, { identity: BUYER_NAMED });
     await recordOne();
     const result = await screen.findByTestId('triage-result');
     expect(within(result).getByText(/Recorded by Paragon/i)).toBeInTheDocument();

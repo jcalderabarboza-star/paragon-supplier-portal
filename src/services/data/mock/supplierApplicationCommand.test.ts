@@ -23,6 +23,8 @@ import { supplierApplicationStore } from './stores/supplierApplicationStore';
 import { mockSuppliers } from '../../../data/mockSuppliers';
 import { getTransition } from '../../transitions';
 import { NO_PERSON } from '../../../context/noPerson';
+import { SAMPLE_PEOPLE } from '../../identity/sampleRoster';
+import type { ActorAttribution } from '../../../lib/enforcement';
 import type { QueryScope } from '../types';
 
 const svc = new MockCommandService();
@@ -35,12 +37,19 @@ const procurementSeat: QueryScope = {
   actor: NO_PERSON,
 };
 
+// SUP-1: approving or refusing an application needs a named person, so the
+// deciding seat acts as the roster's compliance sample user.
+const COMPLIANCE_PERSON: ActorAttribution = {
+  kind: 'RESOLVED',
+  person: { personId: SAMPLE_PEOPLE.find((p) => p.role === 'compliance')!.personId },
+};
+
 /** The lane that REVIEWS and DECIDES one — deliberately a different lane. */
 const complianceSeat: QueryScope = {
   personaType: 'buyer',
   supplierId: null,
   businessRoles: ['compliance'],
-  actor: NO_PERSON,
+  actor: COMPLIANCE_PERSON,
 };
 
 const supplierSeat = (supplierId: string): QueryScope => ({
@@ -306,7 +315,8 @@ describe('the walk — pick it up, then decide it', () => {
     expect(decided.status, decided.reason).toBe('done');
     const row = supplierApplicationStore.get(id)!;
     expect(row.status).toBe('Approved');
-    expect(row.decidedBy).toEqual(NO_PERSON);
+    // SUP-1: the decision is recorded against the named person who took it.
+    expect(row.decidedBy).toEqual(COMPLIANCE_PERSON);
     expect(row.decidedAt).toBeTruthy();
     expect(row.rejectionReason).toBeNull();
   });
@@ -326,7 +336,8 @@ describe('the walk — pick it up, then decide it', () => {
     expect(row.rejectionReason).toBe(
       'No NIB on file and the tax id does not match the legal name.',
     );
-    expect(row.decidedBy).toEqual(NO_PERSON);
+    // SUP-1: the decision is recorded against the named person who took it.
+    expect(row.decidedBy).toEqual(COMPLIANCE_PERSON);
   });
 
   it('a refusal with no reason, and one with only spaces, are BOTH refused', async () => {

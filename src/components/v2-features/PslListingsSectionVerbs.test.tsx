@@ -17,7 +17,11 @@ import React from 'react';
 import { describe, it, expect, beforeEach } from 'vitest';
 import { screen, fireEvent, waitFor } from '@testing-library/react';
 
-import { renderWithProviders } from '../../test/test-utils';
+import {
+  renderWithProviders,
+  BUYER_NAMED,
+  BUYER_NAMED_COMPLIANCE,
+} from '../../test/test-utils';
 import PslListingsSection from './PslListingsSection';
 import { MockCommandService, commandAuditSink } from '../../services/data/mock/MockCommandService';
 import { pslStore } from '../../services/data/mock/stores/pslStore';
@@ -46,6 +50,17 @@ const COMPLIANCE = seat(['compliance', 'finance']);
 const PROCUREMENT = seat(['procurement']);
 /** Holds no PSL atom at all. */
 const RECEIVING = seat(['receiving']);
+// ⚠️ SUP-1: the five verbs here need a NAMED person, so the specs that COMMIT
+// one render under the same two seats acting as a sample person. The roles are
+// unchanged. The gate specs keep the unnamed seats above — which control a
+// seat is offered is decided by its atoms, not by who is acting.
+/** `COMPLIANCE`, acting as a named sample person. */
+const COMPLIANCE_NAMED: CurrentIdentity = {
+  ...COMPLIANCE,
+  actor: BUYER_NAMED_COMPLIANCE.actor,
+};
+/** `PROCUREMENT`, acting as a named sample person. */
+const PROCUREMENT_NAMED: CurrentIdentity = { ...PROCUREMENT, actor: BUYER_NAMED.actor };
 
 /** Surfaces the toast queue — `ToastProvider` renders only its children. */
 const ToastSpy: React.FC = () => {
@@ -133,7 +148,7 @@ describe('⚠️ EACH VERB IS GATED BY ITS OWN ATOM — three atoms, two lanes',
 // ─────────────────────────────────────────────────────────────────────────────
 describe('⚠️ THE VERBS DISPATCH — the STORE moves, not just a toast', () => {
   it('PUBLISH writes `publishedAt` and `publishedBy`, and the affordance is gone after', async () => {
-    renderFor('sup-002', PROCUREMENT);
+    renderFor('sup-002', PROCUREMENT_NAMED);
     fireEvent.click(await screen.findByTestId('psl-publish-psl-002'));
     await waitFor(() => expect(pslStore.get('psl-002')!.publishedAt).not.toBeNull());
     expect(pslStore.get('psl-002')!.publishedBy).not.toBeNull();
@@ -142,7 +157,7 @@ describe('⚠️ THE VERBS DISPATCH — the STORE moves, not just a toast', () =
   });
 
   it('CHANGE STATUS moves the designation and appends `from → to`', async () => {
-    renderFor('sup-002', COMPLIANCE);
+    renderFor('sup-002', COMPLIANCE_NAMED);
     fireEvent.click(await screen.findByTestId('psl-open-change-psl-002'));
     fireEvent.change(await screen.findByTestId('psl-change-status-psl-002'), {
       target: { value: 'Mandatory' },
@@ -161,7 +176,7 @@ describe('⚠️ THE VERBS DISPATCH — the STORE moves, not just a toast', () =
   });
 
   it('RENEW moves the end date, and the commit is disabled without a reason', async () => {
-    renderFor('sup-002', COMPLIANCE);
+    renderFor('sup-002', COMPLIANCE_NAMED);
     fireEvent.click(await screen.findByTestId('psl-open-renew-psl-002'));
     const until = await screen.findByTestId('psl-renew-until-psl-002');
     const current = effectiveValidUntil(pslStore.get('psl-002')!)!;
@@ -180,7 +195,7 @@ describe('⚠️ THE VERBS DISPATCH — the STORE moves, not just a toast', () =
 
   it('⚠️ AN OVER-CAP RENEWAL IS REFUSED, AND THE REFUSAL IS RENDERED IN WORDS', async () => {
     // Operator ruling (e): refused at the verb, never silently bounded at read.
-    renderFor('sup-002', COMPLIANCE);
+    renderFor('sup-002', COMPLIANCE_NAMED);
     fireEvent.click(await screen.findByTestId('psl-open-renew-psl-002'));
     const beyond = new Date(Date.parse(P) + 5000 * 86_400_000).toISOString().slice(0, 10);
     fireEvent.change(await screen.findByTestId('psl-renew-until-psl-002'), {
@@ -201,7 +216,7 @@ describe('⚠️ THE VERBS DISPATCH — the STORE moves, not just a toast', () =
   });
 
   it('⚠️ THE CAP OVERRIDE WRITES ALL FOUR FIELDS IN ONE ACT', async () => {
-    renderFor('sup-002', COMPLIANCE);
+    renderFor('sup-002', COMPLIANCE_NAMED);
     fireEvent.click(await screen.findByTestId('psl-open-cap-psl-002'));
     fireEvent.change(await screen.findByTestId('psl-cap-days-psl-002'), {
       target: { value: '120' },
@@ -221,7 +236,7 @@ describe('⚠️ THE VERBS DISPATCH — the STORE moves, not just a toast', () =
   });
 
   it('⚠️ AN OVER-CEILING OVERRIDE IS REFUSED, AND THE REFUSAL STATES THE CEILING', async () => {
-    renderFor('sup-002', COMPLIANCE);
+    renderFor('sup-002', COMPLIANCE_NAMED);
     fireEvent.click(await screen.findByTestId('psl-open-cap-psl-002'));
     fireEvent.change(await screen.findByTestId('psl-cap-days-psl-002'), {
       target: { value: String(PSL_CAP_CEILING_DAYS + 1) },
@@ -241,8 +256,23 @@ describe('⚠️ THE VERBS DISPATCH — the STORE moves, not just a toast', () =
     expect(pslStore.get('psl-002')!.capDaysOverride).toBeNull();
   });
 
+  it('SUP-1 — the section says, before the act, whose name a decision carries', async () => {
+    const unnamed = renderFor('sup-002', COMPLIANCE);
+    // One per listing that offers an act.
+    const lines = await screen.findAllByTestId('psl-pre-act');
+    for (const line of lines) expect(line).toHaveTextContent(/names nobody/i);
+    expect(screen.queryAllByTestId('psl-pre-act-sample')).toHaveLength(0);
+    unnamed.unmount();
+
+    renderFor('sup-002', COMPLIANCE_NAMED);
+    const named = await screen.findAllByTestId('psl-pre-act-sample');
+    expect(named).toHaveLength(lines.length);
+    for (const line of named) expect(line).toHaveTextContent(/recorded against/i);
+    expect(screen.queryAllByTestId('psl-pre-act')).toHaveLength(0);
+  });
+
   it('WITHDRAW ends the designation, and the actions block goes with it', async () => {
-    renderFor('sup-002', COMPLIANCE);
+    renderFor('sup-002', COMPLIANCE_NAMED);
     fireEvent.click(await screen.findByTestId('psl-open-withdraw-psl-002'));
     fireEvent.change(await screen.findByTestId('psl-withdraw-reason-psl-002'), {
       target: { value: 'the tooling change was not re-qualified' },
