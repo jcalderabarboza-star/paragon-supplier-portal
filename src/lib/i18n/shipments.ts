@@ -16,6 +16,25 @@
 export const shipmentsEn: Record<string, string> = {
   // — Breadcrumb —
   'shipments.crumb.shipments': 'SHIPMENTS & ASN',
+  'shipments.notices.title': 'Ship notices from suppliers',
+  'shipments.notices.count_one': '{{count}} notice',
+  'shipments.notices.count_other': '{{count}} notices',
+  'shipments.notices.explainer':
+    'What suppliers declared in this portal, in the state of the notice itself. A notice is not a carrier record: it has no mode, route or dock until the carrier reports one, so it is listed here and not in the table above.',
+  'shipments.notices.loading': 'Reading ship notices…',
+  'shipments.notices.failed': 'The ship notices could not be read. The shipments above are unaffected.',
+  'shipments.notices.empty': 'No supplier has sent a ship notice that matches.',
+  'shipments.notices.toggle': 'Show the lines of {{asn}}',
+  'shipments.notices.col.carrier': 'Carrier / tracking',
+  'shipments.notices.col.weight': 'Gross weight',
+  'shipments.notices.batch': 'Batch number',
+  'shipments.notices.packingList': 'Packing list',
+  'shipments.notices.packingListName': '{{name}} (file name only — the portal holds no file)',
+  'shipments.notices.notes': 'Handling notes',
+  'shipments.notices.line.material': 'Material',
+  'shipments.notices.line.ordered': 'Ordered',
+  'shipments.notices.line.shipped': 'Shipped',
+  'shipments.notices.line.lot': 'Lot',
   // — Page header —
   'shipments.header.title': 'Shipments & ASN',
   'shipments.header.subtitle':
@@ -142,6 +161,24 @@ export const shipmentsEn: Record<string, string> = {
 export const shipmentsId: Record<string, string> = {
   // — Breadcrumb —
   'shipments.crumb.shipments': 'PENGIRIMAN & ASN',
+  'shipments.notices.title': 'Pemberitahuan pengiriman dari pemasok',
+  'shipments.notices.count_other': '{{count}} pemberitahuan',
+  'shipments.notices.explainer':
+    'Yang dinyatakan pemasok di portal ini, dalam status pemberitahuan itu sendiri. Pemberitahuan bukan catatan kurir: belum ada moda, rute, atau dok sampai kurir melaporkannya, sehingga ditampilkan di sini dan bukan di tabel di atas.',
+  'shipments.notices.loading': 'Membaca pemberitahuan pengiriman…',
+  'shipments.notices.failed': 'Pemberitahuan pengiriman tidak dapat dibaca. Pengiriman di atas tidak terpengaruh.',
+  'shipments.notices.empty': 'Tidak ada pemberitahuan pengiriman dari pemasok yang cocok.',
+  'shipments.notices.toggle': 'Tampilkan baris {{asn}}',
+  'shipments.notices.col.carrier': 'Kurir / pelacakan',
+  'shipments.notices.col.weight': 'Berat kotor',
+  'shipments.notices.batch': 'Nomor batch',
+  'shipments.notices.packingList': 'Daftar kemasan',
+  'shipments.notices.packingListName': '{{name}} (hanya nama berkas — portal tidak menyimpan berkasnya)',
+  'shipments.notices.notes': 'Catatan penanganan',
+  'shipments.notices.line.material': 'Material',
+  'shipments.notices.line.ordered': 'Dipesan',
+  'shipments.notices.line.shipped': 'Dikirim',
+  'shipments.notices.line.lot': 'Lot',
   // — Page header —
   'shipments.header.title': 'Pengiriman & ASN',
   'shipments.header.subtitle':

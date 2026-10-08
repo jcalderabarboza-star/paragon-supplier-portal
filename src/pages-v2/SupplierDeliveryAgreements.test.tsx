@@ -7,6 +7,7 @@ import { mockDataService } from '../services/data/mock/mockDataService';
 import type { QueryScope } from '../services/data/types';
 import SupplierDeliveryAgreements from './SupplierDeliveryAgreements';
 import { shapeObligations } from '../services/chase';
+import { deliveredLateKeys } from '../services/chase/supplierObligations';
 import { deriveAgreementView } from '../services/delivery';
 import { SCHEDULING_AGREEMENT_DEMO, DELIVERY_DEMO_SHIPMENTS } from '../services/delivery/demoFixtures';
 import { SCHEDULING_AGREEMENT_CTR003 } from '../services/delivery/fixtures';
@@ -153,11 +154,18 @@ describe('shapeObligations (SDC-5e) — own-facing, drift-omitted', () => {
 
   it('maps sa-0002 into own-facing overdue + upcoming, OVERDUE-first, drift dropped', () => {
     const obligations = shapeObligations([demoView()], SDC_SIMULATED_NOW);
-    // sa-0002 item A: seq4 late + seq5 missed → 2 overdue; seq6 pending (in window) → 1 upcoming.
+    // OPS-3 — EDITED ON PURPOSE. This asserted 2 overdue: seq4 (LATE — it was
+    // delivered, after its date) and seq5 (missed). The supplier was being told
+    // "Overdue — Paragon is waiting on this delivery" for goods already in the
+    // warehouse. A delivered-late line owes nothing, so it is no longer an
+    // obligation: seq5 missed → 1 overdue; seq6 pending (in window) → 1 upcoming.
     const overdue = obligations.filter((o) => o.kind === 'overdue');
     const upcoming = obligations.filter((o) => o.kind === 'upcoming');
-    expect(overdue).toHaveLength(2);
+    expect(overdue.map((o) => o.key)).toEqual(['sa-0002-10-5']);
     expect(upcoming).toHaveLength(1);
+    // The late line is real, and it is the one left out — not an empty filter.
+    expect([...deliveredLateKeys([demoView()])]).toContain('sa-0002-10-4');
+    expect(obligations.some((o) => o.key === 'sa-0002-10-4')).toBe(false);
     // Overdue sorts before upcoming.
     expect(obligations[0].kind).toBe('overdue');
     expect(obligations[obligations.length - 1].kind).toBe('upcoming');

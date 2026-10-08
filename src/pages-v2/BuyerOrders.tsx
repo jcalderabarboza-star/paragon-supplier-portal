@@ -50,7 +50,7 @@ import EmptyState from '../components/ui-v2/EmptyState';
 import Data from '../components/ui-v2/Data';
 import { usePurchaseOrders, useSuppliers } from '../services/query/hooks';
 import { useNextAct } from '../hooks/useVerbAvailability';
-import { formatIDR, formatNumber, formatDate } from '../lib/format';
+import { formatIDR, formatNumber, formatDate, formatDateTime } from '../lib/format';
 // POStatus / ChannelType are runtime enums (used as values) — they stay sourced
 // from the enum module; the canonical drift-resolved PurchaseOrder type comes
 // from the data layer.
@@ -149,13 +149,26 @@ const buildTimeline = (po: PurchaseOrder, t: TFunction): TimelineEvent[] => {
     {
       id: 'ack',
       title: t('buyerOrders.timeline.acknowledged'),
+      // OPS-3 — the authored hours are shown only for an order with NO
+      // confirmation act on record. An order confirmed in the portal carries
+      // the real time of that act on the next entry; repeating a seeded
+      // "96h after send" beside it told the buyer something nobody measured.
       timestamp:
-        r >= 3
+        r >= 3 && !po.confirmedAt && po.acknowledgmentTimeHours > 0
           ? t('buyerOrders.timeline.ackAfter', {
               hours: po.acknowledgmentTimeHours,
             })
           : undefined,
       status: r >= 3 ? 'completed' : 'current',
+      icon: CheckCircle2,
+    },
+    {
+      id: 'confirmed',
+      title: t('buyerOrders.timeline.confirmed'),
+      // The time the supplier's confirmation was recorded. Absent on a seeded
+      // order — no act is on record, so no time is shown.
+      timestamp: po.confirmedAt ? formatDateTime(po.confirmedAt) : undefined,
+      status: r >= 4 ? 'completed' : r === 3 ? 'current' : 'pending',
       icon: CheckCircle2,
     },
     {
@@ -641,6 +654,37 @@ const BuyerOrders: React.FC = () => {
                     {formatIDR(selectedPO.totalValue)}
                   </Data>
                 </div>
+                {/* OPS-3 — what the supplier confirmed: the date, the time of
+                    the act when one is on record, and the note. The same
+                    stored values the supplier's own panel reads. */}
+                {STATUS_RANK[selectedPO.status] >= 4 && (
+                  <div data-testid="buyer-po-confirmed-delivery">
+                    <dt className="text-text-tertiary">
+                      {t('buyerOrders.panel.field.confirmedDelivery')}
+                    </dt>
+                    <Data as="dd" className="text-text-primary font-medium">
+                      {formatDate(selectedPO.confirmedDeliveryDate)}
+                    </Data>
+                  </div>
+                )}
+                {STATUS_RANK[selectedPO.status] >= 4 && selectedPO.confirmedAt && (
+                  <div data-testid="buyer-po-confirmed-at">
+                    <dt className="text-text-tertiary">
+                      {t('buyerOrders.panel.field.confirmedOn')}
+                    </dt>
+                    <Data as="dd" className="text-text-primary font-medium">
+                      {formatDateTime(selectedPO.confirmedAt)}
+                    </Data>
+                  </div>
+                )}
+                {STATUS_RANK[selectedPO.status] >= 4 && selectedPO.confirmationNote && (
+                  <div className="col-span-2" data-testid="buyer-po-confirmation-note">
+                    <dt className="text-text-tertiary">
+                      {t('buyerOrders.panel.field.supplierNote')}
+                    </dt>
+                    <dd className="text-text-primary">{selectedPO.confirmationNote}</dd>
+                  </div>
+                )}
                 <div>
                   <dt className="text-text-tertiary">{t('buyerOrders.panel.field.channel')}</dt>
                   <dd className="text-text-primary font-medium">
@@ -720,6 +764,22 @@ const BuyerOrders: React.FC = () => {
                         </td>
                         <td className="px-3 py-2 text-right text-text-secondary whitespace-nowrap">
                           <Data>{formatNumber(li.quantity)} {li.uom}</Data>
+                          {/* OPS-3 — what the supplier confirmed, under what was
+                              ordered. In the same cell: a fifth column pushed
+                              the line total out of the panel. */}
+                          {STATUS_RANK[selectedPO.status] >= 4 && (
+                            <div
+                              className={`mt-0.5 text-[11px] ${
+                                li.confirmedQty < li.quantity
+                                  ? 'text-warning-hover font-semibold'
+                                  : 'text-text-tertiary'
+                              }`}
+                              data-testid={`buyer-po-line-confirmed-${li.id}`}
+                            >
+                              <div>{t('buyerOrders.lines.col.confirmed')}</div>
+                              <Data>{formatNumber(li.confirmedQty)} {li.uom}</Data>
+                            </div>
+                          )}
                         </td>
                         <td className="px-3 py-2 text-right text-text-secondary whitespace-nowrap">
                           <Data>{formatIDR(li.unitPrice)}</Data>

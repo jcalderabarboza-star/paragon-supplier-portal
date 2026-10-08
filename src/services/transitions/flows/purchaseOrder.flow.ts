@@ -84,7 +84,10 @@ export const purchaseOrderFlow: FlowDefinition = {
       trigger: 'user',
       requiredRole: 'po:confirm',
       requiredFields: ['confirmedQuantities'],
-      policyHooks: [POLICY_HOOKS.PO_CONFIRM_QTY_WITHIN_ORDERED],
+      policyHooks: [
+        POLICY_HOOKS.PO_CONFIRM_QTY_WITHIN_ORDERED,
+        POLICY_HOOKS.PO_CONFIRM_TERMS_WELL_FORMED,
+      ],
       surfaceable: { surfaced: true },
       version: 1,
     },

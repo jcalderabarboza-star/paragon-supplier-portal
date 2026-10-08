@@ -113,6 +113,7 @@ export const supplierOrdersEn: Record<string, string> = {
   // — Side panel: confirmed summary —
   'supplierOrders.panel.orderConfirmed': 'Order confirmed',
   'supplierOrders.panel.confirmedAt': 'Confirmed at',
+  'supplierOrders.panel.confirmedOn': 'Confirmed on',
   'supplierOrders.panel.deliveryShort': 'Delivery',
   'supplierOrders.panel.totalQty': 'Total qty',
   'supplierOrders.panel.next': 'Next',
@@ -231,6 +232,7 @@ export const supplierOrdersId: Record<string, string> = {
   // — Side panel: confirmed summary —
   'supplierOrders.panel.orderConfirmed': 'Pesanan dikonfirmasi',
   'supplierOrders.panel.confirmedAt': 'Dikonfirmasi pada',
+  'supplierOrders.panel.confirmedOn': 'Waktu konfirmasi',
   'supplierOrders.panel.deliveryShort': 'Pengiriman',
   'supplierOrders.panel.totalQty': 'Total kuantitas',
   'supplierOrders.panel.next': 'Berikutnya',

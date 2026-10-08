@@ -144,6 +144,25 @@ export function formatDate(value?: string | number | Date | null): string {
 }
 
 /**
+ * "08 Oct 2026, 12:37" (Asia/Jakarta) — a moment, for the time of an act.
+ * Same locale rule as `formatDate`. Invalid/empty → "—".
+ */
+export function formatDateTime(value?: string | number | Date | null): string {
+  if (value == null || value === '') return EMPTY;
+  const d = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(d.getTime())) return EMPTY;
+  return new Intl.DateTimeFormat(isID() ? 'id-ID' : 'en-GB', {
+    timeZone: JAKARTA,
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).format(d);
+}
+
+/**
  * A MONTH BUCKET's label — "Aug 2026" (EN) / "Agu 2026" (ID), Asia/Jakarta.
  *
  * Takes a `YYYY-MM` bucket key rather than a date, because that is what a

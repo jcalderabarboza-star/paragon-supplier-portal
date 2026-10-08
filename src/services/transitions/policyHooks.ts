@@ -41,8 +41,14 @@ export const POLICY_HOOKS = {
   SUPPLIERDOC_REFUSAL_AUTHORED: 'supplierdoc_refusal_authored',
   /** PO confirm: each confirmed line qty must be > 0 and ≤ the ordered qty. */
   PO_CONFIRM_QTY_WITHIN_ORDERED: 'po_confirm_qty_within_ordered',
+  /** OPS-3 · PO confirm: a confirmed delivery date, when given, is a real
+   *  calendar day not before the order date; a note, when given, is text. */
+  PO_CONFIRM_TERMS_WELL_FORMED: 'po_confirm_terms_well_formed',
   /** ASN create: the parent PO (payload.poReference) must be Confirmed. */
   ASN_CREATE_PO_CONFIRMED: 'asn_create_po_confirmed',
+  /** OPS-3 · ASN create: packages, weight, ship date and lots, when given, are
+   *  values the platform can store as typed. */
+  ASN_DETAILS_WELL_FORMED: 'asn_details_well_formed',
   /** GR create: the parent shipment/ASN (payload.asnReference) must have arrived. */
   GR_CREATE_SHIPMENT_RECEIVED: 'gr_create_shipment_received',
   // GR header disposition = ROLLUP of the per-line sub-flow states (census G2).

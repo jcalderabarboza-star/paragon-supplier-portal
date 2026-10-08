@@ -328,6 +328,46 @@ targets). They measure different things; this file keeps them separate.
 > `UNATTRIBUTED`, or that records no approver, is not guarded:** its release is admitted from any
 > seat holding `invoice:pay`. Approval itself has no new refusal.
 >
+> **RE-HARVEST (2026-10-08, OPS-3).** What the supplier typed arrives. No figure moved: service
+> surface, catalog, flows and wired targets are as OPS-2b left them. Two policy hooks are new.
+> **`t_po_confirm` GAINED A SECOND HOOK, `po_confirm_terms_well_formed`**, evaluated after
+> `po_confirm_qty_within_ordered`. The payload may now carry two OPTIONAL fields beside
+> `confirmedQuantities`: `confirmedDeliveryDate` (a calendar day, `YYYY-MM-DD`) and
+> `confirmationNote` (text). Three refusals, in this order: `PO_CONFIRM_DATE_INVALID` (the date is
+> given and is not a real calendar day in that form), `PO_CONFIRM_DATE_BEFORE_ORDER` (the date is
+> before the order's `orderDate`), `PO_CONFIRM_NOTE_INVALID` (the note is not text, or exceeds 500
+> characters). A confirmation that carries neither field is admitted and changes neither stored value.
+> **`PurchaseOrder` gained two optional fields:** `confirmedAt` — an ISO instant stamped by the
+> target when a confirmation is applied, never read from the payload — and `confirmationNote`. A
+> confirmation also writes `confirmedDeliveryDate` when one is given. `t_po_acknowledge` stamps none
+> of the three. A seeded order carries no `confirmedAt`.
+> **ONLY THE MOVE INTO `Confirmed` WRITES A CONFIRMATION.** The line `confirmedQty` values and the
+> three fields above are written only when the transition's target state is `Confirmed`, which
+> `t_po_confirm` alone reaches. A payload carrying `confirmedQuantities` on any other PO verb is
+> ignored. Until this batch it was applied on every PO verb, including `t_po_acknowledge`, which
+> runs no hook.
+> **`t_asn_create` GAINED A SECOND HOOK, `asn_details_well_formed`**, evaluated after
+> `asn_create_po_confirmed`. The payload may now carry, all OPTIONAL: `packages` (an integer above
+> zero), `grossWeightKg` (a finite number above zero), `shipDate` (a calendar day), `batchNumber`,
+> `notes`, `packingListName` (text each) and `lotNumbers` (an array of text, one per order line by
+> position). One refusal: `ASN_DETAILS_INVALID`, whose reason names the first field that cannot be
+> stored as given. One reader, `readAsnTypedDetails`, is what the hook judges with and what the
+> target stores from. **`AsnShipmentDetails` gained four optional fields:** `shipDate`,
+> `batchNumber`, `notes`, `packingListName` (a file NAME; no file is stored). `packages` is stored
+> as `details.totalCartons` and `grossWeightKg` as `details.grossWeightKg`; both stay `0` when not
+> given. `lotNumbers[i]` is stored as line `i`'s `lotNumber`.
+> **A CREATED SHIP NOTICE SHIPS THE CONFIRMED QUANTITY.** Each line's `shippedQty` is the order
+> line's `confirmedQty`; it was the ordered `quantity`. `orderedQty` is unchanged. Every order line
+> is copied, as before.
+> **No read changed.** `/buyer/shipments` lists supplier ship notices from the existing
+> `procurement.getASNs`, leaving out `Draft`; `procurement.getShipments` returns what it returned.
+> **Delivery agreements.** `AgreementItemSummary` gained `overToleranceQty` (the quantity released
+> beyond the agreed total when the ledger carries an over-envelope exception, else null); it is
+> derived, not stored. `shapeObligations` no longer returns an obligation for a line whose derived
+> fulfilment is `late` (delivered after its date); a `missed` line is still `overdue`.
+> `deriveDeliveryChase` is unchanged and still returns both. `deliveryDateIsPast` exposes the
+> predicate `delivery_release_not_backdated` already used; the hook and its refusal are unchanged.
+>
 > **RE-HARVEST (2026-10-08, OPS-2b).** The operator's rulings on OPS-2. No figure moved: service
 > surface, catalog, flows and wired targets are as OPS-2 left them. One policy hook is new.
 > **`t_gr_approve` AND `t_gr_partial_approve` GAINED A SECOND HOOK, `gr_receipt_compliant`**,

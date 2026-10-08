@@ -55,6 +55,7 @@ import {
   type ShipmentDisplayState,
 } from '../services/data/shipmentDisplayState';
 import { formatNumber } from '../lib/format';
+import SupplierShipNotices from './shipments/SupplierShipNotices';
 
 // ⚠️ THE FOURTH PIN, RETIRED — see BuyerGoodsReceipt for the full note. All
 // three surviving pins read 2026-05-20, which is what evidences the `shipment`
@@ -768,6 +769,13 @@ const BuyerShipments: React.FC = () => {
           </tbody>
         </Table>
       </div>
+
+      {/* OPS-3 — the ship notices suppliers sent in this portal, in their own
+          state. They have no carrier record, so they are not rows above. */}
+      <SupplierShipNotices
+        search={search}
+        supplierName={(id) => supplierById.get(id)?.name ?? id}
+      />
 
       <FormSection
         eyebrow={t('shipments.dock.eyebrow')}

@@ -4,10 +4,10 @@
 // currency, material/category data, and certificate names stay verbatim.
 export const rfqsEn: Record<string, string> = {
   // breadcrumb
-  'rfqs.crumb.page': 'MY RFQS & QUOTES',
+  'rfqs.crumb.page': 'MY SOURCING EVENTS & QUOTES',
   // header + meta
   'rfqs.header.title': 'My Sourcing Events',
-  'rfqs.header.subtitle': 'RFQs received from Paragon Corp procurement team — {{supplier, stop}}.',
+  'rfqs.header.subtitle': 'Sourcing events received from Paragon Corp procurement team — {{supplier, stop}}.',
   'rfqs.meta.event.one': 'open event',
   'rfqs.meta.event.other': 'open events',
   'rfqs.meta.quote.one': 'quote pending evaluation',
@@ -48,14 +48,14 @@ export const rfqsEn: Record<string, string> = {
   'rfqs.card.evalCriteria': 'Evaluation criteria',
   'rfqs.card.submitQuote': 'Submit quote',
   'rfqs.card.askQuestion': 'Ask question',
-  'rfqs.card.decline': 'Decline RFQ',
+  'rfqs.card.decline': 'Decline event',
   // open tab empty
-  'rfqs.open.emptyTitle': 'No open RFQs at this time',
-  'rfqs.open.emptyBody': 'New RFQs from Paragon will appear here.',
+  'rfqs.open.emptyTitle': 'No open events at this time',
+  'rfqs.open.emptyBody': 'New sourcing events from Paragon will appear here.',
   // my quotes tab — the supplier's OWN submitted quotes (real read); own facts +
   // status only (no competitive score/rank — that needs the hidden sibling set)
   'rfqs.quotes.emptyTitle': 'No quotes submitted yet',
-  'rfqs.quotes.emptyBody': 'Quotes you submit against open RFQs appear here.',
+  'rfqs.quotes.emptyBody': 'Quotes you submit on open events appear here.',
   'rfqs.quotes.col.quoteNo': 'Quote #',
   'rfqs.quotes.col.submitted': 'Submitted',
   'rfqs.quotes.col.unitPrice': 'Unit price',
@@ -70,12 +70,12 @@ export const rfqsEn: Record<string, string> = {
   // 2e-b-2 — the supplier reads their own stated minimum back; absent renders
   // the default it means, never a 0 and never a dash.
   'rfqs.quotes.col.moq': 'Min. order qty',
-  'rfqs.quotes.moqNone': 'Same as RFQ qty',
+  'rfqs.quotes.moqNone': 'Same as event qty',
   'rfqs.quotes.col.validUntil': 'Valid until',
   // awards tab
   'rfqs.awards.emptyTitle': 'No award decisions yet',
-  'rfqs.awards.emptyBody': 'Award outcomes appear here once Paragon awards an RFQ you quoted on.',
-  'rfqs.awards.col.rfq': 'RFQ #',
+  'rfqs.awards.emptyBody': 'Award outcomes appear here once Paragon awards an event you quoted on.',
+  'rfqs.awards.col.rfq': 'Event #',
   'rfqs.awards.col.material': 'Material',
   'rfqs.awards.col.result': 'Result',
   'rfqs.awards.col.awardDate': 'Award date',
@@ -85,8 +85,8 @@ export const rfqsEn: Record<string, string> = {
   'rfqs.awards.note.won': 'Awarded — your quotation was selected',
   'rfqs.awards.note.lost': 'Not awarded — another quotation was selected',
   'rfqs.awards.note.cancelled': 'Paragon cancelled this event — no decision was made on your quotation',
-  'rfqs.awards.winRate.one': 'Your win rate: {{awarded}} of {{total}} decided RFQ awarded ({{pct}}%)',
-  'rfqs.awards.winRate.other': 'Your win rate: {{awarded}} of {{total}} decided RFQs awarded ({{pct}}%)',
+  'rfqs.awards.winRate.one': 'Your win rate: {{awarded}} of {{total}} decided event awarded ({{pct}}%)',
+  'rfqs.awards.winRate.other': 'Your win rate: {{awarded}} of {{total}} decided events awarded ({{pct}}%)',
   'rfqs.awards.winRateLabel': 'Win rate',
   // quote side panel
   'rfqs.panel.title': 'Submit quotation — {{rfq}}',
@@ -299,7 +299,7 @@ export const rfqsEn: Record<string, string> = {
   'rfqs.panel.moq': 'Minimum order quantity (optional)',
   'rfqs.panel.moqPlaceholder': 'e.g. 10000',
   'rfqs.panel.moq.hint':
-    'Leave blank if you can supply the RFQ quantity with no minimum. If you have one, Paragon shows it to the buyer with your quote.',
+    'Leave blank if you can supply the event quantity with no minimum. If you have one, Paragon shows it to the buyer with your quote.',
   'rfqs.panel.moq.refused.notNumeric':
     'That is not a quantity — type digits only, e.g. 10000, or leave it blank if you have no minimum.',
   'rfqs.panel.moq.refused.ambiguous':
@@ -336,10 +336,10 @@ export const rfqsEn: Record<string, string> = {
     'Only the file name is recorded with your quotation. This portal does not hold the file, so send the document to Paragon procurement as well.',
   // wrapper empty state
   'rfqs.empty.title': 'No sourcing events yet',
-  'rfqs.empty.subtitle': 'No RFQ invitations on file for {{supplier, stop}}.',
-  'rfqs.empty.message': 'RFQ invitations from Paragon Corp appear here.',
+  'rfqs.empty.subtitle': 'No sourcing event invitations on file for {{supplier, stop}}.',
+  'rfqs.empty.message': 'Sourcing event invitations from Paragon Corp appear here.',
   // toasts
-  'rfqs.toast.declined.title': 'RFQ decline not available yet — {{rfq}} was not declined.',
+  'rfqs.toast.declined.title': 'Declining an event is not available yet — {{rfq}} was not declined.',
   'rfqs.toast.notified': 'Nobody was notified — this is not wired to a real channel.',
   'rfqs.toast.question.title': 'Message not sent for {{rfq}}',
   'rfqs.toast.question.body': 'Nothing was sent — supplier messaging is not wired to a real channel.',
@@ -369,10 +369,10 @@ export const rfqsEn: Record<string, string> = {
 
 export const rfqsId: Record<string, string> = {
   // breadcrumb
-  'rfqs.crumb.page': 'RFQ & PENAWARAN SAYA',
+  'rfqs.crumb.page': 'ACARA SOURCING & PENAWARAN SAYA',
   // header + meta
   'rfqs.header.title': 'Acara Sourcing Saya',
-  'rfqs.header.subtitle': 'RFQ diterima dari tim pengadaan Paragon Corp — {{supplier, stop}}.',
+  'rfqs.header.subtitle': 'Acara sourcing diterima dari tim pengadaan Paragon Corp — {{supplier, stop}}.',
   'rfqs.meta.event.one': 'acara terbuka',
   'rfqs.meta.event.other': 'acara terbuka',
   'rfqs.meta.quote.one': 'penawaran menunggu evaluasi',
@@ -413,14 +413,14 @@ export const rfqsId: Record<string, string> = {
   'rfqs.card.evalCriteria': 'Kriteria evaluasi',
   'rfqs.card.submitQuote': 'Kirim penawaran',
   'rfqs.card.askQuestion': 'Ajukan pertanyaan',
-  'rfqs.card.decline': 'Tolak RFQ',
+  'rfqs.card.decline': 'Tolak acara',
   // open tab empty
-  'rfqs.open.emptyTitle': 'Tidak ada RFQ terbuka saat ini',
-  'rfqs.open.emptyBody': 'RFQ baru dari Paragon akan muncul di sini.',
+  'rfqs.open.emptyTitle': 'Tidak ada acara terbuka saat ini',
+  'rfqs.open.emptyBody': 'Acara sourcing baru dari Paragon akan muncul di sini.',
   // my quotes tab — penawaran milik pemasok sendiri (pembacaan nyata); hanya
   // fakta + status sendiri (tanpa skor/peringkat kompetitif — butuh set saingan)
   'rfqs.quotes.emptyTitle': 'Belum ada penawaran dikirim',
-  'rfqs.quotes.emptyBody': 'Penawaran yang Anda kirim untuk RFQ terbuka muncul di sini.',
+  'rfqs.quotes.emptyBody': 'Penawaran yang Anda kirim untuk acara terbuka muncul di sini.',
   'rfqs.quotes.col.quoteNo': 'No. Penawaran',
   'rfqs.quotes.col.submitted': 'Dikirim',
   'rfqs.quotes.col.unitPrice': 'Harga satuan',
@@ -431,12 +431,12 @@ export const rfqsId: Record<string, string> = {
   'rfqs.quotes.leadTimeDays.one': '{{days}} hari',
   'rfqs.quotes.leadTimeDays.other': '{{days}} hari',
   'rfqs.quotes.col.moq': 'Kuantitas pesanan min.',
-  'rfqs.quotes.moqNone': 'Sama dengan jml RFQ',
+  'rfqs.quotes.moqNone': 'Sama dengan jml acara',
   'rfqs.quotes.col.validUntil': 'Berlaku hingga',
   // awards tab
   'rfqs.awards.emptyTitle': 'Belum ada keputusan pemenangan',
-  'rfqs.awards.emptyBody': 'Hasil pemenangan muncul di sini setelah Paragon memenangkan RFQ yang Anda tawar.',
-  'rfqs.awards.col.rfq': 'No. RFQ',
+  'rfqs.awards.emptyBody': 'Hasil pemenangan muncul di sini setelah Paragon memenangkan acara yang Anda tawar.',
+  'rfqs.awards.col.rfq': 'No. acara',
   'rfqs.awards.col.material': 'Material',
   'rfqs.awards.col.result': 'Hasil',
   'rfqs.awards.col.awardDate': 'Tanggal pemenangan',
@@ -446,8 +446,8 @@ export const rfqsId: Record<string, string> = {
   'rfqs.awards.note.won': 'Dimenangkan — penawaran Anda dipilih',
   'rfqs.awards.note.lost': 'Tidak dimenangkan — penawaran lain dipilih',
   'rfqs.awards.note.cancelled': 'Paragon membatalkan acara ini — tidak ada keputusan atas penawaran Anda',
-  'rfqs.awards.winRate.one': 'Tingkat kemenangan Anda: {{awarded}} dari {{total}} RFQ diputuskan dimenangkan ({{pct}}%)',
-  'rfqs.awards.winRate.other': 'Tingkat kemenangan Anda: {{awarded}} dari {{total}} RFQ diputuskan dimenangkan ({{pct}}%)',
+  'rfqs.awards.winRate.one': 'Tingkat kemenangan Anda: {{awarded}} dari {{total}} acara diputuskan dimenangkan ({{pct}}%)',
+  'rfqs.awards.winRate.other': 'Tingkat kemenangan Anda: {{awarded}} dari {{total}} acara diputuskan dimenangkan ({{pct}}%)',
   'rfqs.awards.winRateLabel': 'Tingkat kemenangan',
   // quote side panel
   'rfqs.panel.title': 'Kirim penawaran — {{rfq}}',
@@ -652,7 +652,7 @@ export const rfqsId: Record<string, string> = {
   'rfqs.panel.moq': 'Kuantitas pesanan minimum (opsional)',
   'rfqs.panel.moqPlaceholder': 'mis. 10000',
   'rfqs.panel.moq.hint':
-    'Kosongkan jika Anda dapat memasok kuantitas RFQ tanpa minimum. Jika ada, Paragon menampilkannya kepada pembeli bersama penawaran Anda.',
+    'Kosongkan jika Anda dapat memasok kuantitas acara tanpa minimum. Jika ada, Paragon menampilkannya kepada pembeli bersama penawaran Anda.',
   'rfqs.panel.moq.refused.notNumeric':
     'Itu bukan kuantitas — ketik angka saja, misalnya 10000, atau kosongkan jika Anda tidak punya minimum.',
   'rfqs.panel.moq.refused.ambiguous':
@@ -689,10 +689,10 @@ export const rfqsId: Record<string, string> = {
     'Hanya nama berkas yang dicatat bersama penawaran Anda. Portal ini tidak menyimpan berkasnya, jadi kirimkan juga dokumennya ke tim pengadaan Paragon.',
   // wrapper empty state
   'rfqs.empty.title': 'Belum ada acara sourcing',
-  'rfqs.empty.subtitle': 'Tidak ada undangan RFQ di berkas untuk {{supplier, stop}}.',
-  'rfqs.empty.message': 'Undangan RFQ dari Paragon Corp muncul di sini.',
+  'rfqs.empty.subtitle': 'Tidak ada undangan acara sourcing di berkas untuk {{supplier, stop}}.',
+  'rfqs.empty.message': 'Undangan acara sourcing dari Paragon Corp muncul di sini.',
   // toasts
-  'rfqs.toast.declined.title': 'Penolakan RFQ belum tersedia — {{rfq}} tidak ditolak.',
+  'rfqs.toast.declined.title': 'Penolakan acara belum tersedia — {{rfq}} tidak ditolak.',
   'rfqs.toast.notified': 'Tidak ada yang diberi tahu — ini belum tersambung ke kanal nyata.',
   'rfqs.toast.question.title': 'Pesan tidak terkirim untuk {{rfq}}',
   'rfqs.toast.question.body': 'Tidak ada yang dikirim — perpesanan pemasok belum tersambung ke kanal nyata.',

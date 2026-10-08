@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useSearchParams } from 'react-router-dom';
 import { GitBranch, AlertTriangle } from 'lucide-react';
 import AppShellV2 from '../components/layout-v2/AppShellV2';
 import PageHeader from '../components/ui-v2/PageHeader';
@@ -267,9 +268,15 @@ const ProcessFlows: React.FC = () => {
   // this is a stable derivation, not a read that can fail. There is no loading
   // or error state here on purpose: the schema is in the bundle.
   const catalog = useMemo(() => buildCatalogView(getKnownFlows()), []);
-  const [selected, setSelected] = useState<string>(
-    () => catalog.flows[0]?.entity ?? '',
-  );
+  // OPS-3 — `?flow=<entity>` opens the page on that flow, so a surface can link
+  // to the guide it names. An unknown value opens the first flow, as before.
+  const [searchParams] = useSearchParams();
+  const [selected, setSelected] = useState<string>(() => {
+    const asked = searchParams.get('flow');
+    return (
+      catalog.flows.find((f) => f.entity === asked)?.entity ?? catalog.flows[0]?.entity ?? ''
+    );
+  });
   const view = catalog.flows.find((f) => f.entity === selected) ?? catalog.flows[0];
 
   // The walk's whole memory. Session-scoped by construction — this is React

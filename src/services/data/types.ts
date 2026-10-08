@@ -297,6 +297,13 @@ export interface PurchaseOrder {
   confirmedDeliveryDate: string;
   daysOverdue: number;
   acknowledgmentTimeHours: number;
+  /** OPS-3 — WHEN the supplier confirmed, stamped by the store at dispatch and
+   *  never taken from the payload (a caller that could set it could back-date
+   *  its own confirmation). Absent on a seeded order: no confirmation act is on
+   *  record for it, and the surfaces say nothing rather than invent a time. */
+  confirmedAt?: string;
+  /** OPS-3 — the note the supplier typed when confirming. Absent when none. */
+  confirmationNote?: string;
   lineItems: POLineItem[];
 }
 
@@ -725,6 +732,14 @@ export interface AsnShipmentDetails {
   totalCartons: number;
   grossWeightKg: number;
   temperatureRequirement: string;
+  /** OPS-3 — what the supplier typed in the ship-notice form. Each is absent
+   *  when it was not given; a surface shows a dash, never a default. */
+  shipDate?: string;
+  batchNumber?: string;
+  notes?: string;
+  /** The NAME of the packing list the supplier chose. The portal stores no
+   *  file, and every surface that shows this says so. */
+  packingListName?: string;
 }
 
 export interface ASN {

@@ -7,7 +7,8 @@ import SupplierRfqToRespondWidget from './SupplierRfqToRespondWidget';
 // store via a hook) → green "Live" pill, never "Sample data".
 const CASES: [string, React.ComponentType][] = [
   ['Invoice payment', SupplierInvoicePaymentWidget],
-  ['RFQs to respond', SupplierRfqToRespondWidget],
+  // OPS-3 — EDITED ON PURPOSE: the title read "RFQs to respond".
+  ['Sourcing events to respond to', SupplierRfqToRespondWidget],
 ];
 
 describe('Supplier live widgets — Live by construction', () => {

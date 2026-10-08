@@ -172,6 +172,10 @@ function useInvalidateProcurement() {
 export interface PoConfirmVars {
   poId: string;
   confirmedQuantities: number[];
+  /** OPS-3 — the delivery date and the note the supplier typed. Both optional:
+   *  a confirmation that names no date commits to none. */
+  confirmedDeliveryDate?: string;
+  confirmationNote?: string;
 }
 
 /**
@@ -185,12 +189,17 @@ export function usePurchaseOrderConfirm() {
   const invalidate = useInvalidateProcurement();
 
   return useMutation<CommandResult, Error, PoConfirmVars>({
-    mutationFn: ({ poId, confirmedQuantities }) =>
+    mutationFn: ({ poId, confirmedQuantities, confirmedDeliveryDate, confirmationNote }) =>
       svc.commands.dispatch(scope, {
         transitionId: 't_po_confirm',
         entity: 'purchaseOrder',
         entityId: poId,
-        payload: { confirmedQuantities },
+        // Absent stays absent — an empty string would be a typed blank.
+        payload: {
+          confirmedQuantities,
+          ...(confirmedDeliveryDate ? { confirmedDeliveryDate } : {}),
+          ...(confirmationNote?.trim() ? { confirmationNote: confirmationNote.trim() } : {}),
+        },
       }),
     onSuccess: (result) => {
       if (result.status !== 'failed') invalidate(scope);
@@ -244,6 +253,15 @@ export interface AsnCreateVars {
   carrier?: string;
   trackingNumber?: string;
   eta?: string;
+  /** OPS-3 — everything else the ship-notice form asks for. */
+  packages?: number;
+  grossWeightKg?: number;
+  shipDate?: string;
+  batchNumber?: string;
+  notes?: string;
+  packingListName?: string;
+  /** One lot per order line, by position. */
+  lotNumbers?: string[];
 }
 
 /**
