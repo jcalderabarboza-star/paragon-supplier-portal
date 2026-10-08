@@ -645,6 +645,18 @@ Three arcs, in order. Nothing else is queued.
      `t_material_ruling_set`). **Derive what blocks from `qualityValid` and the
      registry, never from this sentence.**
 
+     ⚠️ **AND SINCE OPS-2b THE DISPATCHER ENFORCES IT, AT ONE CLOCK.** The five
+     regulatory clauses left the wizard for ONE predicate
+     (`services/data/receiptCompliance.ts`) that the wizard's quality step and
+     the `gr_receipt_compliant` hook both call; the hook sits on the two verbs
+     that ACCEPT goods (`t_gr_approve`, `t_gr_partial_approve`) and on no other.
+     Both judge at `DECLARED_PRESENT_INSTANT` — the wizard read the wall clock
+     until then, and `oneClock.guard.test.ts` holds every receiving and
+     compliance read off it. The ruling ledger opens on SAMPLE BPOM rulings and
+     the registry carries SAMPLE certificates for the raw-material suppliers;
+     **derive which pair and which material are left stopped from
+     `ops2bEnforcement.test.ts`, never from a sentence here.**
+
      ⚠️ **WHAT THE WIRE IS, STATED SO IT IS NOT OVER-READ: IT TELLS, IT DOES NOT
      STOP.** The wizard renders a certificate NOTICE. `halal.certificate` is
      still **unseeded and consulted by nothing that can refuse** — its empty

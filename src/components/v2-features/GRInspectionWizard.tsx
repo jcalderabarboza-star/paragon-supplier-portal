@@ -40,13 +40,14 @@ import {
   halalUnderRuling,
   type MaterialRuling,
 } from '../../services/sdc/materialRuling';
-import { DECLARED_PRESENT } from '../../services/data/fixturePresent';
+import { DECLARED_PRESENT, DECLARED_PRESENT_INSTANT } from '../../services/data/fixturePresent';
 import { personLabel } from '../../services/identity/personLabel';
 import { rolesHolding } from '../../services/transitions/businessRoles';
 import { ownerLabelKeys } from '../../services/transitions/handoff';
 import { blocks, effectiveEnforcement } from '../../lib/enforcement';
 import type { EnforcementSetting } from '../../lib/enforcement';
 import { verifyHalalAtReceipt } from '../../services/data/halalVerification';
+import { receiptComplianceBlocks } from '../../services/data/receiptCompliance';
 import type {
   HalalVerification,
   HalalNotSatisfiedReason,
@@ -118,6 +119,13 @@ interface GRInspectionWizardProps {
    * and from the material master where Compliance has not ruled.
    */
   materialRulings: readonly MaterialRuling[];
+  /**
+   * OPS-2b — THE INSTANT CERTIFICATES AND MODES ARE JUDGED AT. Omitted, it is
+   * the declared present, which is what the page leaves it at. It is an
+   * ARGUMENT so a spec can stand at another instant — the mandate date, say —
+   * by saying so, never by moving a clock: this form does not read one.
+   */
+  inspectionAt?: string;
   /**
    * OPS-2 (R-OPS P0-4) — THE RECEIPT TO WORK, when there already is one.
    *
@@ -692,6 +700,7 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
   enforcementSettings,
   complianceRegistry,
   materialRulings,
+  inspectionAt,
   resume,
 }) => {
   const { toast } = useToast();
@@ -883,7 +892,16 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
   // at one moment and the certificate at another, so a lapse falling between
   // them would produce an inspection nothing could explain. ONE READ, ONE NAME,
   // BOTH DERIVATIONS.
-  const inspectionInstant = useMemo(() => new Date().toISOString(), []);
+  //
+  // ⚠️ **OPS-2b — AND THAT ONE READ IS NO LONGER A CLOCK (operator ruling: ONE
+  // CLOCK).** It read `new Date().toISOString()`, the wall clock, while the
+  // Compliance page read the same registry at the declared present — so one
+  // certificate was valid on one page and expired at receipt, and every
+  // MUI-legacy certificate was going to stop passing here on the mandate date
+  // with nobody touching the data. Receiving now judges at the declared present,
+  // as every other read in the sample world does; `oneClock.guard.test.ts` holds
+  // the receiving and compliance reads off the wall clock.
+  const inspectionInstant = inspectionAt ?? DECLARED_PRESENT_INSTANT;
 
   /**
    * Does a required-and-unanswered check STOP the step? Read, never assumed.
@@ -1073,16 +1091,37 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
   // said it would: `&& certBlocks`, read off the enforcement ledger like its two
   // neighbours. The way through for a material halal does not apply to is a
   // Compliance ruling on the ledger — never a mode relaxed here.
-  const qualityValid = judged.every((l, i) => {
-    if (!l.visualCheck || !l.packagingCheck) return false;
-    if (!l.halal.ok) return false;
-    if (l.halal.required && !l.halalSealCheck && sealBlocks) return false;
-    if (l.halal.required && certVerdicts[i]?.verdict === 'NOT_SATISFIED' && certBlocks) return false;
-    if (!l.bpom.ok) return false;
-    if (l.bpom.applicable && !l.bpomLotCheck && lotBlocks) return false;
-    if (l.labSampleRequired && !l.labRequestId) return false;
-    return true;
-  });
+  //
+  // ── ⚠️ OPS-2b — THE FIVE REGULATORY CLAUSES LEFT THIS FILE (operator ruling) ─
+  // They read, in this order: `!l.halal.ok` · `l.halal.required &&
+  // !l.halalSealCheck && sealBlocks` · `l.halal.required && certificate
+  // NOT_SATISFIED && certBlocks` · `!l.bpom.ok` · `l.bpom.applicable &&
+  // !l.bpomLotCheck && lotBlocks`. They are now `receiptComplianceBlocks`
+  // (`services/data/receiptCompliance.ts`), and the dispatcher's
+  // `gr_receipt_compliant` hook calls the SAME function on the two verbs that
+  // accept goods. The form is a preview of the refusal, never a second opinion:
+  // what stops the step here is exactly what stops the dispatch there.
+  const receiptBlocks = useMemo(
+    () =>
+      receiptComplianceBlocks({
+        // No source resolved means nobody to hold a certificate: every halal
+        // line then reads NO_CERT, so an unresolved source can only stop.
+        supplierId: activeSource?.supplierId ?? '',
+        lines,
+        rulings: materialRulings,
+        registry: complianceRegistry,
+        at: inspectionInstant,
+        stops: { seal: sealBlocks, lot: lotBlocks, certificate: certBlocks },
+      }),
+    [activeSource, lines, materialRulings, complianceRegistry, inspectionInstant, sealBlocks, lotBlocks, certBlocks],
+  );
+  const qualityValid =
+    receiptBlocks.length === 0 &&
+    judged.every((l) => {
+      if (!l.visualCheck || !l.packagingCheck) return false;
+      if (l.labSampleRequired && !l.labRequestId) return false;
+      return true;
+    });
 
   // A fully-Rejected rollup needs a reason (t_gr_reject requiredField); Approved
   // / Partially Approved don't. 'Pending' can't be finalized (uninspected line).

@@ -5,6 +5,7 @@
 import { bindPolicyHook, POLICY_HOOKS, type CommandTarget, type PolicyDecision } from '../../transitions';
 import { asActorAttribution, isAttributed } from '../../../lib/enforcement';
 import { NO_PERSON } from '../../../context/noPerson';
+import { DECLARED_PRESENT_INSTANT } from '../fixturePresent';
 import { MATERIAL_MASTER } from '../../sdc/fixtures';
 import { isRulingRegime, rulingInForce } from '../../sdc/materialRuling';
 import { materialRulingStore } from './stores/materialRulingStore';
@@ -26,7 +27,10 @@ export const materialRulingTarget: CommandTarget = {
       applicable: payload.applicable === true,
       reason: String(payload.reason).trim(),
       setBy: asActorAttribution(scope.actor) ?? NO_PERSON,
-      setAt: new Date().toISOString(),
+      // OPS-2b (ONE CLOCK) — stamped at the declared present, as an invoice's
+      // payment date is. It read the wall clock, and showed a ruling dated
+      // weeks after the receipts it was read beside.
+      setAt: DECLARED_PRESENT_INSTANT,
       seq: materialRulingStore.nextSeq(),
     });
   },

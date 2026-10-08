@@ -4,7 +4,7 @@ locale: id
 title: Keputusan penerapan material
 wired: true
 owner: portal
-source_sha: da4f1c710ef6ab79023846d67f05eac88b35405b
+source_sha: 852444f6d370948d9ded319a92231da3f0849a8a
 transitions:
   - t_material_ruling_set
 ---
@@ -52,7 +52,7 @@ Tidak ada status yang punya dua jalan keluar. Keputusannya ada di payload: rezim
 - **Penguji — peristiwa pemicu:** `t_material_ruling_set`
 - **Pemeriksaan yang dapat menolak:** `material_ruling_governed`, lima penolakan dalam urutan ini — `RULING_REGIME_UNKNOWN` (rezimnya bukan halal atau BPOM); `RULING_MALFORMED` (`applicable` bukan ya atau tidak); `RULING_REASON_BLANK` (tanpa alasan); `RULING_UNCHANGED` (material sudah diputuskan demikian — keputusan mencatat perubahan); `RULING_ACTOR_UNATTRIBUTED` (kursi tidak menyebut siapa pun). Sebelum itu: kursi pemasok ditolak pada lingkup, kode yang tidak ada di master material adalah `NOT_FOUND`, kursi tanpa `material:rule` mendapat `ROLE_NOT_PERMITTED`, payload yang membawa kunci pelaku mendapat `ACTOR_IN_PAYLOAD`, dan kolom yang hilang mendapat `MISSING_FIELDS`.
 - **Glosarium:** `ROLE_NOT_PERMITTED`, `POLICY_REJECTED`, `MISSING_FIELDS`, `ACTOR_IN_PAYLOAD`, `NOT_FOUND`, `SCOPE_DENIED`, `NO_PERSON_IN_SESSION`, `UNDETERMINED_APPLICABILITY`, `UNKNOWN_MATERIAL`.
-- **Kejujuran:** keputusan pertama atas material yang membaca bawaan master diterima bahkan bila isinya sama dengan bawaan itu — ia mengubah bawaan menjadi keputusan yang dipertanggungjawabkan seseorang. Orang contoh diterima di sini (buku besar menyatakannya pada barisnya); gerbang pelonggaran pada buku besar penegakan, yang menolak orang contoh, adalah catatan yang berbeda dan tidak disentuh oleh keputusan. Keputusan mengubah apa yang DIMINTA penerimaan; ia tidak membuat atau mengubah sertifikat. Buku besar berada di memori: memuat ulang mengembalikan setiap material ke jawaban master.
+- **Kejujuran:** keputusan pertama atas material yang membaca bawaan master diterima bahkan bila isinya sama dengan bawaan itu — ia mengubah bawaan menjadi keputusan yang dipertanggungjawabkan seseorang. Orang contoh diterima di sini (buku besar menyatakannya pada barisnya); gerbang pelonggaran pada buku besar penegakan, yang menolak orang contoh, adalah catatan yang berbeda dan tidak disentuh oleh keputusan. Keputusan mengubah apa yang DIMINTA penerimaan; ia tidak membuat atau mengubah sertifikat. Keputusan diberi tanggal hari ini menurut portal (31 Agu 2026), bukan jam nyata. Buku besar berada di memori: memuat ulang mengembalikannya ke sepuluh keputusan CONTOH dan setiap material lain ke jawaban master.
 <!-- src: src/services/transitions/flows/materialRuling.flow.ts:36-48; src/services/data/mock/materialRulingTarget.ts:17-66; src/services/transitions/policyHooks.ts:146-150; src/pages-v2/compliance/MaterialApplicabilityPanel.tsx:60-160,190-330; src/services/query/commandHooks.ts:1052-1085; src/services/query/hooks.ts:232-238; src/components/v2-features/GRInspectionWizard.tsx:905-925,1470-1500; src/lib/i18n/compliance.ts:264-321; src/lib/i18n/goodsReceipt.ts:540-556 -->
 
 <!-- section:forks -->
@@ -135,5 +135,5 @@ Setelah T+1, baris penerimaan untuk `PK-CART-9901` menampilkan keputusan dan tid
 
 | Status | Id fixture | Nomor | Catatan |
 |---|---|---|---|
-| Governed | `PK-CART-9901`, `PK-PETB-8801`, `RM-COCO-8200`, `RM-EMUL-3320`, `AI-NIAC-6601` | — | setiap kode di master material menjawab Governed. Buku besar terbuka kosong, sehingga masing-masing membaca jawaban masternya: `PK-CART-9901` dan `PK-PETB-8801` (kemasan) — halal berlaku secara bawaan, BPOM tidak berlaku; `RM-COCO-8200` dan `RM-EMUL-3320` (bahan baku) — halal berlaku, BPOM **menunggu**; `AI-NIAC-6601` (bahan aktif) — halal dan BPOM keduanya berlaku. Memutuskan BPOM untuk `RM-EMUL-3320` menghapus blokir BPOM pada penerimaan `gr-007` setelah uji ulangnya; sertifikat halal baris itu adalah pemeriksaan yang terpisah. |
+| Governed | `PK-CART-9901`, `PK-PETB-8801`, `RM-COCO-8200`, `RM-EMUL-3320`, `AI-NIAC-6601` | — | setiap kode di master material menjawab Governed. Buku besar terbuka dengan sepuluh keputusan BPOM CONTOH — masing-masing *berlaku*, dicatat oleh orang contoh dari Kepatuhan, dengan alasan yang diawali "SAMPLE ruling" — mencakup setiap bahan baku yang tidak ditentukan master kecuali `RM-COCO-8200`. Jadi: `PK-CART-9901` dan `PK-PETB-8801` (kemasan) — halal berlaku secara bawaan, BPOM tidak berlaku (master); `RM-EMUL-3320` (bahan baku) — halal berlaku, BPOM berlaku menurut keputusan CONTOH; `RM-COCO-8200` (bahan baku) — halal berlaku, BPOM **menunggu**; `AI-NIAC-6601` (bahan aktif) — halal dan BPOM keduanya berlaku (master). Memutuskan BPOM untuk `RM-COCO-8200` menghapus blokir BPOM pada penerimaan `gr-001`; sertifikat halal sebuah baris adalah pemeriksaan yang terpisah. |
 <!-- src: src/services/sdc/fixtures.ts:130-600; src/services/data/mock/materialRulingTarget.ts:17-21; src/services/data/mock/stores/materialRulingStore.ts:9-12 -->

@@ -86,6 +86,11 @@ function row(over: Partial<ComplianceRegistryEntry> = {}): ComplianceRegistryEnt
 }
 
 const R = COMPLIANCE_REGISTRY;
+// OPS-2b — `creg-0027` is the SAMPLE certificate the operator ruled in for
+// sup-002 × RM-STEAR-7300, beside `creg-0013`, the registry's Missing row for
+// the same pair. The spec below that is ABOUT a Missing row reads the registry
+// as it stood before that certificate; the row it names is unchanged.
+const R_BEFORE_SAMPLE_STEAR = COMPLIANCE_REGISTRY.filter((e) => e.id !== 'creg-0027');
 
 /**
  * The certificate fields a verdict must carry, READ OFF THE ROW IT NAMES.
@@ -318,9 +323,16 @@ describe('H3 — Missing, Under Review, Expired', () => {
       verdict: 'NOT_SATISFIED',
       reason: 'NO_CERT',
     });
-    expect(verifyHalalAtReceipt('sup-002', 'RM-STEAR-7300', R, BEFORE_MANDATE)).toEqual({
+    // OPS-2b — EDITED ON PURPOSE. This read `R`. The pair now also holds a SAMPLE
+    // certificate (`creg-0027`, operator ruling), so the Missing row is read as
+    // it stood — and, with the certificate, the pair is satisfied by that row.
+    expect(verifyHalalAtReceipt('sup-002', 'RM-STEAR-7300', R_BEFORE_SAMPLE_STEAR, BEFORE_MANDATE)).toEqual({
       verdict: 'NOT_SATISFIED',
       reason: 'NO_CERT',
+    });
+    expect(verifyHalalAtReceipt('sup-002', 'RM-STEAR-7300', R, BEFORE_MANDATE)).toEqual({
+      verdict: 'SATISFIED',
+      ...ref('creg-0027'),
     });
   });
 
@@ -622,9 +634,17 @@ describe('H4 — ⚠️ WIRED TO A NOTICE, AND TO NOTHING THAT CAN REFUSE', () =
       .filter(([, text]) => codeLines(text).some((l) => l.includes('verifyHalalAtReceipt')))
       .map(([path]) => path)
       .sort();
+    // ⚠️ OPS-2b — A SECOND CONSUMER, DECIDED AND NAMED. `receiptCompliance.ts`
+    // is the predicate the dispatcher's `gr_receipt_compliant` hook and the
+    // wizard's quality step both call (operator ruling: enforce in the
+    // dispatcher, the form previews the same predicate). It reads at the SAME
+    // instant and the SAME scope the wizard hands it — which is the thing this
+    // census exists to make somebody decide. The wizard still calls the
+    // verification itself, for the notice it renders.
     expect(referencing).toEqual([
       '/src/components/v2-features/GRInspectionWizard.tsx',
       '/src/services/data/halalVerification.ts',
+      '/src/services/data/receiptCompliance.ts',
     ]);
 
     // ⚠️ THE LIMIT OF THIS CHECK, STATED — the `halalApplicability.test.ts`
@@ -689,13 +709,28 @@ describe('H4 — ⚠️ WIRED TO A NOTICE, AND TO NOTHING THAT CAN REFUSE', () =
     // successor would: ONE clause, `&& certBlocks`, where `certBlocks` is read
     // off the enforcement ledger for `halal.certificate`. It never calls the
     // verification itself and never hard-codes the consequence.
+    //
+    // ⚠️ **MOVED AT OPS-2b, AND THE PINS FOLLOWED THE CLAUSE.** They read
+    //
+    //     expect(qualityValid).toContain("certVerdicts[i]?.verdict === 'NOT_SATISFIED' && certBlocks");
+    //     expect(qualityValid).toContain('l.halal.required && certVerdicts[i]');
+    //
+    // The clause is now in `receiptCompliance.ts`, the predicate the dispatcher
+    // enforces and this form previews. `qualityValid` reads its result and
+    // still calls no verification of its own.
     expect(qualityValid.length).toBeGreaterThan(50);
-    expect(qualityValid).toContain("certVerdicts[i]?.verdict === 'NOT_SATISFIED' && certBlocks");
+    expect(qualityValid).toContain('receiptBlocks.length === 0');
     expect(qualityValid).not.toContain('verifyHalalAtReceipt');
-    // The consequence is GOVERNED: the same derivation as its two neighbours.
+    const predicate = codeLines(src['/src/services/data/receiptCompliance.ts']).join('\n');
+    expect(predicate).toContain("if (verdict.verdict === 'NOT_SATISFIED' && stops.certificate) {");
+    // The consequence is GOVERNED: the same derivation as its two neighbours,
+    // handed to the predicate as an argument.
     expect(code).toContain("(enforcementSettings, 'halal.certificate', inspectionInstant).mode");
+    expect(code).toContain('certificate: certBlocks');
     // And only where halal applies — a material ruled not applicable is never
-    // asked for a certificate.
-    expect(qualityValid).toContain('l.halal.required && certVerdicts[i]');
+    // asked for a certificate: the verification sits inside the `required` arm.
+    const arm = predicate.slice(predicate.indexOf('} else if (halal.required) {'), predicate.indexOf('const bpom ='));
+    expect(arm.length).toBeGreaterThan(50);
+    expect(arm).toContain('verifyHalalAtReceipt(');
   });
 });

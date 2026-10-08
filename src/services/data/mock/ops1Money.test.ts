@@ -125,6 +125,12 @@ const line = (materialCode: string, acc: number, rej = 0): InspectionResult => (
   qtyAccepted: acc,
   qtyRejected: rej,
   ...(rej > 0 ? { rejectionReason: 'damaged' } : {}),
+  // OPS-2b — EDITED ON PURPOSE. These lines carried no seal or lot answer and were
+  // accepted anyway; the dispatcher now refuses to accept a line whose required
+  // regulatory check is unanswered (`gr_receipt_compliant`), so a receipt this
+  // spec means to ACCEPT records both, as the receiving form does.
+  halalSealCheck: 'Pass',
+  bpomLotCheck: 'Pass',
   visualCheck: 'Pass',
   packagingCheck: 'Pass',
 });

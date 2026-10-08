@@ -151,6 +151,11 @@ export const POLICY_HOOKS = {
    *  the receipt's own, each quantity is a number that adds up, and nothing is
    *  accepted beyond what was received. */
   GR_RESULTS_MATCH_RECEIPT: 'gr_results_match_receipt',
+  /** OPS-2b — the two verbs that ACCEPT goods are refused while any line is
+   *  stopped: halal or BPOM applicability unruled, a required seal or lot check
+   *  unanswered, or no valid halal certificate on file. The receiving form
+   *  previews the same predicate (`services/data/receiptCompliance.ts`). */
+  GR_RECEIPT_COMPLIANT: 'gr_receipt_compliant',
   /** RR submit (SDC-2a): payload.planVersion must be the referenced
    *  publication's own planVersion — the snapshot binding is un-falsifiable. */
   RR_SUBMIT_PLANVERSION_BOUND: 'rr_submit_planversion_bound',

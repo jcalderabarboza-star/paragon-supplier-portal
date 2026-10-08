@@ -66,6 +66,14 @@ const KNOWN: Record<string, string> = {
   // `halalCertified: false`. The same disagreement as sup-007 and sup-005, by
   // the same cause, and reconciled with them when the supplier master is.
   'sup-008': 'HALAL-XPERSONA-01', // registry SAMPLE BPJPH (permanent) vs master not-certified
+  // OPS-2b — the same, three more times, by the same ruling extended to the
+  // raw-material suppliers: each gained a SAMPLE BPJPH certificate so its open
+  // orders can be received, and the supplier master still reads
+  // `halalCertified: false` for each. (sup-001/003/004/010 gained one too and do
+  // not appear here: their master already says certified.)
+  'sup-006': 'HALAL-XPERSONA-01', // registry SAMPLE BPJPH (permanent) vs master not-certified
+  'sup-009': 'HALAL-XPERSONA-01', // registry SAMPLE BPJPH (permanent) vs master not-certified
+  'sup-011': 'HALAL-XPERSONA-01', // registry SAMPLE BPJPH (permanent) vs master not-certified
   // 'sup-003' REMOVED — it was a contradiction only against the deleted
   // COMPLIANCE_ITEMS. The registry covers sup-002/005/007 (the three tenants),
   // so sup-003 makes no compliance claim and cannot disagree. Leaving the entry

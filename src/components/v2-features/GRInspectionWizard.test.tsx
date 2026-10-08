@@ -1122,15 +1122,41 @@ describe('CP-3 · E4 — ⚠️ THE PER-CHECK DELTA, AND IT IS ZERO', () => {
         return !t.startsWith('//') && !t.startsWith('*');
       })
       .join('\n');
-    // The refusals, unchanged and mode-free.
-    expect(code).toContain('if (!l.halal.ok) return false;');
-    expect(code).toContain('if (!l.bpom.ok) return false;');
-    // The two governed clauses, and they are the ONLY two that read a mode.
-    expect(code).toContain('if (l.halal.required && !l.halalSealCheck && sealBlocks) return false;');
-    expect(code).toContain('if (l.bpom.applicable && !l.bpomLotCheck && lotBlocks) return false;');
-    // Six mentions and no more: the destructure (2), the derivation (2), the two
-    // clauses (2). A seventh means a third site started reading a mode.
-    expect(code.match(/sealBlocks|lotBlocks/g) ?? []).toHaveLength(6);
+    // ⚠️ OPS-2b — THE FOUR CLAUSES MOVED, AND THESE PINS FOLLOWED THEM. They read
+    //
+    //     expect(code).toContain('if (!l.halal.ok) return false;');
+    //     expect(code).toContain('if (!l.bpom.ok) return false;');
+    //     expect(code).toContain('if (l.halal.required && !l.halalSealCheck && sealBlocks) return false;');
+    //     expect(code).toContain('if (l.bpom.applicable && !l.bpomLotCheck && lotBlocks) return false;');
+    //
+    // The clauses now live in `services/data/receiptCompliance.ts`, which the
+    // dispatcher enforces and this form previews. The claim is the same and is
+    // asserted where it now is: the two refusals carry no mode term.
+    const predicate = (
+      import.meta.glob('/src/services/data/receiptCompliance.ts', {
+        query: '?raw',
+        import: 'default',
+        eager: true,
+      }) as Record<string, string>
+    )['/src/services/data/receiptCompliance.ts']
+      .split(/\r?\n/)
+      .filter((l) => {
+        const t = l.trimStart();
+        return !t.startsWith('//') && !t.startsWith('*');
+      })
+      .join('\n');
+    // The refusals, mode-free.
+    expect(predicate).toContain('if (!halal.ok) {');
+    expect(predicate).toContain('if (!bpom.ok) {');
+    // The governed clauses, and they are the ONLY ones that read a mode.
+    expect(predicate).toContain('if (!checkAnswered(line.halalSealCheck) && stops.seal) {');
+    expect(predicate).toContain('} else if (bpom.applicable && !checkAnswered(line.bpomLotCheck) && stops.lot) {');
+    expect(predicate.match(/stops\.(seal|lot|certificate)/g) ?? []).toHaveLength(3);
+    // In the wizard: the destructure (2), the derivation (2), the hand-off to
+    // the predicate (2) and its dependency list (2). A ninth means another site
+    // started reading a mode.
+    expect(code.match(/sealBlocks|lotBlocks/g) ?? []).toHaveLength(8);
+    expect(code).toContain('stops: { seal: sealBlocks, lot: lotBlocks, certificate: certBlocks }');
   });
 
   it('⚠️ `halal.certificate` IS NOT SEEDED — a row nobody took is not written', async () => {
@@ -1265,8 +1291,12 @@ describe('CP-3 · H4 → OPS-2 — the certificate is NAMED on the line, and sin
   ) => {
     cleanup();
     asnStore.reset();
-    vi.useFakeTimers({ shouldAdvanceTime: true });
-    vi.setSystemTime(new Date(`${isoDay}T09:00:00.000Z`));
+    // ⚠️ OPS-2b (ONE CLOCK) — THIS HELPER MOVED THE WALL CLOCK, AND IT NO LONGER
+    // DOES. It read `vi.useFakeTimers(...)` + `vi.setSystemTime(isoDay)`, because
+    // the form judged certificates at `new Date()`. By operator ruling the form
+    // judges at the declared present and reads no clock, so the day a spec
+    // stands on is handed over as the argument it now is. A spec further down
+    // moves the wall clock on purpose and shows the form does not follow it.
     renderWithProviders(
       <GRInspectionWizard
         onClose={() => {}}
@@ -1276,6 +1306,7 @@ describe('CP-3 · H4 → OPS-2 — the certificate is NAMED on the line, and sin
         enforcementSettings={opts.ledger ?? EMPTY_LEDGER}
         complianceRegistry={REGISTRY}
         materialRulings={opts.rulings ?? []}
+        inspectionAt={`${isoDay}T09:00:00.000Z`}
       />,
     );
     fireEvent.click(await screen.findByText(asnNumber));

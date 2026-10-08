@@ -417,4 +417,166 @@ export const COMPLIANCE_REGISTRY: readonly ComplianceRegistryEntry[] = [
     scopeText: 'SAMPLE — secondary packaging: folding cartons',
     notes: 'Synthetic illustrative record — not a real certificate.',
   },
+  // ── OPS-2b — SAMPLE halal certificates for the raw-material suppliers ──────
+  // Operator ruling (2026-10-08): the open supplier × material pairs of the
+  // raw-material suppliers get SAMPLE certificates so their orders can be
+  // received, and EXACTLY ONE open pair is left without a valid one to show the
+  // block. That one is sup-005 × RM-EMUL-9440: `creg-0016` above, the foreign
+  // certificate that expired on 2025-08-01, on `ASN-2025-00302` — a receivable
+  // ASN, so the block can be reached from the receiving page.
+  // `ops2bEnforcement.test.ts` derives the open pairs and pins it by name. Each
+  // row below is marked SAMPLE in its number and its scope, as the two
+  // packaging rows are.
+  //
+  // ⚠️ `creg-0027` SITS BESIDE `creg-0013`, AND THE TWO ARE NOT A CONTRADICTION
+  // TO TIDY AWAY. `creg-0013` is the registry's Missing row for sup-002 ×
+  // RM-STEAR-7300 — a requirement recorded with nothing held against it — and
+  // the specs that are about a Missing row read it as it was. The ruling asked
+  // for a SAMPLE certificate on every other open pair, and that pair is open
+  // (PO-2025-00116), so it has one. Whoever replaces the sample registry with
+  // a real one resolves the pair once, from the real document.
+  {
+    id: 'creg-0019',
+    supplierId: 'sup-001',
+    supplierName: 'PT Sample Oleochemicals',
+    materialCodes: ['RM-COCO-8200', 'RM-PALM-7100'],
+    materialCategory: 'other',
+    certType: 'HALAL_BPJPH',
+    certNumber: 'SAMPLE-HALAL-0001A',
+    issuer: 'BPJPH (illustrative)',
+    issueDate: '2025-02-17',
+    expiryDate: null, // permanent basis (GR 42/2024) — no clock
+    lifecycleState: 'Valid',
+    sapSync: 'AWAITING_SYNC',
+    scopeText: 'SAMPLE — oleochemicals: fatty acid distillates and palm fractions',
+    notes: 'Synthetic illustrative record — not a real certificate.',
+  },
+  {
+    id: 'creg-0020',
+    supplierId: 'sup-003',
+    supplierName: 'Sample Fragrance House Indonesia',
+    materialCodes: ['FR-WARD-4410', 'FR-EMIN-4420', 'FR-MKOV-5520', 'FR-WARD-4430'],
+    materialCategory: 'other',
+    certType: 'HALAL_BPJPH',
+    certNumber: 'SAMPLE-HALAL-0003A',
+    issuer: 'BPJPH (illustrative)',
+    issueDate: '2025-04-08',
+    expiryDate: null, // permanent basis (GR 42/2024) — no clock
+    lifecycleState: 'Valid',
+    sapSync: 'AWAITING_SYNC',
+    scopeText: 'SAMPLE — fragrance compounds',
+    notes: 'Synthetic illustrative record — not a real certificate.',
+  },
+  {
+    id: 'creg-0021',
+    supplierId: 'sup-004',
+    supplierName: 'Sample Aromatics Sdn. Bhd.',
+    materialCodes: ['FR-MKOV-5510'],
+    materialCategory: 'other',
+    certType: 'HALAL_BPJPH',
+    certNumber: 'SAMPLE-HALAL-0004A',
+    issuer: 'BPJPH (illustrative)',
+    issueDate: '2025-06-19',
+    expiryDate: null, // permanent basis (GR 42/2024) — no clock
+    lifecycleState: 'Valid',
+    sapSync: 'AWAITING_SYNC',
+    scopeText: 'SAMPLE — fragrance compound',
+    notes: 'Synthetic illustrative record — not a real certificate.',
+  },
+  {
+    id: 'creg-0022',
+    supplierId: 'sup-005',
+    supplierName: 'Sample Personal Care Emulsifiers GmbH',
+    materialCodes: ['AI-HYALU-6610'],
+    materialCategory: 'other',
+    certType: 'HALAL_BPJPH',
+    certNumber: 'SAMPLE-HALAL-0005D',
+    issuer: 'BPJPH (illustrative)',
+    issueDate: '2025-07-01',
+    expiryDate: null, // permanent basis (GR 42/2024) — no clock
+    lifecycleState: 'Valid',
+    sapSync: 'AWAITING_SYNC',
+    scopeText: 'SAMPLE — hyaluronate active',
+    notes: 'Synthetic illustrative record — not a real certificate.',
+  },
+  {
+    id: 'creg-0023',
+    supplierId: 'sup-006',
+    supplierName: 'Sample Specialty Chemicals France',
+    materialCodes: ['AI-RETA-6750', 'AI-VITC-6720'],
+    materialCategory: 'other',
+    certType: 'HALAL_BPJPH',
+    certNumber: 'SAMPLE-HALAL-0006A',
+    issuer: 'BPJPH (illustrative)',
+    issueDate: '2025-03-27',
+    expiryDate: null, // permanent basis (GR 42/2024) — no clock
+    lifecycleState: 'Valid',
+    sapSync: 'AWAITING_SYNC',
+    scopeText: 'SAMPLE — cosmetic actives',
+    notes: 'Synthetic illustrative record — not a real certificate.',
+  },
+  {
+    id: 'creg-0024',
+    supplierId: 'sup-009',
+    supplierName: 'Sample Vitamins Co.',
+    materialCodes: ['AI-VITC-6730'],
+    materialCategory: 'other',
+    certType: 'HALAL_BPJPH',
+    certNumber: 'SAMPLE-HALAL-0009A',
+    issuer: 'BPJPH (illustrative)',
+    issueDate: '2025-05-14',
+    expiryDate: null, // permanent basis (GR 42/2024) — no clock
+    lifecycleState: 'Valid',
+    sapSync: 'AWAITING_SYNC',
+    scopeText: 'SAMPLE — vitamin C active',
+    notes: 'Synthetic illustrative record — not a real certificate.',
+  },
+  {
+    id: 'creg-0025',
+    supplierId: 'sup-010',
+    supplierName: 'PT Sample Halal Emulsifiers',
+    materialCodes: ['RM-EMUL-9430'],
+    materialCategory: 'other',
+    certType: 'HALAL_BPJPH',
+    certNumber: 'SAMPLE-HALAL-0010A',
+    issuer: 'BPJPH (illustrative)',
+    issueDate: '2025-01-30',
+    expiryDate: null, // permanent basis (GR 42/2024) — no clock
+    lifecycleState: 'Valid',
+    sapSync: 'AWAITING_SYNC',
+    scopeText: 'SAMPLE — emulsifier',
+    notes: 'Synthetic illustrative record — not a real certificate.',
+  },
+  {
+    id: 'creg-0026',
+    supplierId: 'sup-011',
+    supplierName: 'Sample Salicylics & Niacinamide Ltd.',
+    materialCodes: ['AI-SALI-6800'],
+    materialCategory: 'other',
+    certType: 'HALAL_BPJPH',
+    certNumber: 'SAMPLE-HALAL-0011A',
+    issuer: 'BPJPH (illustrative)',
+    issueDate: '2025-08-05',
+    expiryDate: null, // permanent basis (GR 42/2024) — no clock
+    lifecycleState: 'Valid',
+    sapSync: 'AWAITING_SYNC',
+    scopeText: 'SAMPLE — salicylic active',
+    notes: 'Synthetic illustrative record — not a real certificate.',
+  },
+  {
+    id: 'creg-0027',
+    supplierId: 'sup-002',
+    supplierName: 'PT Sample Specialty Fats',
+    materialCodes: ['RM-STEAR-7300'],
+    materialCategory: 'other',
+    certType: 'HALAL_BPJPH',
+    certNumber: 'SAMPLE-HALAL-0002F',
+    issuer: 'BPJPH (illustrative)',
+    issueDate: '2025-06-03',
+    expiryDate: null, // permanent basis (GR 42/2024) — no clock
+    lifecycleState: 'Valid',
+    sapSync: 'AWAITING_SYNC',
+    scopeText: 'SAMPLE — stearic acid',
+    notes: 'Synthetic illustrative record — not a real certificate.',
+  },
 ];
