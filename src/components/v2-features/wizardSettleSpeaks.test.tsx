@@ -41,6 +41,7 @@ import { getKnownFlows } from '../../services/transitions';
 import type { IDataService } from '../../services/data/types';
 import type { EnforcementSetting } from '../../lib/enforcement';
 import { halalOf } from '../../services/sdc/halal';
+import { verifyHalalAtReceipt } from '../../services/data/halalVerification';
 import { bpomOf } from '../../services/sdc/bpom';
 import GRInspectionWizard from './GRInspectionWizard';
 import BuyerGoodsReceipt from '../../pages-v2/BuyerGoodsReceipt';
@@ -88,15 +89,20 @@ const EMPTY_LEDGER: readonly EnforcementSetting[] = [];
 const ELIGIBLE = mockShipments.filter(
   (s) => (s.status === 'At Dock' || s.status === 'Unloading') && s.lineItems.length > 0,
 );
+// OPS-2 — and a valid halal certificate on file for every line: without one the
+// quality step no longer releases, so "answerable" has a third condition. The
+// certificate that satisfies it here is on the permanent BPJPH basis (asserted
+// below), so the walk does not depend on the wall clock.
 const ANSWERABLE = ELIGIBLE.find((s) =>
-  s.lineItems.every((li) => halalOf(li.materialCode).ok && bpomOf(li.materialCode).ok),
+  s.lineItems.every((li) => {
+    const cert = verifyHalalAtReceipt(s.supplierId, li.materialCode, COMPLIANCE_REGISTRY, '2099-01-01T00:00:00.000Z');
+    return halalOf(li.materialCode).ok && bpomOf(li.materialCode).ok && cert.verdict === 'SATISFIED';
+  }),
 );
 const BLOCKED = ELIGIBLE.find((s) =>
   s.lineItems.some((li) => !halalOf(li.materialCode).ok || !bpomOf(li.materialCode).ok),
 );
 
-const radioFor = (check: string, v: 'Pass' | 'Fail') =>
-  screen.getByRole('radio', { name: new RegExp(`${check}.*${v}`) });
 
 const toasts = () => screen.getByTestId('toast-spy').textContent ?? '';
 
@@ -112,6 +118,7 @@ const completeWizard = async (service?: IDataService) => {
         asns={[...asnStore.all()]}
         enforcementSettings={EMPTY_LEDGER}
         complianceRegistry={COMPLIANCE_REGISTRY}
+        materialRulings={[]}
       />
     </>,
     service ? { service } : undefined,
@@ -120,8 +127,13 @@ const completeWizard = async (service?: IDataService) => {
   fireEvent.click(await screen.findByText(ANSWERABLE!.asnNumber));
   fireEvent.click(next()); // → receipt
   fireEvent.click(next()); // → quality
-  fireEvent.click(radioFor('BPOM Lot Tracking', 'Pass'));
-  fireEvent.click(radioFor('Halal Seal Check', 'Pass'));
+  // OPS-2 — every regulatory question the line is ASKED is answered. Which ones
+  // are asked is the master's and the ruling's business (packaging owes no BPOM
+  // lot check), so the walk answers what is on the screen rather than assuming
+  // both — and requires at least one, or it would be answering nothing.
+  const asked = screen.getAllByRole('radio', { name: /(BPOM Lot Tracking|Halal Seal Check).*Pass/ });
+  expect(asked.length).toBeGreaterThan(0);
+  for (const radio of asked) fireEvent.click(radio);
   // The gate genuinely opened — otherwise every assertion below is vacuous.
   expect(next(), 'the quality step never released; the walk below tests nothing').toBeEnabled();
   fireEvent.click(next()); // → summary (autoPostSap defaults ON)

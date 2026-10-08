@@ -37,7 +37,7 @@ import {
 } from '../halal';
 import { MATERIAL_GROUPS } from '../materialGroups';
 import { MATERIAL_MASTER } from '../fixtures';
-import type { HalalApplicability } from '../types';
+import type { HalalApplicability, MaterialMaster } from '../types';
 
 const ENTRIES = Object.values(MATERIAL_MASTER);
 const CODES = Object.keys(MATERIAL_MASTER).sort();
@@ -89,15 +89,19 @@ describe('H1 — the seed is a CLASS RULE, and the rule DERIVES FROM THE AXIS', 
     expect(src['/src/services/sdc/halal.ts']).not.toContain('startsWith(');
   });
 
-  it('⚠️ PACKAGING IS UNDETERMINED — Seat 3, D-COMP-HALAL-1 — and NOT the BPOM rule', () => {
-    // THE REFINEMENT, PINNED. BPOM excludes packaging and rules it
-    // `NOT_APPLICABLE` by the same registry axis. Halal may not: `doc-001` is an
-    // MUI halal certificate linked to a PET bottle material, and
-    // `AdaptiveContext.tsx:89` puts `packaging` inside its `isHalal` selector.
-    // We do not know, so the seed says we do not know.
+  it('⚠️ PACKAGING IS REQUIRED — the operator answered D-COMP-HALAL-1 at OPS-2 — and it is still NOT the BPOM rule', () => {
+    // ⚠️ RETITLED AND INVERTED AT OPS-2; THE OLD TITLE READ *"PACKAGING IS
+    // UNDETERMINED — Seat 3, D-COMP-HALAL-1 — and NOT the BPOM rule"* and every
+    // packaging group was pinned `'UNDETERMINED'`. That was the honest seed
+    // while nobody had answered: BPOM excludes packaging, halal might not
+    // (`doc-001` is an MUI halal certificate linked to a PET bottle material),
+    // so the seed said we did not know — and receiving refused every packaging
+    // line (R-OPS P0-5). The operator's ruling (2026-10-08): HALAL APPLIES TO
+    // PACKAGING BY DEFAULT, and a material it does not apply to is ruled so by
+    // Compliance, by name, on the ruling ledger.
     expect(PACKAGING_GROUPS).toContain('MG-25');
     for (const g of PACKAGING_GROUPS) {
-      expect(PROVISIONAL_HALAL_BY_GROUP[g], `${g} is packaging`).toBe('UNDETERMINED');
+      expect(PROVISIONAL_HALAL_BY_GROUP[g], `${g} is packaging`).toBe('REQUIRED');
       // ⚠️ THE TWO REGIMES DISAGREE, ON EVERY PACKAGING GROUP, IN WRITING.
       // Copying the neighbouring rule because the shape was available turns this
       // red — which is the entire job of this assertion.
@@ -105,7 +109,7 @@ describe('H1 — the seed is a CLASS RULE, and the rule DERIVES FROM THE AXIS', 
     }
   });
 
-  it('everything that ENTERS or FEEDS a formulation is REQUIRED, and nothing else is ruled', () => {
+  it('everything that ENTERS or FEEDS a formulation is REQUIRED, and since OPS-2 so is packaging', () => {
     const ingredientAxes = MATERIAL_GROUPS.filter(
       (g) => g.axis === 'formulation-ingredient' || g.axis === 'upstream-input',
     ).map((g) => g.group);
@@ -118,13 +122,16 @@ describe('H1 — the seed is a CLASS RULE, and the rule DERIVES FROM THE AXIS', 
         .filter(([, v]) => v === 'REQUIRED')
         .map(([g]) => g)
         .sort(),
-    ).toEqual([...ingredientAxes].sort());
+    ).toEqual([...ingredientAxes, ...PACKAGING_GROUPS].sort());
+    // OPS-2 — the UNDETERMINED set was the packaging groups and is now EMPTY:
+    // every declared group has an answer. The default for an UNDECLARED group
+    // or axis is still `'UNDETERMINED'` (the next spec), so the fail-closed
+    // branch is intact; it simply has no declared member today.
     expect(
       Object.entries(PROVISIONAL_HALAL_BY_GROUP)
         .filter(([, v]) => v === 'UNDETERMINED')
-        .map(([g]) => g)
-        .sort(),
-    ).toEqual([...PACKAGING_GROUPS].sort());
+        .map(([g]) => g),
+    ).toEqual([]);
     // ⚠️ NO GROUP IS RULED `'NOT_REQUIRED'`. Not an omission — see the split
     // test below, which states it as a property of the whole master.
     expect(Object.values(PROVISIONAL_HALAL_BY_GROUP)).not.toContain('NOT_REQUIRED');
@@ -164,11 +171,14 @@ describe('H1 — the seed is a CLASS RULE, and the rule DERIVES FROM THE AXIS', 
     expect(drifted).toEqual([]);
   });
 
-  it('the three-way split is 31 / 0 / 11 — and the ZERO is an assertion, not a gap', () => {
+  it('the three-way split is 42 / 0 / 0 since OPS-2 (it was 31 / 0 / 11) — and the ZERO is an assertion, not a gap', () => {
     const count = (v: HalalApplicability) =>
       ENTRIES.filter((e) => e.halalApplicable === v).length;
-    expect(count('REQUIRED')).toBe(31);
-    expect(count('UNDETERMINED')).toBe(11);
+    // The eleven packaging rows moved from `UNDETERMINED` to `REQUIRED` by the
+    // operator's ruling; the thirty-one ingredient rows did not move.
+    expect(count('REQUIRED')).toBe(42);
+    expect(count('UNDETERMINED')).toBe(0);
+    expect(ENTRIES.filter((e) => e.materialType === 'VERP')).toHaveLength(11);
     // ⚠️ **ZERO `'NOT_REQUIRED'`, DELIBERATELY.** No row in this master has a
     // basis for saying a halal determination is unnecessary. The one group where
     // that could have been argued by analogy — packaging, which BPOM excludes —
@@ -184,9 +194,7 @@ describe('H1 — the seed is a CLASS RULE, and the rule DERIVES FROM THE AXIS', 
     // and the SAP taxonomy agree — asserted rather than encoded, because two
     // rules for one fact is how they drift apart.
     for (const e of ENTRIES) {
-      expect(e.halalApplicable, e.materialCode).toBe(
-        e.materialType === 'VERP' ? 'UNDETERMINED' : 'REQUIRED',
-      );
+      expect(e.halalApplicable, e.materialCode).toBe('REQUIRED');
     }
   });
 
@@ -200,13 +208,34 @@ describe('H1 — the seed is a CLASS RULE, and the rule DERIVES FROM THE AXIS', 
 });
 
 describe('H1 — UNDETERMINED REFUSES IDENTICALLY TO AN UNKNOWN CODE', () => {
+  // ⚠️ OPS-2 — THE SEEDED MASTER NO LONGER HOLDS AN UNDETERMINED HALAL ROW (the
+  // eleven packaging rows were the only ones, and the operator ruled them
+  // `REQUIRED`). `CODES.find(...)` therefore returned `undefined`, and the specs
+  // below would have gone on "passing" against `halalOf(undefined)` — an
+  // unknown code compared with itself. The mechanism is still in the module and
+  // still has to refuse, so it is exercised against a master in which the
+  // packaging rows are put back to `UNDETERMINED`: the real rows, one field
+  // changed, through the same lookup.
+  const UNRULED_MASTER: MaterialMaster = Object.fromEntries(
+    CODES.map((c) => [
+      c,
+      PACKAGING_GROUPS.includes(MATERIAL_MASTER[c].materialGroup)
+        ? { ...MATERIAL_MASTER[c], halalApplicable: 'UNDETERMINED' as const }
+        : MATERIAL_MASTER[c],
+    ]),
+  );
   const undeterminedCode = CODES.find(
-    (c) => MATERIAL_MASTER[c].halalApplicable === 'UNDETERMINED',
+    (c) => UNRULED_MASTER[c].halalApplicable === 'UNDETERMINED',
   )!;
+
+  it('the population is real — the unruled master holds an undetermined row, and the seeded one does not', () => {
+    expect(undeterminedCode).toBeDefined();
+    expect(CODES.filter((c) => MATERIAL_MASTER[c].halalApplicable === 'UNDETERMINED')).toEqual([]);
+  });
 
   it('both refusals carry the SAME shape and NOTHING to proceed on', () => {
     const unknown = halalOf('RM-NOT-IN-THE-MASTER');
-    const undetermined = halalOf(undeterminedCode);
+    const undetermined = halalOf(undeterminedCode, UNRULED_MASTER);
     expect(unknown.ok).toBe(false);
     expect(undetermined.ok).toBe(false);
     // ⚠️ NOT A STYLE POINT. `required` is absent from BOTH — there is no field a
@@ -230,7 +259,7 @@ describe('H1 — UNDETERMINED REFUSES IDENTICALLY TO AN UNKNOWN CODE', () => {
       reason: 'UNKNOWN_MATERIAL',
       materialCode: 'RM-NOT-IN-THE-MASTER',
     });
-    expect(halalOf(undeterminedCode)).toEqual({
+    expect(halalOf(undeterminedCode, UNRULED_MASTER)).toEqual({
       ok: false,
       reason: 'UNDETERMINED_APPLICABILITY',
       materialCode: undeterminedCode,
@@ -242,12 +271,12 @@ describe('H1 — UNDETERMINED REFUSES IDENTICALLY TO AN UNKNOWN CODE', () => {
     // `'UNDETERMINED'` STORES AN EXPLICIT ABSENCE OF DETERMINATION AND REFUSES.
     // Stated as a property over the WHOLE master rather than one example.
     const undetermined = CODES.filter(
-      (c) => MATERIAL_MASTER[c].halalApplicable === 'UNDETERMINED',
+      (c) => UNRULED_MASTER[c].halalApplicable === 'UNDETERMINED',
     );
     expect(undetermined).toHaveLength(11);
-    expect(undetermined.filter((c) => halalOf(c).ok)).toEqual([]);
-    // And they are exactly the packaging rows — the eleven `D-COMP-HALAL-1` is
-    // about, and 4 of the 9 receivable lines live in this set.
+    expect(undetermined.filter((c) => halalOf(c, UNRULED_MASTER).ok)).toEqual([]);
+    // And they are exactly the packaging rows — the eleven `D-COMP-HALAL-1` was
+    // about. Against the SEEDED master every one of them now answers.
     expect(
       undetermined.every((c) => PACKAGING_GROUPS.includes(MATERIAL_MASTER[c].materialGroup)),
     ).toBe(true);
@@ -258,7 +287,9 @@ describe('H1 — UNDETERMINED REFUSES IDENTICALLY TO AN UNKNOWN CODE', () => {
     // refused everything they would all still be green.
     expect(halalOf('RM-PSTN-7150')).toEqual({ ok: true, required: true });
     expect(halalOf('AI-NIAC-6601')).toEqual({ ok: true, required: true });
-    expect(halalOf('PK-PETB-8810')).toEqual({
+    // OPS-2 — and so does packaging, which refused here until the ruling.
+    expect(halalOf('PK-PETB-8810')).toEqual({ ok: true, required: true });
+    expect(halalOf('PK-PETB-8810', UNRULED_MASTER)).toEqual({
       ok: false,
       reason: 'UNDETERMINED_APPLICABILITY',
       materialCode: 'PK-PETB-8810',
@@ -288,26 +319,33 @@ describe('HALAL-PROSE-READS-AN-ANSWER-01 — the two mechanisms, MEASURED', () =
   });
 
   it('they agree on 4 rows and DISAGREE on 38 — and the disagreement is the finding', () => {
-    // The class rule says REQUIRED on 31 rows. The prose parse says "check" on
-    // four of them and states a CONFIDENT NEGATIVE on the other 27 — including
-    // `RM-PSTN-7150` (RBD Palm Stearin), the single most halal-load-bearing row
-    // in the master, whose label happens not to contain the word.
+    // The class rule says REQUIRED on every row (42 since OPS-2; 31 before it).
+    // The prose parse says "check" on four of them and states a CONFIDENT
+    // NEGATIVE on the other 38 — including `RM-PSTN-7150` (RBD Palm Stearin),
+    // the single most halal-load-bearing row in the master, whose label happens
+    // not to contain the word.
     const answerable = CODES.filter((c) => halalOf(c).ok);
-    expect(answerable).toHaveLength(31);
+    expect(answerable).toHaveLength(42);
     const agree = answerable.filter((c) => {
       const o = halalOf(c);
       return o.ok && o.required === proseRuleSays(MATERIAL_MASTER[c].label);
     });
     expect(agree).toEqual(proseFires);
-    expect(answerable.length - agree.length).toBe(27);
+    expect(answerable.length - agree.length).toBe(38);
     // ⚠️ AND ON THE ELEVEN THE MASTER REFUSES, THE PROSE PARSE ANSWERS ANYWAY —
     // `false`, on every one. That is the shape `PREFIX-RULE-ASSERTS-A-NEGATIVE-01`
     // named one regulation over: a mechanism with no way to say "undetermined"
     // converts every non-match into a determination it has no basis for. Here it
     // does so on the exact eleven rows `doc-001` gives us reason to doubt.
-    const refused = CODES.filter((c) => !halalOf(c).ok);
-    expect(refused).toHaveLength(11);
-    expect(refused.filter((c) => proseRuleSays(MATERIAL_MASTER[c].label))).toEqual([]);
+    // OPS-2 — the eleven are the packaging rows, which the master refused then
+    // and answers now; the parse's `false` on them is the same fabricated
+    // negative, measured against the rows themselves.
+    const packagingRows = CODES.filter((c) =>
+      PACKAGING_GROUPS.includes(MATERIAL_MASTER[c].materialGroup),
+    );
+    expect(packagingRows).toHaveLength(11);
+    expect(packagingRows.filter((c) => proseRuleSays(MATERIAL_MASTER[c].label))).toEqual([]);
+    expect(CODES.filter((c) => !halalOf(c).ok)).toEqual([]);
   });
 
   it('⚠️ THE FIRING SET MOVED BY ZERO — asserted, not assumed', () => {
@@ -317,8 +355,9 @@ describe('HALAL-PROSE-READS-AN-ANSWER-01 — the two mechanisms, MEASURED', () =
     // inferred from what the diff touched, because "I did not edit that file" is
     // not a measurement.
     expect(proseFires).toHaveLength(4);
+    // 31 when this was written; 42 since OPS-2 ruled packaging in.
     expect(CODES.filter((c) => MATERIAL_MASTER[c].halalApplicable === 'REQUIRED')).toHaveLength(
-      31,
+      42,
     );
     // The one-directional containment, stated: everything the parse fires on is
     // also REQUIRED under the class rule, so H2 can only ADD checks, never
@@ -503,7 +542,15 @@ describe('H2 — WIRED, and the prose parse is GONE', () => {
     // Derived rather than listed: exactly one NON-TEST caller, and it is the GR
     // wizard. A second production caller means the lookup has spread to a
     // surface nobody reviewed, which is worth failing over.
-    expect(callers).toEqual(['/src/components/v2-features/GRInspectionWizard.tsx']);
+    //
+    // OPS-2 — it fired, and the second caller is reviewed and named:
+    // `sdc/materialRuling.ts` calls `halalOf` to read a Compliance ruling OVER
+    // the master's answer (for the Compliance surface's rows). The wizard still
+    // makes its own one read per line; nothing else calls the lookup.
+    expect(callers).toEqual([
+      '/src/components/v2-features/GRInspectionWizard.tsx',
+      '/src/services/sdc/materialRuling.ts',
+    ]);
 
     // ⚠️ AND EXACTLY ONE TYPE-ONLY REFERENCE, NAMED (`CENSUS-COUNTS-TYPE-IMPORTS-01`).
     // `src/lib/enforcement.ts` imports `HalalRefusalReason` to derive — at

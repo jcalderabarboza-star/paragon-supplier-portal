@@ -51,11 +51,13 @@ import {
   useCurrentSupplier,
   usePurchaseOrders,
   useASNs,
+  useShipments,
 } from '../services/query/hooks';
-import type { AsnStatus, ASN, PurchaseOrder } from '../services/data/types';
+import type { AsnStatus, ASN, PurchaseOrder, Shipment } from '../services/data/types';
+import { statusTone } from '../lib/statusTone';
 import { useRefusalText } from '../hooks/useRefusalText';
 import { refusalDetailOf } from '../services/transitions/refusalMessage';
-import { formatNumber } from '../lib/format';
+import { formatDate, formatNumber } from '../lib/format';
 
 type TabKey = 'shipments' | 'create' | 'dock';
 type StatusFilter = AsnStatus | 'All';
@@ -127,79 +129,114 @@ const CARRIER_OPTIONS = [
   'Other',
 ];
 
-const DockAppointments: React.FC = () => {
+/**
+ * OPS-2 — the supplier's dock appointments, READ FROM THE SUPPLIER'S OWN
+ * SHIPMENTS.
+ *
+ * ⚠️ This tab was one hardcoded card — ASN-2026-001, Dock 3, Monday 7 April
+ * 2026, a material that is on no purchase order — shown to every supplier,
+ * with a tab count of 1. It now lists the appointments the shipment records
+ * carry (`dockAssignment` + `dockTime`, set on Paragon's side) for shipments
+ * that have not been delivered, and says so plainly when there are none. The
+ * read is supplier-scoped by the service, so a supplier sees only its own.
+ */
+export const dockAppointmentsOf = (shipments: readonly Shipment[]): Shipment[] =>
+  shipments
+    .filter((s) => !!s.dockAssignment && s.status !== 'Delivered')
+    .sort((x, y) =>
+      `${x.estimatedArrival} ${x.dockTime ?? ''}`.localeCompare(`${y.estimatedArrival} ${y.dockTime ?? ''}`),
+    );
+
+const DockAppointments: React.FC<{
+  appointments: Shipment[];
+  state: 'pending' | 'error' | 'ready';
+}> = ({ appointments, state }) => {
   const { t } = useTranslation();
-  // i18n-defer: dock-appointment fixture is sample data — the field VALUES
-  // (dates, times, dock/location proper nouns) stay canonical EN; only the field
-  // LABELS localize.
-  const dockFields = [
-    { Icon: Calendar, label: t('supplierShipments.dock.field.date'), value: 'Monday, 7 April 2026' },
-    { Icon: Clock, label: t('supplierShipments.dock.field.time'), value: '10:00 WIB' },
-    { Icon: Package, label: t('supplierShipments.dock.field.dock'), value: 'Dock 3' },
-    {
-      Icon: MapPin,
-      label: t('supplierShipments.dock.field.location'),
-      value: 'NDC Jatake 6, Tangerang Selatan',
-    },
-  ];
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4" data-testid="dock-appointments">
       <h3 className="text-section text-text-primary">
         {t('supplierShipments.dock.heading')}
       </h3>
 
-      <div className="bg-bg-surface border-2 border-success rounded-lg shadow-sm p-5">
-        <div className="flex items-start justify-between mb-4 gap-3 flex-wrap">
-          <div>
-            <Data as="div" className="text-base font-bold text-text-primary">
-              ASN-2026-001
-            </Data>
-            <div className="text-xs text-text-tertiary mt-0.5">
-              {/* i18n-defer: mock/sample data (material proper noun) */}
-              <Data>PO-2025-00107</Data> · PET Bottle 100ml Airless Pump
+      {state === 'pending' && (
+        <div className="text-sm text-text-tertiary" role="status">
+          {t('supplierShipments.dock.loading')}
+        </div>
+      )}
+      {state === 'error' && (
+        <div className="text-sm text-danger" role="alert">
+          {t('supplierShipments.dock.readFailed')}
+        </div>
+      )}
+      {state === 'ready' && appointments.length === 0 && (
+        <div
+          className="bg-bg-surface border border-border-subtle rounded-lg px-5 py-6 text-sm text-text-secondary"
+          data-testid="dock-empty"
+        >
+          {t('supplierShipments.dock.empty')}
+        </div>
+      )}
+
+      {state === 'ready' &&
+        appointments.map((s) => (
+          <div
+            key={s.id}
+            className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-5"
+            data-testid={`dock-appointment-${s.asnNumber}`}
+          >
+            <div className="flex items-start justify-between mb-4 gap-3 flex-wrap">
+              <div>
+                <Data as="div" className="text-base font-bold text-text-primary">
+                  {s.asnNumber}
+                </Data>
+                <div className="text-xs text-text-tertiary mt-0.5">
+                  <Data>{s.poNumber}</Data>
+                  {s.lineItems[0] ? ` · ${s.lineItems[0].description}` : ''}
+                </div>
+              </div>
+              {/* The raw status token: `StatusPill` resolves its own label. */}
+              <StatusPill variant={statusTone(s.status)}>{s.status}</StatusPill>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+              {[
+                { Icon: Calendar, label: t('supplierShipments.dock.field.date'), value: formatDate(s.estimatedArrival) },
+                { Icon: Clock, label: t('supplierShipments.dock.field.time'), value: s.dockTime ?? '—' },
+                { Icon: Package, label: t('supplierShipments.dock.field.dock'), value: s.dockAssignment ?? '—' },
+                { Icon: MapPin, label: t('supplierShipments.dock.field.location'), value: s.destination },
+              ].map(({ Icon, label, value }) => (
+                <div
+                  key={label}
+                  className="px-3 py-2 bg-bg-hover rounded-md flex items-start gap-2"
+                >
+                  <Icon size={14} className="text-text-tertiary mt-0.5 shrink-0" />
+                  <div>
+                    <div className="text-label text-text-tertiary uppercase">{label}</div>
+                    <Data as="div" className="text-sm text-text-primary mt-0.5">
+                      {value}
+                    </Data>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
-          <StatusPill variant="success">Confirmed</StatusPill>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-          {dockFields.map(({ Icon, label, value }) => (
-            <div
-              key={label}
-              className="px-3 py-2 bg-bg-hover rounded-md flex items-start gap-2"
-            >
-              <Icon size={14} className="text-text-tertiary mt-0.5 shrink-0" />
-              <div>
-                <div className="text-label text-text-tertiary uppercase">
-                  {label}
-                </div>
-                <div className="text-sm text-text-primary mt-0.5">{value}</div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
+        ))}
 
-      <div className="bg-warning-soft border-l-2 border-warning rounded px-4 py-3 text-sm text-text-secondary flex items-start gap-2">
-        <Clock size={14} className="text-warning-hover shrink-0 mt-0.5" />
-        <span>
-          {t('supplierShipments.dock.notice.arrivePre')}{' '}
-          <strong className="text-warning-hover">
-            {t('supplierShipments.dock.notice.arriveEmphasis')}
-          </strong>
-          . {t('supplierShipments.dock.notice.arrivePost')}{' '}
-          {/* i18n-defer: mock/sample data (receiving-team phone number) */}
-          <strong>+62-21-5595-xxxx</strong>{' '}
-          {t('supplierShipments.dock.notice.arriveTail')}
-        </span>
-      </div>
+      {state === 'ready' && appointments.length > 0 && (
+        <div className="bg-warning-soft border-l-2 border-warning rounded px-4 py-3 text-sm text-text-secondary flex items-start gap-2">
+          <Clock size={14} className="text-warning-hover shrink-0 mt-0.5" />
+          <span>
+            {t('supplierShipments.dock.notice.arrivePre')}{' '}
+            <strong className="text-warning-hover">
+              {t('supplierShipments.dock.notice.arriveEmphasis')}
+            </strong>
+            . {t('supplierShipments.dock.notice.arrivePost')}
+          </span>
+        </div>
+      )}
 
       <div className="bg-info-soft border-l-2 border-info rounded px-4 py-3 text-sm text-text-secondary flex items-start gap-2">
         <CheckCircle2 size={14} className="text-info shrink-0 mt-0.5" />
-        <span>
-          {t('supplierShipments.dock.info.pre')}{' '}
-          <strong>WhatsApp</strong>{' '}
-          {t('supplierShipments.dock.info.post')}
-        </span>
+        <span>{t('supplierShipments.dock.info')}</span>
       </div>
     </div>
   );
@@ -606,6 +643,13 @@ const SupplierShipments: React.FC = () => {
   const supplierQuery = useCurrentSupplier();
   const asnsQuery = useASNs();
   const posQuery = usePurchaseOrders({ status: POStatus.CONFIRMED });
+  // OPS-2 — the dock tab reads the supplier's own shipments. Not part of the
+  // page's gating reads: the tab states its own pending and failed read.
+  const shipmentsQuery = useShipments();
+  const dockAppointments = useMemo(
+    () => dockAppointmentsOf(shipmentsQuery.data?.items ?? []),
+    [shipmentsQuery.data],
+  );
 
   const mySupplier = supplierQuery.data ?? null;
   const asns = useMemo(() => asnsQuery.data?.items ?? [], [asnsQuery.data]);
@@ -1207,7 +1251,7 @@ const SupplierShipments: React.FC = () => {
           ...(wizardHeld
             ? [{ id: 'create' as TabKey, label: t('supplierShipments.tab.createAsn') }]
             : []),
-          { id: 'dock', label: t('supplierShipments.tab.dock'), count: 1 },
+          { id: 'dock', label: t('supplierShipments.tab.dock'), count: dockAppointments.length },
         ]}
         value={tab}
         onChange={setTab}
@@ -1256,7 +1300,12 @@ const SupplierShipments: React.FC = () => {
         />
       )}
 
-      {tab === 'dock' && <DockAppointments />}
+      {tab === 'dock' && (
+        <DockAppointments
+          appointments={dockAppointments}
+          state={shipmentsQuery.isPending ? 'pending' : shipmentsQuery.isError ? 'error' : 'ready'}
+        />
+      )}
 
       <SidePanel
         open={submitTarget !== null}

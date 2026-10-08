@@ -28,6 +28,7 @@ import type {
 // CP-3 · E2 — the enforcement read seam's row type. TYPE-ONLY: naming the
 // vocabulary is not acquiring a consumer, and nothing in this file calls it.
 import type { EnforcementSetting, ActorAttribution } from '../../lib/enforcement';
+import type { MaterialRuling } from '../sdc/materialRuling';
 
 // A planning bucket id (C7 GG-3 / C8 GG-3′, closed on C8's side). TYPE-ONLY for
 // the same reason as the line above: `PurchaseRequisition.periodBucket` names the
@@ -2050,6 +2051,11 @@ export interface IRiskService {
    *  sees the superset). Fixture-backed + SIMULATED (LivenessRegistry) until the
    *  Track-R harvest lands the real cert registry. */
   getComplianceRegistry(scope: QueryScope): Promise<Page<ComplianceRegistryEntry>>;
+  /** OPS-2 — the material applicability ruling ledger, oldest first. Append-only
+   *  upstream; what is in force is derived by the reader (`rulingInForce`).
+   *  BUYER-SCOPED: a supplier resolves to SCOPE_DENIED — it is a Paragon
+   *  governance record carrying who ruled and why. */
+  getMaterialRulings(scope: QueryScope): Promise<Page<MaterialRuling>>;
   getCommodities(scope: QueryScope): Promise<Page<Commodity>>;
 }
 

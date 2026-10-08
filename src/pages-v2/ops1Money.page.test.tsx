@@ -6,7 +6,7 @@
 // are `services/data/mock/ops1Money.test.ts`; this file is the rendered copy.
 // ────────────────────────────────────────────────────────────────────────────
 import { screen, fireEvent, within, waitFor } from '@testing-library/react';
-import { renderWithProviders, BUYER, SUPPLIER } from '../test/test-utils';
+import { renderWithProviders, BUYER, SUPPLIER, nameUnnamedApprovals } from '../test/test-utils';
 import type { CurrentIdentity } from '../context/CurrentIdentityContext';
 import { MockCommandService } from '../services/data/mock/MockCommandService';
 import { purchaseOrderStore } from '../services/data/mock/stores/purchaseOrderStore';
@@ -210,12 +210,52 @@ describe('OPS-1 · who approved and who released', () => {
     expect(invoiceStore.get(id)!.approvedBy).toEqual(FINANCE_ACTOR);
   });
 
-  it('with nobody seated the toast still says the approval was recorded without a named approver', async () => {
+  // ⚠️ REVERSED AT OPS-2, BY OPERATOR RULING. This read *"with nobody seated
+  // the toast still says the approval was recorded without a named approver"*
+  // and asserted the toast "Recorded without a named approver — no person is
+  // resolved in this session". That sentence is deleted with the behaviour: the
+  // approval is refused, the toast says why and what to do, and the invoice
+  // does not move.
+  it('with nobody seated the approval is REFUSED, and the toast says whose name it needs', async () => {
     const id = await matchedInvoice();
     renderWithProviders(<Finance />, { identity: FINANCE_NOBODY });
     const d = await openInvoice(id);
     fireEvent.click(await within(d).findByRole('button', { name: 'Approve for payment' }));
-    expect(await toastText(/Recorded without a named approver/)).toContain('no person is resolved in this session');
+    expect(await toastText(/This seat names no person/)).toBe(
+      'This seat names no person, and an approval is recorded against the person who decided it. Choose a sample user on the identity panel, then approve again.',
+    );
+    expect(invoiceStore.get(id)!.status).toBe('Matched');
+    expect(invoiceStore.get(id)!.approvedBy).toBeUndefined();
+  });
+
+  it('OPS-2 — a seeded approval that names nobody offers Approve again, not Release; a named person takes it', async () => {
+    const seeded = invoiceStore.all().find((i) => i.status === 'Approved' && i.approvedBy?.kind !== 'RESOLVED')!;
+    expect(seeded, 'the seed holds an Approved invoice with no named approver').toBeDefined();
+    renderWithProviders(<Finance />, { identity: FINANCE_1 });
+    const d = await openNumber(seeded.invoiceNumber);
+    // The release is not offered on an approval nobody answers for…
+    expect(within(d).queryByRole('button', { name: 'Release payment' })).not.toBeInTheDocument();
+    expect(within(d).getByTestId('invoice-approval-unnamed')).toHaveTextContent(
+      'No named person approved this invoice. A named person approves it again before its payment is released.',
+    );
+    // …the way back is, and it records who took it.
+    fireEvent.click(await within(d).findByRole('button', { name: 'Approve again' }));
+    await waitFor(() => expect(invoiceStore.get(seeded.id)!.approvedBy).toEqual(FINANCE_ACTOR));
+    expect(invoiceStore.get(seeded.id)!.status).toBe('Approved');
+    await waitFor(() =>
+      expect(within(d).queryByTestId('invoice-approval-unnamed')).not.toBeInTheDocument(),
+    );
+    expect(await within(d).findByRole('button', { name: 'Release payment' })).toBeInTheDocument();
+    expect(within(d).getByTestId('invoice-approver')).toHaveTextContent(label(FINANCE_ACTOR));
+  });
+
+  it('OPS-2 — a seat that names nobody is refused Approve again too, by the same sentence', async () => {
+    const seeded = invoiceStore.all().find((i) => i.status === 'Approved' && i.approvedBy?.kind !== 'RESOLVED')!;
+    renderWithProviders(<Finance />, { identity: FINANCE_NOBODY });
+    const d = await openNumber(seeded.invoiceNumber);
+    fireEvent.click(await within(d).findByRole('button', { name: 'Approve again' }));
+    expect(await toastText(/This seat names no person/)).toContain('then approve again');
+    expect(invoiceStore.get(seeded.id)!.approvedBy).toBeUndefined();
   });
 
   it('the approver is refused the release BY NAME, and no person id reaches the reader', async () => {
@@ -266,6 +306,9 @@ describe('OPS-1 · who approved and who released', () => {
   });
 
   it('an invoice that carries a bank account still names it', async () => {
+    // OPS-2 — the seeded approval names nobody; a named person approves it
+    // again first, so the release confirmation this spec reads is offered.
+    await nameUnnamedApprovals();
     renderWithProviders(<Finance />, { identity: FINANCE_OTHER });
     const seeded = invoiceStore.all().find((i) => i.status === 'Approved' && i.bankAccount)!;
     const d = await openNumber(seeded.invoiceNumber);

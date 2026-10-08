@@ -258,12 +258,15 @@ describe('THE CENSUS — acts a screen is meant to offer that no screen offers',
     // because its absence is the only thing that fails if a future batch
     // retires the affordance without retiring the verb's `surfaced` flag.
     //
-    // The current member is `t_gr_hold`: `surfaced: true`, `from: ['Under
-    // Inspection']`, and **nothing in the tree has ever fired it** — it is
-    // parked by ruling, not by accident, which is exactly what makes it a
-    // stable known-true rather than a defect waiting to be fixed out from under
-    // this assertion.
-    expect(census).toContain('t_gr_hold');
+    // `t_gr_hold` was the third member — `surfaced: true`, `from: ['Under
+    // Inspection']`, never fired — and OPS-2 surfaced it: the receiving form
+    // offers the hold with a reason. It moves to the absence assertion below.
+    //
+    // The current member is `t_grline_quarantine`: `surfaced: true`, `from:
+    // ['Inspected']`, and no line-grain verb has a caller at all — the line
+    // sub-flow is authored and registered, and its command wiring waits for a
+    // line-level editing surface (`goodsReceiptLine.flow.ts`).
+    expect(census).toContain('t_grline_quarantine');
     expect(census.length).toBeGreaterThan(5);
   });
 
@@ -286,6 +289,15 @@ describe('THE CENSUS — acts a screen is meant to offer that no screen offers',
     // holds. It is now fired from the GR page's discrepancy section.
     expect(firable.has('t_asn_resolve_discrepancy')).toBe(true);
     expect(census).not.toContain('t_asn_resolve_discrepancy');
+
+    // OPS-2 — AND `t_gr_hold` JOINS THEM, with the verb that makes a held
+    // receipt decidable again. The hold is placed from the receiving form's last
+    // step; recording an inspection on an existing receipt is the same form's
+    // commit. Both reach the dispatcher through `useGoodsReceiptResume`.
+    expect(firable.has('t_gr_hold')).toBe(true);
+    expect(census).not.toContain('t_gr_hold');
+    expect(firable.has('t_gr_record_inspection')).toBe(true);
+    expect(census).not.toContain('t_gr_record_inspection');
 
     // ⚠️ **AND `t_po_acknowledge` JOINS THEM.** Surfaced in the panel footer on
     // `/supplier/orders`, in its own slot beside `po:confirm`'s.

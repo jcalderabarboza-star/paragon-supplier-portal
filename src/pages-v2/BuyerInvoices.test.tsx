@@ -1,5 +1,9 @@
 import { screen, fireEvent, waitFor } from '@testing-library/react';
-import { renderWithProviders } from '../test/test-utils';
+import {
+  renderWithProviders as renderBase,
+  BUYER_RELEASER,
+  seedNamedApprovals,
+} from '../test/test-utils';
 import type { CurrentIdentity } from '../context/CurrentIdentityContext';
 import { mockDataService } from '../services/data/mock/mockDataService';
 import { withChaos } from '../services/data/mock/withChaos';
@@ -13,6 +17,12 @@ import { useToast } from '../hooks/useToast';
 import BuyerInvoices from './BuyerInvoices';
 import { PERSONA_SYSTEM_ROLES } from '../services/transitions/businessRoles';
 import { NO_PERSON } from '../context/noPerson';
+
+// OPS-2 — a release is taken by a named person on an approval a DIFFERENT named
+// person answers for. Every render below is the named full-buyer seat unless a
+// spec passes its own, and every release starts from `seedNamedApprovals()`.
+const renderWithProviders: typeof renderBase = (ui, opts = {}) =>
+  renderBase(ui, { identity: BUYER_RELEASER, ...opts });
 
 const alwaysFails = withChaos(mockDataService, { minMs: 0, maxMs: 0, failureRate: 1 });
 const alwaysPending = withChaos(mockDataService, { minMs: 1e7, maxMs: 1e7, failureRate: 0 });
@@ -60,7 +70,7 @@ describe('BuyerInvoices — release payment is Option B (no fabrication)', () =>
   usePinnedDemoClock();
 
   it('release → Releasing Payment (no ref) → settle → Payment Released (real ref)', async () => {
-    invoiceStore.reset();
+    await seedNamedApprovals();
     renderWithProviders(<BuyerInvoices />);
     await screen.findByText('Invoices & Payment');
 
@@ -166,7 +176,7 @@ describe('BuyerInvoices — the release affordance survives the clock', () => {
   usePinnedDemoClock();
 
   it('⚠️ THE REGRESSION: a PAST-DUE Approved invoice still offers Release payment', async () => {
-    invoiceStore.reset();
+    await seedNamedApprovals();
     renderWithProviders(<BuyerInvoices />);
     await screen.findByText('Invoices & Payment');
     await openOverdueApprovedInvoice();
@@ -196,7 +206,7 @@ describe('BuyerInvoices — the release affordance survives the clock', () => {
   });
 
   it('offers Dispute wherever the MACHINE allows it, past due included', async () => {
-    invoiceStore.reset();
+    await seedNamedApprovals();
     renderWithProviders(<BuyerInvoices />);
     await screen.findByText('Invoices & Payment');
     await openOverdueApprovedInvoice();
@@ -213,7 +223,7 @@ describe('BuyerInvoices — the settle failure branch', () => {
   // succeeds must leave no failure affordance behind. Only then does a missing
   // retry button in the bad-path specs mean anything.
   it('KNOWN-GOOD FIRST: a settle that SUCCEEDS records success and leaves no remedy', async () => {
-    invoiceStore.reset();
+    await seedNamedApprovals();
     renderWithProviders(
       <>
         <BuyerInvoices />
@@ -237,7 +247,7 @@ describe('BuyerInvoices — the settle failure branch', () => {
   });
 
   it('a RETRYABLE fault records the classified toast AND offers a real retry', async () => {
-    invoiceStore.reset();
+    await seedNamedApprovals();
     const boom = withSettle(async () => {
       throw new DataError('CHAOS', 'transport down');
     });
@@ -270,7 +280,7 @@ describe('BuyerInvoices — the settle failure branch', () => {
   });
 
   it('a NON-RETRYABLE fault offers NO retry — asking again cannot change it', async () => {
-    invoiceStore.reset();
+    await seedNamedApprovals();
     const denied = withSettle(async () => {
       throw new DataError('SCOPE_DENIED', 'not yours');
     });
@@ -297,7 +307,7 @@ describe('BuyerInvoices — the settle failure branch', () => {
   });
 
   it('the interim state offers no verb at all — it is waiting, and says so', async () => {
-    invoiceStore.reset();
+    await seedNamedApprovals();
     const hangs = withSettle(() => new Promise<never>(() => {}));
     renderWithProviders(<BuyerInvoices />, { service: hangs });
     await screen.findByText('Invoices & Payment');

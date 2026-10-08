@@ -512,23 +512,33 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
     const key = personNamingRefusalKey(reason);
     if (key !== null && inv.approvedBy) return t(key, { person: renderAttribution(inv.approvedBy) });
     if (reason?.includes('INVOICE_RELEASER_UNNAMED:')) return t('buyerInvoices.release.refused.unnamed');
+    if (reason?.includes('INVOICE_APPROVAL_UNNAMED:')) return t('buyerInvoices.release.refused.approvalUnnamed');
     return refusalText(reason) ?? t('invoice.pay.failed.desc', { reason: reason ?? '' });
   };
 
-  const handleApprove = () => {
+  // OPS-2 — an Approved invoice whose approval names nobody. Its payment is not
+  // released (`INVOICE_APPROVAL_UNNAMED`); a named person approves it again.
+  const approvalUnnamed = (inv: BuyerInvoice): boolean =>
+    inv.lifecycleState === 'Approved' && inv.approvedBy?.kind !== 'RESOLVED';
+
+  const approveRefusalCopy = (reason: string | undefined): string => {
+    if (reason?.includes('INVOICE_APPROVER_UNATTRIBUTED:')) return t('buyerInvoices.approve.refused.unattributed');
+    if (reason?.includes('INVOICE_ALREADY_APPROVED:')) return t('buyerInvoices.approve.refused.alreadyNamed');
+    return refusalText(reason) ?? t('invoice.approve.failed.desc', { reason: reason ?? '' });
+  };
+
+  const handleApprove = (again = false) => {
     if (!selected) return;
     const inv = selected;
     approveMutation.mutate(
-      { invoiceId: inv.id },
+      { invoiceId: inv.id, again },
       {
         onSuccess: (res) => {
           if (res.status === 'failed') {
             toast({
               variant: 'warning',
               title: t('invoice.approve.failed.title', { invoiceNumber: inv.invoiceNumber }),
-              description:
-                refusalText(res.reason) ??
-                t('invoice.approve.failed.desc', { reason: res.reason ?? '' }),
+              description: approveRefusalCopy(res.reason),
             });
             return;
           }
@@ -536,13 +546,12 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
           toast({
             variant: 'success',
             title: t('invoice.approve.done.title', { invoiceNumber: inv.invoiceNumber }),
-            // OPS-1 — this said "no person is resolved in this session" to a
-            // seat that WAS acting as a named person. It now says who the store
-            // recorded, and keeps the unnamed sentence for the unnamed seat.
-            description:
-              identity.actor.kind === 'RESOLVED'
-                ? t('invoice.approve.done.descNamed', { person: renderAttribution(identity.actor) })
-                : t('invoice.approve.done.desc'),
+            // OPS-1 — says who the store recorded. OPS-2 — an approval is only
+            // ever recorded for a named seat now, so the "recorded without a
+            // named approver" sentence that stood beside this one is gone.
+            description: t('invoice.approve.done.descNamed', {
+              person: renderAttribution(identity.actor),
+            }),
           });
         },
       },
@@ -1161,6 +1170,23 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
                         {t('buyerInvoices.settle.inFlight')}
                       </span>
                     )
+                  ) : approvalUnnamed(selected) ? (
+                    // OPS-2 — the release is not offered on an approval nobody
+                    // answers for; the slot carries the way back instead.
+                    availabilityOfVerb('t_invoice_reapprove').kind === 'held' ? (
+                      <Button
+                        variant="outline"
+                        disabled={approveMutation.isPending}
+                        onClick={() => handleApprove(true)}
+                      >
+                        {t('buyerInvoices.footer.approveAgain')}
+                      </Button>
+                    ) : (
+                      <HandoffNotice
+                        availability={availabilityOfVerb('t_invoice_reapprove')}
+                        testId="handoff-reapprove"
+                      />
+                    )
                   ) : footerVerbId && commitAvailability.kind !== 'held' ? (
                     // ⚠️ THE RESERVED COMMIT IS FINANCE'S. A procurement seat
                     // gets the WAIT in the primary slot — not a disabled button,
@@ -1286,6 +1312,11 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
                   <dd className="text-text-primary font-medium" data-testid="invoice-approver">
                     {selected.approvedBy ? renderAttribution(selected.approvedBy) : selected.approver}
                   </dd>
+                  {approvalUnnamed(selected) && (
+                    <dd className="mt-1 text-xs text-warning-hover" data-testid="invoice-approval-unnamed">
+                      {t('buyerInvoices.approval.unnamed')}
+                    </dd>
+                  )}
                 </div>
                 {selected.releasedBy && (
                   <div>

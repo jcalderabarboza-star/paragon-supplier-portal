@@ -79,6 +79,8 @@ export const processFlowPurposeEn: Record<string, string> = {
     'Something looks wrong, so the goods are frozen rather than taken or refused. The reason written here is what the supplier will be asked about.',
   'processFlows.purpose.t_gr_request_retest':
     'The problem that froze the goods has been dealt with — look again. Without this, frozen stock has no way back into use.',
+  'processFlows.purpose.t_gr_record_inspection':
+    'Writes what the inspector counted and found onto a receipt that already exists. The decision that follows reads these lines, so a receipt nobody inspected cannot be decided.',
   'processFlows.purpose.t_gr_approve':
     'Quality takes the whole delivery. The supplier gets clean credit for it and the goods can be used.',
   'processFlows.purpose.t_gr_partial_approve':
@@ -115,6 +117,8 @@ export const processFlowPurposeEn: Record<string, string> = {
     'Paragon checks the bill against what was ordered and what was received. A bill that fails this check is not a bill anybody can pay.',
   'processFlows.purpose.t_invoice_approve':
     'Finance agrees the claim is owed. The decision to pay is taken here; the money moves later.',
+  'processFlows.purpose.t_invoice_reapprove':
+    'A named person puts their name to an approval that names nobody. Money is not released on an approval nobody answers for.',
   'processFlows.purpose.t_invoice_release_payment':
     'Sends the payment instruction to SAP. Until SAP confirms, nobody should tell a supplier they have been paid.',
   'processFlows.purpose.t_invoice_remit':
@@ -280,6 +284,12 @@ export const processFlowPurposeEn: Record<string, string> = {
     'Which parts of the platform are switched on — and a record of who switched each one, when, and why.',
   'processFlows.purpose.t_module_set':
     'Switches a part of the platform on or off, saying why, under the name of the person who did it; what is already recorded stays readable either way.',
+
+  // ── materialRuling (OPS-2) ────────────────────────────────────
+  'processFlows.purpose.entity.materialRuling':
+    'Whether halal, or BPOM, applies to a material — decided by Compliance, saying why, and kept as a record of who ruled and when.',
+  'processFlows.purpose.t_material_ruling_set':
+    'Compliance rules that halal or BPOM applies, or does not apply, to one material and says why. Receiving checks what the ruling says; a later ruling replaces it without erasing it.',
 
   // ── supplierDocument ───────────────────────────────────────────────────────
   'processFlows.purpose.entity.supplierDocument':
@@ -480,6 +490,8 @@ export const processFlowPurposeId: Record<string, string> = {
     'Ada yang tampak tidak beres, sehingga barangnya dibekukan alih-alih diterima atau ditolak. Alasan yang ditulis di sini adalah yang nanti ditanyakan kepada pemasok.',
   'processFlows.purpose.t_gr_request_retest':
     'Masalah yang membekukan barang sudah ditangani — periksa ulang. Tanpa ini, stok yang dibekukan tidak punya jalan kembali untuk dipakai.',
+  'processFlows.purpose.t_gr_record_inspection':
+    'Menuliskan apa yang dihitung dan ditemukan pemeriksa pada penerimaan yang sudah ada. Keputusan berikutnya membaca baris-baris ini, sehingga penerimaan yang tidak diperiksa siapa pun tidak dapat diputuskan.',
   'processFlows.purpose.t_gr_approve':
     'Tim mutu menerima seluruh kiriman. Pemasok mendapat penilaian bersih untuk kiriman itu dan barangnya boleh dipakai.',
   'processFlows.purpose.t_gr_partial_approve':
@@ -516,6 +528,8 @@ export const processFlowPurposeId: Record<string, string> = {
     'Paragon mencocokkan tagihan dengan apa yang dipesan dan apa yang diterima. Tagihan yang gagal di pemeriksaan ini bukan tagihan yang bisa dibayar siapa pun.',
   'processFlows.purpose.t_invoice_approve':
     'Keuangan menyetujui bahwa klaimnya memang terutang. Keputusan untuk membayar diambil di sini; uangnya berpindah kemudian.',
+  'processFlows.purpose.t_invoice_reapprove':
+    'Seseorang yang bernama mencantumkan namanya pada persetujuan yang tidak menyebut siapa pun. Uang tidak dirilis atas persetujuan yang tidak dipertanggungjawabkan siapa pun.',
   'processFlows.purpose.t_invoice_release_payment':
     'Mengirim instruksi pembayaran ke SAP. Sebelum SAP mengonfirmasi, jangan ada yang memberi tahu pemasok bahwa mereka sudah dibayar.',
   'processFlows.purpose.t_invoice_remit':
@@ -681,6 +695,12 @@ export const processFlowPurposeId: Record<string, string> = {
     'Bagian platform mana yang aktif — beserta catatan siapa yang mengubah masing-masing, kapan, dan mengapa.',
   'processFlows.purpose.t_module_set':
     'Mengaktifkan atau menonaktifkan sebagian platform, dengan alasan, atas nama orang yang melakukannya; apa yang sudah tercatat tetap dapat dibaca dalam kedua keadaan.',
+
+  // ── materialRuling (OPS-2) ────────────────────────────────────
+  'processFlows.purpose.entity.materialRuling':
+    'Apakah halal, atau BPOM, berlaku untuk suatu material — diputuskan oleh Kepatuhan, dengan penjelasannya, dan disimpan sebagai catatan siapa yang memutuskan dan kapan.',
+  'processFlows.purpose.t_material_ruling_set':
+    'Kepatuhan memutuskan bahwa halal atau BPOM berlaku, atau tidak berlaku, untuk satu material dan menyebutkan alasannya. Penerimaan memeriksa apa yang dikatakan keputusan itu; keputusan berikutnya menggantikannya tanpa menghapusnya.',
 
   // ── supplierDocument ───────────────────────────────────────────────────────
   'processFlows.purpose.entity.supplierDocument':

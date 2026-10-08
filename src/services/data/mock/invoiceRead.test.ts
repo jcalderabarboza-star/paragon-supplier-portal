@@ -8,6 +8,7 @@
 // ────────────────────────────────────────────────────────────────────────────
 
 import { describe, it, expect, beforeEach } from 'vitest';
+import { INVOICE_RELEASER, nameUnnamedApprovals } from '../../../test/namedApprovals';
 
 import { MockProcurementService } from './MockProcurementService';
 import { MockCommandService } from './MockCommandService';
@@ -60,7 +61,10 @@ describe('invoice reads — one canonical store, two truthful persona views', ()
   it('a buyer command advances BOTH surfaces coherently — no drift', async () => {
     // inv-giv-0892 (sup-003) is Approved. Release + settle → both read Payment Released.
     const sup003: QueryScope = { personaType: 'supplier', supplierId: 'sup-003', businessRoles: PERSONA_SYSTEM_ROLES.supplier };
-    const post = await commands.dispatch(buyer, {
+    // OPS-2 — the seeded approval names nobody: a named person approves it
+    // again, and a different named person releases.
+    await nameUnnamedApprovals();
+    const post = await commands.dispatch({ ...buyer, actor: INVOICE_RELEASER }, {
       transitionId: 't_invoice_release_payment',
       entity: 'invoice',
       entityId: 'inv-giv-0892',

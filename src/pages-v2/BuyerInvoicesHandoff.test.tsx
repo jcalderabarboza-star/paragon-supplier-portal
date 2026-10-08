@@ -1,5 +1,5 @@
 import { screen, fireEvent } from '@testing-library/react';
-import { renderWithProviders } from '../test/test-utils';
+import { renderWithProviders, seedNamedApprovals } from '../test/test-utils';
 import type { CurrentIdentity } from '../context/CurrentIdentityContext';
 import { invoiceStore } from '../services/data/mock/stores/invoiceStore';
 import { PERSONA_SYSTEM_ROLES } from '../services/transitions/businessRoles';
@@ -49,8 +49,12 @@ function releasableDocNumber(): string {
   return approved!.invoiceNumber;
 }
 
-beforeEach(() => {
-  invoiceStore.reset();
+// OPS-2 — the Approved invoice this walks names its approver (see
+// `test/namedApprovals`), so the primary slot carries the RELEASE — the commit
+// these specs are about — and not the approve-again that stands there while an
+// approval names nobody.
+beforeEach(async () => {
+  await seedNamedApprovals();
 });
 
 describe('POPULATION GUARD', () => {

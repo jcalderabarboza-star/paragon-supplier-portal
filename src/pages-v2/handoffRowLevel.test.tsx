@@ -284,12 +284,25 @@ describe('§75 · BuyerGoodsReceipt — the ROW-LEVEL verbs the entry guard did 
     expect(screen.queryByRole('button', { name: /Post to SAP/i })).not.toBeInTheDocument();
   });
 
-  it('⚠️ the UNGOVERNED control is untouched — Under Inspection holds no atom', async () => {
-    // `Submit inspection results` is a deliberate toast (DEAD-AFFORDANCE-01).
-    // It dispatches nothing, so it is not withheld from anybody; gating it
-    // would invent an authority the machine never asserted.
-    renderWithProviders(<BuyerGoodsReceipt />, { identity: FINANCE });
+  // ⚠️ INVERTED AT OPS-2. This read *"the UNGOVERNED control is untouched —
+  // Under Inspection holds no atom"*: `Submit inspection results` was a
+  // deliberate toast (DEAD-AFFORDANCE-01) that dispatched nothing, so it was
+  // withheld from nobody — a FINANCE seat got the button. It dispatches now
+  // (`t_gr_record_inspection`, then the decision or the hold), so it is
+  // governed like its neighbours: the seat that can do it gets the button, and
+  // a seat that cannot reads whose act it is, in the same slot.
+  it('HELD: a receiving seat gets Submit inspection results on an Under Inspection receipt, and no notice', async () => {
+    renderWithProviders(<BuyerGoodsReceipt />, { identity: RECEIVING_ONLY });
     await openRow('GR-2026-001');
     expect(await screen.findByRole('button', { name: /Submit inspection results/i })).toBeInTheDocument();
+    expect(screen.queryByTestId('handoff-gr-results')).not.toBeInTheDocument();
+  });
+
+  it('WITHHELD: a finance seat reads the owner where Submit inspection results was', async () => {
+    renderWithProviders(<BuyerGoodsReceipt />, { identity: FINANCE });
+    await openRow('GR-2026-001');
+    const n = await screen.findByTestId('handoff-gr-results');
+    expect(n).toHaveTextContent('Awaiting Receiving');
+    expect(screen.queryByRole('button', { name: /Submit inspection results/i })).not.toBeInTheDocument();
   });
 });

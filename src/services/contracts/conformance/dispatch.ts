@@ -74,6 +74,24 @@ export interface DispatchConformanceTarget {
     readonly full: readonly string[];
   };
   /**
+   * OPS-2 — two people the implementation can NAME, as actors.
+   *
+   * An invoice approval is recorded against a person, and its payment is
+   * released by a DIFFERENT named person; an approval that names nobody does
+   * not release money. So the two known-GOOD release controls below need an
+   * approver and a releaser the implementation recognises: the factory has the
+   * approver put their name to the approval (`t_invoice_reapprove`) and then
+   * releases as the releaser. The mock supplies two sample-roster members; an
+   * HTTP harness supplies two test principals.
+   *
+   * ⚠️ They MUST be two different people — the factory asserts it — or the
+   * known-good release is refused for the reason the rule exists.
+   */
+  readonly people: {
+    readonly approver: NonNullable<QueryScope['actor']>;
+    readonly releaser: NonNullable<QueryScope['actor']>;
+  };
+  /**
    * Restore the implementation to its seeded state. Called before every test.
    *
    * ⚠️ **REQUIRED, AND IT IS THE ONE REAL COST THIS FACTORY IMPOSES.** Two of
@@ -149,6 +167,21 @@ export function describeDispatchConformance(
     return approved!.id;
   };
 
+  /**
+   * OPS-2 — a releasable invoice whose approval NAMES the approver. The seeded
+   * Approved invoice names nobody, so the approver approves it again; the
+   * factory fails here, by name, if the implementation refuses that.
+   */
+  const namedApprovedInvoiceId = async (): Promise<string> => {
+    const id = await releasableInvoiceId();
+    const again = await svc.commands.dispatch(
+      { ...finance, actor: t.people.approver },
+      { transitionId: 't_invoice_reapprove', entity: 'invoice', entityId: id, payload: {} },
+    );
+    expect(again.status, `approve-again by the named approver: ${again.reason}`).not.toBe('failed');
+    return id;
+  };
+
   const anyRfqId = async (): Promise<string> => {
     if (t.entities?.anyRfqId) return t.entities.anyRfqId;
     const items = (await svc.procurement.getRFQs(BUYER_READ)).items as unknown as { id: string }[];
@@ -164,6 +197,15 @@ export function describeDispatchConformance(
       const f = new Set(t.roles.finance);
       expect([...f].some((r) => !p.has(r)) || [...p].some((r) => !f.has(r))).toBe(true);
       expect(t.roles.full.length).toBeGreaterThanOrEqual(p.size);
+    });
+
+    it('the two people are named, and are two people (OPS-2)', () => {
+      const { approver, releaser } = t.people;
+      expect(approver.kind).toBe('RESOLVED');
+      expect(releaser.kind).toBe('RESOLVED');
+      if (approver.kind === 'RESOLVED' && releaser.kind === 'RESOLVED') {
+        expect(approver.person.personId).not.toBe(releaser.person.personId);
+      }
     });
 
     it('an actionable entity is reachable through the READ half alone', async () => {
@@ -202,15 +244,50 @@ export function describeDispatchConformance(
       // Without this, the refusal above is equally consistent with a broken
       // harness, an unregistered flow, or a fixture in the wrong state. A guard
       // probed in one direction only ships looking like a working guard.
-      const id = await releasableInvoiceId();
-      const res = await svc.commands.dispatch(finance, {
-        transitionId: 't_invoice_release_payment',
-        entity: 'invoice',
-        entityId: id,
-        payload: {},
-      });
+      //
+      // OPS-2 — the approval is named first, and the release is taken by a
+      // different named person: what a release that is PERMITTED looks like.
+      const id = await namedApprovedInvoiceId();
+      const res = await svc.commands.dispatch(
+        { ...finance, actor: t.people.releaser },
+        {
+          transitionId: 't_invoice_release_payment',
+          entity: 'invoice',
+          entityId: id,
+          payload: {},
+        },
+      );
       expect(res.status).not.toBe('failed');
       expect(res.reason).toBeUndefined();
+    });
+
+    it('OPS-2 — an approval that names nobody does not release money, whoever asks', async () => {
+      // The seeded Approved invoice names no approver. The role gate passes for
+      // finance, and the release is still refused — by name, and the invoice
+      // does not move. This is the half the control above would hide if the
+      // factory only ever released after approving again.
+      const id = await releasableInvoiceId();
+      const res = await svc.commands.dispatch(
+        { ...finance, actor: t.people.releaser },
+        { transitionId: 't_invoice_release_payment', entity: 'invoice', entityId: id, payload: {} },
+      );
+      expect(res.status).toBe('failed');
+      expect(res.reason ?? '').toContain('INVOICE_APPROVAL_UNNAMED:');
+      const after = (await svc.procurement.getBuyerInvoices(BUYER_READ)).items as unknown as {
+        id: string;
+        lifecycleState?: string;
+      }[];
+      expect(after.find((i) => i.id === id)?.lifecycleState).toBe('Approved');
+    });
+
+    it('OPS-2 — and the person who approved is refused the release', async () => {
+      const id = await namedApprovedInvoiceId();
+      const res = await svc.commands.dispatch(
+        { ...finance, actor: t.people.approver },
+        { transitionId: 't_invoice_release_payment', entity: 'invoice', entityId: id, payload: {} },
+      );
+      expect(res.status).toBe('failed');
+      expect(res.reason ?? '').toContain('INVOICE_RELEASER_IS_APPROVER:');
     });
 
     it('and the segregation is MUTUAL — finance cannot award an RFQ', async () => {
@@ -259,12 +336,16 @@ export function describeDispatchConformance(
 
   describe(`${label} — dispatch contract: nothing reachable became unreachable`, () => {
     it('the full seat still releases payment', async () => {
-      const res = await svc.commands.dispatch(fullBuyer, {
-        transitionId: 't_invoice_release_payment',
-        entity: 'invoice',
-        entityId: await releasableInvoiceId(),
-        payload: {},
-      });
+      // OPS-2 — on an approval a named person answers for, as a different one.
+      const res = await svc.commands.dispatch(
+        { ...fullBuyer, actor: t.people.releaser },
+        {
+          transitionId: 't_invoice_release_payment',
+          entity: 'invoice',
+          entityId: await namedApprovedInvoiceId(),
+          payload: {},
+        },
+      );
       expect(res.status).not.toBe('failed');
     });
 

@@ -1,6 +1,6 @@
 # C1 — Method Surface
 
-Three distinct axes. **71** (service surface) · **138** (transition catalog) · **23** (wired
+Three distinct axes. **72** (service surface) · **141** (transition catalog) · **24** (wired
 targets). They measure different things; this file keeps them separate.
 
 > ⚠️ **THIS DOCUMENT IS PINNED TO THE TREE, AND THE PIN IS WHY THE NUMBERS ABOVE ARE ALLOWED TO
@@ -327,6 +327,56 @@ targets). They measure different things; this file keeps them separate.
 > renders it from the head, through the person resolver. **An invoice whose approval is
 > `UNATTRIBUTED`, or that records no approver, is not guarded:** its release is admitted from any
 > seat holding `invoice:pay`. Approval itself has no new refusal.
+>
+> **RE-HARVEST (2026-10-08, OPS-2).** Receiving, and who answers for an approval. Service surface
+> 71 → **72**; catalog 138 → **141** across 29 → **30** flows; wired targets 23 → **24**. Moved by the
+> pin going red.
+> **AN INVOICE APPROVAL NAMES A PERSON** (operator ruling; it supersedes the last sentence of the
+> OPS-1 note above). `t_invoice_approve` gained hook `invoice_approver_named`: a scope whose `actor`
+> is not RESOLVED — `UNATTRIBUTED`, or absent — is refused `INVOICE_APPROVER_UNATTRIBUTED`; the
+> invoice stays `Matched` and nothing is stamped. **`invoice` gained ONE transition and no state:**
+> `t_invoice_reapprove` (Approved → Approved, state-preserving; atom `invoice:approve`; no payload).
+> It stamps `approvedBy` from `scope.actor`. Two refusals, in this order: `INVOICE_APPROVER_UNATTRIBUTED`
+> (hook `invoice_approver_named`) and `INVOICE_ALREADY_APPROVED` (hook `invoice_reapproval_owed`) —
+> the invoice's `approvedBy` is already a RESOLVED actor. **`t_invoice_release_payment` gained ONE
+> refusal**, from the existing hook `invoice_releaser_not_approver`, evaluated first:
+> `INVOICE_APPROVAL_UNNAMED` — the invoice's `approvedBy` is not a RESOLVED actor (a seeded row).
+> Such an invoice is released only after `t_invoice_reapprove`. `INVOICE_RELEASER_UNNAMED` and
+> `INVOICE_RELEASER_IS_APPROVER` are unchanged.
+> **`goodsReceipt` gained ONE transition and no state:** `t_gr_record_inspection` (Under Inspection →
+> Under Inspection, state-preserving; atom `gr:inspect`; required `inspectionResults`). The target
+> writes the receipt's lines for THIS verb only, by name: each line's `materialCode`, `description`
+> and `qtyExpected` stay the receipt's own; the quantities, the four checks, `rejectionReason` and
+> `labResultId` are taken from the payload. Hook `gr_results_match_receipt`, five refusals in this
+> order: `RESULTS_MALFORMED` (not a non-empty list of objects), `RESULTS_NOT_THIS_RECEIPT` (the count
+> differs from the receipt's lines, or a line names another material at its position),
+> `RESULTS_QUANTITY_INVALID` (a quantity is not a finite number of zero or more, or accepted plus
+> rejected does not equal received), `RESULTS_CHECK_UNANSWERED` (`visualCheck` or `packagingCheck` is
+> not `Pass` or `Fail`, or `halalSealCheck` / `bpomLotCheck` is present and is neither),
+> `RESULTS_REJECTION_UNEXPLAINED` (a rejected quantity with no reason).
+> **`t_gr_hold` is unchanged and now has a caller.** No GR verb reads halal or BPOM: the applicability
+> and certificate checks are the receiving form's, as the seal and lot checks already were.
+> **A NEW MACHINE, `materialRuling.flow.ts`** (one state `Governed`, one state-preserving verb — the
+> enforcement ledger's shape). `t_material_ruling_set`: atom `material:rule`, held by `compliance`
+> only; the entity id IS a material-master code (an unknown code is `NOT_FOUND`); required `regime`
+> (`halal` | `bpom`), `applicable` (boolean), `reason`. The target appends one `MaterialRuling`
+> (`materialCode`, `regime`, `applicable`, `reason`, `setBy` from `scope.actor`, store-assigned `setAt`
+> and `seq`) to an append-only ledger that opens empty; `setBy` is already in `ATTRIBUTION_KEYS`, so a
+> payload carrying it is refused `ACTOR_IN_PAYLOAD`. Hook `material_ruling_governed`, five refusals in
+> this order: `RULING_REGIME_UNKNOWN`, `RULING_MALFORMED` (`applicable` is not a boolean),
+> `RULING_REASON_BLANK`, `RULING_UNCHANGED` (the ruling in force already says so; a first ruling on a
+> master default is not "unchanged"), `RULING_ACTOR_UNATTRIBUTED`. A sample person is admitted.
+> `readScopeOwner` is null: a supplier scope is refused at scope.
+> **`IRiskService` gained `getMaterialRulings`** — the ledger, oldest first, as a `Page`. Buyer-scoped:
+> a supplier scope is refused `SCOPE_DENIED`, not answered empty. What is in force is derived by the
+> reader (`sdc/materialRuling.rulingInForce`: the highest `seq` for a material and regime), and
+> applicability at receipt is the master's answer (`halalOf`, `bpomOf`) with that ruling read over it;
+> `UNKNOWN_MATERIAL` is never answered by a ruling.
+> **THE MATERIAL MASTER'S HALAL DEFAULT CHANGED** (operator ruling): the packaging axes read
+> `REQUIRED`, where they read `UNDETERMINED`. No master row is halal-`UNDETERMINED` today; the eleven
+> raw materials with no BPOM determination are unchanged and are the rows a ruling resolves.
+> **The compliance registry gained two rows** (`creg-0017`, `creg-0018`): SAMPLE BPJPH certificates for
+> the two packaging suppliers' packaging materials.
 > **A rank is NOT a refusal.** No verb refuses an advance on a score; the top-N and at-or-above
 > pre-selections are surface conveniences over `rfpEvaluation.rankingOf`.
 > **`RFQ` gains TWO optional stored fields**: `criteria` — a list of `RfpCriterion` (`id`, `name`,
@@ -347,7 +397,7 @@ Source of truth: `src/services/data/types.ts` (service + command types),
 
 ---
 
-## Axis 1 — the 71-method service surface (`IDataService`)
+## Axis 1 — the 72-method service surface (`IDataService`)
 
 The single interface the Phase-F1 real adapter implements; pages call it through
 `useDataService()` and do not change when the mock is swapped for `httpDataService`. Every method
@@ -378,7 +428,7 @@ interface IDataService {
 |---|---|---|
 | `ISupplierService` | 3 | `list`, `getById`, `getCurrent` |
 | `IProcurementService` | 27 | `getPurchaseOrders`, `getPurchaseOrder`, `getInventory`, `getRFQs`, `getQuotations`, `getShipments`, `getASNs`, `getGoodsReceipts`, `getBuyerInvoices`, `getSupplierInvoices`, `getContracts`, `getObligations`, `getDocuments`, `getStorefrontCatalog`, `getStorefrontCerts`, `getStorefrontProducts`, `getKpis`, `getPerformanceTrend`, `getSupplierScorecards`, `getRequisitions`, `getIntakeLines`, `getSupplierApplications`, `getMaterialRequests`, `getPslListings`, `getMyPslListings`, `getProductionLines`, `getSupplierHealth` |
-| `IRiskService` | 7 | `getRiskAlerts`, `getGeoRisks`, `getExposure`, `getScenarios`, `getCompliance`, `getComplianceRegistry`, `getCommodities` |
+| `IRiskService` | 8 | `getRiskAlerts`, `getGeoRisks`, `getExposure`, `getScenarios`, `getCompliance`, `getComplianceRegistry`, `getMaterialRulings`, `getCommodities` |
 | `IDiscoveryService` | 4 | `getRecommended`, `getQualifications`, `getMarketIntel`, `getSingleSourceItems` |
 | `IAnalyticsService` | 7 | `getSummary`, `getSpendByCategory`, `getTopSuppliers`, `getOtifTrend`, `getPoVolumeTrend`, `getChannelMix`, `getSupplierPerformance` |
 | `ICollaborationService` | 10 | `getOwnRequirementResponses`, `getOwnInventoryDeclarations`, `getOwnIncomingShipments`, `getOwnSupplierAsns`, `getConsolidation`, `getCoverage`, `getChase`, `getRollups`, `getPublications`, `getPublicationWorkspace` |
@@ -387,10 +437,10 @@ interface IDataService {
 | `IEnforcementService` | 1 | `getEnforcementSettings` |
 | `IPlanningService` | 1 | `getPlanningFacts` |
 | `IModuleService` | 2 | `getModuleActivation`, `getModuleLedger` |
-| **read subtotal** | **67** | |
+| **read subtotal** | **68** | |
 | `ICommandService` | 3 | `dispatch`, `getCommandStatus`, `settle` |
 | top-level | 1 | `getCapabilities` |
-| **TOTAL** | **71** | |
+| **TOTAL** | **72** | |
 
 **Return contract:** list reads return `Page<T>` (DR-5 — see C2); single reads return `T | null`;
 `getSummary` returns a summary object or `null` (buyer-populated, supplier-null). Failure is
@@ -406,7 +456,7 @@ the string, because those are different claims and only the first is the contrac
 
 ---
 
-## Axis 2 — the 138-transition catalog (29 flows)
+## Axis 2 — the 141-transition catalog (30 flows)
 
 Every authored state-machine edge across the registered flows (`id: 't_<entity>_<verb>'`). Derived
 from `getKnownFlows()` — the seeded registry — never from a grep over the flow files, because a
@@ -417,9 +467,9 @@ transition id can be assembled at a call site rather than written as a literal (
 |---|---|---|---|---|
 | `purchaseOrder.flow.ts` | `purchaseOrder` | 7 | `t_po_issue`, `t_po_view`, `t_po_acknowledge`, `t_po_confirm`, `t_po_partial_deliver`, `t_po_deliver`, `t_po_close` | **wired** |
 | `advanceShipNotice.flow.ts` | `advanceShipNotice` | 6 | `t_asn_create`, `t_asn_submit`, `t_asn_in_transit`, `t_asn_deliver`, `t_asn_discrepancy`, `t_asn_resolve_discrepancy` | **wired** |
-| `goodsReceipt.flow.ts` | `goodsReceipt` | 8 | `t_gr_create`, `t_gr_start_inspection`, `t_gr_hold`, `t_gr_request_retest`, `t_gr_approve`, `t_gr_partial_approve`, `t_gr_reject`, `t_gr_post` | **wired** |
+| `goodsReceipt.flow.ts` | `goodsReceipt` | 9 | `t_gr_create`, `t_gr_start_inspection`, `t_gr_record_inspection`, `t_gr_hold`, `t_gr_request_retest`, `t_gr_approve`, `t_gr_partial_approve`, `t_gr_reject`, `t_gr_post` | **wired** |
 | `goodsReceiptLine.flow.ts` | `goodsReceiptLine` | 6 | `t_grline_inspect`, `t_grline_accept`, `t_grline_reject`, `t_grline_quarantine`, `t_grline_release`, `t_grline_return` | sub-flow (rollup) |
-| `invoice.flow.ts` | `invoice` | 8 | `t_invoice_create`, `t_invoice_submit`, `t_invoice_match`, `t_invoice_approve`, `t_invoice_release_payment`, `t_invoice_remit`, `t_invoice_dispute`, `t_invoice_resolve` | **wired** |
+| `invoice.flow.ts` | `invoice` | 9 | `t_invoice_create`, `t_invoice_submit`, `t_invoice_match`, `t_invoice_approve`, `t_invoice_reapprove`, `t_invoice_release_payment`, `t_invoice_remit`, `t_invoice_dispute`, `t_invoice_resolve` | **wired** |
 | `invoiceMatch.flow.ts` | `invoiceMatch` | 4 | `t_invmatch_await_gr`, `t_invmatch_matched`, `t_invmatch_qty_variance`, `t_invmatch_price_variance` | sub-flow (rollup) |
 | `rfq.flow.ts` | `rfq` | 12 | `t_rfq_create`, `t_rfq_questionnaire_set`, `t_rfq_criteria_set`, `t_rfq_publish`, `t_rfq_close`, `t_rfq_award`, `t_rfq_fx_pin`, `t_rfq_proposal_score`, `t_rfq_advance`, `t_rfq_conclude`, `t_rfq_cancel`, `t_rfq_reopen` | **wired** |
 | `quotation.flow.ts` | `quotation` | 5 | `t_quotation_submit`, `t_quotation_review`, `t_quotation_award`, `t_quotation_reject`, `t_quotation_withdraw` | **wired** |
@@ -444,7 +494,8 @@ transition id can be assembled at a call site rather than written as a literal (
 | `deliveryPolicy.flow.ts` | `deliveryPolicy` | 1 | `t_delivery_policy_set` | **wired** |
 | `forecastPublication.flow.ts` | `forecastPublication` | 7 | `t_publication_open`, `t_publication_allocate`, `t_publication_approve_firm`, `t_publication_publish`, `t_publication_discard`, `t_publication_supersede`, `t_publication_withdraw` | **wired** |
 | `moduleActivation.flow.ts` | `moduleActivation` | 1 | `t_module_set` | **wired** |
-| **TOTAL** | | **138** | | |
+| `materialRuling.flow.ts` | `materialRuling` | 1 | `t_material_ruling_set` | **wired** |
+| **TOTAL** | | **141** | | |
 
 **Flow shape** (`schema.ts`, `FlowDefinition` / `TransitionDef`): each transition declares
 `from[]` / `to` / `trigger` / `requiredRole` / `requiredFields[]` / `policyHooks[]` /
@@ -460,12 +511,12 @@ system reference is minted only on `settle` (see C5, SAP boundary).
 
 ---
 
-## Axis 3 — the 23 wired CommandTargets
+## Axis 3 — the 24 wired CommandTargets
 
-A `CommandTarget` is the per-entity adapter the dispatcher reads/writes through. **23 exist**, the
+A `CommandTarget` is the per-entity adapter the dispatcher reads/writes through. **24 exist**, the
 runtime export `WIRED_COMMAND_TARGETS` (`MockCommandService.ts` `TARGETS`):
 
-- **wired:** `purchaseOrder`, `advanceShipNotice`, `goodsReceipt`, `invoice`, `rfq`, `quotation`, `stageResponse`, `purchaseRequisition`, `intakeLine`, `supplierDocument`, `requirementResponse`, `inventoryDeclaration`, `incomingShipment`, `enforcement`, `role`, `supplierApplication`, `materialRequest`, `psl`, `pslCapSetting`, `deliveryRelease`, `deliveryPolicy`, `forecastPublication`, `moduleActivation`
+- **wired:** `purchaseOrder`, `advanceShipNotice`, `goodsReceipt`, `invoice`, `rfq`, `quotation`, `stageResponse`, `purchaseRequisition`, `intakeLine`, `supplierDocument`, `requirementResponse`, `inventoryDeclaration`, `incomingShipment`, `enforcement`, `role`, `supplierApplication`, `materialRequest`, `psl`, `pslCapSetting`, `deliveryRelease`, `deliveryPolicy`, `forecastPublication`, `moduleActivation`, `materialRuling`
 
 The interface is **7 members** (`dispatcher.ts`, `CommandTarget`):
 
@@ -498,9 +549,9 @@ pre-A2 target ignores the parameter.
 compare"** (§86). The dispatcher's supplier arm compares `owner !== scope.supplierId`
 unconditionally; a target that wants a supplier to reach a verb must NAME that supplier.
 
-### Wiring census (29 flows → 3 states)
+### Wiring census (30 flows → 3 states)
 
-- **23 behavior-wired** — have a `CommandTarget`, dispatch runs against in-memory stores. Named
+- **24 behavior-wired** — have a `CommandTarget`, dispatch runs against in-memory stores. Named
   above.
 - **2 rolled-up sub-flows** — authored, participate via terminal rollup (`grRollup.ts` /
   `invoiceRollup.ts`), **no standalone target**: `goodsReceiptLine`, `invoiceMatch`.

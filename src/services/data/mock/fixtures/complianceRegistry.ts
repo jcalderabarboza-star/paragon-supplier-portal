@@ -81,7 +81,7 @@
 // ════════════════════════════════════════════════════════════════════════════
 
 // ── ⚠️ `sapSync` — WHY EVERY ROW CARRIES THE SAME VALUE ─────────────────────
-//   All 16 rows are `AWAITING_SYNC`, and that is NOT a fixture shortcut: it is
+//   Every row is `AWAITING_SYNC`, and that is NOT a fixture shortcut: it is
 //   the only value the type has, because it is the only value this platform can
 //   reach. Nothing in `src/services/` transmits anything to S/4HANA, so no row
 //   here — and no row a person enters later — has been acknowledged by SAP.
@@ -376,6 +376,45 @@ export const COMPLIANCE_REGISTRY: readonly ComplianceRegistryEntry[] = [
     lifecycleState: 'Valid',
     sapSync: 'AWAITING_SYNC',
     scopeText: 'Sample Blend PF-20 Emulsifier — imported, foreign scheme lapsed',
+    notes: 'Synthetic illustrative record — not a real certificate.',
+  },
+  // ── OPS-2 · SAMPLE halal certificates for the packaging suppliers ───────────
+  // Operator ruling: halal applies to packaging by default, and receiving checks
+  // for a valid certificate on file — so the two packaging suppliers each get a
+  // SAMPLE certificate covering the packaging materials their orders, shipments
+  // and receipts name (derived from those documents, not chosen). Without these
+  // rows no packaging line could be received; with them it is received on a
+  // record that says, in three places, that it is not a real certificate.
+  {
+    id: 'creg-0017',
+    supplierId: 'sup-007',
+    supplierName: 'PT Sample Packaging Indonesia',
+    materialCodes: ['PK-PETB-8801', 'PK-PETB-8802', 'PK-PETB-8804', 'PK-ALCP-2450'],
+    materialCategory: 'other',
+    certType: 'HALAL_BPJPH',
+    certNumber: 'SAMPLE-HALAL-0007F',
+    issuer: 'BPJPH (illustrative)',
+    issueDate: '2025-03-10',
+    expiryDate: null, // permanent basis (GR 42/2024) — no clock
+    lifecycleState: 'Valid',
+    sapSync: 'AWAITING_SYNC',
+    scopeText: 'SAMPLE — primary packaging: PET bottles and aluminium closures',
+    notes: 'Synthetic illustrative record — not a real certificate.',
+  },
+  {
+    id: 'creg-0018',
+    supplierId: 'sup-008',
+    supplierName: 'PT Sample Carton Packaging',
+    materialCodes: ['PK-CART-9901', 'PK-CART-9910'],
+    materialCategory: 'other',
+    certType: 'HALAL_BPJPH',
+    certNumber: 'SAMPLE-HALAL-0008A',
+    issuer: 'BPJPH (illustrative)',
+    issueDate: '2025-05-02',
+    expiryDate: null, // permanent basis (GR 42/2024) — no clock
+    lifecycleState: 'Valid',
+    sapSync: 'AWAITING_SYNC',
+    scopeText: 'SAMPLE — secondary packaging: folding cartons',
     notes: 'Synthetic illustrative record — not a real certificate.',
   },
 ];

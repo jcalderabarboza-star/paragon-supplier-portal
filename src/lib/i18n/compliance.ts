@@ -100,6 +100,110 @@ export const complianceEn: Record<string, string> = {
   // transmitted, and a queue that implies a file arrived would reintroduce on
   // the buyer side exactly the claim §82 removed from the supplier side.
   'compliance.queue.title': 'Declared certificates awaiting review',
+  'compliance.applicability.title':
+    'Material applicability — halal and BPOM',
+  'compliance.applicability.subtitle':
+    'Whether halal, and whether BPOM, applies to each material. Receiving checks what is recorded here: where a regime applies it asks for the check, and for halal a valid certificate on file; where it does not apply the line passes and shows the ruling. A material with no answer cannot be received until Compliance rules. Every ruling carries a reason and the person who made it, and a later ruling replaces it without erasing it.',
+  'compliance.applicability.filter.pending':
+    'Pending a ruling ({{count}})',
+  'compliance.applicability.filter.ruled':
+    'Ruled by Compliance ({{count}})',
+  'compliance.applicability.filter.all':
+    'All materials ({{count}})',
+  'compliance.applicability.loading':
+    'Reading the rulings…',
+  'compliance.applicability.readFailed':
+    'The rulings could not be read, so no applicability is shown. Reload the page to try again.',
+  'compliance.applicability.empty.pending':
+    'No material is waiting for a ruling.',
+  'compliance.applicability.empty.ruled':
+    'Compliance has not ruled on any material yet. Every answer shown under All materials comes from the material master.',
+  'compliance.applicability.empty.all':
+    'The material master holds no materials.',
+  'compliance.applicability.col.material':
+    'Material',
+  'compliance.applicability.col.halal':
+    'Halal',
+  'compliance.applicability.col.bpom':
+    'BPOM',
+  'compliance.applicability.col.history':
+    'Rulings',
+  'compliance.applicability.state.pending':
+    'Pending — Compliance to rule',
+  'compliance.applicability.state.unknown':
+    'Not in the material master',
+  'compliance.applicability.state.applies':
+    'Applies',
+  'compliance.applicability.state.notApplicable':
+    'Does not apply',
+  'compliance.applicability.basis.ruling':
+    'Ruled by {{person}} on {{date}}',
+  'compliance.applicability.basis.master.halal':
+    'Material master default — halal applies to every material unless Compliance rules otherwise',
+  'compliance.applicability.basis.master.bpom':
+    'Material master',
+  'compliance.applicability.basis.none':
+    'No ruling recorded — receipt of this material is blocked',
+  'compliance.applicability.action.rule':
+    'Rule',
+  'compliance.applicability.history.none':
+    'None',
+  'compliance.applicability.history.one':
+    '{{count}} ruling',
+  'compliance.applicability.history.other':
+    '{{count}} rulings',
+  'compliance.applicability.history.reason':
+    'Reason: {{reason}}',
+  'compliance.applicability.regime.halal':
+    'Halal',
+  'compliance.applicability.regime.bpom':
+    'BPOM',
+  'compliance.applicability.form.title':
+    '{{regime}} ruling for',
+  'compliance.applicability.form.yes.halal':
+    'Halal applies',
+  'compliance.applicability.form.no.halal':
+    'Halal does not apply',
+  'compliance.applicability.form.yes.bpom':
+    'BPOM applies',
+  'compliance.applicability.form.no.bpom':
+    'BPOM does not apply',
+  'compliance.applicability.form.reason':
+    'Reason (required)',
+  'compliance.applicability.form.reasonPlaceholder':
+    'Why it applies, or why it does not',
+  'compliance.applicability.form.recordedAs':
+    'This ruling will be recorded under {{person}} and stays on the ledger.',
+  'compliance.applicability.form.unattributed':
+    'This seat names no person, so the ruling will be refused. Choose a sample user on the identity panel first.',
+  'compliance.applicability.form.cancel':
+    'Cancel',
+  'compliance.applicability.form.commit':
+    'Record ruling',
+  'compliance.applicability.failed.title':
+    'Ruling on {{material}} was not recorded',
+  'compliance.applicability.failed.denied':
+    'The ruling could not be sent. Nothing was recorded.',
+  'compliance.applicability.done.title':
+    'Ruling recorded for {{material}}',
+  'compliance.applicability.done.halal.applies':
+    'Halal applies. Receiving asks for the seal check and a valid certificate on file.',
+  'compliance.applicability.done.halal.notApplicable':
+    'Halal does not apply. Receiving passes this material and shows the ruling.',
+  'compliance.applicability.done.bpom.applies':
+    'BPOM applies. Receiving asks for the lot check.',
+  'compliance.applicability.done.bpom.notApplicable':
+    'BPOM does not apply. Receiving passes this material and shows the ruling.',
+  'compliance.applicability.refused.regime':
+    'A ruling is made under halal or BPOM. Nothing was recorded.',
+  'compliance.applicability.refused.malformed':
+    'Choose whether it applies or does not apply. Nothing was recorded.',
+  'compliance.applicability.refused.reasonBlank':
+    'A ruling carries its reason. Write why it applies or does not, then record it again.',
+  'compliance.applicability.refused.unchanged':
+    'This material is already ruled that way. A ruling records a change.',
+  'compliance.applicability.refused.unattributed':
+    'This seat names no person, and a ruling is recorded against the person who made it. Choose a sample user on the identity panel, then rule again.',
   'compliance.queue.subtitle.one':
     '{{count}} certificate has been stated. Nothing was uploaded — check the details against the certificate itself before confirming.',
   'compliance.queue.subtitle.other':
@@ -261,6 +365,110 @@ export const complianceId: Record<string, string> = {
   // — Certificate scheme labels (derived from certType) —
   // — §82 —
   'compliance.queue.title': 'Sertifikat yang dinyatakan, menunggu tinjauan',
+  'compliance.applicability.title':
+    'Penerapan material — halal dan BPOM',
+  'compliance.applicability.subtitle':
+    'Apakah halal, dan apakah BPOM, berlaku untuk tiap material. Penerimaan memeriksa apa yang tercatat di sini: bila suatu rezim berlaku, pemeriksaannya diminta, dan untuk halal sertifikat yang berlaku harus tercatat; bila tidak berlaku, baris lolos dan menampilkan keputusannya. Material tanpa jawaban tidak dapat diterima sampai Kepatuhan memutuskan. Setiap keputusan memuat alasan dan orang yang membuatnya, dan keputusan berikutnya menggantikannya tanpa menghapusnya.',
+  'compliance.applicability.filter.pending':
+    'Menunggu keputusan ({{count}})',
+  'compliance.applicability.filter.ruled':
+    'Diputuskan Kepatuhan ({{count}})',
+  'compliance.applicability.filter.all':
+    'Semua material ({{count}})',
+  'compliance.applicability.loading':
+    'Membaca keputusan…',
+  'compliance.applicability.readFailed':
+    'Keputusan tidak dapat dibaca, sehingga penerapan tidak ditampilkan. Muat ulang halaman untuk mencoba lagi.',
+  'compliance.applicability.empty.pending':
+    'Tidak ada material yang menunggu keputusan.',
+  'compliance.applicability.empty.ruled':
+    'Kepatuhan belum memutuskan material apa pun. Setiap jawaban pada Semua material berasal dari master material.',
+  'compliance.applicability.empty.all':
+    'Master material tidak memuat material apa pun.',
+  'compliance.applicability.col.material':
+    'Material',
+  'compliance.applicability.col.halal':
+    'Halal',
+  'compliance.applicability.col.bpom':
+    'BPOM',
+  'compliance.applicability.col.history':
+    'Keputusan',
+  'compliance.applicability.state.pending':
+    'Menunggu — Kepatuhan yang memutuskan',
+  'compliance.applicability.state.unknown':
+    'Tidak ada di master material',
+  'compliance.applicability.state.applies':
+    'Berlaku',
+  'compliance.applicability.state.notApplicable':
+    'Tidak berlaku',
+  'compliance.applicability.basis.ruling':
+    'Diputuskan oleh {{person}} pada {{date}}',
+  'compliance.applicability.basis.master.halal':
+    'Bawaan master material — halal berlaku untuk setiap material kecuali Kepatuhan memutuskan lain',
+  'compliance.applicability.basis.master.bpom':
+    'Master material',
+  'compliance.applicability.basis.none':
+    'Belum ada keputusan — penerimaan material ini diblokir',
+  'compliance.applicability.action.rule':
+    'Putuskan',
+  'compliance.applicability.history.none':
+    'Belum ada',
+  'compliance.applicability.history.one':
+    '{{count}} keputusan',
+  'compliance.applicability.history.other':
+    '{{count}} keputusan',
+  'compliance.applicability.history.reason':
+    'Alasan: {{reason}}',
+  'compliance.applicability.regime.halal':
+    'Halal',
+  'compliance.applicability.regime.bpom':
+    'BPOM',
+  'compliance.applicability.form.title':
+    'Keputusan {{regime}} untuk',
+  'compliance.applicability.form.yes.halal':
+    'Halal berlaku',
+  'compliance.applicability.form.no.halal':
+    'Halal tidak berlaku',
+  'compliance.applicability.form.yes.bpom':
+    'BPOM berlaku',
+  'compliance.applicability.form.no.bpom':
+    'BPOM tidak berlaku',
+  'compliance.applicability.form.reason':
+    'Alasan (wajib)',
+  'compliance.applicability.form.reasonPlaceholder':
+    'Mengapa berlaku, atau mengapa tidak',
+  'compliance.applicability.form.recordedAs':
+    'Keputusan ini akan dicatat atas nama {{person}} dan tetap tersimpan di buku besar.',
+  'compliance.applicability.form.unattributed':
+    'Kursi ini tidak menyebut siapa pun, sehingga keputusan akan ditolak. Pilih pengguna contoh di panel identitas terlebih dahulu.',
+  'compliance.applicability.form.cancel':
+    'Batal',
+  'compliance.applicability.form.commit':
+    'Catat keputusan',
+  'compliance.applicability.failed.title':
+    'Keputusan untuk {{material}} tidak tercatat',
+  'compliance.applicability.failed.denied':
+    'Keputusan tidak dapat dikirim. Tidak ada yang tercatat.',
+  'compliance.applicability.done.title':
+    'Keputusan tercatat untuk {{material}}',
+  'compliance.applicability.done.halal.applies':
+    'Halal berlaku. Penerimaan meminta pemeriksaan segel dan sertifikat yang berlaku.',
+  'compliance.applicability.done.halal.notApplicable':
+    'Halal tidak berlaku. Penerimaan meloloskan material ini dan menampilkan keputusannya.',
+  'compliance.applicability.done.bpom.applies':
+    'BPOM berlaku. Penerimaan meminta pemeriksaan lot.',
+  'compliance.applicability.done.bpom.notApplicable':
+    'BPOM tidak berlaku. Penerimaan meloloskan material ini dan menampilkan keputusannya.',
+  'compliance.applicability.refused.regime':
+    'Keputusan dibuat untuk halal atau BPOM. Tidak ada yang tercatat.',
+  'compliance.applicability.refused.malformed':
+    'Pilih apakah berlaku atau tidak berlaku. Tidak ada yang tercatat.',
+  'compliance.applicability.refused.reasonBlank':
+    'Keputusan harus memuat alasannya. Tuliskan mengapa berlaku atau tidak, lalu catat lagi.',
+  'compliance.applicability.refused.unchanged':
+    'Material ini sudah diputuskan demikian. Keputusan mencatat suatu perubahan.',
+  'compliance.applicability.refused.unattributed':
+    'Kursi ini tidak menyebut siapa pun, dan keputusan dicatat atas nama orang yang membuatnya. Pilih pengguna contoh di panel identitas, lalu putuskan lagi.',
   'compliance.queue.subtitle.one':
     '{{count}} sertifikat telah dinyatakan. Tidak ada berkas yang diunggah — cocokkan rinciannya dengan sertifikat aslinya sebelum mengonfirmasi.',
   'compliance.queue.subtitle.other':

@@ -16,6 +16,7 @@ import { PERSONA_SYSTEM_ROLES } from '../../transitions/businessRoles';
 import { invoiceStore } from '../../data/mock/stores/invoiceStore';
 import { rfqStore } from '../../data/mock/stores/rfqStore';
 import { describeDispatchConformance } from './dispatch';
+import { SAMPLE_PEOPLE } from '../../identity/sampleRoster';
 
 describeDispatchConformance('mockDataService', () => ({
   service: mockDataService,
@@ -28,6 +29,11 @@ describeDispatchConformance('mockDataService', () => ({
   // HTTP harness re-seeds its test database. Reaching into stores is legitimate
   // HERE and nowhere inside the factory — this file is allowed to know it is
   // driving the mock, which is the whole point of keeping the caller thin.
+  // OPS-2 — two sample-roster members, read off the roster, never spelled.
+  people: {
+    approver: { kind: 'RESOLVED', person: { personId: SAMPLE_PEOPLE.find((p) => p.role === 'finance')!.personId } },
+    releaser: { kind: 'RESOLVED', person: { personId: SAMPLE_PEOPLE.find((p) => p.role === 'buyer_all')!.personId } },
+  },
   reset: () => {
     invoiceStore.reset();
     rfqStore.reset();

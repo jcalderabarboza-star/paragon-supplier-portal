@@ -332,11 +332,14 @@ describe('E1 — ⚠️ THE BOUNDARY: mode relaxes the CONSEQUENCE OF AN ANSWER'
     if (unknownBpom.ok) return;
     expect(isGovernedVerdict(unknownBpom.reason)).toBe(false);
 
-    // And the second refusal, off a REAL master row — 11 of the 42 are
-    // `UNDETERMINED` (H1), so this is reachable through the fixture rather than
-    // built for the test.
+    // And the second refusal, off a REAL master row, so this is reachable
+    // through the fixture rather than built for the test. OPS-2 — it was read
+    // off `halalOf` (eleven packaging rows were halal-`UNDETERMINED`); the
+    // operator ruled those `REQUIRED`, so the real rows that still refuse are
+    // the raw materials with no BPOM ruling, and the lookup that refuses is
+    // `bpomOf`. Same reason, same shape, other regime.
     const undetermined = Object.keys(MATERIAL_MASTER)
-      .map((code) => halalOf(code))
+      .map((code) => bpomOf(code))
       .find((outcome) => !outcome.ok && outcome.reason === 'UNDETERMINED_APPLICABILITY');
     expect(undetermined).toBeDefined();
     expect(isGovernedVerdict('UNDETERMINED_APPLICABILITY')).toBe(false);

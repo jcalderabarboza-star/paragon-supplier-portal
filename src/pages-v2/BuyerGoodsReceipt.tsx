@@ -56,7 +56,9 @@ import {
   useASNs,
   useEnforcementSettings,
   useComplianceRegistry,
+  useMaterialRulings,
 } from '../services/query/hooks';
+import type { MaterialRuling } from '../services/sdc/materialRuling';
 import type { EnforcementSetting } from '../lib/enforcement';
 import type {
   GoodsReceipt,
@@ -188,6 +190,10 @@ interface GoodsReceiptWorkspaceProps {
    *  flight. **A NOTICE THAT SOMETIMES DOES NOT RENDER IS WORSE THAN NONE** —
    *  it teaches a clerk that no banner means no problem. */
   complianceRegistry: readonly ComplianceRegistryEntry[];
+  /** OPS-2 — the material applicability rulings, read here for the reason the
+   *  two reads above are: the wizard never mounts against a pending read, so a
+   *  ruling can never be missing because a fetch was in flight. */
+  materialRulings: readonly MaterialRuling[];
 }
 
 const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
@@ -197,6 +203,7 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
   asns,
   enforcementSettings,
   complianceRegistry,
+  materialRulings,
 }) => {
   const { toast } = useToast();
   const { t } = useTranslation();
@@ -215,6 +222,9 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [wizardOpen, setWizardOpen] = useState(false);
   const [wizardAsnId, setWizardAsnId] = useState<string | undefined>(undefined);
+  // OPS-2 (R-OPS P0-4) — the receipt the form RESUMES, when it was opened from
+  // one. `null` is the "New GR" entry, which creates.
+  const [wizardResumeId, setWizardResumeId] = useState<string | null>(null);
 
   // ── DEEP LINK (?id=) ──────────────────────────────────────────────────────
   // A dashboard window's row links here. The filters are WIDENED first: landing
@@ -281,11 +291,25 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
   const grChain = useVerbAvailabilities({
     receive: 'gr:receive',
     inspect: 'gr:inspect',
+    dispose: 'gr:disposition',
     post: 'gr:post',
   } as const);
   const grChainAvailability =
     [grChain.receive, grChain.inspect, grChain.post].find((a) => a.kind !== 'held') ??
     ({ kind: 'held' } as const);
+  // OPS-2 — working a receipt that EXISTS is a different chain from creating
+  // one: no `gr:receive` (nothing is received again), but the results and the
+  // decision — `gr:inspect` then `gr:disposition`. The first one withheld names
+  // its owner, in chain order, as above.
+  const grResumeAvailability =
+    [grChain.inspect, grChain.dispose].find((a) => a.kind !== 'held') ??
+    ({ kind: 'held' } as const);
+  const openResume = (g: GoodsReceipt) => {
+    setWizardAsnId(undefined);
+    setWizardResumeId(g.id);
+    setSelectedId(null);
+    setWizardOpen(true);
+  };
 
   // ── ASN DISCREPANCY RECONCILIATION (`t_asn_resolve_discrepancy`) ───────────
   //
@@ -482,39 +506,32 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
   const footerForStatus = (g: GoodsReceipt): React.ReactNode => {
     switch (g.status) {
       case 'Pending Inspection':
-        // §75 — THE SECOND ROUTE INTO THE WIZARD, AND IT MAKES §73b's "no
-        // reachable path" FALSE. This opens the same four-step wizard whose one
-        // commit fires t_gr_create -> t_gr_start_inspection -> t_gr_post, so it
-        // carries the same whole-chain guard as the "New GR" entry. Guarding
-        // only the entry left this door open.
-        return grChainAvailability.kind === 'held' ? (
-          <Button
-            variant="outline"
-            onClick={() => {
-              setWizardAsnId(g.asnId);
-              setSelectedId(null);
-              setWizardOpen(true);
-            }}
-          >
+        // ⚠️ OPS-2 (R-OPS P0-4) — THIS OPENED THE CREATE FORM. It passed the
+        // receipt's `asnId` to the wizard as a source, and the wizard's one
+        // commit fired `t_gr_create`: "Start inspection" on GR-2026-002 ended
+        // with a SECOND receipt, and GR-2026-002 still pending. It now resumes
+        // the receipt it was clicked on. The guard is the resume chain's, not
+        // the create chain's (§75's entrance rule is unchanged: the mode is
+        // gated, and both doors into it are).
+        return grResumeAvailability.kind === 'held' ? (
+          <Button variant="outline" onClick={() => openResume(g)}>
             {t('goodsReceipt.footer.startInspection')}
           </Button>
         ) : (
-          <HandoffNotice availability={grChainAvailability} testId="handoff-gr-start" />
+          <HandoffNotice availability={grResumeAvailability} testId="handoff-gr-start" />
         );
       case 'Under Inspection':
-        return (
-          <Button
-            variant="outline"
-            onClick={() =>
-              toast({
-                variant: 'info',
-                title: t('goodsReceipt.toast.submitResults.title'),
-                description: t('goodsReceipt.toast.submitResults.desc'),
-              })
-            }
-          >
+        // ⚠️ OPS-2 — THIS WAS A TOAST ("Submit form will open in a future
+        // release"), on the one state every disposition verb fires from: a
+        // receipt that reached it had no way forward. It opens the same form on
+        // the same receipt; the commit records the results and then decides or
+        // holds.
+        return grResumeAvailability.kind === 'held' ? (
+          <Button variant="outline" onClick={() => openResume(g)}>
             {t('goodsReceipt.footer.submitResults')}
           </Button>
+        ) : (
+          <HandoffNotice availability={grResumeAvailability} testId="handoff-gr-results" />
         );
       case 'Quality Hold':
         return (
@@ -636,6 +653,7 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
 
   const handleNewGR = () => {
     setWizardAsnId(undefined);
+    setWizardResumeId(null);
     setWizardOpen(true);
   };
 
@@ -1270,6 +1288,9 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
 
       {wizardOpen && (
         <GRInspectionWizard
+          // Keyed on what it works, so opening it on a different receipt never
+          // inherits the last one's draft.
+          key={wizardResumeId ?? 'new'}
           onClose={() => setWizardOpen(false)}
           onComplete={handleWizardComplete}
           initialAsnId={wizardAsnId}
@@ -1277,6 +1298,10 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
           asns={asns}
           enforcementSettings={enforcementSettings}
           complianceRegistry={complianceRegistry}
+          materialRulings={materialRulings}
+          resume={
+            wizardResumeId ? allGRs.find((g) => g.id === wizardResumeId) : undefined
+          }
         />
       )}
     </AppShellV2>
@@ -1300,8 +1325,11 @@ const BuyerGoodsReceipt: React.FC = () => {
   // CP-3 · H4 — the certificate side joins the same read set. Buyer scope reads
   // the superset; the service applies the scoping contract, not this page.
   const registryQuery = useComplianceRegistry();
+  // OPS-2 — and the applicability rulings join it, for the same reason.
+  const rulingsQuery = useMaterialRulings();
 
   if (
+    rulingsQuery.isPending ||
     grQuery.isPending ||
     suppliersQuery.isPending ||
     shipmentsQuery.isPending ||
@@ -1311,6 +1339,7 @@ const BuyerGoodsReceipt: React.FC = () => {
   )
     return <LoadingState breadcrumb={GR_CRUMB} />;
   if (
+    rulingsQuery.isError ||
     grQuery.isError ||
     suppliersQuery.isError ||
     shipmentsQuery.isError ||
@@ -1327,7 +1356,8 @@ const BuyerGoodsReceipt: React.FC = () => {
           shipmentsQuery.error ??
           asnsQuery.error ??
           enforcementQuery.error ??
-          registryQuery.error
+          registryQuery.error ??
+          rulingsQuery.error
         }
         onRetry={() => {
           grQuery.refetch();
@@ -1336,6 +1366,7 @@ const BuyerGoodsReceipt: React.FC = () => {
           asnsQuery.refetch();
           enforcementQuery.refetch();
           registryQuery.refetch();
+          rulingsQuery.refetch();
         }}
       />
     );
@@ -1360,6 +1391,7 @@ const BuyerGoodsReceipt: React.FC = () => {
       asns={asnsQuery.data?.items ?? []}
       enforcementSettings={enforcementQuery.data?.items ?? []}
       complianceRegistry={registryQuery.data?.items ?? []}
+      materialRulings={rulingsQuery.data?.items ?? []}
     />
   );
 };

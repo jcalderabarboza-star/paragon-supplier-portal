@@ -984,6 +984,104 @@ export function useGoodsReceiptRequestRetest() {
   });
 }
 
+// ── OPS-2 (R-OPS P0-4) — WORK A RECEIPT THAT ALREADY EXISTS ─────────────────
+//
+// The wizard only ever CREATED: "Start inspection" on an existing receipt opened
+// a form whose last button made a second receipt, and "Submit inspection
+// results" was a toast. This is the chain for the receipt that is there:
+//
+//   Pending Inspection → t_gr_start_inspection → t_gr_record_inspection → then
+//   EITHER the rolled-up disposition verb OR t_gr_hold.
+//
+// Each step is decided by the dispatcher against the state the step before left.
+// The FIRST refusal stops the chain and is returned with the step that met it,
+// so the surface can say which act was refused — nothing after it is attempted.
+export type GrResumeStep = 'start' | 'record' | 'outcome';
+
+export interface GrResumeVars {
+  grId: string;
+  /** The receipt's state when the form was opened. */
+  status: string;
+  inspectionResults: InspectionResult[];
+  outcome:
+    | { kind: 'dispose'; headerVerb: string; dispositionReason?: string }
+    | { kind: 'hold'; holdReason: string };
+}
+
+export interface GrResumeResult {
+  step: GrResumeStep;
+  result: CommandResult;
+}
+
+export function useGoodsReceiptResume() {
+  const svc = useDataService();
+  const scope = useScope();
+  const invalidate = useInvalidateProcurement();
+
+  return useMutation<GrResumeResult, Error, GrResumeVars>({
+    mutationFn: async ({ grId, status, inspectionResults, outcome }) => {
+      const fire = (transitionId: string, payload?: Record<string, unknown>) =>
+        svc.commands.dispatch(scope, {
+          transitionId,
+          entity: 'goodsReceipt',
+          entityId: grId,
+          ...(payload ? { payload } : {}),
+        });
+      if (status === 'Pending Inspection') {
+        const started = await fire('t_gr_start_inspection');
+        if (started.status === 'failed') return { step: 'start', result: started };
+      }
+      const recorded = await fire('t_gr_record_inspection', { inspectionResults });
+      if (recorded.status === 'failed') return { step: 'record', result: recorded };
+      const result =
+        outcome.kind === 'hold'
+          ? await fire('t_gr_hold', { holdReason: outcome.holdReason })
+          : await fire(
+              outcome.headerVerb,
+              outcome.dispositionReason ? { dispositionReason: outcome.dispositionReason } : {},
+            );
+      return { step: 'outcome', result };
+    },
+    // Invalidate whatever the outcome: an earlier step may have moved the
+    // receipt even when a later one was refused.
+    onSettled: () => invalidate(scope),
+  });
+}
+
+/**
+ * OPS-2 — Compliance rules whether halal or BPOM applies to a material
+ * (`t_material_ruling_set`). The entity id IS the material code.
+ */
+export interface MaterialRulingVars {
+  materialCode: string;
+  regime: 'halal' | 'bpom';
+  applicable: boolean;
+  reason: string;
+}
+
+export function useMaterialRulingSet() {
+  const svc = useDataService();
+  const scope = useScope();
+  const qc = useQueryClient();
+
+  return useMutation<CommandResult, Error, MaterialRulingVars>({
+    mutationFn: ({ materialCode, regime, applicable, reason }) =>
+      svc.commands.dispatch(scope, {
+        transitionId: 't_material_ruling_set',
+        entity: 'materialRuling',
+        entityId: materialCode,
+        payload: { regime, applicable, reason },
+      }),
+    onSuccess: (result) => {
+      if (result.status !== 'failed') {
+        qc.invalidateQueries({
+          predicate: (q) => q.queryKey[0] === 'risk' && q.queryKey[1] === 'materialRulings',
+        });
+      }
+    },
+  });
+}
+
 /**
  * Settle a submitted `t_gr_post` (the async SAP callback): advances 'Posting to
  * SAP' → 'Posted to SAP' and assigns the real material document under the same
@@ -1058,16 +1156,18 @@ export function useInvoiceSubmit() {
   });
 }
 
-/** Approve a Matched invoice (fires `t_invoice_approve`, Matched → Approved). */
+/** Approve a Matched invoice (fires `t_invoice_approve`, Matched → Approved).
+ *  OPS-2 — `again` fires `t_invoice_reapprove` instead: a named person puts
+ *  their name to an approval that names nobody (Approved stays Approved). */
 export function useInvoiceApprove() {
   const svc = useDataService();
   const scope = useScope();
   const invalidate = useInvalidateProcurement();
 
-  return useMutation<CommandResult, Error, { invoiceId: string }>({
-    mutationFn: ({ invoiceId }) =>
+  return useMutation<CommandResult, Error, { invoiceId: string; again?: boolean }>({
+    mutationFn: ({ invoiceId, again }) =>
       svc.commands.dispatch(scope, {
-        transitionId: 't_invoice_approve',
+        transitionId: again ? 't_invoice_reapprove' : 't_invoice_approve',
         entity: 'invoice',
         entityId: invoiceId,
       }),

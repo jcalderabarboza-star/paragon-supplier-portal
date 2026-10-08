@@ -48,6 +48,7 @@ import { schedulingAgreementStore } from '../services/delivery/stores/scheduling
 import { PR_INTAKE_LINES } from '../services/data/mock/fixtures/prIntake';
 import { itemKey } from '../services/delivery/addressing';
 import { MODULE_CODES } from '../services/modules/registry';
+import { MATERIAL_MASTER } from '../services/sdc/fixtures';
 import { SYSTEM_ROLES } from '../services/transitions/businessRoles';
 import { WIRED_COMMAND_TARGETS, commandTargetFor } from '../services/data/mock/MockCommandService';
 import { seedEnforcementLedger } from '../services/data/mock/enforcementSeed';
@@ -128,6 +129,8 @@ const FIXTURE_IDS: Readonly<Record<string, () => readonly string[]>> = {
   pslCapSetting: () => [...PSL_SETTING_IDS],
   role: () => Object.keys(SYSTEM_ROLES),
   moduleActivation: () => [...MODULE_CODES],
+  // OPS-2 — the material ruling ledger: its entity IS a material-master code.
+  materialRuling: () => Object.keys(MATERIAL_MASTER),
 };
 
 /**

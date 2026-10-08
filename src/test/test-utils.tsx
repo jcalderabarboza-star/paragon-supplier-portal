@@ -17,6 +17,12 @@ import type {
 import { SEEDED_SEAT_ROLES } from '../services/transitions/businessRoles';
 import { NO_PERSON } from '../context/noPerson';
 import { SAMPLE_PEOPLE } from '../services/identity/sampleRoster';
+import {
+  seedNamedApprovals,
+  nameUnnamedApprovals,
+  INVOICE_APPROVER,
+  INVOICE_RELEASER,
+} from './namedApprovals';
 
 // Default persona for page tests that don't care about identity.
 //
@@ -78,6 +84,14 @@ export const BUYER_NAMED_COMPLIANCE: CurrentIdentity = {
 
 // The seeded supplier (sup-007) — pass to renderWithProviders for pages that
 // gate on a supplier identity (e.g. SupplierWhatsApp -> NoSupplierIdentity).
+/**
+ * OPS-2 — the full buyer seat, NAMED, and not the person `seedNamedApprovals`
+ * approves as: the seat a spec about the invoice RELEASE renders under. See
+ * `./namedApprovals` for why a release needs two people.
+ */
+export const BUYER_RELEASER: CurrentIdentity = { ...BUYER, actor: INVOICE_RELEASER };
+export { seedNamedApprovals, nameUnnamedApprovals, INVOICE_APPROVER, INVOICE_RELEASER };
+
 export const SUPPLIER: CurrentIdentity = {
   personaType: 'supplier',
   supplierId: 'sup-007',

@@ -111,6 +111,8 @@ export const buyerInvoicesEn: Record<string, string> = {
   // ("for payment") rather than the bare verb, because the seat pressing it is
   // authorising money and the next act is the release.
   'buyerInvoices.footer.approve': 'Approve for payment',
+  'buyerInvoices.footer.approveAgain':
+    'Approve again',
   'buyerInvoices.footer.releasePayment': 'Release payment',
   'buyerInvoices.footer.resolveDispute': 'Resolve dispute',
   'buyerInvoices.footer.sendRemittance': 'Send remittance',
@@ -129,6 +131,14 @@ export const buyerInvoicesEn: Record<string, string> = {
   'buyerInvoices.field.paymentTerms': 'Payment terms',
   'buyerInvoices.field.dueDate': 'Due date',
   'buyerInvoices.field.approver': 'Approver',
+  'buyerInvoices.approval.unnamed':
+    'No named person approved this invoice. A named person approves it again before its payment is released.',
+  'buyerInvoices.approve.refused.unattributed':
+    'This seat names no person, and an approval is recorded against the person who decided it. Choose a sample user on the identity panel, then approve again.',
+  'buyerInvoices.approve.refused.alreadyNamed':
+    'This invoice already has a named approver. A second approval would overwrite who decided it.',
+  'buyerInvoices.release.refused.approvalUnnamed':
+    'No named person approved this invoice, so its payment is not released. A named person approves it again first.',
   'buyerInvoices.field.status': 'Status',
   'buyerInvoices.field.channel': 'Channel',
   'buyerInvoices.field.fiDocument': 'FI document',
@@ -310,6 +320,8 @@ export const buyerInvoicesId: Record<string, string> = {
   // — Footer action by status —
   'buyerInvoices.footer.reviewMatch': 'Tinjau pencocokan',
   'buyerInvoices.footer.approve': 'Setujui untuk pembayaran',
+  'buyerInvoices.footer.approveAgain':
+    'Setujui lagi',
   'buyerInvoices.footer.releasePayment': 'Rilis pembayaran',
   'buyerInvoices.footer.resolveDispute': 'Selesaikan sengketa',
   'buyerInvoices.footer.sendRemittance': 'Kirim bukti pembayaran',
@@ -328,6 +340,14 @@ export const buyerInvoicesId: Record<string, string> = {
   'buyerInvoices.field.paymentTerms': 'Termin pembayaran',
   'buyerInvoices.field.dueDate': 'Jatuh tempo',
   'buyerInvoices.field.approver': 'Penyetuju',
+  'buyerInvoices.approval.unnamed':
+    'Tidak ada orang bernama yang menyetujui faktur ini. Seseorang yang bernama menyetujuinya lagi sebelum pembayarannya dirilis.',
+  'buyerInvoices.approve.refused.unattributed':
+    'Kursi ini tidak menyebut siapa pun, dan persetujuan dicatat atas nama orang yang memutuskannya. Pilih pengguna contoh di panel identitas, lalu setujui lagi.',
+  'buyerInvoices.approve.refused.alreadyNamed':
+    'Faktur ini sudah memiliki penyetuju bernama. Persetujuan kedua akan menimpa siapa yang memutuskannya.',
+  'buyerInvoices.release.refused.approvalUnnamed':
+    'Tidak ada orang bernama yang menyetujui faktur ini, sehingga pembayarannya tidak dirilis. Seseorang yang bernama menyetujuinya lagi terlebih dahulu.',
   'buyerInvoices.field.status': 'Status',
   'buyerInvoices.field.channel': 'Kanal',
   'buyerInvoices.field.fiDocument': 'Dokumen FI',

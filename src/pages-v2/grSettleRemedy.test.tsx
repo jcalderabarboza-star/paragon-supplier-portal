@@ -288,7 +288,11 @@ const uiTestAsn = (): ASN => ({
     {
       // MG-04: both regulatory regimes can answer it, and both ASK — so the
       // walk below does what a clerk does. See the note in BuyerGoodsReceipt.test.
-      materialCode: 'AI-NIAC-6601',
+      // OPS-2 — was `AI-NIAC-6601`, for which this supplier holds no halal
+      // certificate: since OPS-2 that stops the quality step. `FR-ROUD-4470` is
+      // the same shape (both regimes ask) and sup-007 holds a BPJPH certificate
+      // for it on the permanent basis, so no clock lapses it under this walk.
+      materialCode: 'FR-ROUD-4470',
       description: 'UI test carton',
       orderedQty: 100,
       shippedQty: 100,
@@ -308,10 +312,10 @@ const walkWizardToPost = async () => {
   fireEvent.click(screen.getByRole('button', { name: /New GR/i }));
   fireEvent.click(await screen.findByText('ASN-SETTLE-1'));
   fireEvent.click(screen.getByRole('button', { name: 'Next' }));
-  fireEvent.change(screen.getByLabelText('Accepted quantity for AI-NIAC-6601'), {
+  fireEvent.change(screen.getByLabelText('Accepted quantity for FR-ROUD-4470'), {
     target: { value: '60' },
   });
-  fireEvent.change(await screen.findByLabelText('Rejection reason for AI-NIAC-6601'), {
+  fireEvent.change(await screen.findByLabelText('Rejection reason for FR-ROUD-4470'), {
     target: { value: '40 cartons crushed in transit' },
   });
   fireEvent.click(screen.getByRole('button', { name: 'Next' }));

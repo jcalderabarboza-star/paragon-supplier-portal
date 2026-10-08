@@ -19,6 +19,9 @@ import {
   COMMODITIES,
 } from './fixtures/buyerRisk';
 import { COMPLIANCE_REGISTRY } from './fixtures/complianceRegistry';
+import { DataError } from '../types';
+import type { MaterialRuling } from '../../sdc/materialRuling';
+import { materialRulingStore } from './stores/materialRulingStore';
 
 // Risk fixtures are buyer-side aggregate views (geopolitical, exposure,
 // compliance, commodity prices). Suppliers do not see this surface — the
@@ -56,6 +59,12 @@ export class MockRiskService implements IRiskService {
         ? [...COMPLIANCE_REGISTRY]
         : COMPLIANCE_REGISTRY.filter((e) => e.supplierId === scope.supplierId);
     return { items };
+  }
+  async getMaterialRulings(scope: QueryScope): Promise<Page<MaterialRuling>> {
+    if (scope.personaType !== 'buyer') {
+      throw new DataError('SCOPE_DENIED', 'material rulings are a buyer governance record');
+    }
+    return { items: [...materialRulingStore.all()] };
   }
   async getCommodities(scope: QueryScope): Promise<Page<Commodity>> {
     return { items: bufferForBuyer(scope, COMMODITIES) };

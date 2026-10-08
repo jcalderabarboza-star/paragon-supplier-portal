@@ -634,6 +634,17 @@ Three arcs, in order. Nothing else is queued.
      `SATISFIED` and 9 `NOT_SATISFIED`** at today's instant — a gate that
      discriminates, not one that refuses everything.
 
+     ⚠️ **RETRACTED 2026-10-08 (OPS-2) — THE PARAGRAPH BELOW IS FALSE AT THE TREE
+     AND IS KEPT AS THE RECORD OF WHAT H4 RULED.** By operator ruling (*"Receiving
+     checks the real thing: applicable → a valid certificate on file; not
+     applicable → passes with the ruling shown"*) the wizard's quality step now
+     reads the certificate verdict through `halal.certificate`'s mode — still
+     UNSEEDED, so it derives `BLOCK` — and a halal line with no valid certificate
+     on file does not pass. Whether halal or BPOM applies to a material is ruled
+     by Compliance on a ledger (`services/sdc/materialRuling.ts`,
+     `t_material_ruling_set`). **Derive what blocks from `qualityValid` and the
+     registry, never from this sentence.**
+
      ⚠️ **WHAT THE WIRE IS, STATED SO IT IS NOT OVER-READ: IT TELLS, IT DOES NOT
      STOP.** The wizard renders a certificate NOTICE. `halal.certificate` is
      still **unseeded and consulted by nothing that can refuse** — its empty

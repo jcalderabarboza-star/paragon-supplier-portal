@@ -148,6 +148,7 @@ import { forecastPublicationStore } from './stores/forecastPublicationStore';
 import { forecastPublicationTarget, previouslyPublished } from './publicationTarget';
 import { publishedMaterialMaster } from '../../planning/publishedMaterial';
 import { moduleActivationTarget, moduleGate } from './moduleActivationTarget';
+import { materialRulingTarget } from './materialRulingTarget';
 import type {
   Acknowledgment,
   IncomingShipment,
@@ -265,11 +266,34 @@ const dispositionForState = (state: string): Disposition | null => {
 // Shipment states in which the goods are physically present to receive.
 const RECEIVABLE_SHIPMENT_STATUSES = new Set(['At Dock', 'Unloading', 'Delivered']);
 
+/** The receipt's lines with an inspection's counts and findings written over
+ *  them. `gr_results_match_receipt` has already held the two to one line each. */
+function recordedInspection(gr: GoodsReceipt, submitted: unknown): InspectionResult[] {
+  const results = submitted as InspectionResult[];
+  return gr.inspectionResults.map((line, i) => {
+    const r = results[i];
+    return {
+      materialCode: line.materialCode,
+      description: line.description,
+      qtyExpected: line.qtyExpected,
+      qtyReceived: r.qtyReceived,
+      qtyAccepted: r.qtyAccepted,
+      qtyRejected: r.qtyRejected,
+      rejectionReason: r.qtyRejected > 0 ? r.rejectionReason : undefined,
+      labResultId: r.labResultId ?? line.labResultId,
+      visualCheck: r.visualCheck,
+      packagingCheck: r.packagingCheck,
+      halalSealCheck: r.halalSealCheck,
+      bpomLotCheck: r.bpomLotCheck,
+    };
+  });
+}
+
 const goodsReceiptTarget: CommandTarget = {
   readState: (id) => goodsReceiptStore.get(id)?.status ?? null,
   readScopeOwner: (id) => goodsReceiptStore.get(id)?.supplierId ?? null,
   readEntity: (id) => goodsReceiptStore.get(id) ?? null,
-  applyTransition: (id, toState, payload) => {
+  applyTransition: (id, toState, payload, _scope, verb) => {
     const reason =
       (typeof payload.dispositionReason === 'string' && payload.dispositionReason) ||
       (typeof payload.holdReason === 'string' && payload.holdReason) ||
@@ -279,6 +303,13 @@ const goodsReceiptTarget: CommandTarget = {
       status: toState as GRStatus,
       disposition: dispositionForState(toState) ?? g.disposition,
       notes: reason || g.notes,
+      // OPS-2 — the lines are written by ONE verb, named, never by payload
+      // shape (the RFx-2 rule). What the receipt already knows about a line —
+      // its material, its description, the quantity expected — stays the
+      // receipt's; the inspection supplies what was counted and what was found.
+      ...(verb === 't_gr_record_inspection'
+        ? { inspectionResults: recordedInspection(g, payload.inspectionResults) }
+        : {}),
     }));
   },
   // GR is a buyer/warehouse document: the buyer receives ANY supplier's inbound
@@ -375,6 +406,81 @@ bindPolicyHook(POLICY_HOOKS.GR_INSPECTION_MATERIALS_DECLARED, ({ payload }) => {
       };
 });
 
+// ── OPS-2 — the recorded-inspection gate (GR_RESULTS_MATCH_RECEIPT) ──────────
+//
+// `t_gr_record_inspection` writes the lines the three disposition verbs then
+// read, so what it accepts is what a receipt can be approved on. Five refusals,
+// in the order a reader needs them: is it a list of lines at all; are they THIS
+// receipt's lines; do the quantities add up; was each check actually answered;
+// is a rejected quantity explained.
+const CHECK_ANSWERS: ReadonlySet<unknown> = new Set(['Pass', 'Fail']);
+/** A regulatory check is owed only where its regime applies, so it may be
+ *  absent — but when it is recorded, it is an answer, never a placeholder. */
+const answerOrAbsent = (v: unknown): boolean => v === undefined || CHECK_ANSWERS.has(v);
+const isCount = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v) && v >= 0;
+
+bindPolicyHook(POLICY_HOOKS.GR_RESULTS_MATCH_RECEIPT, ({ entityId, payload, target }) => {
+  const gr = target.readEntity(entityId) as GoodsReceipt | null;
+  const results = payload.inspectionResults;
+  if (
+    !Array.isArray(results) ||
+    results.length === 0 ||
+    results.some((r) => typeof r !== 'object' || r === null)
+  ) {
+    return {
+      ok: false,
+      reason: 'RESULTS_MALFORMED: inspection results are a list with one entry per receipt line',
+    };
+  }
+  const lines = results as Record<string, unknown>[];
+  const own = gr?.inspectionResults ?? [];
+  const stray =
+    lines.length !== own.length
+      ? `${lines.length} line(s) for a receipt of ${own.length}`
+      : lines
+          .map((r, i) => (r.materialCode === own[i].materialCode ? '' : `'${String(r.materialCode)}'`))
+          .filter(Boolean)
+          .join(', ');
+  if (stray) {
+    return {
+      ok: false,
+      reason: `RESULTS_NOT_THIS_RECEIPT: ${stray} — the results name each line of this receipt, in its order, and nothing else`,
+    };
+  }
+  for (const r of lines) {
+    const code = String(r.materialCode);
+    if (
+      !isCount(r.qtyReceived) ||
+      !isCount(r.qtyAccepted) ||
+      !isCount(r.qtyRejected) ||
+      r.qtyAccepted + r.qtyRejected !== r.qtyReceived
+    ) {
+      return {
+        ok: false,
+        reason: `RESULTS_QUANTITY_INVALID: ${code} — received, accepted and rejected are numbers of zero or more, and accepted plus rejected equals received`,
+      };
+    }
+    if (
+      !CHECK_ANSWERS.has(r.visualCheck) ||
+      !CHECK_ANSWERS.has(r.packagingCheck) ||
+      !answerOrAbsent(r.halalSealCheck) ||
+      !answerOrAbsent(r.bpomLotCheck)
+    ) {
+      return {
+        ok: false,
+        reason: `RESULTS_CHECK_UNANSWERED: ${code} — the visual and packaging checks are each recorded as Pass or Fail, and a halal seal or BPOM lot check, when recorded, is Pass or Fail too`,
+      };
+    }
+    if (r.qtyRejected > 0 && (typeof r.rejectionReason !== 'string' || r.rejectionReason.trim() === '')) {
+      return {
+        ok: false,
+        reason: `RESULTS_REJECTION_UNEXPLAINED: ${code} — a rejected quantity carries its reason`,
+      };
+    }
+  }
+  return { ok: true };
+});
+
 // GR create legality (mock layer — cross-entity read): the parent shipment must
 // have physically arrived, or (for a manual ref) an existing ASN document exists.
 bindPolicyHook(POLICY_HOOKS.GR_CREATE_SHIPMENT_RECEIVED, ({ payload }) => {
@@ -411,7 +517,9 @@ const invoiceTarget: CommandTarget = {
         toState === 'Submitted' && typeof payload.amount === 'number'
           ? payload.amount
           : inv.amount,
-      ...(verb === 't_invoice_approve' && actor ? { approvedBy: actor } : {}),
+      ...((verb === 't_invoice_approve' || verb === 't_invoice_reapprove') && actor
+        ? { approvedBy: actor }
+        : {}),
       ...(verb === 't_invoice_release_payment' && actor ? { releasedBy: actor } : {}),
       // The reason finance wrote is KEPT. It used to be required, sent and
       // dropped here, so neither side could read why an invoice was disputed.
@@ -3024,6 +3132,8 @@ const TARGETS: Record<string, CommandTarget> = {
   // M1 — module activation. Ships in the same commit as its flow so the entity
   // never joins the target-less set; `enforcementTarget`'s shape, verb for verb.
   moduleActivation: moduleActivationTarget,
+  // OPS-2 — the material applicability ruling ledger; the same shape again.
+  materialRuling: materialRulingTarget,
 };
 
 // The behavior-wiring census (was the contract package's "6"; 7 with the G1.1

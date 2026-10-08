@@ -229,6 +229,13 @@ export const useComplianceRegistry = () =>
     svc.risk.getComplianceRegistry(scope),
   );
 
+// OPS-2 — the material applicability ruling ledger. Buyer-scoped (a supplier is
+// refused, not answered empty). The reader derives what is in force.
+export const useMaterialRulings = () =>
+  useServiceQuery(['risk', 'materialRulings'], (svc, scope) =>
+    svc.risk.getMaterialRulings(scope),
+  );
+
 export const useCommodities = () =>
   useServiceQuery(['risk', 'commodities'], (svc, scope) => svc.risk.getCommodities(scope));
 

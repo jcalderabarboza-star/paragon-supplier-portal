@@ -84,7 +84,15 @@ export const supplierShipmentsEn: Record<string, string> = {
   'supplierShipments.empty.message':
     'ASNs and shippable confirmed POs will appear here.',
   // — Dock Appointments tab —
-  'supplierShipments.dock.heading': 'Your scheduled dock appointments',
+  'supplierShipments.dock.heading': 'Dock appointments on your shipments',
+  'supplierShipments.dock.loading':
+    'Reading your shipments…',
+  'supplierShipments.dock.readFailed':
+    'Your shipments could not be read, so no appointment is shown. Reload the page to try again.',
+  'supplierShipments.dock.empty':
+    'No dock appointment is recorded on any of your shipments that are still on the way.',
+  'supplierShipments.dock.info':
+    'Dock slots are set by the Paragon inbound team and appear here once they are recorded on a shipment. Requesting or changing a slot from this page is not available.',
   'supplierShipments.dock.field.date': 'Date',
   'supplierShipments.dock.field.time': 'Time',
   'supplierShipments.dock.field.dock': 'Dock',
@@ -92,11 +100,7 @@ export const supplierShipmentsEn: Record<string, string> = {
   'supplierShipments.dock.notice.arrivePre': 'Please arrive',
   'supplierShipments.dock.notice.arriveEmphasis': '15 minutes before your slot',
   'supplierShipments.dock.notice.arrivePost':
-    'Bring a printed copy of your ASN and packing list. Contact the receiving team at',
-  'supplierShipments.dock.notice.arriveTail': 'if you anticipate delays.',
-  'supplierShipments.dock.info.pre':
-    'Dock appointment requests for new ASNs are processed by the Paragon Inbound Team. Confirmation is sent via',
-  'supplierShipments.dock.info.post': 'within 2 hours of ASN submission.',
+    'Bring a printed copy of your ASN and packing list.',
   // — Wizard: step 1 (select PO) —
   'supplierShipments.wizard.select.title': 'Select PO',
   'supplierShipments.wizard.select.short': 'Select PO',
@@ -240,7 +244,15 @@ export const supplierShipmentsId: Record<string, string> = {
   'supplierShipments.empty.message':
     'ASN dan PO terkonfirmasi yang dapat dikirim akan muncul di sini.',
   // — Dock Appointments tab —
-  'supplierShipments.dock.heading': 'Janji temu dermaga terjadwal Anda',
+  'supplierShipments.dock.heading': 'Janji temu dermaga pada pengiriman Anda',
+  'supplierShipments.dock.loading':
+    'Membaca pengiriman Anda…',
+  'supplierShipments.dock.readFailed':
+    'Pengiriman Anda tidak dapat dibaca, sehingga janji temu tidak ditampilkan. Muat ulang halaman untuk mencoba lagi.',
+  'supplierShipments.dock.empty':
+    'Tidak ada janji temu dermaga yang tercatat pada pengiriman Anda yang masih dalam perjalanan.',
+  'supplierShipments.dock.info':
+    'Slot dermaga ditetapkan oleh tim inbound Paragon dan muncul di sini setelah tercatat pada pengiriman. Meminta atau mengubah slot dari halaman ini belum tersedia.',
   'supplierShipments.dock.field.date': 'Tanggal',
   'supplierShipments.dock.field.time': 'Waktu',
   'supplierShipments.dock.field.dock': 'Dermaga',
@@ -248,12 +260,7 @@ export const supplierShipmentsId: Record<string, string> = {
   'supplierShipments.dock.notice.arrivePre': 'Harap tiba',
   'supplierShipments.dock.notice.arriveEmphasis': '15 menit sebelum slot Anda',
   'supplierShipments.dock.notice.arrivePost':
-    'Bawa salinan cetak ASN dan daftar kemasan Anda. Hubungi tim penerima di',
-  'supplierShipments.dock.notice.arriveTail':
-    'jika Anda memperkirakan keterlambatan.',
-  'supplierShipments.dock.info.pre':
-    'Permintaan janji temu dermaga untuk ASN baru diproses oleh Tim Inbound Paragon. Konfirmasi dikirim via',
-  'supplierShipments.dock.info.post': 'dalam 2 jam setelah pengajuan ASN.',
+    'Bawa salinan cetak ASN dan daftar kemasan Anda.',
   // — Wizard: step 1 (select PO) —
   'supplierShipments.wizard.select.title': 'Pilih PO',
   'supplierShipments.wizard.select.short': 'Pilih PO',

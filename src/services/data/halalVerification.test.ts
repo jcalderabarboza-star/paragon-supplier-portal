@@ -123,6 +123,11 @@ const BEFORE_MANDATE = '2026-01-01T00:00:00.000Z';
 const ON_MANDATE = `${BPJPH_MANDATE_DATE}T00:00:00.000Z`;
 const AFTER_MANDATE = '2026-12-01T09:30:00.000Z';
 
+/** The registry as it stood before OPS-2 added the packaging SAMPLE certificate
+ *  for sup-007 (creg-0017) — for the specs whose claim is about the rows that
+ *  are NOT halal certificates. */
+const REGISTRY_WITHOUT_OPS2_SAMPLE = COMPLIANCE_REGISTRY.filter((e) => e.id !== 'creg-0017');
+
 describe('H3 — halal-class certificate selection', () => {
   it('the three halal schemes are halal-class and the other three cert types are not', () => {
     expect([...HALAL_CERT_TYPES].sort()).toEqual([
@@ -142,6 +147,15 @@ describe('H3 — halal-class certificate selection', () => {
     // in would answer a DIFFERENT QUESTION with a confident yes, and the
     // `UNDER_REVIEW` reason on the first would make the wrong answer look
     // considered.
+    //
+    // OPS-2 — both materials are now ALSO covered by a SAMPLE halal certificate
+    // (creg-0017, operator ruling: packaging is received on a certificate on
+    // file). The claim here is about the two documents that are NOT halal
+    // certificates, so it is asked of the registry without that row; the last
+    // assertion shows what the row changes, so the filter cannot hide it.
+    const R = REGISTRY_WITHOUT_OPS2_SAMPLE;
+    expect(REGISTRY_WITHOUT_OPS2_SAMPLE.length).toBe(COMPLIANCE_REGISTRY.length - 1);
+    expect(verifyHalalAtReceipt('sup-007', 'PK-PETB-8804', COMPLIANCE_REGISTRY, BEFORE_MANDATE).verdict).toBe('SATISFIED');
     expect(verifyHalalAtReceipt('sup-007', 'PK-PETB-8804', R, BEFORE_MANDATE)).toEqual({
       verdict: 'NOT_SATISFIED',
       reason: 'NO_CERT',
@@ -520,11 +534,23 @@ describe('H3 — ⚠️ THE SEAM, MEASURED. The two lanes share ONE vocabulary n
     );
   });
 
-  it('a material whose master row does not require halal still reads NO_CERT', () => {
-    // PK-PETB-8804 is `halalApplicable: UNDETERMINED` and carries only a BPOM
-    // row. A NO_CERT here is not a finding — it is a question that should not
-    // have been asked (H1 answers applicability, not this function).
-    expect(verifyHalalAtReceipt('sup-007', 'PK-PETB-8804', R, BEFORE_MANDATE)).toEqual({
+  it('this function answers for the certificate only — applicability is asked elsewhere', () => {
+    // ⚠️ REWRITTEN AT OPS-2, AND THE OLD TITLE IS KEPT HERE BECAUSE ITS PREMISE
+    // DIED: *"a material whose master row does not require halal still reads
+    // NO_CERT"*. PK-PETB-8804 was `halalApplicable: UNDETERMINED` and carried
+    // only a BPOM row. By operator ruling halal now APPLIES to packaging by
+    // default, and the supplier holds a SAMPLE certificate for it — so the
+    // master row requires halal and the pair reads SATISFIED.
+    //
+    // What survives is the function's shape: it reads the registry it is handed
+    // and nothing else. The same pair without the sample row is NO_CERT, and it
+    // never consults the master to decide whether the question was worth asking.
+    expect(verifyHalalAtReceipt('sup-007', 'PK-PETB-8804', R, BEFORE_MANDATE).verdict).toBe(
+      'SATISFIED',
+    );
+    expect(
+      verifyHalalAtReceipt('sup-007', 'PK-PETB-8804', REGISTRY_WITHOUT_OPS2_SAMPLE, BEFORE_MANDATE),
+    ).toEqual({
       verdict: 'NOT_SATISFIED',
       reason: 'NO_CERT',
     });
@@ -564,6 +590,9 @@ describe('H3 — ⚠️ THE SEAM, MEASURED. The two lanes share ONE vocabulary n
   });
 });
 
+// OPS-2 — the title is kept because three suites cite it; the second half of it
+// is no longer true and the spec under it says so. The certificate is still
+// read in ONE place, and since OPS-2 that place can refuse.
 describe('H4 — ⚠️ WIRED TO A NOTICE, AND TO NOTHING THAT CAN REFUSE', () => {
   const sources = () =>
     import.meta.glob('/src/**/*.{ts,tsx}', {
@@ -607,7 +636,7 @@ describe('H4 — ⚠️ WIRED TO A NOTICE, AND TO NOTHING THAT CAN REFUSE', () =
     expect(src['/src/services/data/halalVerification.test.ts']).toBeUndefined();
   });
 
-  it('⚠️ THE WIZARD READS THE REGISTRY — and `qualityValid` never consults it', () => {
+  it('⚠️ THE WIZARD READS THE REGISTRY — and since OPS-2 `qualityValid` consults it, through the ledger', () => {
     // ⚠️ **THIS ASSERTION WAS GREEN ABOUT THE WRONG FILE FOR THE WHOLE OF H3,
     // AND IT IS WORTH MORE AS A RECORD THAN AS A DELETION.** It read
     //
@@ -646,16 +675,27 @@ describe('H4 — ⚠️ WIRED TO A NOTICE, AND TO NOTHING THAT CAN REFUSE', () =
       code.indexOf('const qualityValid'),
       code.indexOf('const dispositionValid'),
     );
+    //
+    // ⚠️ **INVERTED AT OPS-2, BY OPERATOR RULING, AND THE RETIRED ASSERTIONS ARE
+    // RESTATED RATHER THAN DELETED.** They read
+    //
+    //     expect(qualityValid).not.toContain('certVerdict');
+    //     expect(qualityValid).not.toContain('verifyHalalAtReceipt');
+    //     expect(qualityValid).not.toContain('SATISFIED');
+    //
+    // The new ruling: *"Receiving checks the real thing: applicable → a valid
+    // certificate on file; not applicable → passes with the ruling shown."* So
+    // the predicate now reads the verdict — and it does so the way H4 said the
+    // successor would: ONE clause, `&& certBlocks`, where `certBlocks` is read
+    // off the enforcement ledger for `halal.certificate`. It never calls the
+    // verification itself and never hard-codes the consequence.
     expect(qualityValid.length).toBeGreaterThan(50);
-    expect(qualityValid).not.toContain('certVerdict');
+    expect(qualityValid).toContain("certVerdicts[i]?.verdict === 'NOT_SATISFIED' && certBlocks");
     expect(qualityValid).not.toContain('verifyHalalAtReceipt');
-    expect(qualityValid).not.toContain('SATISFIED');
-    // Nor may the certificate reach the step gate by any other route.
-    const isStepValid = code.slice(
-      code.indexOf('const isStepValid'),
-      code.indexOf('const updateLine'),
-    );
-    expect(isStepValid.length).toBeGreaterThan(50);
-    expect(isStepValid).not.toContain('cert');
+    // The consequence is GOVERNED: the same derivation as its two neighbours.
+    expect(code).toContain("(enforcementSettings, 'halal.certificate', inspectionInstant).mode");
+    // And only where halal applies — a material ruled not applicable is never
+    // asked for a certificate.
+    expect(qualityValid).toContain('l.halal.required && certVerdicts[i]');
   });
 });
