@@ -341,6 +341,11 @@ targets). They measure different things; this file keeps them separate.
 > target when a confirmation is applied, never read from the payload — and `confirmationNote`. A
 > confirmation also writes `confirmedDeliveryDate` when one is given. `t_po_acknowledge` stamps none
 > of the three. A seeded order carries no `confirmedAt`.
+> **ONLY THE MOVE INTO `Confirmed` WRITES A CONFIRMATION.** The line `confirmedQty` values and the
+> three fields above are written only when the transition's target state is `Confirmed`, which
+> `t_po_confirm` alone reaches. A payload carrying `confirmedQuantities` on any other PO verb is
+> ignored. Until this batch it was applied on every PO verb, including `t_po_acknowledge`, which
+> runs no hook.
 > **`t_asn_create` GAINED A SECOND HOOK, `asn_details_well_formed`**, evaluated after
 > `asn_create_po_confirmed`. The payload may now carry, all OPTIONAL: `packages` (an integer above
 > zero), `grossWeightKg` (a finite number above zero), `shipDate` (a calendar day), `batchNumber`,

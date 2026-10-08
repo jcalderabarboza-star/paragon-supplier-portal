@@ -178,9 +178,16 @@ const purchaseOrderTarget: CommandTarget = {
     // genuinely-new references and all derivations recompute (see the store).
     const qtys = payload.confirmedQuantities;
     // OPS-3 — the date and the note the supplier typed are stored, and the
-    // moment of the act is stamped HERE (never read off the payload). Only a
-    // confirmation carries quantities, so that is what marks the act.
-    const confirming = Array.isArray(qtys);
+    // moment of the act is stamped HERE (never read off the payload).
+    //
+    // ⚠️ ONLY THE VERB THAT IS JUDGED MAY WRITE WHAT IS JUDGED. Every PO verb
+    // shares this function, and only `t_po_confirm` runs the two hooks that
+    // read quantities, date and note. It keyed on "the payload carries
+    // quantities", so an ACKNOWLEDGEMENT carrying them wrote them unjudged — an
+    // out-of-bounds confirmed quantity under a verb that has no hook at all.
+    // The confirmation fields are written only on the move INTO Confirmed,
+    // which `t_po_confirm` alone makes.
+    const confirming = toState === POStatus.CONFIRMED && Array.isArray(qtys);
     const date = payload.confirmedDeliveryDate;
     const note = payload.confirmationNote;
     purchaseOrderStore.update(id, (po) => ({
@@ -191,7 +198,7 @@ const purchaseOrderTarget: CommandTarget = {
       ...(confirming && typeof note === 'string' && note.trim()
         ? { confirmationNote: note.trim() }
         : {}),
-      lineItems: Array.isArray(qtys)
+      lineItems: confirming
         ? po.lineItems.map((li, i) =>
             typeof qtys[i] === 'number' ? { ...li, confirmedQty: qtys[i] as number } : li,
           )

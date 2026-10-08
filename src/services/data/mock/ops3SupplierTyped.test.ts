@@ -143,6 +143,40 @@ describe('OPS-3 · order confirmation — the date, the note and the quantity ar
     expect(po.confirmedDeliveryDate).toBe('');
   });
 
+  it('⚠️ an acknowledgement CARRYING confirmation fields writes none of them — only the judged verb writes', async () => {
+    // Every PO verb shares one apply function, and only `t_po_confirm` runs
+    // the hooks that read these fields. An acknowledgement has no hook: before
+    // this was closed it stored an out-of-bounds quantity it was handed.
+    const res = await svc.dispatch(supplier(SUP), {
+      transitionId: 't_po_acknowledge',
+      entity: 'purchaseOrder',
+      entityId: PO,
+      payload: {
+        confirmedQuantities: [999999, 999999],
+        confirmedDeliveryDate: 'not-a-date',
+        confirmationNote: 'x'.repeat(PO_CONFIRM_NOTE_MAX + 50),
+      },
+    });
+    expect(res.status, res.reason).toBe('done');
+    const po = purchaseOrderStore.get(PO)!;
+    expect(po.status).toBe(POStatus.ACKNOWLEDGED);
+    expect(po.lineItems.map((l) => l.confirmedQty)).toEqual([0, 0]);
+    expect(po.confirmedDeliveryDate).toBe('');
+    expect(po.confirmationNote).toBeUndefined();
+    expect(po.confirmedAt).toBeUndefined();
+    // KNOWN-GOOD: the same order still confirms afterwards, through the hooks.
+    const ok = await confirm({ confirmedQuantities: [5000, 300] });
+    expect(ok.status, ok.reason).toBe('done');
+    expect(purchaseOrderStore.get(PO)!.lineItems.map((l) => l.confirmedQty)).toEqual([5000, 300]);
+  });
+
+  it('the population: `t_po_confirm` is the ONLY verb that moves an order into Confirmed', () => {
+    const into = getFlow('purchaseOrder')!
+      .transitions.filter((t) => t.to === POStatus.CONFIRMED)
+      .map((t) => t.id);
+    expect(into).toEqual(['t_po_confirm']);
+  });
+
   describe('a hand-made dispatch is refused by name', () => {
     const refused = async (payload: Record<string, unknown>, head: string) => {
       const res = await confirm({ confirmedQuantities: [5000, 300], ...payload });
