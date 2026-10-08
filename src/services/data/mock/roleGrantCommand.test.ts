@@ -27,18 +27,31 @@ import type { QueryScope } from '../types';
 import { PERSONA_SYSTEM_ROLES, SYSTEM_ROLES } from '../../transitions/businessRoles';
 import { customRoleStore } from '../../transitions/customRoles';
 import { getKnownFlows } from '../../transitions';
+import { SAMPLE_PEOPLE } from '../../identity/sampleRoster';
 
 const svc = new MockCommandService();
 
 /** The portal can name nobody. This is the honest attribution, not a stub. */
 const NOBODY = { kind: 'UNATTRIBUTED', reason: 'NO_PERSON_IN_SESSION' } as const;
 
+/**
+ * SUP-1 — a grant needs a named person, so the seats that must LAND one (or
+ * reach a refusal that sits behind the naming hook) act as a sample person.
+ * Read off the roster, never spelled.
+ */
+const GRANTER = {
+  kind: 'RESOLVED',
+  person: { personId: SAMPLE_PEOPLE.find((p) => p.role === 'compliance')!.personId },
+} as const;
+
 const compliance: QueryScope = {
   personaType: 'buyer',
   supplierId: null,
   businessRoles: ['compliance'],
-  actor: NOBODY,
+  actor: GRANTER,
 };
+/** The same compliance seat naming nobody — the half SUP-1 refuses. */
+const complianceUnnamed: QueryScope = { ...compliance, actor: NOBODY };
 const procurement: QueryScope = {
   personaType: 'buyer',
   supplierId: null,
@@ -62,8 +75,8 @@ const grant = (over: Record<string, unknown> = {}, parent = 'receiving') => ({
     description: 'The dock, after hours.',
     adds: ['invoice:dispute'],
     // No `grantedBy`. The actor rides the SCOPE now (C10 §6.2 / R-PAYLOAD) and
-    // the dispatcher refuses the key; the recorded value is unchanged, because
-    // every scope in this file already carries `NOBODY`.
+    // the dispatcher refuses the key; what is recorded is the scope's own
+    // actor, which since SUP-1 has to be a named person for the grant to land.
     ...over,
   },
 });
@@ -271,9 +284,20 @@ describe('⚠️ PROVENANCE IS MINTED BY THE STORE, NEVER SUPPLIED', () => {
     expect([...stored.parentAtomsAtGrant].sort()).toEqual([...SYSTEM_ROLES.receiving].sort());
   });
 
-  it('the attribution is preserved verbatim — an explicit absence, not a person', async () => {
+  // SUP-1: a grant needs a named person. This used to assert that the stored
+  // attribution was the explicit absence; an unnamed seat can no longer grant,
+  // so what is preserved verbatim is the person the scope named.
+  it('the attribution is preserved verbatim — the person the scope named', async () => {
     await svc.dispatch(compliance, grant());
-    expect(customRoleStore.byId('jakarta-night-shift')!.grantedBy).toEqual(NOBODY);
+    expect(customRoleStore.byId('jakarta-night-shift')!.grantedBy).toEqual(GRANTER);
+  });
+
+  it('⚠️ AND AN UNNAMED SEAT IS REFUSED — nothing is stored against nobody', async () => {
+    const result = await svc.dispatch(complianceUnnamed, grant());
+    expect(result.status).toBe('failed');
+    expect(result.reason).toContain('POLICY_REJECTED:role_granter_named');
+    expect(result.reason).toContain('ROLE_GRANTER_UNATTRIBUTED');
+    expect(customRoleStore.all()).toEqual([]);
   });
 });
 
@@ -282,7 +306,7 @@ describe('⚠️ THE GRANT IS ENFORCED — this is what makes it a role and not 
     personaType: 'buyer',
     supplierId: null,
     businessRoles: ['jakarta-night-shift'],
-    actor: NOBODY,
+    actor: GRANTER,
   };
 
   it('a seat holding the custom role can fire a verb its parent could not', async () => {

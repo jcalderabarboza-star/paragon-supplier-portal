@@ -1,10 +1,11 @@
 import { screen, within, fireEvent } from '@testing-library/react';
-import { renderWithProviders, BUYER } from '../test/test-utils';
+import { renderWithProviders, BUYER, BUYER_NAMED_COMPLIANCE } from '../test/test-utils';
 import { NO_PERSON } from '../context/noPerson';
 import type { CurrentIdentity } from '../context/CurrentIdentityContext';
 import { SYSTEM_ROLES, type SystemRoleId } from '../services/transitions/businessRoles';
 import { deriveRoleViews, roleTotals } from './roles/roleModel';
 import i18n from '../lib/i18n';
+import { personLabel } from '../services/identity/personLabel';
 import RolesCatalogue from './RolesCatalogue';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -182,15 +183,45 @@ describe('⚠️ EDITING IS COMPLIANCE-GATED — THE FIRST ROLE-GATED SURFACE', 
     // A user who creates a role must have been told where it goes BEFORE they
     // create it. The header is not enough — nobody reads a header on the way to
     // a submit button.
-    renderWithProviders(<RolesCatalogue />, { identity: BUYER });
-    const line = await screen.findByTestId('role-create-actor');
-    expect(line).toHaveTextContent(/saved in this browser/i);
-    expect(line).toHaveTextContent(/survive a reload/i);
-    expect(line).toHaveTextContent(/not stored on a server/i);
-    expect(line).toHaveTextContent(/nobody the platform can name/i);
-    // And it sits ABOVE the submit, not below it.
+    //
+    // SUP-1: a grant needs a named person. The line used to say the grant was
+    // recorded against nobody; it is now two — where the grant is kept, and
+    // which of the two this seat is: refused (unnamed) or recorded (named).
+    const { unmount } = renderWithProviders(<RolesCatalogue />, { identity: BUYER });
+    const kept = await screen.findByTestId('role-create-persistence');
+    expect(kept).toHaveTextContent(/saved in this browser/i);
+    expect(kept).toHaveTextContent(/survive a reload/i);
+    expect(kept).toHaveTextContent(/not stored on a server/i);
+    // The unnamed seat is told it will be refused, not that nobody is recorded.
+    const line = screen.getByTestId('role-create-actor');
+    expect(line).toHaveTextContent(i18n.t('identity.preAct.namedRequired'));
+    expect(line).toHaveTextContent(/names nobody/i);
+    expect(line).toHaveTextContent(/will be refused/i);
+    expect(line).not.toHaveTextContent(/nobody the platform can name/i);
+    expect(screen.queryByTestId('role-create-actor-sample')).not.toBeInTheDocument();
+    // And both sit ABOVE the submit, not below it.
     const submit = screen.getByTestId('role-create-submit');
+    expect(kept.compareDocumentPosition(submit) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(line.compareDocumentPosition(submit) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    unmount();
+
+    // The named seat reads who the grant will be recorded against.
+    const person = BUYER_NAMED_COMPLIANCE.actor;
+    if (person.kind !== 'RESOLVED') throw new Error('the named seat must name a person');
+    renderWithProviders(<RolesCatalogue />, { identity: BUYER_NAMED_COMPLIANCE });
+    const named = await screen.findByTestId('role-create-actor-sample');
+    expect(named).toHaveTextContent(
+      i18n.t('identity.preAct.sample', {
+        label: personLabel(person.person.personId, i18n.t.bind(i18n)),
+      }),
+    );
+    expect(named).toHaveTextContent(/recorded against/i);
+    expect(named).toHaveTextContent(/sample/i);
+    expect(screen.queryByTestId('role-create-actor')).not.toBeInTheDocument();
+    const namedSubmit = screen.getByTestId('role-create-submit');
+    expect(
+      named.compareDocumentPosition(namedSubmit) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
   });
 
   it('says there is no user list, and why', async () => {

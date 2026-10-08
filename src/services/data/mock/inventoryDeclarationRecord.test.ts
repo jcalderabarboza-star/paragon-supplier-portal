@@ -31,8 +31,24 @@ import { makeProvenanceRef, type ChannelMessage } from '../../channel/types';
 import { DataError } from '../types';
 import type { QueryScope } from '../types';
 import { PERSONA_SYSTEM_ROLES } from '../../../services/transitions/businessRoles';
+import { SAMPLE_PEOPLE } from '../../identity/sampleRoster';
 
-const buyer: QueryScope = { personaType: 'buyer', supplierId: null, businessRoles: PERSONA_SYSTEM_ROLES.buyer };
+// SUP-1 — a recorded stock figure needs a named person, so the recording buyer
+// acts as a sample one, read off the roster. The roles are what they were.
+const buyer: QueryScope = {
+  personaType: 'buyer',
+  supplierId: null,
+  businessRoles: PERSONA_SYSTEM_ROLES.buyer,
+  actor: {
+    kind: 'RESOLVED',
+    person: { personId: SAMPLE_PEOPLE.find((p) => p.role === 'procurement')!.personId },
+  },
+};
+/** The same buyer seat naming nobody — the half SUP-1 refuses. */
+const buyerUnnamed: QueryScope = {
+  ...buyer,
+  actor: { kind: 'UNATTRIBUTED', reason: 'NO_PERSON_IN_SESSION' },
+};
 // sup-002 makes glycerin (RM-EMUL-3310, manufacturer relationship + fanned).
 const sup002: QueryScope = { personaType: 'supplier', supplierId: 'sup-002', businessRoles: PERSONA_SYSTEM_ROLES.supplier };
 
@@ -105,6 +121,15 @@ describe('C4c — a buyer records; the record IS a declaration, the ACTOR is the
     const ev = eventFor('t_inventorydeclaration_record', res.correlationId);
     expect(ev.actor).toBe('buyer:all'); // Paragon recorded it — truthfully
     expect(ev.scope.personaType).toBe('buyer');
+  });
+
+  it('SUP-1: a buyer seat that names nobody is refused, and nothing is minted', async () => {
+    const before = inventoryDeclarationStore.all().length;
+    const res = await svc.dispatch(buyerUnnamed, record());
+    expect(res.status).toBe('failed');
+    expect(res.reason).toContain('POLICY_REJECTED:inventory_recorder_named');
+    expect(res.reason).toContain('INVENTORY_RECORDER_UNATTRIBUTED');
+    expect(inventoryDeclarationStore.all().length).toBe(before);
   });
 
   it('recorded vs self-submitted are distinguishable from the event stream alone', async () => {

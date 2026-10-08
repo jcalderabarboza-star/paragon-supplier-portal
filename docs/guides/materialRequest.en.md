@@ -21,7 +21,7 @@ Two buyer lanes touch it. **Procurement** raises a request — either from the s
 
 It starts at **Submitted** and ends at **Approved** or **Rejected** — both are real endings. There is no draft: the form and the wizard are the draft. A declined request is not reopened; a better description is a new request, so the master-data team's refusal reasons stay countable. Acceptance records a decision and nothing else: the material itself is created in S/4HANA, which owns material identity, and the catalog gains it when SAP has a code. The status labels say exactly that — the machine state *Approved* is shown as **Accepted for creation**, never "created".
 
-Honest markers. The queue is **SIMULATED** — the pill reads *"Sample — awaiting S/4 material master"*, and green would wrongly mean "the material now exists". The two rows on the pile were grown at start-up through the real verb, with plainly fictional labels marked *(illustrative)*; the first was raised from a sourcing event the seed itself created so its provenance is real. The four-eyes rule (the requester may not decide their own request) is built and admits every act while nobody is signed in; it can only refuse once two persons can be compared. No surface shows a waiting time in days, by ruling.
+Honest markers. The queue is **SIMULATED** — the pill reads *"Sample — awaiting S/4 material master"*, and green would wrongly mean "the material now exists". The two rows on the pile were grown at start-up through the real verb, with plainly fictional labels marked *(illustrative)*; the first was raised from a sourcing event the seed itself created so its provenance is real. Accepting or declining is taken only by a seat that names a person — a seat that has adopted no sample user is refused (`materialrequest_decider_named`) — while raising and picking up stay open to the seat as it opens. The four-eyes rule (the requester may not decide their own request) therefore always has a named decider on a decision: it refuses when the requester was also a named person and is the same one, and admits a request raised by a seat that names nobody. No surface shows a waiting time in days, by ruling.
 
 <!-- section:lifecycle -->
 ## 2 · Lifecycle walk
@@ -35,7 +35,7 @@ Honest markers. The queue is **SIMULATED** — the pill reads *"Sample — await
 
 **Forks**
 
-- **At Under Review:** `t_materialrequest_approve` — planning — when master data accepts the request for creation in SAP; `t_materialrequest_reject` — planning — when master data declines, with a written reason (the material already exists under another name, or is not a material at all).
+- **At Under Review:** `t_materialrequest_approve` — planning — when master data accepts the request for creation in SAP; `t_materialrequest_reject` — planning — when master data declines, with a written reason (the material already exists under another name, or is not a material at all). Both are refused for a seat that names no person (`materialrequest_decider_named`).
 
 No other state has two exits.
 
@@ -85,9 +85,9 @@ No other state has two exits.
 - **Operator — do:** accept the request for creation in SAP. What this records is the decision and nothing else — the material is created in S/4HANA, which owns material identity, and this portal never issues a code.
 - **Operator — fill:** nothing to fill — there is deliberately no text box on an acceptance.
 - **Tester — expected state:** Approved (shown as *Accepted for creation*)
-- **Tester — confirm:** status chip *Accepted for creation*; the panel shows *"Accepted for creation in SAP. The material does not exist yet — the code is issued by SAP, not by this portal, and the catalog gains the material when it does."*; *Decided* and *Decided by* fill in; the row moves to the *Accepted* tab; toast *"Accepted for creation — Recorded. Creating the material in SAP is done outside this portal."* The RFQ it came from, if any, now reads *"A material request for {materials} was decided ({status}). This event is unchanged either way."* The material catalog does not change.
+- **Tester — confirm:** status chip *Accepted for creation*; the panel shows *"Accepted for creation in SAP. The material does not exist yet — the code is issued by SAP, not by this portal, and the catalog gains the material when it does."*; *Decided* and *Decided by* fill in (the latter the sample user's role label, marked *(SAMPLE)*); the row moves to the *Accepted* tab; toast *"Accepted for creation — Recorded. Creating the material in SAP is done outside this portal."* The RFQ it came from, if any, now reads *"A material request for {materials} was decided ({status}). This event is unchanged either way."* The material catalog does not change.
 - **Tester — trigger event:** `t_materialrequest_approve`
-- **Checks that can refuse:** `materialrequest_decider_not_requester` — as above; the requester may not accept their own request.
+- **Checks that can refuse:** `materialrequest_decider_named` — the seat must name a person (`MATERIALREQUEST_DECIDER_UNATTRIBUTED`); the request stays Under Review and nothing is stamped. Above the buttons the panel says which seat this is: *"This seat names nobody, so this act will be refused. Adopt a sample user on the identity panel first."*, or *"This will be recorded against {person}."* once a sample user is seated. The button stays live; pressed from a seat that names nobody, the failure toast reads *"Refused: this seat names nobody, and this act is recorded against the person who takes it. Adopt a sample user on the identity panel, then take it again."* `materialrequest_decider_not_requester` — the requester may not accept their own request; the decider is always named here, so it refuses when *Submitted by* also names a person and it is the same one, and admits a request raised by a seat that names nobody.
 - **Glossary:** `ROLE_NOT_PERMITTED`, `ILLEGAL_TRANSITION`, `POLICY_REJECTED`.
 - **Honesty:** terminal and mints nothing. No date by which the material will exist is shown anywhere, because nothing in the portal observes S/4HANA issuing a code. The label is *Accepted for creation*, never *created*.
 <!-- src: src/services/transitions/flows/materialRequest.flow.ts:153; src/services/transitions/policies.ts:874; src/pages-v2/BuyerMaterialRequests.tsx:897; src/pages-v2/BuyerMaterialRequests.tsx:920; src/services/data/mock/MockCommandService.ts:2093; src/lib/i18n/materialRequests.ts:430; src/lib/i18n/materialRequests.ts:438; src/lib/i18n/materialRequests.ts:443; src/lib/i18n/materialRequests.ts:455; src/lib/i18n/sourcing.ts:319 -->
@@ -103,7 +103,7 @@ No other state has two exits.
 - **Tester — expected state:** Rejected (shown as *Declined*)
 - **Tester — confirm:** status chip *Declined*; the panel shows *"Declined. The reason below is the whole account of the decision."* with the text; *Decided* and *Decided by* fill in; the row moves to the *Declined* tab; toast *"Request declined — The reason is on the record."*
 - **Tester — trigger event:** `t_materialrequest_reject`
-- **Checks that can refuse:** `materialrequest_refusal_authored` — the justification must be a non-blank string; `materialrequest_decider_not_requester` — the requester may not decline their own request.
+- **Checks that can refuse:** `materialrequest_decider_named` — the seat must name a person (`MATERIALREQUEST_DECIDER_UNATTRIBUTED`), with the line and the toast shown under `t_materialrequest_approve`; it is listed first. `materialrequest_refusal_authored` — the justification must be a non-blank string; `materialrequest_decider_not_requester` — the requester may not decline their own request.
 - **Glossary:** `MISSING_FIELDS`, `POLICY_REJECTED`.
 - **Honesty:** terminal by ruling: *"This cannot be undone. A new request would be a new record."* The reason is what tells the buyer whether to ask again with a better description or stop asking.
 <!-- src: src/services/transitions/flows/materialRequest.flow.ts:172; src/services/transitions/policies.ts:822; src/services/transitions/policies.ts:874; src/pages-v2/BuyerMaterialRequests.tsx:945; src/services/data/mock/MockCommandService.ts:2100; src/lib/i18n/materialRequests.ts:431; src/lib/i18n/materialRequests.ts:435; src/lib/i18n/materialRequests.ts:440; src/lib/i18n/materialRequests.ts:458 -->
@@ -115,7 +115,8 @@ No other state has two exits.
 - **Refusal is final.** No revise, reopen, withdraw or cancel on any state. **When** the buyer has a better description: raise a new request; the declined one keeps its reason.
 - **Two entrances, one record (at ∅ → Submitted).** **When** raised from the wizard: the request carries the catalog's reason the pick had no code (one of `AMBIGUOUS_IN_MASTER`, `UNCONFIRMED_LOOSE_MATCH`, `NARROWS_THE_MEANING`, `NO_MASTER_TARGET`, `NOT_A_MATERIAL`) and the RFQ it was discovered on. **When** raised from the page: neither is present and *Raised from* reads *Raised directly*.
 - **The event is never touched.** **When** the RFQ was created but the request was refused: the event stands, the toast says so, and the request is raised again from the page. **When** the RFQ itself was refused: no request is dispatched at all (*"The sourcing event was not created, so nothing was recorded."*).
-- **Self-decision.** **When** the deciding seat is the same person who submitted (only possible today by adopting the same sample identity): review, accept and decline are all refused by name.
+- **Self-decision.** **When** the deciding seat is the same person who submitted (only possible today by adopting the same sample identity): review, accept and decline are all refused by name. A request raised by a seat that names nobody is admitted for any named decider.
+- **A named person decides (at Under Review).** **When** the seat names no person — the seat as it opens, with no sample user adopted on the identity panel — accept and decline are both refused by `materialrequest_decider_named`: nothing is stored or stamped and the request stays Under Review. Adopt a sample user on the identity panel, then decide. Raising a request and starting a review stay open to a seat that names nobody.
 
 <!-- section:flags -->
 ## 5 · Exception flags
@@ -125,7 +126,8 @@ No other state has two exits.
 | SIMULATED — *"Sample — awaiting S/4 material master"* | external (liveness registry) | all states | always, until master data arrives back from S/4HANA | `/buyer/material-requests` meta line (provenance marker) |
 | *"Raised from the RFQ wizard when a picked material has no master code, or here. A request never changes a sourcing event."* | authored honesty note | all states | always | `/buyer/material-requests` meta line |
 | *"Awaiting Procurement"* / *"Awaiting Planning"* | derived at read (seat vs. atom) | ∅ → Submitted (raise); Submitted (review); Under Review (decide) | the seat does not hold the verb's atom | page header; raise panel body; side panel action slot |
-| *"Not attributed — no person in session"* or a person label marked *(SAMPLE)* | derived at read | all states | always in the demo; the seeded rows carry a sample requester | panel *Submitted by*, *Decided by*; pre-act notice on the raise panel |
+| *"Not attributed — no person in session"* or a person label marked *(SAMPLE)* | derived at read | all states | *Not attributed* only on *Submitted by*, when the request was raised by a seat that names nobody; *Decided by* always names a person; the seeded rows carry a sample requester | panel *Submitted by*, *Decided by*; pre-act notice on the raise panel |
+| **No named decider** — *"This seat names nobody, so this act will be refused. Adopt a sample user on the identity panel first."* | derived at read (seat); refusal (`materialrequest_decider_named`) | Under Review | the seat holds `materialrequest:decide` and names no person; with a sample user seated the line reads *"This will be recorded against {person}."* | side panel, above **Accept for creation** / **Decline**; on confirming either, the failure toast *"Refused: this seat names nobody, and this act is recorded against the person who takes it. Adopt a sample user on the identity panel, then take it again."* |
 | *"A material request is pending for: …"* / *"… was decided ({status}) …"* | derived at read | Submitted, Under Review / Approved, Rejected | the RFQ detail of the event a request was raised from | `/buyer/sourcing` RFQ detail |
 | *Why the catalog has no code* | authored (catalog reason) | all states | only on requests raised from the wizard | panel *The request* |
 | *Awaiting review* / *Under review* / *Accepted for creation* / *Declined* | derived at read (state labels) | one per state | always | KPI tiles, tabs, status chips |
@@ -145,7 +147,7 @@ No time-driven flag exists and none is allowed: the store opens empty, every dat
 | Material master | `materialCode` — always `null` (the type says so literally) | The row exists because there is no code. Nothing here ever holds one; when SAP issues a code the catalog changes, not this record. |
 | Catalog code-less reason | `catalogReason` | One of the five reasons the catalog itself gives; `null` when raised from the page. |
 | Category | `category` | The RFQ wizard's own closed category set, reused. |
-| Requester / decider | `submittedBy`, `decidedBy` (actor attributions) | Written from the session. The two seeded rows carry a sample procurement identity as requester; a request raised in the demo carries *unattributed*. |
+| Requester / decider | `submittedBy`, `decidedBy` (actor attributions) | Written from the session. The two seeded rows carry a sample procurement identity as requester; a request raised by a seat that names nobody carries *unattributed*; `decidedBy` always names a person, because a seat that names nobody cannot decide. |
 | Tenant / owner | none (`readScopeOwner` is null) | A request has no supplier owner; no supplier seat can see or act on it, including suppliers invited to the originating event. |
 | Timestamps | `submittedAt`, `reviewStartedAt`, `decidedAt` | Store-assigned at each act; `null` until then. |
 | Expected unit, specification | `expectedUom`, `specification` | The requester's claims, recorded as stated; `null` when not given. |
@@ -157,14 +159,14 @@ No time-driven flag exists and none is allowed: the store opens empty, every dat
 
 Every dispatch writes one `TransitionEvent`: `event` = the transition id, `actor` = `buyer:all` (the seat, not a person), `ts`, `outcome`, one `correlationId` per command; no cascade touches this machine, so no `causationId` appears. A separate `attribution` field records who could be named. Refusals are recorded with their reason.
 
-Worked sequence for `mr-0001` (MR-2026-0001) — the seed runs T+0 under a procurement seat acting as a sample identity; a planning seat continues:
+Worked sequence for `mr-0001` (MR-2026-0001) — the seed runs T+0 under a procurement seat acting as a sample identity; a planning seat continues, acting from T+2 as a sample identity other than the requester (the decision is refused for a seat that names no person):
 
 | Time | From → to | Actor (role) | Trigger | Event |
 |---|---|---|---|---|
 | T+0 | (RFQ) ∅ → Draft | procurement (`buyer:all`) | the seed raises the sourcing event the request will name | `t_rfq_create` |
 | T+0 | ∅ → Submitted | procurement (`buyer:all`, sample identity) | submit — *PET Bottle 100ml*, `Packaging`, reason `AMBIGUOUS_IN_MASTER`, raised from that RFQ | `t_materialrequest_submit` |
 | T+1 (tester) | Submitted → Under Review | planning (`buyer:all`) | **Start review** | `t_materialrequest_start_review` |
-| T+2 (tester) | Under Review → Approved | planning (`buyer:all`) | **Accept for creation** → **Confirm acceptance** | `t_materialrequest_approve` |
+| T+2 (tester) | Under Review → Approved | planning (`buyer:all`, sample identity) | **Accept for creation** → **Confirm acceptance** | `t_materialrequest_approve` |
 
 For the decline branch, walk `mr-0002` (MR-2026-0002, the standalone request) and choose **Decline** at T+2 with a reason; the event is `t_materialrequest_reject`. After T+2 no further event is possible on either row.
 
@@ -183,7 +185,8 @@ For the decline branch, walk `mr-0002` (MR-2026-0002, the standalone request) an
 | Toast naming *raisedFromRfqId* | `POLICY_REJECTED:materialrequest_rfq_resolved` | the named sourcing event does not exist in the store | raise from the page (no event) or from a real event |
 | Toast *"{rfqNumber} raised — material request was not"* | the RFQ toast, error variant | the event was created and the request refused afterwards | the event stands; raise the request from `/buyer/material-requests` |
 | Toast *"No material request was raised"* | after the wizard | the RFQ itself was refused, so no request was dispatched | fix the RFQ refusal first |
-| *"That did not go through"* with a refusal naming the requester | `POLICY_REJECTED:materialrequest_decider_not_requester` | the deciding seat is acting as the same sample identity that submitted the request | decide from a different identity, or unattributed |
+| *"That did not go through"* with a refusal naming the requester | `POLICY_REJECTED:materialrequest_decider_not_requester` | the deciding seat is acting as the same sample identity that submitted the request | decide from a different sample identity — on accept and decline a seat that names nobody is refused by `materialrequest_decider_named` instead; **Start review** stays open to it |
+| Failure toast on **Confirm acceptance** or **Confirm decline**: *"Refused: this seat names nobody, and this act is recorded against the person who takes it. Adopt a sample user on the identity panel, then take it again."* | `POLICY_REJECTED:materialrequest_decider_named` (`MATERIALREQUEST_DECIDER_UNATTRIBUTED`); the line above the buttons already said so | the seat names no person — no sample user is adopted on the identity panel | adopt a sample user on the identity panel, then take the act again; the request is still Under Review and nothing was stamped |
 | Toast *"That did not go through"* naming *justification* | `MISSING_FIELDS:justification` / `POLICY_REJECTED:materialrequest_refusal_authored` | *Why it is declined* was blank | write the reason |
 | *"…not in a state this action can be taken from"* | `ILLEGAL_TRANSITION` | acting on a row that already moved | reopen the row and take the act its state offers |
 | Accepted, but the material is still not in the catalog | no new code on the material picker | expected — acceptance records a decision; SAP issues the code, and nothing in the portal observes it | nothing to do in the portal |
@@ -199,8 +202,8 @@ For the decline branch, walk `mr-0002` (MR-2026-0002, the standalone request) an
 |---|---|---|---|
 | Submitted | `mr-0001`; `mr-0002` | MR-2026-0001; MR-2026-0002 | grown at start-up by the seed through `t_materialrequest_submit` under a procurement seat: *PET Bottle 100ml* (`Packaging`, reason `AMBIGUOUS_IN_MASTER`, raised from the seed's own sourcing event); *Sample Amber Dropper 30ml (illustrative)* (`Packaging`, raised directly) |
 | Under Review | — | — | no fixture — press **Start review** on either row |
-| Approved | — | — | no fixture — accept a row under review |
-| Rejected | — | — | no fixture — decline a row under review with a reason |
+| Approved | — | — | no fixture — accept a row under review, from a seat acting as a sample user |
+| Rejected | — | — | no fixture — decline a row under review with a reason, from a seat acting as a sample user |
 
 The store opens empty by ruling (nobody has ever asked for a material); every row is produced by the verb. The seed also creates one extra RFQ so that `mr-0001` has a real origin. All data is SIMULATED (see §5).
 

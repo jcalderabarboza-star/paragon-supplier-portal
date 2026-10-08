@@ -19,6 +19,8 @@ import { MockCommandService, WIRED_COMMAND_TARGETS } from './MockCommandService'
 import { supplierDocumentStore } from './stores/supplierDocumentStore';
 import { SYSTEM_ROLES } from '../../transitions/businessRoles';
 import { NO_PERSON } from '../../../context/noPerson';
+import { SAMPLE_PEOPLE } from '../../identity/sampleRoster';
+import type { ActorAttribution } from '../../../lib/enforcement';
 import type { QueryScope } from '../types';
 
 const svc = new MockCommandService();
@@ -31,12 +33,19 @@ const backOffice: QueryScope = {
   actor: NO_PERSON,
 };
 
+// SUP-1: confirming or refusing a supplier's document needs a named person, so
+// the compliance seat acts as the roster's compliance sample user.
+const COMPLIANCE_PERSON: ActorAttribution = {
+  kind: 'RESOLVED',
+  person: { personId: SAMPLE_PEOPLE.find((p) => p.role === 'compliance')!.personId },
+};
+
 /** The buyer's compliance seat — the lane that holds verify and reject. */
 const complianceSeat: QueryScope = {
   personaType: 'buyer',
   supplierId: null,
   businessRoles: ['compliance'],
-  actor: NO_PERSON,
+  actor: COMPLIANCE_PERSON,
 };
 
 /** A supplier lane that does NOT hold the supply verbs. */
@@ -279,7 +288,8 @@ describe('§82 · compliance reviews', () => {
     expect(doc.status).toBe('Rejected');
     expect(doc.rejectionReason).toBe('Scope does not cover the materials we buy.');
     expect(doc.rejectedAt).toBeTruthy();
-    expect(doc.rejectedBy).toEqual(NO_PERSON);
+    // SUP-1: a refusal is recorded against the named person who made it.
+    expect(doc.rejectedBy).toEqual(COMPLIANCE_PERSON);
   });
 
   // WARN TWO REFUSALS, TWO MECHANISMS, AND THE SECOND ONE IS THE POINT.

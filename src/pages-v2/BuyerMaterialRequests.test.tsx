@@ -21,6 +21,7 @@ import { materialRequestStore } from '../services/data/mock/stores/materialReque
 import { rfqStore } from '../services/data/mock/stores/rfqStore';
 import { seedMaterialRequests } from '../services/data/mock/materialRequestSeed';
 import { NO_PERSON } from '../context/noPerson';
+import { SAMPLE_PEOPLE } from '../services/identity/sampleRoster';
 import type { CurrentIdentity } from '../context/CurrentIdentityContext';
 
 const seat = (roles: readonly string[]): CurrentIdentity => ({
@@ -44,6 +45,15 @@ const FULL = seat([
 const PROCUREMENT_ONLY = seat(['procurement']);
 /** Reviews and decides but cannot raise. */
 const PLANNING_ONLY = seat(['planning']);
+/** The same seat acting as the roster's planning sample user. SUP-1: accepting
+ *  or declining a request needs a named person. */
+const PLANNING_NAMED: CurrentIdentity = {
+  ...PLANNING_ONLY,
+  actor: {
+    kind: 'RESOLVED',
+    person: { personId: SAMPLE_PEOPLE.find((p) => p.role === 'planning')!.personId },
+  },
+};
 
 let svc: MockCommandService;
 
@@ -207,6 +217,28 @@ describe('the review and decision acts, per verb', () => {
     expect(screen.queryByTestId('material-request-start-review')).not.toBeInTheDocument();
   });
 
+  it('SUP-1 — the panel says, before the act, whose name a decision carries', async () => {
+    const id = materialRequestStore.all().find((r) => r.requestNumber === 'MR-2026-0001')!.id;
+    await new MockCommandService().dispatch(
+      { personaType: 'buyer', supplierId: null, businessRoles: ['planning'], actor: NO_PERSON },
+      { transitionId: 't_materialrequest_start_review', entity: 'materialRequest', entityId: id, payload: {} },
+    );
+    const unnamed = renderWithProviders(<BuyerMaterialRequests />, { identity: PLANNING_ONLY });
+    await openFirstRow();
+    expect(await screen.findByTestId('materialrequest-decide-pre-act')).toHaveTextContent(
+      /names nobody/i,
+    );
+    expect(screen.queryByTestId('materialrequest-decide-pre-act-sample')).toBeNull();
+    unnamed.unmount();
+
+    renderWithProviders(<BuyerMaterialRequests />, { identity: PLANNING_NAMED });
+    await openFirstRow();
+    expect(await screen.findByTestId('materialrequest-decide-pre-act-sample')).toHaveTextContent(
+      /recorded against/i,
+    );
+    expect(screen.queryByTestId('materialrequest-decide-pre-act')).toBeNull();
+  });
+
   it('⚠️ APPROVE CONFIRMS FIRST, AND THE CONFIRM STEP OFFERS NO TEXT BOX', async () => {
     const svc2 = new MockCommandService();
     const id = materialRequestStore.all().find((r) => r.requestNumber === 'MR-2026-0001')!.id;
@@ -219,7 +251,7 @@ describe('the review and decision acts, per verb', () => {
         payload: {},
       },
     );
-    renderWithProviders(<BuyerMaterialRequests />, { identity: PLANNING_ONLY });
+    renderWithProviders(<BuyerMaterialRequests />, { identity: PLANNING_NAMED });
     await openFirstRow();
     fireEvent.click(await screen.findByTestId('material-request-approve'));
     const confirm = await screen.findByTestId('material-request-approve-confirm');
@@ -239,7 +271,7 @@ describe('the review and decision acts, per verb', () => {
       personaType: 'buyer' as const,
       supplierId: null,
       businessRoles: ['planning'],
-      actor: NO_PERSON,
+      actor: PLANNING_NAMED.actor,
     };
     await s.dispatch(planning, {
       transitionId: 't_materialrequest_start_review',
@@ -253,7 +285,7 @@ describe('the review and decision acts, per verb', () => {
       entityId: id,
       payload: {},
     });
-    renderWithProviders(<BuyerMaterialRequests />, { identity: PLANNING_ONLY });
+    renderWithProviders(<BuyerMaterialRequests />, { identity: PLANNING_NAMED });
     await openFirstRow();
     const outcome = await screen.findByTestId('material-request-outcome');
     // The string states plainly that the material does not exist yet.
@@ -275,7 +307,7 @@ describe('the review and decision acts, per verb', () => {
         payload: {},
       },
     );
-    renderWithProviders(<BuyerMaterialRequests />, { identity: PLANNING_ONLY });
+    renderWithProviders(<BuyerMaterialRequests />, { identity: PLANNING_NAMED });
     await openFirstRow();
     fireEvent.click(await screen.findByTestId('material-request-reject'));
     const commit = await screen.findByTestId('material-request-reject-commit');

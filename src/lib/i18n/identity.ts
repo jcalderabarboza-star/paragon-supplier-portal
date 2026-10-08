@@ -78,6 +78,12 @@ export const identityEn: Record<string, string> = {
   // The pre-act line when a SAMPLE user is selected. The lane's own
   // "no person in session" copy is untouched and still used when none is.
   'identity.preAct.sample': 'This will be recorded against {{label, stop}}.',
+  // SUP-1 - the pre-act line and the refusal for a DECISION, which a seat that
+  // names nobody may not take. Shared by the six lanes the ruling covers.
+  'identity.preAct.namedRequired':
+    'This seat names nobody, so this act will be refused. Adopt a sample user on the identity panel first.',
+  'identity.refused.namedRequired':
+    'Refused: this seat names nobody, and this act is recorded against the person who takes it. Adopt a sample user on the identity panel, then take it again.',
   'identity.sample.cannotAcceptRisk':
     'A sample identity cannot accept governance risk. Loosening a governed check or completing an override needs a real signed-in person, and Paragon has no sign-in yet.',
 
@@ -135,6 +141,10 @@ export const identityId: Record<string, string> = {
     'Kursi ini tidak lagi memegang persis peran bawaan pengguna contoh tersebut. Tindakan tetap dicatat atas nama pengguna itu.',
 
   'identity.preAct.sample': 'Ini akan dicatat atas nama {{label, stop}}.',
+  'identity.preAct.namedRequired':
+    'Kursi ini tidak menyebut siapa pun, sehingga tindakan ini akan ditolak. Pilih pengguna contoh di panel identitas terlebih dahulu.',
+  'identity.refused.namedRequired':
+    'Ditolak: kursi ini tidak menyebut siapa pun, dan tindakan ini dicatat atas nama orang yang melakukannya. Pilih pengguna contoh di panel identitas, lalu ulangi.',
   'identity.sample.cannotAcceptRisk':
     'Identitas contoh tidak dapat menerima risiko tata kelola. Melonggarkan pemeriksaan yang diatur atau menyelesaikan penggantian memerlukan orang sungguhan yang telah masuk, dan Paragon belum memiliki proses masuk.',
 

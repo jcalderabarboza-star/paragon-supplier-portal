@@ -21,7 +21,7 @@ Two buyer lanes touch it, and the applicant touches nothing. **Procurement** rai
 
 It starts at **Submitted** and ends at **Approved** or **Rejected** — both are real endings. A refused application is not reopened; a second attempt is a second application. Approval records a decision and nothing else: it creates no supplier record, because the vendor master is raised in S/4HANA, which owns supplier identity.
 
-Honest markers. The queue is **SIMULATED** — the pill reads *"Sample — awaiting real supplier identities"* — and the page's own meta line says it: *"Every application here was raised through the platform's own verbs, by a Paragon seat. None arrived from outside: the walkthrough at /register records nothing and reaches no queue."* The two rows on the pile were grown at start-up through the real verb, under a procurement seat, with plainly fictional company names marked *(illustrative)*. Nobody is signed in, so *Raised by* and *Decided by* read *"Unattributed — no person in session"*. The documents an applicant declares (NPWP, NIB, halal, ISO) are claims with a reference string; nothing here verifies them — that is the supplier-document lane's job.
+Honest markers. The queue is **SIMULATED** — the pill reads *"Sample — awaiting real supplier identities"* — and the page's own meta line says it: *"Every application here was raised through the platform's own verbs, by a Paragon seat. None arrived from outside: the walkthrough at /register records nothing and reaches no queue."* The two rows on the pile were grown at start-up through the real verb, under a procurement seat, with plainly fictional company names marked *(illustrative)*. Nobody is signed in. An application can be raised and picked up by the seat as it opens, so *Raised by* reads *"Unattributed — no person in session"* on both seeded rows; a decision is taken only by a seat acting as a sample user, so *Decided by* reads that user's role label marked *(SAMPLE)*. The documents an applicant declares (NPWP, NIB, halal, ISO) are claims with a reference string; nothing here verifies them — that is the supplier-document lane's job.
 
 <!-- section:lifecycle -->
 ## 2 · Lifecycle walk
@@ -35,7 +35,7 @@ Honest markers. The queue is **SIMULATED** — the pill reads *"Sample — await
 
 **Forks**
 
-- **At Under Review:** `t_application_approve` — compliance — when Paragon accepts the applicant; `t_application_reject` — compliance — when Paragon declines, with a reason in words somebody can repeat to the applicant.
+- **At Under Review:** `t_application_approve` — compliance — when Paragon accepts the applicant; `t_application_reject` — compliance — when Paragon declines, with a reason in words somebody can repeat to the applicant. Both are refused for a seat that names no person (`application_decider_named`).
 
 No other state has two exits. *Submitted* has one (start review); *Approved* and *Rejected* have none.
 
@@ -71,7 +71,7 @@ No other state has two exits. *Submitted* has one (start review); *Approved* and
 - **Tester — trigger event:** `t_application_start_review`
 - **Checks that can refuse:** none beyond role, legality and required fields.
 - **Glossary:** `ROLE_NOT_PERMITTED`, `ILLEGAL_TRANSITION`.
-- **Honesty:** the *Picked up* time is written by the store at the moment of the act; no name is recorded because none can be.
+- **Honesty:** the *Picked up* time is written by the store at the moment of the act; no name is recorded for it — the record keeps who raised and who decided, not who picked it up, and this act stays open to a seat that names nobody.
 <!-- src: src/services/transitions/flows/supplierApplication.flow.ts:195; src/pages-v2/BuyerSupplierApplications.tsx:930; src/services/query/commandHooks.ts:1357; src/services/data/mock/MockCommandService.ts:1959; src/lib/i18n/supplierApplications.ts:85; src/lib/i18n/supplierApplications.ts:106 -->
 
 ### t_application_approve — Approve <!-- transition:t_application_approve -->
@@ -83,10 +83,10 @@ No other state has two exits. *Submitted* has one (start review); *Approved* and
 - **Operator — do:** accept the applicant. The confirmation says what this does and does not do: *"This records the decision for {company}. It cannot be undone, and it creates no supplier record — the vendor master is raised in S/4HANA."*
 - **Operator — fill:** nothing to fill — there is deliberately no text box on an approval.
 - **Tester — expected state:** Approved
-- **Tester — confirm:** status chip *Approved*; *Decided* and *Decided by* fill in (the latter *"Unattributed — no person in session"*); the row moves to the *Decided* tab; toast *"{number} approved — The decision is recorded. No supplier record was created."* The supplier directory does not change.
+- **Tester — confirm:** status chip *Approved*; *Decided* and *Decided by* fill in (the latter the role label of the sample user the seat is acting as, marked *(SAMPLE)*); the row moves to the *Decided* tab; toast *"{number} approved — The decision is recorded. No supplier record was created."* The supplier directory does not change.
 - **Tester — trigger event:** `t_application_approve`
-- **Checks that can refuse:** none beyond role, legality and required fields.
-- **Glossary:** `ROLE_NOT_PERMITTED`, `ILLEGAL_TRANSITION`.
+- **Checks that can refuse:** `application_decider_named` — the seat must name a person (`APPLICATION_DECIDER_UNATTRIBUTED`); the application stays Under Review and nothing is stamped. Above the buttons the panel says which seat this is: *"This seat names nobody, so this act will be refused. Adopt a sample user on the identity panel first."*, or *"This will be recorded against {person}."* once a sample user is seated. The button stays live; pressed from a seat that names nobody, the failure toast reads *"Refused: this seat names nobody, and this act is recorded against the person who takes it. Adopt a sample user on the identity panel, then take it again."*
+- **Glossary:** `ROLE_NOT_PERMITTED`, `ILLEGAL_TRANSITION`, `POLICY_REJECTED`.
 - **Honesty:** terminal and mints nothing. Creating the vendor master record is S/4HANA's act; a cascade from here into a supplier row would be this portal inventing master data it does not own. The consumer is named and the edge is not built.
 <!-- src: src/services/transitions/flows/supplierApplication.flow.ts:211; src/pages-v2/BuyerSupplierApplications.tsx:948; src/pages-v2/BuyerSupplierApplications.tsx:977; src/services/data/mock/MockCommandService.ts:1964; src/lib/i18n/supplierApplications.ts:91; src/lib/i18n/supplierApplications.ts:109 -->
 
@@ -101,7 +101,7 @@ No other state has two exits. *Submitted* has one (start review); *Approved* and
 - **Tester — expected state:** Rejected
 - **Tester — confirm:** status chip *Rejected*; *Decided*, *Decided by* and *Reason given* fill in; the row moves to the *Decided* tab; toast *"{number} refused — The decision and its reason are recorded."*
 - **Tester — trigger event:** `t_application_reject`
-- **Checks that can refuse:** `application_refusal_authored` — the reason must be a non-blank string; the required-field check alone would admit a string of spaces.
+- **Checks that can refuse:** `application_decider_named` — the seat must name a person (`APPLICATION_DECIDER_UNATTRIBUTED`), with the line and the toast shown under `t_application_approve`; it is listed first. `application_refusal_authored` — the reason must be a non-blank string; the required-field check alone would admit a string of spaces.
 - **Glossary:** `MISSING_FIELDS`, `POLICY_REJECTED`.
 - **Honesty:** terminal by ruling. There is no re-submit and no reopen — the applicant holds no verb, and an edge out of the refusal would be a Paragon person editing a decision Paragon already made. A second attempt is a second application through the same door, and the refused one stays exactly as decided.
 <!-- src: src/services/transitions/flows/supplierApplication.flow.ts:227; src/services/transitions/flows/supplierApplication.flow.ts:41; src/services/transitions/policies.ts:670; src/pages-v2/BuyerSupplierApplications.tsx:1002; src/services/data/mock/MockCommandService.ts:1972; src/lib/i18n/supplierApplications.ts:95; src/lib/i18n/supplierApplications.ts:101; src/lib/i18n/supplierApplications.ts:112 -->
@@ -109,7 +109,8 @@ No other state has two exits. *Submitted* has one (start review); *Approved* and
 <!-- section:forks -->
 ## 4 · Decision forks and exception paths
 
-- **The decision (at Under Review).** Branch A — `t_application_approve` — **When:** compliance accepts the applicant; nothing is typed, and the record names the session's actor (today: unattributed). Branch B — `t_application_reject` — **When:** compliance declines; a written reason is required and is the only account the applicant will ever get.
+- **The decision (at Under Review).** Branch A — `t_application_approve` — **When:** compliance accepts the applicant; nothing is typed, and the record names the sample user the seat is acting as. Branch B — `t_application_reject` — **When:** compliance declines; a written reason is required and is the only account the applicant will ever get.
+- **A named person decides (at Under Review).** **When** the seat names no person — the seat as it opens, with no sample user adopted on the identity panel — both branches are refused by `application_decider_named`: nothing is stored or stamped and the application stays Under Review. Adopt a sample user on the identity panel, then decide. Raising an application and starting a review stay open to a seat that names nobody.
 - **Refusal is final.** There is no revise, reopen, withdraw or cancel on any state. **When** a refused company applies again: procurement raises a new application, which takes a new number; the refused row keeps its reason.
 - **Extension of an existing vendor (at ∅ → Submitted).** **When** the request type is `Internal SR`: the vendor is picked from the roster and the platform resolves it; the application records both what was stated (`s4Vendor`) and what it resolved to (`resolvedSupplierId`). This does not make the application visible to that supplier.
 - **No draft, no half-application.** **When** the raise panel is closed before **Yes, raise it**, nothing was recorded anywhere.
@@ -122,7 +123,8 @@ No other state has two exits. *Submitted* has one (start review); *Approved* and
 | SIMULATED — *"Sample — awaiting real supplier identities"* | external (liveness registry) | all states | always, until real supplier identities land (Stage F1) | `/buyer/supplier-applications` meta line (provenance marker) |
 | *"Every application here was raised through the platform's own verbs, by a Paragon seat. None arrived from outside…"* | authored honesty note | all states | always | `/buyer/supplier-applications` meta line |
 | *"Awaiting Procurement"* / *"Awaiting Compliance"* | derived at read (seat vs. atom) | ∅ → Submitted (raise); Submitted (review); Under Review (decide) | the seat does not hold the verb's atom | page header; raise panel body; side panel action slots |
-| *"Unattributed — no person in session"* | derived at read | all states | always in the demo | panel *Raised by*, *Decided by*; the pre-act notice on the confirmation step |
+| *"Unattributed — no person in session"* | derived at read | all states | the application was raised by a seat that names no person (both seeded rows); never on a decision, which a seat that names nobody cannot take | panel *Raised by*; the pre-act notice on the raise confirmation step |
+| **No named decider** — *"This seat names nobody, so this act will be refused. Adopt a sample user on the identity panel first."* | derived at read (seat); refusal (`application_decider_named`) | Under Review | the seat holds `application:decide` and names no person; with a sample user seated the line reads *"This will be recorded against {person}."* | side panel, above **Approve** / **Reject**; on pressing either, the failure toast *"Refused: this seat names nobody, and this act is recorded against the person who takes it. Adopt a sample user on the identity panel, then take it again."* |
 | *"These are the applicant's own statements. Nothing here has been verified…"* | authored honesty note | all states | whenever declared documents are shown | panel *Declared documents* |
 | *Waiting to be picked up* / *Being reviewed* / *Decided* | derived at read (state counts) | Submitted / Under Review / Approved+Rejected | always | KPI tiles and tabs |
 
@@ -141,7 +143,7 @@ No time-driven flag is derived: *Raised*, *Picked up* and *Decided* timestamps a
 | Tenant / owner | `supplierId` — always `null` (the type says so literally) | An applicant is not a tenant; no supplier seat can see or act on an application, including the vendor an extension names. |
 | Supplier documents (NPWP, NIB, halal, ISO) | `declarations[].kind` + `reference` | Claims with a reference string. No status, no verified flag, no expiry — verification is the `supplierDocument` lane's; nothing joins the two records by key. |
 | Vendor master (S/4HANA) | none | Display-only expectation: approval records a decision; the vendor record is raised in S/4HANA and never arrives back here. |
-| Actor | `submittedBy`, `decidedBy` (actor attributions, not names) | Written from the session; today always unattributed. |
+| Actor | `submittedBy`, `decidedBy` (actor attributions, not names) | Written from the session, never from the form. `submittedBy` is unattributed when the raising seat names no person (both seeded rows); `decidedBy` always names a sample user, because a seat that names nobody cannot decide. |
 | Timestamps | `submittedAt`, `reviewStartedAt`, `decidedAt` | Store-assigned at the moment of each act; `null` until then. |
 
 <!-- src: src/services/data/types.ts:2330; src/services/data/mock/MockCommandService.ts:2006; src/services/data/mock/MockCommandService.ts:2021; src/services/data/mock/applicationSeed.ts:70 -->
@@ -151,13 +153,13 @@ No time-driven flag is derived: *Raised*, *Picked up* and *Decided* timestamps a
 
 Every dispatch writes one `TransitionEvent`: `event` = the transition id, `actor` = `buyer:all` (the seat, not a person), `ts`, `outcome`, one `correlationId` per command; there are no cascades on this machine, so no event carries a `causationId`. Refusals are recorded with their reason.
 
-Worked sequence for `app-0001` (APP-2026-0001) — the seed raises it at start-up under a procurement seat; a compliance seat continues:
+Worked sequence for `app-0001` (APP-2026-0001) — the seed raises it at start-up under a procurement seat; a compliance seat continues, acting as a sample user from T+2 (the decision is refused for a seat that names no person):
 
 | Time | From → to | Actor (role) | Trigger | Event |
 |---|---|---|---|---|
 | T+0 | ∅ → Submitted | procurement (`buyer:all`) | raise — `External SR`, *PT Sample Emulsifiers (illustrative)*, declarations NPWP · NIB · halal | `t_application_submit` |
 | T+1 (tester) | Submitted → Under Review | compliance (`buyer:all`) | **Start review** | `t_application_start_review` |
-| T+2 (tester) | Under Review → Approved | compliance (`buyer:all`) | **Approve** → **Yes, approve** | `t_application_approve` |
+| T+2 (tester) | Under Review → Approved | compliance, acting as a sample user (`buyer:all`) | **Approve** → **Yes, approve** | `t_application_approve` |
 
 For the refusal branch, walk `app-0002` (APP-2026-0002) the same way and choose **Reject** at T+2 with a written reason; the event is `t_application_reject`. After T+2 no further event is possible on either row.
 
@@ -175,6 +177,7 @@ For the refusal branch, walk `app-0002` (APP-2026-0002) the same way and choose 
 | Toast *"Could not raise the application"* naming *s4Vendor* | `POLICY_REJECTED:application_internal_vendor_resolved` | an `Internal SR` named a vendor the roster does not hold (not reachable from the picker) | pick from the roster |
 | Toast naming *declarations* | `POLICY_REJECTED:application_declarations_well_formed` | a declaration with an unknown kind or a blank reference reached the dispatcher | fix or drop the malformed entry; the surface never sends blanks |
 | Toast *"Could not refuse {number}"* | `MISSING_FIELDS:rejectionReason` or `POLICY_REJECTED:application_refusal_authored` | the reason box was empty or only spaces | write the reason |
+| Failure toast on **Yes, approve** or **Yes, refuse**: *"Refused: this seat names nobody, and this act is recorded against the person who takes it. Adopt a sample user on the identity panel, then take it again."* | `POLICY_REJECTED:application_decider_named` (`APPLICATION_DECIDER_UNATTRIBUTED`); the line above the buttons already said so | the seat names no person — no sample user is adopted on the identity panel | adopt a sample user on the identity panel, then take the act again; the application is still Under Review and nothing was stamped |
 | *"…not in a state this action can be taken from"* | `ILLEGAL_TRANSITION` | acting on a row that already moved (e.g. approving a *Submitted* row without starting review) | open the row again and take the act its state offers |
 | Approved, but the company is not in the supplier directory | no change on `/buyer/suppliers` | expected — approval records a decision and mints nothing; the vendor master is S/4HANA's | nothing to do in the portal |
 | A company that was refused wants to try again | the refused row is terminal | by design — no reopen | raise a new application |
@@ -190,8 +193,8 @@ For the refusal branch, walk `app-0002` (APP-2026-0002) the same way and choose 
 |---|---|---|---|
 | Submitted | `app-0001`; `app-0002` | APP-2026-0001; APP-2026-0002 | grown at start-up by the seed through `t_application_submit` under a procurement seat: `External SR` *PT Sample Emulsifiers (illustrative)* with three declarations; `KOL` *PT Sample Creator Studio (illustrative)* with one |
 | Under Review | — | — | no fixture — press **Start review** on either row |
-| Approved | — | — | no fixture — approve a row under review |
-| Rejected | — | — | no fixture — refuse a row under review with a reason |
+| Approved | — | — | no fixture — approve a row under review, from a seat acting as a sample user |
+| Rejected | — | — | no fixture — refuse a row under review with a reason, from a seat acting as a sample user |
 
 The store opens empty by ruling (nobody has ever applied); every row is produced by the verb. No `Internal SR` row is seeded — choosing which vendor to extend is a person's act, so raise one from the door to see the vendor resolve. All data is SIMULATED (see §5).
 

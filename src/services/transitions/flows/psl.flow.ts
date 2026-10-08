@@ -163,6 +163,7 @@ export const pslFlow: FlowDefinition = {
       requiredRole: 'psl:decide',
       requiredFields: ['reason'],
       policyHooks: [
+        POLICY_HOOKS.PSL_DECIDER_NAMED,
         POLICY_HOOKS.PSL_DECIDER_NOT_PROPOSER,
         POLICY_HOOKS.PSL_RESTRICTIVE_STATUS_APPROVED,
         POLICY_HOOKS.PSL_DECISION_AUTHORED,
@@ -183,6 +184,7 @@ export const pslFlow: FlowDefinition = {
       requiredRole: 'psl:decide',
       requiredFields: ['reason'],
       policyHooks: [
+        POLICY_HOOKS.PSL_DECIDER_NAMED,
         POLICY_HOOKS.PSL_DECIDER_NOT_PROPOSER,
         POLICY_HOOKS.PSL_DECISION_AUTHORED,
       ],
@@ -201,6 +203,7 @@ export const pslFlow: FlowDefinition = {
       requiredRole: 'psl:decide',
       requiredFields: ['status', 'reason'],
       policyHooks: [
+        POLICY_HOOKS.PSL_DECIDER_NAMED,
         POLICY_HOOKS.PSL_STATUS_KNOWN,
         POLICY_HOOKS.PSL_STATUS_ACTUALLY_CHANGES,
         POLICY_HOOKS.PSL_RESTRICTIVE_STATUS_APPROVED,
@@ -227,6 +230,7 @@ export const pslFlow: FlowDefinition = {
       requiredRole: 'psl:decide',
       requiredFields: ['validUntil', 'reason'],
       policyHooks: [
+        POLICY_HOOKS.PSL_DECIDER_NAMED,
         POLICY_HOOKS.PSL_RENEWAL_EXTENDS,
         POLICY_HOOKS.PSL_RENEWAL_WITHIN_CAP,
         POLICY_HOOKS.PSL_RESTRICTIVE_STATUS_APPROVED,
@@ -243,7 +247,7 @@ export const pslFlow: FlowDefinition = {
       trigger: 'user',
       requiredRole: 'psl:decide',
       requiredFields: ['reason'],
-      policyHooks: [POLICY_HOOKS.PSL_DECISION_AUTHORED],
+      policyHooks: [POLICY_HOOKS.PSL_DECIDER_NAMED, POLICY_HOOKS.PSL_DECISION_AUTHORED],
       surfaceable: { surfaced: true },
       version: 1,
     },
@@ -268,7 +272,7 @@ export const pslFlow: FlowDefinition = {
       trigger: 'user',
       requiredRole: 'psl:publish',
       requiredFields: [],
-      policyHooks: [POLICY_HOOKS.PSL_NOT_ALREADY_PUBLISHED],
+      policyHooks: [POLICY_HOOKS.PSL_DECIDER_NAMED, POLICY_HOOKS.PSL_NOT_ALREADY_PUBLISHED],
       surfaceable: { surfaced: true },
       version: 1,
     },
@@ -294,6 +298,7 @@ export const pslFlow: FlowDefinition = {
       requiredRole: 'psl:cap-set',
       requiredFields: ['capDaysOverride', 'capJustification'],
       policyHooks: [
+        POLICY_HOOKS.PSL_DECIDER_NAMED,
         POLICY_HOOKS.PSL_CAP_WITHIN_CEILING,
         POLICY_HOOKS.PSL_CAP_JUSTIFICATION_AUTHORED,
       ],

@@ -2238,6 +2238,11 @@ const supplierDocumentTarget: CommandTarget = {
             rejectedBy: scope.actor ?? NO_PERSON,
           }
         : {}),
+      // SUP-1 - a confirmation names who and when, minted here like the
+      // refusal's pair. Only `t_supplierdoc_verify` lands in `Valid`.
+      ...(toState === 'Valid'
+        ? { verifiedAt: new Date().toISOString(), verifiedBy: scope.actor ?? NO_PERSON }
+        : {}),
     }));
   },
   // ⚠️ **`requireCreationOwner` IS THE HALF THE DECLARE PATH NEVER NEEDED, AND

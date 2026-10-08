@@ -28,6 +28,7 @@ import { SYSTEM_ROLES } from '../services/transitions/businessRoles';
 import { customRoleStore } from '../services/transitions/customRoles';
 import { MockCommandService } from '../services/data/mock/MockCommandService';
 import type { QueryScope } from '../services/data/types';
+import { SAMPLE_PEOPLE } from '../services/identity/sampleRoster';
 import { deriveRoleViews, roleTotals } from './roles/roleModel';
 import i18n from '../lib/i18n';
 import RolesCatalogue from './RolesCatalogue';
@@ -35,11 +36,17 @@ import RoleDetail from './RoleDetail';
 
 const svc = new MockCommandService();
 const NOBODY = { kind: 'UNATTRIBUTED', reason: 'NO_PERSON_IN_SESSION' } as const;
+// SUP-1 — a grant needs a named person, so the seat that grants acts as a
+// sample one, read off the roster. `NOBODY` stays for the hand-written stored
+// row further down, which is refused on read for a different reason.
 const compliance: QueryScope = {
   personaType: 'buyer',
   supplierId: null,
   businessRoles: ['compliance'],
-  actor: NOBODY,
+  actor: {
+    kind: 'RESOLVED',
+    person: { personId: SAMPLE_PEOPLE.find((p) => p.role === 'compliance')!.personId },
+  },
 };
 
 const ID = 'jakarta-night-shift';

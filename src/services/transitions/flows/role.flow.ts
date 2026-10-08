@@ -91,7 +91,7 @@ export const roleFlow: FlowDefinition = {
       // ROLE's name, not a person's. D-ID-7 deletes a person's name from a
       // record; it says nothing about what a role is called.
       requiredFields: ['roleId', 'displayName', 'description', 'adds'],
-      policyHooks: [POLICY_HOOKS.ROLE_GRANT_GOVERNED],
+      policyHooks: [POLICY_HOOKS.ROLE_GRANTER_NAMED, POLICY_HOOKS.ROLE_GRANT_GOVERNED],
       surfaceable: { surfaced: true },
       version: 1,
     },

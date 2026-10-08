@@ -328,6 +328,37 @@ targets). They measure different things; this file keeps them separate.
 > `UNATTRIBUTED`, or that records no approver, is not guarded:** its release is admitted from any
 > seat holding `invoice:pay`. Approval itself has no new refusal.
 >
+> **RE-HARVEST (2026-10-08, SUP-1).** A named person decides. No figure moved: service surface,
+> catalog, flows and wired targets are as OPS-3 left them. Six policy hooks are new, each evaluated
+> FIRST on its verbs, and each with one refusal: the commanding scope's `actor` is absent or
+> `UNATTRIBUTED`. A `RESOLVED` actor is admitted, a sample person included. The reason names nobody.
+> On a refusal nothing is stored and the state does not move.
+> `application_decider_named` — `APPLICATION_DECIDER_UNATTRIBUTED` — on `t_application_approve`,
+> `t_application_reject`.
+> `supplierdoc_actor_named` — `SUPPLIERDOC_ACTOR_UNATTRIBUTED` — on `t_supplierdoc_request`,
+> `t_supplierdoc_verify`, `t_supplierdoc_reject`.
+> `psl_decider_named` — `PSL_DECIDER_UNATTRIBUTED` — on `t_psl_grant`, `t_psl_reject`,
+> `t_psl_change_status`, `t_psl_renew`, `t_psl_withdraw`, `t_psl_publish`, `t_psl_cap_override`.
+> `materialrequest_decider_named` — `MATERIALREQUEST_DECIDER_UNATTRIBUTED` — on
+> `t_materialrequest_approve`, `t_materialrequest_reject`.
+> `role_granter_named` — `ROLE_GRANTER_UNATTRIBUTED` — on `t_role_grant`.
+> `inventory_recorder_named` — `INVENTORY_RECORDER_UNATTRIBUTED` — on
+> `t_inventorydeclaration_record`.
+> **NOT CHANGED, AND STILL OPEN TO A SEAT THAT NAMES NOBODY:** `t_application_submit`,
+> `t_application_start_review`, `t_supplierdoc_declare`, `t_supplierdoc_submit`, `t_psl_propose`,
+> `t_psl_cap_set`, `t_materialrequest_submit`, `t_materialrequest_start_review`,
+> `t_inventorydeclaration_declare`.
+> **THE TWO FOUR-EYES HOOKS NOW HAVE A NAMED DECIDER TO COMPARE.** `psl_decider_not_proposer` and
+> `materialrequest_decider_not_requester` are unchanged; they refuse when the proposer or requester
+> is a named person and is the decider. A proposal or request raised by a seat that names nobody is
+> admitted, as before.
+> **`SupplierDocument` gained two optional fields:** `verifiedAt` — an ISO instant stamped by the
+> target when a document moves to `Valid` — and `verifiedBy`, the scope's actor. Neither is read
+> from the payload; `verifiedBy` is an attribution key, so a payload carrying it is refused
+> (`ACTOR_IN_PAYLOAD`). A seeded `Valid` document carries neither.
+> **A CUSTOM ROLE'S `grantedBy` IS NOW ALWAYS A NAMED PERSON** for a role granted from this batch on.
+> A stored role granted earlier keeps the attribution it was stored with.
+>
 > **RE-HARVEST (2026-10-08, OPS-3).** What the supplier typed arrives. No figure moved: service
 > surface, catalog, flows and wired targets are as OPS-2b left them. Two policy hooks are new.
 > **`t_po_confirm` GAINED A SECOND HOOK, `po_confirm_terms_well_formed`**, evaluated after

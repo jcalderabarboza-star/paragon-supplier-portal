@@ -69,6 +69,8 @@ import type {
 import { DataError } from '../services/data/types';
 import { useRefusalText, useDataErrorText } from '../hooks/useRefusalText';
 import { DECLARED_PRESENT } from '../services/data/fixturePresent';
+import ActorPreActNotice from '../components/ui-v2/ActorPreActNotice';
+import { namedSeatRefusalKey } from '../lib/namedSeatRefusal';
 
 // ⚠️ ANCHORED — this surface rendered values derived from anchored
 // fixture data against the WALL CLOCK, so what a reader saw moved every day
@@ -149,6 +151,12 @@ const CATEGORY_OPTIONS: { id: CategoryFilter; labelKey: string }[] = [
 const BuyerCompliance: React.FC = () => {
   const { t } = useTranslation();
   const refusalText = useRefusalText();
+  // SUP-1 - asking for, confirming and refusing a document need a named
+  // person; that refusal has its own sentence, in the reader's language.
+  const seatRefusal = (reason: string | undefined): string | null => {
+    const key = namedSeatRefusalKey(reason);
+    return key ? t(key) : null;
+  };
   const dataErrorText = useDataErrorText();
   const { toast } = useToast();
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('All');
@@ -164,6 +172,14 @@ const BuyerCompliance: React.FC = () => {
   const docsQuery = useDocuments();
   const reviewQueue = useMemo(
     () => (docsQuery.data?.items ?? []).filter((d) => d.status === 'Under Review'),
+    [docsQuery.data],
+  );
+  // SUP-1 - documents confirmed through the verb: both halves of the stamp.
+  const confirmedDocs = useMemo(
+    () =>
+      (docsQuery.data?.items ?? []).flatMap((d) =>
+        d.verifiedAt && d.verifiedBy ? [{ ...d, verifiedAt: d.verifiedAt, verifiedBy: d.verifiedBy }] : [],
+      ),
     [docsQuery.data],
   );
   // ⚠️ ONE NOTICE PER VERB, IN THAT VERB'S OWN SLOT (§76). Verify and reject are
@@ -192,7 +208,7 @@ const BuyerCompliance: React.FC = () => {
         toast({
           variant: 'error',
           title: t('compliance.queue.toast.failed'),
-          description: refusalText(result.reason) ?? result.reason,
+          description: seatRefusal(result.reason) ?? refusalText(result.reason) ?? result.reason,
         });
         return;
       }
@@ -213,7 +229,7 @@ const BuyerCompliance: React.FC = () => {
         toast({
           variant: 'error',
           title: t('compliance.queue.toast.failed'),
-          description: refusalText(result.reason) ?? result.reason,
+          description: seatRefusal(result.reason) ?? refusalText(result.reason) ?? result.reason,
         });
         return;
       }
@@ -289,7 +305,7 @@ const BuyerCompliance: React.FC = () => {
         toast({
           variant: 'error',
           title: t('compliance.request.toast.failed'),
-          description: refusalText(result.reason) ?? result.reason,
+          description: seatRefusal(result.reason) ?? refusalText(result.reason) ?? result.reason,
         });
         return;
       }
@@ -505,6 +521,15 @@ const BuyerCompliance: React.FC = () => {
                   ? t('compliance.queue.subtitle.one', { count: reviewQueue.length })
                   : t('compliance.queue.subtitle.other', { count: reviewQueue.length })}
               </div>
+              {/* SUP-1 - said before the act: whose name a confirmation or a
+                  refusal carries, or that this seat names nobody. */}
+              {(review.verify.kind === 'held' || review.reject.kind === 'held') && (
+                <ActorPreActNotice
+                  unattributedKey="identity.preAct.namedRequired"
+                  className="text-xs text-text-tertiary mt-1"
+                  testId="supplierdoc-review-pre-act"
+                />
+              )}
             </div>
           </div>
 
@@ -708,6 +733,49 @@ const BuyerCompliance: React.FC = () => {
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* SUP-1 - WHO CONFIRMED, AND WHEN. A confirmed document leaves the queue
+          above; without this the buyer's side kept no trace of the act. Only
+          documents confirmed through the verb carry the pair, so a seeded
+          `Valid` row is not listed and nothing is invented for it. */}
+      {confirmedDocs.length > 0 && (
+        <div
+          className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm mb-6 overflow-hidden"
+          data-testid="doc-confirmed-list"
+        >
+          <div className="px-5 py-3 border-b border-border-subtle text-sm font-bold text-text-primary">
+            {t('compliance.confirmed.title')}
+          </div>
+          <ul className="divide-y divide-border-subtle">
+            {confirmedDocs.map((doc) => (
+              <li
+                key={doc.id}
+                className="px-5 py-3 text-xs text-text-secondary"
+                data-testid={`doc-confirmed-${doc.id}`}
+              >
+                <span className="text-sm font-semibold text-text-primary">
+                  {doc.declaration
+                    ? t(certTypeLabelKey(doc.declaration.certType))
+                    : /* i18n-defer: mock/sample data (fixture document name) */
+                      doc.name}
+                </span>
+                {' · '}
+                {/* i18n-defer: mock/sample data (supplier id) */}
+                <Data>{doc.supplierId}</Data>
+                {' · '}
+                {t('compliance.confirmed.by', {
+                  person:
+                    doc.verifiedBy.kind === 'RESOLVED'
+                      ? personLabel(doc.verifiedBy.person.personId, t)
+                      : t('compliance.confirmed.nobody'),
+                })}{' '}
+                <Data>{formatDate(doc.verifiedAt)}</Data>{' '}
+                <SessionStampMarker documentId={doc.id} field="verifiedAt" value={doc.verifiedAt} />
+              </li>
+            ))}
+          </ul>
         </div>
       )}
 
@@ -1086,9 +1154,7 @@ const BuyerCompliance: React.FC = () => {
                   <dd className="text-text-secondary">{reqNote.trim()}</dd>
                 </div>
               </dl>
-              <p className="text-xs text-text-tertiary">
-                {t('compliance.request.confirm.unattributed')}
-              </p>
+              <ActorPreActNotice unattributedKey="identity.preAct.namedRequired" testId="supplierdoc-request-pre-act" />
             </div>
           ) : (
             <div className="space-y-5">

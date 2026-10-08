@@ -518,14 +518,22 @@ export interface SupplierDocument {
   /** When the refusal was recorded. Rendered beside the reason, never alone. */
   rejectedAt?: string;
   /**
-   * ⚠️ **ALWAYS `UNATTRIBUTED` IN THIS TREE, AND THE TYPE IS WHAT KEEPS THAT
-   * HONEST.** `CurrentIdentity.actor` is `UNATTRIBUTED: NO_PERSON_IN_SESSION`
-   * everywhere, so a refusal cannot name a person; typing this as
-   * `ActorAttribution` rather than `string` means the surface must RENDER the
-   * unattributed reason instead of printing a name it does not have. C10 §5.2 /
-   * D-ID-3 — no typed-name attribution until session-resolved identity exists.
+   * Who refused it, from the session. SUP-1: a refusal recorded from this batch on
+   * names a person (`SUPPLIERDOC_ACTOR_NAMED`); a seeded one, or one recorded
+   * earlier, may be `UNATTRIBUTED`, and typing this as `ActorAttribution` rather
+   * than `string` is what makes a surface render that instead of a name it does
+   * not have (C10 §5.2 / D-ID-3).
    */
   rejectedBy?: ActorAttribution;
+  /**
+   * SUP-1 - WHO CONFIRMED THE CERTIFICATE, AND WHEN. Written together by
+   * `t_supplierdoc_verify` from the session, never from the payload; the verb
+   * refuses a seat that names nobody (`SUPPLIERDOC_ACTOR_NAMED`), so a document
+   * confirmed after this rule always names its confirmer. A seeded `Valid` row
+   * carries neither, and a surface says nothing rather than inventing one.
+   */
+  verifiedAt?: string;
+  verifiedBy?: ActorAttribution;
   /**
    * The certificate details the supplier stated, present only on a DECLARED
    * document. See `CertificateDeclaration` — the whole object is optional and

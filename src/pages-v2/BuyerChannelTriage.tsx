@@ -34,6 +34,8 @@ import { formatNumber } from '../lib/format';
 import GlossaryTermChip from '../components/ui-v2/GlossaryTermChip';
 import { useRefusalText } from '../hooks/useRefusalText';
 import { refusedByPolicy } from '../services/transitions/refusalMessage';
+import ActorPreActNotice from '../components/ui-v2/ActorPreActNotice';
+import { namedSeatRefusalKey } from '../lib/namedSeatRefusal';
 import { POLICY_HOOKS } from '../services/transitions/policyHooks';
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -297,9 +299,12 @@ const BuyerChannelTriage: React.FC<BuyerChannelTriageProps> = ({ onRecorded }) =
           // it arrives behind `POLICY_REJECTED:sdc_material_known:` and a head
           // test never matched. The buyer has been reading the raw hook string
           // while a full EN+ID remedy sat unused one line away.
-          const named = refusedByPolicy(res.reason, POLICY_HOOKS.SDC_MATERIAL_KNOWN)
-            ? t('commHub.refusal.UNKNOWN_MATERIAL')
-            : undefined;
+          const seatKey = namedSeatRefusalKey(res.reason);
+          const named = seatKey
+            ? t(seatKey)
+            : refusedByPolicy(res.reason, POLICY_HOOKS.SDC_MATERIAL_KNOWN)
+              ? t('commHub.refusal.UNKNOWN_MATERIAL')
+              : undefined;
           results.push({
             ok: false,
             material,
@@ -599,6 +604,9 @@ const BuyerChannelTriage: React.FC<BuyerChannelTriageProps> = ({ onRecorded }) =
                       <p className="text-xs text-warning-hover" data-testid="triage-confirm-blocked">
                         {t('commHub.confirm.blocked')}
                       </p>
+                    )}
+                    {recordAvailability.kind === 'held' && (
+                      <ActorPreActNotice unattributedKey="identity.preAct.namedRequired" testId="triage-record-pre-act" />
                     )}
                     <div className="flex items-center justify-between gap-2">
                       <p className="text-xs text-text-tertiary">{t('buyerCommHub.triage.confirmHint')}</p>

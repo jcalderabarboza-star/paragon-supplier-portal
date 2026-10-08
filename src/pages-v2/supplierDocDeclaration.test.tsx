@@ -17,7 +17,7 @@
 
 import { describe, it, expect, beforeEach, afterAll } from 'vitest';
 import { screen, fireEvent, within, waitFor } from '@testing-library/react';
-import { renderWithProviders } from '../test/test-utils';
+import { renderWithProviders, BUYER_NAMED_COMPLIANCE } from '../test/test-utils';
 import type { CurrentIdentity } from '../context/CurrentIdentityContext';
 import { NO_PERSON } from '../context/noPerson';
 import { supplierDocumentStore } from '../services/data/mock/stores/supplierDocumentStore';
@@ -37,17 +37,19 @@ const BACK_OFFICE: CurrentIdentity = {
 /** A supplier lane that does NOT hold the supply verbs — the handoff case. */
 const COMMERCIAL: CurrentIdentity = { ...BACK_OFFICE, businessRoles: ['commercial'] };
 
-/** The buyer's compliance officer — holds verify and reject. */
+/** The buyer's compliance officer — holds verify and reject. SUP-1: confirming
+ *  or refusing a document needs a named person, so the seat acts as the roster's
+ *  compliance sample user. */
 const COMPLIANCE: CurrentIdentity = {
   personaType: 'buyer',
   supplierId: null,
   supplierName: null,
   businessRoles: ['compliance'],
-  actor: NO_PERSON,
+  actor: BUYER_NAMED_COMPLIANCE.actor,
 };
 
 /** A buyer lane that holds NEITHER review verb — the handoff case, buyer side. */
-const FINANCE: CurrentIdentity = { ...COMPLIANCE, businessRoles: ['finance'] };
+const FINANCE: CurrentIdentity = { ...COMPLIANCE, businessRoles: ['finance'], actor: NO_PERSON };
 
 const CERT_NUMBER = 'ID-BPJPH-WALK-0042';
 const SCOPE_TEXT = 'All PET bottle grades produced at the Tangerang plant';

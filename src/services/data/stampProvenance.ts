@@ -79,8 +79,8 @@ import { DOCUMENTS } from './mock/fixtures/supplierDocuments';
  */
 export type StampOrigin = 'SEEDED' | 'SESSION';
 
-/** The two wall-clock-minted supplier-document stamps a surface renders. */
-export type StampField = 'rejectedAt' | 'declaredAt';
+/** The wall-clock-minted supplier-document stamps a surface renders. */
+export type StampField = 'rejectedAt' | 'declaredAt' | 'verifiedAt';
 
 /** The seeded value for one document and field, or `undefined` when the corpus
  *  has none — a document the store minted at runtime has no seeded row at all,
@@ -88,6 +88,7 @@ export type StampField = 'rejectedAt' | 'declaredAt';
 function seededValue(documentId: string, field: StampField): string | undefined {
   const row = DOCUMENTS.find((d) => d.id === documentId);
   if (!row) return undefined;
+  if (field === 'verifiedAt') return row.verifiedAt;
   return field === 'rejectedAt' ? row.rejectedAt : row.declaration?.declaredAt;
 }
 

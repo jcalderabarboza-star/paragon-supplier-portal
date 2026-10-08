@@ -43,6 +43,7 @@ import { seedPslListings } from './mock/pslSeed';
 import { pslStore } from './mock/stores/pslStore';
 import { DECLARED_PRESENT } from './fixturePresent';
 import { NO_PERSON } from '../../context/noPerson';
+import { SAMPLE_PEOPLE } from '../identity/sampleRoster';
 import { pslStatusFor } from './pslSourcingSeam';
 import { decideSourcing, pslExemptionFor, rosterStatusOf } from './rfqSourcingGate';
 import type { PslListing } from './pslListing';
@@ -58,12 +59,16 @@ const PROCUREMENT: QueryScope = {
   actor: NO_PERSON,
 };
 /** The lane that decides one. Narrow, so the restrictive-designation check
- *  admits — see `pslLeadCheck.ts`. */
+ *  admits — see `pslLeadCheck.ts`. Named (SUP-1): a decision on a listing needs
+ *  a named person, read off the roster. The proposing seat stays unnamed. */
 const COMPLIANCE: QueryScope = {
   personaType: 'buyer',
   supplierId: null,
   businessRoles: ['compliance'],
-  actor: NO_PERSON,
+  actor: {
+    kind: 'RESOLVED',
+    person: { personId: SAMPLE_PEOPLE.find((p) => p.role === 'compliance')!.personId },
+  },
 };
 
 /**

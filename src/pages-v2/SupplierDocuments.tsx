@@ -647,6 +647,15 @@ const SupplierDocuments: React.FC = () => {
                       </div>
                     )}
                     <RefusalBlock doc={doc} />
+                    {/* SUP-1 - when Paragon confirmed it. The date only: the
+                        person is the buyer's record, not the supplier's. */}
+                    {doc.verifiedAt && (
+                      <div className="text-xs text-text-tertiary mt-1" data-testid={`doc-confirmed-on-${doc.id}`}>
+                        {t('supplierDocuments.confirmedOn')}{' '}
+                        <Data className="text-text-tertiary normal-case">{formatDate(doc.verifiedAt)}</Data>{' '}
+                        <SessionStampMarker documentId={doc.id} field="verifiedAt" value={doc.verifiedAt} />
+                      </div>
+                    )}
                     <div className="text-xs text-text-tertiary mt-0.5">
                       {t('supplierDocuments.row.linked', { value: doc.linkedTo })}
                     </div>

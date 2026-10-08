@@ -230,14 +230,14 @@ export const rolesEn: Record<string, string> = {
     'Only permissions on the same side as the role you are copying are offered. The rest are already held by it.',
   'roles.page.createAddsNone': 'This role already holds every permission on its side.',
   'roles.page.createSubmit': 'Create role',
+  'roles.page.createPersistence':
+    'This grant is saved in this browser and will survive a reload — local to this browser only, not shared with anyone, not stored on a server.',
   // ⚠️ **BEFORE THE ACT, AND AS PRECISE AS THE PAGE HEADER.** A user who
   // creates a role and reloads must have been told BEFORE they created it, not
   // discover it after they lost it. The earlier wording said only "does not
   // survive a reload"; the header's precision — held in memory, never written to
   // disk — belongs at the point of creation too, because that is where somebody
   // decides whether the act is worth taking.
-  'roles.page.createGrantedBy':
-    'This grant is saved in this browser and will survive a reload — local to this browser only, not shared with anyone, not stored on a server. It is recorded as taken by nobody the platform can name, because there is no user directory yet.',
   'roles.page.createOk': 'Role {{id}} created. It is enforced now and gone on reload.',
   // The dispatcher’s own words. A refusal that only says “failed” is half a
   // remedy — the reason names the atom, the side, or the field.
@@ -372,8 +372,8 @@ export const rolesId: Record<string, string> = {
     'Hanya izin di sisi yang sama dengan peran yang Anda salin yang ditawarkan. Sisanya sudah dipegang olehnya.',
   'roles.page.createAddsNone': 'Peran ini sudah memegang setiap izin di sisinya.',
   'roles.page.createSubmit': 'Buat peran',
-  'roles.page.createGrantedBy':
-    'Pemberian ini disimpan di peramban ini dan akan bertahan setelah dimuat ulang — lokal untuk peramban ini saja, tidak dibagikan kepada siapa pun, tidak disimpan di server. Pemberian dicatat sebagai dilakukan oleh orang yang tidak dapat disebut namanya oleh platform, karena belum ada direktori pengguna.',
+  'roles.page.createPersistence':
+    'Pemberian ini disimpan di peramban ini dan akan bertahan setelah dimuat ulang — lokal untuk peramban ini saja, tidak dibagikan kepada siapa pun, tidak disimpan di server.',
   'roles.page.createOk': 'Peran {{id}} dibuat. Berlaku sekarang dan hilang saat dimuat ulang.',
   'roles.page.createRefused': 'Ditolak: {{reason}}',
 

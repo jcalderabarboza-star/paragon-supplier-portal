@@ -48,7 +48,7 @@
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { screen, within, cleanup } from '@testing-library/react';
-import { renderWithProviders, SUPPLIER, BUYER } from '../test/test-utils';
+import { renderWithProviders, SUPPLIER, BUYER, BUYER_NAMED_COMPLIANCE } from '../test/test-utils';
 import i18n from '../lib/i18n';
 import SupplierDocuments from './SupplierDocuments';
 import BuyerCompliance from './BuyerCompliance';
@@ -72,12 +72,14 @@ const backOffice: QueryScope = {
   actor: NO_PERSON,
 };
 
-/** The buyer lane that holds `supplierdoc:reject` — `compliance`. */
+/** The buyer lane that holds `supplierdoc:reject` — `compliance`. SUP-1: a
+ *  refusal needs a named person, so the seat acts as the roster's compliance
+ *  sample user. */
 const complianceSeat: QueryScope = {
   personaType: 'buyer',
   supplierId: null,
   businessRoles: ['compliance'],
-  actor: NO_PERSON,
+  actor: BUYER_NAMED_COMPLIANCE.actor,
 };
 
 const DECLARATION = {

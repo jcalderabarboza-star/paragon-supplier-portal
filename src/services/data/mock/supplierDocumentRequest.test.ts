@@ -33,17 +33,23 @@ import { supplierDocumentStore } from './stores/supplierDocumentStore';
 import { mockSuppliers } from '../../../data/mockSuppliers';
 import { getTransition } from '../../transitions';
 import { NO_PERSON } from '../../../context/noPerson';
+import { SAMPLE_PEOPLE } from '../../identity/sampleRoster';
 import type { QueryScope } from '../types';
 
 const svc = new MockCommandService();
 const reads = new MockProcurementService();
 
-/** The buyer's compliance seat — the lane that holds `supplierdoc:request`. */
+/** The buyer's compliance seat — the lane that holds `supplierdoc:request`.
+ *  SUP-1: asking a supplier for a document needs a named person, so the seat
+ *  acts as the roster's compliance sample user. */
 const complianceSeat: QueryScope = {
   personaType: 'buyer',
   supplierId: null,
   businessRoles: ['compliance'],
-  actor: NO_PERSON,
+  actor: {
+    kind: 'RESOLVED',
+    person: { personId: SAMPLE_PEOPLE.find((p) => p.role === 'compliance')!.personId },
+  },
 };
 
 /** A buyer seat with every OTHER lane — the withheld side of the same act. */
