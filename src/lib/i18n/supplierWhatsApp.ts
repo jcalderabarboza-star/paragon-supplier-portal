@@ -94,6 +94,7 @@ export const supplierWhatsAppEn: Record<string, string> = {
   'supplierWhatsApp.lang.pt': 'Portuguese',
   // — Email panel —
   'supplierWhatsApp.email.simulator.title': 'Email Procurement Simulator',
+  'supplierWhatsApp.demo.scripted': 'Scripted demo — nothing was sent, and no order, stock figure or system was changed.',
   'supplierWhatsApp.email.simulator.subtitle':
     'Experience how suppliers respond to procurement notifications via email.',
   'supplierWhatsApp.email.scenario.po': 'PO Notification',
@@ -216,6 +217,7 @@ export const supplierWhatsAppId: Record<string, string> = {
   'supplierWhatsApp.lang.pt': 'Portugis',
   // — Email panel —
   'supplierWhatsApp.email.simulator.title': 'Simulator Pengadaan Email',
+  'supplierWhatsApp.demo.scripted': 'Demo berskenario — tidak ada yang dikirim, dan tidak ada pesanan, angka stok, atau sistem yang diubah.',
   'supplierWhatsApp.email.simulator.subtitle':
     'Rasakan bagaimana pemasok merespons notifikasi pengadaan via email.',
   'supplierWhatsApp.email.scenario.po': 'Notifikasi PO',

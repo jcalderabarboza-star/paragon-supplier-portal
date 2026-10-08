@@ -37,6 +37,7 @@ import {
 import PageHeader from '../components/ui-v2/PageHeader';
 import PageMetaLine from '../components/ui-v2/PageMetaLine';
 import ProvenanceMarker from '../components/ui-v2/ProvenanceMarker';
+import { IllustrativeBanner, IllustrativeMark } from '../components/ui-v2/IllustrativeNotice';
 import Data from '../components/ui-v2/Data';
 import TargetBar from '../components/ui-v2/TargetBar';
 import Tabs from '../components/ui-v2/Tabs';
@@ -176,6 +177,7 @@ const GradeBadge: React.FC<{ grade: Grade; score: number }> = ({ grade, score })
         </span>
       </div>
       <div className="text-base font-bold text-text-primary">{score}/100</div>
+      <IllustrativeMark />
       <span
         className="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold"
         style={{
@@ -454,6 +456,8 @@ const SupplierPerformance: React.FC = () => {
         <ProvenanceMarker capability="scorecards" />
       </PageMetaLine>
 
+      <IllustrativeBanner bodyKey="supplierPerformance.illustrative.body" />
+
       <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6 mb-6">
         <div className="flex items-start justify-between gap-6 flex-wrap">
           <div className="min-w-0 flex-1">
@@ -508,7 +512,8 @@ const SupplierPerformance: React.FC = () => {
                   })
                 : t('supplierPerformance.overview.scorecardTitle.other', {
                     count: kpis.length,
-                  })}
+                  })}{' '}
+              <IllustrativeMark />
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
               {kpis.map((k) => (
@@ -520,7 +525,8 @@ const SupplierPerformance: React.FC = () => {
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-5 mb-6">
             <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6">
               <h2 className="text-section text-text-primary mb-4 pb-3 border-b border-border-subtle">
-                {t('supplierPerformance.overview.radarTitle')}
+                {t('supplierPerformance.overview.radarTitle')}{' '}
+                <IllustrativeMark />
               </h2>
               <ResponsiveContainer width="100%" height={280}>
                 <RadarChart
@@ -561,7 +567,8 @@ const SupplierPerformance: React.FC = () => {
 
             <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6">
               <h2 className="flex items-center gap-2 text-section text-text-primary mb-4 pb-3 border-b border-border-subtle">
-                {t('supplierPerformance.overview.gradeHistoryTitle')}
+                {t('supplierPerformance.overview.gradeHistoryTitle')}{' '}
+                <IllustrativeMark />
                 <StatusPill variant="neutral">
                   {t('supplierPerformance.sampleData')}
                 </StatusPill>
@@ -657,7 +664,8 @@ const SupplierPerformance: React.FC = () => {
         <>
           <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6 mb-6">
             <h2 className="text-section text-text-primary mb-4 pb-3 border-b border-border-subtle">
-              {t('supplierPerformance.trends.otifTitle')}
+              {t('supplierPerformance.trends.otifTitle')}{' '}
+              <IllustrativeMark />
             </h2>
             <ResponsiveContainer width="100%" height={240}>
               <LineChart
@@ -683,7 +691,8 @@ const SupplierPerformance: React.FC = () => {
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
             <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6">
               <h2 className="text-section text-text-primary mb-4 pb-3 border-b border-border-subtle">
-                {t('supplierPerformance.trends.asnTitle')}
+                {t('supplierPerformance.trends.asnTitle')}{' '}
+                <IllustrativeMark />
               </h2>
               <ResponsiveContainer width="100%" height={200}>
                 <LineChart
@@ -707,7 +716,8 @@ const SupplierPerformance: React.FC = () => {
             </section>
             <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6">
               <h2 className="text-section text-text-primary mb-4 pb-3 border-b border-border-subtle">
-                {t('supplierPerformance.trends.poaTitle')}
+                {t('supplierPerformance.trends.poaTitle')}{' '}
+                <IllustrativeMark />
               </h2>
               <ResponsiveContainer width="100%" height={200}>
                 <LineChart

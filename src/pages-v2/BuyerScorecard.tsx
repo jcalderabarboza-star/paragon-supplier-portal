@@ -41,6 +41,7 @@ import Data from '../components/ui-v2/Data';
 import TargetBar from '../components/ui-v2/TargetBar';
 import PageMetaLine from '../components/ui-v2/PageMetaLine';
 import ProvenanceMarker from '../components/ui-v2/ProvenanceMarker';
+import { IllustrativeBanner, IllustrativeMark } from '../components/ui-v2/IllustrativeNotice';
 import StatusPill from '../components/ui-v2/StatusPill';
 import Button from '../components/ui-v2/Button';
 import LoadingState from '../components/ui-v2/LoadingState';
@@ -278,6 +279,8 @@ const BuyerScorecard: React.FC = () => {
         <ProvenanceMarker capability="scorecards" className="ml-3 align-middle" />
       </PageMetaLine>
 
+      <IllustrativeBanner bodyKey="buyerScorecard.illustrative.body" />
+
       {/* DP-1: the supplier identity hero restyles from a solid navy fill to a
           light surface — navy text, teal accents, semantic grade badge kept. */}
       <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6 mb-6">
@@ -335,6 +338,7 @@ const BuyerScorecard: React.FC = () => {
             <div className="text-base font-bold text-text-primary">
               {supp.score}/100
             </div>
+            <IllustrativeMark />
             <span
               className="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold"
               style={{
@@ -354,7 +358,8 @@ const BuyerScorecard: React.FC = () => {
 
       <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6 mb-6">
         <h2 className="text-section text-text-primary mb-4 pb-3 border-b border-border-subtle">
-          {t('buyerScorecard.kpi.title')}
+          {t('buyerScorecard.kpi.title')}{' '}
+          <IllustrativeMark />
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
           {supp.kpis.map((k) => (
@@ -366,7 +371,8 @@ const BuyerScorecard: React.FC = () => {
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-5 mb-6">
         <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6">
           <h2 className="text-section text-text-primary mb-4 pb-3 border-b border-border-subtle">
-            {t('buyerScorecard.radar.title')}
+            {t('buyerScorecard.radar.title')}{' '}
+            <IllustrativeMark />
           </h2>
           <ResponsiveContainer width="100%" height={280}>
             <RadarChart
@@ -407,7 +413,8 @@ const BuyerScorecard: React.FC = () => {
 
         <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6">
           <h2 className="text-section text-text-primary mb-1 pb-3 border-b border-border-subtle">
-            {t('buyerScorecard.trends.title')}
+            {t('buyerScorecard.trends.title')}{' '}
+            <IllustrativeMark />
           </h2>
           <div className="text-meta text-text-tertiary mb-3 mt-3">
             {t('buyerScorecard.trends.caption')}
@@ -487,7 +494,8 @@ const BuyerScorecard: React.FC = () => {
             {t('buyerScorecard.imp.banner')}
           </div>
           <h2 className="text-section text-text-primary mb-4 pb-3 border-b border-border-subtle">
-            {t('buyerScorecard.imp.title')}
+            {t('buyerScorecard.imp.title')}{' '}
+            <IllustrativeMark />
           </h2>
           <div className="flex flex-col gap-2 mb-4">
             {improvementActions.map((a) => (
@@ -531,7 +539,8 @@ const BuyerScorecard: React.FC = () => {
 
       <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6">
         <h2 className="text-section text-text-primary mb-4 pb-3 border-b border-border-subtle">
-          {t('buyerScorecard.comm.title')}
+          {t('buyerScorecard.comm.title')}{' '}
+          <IllustrativeMark />
         </h2>
         {supp.commLog.length === 0 ? (
           <div className="text-sm text-text-tertiary text-center py-6">

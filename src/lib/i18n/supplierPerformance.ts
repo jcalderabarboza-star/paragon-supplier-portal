@@ -51,6 +51,8 @@ export const supplierPerformanceEn: Record<string, string> = {
   'supplierPerformance.card.reportingPeriod': 'Reporting period:',
   'supplierPerformance.card.reportingValue': 'Rolling 12 weeks',
   'supplierPerformance.grade.paragonGrade': 'Paragon Grade',
+  'supplierPerformance.illustrative.body':
+    'The grade, the score and the KPIs on this page are authored sample values, the same for every supplier. They are not computed from your deliveries, receipts or invoices, and Paragon does not rate you by them.',
   // — Tabs —
   'supplierPerformance.tab.overview': 'Overview',
   'supplierPerformance.tab.trends': 'Trends',
@@ -128,6 +130,8 @@ export const supplierPerformanceId: Record<string, string> = {
   'supplierPerformance.card.reportingPeriod': 'Periode pelaporan:',
   'supplierPerformance.card.reportingValue': '12 minggu berjalan',
   'supplierPerformance.grade.paragonGrade': 'Grade Paragon',
+  'supplierPerformance.illustrative.body':
+    'Nilai, skor, dan KPI di halaman ini adalah nilai sampel yang ditulis, sama untuk setiap pemasok. Semuanya tidak dihitung dari pengiriman, penerimaan, atau faktur Anda, dan Paragon tidak menilai Anda berdasarkan angka ini.',
   // — Tabs —
   'supplierPerformance.tab.overview': 'Ikhtisar',
   'supplierPerformance.tab.trends': 'Tren',

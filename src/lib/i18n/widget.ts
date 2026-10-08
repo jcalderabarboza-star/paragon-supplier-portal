@@ -67,6 +67,10 @@ export const widgetEn: Record<string, string> = {
   // is a HORIZON and several on that surface do, `doc-002`'s furthest of them —
   // so "the rest of the portal is dated {{date}}" would be false where it shows.
   'widget.honesty.sessionStamp': 'Recorded this session',
+  // SUP-2 - figures no data backs. The banner title and the per-figure mark.
+  'illustrative.banner.title': 'Illustrative — not measured.',
+  'illustrative.mark': 'Illustrative',
+  'illustrative.mark.title': 'Illustrative — not measured. No record in this portal produces this figure.',
   'widget.honesty.sessionStampNote':
     "Written from this device's clock at the moment the action was recorded, not from this portal's fixed demonstration present of {{date, stop}}.",
   'widget.allClear': 'All clear',
@@ -215,6 +219,9 @@ export const widgetId: Record<string, string> = {
   'widget.honesty.awaitingDiscoveryFeed': 'Sampel — menunggu feed penemuan pemasok',
   'widget.honesty.commandsDispatch': 'Perintah dijalankan — buku besar in-memory',
   'widget.honesty.sessionStamp': 'Dicatat pada sesi ini',
+  'illustrative.banner.title': 'Ilustratif — tidak diukur.',
+  'illustrative.mark': 'Ilustratif',
+  'illustrative.mark.title': 'Ilustratif — tidak diukur. Tidak ada catatan di portal ini yang menghasilkan angka ini.',
   'widget.honesty.sessionStampNote':
     'Ditulis dari jam perangkat ini pada saat tindakan dicatat, bukan dari waktu kini tetap portal ini, yaitu {{date, stop}}.',
   'widget.allClear': 'Semua beres',

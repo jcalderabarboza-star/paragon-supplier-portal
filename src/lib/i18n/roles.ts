@@ -238,7 +238,7 @@ export const rolesEn: Record<string, string> = {
   // survive a reload"; the header's precision — held in memory, never written to
   // disk — belongs at the point of creation too, because that is where somebody
   // decides whether the act is worth taking.
-  'roles.page.createOk': 'Role {{id}} created. It is enforced now and gone on reload.',
+  'roles.page.createOk': 'Role {{id}} created. It is enforced now and saved in this browser.',
   // The dispatcher’s own words. A refusal that only says “failed” is half a
   // remedy — the reason names the atom, the side, or the field.
   'roles.page.createRefused': 'Refused: {{reason}}',
@@ -374,7 +374,7 @@ export const rolesId: Record<string, string> = {
   'roles.page.createSubmit': 'Buat peran',
   'roles.page.createPersistence':
     'Pemberian ini disimpan di peramban ini dan akan bertahan setelah dimuat ulang — lokal untuk peramban ini saja, tidak dibagikan kepada siapa pun, tidak disimpan di server.',
-  'roles.page.createOk': 'Peran {{id}} dibuat. Berlaku sekarang dan hilang saat dimuat ulang.',
+  'roles.page.createOk': 'Peran {{id}} dibuat. Berlaku sekarang dan tersimpan di peramban ini.',
   'roles.page.createRefused': 'Ditolak: {{reason}}',
 
   'roles.page.storeUnreadableTitle': 'Peran tersimpan tidak dapat dibaca',

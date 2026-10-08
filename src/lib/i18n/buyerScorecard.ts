@@ -34,6 +34,8 @@ export const buyerScorecardEn: Record<string, string> = {
   'buyerScorecard.crumb.scorecard': 'SUPPLIER SCORECARD',
   // — Page header —
   'buyerScorecard.header.title': 'Supplier Scorecard',
+  'buyerScorecard.illustrative.body':
+    'The grade, the score and every KPI on this page are authored sample values. They are not computed from this supplier’s deliveries, receipts or invoices, and several suppliers share the same KPI rows. Do not read them as a rating.',
   'buyerScorecard.header.subtitle':
     'Performance scoring across all active suppliers.',
   'buyerScorecard.header.selectSupplier': 'Select supplier',
@@ -84,6 +86,8 @@ export const buyerScorecardId: Record<string, string> = {
   'buyerScorecard.crumb.scorecard': 'KARTU SKOR PEMASOK',
   // — Page header —
   'buyerScorecard.header.title': 'Kartu Skor Pemasok',
+  'buyerScorecard.illustrative.body':
+    'Nilai, skor, dan setiap KPI di halaman ini adalah nilai sampel yang ditulis. Semuanya tidak dihitung dari pengiriman, penerimaan, atau faktur pemasok ini, dan beberapa pemasok memakai baris KPI yang sama. Jangan dibaca sebagai penilaian.',
   'buyerScorecard.header.subtitle':
     'Penilaian kinerja di seluruh pemasok aktif.',
   'buyerScorecard.header.selectSupplier': 'Pilih pemasok',
