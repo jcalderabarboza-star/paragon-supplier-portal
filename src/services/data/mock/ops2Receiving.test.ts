@@ -420,7 +420,9 @@ describe('OPS-2 · an existing receipt is inspected, held, retested and finished
     expect(gr, grNumber).toBeDefined();
     return gr!;
   };
-  /** The receipt's own lines, inspected: everything received is accepted. */
+  /** The receipt's own lines, inspected: everything received is accepted. A
+   *  seeded `Pending` on a regulatory check is not an answer, so it is dropped —
+   *  as the receiving form does. */
   const clean = (gr: GoodsReceipt): InspectionResult[] =>
     gr.inspectionResults.map((r) => ({
       ...r,
@@ -429,6 +431,8 @@ describe('OPS-2 · an existing receipt is inspected, held, retested and finished
       rejectionReason: undefined,
       visualCheck: 'Pass',
       packagingCheck: 'Pass',
+      halalSealCheck: r.halalSealCheck === 'Pass' || r.halalSealCheck === 'Fail' ? r.halalSealCheck : undefined,
+      bpomLotCheck: r.bpomLotCheck === 'Pass' || r.bpomLotCheck === 'Fail' ? r.bpomLotCheck : undefined,
     }));
   const gr = (id: string, verb: string, payload?: Record<string, unknown>) =>
     fire(receiving, 'goodsReceipt', verb, id, payload);
@@ -457,6 +461,18 @@ describe('OPS-2 · an existing receipt is inspected, held, retested and finished
     expect(goodsReceiptStore.get(r.id)!.status).toBe('Posted to SAP');
     expect(goodsReceiptStore.get(r.id)!.sapMaterialDoc).toBeTruthy();
     expect(goodsReceiptStore.all()).toHaveLength(before);
+  });
+
+  it('a regulatory check that is recorded reaches the receipt; one that is not owed stays absent', async () => {
+    const r = byNumber('GR-2026-002');
+    await gr(r.id, 't_gr_start_inspection');
+    const lines = clean(r).map((l) => ({ ...l, halalSealCheck: 'Pass' as const }));
+    expect((await gr(r.id, 't_gr_record_inspection', { inspectionResults: lines })).status).toBe('done');
+    const stored = goodsReceiptStore.get(r.id)!.inspectionResults[0];
+    expect(stored.halalSealCheck).toBe('Pass');
+    // The seeded placeholder is gone: nobody answered a BPOM lot check, and none was owed.
+    expect(r.inspectionResults[0].bpomLotCheck).toBe('Pending');
+    expect(stored.bpomLotCheck).toBeUndefined();
   });
 
   it('without recorded results the same receipt cannot be approved — the lines are still pending', async () => {
@@ -516,6 +532,9 @@ describe('OPS-2 · an existing receipt is inspected, held, retested and finished
       ['RESULTS_QUANTITY_INVALID', (l) => [{ ...l[0], qtyReceived: Number.NaN }]],
       ['RESULTS_CHECK_UNANSWERED', (l) => [{ ...l[0], visualCheck: 'Pending' }]],
       ['RESULTS_CHECK_UNANSWERED', (l) => [{ ...l[0], packagingCheck: undefined }]],
+      // A regulatory check may be absent; recorded, it is Pass or Fail.
+      ['RESULTS_CHECK_UNANSWERED', (l) => [{ ...l[0], halalSealCheck: 'Pending' }]],
+      ['RESULTS_CHECK_UNANSWERED', (l) => [{ ...l[0], bpomLotCheck: 'Pending' }]],
       ['RESULTS_REJECTION_UNEXPLAINED', (l) => [{ ...l[0], qtyAccepted: l[0].qtyReceived - 10, qtyRejected: 10, rejectionReason: '  ' }]],
     ];
     it.each(cases)('%s', async (head, build) => {

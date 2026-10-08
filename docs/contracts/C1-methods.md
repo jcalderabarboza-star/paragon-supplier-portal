@@ -352,7 +352,8 @@ targets). They measure different things; this file keeps them separate.
 > differs from the receipt's lines, or a line names another material at its position),
 > `RESULTS_QUANTITY_INVALID` (a quantity is not a finite number of zero or more, or accepted plus
 > rejected does not equal received), `RESULTS_CHECK_UNANSWERED` (`visualCheck` or `packagingCheck` is
-> not `Pass` or `Fail`), `RESULTS_REJECTION_UNEXPLAINED` (a rejected quantity with no reason).
+> not `Pass` or `Fail`, or `halalSealCheck` / `bpomLotCheck` is present and is neither),
+> `RESULTS_REJECTION_UNEXPLAINED` (a rejected quantity with no reason).
 > **`t_gr_hold` is unchanged and now has a caller.** No GR verb reads halal or BPOM: the applicability
 > and certificate checks are the receiving form's, as the seal and lot checks already were.
 > **A NEW MACHINE, `materialRuling.flow.ts`** (one state `Governed`, one state-preserving verb — the

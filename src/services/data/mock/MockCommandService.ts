@@ -414,6 +414,9 @@ bindPolicyHook(POLICY_HOOKS.GR_INSPECTION_MATERIALS_DECLARED, ({ payload }) => {
 // receipt's lines; do the quantities add up; was each check actually answered;
 // is a rejected quantity explained.
 const CHECK_ANSWERS: ReadonlySet<unknown> = new Set(['Pass', 'Fail']);
+/** A regulatory check is owed only where its regime applies, so it may be
+ *  absent — but when it is recorded, it is an answer, never a placeholder. */
+const answerOrAbsent = (v: unknown): boolean => v === undefined || CHECK_ANSWERS.has(v);
 const isCount = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v) && v >= 0;
 
 bindPolicyHook(POLICY_HOOKS.GR_RESULTS_MATCH_RECEIPT, ({ entityId, payload, target }) => {
@@ -457,10 +460,15 @@ bindPolicyHook(POLICY_HOOKS.GR_RESULTS_MATCH_RECEIPT, ({ entityId, payload, targ
         reason: `RESULTS_QUANTITY_INVALID: ${code} — received, accepted and rejected are numbers of zero or more, and accepted plus rejected equals received`,
       };
     }
-    if (!CHECK_ANSWERS.has(r.visualCheck) || !CHECK_ANSWERS.has(r.packagingCheck)) {
+    if (
+      !CHECK_ANSWERS.has(r.visualCheck) ||
+      !CHECK_ANSWERS.has(r.packagingCheck) ||
+      !answerOrAbsent(r.halalSealCheck) ||
+      !answerOrAbsent(r.bpomLotCheck)
+    ) {
       return {
         ok: false,
-        reason: `RESULTS_CHECK_UNANSWERED: ${code} — the visual and packaging checks are each recorded as Pass or Fail`,
+        reason: `RESULTS_CHECK_UNANSWERED: ${code} — the visual and packaging checks are each recorded as Pass or Fail, and a halal seal or BPOM lot check, when recorded, is Pass or Fail too`,
       };
     }
     if (r.qtyRejected > 0 && (typeof r.rejectionReason !== 'string' || r.rejectionReason.trim() === '')) {

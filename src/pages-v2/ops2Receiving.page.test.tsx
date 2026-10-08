@@ -358,10 +358,16 @@ describe('OPS-2 · the Compliance surface — Material applicability', () => {
     expect(p.getByTestId('applicability-attribution')).toHaveTextContent(
       `This ruling will be recorded under ${personLabel(COMPLIANCE_ID, t)}`,
     );
-    // The commit waits for an answer AND a reason.
+    // The commit waits for an answer AND a reason — each alone is not enough.
     expect(p.getByTestId('applicability-commit')).toBeDisabled();
+    fireEvent.change(p.getByTestId('applicability-reason'), {
+      target: { value: 'Secondary carton; no product contact.' },
+    });
+    expect(p.getByTestId('applicability-commit')).toBeDisabled(); // a reason, no answer
     fireEvent.click(p.getByTestId('applicability-choice-no'));
-    expect(p.getByTestId('applicability-commit')).toBeDisabled();
+    expect(p.getByTestId('applicability-commit')).toBeEnabled();
+    fireEvent.change(p.getByTestId('applicability-reason'), { target: { value: '   ' } });
+    expect(p.getByTestId('applicability-commit')).toBeDisabled(); // an answer, no reason
     fireEvent.change(p.getByTestId('applicability-reason'), {
       target: { value: 'Secondary carton; no product contact.' },
     });
@@ -424,6 +430,10 @@ describe('OPS-2 · the Compliance surface — Material applicability', () => {
     renderWithProviders(<Compliance />, { identity: BUYER_NAMED_COMPLIANCE });
     const p = await panel();
     fireEvent.click(await p.findByText('Ruled by Compliance (1)'));
+    // The filter holds what Compliance ruled and nothing else: one row.
+    expect(await p.findByTestId('applicability-bpom-RM-COCO-8200')).toHaveTextContent('Does not apply');
+    expect(p.queryByTestId('applicability-bpom-RM-STEAR-7300')).not.toBeInTheDocument();
+    expect(p.queryByTestId('applicability-halal-PK-PETB-8801')).not.toBeInTheDocument();
     fireEvent.click(await p.findByTestId('applicability-rule-bpom-RM-COCO-8200'));
     fireEvent.click(p.getByTestId('applicability-choice-no'));
     fireEvent.change(p.getByTestId('applicability-reason'), { target: { value: 'Again.' } });
