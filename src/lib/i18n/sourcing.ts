@@ -293,6 +293,7 @@ export const sourcingEn: Record<string, string> = {
     'Ask for a price: quotations. Ends in an award.',
   'sourcing.wizard.stage.guide':
     'The sourcing events guide describes each stage in full.',
+  'sourcing.wizard.stage.guideLink': 'Open the guide (new tab)',
   'sourcing.wizard.deadlinePast':
     'This date has already passed. An event past its response deadline cannot be published.',
   'sourcing.wizard.review.row.stage':
@@ -1219,6 +1220,7 @@ export const sourcingId: Record<string, string> = {
     'Minta harga: penawaran. Berakhir dengan penetapan pemenang.',
   'sourcing.wizard.stage.guide':
     'Panduan acara sumber menjelaskan tiap tahap selengkapnya.',
+  'sourcing.wizard.stage.guideLink': 'Buka panduan (tab baru)',
   'sourcing.wizard.deadlinePast':
     'Tanggal ini sudah lewat. Acara yang melewati tenggat tanggapannya tidak dapat diterbitkan.',
   'sourcing.wizard.review.row.stage':

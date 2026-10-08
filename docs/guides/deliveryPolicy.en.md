@@ -71,7 +71,7 @@ Honest markers. A single-state machine: the item's tolerance is always `Governed
 | Governed — flag over N% | derived at read | Governed | active enforcement is not `ignore` (tolerance is the active band) | item header chip, both seats |
 | Reference envelope — not enforced | derived at read | Governed | active enforcement is `ignore` | item header chip, both seats |
 | Active policy changed from contract default | derived at read (`policyDeviation`) | Governed | active differs from the contract default in either knob; detail shows the default, the change date and the reason | item header, buyer only |
-| Over-envelope exception | derived at read | Governed | enforced with a finite tolerance and released quantity exceeds agreed × (1 + tolerance) — only reachable after a line adjustment | drawdown ledger `exceptions` |
+| Over-envelope exception | derived at read | Governed | enforced with a finite tolerance and released quantity exceeds agreed × (1 + tolerance) — only reachable after a line adjustment | the item card, buyer only: *Over tolerance: … released against … agreed — … over, beyond the N% tolerance.*; the `/buyer/delivery-agreements` roll-up row: *Over tolerance by …*. It reports and does not stop a release |
 | Block (recorded — not yet enforced) | operator-raised, unenforced | Governed | the active mode is `block`; nothing refuses a release on it | editor label |
 | SIMULATED / Sample | external (liveness) | Governed | always | `LivenessPill` on the Delivery Agreements tab |
 | Awaiting Compliance (handoff) | derived at read | Governed | the seat does not hold `delivery:policy-set` | the **Edit tolerance** slot |

@@ -18,7 +18,7 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
-import { PackageCheck, Pencil, Send, SlidersHorizontal } from 'lucide-react';
+import { AlertTriangle, PackageCheck, Pencil, Send, SlidersHorizontal } from 'lucide-react';
 import StatusPill from '../ui-v2/StatusPill';
 import KpiCard from '../ui-v2/KpiCard';
 import TargetBar from '../ui-v2/TargetBar';
@@ -29,6 +29,8 @@ import PolicyEditor from './PolicyEditor';
 import HandoffNotice from '../ui-v2/HandoffNotice';
 import type { VerbAvailability } from '../../services/transitions/handoff';
 import { formatNumber, formatDate } from '../../lib/format';
+import { overToleranceOf } from '../../services/delivery/ledger';
+import { deliveryDateIsPast } from '../../services/transitions/policies';
 import type { TFunction } from 'i18next';
 import type {
   DeliveryAgreementView,
@@ -302,9 +304,17 @@ const ItemBlock: React.FC<{
   // ── Release (the FIRST write) — buyer-only, over DRAFT lines ────────────────
   // `onRelease` present ⇒ the viewer is a buyer; the horizon control renders only
   // for an item that still has draft lines to transmit.
+  // OPS-3 — only a draft whose date has NOT gone can be released: the
+  // dispatcher refuses a past-dated one (`DELIVERY_RELEASE_BACKDATED`), so
+  // offering it was a button that could only refuse. A past-dated draft keeps
+  // Adjust, which is the remedy that refusal names.
   const draftDates = item.scheduleLines
-    .filter((l) => l.state === 'draft')
+    .filter((l) => l.state === 'draft' && !deliveryDateIsPast(l.releaseDate))
     .map((l) => l.releaseDate);
+  const hasPastDraft = item.scheduleLines.some(
+    (l) => l.state === 'draft' && deliveryDateIsPast(l.releaseDate),
+  );
+  const overTolerance = overToleranceOf(ledger);
   const canRelease = !!onRelease && holds(availability?.release) && draftDates.length > 0;
   const canAdjust = !!onAdjust && holds(availability?.adjust);
 
@@ -325,7 +335,8 @@ const ItemBlock: React.FC<{
   // to prevent.
   const releaseOfferable = !!availability?.release && draftDates.length > 0;
   const confirmOfferable = !!availability?.confirm && hasInferred;
-  const showActions = releaseOfferable || confirmOfferable;
+  // A past-dated draft still needs its column: that is where Adjust lives.
+  const showActions = releaseOfferable || confirmOfferable || (canAdjust && hasPastDraft);
   const [horizon, setHorizon] = useState('');
   const [pending, setPending] = useState<string | null>(null);
   // The line being adjusted, and its seeded values. Collapsed by `canAdjust` so
@@ -484,6 +495,28 @@ const ItemBlock: React.FC<{
         </div>
       </div>
 
+      {/* OPS-3 — THE FLAG the policy chip promises. Buyer-only, like the rest of
+          the governance detail. It reports; it does not stop a release (the
+          envelope is not a block — Decision D). */}
+      {showPolicyHistory && overTolerance && (
+        <div
+          role="alert"
+          data-testid="delivery-over-tolerance"
+          className="mb-5 bg-warning-soft border-l-2 border-warning rounded px-3 py-2 text-xs text-warning-hover flex items-start gap-2"
+        >
+          <AlertTriangle size={14} className="shrink-0 mt-0.5" />
+          <span>
+            {t('delivery.flag.overTolerance', {
+              over: formatNumber(overTolerance.overageQty),
+              uom,
+              released: formatNumber(ledger.releasedQty),
+              agreed: formatNumber(ledger.agreedTotalQty),
+              pct: formatPct(ledger.activePolicy.tolerancePct ?? 0),
+            })}
+          </span>
+        </div>
+      )}
+
       {/* Release toolbar (buyer-only, draft lines remaining) — the FRC/JIT
           "release the next N periods" motion. Solid primary = the reserved
           consequential-commit signal (DP2-BUTTON-01): a release transmits to the
@@ -609,9 +642,17 @@ const ItemBlock: React.FC<{
             ? (line, fv) => {
                 // Draft line → the Release action (buyer with a draft to transmit).
                 if (line.state === 'draft') {
+                  const pastDated = deliveryDateIsPast(line.releaseDate);
                   return (
                     <div className="flex items-center gap-1.5 flex-wrap">
-                      {canRelease ? (
+                      {pastDated ? (
+                        <span
+                          className="text-[11px] text-warning-hover"
+                          data-testid={`delivery-past-draft-${line.releaseSeq}`}
+                        >
+                          {t(canAdjust ? 'delivery.release.pastAdjust' : 'delivery.release.past')}
+                        </span>
+                      ) : canRelease ? (
                         <Button
                           variant="outline"
                           className="px-3 py-1.5 text-xs"

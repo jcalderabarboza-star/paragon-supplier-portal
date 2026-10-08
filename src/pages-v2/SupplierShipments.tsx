@@ -95,7 +95,9 @@ interface AsnForm {
   notes: string;
   confirmed: boolean;
   batchNumber: string;
-  lotNumber: string;
+  /** OPS-3 — one lot per order line, by position. It was a single field that
+   *  never left the page while the form showed one line of the order. */
+  lots: string[];
 }
 
 const DEFAULT_FORM: AsnForm = {
@@ -110,7 +112,21 @@ const DEFAULT_FORM: AsnForm = {
   notes: '',
   confirmed: false,
   batchNumber: '',
-  lotNumber: '',
+  lots: [],
+};
+
+// OPS-3 — the two numeric fields, read once. Blank is "not given" and is fine;
+// anything typed must be a number the dispatcher will store as typed.
+type OptionalNumber =
+  | { readonly kind: 'absent' }
+  | { readonly kind: 'ok'; readonly value: number }
+  | { readonly kind: 'refused' };
+
+const readOptionalNumber = (raw: string, whole: boolean): OptionalNumber => {
+  if (raw.trim() === '') return { kind: 'absent' };
+  const n = Number(raw);
+  if (!Number.isFinite(n) || n <= 0 || (whole && !Number.isInteger(n))) return { kind: 'refused' };
+  return { kind: 'ok', value: n };
 };
 
 // Batch E (DISCOVERY-REAL-SUBJECTS-01): this list was six real courier and
@@ -515,6 +531,37 @@ const ShipmentsList: React.FC<ShipmentsListProps> = ({
                               <dd className="text-text-primary">
                                 {asn.details.temperatureRequirement}
                               </dd>
+                              {/* OPS-3 — what was typed in the form, read back
+                                  from the stored notice. A dash where a field
+                                  was not given. */}
+                              <dt className="text-text-tertiary">
+                                {t('supplierShipments.wizard.review.field.shipDate')}
+                              </dt>
+                              <dd className="text-text-primary" data-testid={`asn-shipdate-${asn.asnNumber}`}>
+                                <Data>{fmtDate(asn.details.shipDate ?? '')}</Data>
+                              </dd>
+                              <dt className="text-text-tertiary">
+                                {t('supplierShipments.wizard.review.field.batch')}
+                              </dt>
+                              <dd className="text-text-primary" data-testid={`asn-batch-${asn.asnNumber}`}>
+                                <Data>{asn.details.batchNumber ?? '—'}</Data>
+                              </dd>
+                              <dt className="text-text-tertiary">
+                                {t('supplierShipments.wizard.review.field.packingList')}
+                              </dt>
+                              <dd className="text-text-primary">
+                                {asn.details.packingListName
+                                  ? t('supplierShipments.wizard.review.packingListName', {
+                                      name: asn.details.packingListName,
+                                    })
+                                  : '—'}
+                              </dd>
+                              <dt className="text-text-tertiary">
+                                {t('supplierShipments.wizard.review.field.notes')}
+                              </dt>
+                              <dd className="text-text-primary" data-testid={`asn-notes-${asn.asnNumber}`}>
+                                {asn.details.notes ?? '—'}
+                              </dd>
                             </dl>
                           </div>
                           <div className="bg-bg-surface border border-border-subtle rounded-md p-4">
@@ -797,13 +844,17 @@ const SupplierShipments: React.FC = () => {
     );
 
   const selectedPO = CONFIRMED_POS.find((p) => p.id === form.poId);
+  const packagesRead = readOptionalNumber(form.packages, true);
+  const weightRead = readOptionalNumber(form.weightKg, false);
   const step1Valid = form.poId !== '';
   const step2Valid =
     form.carrier !== '' &&
     form.trackingNumber !== '' &&
     form.shipDate !== '' &&
     form.eta !== '' &&
-    form.batchNumber !== '';
+    form.batchNumber !== '' &&
+    packagesRead.kind !== 'refused' &&
+    weightRead.kind !== 'refused';
   const step3Valid = form.confirmed;
   const isStepValid = (s: number): boolean =>
     s === 0 ? step1Valid : s === 1 ? step2Valid : step3Valid;
@@ -819,9 +870,19 @@ const SupplierShipments: React.FC = () => {
       eta: form.eta,
     };
     try {
+      // OPS-3 — EVERYTHING the review step shows is sent. Until now only
+      // carrier, tracking and ETA were, under a review step that read "all
+      // values shown will be transmitted".
       const createRes = await createAsnMutation.mutateAsync({
         poReference: selectedPO.poNumber,
         ...detail,
+        shipDate: form.shipDate,
+        batchNumber: form.batchNumber,
+        lotNumbers: selectedPO.lineItems.map((_, i) => (form.lots[i] ?? '').trim()),
+        ...(packagesRead.kind === 'ok' ? { packages: packagesRead.value } : {}),
+        ...(weightRead.kind === 'ok' ? { grossWeightKg: weightRead.value } : {}),
+        ...(form.notes.trim() ? { notes: form.notes.trim() } : {}),
+        ...(form.packingList ? { packingListName: form.packingList } : {}),
       });
       if (createRes.status === 'failed' || !createRes.entityId) {
         toast({
@@ -871,13 +932,14 @@ const SupplierShipments: React.FC = () => {
             </div>
           ) : (
             CONFIRMED_POS.map((po) => {
-              const mat = po.lineItems[0];
               const selected = form.poId === po.id;
               return (
                 <button
                   key={po.id}
                   type="button"
-                  onClick={() => updateForm({ poId: po.id })}
+                  onClick={() =>
+                    updateForm({ poId: po.id, lots: po.lineItems.map(() => '') })
+                  }
                   aria-pressed={selected}
                   className={`text-left rounded-md p-4 border transition-colors ${
                     selected
@@ -890,15 +952,22 @@ const SupplierShipments: React.FC = () => {
                       <Data as="div" className="text-sm font-bold text-text-primary">
                         {po.poNumber}
                       </Data>
-                      <div className="text-sm text-text-secondary mt-1">
-                        {mat?.description ?? '—'}
-                      </div>
+                      {/* OPS-3 — EVERY line of the order, with the quantity
+                          the supplier CONFIRMED. It showed the first line
+                          only, at the ordered quantity. */}
+                      <ul className="mt-1 space-y-0.5" data-testid={`asn-po-lines-${po.id}`}>
+                        {po.lineItems.map((li) => (
+                          <li key={li.id} className="text-sm text-text-secondary">
+                            {li.description}{' '}
+                            <span className="text-xs text-text-tertiary">
+                              {t('supplierShipments.wizard.select.qty')}{' '}
+                              <Data>{`${formatNumber(li.confirmedQty)} ${li.uom}`}</Data>
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
                     </div>
                     <div className="text-right shrink-0">
-                      <div className="text-xs text-text-tertiary">
-                        {t('supplierShipments.wizard.select.qty')}{' '}
-                        <Data>{mat ? `${formatNumber(mat.quantity)} ${mat.uom}` : '—'}</Data>
-                      </div>
                       <div className="text-xs text-text-tertiary">
                         {t('supplierShipments.wizard.select.delivery')}{' '}
                         <Data>{fmtDate(po.requestedDeliveryDate)}</Data>
@@ -1053,18 +1122,63 @@ const SupplierShipments: React.FC = () => {
                   className={inputClass}
                 />
               </div>
-              <div>
-                <label className={labelClass}>
-                  {t('supplierShipments.wizard.details.field.lot')}
-                </label>
-                <input
-                  type="text"
-                  placeholder={t('supplierShipments.placeholder.lot')}
-                  value={form.lotNumber}
-                  onChange={(e) => updateForm({ lotNumber: e.target.value })}
-                  className={inputClass}
-                />
+            </div>
+            {(packagesRead.kind === 'refused' || weightRead.kind === 'refused') && (
+              <div role="alert" data-testid="asn-number-refusal" className="text-xs text-danger">
+                {t('supplierShipments.wizard.details.numberRefused')}
               </div>
+            )}
+            {/* One lot per order line. The receiving dock reads the lot off the
+                line it is counting, so a single lot for a two-material
+                shipment named the wrong goods on one of them. */}
+            <div className="border border-border-subtle rounded-md overflow-hidden">
+              <table className="w-full text-xs" data-testid="asn-line-lots">
+                <thead className="bg-bg-hover text-text-tertiary uppercase tracking-wider">
+                  <tr>
+                    <th className="text-left px-3 py-2 font-semibold">
+                      {t('supplierShipments.lineItems.col.material')}
+                    </th>
+                    <th className="text-right px-3 py-2 font-semibold">
+                      {t('supplierShipments.wizard.details.col.shipping')}
+                    </th>
+                    <th className="text-left px-3 py-2 font-semibold">
+                      {t('supplierShipments.wizard.details.field.lot')}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(selectedPO?.lineItems ?? []).map((li, idx) => (
+                    <tr key={li.id} className="border-t border-border-subtle">
+                      <td className="px-3 py-2">
+                        <Data as="div" className="text-xs text-text-tertiary">
+                          {li.materialCode}
+                        </Data>
+                        <div className="text-text-primary mt-0.5">{li.description}</div>
+                      </td>
+                      <td className="px-3 py-2 text-right text-text-secondary whitespace-nowrap">
+                        <Data>{`${formatNumber(li.confirmedQty)} ${li.uom}`}</Data>
+                      </td>
+                      <td className="px-3 py-2">
+                        <input
+                          type="text"
+                          aria-label={`${t('supplierShipments.wizard.details.field.lot')} ${li.materialCode}`}
+                          placeholder={t('supplierShipments.placeholder.lot')}
+                          value={form.lots[idx] ?? ''}
+                          onChange={(e) => {
+                            const v = e.target.value;
+                            setForm((f) => {
+                              const lots = [...f.lots];
+                              lots[idx] = v;
+                              return { ...f, lots };
+                            });
+                          }}
+                          className={inputClass}
+                        />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </FormSection>
 
@@ -1097,6 +1211,9 @@ const SupplierShipments: React.FC = () => {
                   {form.packingList || t('supplierShipments.wizard.details.noFile')}
                 </span>
               </label>
+              <p className="mt-1 text-xs text-text-tertiary">
+                {t('supplierShipments.wizard.details.packingListNote')}
+              </p>
             </div>
             <div>
               <label className={labelClass}>
@@ -1129,20 +1246,25 @@ const SupplierShipments: React.FC = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {[
                 [t('supplierShipments.wizard.review.field.poNumber'), selectedPO?.poNumber ?? '—'],
-                [t('supplierShipments.wizard.review.field.material'), selectedPO?.lineItems[0]?.description ?? '—'],
-                [
-                  t('supplierShipments.wizard.review.field.quantity'),
-                  selectedPO?.lineItems[0]
-                    ? `${formatNumber(selectedPO.lineItems[0].quantity)} ${selectedPO.lineItems[0].uom}`
-                    : '—',
-                ],
                 [t('supplierShipments.wizard.review.field.carrier'), form.carrier],
                 [t('supplierShipments.wizard.review.field.tracking'), form.trackingNumber || '—'],
                 [t('supplierShipments.wizard.review.field.shipDate'), fmtDate(form.shipDate)],
                 [t('supplierShipments.wizard.review.field.eta'), form.eta ? fmtDate(form.eta) : '—'],
                 [t('supplierShipments.wizard.review.field.packages'), form.packages || '—'],
+                [
+                  t('supplierShipments.wizard.review.field.weight'),
+                  form.weightKg ? `${form.weightKg} kg` : '—',
+                ],
                 [t('supplierShipments.wizard.review.field.batch'), form.batchNumber || '—'],
-                [t('supplierShipments.wizard.review.field.lot'), form.lotNumber || '—'],
+                [
+                  t('supplierShipments.wizard.review.field.packingList'),
+                  form.packingList
+                    ? t('supplierShipments.wizard.review.packingListName', {
+                        name: form.packingList,
+                      })
+                    : '—',
+                ],
+                [t('supplierShipments.wizard.review.field.notes'), form.notes.trim() || '—'],
               ].map(([k, v]) => (
                 <div key={k} className="bg-bg-hover rounded-md px-3 py-2">
                   <div className="text-label text-text-tertiary uppercase mb-0.5">
@@ -1153,6 +1275,49 @@ const SupplierShipments: React.FC = () => {
                   </div>
                 </div>
               ))}
+            </div>
+            {/* Every order line, at the quantity that ships — the confirmed
+                one — with the lot typed for it. */}
+            <div className="border border-border-subtle rounded-md overflow-hidden">
+              <table className="w-full text-xs" data-testid="asn-review-lines">
+                <thead className="bg-bg-hover text-text-tertiary uppercase tracking-wider">
+                  <tr>
+                    <th className="text-left px-3 py-2 font-semibold">
+                      {t('supplierShipments.lineItems.col.material')}
+                    </th>
+                    <th className="text-right px-3 py-2 font-semibold">
+                      {t('supplierShipments.lineItems.col.ordered')}
+                    </th>
+                    <th className="text-right px-3 py-2 font-semibold">
+                      {t('supplierShipments.wizard.details.col.shipping')}
+                    </th>
+                    <th className="text-left px-3 py-2 font-semibold">
+                      {t('supplierShipments.lineItems.col.lot')}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(selectedPO?.lineItems ?? []).map((li, idx) => (
+                    <tr key={li.id} className="border-t border-border-subtle">
+                      <td className="px-3 py-2">
+                        <Data as="div" className="text-xs text-text-tertiary">
+                          {li.materialCode}
+                        </Data>
+                        <div className="text-text-primary mt-0.5">{li.description}</div>
+                      </td>
+                      <td className="px-3 py-2 text-right text-text-secondary whitespace-nowrap">
+                        <Data>{`${formatNumber(li.quantity)} ${li.uom}`}</Data>
+                      </td>
+                      <td className="px-3 py-2 text-right text-text-primary font-semibold whitespace-nowrap">
+                        <Data>{`${formatNumber(li.confirmedQty)} ${li.uom}`}</Data>
+                      </td>
+                      <td className="px-3 py-2 text-text-secondary">
+                        <Data>{(form.lots[idx] ?? '').trim() || '—'}</Data>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </FormSection>
 

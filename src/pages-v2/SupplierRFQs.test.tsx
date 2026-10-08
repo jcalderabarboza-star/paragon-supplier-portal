@@ -423,7 +423,9 @@ describe('SupplierRFQs — the minimum order quantity stops being dropped', () =
     await waitFor(() => expect(minted()).toHaveLength(1));
     // Every quote on this surface honestly lacks a minimum — the field was
     // dropped for all of them until now — so the default sentence is plural.
-    expect((await screen.findAllByText('Same as RFQ qty')).length).toBeGreaterThan(0);
+    // OPS-3 — EDITED ON PURPOSE: the copy read "Same as RFQ qty"; on the
+    // supplier side the thing quoted on is the event, whatever its stage.
+    expect((await screen.findAllByText('Same as event qty')).length).toBeGreaterThan(0);
     // And the shape this replaces: a fabricated quantity of zero.
     expect(screen.queryByText(/^0 PCS$/)).not.toBeInTheDocument();
   });
@@ -434,7 +436,7 @@ describe('SupplierRFQs — the minimum order quantity stops being dropped', () =
     // A placeholder vanishes on the first keystroke; the hint is still there,
     // which is when "blank means same as RFQ qty" becomes useful to read.
     expect(
-      screen.getByText(/Leave blank if you can supply the RFQ quantity with no minimum/i),
+      screen.getByText(/Leave blank if you can supply the event quantity with no minimum/i),
     ).toBeInTheDocument();
   });
 

@@ -1,7 +1,7 @@
 import { afterEach } from 'vitest';
 import { Routes, Route } from 'react-router-dom';
 import { screen, fireEvent, waitFor } from '@testing-library/react';
-import { renderWithProviders, SUPPLIER, BUYER_NAMED_COMPLIANCE } from '../test/test-utils';
+import { renderWithProviders, SUPPLIER, BUYER_NAMED, BUYER_NAMED_COMPLIANCE } from '../test/test-utils';
 import { mockDataService } from '../services/data/mock/mockDataService';
 import { withChaos } from '../services/data/mock/withChaos';
 import { schedulingAgreementStore } from '../services/delivery/stores/schedulingAgreementStore';
@@ -57,18 +57,65 @@ describe('BuyerContractDetail — nested contract detail route', () => {
     expect(await screen.findByText('Missed')).toBeInTheDocument();
   });
 
-  it('a buyer can release a draft line — it flips to Released (portal, not SAP)', async () => {
-    at('/buyer/contracts/ctr-013');
+  // ⚠️ OPS-3 — REWRITTEN ON PURPOSE, AND WHAT IT USED TO ASSERT WAS NEVER TRUE.
+  // It rendered ctr-013 as an UNATTRIBUTED seat, clicked Release on a draft line
+  // dated 2026-04-01, and waited for "one fewer Release button". Both of that
+  // line's refusals applied — the seat names nobody, and the date has gone — so
+  // nothing was ever released. The count dropped to one only while the clicked
+  // button read "Releasing…", and `waitFor` caught that moment. The store was
+  // never read. It is now two specs: the past-dated lines offer no Release at
+  // all, and a real release is driven on a line that can take one and read back
+  // from the store.
+  it('a past-dated draft line offers no Release — it says the date has passed, and keeps Adjust', async () => {
+    at('/buyer/contracts/ctr-013', BUYER_NAMED);
     await screen.findByText(/CTR-2026-021/);
     fireEvent.click(screen.getByRole('tab', { name: /Delivery Agreements/ }));
-    // sa-0002 item A has two DRAFT lines (seqs 1–2) → two per-line Release buttons.
-    const before = await screen.findAllByRole('button', { name: 'Release' });
-    expect(before).toHaveLength(2);
-    fireEvent.click(before[0]);
-    // The write invalidates the read → re-derive → one draft became Released, so
-    // one fewer per-line Release button remains.
+    // sa-0002 item A: seqs 1–2 are DRAFT and dated before the declared present.
+    expect(await screen.findByTestId('delivery-past-draft-1')).toHaveTextContent(
+      'Date has passed — adjust the date first',
+    );
+    expect(screen.getByTestId('delivery-past-draft-2')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Release' })).not.toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: 'Adjust' })).toHaveLength(2);
+  });
+
+  it('⚠️ an item whose ONLY drafts are past-dated still shows its action column — that is where Adjust lives', async () => {
+    // A mutation probe found this unasserted: on ctr-013 the column also shows
+    // for an unrelated reason (a match awaits confirmation), so dropping the
+    // past-draft clause changed nothing there. ctr-002 (sa-1005) is all-draft
+    // with nothing to confirm; every date is moved into the past here, so the
+    // column can only be showing because of those drafts.
+    schedulingAgreementStore.update('sa-1005', (a) => ({
+      ...a,
+      items: a.items.map((i) => ({
+        ...i,
+        scheduleLines: i.scheduleLines.map((l) => ({ ...l, releaseDate: '2026-07-01' })),
+      })),
+    }));
+    at('/buyer/contracts/ctr-002', BUYER_NAMED);
+    fireEvent.click(await screen.findByRole('tab', { name: /Delivery Agreements/ }));
+    expect(await screen.findAllByTestId(/^delivery-past-draft-/)).toHaveLength(4);
+    expect(screen.getAllByRole('button', { name: 'Adjust' })).toHaveLength(4);
+    expect(screen.queryByRole('button', { name: 'Release' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Confirm match' })).not.toBeInTheDocument();
+  });
+
+  it('a buyer can release a draft line that is not past — the STORE shows it released', async () => {
+    // ctr-005 (sa-1006): seq 4 is DRAFT and due after the declared present.
+    const lineOf = () =>
+      schedulingAgreementStore
+        .all()
+        .find((a) => a.id === 'sa-1006')!
+        .items[0].scheduleLines.find((l) => l.releaseSeq === 4)!;
+    expect(lineOf().state).toBe('draft');
+    at('/buyer/contracts/ctr-005', BUYER_NAMED);
+    fireEvent.click(await screen.findByRole('tab', { name: /Delivery Agreements/ }));
+    const release = await screen.findAllByRole('button', { name: 'Release' });
+    expect(release).toHaveLength(1);
+    fireEvent.click(release[0]);
+    await waitFor(() => expect(lineOf().state).toBe('released'));
     await waitFor(() =>
-      expect(screen.getAllByRole('button', { name: 'Release' })).toHaveLength(1),
+      expect(screen.queryByRole('button', { name: 'Release' })).not.toBeInTheDocument(),
     );
     // The honest per-line marker is present on released rows.
     expect(screen.getAllByText(/Portal release — not yet in S\/4HANA/).length).toBeGreaterThan(0);

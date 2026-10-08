@@ -133,7 +133,7 @@ export const widgetEn: Record<string, string> = {
   'widget.invoicePayment.flag.withOverdue': '{{count}} unpaid · {{overdue}} overdue',
   'widget.invoicePayment.flag.awaiting': '{{count}} awaiting payment',
   // — RFQs to respond (Supplier) —
-  'widget.rfqRespond.title': 'RFQs to respond',
+  'widget.rfqRespond.title': 'Sourcing events to respond to',
   'widget.rfqRespond.action': 'Respond',
   'widget.rfqRespond.flag.withLate': '{{count}} open · {{late}} past deadline',
   'widget.rfqRespond.flag.toRespond': '{{count}} to respond',
@@ -281,7 +281,7 @@ export const widgetId: Record<string, string> = {
   'widget.invoicePayment.flag.withOverdue': '{{count}} belum dibayar · {{overdue}} jatuh tempo',
   'widget.invoicePayment.flag.awaiting': '{{count}} menunggu pembayaran',
   // — RFQs to respond (Supplier) —
-  'widget.rfqRespond.title': 'RFQ untuk direspons',
+  'widget.rfqRespond.title': 'Acara sourcing untuk direspons',
   'widget.rfqRespond.action': 'Respons',
   'widget.rfqRespond.flag.withLate': '{{count}} terbuka · {{late}} lewat tenggat',
   'widget.rfqRespond.flag.toRespond': '{{count}} untuk direspons',

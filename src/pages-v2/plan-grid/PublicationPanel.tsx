@@ -37,6 +37,7 @@ import { useCurrentIdentity } from '../../context/CurrentIdentityContext';
 import { useVerbAvailabilities } from '../../hooks/useVerbAvailability';
 import { useRefusalText } from '../../hooks/useRefusalText';
 import { formatDate, formatNumber } from '../../lib/format';
+import type { TFunction } from 'i18next';
 import { planningSupplierName } from '../../services/planning/somoFixture';
 import { usePublicationAct } from '../../services/query/commandHooks';
 import { usePublicationWorkspace } from '../../services/query/sdcBuyerHooks';
@@ -69,6 +70,11 @@ export function allocationCoverage(d: PublicationDocument): { allocated: number;
   const split = new Set(d.lines.map((l) => totalKey(l.materialCode, l.periodBucket)));
   return { allocated: keys.filter((k) => split.has(k)).length, total: keys.length };
 }
+
+// OPS-3 — a counted noun in the form its number takes ("1 supplier line").
+export type CountedUnit = 'materialPeriod' | 'supplierLine' | 'firmAwaits';
+export const countedUnit = (t: TFunction, kind: CountedUnit, count: number): string =>
+  t(`planGrid.publication.unit.${kind}`, { count, n: formatNumber(count) });
 
 const PublicationPanel: React.FC<{
   grain: BucketGrain;
@@ -158,6 +164,8 @@ const PublicationPanel: React.FC<{
       return r.status === 'failed' ? (r.reason ?? 'failed') : null;
     });
 
+  const unit = (kind: CountedUnit, count: number): string => countedUnit(t, kind, count);
+
   const blockerText = (b: PublishBlocker): string => {
     if (b.kind === 'NO_LINES') return t('planGrid.publication.blocker.NO_LINES');
     const lines = b.lines
@@ -165,7 +173,12 @@ const PublicationPanel: React.FC<{
       .map((l) => `${l.materialCode} ${l.periodBucket} ${supplierName(l.supplierId)}`)
       .join(', ');
     const more = b.lines.length > 3 ? t('planGrid.publication.andMore', { n: formatNumber(b.lines.length - 3) }) : '';
-    return t(`planGrid.publication.blocker.${b.kind}`, { n: formatNumber(b.lines.length), lines: lines + more });
+    // `count` selects the plural form where the key has one (UNSIGNED_FIRM).
+    return t(`planGrid.publication.blocker.${b.kind}`, {
+      count: b.lines.length,
+      n: formatNumber(b.lines.length),
+      lines: lines + more,
+    });
   };
 
   if (ws.isLoading) return null;
@@ -196,8 +209,8 @@ const PublicationPanel: React.FC<{
             ? t('planGrid.publication.summaryDraft', {
                 id: draft.publicationId,
                 allocated: formatNumber(cover.allocated),
-                total: formatNumber(cover.total),
-                firm: formatNumber(unsignedFirmLines(draft.lines).length),
+                total: unit('materialPeriod', cover.total),
+                firm: unit('firmAwaits', unsignedFirmLines(draft.lines).length),
               })
             : t('planGrid.publication.summaryNoDraft')}
           {current && <> · {t('planGrid.publication.current', { id: current.publicationId, version: current.planVersion })}</>}
@@ -301,6 +314,7 @@ const DraftBody: React.FC<{
   const [asking, setAsking] = useState(false);
   const cover = allocationCoverage(draft);
   const unsigned = unsignedFirmLines(draft.lines);
+  const unit = (kind: CountedUnit, count: number): string => countedUnit(t, kind, count);
   const blockers = publishBlockers(draft.lines);
   const due = responseDueAtFor(sdcClock.now());
   return (
@@ -328,9 +342,9 @@ const DraftBody: React.FC<{
 
       <p className="text-xs text-text-secondary" data-testid="publication-coverage">
         {t('planGrid.publication.coverage', {
-          allocated: formatNumber(cover.allocated),
+          allocated: unit('materialPeriod', cover.allocated),
           unallocated: formatNumber(cover.total - cover.allocated),
-          lines: formatNumber(draft.lines.length),
+          lines: unit('supplierLine', draft.lines.length),
         })}
         {draft.carriedFrom && <> · {t('planGrid.publication.carriedFrom', { id: draft.carriedFrom })}</>}
       </p>

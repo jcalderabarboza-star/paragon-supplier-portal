@@ -170,6 +170,147 @@ const poConfirmQtyWithinOrdered: PolicyHookFn = ({ entityId, payload, target }) 
 
 bindPolicyHook(POLICY_HOOKS.PO_CONFIRM_QTY_WITHIN_ORDERED, poConfirmQtyWithinOrdered);
 
+// ── OPS-3 · WHAT THE SUPPLIER TYPED ARRIVES ──────────────────────────────────
+// The confirm form has always asked for a delivery date and a note; until OPS-3
+// neither left the page. They are carried now, so they are judged here first: a
+// hand-made dispatch must not be able to store a date no calendar holds.
+//
+// BOTH ARE OPTIONAL, deliberately. A confirmation that names no date commits to
+// none, and the stored date is left as it was — the dispatcher does not invent
+// "as requested" on the supplier's behalf.
+
+/** A real calendar day written YYYY-MM-DD. `2026-02-30` is refused: `Date`
+ *  rolls it into March, so the round trip is what proves the day exists — and
+ *  it proves the SHAPE too, since only a value written exactly that way comes
+ *  back as itself. (A shape test stood in front of it; a mutation probe showed
+ *  it decided nothing the round trip did not.) */
+export const isCalendarDay = (value: unknown): value is string => {
+  if (typeof value !== 'string') return false;
+  const d = new Date(`${value}T00:00:00.000Z`);
+  return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === value;
+};
+
+/** The longest note the confirm form carries. */
+export const PO_CONFIRM_NOTE_MAX = 500;
+
+const poConfirmTermsWellFormed: PolicyHookFn = ({ entityId, payload, target }) => {
+  const po = target.readEntity(entityId) as PurchaseOrder | null;
+  if (!po) return { ok: false, reason: 'entity missing' };
+  const date = payload.confirmedDeliveryDate;
+  if (date !== undefined && date !== '') {
+    if (!isCalendarDay(date)) {
+      return {
+        ok: false,
+        reason:
+          'PO_CONFIRM_DATE_INVALID: the confirmed delivery date is not a calendar ' +
+          'day the platform can read (YYYY-MM-DD).',
+      };
+    }
+    if (date < po.orderDate) {
+      return {
+        ok: false,
+        reason:
+          `PO_CONFIRM_DATE_BEFORE_ORDER: ${date} is before the order date ` +
+          `(${po.orderDate}). A delivery cannot be confirmed for a day before the ` +
+          'order was placed.',
+      };
+    }
+  }
+  const note = payload.confirmationNote;
+  if (note !== undefined && (typeof note !== 'string' || note.length > PO_CONFIRM_NOTE_MAX)) {
+    return {
+      ok: false,
+      reason:
+        `PO_CONFIRM_NOTE_INVALID: the confirmation note must be text of at most ` +
+        `${PO_CONFIRM_NOTE_MAX} characters.`,
+    };
+  }
+  return { ok: true };
+};
+
+bindPolicyHook(POLICY_HOOKS.PO_CONFIRM_TERMS_WELL_FORMED, poConfirmTermsWellFormed);
+
+/** The parts of a ship notice the supplier types beyond carrier, tracking and
+ *  ETA. One reader, used by the hook below and by the target that stores them,
+ *  so what is judged and what is stored cannot be two readings. */
+export interface AsnTypedDetails {
+  readonly packages?: number;
+  readonly grossWeightKg?: number;
+  readonly shipDate?: string;
+  readonly batchNumber?: string;
+  readonly notes?: string;
+  readonly packingListName?: string;
+  /** One lot per PO line, by position. A missing or blank entry is no lot. */
+  readonly lotNumbers?: readonly string[];
+}
+
+export type AsnDetailsRead =
+  | { readonly ok: true; readonly details: AsnTypedDetails }
+  | { readonly ok: false; readonly field: string };
+
+const optionalText = (v: unknown): v is string | undefined =>
+  v === undefined || typeof v === 'string';
+
+/** Read the typed details off a payload, or name the first field that cannot be
+ *  stored as given. Absent is fine everywhere; malformed is not. */
+export function readAsnTypedDetails(payload: Record<string, unknown>): AsnDetailsRead {
+  const { packages, grossWeightKg, shipDate, batchNumber, notes, packingListName, lotNumbers } =
+    payload;
+  if (
+    packages !== undefined &&
+    !(typeof packages === 'number' && Number.isInteger(packages) && packages > 0)
+  ) {
+    return { ok: false, field: 'packages' };
+  }
+  if (
+    grossWeightKg !== undefined &&
+    !(typeof grossWeightKg === 'number' && Number.isFinite(grossWeightKg) && grossWeightKg > 0)
+  ) {
+    return { ok: false, field: 'grossWeightKg' };
+  }
+  if (shipDate !== undefined && shipDate !== '' && !isCalendarDay(shipDate)) {
+    return { ok: false, field: 'shipDate' };
+  }
+  if (!optionalText(batchNumber)) return { ok: false, field: 'batchNumber' };
+  if (!optionalText(notes)) return { ok: false, field: 'notes' };
+  if (!optionalText(packingListName)) return { ok: false, field: 'packingListName' };
+  if (
+    lotNumbers !== undefined &&
+    !(Array.isArray(lotNumbers) && lotNumbers.every((l) => typeof l === 'string'))
+  ) {
+    return { ok: false, field: 'lotNumbers' };
+  }
+  return {
+    ok: true,
+    details: {
+      ...(packages !== undefined ? { packages: packages as number } : {}),
+      ...(grossWeightKg !== undefined ? { grossWeightKg: grossWeightKg as number } : {}),
+      ...(typeof shipDate === 'string' && shipDate ? { shipDate } : {}),
+      ...(typeof batchNumber === 'string' && batchNumber.trim()
+        ? { batchNumber: batchNumber.trim() }
+        : {}),
+      ...(typeof notes === 'string' && notes.trim() ? { notes: notes.trim() } : {}),
+      ...(typeof packingListName === 'string' && packingListName ? { packingListName } : {}),
+      ...(Array.isArray(lotNumbers) ? { lotNumbers: lotNumbers as string[] } : {}),
+    },
+  };
+}
+
+const asnDetailsWellFormed: PolicyHookFn = ({ payload }) => {
+  const read = readAsnTypedDetails(payload);
+  return read.ok
+    ? { ok: true }
+    : {
+        ok: false,
+        reason:
+          `ASN_DETAILS_INVALID: ${read.field} cannot be stored as given. Packages is a ` +
+          'whole number above zero, gross weight a number above zero, the ship date a ' +
+          'calendar day (YYYY-MM-DD), and lots one text per order line.',
+      };
+};
+
+bindPolicyHook(POLICY_HOOKS.ASN_DETAILS_WELL_FORMED, asnDetailsWellFormed);
+
 // — GR header disposition = ROLLUP of the per-line sub-flow (census G2). Each
 //   disposition verb is legal ONLY when the lines roll up to its terminal, so
 //   the header is provably derived, never asserted. Reads the GR's own lines
@@ -2177,6 +2318,13 @@ bindPolicyHook(POLICY_HOOKS.RR_REVIEW_ACTOR_ATTRIBUTED, reviewActorAttributed);
 function isNotPast(day: string): boolean {
   return day >= DECLARED_PRESENT;
 }
+
+/**
+ * OPS-3 — the SAME predicate, for the surface. A draft line whose date has gone
+ * offered a Release button that this hook always refused; the card now asks
+ * this before offering it, so the button and the refusal cannot disagree.
+ */
+export const deliveryDateIsPast = (day: string): boolean => !isNotPast(day);
 
 /**
  * `t_delivery_release` — **A COMMITMENT CANNOT BE MADE IN THE PAST.**

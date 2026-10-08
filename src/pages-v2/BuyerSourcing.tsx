@@ -2265,7 +2265,18 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                 what the stage asks and where it is written. The detail is the
                 guide's; three paragraphs under a radio group were not read. */}
             <p className="text-xs text-text-tertiary mt-1.5" data-testid="rfq-start-stage-note">
-              {t('sourcing.wizard.stage.guide')}
+              {t('sourcing.wizard.stage.guide')}{' '}
+              {/* OPS-3 — the sentence named the guide and gave no way to it.
+                  A new tab, so the entries in this wizard are kept. */}
+              <a
+                href="#/buyer/process-flows?flow=rfq"
+                target="_blank"
+                rel="noreferrer"
+                className="text-action hover:underline"
+                data-testid="rfq-start-stage-guide-link"
+              >
+                {t('sourcing.wizard.stage.guideLink')}
+              </a>
             </p>
           </div>
           <div>

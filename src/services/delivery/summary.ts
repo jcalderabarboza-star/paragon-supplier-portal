@@ -23,6 +23,7 @@
 
 import type { DeliveryAgreementView, DeliveryItemView } from './views';
 import type { ReleaseType } from './types';
+import { overToleranceOf } from './ledger';
 
 /** The primary bucket a row falls in — exception-first (worst wins). `draft` is a
  *  DISTINCT state (nothing released yet), never folded into `onTrack`: an all-draft
@@ -59,6 +60,9 @@ export interface AgreementItemSummary {
   readonly releasedPct: number;
   /** The soonest UPCOMING obligation (≥ now), or null when nothing is upcoming. */
   readonly nextDue: NextDue | null;
+  /** OPS-3 — the quantity released beyond the agreed total when the governed
+   *  tolerance is breached; null when it is not. */
+  readonly overToleranceQty: number | null;
   readonly counts: AgreementItemCounts;
   readonly bucket: AgreementItemBucket;
   /** Worst-first sort key (higher = more urgent). Derived, never stored. */
@@ -166,6 +170,7 @@ export function summarizeAgreementItem(
     releaseType: item.releaseType,
     releasedPct,
     nextDue,
+    overToleranceQty: overToleranceOf(ledger)?.overageQty ?? null,
     counts,
     bucket,
     severity,

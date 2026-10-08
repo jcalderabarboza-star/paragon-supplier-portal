@@ -251,6 +251,16 @@ const BuyerDeliveryAgreements: React.FC = () => {
                   <div className="text-[10px] text-text-tertiary mt-0.5">
                     {countsCaption(r.counts, r.bucket)}
                   </div>
+                  {r.overToleranceQty !== null && (
+                    <div
+                      className="text-[10px] text-warning-hover font-semibold mt-0.5"
+                      data-testid={`rollup-over-tolerance-${r.agreementId}-${r.itemSeq}`}
+                    >
+                      {t('delivery.flag.overToleranceShort', {
+                        over: formatNumber(r.overToleranceQty),
+                      })}
+                    </div>
+                  )}
                 </TableCell>
                 <TableCell className="text-right">
                   <ChevronRight size={16} className="text-text-tertiary inline" />

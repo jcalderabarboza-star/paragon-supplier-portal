@@ -135,6 +135,11 @@ export const supplierShipmentsEn: Record<string, string> = {
   'supplierShipments.wizard.details.field.weight': 'Total weight (KG)',
   'supplierShipments.wizard.details.field.batch': 'Batch number *',
   'supplierShipments.wizard.details.field.lot': 'Lot number',
+  'supplierShipments.wizard.details.col.shipping': 'Shipping (confirmed)',
+  'supplierShipments.wizard.details.numberRefused':
+    'Packages must be a whole number above zero and weight a number above zero, typed without separators — or leave them blank.',
+  'supplierShipments.wizard.details.packingListNote':
+    'Only the file name is recorded. The portal does not store the file — send the packing list with the goods.',
   'supplierShipments.wizard.details.docs.eyebrow': 'Documents & notes',
   'supplierShipments.wizard.details.docs.title': 'Supporting documents',
   'supplierShipments.wizard.details.docs.desc':
@@ -150,7 +155,7 @@ export const supplierShipmentsEn: Record<string, string> = {
   'supplierShipments.wizard.review.summary.eyebrow': 'Review',
   'supplierShipments.wizard.review.summary.title': 'ASN summary',
   'supplierShipments.wizard.review.summary.desc':
-    'All values shown will be transmitted to Paragon.',
+    'All values shown will be transmitted to Paragon and stored on the ship notice.',
   'supplierShipments.wizard.review.field.poNumber': 'PO number',
   'supplierShipments.wizard.review.field.material': 'Material',
   'supplierShipments.wizard.review.field.quantity': 'Quantity',
@@ -160,7 +165,10 @@ export const supplierShipmentsEn: Record<string, string> = {
   'supplierShipments.wizard.review.field.eta': 'ETA',
   'supplierShipments.wizard.review.field.packages': 'Packages',
   'supplierShipments.wizard.review.field.batch': 'Batch number',
-  'supplierShipments.wizard.review.field.lot': 'Lot number',
+  'supplierShipments.wizard.review.field.weight': 'Gross weight',
+  'supplierShipments.wizard.review.field.packingList': 'Packing list',
+  'supplierShipments.wizard.review.field.notes': 'Handling notes',
+  'supplierShipments.wizard.review.packingListName': '{{name}} (file name only)',
   'supplierShipments.wizard.review.confirm':
     'I confirm all shipment details are accurate and the goods match the purchase order specifications.',
   // — Input placeholders (example codes kept verbatim) —
@@ -295,6 +303,11 @@ export const supplierShipmentsId: Record<string, string> = {
   'supplierShipments.wizard.details.field.weight': 'Total berat (KG)',
   'supplierShipments.wizard.details.field.batch': 'Nomor batch *',
   'supplierShipments.wizard.details.field.lot': 'Nomor lot',
+  'supplierShipments.wizard.details.col.shipping': 'Dikirim (dikonfirmasi)',
+  'supplierShipments.wizard.details.numberRefused':
+    'Jumlah paket harus bilangan bulat di atas nol dan berat harus angka di atas nol, diketik tanpa pemisah — atau biarkan kosong.',
+  'supplierShipments.wizard.details.packingListNote':
+    'Hanya nama berkas yang dicatat. Portal tidak menyimpan berkasnya — kirim daftar kemasan bersama barang.',
   'supplierShipments.wizard.details.docs.eyebrow': 'Dokumen & catatan',
   'supplierShipments.wizard.details.docs.title': 'Dokumen pendukung',
   'supplierShipments.wizard.details.docs.desc':
@@ -311,7 +324,7 @@ export const supplierShipmentsId: Record<string, string> = {
   'supplierShipments.wizard.review.summary.eyebrow': 'Tinjau',
   'supplierShipments.wizard.review.summary.title': 'Ringkasan ASN',
   'supplierShipments.wizard.review.summary.desc':
-    'Semua nilai yang ditampilkan akan dikirim ke Paragon.',
+    'Semua nilai yang ditampilkan akan dikirim ke Paragon dan disimpan pada pemberitahuan pengiriman.',
   'supplierShipments.wizard.review.field.poNumber': 'Nomor PO',
   'supplierShipments.wizard.review.field.material': 'Material',
   'supplierShipments.wizard.review.field.quantity': 'Kuantitas',
@@ -321,7 +334,10 @@ export const supplierShipmentsId: Record<string, string> = {
   'supplierShipments.wizard.review.field.eta': 'ETA',
   'supplierShipments.wizard.review.field.packages': 'Paket',
   'supplierShipments.wizard.review.field.batch': 'Nomor batch',
-  'supplierShipments.wizard.review.field.lot': 'Nomor lot',
+  'supplierShipments.wizard.review.field.weight': 'Berat kotor',
+  'supplierShipments.wizard.review.field.packingList': 'Daftar kemasan',
+  'supplierShipments.wizard.review.field.notes': 'Catatan penanganan',
+  'supplierShipments.wizard.review.packingListName': '{{name}} (hanya nama berkas)',
   'supplierShipments.wizard.review.confirm':
     'Saya mengonfirmasi semua detail pengiriman akurat dan barang sesuai dengan spesifikasi pesanan pembelian.',
   // — Input placeholders (example codes kept verbatim) —

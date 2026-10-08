@@ -50,12 +50,19 @@ import {
 // GL-1 - the glossary destination for this surface's refusals.
 import GlossaryTermChip from '../components/ui-v2/GlossaryTermChip';
 import { useRefusalText } from '../hooks/useRefusalText';
-import { formatIDR, formatNumber } from '../lib/format';
+import { formatIDR, formatNumber, formatDate, formatDateTime } from '../lib/format';
 
 type TabKey = 'all' | 'action' | 'progress' | 'completed';
 type PanelMode = 'detail' | 'editing' | 'confirmed' | 'change-request';
 
 const ACTION_STATUSES: POStatus[] = [POStatus.SENT, POStatus.ACKNOWLEDGED];
+// OPS-3 — the states an order holds once a confirmation is on it.
+const CONFIRMED_ONWARD: POStatus[] = [
+  POStatus.CONFIRMED,
+  POStatus.PARTIALLY_DELIVERED,
+  POStatus.DELIVERED,
+  POStatus.CLOSED,
+];
 const PROGRESS_STATUSES: POStatus[] = [
   POStatus.CONFIRMED,
   POStatus.PARTIALLY_DELIVERED,
@@ -147,7 +154,6 @@ const SupplierOrders: React.FC = () => {
   const [deliveryDate, setDeliveryDate] = useState('');
   const [notes, setNotes] = useState('');
   const [changeText, setChangeText] = useState('');
-  const [confirmedAt, setConfirmedAt] = useState<string>('');
 
   const supplierQuery = useCurrentSupplier();
   const posQuery = usePurchaseOrders();
@@ -267,7 +273,6 @@ const SupplierOrders: React.FC = () => {
     setDeliveryDate(po.requestedDeliveryDate);
     setNotes('');
     setChangeText('');
-    setConfirmedAt('');
     setPanelMode(mode);
   };
 
@@ -290,7 +295,14 @@ const SupplierOrders: React.FC = () => {
     // does not come through this surface.
     if (!qtysRead.ok || !allBoundsOk) return;
     confirmMutation.mutate(
-      { poId: po.id, confirmedQuantities: [...qtysRead.quantities] },
+      {
+        poId: po.id,
+        confirmedQuantities: [...qtysRead.quantities],
+        // OPS-3 — the date and the note leave the page. They used to stay in
+        // component state and were shown back as if they had been sent.
+        confirmedDeliveryDate: deliveryDate,
+        confirmationNote: notes,
+      },
       {
         onSuccess: (result) => {
           if (result.status === 'failed') {
@@ -301,11 +313,6 @@ const SupplierOrders: React.FC = () => {
             });
             return;
           }
-          const time = new Date().toLocaleTimeString('en-GB', {
-            hour: '2-digit',
-            minute: '2-digit',
-          });
-          setConfirmedAt(time);
           setPanelMode('confirmed');
           toast({
             variant: 'success',
@@ -379,6 +386,12 @@ const SupplierOrders: React.FC = () => {
     totalConfirmedQty !== null && totalConfirmedQty !== orderedTotalQty;
   const hasDateChange =
     selected !== null && deliveryDate !== selected.requestedDeliveryDate;
+
+  // OPS-3 — a confirmation is on the order once it has left the states that
+  // still await one. Read from the LIVE row, so it turns on the moment the
+  // confirm lands.
+  const showsConfirmation =
+    selected !== null && CONFIRMED_ONWARD.includes((selectedLive ?? selected).status);
 
   const panelTitle = selected ? t('supplierOrders.panel.title', { poNumber: selected.poNumber }) : '';
   // ⚠️ **THE LABEL IS SEAT-DERIVED, BECAUSE THE ACT BEHIND IT ALREADY WAS.**
@@ -803,6 +816,37 @@ const SupplierOrders: React.FC = () => {
                     {selected.channel}
                   </dd>
                 </div>
+                {/* OPS-3 — what this supplier confirmed, read from the STORED
+                    order so it is the same answer the buyer sees. Shown once
+                    the order has left the states that still await a
+                    confirmation; the time of the act only when one is on
+                    record (a seeded order carries none). */}
+                {showsConfirmation && (
+                  <div data-testid="po-confirmed-delivery">
+                    <dt className="text-text-tertiary">
+                      {t('supplierOrders.panel.confirmedDeliveryDate')}
+                    </dt>
+                    <dd className="text-text-primary font-medium">
+                      <Data>{formatDate((selectedLive ?? selected).confirmedDeliveryDate)}</Data>
+                    </dd>
+                  </div>
+                )}
+                {showsConfirmation && (selectedLive ?? selected).confirmedAt && (
+                  <div data-testid="po-confirmed-at">
+                    <dt className="text-text-tertiary">{t('supplierOrders.panel.confirmedOn')}</dt>
+                    <dd className="text-text-primary font-medium">
+                      <Data>{formatDateTime((selectedLive ?? selected).confirmedAt)}</Data>
+                    </dd>
+                  </div>
+                )}
+                {showsConfirmation && (selectedLive ?? selected).confirmationNote && (
+                  <div className="col-span-2" data-testid="po-confirmation-note">
+                    <dt className="text-text-tertiary">{t('supplierOrders.panel.notesLabel')}</dt>
+                    <dd className="text-text-primary">
+                      {(selectedLive ?? selected).confirmationNote}
+                    </dd>
+                  </div>
+                )}
               </dl>
             </section>
 
@@ -822,7 +866,7 @@ const SupplierOrders: React.FC = () => {
                       <th className="text-right px-3 py-2 font-semibold">
                         {t('supplierOrders.panel.col.ordered')}
                       </th>
-                      {effectivePanelMode === 'editing' && (
+                      {(effectivePanelMode === 'editing' || showsConfirmation) && (
                         <th className="text-right px-3 py-2 font-semibold">
                           {t('supplierOrders.panel.col.confirmed')}
                         </th>
@@ -847,6 +891,19 @@ const SupplierOrders: React.FC = () => {
                         <td className="px-3 py-2 text-right text-text-secondary whitespace-nowrap">
                           <Data>{formatNumber(li.quantity)} {li.uom}</Data>
                         </td>
+                        {effectivePanelMode !== 'editing' && showsConfirmation && (
+                          <td
+                            className="px-3 py-2 text-right text-text-secondary whitespace-nowrap"
+                            data-testid={`po-line-confirmed-${idx}`}
+                          >
+                            <Data>
+                              {formatNumber(
+                                (selectedLive ?? selected).lineItems[idx]?.confirmedQty ?? 0,
+                              )}{' '}
+                              {li.uom}
+                            </Data>
+                          </td>
+                        )}
                         {effectivePanelMode === 'editing' && (
                           <td className="px-3 py-2 text-right">
                             {/* Ruling 6.2: text + inputMode, never type="number" —
@@ -987,7 +1044,7 @@ const SupplierOrders: React.FC = () => {
                     <div className="text-xs text-text-secondary">
                       <Data>{selected.poNumber}</Data> ·{' '}
                       {t('supplierOrders.panel.confirmedAt')}{' '}
-                      <Data>{confirmedAt}</Data>
+                      <Data>{formatDateTime((selectedLive ?? selected).confirmedAt)}</Data>
                     </div>
                   </div>
                 </div>
@@ -997,7 +1054,7 @@ const SupplierOrders: React.FC = () => {
                       {t('supplierOrders.panel.deliveryShort')}
                     </dt>
                     <dd className="text-sm font-bold text-text-primary">
-                      <Data>{fmtDate(deliveryDate)}</Data>
+                      <Data>{formatDate((selectedLive ?? selected).confirmedDeliveryDate)}</Data>
                     </dd>
                   </div>
                   <div className="bg-white rounded px-3 py-2 border border-border-subtle">
@@ -1006,9 +1063,12 @@ const SupplierOrders: React.FC = () => {
                     </dt>
                     <dd className="text-sm font-bold text-text-primary">
                       <Data>
-                        {totalConfirmedQty !== null
-                          ? `${formatNumber(totalConfirmedQty)} ${t('supplierOrders.units')}`
-                          : '—'}
+                        {`${formatNumber(
+                          (selectedLive ?? selected).lineItems.reduce(
+                            (a, li) => a + li.confirmedQty,
+                            0,
+                          ),
+                        )} ${t('supplierOrders.units')}`}
                       </Data>
                     </dd>
                   </div>
@@ -1021,9 +1081,13 @@ const SupplierOrders: React.FC = () => {
                     </dd>
                   </div>
                 </dl>
-                {notes && (
-                  <div className="mt-3 text-xs text-text-secondary bg-white rounded px-3 py-2 border border-border-subtle">
-                    {t('supplierOrders.panel.notesPrefix')} {notes}
+                {(selectedLive ?? selected).confirmationNote && (
+                  <div
+                    className="mt-3 text-xs text-text-secondary bg-white rounded px-3 py-2 border border-border-subtle"
+                    data-testid="po-confirmed-note"
+                  >
+                    {t('supplierOrders.panel.notesPrefix')}{' '}
+                    {(selectedLive ?? selected).confirmationNote}
                   </div>
                 )}
               </section>

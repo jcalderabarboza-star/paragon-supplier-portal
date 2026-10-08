@@ -14,6 +14,7 @@ import { DECLARED_PRESENT } from '../fixturePresent';
 // OPS-2b — binds `gr_receipt_compliant`. Imported for that effect: the hook
 // lives beside the stores it reads, in a module that reads no clock.
 import './receiptComplianceHook';
+import { readAsnTypedDetails, type AsnTypedDetails } from '../../transitions/policies';
 import type {
   ICommandService,
   QueryScope,
@@ -176,9 +177,20 @@ const purchaseOrderTarget: CommandTarget = {
     // Immutable swap (new PO + new line items) so the invalidated query yields
     // genuinely-new references and all derivations recompute (see the store).
     const qtys = payload.confirmedQuantities;
+    // OPS-3 — the date and the note the supplier typed are stored, and the
+    // moment of the act is stamped HERE (never read off the payload). Only a
+    // confirmation carries quantities, so that is what marks the act.
+    const confirming = Array.isArray(qtys);
+    const date = payload.confirmedDeliveryDate;
+    const note = payload.confirmationNote;
     purchaseOrderStore.update(id, (po) => ({
       ...po,
       status: toState as POStatus,
+      ...(confirming ? { confirmedAt: new Date().toISOString() } : {}),
+      ...(confirming && typeof date === 'string' && date ? { confirmedDeliveryDate: date } : {}),
+      ...(confirming && typeof note === 'string' && note.trim()
+        ? { confirmationNote: note.trim() }
+        : {}),
       lineItems: Array.isArray(qtys)
         ? po.lineItems.map((li, i) =>
             typeof qtys[i] === 'number' ? { ...li, confirmedQty: qtys[i] as number } : li,
@@ -213,6 +225,10 @@ const advanceShipNoticeTarget: CommandTarget = {
   create: (payload, toState) => {
     const po = findPoByNumber(String(payload.poReference));
     const asnNumber = asnStore.nextNumber();
+    // OPS-3 — what the supplier typed. `asn_details_well_formed` has already
+    // refused anything this cannot read, so a failed read here stores nothing.
+    const typedRead = readAsnTypedDetails(payload);
+    const typed: AsnTypedDetails = typedRead.ok ? typedRead.details : {};
     const asn: ASN = {
       asnNumber,
       supplierId: po?.supplierId ?? '',
@@ -224,17 +240,23 @@ const advanceShipNoticeTarget: CommandTarget = {
       details: {
         originCity: po?.supplierName ?? '',
         destinationWarehouse: 'NDC Jatake 6, Tangerang',
-        totalCartons: 0,
-        grossWeightKg: 0,
+        totalCartons: typed.packages ?? 0,
+        grossWeightKg: typed.grossWeightKg ?? 0,
         temperatureRequirement: 'Ambient',
+        ...(typed.shipDate ? { shipDate: typed.shipDate } : {}),
+        ...(typed.batchNumber ? { batchNumber: typed.batchNumber } : {}),
+        ...(typed.notes ? { notes: typed.notes } : {}),
+        ...(typed.packingListName ? { packingListName: typed.packingListName } : {}),
       },
+      // EVERY order line, shipping what the supplier CONFIRMED. It used to ship
+      // the ordered quantity, so a short confirmation was announced in full.
       lineItems: po
-        ? po.lineItems.map((li) => ({
+        ? po.lineItems.map((li, i) => ({
             materialCode: li.materialCode,
             description: li.description,
             orderedQty: li.quantity,
-            shippedQty: li.quantity,
-            lotNumber: '',
+            shippedQty: li.confirmedQty,
+            lotNumber: (typed.lotNumbers?.[i] ?? '').trim(),
           }))
         : [],
     };

@@ -482,6 +482,12 @@ describe('5 · the wizard: the start stage, and a deadline that has passed', () 
     expect(screen.getByTestId('rfq-start-stage-note')).toHaveTextContent(
       'The sourcing events guide describes each stage in full.',
     );
+    // OPS-3 — ADDED: the sentence named the guide and gave no way to it. The
+    // link opens the guide in a new tab, so the wizard keeps its entries.
+    const guide = screen.getByTestId('rfq-start-stage-guide-link');
+    expect(guide).toHaveAttribute('href', '#/buyer/process-flows?flow=rfq');
+    expect(guide).toHaveAttribute('target', '_blank');
+    expect(guide).toHaveTextContent('Open the guide (new tab)');
     // The lines do not come and go with the choice.
     fireEvent.click(screen.getByTestId('rfq-start-stage-RFI'));
     expect(screen.getByTestId('rfq-start-stage-RFI')).toBeChecked();

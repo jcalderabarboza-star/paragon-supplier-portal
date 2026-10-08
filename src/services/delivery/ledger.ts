@@ -33,6 +33,16 @@ export const DRAWDOWN_PRESET_CASE_C: TolerancePolicy = Object.freeze({
   enforcement: 'ignore',
 });
 
+/**
+ * OPS-3 — THE FLAG. "Governed — flag over N%" described an enforcement that
+ * computed its breach into `exceptions` and showed it to nobody. This is the
+ * one reader: the over-envelope exception, or null when the item is within its
+ * tolerance (or the policy is reference-only, which flags nothing by design).
+ */
+export function overToleranceOf(ledger: DrawdownLedger): DrawdownException | null {
+  return ledger.exceptions.find((e) => e.kind === 'over-envelope') ?? null;
+}
+
 /** True when two tolerance policies differ in either knob. */
 function policiesDiffer(a: TolerancePolicy, b: TolerancePolicy): boolean {
   return a.tolerancePct !== b.tolerancePct || a.enforcement !== b.enforcement;
