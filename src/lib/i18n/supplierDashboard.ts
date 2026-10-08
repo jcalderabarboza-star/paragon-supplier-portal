@@ -58,6 +58,12 @@ export const supplierDashboardEn: Record<string, string> = {
   'supplierDashboard.briefing.cert.desc':
     'Certificate expires {{date}} — submit the renewal to avoid disruption to active POs',
   'supplierDashboard.briefing.cert.cta': 'Renew certificate',
+  'supplierDashboard.briefing.po.title.one': 'Confirm {{count}} purchase order',
+  'supplierDashboard.briefing.po.title.other': 'Confirm {{count}} purchase orders',
+  'supplierDashboard.briefing.po.badge': 'Awaiting your confirmation',
+  'supplierDashboard.briefing.po.desc': '{{po}} · {{value}} · delivery requested {{date, stop}}.',
+  'supplierDashboard.briefing.po.more': 'And {{count}} more.',
+  'supplierDashboard.briefing.po.cta': 'Confirm now',
   // — Recent purchase orders —
   'supplierDashboard.orders.title': 'My recent purchase orders',
   'supplierDashboard.orders.col.po': 'PO #',
@@ -141,6 +147,12 @@ export const supplierDashboardId: Record<string, string> = {
   'supplierDashboard.briefing.cert.desc':
     'Sertifikat kedaluwarsa {{date}} — ajukan perpanjangan agar PO aktif tidak terganggu',
   'supplierDashboard.briefing.cert.cta': 'Perbarui sertifikat',
+  'supplierDashboard.briefing.po.title.one': 'Konfirmasi {{count}} pesanan pembelian',
+  'supplierDashboard.briefing.po.title.other': 'Konfirmasi {{count}} pesanan pembelian',
+  'supplierDashboard.briefing.po.badge': 'Menunggu konfirmasi Anda',
+  'supplierDashboard.briefing.po.desc': '{{po}} · {{value}} · pengiriman diminta {{date, stop}}.',
+  'supplierDashboard.briefing.po.more': 'Dan {{count}} lainnya.',
+  'supplierDashboard.briefing.po.cta': 'Konfirmasi sekarang',
   // — Recent purchase orders —
   'supplierDashboard.orders.title': 'Pesanan pembelian terbaru saya',
   'supplierDashboard.orders.col.po': 'No. PO',

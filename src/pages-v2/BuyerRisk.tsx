@@ -26,6 +26,7 @@ import PageHeader from '../components/ui-v2/PageHeader';
 import PageMetaLine from '../components/ui-v2/PageMetaLine';
 import LivenessPill from '../components/ui-v2/LivenessPill';
 import IllustrativeRegion from '../components/ui-v2/IllustrativeRegion';
+import { IllustrativeBanner } from '../components/ui-v2/IllustrativeNotice';
 import {
   recordAnchorId,
   useDeepLinkedHighlight,
@@ -757,7 +758,13 @@ const ComplianceRisksTab: React.FC<{ compliance: ComplianceRow[] }> = ({
             <TableHeaderCell className="text-right">{t('risk.compliance.col.action')}</TableHeaderCell>
           </TableHeader>
           <tbody>
-            {compliance.map((row) => {
+            {compliance.map((stored) => {
+              // SUP-2 - the days column is computed from the expiry date while
+              // the pill and the action read the row's stored status, so a row
+              // could read "92d overdue" beside "Valid - no action". A date
+              // that has passed is expired, whatever the row stores.
+              const overdue = (daysLeftOf(stored) ?? 0) < 0;
+              const row = overdue ? { ...stored, status: 'expired' as const } : stored;
               const statusLabel =
                 row.status === 'expired'
                   ? 'Expired'
@@ -1097,6 +1104,8 @@ const BuyerRisk: React.FC = () => {
             Real-time chrome that lied over static demo data (CP-0 · W2). */}
         <LivenessPill capability="risk" />
       </PageMetaLine>
+
+      <IllustrativeBanner bodyKey="risk.illustrative.body" />
 
       {visibleAlerts.length > 0 && (
         <IllustrativeRegion

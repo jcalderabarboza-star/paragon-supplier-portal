@@ -27,6 +27,8 @@ export const riskEn: Record<string, string> = {
   'risk.toast.alertConfig.desc': 'Channel rules editor coming in Phase 2A.',
   // — Meta line (honest illustrative caption; the LivenessPill carries the SIMULATED marker) —
   'risk.meta.illustrative': 'Illustrative risk intelligence — no live feed',
+  'risk.illustrative.body':
+    'Every alert, score, map point, price line and recommendation on this page is authored sample content. No risk feed, commodity feed or model produces it.',
   // Replaces the former 'risk.meta.lastUpdated' footer, which stamped
   // `new Date()` under static fixtures — a manufactured freshness claim. The
   // honest footer names the real-later capability instead of a fake timestamp.
@@ -165,6 +167,8 @@ export const riskId: Record<string, string> = {
   'risk.toast.alertConfig.desc': 'Editor aturan kanal hadir pada Fase 2A.',
   // — Meta line (honest illustrative caption; the LivenessPill carries the SIMULATED marker) —
   'risk.meta.illustrative': 'Intelijen risiko ilustratif — tanpa umpan langsung',
+  'risk.illustrative.body':
+    'Setiap peringatan, skor, titik peta, garis harga, dan rekomendasi di halaman ini adalah konten sampel yang ditulis. Tidak ada umpan risiko, umpan komoditas, atau model yang menghasilkannya.',
   'risk.meta.futureCapability':
     'Setiap angka di halaman ini bersifat ilustratif. Ini adalah spesifikasi untuk intelijen risiko pasokan (Tahap-2 · I3) — akan diturunkan dari data belanja, pemasok, dan komoditas yang sebenarnya saat kapabilitas itu hadir.',
   // — Penanda wilayah (caption IllustrativeRegion) —

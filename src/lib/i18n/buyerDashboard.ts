@@ -24,7 +24,7 @@ export const buyerDashboardEn: Record<string, string> = {
   'buyerDashboard.header.eyebrow': 'Buyer · Procurement Command Center',
   'buyerDashboard.header.title': 'Good morning — here is what needs you today',
   'buyerDashboard.header.asOf': 'As of {{date}} · declared present',
-  'buyerDashboard.header.derived': 'Every figure derived',
+  'buyerDashboard.header.derived': 'Figures derived, except the panels marked illustrative',
   // — Lane view chips —
   'buyerDashboard.lane.all': 'All lanes',
   'buyerDashboard.lane.legend': 'Filters the action queue',
@@ -159,7 +159,7 @@ export const buyerDashboardId: Record<string, string> = {
   'buyerDashboard.header.eyebrow': 'Pembeli · Pusat Komando Pengadaan',
   'buyerDashboard.header.title': 'Selamat pagi — ini yang memerlukan Anda hari ini',
   'buyerDashboard.header.asOf': 'Per {{date}} · masa kini yang dinyatakan',
-  'buyerDashboard.header.derived': 'Setiap angka diturunkan',
+  'buyerDashboard.header.derived': 'Angka diturunkan, kecuali panel yang ditandai ilustratif',
   // — Lane view chips —
   'buyerDashboard.lane.all': 'Semua jalur',
   'buyerDashboard.lane.legend': 'Menyaring antrean tindakan',

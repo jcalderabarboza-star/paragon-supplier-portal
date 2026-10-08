@@ -125,6 +125,8 @@ export const supplierMyStorefrontEn: Record<string, string> = {
   'supplierMyStorefront.stat.profileViews': 'Profile views (month)',
   'supplierMyStorefront.stat.rfqInvitations': 'RFQ invitations',
   'supplierMyStorefront.stat.winRate': 'Win rate',
+  'supplierMyStorefront.illustrative.body':
+    'Profile views, RFQ invitations, win rate, category rank and the completeness percentage are authored sample values, the same for every supplier. Nothing counts visits or ranks storefronts.',
   'supplierMyStorefront.stat.categoryRank': 'Category rank',
   // — Advisor panel —
   'supplierMyStorefront.advisor.title': 'How to improve your ranking',
@@ -256,6 +258,8 @@ export const supplierMyStorefrontId: Record<string, string> = {
   'supplierMyStorefront.stat.profileViews': 'Tampilan profil (bulan)',
   'supplierMyStorefront.stat.rfqInvitations': 'Undangan RFQ',
   'supplierMyStorefront.stat.winRate': 'Tingkat kemenangan',
+  'supplierMyStorefront.illustrative.body':
+    'Tayangan profil, undangan RFQ, tingkat kemenangan, peringkat kategori, dan persentase kelengkapan adalah nilai sampel yang ditulis, sama untuk setiap pemasok. Tidak ada yang menghitung kunjungan atau memeringkat etalase.',
   'supplierMyStorefront.stat.categoryRank': 'Peringkat kategori',
   // — Advisor panel —
   'supplierMyStorefront.advisor.title': 'Cara meningkatkan peringkat Anda',

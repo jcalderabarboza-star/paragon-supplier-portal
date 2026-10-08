@@ -15,6 +15,7 @@ import AppShellV2 from '../components/layout-v2/AppShellV2';
 import PageHeader from '../components/ui-v2/PageHeader';
 import PageMetaLine from '../components/ui-v2/PageMetaLine';
 import ProvenanceMarker from '../components/ui-v2/ProvenanceMarker';
+import { IllustrativeMark } from '../components/ui-v2/IllustrativeNotice';
 import KpiCard from '../components/ui-v2/KpiCard';
 import StatusPill from '../components/ui-v2/StatusPill';
 import { statusTone } from '../lib/statusTone';
@@ -57,7 +58,7 @@ import {
 } from '../services/data/documentDisplayState';
 import { daysUntil } from '../services/data/dayProjection';
 import { DECLARED_PRESENT } from '../services/data/fixturePresent';
-import { formatIDR } from '../lib/format';
+import { formatIDR, formatDate } from '../lib/format';
 
 // ⚠️ ANCHORED — this surface rendered values derived from anchored
 // fixture data against the WALL CLOCK, so what a reader saw moved every day
@@ -263,11 +264,14 @@ const SupplierDashboard: React.FC = () => {
     [MY_POS],
   );
 
-  const needsConfirmCount = useMemo(
+  // SUP-2 - THE ORDERS THIS SUPPLIER HAS YET TO CONFIRM, kept as rows and not
+  // only as a count: the briefing names the first of them. It used to print one
+  // fixed order number and value to every supplier, whoever's order it was.
+  const needsConfirm = useMemo(
     () =>
       MY_POS.filter(
         (po) => po.status === POStatus.SENT || po.status === POStatus.ACKNOWLEDGED,
-      ).length,
+      ),
     [MY_POS],
   );
 
@@ -339,19 +343,39 @@ const SupplierDashboard: React.FC = () => {
   // i18n-defer: mock/sample data — the briefing is badged "Sample data"; these
   // action titles/descs/badges/labels are fixture narratives, kept EN by design.
   const allActions: ActionItem[] = [
-    {
-      id: 'po-confirm',
-      Icon: AlertTriangle,
-      iconClass: 'text-danger',
-      iconBg: 'bg-danger-soft',
-      title: `Confirm ${needsConfirmCount} purchase order${needsConfirmCount !== 1 ? 's' : ''}`,
-      badge: 'Urgent',
-      badgeVariant: 'danger',
-      desc: 'PO-2025-00108 · Rp 185jT · Delivery 25 Apr 2025 — acknowledgement overdue 96h',
-      primary: true,
-      btnLabel: 'Confirm now',
-      time: '~2 min',
-    },
+    // SUP-2 - built from this supplier's own orders, and absent when none
+    // awaits confirmation. No "overdue" hours: nothing here records when an
+    // acknowledgement was due.
+    ...(needsConfirm.length > 0
+      ? [
+          {
+            id: 'po-confirm',
+            Icon: AlertTriangle,
+            iconClass: 'text-danger',
+            iconBg: 'bg-danger-soft',
+            title: t(
+              needsConfirm.length === 1
+                ? 'supplierDashboard.briefing.po.title.one'
+                : 'supplierDashboard.briefing.po.title.other',
+              { count: needsConfirm.length },
+            ),
+            badge: t('supplierDashboard.briefing.po.badge'),
+            badgeVariant: 'danger' as const,
+            desc:
+              t('supplierDashboard.briefing.po.desc', {
+                po: needsConfirm[0].poNumber,
+                value: formatIDR(needsConfirm[0].totalValue, { compact: true }),
+                date: formatDate(needsConfirm[0].requestedDeliveryDate),
+              }) +
+              (needsConfirm.length > 1
+                ? ' ' + t('supplierDashboard.briefing.po.more', { count: needsConfirm.length - 1 })
+                : ''),
+            primary: true,
+            btnLabel: t('supplierDashboard.briefing.po.cta'),
+            time: '~2 min',
+          },
+        ]
+      : []),
     // ⚠️ **THE CERTIFICATE CARD IS DERIVED NOW, AND WHAT IT REPLACED WAS NOT
     // MERELY UNTRANSLATED — IT CONTRADICTED THE PAGE IT SAT ON.** Retired,
     // quoted rather than deleted:
@@ -518,6 +542,8 @@ const SupplierDashboard: React.FC = () => {
               <div className="text-xs text-text-secondary mt-1">
                 {mySupplier.otif >= 90 ? '94' : mySupplier.otif >= 80 ? '82' : '70'} / 100
               </div>
+              {/* SUP-2 - the grade and the score are authored, not measured. */}
+              <IllustrativeMark className="mt-1" />
             </div>
             <div className="flex flex-col gap-1">
               <StatusPill variant={otifVariant}>{otifStatusLabel}</StatusPill>
@@ -527,6 +553,7 @@ const SupplierDashboard: React.FC = () => {
               <div className="text-xs text-text-tertiary">
                 {t('supplierDashboard.identity.target')}
               </div>
+              <IllustrativeMark className="self-start" />
             </div>
           </div>
         </div>
@@ -562,7 +589,11 @@ const SupplierDashboard: React.FC = () => {
         <KpiCard
           eyebrow={t('supplierDashboard.kpi.otif.eyebrow')}
           value={`${mySupplier.otif}%`}
-          subtitle={t('supplierDashboard.kpi.otif.subtitle')}
+          subtitle={
+            <>
+              {t('supplierDashboard.kpi.otif.subtitle')} <IllustrativeMark />
+            </>
+          }
           icon={Target}
         />
       </div>

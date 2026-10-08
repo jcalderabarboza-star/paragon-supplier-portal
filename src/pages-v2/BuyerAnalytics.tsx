@@ -33,6 +33,7 @@ import PageHeader from '../components/ui-v2/PageHeader';
 import PageMetaLine from '../components/ui-v2/PageMetaLine';
 import ProvenanceMarker from '../components/ui-v2/ProvenanceMarker';
 import KpiCard from '../components/ui-v2/KpiCard';
+import { IllustrativeBanner, IllustrativeMark } from '../components/ui-v2/IllustrativeNotice';
 import BulkActionsBar from '../components/ui-v2/BulkActionsBar';
 import FilterChipsBar from '../components/ui-v2/FilterChipsBar';
 import StatusPill from '../components/ui-v2/StatusPill';
@@ -288,12 +289,19 @@ const BuyerAnalytics: React.FC = () => {
         <ProvenanceMarker capability="analytics" className="ml-3 align-middle" />
       </PageMetaLine>
 
+      <IllustrativeBanner bodyKey="buyerAnalytics.illustrative.body" />
+
       <div className="mb-6">
         <FilterChipsBar<Period>
           options={PERIOD_OPTIONS}
           value={period}
           onChange={setPeriod}
         />
+        {/* SUP-2 - said where the control is: the chips name a period and the
+            sample figures below do not move with it. */}
+        <p className="text-xs text-text-tertiary mt-2" data-testid="analytics-period-note">
+          {t('buyerAnalytics.period.note')}
+        </p>
       </div>
 
       {summary && (
@@ -306,10 +314,13 @@ const BuyerAnalytics: React.FC = () => {
                 eyebrow={t(`buyerAnalytics.summary.${card.key}`)}
                 value={kpi.value}
                 subtitle={
-                  <span className={`${TONE_CLASS[kpi.tone]} font-medium`}>
-                    <ToneIcon tone={kpi.tone} />
-                    {kpi.subtitle}
-                  </span>
+                  <>
+                    <span className={`${TONE_CLASS[kpi.tone]} font-medium`}>
+                      <ToneIcon tone={kpi.tone} />
+                      {kpi.subtitle}
+                    </span>{' '}
+                    <IllustrativeMark />
+                  </>
                 }
                 icon={card.icon}
               />
@@ -320,7 +331,8 @@ const BuyerAnalytics: React.FC = () => {
 
       <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6 mb-6">
         <h2 className="text-section text-text-primary mb-4 pb-3 border-b border-border-subtle">
-          {t('buyerAnalytics.spend.title')}
+          {t('buyerAnalytics.spend.title')}{' '}
+          <IllustrativeMark />
         </h2>
         <div className="grid grid-cols-1 lg:grid-cols-[6fr_4fr] gap-6">
           <div>
@@ -397,7 +409,8 @@ const BuyerAnalytics: React.FC = () => {
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-5 mb-6">
         <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6">
           <h2 className="text-section text-text-primary mb-4 pb-3 border-b border-border-subtle">
-            {t('buyerAnalytics.otif.title')}
+            {t('buyerAnalytics.otif.title')}{' '}
+            <IllustrativeMark />
           </h2>
           <ResponsiveContainer width="100%" height={240}>
             <LineChart
@@ -449,7 +462,8 @@ const BuyerAnalytics: React.FC = () => {
 
         <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6">
           <h2 className="text-section text-text-primary mb-4 pb-3 border-b border-border-subtle">
-            {t('buyerAnalytics.poVolume.title')}
+            {t('buyerAnalytics.poVolume.title')}{' '}
+            <IllustrativeMark />
           </h2>
           <ResponsiveContainer width="100%" height={240}>
             <ComposedChart
@@ -510,7 +524,8 @@ const BuyerAnalytics: React.FC = () => {
       <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm overflow-hidden mb-6">
         <div className="px-6 py-4 border-b border-border-subtle">
           <h2 className="text-section text-text-primary">
-            {t('buyerAnalytics.perf.title')}
+            {t('buyerAnalytics.perf.title')}{' '}
+            <IllustrativeMark />
           </h2>
         </div>
         <Table>
@@ -567,7 +582,8 @@ const BuyerAnalytics: React.FC = () => {
 
       <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6">
         <h2 className="text-section text-text-primary mb-4 pb-3 border-b border-border-subtle">
-          {t('buyerAnalytics.channel.title')}
+          {t('buyerAnalytics.channel.title')}{' '}
+          <IllustrativeMark />
         </h2>
         <ResponsiveContainer width="100%" height={240}>
           <BarChart

@@ -26,6 +26,10 @@ export const buyerAnalyticsEn: Record<string, string> = {
   'buyerAnalytics.crumb.analytics': 'ANALYTICS',
   // — Page header —
   'buyerAnalytics.header.title': 'Analytics & Procurement Intelligence',
+  'buyerAnalytics.illustrative.body':
+    'Every figure, chart and table on this page is authored sample content. Nothing here is computed from the orders, receipts or invoices in this portal, and it is not a measure of any supplier.',
+  'buyerAnalytics.period.note':
+    'The period changes the label only. These sample figures are the same for every period.',
   'buyerAnalytics.header.subtitle':
     'YTD performance metrics and procurement insights.',
   // — Header action + toast —
@@ -90,6 +94,10 @@ export const buyerAnalyticsId: Record<string, string> = {
   'buyerAnalytics.crumb.analytics': 'ANALITIK',
   // — Page header —
   'buyerAnalytics.header.title': 'Analitik & Intelijen Pengadaan',
+  'buyerAnalytics.illustrative.body':
+    'Setiap angka, grafik, dan tabel di halaman ini adalah konten sampel yang ditulis. Tidak ada yang dihitung dari pesanan, penerimaan, atau faktur di portal ini, dan ini bukan ukuran pemasok mana pun.',
+  'buyerAnalytics.period.note':
+    'Periode hanya mengubah label. Angka sampel ini sama untuk setiap periode.',
   'buyerAnalytics.header.subtitle':
     'Metrik kinerja YTD dan wawasan pengadaan.',
   // — Header action + toast —

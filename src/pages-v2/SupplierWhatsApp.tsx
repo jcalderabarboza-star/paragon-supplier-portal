@@ -655,15 +655,24 @@ const EmailBody: React.FC<{
   onAction: (label: string) => void;
   successMsg: string | null;
 }> = ({ scenario, onAction, successMsg }) => {
+  const { t } = useTranslation();
   const labelCls = 'text-xs text-text-tertiary uppercase tracking-wider font-semibold';
   const valueCls = 'text-sm text-text-primary font-medium mt-0.5';
   const cardCls = 'bg-bg-hover border border-border-subtle rounded-md p-4 mt-3';
 
   const SuccessBanner = () =>
     successMsg ? (
-      <div className="mt-3 bg-success-soft border-l-2 border-success rounded px-3 py-2 text-xs text-success font-semibold flex items-center gap-2">
-        <CheckCircle2 size={14} />
-        {successMsg}
+      <div
+        className="mt-3 bg-bg-hover border-l-2 border-border-input rounded px-3 py-2 text-xs text-text-secondary"
+        data-testid="channel-demo-outcome"
+      >
+        {/* SUP-2 - the line below is the script's own text. Nothing was sent
+            and no system changed, and the banner says that first. */}
+        <div className="font-semibold text-text-primary">{t('supplierWhatsApp.demo.scripted')}</div>
+        <div className="mt-1 flex items-center gap-2">
+          <CheckCircle2 size={14} aria-hidden="true" />
+          {successMsg}
+        </div>
       </div>
     ) : null;
 

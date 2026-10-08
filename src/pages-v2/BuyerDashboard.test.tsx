@@ -311,7 +311,7 @@ describe('⚠️ THE PAGE MAKES NO CLAIM IT CANNOT BACK', () => {
     // `ProvenanceMarker`'s own token — the page cannot author this text, which
     // is the point: no boolean a caller passes can make it say anything else.
     expect(screen.getAllByText(/Sample/).length).toBeGreaterThan(0);
-    expect(screen.getByText('Every figure derived')).toBeInTheDocument();
+    expect(screen.getByText('Figures derived, except the panels marked illustrative')).toBeInTheDocument();
   });
 
   it('⚠️ the RETIRED literals are gone', async () => {

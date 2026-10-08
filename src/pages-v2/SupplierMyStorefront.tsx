@@ -16,6 +16,7 @@ import AppShellV2 from '../components/layout-v2/AppShellV2';
 import PageHeader from '../components/ui-v2/PageHeader';
 import PageMetaLine from '../components/ui-v2/PageMetaLine';
 import ProvenanceMarker from '../components/ui-v2/ProvenanceMarker';
+import { IllustrativeBanner, IllustrativeMark } from '../components/ui-v2/IllustrativeNotice';
 import FormSection from '../components/ui-v2/FormSection';
 import StatusPill from '../components/ui-v2/StatusPill';
 import Button from '../components/ui-v2/Button';
@@ -274,6 +275,8 @@ const StorefrontEditor: React.FC<StorefrontEditorProps> = ({
         <ProvenanceMarker capability="suppliers" className="ml-3 align-middle" />
       </PageMetaLine>
 
+      <IllustrativeBanner bodyKey="supplierMyStorefront.illustrative.body" />
+
       <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-5 mb-6">
         <div className="flex items-center gap-6">
           <div className="flex-1 min-w-0">
@@ -288,7 +291,7 @@ const StorefrontEditor: React.FC<StorefrontEditorProps> = ({
                     : 'text-warning-hover'
                 }`}
               >
-                {completeness}%
+                {completeness}% <IllustrativeMark />
               </span>
             </div>
             <div className="h-2.5 bg-bg-hover rounded-full overflow-hidden">
@@ -895,6 +898,7 @@ const StorefrontEditor: React.FC<StorefrontEditorProps> = ({
                 <div className="text-xs text-text-tertiary mt-1">
                   {s.label}
                 </div>
+                <IllustrativeMark className="mt-1" />
               </div>
             ))}
           </div>
