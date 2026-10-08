@@ -11,6 +11,9 @@
 
 import { POStatus } from '../types';
 import { DECLARED_PRESENT } from '../fixturePresent';
+// OPS-2b — binds `gr_receipt_compliant`. Imported for that effect: the hook
+// lives beside the stores it reads, in a module that reads no clock.
+import './receiptComplianceHook';
 import type {
   ICommandService,
   QueryScope,

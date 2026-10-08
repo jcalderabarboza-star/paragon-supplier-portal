@@ -328,6 +328,39 @@ targets). They measure different things; this file keeps them separate.
 > `UNATTRIBUTED`, or that records no approver, is not guarded:** its release is admitted from any
 > seat holding `invoice:pay`. Approval itself has no new refusal.
 >
+> **RE-HARVEST (2026-10-08, OPS-2b).** The operator's rulings on OPS-2. No figure moved: service
+> surface, catalog, flows and wired targets are as OPS-2 left them. One policy hook is new.
+> **`t_gr_approve` AND `t_gr_partial_approve` GAINED A SECOND HOOK, `gr_receipt_compliant`**,
+> evaluated after the rollup hook. It reads the receipt's stored lines and refuses while any line is
+> stopped, naming the first stopped line. Five refusals, in the order a line is read:
+> `RECEIPT_HALAL_UNRULED` (the halal lookup refuses: the master does not hold the material, or
+> records no determination and no ruling answers it), `RECEIPT_HALAL_SEAL_UNANSWERED` (halal applies
+> and `halalSealCheck` is neither `Pass` nor `Fail`), `RECEIPT_HALAL_CERTIFICATE_NOT_VALID` (halal
+> applies and no halal-class registry row for the receipt's supplier and that material satisfies at
+> the declared present; the reason ends with `NO_CERT`, `EXPIRED`, `SCHEME_INVALID` or
+> `UNDER_REVIEW`), `RECEIPT_BPOM_UNRULED` (the BPOM lookup refuses), `RECEIPT_BPOM_LOT_UNANSWERED`
+> (BPOM applies and `bpomLotCheck` is neither `Pass` nor `Fail`). The seal, lot and certificate
+> refusals are subject to the enforcement mode in force for `halal.seal`, `bpom.lot` and
+> `halal.certificate` (`blocks(mode)`; no setting recorded derives `BLOCK`); the two unruled refusals
+> are subject to no mode. **This supersedes the OPS-2 sentence "No GR verb reads halal or BPOM".**
+> The hook is NOT on `t_gr_create` (an uninspected receipt is a record that goods arrived),
+> `t_gr_record_inspection`, `t_gr_hold`, `t_gr_reject` or `t_gr_post` (which fires only from the two
+> states the guarded verbs produce; receipts seeded in those states are not re-judged).
+> **ONE PREDICATE.** `services/data/receiptCompliance.receiptComplianceBlocks` is the function the
+> hook calls and the receiving form's quality step calls; neither states a clause of its own.
+> **ONE CLOCK.** The hook, the receiving form and the Compliance page judge a certificate and an
+> enforcement mode at `DECLARED_PRESENT_INSTANT` (the declared present, start of day, UTC). The form
+> read the wall clock until this batch. A material ruling's `setAt` is that instant too.
+> **THE RULING LEDGER NO LONGER OPENS EMPTY.** It opens on ten SAMPLE rows (`materialRulingSeed.ts`):
+> `bpom`, `applicable: true`, `setBy` a sample Compliance person, for ten of the eleven raw materials
+> the master leaves BPOM-undetermined. `RM-COCO-8200` has no row and reads pending. `reset()` returns
+> the ledger to those ten rows.
+> **The compliance registry gained nine rows** (`creg-0019` … `creg-0027`): SAMPLE BPJPH
+> certificates for the raw-material suppliers' open supplier-and-material pairs. Exactly one open
+> pair has no valid certificate: `sup-005` × `RM-EMUL-9440` (`creg-0016`, a foreign certificate
+> expired 2025-08-01), carried by the receivable `ASN-2025-00302`. `creg-0027` (`sup-002` ×
+> `RM-STEAR-7300`) sits beside `creg-0013`, the registry's Missing row for the same pair.
+>
 > **RE-HARVEST (2026-10-08, OPS-2).** Receiving, and who answers for an approval. Service surface
 > 71 → **72**; catalog 138 → **141** across 29 → **30** flows; wired targets 23 → **24**. Moved by the
 > pin going red.

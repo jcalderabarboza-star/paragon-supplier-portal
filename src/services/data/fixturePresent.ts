@@ -201,6 +201,13 @@ export const DECLARED_PRESENT: string = new Date(
   .toISOString()
   .slice(0, 10);
 
+/**
+ * The declared present as an INSTANT — the start of that day, UTC. What a read
+ * that takes an instant (a certificate's validity, an enforcement mode, a
+ * ruling's stamp) is given in the sample world, so no such read needs a clock.
+ */
+export const DECLARED_PRESENT_INSTANT: string = `${DECLARED_PRESENT}T00:00:00.000Z`;
+
 // ─────────────────────────────────────────────────────────────────────────────
 // THE PER-FAMILY ANCHORS
 // ─────────────────────────────────────────────────────────────────────────────

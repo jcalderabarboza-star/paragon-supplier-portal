@@ -208,6 +208,12 @@ describe('the loop — the cascade raises it and the resolution clears it', () =
       qtyExpected: li.orderedQty,
       qtyReceived: li.shippedQty,
       ...split(li.shippedQty),
+      // OPS-2b — EDITED ON PURPOSE. These lines carried no seal or lot answer and were
+      // accepted anyway; the dispatcher now refuses to accept a line whose required
+      // regulatory check is unanswered (`gr_receipt_compliant`), so a receipt this
+      // spec means to ACCEPT records both, as the receiving form does.
+      halalSealCheck: 'Pass' as const,
+      bpomLotCheck: 'Pass' as const,
       visualCheck: 'Pass' as const,
       packagingCheck: 'Pass' as const,
     }));

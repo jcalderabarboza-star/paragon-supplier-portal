@@ -434,7 +434,19 @@ describe('H2 — WIRED, and the prose parse is GONE', () => {
     // so a refusal cannot be reduced to a banner beside a check that still
     // passes. `GRInspectionWizard.test.tsx` proves the behaviour; this proves the
     // wiring is the one the behaviour runs through.
-    expect(wizard).toContain('if (!l.halal.ok) return false;');
+    // ⚠️ OPS-2b — THE CLAUSE MOVED, AND THIS PIN FOLLOWED IT. It read
+    // `expect(wizard).toContain('if (!l.halal.ok) return false;')`. By operator ruling the
+    // regulatory clauses are enforced in the dispatcher and the form previews
+    // the SAME predicate, so they left the wizard for
+    // `services/data/receiptCompliance.ts`, which both call. What is pinned is
+    // unchanged — the refusal carries no mode; the answer's consequence does —
+    // and it is pinned where the clause now lives, plus the one line that shows
+    // the wizard still runs through it.
+    const predicate = src['/src/services/data/receiptCompliance.ts'];
+    expect(predicate, 'the shared receipt predicate').toBeDefined();
+    expect(wizard).toContain('receiptBlocks.length === 0');
+    expect(wizard).toContain('receiptComplianceBlocks({');
+    expect(predicate).toContain('if (!halal.ok) {');
     // ⚠️ CP-3 · E4 — THE CLAUSE GAINED A CONJUNCT, AND THIS CENSUS CAUGHT IT.
     // The required-and-unanswered clause now reads its CONSEQUENCE off the
     // enforcement ledger (`sealBlocks`) instead of hard-coding it. The delta is
@@ -447,8 +459,10 @@ describe('H2 — WIRED, and the prose parse is GONE', () => {
     // of an ANSWER and may never relax the ABSENCE OF A QUESTION. If a
     // `Blocks` term ever appears on the `!l.halal.ok` line, the assertion above
     // goes red, which is how this census keeps saying something after E4.
-    expect(wizard).toContain(
-      'if (l.halal.required && !l.halalSealCheck && sealBlocks) return false;',
+    // (It read `'if (l.halal.required && !l.halalSealCheck && sealBlocks) return false;'`.)
+    expect(wizard).toContain('seal: sealBlocks');
+    expect(predicate).toContain(
+      'if (!checkAnswered(line.halalSealCheck) && stops.seal) {',
     );
   });
 
@@ -565,9 +579,14 @@ describe('H2 — WIRED, and the prose parse is GONE', () => {
     // no master, and reaches no surface (the glossary is headless at GL-0). The
     // coupling is the POINT: it is what makes a refusal reason unable to exist
     // without a definition, and a definition unable to outlive its reason.
+    // OPS-2b adds the THIRD, and it is looked at here: `receiptCompliance.ts`
+    // imports the refusal-reason type to carry the lookup's own reason on a
+    // stop (`detail`). It reaches the lookup through `materialRuling.ts`, never
+    // directly, so it is a type-only reference like the other two.
     expect(typeOnly).toEqual([
       '/src/lib/enforcement.ts',
       '/src/lib/glossary/refusals.glossary.ts',
+      '/src/services/data/receiptCompliance.ts',
     ]);
 
     // ⚠️ THE LIMIT OF THIS CHECK, STATED: Vite's `import.meta.glob` EXCLUDES THE

@@ -12,6 +12,13 @@ import { mockDataService } from './mockDataService';
 import { goodsReceiptStore } from './stores/goodsReceiptStore';
 import { invoiceStore } from './stores/invoiceStore';
 import { materialRulingStore } from './stores/materialRulingStore';
+import { SAMPLE_BPOM_RULED } from './materialRulingSeed';
+
+// ⚠️ OPS-2b — THIS FILE WAS WRITTEN AGAINST A LEDGER THAT OPENED EMPTY. By
+// operator ruling it opens on ten SAMPLE BPOM rulings, so every count that read
+// 0 or 1 reads SEEDED or SEEDED + 1, "the row" is the last one, and a `seq` that
+// read n reads SEEDED + n. What each spec asserts about a ruling is unchanged.
+const SEEDED = SAMPLE_BPOM_RULED.length;
 import { DataError } from '../types';
 import type { QueryScope, InspectionResult, GoodsReceipt } from '../types';
 import { PERSONA_SYSTEM_ROLES, rolesHolding } from '../../transitions/businessRoles';
@@ -230,24 +237,28 @@ describe('OPS-2 · material applicability — the default, the ruling and the le
     });
     expect(res.status, res.reason).toBe('done');
     const ledger = materialRulingStore.all();
-    expect(ledger).toHaveLength(1);
-    expect(ledger[0]).toMatchObject({
+    expect(ledger).toHaveLength(SEEDED + 1);
+    const row = ledger.slice(-1)[0]!;
+    expect(row).toMatchObject({
       materialCode: code,
       regime: 'bpom',
       applicable: false,
       reason: 'Oleochemical feedstock; not a notifiable cosmetic ingredient lot.',
       setBy: COMPLIANCE,
-      seq: 1,
+      seq: SEEDED + 1,
     });
-    expect(bpomAtReceipt(code, ledger)).toEqual({ ok: true, applicable: false, ruling: ledger[0] });
-    // The other regime, and every other material, is untouched.
+    expect(bpomAtReceipt(code, ledger)).toEqual({ ok: true, applicable: false, ruling: row });
+    // The other regime, and every other material, is untouched. (OPS-2b — this
+    // read `bpomAtReceipt('RM-STEAR-7300', ledger).ok` is false; that material
+    // now carries its own SAMPLE ruling, and it is still that one.)
     expect(halalAtReceipt(code, ledger)).toEqual({ ok: true, required: true, ruling: null });
-    expect(bpomAtReceipt('RM-STEAR-7300', ledger).ok).toBe(false);
+    expect(bpomAtReceipt('RM-STEAR-7300', ledger)).toMatchObject({ ok: true, applicable: true });
+    expect(bpomAtReceipt('RM-STEAR-7300', ledger)).not.toMatchObject({ ruling: row });
   });
 
   it('the reason is stored as written, without the spaces around it', async () => {
     await rule(compliance, 'PK-CART-9901', { regime: 'halal', applicable: false, reason: '   Secondary carton.  ' });
-    expect(materialRulingStore.all()[0].reason).toBe('Secondary carton.');
+    expect(materialRulingStore.all().slice(-1)[0]!.reason).toBe('Secondary carton.');
   });
 
   it('a ruling never answers for a code the master does not hold — not even a row put on the ledger by hand', () => {
@@ -295,7 +306,7 @@ describe('OPS-2 · material applicability — the default, the ruling and the le
       (await rule(compliance, code, { regime: 'halal', applicable: true, reason: 'Coated board; reviewed.' })).status,
     ).toBe('done');
     const ledger = materialRulingStore.all();
-    expect(rulingInForce(ledger, code, 'halal')).toMatchObject({ applicable: true, seq: 2 });
+    expect(rulingInForce(ledger, code, 'halal')).toMatchObject({ applicable: true, seq: SEEDED + 2 });
     expect(rulingHistory(ledger, code, 'halal').map((r) => r.applicable)).toEqual([true, false]);
     expect(halalAtReceipt(code, ledger)).toMatchObject({ ok: true, required: true });
   });
@@ -309,7 +320,7 @@ describe('OPS-2 · material applicability — the default, the ruling and the le
     expect(res.status).toBe('failed');
     expect(refusedByPolicy(res.reason, POLICY_HOOKS.MATERIAL_RULING_GOVERNED)).toBe(true);
     expect(res.reason).toContain(`${head}:`);
-    expect(materialRulingStore.all()).toHaveLength(0);
+    expect(materialRulingStore.all()).toHaveLength(SEEDED);
   });
 
   it('RULING_UNCHANGED — the same answer twice is refused; the FIRST ruling on a default is not', async () => {
@@ -318,7 +329,7 @@ describe('OPS-2 · material applicability — the default, the ruling and the le
     const again = await rule(compliance, 'PK-CART-9901', { regime: 'halal', applicable: true, reason: 'Again.' });
     expect(again.status).toBe('failed');
     expect(again.reason).toContain('RULING_UNCHANGED:');
-    expect(materialRulingStore.all()).toHaveLength(1);
+    expect(materialRulingStore.all()).toHaveLength(SEEDED + 1);
   });
 
   it.each([
@@ -328,7 +339,7 @@ describe('OPS-2 · material applicability — the default, the ruling and the le
     const res = await rule(buyer(actor), 'PK-CART-9901', { regime: 'halal', applicable: false, reason: 'x' });
     expect(res.status).toBe('failed');
     expect(res.reason).toContain('RULING_ACTOR_UNATTRIBUTED:');
-    expect(materialRulingStore.all()).toHaveLength(0);
+    expect(materialRulingStore.all()).toHaveLength(SEEDED);
   });
 
   it('only the lane holding `material:rule` rules — and receiving is not it', async () => {
@@ -360,7 +371,7 @@ describe('OPS-2 · material applicability — the default, the ruling and the le
       (e: unknown) => (e instanceof DataError ? 'failed' : 'threw-other'),
     );
     expect(sup).toBe('failed');
-    expect(materialRulingStore.all()).toHaveLength(0);
+    expect(materialRulingStore.all()).toHaveLength(SEEDED);
   });
 
   it('a payload cannot name who ruled', async () => {
@@ -431,7 +442,11 @@ describe('OPS-2 · an existing receipt is inspected, held, retested and finished
       rejectionReason: undefined,
       visualCheck: 'Pass',
       packagingCheck: 'Pass',
-      halalSealCheck: r.halalSealCheck === 'Pass' || r.halalSealCheck === 'Fail' ? r.halalSealCheck : undefined,
+      // OPS-2b — EDITED ON PURPOSE. This left the seal check unrecorded where
+      // the receipt had none, and the receipt was approved anyway. The form
+      // never allowed that, and the dispatcher now refuses it
+      // (`gr_receipt_compliant`), so a clean inspection answers the seal.
+      halalSealCheck: r.halalSealCheck === 'Fail' ? 'Fail' : 'Pass',
       bpomLotCheck: r.bpomLotCheck === 'Pass' || r.bpomLotCheck === 'Fail' ? r.bpomLotCheck : undefined,
     }));
   const gr = (id: string, verb: string, payload?: Record<string, unknown>) =>

@@ -4,7 +4,7 @@ locale: en
 title: Material applicability ruling
 wired: true
 owner: portal
-source_sha: da4f1c710ef6ab79023846d67f05eac88b35405b
+source_sha: 852444f6d370948d9ded319a92231da3f0849a8a
 transitions:
   - t_material_ruling_set
 ---
@@ -52,7 +52,7 @@ No state has two exits. The decision sits in the payload: the regime (halal or B
 - **Tester — trigger event:** `t_material_ruling_set`
 - **Checks that can refuse:** `material_ruling_governed`, five refusals in this order — `RULING_REGIME_UNKNOWN` (the regime is not halal or BPOM); `RULING_MALFORMED` (`applicable` is not yes or no); `RULING_REASON_BLANK` (no reason); `RULING_UNCHANGED` (the material is already ruled that way — a ruling records a change); `RULING_ACTOR_UNATTRIBUTED` (the seat names no person). Before these: a supplier seat is refused at scope, a code the material master does not hold is `NOT_FOUND`, a seat without `material:rule` gets `ROLE_NOT_PERMITTED`, a payload carrying an actor key gets `ACTOR_IN_PAYLOAD`, and a missing field gets `MISSING_FIELDS`.
 - **Glossary:** `ROLE_NOT_PERMITTED`, `POLICY_REJECTED`, `MISSING_FIELDS`, `ACTOR_IN_PAYLOAD`, `NOT_FOUND`, `SCOPE_DENIED`, `NO_PERSON_IN_SESSION`, `UNDETERMINED_APPLICABILITY`, `UNKNOWN_MATERIAL`.
-- **Honesty:** the first ruling on a material that reads its master default is taken even when it says the same thing as the default — it turns a default into a decision somebody answers for. A sample person is admitted here (the ledger says so on the row); the enforcement ledger's loosening gate, which refuses sample people, is a different record and is not touched by a ruling. A ruling changes what receiving ASKS; it does not create or change a certificate. The ledger is in memory: a reload returns every material to the master's answer.
+- **Honesty:** the first ruling on a material that reads its master default is taken even when it says the same thing as the default — it turns a default into a decision somebody answers for. A sample person is admitted here (the ledger says so on the row); the enforcement ledger's loosening gate, which refuses sample people, is a different record and is not touched by a ruling. A ruling changes what receiving ASKS; it does not create or change a certificate. A ruling is dated at the portal's declared present (31 Aug 2026), not at the wall clock. The ledger is in memory: a reload returns it to its ten SAMPLE rulings and every other material to the master's answer.
 <!-- src: src/services/transitions/flows/materialRuling.flow.ts:36-48; src/services/data/mock/materialRulingTarget.ts:17-66; src/services/transitions/policyHooks.ts:146-150; src/pages-v2/compliance/MaterialApplicabilityPanel.tsx:60-160,190-330; src/services/query/commandHooks.ts:1052-1085; src/services/query/hooks.ts:232-238; src/components/v2-features/GRInspectionWizard.tsx:905-925,1470-1500; src/lib/i18n/compliance.ts:103-160; src/lib/i18n/goodsReceipt.ts:246-262 -->
 
 <!-- section:forks -->
@@ -135,5 +135,5 @@ After T+1, a receipt line for `PK-CART-9901` shows the ruling and asks for no ha
 
 | State | Fixture id(s) | Number | Note |
 |---|---|---|---|
-| Governed | `PK-CART-9901`, `PK-PETB-8801`, `RM-COCO-8200`, `RM-EMUL-3320`, `AI-NIAC-6601` | — | every code in the material master answers Governed. The ledger opens empty, so each reads its master answer: `PK-CART-9901` and `PK-PETB-8801` (packaging) — halal applies by default, BPOM does not apply; `RM-COCO-8200` and `RM-EMUL-3320` (raw materials) — halal applies, BPOM **pending**; `AI-NIAC-6601` (active) — halal and BPOM both apply. Ruling BPOM for `RM-EMUL-3320` removes the BPOM block on receipt `gr-007` after its retest; that line's halal certificate is a separate check. |
+| Governed | `PK-CART-9901`, `PK-PETB-8801`, `RM-COCO-8200`, `RM-EMUL-3320`, `AI-NIAC-6601` | — | every code in the material master answers Governed. The ledger opens on ten SAMPLE BPOM rulings — each *applies*, recorded by a sample Compliance person, with a reason that begins "SAMPLE ruling" — covering every raw material the master leaves undetermined except `RM-COCO-8200`. So: `PK-CART-9901` and `PK-PETB-8801` (packaging) — halal applies by default, BPOM does not apply (master); `RM-EMUL-3320` (raw material) — halal applies, BPOM applies by SAMPLE ruling; `RM-COCO-8200` (raw material) — halal applies, BPOM **pending**; `AI-NIAC-6601` (active) — halal and BPOM both apply (master). Ruling BPOM for `RM-COCO-8200` removes the BPOM block on receipt `gr-001`; a line's halal certificate is a separate check. |
 <!-- src: src/services/sdc/fixtures.ts:130-600; src/services/data/mock/materialRulingTarget.ts:17-21; src/services/data/mock/stores/materialRulingStore.ts:9-12 -->

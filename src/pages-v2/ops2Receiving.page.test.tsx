@@ -23,6 +23,10 @@ import { MockCommandService } from '../services/data/mock/MockCommandService';
 import { goodsReceiptStore } from '../services/data/mock/stores/goodsReceiptStore';
 import { asnStore } from '../services/data/mock/stores/asnStore';
 import { materialRulingStore } from '../services/data/mock/stores/materialRulingStore';
+import {
+  BPOM_PENDING_SPECIMEN,
+  SAMPLE_BPOM_RULED,
+} from '../services/data/mock/materialRulingSeed';
 import { enforcementSettingStore } from '../services/data/mock/stores/enforcementSettingStore';
 import type { QueryScope } from '../services/data/types';
 import { DECLARED_PRESENT } from '../services/data/fixturePresent';
@@ -78,6 +82,14 @@ const rule = (materialCode: string, regime: 'halal' | 'bpom', applicable: boolea
     entityId: materialCode,
     payload: { regime, applicable, reason },
   });
+
+// ⚠️ OPS-2b — THIS FILE WAS WRITTEN AGAINST A LEDGER THAT OPENED EMPTY. By
+// operator ruling it now opens on ten SAMPLE BPOM rulings, with ONE raw material
+// left pending. So every count below that read 0 or 1 reads SEEDED or
+// SEEDED + 1, the pending material is the one the seed names, and the receipt
+// that carries it is GR-2026-001 (it was GR-2026-007 × RM-EMUL-3320, which is
+// one of the ten now). What each spec asserts about a ruling is unchanged.
+const SEEDED = SAMPLE_BPOM_RULED.length;
 
 const byNumber = (grNumber: string) => goodsReceiptStore.all().find((g) => g.grNumber === grNumber)!;
 const openRow = async (grNumber: string) => {
@@ -215,32 +227,31 @@ describe('OPS-2 · P0-4 — a receipt that exists is worked from the list', () =
   });
 });
 
-/** GR-2026-007 is seeded on Quality Hold; its one line is a raw material with no BPOM ruling. */
-const PENDING_CODE = 'RM-EMUL-3320';
+/** GR-2026-001 is seeded Under Inspection; its one line is the raw material left with no BPOM ruling. */
+const PENDING_CODE = BPOM_PENDING_SPECIMEN;
+const PENDING_GR = 'GR-2026-001';
 
 const openHeldReceipt = async () => {
   renderWithProviders(<Receiving />);
-  await openRow('GR-2026-007');
-  fireEvent.click(await screen.findByRole('button', { name: 'Request lab retest' }));
-  await waitFor(() => expect(byNumber('GR-2026-007').status).toBe('Under Inspection'));
+  await openRow(PENDING_GR);
   fireEvent.click(await screen.findByRole('button', { name: 'Submit inspection results' }));
   await screen.findByTestId('gr-resume-banner');
   fireEvent.click(next()); // → quality
 };
 
 describe('OPS-2 · P0-5 — applicability is ruled by Compliance and read at receipt', () => {
-  // ⚠️ THE CLOCK IS PINNED TO THE DECLARED PRESENT, AND THE REASON IS A FINDING.
-  // The receiving form reads certificate validity at the REAL clock (one instant
-  // captured when it opens — the H4 design, unchanged here). This receipt's
-  // supplier holds a halal certificate that expires ON the declared present
-  // (creg-0015, 2026-08-31), so at any later real date the line is stopped by
-  // its certificate whatever Compliance rules about BPOM. The specs below are
-  // about the RULING, so they are asked at the instant the corpus was written
-  // for; the block after this one holds the other half, a day later.
-  usePinnedDemoClock();
+  // ⚠️ OPS-2b — THE CLOCK PIN THAT STOOD HERE IS GONE, AND SO IS ITS REASON. It
+  // read `usePinnedDemoClock()`, because the receiving form judged a certificate
+  // at the REAL clock and this block's receipt carried one that expires on the
+  // declared present. By operator ruling (ONE CLOCK) the form judges at the
+  // declared present and reads no clock, so these specs need no pin; the block
+  // after this one moves the wall clock on purpose and shows nothing follows it.
 
   it('the population is real — the line is BPOM-pending in the master, and not every material is', () => {
-    expect(byNumber('GR-2026-007').inspectionResults.map((r) => r.materialCode)).toEqual([PENDING_CODE]);
+    expect(byNumber(PENDING_GR).status).toBe('Under Inspection');
+    expect(byNumber(PENDING_GR).inspectionResults.map((r) => r.materialCode)).toEqual([PENDING_CODE]);
+    // And it is the ONLY raw material the ledger opens without a BPOM ruling.
+    expect(materialRulingStore.all().some((r) => r.materialCode === PENDING_CODE)).toBe(false);
     expect(bpomOf(PENDING_CODE)).toMatchObject({ ok: false, reason: 'UNDETERMINED_APPLICABILITY' });
     expect(bpomOf('AI-NIAC-6601')).toEqual({ ok: true, applicable: true });
   });
@@ -261,6 +272,7 @@ describe('OPS-2 · P0-5 — applicability is ruled by Compliance and read at rec
 
   it('after Compliance rules BPOM does not apply, the same receipt shows the ruling and can be finished', async () => {
     const res = await rule(PENDING_CODE, 'bpom', false, 'Process emulsifier; not a notifiable cosmetic ingredient lot.');
+    // (OPS-2b — the sentence is this spec's own sample reason, kept as written.)
     expect(res.status, res.reason).toBe('done');
     await openHeldReceipt();
     expect(screen.queryByTestId('gr-bpom-refusal-0')).not.toBeInTheDocument();
@@ -290,9 +302,7 @@ describe('OPS-2 · P0-5 — applicability is ruled by Compliance and read at rec
   it('the pending sentence names the owner in Indonesian too', async () => {
     await i18n.changeLanguage('id');
     renderWithProviders(<Receiving />);
-    fireEvent.click(await screen.findByText('GR-2026-007'));
-    fireEvent.click(await screen.findByRole('button', { name: 'Minta uji ulang lab' }));
-    await waitFor(() => expect(byNumber('GR-2026-007').status).toBe('Under Inspection'));
+    fireEvent.click(await screen.findByText(PENDING_GR));
     fireEvent.click(await screen.findByRole('button', { name: 'Kirim hasil inspeksi' }));
     expect(await screen.findByTestId('gr-resume-banner')).toHaveTextContent('Mengerjakan penerimaan');
     fireEvent.click(screen.getByRole('button', { name: /^(Berikutnya|Lanjut|Selanjutnya)$/ }));
@@ -302,25 +312,47 @@ describe('OPS-2 · P0-5 — applicability is ruled by Compliance and read at rec
   }, 15000);
 });
 
-describe('OPS-2 · a ruling does not stand in for a certificate — one day after the declared present', () => {
-  usePinnedDemoClock('2026-09-01T09:00:00.000Z');
+// ⚠️ OPS-2b — THIS BLOCK IS INVERTED BY OPERATOR RULING (ONE CLOCK), AND WHAT IT
+// ASSERTED IS RESTATED RATHER THAN DELETED. It was titled *"a ruling does not
+// stand in for a certificate — one day after the declared present"*: with the
+// wall clock at 2026-09-01 the form read sup-005's certificate (creg-0015,
+// expires 2026-08-31) as EXPIRED and stopped the line, while the Compliance page
+// read the same row as valid. The ruling: *"every certificate/ruling read in the
+// sample world uses the declared present, receiving included."* So the same
+// receipt, at the same wall-clock instants, now reads the certificate VALID —
+// and that a ruling does not stand in for a certificate is asserted where a
+// certificate is really missing (`ops2bEnforcement.page.test.tsx`).
+describe('OPS-2b · ONE CLOCK — the wall clock does not move what receiving reads', () => {
+  const openGr007 = async () => {
+    renderWithProviders(<Receiving />);
+    await openRow('GR-2026-007');
+    fireEvent.click(await screen.findByRole('button', { name: 'Request lab retest' }));
+    await waitFor(() => expect(byNumber('GR-2026-007').status).toBe('Under Inspection'));
+    fireEvent.click(await screen.findByRole('button', { name: 'Submit inspection results' }));
+    await screen.findByTestId('gr-resume-banner');
+    fireEvent.click(next()); // → quality
+  };
 
-  it('BPOM is ruled out, and the same line is still stopped: its halal certificate expired the day before', async () => {
-    expect((await rule(PENDING_CODE, 'bpom', false, 'Process emulsifier.')).status).toBe('done');
-    await openHeldReceipt();
-    // The BPOM block is gone — the ruling did what a ruling does…
-    expect(screen.queryByTestId('gr-bpom-refusal-0')).not.toBeInTheDocument();
-    expect(screen.getByTestId('gr-bpom-ruling-0')).toBeInTheDocument();
-    // …and the certificate block is its own fact, named, with its own remedy.
-    const notice = screen.getByTestId('gr-cert-notice-0');
-    expect(notice).toHaveAttribute('role', 'alert');
-    expect(notice).toHaveTextContent(/expired on/i);
-    expect(screen.getByTestId('gr-cert-consequence-0')).toHaveTextContent(
-      'This line cannot pass the quality step. A valid halal certificate from this supplier for this material must be on file — or Compliance rules that halal does not apply to this material.',
-    );
-    fireEvent.click(screen.getByRole('radio', { name: /Halal Seal Check.*Pass/ }));
-    expect(next()).toBeDisabled();
-  }, 15000);
+  describe('a day after the declared present', () => {
+    usePinnedDemoClock('2026-09-01T09:00:00.000Z');
+    it('the certificate that expires ON the declared present still reads valid, and the line can pass', async () => {
+      await openGr007();
+      expect(screen.getByTestId('gr-cert-valid-0')).toHaveTextContent('SAMPLE-HALAL-0005B');
+      expect(screen.queryByTestId('gr-cert-notice-0')).not.toBeInTheDocument();
+      fireEvent.click(screen.getByRole('radio', { name: /Halal Seal Check.*Pass/ }));
+      fireEvent.click(screen.getByRole('radio', { name: /BPOM Lot Tracking.*Pass/ }));
+      expect(next()).toBeEnabled();
+    }, 15000);
+  });
+
+  describe('after the BPJPH mandate date', () => {
+    usePinnedDemoClock('2026-10-20T09:00:00.000Z');
+    it('the same line reads exactly the same — the mandate reaches receiving when the declared present does', async () => {
+      await openGr007();
+      expect(screen.getByTestId('gr-cert-valid-0')).toHaveTextContent('SAMPLE-HALAL-0005B');
+      expect(screen.queryByTestId('gr-cert-notice-0')).not.toBeInTheDocument();
+    }, 15000);
+  });
 });
 
 describe('OPS-2 · the Compliance surface — Material applicability', () => {
@@ -333,16 +365,28 @@ describe('OPS-2 · the Compliance surface — Material applicability', () => {
   it('opens on what is waiting for a ruling — exactly the materials the master has not determined', async () => {
     expect(pendingCodes).toContain('RM-COCO-8200');
     expect(pendingCodes).not.toContain('PK-PETB-8801');
+    // OPS-2b — the master leaves these undetermined; the ledger now opens with a
+    // SAMPLE ruling on all but one. It read "every one of them is pending".
+    expect([...pendingCodes].sort()).toEqual([...SAMPLE_BPOM_RULED, BPOM_PENDING_SPECIMEN].sort());
     renderWithProviders(<Compliance />, { identity: BUYER_NAMED_COMPLIANCE });
     const p = await panel();
-    for (const code of pendingCodes) {
-      expect(await p.findByTestId(`applicability-bpom-${code}`)).toHaveTextContent('Pending — Compliance to rule');
-      // Halal is answered for every one of them — by the master's default.
-      expect(p.getByTestId(`applicability-halal-${code}`)).toHaveTextContent('Applies');
-    }
-    // A packaging row is not waiting: it is not in this filter.
+    expect(await p.findByTestId(`applicability-bpom-${BPOM_PENDING_SPECIMEN}`)).toHaveTextContent(
+      'Pending — Compliance to rule',
+    );
+    // Halal is answered for it — by the master's default.
+    expect(p.getByTestId(`applicability-halal-${BPOM_PENDING_SPECIMEN}`)).toHaveTextContent('Applies');
+    // A ruled raw material and a packaging row are not waiting: neither is in this filter.
+    expect(p.queryByTestId('applicability-bpom-RM-STEAR-7300')).not.toBeInTheDocument();
     expect(p.queryByTestId('applicability-halal-PK-PETB-8801')).not.toBeInTheDocument();
-    expect(p.getByText(`Pending a ruling (${pendingCodes.length})`)).toBeInTheDocument();
+    expect(p.getByText('Pending a ruling (1)')).toBeInTheDocument();
+    // The ten are under "Ruled by Compliance", each applying, each marked SAMPLE.
+    fireEvent.click(p.getByText(`Ruled by Compliance (${SEEDED})`));
+    for (const code of SAMPLE_BPOM_RULED) {
+      const cell = await p.findByTestId(`applicability-bpom-${code}`);
+      expect(cell).toHaveTextContent('Applies');
+      expect(cell).toHaveTextContent('(SAMPLE)');
+    }
+    expect(p.queryByTestId(`applicability-bpom-${BPOM_PENDING_SPECIMEN}`)).not.toBeInTheDocument();
   });
 
   it('Compliance rules a packaging material not applicable; the row, the ledger and the history say who and why', async () => {
@@ -373,8 +417,8 @@ describe('OPS-2 · the Compliance surface — Material applicability', () => {
     });
     fireEvent.click(p.getByTestId('applicability-commit'));
 
-    await waitFor(() => expect(materialRulingStore.all()).toHaveLength(1));
-    expect(materialRulingStore.all()[0]).toMatchObject({
+    await waitFor(() => expect(materialRulingStore.all()).toHaveLength(SEEDED + 1));
+    expect(materialRulingStore.all().slice(-1)[0]).toMatchObject({
       materialCode: 'PK-CART-9901',
       regime: 'halal',
       applicable: false,
@@ -411,7 +455,7 @@ describe('OPS-2 · the Compliance surface — Material applicability', () => {
     await waitFor(() =>
       expect(toasts()).toMatch(/a ruling is recorded against the person who made it/),
     );
-    expect(materialRulingStore.all()).toHaveLength(0);
+    expect(materialRulingStore.all()).toHaveLength(SEEDED);
     // The form stays open: nothing was recorded, so nothing is dismissed.
     expect(p.getByTestId('applicability-form')).toBeInTheDocument();
   }, 15000);
@@ -429,17 +473,20 @@ describe('OPS-2 · the Compliance surface — Material applicability', () => {
     expect((await rule('RM-COCO-8200', 'bpom', false, 'First.')).status).toBe('done');
     renderWithProviders(<Compliance />, { identity: BUYER_NAMED_COMPLIANCE });
     const p = await panel();
-    fireEvent.click(await p.findByText('Ruled by Compliance (1)'));
-    // The filter holds what Compliance ruled and nothing else: one row.
+    fireEvent.click(await p.findByText(`Ruled by Compliance (${SEEDED + 1})`));
+    // The filter holds what Compliance ruled and nothing else. (OPS-2b — it read
+    // "one row"; the ten SAMPLE rulings are in it too, and a material nobody
+    // ruled is still not.)
     expect(await p.findByTestId('applicability-bpom-RM-COCO-8200')).toHaveTextContent('Does not apply');
-    expect(p.queryByTestId('applicability-bpom-RM-STEAR-7300')).not.toBeInTheDocument();
+    expect(p.getByTestId('applicability-bpom-RM-STEAR-7300')).toHaveTextContent('Applies');
+    expect(p.queryByTestId('applicability-bpom-AI-NIAC-6601')).not.toBeInTheDocument();
     expect(p.queryByTestId('applicability-halal-PK-PETB-8801')).not.toBeInTheDocument();
     fireEvent.click(await p.findByTestId('applicability-rule-bpom-RM-COCO-8200'));
     fireEvent.click(p.getByTestId('applicability-choice-no'));
     fireEvent.change(p.getByTestId('applicability-reason'), { target: { value: 'Again.' } });
     fireEvent.click(p.getByTestId('applicability-commit'));
     await waitFor(() => expect(toasts()).toMatch(/already ruled that way\. A ruling records a change\./));
-    expect(materialRulingStore.all()).toHaveLength(1);
+    expect(materialRulingStore.all()).toHaveLength(SEEDED + 1);
   }, 15000);
 
   it('the section is translated — Indonesian reads the pending state and the owner', async () => {

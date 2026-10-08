@@ -68,6 +68,12 @@ const line = (acc: number, rej: number): InspectionResult => ({
   qtyReceived: acc + rej,
   qtyAccepted: acc,
   qtyRejected: rej,
+  // OPS-2b — EDITED ON PURPOSE. These lines carried no seal or lot answer and were
+  // accepted anyway; the dispatcher now refuses to accept a line whose required
+  // regulatory check is unanswered (`gr_receipt_compliant`), so a receipt this
+  // spec means to ACCEPT records both, as the receiving form does.
+  halalSealCheck: 'Pass',
+  bpomLotCheck: 'Pass',
   visualCheck: 'Pass',
   packagingCheck: 'Pass',
 });
@@ -157,8 +163,15 @@ describe('GR-post → invoice-match cascade — the verdict is computed, never f
 
   it('NO-OP: a non-Submitted invoice on the posted PO is left untouched', async () => {
     // inv-brl-0042: Payment Released / Matched on PO-2025-00107 — not Submitted.
-    asnStore.add(asnOn('ASN-NOOP', 'PO-2025-00107', 'sup-007'));
-    const post = await receiveApproveAndPost('ASN-NOOP', [line(100, 0)]);
+    // OPS-2b — EDITED ON PURPOSE. This receipt was sup-007 delivering
+    // RM-EMUL-9410, a material sup-007 holds no halal certificate for, and it
+    // was accepted. `gr_receipt_compliant` now refuses that acceptance, so the
+    // receipt names a material this supplier IS certified for; what the spec
+    // asserts — the invoice is left untouched — is unchanged.
+    const bottle = { materialCode: 'PK-PETB-8801', description: 'PET Bottle 200ml Frosted' };
+    const asn = asnOn('ASN-NOOP', 'PO-2025-00107', 'sup-007');
+    asnStore.add({ ...asn, lineItems: [{ ...asn.lineItems[0], ...bottle }] });
+    const post = await receiveApproveAndPost('ASN-NOOP', [{ ...line(100, 0), ...bottle }]);
     expect(post.status).toBe('submitted');
 
     const inv = invoiceStore.get('inv-brl-0042')!;

@@ -690,6 +690,14 @@ describe('E1 — ⚠️ HEADLESS. NO STORE, NO CONSUMER, NO CLOCK', () => {
       '/src/services/data/mock/enforcementSeam.test.ts',
       '/src/services/data/mock/enforcementSeed.test.ts',
       '/src/services/data/mock/enforcementSetCommand.test.ts',
+      // OPS-2b — the acceptance gate reads the ledger, and this spec appends an
+      // `EnforcementSetting` as data to show that it does (a recorded `OBSERVE`
+      // on the certificate check admits what `BLOCK` refuses). Authorised by the
+      // OPS-2b ruling: enforce in the dispatcher.
+      '/src/services/data/mock/ops2bEnforcement.test.ts',
+      // OPS-2b — the one-clock guard names `effectiveEnforcement` in a matcher:
+      // a module that calls it is in the population held off the wall clock.
+      '/src/services/data/oneClock.guard.test.ts',
       // ⚠️ M2 · OPERATOR RULING 1 — "no module part reaches a governed
       // compliance check". It consumes `GOVERNED_CHECK_IDS` as a VALUE to DERIVE
       // the check set: which wired targets answer for a check id, and which
@@ -756,6 +764,12 @@ describe('E1 — ⚠️ HEADLESS. NO STORE, NO CONSUMER, NO CLOCK', () => {
       '/src/services/data/mock/MockCommandService.ts', // the CommandTarget
       '/src/services/data/mock/MockEnforcementService.ts', // the read seam
       '/src/services/data/mock/enforcementSeed.ts', //    E4 — the opening act
+      // OPS-2b — THE SECOND GATE THAT READS A MODE, and the first in the
+      // dispatcher: `gr_receipt_compliant` asks the ledger whether an unanswered
+      // seal or lot check, or a certificate that does not satisfy, stops the
+      // acceptance — the same three reads the wizard makes. Authorised by the
+      // operator's ruling on OPS-2: enforce in the dispatcher.
+      '/src/services/data/mock/receiptComplianceHook.ts',
       '/src/services/data/mock/stores/enforcementSettingStore.ts', // the ledger
       '/src/services/data/types.ts', //                   the seam's row type (TYPE-ONLY)
       '/src/services/query/hooks.ts', //                  E4 — the scoped read hook

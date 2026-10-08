@@ -371,7 +371,19 @@ describe('2B-4b — the gate: WIRED, and the prefix rule is GONE', () => {
     // so a refusal cannot be reduced to a message beside a check that still
     // passes. `GRInspectionWizard.test.tsx` proves the behaviour; this proves
     // the wiring is the one the behaviour runs through.
-    expect(wizard).toContain('if (!l.bpom.ok) return false;');
+    // ⚠️ OPS-2b — THE CLAUSE MOVED, AND THIS PIN FOLLOWED IT. It read
+    // `expect(wizard).toContain('if (!l.bpom.ok) return false;')`. By operator ruling the
+    // regulatory clauses are enforced in the dispatcher and the form previews
+    // the SAME predicate, so they left the wizard for
+    // `services/data/receiptCompliance.ts`, which both call. What is pinned is
+    // unchanged — the refusal carries no mode; the answer's consequence does —
+    // and it is pinned where the clause now lives, plus the one line that shows
+    // the wizard still runs through it.
+    const predicate = src['/src/services/data/receiptCompliance.ts'];
+    expect(predicate, 'the shared receipt predicate').toBeDefined();
+    expect(wizard).toContain('receiptBlocks.length === 0');
+    expect(wizard).toContain('receiptComplianceBlocks({');
+    expect(predicate).toContain('if (!bpom.ok) {');
     // ⚠️ CP-3 · E4 — the applicable-and-unanswered clause now reads its
     // consequence off the enforcement ledger (`lotBlocks`), measured delta ZERO.
     // Added here because this census asserted only the REFUSAL line and would
@@ -379,9 +391,11 @@ describe('2B-4b — the gate: WIRED, and the prefix rule is GONE', () => {
     // it and this one did not, which is a coverage difference rather than a
     // design one. The refusal line above stays mode-free: a mode may relax the
     // consequence of an answer and never the absence of a question.
-    expect(wizard).toContain(
-      'if (l.bpom.applicable && !l.bpomLotCheck && lotBlocks) return false;',
+    // (It read `'if (l.bpom.applicable && !l.bpomLotCheck && lotBlocks) return false;'`.)
+    expect(predicate).toContain(
+      '} else if (bpom.applicable && !checkAnswered(line.bpomLotCheck) && stops.lot) {',
     );
+    expect(wizard).toContain('lot: lotBlocks');
   });
 
   it('NO PREFIX PARSE SURVIVES IN PRODUCTION CODE — derived, not enumerated', () => {
@@ -447,9 +461,14 @@ describe('2B-4b — the gate: WIRED, and the prefix rule is GONE', () => {
     // no master, and reaches no surface (the glossary is headless at GL-0). The
     // coupling is the POINT: it is what makes a refusal reason unable to exist
     // without a definition, and a definition unable to outlive its reason.
+    // OPS-2b adds the THIRD, and it is looked at here: `receiptCompliance.ts`
+    // imports the refusal-reason type to carry the lookup's own reason on a
+    // stop (`detail`). It reaches the lookup through `materialRuling.ts`, never
+    // directly, so it is a type-only reference like the other two.
     expect(typeOnly).toEqual([
       '/src/lib/enforcement.ts',
       '/src/lib/glossary/refusals.glossary.ts',
+      '/src/services/data/receiptCompliance.ts',
     ]);
 
     // ⚠️ THE LIMIT OF THIS CHECK, STATED AND UNCHANGED FROM 2B-4a: Vite's

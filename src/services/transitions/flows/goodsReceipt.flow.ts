@@ -154,7 +154,11 @@ export const goodsReceiptFlow: FlowDefinition = {
       trigger: 'user',
       requiredRole: 'gr:disposition',
       requiredFields: [],
-      policyHooks: [POLICY_HOOKS.GR_ROLLUP_APPROVED],
+      // OPS-2b — and, second, only when no line is stopped on a regulatory
+      // check. The rollup answers "do the lines add up to this decision"; this
+      // answers "may these goods be accepted at all". Both acceptance verbs
+      // carry it; `t_gr_reject` does not — refusing goods needs no certificate.
+      policyHooks: [POLICY_HOOKS.GR_ROLLUP_APPROVED, POLICY_HOOKS.GR_RECEIPT_COMPLIANT],
       surfaceable: { surfaced: true },
       version: 1,
     },
@@ -167,7 +171,7 @@ export const goodsReceiptFlow: FlowDefinition = {
       trigger: 'user',
       requiredRole: 'gr:disposition',
       requiredFields: [],
-      policyHooks: [POLICY_HOOKS.GR_ROLLUP_PARTIAL],
+      policyHooks: [POLICY_HOOKS.GR_ROLLUP_PARTIAL, POLICY_HOOKS.GR_RECEIPT_COMPLIANT],
       surfaceable: { surfaced: true },
       version: 1,
     },
