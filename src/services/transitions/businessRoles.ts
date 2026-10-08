@@ -355,6 +355,10 @@ const LANE_BUNDLES = Object.freeze({
       // lane that already decides the rules the others are held to — not with
       // any lane it switches.
       'module:set',
+      // ── OPS-2 · RULING WHETHER HALAL OR BPOM APPLIES TO A MATERIAL ─────────
+      // The fifth governance atom here, for the same sentence: receiving is the
+      // lane a ruling binds, so receiving cannot be the lane that makes it.
+      'material:rule',
     ]),
     // The SDC / P2 planning lane. `inventorydeclaration:record` is the C4c
     // buyer RECORDING verb — a distinct authority from the supplier's

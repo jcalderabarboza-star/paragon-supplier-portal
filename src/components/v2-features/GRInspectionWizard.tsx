@@ -7,7 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { useEnumLabel } from '../../hooks/useEnumLabel';
 import { statusLabelKey } from '../../lib/statusLabel';
 import { enumLabelKey } from '../../lib/priorityLabel';
-import type { Shipment, ASN, AsnStatus } from '../../services/data/types';
+import type { Shipment, ASN, AsnStatus, GoodsReceipt } from '../../services/data/types';
 import type { InspectionResult } from '../../data/mockGoodsReceipts';
 import {
   readGrLineQuantities,
@@ -19,6 +19,7 @@ import {
   useGoodsReceiptCreate,
   useGoodsReceiptFinalize,
   useGoodsReceiptPost,
+  useGoodsReceiptResume,
   useGoodsReceiptSettle,
 } from '../../services/query/commandHooks';
 import {
@@ -34,6 +35,15 @@ import { bpomOf } from '../../services/sdc/bpom';
 import type { BpomOutcome, BpomRefusalReason } from '../../services/sdc/bpom';
 import { halalOf } from '../../services/sdc/halal';
 import type { HalalOutcome, HalalRefusalReason } from '../../services/sdc/halal';
+import {
+  bpomUnderRuling,
+  halalUnderRuling,
+  type MaterialRuling,
+} from '../../services/sdc/materialRuling';
+import { DECLARED_PRESENT } from '../../services/data/fixturePresent';
+import { personLabel } from '../../services/identity/personLabel';
+import { rolesHolding } from '../../services/transitions/businessRoles';
+import { ownerLabelKeys } from '../../services/transitions/handoff';
 import { blocks, effectiveEnforcement } from '../../lib/enforcement';
 import type { EnforcementSetting } from '../../lib/enforcement';
 import { verifyHalalAtReceipt } from '../../services/data/halalVerification';
@@ -101,6 +111,24 @@ interface GRInspectionWizardProps {
    * derivation below can widen a `QueryScope`.
    */
   complianceRegistry: readonly ComplianceRegistryEntry[];
+  /**
+   * OPS-2 — the material applicability ruling ledger, resolved by the page
+   * through `useMaterialRulings()` and passed down like the two reads above.
+   * Whether halal or BPOM applies to a line is read from the ruling in force,
+   * and from the material master where Compliance has not ruled.
+   */
+  materialRulings: readonly MaterialRuling[];
+  /**
+   * OPS-2 (R-OPS P0-4) — THE RECEIPT TO WORK, when there already is one.
+   *
+   * Absent, the form creates a receipt (the "New GR" entry). Present, it
+   * RESUMES that receipt: no source step, the lines are the receipt's own, and
+   * the commit fires start-inspection (if it has not started), records the
+   * results, and then takes the decision or places the hold — on THIS receipt.
+   * It used to open the create form whatever it was given, so "Start
+   * inspection" on a pending receipt ended by making a second one.
+   */
+  resume?: GoodsReceipt;
 }
 
 // CP-0 · W1 · 2f-a — each quantity refusal names its own rule. A blank, an
@@ -412,11 +440,13 @@ const seedBpom = (materialCode: string): Pick<LineDraft, 'bpom' | 'bpomLotCheck'
  * ANY DATE ON THE DOCUMENT CHANGING — the scheme retires under GR 42/2024 — and
  * that transition is what the mandate looks like at a dock.
  *
- * ⚠️ **`role="status"`, NEVER `role="alert"`.** The two refusal banners are
- * `alert` because they stop the step; this does not stop anything, and an
- * assertive live region would announce an emergency to a screen-reader user for
- * a line that is going to pass. THE POLITENESS LEVEL IS THE ENFORCEMENT
- * SEMANTICS, SPOKEN.
+ * ⚠️ **THE POLITENESS LEVEL IS THE ENFORCEMENT SEMANTICS, SPOKEN.** At H4 this
+ * was `role="status"`, never `role="alert"`: the notice stopped nothing, and an
+ * assertive live region would have announced an emergency for a line that was
+ * going to pass. Since OPS-2 a certificate that does not satisfy STOPS the step
+ * under the default mode, so the rule has two arms and the caller says which
+ * (`stops`): `alert` when the line will not pass, `status` when a recorded
+ * `OBSERVE` means it will. The sentence under the fields changes with it.
  *
  * ⚠️ **THE REASON CARRIES A GLOSSARY CHIP AND THE COPY NAMES A NEXT ACTION.**
  * `HALAL-REFUSAL-DEAD-ENDS-01`: a refusal that ends the conversation is half a
@@ -429,7 +459,12 @@ const CertificateNotice: React.FC<{
   materialCode: string;
   supplierName: string;
   index: number;
-}> = ({ verdict, materialCode, supplierName, index }) => {
+  /** OPS-2 — does a certificate that does not satisfy STOP the step? Read off
+   *  the enforcement ledger by the caller (`halal.certificate`), never assumed. */
+  stops: boolean;
+  /** Who can rule that halal does not apply — named in the sentence that stops. */
+  owner: string;
+}> = ({ verdict, materialCode, supplierName, index, stops, owner }) => {
   const { t } = useTranslation();
 
   if (verdict.verdict === 'SATISFIED') {
@@ -479,7 +514,9 @@ const CertificateNotice: React.FC<{
   return (
     <div
       data-testid={`gr-cert-notice-${index}`}
-      role="status"
+      // OPS-2 — `alert` when it stops the step, `status` when it only tells:
+      // the politeness level is still the enforcement semantics, spoken.
+      role={stops ? 'alert' : 'status'}
       className="col-span-2 rounded-md border border-warning bg-warning-soft px-3 py-2 text-xs text-warning-hover flex flex-col gap-1"
     >
       <div>
@@ -528,7 +565,11 @@ const CertificateNotice: React.FC<{
       {/* ⚠️ THE SENTENCE THAT MAKES THIS A NOTICE AND NOT A BLOCK, ON THE
           SURFACE where the clerk reads it rather than only in a mode nobody
           can see. */}
-      <div className="italic">{t('goodsReceipt.wizard.cert.notice.proceeds')}</div>
+      <div className="italic" data-testid={`gr-cert-consequence-${index}`}>
+        {stops
+          ? t('goodsReceipt.wizard.cert.notice.stops', { owner })
+          : t('goodsReceipt.wizard.cert.notice.proceeds')}
+      </div>
     </div>
   );
 };
@@ -536,6 +577,53 @@ const CertificateNotice: React.FC<{
 const seedHalal = (materialCode: string): Pick<LineDraft, 'halal' | 'halalSealCheck'> => ({
   halal: halalOf(materialCode),
   halalSealCheck: undefined,
+});
+
+/** A recorded Pass/Fail is kept; anything else (Pending, absent) is no answer. */
+const recordedAnswer = (v: unknown): 'Pass' | 'Fail' | undefined =>
+  v === 'Pass' || v === 'Fail' ? v : undefined;
+
+/**
+ * OPS-2 — the lines of a receipt that already exists, as a draft to work on.
+ *
+ * What was recorded is KEPT: a counted quantity, a failed check, a ticked seal.
+ * What was never recorded is not invented — a regulatory check nobody answered
+ * opens unanswered, exactly as on a new receipt. A receipt nobody has inspected
+ * yet (nothing accepted, nothing rejected) opens with the received quantity as
+ * the accepted one, which is the new-receipt default and is edited from there.
+ */
+const buildDraftFromReceipt = (gr: GoodsReceipt): LineDraft[] =>
+  gr.inspectionResults.map((r) => {
+    const uninspected = r.qtyAccepted === 0 && r.qtyRejected === 0;
+    return {
+      materialCode: r.materialCode,
+      description: r.description,
+      qtyExpected: r.qtyExpected,
+      qtyReceivedRaw: seedQty(r.qtyReceived),
+      qtyAcceptedRaw: seedQty(uninspected ? r.qtyReceived : r.qtyAccepted),
+      rejectionReason: r.rejectionReason ?? '',
+      visualCheck: r.visualCheck === 'Fail' ? 'Fail' : 'Pass',
+      packagingCheck: r.packagingCheck === 'Fail' ? 'Fail' : 'Pass',
+      // The same ONE read per regime as the two builders below — a resumed
+      // line cannot disagree with a new one about what the master says.
+      ...seedHalal(r.materialCode),
+      ...seedBpom(r.materialCode),
+      halalSealCheck: recordedAnswer(r.halalSealCheck),
+      bpomLotCheck: recordedAnswer(r.bpomLotCheck),
+      labSampleRequired: Boolean(r.labResultId),
+      labRequestId: r.labResultId,
+    };
+  });
+
+const sourceFromReceipt = (gr: GoodsReceipt): GrSource => ({
+  id: `gr:${gr.id}`,
+  asnNumber: gr.asnNumber,
+  poNumber: gr.poNumber,
+  supplierId: gr.supplierId,
+  supplierName: gr.supplierName,
+  dockLabel: '',
+  dockTime: '',
+  lines: buildDraftFromReceipt(gr),
 });
 
 const buildDraftFromShipment = (s: Shipment): LineDraft[] =>
@@ -603,6 +691,8 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
   asns,
   enforcementSettings,
   complianceRegistry,
+  materialRulings,
+  resume,
 }) => {
   const { toast } = useToast();
   const { t } = useTranslation();
@@ -622,6 +712,7 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
   const finalizeGR = useGoodsReceiptFinalize();
   const postGR = useGoodsReceiptPost();
   const settleGR = useGoodsReceiptSettle();
+  const resumeGR = useGoodsReceiptResume();
   const [step, setStep] = useState(0);
 
   // Step 1 state
@@ -632,11 +723,16 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
   const [manualASN, setManualASN] = useState('');
 
   // Step 2 state
-  const [receivedDate, setReceivedDate] = useState('2026-05-20');
-  const [receivedBy, setReceivedBy] = useState(ROLES[0]);
+  // OPS-2 — the received date opens on the DECLARED PRESENT. It read the
+  // literal '2026-05-20', a day three months behind every receipt on the page.
+  // A resumed receipt shows the date and receiver it was created with.
+  const [receivedDate, setReceivedDate] = useState(resume?.receivedDate || DECLARED_PRESENT);
+  const [receivedBy, setReceivedBy] = useState(resume?.receivedBy || ROLES[0]);
   const [warehouse, setWarehouse] = useState(LOCATIONS[0]);
   const [notes, setNotes] = useState('');
-  const [lines, setLines] = useState<LineDraft[]>([]);
+  const [lines, setLines] = useState<LineDraft[]>(() =>
+    resume ? buildDraftFromReceipt(resume) : [],
+  );
 
   // Step 4 state — NO free-choice disposition: the header is DERIVED from the
   // lines (see derivedDisposition below), never asserted.
@@ -644,6 +740,11 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
   const [autoPostSap, setAutoPostSap] = useState(true);
   const [finalNotes, setFinalNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  // OPS-2 — the OTHER outcome of an inspection: not a decision, a hold. It is
+  // the inspector's choice (`t_gr_hold`, with a reason), never derived, and
+  // `t_gr_hold` had no caller anywhere until this form offered it.
+  const [holdInstead, setHoldInstead] = useState(false);
+  const [holdReason, setHoldReason] = useState('');
 
   // Receivable GR sources = shipments at dock ∪ live receivable ASNs (deduped by
   // ASN number; the shipment wins when both exist since it carries dock data).
@@ -669,8 +770,17 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
   );
   const manualNotFound = manualASN.trim().length > 0 && !manualAsnMatch;
 
-  const activeSource: GrSource | undefined =
-    sourceMode === 'manual'
+  // The resumed receipt's identity is fixed when the form opens: a refetch
+  // mid-form must not swap the document under the inspector.
+  const resumeSource = useMemo(
+    () => (resume ? sourceFromReceipt(resume) : undefined),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [resume?.id],
+  );
+
+  const activeSource: GrSource | undefined = resumeSource
+    ? resumeSource
+    : sourceMode === 'manual'
       ? manualAsnMatch
         ? sourceFromAsn(manualAsnMatch)
         : undefined
@@ -789,7 +899,7 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
    * unavailable or unreadable ledger blocks exactly as today. There is no path
    * through this derivation on which a missing setting relaxes a check.
    */
-  const { sealBlocks, lotBlocks } = useMemo(
+  const { sealBlocks, lotBlocks, certBlocks } = useMemo(
     () => ({
       sealBlocks: blocks(
         effectiveEnforcement(enforcementSettings, 'halal.seal', inspectionInstant).mode,
@@ -797,10 +907,54 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
       lotBlocks: blocks(
         effectiveEnforcement(enforcementSettings, 'bpom.lot', inspectionInstant).mode,
       ),
+      // OPS-2 — the third governed check, and the clause H4 said would follow.
+      // `halal.certificate` has no recorded setting, so this derives
+      // `BLOCK / NO_SETTING_RECORDED`: full rigour, as an unseeded check always
+      // does.
+      certBlocks: blocks(
+        effectiveEnforcement(enforcementSettings, 'halal.certificate', inspectionInstant).mode,
+      ),
     }),
     [enforcementSettings, inspectionInstant],
   );
 
+  // ── OPS-2 — THE LINES AS THEY ARE JUDGED: THE RULING READ OVER THE MASTER ──
+  // The draft carries what the master says (`l.halal`, `l.bpom` — one read per
+  // regime, when the line is drafted, as before). What DECIDES is that outcome
+  // with the Compliance ruling in force read over it, derived here at render so
+  // a ruling made while the form stands open reaches it. The ruling wins; where
+  // Compliance has not ruled the master answers; where neither has, the
+  // question stays refused and the line says who rules. Index-aligned with
+  // `lines`, and every reader below reads THIS, never the draft's own outcome.
+  const judged = useMemo(
+    () =>
+      lines.map((l) => ({
+        ...l,
+        halal: halalUnderRuling(l.halal, materialRulings, l.materialCode),
+        bpom: bpomUnderRuling(l.bpom, materialRulings, l.materialCode),
+      })),
+    [lines, materialRulings],
+  );
+
+  // Who rules applicability — derived from the lane that holds the atom, so the
+  // name on the refusal moves with the role model rather than with this file.
+  const rulingOwner = ownerLabelKeys(rolesHolding('material:rule'))
+    .map((k) => t(k))
+    .join(' / ');
+
+  // ── ⚠️ OPS-2 — THE TITLE AND THE SECOND SECTION BELOW ARE SUPERSEDED, AND ARE
+  //   LEFT STANDING AS THE RECORD OF WHAT H4 RULED AND WHY. The operator has
+  //   since ruled: *"Receiving checks the real thing: applicable → a valid
+  //   certificate on file; not applicable → passes with the ruling shown."* So
+  //   the notice still TELLS — every field below is still on the line — and the
+  //   step now STOPS, by exactly the successor H4 named: ONE clause in
+  //   `qualityValid`, `&& certBlocks`, read off the enforcement ledger. No mode
+  //   was seeded; the unrecorded setting derives `BLOCK`, which is why it stops.
+  //   The consequence H4 measured is therefore real today and is reported with
+  //   the batch: a halal line with no valid certificate on file does not pass.
+  //   The way through for a material halal does not reach is a Compliance
+  //   ruling (`sdc/materialRuling.ts`), which the third section already assumed.
+  //
   // ── ⚠️ CP-3 · H4 — THE CERTIFICATE NOTICE. IT TELLS; IT DOES NOT STOP. ────
   //
   // THE OPERATOR'S RULING, and it is a ruling about the CLERK, not about a mode:
@@ -841,9 +995,13 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
   //   warning would answer it in the affirmative by implication. Four receivable
   //   lines are that shape and NONE of them gets a notice. Pinned in the spec,
   //   and mutation-probed by widening this condition.
+  //   (OPS-2 — those four were the packaging lines; the operator answered the
+  //   question for them, so they are now asked. The gate itself is unchanged and
+  //   reads the RULED outcome: a material Compliance rules not applicable is not
+  //   asked for a certificate.)
   const certVerdicts: readonly (HalalVerification | null)[] = useMemo(
     () =>
-      lines.map((l) =>
+      judged.map((l) =>
         activeSource && l.halal.ok && l.halal.required
           ? verifyHalalAtReceipt(
               activeSource.supplierId,
@@ -853,7 +1011,7 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
             )
           : null,
       ),
-    [lines, activeSource, complianceRegistry, inspectionInstant],
+    [judged, activeSource, complianceRegistry, inspectionInstant],
   );
 
   // ── CP-2 · 2B-4b — THE REGULATORY GATE, AND IT FAILS CLOSED ───────────────
@@ -907,10 +1065,19 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
   // is no way to write a mode into those two lines without inventing a value
   // the union does not contain — the absence is the mechanism, not a rule
   // somebody has to remember here.
-  const qualityValid = lines.every((l) => {
+  //
+  // ── ⚠️ OPS-2 — THE CERTIFICATE NOW STOPS THE STEP (operator ruling) ────────
+  // "Receiving checks the real thing: applicable → a valid certificate on file;
+  // not applicable → passes with the ruling shown." This SUPERSEDES H4's ruling
+  // that the notice tells and never stops, and it lands as the one clause H4
+  // said it would: `&& certBlocks`, read off the enforcement ledger like its two
+  // neighbours. The way through for a material halal does not apply to is a
+  // Compliance ruling on the ledger — never a mode relaxed here.
+  const qualityValid = judged.every((l, i) => {
     if (!l.visualCheck || !l.packagingCheck) return false;
     if (!l.halal.ok) return false;
     if (l.halal.required && !l.halalSealCheck && sealBlocks) return false;
+    if (l.halal.required && certVerdicts[i]?.verdict === 'NOT_SATISFIED' && certBlocks) return false;
     if (!l.bpom.ok) return false;
     if (l.bpom.applicable && !l.bpomLotCheck && lotBlocks) return false;
     if (l.labSampleRequired && !l.labRequestId) return false;
@@ -919,17 +1086,21 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
 
   // A fully-Rejected rollup needs a reason (t_gr_reject requiredField); Approved
   // / Partially Approved don't. 'Pending' can't be finalized (uninspected line).
-  const dispositionValid =
-    derivedDisposition === 'Rejected'
+  // OPS-2 — a hold is valid when it says why; it takes no decision, so the
+  // rollup's own rule does not apply to it.
+  const dispositionValid = holdInstead
+    ? holdReason.trim().length > 0
+    : derivedDisposition === 'Rejected'
       ? dispositionReason.trim().length > 0
       : derivedDisposition !== 'Pending';
 
-  const isStepValid = (i: number): boolean => {
-    if (i === 0) return sourceValid;
-    if (i === 1) return receiptValid;
-    if (i === 2) return qualityValid;
-    if (i === 3) return dispositionValid;
-    return true;
+  // Keyed on the step's ID, not its position: a resumed receipt has no source
+  // step, so every position after it is one lower than on a new receipt.
+  const stepValidity: Record<string, boolean> = {
+    source: sourceValid,
+    details: receiptValid,
+    quality: qualityValid,
+    disposition: dispositionValid,
   };
 
   const updateLine = (idx: number, patch: Partial<LineDraft>) => {
@@ -1038,6 +1209,21 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
 
   const stepTwoContent = (
     <div className="flex flex-col gap-5">
+      {resume && (
+        <div
+          data-testid="gr-resume-banner"
+          role="status"
+          className="rounded-md border border-border-subtle bg-bg-hover px-4 py-3 text-sm text-text-secondary"
+        >
+          <span className="font-semibold text-text-primary">
+            {t('goodsReceipt.wizard.resume.title')}{' '}
+            <Data as="span">{resume.grNumber}</Data>
+          </span>{' '}
+          · <Data as="span">{resume.asnNumber}</Data> · <Data as="span">{resume.poNumber}</Data> ·{' '}
+          {resume.supplierName}
+          <div className="mt-1 text-xs">{t('goodsReceipt.wizard.resume.body')}</div>
+        </div>
+      )}
       <FormSection title={t('goodsReceipt.wizard.section.receiptInfo')}>
         <div className="grid grid-cols-2 gap-4">
           <div>
@@ -1045,6 +1231,9 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
             <input
               type="date"
               value={receivedDate}
+              // The date and the receiver belong to the receipt's creation; a
+              // resumed receipt shows them and does not rewrite them.
+              disabled={!!resume}
               onChange={(e) => setReceivedDate(e.target.value)}
               className={inputCls}
             />
@@ -1053,9 +1242,13 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
             {labelFor(t('goodsReceipt.wizard.field.receivedBy'))}
             <select
               value={receivedBy}
+              disabled={!!resume}
               onChange={(e) => setReceivedBy(e.target.value)}
               className={inputCls}
             >
+              {resume && !ROLES.includes(receivedBy) && (
+                <option value={receivedBy}>{receivedBy}</option>
+              )}
               {ROLES.map((r) => (
                 <option key={r} value={r}>
                   {r}
@@ -1292,7 +1485,7 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
                   · REQUIRED, ANSWERED     → row, a selection, no marker
                   Neither check opens with an answer (`REQUIRED-OPENS-PRE-
                   ANSWERED-01`); both block `qualityValid` until ticked. */}
-              {l.halal.ok && l.halal.required && (
+              {judged[i].halal.ok && judged[i].halal.required && (
                 <RegulatoryCheck
                   name={`halal-${i}`}
                   label={t('goodsReceipt.wizard.field.halalSealCheck')}
@@ -1315,9 +1508,41 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
                   materialCode={l.materialCode}
                   supplierName={activeSource?.supplierName ?? ''}
                   index={i}
+                  stops={certBlocks}
+                  owner={rulingOwner}
                 />
               )}
-              {l.bpom.ok && l.bpom.applicable && (
+              {/* OPS-2 — THE RULING, SHOWN WHERE IT DECIDES. When Compliance has
+                  ruled on this material the line says so — who, when and why —
+                  whichever way the ruling went. A material ruled NOT applicable
+                  has no check row above, and this line is the reason. */}
+              {(['halal', 'bpom'] as const).map((regime) => {
+                const outcome = regime === 'halal' ? judged[i].halal : judged[i].bpom;
+                if (!outcome.ok || outcome.ruling === null) return null;
+                const r = outcome.ruling;
+                return (
+                  <div
+                    key={regime}
+                    data-testid={`gr-${regime}-ruling-${i}`}
+                    className="col-span-2 rounded-md border border-border-subtle bg-bg-hover px-3 py-2 text-xs text-text-secondary"
+                  >
+                    <span className="font-semibold text-text-primary">
+                      {t(
+                        `goodsReceipt.wizard.ruling.${regime}.${r.applicable ? 'applies' : 'notApplicable'}`,
+                      )}
+                    </span>{' '}
+                    {t('goodsReceipt.wizard.ruling.by', {
+                      person:
+                        r.setBy.kind === 'RESOLVED'
+                          ? personLabel(r.setBy.person.personId, t)
+                          : t('identity.actor.unknown'),
+                      date: formatDate(r.setAt.slice(0, 10)),
+                    })}{' '}
+                    {t('goodsReceipt.wizard.ruling.reason', { reason: r.reason })}
+                  </div>
+                );
+              })}
+              {judged[i].bpom.ok && judged[i].bpom.applicable && (
                 <RegulatoryCheck
                   name={`bpom-${i}`}
                   label={t('goodsReceipt.wizard.field.bpomLotTracking')}
@@ -1337,40 +1562,60 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
                   not-applicable, halal undetermined). Collapsing them into one
                   "compliance cannot be determined" message would lose which
                   regulator has not ruled. */}
-              {!l.halal.ok && (
-                <div
-                  data-testid={`gr-halal-refusal-${i}`}
-                  role="alert"
-                  className="col-span-2 rounded-md border border-warning bg-warning-soft px-3 py-2 text-xs text-warning-hover"
-                >
-                  <span className="font-semibold">
-                    {t('goodsReceipt.wizard.halal.refused.title')}
-                  </span>{' '}
-                  {t(GR_HALAL_REFUSAL_KEY[l.halal.reason], {
-                    code: l.halal.materialCode,
-                  })}{' '}
-                  <GlossaryTermChip
-                    refTo={{ sourceType: 'HalalRefusalReason', term: l.halal.reason }}
-                  />
-                </div>
-              )}
-              {!l.bpom.ok && (
-                <div
-                  data-testid={`gr-bpom-refusal-${i}`}
-                  role="alert"
-                  className="col-span-2 rounded-md border border-warning bg-warning-soft px-3 py-2 text-xs text-warning-hover"
-                >
-                  <span className="font-semibold">
-                    {t('goodsReceipt.wizard.bpom.refused.title')}
-                  </span>{' '}
-                  {t(GR_BPOM_REFUSAL_KEY[l.bpom.reason], {
-                    code: l.bpom.materialCode,
-                  })}{' '}
-                  <GlossaryTermChip
-                    refTo={{ sourceType: 'BpomRefusalReason', term: l.bpom.reason }}
-                  />
-                </div>
-              )}
+              {/* OPS-2 — a refusal for want of a RULING names who rules: the
+                  title says it is pending and the sentence says whose it is. An
+                  unknown material keeps its own title — no ruling can answer for
+                  a code the master does not hold. */}
+              {(() => {
+                const halal = judged[i].halal;
+                if (halal.ok) return null;
+                const pending = halal.reason === 'UNDETERMINED_APPLICABILITY';
+                return (
+                  <div
+                    data-testid={`gr-halal-refusal-${i}`}
+                    role="alert"
+                    className="col-span-2 rounded-md border border-warning bg-warning-soft px-3 py-2 text-xs text-warning-hover"
+                  >
+                    <span className="font-semibold">
+                      {pending
+                        ? t('goodsReceipt.wizard.halal.pending.title', { owner: rulingOwner })
+                        : t('goodsReceipt.wizard.halal.refused.title')}
+                    </span>{' '}
+                    {t(GR_HALAL_REFUSAL_KEY[halal.reason], {
+                      code: halal.materialCode,
+                      owner: rulingOwner,
+                    })}{' '}
+                    <GlossaryTermChip
+                      refTo={{ sourceType: 'HalalRefusalReason', term: halal.reason }}
+                    />
+                  </div>
+                );
+              })()}
+              {(() => {
+                const bpom = judged[i].bpom;
+                if (bpom.ok) return null;
+                const pending = bpom.reason === 'UNDETERMINED_APPLICABILITY';
+                return (
+                  <div
+                    data-testid={`gr-bpom-refusal-${i}`}
+                    role="alert"
+                    className="col-span-2 rounded-md border border-warning bg-warning-soft px-3 py-2 text-xs text-warning-hover"
+                  >
+                    <span className="font-semibold">
+                      {pending
+                        ? t('goodsReceipt.wizard.bpom.pending.title', { owner: rulingOwner })
+                        : t('goodsReceipt.wizard.bpom.refused.title')}
+                    </span>{' '}
+                    {t(GR_BPOM_REFUSAL_KEY[bpom.reason], {
+                      code: bpom.materialCode,
+                      owner: rulingOwner,
+                    })}{' '}
+                    <GlossaryTermChip
+                      refTo={{ sourceType: 'BpomRefusalReason', term: bpom.reason }}
+                    />
+                  </div>
+                );
+              })()}
             </div>
 
             <div className="flex items-center justify-between pt-2 border-t border-border-subtle">
@@ -1438,7 +1683,36 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
           </p>
         </div>
 
-        {derivedDisposition === 'Rejected' && (
+        {/* OPS-2 — the hold. Not a disposition and not derived: the inspector
+            says the lot is not ready to be decided, and why. */}
+        <label className="flex items-center gap-2 text-sm text-text-primary cursor-pointer">
+          <input
+            type="checkbox"
+            data-testid="gr-hold-instead"
+            checked={holdInstead}
+            onChange={(e) => setHoldInstead(e.target.checked)}
+          />
+          {t('goodsReceipt.wizard.hold.choose')}
+        </label>
+        {holdInstead && (
+          <div>
+            {labelFor(t('goodsReceipt.wizard.hold.reason'))}
+            <textarea
+              rows={2}
+              data-testid="gr-hold-reason"
+              aria-label={t('goodsReceipt.wizard.hold.reason')}
+              value={holdReason}
+              onChange={(e) => setHoldReason(e.target.value)}
+              className={inputCls}
+              placeholder={t('goodsReceipt.wizard.hold.placeholder')}
+            />
+            <p className="mt-1.5 text-xs text-text-tertiary">
+              {t('goodsReceipt.wizard.hold.note')}
+            </p>
+          </div>
+        )}
+
+        {!holdInstead && derivedDisposition === 'Rejected' && (
           <div>
             {labelFor(t('goodsReceipt.wizard.field.rejectionReasonRequired'))}
             <textarea
@@ -1452,7 +1726,8 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
           </div>
         )}
 
-        {(derivedDisposition === 'Approved' ||
+        {!holdInstead &&
+          (derivedDisposition === 'Approved' ||
           derivedDisposition === 'Partially Approved') && (
           <label className="flex items-center gap-2 text-sm text-text-primary cursor-pointer">
             <input
@@ -1496,14 +1771,16 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
         <div>
           <div className="text-xs text-text-tertiary">{t('goodsReceipt.wizard.summary.sapDoc')}</div>
           <div className="text-xs text-text-secondary">
-            {autoPostSap ? t('goodsReceipt.wizard.summary.assignedBySap') : t('goodsReceipt.wizard.summary.notPosted')}
+            {autoPostSap && !holdInstead
+              ? t('goodsReceipt.wizard.summary.assignedBySap')
+              : t('goodsReceipt.wizard.summary.notPosted')}
           </div>
         </div>
       </div>
     </div>
   );
 
-  const steps: WizardStep[] = [
+  const allSteps: WizardStep[] = [
     {
       id: 'source',
       title: t('goodsReceipt.wizard.step.source.title'),
@@ -1533,6 +1810,141 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
       content: stepFourContent,
     },
   ];
+  // A resumed receipt has no source to choose — it IS the source.
+  const steps = resume ? allSteps.filter((s) => s.id !== 'source') : allSteps;
+  const isStepValid = (i: number): boolean => stepValidity[steps[i]?.id ?? ''] ?? true;
+
+  // The SAP half of the commit, shared by both entrances — a receipt this form
+  // just created and one it resumed. `grId` is the store key; `grNumber` is
+  // what a reader is shown (they are the same string on a created receipt and
+  // differ on a seeded one).
+  const postIfAsked = async (
+    grId: string,
+    grNumber: string,
+    dispo: GrHeaderDisposition,
+    correlationId: string,
+  ): Promise<void> => {
+    // 3) Post to SAP (Option B) — only for an accepting rollup, when opted in.
+    if (autoPostSap && (dispo === 'Approved' || dispo === 'Partially Approved')) {
+      const postRes = await postGR.mutateAsync({ grId });
+      if (postRes.status === 'submitted') {
+        // The async SAP callback settles: Posting to SAP → Posted to SAP +
+        // the real material document (assigned on settle).
+        // §43 — the settle's OWN failure is surfaced (classified, with its
+        // remedy) by the mutation's onError. It is caught HERE so it cannot
+        // reach the outer catch, which would relabel a settlement fault as
+        // 'Not authorized' — a confidently WRONG cause, and the only thing
+        // worse than no message. On a failed settle the command stays
+        // `submitted` and the GR stays 'Posting to SAP'.
+        //
+        // ⚠️ **§91 FILED THIS AS A REMEDY WITH NO HANDLER, AND §91e MEASURED
+        // THE REMEDY TO BE THE OTHER ONE.** The sentence that stood here read
+        // *"so the post action genuinely re-attempts it"*, was corrected to
+        // *"a remedy named in copy with nothing behind it … the honest remedy
+        // is a re-settle affordance"*, and BOTH readings of the mechanism were
+        // wrong in the same place:
+        //
+        //   · `t_gr_post.from` really does exclude the interim state — but
+        //     widening it was never the fix. A re-post mints a SECOND
+        //     correlationId and orphans the first, whose `pending` entry then
+        //     never clears. The interim's only exit is `settlesTo`, so the
+        //     re-attempt is the SETTLE, on the SAME correlationId, and it
+        //     needs no machine change at all.
+        //   · *"TRANSPORT has no producer in this tree today"* is FALSE.
+        //     `withChaos` proxies `commands` — `settle` included — and throws
+        //     `DataError('CHAOS')`, which classifies TRANSPORT. It is
+        //     DEV-gated (`import.meta.env.DEV && VITE_CHAOS === 'on'`), so it
+        //     is tree-shaken from the production bundle, but a producer that
+        //     runs only in dev is a producer.
+        //
+        // So the copy's promise is TRUE about the machine and was unkept only
+        // by the surface. The catch below no longer swallows: it classifies
+        // and hands the fault UP, and `BuyerGoodsReceipt`'s interim footer
+        // offers the re-settle. The catch is still required, and for the
+        // reason it always was — a settle fault reaching the outer handler
+        // would be relabelled 'Not authorized', a confidently WRONG cause.
+        let failed: FailedSettle | undefined;
+        try {
+          await settleGR.mutateAsync({ correlationId: postRes.correlationId });
+        } catch (err) {
+          failed = {
+            grId,
+            correlationId: postRes.correlationId,
+            fault: classifySettleFault(err),
+          };
+        }
+        if (failed) {
+          // The hook's `onError` already toasted the classified fault and its
+          // remedy; this hands the correlationId up so the remedy EXISTS.
+          onComplete(failed);
+          return;
+        }
+        toast({
+          variant: 'success',
+          title: t('gr.post.posted.title', { grNumber }),
+          description: t('gr.post.posted.desc'),
+        });
+      } else {
+        toast({
+          variant: 'warning',
+          title: t('gr.post.failed.title', { grNumber }),
+          description: refusalText(postRes.reason) ?? t('gr.post.failed.desc', { reason: postRes.reason ?? '' }),
+        });
+      }
+    } else {
+      toast({
+        variant: 'success',
+        title: t('gr.dispose.success.title', { grNumber, disposition: dispositionLabel(dispo) }),
+        description: t('gr.dispose.success.desc', { correlationId: correlationId }),
+      });
+    }
+    onComplete();
+  };
+
+  // OPS-2 (R-OPS P0-4) — THE COMMIT ON A RECEIPT THAT ALREADY EXISTS. Nothing is
+  // created. The chain is start-inspection (when it has not started), record
+  // the results, then the decision or the hold; the first refusal stops it and
+  // is named by the step that met it.
+  const completeResume = async (gr: GoodsReceipt): Promise<void> => {
+    const dispo = derivedDisposition;
+    const headerVerb = headerVerbFor(dispo);
+    if (!holdInstead && !headerVerb) return;
+    const res = await resumeGR.mutateAsync({
+      grId: gr.id,
+      status: gr.status,
+      inspectionResults,
+      outcome: holdInstead
+        ? { kind: 'hold', holdReason: holdReason.trim() }
+        : {
+            kind: 'dispose',
+            headerVerb: headerVerb!,
+            dispositionReason: dispositionReason || finalNotes || undefined,
+          },
+    });
+    if (res.result.status === 'failed') {
+      const missing = (res.result.reason ?? '').startsWith('MISSING_FIELDS');
+      toast({
+        variant: 'warning',
+        title: t(`goodsReceipt.resume.failed.${res.step}`, { grNumber: gr.grNumber }),
+        description: missing
+          ? t('gr.dispose.missingReason')
+          : (refusalText(res.result.reason) ??
+            t('gr.dispose.failed.desc', { reason: res.result.reason ?? '' })),
+      });
+      onComplete();
+      return;
+    }
+    if (holdInstead) {
+      toast({
+        variant: 'success',
+        title: t('goodsReceipt.hold.done.title', { grNumber: gr.grNumber }),
+        description: t('goodsReceipt.hold.done.desc'),
+      });
+      onComplete();
+      return;
+    }
+    await postIfAsked(gr.id, gr.grNumber, dispo, res.result.correlationId);
+  };
 
   // Replaces the old client-side fabrication (GR-FABRICATION-01): the GR is
   // created, disposed, and posted through the dispatcher. The store assigns the
@@ -1546,6 +1958,10 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
     const asnReference = activeSource?.asnNumber ?? manualASN.trim();
 
     try {
+      if (resume) {
+        await completeResume(resume);
+        return;
+      }
       // 1) Create — the store assigns the number; lines are recorded at receipt.
       const createRes = await createGR.mutateAsync({
         asnReference,
@@ -1580,6 +1996,35 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
       }
       const grNumber = createRes.entityId;
 
+      // OPS-2 — a hold on a receipt this form just created: start the
+      // inspection and place the hold, through the same chain a resumed receipt
+      // takes. No decision is derived and nothing is posted.
+      if (holdInstead) {
+        const held = await resumeGR.mutateAsync({
+          grId: grNumber,
+          status: 'Pending Inspection',
+          inspectionResults,
+          outcome: { kind: 'hold', holdReason: holdReason.trim() },
+        });
+        toast(
+          held.result.status === 'failed'
+            ? {
+                variant: 'warning',
+                title: t(`goodsReceipt.resume.failed.${held.step}`, { grNumber }),
+                description:
+                  refusalText(held.result.reason) ??
+                  t('gr.dispose.failed.desc', { reason: held.result.reason ?? '' }),
+              }
+            : {
+                variant: 'success',
+                title: t('goodsReceipt.hold.done.title', { grNumber }),
+                description: t('goodsReceipt.hold.done.desc'),
+              },
+        );
+        onComplete();
+        return;
+      }
+
       // 2) Finalize — dispatch the ROLLED-UP header verb (approve / partial /
       //    reject). The dispatcher re-derives the disposition from the stored
       //    lines, so the header is provably derived, not asserted.
@@ -1605,81 +2050,7 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
         }
       }
 
-      // 3) Post to SAP (Option B) — only for an accepting rollup, when opted in.
-      if (autoPostSap && (dispo === 'Approved' || dispo === 'Partially Approved')) {
-        const postRes = await postGR.mutateAsync({ grId: grNumber });
-        if (postRes.status === 'submitted') {
-          // The async SAP callback settles: Posting to SAP → Posted to SAP +
-          // the real material document (assigned on settle).
-          // §43 — the settle's OWN failure is surfaced (classified, with its
-          // remedy) by the mutation's onError. It is caught HERE so it cannot
-          // reach the outer catch, which would relabel a settlement fault as
-          // 'Not authorized' — a confidently WRONG cause, and the only thing
-          // worse than no message. On a failed settle the command stays
-          // `submitted` and the GR stays 'Posting to SAP'.
-          //
-          // ⚠️ **§91 FILED THIS AS A REMEDY WITH NO HANDLER, AND §91e MEASURED
-          // THE REMEDY TO BE THE OTHER ONE.** The sentence that stood here read
-          // *"so the post action genuinely re-attempts it"*, was corrected to
-          // *"a remedy named in copy with nothing behind it … the honest remedy
-          // is a re-settle affordance"*, and BOTH readings of the mechanism were
-          // wrong in the same place:
-          //
-          //   · `t_gr_post.from` really does exclude the interim state — but
-          //     widening it was never the fix. A re-post mints a SECOND
-          //     correlationId and orphans the first, whose `pending` entry then
-          //     never clears. The interim's only exit is `settlesTo`, so the
-          //     re-attempt is the SETTLE, on the SAME correlationId, and it
-          //     needs no machine change at all.
-          //   · *"TRANSPORT has no producer in this tree today"* is FALSE.
-          //     `withChaos` proxies `commands` — `settle` included — and throws
-          //     `DataError('CHAOS')`, which classifies TRANSPORT. It is
-          //     DEV-gated (`import.meta.env.DEV && VITE_CHAOS === 'on'`), so it
-          //     is tree-shaken from the production bundle, but a producer that
-          //     runs only in dev is a producer.
-          //
-          // So the copy's promise is TRUE about the machine and was unkept only
-          // by the surface. The catch below no longer swallows: it classifies
-          // and hands the fault UP, and `BuyerGoodsReceipt`'s interim footer
-          // offers the re-settle. The catch is still required, and for the
-          // reason it always was — a settle fault reaching the outer handler
-          // would be relabelled 'Not authorized', a confidently WRONG cause.
-          let failed: FailedSettle | undefined;
-          try {
-            await settleGR.mutateAsync({ correlationId: postRes.correlationId });
-          } catch (err) {
-            failed = {
-              grId: grNumber,
-              correlationId: postRes.correlationId,
-              fault: classifySettleFault(err),
-            };
-          }
-          if (failed) {
-            // The hook's `onError` already toasted the classified fault and its
-            // remedy; this hands the correlationId up so the remedy EXISTS.
-            onComplete(failed);
-            return;
-          }
-          toast({
-            variant: 'success',
-            title: t('gr.post.posted.title', { grNumber }),
-            description: t('gr.post.posted.desc'),
-          });
-        } else {
-          toast({
-            variant: 'warning',
-            title: t('gr.post.failed.title', { grNumber }),
-            description: refusalText(postRes.reason) ?? t('gr.post.failed.desc', { reason: postRes.reason ?? '' }),
-          });
-        }
-      } else {
-        toast({
-          variant: 'success',
-          title: t('gr.dispose.success.title', { grNumber, disposition: dispositionLabel(dispo) }),
-          description: t('gr.dispose.success.desc', { correlationId: createRes.correlationId }),
-        });
-      }
-      onComplete();
+      await postIfAsked(grNumber, grNumber, dispo, createRes.correlationId);
     } catch {
       toast({ variant: 'error', title: t('gr.denied.title'), description: t('gr.denied.desc') });
     } finally {
@@ -1696,7 +2067,9 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
         onCancel={onClose}
         onComplete={handleComplete}
         isStepValid={isStepValid}
-        completeLabel={t('goodsReceipt.wizard.complete')}
+        completeLabel={
+          resume ? t('goodsReceipt.wizard.resume.complete') : t('goodsReceipt.wizard.complete')
+        }
       />
     </div>
   );

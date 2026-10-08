@@ -87,6 +87,25 @@ export const goodsReceiptFlow: FlowDefinition = {
       version: 1,
     },
     {
+      // OPS-2 (R-OPS P0-4) — RECORD THE INSPECTION ON A RECEIPT THAT EXISTS.
+      // Lines were only ever written by `t_gr_create`, so a receipt that was
+      // created uninspected could never be inspected: "Submit inspection
+      // results" was a toast, and the three disposition verbs below read lines
+      // nobody could change. This writes them. It moves nothing — the receipt
+      // stays Under Inspection, where the disposition verbs fire — and it may be
+      // taken again until one of them is.
+      id: 't_gr_record_inspection',
+      from: ['Under Inspection'],
+      to: 'Under Inspection',
+      statePreserving: true,
+      trigger: 'user',
+      requiredRole: 'gr:inspect',
+      requiredFields: ['inspectionResults'],
+      policyHooks: [POLICY_HOOKS.GR_RESULTS_MATCH_RECEIPT],
+      surfaceable: { surfaced: true },
+      version: 1,
+    },
+    {
       id: 't_gr_hold',
       from: ['Under Inspection'],
       to: 'Quality Hold',

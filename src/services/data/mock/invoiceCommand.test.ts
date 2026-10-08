@@ -8,6 +8,7 @@
 // ────────────────────────────────────────────────────────────────────────────
 
 import { describe, it, expect, beforeEach } from 'vitest';
+import { INVOICE_RELEASER, nameUnnamedApprovals } from '../../../test/namedApprovals';
 
 import { MockCommandService } from './MockCommandService';
 import { invoiceStore } from './stores/invoiceStore';
@@ -144,8 +145,10 @@ describe('Invoice match rollup — header is derived, never asserted', () => {
 
 describe('Invoice release payment — Option B submitted-interim → settle-finalize', () => {
   it('holds submitted at Releasing Payment (no FI doc); settle assigns the real FI doc', async () => {
-    // inv-giv-0892 is Approved (matched) — ready to release.
-    const post = await fire(buyer, 't_invoice_release_payment', 'inv-giv-0892');
+    // inv-giv-0892 is Approved (matched). OPS-2 — its seeded approval names
+    // nobody, so a named person approves it again and a different one releases.
+    await nameUnnamedApprovals();
+    const post = await fire({ ...buyer, actor: INVOICE_RELEASER }, 't_invoice_release_payment', 'inv-giv-0892');
     expect(post.status).toBe('submitted');
     const interim = invoiceStore.get('inv-giv-0892')!;
     expect(interim.status).toBe('Releasing Payment');

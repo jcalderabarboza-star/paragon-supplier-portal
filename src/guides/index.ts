@@ -79,6 +79,7 @@ export const GUIDE_LIST_ROUTE: Readonly<Record<string, string>> = Object.freeze(
   invoice: '/buyer/invoices',
   invoiceMatch: '/buyer/invoices',
   materialRequest: '/buyer/material-requests',
+  materialRuling: '/buyer/compliance',
   moduleActivation: '/buyer/platform/modules/admin',
   obligation: '/buyer/contracts',
   psl: '/buyer/preferred-suppliers',

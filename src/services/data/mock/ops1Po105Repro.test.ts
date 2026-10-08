@@ -8,6 +8,12 @@
 // is released — Rp 4.0B against an order of Rp 2.0B, with half of one line
 // received. `ops1Money.test.ts` holds the rule itself; this file holds the
 // evidence that the rule was missing.
+//
+// OPS-2 — `releasable` approves and releases as TWO NAMED PEOPLE, because an
+// approval now names a person and the approver may not release. The two actors
+// are read off the sample roster, which predates OPS-1, so the claim above
+// still holds: on `26c7fd6` a scope's `actor` is carried and ignored by both
+// verbs, and both tests still fail there for the reason they always did.
 // ────────────────────────────────────────────────────────────────────────────
 import { describe, it, expect, beforeEach } from 'vitest';
 import { MockCommandService } from './MockCommandService';
@@ -17,6 +23,7 @@ import { asnStore } from './stores/asnStore';
 import { invoiceStore } from './stores/invoiceStore';
 import type { QueryScope, InspectionResult, ASN } from '../types';
 import { PERSONA_SYSTEM_ROLES } from '../../transitions/businessRoles';
+import { SAMPLE_PEOPLE } from '../../identity/sampleRoster';
 
 const svc = new MockCommandService();
 const PO = 'PO-2025-00105';
@@ -24,6 +31,12 @@ const B = 1_000_000_000;
 
 const supplier: QueryScope = { personaType: 'supplier', supplierId: 'sup-005', businessRoles: PERSONA_SYSTEM_ROLES.supplier };
 const buyer: QueryScope = { personaType: 'buyer', supplierId: null, businessRoles: PERSONA_SYSTEM_ROLES.buyer };
+const named = (role: string): QueryScope => ({
+  ...buyer,
+  actor: { kind: 'RESOLVED', person: { personId: SAMPLE_PEOPLE.find((p) => p.role === role)!.personId } },
+});
+const approver = named('finance');
+const releaser = named('buyer_all');
 
 const fire = (scope: QueryScope, entity: string, transitionId: string, entityId?: string, payload?: Record<string, unknown>) =>
   svc.dispatch(scope, { transitionId, entity, entityId, payload });
@@ -85,9 +98,9 @@ const twoInvoicesThenReceipt = async (niacinamideAccepted: number): Promise<[str
 const releasable = async (ids: string[]): Promise<number> => {
   let total = 0;
   for (const id of ids) {
-    const approve = await fire(buyer, 'invoice', 't_invoice_approve', id);
+    const approve = await fire(approver, 'invoice', 't_invoice_approve', id);
     if (approve.status === 'failed') continue;
-    const release = await fire(buyer, 'invoice', 't_invoice_release_payment', id);
+    const release = await fire(releaser, 'invoice', 't_invoice_release_payment', id);
     if (release.status !== 'failed') total += invoiceStore.get(id)!.amount;
   }
   return total;

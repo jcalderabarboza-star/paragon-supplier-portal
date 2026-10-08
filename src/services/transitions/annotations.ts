@@ -120,6 +120,7 @@ export const TRANSITION_PURPOSE: FlowAnnotations = Object.freeze({
   t_gr_start_inspection: { purposeKey: 'processFlows.purpose.t_gr_start_inspection' },
   t_gr_hold: { purposeKey: 'processFlows.purpose.t_gr_hold' },
   t_gr_request_retest: { purposeKey: 'processFlows.purpose.t_gr_request_retest' },
+  t_gr_record_inspection: { purposeKey: 'processFlows.purpose.t_gr_record_inspection' },
   t_gr_approve: { purposeKey: 'processFlows.purpose.t_gr_approve' },
   t_gr_partial_approve: { purposeKey: 'processFlows.purpose.t_gr_partial_approve' },
   t_gr_reject: { purposeKey: 'processFlows.purpose.t_gr_reject' },
@@ -138,6 +139,7 @@ export const TRANSITION_PURPOSE: FlowAnnotations = Object.freeze({
   t_invoice_submit: { purposeKey: 'processFlows.purpose.t_invoice_submit' },
   t_invoice_match: { purposeKey: 'processFlows.purpose.t_invoice_match' },
   t_invoice_approve: { purposeKey: 'processFlows.purpose.t_invoice_approve' },
+  t_invoice_reapprove: { purposeKey: 'processFlows.purpose.t_invoice_reapprove' },
   t_invoice_release_payment: {
     purposeKey: 'processFlows.purpose.t_invoice_release_payment',
   },
@@ -218,6 +220,7 @@ export const TRANSITION_PURPOSE: FlowAnnotations = Object.freeze({
 
   // M1 · module activation.
   t_module_set: { purposeKey: 'processFlows.purpose.t_module_set' },
+  t_material_ruling_set: { purposeKey: 'processFlows.purpose.t_material_ruling_set' },
   t_pr_submit: { purposeKey: 'processFlows.purpose.t_pr_submit' },
   t_pr_approve: { purposeKey: 'processFlows.purpose.t_pr_approve' },
   t_pr_reject: { purposeKey: 'processFlows.purpose.t_pr_reject' },
@@ -360,6 +363,7 @@ export const ENTITY_PURPOSE: FlowAnnotations = Object.freeze({
   intakeLine: { purposeKey: 'processFlows.purpose.entity.intakeLine' },
   forecastPublication: { purposeKey: 'processFlows.purpose.entity.forecastPublication' },
   moduleActivation: { purposeKey: 'processFlows.purpose.entity.moduleActivation' },
+  materialRuling: { purposeKey: 'processFlows.purpose.entity.materialRuling' },
   supplierDocument: { purposeKey: 'processFlows.purpose.entity.supplierDocument' },
   compliance: { purposeKey: 'processFlows.purpose.entity.compliance' },
   requirementResponse: { purposeKey: 'processFlows.purpose.entity.requirementResponse' },

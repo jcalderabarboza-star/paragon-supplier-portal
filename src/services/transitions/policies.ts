@@ -2627,7 +2627,17 @@ bindPolicyHook(POLICY_HOOKS.INTAKE_OVERRIDE_REASONED, ({ payload, target, entity
 bindPolicyHook(POLICY_HOOKS.INVOICE_RELEASER_NOT_APPROVER, ({ entityId, target, scope }) => {
   const inv = target.readEntity(entityId) as { approvedBy?: unknown } | null;
   const approver = asActorAttribution(inv?.approvedBy);
-  if (!approver || !isAttributed(approver)) return { ok: true };
+  // OPS-2 (operator ruling) — an approval that names nobody does not release
+  // money. It read `return { ok: true }` here, which let any seat holding the
+  // pay right release an invoice nobody had put their name to.
+  if (!approver || !isAttributed(approver)) {
+    return {
+      ok: false,
+      reason:
+        'INVOICE_APPROVAL_UNNAMED: this invoice carries no named approver, so its payment is ' +
+        'not released — a named person approves it again first',
+    };
+  }
   const releaser = asActorAttribution(scope.actor);
   if (!releaser || !isAttributed(releaser)) {
     return {
@@ -2647,4 +2657,37 @@ bindPolicyHook(POLICY_HOOKS.INVOICE_RELEASER_NOT_APPROVER, ({ entityId, target, 
     };
   }
   return { ok: true };
+});
+
+// ── OPS-2 · AN APPROVAL NAMES A PERSON (operator ruling) ────────────────────
+//
+// OPS-1 left this open and said so: with nobody seated, the approval was
+// recorded against nobody and any seat could then release the money. The
+// approval is now refused unless the seat names a person — the release hook's
+// own shape, one step earlier. A sample person is admitted, as on release.
+bindPolicyHook(POLICY_HOOKS.INVOICE_APPROVER_NAMED, ({ scope }) => {
+  const actor = asActorAttribution(scope.actor);
+  if (actor && isAttributed(actor)) return { ok: true };
+  return {
+    ok: false,
+    reason:
+      'INVOICE_APPROVER_UNATTRIBUTED: this seat carries no person, and approving an invoice ' +
+      'for payment is recorded against the person who decided it. Adopt a sample user on the ' +
+      'identity panel, then approve again.',
+  };
+});
+
+// Approve-again exists for ONE case: an invoice that is Approved and names
+// nobody (the seeded ones, and any approved before this rule). An approval that
+// already names a person is not overwritten by a second one.
+bindPolicyHook(POLICY_HOOKS.INVOICE_REAPPROVAL_OWED, ({ entityId, target }) => {
+  const inv = target.readEntity(entityId) as { approvedBy?: unknown } | null;
+  const approver = asActorAttribution(inv?.approvedBy);
+  if (!approver || !isAttributed(approver)) return { ok: true };
+  return {
+    ok: false,
+    reason:
+      'INVOICE_ALREADY_APPROVED: this invoice already carries a named approver — a second ' +
+      'approval would overwrite who decided it',
+  };
 });

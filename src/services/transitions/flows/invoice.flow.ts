@@ -141,9 +141,28 @@ export const invoiceFlow: FlowDefinition = {
       trigger: 'user',
       requiredRole: 'invoice:approve',
       requiredFields: [],
-      // OPS-1 — who approved is stamped by the store from the session; no hook,
-      // because the store records whatever actor the scope carries.
-      policyHooks: [],
+      // OPS-1 — who approved is stamped by the store from the session.
+      // OPS-2 (operator ruling) — and the session must name a person: an
+      // approval nobody can be named for is refused, as the release already is.
+      policyHooks: [POLICY_HOOKS.INVOICE_APPROVER_NAMED],
+      surfaceable: { surfaced: true },
+      version: 1,
+    },
+    {
+      // OPS-2 — APPROVE AGAIN. An invoice that is Approved and names no approver
+      // (every seeded one, and any approved before the rule above) cannot have
+      // its payment released, and `t_invoice_approve` leaves Matched only. This
+      // is the way back: a named person puts their name to the approval. It
+      // moves nothing — the invoice stays Approved — and it is refused on an
+      // approval that already names somebody.
+      id: 't_invoice_reapprove',
+      from: ['Approved'],
+      to: 'Approved',
+      statePreserving: true,
+      trigger: 'user',
+      requiredRole: 'invoice:approve',
+      requiredFields: [],
+      policyHooks: [POLICY_HOOKS.INVOICE_APPROVER_NAMED, POLICY_HOOKS.INVOICE_REAPPROVAL_OWED],
       surfaceable: { surfaced: true },
       version: 1,
     },

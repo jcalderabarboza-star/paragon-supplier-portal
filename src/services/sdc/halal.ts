@@ -95,7 +95,9 @@ import type { HalalApplicability, MaterialMaster } from './types';
  *
  * Three branches, and the third is a DEFAULT rather than an enumeration:
  *
- *   1. **Packaging is `'UNDETERMINED'`** — Seat 3's refinement, `D-COMP-HALAL-1`.
+ *   1. **Packaging WAS `'UNDETERMINED'` and is `'REQUIRED'` since OPS-2** (see
+ *      the note in the function body; the paragraph below records why it had
+ *      its own branch) — Seat 3's refinement, `D-COMP-HALAL-1`.
  *      ⚠️ **NOT the BPOM axis rule.** BPOM excludes packaging; halal may not,
  *      and `doc-001` is the in-tree reason to doubt it. Written as its own
  *      branch even though it returns the same value as the default, because
@@ -117,7 +119,15 @@ import type { HalalApplicability, MaterialMaster } from './types';
  * and a default nobody can exercise is a claim rather than a mechanism.
  */
 export const provisionalHalalForAxis = (axis: string): HalalApplicability => {
-  if (axis === 'packaging-substrate' || axis === 'packaging-function') return 'UNDETERMINED';
+  // ⚠️ OPS-2 — `D-COMP-HALAL-1` IS ANSWERED FOR PACKAGING (operator ruling,
+  // 2026-10-08): HALAL APPLIES TO PACKAGING BY DEFAULT. This branch returned
+  // `'UNDETERMINED'`, which is why no packaging material could be received
+  // (R-OPS P0-5): the question was refused and no surface let anybody answer it.
+  // It is still its own branch, and still not the BPOM axis rule — BPOM rules
+  // packaging out; halal rules it in. A material Compliance decides is not
+  // subject to halal is ruled so by name, with a reason, on the ruling ledger
+  // (`sdc/materialRuling.ts`) — never by editing this default.
+  if (axis === 'packaging-substrate' || axis === 'packaging-function') return 'REQUIRED';
   if (axis === 'formulation-ingredient' || axis === 'upstream-input') return 'REQUIRED';
   return 'UNDETERMINED';
 };

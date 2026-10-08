@@ -438,20 +438,32 @@ describe('OPS-1 · approval and payment release record who decided, and keep the
     expect(inv(id).releasedBy).toEqual(EVERY_ROLE);
   });
 
-  it('an unattributed seat is admitted on both, and is recorded as nobody — the check can only compare two names', async () => {
+  // ⚠️ REVERSED AT OPS-2, BY OPERATOR RULING — THE TWO SPECS THAT STOOD HERE ARE
+  // RESTATED RATHER THAN DELETED. They read *"an unattributed seat is admitted
+  // on both, and is recorded as nobody — the check can only compare two names"*
+  // and *"an unnamed approval followed by a named releaser is admitted — nobody
+  // to compare"*, and both asserted `done` / `submitted`. OPS-1 left that open
+  // and said so in its PR. The ruling: an approval by a seat that names nobody
+  // is refused by name, as the release already was.
+  it('an unattributed seat is refused the approval, by name, and nothing is stamped', async () => {
     const id = await matched();
-    await ok(act(finance(NO_PERSON), 't_invoice_approve', id));
-    expect(inv(id).approvedBy).toEqual(NO_PERSON);
-    await ok(act(finance(NO_PERSON), 't_invoice_release_payment', id));
-    expect(inv(id).releasedBy).toEqual(NO_PERSON);
+    const approve = await act(finance(NO_PERSON), 't_invoice_approve', id);
+    expect(approve.status).toBe('failed');
+    expect(refusedByPolicy(approve.reason, POLICY_HOOKS.INVOICE_APPROVER_NAMED), approve.reason).toBe(true);
+    expect(approve.reason).toContain('INVOICE_APPROVER_UNATTRIBUTED:');
+    expect(inv(id).status).toBe('Matched');
+    expect(inv(id).approvedBy).toBeUndefined();
   });
 
-  it('an unnamed approval followed by a named releaser is admitted — nobody to compare', async () => {
+  it('so no approval can name nobody — and one that somehow does is not released on, even by a named person', async () => {
     const id = await matched();
-    await ok(act(finance(NO_PERSON), 't_invoice_approve', id));
-    const release = await ok(act(finance(FINANCE), 't_invoice_release_payment', id));
-    expect(release.status).toBe('submitted');
-    expect(inv(id).releasedBy).toEqual(FINANCE);
+    // The only way an Approved invoice names nobody now is the seed (or a row
+    // approved before the rule). Put this one there by hand to probe the release.
+    invoiceStore.update(id, (i) => ({ ...i, status: 'Approved', approvedBy: undefined }));
+    const release = await act(finance(FINANCE), 't_invoice_release_payment', id);
+    expect(release.status).toBe('failed');
+    expect(release.reason).toContain('INVOICE_APPROVAL_UNNAMED:');
+    expect(inv(id).status).toBe('Approved');
   });
 
   it('a named approval cannot be released by a seat that names nobody — with no person, or with no actor at all', async () => {
@@ -472,15 +484,17 @@ describe('OPS-1 · approval and payment release record who decided, and keep the
     expect((await ok(act(finance(EVERY_ROLE), 't_invoice_release_payment', id))).status).toBe('submitted');
   });
 
-  it('a scope that carries no actor at all is still admitted, and stamps nothing', async () => {
+  // ⚠️ REVERSED AT OPS-2 — this read *"a scope that carries no actor at all is
+  // still admitted, and stamps nothing"*, and it walked approve and release to
+  // `Releasing Payment` with neither stamped.
+  it('a scope that carries no actor at all is refused the approval too', async () => {
     const id = await matched();
     const bare: QueryScope = { personaType: 'buyer', supplierId: null, businessRoles: ['finance'] as QueryScope['businessRoles'] };
-    await ok(act(bare, 't_invoice_approve', id));
-    expect(inv(id).status).toBe('Approved');
+    const approve = await act(bare, 't_invoice_approve', id);
+    expect(approve.status).toBe('failed');
+    expect(approve.reason).toContain('INVOICE_APPROVER_UNATTRIBUTED:');
+    expect(inv(id).status).toBe('Matched');
     expect(inv(id).approvedBy).toBeUndefined();
-    await ok(act(bare, 't_invoice_release_payment', id));
-    expect(inv(id).status).toBe('Releasing Payment');
-    expect(inv(id).releasedBy).toBeUndefined();
   });
 
   it('a caller cannot name the approver or the releaser in a payload', async () => {
@@ -495,7 +509,13 @@ describe('OPS-1 · approval and payment release record who decided, and keep the
   it('the hooks sit on the verbs they guard', () => {
     const flow = getFlow('invoice')!;
     const hooks = (id: string) => flow.transitions.find((t) => t.id === id)!.policyHooks;
-    expect(hooks('t_invoice_approve')).toEqual([]);
+    // OPS-2 — approve read `[]` here ("the store records whatever actor the
+    // scope carries"); it now requires a named one, and so does approve-again.
+    expect(hooks('t_invoice_approve')).toEqual([POLICY_HOOKS.INVOICE_APPROVER_NAMED]);
+    expect(hooks('t_invoice_reapprove')).toEqual([
+      POLICY_HOOKS.INVOICE_APPROVER_NAMED,
+      POLICY_HOOKS.INVOICE_REAPPROVAL_OWED,
+    ]);
     expect(hooks('t_invoice_release_payment')).toEqual([POLICY_HOOKS.INVOICE_RELEASER_NOT_APPROVER]);
   });
 });

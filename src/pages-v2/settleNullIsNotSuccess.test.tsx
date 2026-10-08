@@ -35,7 +35,7 @@ import { DataError, type IDataService } from '../services/data/types';
 import BuyerInvoices from './BuyerInvoices';
 import BuyerGoodsReceipt from './BuyerGoodsReceipt';
 import { useGoodsReceiptSettle } from '../services/query/commandHooks';
-import { BUYER } from '../test/test-utils';
+import { BUYER, BUYER_RELEASER, seedNamedApprovals } from '../test/test-utils';
 import type { QueryScope } from '../services/data/types';
 
 /** The seat `renderWithProviders` renders under, as a command scope — the
@@ -125,12 +125,14 @@ describe('§90 KNOWN-GOOD FIRST — a real settle still completes and still says
   usePinnedDemoClock();
 
   it('invoice: release → settle mints a REAL payment reference and toasts released', async () => {
-    invoiceStore.reset();
+    // OPS-2 — a named approval, released by a different named person.
+    await seedNamedApprovals();
     renderWithProviders(
       <>
         <BuyerInvoices />
         <ToastSpy />
       </>,
+      { identity: BUYER_RELEASER },
     );
     await screen.findByText('Invoices & Payment');
     fireEvent.click(await screen.findByText('INV-2025-GIV-0892'));
@@ -178,13 +180,14 @@ describe('§90 THE DEFECT — a null settle renders a refusal, never a success',
   usePinnedDemoClock();
 
   it('invoice: the surface does NOT claim payment released, and says a rule refused it', async () => {
-    invoiceStore.reset();
+    // OPS-2 — a named approval, released by a different named person.
+    await seedNamedApprovals();
     renderWithProviders(
       <>
         <BuyerInvoices />
         <ToastSpy />
       </>,
-      { service: settleReturnsNull() },
+      { service: settleReturnsNull(), identity: BUYER_RELEASER },
     );
     await screen.findByText('Invoices & Payment');
     fireEvent.click(await screen.findByText('INV-2025-GIV-0892'));
@@ -208,13 +211,14 @@ describe('§90 THE DEFECT — a null settle renders a refusal, never a success',
   }, 20000);
 
   it('invoice: REFUSED is not retryable, so no retry is offered — asking again cannot help', async () => {
-    invoiceStore.reset();
+    // OPS-2 — a named approval, released by a different named person.
+    await seedNamedApprovals();
     renderWithProviders(
       <>
         <BuyerInvoices />
         <ToastSpy />
       </>,
-      { service: settleReturnsNull() },
+      { service: settleReturnsNull(), identity: BUYER_RELEASER },
     );
     await screen.findByText('Invoices & Payment');
     fireEvent.click(await screen.findByText('INV-2025-GIV-0892'));

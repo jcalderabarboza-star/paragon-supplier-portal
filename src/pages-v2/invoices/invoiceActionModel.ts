@@ -87,6 +87,14 @@ export const INVOICE_VERB_SURFACE: Readonly<Record<string, InvoiceVerbSurface>> 
     // wrong dispatch behind an approval. Filed rather than improvised.
     confirm: false,
   },
+  // OPS-2 — not the reserved commit: on an Approved invoice that stays the
+  // release. The page puts this in the primary slot only while the approval
+  // names nobody, which is the one case the verb is legal for.
+  t_invoice_reapprove: {
+    labelKey: 'buyerInvoices.footer.approveAgain',
+    reservedCommit: false,
+    confirm: false,
+  },
   t_invoice_release_payment: {
     labelKey: 'buyerInvoices.footer.releasePayment',
     // The reserved commit for `Approved`: Option-B, mints an FI document.

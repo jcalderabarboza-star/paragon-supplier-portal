@@ -101,7 +101,12 @@ const uiTestAsn = (): ASN => ({
       // material anywhere clears the quality step without a human answer.**
       // `AI-NIAC-6601` is MG-04: both regimes can answer it, and both ASK. The
       // specs below tick both, which is exactly what a clerk now has to do.
-      materialCode: 'AI-NIAC-6601',
+      //   · `AI-NIAC-6601` → `FR-ROUD-4470` (OPS-2). Receiving now checks for a
+      //     valid halal certificate on file, and sup-007 holds none for the
+      //     niacinamide. It holds a BPJPH certificate for `FR-ROUD-4470` on the
+      //     permanent basis (creg-0001) — MG-05, so both regimes still ASK and
+      //     the specs below still tick both — and no clock lapses it.
+      materialCode: 'FR-ROUD-4470',
       description: 'UI test carton',
       orderedQty: 100,
       shippedQty: 100,
@@ -210,11 +215,11 @@ describe('BuyerGoodsReceipt — GR from a live store ASN (UI path)', () => {
     // Step 1 → Details, then accept 60 of 100 received (40 rejected → mixed line).
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.change(
-      screen.getByLabelText('Accepted quantity for AI-NIAC-6601'),
+      screen.getByLabelText('Accepted quantity for FR-ROUD-4470'),
       { target: { value: '60' } },
     );
     fireEvent.change(
-      await screen.findByLabelText('Rejection reason for AI-NIAC-6601'),
+      await screen.findByLabelText('Rejection reason for FR-ROUD-4470'),
       { target: { value: '40 cartons crushed in transit' } },
     );
 
@@ -298,7 +303,7 @@ describe('BuyerGoodsReceipt — CP-3 · E4, the enforcement ledger reaches the g
   });
 
   it('⚠️ THE SHIPPED LEDGER STILL STOPS THE STEP — the delta at the page is zero', async () => {
-    // `AI-NIAC-6601` is MG-04: halal REQUIRED and BPOM applicable, so both
+    // `FR-ROUD-4470` is MG-05: halal REQUIRED and BPOM applicable, so both
     // governed clauses are live and neither is answered. Under the ledger the
     // product boots with, the step does not advance — exactly as it did before
     // E4, when the wizard asserted the consequence instead of reading it.

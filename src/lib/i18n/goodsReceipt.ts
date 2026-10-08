@@ -84,8 +84,6 @@ export const goodsReceiptEn: Record<string, string> = {
   'goodsReceipt.settle.notRetryable':
     'Settlement was refused. Asking again will not change the answer — the receipt stays here until the refusal is resolved.',
   // — Placeholder ("future release") toasts —
-  'goodsReceipt.toast.submitResults.title': 'Inspection results',
-  'goodsReceipt.toast.submitResults.desc': 'Submit form will open in a future release.',
   'goodsReceipt.retest.submitting': 'Releasing…',
   'goodsReceipt.retest.done.title': '{{grNumber}} back under inspection',
   'goodsReceipt.retest.done.desc':
@@ -136,6 +134,30 @@ export const goodsReceiptEn: Record<string, string> = {
   'goodsReceipt.empty.message': 'Goods receipts and QC inspections appear here as deliveries arrive.',
   // — Wizard: chrome / steps —
   'goodsReceipt.wizard.complete': 'Create GR',
+  'goodsReceipt.wizard.resume.complete':
+    'Submit inspection results',
+  'goodsReceipt.wizard.resume.title':
+    'Working receipt',
+  'goodsReceipt.wizard.resume.body':
+    'This is an existing receipt. Nothing new is created: the inspection is recorded on it, and it is then decided or placed on quality hold.',
+  'goodsReceipt.wizard.hold.choose':
+    'Place on quality hold instead of deciding now',
+  'goodsReceipt.wizard.hold.reason':
+    'Hold reason (required)',
+  'goodsReceipt.wizard.hold.placeholder':
+    'What has to be settled before this lot can be decided',
+  'goodsReceipt.wizard.hold.note':
+    'The inspection is recorded and the receipt waits on Quality Hold. A retest returns it to inspection, where it is decided.',
+  'goodsReceipt.resume.failed.start':
+    '{{grNumber}} — the inspection could not be started',
+  'goodsReceipt.resume.failed.record':
+    '{{grNumber}} — the inspection results were not recorded',
+  'goodsReceipt.resume.failed.outcome':
+    '{{grNumber}} — the results are recorded, the decision was refused',
+  'goodsReceipt.hold.done.title':
+    '{{grNumber}} is on quality hold',
+  'goodsReceipt.hold.done.desc':
+    'The inspection is recorded. Request a retest to return it to inspection.',
   'goodsReceipt.wizard.step.source.title': 'Source selection',
   'goodsReceipt.wizard.step.source.short': 'Source',
   'goodsReceipt.wizard.step.source.desc': 'Pick a shipment at the dock or enter PO/ASN manually.',
@@ -205,10 +227,12 @@ export const goodsReceiptEn: Record<string, string> = {
   // CP-2 · 2B-4b — the BPOM refusal, by name. The two messages differ only in
   // which absence they name; both block the step identically.
   'goodsReceipt.wizard.bpom.refused.title': 'BPOM applicability cannot be determined.',
+  'goodsReceipt.wizard.bpom.pending.title':
+    'BPOM: pending — {{owner}} to rule.',
   'goodsReceipt.wizard.bpom.refused.unknownMaterial':
     'The material master does not name {{code}}, so whether this lot needs a BPOM lot check is unknown. This line cannot be inspected until the material is registered.',
   'goodsReceipt.wizard.bpom.refused.undetermined':
-    'The material master names {{code}} but records no BPOM determination for it. This line cannot be inspected until someone rules on it.',
+    'Nobody has ruled whether BPOM applies to {{code, stop}}. This line cannot be received until {{owner}} rules on it, on the Compliance page under Material applicability.',
   // CP-3 · H2 — the halal refusal, by name, and DELIBERATELY NOT SHARED WITH THE
   // BPOM SENTENCES. The unanswered marker above IS shared, because an
   // outstanding question is the same fact whichever check owes it. A refusal is
@@ -220,10 +244,12 @@ export const goodsReceiptEn: Record<string, string> = {
   // split). Certificate verification is a different fact with a different
   // answerer and its own clock, and it is not performed anywhere in this product.
   'goodsReceipt.wizard.halal.refused.title': 'Halal applicability cannot be determined.',
+  'goodsReceipt.wizard.halal.pending.title':
+    'Halal: pending — {{owner}} to rule.',
   'goodsReceipt.wizard.halal.refused.unknownMaterial':
     'The material master does not name {{code}}, so whether this lot needs a halal check is unknown. This line cannot be inspected until the material is registered.',
   'goodsReceipt.wizard.halal.refused.undetermined':
-    'The material master names {{code}} but records no halal determination for it. This line cannot be inspected until someone rules on it.',
+    'Nobody has ruled whether halal applies to {{code, stop}}. This line cannot be received until {{owner}} rules on it, on the Compliance page under Material applicability.',
   // ── ⚠️ CP-3 · H4 — THE CERTIFICATE NOTICE. IT TELLS; IT DOES NOT STOP. ────
   //
   // ⚠️ **EVERY STRING BELOW NAMES SOMETHING THE READER CAN ACT ON**, which is
@@ -237,12 +263,34 @@ export const goodsReceiptEn: Record<string, string> = {
   // operator's ruling is that **the receipt proceeds and the person now knows
   // they have a call to make.** Copy that said "cannot be received" would be the
   // block the ruling refused, written in the one place nobody diffs.
+  //
+  // ⚠️ OPS-2 — SUPERSEDED BY A LATER RULING, AND THE PARAGRAPH ABOVE IS KEPT AS
+  // THE RECORD. A halal line with no valid certificate on file now stops the
+  // quality step under the default mode, so there are two sentences: `.stops`
+  // (the default — it says the line cannot pass and names who can rule halal
+  // out) and `.proceeds` (only under a recorded `OBSERVE`, which is the H4 copy
+  // unchanged). The form picks by the mode in force; neither is ever shown for
+  // the other's case.
   'goodsReceipt.wizard.cert.valid.label': 'Halal certificate',
   'goodsReceipt.wizard.cert.valid.expires': 'valid to {{date}}',
   // GR 42/2024: a BPJPH certificate has no clock. `null` is a REAL answer here
   // and must never render as a blank or a guess.
   'goodsReceipt.wizard.cert.valid.noExpiry': 'no expiry (BPJPH, permanent basis)',
   'goodsReceipt.wizard.cert.notice.title': 'Halal certificate — action needed.',
+  'goodsReceipt.wizard.cert.notice.stops':
+    'This line cannot pass the quality step. A valid halal certificate from this supplier for this material must be on file — or {{owner}} rules that halal does not apply to this material.',
+  'goodsReceipt.wizard.ruling.halal.applies':
+    'Halal applies — ruled by Compliance.',
+  'goodsReceipt.wizard.ruling.halal.notApplicable':
+    'Halal does not apply — ruled by Compliance. No seal check and no certificate are asked for.',
+  'goodsReceipt.wizard.ruling.bpom.applies':
+    'BPOM applies — ruled by Compliance.',
+  'goodsReceipt.wizard.ruling.bpom.notApplicable':
+    'BPOM does not apply — ruled by Compliance. No lot check is asked for.',
+  'goodsReceipt.wizard.ruling.by':
+    'Ruled by {{person}} on {{date, stop}}.',
+  'goodsReceipt.wizard.ruling.reason':
+    'Reason: {{reason}}',
   'goodsReceipt.wizard.cert.notice.proceeds':
     'This does not stop the receipt. Record it and raise the renewal with the supplier and the compliance team.',
   // The four reasons, and they are FOUR DIFFERENT NEXT ACTIONS — chase the
@@ -366,8 +414,6 @@ export const goodsReceiptId: Record<string, string> = {
   'goodsReceipt.settle.notRetryable':
     'Penyelesaian ditolak. Mengulang permintaan tidak akan mengubah jawabannya — penerimaan barang tetap di sini sampai penolakan itu diselesaikan.',
   // — Placeholder ("future release") toasts —
-  'goodsReceipt.toast.submitResults.title': 'Hasil inspeksi',
-  'goodsReceipt.toast.submitResults.desc': 'Formulir pengiriman akan tersedia pada rilis mendatang.',
   'goodsReceipt.retest.submitting': 'Melepaskan…',
   'goodsReceipt.retest.done.title': '{{grNumber}} kembali diperiksa',
   'goodsReceipt.retest.done.desc':
@@ -418,6 +464,30 @@ export const goodsReceiptId: Record<string, string> = {
   'goodsReceipt.empty.message': 'Penerimaan barang dan inspeksi QC muncul di sini saat pengiriman tiba.',
   // — Wizard: chrome / steps —
   'goodsReceipt.wizard.complete': 'Buat GR',
+  'goodsReceipt.wizard.resume.complete':
+    'Kirim hasil inspeksi',
+  'goodsReceipt.wizard.resume.title':
+    'Mengerjakan penerimaan',
+  'goodsReceipt.wizard.resume.body':
+    'Ini penerimaan yang sudah ada. Tidak ada yang dibuat baru: inspeksi dicatat padanya, lalu penerimaan diputuskan atau ditahan untuk mutu.',
+  'goodsReceipt.wizard.hold.choose':
+    'Tahan untuk mutu, jangan putuskan sekarang',
+  'goodsReceipt.wizard.hold.reason':
+    'Alasan penahanan (wajib)',
+  'goodsReceipt.wizard.hold.placeholder':
+    'Apa yang harus diselesaikan sebelum lot ini dapat diputuskan',
+  'goodsReceipt.wizard.hold.note':
+    'Inspeksi dicatat dan penerimaan menunggu di Penahanan Mutu. Uji ulang mengembalikannya ke inspeksi, tempat penerimaan diputuskan.',
+  'goodsReceipt.resume.failed.start':
+    '{{grNumber}} — inspeksi tidak dapat dimulai',
+  'goodsReceipt.resume.failed.record':
+    '{{grNumber}} — hasil inspeksi tidak tercatat',
+  'goodsReceipt.resume.failed.outcome':
+    '{{grNumber}} — hasil tercatat, keputusannya ditolak',
+  'goodsReceipt.hold.done.title':
+    '{{grNumber}} ditahan untuk mutu',
+  'goodsReceipt.hold.done.desc':
+    'Inspeksi sudah dicatat. Minta uji ulang untuk mengembalikannya ke inspeksi.',
   'goodsReceipt.wizard.step.source.title': 'Pemilihan sumber',
   'goodsReceipt.wizard.step.source.short': 'Sumber',
   'goodsReceipt.wizard.step.source.desc': 'Pilih pengiriman di dermaga atau masukkan PO/ASN secara manual.',
@@ -473,20 +543,38 @@ export const goodsReceiptId: Record<string, string> = {
   'goodsReceipt.wizard.check.unanswered':
     'Belum dijawab. Pemeriksaan ini wajib untuk material tersebut — penerimaan tidak dapat dicatat sampai inspektur memilih Lulus atau Gagal.',
   'goodsReceipt.wizard.bpom.refused.title': 'Penerapan BPOM tidak dapat ditentukan.',
+  'goodsReceipt.wizard.bpom.pending.title':
+    'BPOM: menunggu — {{owner}} yang memutuskan.',
   'goodsReceipt.wizard.bpom.refused.unknownMaterial':
     'Master material tidak memuat {{code}}, sehingga tidak diketahui apakah lot ini memerlukan pemeriksaan lot BPOM. Baris ini tidak dapat diinspeksi sampai material tersebut terdaftar.',
   'goodsReceipt.wizard.bpom.refused.undetermined':
-    'Master material memuat {{code}} tetapi tidak mencatat penetapan BPOM untuknya. Baris ini tidak dapat diinspeksi sampai ada yang memutuskan.',
+    'Belum ada yang memutuskan apakah BPOM berlaku untuk {{code, stop}}. Baris ini tidak dapat diterima sampai {{owner}} memutuskannya, di halaman Kepatuhan pada bagian Penerapan material.',
   'goodsReceipt.wizard.halal.refused.title': 'Penerapan halal tidak dapat ditentukan.',
+  'goodsReceipt.wizard.halal.pending.title':
+    'Halal: menunggu — {{owner}} yang memutuskan.',
   'goodsReceipt.wizard.halal.refused.unknownMaterial':
     'Master material tidak memuat {{code}}, sehingga tidak diketahui apakah lot ini memerlukan pemeriksaan halal. Baris ini tidak dapat diinspeksi sampai material tersebut terdaftar.',
   'goodsReceipt.wizard.halal.refused.undetermined':
-    'Master material memuat {{code}} tetapi tidak mencatat penetapan halal untuknya. Baris ini tidak dapat diinspeksi sampai ada yang memutuskan.',
+    'Belum ada yang memutuskan apakah halal berlaku untuk {{code, stop}}. Baris ini tidak dapat diterima sampai {{owner}} memutuskannya, di halaman Kepatuhan pada bagian Penerapan material.',
   // CP-3 · H4 — lihat catatan pada blok EN di atas.
   'goodsReceipt.wizard.cert.valid.label': 'Sertifikat halal',
   'goodsReceipt.wizard.cert.valid.expires': 'berlaku sampai {{date}}',
   'goodsReceipt.wizard.cert.valid.noExpiry': 'tanpa masa berlaku (BPJPH, dasar permanen)',
   'goodsReceipt.wizard.cert.notice.title': 'Sertifikat halal — perlu tindakan.',
+  'goodsReceipt.wizard.cert.notice.stops':
+    'Baris ini tidak dapat melewati langkah mutu. Sertifikat halal yang berlaku dari pemasok ini untuk material ini harus tercatat — atau {{owner}} memutuskan bahwa halal tidak berlaku untuk material ini.',
+  'goodsReceipt.wizard.ruling.halal.applies':
+    'Halal berlaku — diputuskan oleh Kepatuhan.',
+  'goodsReceipt.wizard.ruling.halal.notApplicable':
+    'Halal tidak berlaku — diputuskan oleh Kepatuhan. Pemeriksaan segel dan sertifikat tidak diminta.',
+  'goodsReceipt.wizard.ruling.bpom.applies':
+    'BPOM berlaku — diputuskan oleh Kepatuhan.',
+  'goodsReceipt.wizard.ruling.bpom.notApplicable':
+    'BPOM tidak berlaku — diputuskan oleh Kepatuhan. Pemeriksaan lot tidak diminta.',
+  'goodsReceipt.wizard.ruling.by':
+    'Diputuskan oleh {{person}} pada {{date, stop}}.',
+  'goodsReceipt.wizard.ruling.reason':
+    'Alasan: {{reason}}',
   'goodsReceipt.wizard.cert.notice.proceeds':
     'Hal ini tidak menghentikan penerimaan. Catat dan sampaikan perpanjangannya kepada pemasok dan tim kepatuhan.',
   'goodsReceipt.wizard.cert.reason.EXPIRED':

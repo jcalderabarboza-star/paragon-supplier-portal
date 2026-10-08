@@ -65,6 +65,7 @@ import { MockProcurementService } from './mock/MockProcurementService';
 import { SYSTEM_ROLES } from '../transitions/businessRoles';
 import { DECLARED_PRESENT } from './fixturePresent';
 import type { QueryScope, Invoice } from './types';
+import { INVOICE_RELEASER, nameUnnamedApprovals } from '../../test/namedApprovals';
 
 const commands = new MockCommandService();
 const reads = new MockProcurementService();
@@ -217,6 +218,10 @@ describe('settleFinalize stamps paymentDate at the DECLARED PRESENT', () => {
   /** Canonical state, not the display label: an `Approved` row past its due date
    *  renders `Overdue` on the buyer DTO, and it is still releasable. */
   async function releasable(): Promise<readonly string[]> {
+    // OPS-2 — a release needs an approval that names a person, and a releaser
+    // who is not that person. This file asks about CLOCKS, so the approvals are
+    // named up front and every release below is taken as the named releaser.
+    await nameUnnamedApprovals();
     const all = await reads.getBuyerInvoices(buyerRead);
     return all.items
       .filter((i) => i.lifecycleState === 'Approved' && i.paymentDate === null)
@@ -240,7 +245,7 @@ describe('settleFinalize stamps paymentDate at the DECLARED PRESENT', () => {
     // The wall clock is five years past P here, so a wall-clock stamp cannot
     // coincide with P by accident — this single instant is the whole property.
     expect(new Date().toISOString().slice(0, 10)).not.toBe(DECLARED_PRESENT);
-    const rel = await commands.dispatch(buyer, {
+    const rel = await commands.dispatch({ ...buyer, actor: INVOICE_RELEASER }, {
       transitionId: 't_invoice_release_payment',
       entity: 'invoice',
       entityId: id,
@@ -258,7 +263,7 @@ describe('settleFinalize stamps paymentDate at the DECLARED PRESENT', () => {
     const [id] = await releasable();
     expect(id, 'a second releasable row was available to spend').toBeDefined();
     restore = installClock(P_MS);
-    const rel = await commands.dispatch(buyer, {
+    const rel = await commands.dispatch({ ...buyer, actor: INVOICE_RELEASER }, {
       transitionId: 't_invoice_release_payment',
       entity: 'invoice',
       entityId: id,

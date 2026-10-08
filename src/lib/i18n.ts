@@ -600,7 +600,6 @@ export const resources = {
       // session (C10 §6.4), so the copy says what happened and never names a
       // person the platform cannot resolve.
       'invoice.approve.done.title': '{{invoiceNumber}} — approved for payment',
-      'invoice.approve.done.desc': 'Recorded without a named approver — no person is resolved in this session. Payment can now be released.',
       'invoice.approve.done.descNamed':
         'Approved by {{person, stop}}. The payment is released by somebody else.',
       'invoice.approve.failed.title': 'Could not approve {{invoiceNumber}}',
@@ -1090,7 +1089,6 @@ export const resources = {
       // pembayaran. Dicatat sebagai `UNATTRIBUTED` terhadap sesi (C10 §6.4),
       // jadi teksnya tidak pernah menyebut orang yang tidak dapat dikenali.
       'invoice.approve.done.title': '{{invoiceNumber}} — disetujui untuk pembayaran',
-      'invoice.approve.done.desc': 'Dicatat tanpa nama penyetuju — tidak ada orang yang dikenali dalam sesi ini. Pembayaran kini dapat dirilis.',
       'invoice.approve.done.descNamed':
         'Disetujui oleh {{person, stop}}. Pembayarannya dirilis oleh orang lain.',
       'invoice.approve.failed.title': 'Tidak dapat menyetujui {{invoiceNumber}}',

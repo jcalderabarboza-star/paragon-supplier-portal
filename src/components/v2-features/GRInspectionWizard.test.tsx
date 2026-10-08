@@ -9,6 +9,10 @@ import { MATERIAL_MASTER } from '../../services/sdc/fixtures';
 import { COMPLIANCE_REGISTRY } from '../../services/data/mock/fixtures/complianceRegistry';
 import { verifyHalalAtReceipt } from '../../services/data/halalVerification';
 import GRInspectionWizard from './GRInspectionWizard';
+import type { ComplianceRegistryEntry } from '../../services/data/types';
+import type { MaterialRuling } from '../../services/sdc/materialRuling';
+import { MATERIAL_GROUPS } from '../../services/sdc/materialGroups';
+import { SAMPLE_PEOPLE } from '../../services/identity/sampleRoster';
 import { enforcementSettingStore } from '../../services/data/mock/stores/enforcementSettingStore';
 import { seedEnforcementLedger, SEEDED_CHECKS } from '../../services/data/mock/enforcementSeed';
 import {
@@ -60,7 +64,38 @@ const RECEIVABLE = mockShipments.find(
     (s.status === 'At Dock' || s.status === 'Unloading') && s.lineItems.length > 0,
 )!;
 
-const renderWizard = () => {
+/**
+ * OPS-2 — a SYNTHETIC valid halal certificate, written by a spec and saying so.
+ *
+ * Since OPS-2 a halal-applicable line with no valid certificate on file STOPS the
+ * quality step (operator ruling). The specs below that are about ANOTHER gate —
+ * the BPOM lot check, the seal check, the enforcement mode — would all now be
+ * carried by the certificate gate on any source whose supplier holds no
+ * certificate in the fixture. This removes that one gate from the question, the
+ * way `settleHalal` removes the seal question, and it is passed EXPLICITLY at
+ * each site so no spec is isolated by accident.
+ */
+const certFor = (supplierId: string, materialCodes: string[]): ComplianceRegistryEntry => ({
+  ...COMPLIANCE_REGISTRY.find((e) => e.id === 'creg-0001')!,
+  id: `spec-cert-${supplierId}`,
+  supplierId,
+  materialCodes,
+  certNumber: 'SPEC-HALAL-SYNTHETIC',
+  scopeText: 'Synthetic — written by a spec to isolate another gate',
+});
+
+/** The real registry plus a synthetic certificate covering every line of one dock source. */
+const registryCovering = (asnNumber: string): readonly ComplianceRegistryEntry[] => {
+  const s = mockShipments.find((x) => x.asnNumber === asnNumber)!;
+  return [...REGISTRY, certFor(s.supplierId, s.lineItems.map((li) => li.materialCode))];
+};
+
+interface RenderOpts {
+  registry?: readonly ComplianceRegistryEntry[];
+  rulings?: readonly MaterialRuling[];
+}
+
+const renderWizard = (opts: RenderOpts = {}) => {
   asnStore.reset();
   return renderWithProviders(
     <GRInspectionWizard
@@ -69,7 +104,8 @@ const renderWizard = () => {
       shipments={mockShipments}
       asns={[...asnStore.all()]}
       enforcementSettings={EMPTY_LEDGER}
-      complianceRegistry={REGISTRY}
+      complianceRegistry={opts.registry ?? REGISTRY}
+      materialRulings={opts.rulings ?? []}
     />,
   );
 };
@@ -237,8 +273,8 @@ const settleHalal = () => {
 };
 
 /** Reach step 3 (Quality) from a named dock source. */
-const openQuality = async (asnNumber: string) => {
-  renderWizard();
+const openQuality = async (asnNumber: string, opts: RenderOpts = {}) => {
+  renderWizard(opts);
   fireEvent.click(await screen.findByText(asnNumber));
   const next = () => screen.getByRole('button', { name: /Next/i });
   fireEvent.click(next()); // → step 2, receipt
@@ -264,18 +300,19 @@ describe('GRInspectionWizard — the BPOM gate reads the master and fails closed
     expect(screen.queryByTestId('gr-bpom-refusal-0')).not.toBeInTheDocument();
     expect(screen.queryByText('BPOM Lot Tracking')).not.toBeInTheDocument();
 
-    // ⚠️ AMENDED AT CP-3 · H2, AND THE AMENDMENT IS A FINDING, NOT A FIX-UP.
-    // This spec used to end `expect(next()).toBeEnabled()`. It cannot any more,
-    // and NOT because BPOM changed: every BPOM-not-applicable source in the
-    // fixtures is PACKAGING, and packaging is exactly what the halal seed leaves
-    // `'UNDETERMINED'` (Seat 3, `D-COMP-HALAL-1` — BPOM excludes packaging,
-    // halal may not). So the step is now blocked by the OTHER regime.
-    //
-    // Asserted rather than deleted, and asserted as a CROSS-GATE fact: the block
-    // is present, and the thing producing it is the halal refusal, so nobody can
-    // read this as the BPOM gate having become stricter.
-    expect(screen.getByTestId('gr-halal-refusal-0')).toBeInTheDocument();
-    expect(next()).toBeDisabled();
+    // ⚠️ AMENDED AT CP-3 · H2, AND AMENDED BACK AT OPS-2. This spec ended
+    // `expect(next()).toBeEnabled()`; H2 took that away, because every BPOM-not-
+    // applicable source in the fixtures is PACKAGING and the halal seed left
+    // packaging `'UNDETERMINED'`, so the OTHER regime refused the line
+    // (`gr-halal-refusal-0`, Next disabled). OPS-2 is the operator answering
+    // that question — halal applies to packaging by default — so the line is no
+    // longer refused: it is ASKED the seal check, its supplier holds a SAMPLE
+    // certificate, and once the seal is answered the step moves. The original
+    // ending is back, and it is BPOM's "nothing owed" that it now shows.
+    expect(screen.queryByTestId('gr-halal-refusal-0')).not.toBeInTheDocument();
+    expect(next()).toBeDisabled(); // the seal question is still owed
+    settleHalal();
+    expect(next()).toBeEnabled();
   });
 
   // ⚠️ INVERTED AT CP-3 (`REQUIRED-OPENS-PRE-ANSWERED-01`), NOT DELETED. This
@@ -285,7 +322,12 @@ describe('GRInspectionWizard — the BPOM gate reads the master and fails closed
   // and the tick that un-blocks it is asserted in the same spec so the inversion
   // cannot be read as "the gate blocks everything now".
   it('⚠️ an APPLICABLE line asks for the check — and the wizard STOPS until it is answered', async () => {
-    const next = await openQuality(REQUIRES!.asnNumber);
+    // OPS-2 — and the certificate gate is taken out of the question too
+    // (`registryCovering`): this source's supplier holds no certificate in the
+    // fixture, so without it Next would stay disabled whatever BPOM said.
+    const next = await openQuality(REQUIRES!.asnNumber, {
+      registry: registryCovering(REQUIRES!.asnNumber),
+    });
     expect(screen.getByText('BPOM Lot Tracking')).toBeInTheDocument();
     expect(screen.queryByTestId('gr-bpom-refusal-0')).not.toBeInTheDocument();
     // CP-3 · H2 — the halal question on this line is answered FIRST, so the
@@ -323,10 +365,16 @@ describe('GRInspectionWizard — the BPOM gate reads the master and fails closed
     expect(screen.queryByText('BPOM Lot Tracking')).not.toBeInTheDocument();
     // The code, so an operator knows which material to chase.
     expect(refusal.textContent).toContain(REFUSES!.lineItems[0].materialCode);
-    // And WHICH absence: the master HAS the row and records no determination.
+    // And WHICH absence: the master HAS the row and nobody has ruled on it.
     // The other reason ("does not name") would be a different sentence, and
     // conflating them is how a refusal becomes unactionable.
-    expect(refusal.textContent).toMatch(/records no BPOM determination/i);
+    //
+    // OPS-2 — the sentence used to end *"…cannot be inspected until someone
+    // rules on it"*, and no surface let anybody. It now says it is PENDING and
+    // NAMES WHO RULES — the lane holding `material:rule` — and where.
+    expect(refusal.textContent).toMatch(/BPOM: pending — Compliance to rule/);
+    expect(refusal.textContent).toMatch(/Nobody has ruled whether BPOM applies/i);
+    expect(refusal.textContent).toMatch(/until Compliance rules on it/i);
     expect(refusal.textContent).not.toMatch(/does not name/i);
   });
 
@@ -370,6 +418,7 @@ describe('GRInspectionWizard — the BPOM gate reads the master and fails closed
         asns={[...asnStore.all()]}
         enforcementSettings={EMPTY_LEDGER}
         complianceRegistry={REGISTRY}
+        materialRulings={[]}
       />,
     );
     fireEvent.click(await screen.findByText('ASN-UNKNOWN-MAT'));
@@ -384,7 +433,11 @@ describe('GRInspectionWizard — the BPOM gate reads the master and fails closed
     // Only the named absence differs, which is the whole permitted use of
     // `reason`: this master has no such row, rather than has one and is silent.
     expect(refusal.textContent).toMatch(/does not name/i);
-    expect(refusal.textContent).not.toMatch(/records no BPOM determination/i);
+    expect(refusal.textContent).not.toMatch(/Nobody has ruled/i);
+    // OPS-2 — and it is NOT "pending — Compliance to rule": a ruling cannot
+    // answer for a code the master does not hold, so the title does not promise one.
+    expect(refusal.textContent).toMatch(/BPOM applicability cannot be determined/i);
+    expect(refusal.textContent).not.toMatch(/pending/i);
     expect(refusal.textContent).toContain('PK-NOT-IN-THE-MASTER');
   });
 
@@ -409,6 +462,7 @@ describe('GRInspectionWizard — the BPOM gate reads the master and fails closed
         asns={[...asnStore.all()]}
         enforcementSettings={EMPTY_LEDGER}
         complianceRegistry={REGISTRY}
+        materialRulings={[]}
       />,
     );
     fireEvent.click(await screen.findByText(asn!.asnNumber));
@@ -463,7 +517,9 @@ describe('GRInspectionWizard — a required check opens UNANSWERED, and blocks',
     // wearing a workflow, quietly making "record what you found" mean "record
     // that it was fine". An inspector who finds a bad lot must be able to say so
     // and move on — the receipt then rolls up Rejected, which is the point.
-    const next = await openQuality(REQUIRES!.asnNumber);
+    const next = await openQuality(REQUIRES!.asnNumber, {
+      registry: registryCovering(REQUIRES!.asnNumber), // OPS-2 — see `certFor`
+    });
     settleHalal(); // CP-3 · H2 — isolate the BPOM gate; see `settleHalal`.
     expect(next()).toBeDisabled();
     fireEvent.click(radioFor('BPOM Lot Tracking', 'Fail'));
@@ -488,7 +544,9 @@ describe('GRInspectionWizard — a required check opens UNANSWERED, and blocks',
     cleanup();
 
     // REQUIRED AND UNANSWERED: the control, nothing selected, a marker, blocked.
-    const required = await openQuality(REQUIRES!.asnNumber);
+    const required = await openQuality(REQUIRES!.asnNumber, {
+      registry: registryCovering(REQUIRES!.asnNumber), // OPS-2 — see `certFor`
+    });
     settleHalal();
     const marker = screen.getByTestId('gr-bpom-unanswered-0');
     expect(marker).toBeInTheDocument();
@@ -549,7 +607,7 @@ const receivableLines = () => {
 };
 
 describe('CP-3 · H2 — THE DELTA, LINE BY LINE, over every receivable line', () => {
-  it('⚠️ THE MEASUREMENT — 5 gain a question, 4 refuse, and NOTHING loses one', () => {
+  it('⚠️ THE MEASUREMENT — every receivable line is asked since OPS-2 (at H2: 5 gained a question, 4 refused), and NOTHING loses one', () => {
     // The dispatch's standing requirement, and the pin that would have stopped
     // this batch if the firing set had moved in a direction nobody could explain.
     // Stated PER LINE rather than as counts: a count that comes out right for
@@ -584,10 +642,18 @@ describe('CP-3 · H2 — THE DELTA, LINE BY LINE, over every receivable line', (
     // ⚠️ SIX AT H4 — the fifth of the H2 five plus `AI-NIAC-6612`, which the
     // master marks REQUIRED. It gains a SEAL question exactly like the others;
     // what makes it the mandate exemplar is fact 3, not fact 1.
+    //
+    // ⚠️ TEN AT OPS-2 — the six above plus the four PACKAGING lines, which the
+    // master refused to rule on until the operator ruled that halal applies to
+    // packaging by default. They move from the refused list below to this one.
     expect(gained).toEqual([
       'AI-NIAC-6612',
       'FR-ROUD-4470',
       'FR-WARD-4410',
+      'PK-ALCP-2450',
+      'PK-PETB-8801',
+      'PK-PETB-8802',
+      'PK-PETB-8804',
       'RM-COCO-8200',
       'RM-EMUL-9440',
       'RM-PSTN-7150',
@@ -600,16 +666,15 @@ describe('CP-3 · H2 — THE DELTA, LINE BY LINE, over every receivable line', (
     // which the halal class rule marks `REQUIRED` — they refuse under BPOM,
     // which is a different regime and a state they were already in. Recorded
     // because a dispatch expectation that is quietly not met is a finding.
-    expect(refused).toEqual([
-      'PK-ALCP-2450',
-      'PK-PETB-8801',
-      'PK-PETB-8802',
-      'PK-PETB-8804',
-    ]);
+    //
+    // ⚠️ OPS-2 — AND THOSE FOUR ARE NO LONGER REFUSED. They were
+    // `PK-ALCP-2450`, `PK-PETB-8801`, `PK-PETB-8802`, `PK-PETB-8804`; the
+    // refusal was honest while nobody had answered and it meant no packaging
+    // line could be received at all (R-OPS P0-5). No receivable line is refused
+    // for halal applicability today.
+    expect(refused).toEqual([]);
 
     // EVERY LINE IS NOW ANSWERED OR REFUSED — no third outcome, nothing silent.
-    // ⚠️ THE REFUSED SET IS UNCHANGED AT FOUR, which is the half that matters:
-    // the H4 line ADDED a question and moved no line out of a refusal.
     expect(gained.length + refused.length).toBe(10);
 
     // ⚠️ AND NOTHING MOVED FROM CHECKED TO UNCHECKED. The prose parse said
@@ -653,6 +718,15 @@ describe('CP-3 · H2 — the halal gate on a REAL receivable line', () => {
   const HALAL_REFUSED = ELIGIBLE.find((s) =>
     s.lineItems.every((li) => !halalOf(li.materialCode).ok),
   );
+  /** OPS-2 — the source that WAS `HALAL_REFUSED` until the operator's ruling:
+   *  every line packaging. Derived from the registry's own axis, not named. */
+  const PACKAGING_AXES = new Set(['packaging-substrate', 'packaging-function']);
+  const PACKAGING_GROUPS = new Set(
+    MATERIAL_GROUPS.filter((g) => PACKAGING_AXES.has(g.axis)).map((g) => g.group),
+  );
+  const PACKAGING_ONLY = ELIGIBLE.find((s) =>
+    s.lineItems.every((li) => PACKAGING_GROUPS.has(MATERIAL_MASTER[li.materialCode].materialGroup)),
+  );
 
   it('THE FIXTURES REACH BOTH STATES — else the specs below are vacuous', () => {
     // `EMPTY-INPUT-REPORTS-CLEAN-01`, and the reason these are DERIVED rather
@@ -662,14 +736,25 @@ describe('CP-3 · H2 — the halal gate on a REAL receivable line', () => {
       HALAL_REQUIRED,
       'no eligible source is halal-REQUIRED with an ANSWERABLE BPOM check — the two gates cannot be told apart',
     ).toBeDefined();
-    expect(HALAL_REFUSED, 'no eligible source REFUSES — the fail-closed path is untested').toBeDefined();
+    // ⚠️ OPS-2 — THE SECOND STATE LEFT THE FIXTURES, AND THAT IS ASSERTED RATHER
+    // THAN LEFT TO PASS VACUOUSLY. It read `expect(HALAL_REFUSED …).toBeDefined()`:
+    // a dock source the master refused to rule on for halal. Those were the
+    // packaging sources, and the operator ruled packaging in, so NO eligible
+    // source refuses for halal applicability today. The fail-closed path is
+    // still in the lookup (`halalApplicability.test.ts` drives it against a
+    // master with the rows put back) and still at the surface for a code the
+    // master does not hold (the BPOM block above constructs one).
+    expect(HALAL_REFUSED, 'a dock source refuses for halal again — restore the refusal specs').toBeUndefined();
+    expect(PACKAGING_ONLY, 'no all-packaging dock source — the OPS-2 specs below are vacuous').toBeDefined();
   });
 
   it('⚠️ NATURAL REACH — a REQUIRED line asks, opens UNANSWERED, and STOPS the wizard', async () => {
     // The inversion, in one spec. Before H2 this could only be demonstrated on a
     // fixture the test wrote itself, because no receivable line tripped the
     // parse. It is now a line a clerk can actually open.
-    const next = await openQuality(HALAL_REQUIRED!.asnNumber);
+    const next = await openQuality(HALAL_REQUIRED!.asnNumber, {
+      registry: registryCovering(HALAL_REQUIRED!.asnNumber), // OPS-2 — see `certFor`
+    });
     expect(screen.getByText('Halal Seal Check')).toBeInTheDocument();
     expect(screen.queryByTestId('gr-halal-refusal-0')).not.toBeInTheDocument();
     expect(radioFor('Halal Seal Check', 'Pass')).not.toBeChecked();
@@ -694,31 +779,54 @@ describe('CP-3 · H2 — the halal gate on a REAL receivable line', () => {
   it('⚠️ FAIL UN-BLOCKS IT TOO — the gate demands an ANSWER, not a PASS', async () => {
     // The same rule the BPOM gate carries: a gate that only clears on `Pass`
     // quietly makes "record what you found" mean "record that it was fine".
-    const next = await openQuality(HALAL_REQUIRED!.asnNumber);
+    const next = await openQuality(HALAL_REQUIRED!.asnNumber, {
+      registry: registryCovering(HALAL_REQUIRED!.asnNumber), // OPS-2 — see `certFor`
+    });
     fireEvent.click(radioFor('BPOM Lot Tracking', 'Pass'));
     expect(next()).toBeDisabled();
     fireEvent.click(radioFor('Halal Seal Check', 'Fail'));
     expect(next()).toBeEnabled();
   });
 
-  it('⚠️ THE LOCK — an UNDETERMINED line REFUSES BY NAME and blocks', async () => {
-    // THE LOAD-BEARING ASSERTION. Under the prose parse this line rendered
-    // NOTHING, owed NOTHING, and posted a receipt asserting no halal check was
-    // required — a negative nobody had any basis for, on a PET bottle that
-    // `doc-001` links a halal certificate to.
-    const next = await openQuality(HALAL_REFUSED!.asnNumber);
-    const refusal = screen.getByTestId('gr-halal-refusal-0');
-    expect(refusal).toHaveAttribute('role', 'alert');
-    // It NAMES the material — a refusal that cannot say what it is about is a
-    // hidden skip with better manners.
-    expect(refusal.textContent).toContain(HALAL_REFUSED!.lineItems[0].materialCode);
+  it('⚠️ OPS-2 — the PACKAGING line that REFUSED BY NAME is now ASKED, on a certificate that is on file', async () => {
+    // ⚠️ THIS WAS *"THE LOCK — an UNDETERMINED line REFUSES BY NAME and
+    // blocks"*, on this same source. Under the prose parse the line rendered
+    // nothing and owed nothing; at H2 it refused by name (`gr-halal-refusal-0`,
+    // role alert, no seal row, Next disabled) because nobody had ruled whether
+    // halal reaches packaging — and so no packaging line could be received.
+    // The operator ruled it in. The line now reads like every other halal line:
+    // the seal question, unanswered; the certificate, named; and it moves once
+    // the inspector answers.
+    const next = await openQuality(PACKAGING_ONLY!.asnNumber);
+    expect(screen.queryByTestId('gr-halal-refusal-0')).not.toBeInTheDocument();
+    expect(screen.getByText('Halal Seal Check')).toBeInTheDocument();
+    expect(radioFor('Halal Seal Check', 'Pass')).not.toBeChecked();
+    // The certificate on file is the SAMPLE one, and the line says which.
+    const valid = screen.getByTestId('gr-cert-valid-0');
+    expect(valid.textContent).toContain('SAMPLE-HALAL-0007F');
+    expect(screen.queryByTestId('gr-cert-notice-0')).not.toBeInTheDocument();
+    // Packaging owes no BPOM lot check — that determination is unchanged.
+    expect(screen.queryByText('BPOM Lot Tracking')).not.toBeInTheDocument();
     expect(next()).toBeDisabled();
+    fireEvent.click(radioFor('Halal Seal Check', 'Pass'));
+    expect(next()).toBeEnabled();
+  });
 
-    // ⚠️ M6's LESSON, APPLIED TO THE NEW GATE: a refused line must offer NO
-    // check to record. Inviting an inspector to tick Pass on an applicability
-    // the system has just said it cannot determine is a determination with
-    // extra steps.
-    expect(screen.queryByText('Halal Seal Check')).not.toBeInTheDocument();
+  it('⚠️ OPS-2 — the same packaging line with NO certificate on file is stopped, and told who can rule', async () => {
+    // The other direction of the spec above, so "it moves" cannot be the form
+    // having stopped checking: take the SAMPLE certificate away and the same
+    // answers do not release the step.
+    const withoutSample = REGISTRY.filter((e) => e.id !== 'creg-0017');
+    expect(withoutSample.length).toBe(REGISTRY.length - 1);
+    const next = await openQuality(PACKAGING_ONLY!.asnNumber, { registry: withoutSample });
+    fireEvent.click(radioFor('Halal Seal Check', 'Pass'));
+    expect(next()).toBeDisabled();
+    const notice = screen.getByTestId('gr-cert-notice-0');
+    expect(notice).toHaveAttribute('role', 'alert');
+    expect(notice.textContent).toMatch(/No halal certificate is on record/i);
+    expect(screen.getByTestId('gr-cert-consequence-0').textContent).toMatch(
+      /cannot pass the quality step.*or Compliance rules that halal does not apply/i,
+    );
   });
 
   it('⚠️ `H2-NOT-REQUIRED-IS-UNREACHABLE-01` — the positive twin CANNOT be tested, and here is why', () => {
@@ -729,7 +837,8 @@ describe('CP-3 · H2 — the halal gate on a REAL receivable line', () => {
     //
     // It survives because the mutation is currently UNREACHABLE, not because the
     // suite is careless: **no row in the master is `'NOT_REQUIRED'`** (H1's
-    // 31/0/11 split, and the zero is an assertion — nothing here has a basis for
+    // 31/0/11 split — 42/0/0 since OPS-2 — and the zero is an assertion —
+    // nothing here has a basis for
     // saying a halal determination is unnecessary). The BPOM gate has this twin
     // covered (`POSITIVE TWIN — a determined NOT_APPLICABLE line shows no
     // check`) precisely because packaging gives it one.
@@ -745,12 +854,17 @@ describe('CP-3 · H2 — the halal gate on a REAL receivable line', () => {
   });
 
   it('THE TWO REGIMES ARE NAMED SEPARATELY — a refusal says WHICH regulator has not ruled', async () => {
-    // These four lines are BPOM-determined and halal-undetermined at once, which
-    // is the shape that would be lost by one shared "compliance cannot be
-    // determined" banner. The halal refusal renders; the BPOM one does not.
-    await openQuality(HALAL_REFUSED!.asnNumber);
-    expect(screen.getByTestId('gr-halal-refusal-0').textContent).toMatch(/halal/i);
-    expect(screen.queryByTestId('gr-bpom-refusal-0')).not.toBeInTheDocument();
+    // ⚠️ MIRRORED AT OPS-2. This was asserted on the four packaging lines, which
+    // were BPOM-determined and halal-undetermined at once: the halal refusal
+    // rendered and the BPOM one did not. Those lines are no longer refused. The
+    // shape survives on the OTHER side — a raw material with no BPOM ruling is
+    // halal-determined and BPOM-pending at once — and it is the same claim: one
+    // shared "compliance cannot be determined" banner would lose which
+    // regulator has not ruled. The BPOM refusal renders; the halal one does not.
+    await openQuality(REFUSES!.asnNumber);
+    expect(screen.getByTestId('gr-bpom-refusal-0').textContent).toMatch(/BPOM/);
+    expect(screen.queryByTestId('gr-halal-refusal-0')).not.toBeInTheDocument();
+    expect(screen.getByText('Halal Seal Check')).toBeInTheDocument();
   });
 });
 
@@ -961,10 +1075,11 @@ describe('CP-3 · E4 — ⚠️ THE PER-CHECK DELTA, AND IT IS ZERO', () => {
         after: postMigration(OBSERVING_LEDGER, INSTANTS[1], li.materialCode, false, false),
       }))
       .filter((r) => r.before !== r.after);
-    // SIX lines stop blocking on the seal question under OBSERVE — the same six
-    // the census above measures as GAINING one. The gate would still ASK; it
-    // would stop stopping, which is exactly what OBSERVE means and exactly what
-    // nothing in this build has been relaxed to.
+    // Every line the census above measures as GAINING a seal question stops
+    // blocking on it under OBSERVE — six at H4, ten since OPS-2 ruled the four
+    // packaging lines in. The gate would still ASK; it would stop stopping,
+    // which is exactly what OBSERVE means and exactly what nothing in this
+    // build has been relaxed to.
     //
     // ⚠️ **AND H4 MEASURED WHY IT HAS NOT BEEN, WHICH SHARPENS THE NOTE ABOVE
     // FROM AN ASIDE INTO THE BATCH'S FINDING.** This ledger is unreachable in
@@ -979,6 +1094,10 @@ describe('CP-3 · E4 — ⚠️ THE PER-CHECK DELTA, AND IT IS ZERO', () => {
       'AI-NIAC-6612',
       'FR-ROUD-4470',
       'FR-WARD-4410',
+      'PK-ALCP-2450',
+      'PK-PETB-8801',
+      'PK-PETB-8802',
+      'PK-PETB-8804',
       'RM-COCO-8200',
       'RM-EMUL-9440',
       'RM-PSTN-7150',
@@ -1054,7 +1173,10 @@ describe('CP-3 · E4 — the migration at the SURFACE, under the shipped ledger'
         shipments={mockShipments}
         asns={[...asnStore.all()]}
         enforcementSettings={enforcementSettings}
-        complianceRegistry={REGISTRY}
+        // OPS-2 — these two specs are about the SEAL clause under a ledger; the
+        // certificate gate is taken out of the question (`certFor`).
+        complianceRegistry={registryCovering(asnNumber)}
+        materialRulings={[]}
       />,
     );
     fireEvent.click(await screen.findByText(asnNumber));
@@ -1110,11 +1232,37 @@ describe('CP-3 · E4 — the migration at the SURFACE, under the shipped ledger'
 // because either one alone is a different product.
 // ────────────────────────────────────────────────────────────────────────────
 
-describe('CP-3 · H4 — the certificate notice TELLS, and does not STOP', () => {
+// ⚠️ OPS-2 — THE SECOND HALF OF THAT RULING IS SUPERSEDED, BY THE OPERATOR, AND
+// THE HEADER ABOVE IS LEFT STANDING AS THE RECORD OF WHAT IT WAS. The new
+// ruling: *"Receiving checks the real thing: applicable → a valid certificate
+// on file; not applicable → passes with the ruling shown."* THE CLERK IS STILL
+// TOLD — every field is still on the line — AND THE STEP NOW STOPS, by the one
+// clause H4 said would follow: `&& certBlocks`, read off the enforcement ledger
+// for `halal.certificate`, whose unrecorded setting derives `BLOCK`. Under a
+// recorded `OBSERVE` the old behaviour is exactly what renders, and a spec
+// below holds both.
+describe('CP-3 · H4 → OPS-2 — the certificate is NAMED on the line, and since OPS-2 it STOPS the step', () => {
   /** `shp-013` — the At Dock source carrying the mandate exemplar at line 1. */
   const DOCK = mockShipments.find((s) => s.asnNumber === 'ASN-2026-013')!;
 
-  const openAt = async (asnNumber: string, isoDay: string) => {
+  /** A ledger that relaxes ONLY the certificate check to `OBSERVE`. Constructed
+   *  as data, like `OBSERVING_LEDGER` above, and unreachable in the product for
+   *  the same reason: a loosening needs a named, non-sample person. */
+  const CERT_OBSERVED: readonly EnforcementSetting[] = [
+    {
+      checkId: 'halal.certificate',
+      mode: 'OBSERVE' as const,
+      reviewBy: '2099-12-31',
+      setBy: NAMED_IN_A_TEST,
+      setAt: '2026-08-10T00:00:00.000Z',
+    },
+  ];
+
+  const openAt = async (
+    asnNumber: string,
+    isoDay: string,
+    opts: { ledger?: readonly EnforcementSetting[]; rulings?: readonly MaterialRuling[] } = {},
+  ) => {
     cleanup();
     asnStore.reset();
     vi.useFakeTimers({ shouldAdvanceTime: true });
@@ -1125,8 +1273,9 @@ describe('CP-3 · H4 — the certificate notice TELLS, and does not STOP', () =>
         onComplete={() => {}}
         shipments={mockShipments}
         asns={[...asnStore.all()]}
-        enforcementSettings={EMPTY_LEDGER}
+        enforcementSettings={opts.ledger ?? EMPTY_LEDGER}
         complianceRegistry={REGISTRY}
+        materialRulings={opts.rulings ?? []}
       />,
     );
     fireEvent.click(await screen.findByText(asnNumber));
@@ -1179,81 +1328,138 @@ describe('CP-3 · H4 — the certificate notice TELLS, and does not STOP', () =>
     expect(notice.textContent).toContain('SAMPLE-HALAL-0007B');
     expect(notice.textContent).toContain('MUI legacy (illustrative)');
     expect(notice.textContent).toMatch(/2027/);
-    // And it says, in words, that the receipt is not stopped.
-    expect(notice.textContent).toMatch(/does not stop the receipt/i);
+    // OPS-2 — it said, in words, that the receipt is not stopped
+    // (`/does not stop the receipt/`). It now says it IS, and who can rule.
+    expect(notice.textContent).toMatch(/cannot pass the quality step/i);
+    expect(notice.textContent).toMatch(/Compliance rules that halal does not apply/i);
+    expect(notice.textContent).not.toMatch(/does not stop the receipt/i);
     // The valid line is gone — this is a REPLACEMENT, not an addition.
     expect(screen.queryByTestId('gr-cert-valid-1')).toBeNull();
   });
 
-  it('⚠️ `role="status"`, NEVER `role="alert"` — the politeness IS the semantics', async () => {
+  it('⚠️ THE POLITENESS IS STILL THE SEMANTICS — `alert` when it stops, `status` when it only tells', async () => {
+    // ⚠️ THIS WAS *"`role="status"`, NEVER `role="alert"`"*, and the reason
+    // given was that the notice does not stop anything, so an assertive live
+    // region would announce an emergency for a line that is going to pass. The
+    // reason is unchanged and the rule it produces now has two arms: under the
+    // default `BLOCK` the line is NOT going to pass, so it is an `alert`; under
+    // a recorded `OBSERVE` it is the polite `status` it always was.
     await openAt(DOCK.asnNumber, '2026-10-17');
-    const notice = await screen.findByTestId('gr-cert-notice-1');
-    expect(notice).toHaveAttribute('role', 'status');
-    // The refusal on the sibling line DOES stop the step, and it is `alert`.
-    // The two are deliberately different, and a screen-reader user hears the
-    // difference before they read either.
-    expect(screen.getByTestId('gr-halal-refusal-0')).toHaveAttribute('role', 'alert');
+    expect(await screen.findByTestId('gr-cert-notice-1')).toHaveAttribute('role', 'alert');
+
+    await openAt(DOCK.asnNumber, '2026-10-17', { ledger: CERT_OBSERVED });
+    const observed = await screen.findByTestId('gr-cert-notice-1');
+    expect(observed).toHaveAttribute('role', 'status');
+    expect(observed.textContent).toMatch(/does not stop the receipt/i);
   });
 
-  it('⚠️ AND THE RECEIPT PROCEEDS — an EXPIRED certificate does not disable Next', async () => {
+  it('⚠️ AN EXPIRED CERTIFICATE STOPS THE STEP — and under a recorded OBSERVE it tells and proceeds', async () => {
+    // ⚠️ INVERTED AT OPS-2. This was *"AND THE RECEIPT PROCEEDS — an EXPIRED
+    // certificate does not disable Next"*, and it carried the sentence *"If a
+    // `certBlocks` clause ever reaches `qualityValid`, this is the test that
+    // goes red."* It did, by operator ruling, and this is that test.
+    //
     // `ASN-2025-00302` — sup-005 × `RM-EMUL-9440`, halal REQUIRED, BPOM
-    // APPLICABLE, certificate EXPIRED since 2025-08-01. THE POINT OF THE WHOLE
-    // BATCH: answer the two questions a human owes and the wizard lets you
-    // through, WITH the notice on screen. If a `certBlocks` clause ever reaches
-    // `qualityValid`, this is the test that goes red.
+    // APPLICABLE, certificate EXPIRED since 2025-08-01.
     const next = await openAt('ASN-2025-00302', '2026-08-20');
     const notice = await screen.findByTestId('gr-cert-notice-0');
     expect(notice.textContent).toMatch(/expired on/i);
     expect(notice.textContent).toContain('RM-EMUL-9440');
 
-    // Both human answers still owed — the notice did not answer them.
+    // Both human answers are given — and the step does NOT move.
     expect(next()).toBeDisabled();
     fireEvent.click(radioFor('Halal Seal Check', 'Pass'));
     fireEvent.click(radioFor('BPOM Lot Tracking', 'Pass'));
+    expect(next()).toBeDisabled();
+    expect(screen.getByTestId('gr-cert-consequence-0').textContent).toMatch(
+      /cannot pass the quality step/i,
+    );
 
-    // ⚠️ THROUGH — with an expired halal certificate named on the screen.
-    expect(next()).not.toBeDisabled();
+    // KNOWN-GOOD, AND THE OLD BEHAVIOUR EXACTLY: the same line, the same
+    // answers, with the certificate check recorded at `OBSERVE` — through,
+    // with the expired certificate still named on the screen. So the block
+    // above is the ledger's consequence, not a hard-coded one.
+    const observed = await openAt('ASN-2025-00302', '2026-08-20', { ledger: CERT_OBSERVED });
+    fireEvent.click(radioFor('Halal Seal Check', 'Pass'));
+    fireEvent.click(radioFor('BPOM Lot Tracking', 'Pass'));
+    expect(observed()).not.toBeDisabled();
     expect(screen.getByTestId('gr-cert-notice-0')).toBeInTheDocument();
+    expect(screen.getByTestId('gr-cert-consequence-0').textContent).toMatch(
+      /does not stop the receipt/i,
+    );
   });
 
-  it('⚠️ A QUESTION THAT SHOULD NOT HAVE BEEN ASKED DOES NOT BECOME A WARNING', async () => {
-    // `PK-PETB-8802` is `UNDETERMINED_APPLICABILITY`: nobody has ruled on
-    // whether contact packaging is in halal scope (`D-COMP-HALAL-1`). A
-    // `NO_CERT` there is not a finding — it is an answer to a question the
-    // platform has no business posing, and rendering it as a certificate
-    // warning would answer `D-COMP-HALAL-1` in the affirmative by implication.
-    //
-    // ⚠️ THE FOUR REFUSING LINES ARE ALL PACKAGING and NONE of them gets a
-    // notice, in EITHER shape. Derived, not listed.
-    await openAt(DOCK.asnNumber, '2026-10-17');
-    expect(screen.getByTestId('gr-halal-refusal-0')).toBeInTheDocument();
+  it('⚠️ OPS-2 — PACKAGING IS ASKED AND ANSWERED; a material RULED not applicable is not asked, and says why', async () => {
+    // ⚠️ THIS WAS *"A QUESTION THAT SHOULD NOT HAVE BEEN ASKED DOES NOT BECOME A
+    // WARNING"*: `PK-PETB-8802` was `UNDETERMINED_APPLICABILITY`, the line was
+    // refused (`gr-halal-refusal-0`), and it got no certificate notice in either
+    // shape — because a `NO_CERT` on a material nobody had ruled on would have
+    // answered `D-COMP-HALAL-1` in the affirmative by implication. The operator
+    // has now answered it in the affirmative, in words: halal applies to
+    // packaging by default. So the question IS asked, and it is answered by a
+    // certificate on file.
+    await openAt(DOCK.asnNumber, '2026-08-31');
+    expect(screen.queryByTestId('gr-halal-refusal-0')).toBeNull();
+    expect((await screen.findByTestId('gr-cert-valid-0')).textContent).toContain('SAMPLE-HALAL-0007F');
     expect(screen.queryByTestId('gr-cert-notice-0')).toBeNull();
-    expect(screen.queryByTestId('gr-cert-valid-0')).toBeNull();
 
-    const refusing = receivableLines().filter(({ li }) => !halalOf(li.materialCode).ok);
-    expect(refusing.map(({ li }) => li.materialCode).sort()).toEqual([
+    // No receivable line is refused for halal applicability any more — the four
+    // that were are the four packaging lines. Derived, not listed.
+    expect(receivableLines().filter(({ li }) => !halalOf(li.materialCode).ok)).toEqual([]);
+    // And each of them is backed by a SAMPLE certificate that says it is one.
+    const packagingLines = receivableLines().filter(({ li }) => li.materialCode.startsWith('PK-'));
+    expect(packagingLines.map(({ li }) => li.materialCode).sort()).toEqual([
       'PK-ALCP-2450',
       'PK-PETB-8801',
       'PK-PETB-8802',
       'PK-PETB-8804',
     ]);
-    // Every one of them would verify as NO_CERT if asked — which is exactly why
-    // the gate on `l.halal.required` is load-bearing rather than tidy.
-    for (const { li } of refusing) {
-      const v = verifyHalalAtReceipt('sup-007', li.materialCode, REGISTRY, '2026-10-17T00:00:00.000Z');
-      expect(v).toEqual({ verdict: 'NOT_SATISFIED', reason: 'NO_CERT' });
+    for (const { li } of packagingLines) {
+      const v = verifyHalalAtReceipt('sup-007', li.materialCode, REGISTRY, '2026-08-31T00:00:00.000Z');
+      expect(v.verdict, li.materialCode).toBe('SATISFIED');
+      if (v.verdict === 'SATISFIED') expect(v.certNumber).toBe('SAMPLE-HALAL-0007F');
     }
+
+    // THE OTHER ARM OF THE RULING — "not applicable → passes with the ruling
+    // shown". Compliance rules halal out for the packaging line: no seal row and
+    // no certificate line for it, and the ruling is on the screen with who made
+    // it and why. The second line (an active ingredient) is untouched.
+    const compliance = SAMPLE_PEOPLE.find((p) => p.role === 'compliance')!;
+    const ruledOut: MaterialRuling = {
+      materialCode: 'PK-PETB-8802',
+      regime: 'halal',
+      applicable: false,
+      reason: 'No product-contact surface carries an animal-derived additive.',
+      setBy: { kind: 'RESOLVED', person: { personId: compliance.personId } },
+      setAt: '2026-08-31T02:00:00.000Z',
+      seq: 1,
+    };
+    await openAt(DOCK.asnNumber, '2026-08-31', { rulings: [ruledOut] });
+    const ruling = await screen.findByTestId('gr-halal-ruling-0');
+    expect(ruling.textContent).toMatch(/Halal does not apply — ruled by Compliance/);
+    expect(ruling.textContent).toContain('No product-contact surface carries an animal-derived additive.');
+    expect(ruling.textContent).toMatch(/\(SAMPLE\)/);
+    expect(screen.queryByTestId('gr-cert-valid-0')).toBeNull();
+    expect(screen.queryByTestId('gr-cert-notice-0')).toBeNull();
+    expect(screen.queryByTestId('gr-halal-unanswered-0')).toBeNull();
+    // The neighbouring line still asks, and still shows its own certificate.
+    expect(screen.getByTestId('gr-halal-unanswered-1')).toBeInTheDocument();
+    expect(screen.getByTestId('gr-cert-valid-1')).toBeInTheDocument();
   });
 
-  it('⚠️ THE NOTICE CANNOT REACH THE STEP GATE — the mode is never consulted for it', () => {
-    // The complement of the render tests, at the level the render cannot reach:
-    // `halal.certificate` derives `BLOCK / NO_SETTING_RECORDED` and NOTHING in
-    // this wizard asks. If it ever did, six of ten receivable lines would stop
-    // the dock on a certificate the harvest (R0.1) has not collected.
+  it('⚠️ THE DEFAULT IS `BLOCK` — and since OPS-2 the wizard asks, which is why an unseeded check stops the step', () => {
+    // ⚠️ THIS WAS *"THE NOTICE CANNOT REACH THE STEP GATE — the mode is never
+    // consulted for it"*, with the sentence *"If it ever did, six of ten
+    // receivable lines would stop the dock on a certificate the harvest (R0.1)
+    // has not collected."* The wizard consults it now, by ruling, and that
+    // consequence is real and is measured in `ops2Receiving.test.ts` and
+    // reported with the batch: a halal line with no valid certificate on file
+    // does not pass.
     expect(effectiveEnforcement([], 'halal.certificate', INSTANTS[1])).toEqual({
       mode: 'BLOCK',
       source: 'NO_SETTING_RECORDED',
     });
     expect(blocks('BLOCK')).toBe(true);
+    expect(blocks(effectiveEnforcement(CERT_OBSERVED, 'halal.certificate', INSTANTS[1]).mode)).toBe(false);
   });
 });

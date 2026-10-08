@@ -294,6 +294,20 @@ export const LOOSE_END_CENSUS: readonly CensusEntry[] = Object.freeze([
       'somebody moved, with the distance between them visible.',
   },
 
+  // ── materialRuling (OPS-2) ─────────────────────────────────────────────
+  {
+    entity: 'materialRuling',
+    kind: 'initial-integrity',
+    subject: 'Governed',
+    reason: 'substrate-only',
+    note:
+      'THE SAME DEGENERATE SINGLE-STATE LEDGER SHAPE AS THE ENFORCEMENT MACHINE: the entity IS the ' +
+      'material being ruled on, and a material exists by being in the material master — not a row ' +
+      'anybody creates here. The set verb is statePreserving, so it is neither an entry nor an ' +
+      'exit, and the state is correctly declared terminal. What the verb writes is a ruling on a ' +
+      'ledger; whether halal or BPOM applies is derived from that ledger and the master at read.',
+  },
+
   // ── moduleActivation (M1) ──────────────────────────────────────────────
   {
     entity: 'moduleActivation',

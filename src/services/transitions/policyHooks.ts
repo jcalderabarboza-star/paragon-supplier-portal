@@ -138,6 +138,19 @@ export const POLICY_HOOKS = {
   /** OPS-1 — release payment: the person releasing is not the person who
    *  approved the invoice. Approving and paying are two authorities. */
   INVOICE_RELEASER_NOT_APPROVER: 'invoice_releaser_not_approver',
+  /** OPS-2 — approve and approve-again: the seat names a person. An approval
+   *  nobody can be named for is refused rather than recorded. */
+  INVOICE_APPROVER_NAMED: 'invoice_approver_named',
+  /** OPS-2 — approve-again: only an approval that names nobody is taken again. */
+  INVOICE_REAPPROVAL_OWED: 'invoice_reapproval_owed',
+  /** OPS-2 — material applicability ruling: a known regime, a yes or a no, a
+   *  reason with substance, a change from the ruling in force, and a named
+   *  person. One hook, five refusals, in the order a reader needs them. */
+  MATERIAL_RULING_GOVERNED: 'material_ruling_governed',
+  /** OPS-2 — recording inspection results on an existing receipt: the lines are
+   *  the receipt's own, each quantity is a number that adds up, and nothing is
+   *  accepted beyond what was received. */
+  GR_RESULTS_MATCH_RECEIPT: 'gr_results_match_receipt',
   /** RR submit (SDC-2a): payload.planVersion must be the referenced
    *  publication's own planVersion — the snapshot binding is un-falsifiable. */
   RR_SUBMIT_PLANVERSION_BOUND: 'rr_submit_planversion_bound',

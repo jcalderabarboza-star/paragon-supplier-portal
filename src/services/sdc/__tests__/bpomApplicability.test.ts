@@ -424,7 +424,15 @@ describe('2B-4b — the gate: WIRED, and the prefix rule is GONE', () => {
     // Derived rather than listed: exactly one NON-TEST caller, and it is the
     // GR wizard. A second production caller means the lookup has spread to a
     // surface nobody reviewed, which is worth failing over.
-    expect(callers).toEqual(['/src/components/v2-features/GRInspectionWizard.tsx']);
+    //
+    // OPS-2 — it fired, and the second caller is reviewed and named:
+    // `sdc/materialRuling.ts` calls `bpomOf` to read a Compliance ruling OVER
+    // the master's answer (for the Compliance surface's rows). The wizard still
+    // makes its own one read per line; nothing else calls the lookup.
+    expect(callers).toEqual([
+      '/src/components/v2-features/GRInspectionWizard.tsx',
+      '/src/services/sdc/materialRuling.ts',
+    ]);
 
     // ⚠️ AND EXACTLY ONE TYPE-ONLY REFERENCE, NAMED (`CENSUS-COUNTS-TYPE-IMPORTS-01`).
     // `src/lib/enforcement.ts` imports `BpomRefusalReason` to derive — at

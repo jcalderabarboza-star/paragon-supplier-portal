@@ -147,7 +147,7 @@ function buildModules(): readonly ModuleSpec[] {
     {
       code: 'CMP', nameKey: name('CMP'), descriptionKey: desc('CMP'), scope: 'cross-cutting',
       routes: ['/buyer/compliance', '/supplier/documents'],
-      flows: ['supplierDocument', 'compliance'],
+      flows: ['supplierDocument', 'compliance', 'materialRuling'],
       capabilities: ['compliance', 'supplierDocuments'],
       dependsOn: [hard('SUP')],
       parts: [
@@ -244,7 +244,7 @@ function buildModules(): readonly ModuleSpec[] {
       capabilities: ['goodsReceipts'],
       dependsOn: [hard('SHP'), soft('CMP')],
       parts: [
-        part('inspectionWizard', ['t_gr_create', 't_gr_start_inspection', 't_gr_approve', 't_gr_partial_approve', 't_gr_reject', 't_gr_post']),
+        part('inspectionWizard', ['t_gr_create', 't_gr_start_inspection', 't_gr_record_inspection', 't_gr_approve', 't_gr_partial_approve', 't_gr_reject', 't_gr_post']),
         part('qualityHold', ['t_gr_hold', 't_gr_request_retest']),
       ],
     },

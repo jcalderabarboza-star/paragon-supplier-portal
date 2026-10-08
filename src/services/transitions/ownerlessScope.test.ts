@@ -228,6 +228,9 @@ async function realIds(): Promise<Record<string, string | null>> {
     // M1 — the activation ledger's entity IS the module code, like the cap
     // ledger's is its setting key. `SHP` is a switchable module.
     moduleActivation: 'SHP',
+    // OPS-2 — the ruling ledger's entity IS the material code. A packaging
+    // material the master holds.
+    materialRuling: 'PK-CART-9901',
     // CALL-OFF STEP 1 — the delivery lane's two addresses. The line is named by
     // its `releaseRef` (the portal join-chain) and the tolerance by
     // `agreementId#lineSeq`. Both are read off the LIVE store rather than
@@ -316,6 +319,7 @@ async function walk(entity: string, t: TransitionDef): Promise<Walk | null> {
   }
   if (entity === 'enforcement') return at(GOVERNED_CHECK_IDS[0], 'Governed');
   if (entity === 'moduleActivation') return at('SHP', 'Governed');
+  if (entity === 'materialRuling') return at('PK-CART-9901', 'Governed');
   if (entity === 'role') return at('receiving', 'Defined');
   if (entity === 'supplierApplication') {
     const raised = await svc.dispatch(buyerSeat('procurement'), {
@@ -421,6 +425,8 @@ describe('POPULATION — nothing below means anything without this', () => {
     // M1 — module activation is a BUYER governance record: a supplier reads
     // what is ON through `getModuleActivation` and never switches anything.
     expect(ownerless).toContain('moduleActivation');
+    // OPS-2 — and so is the material applicability ruling ledger.
+    expect(ownerless).toContain('materialRuling');
     expect(ownerless).not.toContain('purchaseOrder');
     expect(ownerless).not.toContain('invoice');
     expect(ownerful).toContain('purchaseOrder');
@@ -540,6 +546,9 @@ describe('THE LEGITIMATE PATHS — the half a "refuse everyone" fix would break'
         // "nothing to compare" (§86).
         'intakeLine',
         'materialRequest',
+        // OPS-2 — the material ruling ledger is a Paragon governance record:
+        // who ruled and why. A supplier neither reads it nor rules.
+        'materialRuling',
         // M1 — the activation ledger; `enforcement`'s shape, verb for verb.
         'moduleActivation',
         'psl',

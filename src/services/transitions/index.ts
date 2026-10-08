@@ -63,6 +63,7 @@ export {
   PUBLICATION_APPROVE_FIELDS,
 } from './flows/forecastPublication.flow';
 export { moduleActivationFlow } from './flows/moduleActivation.flow';
+export { materialRulingFlow } from './flows/materialRuling.flow';
 export * from './customRoles';
 
 import { flowRegistry } from './registry';
@@ -95,6 +96,7 @@ import { deliveryPolicyFlow } from './flows/deliveryPolicy.flow';
 import { intakeLineFlow } from './flows/intakeLine.flow';
 import { forecastPublicationFlow } from './flows/forecastPublication.flow';
 import { moduleActivationFlow } from './flows/moduleActivation.flow';
+import { materialRulingFlow } from './flows/materialRuling.flow';
 
 // Seed the shipped flows onto the singleton.
 flowRegistry.register(purchaseOrderFlow); // Step 3.1 — PO
@@ -181,3 +183,5 @@ flowRegistry.register(intakeLineFlow); // A2 — Intake line
 // its target (`forecastPublication`), so it never joins the target-less set.
 flowRegistry.register(forecastPublicationFlow); // B4a — Forecast publication
 flowRegistry.register(moduleActivationFlow); // M1 — Module activation
+// OPS-2 — WIRED in the same commit as its target (`materialRuling`).
+flowRegistry.register(materialRulingFlow); // OPS-2 — Material applicability ruling

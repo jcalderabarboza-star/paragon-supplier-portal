@@ -121,8 +121,9 @@ const PROV_SUPPLIER_DRAFT: Provenance = Object.freeze({
 //   PENDING COMPLIANCE RATIFICATION, taken from the row's DECLARED GROUP via
 //   `PROVISIONAL_HALAL_BY_GROUP` (`sdc/halal.ts`) and NEVER from the label:
 //   four labels in this file contain the word *Halal* and the parse that reads
-//   them is the defect. Thirty-one `REQUIRED` (everything that enters or feeds
-//   a formulation), ELEVEN `UNDETERMINED` (all packaging), and **ZERO
+//   them is the defect. Every row is `REQUIRED` since OPS-2 (operator ruling:
+//   halal applies to packaging by default — the eleven packaging rows read
+//   `UNDETERMINED` before it, and could not be received), and **ZERO
 //   `NOT_REQUIRED` — no row in this master has a basis for saying a halal
 //   determination is unnecessary, and none is invented to fill the state out.**
 //
@@ -169,7 +170,7 @@ export const MATERIAL_MASTER: MaterialMaster = Object.freeze({
     materialGroup: 'MG-20', // rigid plastic packaging
     canonicalUom: 'PCS',
     bpomApplicable: 'NOT_APPLICABLE',
-    halalApplicable: 'UNDETERMINED',
+    halalApplicable: 'REQUIRED',
   },
   // SDC-2b (F-1a) — second packaging material so the seeded persona (sup-007,
   // PT Sample Packaging) carries a semi-firm line on its own material×period
@@ -182,7 +183,7 @@ export const MATERIAL_MASTER: MaterialMaster = Object.freeze({
     materialGroup: 'MG-21', // closures
     canonicalUom: 'PCS',
     bpomApplicable: 'NOT_APPLICABLE',
-    halalApplicable: 'UNDETERMINED',
+    halalApplicable: 'REQUIRED',
   },
 
   // ══ CP-2 · 2B-2 — ADOPTED FROM THE DOCUMENT LANE ════════════════════════════
@@ -417,7 +418,7 @@ export const MATERIAL_MASTER: MaterialMaster = Object.freeze({
     materialGroup: 'MG-20',
     canonicalUom: 'PCS',
     bpomApplicable: 'NOT_APPLICABLE',
-    halalApplicable: 'UNDETERMINED',
+    halalApplicable: 'REQUIRED',
   },
   'PK-PETB-8802': {
     materialCode: 'PK-PETB-8802',
@@ -426,7 +427,7 @@ export const MATERIAL_MASTER: MaterialMaster = Object.freeze({
     materialGroup: 'MG-20',
     canonicalUom: 'PCS',
     bpomApplicable: 'NOT_APPLICABLE',
-    halalApplicable: 'UNDETERMINED',
+    halalApplicable: 'REQUIRED',
   },
 
   // ── MG-23 · paper & board packaging ────────────────────────────────────────
@@ -437,7 +438,7 @@ export const MATERIAL_MASTER: MaterialMaster = Object.freeze({
     materialGroup: 'MG-23',
     canonicalUom: 'PCS',
     bpomApplicable: 'NOT_APPLICABLE',
-    halalApplicable: 'UNDETERMINED',
+    halalApplicable: 'REQUIRED',
   },
   'PK-CART-9910': {
     materialCode: 'PK-CART-9910',
@@ -446,7 +447,7 @@ export const MATERIAL_MASTER: MaterialMaster = Object.freeze({
     materialGroup: 'MG-23',
     canonicalUom: 'PCS',
     bpomApplicable: 'NOT_APPLICABLE',
-    halalApplicable: 'UNDETERMINED',
+    halalApplicable: 'REQUIRED',
   },
   // NOTE — `MG-21` (closures) and `MG-22` (metal) gain NO members here. The
   // tree's only unadopted closure is `PK-ALCP-2441` (RFQ-mute → 2B-3) and its
@@ -570,7 +571,7 @@ export const MATERIAL_MASTER: MaterialMaster = Object.freeze({
     materialGroup: 'MG-20',
     canonicalUom: 'PCS',
     bpomApplicable: 'NOT_APPLICABLE',
-    halalApplicable: 'UNDETERMINED',
+    halalApplicable: 'REQUIRED',
   },
   'PK-PETB-8825': {
     materialCode: 'PK-PETB-8825',
@@ -588,7 +589,7 @@ export const MATERIAL_MASTER: MaterialMaster = Object.freeze({
     materialGroup: 'MG-20',
     canonicalUom: 'PCS',
     bpomApplicable: 'NOT_APPLICABLE',
-    halalApplicable: 'UNDETERMINED',
+    halalApplicable: 'REQUIRED',
   },
 
   // ── MG-21 · closures — where R-1's substrate-vs-function split PAYS OUT ─────
@@ -610,7 +611,7 @@ export const MATERIAL_MASTER: MaterialMaster = Object.freeze({
     materialGroup: 'MG-21',
     canonicalUom: 'PCS',
     bpomApplicable: 'NOT_APPLICABLE',
-    halalApplicable: 'UNDETERMINED',
+    halalApplicable: 'REQUIRED',
   },
 
   // NOTE — `MG-22` (metal packaging) STILL gains no member, and that is the
@@ -816,7 +817,7 @@ export const MATERIAL_MASTER: MaterialMaster = Object.freeze({
     materialGroup: 'MG-20',
     canonicalUom: 'PCS', // group convention; every MG-20 row is PCS
     bpomApplicable: 'NOT_APPLICABLE',
-    halalApplicable: 'UNDETERMINED',
+    halalApplicable: 'REQUIRED',
   },
 
   // ── MG-21 · closures ───────────────────────────────────────────────────────
@@ -844,7 +845,7 @@ export const MATERIAL_MASTER: MaterialMaster = Object.freeze({
     materialGroup: 'MG-21',
     canonicalUom: 'PCS', // group convention; `PK-CAPF-8820`/`PK-ALCP-2441` are PCS
     bpomApplicable: 'NOT_APPLICABLE',
-    halalApplicable: 'UNDETERMINED',
+    halalApplicable: 'REQUIRED',
   },
 });
 

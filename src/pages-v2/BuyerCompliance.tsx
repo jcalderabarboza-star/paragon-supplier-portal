@@ -46,6 +46,7 @@ import {
 } from '../services/query/commandHooks';
 import { useVerbAvailabilities, useVerbAvailability } from '../hooks/useVerbAvailability';
 import { HandoffNotice } from '../components/ui-v2/HandoffNotice';
+import MaterialApplicabilityPanel from './compliance/MaterialApplicabilityPanel';
 import {
   BPJPH_MANDATE_DATE,
   computeStatus,
@@ -483,6 +484,11 @@ const BuyerCompliance: React.FC = () => {
           decide about. Folding them into one list would make a supplier's
           unverified claim look like a registry fact, which is exactly what
           `lifecycleState` exists to keep apart. */}
+      {/* OPS-2 — where Compliance rules whether halal and BPOM apply to a
+          material. Receiving reads it; it sits above the certificate registry
+          because a certificate is only asked for where halal applies. */}
+      <MaterialApplicabilityPanel />
+
       {reviewQueue.length > 0 && (
         <div
           className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm mb-6 overflow-hidden"
