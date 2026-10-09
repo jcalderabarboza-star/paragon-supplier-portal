@@ -28,6 +28,7 @@ import { useVerbAvailabilities } from '../../hooks/useVerbAvailability';
 import { useToast } from '../../hooks/useToast';
 import { useRefusalText, useDataErrorText } from '../../hooks/useRefusalText';
 import { useCurrentIdentity } from '../../context/CurrentIdentityContext';
+import { isSuperAdminSeat } from '../../services/identity/superAdmin';
 import { atomsForSeat } from '../../services/transitions/customRoles';
 import { restrictiveDecisionVerdict } from '../../services/data/pslLeadCheck';
 import { pslRefusalKey } from '../../pages-v2/psl/pslRefusal';
@@ -143,7 +144,10 @@ const PslListingCard: React.FC<{ listing: PslListing; nowIso: string; highlighte
   // form stands open re-gates the form rather than leaving a stale verdict
   // behind it. `atomsForSeat`, never `atomsFor` — only the first honours a
   // custom role's parent reference.
-  const seatAtoms = atomsForSeat(identity.businessRoles);
+  // ADM-1 — the Super Admin is exempt from the seat check (the dispatcher
+  // admits the act with a stated reason), so the mirror below reads an empty
+  // seat for that one case and warns about nothing it will not be refused for.
+  const seatAtoms = isSuperAdminSeat(identity) ? [] : atomsForSeat(identity.businessRoles);
 
   const changeStatus = usePslChangeStatus();
   const renew = usePslRenew();

@@ -115,6 +115,18 @@ On 8 and 9 October one material (Niacinamide) was walked through every hand-off,
 - **Most of the corrections v1 asked for in repository documents were applied** in the commit that created v1 (D8 §0 lists each one and what is still open). v1's own text did not say so; v2 does.
 - The six design documents and the five review documents are **unchanged** (same content hashes). They describe an older commit; D8 §7 lists what they say that is no longer true.
 
+## After the `handover-v2` tag — ADM-1
+
+The tag `handover-v2` is the package as handed over. One product batch has merged since, and the documents in this folder were moved with it so they stay true of the tree: the figures in D1 §1, D2, D3, D4 and D7, and four rows of D6 §2.
+
+- **Two administrator roles.** `super_admin` is new and `admin` changed: both hold every buyer-side permission and no supplier-side act. The Super Admin is exempt from the four-eyes and separation-of-duties checks and from the sample-identity locks; each such act needs a one-line reason, is refused by name without it, and is recorded with the check it passed. The Admin is not exempt.
+- **One new route**, `/buyer/platform/super-admin-activity`: every Super Admin act, read from the audit trail, for the Super Admin and Compliance.
+- **Three rulings of 9 October built**: an invoice states its lines; invoicing before a receipt is allowed up to the confirmed quantity, and the match waits; a goods receipt records the named receiver and the instant.
+- **Surfaces**: the role creation form is a pop-up opened by "New role"; the buyer dashboard's lane chips filter the alerts as well as the action queue, and the KPI cards are labelled whole-platform.
+- **Figures**: routes 51 → 52, system roles 13 → 14, sample persons 16 → 18. Modules and liveness capabilities are unchanged.
+
+The contract record is `docs/contracts/C1-methods.md` (RE-HARVEST, ADM-1) and `C3-events.md` (`bypass`). `C10-identity.md` is not amended by this batch: its role vocabulary predates both administrator roles.
+
 ## Three things to know before trusting this set
 
 1. **The backlog is built from a compilation, not from the review reports.** The four reviews' lists were compiled from the reports as delivered; the Operations P2 list is cut off mid-item, and part of the Supplier Collaboration report arrived truncated. Rows that only a pull request names carry a severity the compiling seat assigned, and are marked.

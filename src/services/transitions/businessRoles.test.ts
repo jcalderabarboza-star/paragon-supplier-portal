@@ -220,15 +220,16 @@ describe('THE OPERATOR RULINGS, ASSERTED', () => {
 });
 
 describe('⚠️ THE SUPER ADMIN — DERIVED, BOUNDED, AND NAMED', () => {
-  it('holds THE UNION OF EVERY OTHER BUNDLE — derived, so it cannot drift', () => {
-    // Hand-listing 52 atoms would put a copy of every other bundle somewhere
-    // nothing checks. Composed, `admin` gains an atom in the same commit a lane
-    // gains one — which is what makes this assertion structural rather than a
-    // snapshot.
-    const others = (Object.keys(SYSTEM_ROLES) as SystemRoleId[]).filter((r) => r !== 'admin');
-    expect(others.length).toBeGreaterThan(0); // population guard
+  it('holds THE UNION OF EVERY BUYER LANE — derived, so it cannot drift', () => {
+    // ADM-1 (operator ruling): an administrator holds every buyer-side and
+    // governance atom and never a supplier tenant's act. It read "the union of
+    // every OTHER bundle", supplier lanes included. Composed from the buyer
+    // offer, so `admin` gains an atom in the same commit a buyer lane gains one.
+    const others = PERSONA_SYSTEM_ROLES.buyer.filter((r) => r !== 'admin' && r !== 'super_admin');
+    expect(others).toContain('procurement'); // population guard
     const union = new Set(others.flatMap((r) => SYSTEM_ROLES[r]));
     expect(new Set(SYSTEM_ROLES.admin)).toEqual(union);
+    expect(new Set(SYSTEM_ROLES.super_admin)).toEqual(union);
   });
 
   it('⚠️ IS BOUNDED BY WHAT A HUMAN CAN DO — no machine-only atom', () => {
@@ -247,29 +248,37 @@ describe('⚠️ THE SUPER ADMIN — DERIVED, BOUNDED, AND NAMED', () => {
     for (const a of machineOnly) {
       expect(SYSTEM_ROLES.admin, `admin holds machine-only atom '${a}'`).not.toContain(a);
     }
-    // Known-GOOD control beside it: it DOES hold the human ones.
+    // Known-GOOD control beside it: it DOES hold the human buyer ones.
     expect(SYSTEM_ROLES.admin).toContain('invoice:pay');
-    expect(SYSTEM_ROLES.admin).toContain('po:confirm');
+    expect(SYSTEM_ROLES.admin).toContain('role:grant');
   });
 
-  it('⚠️ SPANS BOTH TENANCIES — which is what buyer:all never did', () => {
-    // Measured: the sides are DISJOINT. The retired persona grant reached 36
-    // assignable buyer atoms and zero supplier atoms; "wildcard" was accurate
-    // about its SHAPE and loose about its REACH. `admin` is genuinely wider,
-    // which is why it is named on the catalogue rather than quietly granted.
+  it('⚠️ HOLDS THE WHOLE BUYER SIDE AND NO SUPPLIER ACT (ADM-1) — it no longer spans tenancies', () => {
+    // Measured: the sides are DISJOINT. By ruling an administrator never holds
+    // a supplier tenant's acts, so the assertion that stood here — `admin` holds
+    // every atom of BOTH sides — is retired with the bundle it described.
     const buyerAtoms = new Set(PERSONA_SYSTEM_ROLES.buyer.flatMap((r) => SYSTEM_ROLES[r]));
     const supAtoms = new Set(PERSONA_SYSTEM_ROLES.supplier.flatMap((r) => SYSTEM_ROLES[r]));
     expect([...buyerAtoms].filter((a) => supAtoms.has(a))).toEqual([]);
-    for (const a of [...buyerAtoms, ...supAtoms]) expect(SYSTEM_ROLES.admin).toContain(a);
+    expect(supAtoms.has('po:confirm')).toBe(true); // the population is real
+    for (const role of ['admin', 'super_admin'] as const) {
+      for (const a of buyerAtoms) expect(SYSTEM_ROLES[role], `${role} lacks ${a}`).toContain(a);
+      for (const a of supAtoms) expect(SYSTEM_ROLES[role], `${role} holds ${a}`).not.toContain(a);
+    }
   });
 
-  it('⚠️ IS NOT A PERSONA BUNDLE — the tenancy answer must not collapse', () => {
-    // Listing `admin` under a persona would make `PERSONA_ROLES.buyer` span
-    // supplier atoms, and `personaCan('buyer','po:confirm')` would turn true —
-    // collapsing the answer `nextActorFrom`, `catalogView` and the `surfaceable`
-    // per-persona invariant all read.
-    expect(PERSONA_SYSTEM_ROLES.buyer as readonly string[]).not.toContain('admin');
+  it('⚠️ IS ON THE BUYER SIDE, AND THE TENANCY ANSWER DID NOT COLLAPSE', () => {
+    // ADM-1 — both administrator roles are buyer-side roles now. What this test
+    // guarded is still guarded, by its consequence rather than by an absence:
+    // listing them under `buyer` must not let a buyer persona reach a supplier
+    // atom (`personaCan('buyer','po:confirm')` stays false).
+    expect(PERSONA_SYSTEM_ROLES.buyer as readonly string[]).toContain('admin');
+    expect(PERSONA_SYSTEM_ROLES.buyer as readonly string[]).toContain('super_admin');
     expect(PERSONA_SYSTEM_ROLES.supplier as readonly string[]).not.toContain('admin');
+    expect(PERSONA_SYSTEM_ROLES.supplier as readonly string[]).not.toContain('super_admin');
+    const buyerReach = new Set<string>(PERSONA_SYSTEM_ROLES.buyer.flatMap((r) => SYSTEM_ROLES[r]));
+    expect(buyerReach.has('po:confirm')).toBe(false);
+    expect(buyerReach.has('invoice:pay')).toBe(true);
   });
 
   it('⚠️ DOES NOT POLLUTE THE HANDOFF — universality names no owner', () => {

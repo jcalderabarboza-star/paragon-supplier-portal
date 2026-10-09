@@ -388,11 +388,12 @@ export const customRoleStore = {
 // ── TENANCY ─────────────────────────────────────────────────────────────────
 
 /**
- * The side a SYSTEM role sits on, or `null` for `admin`.
+ * The side a SYSTEM role sits on, or `null` for an id on neither.
  *
- * ⚠️ **`admin` RETURNS `null` BECAUSE IT IS NOT ON A SIDE**, and that is the
- * reason it cannot be a parent. A copy of `admin` would span both tenancies by
- * construction — see `assertCopyableParent`.
+ * ⚠️ **NO SYSTEM ROLE RETURNS `null` SINCE ADM-1.** `admin` did — it spanned
+ * both tenancies and so could not be a parent. By ruling an administrator holds
+ * no supplier act, so `admin` and `super_admin` are buyer-side roles and the
+ * `null` arm is left for an id this platform does not have.
  */
 export function sideOfSystemRole(id: SystemRoleId): RoleSide | null {
   if ((PERSONA_SYSTEM_ROLES.buyer as readonly string[]).includes(id)) return 'buyer';

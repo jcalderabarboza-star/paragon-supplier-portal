@@ -104,8 +104,14 @@ const receiveAndPost = async (niacinamide: number) => {
     await ok(svc.dispatch(receiving, { transitionId: verb, entity: 'goodsReceipt', entityId: gr.entityId! }));
   }
 };
+// ADM-1 — an invoice states its lines (operator ruling): the order's two, at the
+// confirmed quantity. Every invoice this file raises is for the whole order.
+const ORDER_LINES = [
+  { materialCode: 'AI-NIAC-6601', qty: 5000, unitPrice: 220_000 },
+  { materialCode: 'AI-HYALU-6610', qty: 300, unitPrice: 3_000_000 },
+];
 const invoice = async (amount: number): Promise<string> => {
-  const c = await ok(svc.dispatch(supplier, { transitionId: 't_invoice_create', entity: 'invoice', payload: { poReference: PO, amount } }));
+  const c = await ok(svc.dispatch(supplier, { transitionId: 't_invoice_create', entity: 'invoice', payload: { poReference: PO, amount, lines: ORDER_LINES } }));
   await ok(svc.dispatch(supplier, { transitionId: 't_invoice_submit', entity: 'invoice', entityId: c.entityId!, payload: { amount } }));
   return c.entityId!;
 };

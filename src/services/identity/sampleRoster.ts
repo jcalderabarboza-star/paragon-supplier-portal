@@ -106,6 +106,12 @@ const BUYER_ROSTER = Object.freeze([
   // filed: this person can raise a designation and rule on it, and the four-eyes
   // check is what refuses them.
   { personId: 'sim-usr-buyer-all-1', role: 'buyer_all', ordinal: 1, personaType: 'buyer', supplierId: null, roles: ['buyer_all'] },
+  // ADM-1 — the two administrator seats, one person each, so the ruling's pin
+  // is walkable: the same act is refused by four-eyes for Admin 1 and
+  // admitted, stamped and reasoned for Super Admin 1. A SAMPLE holder; in
+  // production the Super Admin is a real named person the SE Team chooses.
+  { personId: 'sim-usr-admin-1', role: 'admin', ordinal: 1, personaType: 'buyer', supplierId: null, roles: ['admin'] },
+  { personId: 'sim-usr-super-admin-1', role: 'super_admin', ordinal: 1, personaType: 'buyer', supplierId: null, roles: ['super_admin'] },
 ] as const satisfies readonly SamplePerson[]);
 
 /**

@@ -387,13 +387,28 @@ describe('E2E-1 · the receiving form and a seat that names nobody', () => {
     expect(goodsReceiptStore.all()).toHaveLength(total);
   }, 13120);
 
-  it('a hold is not a decision: ticking it withdraws the notice', async () => {
+  it('ADM-1 · a NEW receipt names its receiver, so the notice stays when the hold box is ticked — and nothing is created', async () => {
+    // It read "a hold is not a decision: ticking it withdraws the notice". A
+    // hold is still not a decision, but RAISING a receipt now records the named
+    // receiver (`gr_receiver_named`), so a seat that names nobody is told so
+    // before the act whether it means to hold or not.
     renderWithProviders(<BuyerGoodsReceipt />);
     await screen.findByText('Rejection Rate (30d)');
     await toLastStep();
     expect(screen.getByTestId('gr-dispose-pre-act')).toBeInTheDocument();
     fireEvent.click(screen.getByTestId('gr-hold-instead'));
-    expect(screen.queryByTestId('gr-dispose-pre-act')).toBeNull();
+    expect(screen.getByTestId('gr-dispose-pre-act')).toBeInTheDocument();
+    // The hold needs its reason before the button is live; with it stated the
+    // create is still refused, because the receipt would name nobody.
+    fireEvent.change(screen.getByTestId('gr-hold-reason'), { target: { value: 'Awaiting the lab result.' } });
+    const before = goodsReceiptStore.all().length;
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Create GR' })).not.toBeDisabled());
+    fireEvent.click(screen.getByRole('button', { name: 'Create GR' }));
+    await new Promise((r) => setTimeout(r, 300));
+    expect(received()).toEqual([]);
+    expect(goodsReceiptStore.all()).toHaveLength(before);
+    // KNOWN-GOOD beside it: the same hold from a NAMED seat does create the receipt
+    // (`a named person … the receipt is recorded`, below, is the decision's twin).
   }, 13120);
 
   it('a named person reads whose name the decision carries, and the receipt is recorded', async () => {

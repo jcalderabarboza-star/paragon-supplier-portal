@@ -92,8 +92,11 @@ import {
   type ActorAttribution,
   type EnforcementMode,
   type GovernedCheckId,
+  isAttributed,
 } from '../../../lib/enforcement';
 import { INTAKE_TRIAGE_ATOM } from '../../transitions/flows/intakeLine.flow';
+import { askBypassReason, hasBypassReasonPrompt } from '../../identity/bypassReasonPrompt';
+import { isSuperAdminSeat } from '../../identity/superAdmin';
 import {
   createDispatcher,
   InMemoryAuditSink,
@@ -353,7 +356,7 @@ const goodsReceiptTarget: CommandTarget = {
     const ref = String(payload.asnReference);
     return shipmentByRef(ref)?.supplierId ?? asnStore.get(ref)?.supplierId ?? null;
   },
-  create: (payload, toState) => {
+  create: (payload, toState, scope) => {
     const ref = String(payload.asnReference);
     const shp = shipmentByRef(ref);
     // Manual/ASN-ref path (no shipment): derive owner/refs from the ASN document
@@ -380,6 +383,11 @@ const goodsReceiptTarget: CommandTarget = {
       supplierName: shp?.supplierName ?? asnPo?.supplierName ?? '—',
       receivedDate: typeof payload.receivedDate === 'string' ? payload.receivedDate : '',
       receivedBy: typeof payload.receivedBy === 'string' ? payload.receivedBy : '',
+      // ADM-1 — the named receiver and the instant, from the SESSION. The
+      // `gr_receiver_named` hook has already refused a seat that names nobody.
+      ...(scope.actor && isAttributed(scope.actor)
+        ? { receivedByPerson: scope.actor, receivedAt: new Date().toISOString() }
+        : {}),
       status: toState as GRStatus,
       inspectionResults,
       disposition: 'Pending',
@@ -679,10 +687,24 @@ bindPolicyHook(POLICY_HOOKS.INVOICE_CREATE_PO_CONFIRMED, ({ payload }) => {
 // RECEIVED. The invoice form opens on the order's lines at the order's prices
 // and the accepted quantity, and the supplier may lower a quantity; this is the
 // same predicate behind the form (`invoiceLinesRefusal`), so a hand-crafted
-// dispatch cannot state what the form would not. An invoice that states NO
-// lines is not examined here — its amount is judged by the match, as before.
+// dispatch cannot state what the form would not.
+//
+// ADM-1 (operator rulings, 9 October 2026) — TWO CHANGES, BOTH HERE.
+//   · An invoice with NO lines is refused (`INVOICE_LINES_REQUIRED`). It read
+//     *"An invoice that states NO lines is not examined here"*, which let a
+//     caller invoice any amount with nothing behind it.
+//   · Invoicing BEFORE a receipt is allowed: the ceiling is the confirmed
+//     quantity until a receipt is posted, the accepted quantity after
+//     (`invoiceCeilingBasis`). The match still waits for the receipt.
 bindPolicyHook(POLICY_HOOKS.INVOICE_LINES_WITHIN_RECEIVED, ({ payload }) => {
-  if (!('lines' in payload)) return { ok: true };
+  if (!('lines' in payload)) {
+    return {
+      ok: false,
+      reason:
+        'INVOICE_LINES_REQUIRED: an invoice states the lines it invoices. State each line as ' +
+        '{ materialCode, qty, unitPrice }',
+    };
+  }
   const po = findPoByNumber(String(payload.poReference));
   if (!po) return { ok: true }; // `invoice_create_po_confirmed` has already refused this
   const lines = asInvoiceLines(payload.lines);
@@ -718,6 +740,20 @@ bindPolicyHook(POLICY_HOOKS.INVOICE_LINES_WITHIN_RECEIVED, ({ payload }) => {
         reason:
           `INVOICE_LINE_EXCEEDS_RECEIVED: ${refusal.qty} of ${refusal.materialCode} is invoiced and ` +
           `${refusal.maxQty} was received and accepted on ${po.poNumber}. Invoice that quantity or less`,
+      };
+    case 'INVOICE_LINE_EXCEEDS_CONFIRMED':
+      return {
+        ok: false,
+        reason:
+          `INVOICE_LINE_EXCEEDS_CONFIRMED: ${refusal.qty} of ${refusal.materialCode} is invoiced and ` +
+          `${refusal.maxQty} was confirmed on ${po.poNumber}. No receipt is posted yet, so the ` +
+          'confirmed quantity is the most that can be invoiced',
+      };
+    case 'INVOICE_LINES_REQUIRED':
+      return {
+        ok: false,
+        reason:
+          'INVOICE_LINES_REQUIRED: an invoice states the lines it invoices, and this one states none',
       };
     case 'INVOICE_NOTHING_INVOICED':
       return { ok: false, reason: 'INVOICE_NOTHING_INVOICED: no line invoices a quantity above zero' };
@@ -3633,6 +3669,21 @@ export class MockCommandService implements ICommandService {
     // so every event this dispatch emits groups to the first command's
     // correlationId (DR-10). The dispatcher has always accepted this third arg
     // (cascades use it); this exposes it on the public seam.
+    // ADM-1 — a Super Admin act that passes a four-eyes check needs a one-line
+    // reason. It is asked for ONCE, here, BEFORE the act is taken, so no surface
+    // has to know the exemption exists and no refused command is left on the
+    // trail ahead of a reasoned one. The preview reads the same hooks and
+    // records nothing (`bypassRulesFor`). With nobody to ask, or on a cancel,
+    // the command is dispatched as it came and refused by name.
+    if (input.bypassReason === undefined && hasBypassReasonPrompt() && isSuperAdminSeat(scope)) {
+      const rules = dispatcher.bypassRulesFor(scope, input);
+      if (rules.length > 0) {
+        const reason = await askBypassReason(rules);
+        if (reason !== null) {
+          return dispatcher.dispatch(scope, { ...input, bypassReason: reason }, causationId);
+        }
+      }
+    }
     return dispatcher.dispatch(scope, input, causationId);
   }
 

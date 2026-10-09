@@ -54,7 +54,7 @@ import NextActLine from '../components/ui-v2/NextActLine';
 import { HandoffNotice } from '../components/ui-v2/HandoffNotice';
 import type { QtyRefusalReason } from '../lib/localeNumber';
 import { openingQty, readInvoiceDraft, readInvoiceQty } from './invoices/invoiceLinesModel';
-import { invoiceLinesFor, receiptsOnOrder } from '../services/data/orderReceipt';
+import { invoiceCeilingBasis, invoiceLinesFor } from '../services/data/orderReceipt';
 import { InvoicedLines } from '../components/v2-features/ReceivedBlock';
 // GL-1 - the glossary destination for this surface's refusals.
 import GlossaryTermChip from '../components/ui-v2/GlossaryTermChip';
@@ -230,7 +230,10 @@ const SupplierInvoices: React.FC = () => {
     () => (newPo ? invoiceLinesFor(newPo, allReceipts) : []),
     [newPo, allReceipts],
   );
-  const nothingReceived = newPo !== null && receiptsOnOrder(newPo.poNumber, allReceipts).length === 0;
+  // ADM-1 — invoicing before a receipt is allowed (operator ruling). With no
+  // receipt posted the lines open on the CONFIRMED quantity and the form says
+  // the match will wait; it read `nothingReceived` and refused the create.
+  const beforeReceipt = newPo !== null && invoiceCeilingBasis(newPo.poNumber, allReceipts) === 'confirmed';
   const draftRead = readInvoiceDraft(newLines, newQty);
   const choosePo = (poNumber: string) => {
     setNewPoRef(poNumber);
@@ -281,11 +284,7 @@ const SupplierInvoices: React.FC = () => {
       toast({
         variant: 'warning',
         title: t('invoice.create.failed.title'),
-        description: t(
-          nothingReceived
-            ? 'supplierInvoices.new.nothingReceived'
-            : 'supplierInvoices.new.lines.invalid',
-        ),
+        description: t('supplierInvoices.new.lines.invalid'),
       });
       return;
     }
@@ -908,18 +907,18 @@ const SupplierInvoices: React.FC = () => {
               prices and the quantity received and accepted; the supplier may
               lower a quantity and never raise it past that. The amount is the
               lines' total and is not typed. */}
-          {newPo && nothingReceived && (
-            <p className="text-sm text-text-secondary" data-testid="invoice-nothing-received">
-              {t('supplierInvoices.new.nothingReceived')}
+          {newPo && beforeReceipt && (
+            <p className="text-sm text-text-secondary" data-testid="invoice-before-receipt">
+              {t('supplierInvoices.new.beforeReceipt')}
             </p>
           )}
-          {newPo && !nothingReceived && (
+          {newPo && (
             <div data-testid="invoice-lines">
               <div className="text-label text-text-tertiary uppercase mb-1">
                 {t('supplierInvoices.new.lines.title')}
               </div>
               <p className="text-xs text-text-tertiary mb-3">
-                {t('supplierInvoices.new.lines.note')}
+                {t(beforeReceipt ? 'supplierInvoices.new.lines.noteConfirmed' : 'supplierInvoices.new.lines.note')}
               </p>
               <ul className="space-y-3">
                 {newLines.map((l) => {
@@ -941,7 +940,9 @@ const SupplierInvoices: React.FC = () => {
                           <dd><Data>{formatIDR(l.unitPrice)}</Data></dd>
                         </div>
                         <div>
-                          <dt className="text-text-tertiary">{t('supplierInvoices.new.lines.accepted')}</dt>
+                          <dt className="text-text-tertiary">
+                            {t(l.basis === 'confirmed' ? 'supplierInvoices.new.lines.confirmed' : 'supplierInvoices.new.lines.accepted')}
+                          </dt>
                           <dd data-testid={`invoice-line-accepted-${l.materialCode}`}>
                             <Data>{formatNumber(l.maxQty)} {l.uom}</Data>
                           </dd>
@@ -967,7 +968,7 @@ const SupplierInvoices: React.FC = () => {
                           className="mt-1 text-[11px] text-danger"
                         >
                           {read.reason === 'EXCEEDS_RECEIVED' ? (
-                            t('supplierInvoices.new.qty.refused.exceedsReceived', {
+                            t(l.basis === 'confirmed' ? 'supplierInvoices.new.qty.refused.exceedsConfirmed' : 'supplierInvoices.new.qty.refused.exceedsReceived', {
                               max: formatNumber(l.maxQty),
                               uom: l.uom,
                             })

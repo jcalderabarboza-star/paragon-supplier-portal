@@ -73,8 +73,11 @@ describe('⚠️ THE PANEL OFFERS IT — holdable, and unheld until somebody cli
       .getAllByRole('menuitemcheckbox')
       .map((b) => b.getAttribute('data-testid')!.replace('identity-role-', ''));
     expect([...offered].sort()).toEqual([...PERSONA_SYSTEM_ROLES.buyer].sort());
-    // …and `admin` is NOT among them — it is not on a side.
-    expect(offered).not.toContain('admin');
+    // ADM-1 — the two administrator roles are buyer-side roles and are offered;
+    // no supplier-side role is.
+    expect(offered).toContain('admin');
+    expect(offered).toContain('super_admin');
+    expect(offered).not.toContain('fulfilment');
   });
 
   it.each(['en', 'id'])('%s reads the role by name, not by key', async (lng) => {

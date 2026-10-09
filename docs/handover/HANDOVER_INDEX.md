@@ -86,7 +86,7 @@ Compute `git hash-object <target>` after copying; each must equal the blob id be
 | SE21_PRODUCT_CATALOG.md | 10,469 | bc4b012158db1b491fa5763417bc81f4e725636c |
 | SE_BACKLOG_v2.md | 35,183 | 8bc0c851e0e21f0d8fe3ae0b0e1e3d0427d9e6d4 |
 
-**One committed file differs from its draft, on purpose.** Before committing, Seat 2 recorded the operator rulings of 9 October 2026 in `D6_DECISION_REGISTER.md` §2 (dispatch H2). The committed D6 is 27,257 bytes with blob id `47311020067c80539d6ceb24270756ad7097d73d`; the row above is the draft's. The other twelve are committed as drafted.
+**One committed file differs from its draft, on purpose.** Before committing, Seat 2 recorded the operator rulings of 9 October 2026 in `D6_DECISION_REGISTER.md` §2 (dispatch H2). The committed D6 is 27,257 bytes with blob id `47311020067c80539d6ceb24270756ad7097d73d`; the row above is the draft's. The other twelve are committed as drafted — **at the `handover-v2` tag.** After the tag, the batch ADM-1 changed six of them so they stay true of the tree it changed (`D1_SE_HANDOVER.md`, `D2_ENGINEERING_GUIDE.md`, `D3_ARCHITECTURE.md`, `D4_SAMPLE_DATA_REPLACEMENT.md`, `D7_CONTRACTS_INDEX.md`, `CHANGES_SINCE_V1.md`) and `D6_DECISION_REGISTER.md` again; `CHANGES_SINCE_V1.md` lists what moved. For those seven the ids in this section are the tag's, not the tree's: read the tagged files with `git show handover-v2:<path>`.
 
 `src/handoverIndex.guard.test.ts` does **not** hold these: it records no blob id for a handover row, by design.
 

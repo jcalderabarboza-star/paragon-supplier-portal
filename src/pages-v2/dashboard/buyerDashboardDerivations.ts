@@ -427,10 +427,33 @@ export function buyerLaneIds(): readonly SystemRoleId[] {
   );
 }
 
-/** The lanes a seat actually holds, in the model's own order. */
+/**
+ * The lanes a seat actually holds, in the model's own order.
+ *
+ * ADM-1 — a seat holding a buyer SUPERSET role (the manager's seat, Admin,
+ * Super Admin) holds every lane's work, so it holds every lane here. It read
+ * role ids only, so such a seat was offered no chip and every row was marked as
+ * somebody else's.
+ */
 export function heldLanes(seatRoles: readonly string[] | undefined): readonly SystemRoleId[] {
   const held = new Set(seatRoles ?? []);
-  return buyerLaneIds().filter((lane) => held.has(lane));
+  const everyLane = PERSONA_SYSTEM_ROLES.buyer.some((r) => SUPERSET_ROLES.has(r) && held.has(r));
+  return buyerLaneIds().filter((lane) => everyLane || held.has(lane));
+}
+
+/**
+ * ADM-1 — the lane a dashboard opens on. A seat narrowed to exactly ONE lane
+ * opens on it; any other seat opens on All lanes. `chosen` is what the person
+ * picked on this visit (`'all'` for the All-lanes chip), and a lane the seat no
+ * longer holds is not honoured — component state outlives the seat.
+ */
+export function activeLaneFor(
+  chosen: SystemRoleId | 'all' | null,
+  held: readonly SystemRoleId[],
+): SystemRoleId | null {
+  if (chosen === 'all') return null;
+  if (chosen !== null && held.includes(chosen)) return chosen;
+  return held.length === 1 ? held[0] : null;
 }
 
 /**
@@ -591,8 +614,26 @@ export const ALERT_GROUP_IDS = Object.freeze([
 
 export type AlertGroupId = (typeof ALERT_GROUP_IDS)[number];
 
+/**
+ * ADM-1 — THE LANE THAT OWNS EACH ALERT GROUP, derived the way a queue row's is:
+ * the atom of the act that clears the alert, then `rolesHolding`. No lane id is
+ * written here, so an atom that moves lanes takes its alert with it.
+ */
+export const ALERT_GROUP_ATOMS: Readonly<Record<AlertGroupId, TransitionRole>> = Object.freeze({
+  overdueInvoices: 'invoice:pay' as TransitionRole,
+  halal: 'compliance:verify' as TransitionRole,
+  obligations: 'obligation:track' as TransitionRole,
+  receipts: 'gr:disposition' as TransitionRole,
+  disputes: 'invoice:dispute' as TransitionRole,
+  contracts: 'contract:renew' as TransitionRole,
+  pslExpiring: 'psl:decide' as TransitionRole,
+  pslExpiredListed: 'psl:decide' as TransitionRole,
+});
+
 export interface AlertGroup {
   readonly id: AlertGroupId;
+  /** ADM-1 — the owning lane, from `ALERT_GROUP_ATOMS`. */
+  readonly lane: SystemRoleId;
   readonly severity: AlertSeverity;
   readonly count: number;
   /** The interpolation values the group's one-line detail needs. */
@@ -649,7 +690,7 @@ export function alertGroups(input: AlertInput): readonly AlertGroup[] {
     input.capSettings,
   );
 
-  const all: readonly AlertGroup[] = [
+  const base: readonly Omit<AlertGroup, 'lane'>[] = [
     {
       id: 'overdueInvoices',
       severity: carded(invoiceTier(input.invoices as BuyerInvoice[]), 'critical'),
@@ -730,6 +771,10 @@ export function alertGroups(input: AlertInput): readonly AlertGroup[] {
       route: '/buyer/preferred-suppliers?tab=expiredListed',
     },
   ];
+  const all: readonly AlertGroup[] = base.map((g) => ({
+    ...g,
+    lane: rolesHolding(ALERT_GROUP_ATOMS[g.id])[0],
+  }));
 
   return all
     .filter((g) => g.count > 0)

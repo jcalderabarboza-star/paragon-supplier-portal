@@ -50,6 +50,7 @@ import BuyerCompliance from '../pages-v2/BuyerCompliance';
 import ProcessFlows from '../pages-v2/ProcessFlows';
 import RolesCatalogue from '../pages-v2/RolesCatalogue';
 import RoleDetail from '../pages-v2/RoleDetail';
+import SuperAdminActivity from '../pages-v2/SuperAdminActivity';
 import ModulesBoard from '../pages-v2/ModulesBoard';
 import ModulesAdmin from '../pages-v2/ModulesAdmin';
 import Glossary from '../pages-v2/Glossary';
@@ -131,6 +132,8 @@ const ROUTES: RouteCase[] = [
   { name: 'buyer/process-flows', pattern: '/buyer/process-flows', at: '/buyer/process-flows', element: <ProcessFlows />, identity: BUYER },
   { name: 'buyer/roles', pattern: '/buyer/roles', at: '/buyer/roles', element: <RolesCatalogue />, identity: BUYER },
   { name: 'buyer/roles/:roleId', pattern: '/buyer/roles/:roleId', at: '/buyer/roles/finance', element: <RoleDetail />, identity: BUYER },
+  // ADM-1 — the Super Admin activity view.
+  { name: 'buyer/platform/super-admin-activity', pattern: '/buyer/platform/super-admin-activity', at: '/buyer/platform/super-admin-activity', element: <SuperAdminActivity />, identity: BUYER },
   // M2 · Design 5 §A.5 — the module roadmap board and the admin page.
   { name: 'buyer/platform/modules', pattern: '/buyer/platform/modules', at: '/buyer/platform/modules', element: <ModulesBoard />, identity: BUYER },
   { name: 'buyer/platform/modules/admin', pattern: '/buyer/platform/modules/admin', at: '/buyer/platform/modules/admin', element: <ModulesAdmin />, identity: BUYER },

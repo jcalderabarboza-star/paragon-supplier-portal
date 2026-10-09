@@ -18,6 +18,7 @@ import type { QueryScope } from '../types';
 import { PERSONA_SYSTEM_ROLES, AUTOMATION_ROLE } from '../../../services/transitions/businessRoles';
 import { NO_PERSON } from '../../../context/noPerson';
 import { DEMO_NOW } from '../../../test/demoClock';
+import { fullInvoicePayload } from '../../../test/invoiceLines';
 
 const buyer: QueryScope = { personaType: 'buyer', supplierId: null, businessRoles: PERSONA_SYSTEM_ROLES.buyer };
 const sup007: QueryScope = { personaType: 'supplier', supplierId: 'sup-007', businessRoles: PERSONA_SYSTEM_ROLES.supplier };
@@ -25,11 +26,15 @@ const sup002: QueryScope = { personaType: 'supplier', supplierId: 'sup-002', bus
 const svc = new MockCommandService();
 
 // PO-2025-00107 is Confirmed and owned by sup-007 (see mockPurchaseOrders).
+// ADM-1 — an invoice states its lines, so the payload is the one the form opens
+// on for this order (`fullInvoicePayload`), and the amount is the lines' total.
+// It was an amount typed here (Rp 250,000,000) with no lines behind it.
+const OWN = () => fullInvoicePayload('PO-2025-00107');
 const createOwn = () =>
   svc.dispatch(sup007, {
     transitionId: 't_invoice_create',
     entity: 'invoice',
-    payload: { poReference: 'PO-2025-00107', amount: 250_000_000, dueDate: '2026-09-01' },
+    payload: { ...OWN(), dueDate: '2026-09-01' },
   });
 
 const fire = (
@@ -51,7 +56,8 @@ describe('Invoice command integration — supplier creation-shape', () => {
     expect(inv.status).toBe('Draft');
     expect(inv.supplierId).toBe('sup-007'); // derived from the parent PO
     expect(inv.poNumber).toBe('PO-2025-00107');
-    expect(inv.amount).toBe(250_000_000);
+    expect(inv.amount).toBe(OWN().amount);
+    expect(inv.amount).toBeGreaterThan(0);
   });
 
   it('denies drafting against another supplier’s PO (SCOPE_DENIED)', async () => {
@@ -59,14 +65,14 @@ describe('Invoice command integration — supplier creation-shape', () => {
       svc.dispatch(sup002, {
         transitionId: 't_invoice_create',
         entity: 'invoice',
-        payload: { poReference: 'PO-2025-00107', amount: 1 },
+        payload: { ...OWN() },
       }),
     ).rejects.toBeInstanceOf(DataError);
   });
 
   it('submits a draft (Draft → Submitted)', async () => {
     const id = (await createOwn()).entityId!;
-    const res = await fire(sup007, 't_invoice_submit', id, { amount: 250_000_000 });
+    const res = await fire(sup007, 't_invoice_submit', id, { amount: OWN().amount });
     expect(res.status).toBe('done');
     expect(invoiceStore.get(id)!.status).toBe('Submitted');
   });
@@ -80,10 +86,10 @@ describe('Invoice command integration — supplier creation-shape', () => {
       await svc.dispatch(sup007, {
         transitionId: 't_invoice_create',
         entity: 'invoice',
-        payload: { poReference: 'PO-2025-00107', amount: 250_000_000 },
+        payload: { ...OWN() },
       })
     ).entityId!;
-    await fire(sup007, 't_invoice_submit', id, { amount: 250_000_000 });
+    await fire(sup007, 't_invoice_submit', id, { amount: OWN().amount });
 
     const inv = invoiceStore.get(id)!;
     // ⚠️ **PINNED, AND IT USED TO BE `new Date().toISOString()`.** That read the

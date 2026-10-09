@@ -55,12 +55,14 @@ describe('H1 · the populations are real before any figure is believed', () => {
 });
 
 describe('H1 · the figures D1 §1 states', () => {
-  it('routes: 51 declared in AppRouter', () => {
+  it('routes: 52 declared in AppRouter', () => {
     // D1 first stated 47, from `grep -c "<Route "` — which misses the four
     // declarations written across lines (`<Route` then a newline). The regex
     // here takes `\s+`, so it reads both shapes; a known multi-line member is
     // asserted in the population control above.
-    expect(ROUTES.length).toBe(51);
+    // ADM-1 added `/buyer/platform/super-admin-activity` (51 at the handover-v2 tag).
+    expect(ROUTES).toContain('/buyer/platform/super-admin-activity');
+    expect(ROUTES.length).toBe(52);
   });
 
   it('modules: 16 in the registry, PLT the only always-on one, every default Active', () => {
@@ -70,14 +72,19 @@ describe('H1 · the figures D1 §1 states', () => {
     expect(MODULE_CODES.filter((c) => view.modules[c].phase !== 'Active')).toEqual([]);
   });
 
-  it('business roles ("system roles"): 13', () => {
-    expect(Object.keys(SYSTEM_ROLES).length).toBe(13);
+  it('business roles ("system roles"): 14', () => {
+    // ADM-1 added `super_admin` (13 at the handover-v2 tag).
+    expect(Object.keys(SYSTEM_ROLES)).toContain('super_admin');
+    expect(Object.keys(SYSTEM_ROLES).length).toBe(14);
   });
 
-  it('sample roster: 16 people, no person id repeated', () => {
+  it('sample roster: 18 people, no person id repeated', () => {
     // The namespace itself is `simUsrNamespace.test.ts`'s to police (CLAUDE.md:
     // the `sim-usr-` prefix is read as a string in exactly one place).
-    expect(SAMPLE_PEOPLE.length).toBe(16);
+    // ADM-1 added Admin 1 and Super Admin 1 (16 at the handover-v2 tag).
+    expect(SAMPLE_PEOPLE.map((p) => p.role)).toContain('super_admin');
+    expect(SAMPLE_PEOPLE.map((p) => p.role)).toContain('admin');
+    expect(SAMPLE_PEOPLE.length).toBe(18);
     expect(new Set(SAMPLE_PEOPLE.map((p) => p.personId)).size).toBe(SAMPLE_PEOPLE.length);
   });
 

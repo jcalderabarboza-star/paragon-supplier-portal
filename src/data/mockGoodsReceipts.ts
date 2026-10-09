@@ -1,4 +1,5 @@
 import { shiftFields } from '../services/data/fixturePresent';
+import type { ActorAttribution } from '../lib/enforcement';
 
 export type GRStatus =
   | 'Pending Inspection'
@@ -48,7 +49,18 @@ export interface GoodsReceipt {
   supplierId: string;
   supplierName: string;
   receivedDate: string;
+  /** The receiving POST chosen on the wizard ("Warehouse Supervisor") — a role
+   *  label, never a person. The person is `receivedByPerson`. */
   receivedBy: string;
+  /**
+   * ADM-1 — WHO received the goods: the seat's named person, stamped by the
+   * target from `scope.actor` when the receipt is raised (never from a
+   * payload). Absent on the seeded receipts, which predate the ruling and name
+   * nobody; the surface then shows the post alone and does not invent a person.
+   */
+  receivedByPerson?: ActorAttribution;
+  /** ADM-1 — WHEN the receipt was recorded, as the target stamped it. */
+  receivedAt?: string;
   status: GRStatus;
   inspectionResults: InspectionResult[];
   disposition: Disposition;

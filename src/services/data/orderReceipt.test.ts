@@ -18,6 +18,7 @@ import type { GoodsReceipt, GRStatus } from '../../data/mockGoodsReceipts';
 import type { POLineItem } from './types';
 import {
   asInvoiceLines,
+  invoiceCeilingBasis,
   invoiceLinesFor,
   invoiceLinesRefusal,
   invoiceLinesTotal,
@@ -250,7 +251,8 @@ describe('E2E-2 · the lines an invoice may state', () => {
     expect(invoiceLinesRefusal(PO, receipts, [{ materialCode: 'A', qty: 0, unitPrice: 10 }], 0)).toEqual({
       code: 'INVOICE_NOTHING_INVOICED',
     });
-    expect(invoiceLinesRefusal(PO, receipts, [], 0)).toEqual({ code: 'INVOICE_NOTHING_INVOICED' });
+    // ADM-1 — a list of NO lines is its own refusal now: lines are required.
+    expect(invoiceLinesRefusal(PO, receipts, [], 0)).toEqual({ code: 'INVOICE_LINES_REQUIRED' });
   });
 
   it('an amount that is not the lines\' total is refused', () => {
@@ -261,11 +263,34 @@ describe('E2E-2 · the lines an invoice may state', () => {
     });
   });
 
-  it('with no receipt nothing may be invoiced', () => {
-    expect(invoiceLinesFor(PO, []).map((l) => l.maxQty)).toEqual([0, 0]);
-    expect(invoiceLinesRefusal(PO, [], [{ materialCode: 'A', qty: 1, unitPrice: 10 }], 10)).toMatchObject({
-      code: 'INVOICE_LINE_EXCEEDS_RECEIVED',
+  it('ADM-1 · with no receipt the ceiling is the CONFIRMED quantity; from the first receipt on it is the accepted one', () => {
+    // It read "with no receipt nothing may be invoiced" — ceilings of [0, 0].
+    // By ruling, invoicing before a receipt is allowed up to what was confirmed.
+    expect(invoiceCeilingBasis(PO.poNumber, [])).toBe('confirmed');
+    expect(invoiceLinesFor(PO, []).map((l) => [l.materialCode, l.maxQty, l.basis])).toEqual([
+      ['A', 100, 'confirmed'],
+      ['B', 50, 'confirmed'],
+    ]);
+    expect(invoiceLinesRefusal(PO, [], [{ materialCode: 'A', qty: 100, unitPrice: 10 }], 1000)).toBeNull();
+    expect(invoiceLinesRefusal(PO, [], [{ materialCode: 'A', qty: 101, unitPrice: 10 }], 1010)).toEqual({
+      code: 'INVOICE_LINE_EXCEEDS_CONFIRMED',
+      materialCode: 'A',
+      qty: 101,
+      maxQty: 100,
     });
+    // The SAME order once a receipt is posted: the basis moves, and with it the
+    // ceiling — 80 accepted of the 100 confirmed, and nothing on the other line.
+    expect(invoiceCeilingBasis(PO.poNumber, receipts)).toBe('accepted');
+    expect(open.map((l) => [l.materialCode, l.maxQty, l.basis])).toEqual([
+      ['A', 80, 'accepted'],
+      ['B', 0, 'accepted'],
+    ]);
+    expect(invoiceLinesRefusal(PO, receipts, [{ materialCode: 'A', qty: 100, unitPrice: 10 }], 1000)).toMatchObject({
+      code: 'INVOICE_LINE_EXCEEDS_RECEIVED',
+      maxQty: 80,
+    });
+    // A receipt that is not posted is not a receipt: the basis stays confirmed.
+    expect(invoiceCeilingBasis(PO.poNumber, [gr('Under Inspection', [['A', 80, 0]])])).toBe('confirmed');
   });
 
   it('asInvoiceLines reads a list of lines and nothing else', () => {

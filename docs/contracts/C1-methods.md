@@ -416,6 +416,41 @@ targets). They measure different things; this file keeps them separate.
 > received, and that is the surfaces withholding the offer, not the dispatcher refusing the verb.
 > An order's status and a ship notice's status are not moved by a receipt.
 >
+> **RE-HARVEST (2026-10-09, ADM-1).** Two administrator roles, one exemption, and three operator
+> rulings of 9 October built. The service surface, the catalog, the flows and the wired targets are
+> as E2E-2 left them: no verb, no flow, no target and no service method was added.
+> **ROLES.** `SystemRoleId` gained `super_admin`, and `admin` changed: both hold every BUYER-side
+> lane atom (governance included) and neither holds a supplier lane's atom. `admin` no longer spans
+> the tenancies. Both are offered to a buyer seat and seeded on none.
+> **THE EXEMPTION, AND ITS ONE NEW REFUSAL.** A seat that holds `super_admin` AND names a person is
+> exempt from five refusals, by head: `INVOICE_RELEASER_IS_APPROVER`, `PSL_DECIDER_IS_PROPOSER`,
+> `PSL_SEAT_HOLDS_BOTH_AUTHORITIES`, `MATERIALREQUEST_DECIDER_IS_REQUESTER` and
+> `SAMPLE_ACTOR_CANNOT_LOOSEN` (on `t_enforcement_set` and on `t_delivery_policy_set`). The check
+> asks the dispatcher (`exempt(head)`) at the point it would refuse; every other check in the same
+> hook still runs. `admin` is NOT exempt, an unnamed `super_admin` seat is not exempt, and a sample
+> person is not exempt on a production deployment. When a check stood aside the command must carry
+> `CommandInput.bypassReason` — one line, 1 to 300 characters — or it is refused
+> `POLICY_REJECTED:super_admin_bypass_reasoned:SUPER_ADMIN_REASON_REQUIRED`, naming the heads, with
+> nothing applied. Admitted, the event carries `bypass: { rules, reason }` (C3). `bypassReason` is
+> read only then; from any other seat it is ignored. No named-seat refusal (`…_UNATTRIBUTED`,
+> `…_UNNAMED`) is exempted, and `module_set_not_sample_in_prod` is not.
+> **`t_invoice_create` REQUIRES `lines`.** A payload that states no `lines`, or an empty list, is
+> refused `INVOICE_LINES_REQUIRED` by `invoice_lines_within_received`, with nothing created. This
+> retracts E2E-2's *"A PAYLOAD THAT STATES NO `lines` IS NOT EXAMINED BY IT"* and *"It is not a
+> required field"*, both left above as written. A seeded invoice still carries none.
+> **THE CEILING BEFORE A RECEIPT IS THE CONFIRMED QUANTITY.** While no receipt on the order is
+> posting or posted, a line may state up to the order line's confirmed quantity, and one more is
+> refused `INVOICE_LINE_EXCEEDS_CONFIRMED`. From the first such receipt on, the ceiling is the
+> accepted quantity and the refusal is `INVOICE_LINE_EXCEEDS_RECEIVED`, as before. **THE MATCH IS
+> UNCHANGED:** it writes nothing until a receipt is posting or posted, so an invoice raised before
+> one stays `Pending`.
+> **`t_gr_create` NAMES THE RECEIVER.** One hook is new, `gr_receiver_named`, evaluated FIRST: the
+> commanding scope's `actor` is absent or `UNATTRIBUTED` → `GR_RECEIVER_UNATTRIBUTED`, nothing
+> minted. The target stamps `receivedByPerson` (the scope's actor) and `receivedAt` on the receipt;
+> `receivedByPerson` is an attribution key, so a payload that carries it is refused
+> `ACTOR_IN_PAYLOAD`. `receivedBy` is unchanged and remains the receiving post. Seeded receipts
+> carry neither new field.
+>
 > **RE-HARVEST (2026-10-08, SUP-1).** A named person decides. No figure moved: service surface,
 > catalog, flows and wired targets are as OPS-3 left them. Six policy hooks are new, each evaluated
 > FIRST on its verbs, and each with one refusal: the commanding scope's `actor` is absent or
@@ -806,7 +841,7 @@ roles, targets, hooks, sink, id/clock are **injected**, so the mock and the Phas
 share it unchanged.
 
 **Command types** (`types.ts`): `CommandInput` (`transitionId` / `entity` / `entityId?` /
-`payload?` / `expectedState?` / `idempotencyKey?` / `decision?`), `CommandResult` (`correlationId` / `transitionId` /
+`payload?` / `expectedState?` / `idempotencyKey?` / `bypassReason?` / `decision?`), `CommandResult` (`correlationId` / `transitionId` /
 `status` / `reason?` / `entityId?`), `CommandStatus` (`correlationId` / `transitionId` / `status`
 / `ts`), `CommandOutcome = 'done' | 'submitted' | 'failed'`.
 

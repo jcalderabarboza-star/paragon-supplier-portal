@@ -23,6 +23,7 @@ interface TransitionEvent {
   readonly decision?: CommandDecision;      // governed-decision provenance (C6-LOCK), opaque
   readonly attribution?: ActorAttribution;  // WHICH HUMAN (C10 §6.4) — orthogonal to `actor`
   readonly subject?: TransitionSubject;     // WHICH DOCUMENT (G1) — { entity, entityId, from, to }
+  readonly bypass?: SuperAdminBypass;       // WHICH RULE STOOD ASIDE, AND WHY (ADM-1) — { rules, reason }
 }
 ```
 
@@ -51,6 +52,13 @@ drift into two different stories:
   refusal `to` is where the act would have landed; on a settlement the edge is the boundary
   verb's interim state → its `settlesTo`. Additive and optional, for C10 §6.4's reason: the
   sink is still in-memory, which is the only window in which a field can be added.
+- **`bypass`** — **WHICH RULE STOOD ASIDE, AND WHY** (added at ADM-1): `{ rules, reason }`. Present
+  ONLY on an act a Super Admin seat took past a four-eyes, segregation or sample-identity check:
+  `rules` are the refusal heads that stood aside, in the order the checks ran, and `reason` is the
+  one line the Super Admin stated (`CommandInput.bypassReason`). Absent on a refusal — a refused
+  command bypassed nothing — and absent on every other event, a Super Admin's ordinary acts
+  included: those are found by `scope.businessRoles`, which every event already carries. The
+  Super Admin activity view and the note a document carries are both reads over this field.
 
 **Every outcome is an event.** A successful apply (`done`), a SAP-boundary submit (`submitted`),
 and a domain rejection (`failed`, with its reason on the `CommandResult`) all emit — so the audit

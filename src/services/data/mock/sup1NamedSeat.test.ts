@@ -96,6 +96,13 @@ const RULED: ReadonlyArray<{ hook: PolicyHookId; head: string; verbs: readonly s
     head: 'GR_DISPOSER_UNATTRIBUTED',
     verbs: ['t_gr_approve', 't_gr_partial_approve', 't_gr_reject'],
   },
+  // ADM-1 (operator ruling, 9 October 2026) — a receipt records the named
+  // receiver, so raising one left the "ruled open" list below for this one.
+  {
+    hook: POLICY_HOOKS.GR_RECEIVER_NAMED,
+    head: 'GR_RECEIVER_UNATTRIBUTED',
+    verbs: ['t_gr_create'],
+  },
 ];
 
 /** Proposing, raising, picking up and the supplier's own acts stay open. */
@@ -110,13 +117,13 @@ const RULED_OPEN: readonly string[] = [
   't_inventorydeclaration_declare',
   // E2E-1 - the neighbours of the three new lanes that are not decisions:
   // raising, submitting and revising a requisition; opening and allocating a
-  // publication; receiving, inspecting, holding, retesting and posting.
+  // publication; inspecting, holding, retesting and posting. (Raising a receipt
+  // left this list at ADM-1: the receipt names its receiver.)
   't_pr_create',
   't_pr_submit',
   't_pr_revise',
   't_publication_open',
   't_publication_allocate',
-  't_gr_create',
   't_gr_start_inspection',
   't_gr_record_inspection',
   't_gr_hold',

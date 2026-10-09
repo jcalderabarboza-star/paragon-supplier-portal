@@ -1,4 +1,4 @@
-import { screen, fireEvent, waitFor } from '@testing-library/react';
+import { screen, fireEvent, waitFor, within } from '@testing-library/react';
 import i18n from '../lib/i18n';
 import { renderWithProviders, SUPPLIER } from '../test/test-utils';
 import type { CurrentIdentity } from '../context/CurrentIdentityContext';
@@ -184,14 +184,35 @@ describe('SupplierInvoices — the new invoice opens on the order\'s lines (E2E-
     expect(create()).toBeDisabled();
   });
 
-  it('an order with NOTHING received says so, shows no lines, and holds the create', async () => {
+  it('ADM-1 · an order with NOTHING received opens on the CONFIRMED quantity, says the match will wait, and may be invoiced', async () => {
+    // It read "says so, shows no lines, and holds the create". By ruling,
+    // invoicing before a receipt is allowed again.
     // sup-007's PO-2025-00107 is Confirmed and no receipt on it is posted.
     await openNewInvoice(SUPPLIER, 'PO-2025-00107');
-    expect(await screen.findByTestId('invoice-nothing-received')).toHaveTextContent(
-      'Nothing has been received and accepted on this order yet, so there is nothing to invoice.',
+    expect(await screen.findByTestId('invoice-before-receipt')).toHaveTextContent(
+      'No receipt is posted on this order yet. You may invoice up to the confirmed quantity; the invoice is matched once Paragon posts the receipt, and waits until then.',
     );
-    expect(screen.queryByTestId('invoice-lines')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('invoice-nothing-received')).not.toBeInTheDocument();
+    const line = within(screen.getByTestId('invoice-lines')).getByTestId('invoice-line-PK-PETB-8801');
+    expect(line).toHaveTextContent('Confirmed');
+    expect(line).not.toHaveTextContent('Received and accepted');
+    expect(screen.getByTestId('invoice-line-accepted-PK-PETB-8801')).toHaveTextContent('200,000');
+    const qty = screen.getByLabelText('Quantity to invoice for PK-PETB-8801');
+    expect(qty).toHaveValue('200000');
+    expect(create()).not.toBeDisabled();
+    // One more than was confirmed is refused in the confirmed wording.
+    fireEvent.change(qty, { target: { value: '200001' } });
+    expect(screen.getByTestId('invoice-qty-refusal-PK-PETB-8801')).toHaveTextContent(
+      'More than was confirmed on this line (200,000',
+    );
     expect(create()).toBeDisabled();
+  });
+
+  it('ADM-1 · an order WITH a posted receipt keeps the received wording and shows no before-receipt note', async () => {
+    await openNewInvoice(SUP_002, PO_RECEIVED);
+    await screen.findByLabelText(QTY_LABEL);
+    expect(screen.queryByTestId('invoice-before-receipt')).not.toBeInTheDocument();
+    expect(screen.getByTestId(`invoice-line-${MATERIAL}`)).toHaveTextContent('Received and accepted');
   });
 
   it('creating the draft stores the lines and their total — the number shown is the number stored', async () => {

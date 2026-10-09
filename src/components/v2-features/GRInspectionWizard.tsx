@@ -1764,7 +1764,10 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
 
         {/* E2E-1 — said before the act: whose name the decision carries, or
             that this seat names nobody and the decision will be refused. */}
-        {!holdInstead && (
+        {/* ADM-1 — and a NEW receipt records its named receiver, so it needs a
+            named seat whether or not it is held; only holding a receipt that
+            already exists stays open to a seat that names nobody. */}
+        {(!holdInstead || !resume) && (
           <ActorPreActNotice
             unattributedKey="identity.preAct.namedRequired"
             testId="gr-dispose-pre-act"
@@ -2022,8 +2025,12 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
       // creates the receipt and then decides it; a seat that names nobody would
       // be refused at the decision with the receipt already created. So the
       // decision is refused here, before anything is recorded. A hold is not a
-      // decision and stays open to the seat.
-      if (!holdInstead && identity.actor.kind !== 'RESOLVED') {
+      // decision and stays open to the seat — on a receipt that already exists.
+      //
+      // ADM-1 — raising a NEW receipt records the named receiver
+      // (`gr_receiver_named`), so a new receipt is refused here for a seat that
+      // names nobody, held or not.
+      if ((!holdInstead || !resume) && identity.actor.kind !== 'RESOLVED') {
         toast({
           variant: 'warning',
           title: t('gr.dispose.needsPerson.title'),

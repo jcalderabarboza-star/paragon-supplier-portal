@@ -66,6 +66,7 @@ import { SYSTEM_ROLES } from '../transitions/businessRoles';
 import { DECLARED_PRESENT } from './fixturePresent';
 import type { QueryScope, Invoice } from './types';
 import { INVOICE_RELEASER, nameUnnamedApprovals } from '../../test/namedApprovals';
+import { fullInvoicePayload } from '../../test/invoiceLines';
 
 const commands = new MockCommandService();
 const reads = new MockProcurementService();
@@ -122,10 +123,12 @@ async function createInvoiceAt(atMs: number | null, payload: Record<string, unkn
   restore = atMs === null ? null : installClock(atMs);
   const pos = await reads.getPurchaseOrders(buyerRead);
   const po = pos.items.find((p) => p.status === 'Confirmed') ?? pos.items[0];
+  const base = fullInvoicePayload(po.poNumber);
   const res = await commands.dispatch(supplier(po.supplierId), {
     transitionId: 't_invoice_create',
     entity: 'invoice',
-    payload: { poReference: po.poNumber, amount: 12_345_000, ...payload },
+    // ADM-1 — an invoice states its lines; the payload is the form's own.
+    payload: { ...base, ...payload },
   });
   expect(res.status, `create refused: ${res.reason ?? ''}`).not.toBe('failed');
   // The buyer read drops Draft, so submit first to make the row readable.
@@ -133,7 +136,7 @@ async function createInvoiceAt(atMs: number | null, payload: Record<string, unkn
     transitionId: 't_invoice_submit',
     entity: 'invoice',
     entityId: res.entityId!,
-    payload: { amount: 12_345_000 },
+    payload: { amount: base.amount },
   });
   const after = await reads.getBuyerInvoices(buyerRead);
   const row = after.items.find((i) => i.id === res.entityId);

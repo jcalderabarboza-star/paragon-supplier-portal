@@ -108,11 +108,12 @@ describe('⚠️ IT MIRRORS THE SUPPLIER ANCHOR — same shape, not a new invent
       expect(sideOfSystemRole(anchor), `${anchor} side`).toBe(side);
       expect(copyableParentRefusal(anchor), `${anchor} refused as parent`).toBeNull();
     }
-    // Known-BAD control, same instrument, same run: the role on NO side is still
+    // Known-BAD control, same instrument, same run: an id on NO side is still
     // refused as a parent, so "copyable" above is a real answer rather than a
-    // predicate that returns null for everything.
-    expect(copyableParentRefusal('admin')).toContain('spans both tenancies');
-    expect(sideOfSystemRole('admin')).toBeNull();
+    // predicate that returns null for everything. (It was `admin` until ADM-1
+    // put the administrator roles on the buyer side.)
+    expect(copyableParentRefusal('not-a-role')).toContain('is not a system role');
+    expect(sideOfSystemRole('not-a-role' as never)).toBeNull();
   });
 
   it('the handoff record stays total over the union, in both directions', () => {

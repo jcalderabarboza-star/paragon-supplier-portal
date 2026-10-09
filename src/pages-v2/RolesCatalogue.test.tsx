@@ -119,6 +119,77 @@ describe('⚠️ THE LIST IS DERIVED — one row per system role, no more, no fe
 // affordance and a marker explaining why. The page can now edit, so the rules
 // that replace them are stronger, not weaker: the affordance must be GATED, and
 // the marker must state what survives a reload rather than omitting the subject.
+// ADM-1 — the creation form is a pop-up opened by "New role" (top right). The
+// gate, the form and the pre-act lines are unchanged; they are reached by
+// opening the dialog, which is what `openCreate` does.
+const openCreate = async (): Promise<void> => {
+  fireEvent.click(await screen.findByTestId('roles-new'));
+  await screen.findByTestId('roles-create-dialog');
+};
+
+describe('ADM-1 · the creation form is a pop-up, not a section that always stands on the page', () => {
+  it('nothing of the form is on the page until "New role" is pressed', async () => {
+    renderWithProviders(<RolesCatalogue />, { identity: BUYER });
+    await screen.findByTestId('roles-catalogue');
+    expect(screen.queryByTestId('roles-create')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('roles-create-gate')).not.toBeInTheDocument();
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    // The button sits in the page header, with the title.
+    const button = screen.getByTestId('roles-new');
+    expect(button).toHaveTextContent('New role');
+    expect(button.closest('header')).toContainElement(screen.getByRole('heading', { level: 1, name: 'Roles' }));
+  });
+
+  it('it opens as a dialog named by its title, focus moves into the form, and Escape closes it', async () => {
+    renderWithProviders(<RolesCatalogue />, { identity: BUYER });
+    const button = await screen.findByTestId('roles-new');
+    button.focus();
+    fireEvent.click(button);
+    const dialog = await screen.findByRole('dialog');
+    expect(dialog).toHaveAttribute('aria-modal', 'true');
+    expect(dialog).toHaveAccessibleName('Create a custom role');
+    expect(within(dialog).getByTestId('roles-create')).toBeInTheDocument();
+    // Focus is on the form's first control, not left on the page behind it.
+    expect(document.activeElement).toBe(within(dialog).getByTestId('role-create-parent'));
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    // …and focus goes back to the button that opened it.
+    expect(document.activeElement).toBe(button);
+  });
+
+  it('focus is trapped: Tab from the last control goes to the first, Shift+Tab from the first to the last', async () => {
+    renderWithProviders(<RolesCatalogue />, { identity: BUYER });
+    await openCreate();
+    const dialog = screen.getByRole('dialog');
+    const focusable = Array.from(
+      dialog.querySelectorAll<HTMLElement>('a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled])'),
+    );
+    expect(focusable.length).toBeGreaterThan(2);
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    last.focus();
+    fireEvent.keyDown(document, { key: 'Tab' });
+    expect(document.activeElement).toBe(first);
+    fireEvent.keyDown(document, { key: 'Tab', shiftKey: true });
+    expect(document.activeElement).toBe(last);
+    // A control in the MIDDLE is left to the browser: the trap only wraps.
+    focusable[1].focus();
+    fireEvent.keyDown(document, { key: 'Tab' });
+    expect(document.activeElement).toBe(focusable[1]);
+  });
+
+  it('the scrim closes it too, and a seat without role:grant opens the same dialog onto the gate', async () => {
+    const { unmount } = renderWithProviders(<RolesCatalogue />, { identity: BUYER });
+    await openCreate();
+    fireEvent.click(screen.getByTestId('roles-create-dialog-scrim'));
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    unmount();
+    renderWithProviders(<RolesCatalogue />, { identity: PROCUREMENT_ONLY });
+    await openCreate();
+    expect(within(screen.getByRole('dialog')).getByTestId('roles-create-gate')).toBeInTheDocument();
+  });
+});
+
 describe('⚠️ EDITING IS COMPLIANCE-GATED — THE FIRST ROLE-GATED SURFACE', () => {
   it('a seat WITHOUT role:grant gets the wait, not a gap', async () => {
     // The ruled shape: a withheld verb renders PENDING WITH AN OWNER. A route
@@ -126,6 +197,7 @@ describe('⚠️ EDITING IS COMPLIANCE-GATED — THE FIRST ROLE-GATED SURFACE', 
     // must stay readable by anyone.
     renderWithProviders(<RolesCatalogue />, { identity: PROCUREMENT_ONLY });
     await screen.findByTestId('roles-catalogue');
+    await openCreate();
     expect(screen.queryByTestId('roles-create')).not.toBeInTheDocument();
     const gate = screen.getByTestId('roles-create-gate');
     expect(gate).toHaveTextContent(/compliance action/i);
@@ -148,6 +220,7 @@ describe('⚠️ EDITING IS COMPLIANCE-GATED — THE FIRST ROLE-GATED SURFACE', 
     // ⚠️ WITHOUT THIS, THE TEST ABOVE PROVES ONLY THAT SOMETHING IS ABSENT, and
     // a panel that never renders for anyone would pass it. Probe both ways.
     renderWithProviders(<RolesCatalogue />, { identity: BUYER });
+    await openCreate();
     expect(await screen.findByTestId('roles-create')).toBeInTheDocument();
     expect(screen.queryByTestId('roles-create-gate')).not.toBeInTheDocument();
     expect(screen.getByTestId('role-create-submit')).toBeInTheDocument();
@@ -188,6 +261,7 @@ describe('⚠️ EDITING IS COMPLIANCE-GATED — THE FIRST ROLE-GATED SURFACE', 
     // recorded against nobody; it is now two — where the grant is kept, and
     // which of the two this seat is: refused (unnamed) or recorded (named).
     const { unmount } = renderWithProviders(<RolesCatalogue />, { identity: BUYER });
+    await openCreate();
     const kept = await screen.findByTestId('role-create-persistence');
     expect(kept).toHaveTextContent(/saved in this browser/i);
     expect(kept).toHaveTextContent(/survive a reload/i);
@@ -209,6 +283,7 @@ describe('⚠️ EDITING IS COMPLIANCE-GATED — THE FIRST ROLE-GATED SURFACE', 
     const person = BUYER_NAMED_COMPLIANCE.actor;
     if (person.kind !== 'RESOLVED') throw new Error('the named seat must name a person');
     renderWithProviders(<RolesCatalogue />, { identity: BUYER_NAMED_COMPLIANCE });
+    await openCreate();
     const named = await screen.findByTestId('role-create-actor-sample');
     expect(named).toHaveTextContent(
       i18n.t('identity.preAct.sample', {

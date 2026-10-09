@@ -180,8 +180,9 @@ describe('E2E-1 · a seat that names nobody does not decide a receipt', () => {
     svc.dispatch(scope, { transitionId, entity: 'goodsReceipt', entityId, payload });
   const inspected = async (lines: InspectionResult[]) => {
     asnStore.add(submittedAsn('ASN-TEST-9'));
-    // Created and inspected by the unnamed seat: neither act is a decision.
-    const made = await svc.dispatch(unnamed, {
+    // ADM-1 — RAISED by a named person (a receipt names its receiver), and
+    // inspected by the unnamed seat: starting an inspection is not a decision.
+    const made = await svc.dispatch(buyer, {
       transitionId: 't_gr_create',
       entity: 'goodsReceipt',
       entityId: '',
@@ -210,6 +211,48 @@ describe('E2E-1 · a seat that names nobody does not decide a receipt', () => {
     const ok = await as(buyer, verb, grId, payload ? { ...payload } : undefined);
     expect(ok.status, ok.reason).toBe('done');
     expect(goodsReceiptStore.get(grId)!.status).not.toBe(before!.status);
+  });
+
+  it('ADM-1 · raising a receipt is refused by name for a seat that names nobody, and nothing is minted', async () => {
+    asnStore.add(submittedAsn('ASN-TEST-9'));
+    const before = goodsReceiptStore.all().length;
+    for (const scope of [unnamed, noActor]) {
+      const res = await svc.dispatch(scope, {
+        transitionId: 't_gr_create',
+        entity: 'goodsReceipt',
+        payload: { asnReference: 'ASN-TEST-9', inspectionResults: [line(100, 0)] },
+      });
+      expect(res.status).toBe('failed');
+      expect(res.reason).toContain('POLICY_REJECTED:gr_receiver_named:GR_RECEIVER_UNATTRIBUTED');
+    }
+    expect(goodsReceiptStore.all().length).toBe(before);
+  });
+
+  it('ADM-1 · a named seat raises it, and the receipt records WHO and WHEN — from the session, never the payload', async () => {
+    asnStore.add(submittedAsn('ASN-TEST-9'));
+    const made = await svc.dispatch(buyer, {
+      transitionId: 't_gr_create',
+      entity: 'goodsReceipt',
+      payload: { asnReference: 'ASN-TEST-9', receivedBy: 'QC Inspector', inspectionResults: [line(100, 0)] },
+    });
+    expect(made.status, made.reason).toBe('done');
+    const gr = goodsReceiptStore.get(made.entityId!)!;
+    expect(gr.receivedByPerson).toEqual(buyer.actor);
+    expect(gr.receivedBy).toBe('QC Inspector');
+    expect(Number.isNaN(Date.parse(gr.receivedAt ?? ''))).toBe(false);
+    // A payload that tries to say who received is refused by key, loudly.
+    const smuggled = await svc.dispatch(buyer, {
+      transitionId: 't_gr_create',
+      entity: 'goodsReceipt',
+      payload: {
+        asnReference: 'ASN-TEST-9',
+        receivedByPerson: { kind: 'RESOLVED', person: { personId: SAMPLE_PEOPLE.find((p) => p.role === 'finance')!.personId } },
+      },
+    });
+    expect(smuggled.status).toBe('failed');
+    expect(smuggled.reason).toContain('ACTOR_IN_PAYLOAD');
+    // The seeded receipts name nobody, and the type says so by omission.
+    expect(goodsReceiptStore.all().filter((g) => g.id !== gr.id).every((g) => g.receivedByPerson === undefined)).toBe(true);
   });
 
   it('a hold is not a decision: the unnamed seat places one', async () => {

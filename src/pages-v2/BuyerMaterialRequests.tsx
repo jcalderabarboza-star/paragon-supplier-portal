@@ -86,6 +86,7 @@ import TableRow from '../components/ui-v2/TableRow';
 import TableCell from '../components/ui-v2/TableCell';
 import Button from '../components/ui-v2/Button';
 import SidePanel from '../components/ui-v2/SidePanel';
+import SuperAdminBypassNote from '../components/v2-features/SuperAdminBypassNote';
 import FormSection from '../components/ui-v2/FormSection';
 import LoadingState from '../components/ui-v2/LoadingState';
 import ErrorState from '../components/ui-v2/ErrorState';
@@ -747,6 +748,8 @@ const BuyerMaterialRequests: React.FC = () => {
                 this page omitting it made the default render for the first
                 time and the gate fired with nobody editing it. */}
             <NextActLine act={nextAct} testId="next-act-buyer-material-request" />
+            {/* ADM-1 — what a Super Admin passed on this request, if anything. */}
+            <SuperAdminBypassNote entity="materialRequest" entityId={selected.id} />
 
             <FormSection title={t('materialRequests.detail.section.request')}>
               <dl className="space-y-3 text-sm">

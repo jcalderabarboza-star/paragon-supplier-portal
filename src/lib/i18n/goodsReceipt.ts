@@ -107,6 +107,9 @@ export const goodsReceiptEn: Record<string, string> = {
   'goodsReceipt.panel.field.supplier': 'Supplier',
   'goodsReceipt.panel.field.receivedDate': 'Received Date',
   'goodsReceipt.panel.field.receivedBy': 'Received By',
+  // ADM-1 — the named receiver and the instant the receipt was recorded.
+  'goodsReceipt.panel.field.recordedAt': 'Recorded',
+  'goodsReceipt.panel.field.noNamedReceiver': 'Receiving post only — this receipt names no person.',
   'goodsReceipt.panel.field.status': 'Status',
   'goodsReceipt.panel.field.disposition': 'Disposition',
   // — Side panel: line items —
@@ -437,6 +440,8 @@ export const goodsReceiptId: Record<string, string> = {
   'goodsReceipt.panel.field.supplier': 'Pemasok',
   'goodsReceipt.panel.field.receivedDate': 'Tanggal Penerimaan',
   'goodsReceipt.panel.field.receivedBy': 'Diterima Oleh',
+  'goodsReceipt.panel.field.recordedAt': 'Dicatat',
+  'goodsReceipt.panel.field.noNamedReceiver': 'Hanya pos penerimaan — penerimaan ini tidak menyebut orang.',
   'goodsReceipt.panel.field.status': 'Status',
   'goodsReceipt.panel.field.disposition': 'Disposisi',
   // — Side panel: line items —

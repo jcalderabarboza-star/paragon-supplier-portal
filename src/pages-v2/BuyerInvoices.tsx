@@ -39,6 +39,7 @@ import TableRow from '../components/ui-v2/TableRow';
 import TableCell from '../components/ui-v2/TableCell';
 import Button from '../components/ui-v2/Button';
 import SidePanel from '../components/ui-v2/SidePanel';
+import SuperAdminBypassNote from '../components/v2-features/SuperAdminBypassNote';
 import { useToast } from '../hooks/useToast';
 import LoadingState from '../components/ui-v2/LoadingState';
 import { useDeepLinkedSelection } from '../lib/recordDeepLink';
@@ -1266,6 +1267,8 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
       >
         {selected && (
           <div className="space-y-6">
+            {/* ADM-1 — what a Super Admin passed on this invoice, if anything. */}
+            <SuperAdminBypassNote entity="invoice" entityId={selected.id} />
             <section>
               <h3 className="text-label text-text-tertiary uppercase mb-3">
                 {t('buyerInvoices.section.keyFacts')}

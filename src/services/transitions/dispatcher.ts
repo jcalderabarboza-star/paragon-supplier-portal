@@ -37,6 +37,13 @@ import type { AuditSink, TransitionSubject } from './events';
 import { actorKey } from './events';
 import { attributionKeysIn } from '../identity/attributionKeys';
 import { AUTOMATION_ROLE } from './businessRoles';
+import {
+  isSuperAdminSeat,
+  readBypassReason,
+  SUPER_ADMIN_BYPASS_REASONED,
+  SUPER_ADMIN_REASON_REQUIRED,
+  type SuperAdminBypass,
+} from '../identity/superAdmin';
 import { getTransition } from './registry';
 import { refusal } from './refusals';
 import { classifySettleFault, settleFault, settleFaultDetail } from './settleFaults';
@@ -171,6 +178,15 @@ export type PolicyHookFn = (ctx: {
    * a hook that policed `payload.approvedBy` would be policing an assertion.
    */
   scope: QueryScope;
+  /**
+   * ADM-1 — *does this refusal stand aside for the commanding seat?* A
+   * four-eyes, segregation or sample-identity check asks this with its refusal
+   * head at the point it would refuse. `true` only for a Super Admin seat that
+   * names a person; the dispatcher then records the head on the event and
+   * requires a stated reason before the act applies. Absent when a hook is
+   * called outside the dispatcher (a spec), which is the same as `false`.
+   */
+  exempt?: (refusalHead: string) => boolean;
 }) => PolicyDecision;
 
 /** A command the dispatcher should fan out after a source transition (G4). */
@@ -289,6 +305,21 @@ export interface Dispatcher {
   getCommandStatus(scope: QueryScope, correlationId: string): CommandStatus | null;
   /** Settle a `submitted` command to `done` (Step 3.5 SAP settlement). Scoped. */
   settle(scope: QueryScope, correlationId: string): CommandStatus | null;
+  /**
+   * ADM-1 — WHICH CHECKS WOULD STAND ASIDE for this command, asked WITHOUT
+   * taking it: the refusal heads a Super Admin seat would pass, or none.
+   *
+   * It runs the same gates and the same policy hooks `dispatch` runs and stops
+   * before anything is applied. **Nothing is emitted, minted or recorded** — no
+   * event, no correlation id, no status, no idempotency entry — so a caller may
+   * ask, obtain the reason from a person, and then take the act once. Without
+   * it the reason could only be asked for after a refusal, and every reasoned
+   * act would leave a refused command on the trail before it.
+   *
+   * A command that would be refused on other grounds answers none: it is
+   * `dispatch`'s job to say why.
+   */
+  bypassRulesFor(scope: QueryScope, input: CommandInput): readonly string[];
 }
 
 function isEmpty(value: unknown): boolean {
@@ -410,6 +441,7 @@ export function createDispatcher(deps: DispatcherDeps): Dispatcher {
     decision?: CommandDecision,
     attribution?: ActorAttribution,
     subject?: TransitionSubject,
+    bypass?: SuperAdminBypass,
   ): void {
     deps.sink.emit({
       event: transitionId,
@@ -433,8 +465,17 @@ export function createDispatcher(deps: DispatcherDeps): Dispatcher {
       // G1 — WHICH DOCUMENT. Absent only where the dispatcher refused before it
       // knew one (see `TransitionEvent.subject`).
       ...(subject ? { subject } : {}),
+      // ADM-1 — WHICH RULE STOOD ASIDE, AND WHY. Present only on a Super Admin
+      // act that passed a four-eyes, segregation or sample-identity check.
+      ...(bypass ? { bypass } : {}),
     });
   }
+
+  // ADM-1 — set only inside `bypassRulesFor`, for the length of one synchronous
+  // `dispatch`. While it is set `finish` returns without emitting or minting,
+  // and `dispatch` stops after the hooks.
+  let previewing = false;
+  let previewRules: readonly string[] = [];
 
   function finish(
     scope: QueryScope,
@@ -446,10 +487,13 @@ export function createDispatcher(deps: DispatcherDeps): Dispatcher {
     decision?: CommandDecision,
     attribution?: ActorAttribution,
     subject?: TransitionSubject,
+    bypass?: SuperAdminBypass,
   ): CommandResult {
+    // ADM-1 — a preview takes no act and leaves no trace (`bypassRulesFor`).
+    if (previewing) return { correlationId: '', transitionId, status: outcome, reason, entityId };
     const correlationId = deps.nextCorrelationId();
     const ts = deps.now();
-    emit(scope, transitionId, outcome, correlationId, ts, reason, causationId, decision, attribution, subject);
+    emit(scope, transitionId, outcome, correlationId, ts, reason, causationId, decision, attribution, subject, bypass);
     statuses.set(correlationId, { correlationId, transitionId, status: outcome, ts });
     // WHO MAY LOOK. Recorded here rather than at the `submitted` branch because
     // this is the single mint point: every outcome gets an owner, or the gate
@@ -509,6 +553,9 @@ export function createDispatcher(deps: DispatcherDeps): Dispatcher {
     // no document to name, and the event says so by omitting the field.
     let currentState: string | null = null;
     let stateRead = false;
+    // ADM-1 — set at step 7, once every hook has run and the reason is read.
+    // Declared here because `fin` carries it onto the event.
+    let bypass: SuperAdminBypass | undefined;
     const subjectFor = (entityId?: string): TransitionSubject | undefined => {
       const def = getTransition(input.transitionId);
       const id = entityId ?? input.entityId;
@@ -539,6 +586,8 @@ export function createDispatcher(deps: DispatcherDeps): Dispatcher {
         recorded,
         attributionFor(),
         subjectFor(entityId),
+        // Only an act that happened carries a bypass: a refusal bypassed nothing.
+        outcome === 'failed' ? undefined : bypass,
       );
       // Record AFTER the act, and only when there was one. `finish` is the
       // single mint point, so every outcome passes here exactly once.
@@ -789,6 +838,20 @@ export function createDispatcher(deps: DispatcherDeps): Dispatcher {
     }
 
     // (7) policy hooks (by registered name).
+    //
+    // ADM-1 — THE SUPER ADMIN EXEMPTION, AND IT IS ASKED BY THE CHECK, NOT
+    // GRANTED OVER IT. A four-eyes, segregation or sample-identity check calls
+    // `exempt(head)` at the point it would refuse. For a Super Admin seat that
+    // returns true and the head is collected; for every other seat — `admin`
+    // included — it returns false and the check refuses as it always did. Every
+    // other check in the same hook still runs, because the hook carries on.
+    const superAdmin = isSuperAdminSeat(scope);
+    const stoodAside: string[] = [];
+    const exempt = (head: string): boolean => {
+      if (!superAdmin) return false;
+      if (!stoodAside.includes(head)) stoodAside.push(head);
+      return true;
+    };
     for (const name of transition.policyHooks) {
       const hook = deps.resolvePolicyHook(name);
       if (!hook) return fin(scope, transition.id, 'failed', refusal('UNBOUND_HOOK', name));
@@ -801,10 +864,41 @@ export function createDispatcher(deps: DispatcherDeps): Dispatcher {
         payload,
         target,
         scope,
+        exempt,
       });
-      if (!decision.ok) {
-        return fin(scope, transition.id, 'failed', refusal('POLICY_REJECTED', `${name}:${decision.reason ?? ''}`));
+      if (!decision.ok) return rejectedBy(name, decision);
+    }
+
+    // A preview ends here, having applied nothing: it reports what stood aside.
+    if (previewing) {
+      previewRules = [...stoodAside];
+      return fin(scope, transition.id, 'failed');
+    }
+
+    // (7b) A BYPASS IS REASONED, OR IT IS REFUSED BY NAME. Read AFTER the hooks
+    // so a reason is asked for only when a rule really stood aside, and so an
+    // act refused on other grounds is told those grounds first.
+    if (stoodAside.length > 0) {
+      const reason = readBypassReason(input.bypassReason);
+      if (reason === null) {
+        return rejectedBy(SUPER_ADMIN_BYPASS_REASONED, {
+          ok: false,
+          reason:
+            `${SUPER_ADMIN_REASON_REQUIRED}: this act passes ${stoodAside.join(', ')} on the ` +
+            'Super Admin exemption, and a bypass is recorded with a one-line reason. State the ' +
+            'reason, then take the act again.',
+        });
       }
+      bypass = { rules: stoodAside, reason };
+    }
+
+    // THE ONE PRODUCER of the `POLICY_REJECTED:<name>:<reason>` wire value —
+    // `refusedByPolicy.test.ts` pins that there is one, and the bypass-reason
+    // refusal above goes through it under its own name. A hoisted declaration,
+    // written HERE so the refusal kinds still appear in this file in the order
+    // the dispatcher constructs them (`refusals.test.ts` reads that order).
+    function rejectedBy(name: string, decision: PolicyDecision): CommandResult {
+      return fin(scope, transition!.id, 'failed', refusal('POLICY_REJECTED', `${name}:${decision.reason ?? ''}`));
     }
 
     // Apply + emit. Creation mints a new entity (store-assigned id); others
@@ -1014,5 +1108,23 @@ export function createDispatcher(deps: DispatcherDeps): Dispatcher {
     return current ?? null;
   }
 
-  return { dispatch, getCommandStatus, settle };
+  function bypassRulesFor(scope: QueryScope, input: CommandInput): readonly string[] {
+    // A replayed idempotency key would return its recorded result before any
+    // hook ran; a preview carries none, so it always reads the hooks.
+    const { idempotencyKey: _dropped, ...asked } = input;
+    previewing = true;
+    previewRules = [];
+    try {
+      dispatch(scope, asked);
+    } catch {
+      // A scope denial or an absent entity throws from `dispatch`; the real
+      // command will throw the same way and say so. A preview answers none.
+      previewRules = [];
+    } finally {
+      previewing = false;
+    }
+    return previewRules;
+  }
+
+  return { dispatch, getCommandStatus, settle, bypassRulesFor };
 }

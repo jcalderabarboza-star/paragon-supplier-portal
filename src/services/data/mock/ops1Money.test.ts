@@ -156,15 +156,30 @@ const receiveAndPost = async (results: InspectionResult[]) => {
   return fire('t_gr_post');
 };
 
+/**
+ * ADM-1 — an invoice states its lines (operator ruling), so every invoice this
+ * file raises does. The lines that come to `amount` at the order's own prices:
+ * niacinamide first, hyaluronate for what is left. Fractional quantities are
+ * legal and are what a figure like Rp 1.8B needs.
+ */
+type Line = { materialCode: string; qty: number; unitPrice: number };
+const linesFor = (amount: number): Line[] => {
+  const niac = Math.min(amount, 5000 * 220_000);
+  return [
+    { materialCode: NIAC, qty: niac / 220_000, unitPrice: 220_000 },
+    { materialCode: HYAL, qty: (amount - niac) / 3_000_000, unitPrice: 3_000_000 },
+  ];
+};
+const createInvoice = (amount: number, lines: Line[] = linesFor(amount)) =>
+  svc.dispatch(supplier, {
+    transitionId: 't_invoice_create',
+    entity: 'invoice',
+    payload: { poReference: PO, amount, lines },
+  });
+
 /** Draft and submit an invoice on the PO; returns its id. */
-const invoice = async (amount: number): Promise<string> => {
-  const created = await ok(
-    svc.dispatch(supplier, {
-      transitionId: 't_invoice_create',
-      entity: 'invoice',
-      payload: { poReference: PO, amount },
-    }),
-  );
+const invoice = async (amount: number, lines?: Line[]): Promise<string> => {
+  const created = await ok(createInvoice(amount, lines));
   const id = created.entityId!;
   await ok(
     svc.dispatch(supplier, { transitionId: 't_invoice_submit', entity: 'invoice', entityId: id, payload: { amount } }),
@@ -284,30 +299,55 @@ describe('OPS-1 · P0-1 — the match reads what was received and what is alread
     expect(inv(a).matchStatus).toBe('Qty Mismatch');
     expect(inv(a).matchBasis).toMatchObject({ cause: 'EXCEEDS_RECEIVED', receivedValue: 4000 * 220_000 + 900_000_000 });
     // …and an invoice for the accepted part is matched, rejects or not
-    const part = await invoice(4000 * 220_000 + 900_000_000);
+    const part = await invoice(4000 * 220_000 + 900_000_000, [
+      { materialCode: NIAC, qty: 4000, unitPrice: 220_000 },
+      { materialCode: HYAL, qty: 300, unitPrice: 3_000_000 },
+    ]);
     expect(inv(part).status).toBe('Matched');
   });
 
-  it('an invoice above the whole order is the only one shown as a price variance', async () => {
+  it('an invoice above the whole order cannot be raised any more (ADM-1); the match still names one as a price variance', async () => {
+    // It raised an amount-only invoice of Rp 2.5B and read "Price Variance" off
+    // it. An invoice states its lines now, and a line above the confirmed
+    // quantity is refused at the door — so the variance is unreachable through
+    // the dispatcher, and the match's own verdict is asserted where it lives.
     await confirmPo();
-    const over = await invoice(2.5 * B);
-    await receiveAndPost([line(NIAC, 5000), line(HYAL, 300)]);
-    expect(inv(over).matchStatus).toBe('Price Variance');
-    expect(inv(over).matchBasis!.cause).toBe('EXCEEDS_ORDER');
-    expect(inv(over).status).toBe('Submitted');
+    const over = await createInvoice(2.5 * B, [
+      { materialCode: NIAC, qty: 5000, unitPrice: 220_000 },
+      { materialCode: HYAL, qty: 1.4 * B / 3_000_000, unitPrice: 3_000_000 },
+    ]);
+    expect(over.status).toBe('failed');
+    expect(over.reason).toContain('INVOICE_LINE_EXCEEDS_CONFIRMED:');
+    expect(invoiceStore.all().filter((i) => i.poNumber === PO)).toEqual([]);
+    // A row that predates the ruling (the seed holds line-less invoices) is
+    // still judged, and still as the only "Price Variance".
+    const po = purchaseOrderStore.all().find((p) => p.poNumber === PO)!;
+    const [verdict] = matchInvoicesOnPo(
+      { lines: po.lineItems, statedTotal: po.totalValue },
+      [{ materialCode: NIAC, qtyAccepted: 5000 }, { materialCode: HYAL, qtyAccepted: 300 }],
+      [{ id: 'legacy', invoiceNumber: 'legacy', status: 'Submitted', amount: 2.5 * B, submittedDate: '2026-01-01' }],
+    );
+    expect(verdict.verdict).toBe('Price Variance');
+    expect(verdict.basis.cause).toBe('EXCEEDS_ORDER');
   });
 
-  it('a short CONFIRMATION lowers the order’s value: the unconfirmed quantity is not payable', async () => {
+  it('a short CONFIRMATION lowers the order’s value: the unconfirmed quantity is not invoiced (ADM-1), and not payable', async () => {
     await confirmPo([4000, 300]);
-    const a = await invoice(2 * B);
+    // ADM-1 — before a receipt the ceiling is the CONFIRMED quantity, so the
+    // whole order's 5,000 kg is refused at the door. It was admitted amount-only
+    // and held by the match as EXCEEDS_ORDER.
+    const whole = await createInvoice(2 * B);
+    expect(whole.status).toBe('failed');
+    expect(whole.reason).toContain('INVOICE_LINE_EXCEEDS_CONFIRMED:');
+    const confirmed = 4000 * 220_000 + 900_000_000;
+    const a = await invoice(confirmed, [
+      { materialCode: NIAC, qty: 4000, unitPrice: 220_000 },
+      { materialCode: HYAL, qty: 300, unitPrice: 3_000_000 },
+    ]);
     await receiveAndPost([line(NIAC, 5000), line(HYAL, 300)]);
     // received is capped at the confirmed 4,000 kg — an over-delivery is not an order for more
-    expect(inv(a).matchBasis).toMatchObject({
-      orderedValue: 4000 * 220_000 + 900_000_000,
-      receivedValue: 4000 * 220_000 + 900_000_000,
-      cause: 'EXCEEDS_ORDER',
-    });
-    expect(inv(a).status).toBe('Submitted');
+    expect(inv(a).matchBasis).toMatchObject({ orderedValue: confirmed, receivedValue: confirmed, cause: 'WITHIN' });
+    expect(inv(a).status).toBe('Matched');
   });
 
   it('the stated total that disagrees with the lines is carried so it can be flagged, and is not what the match uses', async () => {
@@ -324,9 +364,7 @@ describe('OPS-1 · P0-3 — an invoice that arrives after its receipt is matched
   it('receipt posted first, invoice submitted afterwards: matched by the invoice’s own submission', async () => {
     await confirmPo();
     await receiveAndPost([line(NIAC, 5000), line(HYAL, 300)]);
-    const created = await ok(
-      svc.dispatch(supplier, { transitionId: 't_invoice_create', entity: 'invoice', payload: { poReference: PO, amount: 2 * B } }),
-    );
+    const created = await ok(createInvoice(2 * B));
     const id = created.entityId!;
     expect(inv(id).matchStatus).toBe('Pending');
     const submit = await ok(
@@ -547,20 +585,37 @@ describe('OPS-1 · an amount that is not a positive number is never matched and 
     expect(res2.map((r) => [r.invoiceId, r.basis.cause])).toEqual([['b-first', 'WITHIN'], ['c-second', 'ALREADY_INVOICED']]);
   });
 
-  it('through the dispatcher: a negative amount submitted by hand stays unmatched and frees nothing', async () => {
+  it('through the dispatcher: a negative amount is refused at the door (ADM-1) and frees nothing', async () => {
+    // It created an amount-only invoice of −Rp 2.0B and watched the match skip
+    // it. An invoice states its lines now, so a negative amount has three ways
+    // in and each is refused by name: no lines, a negative quantity, or an
+    // amount that is not the lines' total — at create and again at submit.
     await confirmPo();
     await receiveAndPost([line(NIAC, 5000), line(HYAL, 300)]);
-    const created = await ok(
-      svc.dispatch(supplier, { transitionId: 't_invoice_create', entity: 'invoice', payload: { poReference: PO, amount: -2 * B } }),
-    );
-    const neg = created.entityId!;
-    await svc.dispatch(supplier, { transitionId: 't_invoice_submit', entity: 'invoice', entityId: neg, payload: { amount: -2 * B } });
-    expect(inv(neg).status).not.toBe('Matched');
+    const noLines = await svc.dispatch(supplier, {
+      transitionId: 't_invoice_create',
+      entity: 'invoice',
+      payload: { poReference: PO, amount: -2 * B },
+    });
+    expect(noLines.reason).toContain('INVOICE_LINES_REQUIRED:');
+    const negQty = await createInvoice(-2 * B, [{ materialCode: NIAC, qty: -5000, unitPrice: 220_000 }]);
+    expect(negQty.reason).toContain('INVOICE_LINES_MALFORMED:');
+    const negAmount = await createInvoice(-2 * B, linesFor(2 * B));
+    expect(negAmount.reason).toContain('INVOICE_AMOUNT_NOT_LINES_TOTAL:');
+    expect(invoiceStore.all().filter((i) => i.poNumber === PO)).toEqual([]);
+    const draft = (await ok(createInvoice(2 * B))).entityId!;
+    const bySubmit = await svc.dispatch(supplier, {
+      transitionId: 't_invoice_submit',
+      entity: 'invoice',
+      entityId: draft,
+      payload: { amount: -2 * B },
+    });
+    expect(bySubmit.reason).toContain('INVOICE_AMOUNT_NOT_LINES_TOTAL:');
+    expect(inv(draft).status).toBe('Draft');
     const a = await invoice(2 * B);
     const b = await invoice(2 * B);
     expect(inv(a).status).toBe('Matched');
     expect(inv(b).status).toBe('Submitted');
-    expect(inv(neg).status).not.toBe('Matched');
   });
 });
 

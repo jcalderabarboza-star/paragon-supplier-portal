@@ -40,7 +40,10 @@ const CHECK = 'halal.certificate';
 const scopeOf = (actor: ActorAttribution): QueryScope => ({
   personaType: 'buyer',
   supplierId: null,
-  businessRoles: PERSONA_SYSTEM_ROLES.buyer,
+  // ADM-1 — every buyer role EXCEPT the Super Admin, whose seat these two
+  // locks stand aside for (`adm1Locks.test.ts`). The locks are measured here
+  // against a seat they bind.
+  businessRoles: PERSONA_SYSTEM_ROLES.buyer.filter((r) => r !== 'super_admin'),
   actor,
 });
 
