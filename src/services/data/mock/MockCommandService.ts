@@ -167,6 +167,7 @@ import type {
   ShipmentLifecycle,
   Uom,
 } from '../../sdc';
+import { asInvoiceLines, invoiceLinesRefusal, invoiceLinesTotal } from '../orderReceipt';
 
 // — Purchase-order command target — reads/writes the mutable PO store. ————————
 const purchaseOrderTarget: CommandTarget = {
@@ -597,6 +598,7 @@ const invoiceTarget: CommandTarget = {
         : new Date(Date.parse(submittedDate) + 30 * 86_400_000)
             .toISOString()
             .slice(0, 10);
+    const statedLines = 'lines' in payload ? asInvoiceLines(payload.lines) : null;
     const invoice: Invoice = {
       id: invoiceNumber, // store keyed by id; the assigned number doubles as id
       invoiceNumber,
@@ -620,6 +622,9 @@ const invoiceTarget: CommandTarget = {
       paymentTerms: 'Net 30',
       buyerContact: '',
       remittanceNote: null,
+      // E2E-2 — the stated lines, already examined by
+      // `invoice_lines_within_received`. Absent when the caller stated none.
+      ...(statedLines ? { lines: statedLines } : {}),
     };
     invoiceStore.add(invoice);
     return { entityId: invoiceNumber };
@@ -668,6 +673,83 @@ bindPolicyHook(POLICY_HOOKS.INVOICE_CREATE_PO_CONFIRMED, ({ payload }) => {
   if (!po) return { ok: false, reason: 'parent PO not found' };
   if (po.status !== POStatus.CONFIRMED) return { ok: false, reason: `PO ${po.poNumber} is not Confirmed` };
   return { ok: true };
+});
+
+// E2E-2 — AN INVOICE THAT STATES ITS LINES MAY NOT INVOICE MORE THAN WAS
+// RECEIVED. The invoice form opens on the order's lines at the order's prices
+// and the accepted quantity, and the supplier may lower a quantity; this is the
+// same predicate behind the form (`invoiceLinesRefusal`), so a hand-crafted
+// dispatch cannot state what the form would not. An invoice that states NO
+// lines is not examined here — its amount is judged by the match, as before.
+bindPolicyHook(POLICY_HOOKS.INVOICE_LINES_WITHIN_RECEIVED, ({ payload }) => {
+  if (!('lines' in payload)) return { ok: true };
+  const po = findPoByNumber(String(payload.poReference));
+  if (!po) return { ok: true }; // `invoice_create_po_confirmed` has already refused this
+  const lines = asInvoiceLines(payload.lines);
+  if (lines === null) {
+    return {
+      ok: false,
+      reason:
+        'INVOICE_LINES_MALFORMED: lines must be a list of { materialCode, qty, unitPrice } with ' +
+        'a quantity and a price that are numbers of zero or more',
+    };
+  }
+  const amount = typeof payload.amount === 'number' ? payload.amount : 0;
+  const refusal = invoiceLinesRefusal(po, goodsReceiptStore.all(), lines, amount);
+  if (refusal === null) return { ok: true };
+  switch (refusal.code) {
+    case 'INVOICE_LINES_MALFORMED':
+      return { ok: false, reason: 'INVOICE_LINES_MALFORMED: a material is stated on more than one line' };
+    case 'INVOICE_LINE_NOT_ON_ORDER':
+      return {
+        ok: false,
+        reason: `INVOICE_LINE_NOT_ON_ORDER: ${refusal.materialCode} is not a line of ${po.poNumber}`,
+      };
+    case 'INVOICE_LINE_PRICE_NOT_ORDER_PRICE':
+      return {
+        ok: false,
+        reason:
+          `INVOICE_LINE_PRICE_NOT_ORDER_PRICE: ${refusal.materialCode} is invoiced at a price ` +
+          `other than the order's (${refusal.orderPrice}). An invoice is raised at the order's price`,
+      };
+    case 'INVOICE_LINE_EXCEEDS_RECEIVED':
+      return {
+        ok: false,
+        reason:
+          `INVOICE_LINE_EXCEEDS_RECEIVED: ${refusal.qty} of ${refusal.materialCode} is invoiced and ` +
+          `${refusal.maxQty} was received and accepted on ${po.poNumber}. Invoice that quantity or less`,
+      };
+    case 'INVOICE_NOTHING_INVOICED':
+      return { ok: false, reason: 'INVOICE_NOTHING_INVOICED: no line invoices a quantity above zero' };
+    case 'INVOICE_AMOUNT_NOT_LINES_TOTAL':
+      return {
+        ok: false,
+        reason:
+          `INVOICE_AMOUNT_NOT_LINES_TOTAL: the amount (${refusal.amount}) is not the total of the ` +
+          `lines (${refusal.linesTotal})`,
+      };
+  }
+});
+
+// E2E-2 — AND THE LINES' TOTAL STAYS THE AMOUNT. `t_invoice_submit` and
+// `t_invoice_resolve` both land on `Submitted`, where the target writes a stated
+// `amount` onto the invoice. On an invoice that carries lines that would let a
+// caller invoice within the receipt at create and then submit any amount it
+// liked. So a stated amount that is not the lines' total is refused here, and
+// the invoice is left as it was. An invoice with no lines is not examined.
+bindPolicyHook(POLICY_HOOKS.INVOICE_AMOUNT_IS_LINES_TOTAL, ({ entityId, payload, target }) => {
+  const inv = target.readEntity(entityId) as { lines?: unknown } | null;
+  const lines = inv && 'lines' in inv ? asInvoiceLines(inv.lines) : null;
+  if (lines === null || lines.length === 0) return { ok: true };
+  if (typeof payload.amount !== 'number') return { ok: true };
+  const total = invoiceLinesTotal(lines);
+  if (Math.abs(payload.amount - total) <= 0.005) return { ok: true };
+  return {
+    ok: false,
+    reason:
+      `INVOICE_AMOUNT_NOT_LINES_TOTAL: the amount (${payload.amount}) is not the total of this ` +
+      `invoice's lines (${total}). An invoice that states its lines is submitted for their total`,
+  };
 });
 
 // — RFQ target (Step 4 batch iv) — buyer-side sourcing. `t_rfq_award` is the

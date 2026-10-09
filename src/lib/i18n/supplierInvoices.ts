@@ -114,24 +114,34 @@ export const supplierInvoicesEn: Record<string, string> = {
   'supplierInvoices.new.cancel': 'Cancel',
   'supplierInvoices.new.createDraft': 'Create draft',
   'supplierInvoices.new.intro':
-    'Draft an invoice against one of your confirmed purchase orders. The invoice number is assigned on creation; you submit it for approval from the list.',
+    'Draft an invoice against one of your confirmed purchase orders. It opens on the order\'s lines, at the order\'s prices, for the quantity received and accepted. The invoice number is assigned on creation; you submit it for approval from the list.',
   'supplierInvoices.new.poLabel': 'Purchase order',
   'supplierInvoices.new.poPlaceholder': 'Select a confirmed PO…',
   'supplierInvoices.new.noPos': 'No confirmed POs available to invoice.',
-  'supplierInvoices.new.amountLabel': 'Amount (IDR)',
-  'supplierInvoices.new.amountPlaceholder': 'e.g. 250000000',
-  // — New invoice: the amount refusals (CP-0 · W1 · 2f-d). These replace a
-  // hard-coded English literal that covered three causes in one sentence.
+  // — New invoice: the lines (E2E-2). The amount is no longer typed; it is the
+  // total of the lines, each capped at the quantity received and accepted.
+  'supplierInvoices.new.nothingReceived':
+    'Nothing has been received and accepted on this order yet, so there is nothing to invoice. An invoice is raised for what Paragon has received.',
+  'supplierInvoices.new.lines.title': 'Lines to invoice',
+  'supplierInvoices.new.lines.note':
+    'Each quantity opens on what was received and accepted. You may invoice less, never more. Whether the invoice matches the order and the receipt is decided after you submit it.',
+  'supplierInvoices.new.lines.unitPrice': 'Order unit price',
+  'supplierInvoices.new.lines.accepted': 'Received and accepted',
+  'supplierInvoices.new.lines.qtyLabel': 'Quantity to invoice for {{material}}',
+  'supplierInvoices.new.lines.lineTotal': 'Line total:',
+  'supplierInvoices.new.lines.total': 'Invoice amount',
+  'supplierInvoices.new.lines.allZero': 'Every line is at zero. Invoice a quantity on at least one line.',
+  'supplierInvoices.new.lines.invalid': 'A line\'s quantity cannot be invoiced as typed. Correct it and create the draft again.',
   'supplierInvoices.new.po.required':
     'Select the purchase order this invoice is raised against.',
-  'supplierInvoices.new.amount.refused.empty':
-    'Enter the invoice amount — it is the sum being claimed, and a blank is not an amount of zero.',
-  'supplierInvoices.new.amount.refused.notNumeric':
-    'That is not an amount — type digits only, e.g. 250000000.',
-  'supplierInvoices.new.amount.refused.ambiguous':
+  'supplierInvoices.new.qty.refused.empty':
+    'Enter the quantity to invoice — a blank is not a quantity of zero. Type 0 to leave this line off the invoice.',
+  'supplierInvoices.new.qty.refused.notNumeric':
+    'That is not a quantity — type digits only, e.g. 4500.',
+  'supplierInvoices.new.qty.refused.ambiguous':
     'This can be read two ways — "1.500" means one thousand five hundred in Indonesian and one-point-five in English. Type it without separators: 1500.',
-  'supplierInvoices.new.amount.mustExceedZero':
-    'An invoice amount must be greater than zero.',
+  'supplierInvoices.new.qty.refused.exceedsReceived':
+    'More than was received and accepted on this line ({{max}} {{uom}}). Invoice that quantity or less.',
   // — Empty state (all-empty early return) —
   'supplierInvoices.empty.title': 'No invoices yet',
   'supplierInvoices.empty.subtitle': 'No invoices on file for {{supplier, stop}}.',
@@ -242,23 +252,33 @@ export const supplierInvoicesId: Record<string, string> = {
   'supplierInvoices.new.cancel': 'Batal',
   'supplierInvoices.new.createDraft': 'Buat draf',
   'supplierInvoices.new.intro':
-    'Buat draf faktur untuk salah satu pesanan pembelian Anda yang telah dikonfirmasi. Nomor faktur ditetapkan saat pembuatan; Anda mengajukannya untuk persetujuan dari daftar.',
+    'Buat draf faktur untuk salah satu pesanan pembelian Anda yang telah dikonfirmasi. Draf dibuka dengan baris pesanan, pada harga pesanan, untuk kuantitas yang telah diterima dan disetujui. Nomor faktur ditetapkan saat pembuatan; Anda mengajukannya untuk persetujuan dari daftar.',
   'supplierInvoices.new.poLabel': 'Pesanan pembelian',
   'supplierInvoices.new.poPlaceholder': 'Pilih PO yang dikonfirmasi…',
   'supplierInvoices.new.noPos': 'Tidak ada PO dikonfirmasi yang tersedia untuk difakturkan.',
-  'supplierInvoices.new.amountLabel': 'Jumlah (IDR)',
-  'supplierInvoices.new.amountPlaceholder': 'mis. 250000000',
-  // — Faktur baru: penolakan jumlah (CP-0 · W1 · 2f-d) —
+  // — Faktur baru: baris (E2E-2) —
+  'supplierInvoices.new.nothingReceived':
+    'Belum ada yang diterima dan disetujui pada pesanan ini, sehingga belum ada yang dapat difakturkan. Faktur dibuat untuk apa yang telah diterima Paragon.',
+  'supplierInvoices.new.lines.title': 'Baris yang difakturkan',
+  'supplierInvoices.new.lines.note':
+    'Setiap kuantitas dibuka pada jumlah yang diterima dan disetujui. Anda boleh memfakturkan lebih sedikit, tidak pernah lebih banyak. Apakah faktur cocok dengan pesanan dan penerimaan diputuskan setelah Anda mengajukannya.',
+  'supplierInvoices.new.lines.unitPrice': 'Harga satuan pesanan',
+  'supplierInvoices.new.lines.accepted': 'Diterima dan disetujui',
+  'supplierInvoices.new.lines.qtyLabel': 'Kuantitas yang difakturkan untuk {{material}}',
+  'supplierInvoices.new.lines.lineTotal': 'Total baris:',
+  'supplierInvoices.new.lines.total': 'Jumlah faktur',
+  'supplierInvoices.new.lines.allZero': 'Semua baris bernilai nol. Fakturkan kuantitas pada setidaknya satu baris.',
+  'supplierInvoices.new.lines.invalid': 'Kuantitas pada salah satu baris tidak dapat difakturkan sebagaimana diketik. Perbaiki lalu buat draf lagi.',
   'supplierInvoices.new.po.required':
     'Pilih pesanan pembelian yang menjadi dasar faktur ini.',
-  'supplierInvoices.new.amount.refused.empty':
-    'Masukkan jumlah faktur — inilah nilai yang ditagihkan, dan kolom kosong bukan berarti jumlahnya nol.',
-  'supplierInvoices.new.amount.refused.notNumeric':
-    'Itu bukan nominal — ketik angka saja, misalnya 250000000.',
-  'supplierInvoices.new.amount.refused.ambiguous':
+  'supplierInvoices.new.qty.refused.empty':
+    'Masukkan kuantitas yang difakturkan — kolom kosong bukan berarti kuantitasnya nol. Ketik 0 untuk tidak memfakturkan baris ini.',
+  'supplierInvoices.new.qty.refused.notNumeric':
+    'Itu bukan kuantitas — ketik angka saja, misalnya 4500.',
+  'supplierInvoices.new.qty.refused.ambiguous':
     'Ini bisa dibaca dua cara — "1.500" berarti seribu lima ratus dalam bahasa Indonesia dan satu koma lima dalam bahasa Inggris. Ketik tanpa pemisah: 1500.',
-  'supplierInvoices.new.amount.mustExceedZero':
-    'Jumlah faktur harus lebih besar dari nol.',
+  'supplierInvoices.new.qty.refused.exceedsReceived':
+    'Lebih banyak daripada yang diterima dan disetujui pada baris ini ({{max}} {{uom}}). Fakturkan kuantitas itu atau kurang.',
   // — Empty state (all-empty early return) —
   'supplierInvoices.empty.title': 'Belum ada faktur',
   'supplierInvoices.empty.subtitle': 'Tidak ada faktur untuk {{supplier, stop}}.',

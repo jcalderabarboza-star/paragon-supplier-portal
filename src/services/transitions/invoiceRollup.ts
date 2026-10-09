@@ -58,7 +58,8 @@ export const MATCH_TOLERANCE = 0.01; // 1%
 //             order for more)
 //   already   Σ of the OTHER invoices on the PO that are matched or further
 //
-// An invoice carries a total and no lines, so the match can say that the total
+// The match reads an invoice's total and never its lines (E2E-2 gave form-made
+// invoices lines; the match does not read them), so it can say that the total
 // runs over and which ceiling it ran over; it cannot say which line or which
 // unit price. The causes below say exactly that much and no more.
 
@@ -87,31 +88,43 @@ export function poLineTotalOf(lines: readonly MatchOrderLine[]): number {
 }
 
 /**
- * The value received and accepted, at PO prices. Accepted quantity is pooled per
- * material across every receipt line given, then handed to the PO's lines in
- * order, each line taking no more than its confirmed quantity. A material the PO
- * does not carry earns nothing.
+ * The quantity accepted against EACH PO line, in the PO's own line order.
+ * Accepted quantity is pooled per material across every receipt line given,
+ * then handed to the PO's lines in order, each line taking no more than its
+ * confirmed quantity. A material the PO does not carry is handed to no line.
+ *
+ * E2E-2 — extracted from `receivedValueOf` so the order page, the invoice form
+ * and the match read ONE allocation (`services/data/orderReceipt.ts`).
  */
-export function receivedValueOf(
-  lines: readonly MatchOrderLine[],
+export function acceptedPerOrderLine(
+  lines: readonly Pick<MatchOrderLine, 'materialCode' | 'confirmedQty'>[],
   receiptLines: readonly MatchReceiptLine[],
-): number {
+): number[] {
   const pool = new Map<string, number>();
   for (const r of receiptLines) {
     if (!(r.qtyAccepted > 0)) continue;
     pool.set(r.materialCode, (pool.get(r.materialCode) ?? 0) + r.qtyAccepted);
   }
-  let value = 0;
-  for (const li of lines) {
+  return lines.map((li) => {
     const left = pool.get(li.materialCode) ?? 0;
     const taken = Math.min(left, Math.max(0, li.confirmedQty));
     pool.set(li.materialCode, left - taken);
-    value += taken * li.unitPrice;
-  }
-  return value;
+    return taken;
+  });
 }
 
-/** Which verdict each cause is shown as. */
+/**
+ * The value received and accepted, at PO prices: each line's accepted quantity
+ * (`acceptedPerOrderLine`) at that line's unit price.
+ */
+export function receivedValueOf(
+  lines: readonly MatchOrderLine[],
+  receiptLines: readonly MatchReceiptLine[],
+): number {
+  const taken = acceptedPerOrderLine(lines, receiptLines);
+  return lines.reduce((value, li, i) => value + taken[i] * li.unitPrice, 0);
+}
+
 export const VERDICT_OF_CAUSE: Readonly<Record<InvoiceMatchCause, MatchVerdict>> = Object.freeze({
   WITHIN: 'Matched',
   EXCEEDS_RECEIVED: 'Qty Mismatch',

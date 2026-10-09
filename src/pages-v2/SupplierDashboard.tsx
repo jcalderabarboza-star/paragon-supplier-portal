@@ -35,7 +35,7 @@ import { useTranslation } from 'react-i18next';
 import { useToast } from '../hooks/useToast';
 import { useCurrentIdentity } from '../context/CurrentIdentityContext';
 import { PreferredChannel } from '../types/supplier.types';
-import { POStatus } from '../services/data/types';
+import { POStatus, type PurchaseOrder } from '../services/data/types';
 import NoSupplierIdentity from '../components/ui-v2/NoSupplierIdentity';
 import LoadingState from '../components/ui-v2/LoadingState';
 import ErrorState from '../components/ui-v2/ErrorState';
@@ -49,7 +49,9 @@ import {
   usePurchaseOrders,
   useSupplierInvoices,
   useDocuments,
+  useGoodsReceipts,
 } from '../services/query/hooks';
+import { receivedOnOrder } from '../services/data/orderReceipt';
 import {
   documentDisplayState,
   DISPLAY_STATE_LABEL_KEY,
@@ -275,13 +277,21 @@ const SupplierDashboard: React.FC = () => {
     [MY_POS],
   );
 
+  // E2E-2 — an order that is fully received is not asked for a ship notice,
+  // in the briefing or in the orders table.
+  const receiptsQuery = useGoodsReceipts();
+  const MY_RECEIPTS = receiptsQuery.data?.items;
+  const mayShip = (po: PurchaseOrder) =>
+    po.status === POStatus.CONFIRMED && !receivedOnOrder(po, MY_RECEIPTS ?? []).fullyReceived;
+
   const asnDueOrders = useMemo(
     () =>
       MY_POS.filter((po) => {
         if (po.status !== POStatus.CONFIRMED) return false;
+        if (receivedOnOrder(po, MY_RECEIPTS ?? []).fullyReceived) return false;
         return (daysUntil(po.requestedDeliveryDate, TODAY) ?? 0) <= 7;
       }),
-    [MY_POS],
+    [MY_POS, MY_RECEIPTS],
   );
 
   if (!supplierId) return <NoSupplierIdentity />;
@@ -748,7 +758,7 @@ const SupplierDashboard: React.FC = () => {
                   const isActionable =
                     po.status === POStatus.SENT ||
                     po.status === POStatus.ACKNOWLEDGED;
-                  const isConfirmed = po.status === POStatus.CONFIRMED;
+                  const isConfirmed = mayShip(po);
                   const btnLabel = isActionable
                     ? t('supplierDashboard.orders.action.confirm')
                     : isConfirmed

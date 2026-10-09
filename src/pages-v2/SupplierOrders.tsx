@@ -38,7 +38,9 @@ import NoSupplierIdentity from '../components/ui-v2/NoSupplierIdentity';
 import LoadingState from '../components/ui-v2/LoadingState';
 import ErrorState from '../components/ui-v2/ErrorState';
 import EmptyState from '../components/ui-v2/EmptyState';
-import { useCurrentSupplier, usePurchaseOrders } from '../services/query/hooks';
+import { useCurrentSupplier, usePurchaseOrders, useGoodsReceipts } from '../services/query/hooks';
+import { receivedOnOrder } from '../services/data/orderReceipt';
+import { ReceivedOnOrder } from '../components/v2-features/ReceivedBlock';
 import type { PurchaseOrder } from '../services/data/types';
 import type { QtyRefusalReason } from '../lib/localeNumber';
 import { confirmedQtyWithinBounds } from '../services/transitions/policies';
@@ -157,6 +159,13 @@ const SupplierOrders: React.FC = () => {
 
   const supplierQuery = useCurrentSupplier();
   const posQuery = usePurchaseOrders();
+  // E2E-2 — the supplier's own receipts (the read is scoped to the supplier).
+  // What was received is derived from them, and an order that is fully
+  // received is not offered a ship notice: there is nothing left to ship.
+  const receiptsQuery = useGoodsReceipts();
+  const receivedOf = (po: PurchaseOrder) => receivedOnOrder(po, receiptsQuery.data?.items ?? []);
+  const mayShip = (po: PurchaseOrder) =>
+    po.status === POStatus.CONFIRMED && !receivedOf(po).fullyReceived;
 
   const mySupplier = supplierQuery.data ?? null;
 
@@ -359,7 +368,9 @@ const SupplierOrders: React.FC = () => {
     e.stopPropagation();
     if (ACTION_STATUSES.includes(po.status)) {
       openOrderPanel(po, 'editing');
-    } else if (po.status === POStatus.CONFIRMED) {
+    } else if (mayShip(po)) {
+      // E2E-2 — only an order with goods still owed. A fully received order's
+      // row reads "View" and opens the panel, like any other.
       toast({
         title: t('supplierOrders.toast.creatingAsn.title', {
           poNumber: po.poNumber,
@@ -474,7 +485,7 @@ const SupplierOrders: React.FC = () => {
       return canConfirmHere
         ? t('supplierOrders.action.confirm')
         : t('supplierOrders.action.view');
-    if (po.status === POStatus.CONFIRMED) return t('supplierOrders.action.createAsn');
+    if (mayShip(po)) return t('supplierOrders.action.createAsn');
     return t('supplierOrders.action.view');
   };
 
@@ -704,8 +715,8 @@ const SupplierOrders: React.FC = () => {
                         testId="handoff-po-confirm"
                       />
                     )
-                  ) : (selectedLive ?? selected).status === POStatus.CONFIRMED ? (
-                    <Button variant="outline" onClick={goToASN}>
+                  ) : mayShip(selectedLive ?? selected) ? (
+                    <Button variant="outline" onClick={goToASN} data-testid="po-create-asn">
                       {t('supplierOrders.action.createAsn')}
                     </Button>
                   ) : null}
@@ -752,9 +763,11 @@ const SupplierOrders: React.FC = () => {
                   <Button variant="secondary" onClick={closePanel}>
                     {t('supplierOrders.action.close')}
                   </Button>
-                  <Button variant="outline" icon={Truck} onClick={goToASN}>
-                    {t('supplierOrders.action.createAsnNow')}
-                  </Button>
+                  {selected && mayShip(selectedLive ?? selected) && (
+                    <Button variant="outline" icon={Truck} onClick={goToASN}>
+                      {t('supplierOrders.action.createAsnNow')}
+                    </Button>
+                  )}
                 </>
               )}
             </>
@@ -980,6 +993,15 @@ const SupplierOrders: React.FC = () => {
               </div>
             </section>
 
+            {/* E2E-2 — what Paragon has received on this order, from the
+                supplier's own receipts, and whose the order's status is. */}
+            {effectivePanelMode !== 'editing' && (
+              <ReceivedOnOrder
+                received={receivedOf(selectedLive ?? selected)}
+                testId="supplier-order-received"
+              />
+            )}
+
             {effectivePanelMode === 'editing' && (
               <section>
                 <h3 className="text-label text-text-tertiary uppercase mb-3">
@@ -1077,7 +1099,13 @@ const SupplierOrders: React.FC = () => {
                       {t('supplierOrders.panel.next')}
                     </dt>
                     <dd className="text-sm font-bold text-teal inline-flex items-center gap-1">
-                      {t('supplierOrders.action.createAsn')} <ChevronRight size={12} />
+                      {mayShip(selectedLive ?? selected) ? (
+                        <>
+                          {t('supplierOrders.action.createAsn')} <ChevronRight size={12} />
+                        </>
+                      ) : (
+                        t('received.order.full')
+                      )}
                     </dd>
                   </div>
                 </dl>

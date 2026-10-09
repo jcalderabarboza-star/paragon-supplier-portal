@@ -16,6 +16,8 @@ import { screen } from '@testing-library/react';
 import { renderWithProviders, SUPPLIER } from '../test/test-utils';
 import type { CurrentIdentity } from '../context/CurrentIdentityContext';
 import { purchaseOrderStore } from '../services/data/mock/stores/purchaseOrderStore';
+import { goodsReceiptStore } from '../services/data/mock/stores/goodsReceiptStore';
+import { receivedOnOrder } from '../services/data/orderReceipt';
 import { POStatus } from '../services/data/types';
 import { DECLARED_PRESENT } from '../services/data/fixturePresent';
 import { daysUntil } from '../services/data/dayProjection';
@@ -35,10 +37,13 @@ afterAll(async () => {
 });
 
 const seat = (supplierId: string): CurrentIdentity => ({ ...SUPPLIER, supplierId, supplierName: supplierId });
+// E2E-2 — an order that is fully received is not asked for a ship notice, so it
+// is not in the briefing; the population is derived with the page's own read.
 const due = () =>
   purchaseOrderStore
     .all()
     .filter((po) => po.status === POStatus.CONFIRMED)
+    .filter((po) => !receivedOnOrder(po, goodsReceiptStore.all()).fullyReceived)
     .map((po) => ({ po, days: daysUntil(po.requestedDeliveryDate, DECLARED_PRESENT)! }))
     .filter(({ days }) => days <= 7);
 const briefing = async () => {

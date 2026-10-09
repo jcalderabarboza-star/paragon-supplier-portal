@@ -21,7 +21,7 @@ The supplier's heads-up that goods are on their way, and what is on them. It is 
 
 Two seats touch it. The supplier's **fulfilment** contact drafts and submits (`/supplier/shipments`, **Shipments & ASN**). The buyer's **receiving** lane never edits an ASN, but it is the lane that clears a discrepancy — because a discrepancy is only ever raised by a goods-receipt disposition, and the authority that raised the problem is the authority that clears it (`/buyer/goods-receipt`, **Shipment discrepancies → Reconcile**).
 
-Honesty markers: **In Transit** and **Delivered** are carrier facts owned by **TMS** (INT-TMS-01); nobody in the portal presses them and the demo rows in those states are **SIMULATED fixtures**. **Discrepancy** is not declared by anyone — it is the cascade fired when a receiver rejects or partially approves a receipt. The **Export EDI 856** button and the **Dock Appointments** tab are display-only (the export toast says no file was generated; the dock text is static copy). The page's meta line carries a provenance marker: create and submit genuinely dispatch; the POs being shipped against are fixtures.
+Honesty markers: **In Transit** and **Delivered** are carrier facts owned by **TMS** (INT-TMS-01); nobody in the portal presses them and the demo rows in those states are **SIMULATED fixtures**. **Discrepancy** is not declared by anyone — it is the cascade fired when a receiver rejects or partially approves a receipt. The **Export EDI 856** button and the **Dock Appointments** tab are display-only (the export toast says no file was generated; the dock text is static copy). The page's meta line carries a provenance marker: create and submit genuinely dispatch; the POs being shipped against are fixtures. A goods receipt posted against a notice is shown on that notice, on both sides, and does not change the notice's status. A `Confirmed` order that is fully received is not offered for a new ASN on the supplier's pages; `t_asn_create` itself is unchanged and has no new refusal.
 
 <!-- section:lifecycle -->
 ## 2 · Lifecycle walk
@@ -62,8 +62,8 @@ This machine declares **no terminal**: every state after `Draft` has an exit (`D
 - **Tester — trigger event:** `t_asn_create`
 - **Checks that can refuse:** `asn_create_po_confirmed` — the parent PO must exist and be `Confirmed` ("PO PO-… is not Confirmed" otherwise). Before that, creation scope: the PO's supplier must be the seat's own supplier, or the dispatcher throws `SCOPE_DENIED`. Then `asn_details_well_formed`: `ASN_DETAILS_INVALID` names the first of `packages`, `grossWeightKg`, `shipDate`, `batchNumber`, `notes`, `packingListName` or `lotNumbers` that cannot be stored as given; a refused creation makes no notice.
 - **Glossary:** `POLICY_REJECTED`, `SCOPE_DENIED`, `MISSING_FIELDS`, `ROLE_NOT_PERMITTED`.
-- **Honesty:** the "awaiting ASN" panel lists only confirmed POs with **no** ASN yet; the wizard's **Select PO** step lists **every** confirmed PO of the supplier, so a second ASN for the same PO is possible through the wizard. A seat without `asn:create` sees **Awaiting Supplier Fulfilment** on the PO row and does not see the **Create ASN** tab at all (the tab needs both create and submit held). The draft's destination warehouse and temperature are fixed sample values written by the store.
-<!-- src: src/services/transitions/flows/advanceShipNotice.flow.ts:49-61; src/services/data/mock/MockCommandService.ts:171-233; src/pages-v2/SupplierShipments.tsx:252-307,697-728,769-813,1204-1211; src/services/query/commandHooks.ts:254-272; src/lib/i18n.ts:503-508 -->
+- **Honesty:** the "awaiting ASN" panel lists only confirmed POs with **no** ASN yet; the wizard's **Select PO** step lists **every** confirmed PO of the supplier that still has goods owed, so a second ASN for the same PO is possible through the wizard. Neither lists a confirmed PO that is fully received — every line that confirmed a quantity has all of it accepted on goods receipts posting or posted to SAP — and `/supplier/orders` and the supplier dashboard do not offer **Create ASN** on such an order either. That is the pages withholding an offer: `t_asn_create` has no new check, and a hand-crafted dispatch against a fully received order is still admitted while the PO is `Confirmed`. A receipt that is only inspected, not posted, withholds nothing. A seat without `asn:create` sees **Awaiting Supplier Fulfilment** on the PO row and does not see the **Create ASN** tab at all (the tab needs both create and submit held). The draft's destination warehouse and temperature are fixed sample values written by the store.
+<!-- src: src/services/transitions/flows/advanceShipNotice.flow.ts:49-61; src/services/data/mock/MockCommandService.ts:171-233; src/pages-v2/SupplierShipments.tsx:252-307,697-728,769-813,1204-1211; src/services/query/commandHooks.ts:254-272; src/lib/i18n.ts:503-508; src/services/data/orderReceipt.ts:92-126; src/pages-v2/SupplierShipments.tsx:312-315,719-728,951-956; src/pages-v2/SupplierOrders.tsx:162-168; src/pages-v2/SupplierDashboard.tsx:280-294 -->
 
 ### t_asn_submit — Submit ASN <!-- transition:t_asn_submit -->
 
@@ -110,8 +110,8 @@ This machine declares **no terminal**: every state after `Draft` has an exit (`D
 - **Tester — trigger event:** `t_asn_deliver` (not emitted by any surface)
 - **Checks that can refuse:** none beyond role, legality and required fields.
 - **Glossary:** none specific.
-- **Honesty:** SIMULATED. A goods receipt created in the portal does **not** mark the ASN delivered; the receipt and the carrier fact are different documents.
-<!-- src: src/services/transitions/flows/advanceShipNotice.flow.ts:93-110; src/services/data/mock/fixtures/supplierShipments.ts:109-119,203-216 -->
+- **Honesty:** SIMULATED. A goods receipt created in the portal does **not** mark the ASN delivered; the receipt and the carrier fact are different documents. A receipt that is posting or posted to SAP is shown on the notice instead. Expanding the row — on `/supplier/shipments` for any notice that is not a `Draft`, and on `/buyer/shipments` under **Ship notices from suppliers** — shows **Goods receipt**: each receipt recorded against the notice (GR number · date · accepted · rejected when any, or "N materials" when the receipt carries more than one material — every line of the receipt is read here · "SAP document" with its number, or "posting to SAP"), or "No goods receipt is posted against this ship notice yet.", and always "Read from the goods receipts posted in this portal. The ship notice's own status is not changed by a receipt." No seeded receipt names an ASN-store number, so every seeded notice reads the "No goods receipt…" sentence; to see a receipt there, create one on `/buyer/goods-receipt` under **Enter ASN number** with a store ASN and post it.
+<!-- src: src/services/transitions/flows/advanceShipNotice.flow.ts:93-110; src/services/data/mock/fixtures/supplierShipments.ts:109-119,203-216; src/services/data/orderReceipt.ts:102-137; src/components/v2-features/ReceivedBlock.tsx:24-44,95-117; src/pages-v2/SupplierShipments.tsx:494-502,719-728; src/pages-v2/shipments/SupplierShipNotices.tsx:59,186-191; src/lib/i18n.ts:558-567; src/services/data/orderReceipt.ts:82-100 -->
 
 ### t_asn_discrepancy — A receipt flags the notice <!-- transition:t_asn_discrepancy -->
 
@@ -159,12 +159,13 @@ This machine declares **no terminal**: every state after `Draft` has an exit (`D
 | Flag | Kind | Applies at | When it appears | Where shown |
 |---|---|---|---|---|
 | Discrepancy chip / KPI tile | operator-raised (by the receiver's disposition, via cascade) | Discrepancy | the ASN was flagged by `t_gr_reject` / `t_gr_partial_approve` | `/supplier/shipments` row chip and **Discrepancy** tile; `/buyer/goods-receipt` **Shipment discrepancies** section |
-| "N confirmed purchase orders awaiting ASN" | derived at read | (PO side) Confirmed | a confirmed PO of the supplier has no ASN referencing it | `/supplier/shipments` amber panel above the list |
+| "N confirmed purchase orders awaiting ASN" | derived at read | (PO side) Confirmed | a confirmed PO of the supplier has no ASN referencing it and is not fully received | `/supplier/shipments` amber panel above the list |
+| **Goods receipt** on the notice | derived at read (from the goods receipts posting or posted to SAP) | every state but Draft | always shown in the expanded row: the receipt or receipts recorded against the notice, or "No goods receipt is posted against this ship notice yet." | expanded row on `/supplier/shipments`; expanded row under **Ship notices from suppliers** on `/buyer/shipments` |
 | Awaiting Supplier Fulfilment | derived at read (handoff) | ∅, Draft | the seat lacks `asn:create` / `asn:submit` | PO row action; Draft row action; wizard body when narrowed mid-flow |
 | Awaiting Receiving | derived at read (handoff) | Discrepancy | the seat lacks `asn:flag` (every supplier seat; buyer seats outside receiving) | `/supplier/shipments` action cell; `/buyer/goods-receipt` reconcile cell |
 | Provenance marker | SIMULATED marker | all | always | `/supplier/shipments` meta line |
 | Dock appointment notice | static copy | — | always | **Dock Appointments** tab (fixture text; nothing derives it) |
-<!-- src: src/pages-v2/SupplierShipments.tsx:63-69,252-261,297-304,395-421,1191-1199,1236-1241; src/pages-v2/BuyerGoodsReceipt.tsx:871-936; src/lib/i18n/supplierShipments.ts:44-47,88-100 -->
+<!-- src: src/pages-v2/SupplierShipments.tsx:63-69,252-261,297-304,395-421,1191-1199,1236-1241; src/pages-v2/BuyerGoodsReceipt.tsx:871-936; src/lib/i18n/supplierShipments.ts:44-47,88-100; src/services/data/orderReceipt.ts:102-137; src/components/v2-features/ReceivedBlock.tsx:24-44,95-117; src/pages-v2/SupplierShipments.tsx:494-502,719-728; src/pages-v2/shipments/SupplierShipNotices.tsx:59,186-191 -->
 
 The ASN page renders no next-act line; the state chip and the handoff notice are the only status cues on the supplier side.
 
@@ -177,28 +178,28 @@ The ASN page renders no next-act line; the state chip and the handoff notice are
 |---|---|---|
 | Purchase order | `poReference` = `PO-2025-00107` (`po-007`, Confirmed) | creation scope is derived from this PO's `supplierId`; `asn_create_po_confirmed` reads its status |
 | Supplier | `supplierId` = `sup-007` | scope owner for every later command on the ASN |
-| Goods receipt | GR `asnNumber` = the ASN number | the cascade key: `t_gr_reject` / `t_gr_partial_approve` fan out onto `gr.asnNumber`. No seeded GR references `ASN-2025-00201` (seeded GRs reference `ASN-2026-0xx` shipments), so this row's discrepancy is authored, not produced |
+| Goods receipt | GR `asnNumber` = the ASN number | the cascade key: `t_gr_reject` / `t_gr_partial_approve` fan out onto `gr.asnNumber`. No seeded GR references `ASN-2025-00201` (seeded GRs reference `ASN-2026-0xx` shipments), so this row's discrepancy is authored, not produced. The notice's **Goods receipt** block reads the receipts with this `asnNumber` that are posting or posted to SAP; nothing is written to the notice |
 | Line items | `lineItems[]` (`materialCode`, `orderedQty`, `shippedQty`, `lotNumber`) | copied from the PO at create; the GR wizard's `gr_inspection_materials_declared` hook checks a receipt's lines against these |
 | `carrier`, `trackingNumber`, `eta` | written by `t_asn_submit` | fixture drafts hold `—` placeholders which the submit panel blanks |
 | `details` (origin, destination warehouse, cartons, weight, temperature) | fixture / store constants | display-only; the create verb writes fixed sample values |
 | Shipment (`/buyer/shipments`, `mockShipments`) | none | a **different** document: shipment rows carry `ASN-2026-0xx` numbers that do not exist in the ASN store |
-<!-- src: src/services/data/mock/fixtures/supplierShipments.ts:132-141; src/services/data/mock/MockCommandService.ts:192-226,313-362,2884-2889; src/pages-v2/BuyerGoodsReceipt.tsx:853-863 -->
+<!-- src: src/services/data/mock/fixtures/supplierShipments.ts:132-141; src/services/data/mock/MockCommandService.ts:192-226,313-362,2884-2889; src/pages-v2/BuyerGoodsReceipt.tsx:853-863; src/services/data/orderReceipt.ts:128-137 -->
 
 <!-- section:history -->
 ## 7 · Status history
 
 Every dispatch writes one `TransitionEvent` (`event`, `actor` = `supplier:<id>` or `buyer:all`, `ts`, `outcome`, `correlationId`). A cascaded `t_asn_discrepancy` carries `causationId` = the receipt command's correlation id and runs under the automation grant; a refused cascade still leaves a `failed` event with its `reason`. Nothing in this flow settles.
 
-Worked sequence a tester can produce end-to-end, starting from `po-002` (PO-2025-00102, `sup-002`, Confirmed, no ASN yet):
+Worked sequence a tester can produce end-to-end, starting from `po-007` (PO-2025-00107, `sup-007`, Confirmed, goods still owed) on the **Create ASN** tab:
 
 | Time | From → to | Actor (role) | Trigger | Event |
 |---|---|---|---|---|
-| T+0 | ∅ → Draft | supplier · fulfilment (`supplier:sup-002`) | **Create ASN** on the awaiting-ASN row | `t_asn_create` · done (new `ASN-…` number returned) |
-| T+1 | Draft → Submitted | supplier · fulfilment (`supplier:sup-002`) | **Submit** → carrier, tracking, ETA → **Submit ASN** | `t_asn_submit` · done |
+| T+0 | ∅ → Draft | supplier · fulfilment (`supplier:sup-007`) | **Select PO** → shipment details → **Submit ASN** | `t_asn_create` · done (new `ASN-…` number returned) |
+| T+1 | Draft → Submitted | supplier · fulfilment (`supplier:sup-007`) | same click | `t_asn_submit` · done |
 | T+2 | Submitted → In Transit → Delivered | TMS | not reproducible in the portal | `t_asn_in_transit` / `t_asn_deliver` |
 | T+3 | Submitted → Discrepancy | automation (cascade; `causationId` = the GR's correlation id) | receiver creates a GR under **Enter ASN number** with this ASN, rejects a line, presses **Create GR** | `t_asn_discrepancy` · done |
 | T+4 | Discrepancy → Delivered | buyer · receiving (`buyer:all`) | **Reconcile** | `t_asn_resolve_discrepancy` · done |
-<!-- src: src/services/transitions/events.ts:25-129; src/services/transitions/dispatcher.ts:453-473; src/services/data/mock/MockCommandService.ts:2884-2889 -->
+<!-- src: src/services/transitions/events.ts:25-129; src/services/transitions/dispatcher.ts:453-473; src/services/data/mock/MockCommandService.ts:2884-2889; src/pages-v2/SupplierShipments.tsx:719-728,951-956; src/data/mockPurchaseOrders.ts:194-216 -->
 
 <!-- section:troubleshooting -->
 ## 8 · Troubleshooting
@@ -212,12 +213,14 @@ Worked sequence a tester can produce end-to-end, starting from `po-002` (PO-2025
 | "Could not submit ASN-… — Carrier, tracking number and ETA are required. (carrier,eta)" | warning toast naming the blank keys (`MISSING_FIELDS`) | a required field was left blank (a space counts as blank) | fill all three and submit again |
 | **Awaiting Supplier Fulfilment** where **Create ASN** / **Submit** should be; no **Create ASN** tab | handoff notice | the seat lacks `asn:create` and/or `asn:submit` | use a supplier fulfilment seat |
 | Row shows **Awaiting Receiving** and nothing to press | Discrepancy row on the supplier page | `asn:flag` is a receiving atom | the receiver reconciles on `/buyer/goods-receipt`; discuss the mismatch with them |
-| ASN stays `Submitted` forever | no chip change | In Transit / Delivered are TMS facts with no feed in the demo | expected; the buyer can still receive against it |
+| ASN stays `Submitted` forever, even after the goods were received | no chip change; the expanded row's **Goods receipt** lists the receipt and says "The ship notice's own status is not changed by a receipt." | In Transit / Delivered are TMS facts with no feed in the demo, and a receipt does not move the notice | expected; the buyer can still receive against it, and the posted receipt is read on the notice |
+| A `Confirmed` order is missing from "awaiting ASN" and from the wizard's **Select PO** step | on `/supplier/orders` the order carries the **Fully received** pill and no **Create ASN** | every line that confirmed a quantity has all of it received and accepted, so there is nothing left to ship | expected; an order with goods still owed is listed |
+| The notice reads "No goods receipt is posted against this ship notice yet." after the goods were received | the receipt is not posting or posted to SAP, or it was created from a dock shipment (`ASN-2026-0xx`) and names no store ASN | only receipts posting or posted to SAP, recorded against this notice's own number, are read | the receiver posts the receipt; a receipt made from a dock shipment shows on the order, not on a notice |
 | Rejected a receipt but no discrepancy appeared | supplier row unchanged; no **Shipment discrepancies** section | the GR was created from a dock shipment (`ASN-2026-0xx`), not a store ASN, or the ASN is still `Draft` | create the receipt under **Enter ASN number** with a Submitted / In Transit / Delivered `ASN-2025-…` |
 | "The document is not in a state this action can be taken from" on **Reconcile** | toast (`ILLEGAL_TRANSITION`) | someone already reconciled it | refresh; the section re-derives |
 | **Export EDI 856** did nothing | toast "No file was generated" | export is not wired to a real system | none; display-only control |
 | An action on this flow is refused for every seat, whatever the role | the refusal names `MODULE_INACTIVE:SHP`; where the surface checks first, the control reads *"Switched off — Shipments & ASN"* | the Shipments & ASN module is switched off; its pages stay readable | have it switched back on at `/buyer/platform/modules/admin`; no role change helps, because the module check runs before the role check |
-<!-- src: src/lib/glossary/refusals.glossary.ts:32-117; src/lib/i18n.ts:503-520; src/pages-v2/SupplierShipments.tsx:672-680; src/services/data/mock/MockCommandService.ts:228-233 -->
+<!-- src: src/lib/glossary/refusals.glossary.ts:32-117; src/lib/i18n.ts:503-520; src/pages-v2/SupplierShipments.tsx:672-680; src/services/data/mock/MockCommandService.ts:228-233; src/services/data/orderReceipt.ts:102-137; src/components/v2-features/ReceivedBlock.tsx:24-44,95-117; src/pages-v2/SupplierShipments.tsx:494-502,719-728; src/pages-v2/shipments/SupplierShipNotices.tsx:59,186-191; src/lib/i18n.ts:558-560 -->
 
 <!-- section:testdata -->
 ## 9 · Test data
@@ -225,8 +228,8 @@ Worked sequence a tester can produce end-to-end, starting from `po-002` (PO-2025
 | State | Fixture id(s) | Number | Note |
 |---|---|---|---|
 | Draft | `ASN-2025-00215` | ASN-2025-00215 | `sup-007`, PO-2025-00107; carrier/tracking/ETA are `—` placeholders — the natural **Submit** specimen |
-| Submitted | none | — | reach it by submitting `ASN-2025-00215` or creating a new draft from `po-002` (PO-2025-00102, `sup-002`) |
+| Submitted | none | — | reach it by submitting `ASN-2025-00215`, or through the **Create ASN** tab from `po-007` (PO-2025-00107, `sup-007`). `po-002` (PO-2025-00102, `sup-002`) is fully received by GR-2026-014 and is not offered for a new ASN |
 | In Transit | `ASN-2025-00211`, `ASN-2025-00301` | ASN-2025-00211, ASN-2025-00301 | `sup-007` / PO-2025-00107 and `sup-002` / PO-2025-00116; SIMULATED TMS state; receivable by the buyer's GR wizard |
 | Delivered | `ASN-2025-00198`, `ASN-2025-00302` | ASN-2025-00198, ASN-2025-00302 | `sup-007` / PO-2025-00107 and `sup-005` / PO-2025-00131; receivable by the GR wizard |
 | Discrepancy | `ASN-2025-00201` | ASN-2025-00201 | `sup-007`, PO-2025-00107; the seeded **Reconcile** specimen on `/buyer/goods-receipt` |
-<!-- src: src/services/data/mock/fixtures/supplierShipments.ts:84-216; _derived/guidefacts.json (advanceShipNotice.fixtures) -->
+<!-- src: src/services/data/mock/fixtures/supplierShipments.ts:84-216; _derived/guidefacts.json (advanceShipNotice.fixtures); src/data/mockGoodsReceipts.ts:416-452; src/services/data/orderReceipt.test.ts:259-279 -->

@@ -46,25 +46,28 @@ import {
   useSupplierInvoices,
   useCurrentSupplier,
   usePurchaseOrders,
+  useGoodsReceipts,
 } from '../services/query/hooks';
 import { useInvoiceCreate, useInvoiceSubmit } from '../services/query/commandHooks';
 import { useVerbAvailability, useNextAct } from '../hooks/useVerbAvailability';
 import NextActLine from '../components/ui-v2/NextActLine';
 import { HandoffNotice } from '../components/ui-v2/HandoffNotice';
 import type { QtyRefusalReason } from '../lib/localeNumber';
-import { readInvoiceAmount } from './invoices/invoiceAmountModel';
+import { openingQty, readInvoiceDraft, readInvoiceQty } from './invoices/invoiceLinesModel';
+import { invoiceLinesFor, receiptsOnOrder } from '../services/data/orderReceipt';
+import { InvoicedLines } from '../components/v2-features/ReceivedBlock';
 // GL-1 - the glossary destination for this surface's refusals.
 import GlossaryTermChip from '../components/ui-v2/GlossaryTermChip';
 import { useRefusalText } from '../hooks/useRefusalText';
-import { formatIDR } from '../lib/format';
+import { formatIDR, formatNumber } from '../lib/format';
 
 // CP-0 · W1 · 2f-d — each refusal names what to type instead. Replaces a
 // hard-coded English literal ('PO and a positive amount are required') that
 // covered three distinct causes in one untranslated sentence.
-const INVOICE_AMOUNT_REFUSAL_KEY: Record<QtyRefusalReason, string> = {
-  EMPTY_QTY: 'supplierInvoices.new.amount.refused.empty',
-  NOT_NUMERIC: 'supplierInvoices.new.amount.refused.notNumeric',
-  AMBIGUOUS_QTY: 'supplierInvoices.new.amount.refused.ambiguous',
+const INVOICE_QTY_REFUSAL_KEY: Record<QtyRefusalReason, string> = {
+  EMPTY_QTY: 'supplierInvoices.new.qty.refused.empty',
+  NOT_NUMERIC: 'supplierInvoices.new.qty.refused.notNumeric',
+  AMBIGUOUS_QTY: 'supplierInvoices.new.qty.refused.ambiguous',
 };
 
 const STATUS_VARIANT: Record<InvStatus, 'success' | 'warning' | 'danger' | 'neutral'> = {
@@ -173,6 +176,8 @@ const SupplierInvoices: React.FC = () => {
   const invoicesQuery = useSupplierInvoices();
   const supplierQuery = useCurrentSupplier();
   const posQuery = usePurchaseOrders();
+  // E2E-2 — the supplier's own receipts (the read is scoped to the supplier).
+  const receiptsQuery = useGoodsReceipts();
   const createMutation = useInvoiceCreate();
   const submitMutation = useInvoiceSubmit();
   // ⚠️ ONE ATOM, TWO VERBS. `t_invoice_create` and `t_invoice_submit` both
@@ -206,18 +211,31 @@ const SupplierInvoices: React.FC = () => {
   // confirmed POs — the store assigns the invoice number).
   const [newOpen, setNewOpen] = useState(false);
   const [newPoRef, setNewPoRef] = useState('');
-  const [newAmount, setNewAmount] = useState('');
+  // E2E-2 — what the supplier typed per line, keyed by material. A line the
+  // supplier has not touched is absent and reads as its opening quantity.
+  const [newQty, setNewQty] = useState<Record<string, string>>({});
 
   // The supplier's confirmed POs are the legal parents for a new invoice.
   const confirmablePos = (posQuery.data?.items ?? []).filter(
     (po) => po.status === POStatus.CONFIRMED,
   );
 
-  // ── CP-0 · W1 · 2f-d — THE ONE READ of the new-invoice amount ──────────────
-  // The gate, the inline message and the dispatched payload all read this, so
-  // none of them can disagree about the amount being invoiced.
-  const amountRead = readInvoiceAmount(newAmount);
-  const amountPositive = amountRead.ok && amountRead.value > 0;
+  // ── E2E-2 — THE LINES THE INVOICE OPENS ON ─────────────────────────────────
+  // The order's lines at the order's prices, each capped at the quantity
+  // received and accepted against it. ONE read (`readInvoiceDraft`) feeds the
+  // button, the total and the dispatched payload.
+  const newPo = confirmablePos.find((po) => po.poNumber === newPoRef) ?? null;
+  const allReceipts = receiptsQuery.data?.items ?? [];
+  const newLines = useMemo(
+    () => (newPo ? invoiceLinesFor(newPo, allReceipts) : []),
+    [newPo, allReceipts],
+  );
+  const nothingReceived = newPo !== null && receiptsOnOrder(newPo.poNumber, allReceipts).length === 0;
+  const draftRead = readInvoiceDraft(newLines, newQty);
+  const choosePo = (poNumber: string) => {
+    setNewPoRef(poNumber);
+    setNewQty({});
+  };
 
   const submitDraft = (inv: SupplierInvoice) => {
     submitMutation.mutate(
@@ -256,28 +274,24 @@ const SupplierInvoices: React.FC = () => {
       });
       return;
     }
-    if (!amountRead.ok) {
+    // E2E-2 — the lines are read ONCE, above. A refused or all-zero draft never
+    // reaches the dispatcher; the button is already disabled, and this is the
+    // structural twin a keyboard or a future caller cannot route around.
+    if (!draftRead.ok) {
       toast({
         variant: 'warning',
         title: t('invoice.create.failed.title'),
-        description: t(INVOICE_AMOUNT_REFUSAL_KEY[amountRead.reason]),
+        description: t(
+          nothingReceived
+            ? 'supplierInvoices.new.nothingReceived'
+            : 'supplierInvoices.new.lines.invalid',
+        ),
       });
       return;
     }
-    // The pre-existing `> 0` rule, PRESERVED VERBATIM — whether a zero-value
-    // invoice is legal is a commercial question, not a parsing one. What changed
-    // is that it now says which rule it is.
-    if (amountRead.value <= 0) {
-      toast({
-        variant: 'warning',
-        title: t('invoice.create.failed.title'),
-        description: t('supplierInvoices.new.amount.mustExceedZero'),
-      });
-      return;
-    }
-    const amount = amountRead.value;
+    const { amount, lines } = draftRead;
     createMutation.mutate(
-      { poReference: newPoRef, amount },
+      { poReference: newPoRef, amount, lines },
       {
         onSuccess: (res) => {
           if (res.status === 'failed') {
@@ -290,7 +304,7 @@ const SupplierInvoices: React.FC = () => {
           }
           setNewOpen(false);
           setNewPoRef('');
-          setNewAmount('');
+          setNewQty({});
           toast({
             variant: 'success',
             title: t('invoice.create.success.title', { invoiceNumber: res.entityId ?? '' }),
@@ -743,6 +757,11 @@ const SupplierInvoices: React.FC = () => {
               </dl>
             </section>
 
+            {/* E2E-2 — the lines this invoice stated, when it stated any. */}
+            {selected.lines && selected.lines.length > 0 && (
+              <InvoicedLines lines={selected.lines} testId="supplier-invoice-lines" />
+            )}
+
             {panelMode === 'detail' && (
               <section>
                 <h3 className="text-label text-text-tertiary uppercase mb-3">
@@ -850,7 +869,7 @@ const SupplierInvoices: React.FC = () => {
                 what guarantees no misread amount is dispatched. */}
             <Button
               variant="outline"
-              disabled={createMutation.isPending || !newPoRef || !amountPositive}
+              disabled={createMutation.isPending || !newPoRef || !draftRead.ok}
               onClick={submitNewInvoice}
             >
               {t('supplierInvoices.new.createDraft')}
@@ -870,7 +889,7 @@ const SupplierInvoices: React.FC = () => {
               id="new-po"
               className="w-full text-sm border border-border-subtle rounded-md px-3 py-2 bg-bg-surface text-text-primary"
               value={newPoRef}
-              onChange={(e) => setNewPoRef(e.target.value)}
+              onChange={(e) => choosePo(e.target.value)}
             >
               <option value="">{t('supplierInvoices.new.poPlaceholder')}</option>
               {confirmablePos.map((po) => (
@@ -885,51 +904,106 @@ const SupplierInvoices: React.FC = () => {
               </div>
             )}
           </div>
-          <div>
-            <label htmlFor="new-amount" className="text-label text-text-tertiary uppercase block mb-1">
-              {t('supplierInvoices.new.amountLabel')}
-            </label>
-            {/* Ruling 6.2: text + inputMode. `min={0}` was a number-input
-                affordance that never bound the parse — a negative is refused by
-                `normalizeQty` as NOT_NUMERIC, where it is actually enforced. */}
-            <input
-              id="new-amount"
-              type="text"
-              inputMode="decimal"
-              className="w-full text-sm border border-border-subtle rounded-md px-3 py-2 bg-bg-surface text-text-primary"
-              placeholder={t('supplierInvoices.new.amountPlaceholder')}
-              value={newAmount}
-              aria-invalid={newAmount.trim() !== '' && !amountRead.ok}
-              onChange={(e) => setNewAmount(e.target.value)}
-            />
-            {/* UNSEEDED field, so the 2e-a rule applies: an untouched blank does
-                not nag on sight — it refuses at the gate and speaks once the
-                supplier has typed something. (Contrast the seeded 2f-a/2f-c
-                cells, where every blank is operator-cleared.) */}
-            {newAmount.trim() !== '' && !amountRead.ok && (
-              <div
-                role="alert"
-                data-testid="invoice-amount-refusal"
-                className="mt-1 text-[11px] text-danger"
-              >
-                {t(INVOICE_AMOUNT_REFUSAL_KEY[amountRead.reason])}{' '}
-                <GlossaryTermChip
-                  refTo={{ sourceType: 'QtyRefusalReason', term: amountRead.reason }}
-                />
+          {/* E2E-2 — THE LINES. Opened on the order's own lines at the order's
+              prices and the quantity received and accepted; the supplier may
+              lower a quantity and never raise it past that. The amount is the
+              lines' total and is not typed. */}
+          {newPo && nothingReceived && (
+            <p className="text-sm text-text-secondary" data-testid="invoice-nothing-received">
+              {t('supplierInvoices.new.nothingReceived')}
+            </p>
+          )}
+          {newPo && !nothingReceived && (
+            <div data-testid="invoice-lines">
+              <div className="text-label text-text-tertiary uppercase mb-1">
+                {t('supplierInvoices.new.lines.title')}
               </div>
-            )}
-            {/* The pre-existing `> 0` rule, finally SAYING SO rather than
-                failing into a generic warning toast. No rule changed. */}
-            {amountRead.ok && amountRead.value <= 0 && (
-              <div
-                role="alert"
-                data-testid="invoice-amount-zero"
-                className="mt-1 text-[11px] text-danger"
-              >
-                {t('supplierInvoices.new.amount.mustExceedZero')}
+              <p className="text-xs text-text-tertiary mb-3">
+                {t('supplierInvoices.new.lines.note')}
+              </p>
+              <ul className="space-y-3">
+                {newLines.map((l) => {
+                  const raw = newQty[l.materialCode] ?? openingQty(l);
+                  const read = readInvoiceQty(raw, l.maxQty);
+                  const inputId = `new-qty-${l.materialCode}`;
+                  return (
+                    <li
+                      key={l.materialCode}
+                      className="rounded-md border border-border-subtle px-3 py-2"
+                      data-testid={`invoice-line-${l.materialCode}`}
+                    >
+                      <div className="text-sm text-text-primary">
+                        <Data>{l.materialCode}</Data> · {l.description}
+                      </div>
+                      <dl className="mt-1 grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+                        <div>
+                          <dt className="text-text-tertiary">{t('supplierInvoices.new.lines.unitPrice')}</dt>
+                          <dd><Data>{formatIDR(l.unitPrice)}</Data></dd>
+                        </div>
+                        <div>
+                          <dt className="text-text-tertiary">{t('supplierInvoices.new.lines.accepted')}</dt>
+                          <dd data-testid={`invoice-line-accepted-${l.materialCode}`}>
+                            <Data>{formatNumber(l.maxQty)} {l.uom}</Data>
+                          </dd>
+                        </div>
+                      </dl>
+                      <label htmlFor={inputId} className="text-label text-text-tertiary uppercase block mt-2 mb-1">
+                        {t('supplierInvoices.new.lines.qtyLabel', { material: l.materialCode })}
+                      </label>
+                      {/* Ruling 6.2: text + inputMode, never type="number". */}
+                      <input
+                        id={inputId}
+                        type="text"
+                        inputMode="decimal"
+                        className="w-full text-sm border border-border-subtle rounded-md px-3 py-2 bg-bg-surface text-text-primary"
+                        value={raw}
+                        aria-invalid={!read.ok}
+                        onChange={(e) => setNewQty((q) => ({ ...q, [l.materialCode]: e.target.value }))}
+                      />
+                      {!read.ok && (
+                        <div
+                          role="alert"
+                          data-testid={`invoice-qty-refusal-${l.materialCode}`}
+                          className="mt-1 text-[11px] text-danger"
+                        >
+                          {read.reason === 'EXCEEDS_RECEIVED' ? (
+                            t('supplierInvoices.new.qty.refused.exceedsReceived', {
+                              max: formatNumber(l.maxQty),
+                              uom: l.uom,
+                            })
+                          ) : (
+                            <>
+                              {t(INVOICE_QTY_REFUSAL_KEY[read.reason])}{' '}
+                              <GlossaryTermChip
+                                refTo={{ sourceType: 'QtyRefusalReason', term: read.reason }}
+                              />
+                            </>
+                          )}
+                        </div>
+                      )}
+                      {read.ok && (
+                        <div className="mt-1 text-xs text-text-tertiary">
+                          {t('supplierInvoices.new.lines.lineTotal')}{' '}
+                          <Data>{formatIDR(read.value * l.unitPrice)}</Data>
+                        </div>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+              <div className="mt-3 flex items-baseline justify-between text-sm">
+                <span className="text-text-tertiary">{t('supplierInvoices.new.lines.total')}</span>
+                <span className="font-semibold" data-testid="invoice-lines-total">
+                  {draftRead.ok ? <Data>{formatIDR(draftRead.amount)}</Data> : '—'}
+                </span>
               </div>
-            )}
-          </div>
+              {!draftRead.ok && newLines.every((l) => readInvoiceQty(newQty[l.materialCode] ?? openingQty(l), l.maxQty).ok) && (
+                <div role="alert" data-testid="invoice-lines-all-zero" className="mt-1 text-[11px] text-danger">
+                  {t('supplierInvoices.new.lines.allZero')}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </SidePanel>
     </AppShellV2>

@@ -21,7 +21,7 @@ Pemberitahuan awal dari pemasok bahwa barang sedang dalam perjalanan, beserta is
 
 Dua kursi menyentuhnya. Kontak **pemenuhan** (fulfilment) pemasok membuat draf dan mengajukan (`/supplier/shipments`, **Pengiriman & ASN**). Jalur **penerimaan** (receiving) pembeli tidak pernah menyunting ASN, tetapi jalur inilah yang menuntaskan selisih — karena selisih hanya pernah dimunculkan oleh disposisi penerimaan barang, dan otoritas yang memunculkan masalah adalah otoritas yang menuntaskannya (`/buyer/goods-receipt`, **Selisih pengiriman → Rekonsiliasi**).
 
-Penanda kejujuran: **In Transit** dan **Delivered** adalah fakta pengangkut milik **TMS** (INT-TMS-01); tidak ada yang menekannya di portal dan baris demo dalam status itu adalah **fixture TERSIMULASI**. **Discrepancy** tidak dinyatakan oleh siapa pun — ia adalah rantai (cascade) yang menyala ketika penerima menolak atau menyetujui sebagian sebuah penerimaan. Tombol **Ekspor EDI 856** dan tab **Janji Temu Dermaga** hanya tampilan (toast ekspor menyatakan tidak ada berkas yang dibuat; teks dermaga adalah salinan statis). Baris meta halaman membawa penanda provenans: buat dan ajukan benar-benar dikirim; PO yang menjadi dasar pengiriman adalah fixture.
+Penanda kejujuran: **In Transit** dan **Delivered** adalah fakta pengangkut milik **TMS** (INT-TMS-01); tidak ada yang menekannya di portal dan baris demo dalam status itu adalah **fixture TERSIMULASI**. **Discrepancy** tidak dinyatakan oleh siapa pun — ia adalah rantai (cascade) yang menyala ketika penerima menolak atau menyetujui sebagian sebuah penerimaan. Tombol **Ekspor EDI 856** dan tab **Janji Temu Dermaga** hanya tampilan (toast ekspor menyatakan tidak ada berkas yang dibuat; teks dermaga adalah salinan statis). Baris meta halaman membawa penanda provenans: buat dan ajukan benar-benar dikirim; PO yang menjadi dasar pengiriman adalah fixture. Penerimaan barang yang diposting terhadap sebuah pemberitahuan ditampilkan pada pemberitahuan itu, di kedua sisi, dan tidak mengubah status pemberitahuan. Pesanan `Confirmed` yang sudah diterima penuh tidak ditawarkan untuk ASN baru di halaman pemasok; `t_asn_create` sendiri tidak berubah dan tidak punya penolakan baru.
 
 <!-- section:lifecycle -->
 ## 2 · Perjalanan siklus hidup
@@ -62,8 +62,8 @@ Mesin ini **tidak mendeklarasikan terminal**: setiap status setelah `Draft` puny
 - **Penguji — peristiwa pemicu:** `t_asn_create`
 - **Pemeriksaan yang dapat menolak:** `asn_create_po_confirmed` — PO induk harus ada dan berstatus `Confirmed` ("PO PO-… is not Confirmed" jika tidak). Sebelum itu, cakupan pembuatan: pemasok PO harus sama dengan pemasok kursi, atau dispatcher melempar `SCOPE_DENIED`. Lalu `asn_details_well_formed`: `ASN_DETAILS_INVALID` menyebut yang pertama dari `packages`, `grossWeightKg`, `shipDate`, `batchNumber`, `notes`, `packingListName`, atau `lotNumbers` yang tidak dapat disimpan sebagaimana diberikan; pembuatan yang ditolak tidak membuat pemberitahuan.
 - **Glosarium:** `POLICY_REJECTED`, `SCOPE_DENIED`, `MISSING_FIELDS`, `ROLE_NOT_PERMITTED`.
-- **Kejujuran:** panel "menunggu ASN" hanya memuat PO terkonfirmasi yang **belum** punya ASN; langkah **Pilih PO** di wizard memuat **setiap** PO terkonfirmasi milik pemasok, sehingga ASN kedua untuk PO yang sama mungkin dibuat lewat wizard. Kursi tanpa `asn:create` melihat **Menunggu Pemenuhan Pemasok** di baris PO dan sama sekali tidak melihat tab **Buat ASN** (tab itu memerlukan atom buat dan ajukan sekaligus). Gudang tujuan dan suhu pada draf adalah nilai contoh tetap yang ditulis penyimpanan.
-<!-- src: src/services/transitions/flows/advanceShipNotice.flow.ts:49-61; src/services/data/mock/MockCommandService.ts:171-233; src/pages-v2/SupplierShipments.tsx:252-307,697-728,769-813,1204-1211; src/services/query/commandHooks.ts:254-272; src/lib/i18n.ts:994-999 -->
+- **Kejujuran:** panel "menunggu ASN" hanya memuat PO terkonfirmasi yang **belum** punya ASN; langkah **Pilih PO** di wizard memuat **setiap** PO terkonfirmasi milik pemasok yang masih punya barang terutang, sehingga ASN kedua untuk PO yang sama mungkin dibuat lewat wizard. Keduanya tidak memuat PO terkonfirmasi yang sudah diterima penuh — setiap baris yang mengonfirmasi kuantitas sudah disetujui seluruhnya pada penerimaan barang yang sedang atau sudah diposting ke SAP — dan `/supplier/orders` maupun dasbor pemasok juga tidak menawarkan **Buat ASN** pada pesanan seperti itu. Ini halaman yang menahan tawaran: `t_asn_create` tidak punya pemeriksaan baru, dan pengiriman buatan tangan terhadap pesanan yang sudah diterima penuh tetap diterima selama PO-nya `Confirmed`. Penerimaan yang baru diinspeksi, belum diposting, tidak menahan apa pun. Kursi tanpa `asn:create` melihat **Menunggu Pemenuhan Pemasok** di baris PO dan sama sekali tidak melihat tab **Buat ASN** (tab itu memerlukan atom buat dan ajukan sekaligus). Gudang tujuan dan suhu pada draf adalah nilai contoh tetap yang ditulis penyimpanan.
+<!-- src: src/services/transitions/flows/advanceShipNotice.flow.ts:49-61; src/services/data/mock/MockCommandService.ts:171-233; src/pages-v2/SupplierShipments.tsx:252-307,697-728,769-813,1204-1211; src/services/query/commandHooks.ts:254-272; src/lib/i18n.ts:994-999; src/services/data/orderReceipt.ts:92-126; src/pages-v2/SupplierShipments.tsx:312-315,719-728,951-956; src/pages-v2/SupplierOrders.tsx:162-168; src/pages-v2/SupplierDashboard.tsx:280-294 -->
 
 ### t_asn_submit — Kirim ASN <!-- transition:t_asn_submit -->
 
@@ -110,8 +110,8 @@ Mesin ini **tidak mendeklarasikan terminal**: setiap status setelah `Draft` puny
 - **Penguji — peristiwa pemicu:** `t_asn_deliver` (tidak dipancarkan oleh permukaan mana pun)
 - **Pemeriksaan yang dapat menolak:** tidak ada selain peran, legalitas, dan kolom wajib.
 - **Glosarium:** tidak ada yang khusus.
-- **Kejujuran:** TERSIMULASI. Penerimaan barang yang dibuat di portal **tidak** menandai ASN sebagai terkirim; penerimaan dan fakta pengangkut adalah dokumen yang berbeda.
-<!-- src: src/services/transitions/flows/advanceShipNotice.flow.ts:93-110; src/services/data/mock/fixtures/supplierShipments.ts:109-119,203-216 -->
+- **Kejujuran:** TERSIMULASI. Penerimaan barang yang dibuat di portal **tidak** menandai ASN sebagai terkirim; penerimaan dan fakta pengangkut adalah dokumen yang berbeda. Penerimaan yang sedang atau sudah diposting ke SAP justru ditampilkan pada pemberitahuan itu. Membuka baris — di `/supplier/shipments` untuk pemberitahuan apa pun yang bukan `Draft`, dan di `/buyer/shipments` di bawah **Pemberitahuan pengiriman dari pemasok** — menampilkan **Penerimaan barang**: setiap penerimaan yang dicatat terhadap pemberitahuan itu (nomor GR · tanggal · disetujui · ditolak bila ada, atau "N material" bila penerimaan itu memuat lebih dari satu material — di sini setiap baris penerimaan dibaca · "Dokumen SAP" dengan nomornya, atau "sedang diposting ke SAP"), atau "Belum ada penerimaan barang yang diposting untuk pemberitahuan pengiriman ini.", dan selalu "Dibaca dari penerimaan barang yang diposting di portal ini. Status pemberitahuan pengiriman sendiri tidak diubah oleh penerimaan." Tidak ada penerimaan unggulan yang menyebut nomor ASN di penyimpanan, sehingga setiap pemberitahuan unggulan menampilkan kalimat "Belum ada penerimaan barang…"; untuk melihat penerimaan di sana, buat penerimaan di `/buyer/goods-receipt` lewat **Masukkan nomor ASN** dengan ASN dari penyimpanan lalu posting.
+<!-- src: src/services/transitions/flows/advanceShipNotice.flow.ts:93-110; src/services/data/mock/fixtures/supplierShipments.ts:109-119,203-216; src/services/data/orderReceipt.ts:102-137; src/components/v2-features/ReceivedBlock.tsx:24-44,95-117; src/pages-v2/SupplierShipments.tsx:494-502,719-728; src/pages-v2/shipments/SupplierShipNotices.tsx:59,186-191; src/lib/i18n.ts:1079-1088; src/services/data/orderReceipt.ts:82-100 -->
 
 ### t_asn_discrepancy — Penerimaan menandai pemberitahuan <!-- transition:t_asn_discrepancy -->
 
@@ -159,12 +159,13 @@ Mesin ini **tidak mendeklarasikan terminal**: setiap status setelah `Draft` puny
 | Bendera | Jenis | Berlaku di | Kapan muncul | Di mana ditampilkan |
 |---|---|---|---|---|
 | Chip / ubin KPI Selisih | dimunculkan operator (oleh disposisi penerima, lewat rantai) | Discrepancy | ASN ditandai oleh `t_gr_reject` / `t_gr_partial_approve` | chip baris dan ubin **Selisih** di `/supplier/shipments`; bagian **Selisih pengiriman** di `/buyer/goods-receipt` |
-| "N pesanan pembelian terkonfirmasi menunggu ASN" | diturunkan saat dibaca | (sisi PO) Confirmed | PO terkonfirmasi milik pemasok belum dirujuk ASN mana pun | panel kuning di atas daftar `/supplier/shipments` |
+| "N pesanan pembelian terkonfirmasi menunggu ASN" | diturunkan saat dibaca | (sisi PO) Confirmed | PO terkonfirmasi milik pemasok belum dirujuk ASN mana pun dan belum diterima penuh | panel kuning di atas daftar `/supplier/shipments` |
+| **Penerimaan barang** pada pemberitahuan | diturunkan saat dibaca (dari penerimaan barang yang sedang atau sudah diposting ke SAP) | setiap status kecuali Draft | selalu tampil pada baris yang dibuka: penerimaan yang dicatat terhadap pemberitahuan itu, atau "Belum ada penerimaan barang yang diposting untuk pemberitahuan pengiriman ini." | baris yang dibuka di `/supplier/shipments`; baris yang dibuka di bawah **Pemberitahuan pengiriman dari pemasok** di `/buyer/shipments` |
 | Menunggu Pemenuhan Pemasok | diturunkan saat dibaca (serah terima) | ∅, Draft | kursi tidak memegang `asn:create` / `asn:submit` | tindakan baris PO; tindakan baris Draft; badan wizard bila dipersempit di tengah alur |
 | Menunggu Penerimaan | diturunkan saat dibaca (serah terima) | Discrepancy | kursi tidak memegang `asn:flag` (setiap kursi pemasok; kursi pembeli di luar penerimaan) | sel tindakan `/supplier/shipments`; sel rekonsiliasi `/buyer/goods-receipt` |
 | Penanda provenans | penanda TERSIMULASI | semua | selalu | baris meta `/supplier/shipments` |
 | Pemberitahuan janji temu dermaga | salinan statis | — | selalu | tab **Janji Temu Dermaga** (teks fixture; tidak ada yang menurunkannya) |
-<!-- src: src/pages-v2/SupplierShipments.tsx:63-69,252-261,297-304,395-421,1191-1199,1236-1241; src/pages-v2/BuyerGoodsReceipt.tsx:871-936; src/lib/i18n/supplierShipments.ts:200-204,245-258 -->
+<!-- src: src/pages-v2/SupplierShipments.tsx:63-69,252-261,297-304,395-421,1191-1199,1236-1241; src/pages-v2/BuyerGoodsReceipt.tsx:871-936; src/lib/i18n/supplierShipments.ts:200-204,245-258; src/services/data/orderReceipt.ts:102-137; src/components/v2-features/ReceivedBlock.tsx:24-44,95-117; src/pages-v2/SupplierShipments.tsx:494-502,719-728; src/pages-v2/shipments/SupplierShipNotices.tsx:59,186-191 -->
 
 Halaman ASN tidak menampilkan baris tindakan berikutnya; chip status dan pemberitahuan serah terima adalah satu-satunya petunjuk status di sisi pemasok.
 
@@ -177,28 +178,28 @@ Halaman ASN tidak menampilkan baris tindakan berikutnya; chip status dan pemberi
 |---|---|---|
 | Pesanan pembelian | `poReference` = `PO-2025-00107` (`po-007`, Confirmed) | cakupan pembuatan diturunkan dari `supplierId` PO ini; `asn_create_po_confirmed` membaca statusnya |
 | Pemasok | `supplierId` = `sup-007` | pemilik cakupan untuk setiap perintah berikutnya pada ASN |
-| Penerimaan barang | `asnNumber` GR = nomor ASN | kunci rantai: `t_gr_reject` / `t_gr_partial_approve` menyebar ke `gr.asnNumber`. Tidak ada GR yang diunggulkan merujuk `ASN-2025-00201` (GR unggulan merujuk pengiriman `ASN-2026-0xx`), sehingga selisih baris ini ditulis, bukan dihasilkan |
+| Penerimaan barang | `asnNumber` GR = nomor ASN | kunci rantai: `t_gr_reject` / `t_gr_partial_approve` menyebar ke `gr.asnNumber`. Tidak ada GR yang diunggulkan merujuk `ASN-2025-00201` (GR unggulan merujuk pengiriman `ASN-2026-0xx`), sehingga selisih baris ini ditulis, bukan dihasilkan. Blok **Penerimaan barang** pada pemberitahuan membaca penerimaan dengan `asnNumber` ini yang sedang atau sudah diposting ke SAP; tidak ada yang ditulis ke pemberitahuan |
 | Item baris | `lineItems[]` (`materialCode`, `orderedQty`, `shippedQty`, `lotNumber`) | disalin dari PO saat pembuatan; hook `gr_inspection_materials_declared` di wizard GR memeriksa baris penerimaan terhadap ini |
 | `carrier`, `trackingNumber`, `eta` | ditulis oleh `t_asn_submit` | draf fixture memuat placeholder `—` yang dikosongkan panel kirim |
 | `details` (asal, gudang tujuan, karton, berat, suhu) | konstanta fixture / penyimpanan | hanya tampilan; kata kerja pembuatan menulis nilai contoh tetap |
 | Pengiriman (`/buyer/shipments`, `mockShipments`) | tidak ada | dokumen yang **berbeda**: baris pengiriman membawa nomor `ASN-2026-0xx` yang tidak ada di penyimpanan ASN |
-<!-- src: src/services/data/mock/fixtures/supplierShipments.ts:132-141; src/services/data/mock/MockCommandService.ts:192-226,313-362,2884-2889; src/pages-v2/BuyerGoodsReceipt.tsx:853-863 -->
+<!-- src: src/services/data/mock/fixtures/supplierShipments.ts:132-141; src/services/data/mock/MockCommandService.ts:192-226,313-362,2884-2889; src/pages-v2/BuyerGoodsReceipt.tsx:853-863; src/services/data/orderReceipt.ts:128-137 -->
 
 <!-- section:history -->
 ## 7 · Riwayat status
 
 Setiap pengiriman perintah menulis satu `TransitionEvent` (`event`, `actor` = `supplier:<id>` atau `buyer:all`, `ts`, `outcome`, `correlationId`). `t_asn_discrepancy` yang berantai membawa `causationId` = id korelasi perintah penerimaan dan berjalan dengan hak otomasi; rantai yang ditolak tetap meninggalkan peristiwa `failed` beserta `reason`-nya. Tidak ada yang diselesaikan (settle) dalam alur ini.
 
-Urutan kerja yang dapat dihasilkan penguji dari awal sampai akhir, mulai dari `po-002` (PO-2025-00102, `sup-002`, Confirmed, belum ada ASN):
+Urutan kerja yang dapat dihasilkan penguji dari awal sampai akhir, mulai dari `po-007` (PO-2025-00107, `sup-007`, Confirmed, masih ada barang terutang) pada tab **Buat ASN**:
 
 | Waktu | Dari → ke | Aktor (peran) | Pemicu | Peristiwa |
 |---|---|---|---|---|
-| T+0 | ∅ → Draft | pemasok · pemenuhan (`supplier:sup-002`) | **Buat ASN** pada baris menunggu-ASN | `t_asn_create` · done (nomor `ASN-…` baru dikembalikan) |
-| T+1 | Draft → Submitted | pemasok · pemenuhan (`supplier:sup-002`) | **Kirim** → kurir, pelacakan, ETA → **Kirim ASN** | `t_asn_submit` · done |
+| T+0 | ∅ → Draft | pemasok · pemenuhan (`supplier:sup-007`) | **Pilih PO** → detail pengiriman → **Kirim ASN** | `t_asn_create` · done (nomor `ASN-…` baru dikembalikan) |
+| T+1 | Draft → Submitted | pemasok · pemenuhan (`supplier:sup-007`) | klik yang sama | `t_asn_submit` · done |
 | T+2 | Submitted → In Transit → Delivered | TMS | tidak dapat direproduksi di portal | `t_asn_in_transit` / `t_asn_deliver` |
 | T+3 | Submitted → Discrepancy | otomasi (rantai; `causationId` = id korelasi GR) | penerima membuat GR lewat **Masukkan nomor ASN** dengan ASN ini, menolak satu baris, menekan **Buat GR** | `t_asn_discrepancy` · done |
 | T+4 | Discrepancy → Delivered | pembeli · penerimaan (`buyer:all`) | **Rekonsiliasi** | `t_asn_resolve_discrepancy` · done |
-<!-- src: src/services/transitions/events.ts:25-129; src/services/transitions/dispatcher.ts:453-473; src/services/data/mock/MockCommandService.ts:2884-2889 -->
+<!-- src: src/services/transitions/events.ts:25-129; src/services/transitions/dispatcher.ts:453-473; src/services/data/mock/MockCommandService.ts:2884-2889; src/pages-v2/SupplierShipments.tsx:719-728,951-956; src/data/mockPurchaseOrders.ts:194-216 -->
 
 <!-- section:troubleshooting -->
 ## 8 · Pemecahan masalah
@@ -212,12 +213,14 @@ Urutan kerja yang dapat dihasilkan penguji dari awal sampai akhir, mulai dari `p
 | "Tidak dapat mengirim ASN-… — Kurir, nomor pelacakan, dan ETA wajib diisi. (carrier,eta)" | toast peringatan yang menyebut kunci kosong (`MISSING_FIELDS`) | kolom wajib dibiarkan kosong (spasi dihitung kosong) | isi ketiganya lalu kirim lagi |
 | **Menunggu Pemenuhan Pemasok** di tempat **Buat ASN** / **Kirim** seharusnya; tidak ada tab **Buat ASN** | pemberitahuan serah terima | kursi tidak memegang `asn:create` dan/atau `asn:submit` | gunakan kursi pemenuhan pemasok |
 | Baris menampilkan **Menunggu Penerimaan** dan tidak ada yang bisa ditekan | baris Discrepancy di halaman pemasok | `asn:flag` adalah atom penerimaan | penerima merekonsiliasi di `/buyer/goods-receipt`; bicarakan ketidaksesuaian dengan mereka |
-| ASN tetap `Submitted` selamanya | chip tidak berubah | In Transit / Delivered adalah fakta TMS tanpa umpan dalam demo | wajar; pembeli tetap dapat menerima terhadapnya |
+| ASN tetap `Submitted` selamanya, bahkan setelah barangnya diterima | chip tidak berubah; **Penerimaan barang** pada baris yang dibuka mencantumkan penerimaan itu dan menyatakan "Status pemberitahuan pengiriman sendiri tidak diubah oleh penerimaan." | In Transit / Delivered adalah fakta TMS tanpa umpan dalam demo, dan penerimaan tidak menggerakkan pemberitahuan | wajar; pembeli tetap dapat menerima terhadapnya, dan penerimaan yang diposting terbaca pada pemberitahuan |
+| Pesanan `Confirmed` tidak ada di "menunggu ASN" maupun di langkah **Pilih PO** wizard | di `/supplier/orders` pesanan itu membawa pil **Diterima penuh** dan tanpa **Buat ASN** | setiap baris yang mengonfirmasi kuantitas sudah diterima dan disetujui seluruhnya, sehingga tidak ada lagi yang perlu dikirim | wajar; pesanan yang masih punya barang terutang tetap tercantum |
+| Pemberitahuan berbunyi "Belum ada penerimaan barang yang diposting untuk pemberitahuan pengiriman ini." setelah barang diterima | penerimaannya belum sedang atau sudah diposting ke SAP, atau dibuat dari pengiriman dermaga (`ASN-2026-0xx`) dan tidak menyebut ASN di penyimpanan | hanya penerimaan yang sedang atau sudah diposting ke SAP, yang dicatat terhadap nomor pemberitahuan ini sendiri, yang dibaca | penerima memposting penerimaannya; penerimaan yang dibuat dari pengiriman dermaga tampil pada pesanan, bukan pada pemberitahuan |
 | Menolak penerimaan tetapi tidak ada selisih yang muncul | baris pemasok tak berubah; tidak ada bagian **Selisih pengiriman** | GR dibuat dari pengiriman dermaga (`ASN-2026-0xx`), bukan ASN penyimpanan, atau ASN masih `Draft` | buat penerimaan lewat **Masukkan nomor ASN** dengan `ASN-2025-…` berstatus Submitted / In Transit / Delivered |
 | "Dokumen tidak berada dalam status yang memungkinkan tindakan ini" pada **Rekonsiliasi** | toast (`ILLEGAL_TRANSITION`) | seseorang sudah merekonsiliasinya | muat ulang; bagian itu diturunkan kembali |
 | **Ekspor EDI 856** tidak melakukan apa pun | toast "Tidak ada berkas yang dibuat" | ekspor belum tersambung ke sistem nyata | tidak ada; kontrol hanya tampilan |
 | Tindakan pada alur ini ditolak untuk setiap kursi, apa pun perannya | penolakan menyebut `MODULE_INACTIVE:SHP`; bila permukaan memeriksa lebih dulu, kontrol terbaca *"Dinonaktifkan — Pengiriman & ASN"* | modul Pengiriman & ASN dinonaktifkan; halamannya tetap dapat dibaca | minta modul diaktifkan kembali di `/buyer/platform/modules/admin`; perubahan peran tidak membantu, karena pemeriksaan modul berjalan sebelum pemeriksaan peran |
-<!-- src: src/lib/glossary/refusals.glossary.ts:32-117; src/lib/i18n.ts:994-1011; src/pages-v2/SupplierShipments.tsx:672-680; src/services/data/mock/MockCommandService.ts:228-233 -->
+<!-- src: src/lib/glossary/refusals.glossary.ts:32-117; src/lib/i18n.ts:994-1011; src/pages-v2/SupplierShipments.tsx:672-680; src/services/data/mock/MockCommandService.ts:228-233; src/services/data/orderReceipt.ts:102-137; src/components/v2-features/ReceivedBlock.tsx:24-44,95-117; src/pages-v2/SupplierShipments.tsx:494-502,719-728; src/pages-v2/shipments/SupplierShipNotices.tsx:59,186-191; src/lib/i18n.ts:1077-1079 -->
 
 <!-- section:testdata -->
 ## 9 · Data uji
@@ -225,8 +228,8 @@ Urutan kerja yang dapat dihasilkan penguji dari awal sampai akhir, mulai dari `p
 | Status | Id fixture | Nomor | Catatan |
 |---|---|---|---|
 | Draft | `ASN-2025-00215` | ASN-2025-00215 | `sup-007`, PO-2025-00107; kurir/pelacakan/ETA berupa placeholder `—` — spesimen alami untuk **Kirim** |
-| Submitted | tidak ada | — | capai dengan mengajukan `ASN-2025-00215` atau membuat draf baru dari `po-002` (PO-2025-00102, `sup-002`) |
+| Submitted | tidak ada | — | capai dengan mengajukan `ASN-2025-00215`, atau lewat tab **Buat ASN** dari `po-007` (PO-2025-00107, `sup-007`). `po-002` (PO-2025-00102, `sup-002`) sudah diterima penuh oleh GR-2026-014 dan tidak ditawarkan untuk ASN baru |
 | In Transit | `ASN-2025-00211`, `ASN-2025-00301` | ASN-2025-00211, ASN-2025-00301 | `sup-007` / PO-2025-00107 dan `sup-002` / PO-2025-00116; status TMS TERSIMULASI; dapat diterima oleh wizard GR pembeli |
 | Delivered | `ASN-2025-00198`, `ASN-2025-00302` | ASN-2025-00198, ASN-2025-00302 | `sup-007` / PO-2025-00107 dan `sup-005` / PO-2025-00131; dapat diterima oleh wizard GR |
 | Discrepancy | `ASN-2025-00201` | ASN-2025-00201 | `sup-007`, PO-2025-00107; spesimen **Rekonsiliasi** yang diunggulkan di `/buyer/goods-receipt` |
-<!-- src: src/services/data/mock/fixtures/supplierShipments.ts:84-216; _derived/guidefacts.json (advanceShipNotice.fixtures) -->
+<!-- src: src/services/data/mock/fixtures/supplierShipments.ts:84-216; _derived/guidefacts.json (advanceShipNotice.fixtures); src/data/mockGoodsReceipts.ts:416-452; src/services/data/orderReceipt.test.ts:259-279 -->

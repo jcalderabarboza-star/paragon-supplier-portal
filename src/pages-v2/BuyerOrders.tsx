@@ -48,7 +48,9 @@ import { useDeepLinkedSelection } from '../lib/recordDeepLink';
 import ErrorState from '../components/ui-v2/ErrorState';
 import EmptyState from '../components/ui-v2/EmptyState';
 import Data from '../components/ui-v2/Data';
-import { usePurchaseOrders, useSuppliers } from '../services/query/hooks';
+import { usePurchaseOrders, useSuppliers, useGoodsReceipts } from '../services/query/hooks';
+import { receivedOnOrder } from '../services/data/orderReceipt';
+import { ReceivedOnOrder } from '../components/v2-features/ReceivedBlock';
 import { useNextAct } from '../hooks/useVerbAvailability';
 import { formatIDR, formatNumber, formatDate, formatDateTime } from '../lib/format';
 // POStatus / ChannelType are runtime enums (used as values) — they stay sourced
@@ -250,6 +252,9 @@ const BuyerOrders: React.FC = () => {
 
   const ordersQuery = usePurchaseOrders();
   const suppliersQuery = useSuppliers();
+  // E2E-2 — the receipts the order's "Received" block is derived from. Not one
+  // of the page's gating reads: the block shows nothing received until it lands.
+  const receiptsQuery = useGoodsReceipts();
   const orders = ordersQuery.data?.items ?? [];
   // ── DEEP LINK (?id=) ──────────────────────────────────────────────────────
   // A dashboard window's row links here. The filters are WIDENED first: landing
@@ -806,6 +811,13 @@ const BuyerOrders: React.FC = () => {
                 </table>
               </div>
             </section>
+
+            {/* E2E-2 — what was received, derived from the posted receipts, with
+                the sentence that the order's own status is SAP's. */}
+            <ReceivedOnOrder
+              received={receivedOnOrder(selectedPO, receiptsQuery.data?.items ?? [])}
+              testId="buyer-order-received"
+            />
 
             <section>
               <h3 className="text-label text-text-tertiary uppercase mb-3">

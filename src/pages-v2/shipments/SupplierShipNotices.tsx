@@ -24,7 +24,9 @@ import { useTranslation } from 'react-i18next';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import StatusPill from '../../components/ui-v2/StatusPill';
 import Data from '../../components/ui-v2/Data';
-import { useASNs } from '../../services/query/hooks';
+import { useASNs, useGoodsReceipts } from '../../services/query/hooks';
+import { receiptsOfNotice } from '../../services/data/orderReceipt';
+import { ReceivedOnNotice } from '../../components/v2-features/ReceivedBlock';
 import type { ASN, AsnStatus } from '../../services/data/types';
 import { statusLabelKey } from '../../lib/statusLabel';
 import { formatDate, formatNumber } from '../../lib/format';
@@ -53,6 +55,8 @@ interface Props {
 const SupplierShipNotices: React.FC<Props> = ({ search, supplierName }) => {
   const { t } = useTranslation();
   const query = useASNs();
+  // E2E-2 — the receipt recorded against each notice, read not written.
+  const receiptsQuery = useGoodsReceipts();
   const [open, setOpen] = useState<ReadonlySet<string>>(new Set());
 
   const notices = useMemo(() => sentShipNotices(query.data?.items ?? []), [query.data]);
@@ -179,6 +183,12 @@ const SupplierShipNotices: React.FC<Props> = ({ search, supplierName }) => {
                     <tr className="bg-bg-subtle" data-testid={`ship-notice-detail-${a.asnNumber}`}>
                       <td />
                       <td colSpan={8} className="px-3 py-3">
+                        <div className="mb-3">
+                          <ReceivedOnNotice
+                            receipts={receiptsOfNotice(a.asnNumber, receiptsQuery.data?.items ?? [])}
+                            testId={`ship-notice-received-${a.asnNumber}`}
+                          />
+                        </div>
                         <dl className="grid grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-1.5 text-xs mb-3">
                           <div>
                             <dt className="text-text-tertiary">{t('shipments.notices.batch')}</dt>
