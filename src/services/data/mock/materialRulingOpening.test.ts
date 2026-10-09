@@ -34,14 +34,18 @@ describe('OPS-2b · the ruling ledger opens on the SAMPLE rulings — with no re
     const { MockCommandService } = await import('./MockCommandService');
     const { asnStore } = await import('./stores/asnStore');
     const { PERSONA_SYSTEM_ROLES } = await import('../../transitions/businessRoles');
-    const { NO_PERSON } = await import('../../../context/noPerson');
+    const { SAMPLE_PEOPLE } = await import('../../identity/sampleRoster');
     const { DECLARED_PRESENT } = await import('../fixturePresent');
     const svc = new MockCommandService();
     const scope = {
       personaType: 'buyer' as const,
       supplierId: null,
       businessRoles: PERSONA_SYSTEM_ROLES.buyer,
-      actor: NO_PERSON,
+      // E2E-1 — a disposition needs a named person (GR_DISPOSER_NAMED).
+      actor: {
+        kind: 'RESOLVED' as const,
+        person: { personId: SAMPLE_PEOPLE.find((p) => p.role === 'receiving')!.personId },
+      },
     };
     asnStore.add({
       asnNumber: 'ASN-OPS2B-BOOT',

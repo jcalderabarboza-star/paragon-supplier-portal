@@ -39,6 +39,8 @@ const PLANNER = seat(['planning']);
 /** Roster members by ROLE, never by a spelled id (the namespace is policed). */
 const personFor = (role: SystemRoleId, ordinal = 1) =>
   SAMPLE_PEOPLE.find((p) => p.role === role && p.ordinal === ordinal)!.personId;
+// E2E-1 — publishing, discarding and withdrawing need a named person (PUBLICATION_ACTOR_NAMED).
+const PLANNER_NAMED = seat(['planning'], personFor('planning'));
 const PROCUREMENT_NAMED = seat(['procurement'], personFor('procurement'));
 const PROCUREMENT_UNNAMED = seat(['procurement']);
 const SUP002: QueryScope = { personaType: 'supplier', supplierId: 'sup-002', businessRoles: PERSONA_SYSTEM_ROLES.supplier };
@@ -218,14 +220,14 @@ describe('t_publication_approve_firm — signed by procurement, not by the plann
 describe('t_publication_publish — the gates, the stamps, and the supersede cascade', () => {
   it('an empty draft is refused (PUB_HAS_LINES)', async () => {
     const id = (await open()).entityId!;
-    const r = await fire(PLANNER, 't_publication_publish', id);
+    const r = await fire(PLANNER_NAMED, 't_publication_publish', id);
     expect(r.reason).toMatch(/PUB_HAS_LINES/);
   });
 
   it('an unapproved firm line blocks publish, BY NAME', async () => {
     const id = (await open()).entityId!;
     await allocate(id, 'sup-002', 6000);
-    const r = await fire(PLANNER, 't_publication_publish', id);
+    const r = await fire(PLANNER_NAMED, 't_publication_publish', id);
     expect(r.status).toBe('failed');
     expect(r.reason).toMatch(/PUB_FIRM_LINES_APPROVED: firm lines awaiting approval — RM-EMUL-3310 2026-08 sup-002/);
     expect(draft(id).state).toBe('Draft');
@@ -235,7 +237,7 @@ describe('t_publication_publish — the gates, the stamps, and the supersede cas
     const id = (await open()).entityId!;
     await allocate(id, 'sup-002', 6000);
     await approve(PROCUREMENT_NAMED, id, 'sup-002');
-    const r = await fire(PLANNER, 't_publication_publish', id);
+    const r = await fire(PLANNER_NAMED, 't_publication_publish', id);
     expect(r.status, r.reason).toBe('done');
     const now = sdcClock.now();
     expect(draft(id)).toMatchObject({
@@ -271,9 +273,9 @@ describe('t_publication_publish — the gates, the stamps, and the supersede cas
 
 describe('t_publication_withdraw — taken back, with the reason on the record', () => {
   it('a blank reason is refused; a stated one withdraws, and the publication leaves every reader', async () => {
-    const blank = await fire(PLANNER, 't_publication_withdraw', 'PUB-2026-08-RM-R2', { reason: '   ' });
+    const blank = await fire(PLANNER_NAMED, 't_publication_withdraw', 'PUB-2026-08-RM-R2', { reason: '   ' });
     expect(blank.reason).toMatch(/PUB_TEXT_AUTHORED/);
-    const r = await fire(PLANNER, 't_publication_withdraw', 'PUB-2026-08-RM-R2', { reason: 'SOMO re-ran the plan' });
+    const r = await fire(PLANNER_NAMED, 't_publication_withdraw', 'PUB-2026-08-RM-R2', { reason: 'SOMO re-ran the plan' });
     expect(r.status, r.reason).toBe('done');
     expect(draft('PUB-2026-08-RM-R2')).toMatchObject({ state: 'Withdrawn', withdrawnReason: 'SOMO re-ran the plan' });
     expect(forecastPublicationStore.publications().map((p) => p.publicationId)).not.toContain('PUB-2026-08-RM-R2');

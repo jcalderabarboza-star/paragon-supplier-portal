@@ -27,6 +27,7 @@ import { planVersionOffers } from './publicationFeed';
 import { legsStillIncoming } from './incomingLegs';
 import { PERSONA_SYSTEM_ROLES, type SystemRoleId } from '../../transitions/businessRoles';
 import { getKnownFlows } from '../../transitions';
+import { POLICY_HOOKS } from '../../transitions/policyHooks';
 import { SAMPLE_PEOPLE } from '../../identity/sampleRoster';
 import {
   MATERIAL_MASTER,
@@ -219,11 +220,13 @@ describe('SDC-5 · a draft publication can be discarded', () => {
     expect(exits).toEqual(['t_publication_discard→Discarded', 't_publication_publish→Published']);
     expect(flow.terminals).toContain('Discarded');
     const discard = flow.transitions.find((t) => t.id === 't_publication_discard')!;
-    // The opener's own atom, nothing to fill, nothing that can refuse it.
+    // E2E-1 — publishing, discarding and withdrawing need a named person (PUBLICATION_ACTOR_NAMED).
+    // The opener's own atom, nothing to fill, and ONE thing that can refuse it: a seat
+    // that names nobody (this read `[]` — "nothing that can refuse it" — until E2E-1).
     expect([discard.requiredRole, discard.requiredFields, discard.policyHooks, discard.trigger]).toEqual([
       'publication:draft',
       [],
-      [],
+      [POLICY_HOOKS.PUBLICATION_ACTOR_NAMED],
       'user',
     ]);
   });
@@ -287,6 +290,12 @@ describe('SDC-5 · a draft publication can be discarded', () => {
     // a supplier is denied at scope, before the role gate
     await expect(fire(supplier('sup-002'), 't_publication_discard', draft)).rejects.toBeInstanceOf(DataError);
     expect(forecastPublicationStore.get(draft)!.state).toBe('Draft');
+    // E2E-1 — the right lane naming nobody is refused BY NAME, and the draft stands
+    const unnamed = await fire(seat(['planning']), 't_publication_discard', draft);
+    expect(unnamed.status).toBe('failed');
+    expect(unnamed.reason).toContain('PUBLICATION_ACTOR_UNATTRIBUTED');
+    expect(forecastPublicationStore.get(draft)!.state).toBe('Draft');
+    expect(forecastPublicationStore.get(draft)!.ledger.map((e) => e.verb)).toEqual(['t_publication_open']);
     // a published plan is not discardable — it was sent
     const published = await fire(PLANNER, 't_publication_discard', 'PUB-2026-08-RM-R2');
     expect(published.status).toBe('failed');

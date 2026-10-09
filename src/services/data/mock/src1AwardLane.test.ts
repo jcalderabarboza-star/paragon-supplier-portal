@@ -260,8 +260,9 @@ describe('4 · a mixed-currency event without a recorded rate is not awarded', (
   });
 
   it('KNOWN-GOOD — a recorded rate that has gone stale is a recorded basis (rfq-013)', async () => {
-    // SRC-2 — the rate ledger is re-timed with its event (authored 05-09 / 05-16).
-    expect(rfqStore.get('rfq-013')!.fxPins!.map((p) => p.asOf)).toEqual(['2026-08-22', '2026-08-29']);
+    // SRC-2 — the rate ledger is re-timed with its event. E2E-1 — authored
+    // 05-02 / 05-09, so the rate in force is past the limit at the declared present.
+    expect(rfqStore.get('rfq-013')!.fxPins!.map((p) => p.asOf)).toEqual(['2026-08-15', '2026-08-22']);
     const res = await award(named, 'rfq-013', 'qt-013b', 'sup-006');
     expect(res.status, res.reason).toBe('done');
   });

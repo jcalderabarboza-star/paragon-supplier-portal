@@ -79,6 +79,23 @@ const RULED: ReadonlyArray<{ hook: PolicyHookId; head: string; verbs: readonly s
     head: 'PSL_CAP_SETTER_UNATTRIBUTED',
     verbs: ['t_psl_cap_set'],
   },
+  // E2E-1 - three more lanes, ruled after the end-to-end walk found a
+  // requisition approved by a seat that named nobody.
+  {
+    hook: POLICY_HOOKS.PR_DECIDER_NAMED,
+    head: 'PR_DECIDER_UNATTRIBUTED',
+    verbs: ['t_pr_approve', 't_pr_reject'],
+  },
+  {
+    hook: POLICY_HOOKS.PUBLICATION_ACTOR_NAMED,
+    head: 'PUBLICATION_ACTOR_UNATTRIBUTED',
+    verbs: ['t_publication_discard', 't_publication_publish', 't_publication_withdraw'],
+  },
+  {
+    hook: POLICY_HOOKS.GR_DISPOSER_NAMED,
+    head: 'GR_DISPOSER_UNATTRIBUTED',
+    verbs: ['t_gr_approve', 't_gr_partial_approve', 't_gr_reject'],
+  },
 ];
 
 /** Proposing, raising, picking up and the supplier's own acts stay open. */
@@ -91,6 +108,20 @@ const RULED_OPEN: readonly string[] = [
   't_materialrequest_submit',
   't_materialrequest_start_review',
   't_inventorydeclaration_declare',
+  // E2E-1 - the neighbours of the three new lanes that are not decisions:
+  // raising, submitting and revising a requisition; opening and allocating a
+  // publication; receiving, inspecting, holding, retesting and posting.
+  't_pr_create',
+  't_pr_submit',
+  't_pr_revise',
+  't_publication_open',
+  't_publication_allocate',
+  't_gr_create',
+  't_gr_start_inspection',
+  't_gr_record_inspection',
+  't_gr_hold',
+  't_gr_request_retest',
+  't_gr_post',
 ];
 
 const transitions = () => getKnownFlows().flatMap((f) => f.transitions);

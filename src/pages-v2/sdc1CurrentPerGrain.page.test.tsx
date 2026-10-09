@@ -57,7 +57,8 @@ async function publishOneWeeklyLine(): Promise<string> {
       payload: { materialCode: l.materialCode, periodBucket: l.periodBucket, supplierId: l.supplierId },
     });
   }
-  const r = await commands.dispatch(planner, { transitionId: 't_publication_publish', entity: 'forecastPublication', entityId: id, payload: {} });
+  // E2E-1 — publishing, discarding and withdrawing need a named person (PUBLICATION_ACTOR_NAMED).
+  const r = await commands.dispatch(seat(['planning'], 'planning'), { transitionId: 't_publication_publish', entity: 'forecastPublication', entityId: id, payload: {} });
   expect(r.status, r.reason).toBe('done');
   return id;
 }

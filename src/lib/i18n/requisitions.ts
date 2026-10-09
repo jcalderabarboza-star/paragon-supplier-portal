@@ -128,8 +128,6 @@ export const requisitionsEn: Record<string, string> = {
   'requisitions.panel.revisedBecause': 'Revised — what changed',
   'requisitions.panel.unattributed.noPerson': 'Unattributed — no person in session',
   'requisitions.panel.unattributed.idpDown': 'Unattributed — identity provider unavailable',
-  'requisitions.panel.attributionNote':
-    'This portal holds no person identity yet, so the decision is recorded as unattributed. The act proceeds and the record says who could not be named.',
   // ⚠️ C.3 — REPLACES `terminal.*`, WHICH HAD BECOME FALSE. It said no producer
   // was wired for sourcing; one was wired at C.2 and this string did not move.
   // What is still true is named precisely: PO conversion has no producer, and
@@ -194,7 +192,7 @@ export const requisitionsEn: Record<string, string> = {
   'requisitions.toast.revised.desc': 'The note is recorded on the requisition. Submit it again when it is ready.',
   'requisitions.toast.reviseFailed.title': '{{prNumber}} was not revised',
   'requisitions.toast.approved.title': '{{prNumber}} approved',
-  'requisitions.toast.approved.desc': 'Recorded against this requisition as unattributed.',
+  'requisitions.toast.approved.desc': 'Recorded against this requisition as approved by {{person, stop}}.',
   'requisitions.toast.approveFailed.title': '{{prNumber}} was not approved',
   'requisitions.toast.rejected.title': '{{prNumber}} rejected',
   'requisitions.toast.rejected.desc': 'The reason is recorded on the requisition.',
@@ -370,8 +368,6 @@ export const requisitionsId: Record<string, string> = {
   'requisitions.panel.revisedBecause': 'Direvisi — apa yang berubah',
   'requisitions.panel.unattributed.noPerson': 'Tanpa atribusi — tidak ada orang dalam sesi',
   'requisitions.panel.unattributed.idpDown': 'Tanpa atribusi — penyedia identitas tidak tersedia',
-  'requisitions.panel.attributionNote':
-    'Portal ini belum memiliki identitas orang, sehingga keputusan dicatat tanpa atribusi. Tindakan tetap berjalan dan catatannya menyatakan siapa yang tidak dapat disebutkan.',
   'requisitions.panel.sourcing.title': 'Disetujui — siap disourcing',
   'requisitions.panel.sourcing.body':
     'Mengajukan RFQ dari permintaan ini memindahkannya ke Acara Sourcing dan mencatat RFQ tersebut padanya. Konversi PO langsung tidak tersedia di sini: pesanan pembelian dibuat di S/4 dan tiba sebagai fakta.',
@@ -421,7 +417,7 @@ export const requisitionsId: Record<string, string> = {
   'requisitions.toast.revised.desc': 'Catatan tersimpan pada permintaan. Ajukan kembali bila sudah siap.',
   'requisitions.toast.reviseFailed.title': '{{prNumber}} tidak direvisi',
   'requisitions.toast.approved.title': '{{prNumber}} disetujui',
-  'requisitions.toast.approved.desc': 'Dicatat pada permintaan ini tanpa atribusi.',
+  'requisitions.toast.approved.desc': 'Dicatat pada permintaan ini sebagai disetujui oleh {{person, stop}}.',
   'requisitions.toast.approveFailed.title': '{{prNumber}} tidak disetujui',
   'requisitions.toast.rejected.title': '{{prNumber}} ditolak',
   'requisitions.toast.rejected.desc': 'Alasannya dicatat pada permintaan.',

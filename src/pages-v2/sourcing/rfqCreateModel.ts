@@ -70,6 +70,8 @@ export interface RfqCreateDraft {
   budget: string;
   responseDeadline: string;
   awardDeadline: string;
+  /** E2E-1 — optional; '' = the buyer stated no delivery date. */
+  requestedDeliveryDate?: string;
   incoterms: string;
   paymentTerms: string;
   invitedSupplierIds: string[];
@@ -218,6 +220,24 @@ export function normalizeRfqCreateDraft(
 }
 
 /**
+ * E2E-1 · IS A STATED DELIVERY DATE TOO EARLY? A delivery date is optional. One
+ * that is stated falls AFTER the award deadline — on or before it, the supplier
+ * would be asked to deliver before a winner exists. Both are `YYYY-MM-DD` from a
+ * date input, so the comparison is on the strings. An unstated date, or an
+ * unstated award deadline, is not this refusal.
+ *
+ * ONE predicate: the wizard's step gate and the sentence under the field both
+ * call it, so the step cannot be held shut without the reason on screen.
+ */
+export function deliveryDateTooEarly(
+  terms: Pick<RfqCreateDraft, 'awardDeadline' | 'requestedDeliveryDate'>,
+): boolean {
+  const delivery = terms.requestedDeliveryDate ?? '';
+  if (delivery === '' || terms.awardDeadline === '') return false;
+  return delivery <= terms.awardDeadline;
+}
+
+/**
  * Assemble the `t_rfq_create` payload from the wizard's TEXTUAL terms and an
  * ALREADY-NORMALISED pair of numbers. Pure assembly — no coercion, no
  * defaulting, no parse: the number it is given is the number it ships.
@@ -237,6 +257,10 @@ export function buildRfqCreatePayload(
     invitedSupplierIds: terms.invitedSupplierIds,
     responseDeadline: terms.responseDeadline,
     awardDeadline: terms.awardDeadline,
+    // E2E-1 — emitted only when stated, the shape `estimatedValue` uses below.
+    ...(terms.requestedDeliveryDate
+      ? { requestedDeliveryDate: terms.requestedDeliveryDate }
+      : {}),
     totalQty: numbers.totalQty,
     uom: terms.uom,
     ...(numbers.estimatedValue === undefined

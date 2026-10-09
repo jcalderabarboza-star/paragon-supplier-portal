@@ -904,6 +904,12 @@ bindPolicyHook(POLICY_HOOKS.SUPPLIERDOC_REFUSAL_AUTHORED, ({ payload }) => {
 // today (`NO_PERSON_IN_SESSION`) and exactly what makes the gap countable.
 // Refusing it would make approval unreachable and would replace an honest
 // absence with no record at all.
+// E2E-1 — RETRACTED IN EFFECT, KEPT AS THE RECORD. The paragraph above says an
+// unattributed session actor is accepted and must be. This hook still accepts
+// one, but it no longer decides the question: `PR_DECIDER_NAMED` runs before it
+// on approve and refuses a seat that names nobody (operator ruling, after the
+// end-to-end walk found a requisition approved by nobody). What this hook still
+// owns is the payload half: `approvedBy` is never the caller's to write.
 bindPolicyHook(POLICY_HOOKS.PR_APPROVAL_ATTRIBUTED, ({ payload, scope }) => {
   if ('approvedBy' in payload) {
     return {
@@ -2905,5 +2911,27 @@ bindPolicyHook(
   namedSeatHook(
     'PSL_CAP_SETTER_UNATTRIBUTED',
     'setting the portal default validity cap is recorded against the person who set it',
+  ),
+);
+// E2E-1 — three more lanes, on the operator's ruling after the end-to-end walk.
+bindPolicyHook(
+  POLICY_HOOKS.PR_DECIDER_NAMED,
+  namedSeatHook(
+    'PR_DECIDER_UNATTRIBUTED',
+    'approving or rejecting a requisition is recorded against the person who decided it',
+  ),
+);
+bindPolicyHook(
+  POLICY_HOOKS.PUBLICATION_ACTOR_NAMED,
+  namedSeatHook(
+    'PUBLICATION_ACTOR_UNATTRIBUTED',
+    'publishing, discarding or withdrawing a forecast publication is recorded against the person who did it',
+  ),
+);
+bindPolicyHook(
+  POLICY_HOOKS.GR_DISPOSER_NAMED,
+  namedSeatHook(
+    'GR_DISPOSER_UNATTRIBUTED',
+    'accepting or rejecting received goods is recorded against the person who decided it',
   ),
 );

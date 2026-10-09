@@ -25,6 +25,11 @@ import { PERSONA_SYSTEM_ROLES, SYSTEM_ROLES } from '../../transitions/businessRo
 import { getTransition } from '../../transitions';
 import { NO_PERSON } from '../../../context/noPerson';
 import { MockCommandService, commandAuditSink } from './MockCommandService';
+import { SAMPLE_ACTORS } from '../../identity/sampleActors';
+import { SAMPLE_PEOPLE } from '../../identity/sampleRoster';
+
+/** Procurement 1, from the roster — never a spelled id (`simUsrNamespace.test.ts`). */
+const PROCUREMENT_1_ID = SAMPLE_PEOPLE.find((p) => p.role === 'procurement' && p.ordinal === 1)!.personId;
 
 const svc = new MockCommandService();
 
@@ -42,13 +47,18 @@ const requisitioner: QueryScope = {
   businessRoles: ['requisitioner'],
   actor: NO_PERSON,
 };
-/** Decides them; cannot raise them. */
+/** The person the deciding seat acts as — since E2E-1 (`PR_DECIDER_NAMED`) an
+ *  unnamed seat is refused on approve and on reject. */
+const DECIDER = SAMPLE_ACTORS.procurement1;
+/** Decides them; cannot raise them. Acts as a named sample person. */
 const procurement: QueryScope = {
   personaType: 'buyer',
   supplierId: null,
   businessRoles: ['procurement'],
-  actor: NO_PERSON,
+  actor: DECIDER,
 };
+/** The same deciding seat as it opens — naming nobody. */
+const unnamedProcurement: QueryScope = { ...procurement, actor: NO_PERSON };
 
 /** The seeded Draft fixture — the state the whole batch is about. */
 const DRAFT = 'pr-005';
@@ -215,7 +225,7 @@ describe('§68 · revise — REQUIRED, NON-BLANK, AND AT LAST PERSISTED', () => 
 });
 
 describe('⚠️ §68 · THE APPROVAL NAMES ITS DECIDER — C10 §6.2, both halves', () => {
-  it('✅ THE KNOWN-GOOD PATH PASSES — a session with an actor approves', async () => {
+  it('✅ THE KNOWN-GOOD PATH PASSES — a session with a NAMED actor approves', async () => {
     const res = await dispatch(procurement, 't_pr_approve', PENDING);
     expect(res.status).toBe('done');
     expect(purchaseRequisitionStore.get(PENDING)!.status).toBe('Approved');
@@ -223,14 +233,39 @@ describe('⚠️ §68 · THE APPROVAL NAMES ITS DECIDER — C10 §6.2, both halv
 
   it('⚠️ AND THE ATTRIBUTION IS WRITTEN ONTO THE DOCUMENT, FROM THE SESSION', async () => {
     await dispatch(procurement, 't_pr_approve', PENDING);
-    // Today this is ALWAYS the honest absence, because nothing in shipped code
-    // constructs a RESOLVED actor (C10 §2.3). `approvalLevel` — the field that
-    // used to be called `approver` — said 'Section Head' before anybody had
-    // approved anything, and still says it: it is the DESTINATION, not the act.
-    expect(purchaseRequisitionStore.get(PENDING)!.approvedBy).toEqual({
-      kind: 'UNATTRIBUTED',
-      reason: 'NO_PERSON_IN_SESSION',
+    // The unnamed seat is refused since E2E-1 (`PR_DECIDER_NAMED`), so what is
+    // written is EXACTLY the person the session named. `approvalLevel` — the
+    // field that used to be called `approver` — said 'Section Head' before
+    // anybody had approved anything, and still says it: it is the DESTINATION,
+    // not the act.
+    expect(DECIDER).toEqual({ kind: 'RESOLVED', person: { personId: PROCUREMENT_1_ID } });
+    expect(purchaseRequisitionStore.get(PENDING)!.approvedBy).toEqual(DECIDER);
+  });
+
+  it('⚠️ AN UNATTRIBUTED SESSION IS REFUSED BY NAME — and no attribution is written', async () => {
+    // The other direction of the two specs above, on the same harness: the
+    // seat holds `pr:approve` and differs from `procurement` only in its actor.
+    expect(unnamedProcurement.businessRoles).toEqual(procurement.businessRoles);
+    const res = await dispatch(unnamedProcurement, 't_pr_approve', PENDING);
+    expect(res.status).toBe('failed');
+    expect(res.reason).toContain('POLICY_REJECTED:pr_decider_named');
+    expect(res.reason).toContain('PR_DECIDER_UNATTRIBUTED');
+    const pr = purchaseRequisitionStore.get(PENDING)!;
+    expect(pr.status).toBe('Pending Approval');
+    expect(pr.approvedBy).toBeUndefined();
+  });
+
+  it('⚠️ AND SO IS AN UNATTRIBUTED REJECT — nothing moves, no reason is stored', async () => {
+    const res = await dispatch(unnamedProcurement, 't_pr_reject', PENDING, {
+      rejectionReason: 'Over budget.',
     });
+    expect(res.status).toBe('failed');
+    expect(res.reason).toContain('POLICY_REJECTED:pr_decider_named');
+    expect(res.reason).toContain('PR_DECIDER_UNATTRIBUTED');
+    const pr = purchaseRequisitionStore.get(PENDING)!;
+    expect(pr.status).toBe('Pending Approval');
+    expect(pr.rejectionReason).toBeUndefined();
+    expect(pr.approvedBy).toBeUndefined();
   });
 
   it('⚠️ A PAYLOAD-SUPPLIED `approvedBy` IS REFUSED BY NAME — §6.2 half two', async () => {
@@ -277,7 +312,10 @@ describe('⚠️ §68 · THE APPROVAL NAMES ITS DECIDER — C10 §6.2, both halv
     const res = await dispatch(anonymous, 't_pr_approve', PENDING);
     expect(res.status).toBe('failed');
     expect(res.reason).toContain('POLICY_REJECTED');
+    // `PR_DECIDER_NAMED` runs first, so this is the head a no-actor scope meets.
+    expect(res.reason).toContain('PR_DECIDER_UNATTRIBUTED');
     expect(purchaseRequisitionStore.get(PENDING)!.status).toBe('Pending Approval');
+    expect(purchaseRequisitionStore.get(PENDING)!.approvedBy).toBeUndefined();
   });
 
   it('⚠️ REJECT IS NOT ATTRIBUTED ON THE DOCUMENT — stated, not overlooked', async () => {
@@ -297,7 +335,8 @@ describe('⚠️ §68 · THE LEDGER — C10 §6.4, and ABSENT MEANS A MACHINE AC
     await dispatch(procurement, 't_pr_approve', PENDING);
     const ev = lastEvent('t_pr_approve');
     expect(getTransition('t_pr_approve')!.trigger).toBe('user');
-    expect(ev.attribution).toEqual({ kind: 'UNATTRIBUTED', reason: 'NO_PERSON_IN_SESSION' });
+    expect(ev.outcome).toBe('done');
+    expect(ev.attribution).toEqual(DECIDER);
     // ⚠️ AND `actor` IS UNCHANGED. It answers WHICH SEAT and is a true fact
     // about the scope; attribution answers WHICH HUMAN. Collapsing them is
     // `ENF-EVENT-ACTOR-IS-A-PERSONA-01` with extra steps (C10 §6.4), so the
@@ -330,6 +369,13 @@ describe('⚠️ §68 · THE LEDGER — C10 §6.4, and ABSENT MEANS A MACHINE AC
     expect(ev.outcome).toBe('failed');
     expect(ev.attribution).toEqual({ kind: 'UNATTRIBUTED', reason: 'NO_PERSON_IN_SESSION' });
   });
+
+  it('⚠️ AND AN UNNAMED DECIDER LEAVES A FAILED EVENT, NEVER A DONE ONE — the ledger says nobody approved', async () => {
+    await dispatch(unnamedProcurement, 't_pr_approve', PENDING);
+    const events = commandAuditSink.byEvent('t_pr_approve');
+    expect(events.map((e) => e.outcome)).toEqual(['failed']);
+    expect(events[0].attribution).toEqual({ kind: 'UNATTRIBUTED', reason: 'NO_PERSON_IN_SESSION' });
+  });
 });
 
 describe('⚠️ §68 · THE WHOLE LOOP, ACROSS BOTH BUNDLES', () => {
@@ -356,7 +402,7 @@ describe('⚠️ §68 · THE WHOLE LOOP, ACROSS BOTH BUNDLES', () => {
     expect(pr.status).toBe('Approved');
     expect(pr.rejectionReason).toBe('Wrong grade.');
     expect(pr.revisionNote).toBe('Grade corrected.');
-    expect(pr.approvedBy).toEqual({ kind: 'UNATTRIBUTED', reason: 'NO_PERSON_IN_SESSION' });
+    expect(pr.approvedBy).toEqual(DECIDER);
   });
 
   it('⚠️ AND NEITHER NARROW SEAT COULD HAVE WALKED IT ALONE — derived from the bundles', () => {

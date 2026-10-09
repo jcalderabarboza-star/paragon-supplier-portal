@@ -148,8 +148,9 @@ describe('the ledger reads newest first, and a cascade sits ABOVE the act that c
         payload: { materialCode: l.materialCode, periodBucket: l.periodBucket, supplierId: l.supplierId },
       });
     }
+    // E2E-1 — publishing, discarding and withdrawing need a named person (PUBLICATION_ACTOR_NAMED).
     await commands.dispatch(
-      { personaType: 'buyer', supplierId: null, businessRoles: ['planning'] },
+      { personaType: 'buyer', supplierId: null, businessRoles: ['planning'], actor: { kind: 'RESOLVED', person: { personId: person('planning') } } },
       { transitionId: 't_publication_publish', entity: 'forecastPublication', entityId: id, payload: {} },
     );
     expect(ledgerRows(forecastPublicationStore.all()).map((r) => `${r.verb} ${r.publicationId}`)).toEqual([
@@ -171,5 +172,53 @@ describe('ID — the panel reads Indonesian', () => {
     fireEvent.click(screen.getByTestId('publication-open'));
     expect((await screen.findByTestId('publication-publish')).textContent).toBe('Terbitkan');
     expect(screen.getByTestId('publication-blocker-UNSIGNED_FIRM').textContent).toMatch(/^Belum bisa: 3 baris tetap menunggu tanda tangan pengadaan/);
+  });
+});
+
+// ────────────────────────────────────────────────────────────────────────────
+// E2E-1 · PUBLISHING AND DISCARDING NEED A NAMED PERSON
+// (`PUBLICATION_ACTOR_NAMED`). A seat that names nobody is told before the act,
+// is refused in its own language when it discards, and the draft stays open. A
+// named seat is not shown the line and its discard ends the draft.
+// ────────────────────────────────────────────────────────────────────────────
+describe.each(['en', 'id'] as const)('E2E-1 · a seat that names nobody does not discard a draft [%s]', (lng) => {
+  const discard = async () => {
+    fireEvent.click(await screen.findByTestId('publication-discard'));
+    fireEvent.click(await screen.findByTestId('publication-discard-yes'));
+  };
+
+  it('is told before the act, is refused in that language, and the draft stays open', async () => {
+    const id = await openCarried();
+    await i18n.changeLanguage(lng);
+    mount(BUYER);
+    expect(await screen.findByTestId('publication-act-needs-person')).toHaveTextContent(
+      i18n.t('identity.preAct.namedRequired'),
+    );
+    const before = forecastPublicationStore.get(id);
+    await discard();
+    const failure = await screen.findByTestId('publication-failure');
+    expect(failure).toHaveTextContent(i18n.t('identity.refused.namedRequired'));
+    // The hook's own English sentence is not what the reader is shown.
+    expect(failure.textContent).not.toContain('PUBLICATION_ACTOR_UNATTRIBUTED');
+    expect(forecastPublicationStore.get(id)).toEqual(before);
+    expect(forecastPublicationStore.get(id)!.state).toBe('Draft');
+  });
+
+  it('a named seat is not shown the line, and its discard ends the draft', async () => {
+    const id = await openCarried();
+    await i18n.changeLanguage(lng);
+    mount(BUYER_NAMED);
+    await screen.findByTestId('publication-discard');
+    expect(screen.queryByTestId('publication-act-needs-person')).toBeNull();
+    await discard();
+    await waitFor(() => expect(forecastPublicationStore.get(id)!.state).toBe('Discarded'));
+    expect(screen.queryByTestId('publication-failure')).toBeNull();
+  });
+});
+
+describe('E2E-1 · the two sentences differ by locale', () => {
+  it.each(['identity.preAct.namedRequired', 'identity.refused.namedRequired'])('%s', (key) => {
+    expect(i18n.t(key, { lng: 'en' })).not.toBe(key);
+    expect(i18n.t(key, { lng: 'en' })).not.toBe(i18n.t(key, { lng: 'id' }));
   });
 });

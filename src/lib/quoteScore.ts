@@ -22,6 +22,7 @@
 // NOT a user-editable formula. This module is pure (no I/O, no clock, no store).
 // ────────────────────────────────────────────────────────────────────────────
 import { BASE_CURRENCY, type BidCurrency } from './currencyPolicy';
+import { DECLARED_PRESENT_INSTANT } from '../services/data/fixturePresent';
 import {
   effectivePin,
   isStalePin,
@@ -207,7 +208,7 @@ export interface ScoringOptions {
    *  mixed-currency set rather than assuming a rate. */
   readonly pins?: readonly FxPin[];
   readonly weights?: CriteriaWeights;
-  /** The clock for the staleness read, injectable so specs are deterministic. */
+  /** The instant for the staleness read. Absent = the declared present (E2E-1). */
   readonly now?: Date;
 }
 
@@ -230,7 +231,7 @@ export function scoreQuotations(
   quotes: readonly ScorableQuote[],
   opts: ScoringOptions = {},
 ): ScoringOutcome {
-  const { pins = [], weights = CRITERIA_WEIGHTS, now = new Date() } = opts;
+  const { pins = [], weights = CRITERIA_WEIGHTS, now = new Date(DECLARED_PRESENT_INSTANT) } = opts;
   if (quotes.length === 0) {
     return {
       kind: 'scored',

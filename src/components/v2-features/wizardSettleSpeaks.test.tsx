@@ -30,7 +30,7 @@ import path from 'node:path';
 import React from 'react';
 import { describe, it, expect, beforeEach } from 'vitest';
 import { screen, fireEvent, waitFor } from '@testing-library/react';
-import { renderWithProviders } from '../../test/test-utils';
+import { renderWithProviders, BUYER_NAMED } from '../../test/test-utils';
 import { useToast } from '../../hooks/useToast';
 import { mockDataService } from '../../services/data/mock/mockDataService';
 import { asnStore } from '../../services/data/mock/stores/asnStore';
@@ -121,7 +121,8 @@ const completeWizard = async (service?: IDataService) => {
         materialRulings={[]}
       />
     </>,
-    service ? { service } : undefined,
+    // E2E-1 — a disposition needs a named person (GR_DISPOSER_NAMED).
+    { ...(service ? { service } : {}), identity: BUYER_NAMED },
   );
   const next = () => screen.getByRole('button', { name: /Next/i });
   fireEvent.click(await screen.findByText(ANSWERABLE!.asnNumber));

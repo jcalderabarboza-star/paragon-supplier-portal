@@ -1013,6 +1013,17 @@ export const POLICY_HOOKS = {
    *  six above and landed after them: whoever sets the default bounds every
    *  listing without a cap of its own, so the ledger entry names a person. */
   PSL_CAP_SETTER_NAMED: 'psl_cap_setter_named',
+  // ── E2E-1 · THE SAME RULE ON THREE MORE LANES (operator ruling) ────────────
+  // Derived from the registry: the decision-shaped buyer verbs that still
+  // admitted a seat naming nobody. Same shape, same shared surface sentence.
+  /** Requisition approve / reject. `PR_APPROVAL_ATTRIBUTED` stays beside it on
+   *  approve: that one refuses an approver stated in the PAYLOAD. */
+  PR_DECIDER_NAMED: 'pr_decider_named',
+  /** Forecast publication publish / discard / withdraw. (The firm signature
+   *  already needs a person: `PUB_ACTOR_ATTRIBUTED`.) */
+  PUBLICATION_ACTOR_NAMED: 'publication_actor_named',
+  /** Goods-receipt disposition: accept, partly accept, reject. */
+  GR_DISPOSER_NAMED: 'gr_disposer_named',
 } as const;
 
 for (const name of Object.values(POLICY_HOOKS)) registerPolicyHook(name);

@@ -147,7 +147,8 @@ describe('SDC-3 · an acknowledgment never blocks a commitment', () => {
    * makes the line a COMMITMENT where R2 had it visibility-only.
    */
   async function republish(): Promise<string> {
-    const planner: QueryScope = { personaType: 'buyer', supplierId: null, businessRoles: ['planning'] };
+    // E2E-1 — publishing, discarding and withdrawing need a named person (PUBLICATION_ACTOR_NAMED).
+    const planner: QueryScope = { personaType: 'buyer', supplierId: null, businessRoles: ['planning'], actor: personOf('planning') };
     const PV = 'PV-2026-08.2';
     const id = (
       await svc.dispatch(planner, {

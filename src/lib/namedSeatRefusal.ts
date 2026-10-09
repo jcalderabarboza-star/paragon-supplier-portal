@@ -17,6 +17,10 @@ export const NAMED_SEAT_HOOKS: readonly PolicyHookId[] = [
   // FIN-1 - the portal default cap. No surface fires it yet; the key is here
   // so the surface that does renders the shared sentence.
   POLICY_HOOKS.PSL_CAP_SETTER_NAMED,
+  // E2E-1 - requisition decisions, forecast publication, goods-receipt disposition.
+  POLICY_HOOKS.PR_DECIDER_NAMED,
+  POLICY_HOOKS.PUBLICATION_ACTOR_NAMED,
+  POLICY_HOOKS.GR_DISPOSER_NAMED,
 ];
 
 /** The i18n key for a refusal one of these hooks produced, else `null`. */

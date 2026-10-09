@@ -68,6 +68,12 @@ export interface RFQ {
   createdAt: string;
   responseDeadline: string;
   awardDeadline: string;
+  /**
+   * E2E-1 · THE DAY THE BUYER WANTS THE GOODS (`YYYY-MM-DD`). Optional: absent =
+   * the buyer stated none, and every reader says so rather than borrowing
+   * another date. The supplier card used to show `awardDeadline` here.
+   */
+  requestedDeliveryDate?: string;
   invitedSupplierIds: string[];
   /**
    * SRC-1 · DERIVED AT READ, NEVER STORED — the suppliers holding a quotation on
@@ -495,6 +501,12 @@ const RFQ_SEED_RAW: RfqSeed[] = [
     // fixture owns the refusal, and the ranked outcome is reached by a buyer
     // recording a current rate — which is a real act, dated by the buyer's own
     // clock, and therefore never decays. See docs/CP0_2e-c_FX_smoke.md.
+    //
+    // E2E-1 · ONE CLOCK. Staleness is now read against the DECLARED PRESENT,
+    // and these vintages are re-anchored with the event, so "old" has to be
+    // old against the sourcing anchor: the rate in force is dated nine days
+    // before it, each rate a week older than the day it was recorded. The
+    // fixture still owns the refusal, at the declared present and after it.
     id: 'rfq-013',
     rfqNumber: 'RFQ-2026-013',
     title: 'Propylene Glycol USP — dual-currency, rate on record',
@@ -520,7 +532,7 @@ const RFQ_SEED_RAW: RfqSeed[] = [
         quote: 'USD',
         base: 'IDR',
         rate: 17_180,
-        asOf: '2026-05-09',
+        asOf: '2026-05-02',
         pinnedAt: '2026-05-09T04:12:00.000Z',
         source: 'MANUAL',
         liveness: 'SIMULATED',
@@ -531,7 +543,7 @@ const RFQ_SEED_RAW: RfqSeed[] = [
         quote: 'USD',
         base: 'IDR',
         rate: 17_310,
-        asOf: '2026-05-16',
+        asOf: '2026-05-09',
         pinnedAt: '2026-05-16T02:40:00.000Z',
         source: 'MANUAL',
         liveness: 'SIMULATED',

@@ -13,15 +13,21 @@
 // ────────────────────────────────────────────────────────────────────────────
 
 import { screen, fireEvent, waitFor } from '@testing-library/react';
-import { renderWithProviders, BUYER, SUPPLIER } from '../test/test-utils';
+import { renderWithProviders, BUYER, BUYER_NAMED, SUPPLIER } from '../test/test-utils';
 import { purchaseRequisitionStore } from '../services/data/mock/stores/purchaseRequisitionStore';
+import { commandAuditSink } from '../services/data/mock/MockCommandService';
 import type { CurrentIdentity } from '../context/CurrentIdentityContext';
 import BuyerRequisitions from './BuyerRequisitions';
 
 /** A seat that RAISES requisitions and cannot decide them. */
 const REQUISITIONER: CurrentIdentity = { ...BUYER, businessRoles: ['requisitioner'] };
-/** A seat that DECIDES them and cannot raise them. */
+/** A seat that DECIDES them and cannot raise them — as it opens, naming nobody. */
 const PROCUREMENT: CurrentIdentity = { ...BUYER, businessRoles: ['procurement'] };
+/** The same deciding seat acting as a named sample person. Since E2E-1
+ *  (`PR_DECIDER_NAMED`) this is the only seat whose approve or reject lands. */
+const PROCUREMENT_NAMED: CurrentIdentity = { ...PROCUREMENT, actor: BUYER_NAMED.actor };
+/** What the one person resolver prints for that person, in English. */
+const NAMED_LABEL = 'Procurement 1 (SAMPLE)';
 
 /** The seeded fixture already in the approval queue. */
 const PENDING_PR = 'PR-2026-00344';
@@ -49,7 +55,7 @@ describe('§67 · the population this file rests on', () => {
 
 describe('§67 · approve — reachable at last', () => {
   it('✅ procurement approves, and the STORE moves — not just the toast', async () => {
-    renderWithProviders(<BuyerRequisitions />, { identity: PROCUREMENT });
+    renderWithProviders(<BuyerRequisitions />, { identity: PROCUREMENT_NAMED });
     await openPending();
 
     fireEvent.click(screen.getByTestId('pr-approve'));
@@ -57,6 +63,8 @@ describe('§67 · approve — reachable at last', () => {
     await waitFor(() =>
       expect(purchaseRequisitionStore.get('pr-004')!.status).toBe('Approved'),
     );
+    // …and it is recorded against exactly the person the seat named.
+    expect(purchaseRequisitionStore.get('pr-004')!.approvedBy).toEqual(BUYER_NAMED.actor);
   });
 
   it('the default buyer seat can approve too — it holds procurement today', async () => {
@@ -105,7 +113,7 @@ describe('⚠️ §67 · REJECT CARRIES ITS REASON, AND THE COMMIT IS DISABLED U
   });
 
   it('✅ a real reason ENABLES it, dispatches, and the reason lands ON THE DOCUMENT', async () => {
-    renderWithProviders(<BuyerRequisitions />, { identity: PROCUREMENT });
+    renderWithProviders(<BuyerRequisitions />, { identity: PROCUREMENT_NAMED });
     await openPending();
 
     fireEvent.click(screen.getByTestId('pr-reject-open'));
@@ -178,16 +186,77 @@ describe('⚠️ §67 · THE THREE RETIRED AFFORDANCES ARE GONE, AND SAY WHY', (
 });
 
 describe('⚠️ §67 · THE CEILING IS STATED BEFORE THE ACT, NOT AFTER IT', () => {
-  it('a seat that can decide is told the decision records unattributed', async () => {
+  // The unnamed seat is refused since E2E-1 (`PR_DECIDER_NAMED`), so the line
+  // before the act says the act will be refused — or names who it records.
+  const NAMED_REQUIRED =
+    'This seat names nobody, so this act will be refused. Adopt a sample user on the identity panel first.';
+
+  beforeEach(() => commandAuditSink.clear());
+
+  it('a seat that can decide but names nobody is told the act will be refused', async () => {
     renderWithProviders(<BuyerRequisitions />, { identity: PROCUREMENT });
     await openPending();
-    expect(screen.getByTestId('pr-attribution-note').textContent).toMatch(/unattributed/i);
+    expect(screen.getByTestId('pr-attribution-note').textContent).toBe(NAMED_REQUIRED);
+    // …and it is not ALSO told it will be recorded against somebody.
+    expect(screen.queryByTestId('pr-attribution-note-sample')).not.toBeInTheDocument();
+  });
+
+  it('✅ the other direction — a seat that names a person reads its OWN label before the act', async () => {
+    renderWithProviders(<BuyerRequisitions />, { identity: PROCUREMENT_NAMED });
+    await openPending();
+    expect(screen.getByTestId('pr-attribution-note-sample').textContent).toBe(
+      `This will be recorded against ${NAMED_LABEL}.`,
+    );
+    expect(screen.queryByTestId('pr-attribution-note')).not.toBeInTheDocument();
+  });
+
+  it('⚠️ AND THE SENTENCE IS TRUE — the unnamed seat approves, is refused by name, and nothing moves', async () => {
+    renderWithProviders(<BuyerRequisitions />, { identity: PROCUREMENT });
+    await openPending();
+
+    fireEvent.click(screen.getByTestId('pr-approve'));
+
+    // Wait on the REFUSAL, not on an absence: "the store did not move" is also
+    // what a click that never dispatched looks like.
+    await waitFor(() => {
+      const events = commandAuditSink.byEvent('t_pr_approve');
+      expect(events.map((e) => e.outcome)).toEqual(['failed']);
+      expect(events[0].reason).toContain('PR_DECIDER_UNATTRIBUTED');
+    });
+    const pr = purchaseRequisitionStore.get('pr-004')!;
+    expect(pr.status).toBe('Pending Approval');
+    expect(pr.approvedBy).toBeUndefined();
+    expect(pr.rejectionReason).toBeUndefined();
+    // The panel stays open on the document that was not decided.
+    expect(screen.getByTestId('pr-approve')).toBeInTheDocument();
+  });
+
+  it('⚠️ and the unnamed seat rejects with a real reason — refused by name, no reason stored', async () => {
+    renderWithProviders(<BuyerRequisitions />, { identity: PROCUREMENT });
+    await openPending();
+
+    fireEvent.click(screen.getByTestId('pr-reject-open'));
+    fireEvent.change(screen.getByTestId('pr-reject-reason'), {
+      target: { value: 'Over the Q3 budget envelope.' },
+    });
+    fireEvent.click(screen.getByTestId('pr-reject-confirm'));
+
+    await waitFor(() => {
+      const events = commandAuditSink.byEvent('t_pr_reject');
+      expect(events.map((e) => e.outcome)).toEqual(['failed']);
+      expect(events[0].reason).toContain('PR_DECIDER_UNATTRIBUTED');
+    });
+    const pr = purchaseRequisitionStore.get('pr-004')!;
+    expect(pr.status).toBe('Pending Approval');
+    expect(pr.rejectionReason).toBeUndefined();
+    expect(pr.approvedBy).toBeUndefined();
   });
 
   it('a seat that CANNOT decide is not told — the notice belongs to the act, not the page', async () => {
     renderWithProviders(<BuyerRequisitions />, { identity: REQUISITIONER });
     await openPending();
     expect(screen.queryByTestId('pr-attribution-note')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('pr-attribution-note-sample')).not.toBeInTheDocument();
   });
 });
 

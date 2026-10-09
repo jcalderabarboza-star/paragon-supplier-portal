@@ -14,15 +14,23 @@
 // ────────────────────────────────────────────────────────────────────────────
 
 import { screen, fireEvent, waitFor } from '@testing-library/react';
-import { renderWithProviders, BUYER } from '../test/test-utils';
+import { renderWithProviders, BUYER, BUYER_NAMED } from '../test/test-utils';
 import { purchaseRequisitionStore } from '../services/data/mock/stores/purchaseRequisitionStore';
+import { commandAuditSink } from '../services/data/mock/MockCommandService';
 import type { CurrentIdentity } from '../context/CurrentIdentityContext';
 import BuyerRequisitions from './BuyerRequisitions';
+import { SAMPLE_PEOPLE } from '../services/identity/sampleRoster';
+
+/** Procurement 1, from the roster — never a spelled id (`simUsrNamespace.test.ts`). */
+const PROCUREMENT_1_ID = SAMPLE_PEOPLE.find((p) => p.role === 'procurement' && p.ordinal === 1)!.personId;
 
 /** A seat that RAISES requisitions and cannot decide them. */
 const REQUISITIONER: CurrentIdentity = { ...BUYER, businessRoles: ['requisitioner'] };
-/** A seat that DECIDES them and cannot raise them. */
+/** A seat that DECIDES them and cannot raise them — as it opens, naming nobody. */
 const PROCUREMENT: CurrentIdentity = { ...BUYER, businessRoles: ['procurement'] };
+/** The same deciding seat acting as a named sample person. Since E2E-1
+ *  (`PR_DECIDER_NAMED`) an unnamed seat is refused on approve. */
+const PROCUREMENT_NAMED: CurrentIdentity = { ...PROCUREMENT, actor: BUYER_NAMED.actor };
 
 /** The seeded Draft row. */
 const DRAFT_PR = 'PR-2026-00345';
@@ -162,20 +170,44 @@ describe('⚠️ §68 · REVISE CARRIES ITS NOTE, AND THE COMMIT IS DISABLED UNT
 
 describe('⚠️ §68 · THE APPROVAL NAMES ITS DECIDER, AND THE ROUTING TARGET STOPS PRETENDING TO', () => {
   it('✅ an approval writes the attribution, and the panel READS IT BACK', async () => {
-    renderWithProviders(<BuyerRequisitions />, { identity: PROCUREMENT });
+    renderWithProviders(<BuyerRequisitions />, { identity: PROCUREMENT_NAMED });
     await open(PENDING_PR);
 
     fireEvent.click(screen.getByTestId('pr-approve'));
 
     await waitFor(() =>
       expect(purchaseRequisitionStore.get('pr-004')!.approvedBy).toEqual({
-        kind: 'UNATTRIBUTED',
-        reason: 'NO_PERSON_IN_SESSION',
+        kind: 'RESOLVED',
+        person: { personId: PROCUREMENT_1_ID },
       }),
     );
+    expect(purchaseRequisitionStore.get('pr-004')!.approvedBy).toEqual(BUYER_NAMED.actor);
 
     fireEvent.click(await screen.findByText(PENDING_PR));
-    expect(await screen.findByTestId('pr-approved-by')).toHaveTextContent(/no person in session/i);
+    // The person, through the one resolver — marked, and never the raw id.
+    const approvedBy = await screen.findByTestId('pr-approved-by');
+    expect(approvedBy.textContent).toBe('Procurement 1 (SAMPLE)');
+    expect(approvedBy.textContent).not.toContain(PROCUREMENT_1_ID);
+  });
+
+  it('⚠️ AND AN UNNAMED SEAT WRITES NONE — refused by name, so "Approved by" stays absent', async () => {
+    // The unnamed seat is refused since E2E-1 (`PR_DECIDER_NAMED`): there is no
+    // longer an approval recorded against nobody for the panel to read back.
+    commandAuditSink.clear();
+    renderWithProviders(<BuyerRequisitions />, { identity: PROCUREMENT });
+    await open(PENDING_PR);
+
+    fireEvent.click(screen.getByTestId('pr-approve'));
+
+    await waitFor(() => {
+      const events = commandAuditSink.byEvent('t_pr_approve');
+      expect(events.map((e) => e.outcome)).toEqual(['failed']);
+      expect(events[0].reason).toContain('PR_DECIDER_UNATTRIBUTED');
+    });
+    const pr = purchaseRequisitionStore.get('pr-004')!;
+    expect(pr.status).toBe('Pending Approval');
+    expect(pr.approvedBy).toBeUndefined();
+    expect(screen.queryByTestId('pr-approved-by')).not.toBeInTheDocument();
   });
 
   it('⚠️ AND "Approved by" IS ABSENT BEFORE ANYBODY APPROVES — which the old field never was', async () => {

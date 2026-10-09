@@ -900,6 +900,10 @@ const rfqTarget: CommandTarget = {
       createdAt: new Date().toISOString().slice(0, 10),
       responseDeadline: str('responseDeadline'),
       awardDeadline: str('awardDeadline'),
+      // E2E-1 — stored only when the buyer stated one. Absence stays absence.
+      ...(str('requestedDeliveryDate') !== ''
+        ? { requestedDeliveryDate: str('requestedDeliveryDate') }
+        : {}),
       invitedSupplierIds: strArr('invitedSupplierIds'),
       // Derived at read from the quotations (SRC-1); `rfqStore.add` drops it.
       respondedSupplierIds: [],

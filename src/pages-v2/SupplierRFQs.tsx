@@ -76,7 +76,6 @@ import { POLICY_HOOKS } from '../services/transitions/policyHooks';
 import { refusedByPolicy } from '../services/transitions/refusalMessage';
 import type { SupplierDocumentCategory } from '../services/data/types';
 import type { RFQ, Quotation, Supplier } from '../services/data/types';
-import { CHART_SERIES } from '../lib/chartPalette';
 import { formatDate, formatMoney, formatNumber } from '../lib/format';
 import { useRefusalText } from '../hooks/useRefusalText';
 import { notShortlistedAdvanceOf, stageOf, stagePathOf, type RfqStage } from '../data/rfqStage';
@@ -141,7 +140,8 @@ interface OpenRFQ {
   /** The same quantity as a number — what the total-price preview multiplies. */
   totalQty: number;
   deliveryLocation: string;
-  requestedDelivery: string;
+  /** E2E-1 — the event's own requested delivery date; absent = none stated. */
+  requestedDelivery?: string;
   deadline: string;
   daysRemaining: number;
   /** SRC-2 — the response deadline has gone; the event takes no quotation. */
@@ -155,13 +155,6 @@ interface OpenRFQ {
   /** RFx-1 — the payment terms the buyer asked for; the quote form starts from them. */
   paymentTerms: string;
   specialRequirements: string;
-  evaluationCriteria: {
-    price: number;
-    quality: number;
-    leadTime: number;
-    sustainability: number;
-    risk: number;
-  };
   status: string;
   receivedVia: string;
   receivedDate: string;
@@ -283,19 +276,6 @@ const buildAwardRows = (
 
 type TabKey = 'open' | 'quotes' | 'history';
 
-const EVAL_SEGMENTS: {
-  key: keyof OpenRFQ['evaluationCriteria'];
-  labelKey: string;
-  color: string;
-}[] = [
-  // DP-2: single teal→navy ramp (chartPalette CHART_SERIES), not a rainbow.
-  { key: 'price', labelKey: 'rfqs.eval.price', color: CHART_SERIES[0] },
-  { key: 'quality', labelKey: 'rfqs.eval.quality', color: CHART_SERIES[1] },
-  { key: 'leadTime', labelKey: 'rfqs.eval.leadTime', color: CHART_SERIES[2] },
-  { key: 'sustainability', labelKey: 'rfqs.eval.sustainability', color: CHART_SERIES[3] },
-  { key: 'risk', labelKey: 'rfqs.eval.risk', color: CHART_SERIES[4] },
-];
-
 const CHANNEL_ICON: Record<string, LucideIcon> = {
   'Web Portal': Globe,
   Web: Globe,
@@ -376,39 +356,6 @@ const emptyQuoteForm: QuoteForm = {
   attachmentName: '',
 };
 
-const EvalBar: React.FC<{ criteria: OpenRFQ['evaluationCriteria'] }> = ({
-  criteria,
-}) => {
-  const { t } = useTranslation();
-  return (
-    <div>
-      <div className="flex h-2 rounded-full overflow-hidden mb-2">
-        {EVAL_SEGMENTS.map((seg) => (
-          <div
-            key={seg.key}
-            style={{ width: `${criteria[seg.key]}%`, background: seg.color }}
-            title={`${t(seg.labelKey)}: ${criteria[seg.key]}%`}
-          />
-        ))}
-      </div>
-      <div className="flex flex-wrap gap-3">
-        {EVAL_SEGMENTS.map((seg) => (
-          <span
-            key={seg.key}
-            className="inline-flex items-center gap-1.5 text-[10px] text-text-tertiary"
-          >
-            <span
-              className="inline-block w-2 h-2 rounded-full"
-              style={{ background: seg.color }}
-            />
-            {t(seg.labelKey)} {criteria[seg.key]}%
-          </span>
-        ))}
-      </div>
-    </div>
-  );
-};
-
 interface RFQCardProps {
   rfq: OpenRFQ;
   onSubmitQuote: (rfq: OpenRFQ) => void;
@@ -443,6 +390,9 @@ const RFQCard: React.FC<RFQCardProps> = ({
   // none reads as at RFx-1.
   const criteria = rfq.stage === 'RFP' ? (rfq.event.criteria ?? []) : [];
   const asksProposal = criteria.length > 0;
+  // E2E-1 — what the card LISTS is whatever criteria the read carries: the ones
+  // the buyer set, at any stage the read hands them over. Nothing else.
+  const shownCriteria = rfq.event.criteria ?? [];
   const [interestOpen, setInterestOpen] = useState(false);
   const [interestNote, setInterestNote] = useState('');
   const [interestSending, setInterestSending] = useState(false);
@@ -512,8 +462,8 @@ const RFQCard: React.FC<RFQCardProps> = ({
           </span>
           <span>
             {t('rfqs.card.reqDelivery')}{' '}
-            <strong className="text-text-primary">
-              {rfq.requestedDelivery}
+            <strong className="text-text-primary" data-testid={`rfq-req-delivery-${rfq.id}`}>
+              {rfq.requestedDelivery ?? t('rfqs.card.reqDeliveryNone')}
             </strong>
           </span>
           <span>
@@ -556,12 +506,12 @@ const RFQCard: React.FC<RFQCardProps> = ({
           <div className="text-label text-text-tertiary uppercase mb-2">
             {t('rfqs.card.evalCriteria')}
           </div>
-          {/* RFx-3 — the event's OWN criteria and weights where it sets them;
-              the sample bar stands only where it sets none. Two "evaluation
-              criteria" on one card, one of them a sample, would be a lie. */}
-          {asksProposal ? (
+          {/* RFx-3 — the event's OWN criteria and weights where it sets them.
+              E2E-1 — and where it sets none the card says so: the sample bar
+              that stood here listed five weights nobody had set. */}
+          {shownCriteria.length > 0 ? (
             <ol className="space-y-1" data-testid={`rfp-own-criteria-${rfq.id}`}>
-              {criteria.map((c, i) => (
+              {shownCriteria.map((c, i) => (
                 <li key={c.id} className="text-xs text-text-secondary flex items-baseline gap-2">
                   <span className="font-mono">{criterionLabel(i + 1)}</span>
                   <span className="flex-1 text-text-primary">
@@ -575,7 +525,9 @@ const RFQCard: React.FC<RFQCardProps> = ({
               ))}
             </ol>
           ) : (
-            <EvalBar criteria={rfq.evaluationCriteria} />
+            <p className="text-xs text-text-tertiary" data-testid={`rfq-no-criteria-${rfq.id}`}>
+              {t('rfqs.card.evalCriteriaNone')}
+            </p>
           )}
         </div>
 
@@ -1077,14 +1029,6 @@ const AwardsTab: React.FC<{ rows: AwardRow[] }> = ({ rows }) => {
   );
 };
 
-const SAMPLE_EVAL: OpenRFQ['evaluationCriteria'] = {
-  price: 40,
-  quality: 25,
-  leadTime: 15,
-  sustainability: 10,
-  risk: 10,
-};
-
 // Adapter: canonical RFQ → the page's OpenRFQ display shape. Real fields come
 // from the read (number, material, category, qty, deadline, received date);
 // the supplier-facing detail the RFQ entity does NOT carry — evaluation weights,
@@ -1120,7 +1064,9 @@ const toOpenRfq = (r: RFQ, nowIso: string): OpenRFQ => {
     // formatting (CP-0 2e-a).
     totalQty: r.totalQty,
     deliveryLocation: 'NDC Jatake 6',
-    requestedDelivery: r.awardDeadline,
+    // E2E-1 — the event's delivery date and nothing else. It used to be the
+    // award deadline, which is the day the buyer decides, not the day goods land.
+    ...(r.requestedDeliveryDate ? { requestedDelivery: r.requestedDeliveryDate } : {}),
     deadline: r.responseDeadline,
     daysRemaining,
     deadlinePassed,
@@ -1131,7 +1077,6 @@ const toOpenRfq = (r: RFQ, nowIso: string): OpenRFQ => {
     paymentTerms: r.paymentTerms,
     specialRequirements:
       'Full RFQ specifics arrive with the Paragon sourcing packet (illustrative sample).',
-    evaluationCriteria: SAMPLE_EVAL,
     status: r.status === 'Open' ? 'Open — Awaiting Your Quote' : r.status,
     receivedVia: 'Web Portal',
     receivedDate: r.createdAt,

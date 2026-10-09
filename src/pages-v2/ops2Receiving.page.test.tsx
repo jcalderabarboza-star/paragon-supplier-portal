@@ -15,6 +15,7 @@ import { screen, fireEvent, waitFor, within } from '@testing-library/react';
 import {
   renderWithProviders,
   BUYER,
+  BUYER_NAMED,
   BUYER_NAMED_COMPLIANCE,
   SUPPLIER,
 } from '../test/test-utils';
@@ -116,7 +117,8 @@ describe('OPS-2 · P0-4 — a receipt that exists is worked from the list', () =
     const seeded = byNumber('GR-2026-002');
     expect(seeded.status).toBe('Pending Inspection');
 
-    renderWithProviders(<Receiving />);
+    // E2E-1 — a disposition needs a named person (GR_DISPOSER_NAMED).
+    renderWithProviders(<Receiving />, { identity: BUYER_NAMED });
     await openRow('GR-2026-002');
     fireEvent.click(await screen.findByRole('button', { name: 'Start inspection' }));
 
@@ -188,7 +190,8 @@ describe('OPS-2 · P0-4 — a receipt that exists is worked from the list', () =
     first.unmount();
 
     // Hold → retest → the same form on the same receipt → decided.
-    renderWithProviders(<Receiving />);
+    // E2E-1 — a disposition needs a named person (GR_DISPOSER_NAMED).
+    renderWithProviders(<Receiving />, { identity: BUYER_NAMED });
     await openRow('GR-2026-008');
     fireEvent.click(await screen.findByRole('button', { name: 'Request lab retest' }));
     await waitFor(() => expect(byNumber('GR-2026-008').status).toBe('Under Inspection'));

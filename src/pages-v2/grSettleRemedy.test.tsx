@@ -26,7 +26,7 @@
 import React from 'react';
 import { describe, it, expect, beforeEach } from 'vitest';
 import { screen, fireEvent, waitFor } from '@testing-library/react';
-import { renderWithProviders } from '../test/test-utils';
+import { renderWithProviders, BUYER_NAMED } from '../test/test-utils';
 import { mockDataService } from '../services/data/mock/mockDataService';
 import { goodsReceiptStore } from '../services/data/mock/stores/goodsReceiptStore';
 import { asnStore } from '../services/data/mock/stores/asnStore';
@@ -339,6 +339,8 @@ describe('§91e — a settle the WIZARD saw fail is still remediable on the page
         <BuyerGoodsReceipt />
         <ToastSpy />
       </>,
+      // E2E-1 — a disposition needs a named person (GR_DISPOSER_NAMED).
+      { identity: BUYER_NAMED },
     );
     await screen.findByText('Rejection Rate (30d)');
     await walkWizardToPost();
@@ -354,7 +356,8 @@ describe('§91e — a settle the WIZARD saw fail is still remediable on the page
         <BuyerGoodsReceipt />
         <ToastSpy />
       </>,
-      { service: failFirst(1, () => new DataError('CHAOS', 'transport down')) },
+      // E2E-1 — a disposition needs a named person (GR_DISPOSER_NAMED).
+      { service: failFirst(1, () => new DataError('CHAOS', 'transport down')), identity: BUYER_NAMED },
     );
     await screen.findByText('Rejection Rate (30d)');
     await walkWizardToPost();
@@ -383,7 +386,8 @@ describe('§91e — a settle the WIZARD saw fail is still remediable on the page
         <BuyerGoodsReceipt />
         <ToastSpy />
       </>,
-      { service: withSettle(() => Promise.reject(new DataError('SCOPE_DENIED', 'not yours'))) },
+      // E2E-1 — a disposition needs a named person (GR_DISPOSER_NAMED).
+      { service: withSettle(() => Promise.reject(new DataError('SCOPE_DENIED', 'not yours'))), identity: BUYER_NAMED },
     );
     await screen.findByText('Rejection Rate (30d)');
     await walkWizardToPost();

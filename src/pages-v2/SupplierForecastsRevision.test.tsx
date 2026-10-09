@@ -61,7 +61,8 @@ async function publishRevision() {
       payload: { materialCode: l.materialCode, periodBucket: l.periodBucket, supplierId: l.supplierId },
     });
   }
-  await commands.dispatch(planner, { transitionId: 't_publication_publish', entity: 'forecastPublication', entityId: id, payload: {} });
+  // E2E-1 — publishing, discarding and withdrawing need a named person (PUBLICATION_ACTOR_NAMED).
+  await commands.dispatch(seat(['planning'], 'planning'), { transitionId: 't_publication_publish', entity: 'forecastPublication', entityId: id, payload: {} });
   return id;
 }
 
@@ -170,7 +171,8 @@ describe('a revision published from the grid', () => {
         payload: { materialCode: l.materialCode, periodBucket: l.periodBucket, supplierId: l.supplierId },
       });
     }
-    await commands.dispatch(planner, { transitionId: 't_publication_publish', entity: 'forecastPublication', entityId: next, payload: {} });
+    // E2E-1 — publishing, discarding and withdrawing need a named person (PUBLICATION_ACTOR_NAMED).
+    await commands.dispatch(seat(['planning'], 'planning'), { transitionId: 't_publication_publish', entity: 'forecastPublication', entityId: next, payload: {} });
     renderPage();
     expect((await screen.findByTestId('sdcsup-version-banner')).textContent).toBe(
       'Plan PV-2026-08.2 published 31 Aug 2026 — 2 lines changed, 0 carried',

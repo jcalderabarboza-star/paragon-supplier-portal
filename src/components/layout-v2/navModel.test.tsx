@@ -85,11 +85,11 @@ describe('N1 — the order is pinned, stage by stage', () => {
       ['nav.section.plan', ['/buyer/plan-grid', '/buyer/purchase-requisition']],
       ['nav.section.source', ['/buyer/sourcing', '/buyer/preferred-suppliers', '/buyer/material-requests', '/buyer/discovery', '/marketplace']],
       ['nav.section.contract', ['/buyer/contracts', '/buyer/delivery-agreements']],
-      ['nav.section.collaborate', ['/buyer/collaboration', '/buyer/chase', '/buyer/comm-hub']],
+      ['nav.section.collaborate', ['/buyer/collaboration', '/buyer/inventory', '/buyer/chase', '/buyer/comm-hub']],
       ['nav.section.orderReceive', ['/buyer/orders', '/buyer/shipments', '/buyer/goods-receipt']],
       ['nav.section.pay', ['/buyer/invoices']],
       ['nav.section.suppliers', ['/buyer/suppliers', '/buyer/supplier-applications', '/buyer/compliance']],
-      ['nav.section.insights', ['/buyer/analytics', '/buyer/scorecard', '/buyer/risk', '/buyer/inventory']],
+      ['nav.section.insights', ['/buyer/analytics', '/buyer/scorecard', '/buyer/risk']],
       ['nav.section.platform', ['/buyer/platform/modules', '/buyer/roles', '/buyer/process-flows', '/glossary']],
     ]);
   });

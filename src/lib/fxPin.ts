@@ -40,6 +40,7 @@
 // ────────────────────────────────────────────────────────────────────────────
 
 import { FX_PIN_MAX_AGE_DAYS, type BidCurrency } from './currencyPolicy';
+import { DECLARED_PRESENT_INSTANT } from '../services/data/fixturePresent';
 
 /** Where a pinned rate came from. Provenance is part of the fact, not metadata
  *  about it: "a buyer typed this" and "S/4HANA said this" are different claims,
@@ -122,7 +123,12 @@ export function pinHistory(
 
 /**
  * Is this pin's RATE too old to rank on? Measured from `asOf` (the rate's
- * vintage), evaluated with the clock AT READ.
+ * vintage), evaluated at read.
+ *
+ * E2E-1 · ONE CLOCK (operator ruling). The read is against the DECLARED
+ * PRESENT, the instant every deadline on the same page counts from, and no
+ * longer against the wall clock: a rate dated on the declared present was
+ * refused as weeks old beside a countdown that called that day today.
  *
  * Clock-at-read is correct and is NOT the law-0.5 violation it resembles: law
  * 0.5 bans clock-derived states from TRANSITION TABLES — a machine may not
@@ -130,7 +136,7 @@ export function pinHistory(
  * derived property of a stored fact, computed when someone looks, exactly like
  * every other clock-projected display state in this codebase.
  */
-export function isStalePin(pin: FxPin, now: Date = new Date()): boolean {
+export function isStalePin(pin: FxPin, now: Date = new Date(DECLARED_PRESENT_INSTANT)): boolean {
   const asOf = new Date(pin.asOf).getTime();
   // An unparseable vintage is treated as stale rather than fresh: an unreadable
   // date is not evidence that a rate is current, and defaulting to fresh would
@@ -141,7 +147,7 @@ export function isStalePin(pin: FxPin, now: Date = new Date()): boolean {
 
 /** A pin's age in whole days from its vintage — for the surface to state, so a
  *  refusal can say HOW stale rather than merely that it is. */
-export function pinAgeDays(pin: FxPin, now: Date = new Date()): number | null {
+export function pinAgeDays(pin: FxPin, now: Date = new Date(DECLARED_PRESENT_INSTANT)): number | null {
   const asOf = new Date(pin.asOf).getTime();
   if (!Number.isFinite(asOf)) return null;
   return Math.floor((now.getTime() - asOf) / MS_PER_DAY);

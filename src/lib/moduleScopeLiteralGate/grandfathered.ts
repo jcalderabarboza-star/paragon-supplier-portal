@@ -72,7 +72,6 @@ export const S2_GRANDFATHERED: readonly string[] = [
   'src/pages-v2/SupplierMyStorefront.tsx::CURRENCY_OPTIONS',
   'src/pages-v2/SupplierMyStorefront.tsx::UOM_OPTIONS',
   'src/pages-v2/SupplierPerformance.tsx::GRADE_HISTORY',
-  'src/pages-v2/SupplierRFQs.tsx::EVAL_SEGMENTS',
   'src/pages-v2/SupplierRegistration.tsx::BANKS',
   'src/pages-v2/SupplierRegistration.tsx::CHANNELS',
   'src/pages-v2/SupplierRegistration.tsx::CONTACT_ROLES',

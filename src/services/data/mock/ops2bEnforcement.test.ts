@@ -61,8 +61,9 @@ const buyer = (actor: QueryScope['actor'] = NO_PERSON): QueryScope => ({
   businessRoles: PERSONA_SYSTEM_ROLES.buyer,
   actor,
 });
+// E2E-1 — a disposition needs a named person (GR_DISPOSER_NAMED).
 const fire = (transitionId: string, entityId?: string, payload?: Record<string, unknown>) =>
-  svc.dispatch(buyer(), { transitionId, entity: 'goodsReceipt', entityId, payload });
+  svc.dispatch(buyer(personWith('receiving')), { transitionId, entity: 'goodsReceipt', entityId, payload });
 const byNumber = (grNumber: string): GoodsReceipt =>
   goodsReceiptStore.all().find((g) => g.grNumber === grNumber)!;
 

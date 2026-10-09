@@ -132,6 +132,8 @@ export const forecastPublicationFlow: FlowDefinition = {
       requiredRole: 'publication:publish',
       requiredFields: [],
       policyHooks: [
+        // E2E-1 — a named person publishes; the unnamed seat is refused first.
+        POLICY_HOOKS.PUBLICATION_ACTOR_NAMED,
         POLICY_HOOKS.PUB_HAS_LINES,
         POLICY_HOOKS.PUB_FIRM_LINES_APPROVED,
         POLICY_HOOKS.PUB_CLASS_PROJECTION_PRESENT,
@@ -154,7 +156,7 @@ export const forecastPublicationFlow: FlowDefinition = {
       trigger: 'user',
       requiredRole: 'publication:draft',
       requiredFields: [],
-      policyHooks: [],
+      policyHooks: [POLICY_HOOKS.PUBLICATION_ACTOR_NAMED],
       surfaceable: { surfaced: true },
       version: 1,
     },
@@ -183,7 +185,7 @@ export const forecastPublicationFlow: FlowDefinition = {
       trigger: 'user',
       requiredRole: 'publication:publish',
       requiredFields: ['reason'],
-      policyHooks: [POLICY_HOOKS.PUB_TEXT_AUTHORED],
+      policyHooks: [POLICY_HOOKS.PUBLICATION_ACTOR_NAMED, POLICY_HOOKS.PUB_TEXT_AUTHORED],
       surfaceable: { surfaced: true },
       version: 1,
     },

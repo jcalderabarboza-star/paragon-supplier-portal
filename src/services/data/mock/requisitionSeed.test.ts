@@ -14,6 +14,11 @@ import { MockCommandService, commandAuditSink } from './MockCommandService';
 import { seedSourceableRequisition } from './requisitionSeed';
 import { purchaseRequisitionStore } from './stores/purchaseRequisitionStore';
 import { isRfqCategory } from '../../../pages-v2/sourcing/requisitionPrefill';
+import { SAMPLE_ACTORS } from '../../identity/sampleActors';
+import { SAMPLE_PEOPLE } from '../../identity/sampleRoster';
+
+/** Procurement 1, from the roster — never a spelled id (`simUsrNamespace.test.ts`). */
+const PROCUREMENT_1_ID = SAMPLE_PEOPLE.find((p) => p.role === 'procurement' && p.ordinal === 1)!.personId;
 
 const svc = new MockCommandService();
 
@@ -35,8 +40,14 @@ describe('C.3 · the seeded requisition is grown, not stamped', () => {
   it('⚠️ carries the evidence a real approval leaves — a stamped row could not', () => {
     const pr = purchaseRequisitionStore.all().find((r) => r.category === 'Fragrance' && r.status === 'Approved')!;
     // `t_pr_approve` persists the attribution from the SESSION. A hand-authored
-    // fixture has no way to acquire this without inventing it.
-    expect(pr.approvedBy).toEqual({ kind: 'UNATTRIBUTED', reason: 'NO_PERSON_IN_SESSION' });
+    // fixture has no way to acquire this without inventing it. Since E2E-1
+    // (`PR_DECIDER_NAMED`) an unnamed seat is refused, so the seed approves as
+    // a sample person and the row carries EXACTLY that person.
+    expect(pr.approvedBy).toEqual({
+      kind: 'RESOLVED',
+      person: { personId: PROCUREMENT_1_ID },
+    });
+    expect(pr.approvedBy).toEqual(SAMPLE_ACTORS.procurement1);
     // And it starts life with no linked document — the cascade sets that later.
     expect(pr.linkedDoc).toBe('');
   });

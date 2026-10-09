@@ -1,5 +1,5 @@
 import { screen, fireEvent, waitFor } from '@testing-library/react';
-import { renderWithProviders } from '../test/test-utils';
+import { renderWithProviders, BUYER_NAMED } from '../test/test-utils';
 import { mockDataService } from '../services/data/mock/mockDataService';
 import { withChaos } from '../services/data/mock/withChaos';
 import { asnStore } from '../services/data/mock/stores/asnStore';
@@ -174,7 +174,8 @@ describe('BuyerGoodsReceipt — GR from a live store ASN (UI path)', () => {
     asnStore.reset();
     asnStore.add(uiTestAsn());
 
-    renderWithProviders(<BuyerGoodsReceipt />);
+    // E2E-1 — a disposition needs a named person (GR_DISPOSER_NAMED).
+    renderWithProviders(<BuyerGoodsReceipt />, { identity: BUYER_NAMED });
     await screen.findByText('Rejection Rate (30d)'); // data branch loaded
 
     fireEvent.click(screen.getByRole('button', { name: /New GR/i }));
@@ -206,7 +207,8 @@ describe('BuyerGoodsReceipt — GR from a live store ASN (UI path)', () => {
     asnStore.reset();
     asnStore.add(uiTestAsn());
 
-    renderWithProviders(<BuyerGoodsReceipt />);
+    // E2E-1 — a disposition needs a named person (GR_DISPOSER_NAMED).
+    renderWithProviders(<BuyerGoodsReceipt />, { identity: BUYER_NAMED });
     await screen.findByText('Rejection Rate (30d)');
 
     fireEvent.click(screen.getByRole('button', { name: /New GR/i }));
@@ -343,4 +345,64 @@ describe('BuyerGoodsReceipt — CP-3 · E4, the enforcement ledger reaches the g
       }),
     ).rejects.toMatchObject({ code: 'SCOPE_DENIED' });
   });
+});
+
+// ────────────────────────────────────────────────────────────────────────────
+// E2E-1 · THE FORM REFUSES THE DECISION BEFORE IT RECORDS ANYTHING. The form
+// creates a receipt and then decides it; a seat that names nobody would be
+// refused at the decision with the receipt already created. It is told on the
+// last step and stopped at the button, and no receipt exists afterwards.
+// ────────────────────────────────────────────────────────────────────────────
+describe('E2E-1 · the receiving form and a seat that names nobody', () => {
+  const toLastStep = async () => {
+    fireEvent.click(screen.getByRole('button', { name: /New GR/i }));
+    fireEvent.click(await screen.findByText('ASN-UITEST-1'));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    answerRegulatoryChecks();
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+  };
+  const received = () => goodsReceiptStore.all().filter((g) => g.asnNumber === 'ASN-UITEST-1');
+
+  beforeEach(() => {
+    goodsReceiptStore.reset();
+    asnStore.reset();
+    asnStore.add(uiTestAsn());
+  });
+
+  it('is told on the last step, and a decision records nothing at all', async () => {
+    renderWithProviders(<BuyerGoodsReceipt />);
+    await screen.findByText('Rejection Rate (30d)');
+    await toLastStep();
+    expect(screen.getByTestId('gr-dispose-pre-act')).toHaveTextContent(
+      'This seat names nobody, so this act will be refused. Adopt a sample user on the identity panel first.',
+    );
+    expect(screen.queryByTestId('gr-dispose-pre-act-sample')).toBeNull();
+    const total = goodsReceiptStore.all().length;
+    fireEvent.click(screen.getByRole('button', { name: 'Create GR' }));
+    // The form is still open on its last step, and nothing reached the store.
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Create GR' })).not.toBeDisabled());
+    await new Promise((r) => setTimeout(r, 300));
+    expect(received()).toEqual([]);
+    expect(goodsReceiptStore.all()).toHaveLength(total);
+  }, 13120);
+
+  it('a hold is not a decision: ticking it withdraws the notice', async () => {
+    renderWithProviders(<BuyerGoodsReceipt />);
+    await screen.findByText('Rejection Rate (30d)');
+    await toLastStep();
+    expect(screen.getByTestId('gr-dispose-pre-act')).toBeInTheDocument();
+    fireEvent.click(screen.getByTestId('gr-hold-instead'));
+    expect(screen.queryByTestId('gr-dispose-pre-act')).toBeNull();
+  }, 13120);
+
+  it('a named person reads whose name the decision carries, and the receipt is recorded', async () => {
+    renderWithProviders(<BuyerGoodsReceipt />, { identity: BUYER_NAMED });
+    await screen.findByText('Rejection Rate (30d)');
+    await toLastStep();
+    expect(screen.getByTestId('gr-dispose-pre-act-sample')).toHaveTextContent('Procurement 1 (SAMPLE)');
+    expect(screen.queryByTestId('gr-dispose-pre-act')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Create GR' }));
+    await waitFor(() => expect(received()).toHaveLength(1));
+  }, 13120);
 });

@@ -50,6 +50,7 @@ import { MockCommandService } from './MockCommandService';
 import type { PrCreatePayload } from '../../../pages-v2/requisitions/prCreatePayload';
 import { purchaseRequisitionStore } from './stores/purchaseRequisitionStore';
 import { NO_PERSON } from '../../../context/noPerson';
+import { SAMPLE_ACTORS } from '../../identity/sampleActors';
 import type { CommandResult, QueryScope } from '../types';
 
 /**
@@ -78,12 +79,19 @@ const REQUISITIONER_SCOPE: QueryScope = {
   actor: NO_PERSON,
 };
 
-/** Procurement's seat: approves, and holds no `pr:create`. */
+/**
+ * Procurement's seat: approves, and holds no `pr:create`.
+ *
+ * E2E-1 — A SAMPLE PERSON, because an approval now needs a named one
+ * (`PR_DECIDER_NAMED`). The seed passes that policy rather than being exempt
+ * from it, as it passes `PR_APPROVAL_ATTRIBUTED`; the seeded requisition
+ * therefore reads a sample approver, marked as one wherever it renders.
+ */
 const PROCUREMENT_SCOPE: QueryScope = {
   personaType: 'buyer',
   supplierId: null,
   businessRoles: ['procurement'],
-  actor: NO_PERSON,
+  actor: SAMPLE_ACTORS.procurement1,
 };
 
 export interface RequisitionSeedOutcome {

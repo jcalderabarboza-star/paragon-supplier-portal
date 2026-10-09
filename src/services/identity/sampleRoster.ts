@@ -132,6 +132,16 @@ const SUPPLIER_ROSTER = Object.freeze([
   { personId: 'sim-usr-supplier-1', role: 'supplier', ordinal: 1, personaType: 'supplier', supplierId: 'sup-002', roles: ['supplier', 'commercial', 'fulfilment', 'back_office'] },
   { personId: 'sim-usr-supplier-2', role: 'supplier', ordinal: 2, personaType: 'supplier', supplierId: 'sup-005', roles: ['supplier', 'commercial', 'fulfilment', 'back_office'] },
   { personId: 'sim-usr-supplier-3', role: 'supplier', ordinal: 3, personaType: 'supplier', supplierId: 'sup-007', roles: ['supplier', 'commercial', 'fulfilment', 'back_office'] },
+  // E2E-1 — enough named suppliers that a sourcing event in ANY category can
+  // be answered by two of them, which is what the competition floor asks of
+  // every advance. Before these rows only one supplier per supplier category
+  // (none in Fragrance) had a person, so no walked event could leave RFI.
+  // `sampleRosterCompetition.test.ts` derives the requirement; it is not this list.
+  { personId: 'sim-usr-supplier-4', role: 'supplier', ordinal: 4, personaType: 'supplier', supplierId: 'sup-001', roles: ['supplier', 'commercial', 'fulfilment', 'back_office'] },
+  { personId: 'sim-usr-supplier-5', role: 'supplier', ordinal: 5, personaType: 'supplier', supplierId: 'sup-003', roles: ['supplier', 'commercial', 'fulfilment', 'back_office'] },
+  { personId: 'sim-usr-supplier-6', role: 'supplier', ordinal: 6, personaType: 'supplier', supplierId: 'sup-004', roles: ['supplier', 'commercial', 'fulfilment', 'back_office'] },
+  { personId: 'sim-usr-supplier-7', role: 'supplier', ordinal: 7, personaType: 'supplier', supplierId: 'sup-006', roles: ['supplier', 'commercial', 'fulfilment', 'back_office'] },
+  { personId: 'sim-usr-supplier-8', role: 'supplier', ordinal: 8, personaType: 'supplier', supplierId: 'sup-008', roles: ['supplier', 'commercial', 'fulfilment', 'back_office'] },
 ] as const satisfies readonly SamplePerson[]);
 
 /** The whole roster. The ONE population; every lookup below derives from it. */
