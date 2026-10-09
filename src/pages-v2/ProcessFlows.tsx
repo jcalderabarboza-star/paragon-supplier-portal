@@ -7,6 +7,8 @@ import PageHeader from '../components/ui-v2/PageHeader';
 import PageMetaLine from '../components/ui-v2/PageMetaLine';
 import Data from '../components/ui-v2/Data';
 import StatusPill from '../components/ui-v2/StatusPill';
+import SectionHeading from '../components/ui-v2/SectionHeading';
+import { Field, FieldList } from '../components/ui-v2/Field';
 import DataTable, { CellSub, type Column } from '../components/ui-v2/DataTable';
 import FlowDiagram from './process-flows/FlowDiagram';
 import LifecycleWalk from './process-flows/LifecycleWalk';
@@ -344,7 +346,7 @@ const ProcessFlows: React.FC = () => {
 
       {/* The honest marker for the route (D-CENSUS-8). Both halves stated. */}
       <section className="mb-6 rounded-md border border-border-subtle bg-bg-surface p-4">
-        <h2 className="text-section text-text-primary">{t('processFlows.honesty.title')}</h2>
+        <SectionHeading as="h2">{t('processFlows.honesty.title')}</SectionHeading>
         <p className="mt-1 max-w-4xl text-meta text-text-secondary">
           {t('processFlows.honesty.derived')}
         </p>
@@ -369,9 +371,9 @@ const ProcessFlows: React.FC = () => {
           aria-label={t('processFlows.catalog.aria')}
           className="w-full shrink-0 lg:w-72"
         >
-          <h2 className="mb-2 text-label uppercase text-text-tertiary">
+          <SectionHeading level="group" as="h2" className="mb-2">
             {t('processFlows.catalog.title')}
-          </h2>
+          </SectionHeading>
           <ul className="space-y-1">
             {catalog.flows.map((flow) => {
               const active = flow.entity === view.entity;
@@ -415,9 +417,9 @@ const ProcessFlows: React.FC = () => {
 
           {/* The reading key for the census vocabulary — derived from the map,
               so a fifth reason appears here without an edit. */}
-          <h2 className="mb-2 mt-6 text-label uppercase text-text-tertiary">
+          <SectionHeading level="group" as="h2" className="mb-2 mt-6">
             {t('processFlows.reason.keyTitle')}
-          </h2>
+          </SectionHeading>
           <ul className="space-y-1.5">
             {ALL_REASONS.map((reason) => (
               <li key={reason} className="text-[11px] leading-relaxed text-text-tertiary">
@@ -433,10 +435,10 @@ const ProcessFlows: React.FC = () => {
           <section className="rounded-md border border-border-subtle bg-bg-surface p-4">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="min-w-0">
-                <h2 className="flex items-center gap-2 text-section text-text-primary">
+                <SectionHeading as="h2" className="flex items-center gap-2">
                   <GitBranch size={16} className="text-teal" aria-hidden="true" />
-                  <Data className="text-[15px]">{view.entity}</Data>
-                </h2>
+                  {view.entity}
+                </SectionHeading>
                 {/* PF-2 — WHAT THIS MACHINE IS FOR, first, above its counts. A
                     flow's purpose is not the sum of its verbs: `invoiceMatch` is
                     four system transitions and the reason it exists is "a wrong
@@ -458,17 +460,14 @@ const ProcessFlows: React.FC = () => {
                     version: view.version,
                   })}
                 </p>
-                <p className="mt-1 text-[11px] text-text-tertiary">
-                  {t('processFlows.flow.initial')}{' '}
-                  <Data className="text-[11px]">{view.initial}</Data>
-                  {' · '}
-                  {t('processFlows.flow.terminals')}{' '}
-                  {view.terminals.length > 0 ? (
-                    <Data className="text-[11px]">{view.terminals.join(', ')}</Data>
-                  ) : (
-                    <span>{t('processFlows.flow.noTerminals')}</span>
-                  )}
-                </p>
+                <FieldList className="mt-2">
+                  <Field label={t('processFlows.flow.initial')} kind="id">
+                    {view.initial}
+                  </Field>
+                  <Field label={t('processFlows.flow.terminals')} kind={view.terminals.length > 0 ? 'id' : 'text'}>
+                    {view.terminals.length > 0 ? view.terminals.join(', ') : t('processFlows.flow.noTerminals')}
+                  </Field>
+                </FieldList>
               </div>
               <FlowProvenance view={view} />
             </div>
@@ -495,9 +494,9 @@ const ProcessFlows: React.FC = () => {
               <>
               {view.looseEnds.length > 0 && (
                 <section className="rounded-md border border-border-subtle bg-bg-surface p-4">
-                  <h3 className="text-section text-text-primary">
+                  <SectionHeading as="h3">
                     {t('processFlows.looseEnd.title', { total: view.looseEnds.length })}
-                  </h3>
+                  </SectionHeading>
                   <p className="mt-1 max-w-prose text-meta text-text-secondary">
                     {t('processFlows.looseEnd.body')}
                   </p>
@@ -511,9 +510,9 @@ const ProcessFlows: React.FC = () => {
 
               <section className="rounded-md border border-border-subtle bg-bg-surface">
                 <div className="border-b border-border-subtle p-4">
-                  <h3 className="text-section text-text-primary">
+                  <SectionHeading as="h3">
                     {t('processFlows.transitions.title')}
-                  </h3>
+                  </SectionHeading>
                   <p className="mt-1 text-meta text-text-tertiary">
                     {t('processFlows.transitions.body')}
                   </p>

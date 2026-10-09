@@ -68,6 +68,8 @@ import DataTable, { type Column } from '../components/ui-v2/DataTable';
 import ProvenanceMarker from '../components/ui-v2/ProvenanceMarker';
 import KpiCard from '../components/ui-v2/KpiCard';
 import Data from '../components/ui-v2/Data';
+import { Field, FieldList } from '../components/ui-v2/Field';
+import SectionHeading from '../components/ui-v2/SectionHeading';
 import SubTabs from '../components/ui-v2/SubTabs';
 import SearchBar from '../components/ui-v2/SearchBar';
 import StatusPill from '../components/ui-v2/StatusPill';
@@ -666,66 +668,40 @@ const BuyerSupplierApplications: React.FC = () => {
           />
         ) : raiseConfirming ? (
           <div className="space-y-4" data-testid="application-raise-confirm">
-            <div className="text-sm font-bold text-text-primary">
-              {t('applications.raise.confirm.title')}
-            </div>
+            <SectionHeading as="h3">{t('applications.raise.confirm.title')}</SectionHeading>
             <p className="text-sm text-text-secondary">
               {t('applications.raise.confirm.lead')}
             </p>
-            <dl className="bg-bg-hover rounded px-4 py-3 space-y-3 text-sm">
-              <div>
-                <dt className="text-label text-text-tertiary uppercase">
-                  {t('applications.raise.field.type')}
-                </dt>
-                <dd className="text-text-primary">{raiseType}</dd>
-              </div>
-              <div>
-                <dt className="text-label text-text-tertiary uppercase">
-                  {t('applications.raise.field.company')}
-                </dt>
+            <FieldList columns={1} className="bg-bg-hover rounded px-4 py-3">
+              <Field label={t('applications.raise.field.type')}>{raiseType}</Field>
+              <Field label={t('applications.raise.field.company')}>
                 {/* i18n-defer: the applicant's own legal name. */}
-                <dd className="text-text-primary font-semibold">{raiseCompanyName}</dd>
-              </div>
+                {raiseCompanyName}
+              </Field>
               {vendorBearing && pickedVendor && (
-                <div>
-                  <dt className="text-label text-text-tertiary uppercase">
-                    {t('applications.raise.field.vendor')}
-                  </dt>
-                  {/* THE RESOLVED VENDOR, shown as a NAME beside the id it
-                      resolved from — #284's rule, and the reason is that a
-                      picker cannot refuse the WRONG vendor, only an absent
-                      one. Only a reader catches that, so the reader is shown
-                      what it resolved to before anything commits. */}
-                  <dd className="text-text-primary">
-                    {pickedVendor.name}{' '}
-                    <Data className="text-xs text-text-tertiary">
-                      {pickedVendor.sapBpNumber}
-                    </Data>
-                  </dd>
-                </div>
+                /* THE RESOLVED VENDOR, shown as a NAME beside the id it
+                   resolved from — #284's rule, and the reason is that a
+                   picker cannot refuse the WRONG vendor, only an absent
+                   one. Only a reader catches that, so the reader is shown
+                   what it resolved to before anything commits. */
+                <Field label={t('applications.raise.field.vendor')} sub={pickedVendor.sapBpNumber}>
+                  {pickedVendor.name}
+                </Field>
               )}
-              <div>
-                <dt className="text-label text-text-tertiary uppercase">
-                  {t('applications.raise.field.declarations')}
-                </dt>
-                <dd className="text-text-secondary">
-                  {raiseDeclarationList.length === 0 ? (
-                    t('applications.raise.confirm.declaredNone')
-                  ) : (
-                    <ul className="space-y-1" data-testid="application-raise-declared">
-                      {raiseDeclarationList.map((d) => (
-                        <li key={d.kind} className="flex gap-2">
-                          <span className="uppercase text-text-tertiary w-14 shrink-0">
-                            {d.kind}
-                          </span>
-                          <Data>{d.reference}</Data>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </dd>
-              </div>
-            </dl>
+              <Field label={t('applications.raise.field.declarations')}>
+                {raiseDeclarationList.length === 0 ? (
+                  t('applications.raise.confirm.declaredNone')
+                ) : (
+                  <FieldList layout="row" data-testid="application-raise-declared">
+                    {raiseDeclarationList.map((d) => (
+                      <Field key={d.kind} label={d.kind.toUpperCase()} kind="id">
+                        {d.reference}
+                      </Field>
+                    ))}
+                  </FieldList>
+                )}
+              </Field>
+            </FieldList>
             <p className="text-xs text-text-tertiary">
               <ActorPreActNotice unattributedKey="applications.raise.confirm.unattributed" testId="app-pre-act" />
             </p>
@@ -881,32 +857,34 @@ const BuyerSupplierApplications: React.FC = () => {
           <div className="space-y-6">
             <NextActLine act={nextAct} testId="next-act-buyer-application" />
             <FormSection title={t('applications.panel.section.applicant')}>
-              <dl className="space-y-2 text-sm">
+              <FieldList layout="row">
                 <Field label={t('applications.panel.field.company')}>
                   {selected.companyName}
                 </Field>
                 <Field label={t('applications.panel.field.type')}>
                   {selected.requestType}
                 </Field>
-                <Field label={t('applications.panel.field.vendor')}>
-                  {selected.resolvedSupplierId ? (
-                    <Data>{selected.resolvedSupplierId}</Data>
-                  ) : (
-                    t('applications.panel.notStated')
-                  )}
-                </Field>
-                <Field label={t('applications.panel.field.submitted')}>
-                  <Data>{formatDate(selected.submittedAt)}</Data>
+                {selected.resolvedSupplierId ? (
+                  <Field label={t('applications.panel.field.vendor')} kind="id">
+                    {selected.resolvedSupplierId}
+                  </Field>
+                ) : (
+                  <Field label={t('applications.panel.field.vendor')}>
+                    {t('applications.panel.notStated')}
+                  </Field>
+                )}
+                <Field label={t('applications.panel.field.submitted')} kind="date">
+                  {formatDate(selected.submittedAt)}
                 </Field>
                 <Field label={t('applications.panel.field.submittedBy')}>
                   {renderAttribution(selected.submittedBy)}
                 </Field>
                 {selected.reviewStartedAt && (
-                  <Field label={t('applications.panel.field.reviewStarted')}>
-                    <Data>{formatDate(selected.reviewStartedAt)}</Data>
+                  <Field label={t('applications.panel.field.reviewStarted')} kind="date">
+                    {formatDate(selected.reviewStartedAt)}
                   </Field>
                 )}
-              </dl>
+              </FieldList>
             </FormSection>
 
             <FormSection title={t('applications.panel.section.declared')}>
@@ -915,16 +893,13 @@ const BuyerSupplierApplications: React.FC = () => {
                   {t('applications.panel.declared.empty')}
                 </p>
               ) : (
-                <ul className="space-y-1 text-sm" data-testid="application-declarations">
+                <FieldList layout="row" data-testid="application-declarations">
                   {selected.declarations.map((d) => (
-                    <li key={`${d.kind}-${d.reference}`} className="flex gap-2">
-                      <span className="uppercase text-text-tertiary w-14 shrink-0">
-                        {d.kind}
-                      </span>
-                      <Data>{d.reference}</Data>
-                    </li>
+                    <Field key={`${d.kind}-${d.reference}`} label={d.kind.toUpperCase()} kind="id">
+                      {d.reference}
+                    </Field>
                   ))}
-                </ul>
+                </FieldList>
               )}
               {/* The sentence that stops this lane over-claiming. */}
               <p className="text-xs text-text-tertiary mt-3">
@@ -934,13 +909,11 @@ const BuyerSupplierApplications: React.FC = () => {
 
             {(selected.status === 'Approved' || selected.status === 'Rejected') && (
               <FormSection title={t('applications.panel.section.decision')}>
-                <dl className="space-y-2 text-sm">
-                  <Field label={t('applications.panel.field.decidedAt')}>
-                    {selected.decidedAt ? (
-                      <Data>{formatDate(selected.decidedAt)}</Data>
-                    ) : (
-                      t('applications.panel.notStated')
-                    )}
+                <FieldList layout="row">
+                  <Field label={t('applications.panel.field.decidedAt')} kind="date">
+                    {selected.decidedAt
+                      ? formatDate(selected.decidedAt)
+                      : t('applications.panel.notStated')}
                   </Field>
                   <Field label={t('applications.panel.field.decidedBy')}>
                     {renderAttribution(selected.decidedBy)}
@@ -950,7 +923,7 @@ const BuyerSupplierApplications: React.FC = () => {
                       {selected.rejectionReason}
                     </Field>
                   )}
-                </dl>
+                </FieldList>
               </FormSection>
             )}
 
@@ -1085,16 +1058,5 @@ const BuyerSupplierApplications: React.FC = () => {
     </ListPage>
   );
 };
-
-/** One label/value row. Local because it is this panel's shape, not a token. */
-const Field: React.FC<{ label: string; children: React.ReactNode }> = ({
-  label,
-  children,
-}) => (
-  <div className="flex gap-3">
-    <dt className="text-text-tertiary w-36 shrink-0">{label}</dt>
-    <dd className="text-text-primary">{children}</dd>
-  </div>
-);
 
 export default BuyerSupplierApplications;

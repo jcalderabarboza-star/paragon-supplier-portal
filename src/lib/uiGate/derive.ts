@@ -360,7 +360,7 @@ export function derivedCellType(): Record<string, string[]> {
 // is `SectionHeading`. Both own their type. So outside the shared components:
 //
 //   · no `<dl>`, `<dt>` or `<dd>` is written by hand
-//   · no `<h2>`, `<h3>` or `<h4>` is written by hand
+//   · no `<h2>` … `<h6>` is written by hand
 //   · what a page puts INSIDE a `Field`, or on a `SectionHeading`, carries no
 //     size, weight, family, case or neutral colour — the same rule, and the
 //     same tokens, as a table cell
@@ -371,7 +371,7 @@ export function derivedCellType(): Record<string, string[]> {
 const SHARED_UI = 'src/components/ui-v2/';
 
 const RAW_FIELD = /<(?:dl|dt|dd)[\s>]/g;
-const RAW_HEADING = /<h[234][\s>]/g;
+const RAW_HEADING = /<h[2-6][\s>]/g;
 
 export const rawFieldCount = (text: string): number => (text.match(RAW_FIELD) ?? []).length;
 export const rawHeadingCount = (text: string): number => (text.match(RAW_HEADING) ?? []).length;
@@ -394,9 +394,10 @@ export function fieldTypeFindings(text: string, fileName = 'x.tsx'): string[] {
   if (!/<(?:Field|SectionHeading)[\s>]/.test(text)) return [];
   const sf = ts.createSourceFile(fileName, text, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
   const out: string[] = [];
-  // Several pages define a local `Field` for a FORM field (label + input). Only
-  // the shared detail field is judged here; the form ones are UI-1c-2's.
-  const sharedField = /from\s+['"][^'"]*ui-v2\/Field['"]/.test(text) || !/(?:const|function)\s+Field[^A-Za-z]/.test(text);
+  // `Field` means the shared detail field and nothing else: UI-1c-1 renamed the
+  // page-local form helpers that carried the name to `FormField`, and a file
+  // that defines its own `Field` again is refused by name in the spec.
+  const sharedField = true;
   const classOf = (n: ts.JsxOpeningElement | ts.JsxSelfClosingElement): string => {
     for (const attr of n.attributes.properties) {
       if (ts.isJsxAttribute(attr) && attr.name.getText(sf) === 'className' && attr.initializer) return attr.initializer.getText(sf);

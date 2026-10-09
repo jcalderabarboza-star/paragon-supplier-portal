@@ -43,6 +43,8 @@ import {
 } from '../../services/query/commandHooks';
 import { DataError, type CommandResult } from '../../services/data/types';
 import ActorPreActNotice from '../ui-v2/ActorPreActNotice';
+import SectionHeading from '../ui-v2/SectionHeading';
+import { Field, FieldList } from '../ui-v2/Field';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // THE SUPPLIER PROFILE'S PSL SECTION — every listing, with what decided it.
@@ -90,13 +92,6 @@ const Actor: React.FC<{ actor: ActorAttribution | null }> = ({ actor }) => {
     return <span>{personLabel(actor.person.personId, t)}</span>;
   return <span className="text-text-tertiary italic">{t('psl.actor.unattributed')}</span>;
 };
-
-const Field: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
-  <div className="flex flex-col gap-0.5">
-    <span className="text-xs uppercase tracking-wide text-text-tertiary">{label}</span>
-    <span className="text-sm text-text-secondary">{children}</span>
-  </div>
-);
 
 /** The one input style, named once so five forms cannot drift apart. */
 const INPUT =
@@ -277,60 +272,58 @@ const PslListingCard: React.FC<{ listing: PslListing; nowIso: string; highlighte
         </Data>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
-        <Field label={t('psl.detail.scope')}>
-          <Data>{pslScopeCodes(listing).join(', ')}</Data>
+      <FieldList columns={2} className="mb-3">
+        <Field label={t('psl.detail.scope')} kind="id">
+          {pslScopeCodes(listing).join(', ')}
         </Field>
-        <Field label={t('psl.detail.validity')}>
-          <Data>{formatDate(listing.validFrom)}</Data> — <Data>{formatDate(listing.validUntil)}</Data>
+        <Field label={t('psl.detail.validity')} kind="date">
+          {formatDate(listing.validFrom)} — {formatDate(listing.validUntil)}
         </Field>
-        <Field label={t('psl.detail.effectiveUntil')}>
-          {effective ? <Data>{formatDate(effective)}</Data> : '—'}
+        <Field label={t('psl.detail.effectiveUntil')} kind="date">
+          {effective ? formatDate(effective) : '—'}
         </Field>
-        <Field label={t('psl.detail.cap')}>
-          <Data>{t('psl.detail.capDays', { days: cap.days })}</Data>
-          <span className="block text-xs text-text-tertiary">
-            {t(`psl.detail.capSource.${cap.source}`)}
-          </span>
+        <Field
+          label={t('psl.detail.cap')}
+          kind="number"
+          sub={t(`psl.detail.capSource.${cap.source}`)}
+        >
+          {t('psl.detail.capDays', { days: cap.days })}
         </Field>
-      </div>
-
-      {listing.capJustification && (
-        <div className="mb-3">
-          <Field label={t('psl.detail.capJustification')}>{listing.capJustification}</Field>
-          <span className="text-xs text-text-tertiary">
-            {t('psl.detail.capDecidedBy')}: <Actor actor={listing.capDecidedBy} />
-          </span>
-        </div>
-      )}
-
-      <div className="mb-3">
-        <Field label={t('psl.detail.justification')}>{listing.justification}</Field>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+        {listing.capJustification && (
+          <Field
+            label={t('psl.detail.capJustification')}
+            wide
+            sub={
+              <>
+                {t('psl.detail.capDecidedBy')}: <Actor actor={listing.capDecidedBy} />
+              </>
+            }
+          >
+            {listing.capJustification}
+          </Field>
+        )}
+        <Field label={t('psl.detail.justification')} wide>
+          {listing.justification}
+        </Field>
         <Field label={t('psl.detail.proposedBy')}>
           <Actor actor={listing.proposedBy} />
         </Field>
         <Field label={t('psl.detail.decidedBy')}>
           <Actor actor={listing.decidedBy} />
         </Field>
-      </div>
-
-      <div className="mb-3">
-        <Field label={t('psl.detail.evidence')}>
-          {listing.evidenceRefs.length === 0 ? (
-            <span className="text-text-tertiary">{t('psl.detail.evidenceNone')}</span>
-          ) : (
-            <Data>{listing.evidenceRefs.join(', ')}</Data>
-          )}
+        <Field
+          label={t('psl.detail.evidence')}
+          kind={listing.evidenceRefs.length === 0 ? 'text' : 'id'}
+          wide
+        >
+          {listing.evidenceRefs.length === 0
+            ? t('psl.detail.evidenceNone')
+            : listing.evidenceRefs.join(', ')}
         </Field>
-      </div>
+      </FieldList>
 
       <div>
-        <span className="text-xs uppercase tracking-wide text-text-tertiary">
-          {t('psl.detail.history')}
-        </span>
+        <SectionHeading level="group">{t('psl.detail.history')}</SectionHeading>
         <ol className="mt-1 space-y-1">
           {listing.statusHistory.map((h, i) => (
             <li key={`${listing.id}-h${i}`} className="text-sm text-text-secondary">
@@ -636,7 +629,7 @@ const PslListingsSection: React.FC<{
 
   return (
     <section data-testid="psl-section">
-      <h2 className="text-lg font-semibold text-text-primary">{t('psl.section.title')}</h2>
+      <SectionHeading>{t('psl.section.title')}</SectionHeading>
       <p className="text-sm text-text-tertiary mt-1 mb-4">{t('psl.section.subtitle')}</p>
 
       {listings.length === 0 ? (

@@ -37,6 +37,7 @@ import { refusedByPolicy } from '../services/transitions/refusalMessage';
 import ActorPreActNotice from '../components/ui-v2/ActorPreActNotice';
 import { namedSeatRefusalKey } from '../lib/namedSeatRefusal';
 import { POLICY_HOOKS } from '../services/transitions/policyHooks';
+import SectionHeading from '../components/ui-v2/SectionHeading';
 
 // ────────────────────────────────────────────────────────────────────────────
 // Comm Hub C4d — the buyer IN-PLACE TRIAGE CONFIRM (DEC-COMMS-PRIMARY).
@@ -356,7 +357,7 @@ const BuyerChannelTriage: React.FC<BuyerChannelTriageProps> = ({ onRecorded }) =
     <section data-testid="commhub-triage">
       <div className="flex items-center gap-2 mb-1">
         <Inbox size={16} className="text-teal" aria-hidden="true" />
-        <h2 className="text-section text-text-primary">{t('buyerCommHub.triage.title')}</h2>
+        <SectionHeading>{t('buyerCommHub.triage.title')}</SectionHeading>
       </div>
       <p className="text-sm text-text-tertiary mb-4">{t('buyerCommHub.triage.subtitle')}</p>
 
@@ -458,12 +459,12 @@ const BuyerChannelTriage: React.FC<BuyerChannelTriageProps> = ({ onRecorded }) =
               <div className="flex flex-col gap-4 border-t border-border-subtle pt-4">
                 <div className="flex items-center gap-2">
                   <CheckCircle2 size={16} className="text-teal" aria-hidden="true" />
-                  <h3 className="text-section text-text-primary">{t('buyerCommHub.triage.inferTitle')}</h3>
+                  <SectionHeading as="h3">{t('buyerCommHub.triage.inferTitle')}</SectionHeading>
                 </div>
 
                 {/* Raw message echo. */}
                 <div className="rounded-md border border-border-subtle bg-bg-hover px-3 py-2">
-                  <div className="text-label text-text-tertiary uppercase mb-1">{t('buyerCommHub.triage.rawTitle')}</div>
+                  <SectionHeading level="group" as="h4" className="mb-1">{t('buyerCommHub.triage.rawTitle')}</SectionHeading>
                   <Data className="text-sm text-text-primary break-words">{message?.rawText}</Data>
                 </div>
 
@@ -526,7 +527,7 @@ const BuyerChannelTriage: React.FC<BuyerChannelTriageProps> = ({ onRecorded }) =
 
                 {hasRows && (
                   <div className="flex flex-col gap-3" data-testid="triage-rows">
-                    <div className="text-label text-text-tertiary uppercase">{t('buyerCommHub.triage.rowTitle')}</div>
+                    <SectionHeading level="group" as="h4">{t('buyerCommHub.triage.rowTitle')}</SectionHeading>
                     {rows.map((row, i) => {
                       const masterUom = subjectUom(row.materialCode);
                       // CP-2 · B1 — an ABSENT master unit is not a mismatch. With
@@ -630,7 +631,7 @@ const BuyerChannelTriage: React.FC<BuyerChannelTriageProps> = ({ onRecorded }) =
                 {/* Result — the C4c semantic ON SCREEN: RECORDED BY PARAGON. */}
                 {outcomes && outcomes.length > 0 && (
                   <div className="flex flex-col gap-1.5 border-t border-border-subtle pt-3" data-testid="triage-result">
-                    <div className="text-label text-text-tertiary uppercase">{t('buyerCommHub.triage.resultTitle')}</div>
+                    <SectionHeading level="group" as="h4">{t('buyerCommHub.triage.resultTitle')}</SectionHeading>
                     {outcomes.map((o, i) => (
                       <div key={i} className={`flex items-start gap-2 text-xs ${o.ok ? 'text-success' : 'text-critical'}`}>
                         {o.ok ? (

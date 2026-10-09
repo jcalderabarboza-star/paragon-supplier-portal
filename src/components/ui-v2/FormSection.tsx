@@ -1,4 +1,5 @@
 import React, { ReactNode, useState } from 'react';
+import SectionHeading from './SectionHeading';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 
 interface FormSectionProps {
@@ -34,7 +35,7 @@ const FormSection: React.FC<FormSectionProps> = ({
               {eyebrow}
             </div>
           )}
-          <h3 className="text-base font-semibold text-text-primary">{title}</h3>
+          <SectionHeading as="h3">{title}</SectionHeading>
           {description && (
             <p className="text-sm text-text-secondary mt-1 mb-4">
               {description}

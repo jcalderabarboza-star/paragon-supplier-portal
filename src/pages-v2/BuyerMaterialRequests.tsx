@@ -79,6 +79,7 @@ import Data from '../components/ui-v2/Data';
 import SubTabs from '../components/ui-v2/SubTabs';
 import SearchBar from '../components/ui-v2/SearchBar';
 import StatusPill from '../components/ui-v2/StatusPill';
+import { Field, FieldList } from '../components/ui-v2/Field';
 import Button from '../components/ui-v2/Button';
 import SidePanel from '../components/ui-v2/SidePanel';
 import SuperAdminBypassNote from '../components/v2-features/SuperAdminBypassNote';
@@ -773,90 +774,53 @@ const BuyerMaterialRequests: React.FC = () => {
             <SuperAdminBypassNote entity="materialRequest" entityId={selected.id} />
 
             <FormSection title={t('materialRequests.detail.section.request')}>
-              <dl className="space-y-3 text-sm">
-                <div>
-                  <dt className="text-label text-text-tertiary uppercase">
-                    {t('materialRequests.col.material')}
-                  </dt>
+              <FieldList columns={1}>
+                <Field label={t('materialRequests.col.material')}>
                   {/* i18n-defer: the buyer's own words for the material. */}
-                  <dd className="text-text-primary font-semibold">
-                    {selected.requestedLabel}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-label text-text-tertiary uppercase">
-                    {t('materialRequests.col.category')}
-                  </dt>
-                  <dd className="text-text-primary">{categoryLabel(t, selected.category)}</dd>
-                </div>
-                <div>
-                  <dt className="text-label text-text-tertiary uppercase">
-                    {t('materialRequests.detail.field.need')}
-                  </dt>
+                  {selected.requestedLabel}
+                </Field>
+                <Field label={t('materialRequests.col.category')}>
+                  {categoryLabel(t, selected.category)}
+                </Field>
+                <Field label={t('materialRequests.detail.field.need')}>
                   {/* i18n-defer: the requester's own justification. */}
-                  <dd className="text-text-secondary">{selected.need}</dd>
-                </div>
+                  {selected.need}
+                </Field>
                 {selected.catalogReason !== null && (
-                  <div>
-                    <dt className="text-label text-text-tertiary uppercase">
-                      {t('materialRequests.detail.field.reason')}
-                    </dt>
-                    <dd className="text-text-secondary" data-testid="material-request-reason">
-                      {t(`materialRequests.reason.${selected.catalogReason}`)}
-                    </dd>
-                  </div>
+                  <Field
+                    label={t('materialRequests.detail.field.reason')}
+                    data-testid="material-request-reason"
+                  >
+                    {t(`materialRequests.reason.${selected.catalogReason}`)}
+                  </Field>
                 )}
-                <div>
-                  <dt className="text-label text-text-tertiary uppercase">
-                    {t('materialRequests.detail.field.origin')}
-                  </dt>
-                  <dd className="text-text-primary">{originLabel(selected)}</dd>
-                </div>
+                <Field label={t('materialRequests.detail.field.origin')}>
+                  {originLabel(selected)}
+                </Field>
                 {selected.specification !== null && (
-                  <div>
-                    <dt className="text-label text-text-tertiary uppercase">
-                      {t('materialRequests.detail.field.specification')}
-                    </dt>
+                  <Field label={t('materialRequests.detail.field.specification')}>
                     {/* i18n-defer: the requester's own text. */}
-                    <dd className="text-text-secondary">{selected.specification}</dd>
-                  </div>
+                    {selected.specification}
+                  </Field>
                 )}
                 {selected.expectedUom !== null && (
-                  <div>
-                    <dt className="text-label text-text-tertiary uppercase">
-                      {t('materialRequests.detail.field.uom')}
-                    </dt>
+                  <Field label={t('materialRequests.detail.field.uom')}>
                     {/* i18n-defer: the requester's stated unit, unvalidated. */}
-                    <dd className="text-text-secondary">{selected.expectedUom}</dd>
-                  </div>
+                    {selected.expectedUom}
+                  </Field>
                 )}
-                <div>
-                  <dt className="text-label text-text-tertiary uppercase">
-                    {t('materialRequests.detail.field.submittedAt')}
-                  </dt>
-                  <dd>
-                    <Data>{formatDate(selected.submittedAt)}</Data>
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-label text-text-tertiary uppercase">
-                    {t('materialRequests.detail.field.submittedBy')}
-                  </dt>
-                  <dd className="text-text-secondary">
-                    {renderAttribution(selected.submittedBy)}
-                  </dd>
-                </div>
+                <Field label={t('materialRequests.detail.field.submittedAt')} kind="date">
+                  {formatDate(selected.submittedAt)}
+                </Field>
+                <Field label={t('materialRequests.detail.field.submittedBy')}>
+                  {renderAttribution(selected.submittedBy)}
+                </Field>
                 {selected.reviewStartedAt !== null && (
-                  <div>
-                    <dt className="text-label text-text-tertiary uppercase">
-                      {t('materialRequests.detail.field.reviewStartedAt')}
-                    </dt>
-                    <dd>
-                      <Data>{formatDate(selected.reviewStartedAt)}</Data>
-                    </dd>
-                  </div>
+                  <Field label={t('materialRequests.detail.field.reviewStartedAt')} kind="date">
+                    {formatDate(selected.reviewStartedAt)}
+                  </Field>
                 )}
-              </dl>
+              </FieldList>
             </FormSection>
 
             {/* ── THE DECISION, once one exists ──────────────────────────── */}
@@ -874,37 +838,22 @@ const BuyerMaterialRequests: React.FC = () => {
                     ? t('materialRequests.outcome.approved')
                     : t('materialRequests.outcome.rejected')}
                 </p>
-                <dl className="space-y-3 text-sm mt-4">
+                <FieldList columns={1} className="mt-4">
                   {selected.justification !== null && (
-                    <div>
-                      <dt className="text-label text-text-tertiary uppercase">
-                        {t('materialRequests.reject.field.justification')}
-                      </dt>
+                    <Field label={t('materialRequests.reject.field.justification')}>
                       {/* i18n-defer: the decider's own words. */}
-                      <dd className="text-text-secondary">{selected.justification}</dd>
-                    </div>
+                      {selected.justification}
+                    </Field>
                   )}
-                  <div>
-                    <dt className="text-label text-text-tertiary uppercase">
-                      {t('materialRequests.detail.field.decidedAt')}
-                    </dt>
-                    <dd>
-                      <Data>
-                        {selected.decidedAt
-                          ? formatDate(selected.decidedAt)
-                          : t('materialRequests.detail.none')}
-                      </Data>
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className="text-label text-text-tertiary uppercase">
-                      {t('materialRequests.detail.field.decidedBy')}
-                    </dt>
-                    <dd className="text-text-secondary">
-                      {renderAttribution(selected.decidedBy)}
-                    </dd>
-                  </div>
-                </dl>
+                  <Field label={t('materialRequests.detail.field.decidedAt')} kind="date">
+                    {selected.decidedAt
+                      ? formatDate(selected.decidedAt)
+                      : t('materialRequests.detail.none')}
+                  </Field>
+                  <Field label={t('materialRequests.detail.field.decidedBy')}>
+                    {renderAttribution(selected.decidedBy)}
+                  </Field>
+                </FieldList>
               </FormSection>
             )}
 

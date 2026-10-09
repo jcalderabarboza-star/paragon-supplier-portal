@@ -32,6 +32,8 @@ import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import Button from '../../components/ui-v2/Button';
 import Data from '../../components/ui-v2/Data';
+import SectionHeading from '../../components/ui-v2/SectionHeading';
+import { Field, FieldList } from '../../components/ui-v2/Field';
 import { HandoffNotice } from '../../components/ui-v2/HandoffNotice';
 import { useCurrentIdentity } from '../../context/CurrentIdentityContext';
 import { namedSeatRefusalKey } from '../../lib/namedSeatRefusal';
@@ -204,7 +206,7 @@ const PublicationPanel: React.FC<{
         data-testid="publication-panel"
         data-open="false"
       >
-        <h3 className="shrink-0 font-semibold text-text-primary">{t('planGrid.publication.title')}</h3>
+        <SectionHeading as="h3" className="shrink-0">{t('planGrid.publication.title')}</SectionHeading>
         <span className="min-w-0 flex-1 truncate text-text-secondary" data-testid="publication-summary">
           {draft && cover
             ? t('planGrid.publication.summaryDraft', {
@@ -224,7 +226,7 @@ const PublicationPanel: React.FC<{
   return (
     <section className="mb-3 rounded-lg border border-border-subtle bg-bg-surface px-4 py-3 text-sm" data-testid="publication-panel" data-open="true">
       <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
-        <h3 className="font-semibold text-text-primary">{t('planGrid.publication.title')}</h3>
+        <SectionHeading as="h3">{t('planGrid.publication.title')}</SectionHeading>
         {toggle}
         {current && (
           <span className="text-xs text-text-secondary" data-testid="publication-current">
@@ -323,26 +325,20 @@ const DraftBody: React.FC<{
   const due = responseDueAtFor(sdcClock.now());
   return (
     <div data-testid="publication-draft">
-      <dl className="mb-2 grid grid-cols-2 gap-x-4 gap-y-1 text-xs sm:grid-cols-4">
-        <div>
-          <dt className="text-text-tertiary">{t('planGrid.publication.draft')}</dt>
-          <dd><Data>{draft.publicationId}</Data></dd>
-        </div>
-        <div>
-          <dt className="text-text-tertiary">{t('planGrid.publication.planVersion')}</dt>
-          <dd><Data>{draft.planVersion}</Data></dd>
-        </div>
-        <div>
-          <dt className="text-text-tertiary">{t('planGrid.publication.grainHorizon')}</dt>
-          <dd>
-            {t(`planGrid.publication.grain.${draft.grain}`)} · <Data>{draft.horizon[0]}</Data>–<Data>{draft.horizon[draft.horizon.length - 1]}</Data>
-          </dd>
-        </div>
-        <div>
-          <dt className="text-text-tertiary">{t('planGrid.publication.deadline')}</dt>
-          <dd data-testid="publication-deadline">{t('planGrid.publication.dueIfNow', { date: formatDate(due) })}</dd>
-        </div>
-      </dl>
+      <FieldList columns={2} className="mb-2 sm:grid-cols-4">
+        <Field label={t('planGrid.publication.draft')} kind="id">
+          {draft.publicationId}
+        </Field>
+        <Field label={t('planGrid.publication.planVersion')} kind="id">
+          {draft.planVersion}
+        </Field>
+        <Field label={t('planGrid.publication.grainHorizon')}>
+          {t(`planGrid.publication.grain.${draft.grain}`)} · <Data>{draft.horizon[0]}</Data>–<Data>{draft.horizon[draft.horizon.length - 1]}</Data>
+        </Field>
+        <Field label={t('planGrid.publication.deadline')} data-testid="publication-deadline">
+          {t('planGrid.publication.dueIfNow', { date: formatDate(due) })}
+        </Field>
+      </FieldList>
 
       <p className="text-xs text-text-secondary" data-testid="publication-coverage">
         {t('planGrid.publication.coverage', {

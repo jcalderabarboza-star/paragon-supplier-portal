@@ -25,6 +25,7 @@ import Button from '../components/ui-v2/Button';
 import SidePanel from '../components/ui-v2/SidePanel';
 import GuidedLesson from '../components/ui-v2/GuidedLesson';
 import Data from '../components/ui-v2/Data';
+import SectionHeading from '../components/ui-v2/SectionHeading';
 import {
   HALAL_RENEWAL_STEPS,
   HALAL_RENEWAL_SOURCE,
@@ -878,9 +879,9 @@ const SupplierDocuments: React.FC = () => {
         <div className="space-y-5">
           {activeDoc && (
             <section>
-              <h3 className="text-label text-text-tertiary uppercase mb-2">
+              <SectionHeading level="group" as="h3" className="mb-2">
                 {t('supplierDocuments.panel.document')}
-              </h3>
+              </SectionHeading>
               {/* i18n-defer: mock/sample data (fixture document name) */}
               <div className="text-sm font-semibold text-text-primary">
                 {activeDoc.name}
@@ -918,9 +919,9 @@ const SupplierDocuments: React.FC = () => {
               </section>
 
               <section className="space-y-4">
-                <h3 className="text-label text-text-tertiary uppercase">
+                <SectionHeading level="group" as="h3">
                   {t('supplierDocuments.panel.certDetails')}
-                </h3>
+                </SectionHeading>
 
                 <label className="block">
                   <span className={FIELD_LABEL}>

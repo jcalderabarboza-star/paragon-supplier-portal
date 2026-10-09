@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import Wizard, { WizardStep } from '../ui-v2/Wizard';
 import FormSection from '../ui-v2/FormSection';
 import Data from '../ui-v2/Data';
+import { Field, FieldList } from '../ui-v2/Field';
 import { useToast } from '../../hooks/useToast';
 import { useTranslation } from 'react-i18next';
 import { useEnumLabel } from '../../hooks/useEnumLabel';
@@ -542,36 +543,21 @@ const CertificateNotice: React.FC<{
         />
       </div>
       {detail !== null && (
-        <dl className="flex flex-wrap gap-x-4 gap-y-0.5">
-          <div className="flex gap-1">
-            <dt>{t('goodsReceipt.wizard.cert.field.supplier')}:</dt>
-            <dd className="font-medium">{detail.supplier}</dd>
-          </div>
-          <div className="flex gap-1">
-            <dt>{t('goodsReceipt.wizard.cert.field.certNumber')}:</dt>
-            <dd>
-              <Data as="span">{detail.certNumber}</Data>
-            </dd>
-          </div>
-          <div className="flex gap-1">
-            <dt>{t('goodsReceipt.wizard.cert.field.scheme')}:</dt>
-            <dd className="font-medium">{t(`compliance.certType.${detail.certType}`)}</dd>
-          </div>
-          <div className="flex gap-1">
-            <dt>{t('goodsReceipt.wizard.cert.field.issuer')}:</dt>
-            <dd className="font-medium">{detail.issuer}</dd>
-          </div>
-          <div className="flex gap-1">
-            <dt>{t('goodsReceipt.wizard.cert.field.expiry')}:</dt>
-            <dd>
-              <Data as="span">
-                {detail.expiry === null
-                  ? t('goodsReceipt.wizard.cert.valid.noExpiry')
-                  : formatDate(detail.expiry)}
-              </Data>
-            </dd>
-          </div>
-        </dl>
+        <FieldList columns={3} className="my-1">
+          <Field label={t('goodsReceipt.wizard.cert.field.supplier')}>{detail.supplier}</Field>
+          <Field label={t('goodsReceipt.wizard.cert.field.certNumber')} kind="id">
+            {detail.certNumber}
+          </Field>
+          <Field label={t('goodsReceipt.wizard.cert.field.scheme')}>
+            {t(`compliance.certType.${detail.certType}`)}
+          </Field>
+          <Field label={t('goodsReceipt.wizard.cert.field.issuer')}>{detail.issuer}</Field>
+          <Field label={t('goodsReceipt.wizard.cert.field.expiry')} kind="date">
+            {detail.expiry === null
+              ? t('goodsReceipt.wizard.cert.valid.noExpiry')
+              : formatDate(detail.expiry)}
+          </Field>
+        </FieldList>
       )}
       {/* ⚠️ THE SENTENCE THAT MAKES THIS A NOTICE AND NOT A BLOCK, ON THE
           SURFACE where the clerk reads it rather than only in a mode nobody
@@ -1359,12 +1345,11 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
                         {l.description}
                       </div>
                     </div>
-                    <div className="text-xs text-text-tertiary text-right">
-                      {t('goodsReceipt.wizard.field.expected')}
-                      <div className="font-semibold text-text-primary">
-                        <Data>{formatNumber(l.qtyExpected)}</Data>
-                      </div>
-                    </div>
+                    <FieldList columns={1} className="text-right">
+                      <Field label={t('goodsReceipt.wizard.field.expected')} kind="number">
+                        {formatNumber(l.qtyExpected)}
+                      </Field>
+                    </FieldList>
                   </div>
                   <div className="grid grid-cols-4 gap-3">
                     <div>
@@ -1813,32 +1798,22 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
         </div>
       </FormSection>
 
-      <div className="border border-border-subtle rounded-lg p-4 bg-bg-hover grid grid-cols-4 gap-3 text-sm">
-        <div>
-          <div className="text-xs text-text-tertiary">{t('goodsReceipt.wizard.summary.totalItems')}</div>
-          <div className="font-semibold text-text-primary"><Data>{totals.items}</Data></div>
-        </div>
-        <div>
-          <div className="text-xs text-text-tertiary">{t('goodsReceipt.wizard.summary.totalAccepted')}</div>
-          <div className="font-semibold text-success">
-            <Data>{formatNumber(totals.accepted)}</Data>
-          </div>
-        </div>
-        <div>
-          <div className="text-xs text-text-tertiary">{t('goodsReceipt.wizard.summary.totalRejected')}</div>
-          <div className="font-semibold text-critical">
-            <Data>{formatNumber(totals.rejected)}</Data>
-          </div>
-        </div>
-        <div>
-          <div className="text-xs text-text-tertiary">{t('goodsReceipt.wizard.summary.sapDoc')}</div>
-          <div className="text-xs text-text-secondary">
-            {autoPostSap && !holdInstead
-              ? t('goodsReceipt.wizard.summary.assignedBySap')
-              : t('goodsReceipt.wizard.summary.notPosted')}
-          </div>
-        </div>
-      </div>
+      <FieldList columns={4} className="border border-border-subtle rounded-lg p-4 bg-bg-hover">
+        <Field label={t('goodsReceipt.wizard.summary.totalItems')} kind="number">
+          {totals.items}
+        </Field>
+        <Field label={t('goodsReceipt.wizard.summary.totalAccepted')} kind="number">
+          <span className="text-success">{formatNumber(totals.accepted)}</span>
+        </Field>
+        <Field label={t('goodsReceipt.wizard.summary.totalRejected')} kind="number">
+          <span className="text-critical">{formatNumber(totals.rejected)}</span>
+        </Field>
+        <Field label={t('goodsReceipt.wizard.summary.sapDoc')}>
+          {autoPostSap && !holdInstead
+            ? t('goodsReceipt.wizard.summary.assignedBySap')
+            : t('goodsReceipt.wizard.summary.notPosted')}
+        </Field>
+      </FieldList>
     </div>
   );
 

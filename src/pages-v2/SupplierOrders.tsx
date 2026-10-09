@@ -18,6 +18,8 @@ import { statusTone } from '../lib/statusTone';
 import Button from '../components/ui-v2/Button';
 import SidePanel from '../components/ui-v2/SidePanel';
 import Data from '../components/ui-v2/Data';
+import { FieldList, Field } from '../components/ui-v2/Field';
+import SectionHeading from '../components/ui-v2/SectionHeading';
 import { useTranslation } from 'react-i18next';
 import { useToast } from '../hooks/useToast';
 import { useCurrentIdentity } from '../context/CurrentIdentityContext';
@@ -767,98 +769,78 @@ const SupplierOrders: React.FC = () => {
         {selected && (
           <div className="space-y-6">
             <section>
-              <h3 className="text-label text-text-tertiary uppercase mb-3">
+              <SectionHeading level="group" as="h3" className="mb-3">
                 {t('supplierOrders.panel.keyFacts')}
-              </h3>
-              <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
-                <div>
-                  <dt className="text-text-tertiary">{t('supplierOrders.col.orderDate')}</dt>
-                  <dd className="text-text-primary font-medium">
-                    <Data>{fmtDate(selected.orderDate)}</Data>
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-text-tertiary">{t('supplierOrders.col.requestedDelivery')}</dt>
-                  <dd className="text-text-primary font-medium">
-                    <Data>{fmtDate(selected.requestedDeliveryDate)}</Data>
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-text-tertiary">{t('supplierOrders.panel.lineItems')}</dt>
-                  <dd className="text-text-primary font-medium">
-                    {selected.lineItems.length}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-text-tertiary">{t('supplierOrders.panel.totalValue')}</dt>
-                  <dd className="text-text-primary font-semibold">
-                    <Data>{formatIDR(selected.totalValue, { compact: true })}</Data>
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-text-tertiary">{t('supplierOrders.col.status')}</dt>
-                  <dd>
-                    <StatusPill variant={statusTone((selectedLive ?? selected).status)}>
-                      {(selectedLive ?? selected).status}
-                    </StatusPill>
-                    {/* WHO ACTS NEXT — the answer the pill cannot give. A PO in
-                        `Confirmed` carries no footer verb and no handoff notice
-                        (there is no surfaceable atom to ask about), so before
-                        this line the supplier saw a status word and nothing
-                        else while both parties waited on S/4HANA. Derived from
-                        the CANONICAL state, never the pill's label. */}
-                    <span className="mt-1 block">
-                      <NextActLine act={nextAct} testId="next-act-supplier-po" />
-                    </span>
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-text-tertiary">{t('supplierOrders.panel.channel')}</dt>
-                  <dd className="text-text-primary font-medium">
-                    {/* i18n-defer: mock/sample data (fixture-derived channel value) */}
-                    {selected.channel}
-                  </dd>
-                </div>
+              </SectionHeading>
+              <FieldList columns={2}>
+                <Field label={t('supplierOrders.col.orderDate')} kind="date">
+                  {fmtDate(selected.orderDate)}
+                </Field>
+                <Field label={t('supplierOrders.col.requestedDelivery')} kind="date">
+                  {fmtDate(selected.requestedDeliveryDate)}
+                </Field>
+                <Field label={t('supplierOrders.panel.lineItems')} kind="number">
+                  {selected.lineItems.length}
+                </Field>
+                <Field label={t('supplierOrders.panel.totalValue')} kind="money">
+                  {formatIDR(selected.totalValue, { compact: true })}
+                </Field>
+                <Field label={t('supplierOrders.col.status')} kind="status">
+                  <StatusPill variant={statusTone((selectedLive ?? selected).status)}>
+                    {(selectedLive ?? selected).status}
+                  </StatusPill>
+                  {/* WHO ACTS NEXT — the answer the pill cannot give. A PO in
+                      `Confirmed` carries no footer verb and no handoff notice
+                      (there is no surfaceable atom to ask about), so before
+                      this line the supplier saw a status word and nothing
+                      else while both parties waited on S/4HANA. Derived from
+                      the CANONICAL state, never the pill's label. */}
+                  <span className="mt-1 block">
+                    <NextActLine act={nextAct} testId="next-act-supplier-po" />
+                  </span>
+                </Field>
+                <Field label={t('supplierOrders.panel.channel')} kind="text">
+                  {/* i18n-defer: mock/sample data (fixture-derived channel value) */}
+                  {selected.channel}
+                </Field>
                 {/* OPS-3 — what this supplier confirmed, read from the STORED
                     order so it is the same answer the buyer sees. Shown once
                     the order has left the states that still await a
                     confirmation; the time of the act only when one is on
                     record (a seeded order carries none). */}
                 {showsConfirmation && (
-                  <div data-testid="po-confirmed-delivery">
-                    <dt className="text-text-tertiary">
-                      {t('supplierOrders.panel.confirmedDeliveryDate')}
-                    </dt>
-                    <dd className="text-text-primary font-medium">
-                      <Data>{formatDate((selectedLive ?? selected).confirmedDeliveryDate)}</Data>
-                    </dd>
-                  </div>
+                  <Field
+                    label={t('supplierOrders.panel.confirmedDeliveryDate')}
+                    kind="date"
+                    data-testid="po-confirmed-delivery"
+                  >
+                    {formatDate((selectedLive ?? selected).confirmedDeliveryDate)}
+                  </Field>
                 )}
                 {showsConfirmation && (selectedLive ?? selected).confirmedAt && (
-                  <div data-testid="po-confirmed-at">
-                    <dt className="text-text-tertiary">{t('supplierOrders.panel.confirmedOn')}</dt>
-                    <dd className="text-text-primary font-medium">
-                      <Data>{formatDateTime((selectedLive ?? selected).confirmedAt)}</Data>
-                    </dd>
-                  </div>
+                  <Field label={t('supplierOrders.panel.confirmedOn')} kind="date" data-testid="po-confirmed-at">
+                    {formatDateTime((selectedLive ?? selected).confirmedAt)}
+                  </Field>
                 )}
                 {showsConfirmation && (selectedLive ?? selected).confirmationNote && (
-                  <div className="col-span-2" data-testid="po-confirmation-note">
-                    <dt className="text-text-tertiary">{t('supplierOrders.panel.notesLabel')}</dt>
-                    <dd className="text-text-primary">
-                      {(selectedLive ?? selected).confirmationNote}
-                    </dd>
-                  </div>
+                  <Field
+                    label={t('supplierOrders.panel.notesLabel')}
+                    kind="text"
+                    wide
+                    data-testid="po-confirmation-note"
+                  >
+                    {(selectedLive ?? selected).confirmationNote}
+                  </Field>
                 )}
-              </dl>
+              </FieldList>
             </section>
 
             <section>
-              <h3 className="text-label text-text-tertiary uppercase mb-3">
+              <SectionHeading level="group" as="h3" className="mb-3">
                 {effectivePanelMode === 'editing'
                   ? t('supplierOrders.panel.lineItemsConfirm')
                   : t('supplierOrders.panel.lineItems')}
-              </h3>
+              </SectionHeading>
               <div className="border border-border-subtle rounded-md overflow-hidden">
                 <DataTable<PoLine>
                   density="compact"
@@ -999,9 +981,9 @@ const SupplierOrders: React.FC = () => {
 
             {effectivePanelMode === 'editing' && (
               <section>
-                <h3 className="text-label text-text-tertiary uppercase mb-3">
+                <SectionHeading level="group" as="h3" className="mb-3">
                   {t('supplierOrders.panel.deliveryNotes')}
-                </h3>
+                </SectionHeading>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
                   <div>
                     <label className={labelClass}>
@@ -1035,9 +1017,9 @@ const SupplierOrders: React.FC = () => {
 
             {effectivePanelMode === 'change-request' && (
               <section>
-                <h3 className="text-label text-text-tertiary uppercase mb-3">
+                <SectionHeading level="group" as="h3" className="mb-3">
                   {t('supplierOrders.panel.changeRequest')}
-                </h3>
+                </SectionHeading>
                 <p className="text-xs text-text-secondary mb-2">
                   {t('supplierOrders.panel.changeRequestHint')}
                 </p>
@@ -1065,35 +1047,32 @@ const SupplierOrders: React.FC = () => {
                     </div>
                   </div>
                 </div>
-                <dl className="grid grid-cols-3 gap-3 mt-3">
-                  <div className="bg-white rounded px-3 py-2 border border-border-subtle">
-                    <dt className="text-label text-text-tertiary uppercase mb-0.5">
-                      {t('supplierOrders.panel.deliveryShort')}
-                    </dt>
-                    <dd className="text-sm font-bold text-text-primary">
-                      <Data>{formatDate((selectedLive ?? selected).confirmedDeliveryDate)}</Data>
-                    </dd>
-                  </div>
-                  <div className="bg-white rounded px-3 py-2 border border-border-subtle">
-                    <dt className="text-label text-text-tertiary uppercase mb-0.5">
-                      {t('supplierOrders.panel.totalQty')}
-                    </dt>
-                    <dd className="text-sm font-bold text-text-primary">
-                      <Data>
-                        {`${formatNumber(
-                          (selectedLive ?? selected).lineItems.reduce(
-                            (a, li) => a + li.confirmedQty,
-                            0,
-                          ),
-                        )} ${t('supplierOrders.units')}`}
-                      </Data>
-                    </dd>
-                  </div>
-                  <div className="bg-white rounded px-3 py-2 border border-border-subtle">
-                    <dt className="text-label text-text-tertiary uppercase mb-0.5">
-                      {t('supplierOrders.panel.next')}
-                    </dt>
-                    <dd className="text-sm font-bold text-teal-text inline-flex items-center gap-1">
+                <FieldList columns={3} className="mt-3">
+                  <Field
+                    label={t('supplierOrders.panel.deliveryShort')}
+                    kind="date"
+                    className="bg-white rounded px-3 py-2 border border-border-subtle"
+                  >
+                    {formatDate((selectedLive ?? selected).confirmedDeliveryDate)}
+                  </Field>
+                  <Field
+                    label={t('supplierOrders.panel.totalQty')}
+                    kind="number"
+                    className="bg-white rounded px-3 py-2 border border-border-subtle"
+                  >
+                    {`${formatNumber(
+                      (selectedLive ?? selected).lineItems.reduce(
+                        (a, li) => a + li.confirmedQty,
+                        0,
+                      ),
+                    )} ${t('supplierOrders.units')}`}
+                  </Field>
+                  <Field
+                    label={t('supplierOrders.panel.next')}
+                    kind="text"
+                    className="bg-white rounded px-3 py-2 border border-border-subtle"
+                  >
+                    <span className="text-teal-text inline-flex items-center gap-1">
                       {mayShip(selectedLive ?? selected) ? (
                         <>
                           {t('supplierOrders.action.createAsn')} <ChevronRight size={12} />
@@ -1101,9 +1080,9 @@ const SupplierOrders: React.FC = () => {
                       ) : (
                         t('received.order.full')
                       )}
-                    </dd>
-                  </div>
-                </dl>
+                    </span>
+                  </Field>
+                </FieldList>
                 {(selectedLive ?? selected).confirmationNote && (
                   <div
                     className="mt-3 text-xs text-text-secondary bg-white rounded px-3 py-2 border border-border-subtle"

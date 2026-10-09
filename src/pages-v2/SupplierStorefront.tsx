@@ -29,6 +29,8 @@ import Button from '../components/ui-v2/Button';
 import LoadingState from '../components/ui-v2/LoadingState';
 import ErrorState from '../components/ui-v2/ErrorState';
 import Data from '../components/ui-v2/Data';
+import { Field, FieldList } from '../components/ui-v2/Field';
+import SectionHeading from '../components/ui-v2/SectionHeading';
 import { PreferredChannel } from '../types/supplier.types';
 import { useSupplier, useStorefrontProducts } from '../services/query/hooks';
 import { useCategoryLabel } from '../hooks/useCategoryLabel';
@@ -280,9 +282,9 @@ const SupplierStorefront: React.FC = () => {
                 </>
               )}
             </div>
-            <h2 className="text-section text-text-primary mt-1">
+            <SectionHeading as="h2" className="mt-1">
               {supp.name}
-            </h2>
+            </SectionHeading>
             <p className="text-sm text-text-secondary mt-1.5 max-w-2xl">
               {/* intelligenceNote is fixture data (i18n-defer); the fallback sentence
                   is composed via interpolation — category via cl(), channel via chl() */}
@@ -354,27 +356,17 @@ const SupplierStorefront: React.FC = () => {
               <Data as="div" className="text-xs text-text-tertiary">
                 {p.code}
               </Data>
-              <h3 className="text-section text-text-primary mt-1">
+              <SectionHeading as="h3" className="mt-1">
                 {p.name}
-              </h3>
-              <div className="grid grid-cols-2 gap-3 mt-4 text-meta">
-                <div>
-                  <div className="text-label text-text-tertiary uppercase">
-                    {t('supplierStorefront.catalog.moq')}
-                  </div>
-                  <div className="text-text-primary font-medium">
-                    <Data>{p.moq}</Data>
-                  </div>
-                </div>
-                <div>
-                  <div className="text-label text-text-tertiary uppercase">
-                    {t('supplierStorefront.catalog.leadTime')}
-                  </div>
-                  <div className="text-text-primary font-medium">
-                    <Data>{p.leadTime}</Data>
-                  </div>
-                </div>
-              </div>
+              </SectionHeading>
+              <FieldList columns={2} className="mt-4">
+                <Field label={t('supplierStorefront.catalog.moq')} kind="number">
+                  {p.moq}
+                </Field>
+                <Field label={t('supplierStorefront.catalog.leadTime')} kind="number">
+                  {p.leadTime}
+                </Field>
+              </FieldList>
               <div className="mt-4">
                 <Button
                   variant="secondary"
@@ -424,9 +416,9 @@ const SupplierStorefront: React.FC = () => {
       {activeTab === 'track' && (
         <div className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6">
           <div className="flex items-center gap-2 mb-5">
-            <h2 className="text-section text-text-primary">
+            <SectionHeading as="h2">
               {t('supplierStorefront.track.title')}
-            </h2>
+            </SectionHeading>
             <StatusPill variant="neutral">{t('supplierStorefront.sampleData')}</StatusPill>
           </div>
           <ol className="relative space-y-5">
@@ -464,11 +456,11 @@ const SupplierStorefront: React.FC = () => {
           <div className="lg:col-span-2 bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6">
             <div className="flex items-center gap-2 mb-4">
               <ChannelIcon size={18} className="text-teal" />
-              <h2 className="text-section text-text-primary">
+              <SectionHeading as="h2">
                 {t('supplierStorefront.contact.sendVia', {
                   channel: chl(supp.preferredChannel),
                 })}
-              </h2>
+              </SectionHeading>
             </div>
             <p className="text-meta text-text-tertiary mb-4">
               {t(`supplierStorefront.channelHint.${supp.preferredChannel}`)}
@@ -519,9 +511,9 @@ const SupplierStorefront: React.FC = () => {
           </div>
 
           <div className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6 space-y-4">
-            <h3 className="text-section text-text-primary">
+            <SectionHeading as="h3">
               {t('supplierStorefront.contact.primaryContact')}
-            </h3>
+            </SectionHeading>
             <div className="text-sm">
               <div className="text-text-primary font-medium">
                 {supp.contactName}

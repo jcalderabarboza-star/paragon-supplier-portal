@@ -19,6 +19,8 @@ import BulkActionsBar from '../components/ui-v2/BulkActionsBar';
 import SubTabs from '../components/ui-v2/SubTabs';
 import SearchBar from '../components/ui-v2/SearchBar';
 import StatusPill from '../components/ui-v2/StatusPill';
+import { Field, FieldList } from '../components/ui-v2/Field';
+import SectionHeading from '../components/ui-v2/SectionHeading';
 import DataTable, { type Column } from '../components/ui-v2/DataTable';
 import ListPage from '../components/ui-v2/ListPage';
 import Button from '../components/ui-v2/Button';
@@ -151,9 +153,9 @@ const ProcurementFlow: React.FC = () => {
   };
   return (
     <div className="bg-bg-surface border border-border-subtle rounded-lg px-5 py-4">
-      <div className="text-label text-text-tertiary uppercase mb-3">
+      <SectionHeading level="group" as="h3" className="mb-3">
         {t('requisitions.flow.label')}
-      </div>
+      </SectionHeading>
       <div className="flex items-center gap-2 flex-wrap">
         {steps.map((s, i) => (
           <React.Fragment key={s.label}>
@@ -1244,9 +1246,9 @@ const BuyerRequisitions: React.FC = () => {
                 the verb for any caller that never renders this box. */}
             {panelMode === 'rejecting' && selectedPR.status === 'Pending Approval' && (
               <section>
-                <h3 className="text-label text-text-tertiary uppercase mb-3">
+                <SectionHeading level="group" as="h3" className="mb-3">
                   {t('requisitions.panel.rejectSection')}
-                </h3>
+                </SectionHeading>
                 <label htmlFor="pr-reject-reason" className="sr-only">
                   {t('requisitions.panel.rejectSrLabel', { number: selectedPR.prNumber })}
                 </label>
@@ -1273,9 +1275,9 @@ const BuyerRequisitions: React.FC = () => {
                 dropped before the document was written. */}
             {panelMode === 'revising' && selectedPR.status === 'Rejected' && (
               <section>
-                <h3 className="text-label text-text-tertiary uppercase mb-3">
+                <SectionHeading level="group" as="h3" className="mb-3">
                   {t('requisitions.panel.reviseSection')}
-                </h3>
+                </SectionHeading>
                 <label htmlFor="pr-revise-note" className="sr-only">
                   {t('requisitions.panel.reviseSrLabel', { number: selectedPR.prNumber })}
                 </label>
@@ -1319,9 +1321,9 @@ const BuyerRequisitions: React.FC = () => {
                 data-testid="pr-rejection-reason"
                 className="rounded-md border border-critical/30 bg-critical-soft/40 px-3 py-2"
               >
-                <h3 className="text-label text-text-tertiary uppercase mb-1">
+                <SectionHeading level="group" as="h3" className="mb-1">
                   {t('requisitions.panel.rejectedBecause')}
-                </h3>
+                </SectionHeading>
                 <p className="text-sm text-text-primary">{selectedPR.rejectionReason}</p>
               </section>
             )}
@@ -1336,9 +1338,9 @@ const BuyerRequisitions: React.FC = () => {
                 data-testid="pr-revision-note"
                 className="rounded-md border border-border-subtle bg-bg-muted px-3 py-2"
               >
-                <h3 className="text-label text-text-tertiary uppercase mb-1">
+                <SectionHeading level="group" as="h3" className="mb-1">
                   {t('requisitions.panel.revisedBecause')}
-                </h3>
+                </SectionHeading>
                 <p className="text-sm text-text-primary">{selectedPR.revisionNote}</p>
               </section>
             )}
@@ -1373,9 +1375,9 @@ const BuyerRequisitions: React.FC = () => {
                 data-testid="pr-approved-terminal"
                 className="rounded-md border border-border-subtle bg-bg-muted px-3 py-2"
               >
-                <h3 className="text-label text-text-tertiary uppercase mb-1">
+                <SectionHeading level="group" as="h3" className="mb-1">
                   {t('requisitions.panel.sourcing.title')}
-                </h3>
+                </SectionHeading>
                 <p className="text-sm text-text-secondary mb-2">
                   {t('requisitions.panel.sourcing.body')}
                 </p>
@@ -1413,9 +1415,9 @@ const BuyerRequisitions: React.FC = () => {
                 data-testid="pr-draft-note"
                 className="rounded-md border border-border-subtle bg-bg-muted px-3 py-2"
               >
-                <h3 className="text-label text-text-tertiary uppercase mb-1">
+                <SectionHeading level="group" as="h3" className="mb-1">
                   {t('requisitions.panel.draftNote.title')}
-                </h3>
+                </SectionHeading>
                 <p className="text-sm text-text-secondary">
                   {t('requisitions.panel.draftNote.body')}
                 </p>
@@ -1423,64 +1425,38 @@ const BuyerRequisitions: React.FC = () => {
             )}
 
             <section>
-              <h3 className="text-label text-text-tertiary uppercase mb-3">
+              <SectionHeading level="group" as="h3" className="mb-3">
                 {t('requisitions.panel.keyFacts')}
-              </h3>
-              <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
-                <div>
-                  <dt className="text-text-tertiary">{t('requisitions.panel.field.material')}</dt>
-                  <dd className="text-text-primary font-medium">
-                    {selectedPR.material}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-text-tertiary">{t('requisitions.panel.field.category')}</dt>
-                  <dd className="text-text-primary font-medium">
-                    {orSap(selectedPR, 'category')}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-text-tertiary">{t('requisitions.panel.field.quantity')}</dt>
-                  <Data as="dd" className="text-text-primary font-medium">
-                    {formatNumber(selectedPR.quantity)} {selectedPR.uom}
-                  </Data>
-                </div>
-                <div>
-                  <dt className="text-text-tertiary">{t('requisitions.panel.field.requiredDate')}</dt>
-                  <dd className="text-text-primary font-medium">
-                    {orSap(selectedPR, 'requiredDate', (v) => <Data>{formatDate(v)}</Data>)}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-text-tertiary">{t('requisitions.panel.field.estValue')}</dt>
-                  <Data as="dd" className="text-text-primary font-semibold">
-                    {formatIDR(selectedPR.estimatedValue, { compact: true })}
-                  </Data>
-                </div>
-                <div>
-                  <dt className="text-text-tertiary">{t('requisitions.panel.field.priority')}</dt>
-                  <dd className="text-text-primary font-medium">
-                    {/* ⚠️ ABSENT IS SAID, NOT GUESSED. The target used to coerce a
-                        missing priority to 'Medium', so a plan-grid push showed
-                        a choice nobody made. Same shape as the approval band
-                        below, which has said "Not assigned" since §69. */}
-                    {selectedPR.priority
-                      ? el(selectedPR.priority)
-                      : t('requisitions.panel.priority.unset')}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-text-tertiary">{t('requisitions.panel.field.requestor')}</dt>
-                  <dd className="text-text-primary font-medium">
-                    {requestorOf(selectedPR)}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-text-tertiary">{t('requisitions.panel.field.costCenter')}</dt>
-                  <dd className="text-text-primary font-medium">
-                    {orSap(selectedPR, 'costCenter')}
-                  </dd>
-                </div>
+              </SectionHeading>
+              <FieldList columns={2}>
+                <Field label={t('requisitions.panel.field.material')}>{selectedPR.material}</Field>
+                <Field label={t('requisitions.panel.field.category')}>
+                  {orSap(selectedPR, 'category')}
+                </Field>
+                <Field label={t('requisitions.panel.field.quantity')} kind="number">
+                  {formatNumber(selectedPR.quantity)} {selectedPR.uom}
+                </Field>
+                <Field label={t('requisitions.panel.field.requiredDate')} kind="date">
+                  {orSap(selectedPR, 'requiredDate', (v) => formatDate(v))}
+                </Field>
+                <Field label={t('requisitions.panel.field.estValue')} kind="money">
+                  {formatIDR(selectedPR.estimatedValue, { compact: true })}
+                </Field>
+                <Field label={t('requisitions.panel.field.priority')}>
+                  {/* ⚠️ ABSENT IS SAID, NOT GUESSED. The target used to coerce a
+                      missing priority to 'Medium', so a plan-grid push showed
+                      a choice nobody made. Same shape as the approval band
+                      below, which has said "Not assigned" since §69. */}
+                  {selectedPR.priority
+                    ? el(selectedPR.priority)
+                    : t('requisitions.panel.priority.unset')}
+                </Field>
+                <Field label={t('requisitions.panel.field.requestor')}>
+                  {requestorOf(selectedPR)}
+                </Field>
+                <Field label={t('requisitions.panel.field.costCenter')} kind="id">
+                  {orSap(selectedPR, 'costCenter')}
+                </Field>
                 {/* ⚠️ §68 LABELLED IT A DESTINATION; §69 SAYS WHERE THE
                     DESTINATION CAME FROM, BECAUSE THE ROW STILL LOOKED
                     COMPUTED. The values track `estimatedValue` closely enough
@@ -1497,28 +1473,23 @@ const BuyerRequisitions: React.FC = () => {
                     worse than an authored one, and putting the numbers in code
                     is C10 §4.1's second cost (a Tuesday decision becomes a
                     deploy) taken in a hook instead of in a state. */}
-                <div>
-                  <dt className="text-text-tertiary">
-                    {t('requisitions.panel.field.approvalLevel')}
-                  </dt>
-                  <dd
-                    className="text-text-primary font-medium"
-                    data-testid="pr-approval-level"
-                  >
+                {/* The provenance line is on EVERY row, including the unassigned
+                    one: the claim is about the FIELD's provenance, not about
+                    the value it happens to hold. A note that appeared only when
+                    a band was present would read as a caveat on that band. */}
+                <Field
+                  label={t('requisitions.panel.field.approvalLevel')}
+                  sub={
+                    <span data-testid="pr-approval-level-provenance">
+                      {t('requisitions.panel.approvalLevel.authored')}
+                    </span>
+                  }
+                >
+                  <span data-testid="pr-approval-level">
                     {selectedPR.approvalLevel ||
                       t('requisitions.panel.approvalLevel.unassigned')}
-                  </dd>
-                  {/* On EVERY row, including the unassigned one: the claim is
-                      about the FIELD's provenance, not about the value it
-                      happens to hold. A note that appeared only when a band was
-                      present would read as a caveat on that band. */}
-                  <dd
-                    className="mt-1 text-[11px] text-text-tertiary"
-                    data-testid="pr-approval-level-provenance"
-                  >
-                    {t('requisitions.panel.approvalLevel.authored')}
-                  </dd>
-                </div>
+                  </span>
+                </Field>
                 {/* ── WHERE THIS REQUISITION CAME FROM (A1-R3, rendered at A2) ──
                     ⚠️ **THE APPROVER READS THE OVERRIDE HERE, ON THE DOCUMENT,
                     AND UNTIL NOW THEY COULD NOT READ IT ANYWHERE.** The plan
@@ -1539,92 +1510,82 @@ const BuyerRequisitions: React.FC = () => {
                     `decision` means nobody overrode anything — never "the
                     override was unexplained". */}
                 {selectedPR.periodBucket && (
-                  <div>
-                    <dt className="text-text-tertiary">
-                      {t('requisitions.panel.field.periodBucket')}
-                    </dt>
+                  <Field
+                    label={t('requisitions.panel.field.periodBucket')}
+                    kind="date"
+                    sub={t('requisitions.panel.periodBucket.note')}
+                  >
                     {/* ⚠️ **RENDERED AS A BUCKET, NEVER THROUGH `formatDate`.**
                         A month is the one form `Date` happily parses, so that
                         call turns `'2026-09'` into `01 Sept 2026` — a specific
                         day nobody entered, which reads as an answer. */}
-                    <Data as="dd" className="text-text-primary font-medium" data-testid="pr-period-bucket">
-                      {selectedPR.periodBucket}
-                    </Data>
-                    <dd className="mt-1 text-[11px] text-text-tertiary">
-                      {t('requisitions.panel.periodBucket.note')}
-                    </dd>
-                  </div>
+                    <span data-testid="pr-period-bucket">{selectedPR.periodBucket}</span>
+                  </Field>
                 )}
                 {selectedPR.intakeLineId && (
-                  <div>
-                    <dt className="text-text-tertiary">
-                      {t('requisitions.panel.field.intakeLine')}
-                    </dt>
-                    <Data as="dd" className="text-text-primary font-medium" data-testid="pr-intake-line">
-                      {selectedPR.intakeLineId}
-                    </Data>
-                  </div>
+                  <Field
+                    label={t('requisitions.panel.field.intakeLine')}
+                    kind="id"
+                    data-testid="pr-intake-line"
+                  >
+                    {selectedPR.intakeLineId}
+                  </Field>
                 )}
                 {selectedPR.decision && (
-                  <div className="sm:col-span-2">
-                    <dt className="text-text-tertiary">
-                      {t('requisitions.panel.field.decision')}
-                    </dt>
-                    <dd
-                      className="text-text-primary font-medium"
-                      data-testid="pr-decision"
-                    >
-                      <Data className="text-sm">
-                        {formatNumber(selectedPR.decision.from)}
-                        {' → '}
-                        {formatNumber(selectedPR.decision.to)}
-                      </Data>
-                    </dd>
-                    <dd className="mt-1 text-text-secondary" data-testid="pr-decision-reason">
-                      {selectedPR.decision.reason}
-                    </dd>
-                    {/* ⚠️ **THE BASELINE IS NAMED, BECAUSE A FROM/TO WITHOUT ONE
-                        IS AMBIGUOUS AND THE AMBIGUITY IS THE DEFECT A1-R2
-                        CLOSED.** `from` is the PRODUCER's delivered quantity,
-                        so this row is the planner's own change and nobody
-                        else's. Read against `suggestedQty` it would charge a
-                        human for the producer's arithmetic. */}
-                    <dd className="mt-1 text-[11px] text-text-tertiary">
-                      {t('requisitions.panel.decision.baseline')}
-                    </dd>
-                  </div>
+                  <Field
+                    label={t('requisitions.panel.field.decision')}
+                    kind="number"
+                    wide
+                    sub={
+                      <>
+                        <span className="block" data-testid="pr-decision-reason">
+                          {selectedPR.decision.reason}
+                        </span>
+                        {/* ⚠️ **THE BASELINE IS NAMED, BECAUSE A FROM/TO WITHOUT ONE
+                            IS AMBIGUOUS AND THE AMBIGUITY IS THE DEFECT A1-R2
+                            CLOSED.** `from` is the PRODUCER's delivered quantity,
+                            so this row is the planner's own change and nobody
+                            else's. Read against `suggestedQty` it would charge a
+                            human for the producer's arithmetic. */}
+                        <span className="mt-1 block">
+                          {t('requisitions.panel.decision.baseline')}
+                        </span>
+                      </>
+                    }
+                  >
+                    <span data-testid="pr-decision">
+                      {formatNumber(selectedPR.decision.from)}
+                      {' → '}
+                      {formatNumber(selectedPR.decision.to)}
+                    </span>
+                  </Field>
                 )}
                 {/* And WHO decided, present only once somebody has. Absent
                     before the act rather than pre-filled — which is the whole
                     difference between this row and the one above it. */}
                 {selectedPR.approvedBy && (
-                  <div>
-                    <dt className="text-text-tertiary">
-                      {t('requisitions.panel.field.approvedBy')}
-                    </dt>
-                    <dd className="text-text-primary font-medium" data-testid="pr-approved-by">
-                      {renderAttribution(selectedPR.approvedBy)}
-                    </dd>
-                  </div>
+                  <Field
+                    label={t('requisitions.panel.field.approvedBy')}
+                    data-testid="pr-approved-by"
+                  >
+                    {renderAttribution(selectedPR.approvedBy)}
+                  </Field>
                 )}
-                <div>
-                  <dt className="text-text-tertiary">{t('requisitions.panel.field.status')}</dt>
-                  <dd>
-                    <StatusPill variant={STATUS_VARIANT[selectedPR.status]}>
-                      {selectedPR.status}
-                    </StatusPill>
-                    <span className="mt-1 block">
-                      <NextActLine act={nextAct} testId="next-act-buyer-pr" />
-                    </span>
-                  </dd>
-                </div>
-              </dl>
+                <Field label={t('requisitions.panel.field.status')} kind="status">
+                  <StatusPill variant={STATUS_VARIANT[selectedPR.status]}>
+                    {selectedPR.status}
+                  </StatusPill>
+                  <span className="mt-1 block">
+                    <NextActLine act={nextAct} testId="next-act-buyer-pr" />
+                  </span>
+                </Field>
+              </FieldList>
             </section>
 
             <section>
-              <h3 className="text-label text-text-tertiary uppercase mb-3">
+              <SectionHeading level="group" as="h3" className="mb-3">
                 {t('requisitions.panel.source.title')}
-              </h3>
+              </SectionHeading>
               {isSetInSap(selectedPR, 'sourceOfSupply') ? (
                 <div className="border-l-2 border-border-subtle rounded bg-bg-subtle px-3 py-3 text-sm" data-testid="pr-source-set-in-sap">
                   <div className="font-semibold text-text-primary">{t('requisitions.setInSap')}</div>
@@ -1661,9 +1622,9 @@ const BuyerRequisitions: React.FC = () => {
             </section>
 
             <section>
-              <h3 className="text-label text-text-tertiary uppercase mb-2">
+              <SectionHeading level="group" as="h3" className="mb-2">
                 {t('requisitions.panel.justification')}
-              </h3>
+              </SectionHeading>
               <p className="text-sm text-text-secondary leading-relaxed">
                 {orSap(selectedPR, 'justification')}
               </p>

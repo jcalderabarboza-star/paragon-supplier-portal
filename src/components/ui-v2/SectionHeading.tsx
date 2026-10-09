@@ -25,7 +25,7 @@ export const HEADING_CLASS: Record<HeadingLevel, string> = {
 interface SectionHeadingProps {
   level?: HeadingLevel;
   /** The element. Defaults to `h2` for a section and `h3` for a group. */
-  as?: 'h2' | 'h3' | 'h4';
+  as?: 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
   children: React.ReactNode;
   /** Layout only — a margin, a flex row. Never a size, a weight or a colour. */
   className?: string;

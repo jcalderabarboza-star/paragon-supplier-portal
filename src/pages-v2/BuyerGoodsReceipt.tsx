@@ -70,6 +70,8 @@ import { useRefusalText } from '../hooks/useRefusalText';
 import { statusTone } from '../lib/statusTone';
 import { DECLARED_PRESENT } from '../services/data/fixturePresent';
 import { formatNumber } from '../lib/format';
+import SectionHeading from '../components/ui-v2/SectionHeading';
+import { Field, FieldList } from '../components/ui-v2/Field';
 
 // ⚠️ **THE THIRD PIN, RETIRED — AND THE CANON LISTED ONLY TWO.**
 // `REFERENCE_TODAY` (2026-05-18) and `RFQ_TODAY_MS` (2026-04-25) went at #317.
@@ -1081,10 +1083,10 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
           data-testid="gr-asn-discrepancies"
         >
           <div className="px-6 py-4 border-b border-border-subtle">
-            <h2 className="text-sm font-semibold text-text-primary flex items-center gap-2">
+            <SectionHeading className="flex items-center gap-2">
               <AlertTriangle size={16} className="text-warning" aria-hidden="true" />
               {t('goodsReceipt.discrepancy.heading')}
-            </h2>
+            </SectionHeading>
             <p className="mt-1 text-xs text-text-secondary">
               {t('goodsReceipt.discrepancy.subtitle')}
             </p>
@@ -1155,98 +1157,79 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
         {selected && (
           <div className="flex flex-col gap-6">
             <section>
-              <div className="text-label text-text-tertiary uppercase mb-2">
+              <SectionHeading level="group" className="mb-2">
                 {t('goodsReceipt.panel.keyFacts')}
-              </div>
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <div>
-                  <div className="text-xs text-text-tertiary">{t('goodsReceipt.panel.field.gr')}</div>
-                  <div className="font-semibold text-text-primary">
-                    <Data>{selected.grNumber}</Data>
-                  </div>
-                </div>
-                <div>
-                  <div className="text-xs text-text-tertiary">{t('goodsReceipt.panel.field.asn')}</div>
-                  <Data as="div" className="text-text-primary">
-                    {selected.asnNumber}
-                  </Data>
-                </div>
-                <div>
-                  <div className="text-xs text-text-tertiary">{t('goodsReceipt.panel.field.po')}</div>
-                  <Data as="div" className="text-text-primary">
-                    {selected.poNumber}
-                  </Data>
-                </div>
-                <div>
-                  <div className="text-xs text-text-tertiary">
-                    {t('goodsReceipt.panel.field.sapMaterialDoc')}
-                  </div>
-                  <Data as="div" className="text-text-primary">
-                    {selected.sapMaterialDoc ?? '—'}
-                  </Data>
-                </div>
-                <div className="col-span-2">
-                  <div className="text-xs text-text-tertiary">{t('goodsReceipt.panel.field.supplier')}</div>
-                  <div className="text-text-primary">
-                    {selected.supplierName}{' '}
-                    {selectedSupplier && (
-                      <span className="text-xs text-text-tertiary">
-                        ·{' '}
-                        {COUNTRY_FLAG[selectedSupplier.country] ??
-                          selectedSupplier.country}
-                      </span>
-                    )}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-xs text-text-tertiary">
-                    {t('goodsReceipt.panel.field.receivedDate')}
-                  </div>
-                  <div className="text-text-primary">
-                    <Data>{formatDate(selected.receivedDate)}</Data>
-                  </div>
-                </div>
-                <div>
-                  <div className="text-xs text-text-tertiary">{t('goodsReceipt.panel.field.receivedBy')}</div>
-                  {/* ADM-1 — WHO and WHEN. The person is the seat's, stamped when
-                      the receipt was raised; the post is what the wizard chose. */}
-                  {selected.receivedByPerson && isAttributed(selected.receivedByPerson) ? (
-                    <div className="text-text-primary" data-testid="gr-panel-receiver">
-                      {personLabel(selected.receivedByPerson.person.personId, t)}
-                      <span className="text-text-tertiary"> · {selected.receivedBy}</span>
-                      {selected.receivedAt && (
-                        <div className="text-xs text-text-tertiary" data-testid="gr-panel-received-at">
-                          {t('goodsReceipt.panel.field.recordedAt')} <Data>{formatSetAt(selected.receivedAt)}</Data>
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="text-text-primary" data-testid="gr-panel-receiver">
-                      {selected.receivedBy}
-                      <div className="text-xs text-text-tertiary">{t('goodsReceipt.panel.field.noNamedReceiver')}</div>
-                    </div>
+              </SectionHeading>
+              <FieldList columns={2}>
+                <Field label={t('goodsReceipt.panel.field.gr')} kind="id">
+                  {selected.grNumber}
+                </Field>
+                <Field label={t('goodsReceipt.panel.field.asn')} kind="id">
+                  {selected.asnNumber}
+                </Field>
+                <Field label={t('goodsReceipt.panel.field.po')} kind="id">
+                  {selected.poNumber}
+                </Field>
+                <Field label={t('goodsReceipt.panel.field.sapMaterialDoc')} kind="id">
+                  {selected.sapMaterialDoc ?? '—'}
+                </Field>
+                <Field label={t('goodsReceipt.panel.field.supplier')} wide>
+                  {selected.supplierName}{' '}
+                  {selectedSupplier && (
+                    <span>
+                      ·{' '}
+                      {COUNTRY_FLAG[selectedSupplier.country] ??
+                        selectedSupplier.country}
+                    </span>
                   )}
-                </div>
-                <div>
-                  <div className="text-xs text-text-tertiary">{t('goodsReceipt.panel.field.status')}</div>
+                </Field>
+                <Field label={t('goodsReceipt.panel.field.receivedDate')} kind="date">
+                  {formatDate(selected.receivedDate)}
+                </Field>
+                {/* ADM-1 — WHO and WHEN. The person is the seat's, stamped when
+                    the receipt was raised; the post is what the wizard chose. */}
+                {selected.receivedByPerson && isAttributed(selected.receivedByPerson) ? (
+                  <Field
+                    label={t('goodsReceipt.panel.field.receivedBy')}
+                    data-testid="gr-panel-receiver"
+                    sub={
+                      selected.receivedAt ? (
+                        <span data-testid="gr-panel-received-at">
+                          {t('goodsReceipt.panel.field.recordedAt')} <Data>{formatSetAt(selected.receivedAt)}</Data>
+                        </span>
+                      ) : undefined
+                    }
+                  >
+                    {personLabel(selected.receivedByPerson.person.personId, t)}
+                    <span> · {selected.receivedBy}</span>
+                  </Field>
+                ) : (
+                  <Field
+                    label={t('goodsReceipt.panel.field.receivedBy')}
+                    data-testid="gr-panel-receiver"
+                    sub={t('goodsReceipt.panel.field.noNamedReceiver')}
+                  >
+                    {selected.receivedBy}
+                  </Field>
+                )}
+                <Field label={t('goodsReceipt.panel.field.status')} kind="status">
                   <StatusPill variant={STATUS_VARIANT[selected.status]}>
                     {selected.status}
                   </StatusPill>
                   <span className="mt-1 block">
                     <NextActLine act={nextAct} testId="next-act-buyer-gr" />
                   </span>
-                </div>
-                <div>
-                  <div className="text-xs text-text-tertiary">{t('goodsReceipt.panel.field.disposition')}</div>
-                  <div className="text-text-primary">{el(selected.disposition)}</div>
-                </div>
-              </div>
+                </Field>
+                <Field label={t('goodsReceipt.panel.field.disposition')}>
+                  {el(selected.disposition)}
+                </Field>
+              </FieldList>
             </section>
 
             <section>
-              <div className="text-label text-text-tertiary uppercase mb-2">
+              <SectionHeading level="group" className="mb-2">
                 {t('goodsReceipt.panel.lineItems')}
-              </div>
+              </SectionHeading>
               <div className="overflow-x-auto">
                 <DataTable
                   columns={inspectionColumns}
@@ -1263,9 +1246,9 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
 
             {selected.notes && (
               <section>
-                <div className="text-label text-text-tertiary uppercase mb-2">
+                <SectionHeading level="group" className="mb-2">
                   {t('goodsReceipt.panel.inspectionNotes')}
-                </div>
+                </SectionHeading>
                 <p className="text-sm text-text-secondary border border-border-subtle rounded-md p-3 bg-bg-hover">
                   {selected.notes}
                 </p>
@@ -1273,9 +1256,9 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
             )}
 
             <section>
-              <div className="text-label text-text-tertiary uppercase mb-2">
+              <SectionHeading level="group" className="mb-2">
                 {t('goodsReceipt.panel.dispositionWorkflow')}
-              </div>
+              </SectionHeading>
               <Timeline events={buildTimeline(selected)} />
             </section>
           </div>

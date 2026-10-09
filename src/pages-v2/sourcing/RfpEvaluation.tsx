@@ -25,6 +25,8 @@ import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Save } from 'lucide-react';
 import Button from '../../components/ui-v2/Button';
+import { Field, FieldList } from '../../components/ui-v2/Field';
+import SectionHeading from '../../components/ui-v2/SectionHeading';
 import { HandoffNotice } from '../../components/ui-v2/HandoffNotice';
 import { useToast } from '../../hooks/useToast';
 import { useRefusalText } from '../../hooks/useRefusalText';
@@ -139,7 +141,7 @@ const ScoreSheet: React.FC<{
 
   return (
     <div className="mt-3 border-t border-border-subtle pt-3" data-testid={`rfp-score-sheet-${supplierId}`}>
-      <div className="text-label text-text-tertiary uppercase mb-1">{t('sourcing.rfp.score.title')}</div>
+      <SectionHeading level="group" as="h4" className="mb-1">{t('sourcing.rfp.score.title')}</SectionHeading>
       <p className="text-xs text-text-tertiary mb-2">
         {t(saved ? 'sourcing.rfp.score.yoursSaved' : 'sourcing.rfp.score.yoursNew', {
           person: personLabel(evaluatorId, t),
@@ -355,7 +357,7 @@ const RfpEvaluation: React.FC<{
 
   return (
     <div data-testid="rfp-evaluation">
-      <h4 className="text-label text-text-tertiary uppercase mt-4 mb-2">{t('sourcing.rfp.proposals.title')}</h4>
+      <SectionHeading level="group" as="h4" className="mt-4 mb-2">{t('sourcing.rfp.proposals.title')}</SectionHeading>
       {proposals.length === 0 ? (
         <div
           className="text-sm text-text-tertiary p-4 border border-border-subtle rounded-md text-center"
@@ -385,24 +387,24 @@ const RfpEvaluation: React.FC<{
                   data-testid={`rfp-proposal-${p.supplierId}`}
                 >
                   <div className="text-sm font-semibold text-text-primary mb-2">{name}</div>
-                  <dl className="space-y-2">
+                  <FieldList columns={1}>
                     {criteria.map((c, i) => (
-                      <div key={c.id}>
-                        <dt className="text-xs text-text-tertiary">
-                          <span className="font-mono mr-1.5">{criterionLabel(i + 1)}</span>
-                          {c.name}
-                        </dt>
-                        <dd
-                          className="text-sm text-text-primary whitespace-pre-wrap"
-                          data-testid={`rfp-proposal-response-${p.supplierId}-${c.id}`}
-                        >
-                          {p.proposal?.[c.id] ?? (
-                            <span className="text-text-tertiary">{t('sourcing.rfp.proposals.noResponse')}</span>
-                          )}
-                        </dd>
-                      </div>
+                      <Field
+                        key={c.id}
+                        label={
+                          <>
+                            <span className="mr-1.5">{criterionLabel(i + 1)}</span>
+                            {c.name}
+                          </>
+                        }
+                        data-testid={`rfp-proposal-response-${p.supplierId}-${c.id}`}
+                      >
+                        <span className="whitespace-pre-wrap">
+                          {p.proposal?.[c.id] ?? t('sourcing.rfp.proposals.noResponse')}
+                        </span>
+                      </Field>
                     ))}
-                  </dl>
+                  </FieldList>
                   <div className="text-xs text-text-tertiary mt-2" data-testid={`rfp-proposal-documents-${p.supplierId}`}>
                     {(p.documents ?? []).length === 0 ? (
                       t('sourcing.rfp.proposals.noDocuments')
@@ -431,7 +433,7 @@ const RfpEvaluation: React.FC<{
               );
             })}
           </ul>
-          <h4 className="text-label text-text-tertiary uppercase mt-4 mb-2">{t('sourcing.rfp.ranking.title')}</h4>
+          <SectionHeading level="group" as="h4" className="mt-4 mb-2">{t('sourcing.rfp.ranking.title')}</SectionHeading>
           <RfpRanking rfq={rfq} supplierNameById={supplierNameById} />
         </>
       )}

@@ -18,6 +18,7 @@ import FilterChipsBar from '../components/ui-v2/FilterChipsBar';
 import SearchBar from '../components/ui-v2/SearchBar';
 import StatusPill from '../components/ui-v2/StatusPill';
 import Data from '../components/ui-v2/Data';
+import SectionHeading from '../components/ui-v2/SectionHeading';
 import { useTranslation, Trans } from 'react-i18next';
 import { statusLabelKey } from '../lib/statusLabel';
 import { enumLabelKey } from '../lib/priorityLabel';
@@ -331,7 +332,7 @@ const SupplierInventory: React.FC = () => {
       }
     >
       <section className="mb-6 rounded-lg border border-border-subtle bg-bg-surface px-4 py-3" data-testid="inventory-declared">
-        <h2 className="text-base font-semibold text-text-primary">{t('supplierInventory.declared.title')}</h2>
+        <SectionHeading as="h2">{t('supplierInventory.declared.title')}</SectionHeading>
         <p className="mb-3 text-sm text-text-secondary">{t('supplierInventory.declared.subtitle')}</p>
         {declared.length === 0 ? (
           <p className="text-sm text-text-tertiary" data-testid="inventory-declared-none">

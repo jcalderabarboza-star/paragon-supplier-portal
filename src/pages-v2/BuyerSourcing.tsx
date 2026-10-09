@@ -38,6 +38,8 @@ import SidePanel from '../components/ui-v2/SidePanel';
 import Timeline, { TimelineEvent } from '../components/ui-v2/Timeline';
 import ScoreBadge from '../components/ui-v2/ScoreBadge';
 import Data from '../components/ui-v2/Data';
+import { Field, FieldList } from '../components/ui-v2/Field';
+import SectionHeading from '../components/ui-v2/SectionHeading';
 import LivenessPill from '../components/ui-v2/LivenessPill';
 import ModelMarker from '../components/ui-v2/ModelMarker';
 import Button from '../components/ui-v2/Button';
@@ -603,9 +605,9 @@ const FxBasisPanel: React.FC<{
 }> = ({ currencies, pins, onPin, t }) => (
   <div className="mb-3 rounded-md border border-border-subtle bg-surface-subtle px-3 py-2">
     <div className="flex items-center gap-2 mb-2">
-      <span className="text-label uppercase text-text-tertiary">
+      <SectionHeading level="group" as="h4">
         {t('sourcing.cmp.fx.basis.title')}
-      </span>
+      </SectionHeading>
       <LivenessPill capability="commodityIntel" />
     </div>
     <ul className="flex flex-col gap-1.5">
@@ -808,7 +810,7 @@ const ReviewSection: React.FC<{
   return (
   <section className="border border-border-subtle rounded-md">
     <header className="flex items-center justify-between px-4 py-2 bg-bg-hover">
-      <span className="text-label text-text-tertiary uppercase">{label}</span>
+      <SectionHeading level="group" as="h4">{label}</SectionHeading>
       <button
         type="button"
         onClick={onEdit}
@@ -817,14 +819,13 @@ const ReviewSection: React.FC<{
         {t('sourcing.wizard.review.edit')}
       </button>
     </header>
-    <dl className="px-4 py-3 divide-y divide-border-subtle">
+    <FieldList layout="row" className="px-4 py-3 divide-y divide-border-subtle">
       {rows.map(([k, v]) => (
-        <div key={k} className="flex justify-between py-2 gap-4">
-          <dt className="text-text-tertiary">{k}</dt>
-          <dd className="text-text-primary text-right">{v}</dd>
-        </div>
+        <Field key={k} label={k} className="pt-2 first:pt-0">
+          {v}
+        </Field>
       ))}
-    </dl>
+    </FieldList>
   </section>
   );
 };
@@ -2601,9 +2602,9 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
             <div className="bg-teal-soft border border-teal/20 rounded-md p-4">
               <div className="flex items-center gap-2 mb-3">
                 <Sparkles size={16} className="text-teal" />
-                <h4 className="text-sm font-semibold text-text-primary">
+                <SectionHeading as="h4">
                   {t('sourcing.wizard.ai.title')}
-                </h4>
+                </SectionHeading>
                 <span className="text-xs text-text-tertiary">
                   {t('sourcing.wizard.ai.basis')}
                 </span>
@@ -3458,9 +3459,9 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
           className="w-full flex items-center justify-between px-6 py-4 hover:bg-bg-hover transition-colors"
         >
           <div className="text-left">
-            <h2 className="text-section text-text-primary">
+            <SectionHeading as="h2">
               {t('sourcing.awards.title')}
-            </h2>
+            </SectionHeading>
             <p className="text-meta text-text-tertiary">
               {t(
                 awarded.length === 1
@@ -3561,53 +3562,33 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
               <section className="bg-success-soft border border-success/30 rounded-md p-4">
                 <div className="flex items-center gap-2 mb-3">
                   <Trophy size={16} className="text-success" />
-                  <h3 className="text-section text-text-primary">
+                  <SectionHeading as="h3">
                     {t('sourcing.panel.awardSummary')}
-                  </h3>
+                  </SectionHeading>
                 </div>
-                <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
-                  <div>
-                    <dt className="text-text-tertiary">
-                      {t('sourcing.panel.awardedTo')}
-                    </dt>
-                    <dd className="text-text-primary font-semibold">
-                      {selectedRfq.awardedSupplierId
-                        ? (supplierNameById.get(selectedRfq.awardedSupplierId) ??
-                          selectedRfq.awardedSupplierId)
-                        : '—'}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className="text-text-tertiary">
-                      {t('sourcing.panel.awardedValue')}
-                    </dt>
-                    <Data as="dd" className="text-text-primary font-semibold">
-                      {/* 2e-c-4 — was an unconditional `formatIDR`, so an awarded USD or
-                          EUR quote had its contract value restated in rupiah on
-                          the ONE row recording what Paragon actually committed
-                          to. The award summary is the last place a currency may
-                          be assumed. */}
-                      {awardedQuote
-                        ? formatMoney(awardedQuote.totalPrice, awardedQuote.currency)
-                        : '—'}
-                    </Data>
-                  </div>
-                  <div>
-                    <dt className="text-text-tertiary">
-                      {t('sourcing.panel.awardDate')}
-                    </dt>
-                    <Data as="dd" className="text-text-primary font-medium" data-testid="rfq-award-date">
-                      {selectedRfq.awardedAt ? formatDate(selectedRfq.awardedAt) : '—'}
-                    </Data>
-                  </div>
-                  <div>
-                    <dt className="text-text-tertiary">
-                      {t('sourcing.panel.poIssued')}
-                    </dt>
-                    {/* Award mints no PO — issuance is a separate buyer verb. */}
-                    <dd className="text-text-tertiary font-medium">—</dd>
-                  </div>
-                </dl>
+                <FieldList columns={2}>
+                  <Field label={t('sourcing.panel.awardedTo')}>
+                    {selectedRfq.awardedSupplierId
+                      ? (supplierNameById.get(selectedRfq.awardedSupplierId) ??
+                        selectedRfq.awardedSupplierId)
+                      : '—'}
+                  </Field>
+                  <Field label={t('sourcing.panel.awardedValue')} kind="money">
+                    {/* 2e-c-4 — was an unconditional `formatIDR`, so an awarded USD or
+                        EUR quote had its contract value restated in rupiah on
+                        the ONE row recording what Paragon actually committed
+                        to. The award summary is the last place a currency may
+                        be assumed. */}
+                    {awardedQuote
+                      ? formatMoney(awardedQuote.totalPrice, awardedQuote.currency)
+                      : '—'}
+                  </Field>
+                  <Field label={t('sourcing.panel.awardDate')} kind="date" data-testid="rfq-award-date">
+                    {selectedRfq.awardedAt ? formatDate(selectedRfq.awardedAt) : '—'}
+                  </Field>
+                  {/* Award mints no PO — issuance is a separate buyer verb. */}
+                  <Field label={t('sourcing.panel.poIssued')}>—</Field>
+                </FieldList>
               </section>
             )}
 
@@ -3620,26 +3601,17 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
               >
                 <div className="flex items-center gap-2 mb-3">
                   <Flag size={16} className="text-text-secondary" />
-                  <h3 className="text-section text-text-primary">{t('sourcing.concluded.title')}</h3>
+                  <SectionHeading as="h3">{t('sourcing.concluded.title')}</SectionHeading>
                 </div>
-                <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
-                  <div>
-                    <dt className="text-text-tertiary">{t('sourcing.concluded.date')}</dt>
-                    <Data as="dd" className="text-text-primary font-medium">
-                      {selectedRfq.concludedAt ? formatDate(selectedRfq.concludedAt) : '—'}
-                    </Data>
-                  </div>
-                  <div>
-                    <dt className="text-text-tertiary">{t('sourcing.concluded.stage')}</dt>
-                    <dd className="text-text-primary font-medium">{selectedStage}</dd>
-                  </div>
-                  <div className="col-span-2">
-                    <dt className="text-text-tertiary">{t('sourcing.concluded.reason')}</dt>
-                    <dd className="text-text-primary" data-testid="rfq-concluded-reason">
-                      {selectedRfq.concludeReason || '—'}
-                    </dd>
-                  </div>
-                </dl>
+                <FieldList columns={2}>
+                  <Field label={t('sourcing.concluded.date')} kind="date">
+                    {selectedRfq.concludedAt ? formatDate(selectedRfq.concludedAt) : '—'}
+                  </Field>
+                  <Field label={t('sourcing.concluded.stage')}>{selectedStage}</Field>
+                  <Field label={t('sourcing.concluded.reason')} wide data-testid="rfq-concluded-reason">
+                    {selectedRfq.concludeReason || '—'}
+                  </Field>
+                </FieldList>
               </section>
             )}
 
@@ -3666,117 +3638,64 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
             </section>
 
             <section>
-              <h3 className="text-label text-text-tertiary uppercase mb-3">
+              <SectionHeading level="group" as="h3" className="mb-3">
                 {t('sourcing.panel.summary')}
-              </h3>
-              <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
-                <div>
-                  <dt className="text-text-tertiary">
-                    {t('sourcing.panel.field.category')}
-                  </dt>
-                  <dd className="text-text-primary font-medium">
-                    {categoryLabel(t, selectedRfq.materialCategory)}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-text-tertiary">
-                    {t('sourcing.panel.field.status')}
-                  </dt>
-                  <dd>
-                    <StatusPill variant={STATUS_VARIANT[selectedRfq.status]}>
-                      {selectedRfq.status}
-                    </StatusPill>
-                    <span className="mt-1 block">
-                      <NextActLine act={nextAct} testId="next-act-buyer-rfq" />
-                    </span>
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-text-tertiary">
-                    {t('sourcing.panel.field.created')}
-                  </dt>
-                  <Data as="dd" className="text-text-primary font-medium">
-                    {formatDate(selectedRfq.createdAt)}
-                  </Data>
-                </div>
-                <div>
-                  <dt className="text-text-tertiary">
-                    {t('sourcing.panel.field.responseDeadline')}
-                  </dt>
-                  <Data as="dd" className="text-text-primary font-medium">
-                    {formatDate(selectedRfq.responseDeadline)}
-                  </Data>
-                </div>
-                <div>
-                  <dt className="text-text-tertiary">
-                    {t('sourcing.panel.field.awardDeadline')}
-                  </dt>
-                  <Data as="dd" className="text-text-primary font-medium">
-                    {formatDate(selectedRfq.awardDeadline)}
-                  </Data>
-                </div>
-                <div>
-                  <dt className="text-text-tertiary">
-                    {t('sourcing.panel.field.requestedDelivery')}
-                  </dt>
-                  <dd className="text-text-primary font-medium" data-testid="rfq-panel-delivery-date">
-                    {selectedRfq.requestedDeliveryDate ? (
-                      <Data as="span">{formatDate(selectedRfq.requestedDeliveryDate)}</Data>
-                    ) : (
-                      t('sourcing.panel.field.requestedDeliveryNone')
-                    )}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-text-tertiary">
-                    {t('sourcing.panel.field.totalQty')}
-                  </dt>
-                  <Data as="dd" className="text-text-primary font-medium">
-                    {formatNumber(selectedRfq.totalQty)} {selectedRfq.uom}
-                  </Data>
-                </div>
-                <div>
-                  <dt className="text-text-tertiary">
-                    {t('sourcing.panel.field.estValue')}
-                  </dt>
-                  <Data as="dd" className="text-text-primary font-semibold">
-                    {formatIDR(selectedRfq.estimatedValue)}
-                  </Data>
-                </div>
-                <div>
-                  <dt className="text-text-tertiary">
-                    {t('sourcing.panel.field.currency')}
-                  </dt>
-                  <dd className="text-text-primary font-medium">
-                    {selectedRfq.currency}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-text-tertiary">
-                    {t('sourcing.panel.field.incoterms')}
-                  </dt>
-                  <dd className="text-text-primary font-medium">
-                    {selectedRfq.incoterms}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-text-tertiary">
-                    {t('sourcing.panel.field.paymentTerms')}
-                  </dt>
-                  <dd className="text-text-primary font-medium">
-                    {selectedRfq.paymentTerms}
-                  </dd>
-                </div>
-              </dl>
+              </SectionHeading>
+              <FieldList columns={2}>
+                <Field label={t('sourcing.panel.field.category')}>
+                  {categoryLabel(t, selectedRfq.materialCategory)}
+                </Field>
+                <Field label={t('sourcing.panel.field.status')} kind="status">
+                  <StatusPill variant={STATUS_VARIANT[selectedRfq.status]}>
+                    {selectedRfq.status}
+                  </StatusPill>
+                  <span className="mt-1 block">
+                    <NextActLine act={nextAct} testId="next-act-buyer-rfq" />
+                  </span>
+                </Field>
+                <Field label={t('sourcing.panel.field.created')} kind="date">
+                  {formatDate(selectedRfq.createdAt)}
+                </Field>
+                <Field label={t('sourcing.panel.field.responseDeadline')} kind="date">
+                  {formatDate(selectedRfq.responseDeadline)}
+                </Field>
+                <Field label={t('sourcing.panel.field.awardDeadline')} kind="date">
+                  {formatDate(selectedRfq.awardDeadline)}
+                </Field>
+                <Field
+                  label={t('sourcing.panel.field.requestedDelivery')}
+                  kind={selectedRfq.requestedDeliveryDate ? 'date' : 'text'}
+                  data-testid="rfq-panel-delivery-date"
+                >
+                  {selectedRfq.requestedDeliveryDate
+                    ? formatDate(selectedRfq.requestedDeliveryDate)
+                    : t('sourcing.panel.field.requestedDeliveryNone')}
+                </Field>
+                <Field label={t('sourcing.panel.field.totalQty')} kind="number">
+                  {formatNumber(selectedRfq.totalQty)} {selectedRfq.uom}
+                </Field>
+                <Field label={t('sourcing.panel.field.estValue')} kind="money">
+                  {formatIDR(selectedRfq.estimatedValue)}
+                </Field>
+                <Field label={t('sourcing.panel.field.currency')}>
+                  {selectedRfq.currency}
+                </Field>
+                <Field label={t('sourcing.panel.field.incoterms')}>
+                  {selectedRfq.incoterms}
+                </Field>
+                <Field label={t('sourcing.panel.field.paymentTerms')}>
+                  {selectedRfq.paymentTerms}
+                </Field>
+              </FieldList>
             </section>
 
             {/* RFx-1 — WHERE THE EVENT IS ON ITS PATH, and what each advance
                 carried. The names are the buyer's to read; a supplier's copy of
                 this timeline names nobody (`rfqSupplierView.ts`). */}
             <section data-testid="rfq-stage-section">
-              <h3 className="text-label text-text-tertiary uppercase mb-3">
+              <SectionHeading level="group" as="h3" className="mb-3">
                 {t('sourcing.stage.title')}
-              </h3>
+              </SectionHeading>
               <StageTimeline event={selectedRfq} testId="rfq-stage-timeline" />
               {(selectedRfq.stageHistory ?? []).map((a) => (
                 <div
@@ -3815,9 +3734,9 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
             {startStageOf(selectedRfq) === 'RFI' &&
               (selectedRfq.status === 'Draft' || (selectedRfq.questionnaire ?? []).length > 0) && (
                 <section data-testid="rfq-questionnaire-section">
-                  <h3 className="text-label text-text-tertiary uppercase mb-3">
+                  <SectionHeading level="group" as="h3" className="mb-3">
                     {t('sourcing.rfi.title')}
-                  </h3>
+                  </SectionHeading>
                   {selectedRfq.status === 'Draft' ? (
                     // Keyed by the event: another draft opened in this panel
                     // starts from its own questions, not the last one's edits.
@@ -3825,9 +3744,9 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                   ) : (
                     <>
                       <RfiQuestionList questions={selectedRfq.questionnaire ?? []} />
-                      <h4 className="text-label text-text-tertiary uppercase mt-4 mb-2">
+                      <SectionHeading level="group" as="h4" className="mt-4 mb-2">
                         {t('sourcing.rfi.matrix.title')}
-                      </h4>
+                      </SectionHeading>
                       <RfiAnswerMatrix rfq={selectedRfq} supplierNameById={supplierNameById} />
                     </>
                   )}
@@ -3842,9 +3761,9 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
             {stagePathOf(selectedRfq).includes('RFP') &&
               (selectedRfq.status === 'Draft' || (selectedRfq.criteria ?? []).length > 0) && (
                 <section data-testid="rfq-criteria-section">
-                  <h3 className="text-label text-text-tertiary uppercase mb-3">
+                  <SectionHeading level="group" as="h3" className="mb-3">
                     {t('sourcing.rfp.title')}
-                  </h3>
+                  </SectionHeading>
                   {selectedRfq.status === 'Draft' ? (
                     <RfpCriteriaEditor key={selectedRfq.id} rfq={selectedRfq} />
                   ) : (
@@ -3863,9 +3782,9 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
               selectedRfq.status === 'Open' ||
               selectedRfq.status === 'Closed') && (
               <section>
-                <h3 className="text-label text-text-tertiary uppercase mb-3">
+                <SectionHeading level="group" as="h3" className="mb-3">
                   {t('sourcing.lifecycle.actions')}
-                </h3>
+                </SectionHeading>
                 <div className="flex flex-wrap gap-2">
                   {/* PF-1a — PUBLISH. Wired here and not deferred to the surface
                       batch because D-1 made `Draft` the state EVERY newly-raised
@@ -4313,9 +4232,9 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
             )}
 
             <section>
-              <h3 className="text-label text-text-tertiary uppercase mb-3">
+              <SectionHeading level="group" as="h3" className="mb-3">
                 {t('sourcing.panel.lifecycle')}
-              </h3>
+              </SectionHeading>
               <Timeline events={buildTimeline(selectedRfq, t)} />
             </section>
 
@@ -4326,9 +4245,9 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                 more, until the questionnaire and the proposal are built. */}
             {(selectedStage !== 'RFQ' || stageAnswers.length > 0) && (
               <section data-testid="rfq-stage-responses">
-                <h3 className="text-label text-text-tertiary uppercase mb-3">
+                <SectionHeading level="group" as="h3" className="mb-3">
                   {t('sourcing.interest.title')}
-                </h3>
+                </SectionHeading>
                 <p className="text-xs text-text-tertiary mb-3" data-testid="rfq-stage-content-note">
                   {t('sourcing.interest.contentNote')}
                 </p>
@@ -4375,14 +4294,14 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
             )}
 
             <section>
-              <h3 className="text-label text-text-tertiary uppercase mb-3">
+              <SectionHeading level="group" as="h3" className="mb-3">
                 {t(
                   quotesForSelected.length === 1
                     ? 'sourcing.cmp.title.one'
                     : 'sourcing.cmp.title.other',
                   { count: quotesForSelected.length },
                 )}
-              </h3>
+              </SectionHeading>
               {/* 2e-c-3 — the refusal, stated ABOVE the table it applies to.
                   The bids are still shown (they are facts the supplier stated);
                   what is withheld is the RANKING, because ranking them would
@@ -4843,9 +4762,9 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                 to commit it. */}
             {isAwardable(selectedRfq, quotesForSelected.length) && (
                 <section className="bg-teal-soft border border-teal/20 rounded-md p-4" data-testid="rfq-award-section">
-                  <h3 className="text-section text-text-primary mb-2">
+                  <SectionHeading as="h3" className="mb-2">
                     {t('sourcing.award.title')}
-                  </h3>
+                  </SectionHeading>
                   <p className="text-sm text-text-secondary mb-3">
                     {selectedQuoteId
                       ? t('sourcing.award.selected', {
@@ -4964,14 +4883,14 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
             data-testid="fx-pin-dialog"
             className="w-full max-w-md bg-white rounded-lg border border-border-subtle p-5"
           >
-            <h3 className="text-section text-text-primary mb-1">
+            <SectionHeading as="h3" className="mb-1">
               {t(
                 pinDraft.superseding
                   ? 'sourcing.fx.dialog.title.supersede'
                   : 'sourcing.fx.dialog.title.record',
                 { currency: pinDraft.currency },
               )}
-            </h3>
+            </SectionHeading>
             <p className="text-xs text-text-secondary mb-4">
               {t(
                 pinDraft.superseding

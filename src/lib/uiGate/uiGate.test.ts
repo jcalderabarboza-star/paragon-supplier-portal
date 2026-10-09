@@ -344,6 +344,16 @@ describe('UI gate 6 · fields and headings', () => {
     expect(derivedRawHeadings()).toEqual({});
   });
 
+  it('`Field` names the shared detail field only — no page defines its own', () => {
+    // A page-local `Field` hid a detail helper from this gate once (the listing
+    // card). A form helper is `FormField` until the form components replace it.
+    const local = shippedFiles()
+      .filter((f) => f.file.endsWith('.tsx') && f.file !== 'src/components/ui-v2/Field.tsx')
+      .filter((f) => /(?:const|function)\s+Field[^A-Za-z]/.test(f.text))
+      .map((f) => f.file);
+    expect(local).toEqual([]);
+  });
+
   it('no field or heading in the tree dresses itself', () => {
     expect(derivedFieldType()).toEqual({});
   });

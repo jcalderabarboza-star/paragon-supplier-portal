@@ -1,4 +1,5 @@
 import React from 'react';
+import SectionHeading from './SectionHeading';
 import { useTranslation } from 'react-i18next';
 import { Check } from 'lucide-react';
 import Button from './Button';
@@ -107,9 +108,9 @@ const Wizard: React.FC<WizardProps> = ({
 
       {/* Header */}
       <div className="px-8 pt-6 pb-2">
-        <h2 className="text-xl font-semibold text-text-primary">
+        <SectionHeading as="h2">
           {current.title}
-        </h2>
+        </SectionHeading>
         {current.description && (
           <p className="text-sm text-text-secondary mt-1">
             {current.description}

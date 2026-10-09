@@ -24,6 +24,8 @@ import Button from '../components/ui-v2/Button';
 import SidePanel from '../components/ui-v2/SidePanel';
 import FormSection from '../components/ui-v2/FormSection';
 import Data from '../components/ui-v2/Data';
+import { FieldList, Field } from '../components/ui-v2/Field';
+import SectionHeading from '../components/ui-v2/SectionHeading';
 import { useToast } from '../hooks/useToast';
 import { useCurrentIdentity } from '../context/CurrentIdentityContext';
 import NoSupplierIdentity from '../components/ui-v2/NoSupplierIdentity';
@@ -444,40 +446,29 @@ const RFQCard: React.FC<RFQCardProps> = ({
           <StatusPill variant="info">{rfq.category}</StatusPill>
         </div>
 
-        <div className="flex flex-wrap gap-x-5 gap-y-1 text-xs text-text-tertiary mb-3">
-          <span>
-            {t('rfqs.card.qty')}{' '}
-            <strong className="text-text-primary">{rfq.qty}</strong>
-          </span>
-          <span>
-            {t('rfqs.card.location')}{' '}
-            <strong className="text-text-primary">
-              {rfq.deliveryLocation}
-            </strong>
-          </span>
-          <span>
-            {t('rfqs.card.reqDelivery')}{' '}
-            <strong className="text-text-primary" data-testid={`rfq-req-delivery-${rfq.id}`}>
-              {rfq.requestedDelivery ?? t('rfqs.card.reqDeliveryNone')}
-            </strong>
-          </span>
-          <span>
-            {t('rfqs.card.deadline')}{' '}
-            <strong className={urgent ? 'text-critical' : 'text-text-primary'}>
-              {rfq.deadline}
-            </strong>
-          </span>
-        </div>
+        <FieldList columns={2} className="sm:grid-cols-4 mb-3">
+          <Field label={t('rfqs.card.qty')} kind="number">
+            {rfq.qty}
+          </Field>
+          <Field label={t('rfqs.card.location')} kind="text">
+            {rfq.deliveryLocation}
+          </Field>
+          <Field label={t('rfqs.card.reqDelivery')} kind="date" data-testid={`rfq-req-delivery-${rfq.id}`}>
+            {rfq.requestedDelivery ?? t('rfqs.card.reqDeliveryNone')}
+          </Field>
+          <Field label={t('rfqs.card.deadline')} kind="date">
+            {urgent ? <span className="text-critical">{rfq.deadline}</span> : rfq.deadline}
+          </Field>
+        </FieldList>
 
         <div className="bg-bg-hover rounded-md px-3 py-2 mb-3">
-          <div className="text-label text-text-tertiary uppercase mb-1">
-            {t('rfqs.card.specialReqs')}
-          </div>
-          <div className="text-xs text-text-secondary leading-relaxed">
-            {expanded || !showLongReqs
-              ? rfq.specialRequirements
-              : rfq.specialRequirements.slice(0, 80) + '…'}
-          </div>
+          <FieldList columns={1}>
+            <Field label={t('rfqs.card.specialReqs')} kind="text">
+              {expanded || !showLongReqs
+                ? rfq.specialRequirements
+                : rfq.specialRequirements.slice(0, 80) + '…'}
+            </Field>
+          </FieldList>
           {showLongReqs && (
             <button
               type="button"
@@ -498,9 +489,9 @@ const RFQCard: React.FC<RFQCardProps> = ({
         </div>
 
         <div className="mb-4">
-          <div className="text-label text-text-tertiary uppercase mb-2">
+          <SectionHeading level="group" as="h4" className="mb-2">
             {t('rfqs.card.evalCriteria')}
-          </div>
+          </SectionHeading>
           {/* RFx-3 — the event's OWN criteria and weights where it sets them.
               E2E-1 — and where it sets none the card says so: the sample bar
               that stood here listed five weights nobody had set. */}
@@ -528,7 +519,7 @@ const RFQCard: React.FC<RFQCardProps> = ({
 
         {stagePathOf(rfq.event).length > 1 && (
           <div className="mb-4">
-            <div className="text-label text-text-tertiary uppercase mb-2">{t('rfqs.card.stages')}</div>
+            <SectionHeading level="group" as="h4" className="mb-2">{t('rfqs.card.stages')}</SectionHeading>
             <StageTimeline event={rfq.event} testId={`rfq-stage-timeline-${rfq.id}`} />
           </div>
         )}
@@ -878,30 +869,27 @@ const MyQuotesTab: React.FC<{ quotes: SubmittedQuote[] }> = ({ quotes }) => {
             <StatusPill variant="neutral">{q.status}</StatusPill>
           </div>
 
-          <dl className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3">
-            {[
-              { label: t('rfqs.quotes.col.quoteNo'), value: q.quoteNumber },
-              { label: t('rfqs.quotes.col.submitted'), value: q.submittedDate },
-              { label: t('rfqs.quotes.col.unitPrice'), value: q.unitPrice },
-              { label: t('rfqs.quotes.col.totalPrice'), value: q.totalPrice },
-              { label: t('rfqs.quotes.col.leadTime'), value: q.leadTime },
-              // 2e-b-2 — the minimum order quantity appears here for the first
-              // time. It was collected on the form and dropped before this card
-              // existed, so the supplier's own record of their quote silently
-              // omitted a term they had stated.
-              { label: t('rfqs.quotes.col.moq'), value: q.moq },
-              { label: t('rfqs.quotes.col.validUntil'), value: q.validUntil },
-            ].map((d) => (
-              <div key={d.label} className="bg-bg-hover rounded-md px-3 py-2">
-                <dt className="text-label text-text-tertiary uppercase mb-0.5">
-                  {d.label}
-                </dt>
-                <Data as="dd" className="text-sm font-semibold text-text-primary">
-                  {d.value}
-                </Data>
-              </div>
+          <FieldList columns={2} className="sm:grid-cols-3 lg:grid-cols-7">
+            {(
+              [
+                { kind: 'id', label: t('rfqs.quotes.col.quoteNo'), value: q.quoteNumber },
+                { kind: 'date', label: t('rfqs.quotes.col.submitted'), value: q.submittedDate },
+                { kind: 'money', label: t('rfqs.quotes.col.unitPrice'), value: q.unitPrice },
+                { kind: 'money', label: t('rfqs.quotes.col.totalPrice'), value: q.totalPrice },
+                { kind: 'number', label: t('rfqs.quotes.col.leadTime'), value: q.leadTime },
+                // 2e-b-2 — the minimum order quantity appears here for the first
+                // time. It was collected on the form and dropped before this card
+                // existed, so the supplier's own record of their quote silently
+                // omitted a term they had stated.
+                { kind: 'number', label: t('rfqs.quotes.col.moq'), value: q.moq },
+                { kind: 'date', label: t('rfqs.quotes.col.validUntil'), value: q.validUntil },
+              ] as const
+            ).map((d) => (
+              <Field key={d.label} label={d.label} kind={d.kind} className="bg-bg-hover rounded-md px-3 py-2">
+                {d.value}
+              </Field>
             ))}
-          </dl>
+          </FieldList>
         </div>
       ))}
     </div>
@@ -1551,26 +1539,18 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
               <div className="text-sm font-semibold text-text-primary">
                 {effectiveQuotePanelRFQ.material}
               </div>
-              <div className="flex flex-wrap gap-4 mt-2 text-xs text-text-tertiary">
-                <span>
-                  {t('rfqs.card.qty')}{' '}
-                  <strong className="text-text-primary">
-                    {effectiveQuotePanelRFQ.qty}
-                  </strong>
-                </span>
-                <span>
-                  {t('rfqs.card.deadline')}{' '}
-                  <strong
-                    className={
-                      effectiveQuotePanelRFQ.daysRemaining <= 7
-                        ? 'text-critical'
-                        : 'text-text-primary'
-                    }
-                  >
-                    {effectiveQuotePanelRFQ.deadline}
-                  </strong>
-                </span>
-              </div>
+              <FieldList columns={2} className="mt-2">
+                <Field label={t('rfqs.card.qty')} kind="number">
+                  {effectiveQuotePanelRFQ.qty}
+                </Field>
+                <Field label={t('rfqs.card.deadline')} kind="date">
+                  {effectiveQuotePanelRFQ.daysRemaining <= 7 ? (
+                    <span className="text-critical">{effectiveQuotePanelRFQ.deadline}</span>
+                  ) : (
+                    effectiveQuotePanelRFQ.deadline
+                  )}
+                </Field>
+              </FieldList>
             </section>
 
             <FormSection

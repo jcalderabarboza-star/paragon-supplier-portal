@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import SectionHeading from './SectionHeading';
 import { Check, ExternalLink, type LucideIcon } from 'lucide-react';
 import Button from './Button';
 
@@ -98,10 +99,10 @@ const GuidedLesson: React.FC<GuidedLessonProps> = ({
         <div className="text-meta text-text-tertiary uppercase tracking-wider mb-2">
           {labels.step(current + 1, total)}
         </div>
-        <h3 className="flex items-center gap-2 text-base font-semibold text-text-primary mb-2">
+        <SectionHeading as="h3" className="flex items-center gap-2 mb-2">
           {StepIcon && <StepIcon size={18} className="text-teal shrink-0" aria-hidden="true" />}
           {step.title}
-        </h3>
+        </SectionHeading>
         <div className="text-sm text-text-secondary leading-relaxed">{step.body}</div>
       </div>
 

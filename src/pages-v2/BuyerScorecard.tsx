@@ -59,6 +59,8 @@ import type {
   CommLogEntry,
   KpiTrend,
 } from '../services/data/types';
+import SectionHeading from '../components/ui-v2/SectionHeading';
+import { Field, FieldList } from '../components/ui-v2/Field';
 
 type Grade = ScorecardGradeLetter;
 type Trend = KpiTrend;
@@ -301,20 +303,14 @@ const BuyerScorecard: React.FC = () => {
                 {supp.tier}
               </span>
             </div>
-            <div className="flex flex-wrap gap-5 text-xs text-text-secondary">
-              <span>
-                <span className="text-text-tertiary font-semibold">
-                  {t('buyerScorecard.hero.sapBp')}:{' '}
-                </span>
+            <FieldList columns={2} className="max-w-sm">
+              <Field label={t('buyerScorecard.hero.sapBp')} kind="id">
                 {supp.sapBp}
-              </span>
-              <span>
-                <span className="text-text-tertiary font-semibold">
-                  {t('buyerScorecard.hero.channel')}:{' '}
-                </span>
+              </Field>
+              <Field label={t('buyerScorecard.hero.channel')}>
                 {chl(supp.channel)}
-              </span>
-            </div>
+              </Field>
+            </FieldList>
             {compliance && (
               <div
                 className={`mt-4 inline-flex items-center gap-2 rounded px-3 py-2 text-xs font-medium ${
@@ -358,10 +354,10 @@ const BuyerScorecard: React.FC = () => {
       </section>
 
       <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6 mb-6">
-        <h2 className="text-section text-text-primary mb-4 pb-3 border-b border-border-subtle">
+        <SectionHeading className="mb-4 pb-3 border-b border-border-subtle">
           {t('buyerScorecard.kpi.title')}{' '}
           <IllustrativeMark />
-        </h2>
+        </SectionHeading>
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
           {supp.kpis.map((k) => (
             <KpiProgressTile key={k.name} k={k} />
@@ -371,10 +367,10 @@ const BuyerScorecard: React.FC = () => {
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-5 mb-6">
         <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6">
-          <h2 className="text-section text-text-primary mb-4 pb-3 border-b border-border-subtle">
+          <SectionHeading className="mb-4 pb-3 border-b border-border-subtle">
             {t('buyerScorecard.radar.title')}{' '}
             <IllustrativeMark />
-          </h2>
+          </SectionHeading>
           <ResponsiveContainer width="100%" height={280}>
             <RadarChart
               data={radarData}
@@ -413,10 +409,10 @@ const BuyerScorecard: React.FC = () => {
         </section>
 
         <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6">
-          <h2 className="text-section text-text-primary mb-1 pb-3 border-b border-border-subtle">
+          <SectionHeading className="mb-1 pb-3 border-b border-border-subtle">
             {t('buyerScorecard.trends.title')}{' '}
             <IllustrativeMark />
-          </h2>
+          </SectionHeading>
           <div className="text-meta text-text-tertiary mb-3 mt-3">
             {t('buyerScorecard.trends.caption')}
           </div>
@@ -494,10 +490,10 @@ const BuyerScorecard: React.FC = () => {
             <AlertTriangle size={14} />
             {t('buyerScorecard.imp.banner')}
           </div>
-          <h2 className="text-section text-text-primary mb-4 pb-3 border-b border-border-subtle">
+          <SectionHeading className="mb-4 pb-3 border-b border-border-subtle">
             {t('buyerScorecard.imp.title')}{' '}
             <IllustrativeMark />
-          </h2>
+          </SectionHeading>
           <div className="flex flex-col gap-2 mb-4">
             {improvementActions.map((a) => (
               <div
@@ -539,10 +535,10 @@ const BuyerScorecard: React.FC = () => {
       )}
 
       <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6">
-        <h2 className="text-section text-text-primary mb-4 pb-3 border-b border-border-subtle">
+        <SectionHeading className="mb-4 pb-3 border-b border-border-subtle">
           {t('buyerScorecard.comm.title')}{' '}
           <IllustrativeMark />
-        </h2>
+        </SectionHeading>
         {supp.commLog.length === 0 ? (
           <div className="text-sm text-text-tertiary text-center py-6">
             {t('buyerScorecard.comm.empty')}

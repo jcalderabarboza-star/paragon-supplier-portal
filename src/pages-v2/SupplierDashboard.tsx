@@ -28,6 +28,7 @@ import TargetBar from '../components/ui-v2/TargetBar';
 import DataTable from '../components/ui-v2/DataTable';
 import Button from '../components/ui-v2/Button';
 import Data from '../components/ui-v2/Data';
+import SectionHeading from '../components/ui-v2/SectionHeading';
 import { useTranslation } from 'react-i18next';
 import { useToast } from '../hooks/useToast';
 import { useCurrentIdentity } from '../context/CurrentIdentityContext';
@@ -638,9 +639,9 @@ const SupplierDashboard: React.FC = () => {
             <div className="px-5 py-4 border-b border-border-subtle flex items-center justify-between">
               <div>
                 <div className="flex items-center gap-2">
-                  <div className="text-sm font-bold text-text-primary">
+                  <SectionHeading as="h2">
                     {t('supplierDashboard.briefing.title')}
-                  </div>
+                  </SectionHeading>
                   <StatusPill variant="neutral">
                     {t('supplierDashboard.briefing.sampleData')}
                   </StatusPill>
@@ -737,9 +738,9 @@ const SupplierDashboard: React.FC = () => {
 
           <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm overflow-hidden">
             <div className="px-5 py-4 border-b border-border-subtle">
-              <h2 className="text-section text-text-primary">
+              <SectionHeading as="h2">
                 {t('supplierDashboard.orders.title')}
-              </h2>
+              </SectionHeading>
             </div>
             <DataTable<PurchaseOrder>
               card={false}
@@ -821,9 +822,9 @@ const SupplierDashboard: React.FC = () => {
         <div className="flex flex-col gap-5">
           <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-5">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-section text-text-primary">
+              <SectionHeading as="h2">
                 {t('supplierDashboard.perf.title')}
-              </h2>
+              </SectionHeading>
               <GradeBadge grade={grade} size="sm" />
             </div>
             <div className="flex flex-col gap-4">
@@ -863,9 +864,9 @@ const SupplierDashboard: React.FC = () => {
           </section>
 
           <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-5">
-            <h2 className="text-section text-text-primary mb-4">
+            <SectionHeading as="h2" className="mb-4">
               {t('supplierDashboard.docs.title')}
-            </h2>
+            </SectionHeading>
             <div className="flex flex-col">
               {documents.map((doc, idx) => {
                 const display = documentDisplayState(doc, nowIso);

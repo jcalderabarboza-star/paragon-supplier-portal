@@ -24,6 +24,7 @@ import type { ChaseSeverityLevel } from '../services/chase';
 import type { ConsolidationRow } from '../services/sdc';
 import { sdcClock } from '../services/sdc';
 import { formatDate } from '../lib/format';
+import SectionHeading from '../components/ui-v2/SectionHeading';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Comm Hub C4a — the buyer/planner COMMUNICATION HUB (DEC-COMMS-PRIMARY front door).
@@ -144,7 +145,7 @@ const BuyerCommHub: React.FC = () => {
       <section className="mb-8" data-testid="commhub-outbound">
         <div className="flex items-center gap-2 mb-1">
           <Send size={16} className="text-teal" aria-hidden="true" />
-          <h2 className="text-section text-text-primary">{t('buyerCommHub.outbound.title')}</h2>
+          <SectionHeading>{t('buyerCommHub.outbound.title')}</SectionHeading>
         </div>
         <p className="text-sm text-text-tertiary mb-4">{t('buyerCommHub.outbound.subtitle')}</p>
 
@@ -225,7 +226,7 @@ const BuyerCommHub: React.FC = () => {
       <section className="mb-8" data-testid="commhub-provenance">
         <div className="flex items-center gap-2 mb-1">
           <Radio size={16} className="text-teal" aria-hidden="true" />
-          <h2 className="text-section text-text-primary">{t('buyerCommHub.provenance.title')}</h2>
+          <SectionHeading>{t('buyerCommHub.provenance.title')}</SectionHeading>
         </div>
         <p className="text-sm text-text-tertiary mb-4">{t('buyerCommHub.provenance.subtitle')}</p>
 

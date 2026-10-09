@@ -1,4 +1,5 @@
 import React, { useEffect, useId, useRef } from 'react';
+import SectionHeading from './SectionHeading';
 import { X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
@@ -111,9 +112,9 @@ const Dialog: React.FC<DialogProps> = ({
         className={`relative w-full ${widthClass} bg-bg-surface rounded-lg shadow-md border border-border-subtle`}
       >
         <header className="flex items-center justify-between gap-4 px-6 py-4 border-b border-border-subtle">
-          <h2 id={titleId} className="text-base font-semibold text-text-primary">
+          <SectionHeading as="h2" id={titleId}>
             {title}
-          </h2>
+          </SectionHeading>
           <button
             type="button"
             aria-label={t('ui.closePanel')}

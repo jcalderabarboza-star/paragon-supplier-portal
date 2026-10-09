@@ -24,6 +24,8 @@ import Button from '../components/ui-v2/Button';
 import SidePanel from '../components/ui-v2/SidePanel';
 import Timeline, { TimelineEvent } from '../components/ui-v2/Timeline';
 import Data from '../components/ui-v2/Data';
+import { FieldList, Field } from '../components/ui-v2/Field';
+import SectionHeading from '../components/ui-v2/SectionHeading';
 import { useToast } from '../hooks/useToast';
 import { useCurrentIdentity } from '../context/CurrentIdentityContext';
 import NoSupplierIdentity from '../components/ui-v2/NoSupplierIdentity';
@@ -686,88 +688,50 @@ const SupplierInvoices: React.FC = () => {
         {selected && (
           <div className="space-y-6">
             <section>
-              <h3 className="text-label text-text-tertiary uppercase mb-3">
+              <SectionHeading level="group" as="h3" className="mb-3">
                 {t('supplierInvoices.section.keyFacts')}
-              </h3>
-              <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
-                <div>
-                  <dt className="text-text-tertiary">{t('supplierInvoices.field.poReference')}</dt>
-                  <Data as="dd" className="text-text-primary">
-                    {selected.poNumber}
-                  </Data>
-                </div>
-                <div>
-                  <dt className="text-text-tertiary">{t('supplierInvoices.field.amount')}</dt>
-                  <dd className="text-text-primary font-semibold">
-                    <Data>{formatIDR(selected.amount)}</Data>
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-text-tertiary">{t('supplierInvoices.field.submitted')}</dt>
-                  <dd className="text-text-primary font-medium">
-                    <Data>{fmtDate(selected.submittedDate)}</Data>
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-text-tertiary">{t('supplierInvoices.field.dueDate')}</dt>
-                  <dd className="text-text-primary font-medium">
-                    <Data>{fmtDate(selected.dueDate)}</Data>
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-text-tertiary">{t('supplierInvoices.field.status')}</dt>
-                  <dd>
-                    <StatusPill variant={STATUS_VARIANT[selected.status]}>
-                      {selected.status}
-                    </StatusPill>
-                    <span className="mt-1 block">
-                      <NextActLine act={nextAct} testId="next-act-supplier-invoice" />
-                    </span>
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-text-tertiary">{t('supplierInvoices.field.channel')}</dt>
-                  <dd className="text-text-primary font-medium">
-                    {selected.channel}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-text-tertiary">{t('supplierInvoices.field.buyerContact')}</dt>
-                  <dd className="text-text-primary font-medium">
-                    {selected.buyerContact}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-text-tertiary">{t('supplierInvoices.field.bankAccount')}</dt>
-                  <dd className="text-text-primary font-medium">
-                    {selected.bankAccount}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-text-tertiary">{t('supplierInvoices.field.sapFiDoc')}</dt>
-                  <Data
-                    as="dd"
-                    className={`text-xs ${
-                      selected.sapFiDoc ? 'text-success' : 'text-text-tertiary'
-                    }`}
-                  >
-                    {selected.sapFiDoc ?? t('supplierInvoices.field.pending')}
-                  </Data>
-                </div>
-                <div>
-                  <dt className="text-text-tertiary">{t('supplierInvoices.field.paymentRef')}</dt>
-                  <Data
-                    as="dd"
-                    className={`text-xs ${
-                      selected.paymentRef
-                        ? 'text-text-primary'
-                        : 'text-text-tertiary'
-                    }`}
-                  >
-                    {selected.paymentRef ?? t('supplierInvoices.field.pending')}
-                  </Data>
-                </div>
-              </dl>
+              </SectionHeading>
+              <FieldList columns={2}>
+                <Field label={t('supplierInvoices.field.poReference')} kind="id">
+                  {selected.poNumber}
+                </Field>
+                <Field label={t('supplierInvoices.field.amount')} kind="money">
+                  {formatIDR(selected.amount)}
+                </Field>
+                <Field label={t('supplierInvoices.field.submitted')} kind="date">
+                  {fmtDate(selected.submittedDate)}
+                </Field>
+                <Field label={t('supplierInvoices.field.dueDate')} kind="date">
+                  {fmtDate(selected.dueDate)}
+                </Field>
+                <Field label={t('supplierInvoices.field.status')} kind="status">
+                  <StatusPill variant={STATUS_VARIANT[selected.status]}>
+                    {selected.status}
+                  </StatusPill>
+                  <span className="mt-1 block">
+                    <NextActLine act={nextAct} testId="next-act-supplier-invoice" />
+                  </span>
+                </Field>
+                <Field label={t('supplierInvoices.field.channel')} kind="text">
+                  {selected.channel}
+                </Field>
+                <Field label={t('supplierInvoices.field.buyerContact')} kind="text">
+                  {selected.buyerContact}
+                </Field>
+                <Field label={t('supplierInvoices.field.bankAccount')} kind="text">
+                  {selected.bankAccount}
+                </Field>
+                <Field label={t('supplierInvoices.field.sapFiDoc')} kind="id">
+                  {selected.sapFiDoc ? (
+                    <span className="text-success">{selected.sapFiDoc}</span>
+                  ) : (
+                    t('supplierInvoices.field.pending')
+                  )}
+                </Field>
+                <Field label={t('supplierInvoices.field.paymentRef')} kind="id">
+                  {selected.paymentRef ?? t('supplierInvoices.field.pending')}
+                </Field>
+              </FieldList>
             </section>
 
             {/* E2E-2 — the lines this invoice stated, when it stated any. */}
@@ -777,9 +741,9 @@ const SupplierInvoices: React.FC = () => {
 
             {panelMode === 'detail' && (
               <section>
-                <h3 className="text-label text-text-tertiary uppercase mb-3">
+                <SectionHeading level="group" as="h3" className="mb-3">
                   {t('supplierInvoices.section.lifecycle')}
-                </h3>
+                </SectionHeading>
                 <Timeline events={buildTimeline(selected, t)} />
                 {selected.status === 'Disputed' && (
                   <div
@@ -802,9 +766,9 @@ const SupplierInvoices: React.FC = () => {
 
             {panelMode === 'remittance' && (
               <section>
-                <h3 className="text-label text-text-tertiary uppercase mb-3">
+                <SectionHeading level="group" as="h3" className="mb-3">
                   {t('supplierInvoices.section.remittance')}
-                </h3>
+                </SectionHeading>
                 {/* OPS-1 — "processed and credited to your account" was shown at
                     Payment Released, where the bank has confirmed nothing. The
                     credited sentence is kept for the state the bank's fact
@@ -825,38 +789,23 @@ const SupplierInvoices: React.FC = () => {
                     {t('supplierInvoices.remittance.released')}
                   </div>
                 )}
-                <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
-                  <div>
-                    <dt className="text-text-tertiary">{t('supplierInvoices.remittance.invoiceNo')}</dt>
-                    <Data as="dd" className="text-text-primary">
-                      {selected.invoiceNumber}
-                    </Data>
-                  </div>
-                  <div>
-                    <dt className="text-text-tertiary">{t('supplierInvoices.remittance.amountPaid')}</dt>
-                    <dd className="text-text-primary font-semibold">
-                      <Data>{formatIDR(selected.amount)}</Data>
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className="text-text-tertiary">{t('supplierInvoices.remittance.paymentDate')}</dt>
-                    <dd className="text-text-primary font-medium">
-                      <Data>{fmtDate(selected.paymentDate)}</Data>
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className="text-text-tertiary">{t('supplierInvoices.remittance.bankCredited')}</dt>
-                    <dd className="text-text-primary font-medium">
-                      {selected.bankAccount || t('supplierInvoices.remittance.bankUnknown')}
-                    </dd>
-                  </div>
-                  <div className="col-span-2">
-                    <dt className="text-text-tertiary">{t('supplierInvoices.remittance.reference')}</dt>
-                    <Data as="dd" className="text-text-primary">
-                      {selected.paymentRef ?? '—'}
-                    </Data>
-                  </div>
-                </dl>
+                <FieldList columns={2}>
+                  <Field label={t('supplierInvoices.remittance.invoiceNo')} kind="id">
+                    {selected.invoiceNumber}
+                  </Field>
+                  <Field label={t('supplierInvoices.remittance.amountPaid')} kind="money">
+                    {formatIDR(selected.amount)}
+                  </Field>
+                  <Field label={t('supplierInvoices.remittance.paymentDate')} kind="date">
+                    {fmtDate(selected.paymentDate)}
+                  </Field>
+                  <Field label={t('supplierInvoices.remittance.bankCredited')} kind="text">
+                    {selected.bankAccount || t('supplierInvoices.remittance.bankUnknown')}
+                  </Field>
+                  <Field label={t('supplierInvoices.remittance.reference')} kind="id" wide>
+                    {selected.paymentRef ?? '—'}
+                  </Field>
+                </FieldList>
                 {selected.remittanceNote && (
                   <div className="mt-3 text-xs text-text-secondary bg-bg-hover rounded px-3 py-2 border border-border-subtle">
                     <strong className="text-text-primary">{t('supplierInvoices.remittance.paymentNote')}</strong>{' '}
@@ -928,9 +877,9 @@ const SupplierInvoices: React.FC = () => {
           )}
           {newPo && (
             <div data-testid="invoice-lines">
-              <div className="text-label text-text-tertiary uppercase mb-1">
+              <SectionHeading level="group" as="h3" className="mb-1">
                 {t('supplierInvoices.new.lines.title')}
-              </div>
+              </SectionHeading>
               <p className="text-xs text-text-tertiary mb-3">
                 {t(beforeReceipt ? 'supplierInvoices.new.lines.noteConfirmed' : 'supplierInvoices.new.lines.note')}
               </p>
@@ -948,20 +897,18 @@ const SupplierInvoices: React.FC = () => {
                       <div className="text-sm text-text-primary">
                         <Data>{l.materialCode}</Data> · {l.description}
                       </div>
-                      <dl className="mt-1 grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
-                        <div>
-                          <dt className="text-text-tertiary">{t('supplierInvoices.new.lines.unitPrice')}</dt>
-                          <dd><Data>{formatIDR(l.unitPrice)}</Data></dd>
-                        </div>
-                        <div>
-                          <dt className="text-text-tertiary">
-                            {t(l.basis === 'confirmed' ? 'supplierInvoices.new.lines.confirmed' : 'supplierInvoices.new.lines.accepted')}
-                          </dt>
-                          <dd data-testid={`invoice-line-accepted-${l.materialCode}`}>
-                            <Data>{formatNumber(l.maxQty)} {l.uom}</Data>
-                          </dd>
-                        </div>
-                      </dl>
+                      <FieldList columns={2} className="mt-1">
+                        <Field label={t('supplierInvoices.new.lines.unitPrice')} kind="money">
+                          {formatIDR(l.unitPrice)}
+                        </Field>
+                        <Field
+                          label={t(l.basis === 'confirmed' ? 'supplierInvoices.new.lines.confirmed' : 'supplierInvoices.new.lines.accepted')}
+                          kind="number"
+                          data-testid={`invoice-line-accepted-${l.materialCode}`}
+                        >
+                          {formatNumber(l.maxQty)} {l.uom}
+                        </Field>
+                      </FieldList>
                       <label htmlFor={inputId} className="text-label text-text-tertiary uppercase block mt-2 mb-1">
                         {t('supplierInvoices.new.lines.qtyLabel', { material: l.materialCode })}
                       </label>
@@ -1006,12 +953,11 @@ const SupplierInvoices: React.FC = () => {
                   );
                 })}
               </ul>
-              <div className="mt-3 flex items-baseline justify-between text-sm">
-                <span className="text-text-tertiary">{t('supplierInvoices.new.lines.total')}</span>
-                <span className="font-semibold" data-testid="invoice-lines-total">
-                  {draftRead.ok ? <Data>{formatIDR(draftRead.amount)}</Data> : '—'}
-                </span>
-              </div>
+              <FieldList layout="row" className="mt-3">
+                <Field label={t('supplierInvoices.new.lines.total')} kind="money" data-testid="invoice-lines-total">
+                  {draftRead.ok ? formatIDR(draftRead.amount) : '—'}
+                </Field>
+              </FieldList>
               {!draftRead.ok && newLines.every((l) => readInvoiceQty(newQty[l.materialCode] ?? openingQty(l), l.maxQty).ok) && (
                 <div role="alert" data-testid="invoice-lines-all-zero" className="mt-1 text-[11px] text-critical">
                   {t('supplierInvoices.new.lines.allZero')}

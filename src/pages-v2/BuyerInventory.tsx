@@ -45,6 +45,8 @@ import { useCategoryLabel } from '../hooks/useCategoryLabel';
 import { InventoryRecord } from '../types/supplier.types';
 import { POStatus } from '../services/data/types';
 import { DECLARED_PRESENT } from '../services/data/fixturePresent';
+import SectionHeading from '../components/ui-v2/SectionHeading';
+import { Field, FieldList } from '../components/ui-v2/Field';
 
 type GroupTab = 'all' | 'critical' | 'warning' | 'healthy' | 'excess';
 
@@ -641,9 +643,9 @@ const BuyerInventory: React.FC = () => {
             <div className="text-label text-text-tertiary uppercase mb-1">
               {t('buyerInventory.heatmap.eyebrow')}
             </div>
-            <h3 className="text-section text-text-primary">
+            <SectionHeading as="h3">
               {t('buyerInventory.heatmap.title')}
-            </h3>
+            </SectionHeading>
           </div>
           <div className="flex items-center gap-3 text-xs text-text-tertiary">
             <span className="inline-flex items-center gap-1">
@@ -691,57 +693,32 @@ const BuyerInventory: React.FC = () => {
         {selected && (
           <div className="flex flex-col gap-6">
             <section>
-              <div className="text-label text-text-tertiary uppercase mb-2">
+              <SectionHeading level="group" className="mb-2">
                 {t('buyerInventory.panel.keyFacts')}
-              </div>
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <div>
-                  <div className="text-xs text-text-tertiary">{t('buyerInventory.panel.material')}</div>
-                  <Data as="div" className="text-text-primary">
-                    {selected.materialCode}
-                  </Data>
-                </div>
-                <div>
-                  <div className="text-xs text-text-tertiary">{t('buyerInventory.panel.category')}</div>
-                  <div className="text-text-primary">
-                    {selectedSupplier?.category ? cl(selectedSupplier.category) : '—'}
-                  </div>
-                </div>
-                <div className="col-span-2">
-                  <div className="text-xs text-text-tertiary">{t('buyerInventory.panel.description')}</div>
-                  <div className="text-text-primary">
-                    {selected.materialDescription}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-xs text-text-tertiary">{t('buyerInventory.panel.supplier')}</div>
-                  <div className="text-text-primary">
-                    {selected.supplierName}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-xs text-text-tertiary">{t('buyerInventory.panel.otif')}</div>
-                  <div className="text-text-primary">
-                    <Data>
-                      {selectedSupplier
-                        ? `${selectedSupplier.otif}%`
-                        : '—'}
-                    </Data>
-                  </div>
-                </div>
-                <div>
-                  <div className="text-xs text-text-tertiary">{t('buyerInventory.panel.leadTime')}</div>
-                  <div className="text-text-primary"><Data>14 days</Data></div>
-                </div>
-                <div>
-                  <div className="text-xs text-text-tertiary">{t('buyerInventory.panel.moq')}</div>
-                  <div className="text-text-primary">
-                    <Data>
-                      {formatNumber(Math.max(500, selected.avgDailyDemand * 7))}{' '}
-                      {selected.uom}
-                    </Data>
-                  </div>
-                </div>
+              </SectionHeading>
+              <FieldList columns={2}>
+                <Field label={t('buyerInventory.panel.material')} kind="id">
+                  {selected.materialCode}
+                </Field>
+                <Field label={t('buyerInventory.panel.category')}>
+                  {selectedSupplier?.category ? cl(selectedSupplier.category) : '—'}
+                </Field>
+                <Field label={t('buyerInventory.panel.description')} wide>
+                  {selected.materialDescription}
+                </Field>
+                <Field label={t('buyerInventory.panel.supplier')}>
+                  {selected.supplierName}
+                </Field>
+                <Field label={t('buyerInventory.panel.otif')} kind="number">
+                  {selectedSupplier ? `${selectedSupplier.otif}%` : '—'}
+                </Field>
+                <Field label={t('buyerInventory.panel.leadTime')} kind="number">
+                  14 days
+                </Field>
+                <Field label={t('buyerInventory.panel.moq')} kind="number">
+                  {formatNumber(Math.max(500, selected.avgDailyDemand * 7))}{' '}
+                  {selected.uom}
+                </Field>
                 {/* ⚠️ **THESE TWO ARE DISPLAY ARITHMETIC AND THE COPY NOW SAYS
                     SO (operator ruling Q1, call-off step 1).** Measured: the
                     only occurrences of `reorderPoint` / `safetyStock` anywhere
@@ -758,33 +735,21 @@ const BuyerInventory: React.FC = () => {
                     none of the three. The caption is the whole fix: no
                     behaviour changes, and the number stops claiming to be a
                     parameter. */}
-                <div>
-                  <div className="text-xs text-text-tertiary">
-                    {t('buyerInventory.panel.safetyStock')}
-                  </div>
-                  <div className="text-text-primary">
-                    <Data>
-                      {formatNumber(selected.avgDailyDemand * 7)} {selected.uom}
-                    </Data>
-                  </div>
-                  <div className="text-[10px] italic text-text-tertiary mt-0.5">
-                    {t('buyerInventory.panel.safetyStockBasis')}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-xs text-text-tertiary">
-                    {t('buyerInventory.panel.reorderPoint')}
-                  </div>
-                  <div className="text-text-primary">
-                    <Data>
-                      {formatNumber(selected.avgDailyDemand * 14)} {selected.uom}
-                    </Data>
-                  </div>
-                  <div className="text-[10px] italic text-text-tertiary mt-0.5">
-                    {t('buyerInventory.panel.reorderPointBasis')}
-                  </div>
-                </div>
-              </div>
+                <Field
+                  label={t('buyerInventory.panel.safetyStock')}
+                  kind="number"
+                  sub={t('buyerInventory.panel.safetyStockBasis')}
+                >
+                  {formatNumber(selected.avgDailyDemand * 7)} {selected.uom}
+                </Field>
+                <Field
+                  label={t('buyerInventory.panel.reorderPoint')}
+                  kind="number"
+                  sub={t('buyerInventory.panel.reorderPointBasis')}
+                >
+                  {formatNumber(selected.avgDailyDemand * 14)} {selected.uom}
+                </Field>
+              </FieldList>
             </section>
 
             {/* D-CENSUS-8 — the 30-day DOS trend chart is DELETED, not marked.
@@ -798,16 +763,16 @@ const BuyerInventory: React.FC = () => {
                 DOS figure is real fixture data and is still shown above. */}
 
             <section>
-              <div className="text-label text-text-tertiary uppercase mb-2">
+              <SectionHeading level="group" className="mb-2">
                 {t('buyerInventory.panel.recentUpdates')}
-              </div>
+              </SectionHeading>
               <Timeline events={inventoryTimeline} />
             </section>
 
             <section>
-              <div className="text-label text-text-tertiary uppercase mb-2">
+              <SectionHeading level="group" className="mb-2">
                 {t('buyerInventory.panel.activePos')}
-              </div>
+              </SectionHeading>
               {activePOs.length === 0 ? (
                 <div className="text-sm text-text-tertiary">
                   {t('buyerInventory.panel.noActivePos')}

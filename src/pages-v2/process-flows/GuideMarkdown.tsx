@@ -1,5 +1,6 @@
 import React from 'react';
 import Data from '../../components/ui-v2/Data';
+import SectionHeading from '../../components/ui-v2/SectionHeading';
 import { parseInline, parseMarkdown, type Block, type Inline } from '../../guides/markdown';
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -32,9 +33,9 @@ const BlockView: React.FC<{ block: Block }> = ({ block }) => {
   switch (block.kind) {
     case 'heading':
       return (
-        <h4 className="mt-3 text-[12px] font-semibold text-text-primary">
+        <SectionHeading level="group" as="h4" className="mt-3">
           <InlineText inline={block.inline} />
-        </h4>
+        </SectionHeading>
       );
     case 'paragraph':
       return (

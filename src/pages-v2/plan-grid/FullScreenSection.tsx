@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Maximize2, Minimize2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import SectionHeading from '../../components/ui-v2/SectionHeading';
 
 // ────────────────────────────────────────────────────────────────────────────
 // FullScreenSection (Stage G · G1.3.2) — the shared per-section full-screen
@@ -82,7 +83,7 @@ const FullScreenSection: React.FC<FullScreenSectionProps> = ({
         className="fixed inset-0 z-50 flex flex-col bg-bg-page p-4"
       >
         <div className="mb-3 flex items-center justify-between gap-3">
-          <h2 className="text-base font-semibold text-text-primary">{title}</h2>
+          <SectionHeading as="h2">{title}</SectionHeading>
           {ToggleButton}
         </div>
         <div className="min-h-0 flex-1 overflow-auto">
@@ -95,7 +96,7 @@ const FullScreenSection: React.FC<FullScreenSectionProps> = ({
   return (
     <div>
       <div className="mb-2 flex items-center justify-between gap-3">
-        <h2 className="text-base font-semibold text-text-primary">{title}</h2>
+        <SectionHeading as="h2">{title}</SectionHeading>
         {ToggleButton}
       </div>
       {children({ expanded: false, dsgHeight })}

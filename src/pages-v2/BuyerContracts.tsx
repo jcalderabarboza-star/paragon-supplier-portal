@@ -27,6 +27,8 @@ import SearchBar from '../components/ui-v2/SearchBar';
 import StatusPill from '../components/ui-v2/StatusPill';
 import ScoreBadge from '../components/ui-v2/ScoreBadge';
 import Data from '../components/ui-v2/Data';
+import { Field, FieldList, type FieldKind } from '../components/ui-v2/Field';
+import SectionHeading from '../components/ui-v2/SectionHeading';
 import Button from '../components/ui-v2/Button';
 import Wizard, { WizardStep } from '../components/ui-v2/Wizard';
 import { useToast } from '../hooks/useToast';
@@ -171,9 +173,12 @@ const formatMonth = (iso: string): string => {
 // the pill and the tab read, so the figure's colour and the pill beside it
 // cannot disagree.
 
+type ReviewRow = [string, React.ReactNode, FieldKind?];
+
 const ReviewSection: React.FC<{
   label: string;
-  rows: [string, React.ReactNode][];
+  /** label, value and — when it is not plain words — the value's kind. */
+  rows: ReviewRow[];
   /** Absent on the terminal panel: there is nothing left to edit once the
    *  walkthrough has stopped, and an Edit link there would offer a way back
    *  into a form whose act has already been refused. */
@@ -183,7 +188,9 @@ const ReviewSection: React.FC<{
   return (
   <section className="border border-border-subtle rounded-md">
     <header className="flex items-center justify-between px-4 py-2 bg-bg-hover">
-      <span className="text-label text-text-tertiary uppercase">{label}</span>
+      <SectionHeading level="group" as="h4">
+        {label}
+      </SectionHeading>
       {onEdit && (
         <button
           type="button"
@@ -194,14 +201,13 @@ const ReviewSection: React.FC<{
         </button>
       )}
     </header>
-    <dl className="px-4 py-3 divide-y divide-border-subtle">
-      {rows.map(([k, v]) => (
-        <div key={k} className="flex justify-between py-2 gap-4">
-          <dt className="text-text-tertiary">{k}</dt>
-          <dd className="text-text-primary text-right">{v}</dd>
-        </div>
+    <FieldList layout="row" className="px-4 py-3 gap-0 divide-y divide-border-subtle">
+      {rows.map(([k, v, kind]) => (
+        <Field key={k} label={k} kind={kind} className="py-2">
+          {v}
+        </Field>
       ))}
-    </dl>
+    </FieldList>
   </section>
   );
 };
@@ -655,8 +661,8 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
         label={t('contracts.wizard.review.section.terms')}
         onEdit={editable ? () => setWizardStep(1) : undefined}
         rows={[
-          [t('contracts.wizard.review.row.startDate'), draft.startDate || '—'],
-          [t('contracts.wizard.review.row.endDate'), draft.endDate || '—'],
+          [t('contracts.wizard.review.row.startDate'), draft.startDate || '—', 'date'],
+          [t('contracts.wizard.review.row.endDate'), draft.endDate || '—', 'date'],
           [
             t('contracts.wizard.review.row.autoRenewal'),
             draft.autoRenewal ? t('contracts.common.yes') : t('contracts.common.no'),
@@ -677,12 +683,14 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
                         { count: noticeRead.value },
                       )
                     : '—',
+                  'number',
                 ],
-              ] as [string, React.ReactNode][])
+              ] as ReviewRow[])
             : []),
           [
             t('contracts.wizard.review.row.value'),
             valueRead.ok ? formatIDR(valueRead.value) : '—',
+            'money',
           ],
           [t('contracts.wizard.review.row.paymentTerms'), draft.paymentTerms],
           [t('contracts.wizard.review.row.incoterms'), draft.incoterms],
@@ -700,6 +708,7 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
                 : 'contracts.wizard.review.oblCount.other',
               { count: draft.obligations.length },
             ),
+            'number',
           ],
           [
             t('contracts.wizard.review.row.titles'),
@@ -1030,11 +1039,11 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
         <div className="space-y-5">
           {draft.type && (
             <div>
-              <h4 className="text-sm font-semibold text-text-primary mb-2">
+              <SectionHeading level="group" as="h4" className="mb-2">
                 {t('contracts.wizard.obl.suggestedFor', {
                   type: typeLabel(t, draft.type),
                 })}
-              </h4>
+              </SectionHeading>
               <div className="space-y-2">
                 {OBLIGATION_SUGGESTIONS[draft.type as ContractType].map(
                   (s) => {
@@ -1077,9 +1086,9 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
           )}
 
           <div>
-            <h4 className="text-sm font-semibold text-text-primary mb-2">
+            <SectionHeading level="group" as="h4" className="mb-2">
               {t('contracts.wizard.obl.addCustom')}
-            </h4>
+            </SectionHeading>
             <div className="flex gap-2">
               <input
                 type="text"
@@ -1101,11 +1110,11 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
 
           {draft.obligations.length > 0 && (
             <div>
-              <h4 className="text-sm font-semibold text-text-primary mb-2">
+              <SectionHeading level="group" as="h4" className="mb-2">
                 {t('contracts.wizard.obl.selected', {
                   count: draft.obligations.length,
                 })}
-              </h4>
+              </SectionHeading>
               <DataTable<DraftObligation>
                 density="compact"
                 rows={draft.obligations}
@@ -1542,9 +1551,9 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
           <div className="text-label text-text-tertiary uppercase">
             {t('contracts.pipeline.eyebrow')}
           </div>
-          <h2 className="text-section text-text-primary mt-1">
+          <SectionHeading as="h2" className="mt-1">
             {t('contracts.pipeline.title')}
-          </h2>
+          </SectionHeading>
           <p className="text-meta text-text-tertiary">
             {t('contracts.pipeline.subtitle')}
           </p>
@@ -1559,9 +1568,7 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
               <li key={month} className="px-6 py-4">
                 <div className="flex items-center gap-2 mb-3">
                   <CalendarDays size={14} className="text-teal" />
-                  <h3 className="text-section text-text-primary">
-                    {month}
-                  </h3>
+                  <SectionHeading as="h3">{month}</SectionHeading>
                   <span className="text-xs text-text-tertiary">
                     {t(
                       items.length === 1

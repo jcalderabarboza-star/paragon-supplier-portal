@@ -27,6 +27,8 @@ import SidePanel from '../components/ui-v2/SidePanel';
 import Wizard, { WizardStep } from '../components/ui-v2/Wizard';
 import FormSection from '../components/ui-v2/FormSection';
 import Data from '../components/ui-v2/Data';
+import { FieldList, Field } from '../components/ui-v2/Field';
+import SectionHeading from '../components/ui-v2/SectionHeading';
 import { useVerbAvailabilities } from '../hooks/useVerbAvailability';
 import { HandoffNotice } from '../components/ui-v2/HandoffNotice';
 import { useTranslation } from 'react-i18next';
@@ -172,9 +174,9 @@ const DockAppointments: React.FC<{
   const { t } = useTranslation();
   return (
     <div className="flex flex-col gap-4" data-testid="dock-appointments">
-      <h3 className="text-section text-text-primary">
+      <SectionHeading as="h3">
         {t('supplierShipments.dock.heading')}
-      </h3>
+      </SectionHeading>
 
       {state === 'pending' && (
         <div className="text-sm text-text-tertiary" role="status">
@@ -215,27 +217,30 @@ const DockAppointments: React.FC<{
               {/* The raw status token: `StatusPill` resolves its own label. */}
               <StatusPill variant={statusTone(s.status)}>{s.status}</StatusPill>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-              {[
-                { Icon: Calendar, label: t('supplierShipments.dock.field.date'), value: formatDate(s.estimatedArrival) },
-                { Icon: Clock, label: t('supplierShipments.dock.field.time'), value: s.dockTime ?? '—' },
-                { Icon: Package, label: t('supplierShipments.dock.field.dock'), value: s.dockAssignment ?? '—' },
-                { Icon: MapPin, label: t('supplierShipments.dock.field.location'), value: s.destination },
-              ].map(({ Icon, label, value }) => (
-                <div
+            <FieldList columns={1} className="sm:grid-cols-2">
+              {(
+                [
+                  { Icon: Calendar, kind: 'date', label: t('supplierShipments.dock.field.date'), value: formatDate(s.estimatedArrival) },
+                  { Icon: Clock, kind: 'date', label: t('supplierShipments.dock.field.time'), value: s.dockTime ?? '—' },
+                  { Icon: Package, kind: 'text', label: t('supplierShipments.dock.field.dock'), value: s.dockAssignment ?? '—' },
+                  { Icon: MapPin, kind: 'text', label: t('supplierShipments.dock.field.location'), value: s.destination },
+                ] as const
+              ).map(({ Icon, kind, label, value }) => (
+                <Field
                   key={label}
-                  className="px-3 py-2 bg-bg-hover rounded-md flex items-start gap-2"
+                  kind={kind}
+                  className="px-3 py-2 bg-bg-hover rounded-md"
+                  label={
+                    <span className="inline-flex items-center gap-1.5">
+                      <Icon size={14} className="shrink-0" />
+                      {label}
+                    </span>
+                  }
                 >
-                  <Icon size={14} className="text-text-tertiary mt-0.5 shrink-0" />
-                  <div>
-                    <div className="text-label text-text-tertiary uppercase">{label}</div>
-                    <Data as="div" className="text-sm text-text-primary mt-0.5">
-                      {value}
-                    </Data>
-                  </div>
-                </div>
+                  {value}
+                </Field>
               ))}
-            </div>
+            </FieldList>
           </div>
         ))}
 
@@ -407,17 +412,17 @@ const ShipmentsList: React.FC<ShipmentsListProps> = ({
 
       <div className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm overflow-hidden">
         <div className="px-5 py-3 border-b border-border-subtle flex items-center justify-between flex-wrap gap-2">
-          <h3 className="text-section text-text-primary">
+          <SectionHeading as="h3">
             {t('supplierShipments.list.heading')}
             {statusFilter !== 'All' && (
-              <span className="text-text-tertiary font-normal ml-2 text-xs">
+              <span className="ml-2">
                 ·{' '}
                 {t('supplierShipments.list.filteredBy', {
                   status: t(statusLabelKey(statusFilter) ?? statusFilter),
                 })}
               </span>
             )}
-          </h3>
+          </SectionHeading>
         </div>
         <DataTable<ASN>
           card={false}
@@ -547,90 +552,71 @@ const ShipmentsList: React.FC<ShipmentsListProps> = ({
                 )}
                 <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.4fr] gap-5">
                   <div className="bg-bg-surface border border-border-subtle rounded-md p-4">
-                    <div className="text-label text-text-tertiary uppercase mb-3">
+                    <SectionHeading level="group" as="h4" className="mb-3">
                       {t('supplierShipments.detail.heading')}
-                    </div>
-                    <dl className="grid grid-cols-[160px_1fr] gap-y-1.5 text-xs">
-                      <dt className="text-text-tertiary">
-                        {t('supplierShipments.detail.origin')}
-                      </dt>
+                    </SectionHeading>
+                    <FieldList layout="row">
                       {/* i18n-defer: mock/sample data (origin city) */}
-                      <dd className="text-text-primary">
+                      <Field label={t('supplierShipments.detail.origin')} kind="text">
                         {asn.details.originCity}
-                      </dd>
-                      <dt className="text-text-tertiary">
-                        {t('supplierShipments.detail.destinationWarehouse')}
-                      </dt>
+                      </Field>
                       {/* i18n-defer: mock/sample data (warehouse name) */}
-                      <dd className="text-text-primary">
+                      <Field label={t('supplierShipments.detail.destinationWarehouse')} kind="text">
                         {asn.details.destinationWarehouse}
-                      </dd>
-                      <dt className="text-text-tertiary">
-                        {t('supplierShipments.detail.totalCartons')}
-                      </dt>
-                      <dd className="text-text-primary">
-                        <Data>
-                          {asn.details.totalCartons
-                            ? formatNumber(asn.details.totalCartons)
-                            : '—'}
-                        </Data>
-                      </dd>
-                      <dt className="text-text-tertiary">
-                        {t('supplierShipments.detail.grossWeight')}
-                      </dt>
-                      <dd className="text-text-primary">
-                        <Data>
-                          {asn.details.grossWeightKg
-                            ? `${formatNumber(asn.details.grossWeightKg)} kg`
-                            : '—'}
-                        </Data>
-                      </dd>
-                      <dt className="text-text-tertiary">
-                        {t('supplierShipments.detail.temperature')}
-                      </dt>
+                      </Field>
+                      <Field label={t('supplierShipments.detail.totalCartons')} kind="number">
+                        {asn.details.totalCartons
+                          ? formatNumber(asn.details.totalCartons)
+                          : '—'}
+                      </Field>
+                      <Field label={t('supplierShipments.detail.grossWeight')} kind="number">
+                        {asn.details.grossWeightKg
+                          ? `${formatNumber(asn.details.grossWeightKg)} kg`
+                          : '—'}
+                      </Field>
                       {/* i18n-defer: mock/sample data (temperature requirement) */}
-                      <dd className="text-text-primary">
+                      <Field label={t('supplierShipments.detail.temperature')} kind="text">
                         {asn.details.temperatureRequirement}
-                      </dd>
+                      </Field>
                       {/* OPS-3 — what was typed in the form, read back
                           from the stored notice. A dash where a field
                           was not given. */}
-                      <dt className="text-text-tertiary">
-                        {t('supplierShipments.wizard.review.field.shipDate')}
-                      </dt>
-                      <dd className="text-text-primary" data-testid={`asn-shipdate-${asn.asnNumber}`}>
-                        <Data>{fmtDate(asn.details.shipDate ?? '')}</Data>
-                      </dd>
-                      <dt className="text-text-tertiary">
-                        {t('supplierShipments.wizard.review.field.batch')}
-                      </dt>
-                      <dd className="text-text-primary" data-testid={`asn-batch-${asn.asnNumber}`}>
-                        <Data>{asn.details.batchNumber ?? '—'}</Data>
-                      </dd>
-                      <dt className="text-text-tertiary">
-                        {t('supplierShipments.wizard.review.field.packingList')}
-                      </dt>
-                      <dd className="text-text-primary">
+                      <Field
+                        label={t('supplierShipments.wizard.review.field.shipDate')}
+                        kind="date"
+                        data-testid={`asn-shipdate-${asn.asnNumber}`}
+                      >
+                        {fmtDate(asn.details.shipDate ?? '')}
+                      </Field>
+                      <Field
+                        label={t('supplierShipments.wizard.review.field.batch')}
+                        kind="id"
+                        data-testid={`asn-batch-${asn.asnNumber}`}
+                      >
+                        {asn.details.batchNumber ?? '—'}
+                      </Field>
+                      <Field label={t('supplierShipments.wizard.review.field.packingList')} kind="text">
                         {asn.details.packingListName
                           ? t('supplierShipments.wizard.review.packingListName', {
                               name: asn.details.packingListName,
                             })
                           : '—'}
-                      </dd>
-                      <dt className="text-text-tertiary">
-                        {t('supplierShipments.wizard.review.field.notes')}
-                      </dt>
-                      <dd className="text-text-primary" data-testid={`asn-notes-${asn.asnNumber}`}>
+                      </Field>
+                      <Field
+                        label={t('supplierShipments.wizard.review.field.notes')}
+                        kind="text"
+                        data-testid={`asn-notes-${asn.asnNumber}`}
+                      >
                         {asn.details.notes ?? '—'}
-                      </dd>
-                    </dl>
+                      </Field>
+                    </FieldList>
                   </div>
                   <div className="bg-bg-surface border border-border-subtle rounded-md p-4">
-                    <div className="text-label text-text-tertiary uppercase mb-3">
+                    <SectionHeading level="group" as="h4" className="mb-3">
                       {t('supplierShipments.detail.lineItems', {
                         count: asn.lineItems.length,
                       })}
-                    </div>
+                    </SectionHeading>
                     {asn.lineItems.length === 0 ? (
                       <div className="text-xs text-text-tertiary">
                         {t('supplierShipments.detail.noLineItems')}
@@ -1255,39 +1241,38 @@ const SupplierShipments: React.FC = () => {
             title={t('supplierShipments.wizard.review.summary.title')}
             description={t('supplierShipments.wizard.review.summary.desc')}
           >
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {[
-                [t('supplierShipments.wizard.review.field.poNumber'), selectedPO?.poNumber ?? '—'],
-                [t('supplierShipments.wizard.review.field.carrier'), form.carrier],
-                [t('supplierShipments.wizard.review.field.tracking'), form.trackingNumber || '—'],
-                [t('supplierShipments.wizard.review.field.shipDate'), fmtDate(form.shipDate)],
-                [t('supplierShipments.wizard.review.field.eta'), form.eta ? fmtDate(form.eta) : '—'],
-                [t('supplierShipments.wizard.review.field.packages'), form.packages || '—'],
+            <FieldList columns={1} className="sm:grid-cols-2">
+              {(
                 [
-                  t('supplierShipments.wizard.review.field.weight'),
-                  form.weightKg ? `${form.weightKg} kg` : '—',
-                ],
-                [t('supplierShipments.wizard.review.field.batch'), form.batchNumber || '—'],
-                [
-                  t('supplierShipments.wizard.review.field.packingList'),
-                  form.packingList
-                    ? t('supplierShipments.wizard.review.packingListName', {
-                        name: form.packingList,
-                      })
-                    : '—',
-                ],
-                [t('supplierShipments.wizard.review.field.notes'), form.notes.trim() || '—'],
-              ].map(([k, v]) => (
-                <div key={k} className="bg-bg-hover rounded-md px-3 py-2">
-                  <div className="text-label text-text-tertiary uppercase mb-0.5">
-                    {k}
-                  </div>
-                  <div className="text-sm font-semibold text-text-primary">
-                    {v}
-                  </div>
-                </div>
+                  [t('supplierShipments.wizard.review.field.poNumber'), selectedPO?.poNumber ?? '—', 'id'],
+                  [t('supplierShipments.wizard.review.field.carrier'), form.carrier, 'text'],
+                  [t('supplierShipments.wizard.review.field.tracking'), form.trackingNumber || '—', 'id'],
+                  [t('supplierShipments.wizard.review.field.shipDate'), fmtDate(form.shipDate), 'date'],
+                  [t('supplierShipments.wizard.review.field.eta'), form.eta ? fmtDate(form.eta) : '—', 'date'],
+                  [t('supplierShipments.wizard.review.field.packages'), form.packages || '—', 'number'],
+                  [
+                    t('supplierShipments.wizard.review.field.weight'),
+                    form.weightKg ? `${form.weightKg} kg` : '—',
+                    'number',
+                  ],
+                  [t('supplierShipments.wizard.review.field.batch'), form.batchNumber || '—', 'id'],
+                  [
+                    t('supplierShipments.wizard.review.field.packingList'),
+                    form.packingList
+                      ? t('supplierShipments.wizard.review.packingListName', {
+                          name: form.packingList,
+                        })
+                      : '—',
+                    'text',
+                  ],
+                  [t('supplierShipments.wizard.review.field.notes'), form.notes.trim() || '—', 'text'],
+                ] as const
+              ).map(([k, v, kind]) => (
+                <Field key={k} label={k} kind={kind} className="bg-bg-hover rounded-md px-3 py-2">
+                  {v}
+                </Field>
               ))}
-            </div>
+            </FieldList>
             {/* Every order line, at the quantity that ships — the confirmed
                 one — with the lot typed for it. */}
             <div className="border border-border-subtle rounded-md overflow-hidden">

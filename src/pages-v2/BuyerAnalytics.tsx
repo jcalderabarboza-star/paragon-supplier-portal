@@ -65,6 +65,7 @@ import type {
   AnalyticsGrade as Grade,
   AnalyticsSummary,
 } from '../services/data/types';
+import SectionHeading from '../components/ui-v2/SectionHeading';
 
 type Period = '30d' | '90d' | 'ytd';
 
@@ -328,10 +329,10 @@ const BuyerAnalytics: React.FC = () => {
       )}
 
       <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6 mb-6">
-        <h2 className="text-section text-text-primary mb-4 pb-3 border-b border-border-subtle">
+        <SectionHeading className="mb-4 pb-3 border-b border-border-subtle">
           {t('buyerAnalytics.spend.title')}{' '}
           <IllustrativeMark />
-        </h2>
+        </SectionHeading>
         <div className="grid grid-cols-1 lg:grid-cols-[6fr_4fr] gap-6">
           <div>
             <div className="text-meta text-text-secondary mb-2">
@@ -406,10 +407,10 @@ const BuyerAnalytics: React.FC = () => {
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-5 mb-6">
         <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6">
-          <h2 className="text-section text-text-primary mb-4 pb-3 border-b border-border-subtle">
+          <SectionHeading className="mb-4 pb-3 border-b border-border-subtle">
             {t('buyerAnalytics.otif.title')}{' '}
             <IllustrativeMark />
-          </h2>
+          </SectionHeading>
           <ResponsiveContainer width="100%" height={240}>
             <LineChart
               data={otifData}
@@ -459,10 +460,10 @@ const BuyerAnalytics: React.FC = () => {
         </section>
 
         <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6">
-          <h2 className="text-section text-text-primary mb-4 pb-3 border-b border-border-subtle">
+          <SectionHeading className="mb-4 pb-3 border-b border-border-subtle">
             {t('buyerAnalytics.poVolume.title')}{' '}
             <IllustrativeMark />
-          </h2>
+          </SectionHeading>
           <ResponsiveContainer width="100%" height={240}>
             <ComposedChart
               data={poVolData}
@@ -521,10 +522,10 @@ const BuyerAnalytics: React.FC = () => {
 
       <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm overflow-hidden mb-6">
         <div className="px-6 py-4 border-b border-border-subtle">
-          <h2 className="text-section text-text-primary">
+          <SectionHeading>
             {t('buyerAnalytics.perf.title')}{' '}
             <IllustrativeMark />
-          </h2>
+          </SectionHeading>
         </div>
         <DataTable<(typeof perfTable)[number]>
           card={false}
@@ -596,10 +597,10 @@ const BuyerAnalytics: React.FC = () => {
       </section>
 
       <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6">
-        <h2 className="text-section text-text-primary mb-4 pb-3 border-b border-border-subtle">
+        <SectionHeading className="mb-4 pb-3 border-b border-border-subtle">
           {t('buyerAnalytics.channel.title')}{' '}
           <IllustrativeMark />
-        </h2>
+        </SectionHeading>
         <ResponsiveContainer width="100%" height={240}>
           <BarChart
             data={channelData}
