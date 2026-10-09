@@ -118,7 +118,7 @@ const RfiAnswerMatrix: React.FC<{
                     </span>
                     {knockouts && (
                       <span
-                        className={`block font-semibold mt-0.5 ${failed ? 'text-danger' : 'text-success'}`}
+                        className={`block font-semibold mt-0.5 ${failed ? 'text-critical' : 'text-success'}`}
                         data-testid={`rfi-matrix-verdict-${r.supplierId}`}
                       >
                         {failed
@@ -133,7 +133,7 @@ const RfiAnswerMatrix: React.FC<{
                       <td
                         key={q.id}
                         className={`px-2 py-2 align-top border-b border-l border-border-subtle ${
-                          out ? 'bg-danger-soft border-l-2 border-l-danger' : ''
+                          out ? 'bg-critical-soft border-l-2 border-l-critical' : ''
                         }`}
                         data-testid={`rfi-matrix-cell-${r.supplierId}-${q.id}`}
                         data-knockout={out ? 'true' : undefined}
@@ -142,7 +142,7 @@ const RfiAnswerMatrix: React.FC<{
                           {answerText(q, r.answers?.[q.id], words) ?? t('sourcing.rfi.matrix.noAnswer')}
                         </span>
                         {out && (
-                          <span className="block font-semibold text-danger mt-0.5">
+                          <span className="block font-semibold text-critical mt-0.5">
                             {t('sourcing.rfi.matrix.knockedOut')}
                           </span>
                         )}

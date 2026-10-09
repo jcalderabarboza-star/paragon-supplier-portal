@@ -882,7 +882,7 @@ const BuyerRequisitions: React.FC = () => {
                   })}
                 </span>
                 {bulkResult.refused.length > 0 && (
-                  <ul className="mt-0.5 text-xs text-danger" data-testid="pr-bulk-refusals">
+                  <ul className="mt-0.5 text-xs text-critical" data-testid="pr-bulk-refusals">
                     {bulkResult.refused.map(([reason, n]) => (
                       <li key={reason}>{t('requisitions.bulk.refusedLine', { n: formatNumber(n), reason })}</li>
                     ))}
@@ -1305,7 +1305,7 @@ const BuyerRequisitions: React.FC = () => {
             {selectedPR.rejectionReason && (
               <section
                 data-testid="pr-rejection-reason"
-                className="rounded-md border border-danger/30 bg-danger-soft/40 px-3 py-2"
+                className="rounded-md border border-critical/30 bg-critical-soft/40 px-3 py-2"
               >
                 <h3 className="text-label text-text-tertiary uppercase mb-1">
                   {t('requisitions.panel.rejectedBecause')}
@@ -1717,7 +1717,7 @@ const BuyerRequisitions: React.FC = () => {
                   <div
                     role="alert"
                     data-testid="new-pr-qty-refusal"
-                    className="mt-1 text-[11px] text-danger"
+                    className="mt-1 text-[11px] text-critical"
                   >
                     {t(QTY_REFUSAL_KEY[parsedQty.reason])}{' '}
                     <GlossaryTermChip

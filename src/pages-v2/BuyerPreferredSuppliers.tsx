@@ -447,7 +447,7 @@ const BuyerPreferredSuppliers: React.FC = () => {
             data-testid={`psl-queue-tab-${k}`}
             className={`text-sm px-3 py-1.5 rounded border ${
               tab === k
-                ? 'border-action text-action'
+                ? 'border-action text-action-text'
                 : 'border-border-subtle text-text-secondary'
             }`}
           >
@@ -526,7 +526,7 @@ const BuyerPreferredSuppliers: React.FC = () => {
 
             <Link
               to={`/buyer/suppliers/${selected.supplierId}?id=${selected.id}`}
-              className="text-action text-sm"
+              className="text-action-text text-sm"
               data-testid="psl-queue-open-profile"
             >
               {t('psl.queue.openProfile')}

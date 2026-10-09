@@ -257,7 +257,7 @@ const RfiAnswerForm: React.FC<Props> = ({ rfq, supplierId, onClose }) => {
               {field(q)}
               {unanswered && (
                 <div
-                  className="text-xs text-danger font-semibold mt-1"
+                  className="text-xs text-critical font-semibold mt-1"
                   data-testid={`rfi-question-missing-${rfq.id}-${q.id}`}
                 >
                   {t('rfqs.rfi.missing')}

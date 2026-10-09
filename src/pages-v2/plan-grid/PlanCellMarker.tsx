@@ -32,13 +32,13 @@ const PlanCellMarker: React.FC<{
       {/* Source tier — green only if the registry greens it */}
       <span
         className={`inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider ${
-          live ? 'text-success' : 'text-warning-hover'
+          live ? 'text-success' : 'text-sample'
         }`}
       >
         <span
           aria-hidden="true"
           className={`h-1.5 w-1.5 rounded-full ${
-            live ? 'bg-success' : 'border border-warning'
+            live ? 'bg-success' : 'border border-dashed border-sample'
           }`}
         />
         {t(live ? 'planGrid.tier.live' : 'planGrid.tier.simulated')}

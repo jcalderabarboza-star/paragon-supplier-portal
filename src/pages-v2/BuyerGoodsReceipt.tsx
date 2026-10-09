@@ -610,7 +610,7 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
               {t('goodsReceipt.action.retrySettle')}
             </Button>
           ) : (
-            <span className="text-xs text-danger self-center">
+            <span className="text-xs text-critical self-center">
               {t('goodsReceipt.settle.notRetryable')}
             </span>
           )
@@ -850,7 +850,7 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
         <KpiCard
           eyebrow={t('goodsReceipt.kpi.hold.eyebrow')}
           value={
-            <span className="text-danger">{formatNumber(counts.hold)}</span>
+            <span className="text-critical">{formatNumber(counts.hold)}</span>
           }
           icon={AlertTriangle}
           subtitle={t('goodsReceipt.kpi.hold.subtitle')}
@@ -1227,7 +1227,7 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
                             {r.description}
                           </div>
                           {r.rejectionReason && (
-                            <div className="text-xs text-danger mt-1">
+                            <div className="text-xs text-critical mt-1">
                               {r.rejectionReason}
                             </div>
                           )}
@@ -1241,7 +1241,7 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
                         <TableCell className="text-right text-xs text-success">
                           <Data>{formatNumber(r.qtyAccepted)}</Data>
                         </TableCell>
-                        <TableCell className="text-right text-xs text-danger">
+                        <TableCell className="text-right text-xs text-critical">
                           <Data>{formatNumber(r.qtyRejected)}</Data>
                         </TableCell>
                         <TableCell>

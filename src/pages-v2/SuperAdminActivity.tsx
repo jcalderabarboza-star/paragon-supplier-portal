@@ -82,7 +82,7 @@ const SuperAdminActivity: React.FC = () => {
                   data-testid={`super-admin-filter-${f}`}
                   className={`text-meta rounded-full border px-3 py-1 ${
                     filter === f
-                      ? 'border-action text-action bg-action-soft'
+                      ? 'border-action text-action-text bg-action-soft'
                       : 'border-border-subtle text-text-secondary'
                   }`}
                 >
@@ -143,7 +143,7 @@ const SuperAdminActivity: React.FC = () => {
                         <td className="py-3 px-4 text-xs">
                           <Data>{a.transitionId}</Data>
                           {a.status === 'failed' && (
-                            <div className="text-danger mt-0.5">
+                            <div className="text-critical mt-0.5">
                               {t(a.refusedForNoReason ? 'superAdmin.activity.refusedNoReason' : 'superAdmin.activity.refused')}
                             </div>
                           )}

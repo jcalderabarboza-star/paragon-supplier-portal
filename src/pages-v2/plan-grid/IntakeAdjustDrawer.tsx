@@ -251,7 +251,7 @@ const IntakeAdjustDrawer: React.FC<{ line: IntakeLine | null }> = ({ line }) => 
               <span
                 role="alert"
                 data-testid="accepted-qty-refusal"
-                className="inline-flex items-center rounded-sm border border-danger/30 bg-danger-soft px-1.5 py-0.5 font-medium text-danger"
+                className="inline-flex items-center rounded-sm border border-critical/30 bg-critical-soft px-1.5 py-0.5 font-medium text-critical"
               >
                 {t(QTY_REFUSAL_KEY[parsed.reason])}{' '}
                 <GlossaryTermChip refTo={{ sourceType: 'QtyRefusalReason', term: parsed.reason }} />
@@ -302,7 +302,7 @@ const IntakeAdjustDrawer: React.FC<{ line: IntakeLine | null }> = ({ line }) => 
             </Data>
           )}
           {failure && (
-            <span className="text-danger" role="alert">
+            <span className="text-critical" role="alert">
               {refusalText(failure) ?? t('planGrid.push.failed', { reason: failure })}
             </span>
           )}

@@ -178,7 +178,7 @@ export const IntakeTriageCell: React.FC<{ line: IntakeLine }> = ({ line }) => {
         </div>
       )}
       {refusal && (
-        <div className="text-[11px] text-danger" role="alert">
+        <div className="text-[11px] text-critical" role="alert">
           {refusalText(refusal) ?? t('intakeReview.failed.label', { reason: refusal })}
         </div>
       )}
@@ -208,7 +208,7 @@ export function intakeReviewColumns(
               e.stopPropagation();
               select(rowData.id);
             }}
-            className="inline-flex items-center rounded-md border border-action/40 bg-action-soft px-2 py-0.5 text-xs text-action hover:border-action"
+            className="inline-flex items-center rounded-md border border-action/40 bg-action-soft px-2 py-0.5 text-xs text-action-text hover:border-action"
           >
             {t('planGrid.intake.col.select')}
           </button>

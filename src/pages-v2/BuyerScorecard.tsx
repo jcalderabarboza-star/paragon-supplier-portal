@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { legendLabel } from '../lib/chartLegend';
 import { useTranslation } from 'react-i18next';
 import {
   RadarChart,
@@ -85,7 +86,7 @@ const GRADE_TONE: Record<Grade, { stroke: string; soft: string; text: string }> 
   A: { stroke: '#107E3E', soft: '#E8F5EC', text: 'text-success' },
   B: { stroke: '#1E5BAE', soft: '#E5F0FF', text: 'text-info' },
   C: { stroke: '#B45309', soft: '#FEF3D6', text: 'text-warning-hover' },
-  D: { stroke: '#BB0000', soft: '#FCE4E4', text: 'text-danger' },
+  D: { stroke: '#BB0000', soft: '#FCE4E4', text: 'text-critical' },
 };
 
 const COMM_STATUS_VARIANT: Record<CommLogEntry['status'], 'success' | 'warning' | 'neutral'> = {
@@ -153,7 +154,7 @@ const TrendIcon: React.FC<{ trend: Trend }> = ({ trend }) => {
   if (trend === '↑')
     return <TrendingUp size={14} className="text-success" aria-hidden="true" />;
   if (trend === '↓')
-    return <TrendingDown size={14} className="text-danger" aria-hidden="true" />;
+    return <TrendingDown size={14} className="text-critical" aria-hidden="true" />;
   return <Minus size={14} className="text-text-tertiary" aria-hidden="true" />;
 };
 
@@ -296,7 +297,7 @@ const BuyerScorecard: React.FC = () => {
               </span>
               {/* i18n-defer: supp.tier is a composite fixture string
                   ("Tier 3 — API" …) — data, no central map; kept canonical EN. */}
-              <span className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold bg-teal-soft text-teal">
+              <span className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold bg-teal-soft text-teal-text">
                 {supp.tier}
               </span>
             </div>
@@ -319,7 +320,7 @@ const BuyerScorecard: React.FC = () => {
                 className={`mt-4 inline-flex items-center gap-2 rounded px-3 py-2 text-xs font-medium ${
                   compliance.level === 'expiring'
                     ? 'bg-warning-soft text-warning-hover'
-                    : 'bg-danger-soft text-danger'
+                    : 'bg-critical-soft text-critical'
                 }`}
               >
                 <AlertTriangle size={14} />
@@ -405,7 +406,7 @@ const BuyerScorecard: React.FC = () => {
                 fillOpacity={0.2}
                 strokeWidth={2}
               />
-              <Legend iconSize={10} wrapperStyle={{ fontSize: 11 }} />
+              <Legend iconSize={10} wrapperStyle={{ fontSize: 11 }} formatter={legendLabel} />
               <Tooltip content={<ChartTooltip />} />
             </RadarChart>
           </ResponsiveContainer>
@@ -481,7 +482,7 @@ const BuyerScorecard: React.FC = () => {
                 name={t('buyerScorecard.series.defectRate')}
                 strokeDasharray="2 2"
               />
-              <Legend iconSize={10} wrapperStyle={{ fontSize: 11 }} />
+              <Legend iconSize={10} wrapperStyle={{ fontSize: 11 }} formatter={legendLabel} />
             </LineChart>
           </ResponsiveContainer>
         </section>
@@ -489,7 +490,7 @@ const BuyerScorecard: React.FC = () => {
 
       {supp.impPlan && (
         <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6 mb-6">
-          <div className="bg-danger-soft border-l-2 border-danger rounded px-4 py-3 mb-4 text-sm text-danger font-semibold flex items-center gap-2">
+          <div className="bg-critical-soft border-l-2 border-critical rounded px-4 py-3 mb-4 text-sm text-critical font-semibold flex items-center gap-2">
             <AlertTriangle size={14} />
             {t('buyerScorecard.imp.banner')}
           </div>
@@ -501,7 +502,7 @@ const BuyerScorecard: React.FC = () => {
             {improvementActions.map((a) => (
               <div
                 key={a.item}
-                className="flex items-center justify-between gap-3 px-4 py-3 bg-danger-soft/40 border border-danger-soft rounded-md"
+                className="flex items-center justify-between gap-3 px-4 py-3 bg-critical-soft/40 border border-critical-soft rounded-md"
               >
                 <div className="min-w-0">
                   {/* i18n-defer: a.item is fixture action-item narrative (data) */}
@@ -559,7 +560,7 @@ const BuyerScorecard: React.FC = () => {
                     <div className="text-xs text-text-tertiary whitespace-nowrap">
                       {log.date}
                     </div>
-                    <div className="inline-flex items-center gap-1 text-xs text-teal font-semibold mt-1">
+                    <div className="inline-flex items-center gap-1 text-xs text-teal-text font-semibold mt-1">
                       <Icon size={12} />
                       {chl(log.channel)}
                     </div>

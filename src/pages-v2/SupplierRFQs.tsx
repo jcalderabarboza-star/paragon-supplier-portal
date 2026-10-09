@@ -468,7 +468,7 @@ const RFQCard: React.FC<RFQCardProps> = ({
           </span>
           <span>
             {t('rfqs.card.deadline')}{' '}
-            <strong className={urgent ? 'text-danger' : 'text-text-primary'}>
+            <strong className={urgent ? 'text-critical' : 'text-text-primary'}>
               {rfq.deadline}
             </strong>
           </span>
@@ -487,7 +487,7 @@ const RFQCard: React.FC<RFQCardProps> = ({
             <button
               type="button"
               onClick={() => setExpanded(!expanded)}
-              className="mt-1 text-xs font-semibold text-teal hover:text-teal-hover inline-flex items-center gap-1"
+              className="mt-1 text-xs font-semibold text-teal-text hover:text-teal-hover inline-flex items-center gap-1"
             >
               {expanded ? (
                 <>
@@ -669,7 +669,7 @@ const RFQCard: React.FC<RFQCardProps> = ({
           {rfq.deadlinePassed ? (
             <span
               data-testid="rfq-deadline-passed"
-              className="text-xs text-danger font-semibold"
+              className="text-xs text-critical font-semibold"
             >
               {t('rfqs.card.deadlinePassed.note', { date: formatDate(rfq.deadline) })}
             </span>
@@ -748,7 +748,7 @@ const RFQCard: React.FC<RFQCardProps> = ({
           <button
             type="button"
             onClick={() => onDecline(rfq.rfqNumber)}
-            className="ml-auto text-xs text-danger hover:underline font-semibold"
+            className="ml-auto text-xs text-critical hover:underline font-semibold"
           >
             {t('rfqs.card.decline')}
           </button>
@@ -1568,7 +1568,7 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
                   <strong
                     className={
                       effectiveQuotePanelRFQ.daysRemaining <= 7
-                        ? 'text-danger'
+                        ? 'text-critical'
                         : 'text-text-primary'
                     }
                   >
@@ -1642,7 +1642,7 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
                   <div
                     role="alert"
                     data-testid="quote-price-refusal"
-                    className="mt-1 text-[11px] text-danger"
+                    className="mt-1 text-[11px] text-critical"
                   >
                     {t(PRICE_REFUSAL_KEY[bidPrice.reason])}
                   </div>
@@ -1728,7 +1728,7 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
                   <div
                     role="alert"
                     data-testid="quote-leadtime-refusal"
-                    className="mt-1 text-[11px] text-danger"
+                    className="mt-1 text-[11px] text-critical"
                   >
                     {t(LEAD_TIME_REFUSAL_KEY[leadTime.reason])}
                   </div>
@@ -1777,7 +1777,7 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
                   <div
                     role="alert"
                     data-testid="quote-validity-refusal"
-                    className="mt-1 text-[11px] text-danger"
+                    className="mt-1 text-[11px] text-critical"
                   >
                     {t('rfqs.panel.validUntil.past', { today: formatDate(TODAY) })}
                   </div>
@@ -1827,7 +1827,7 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
                   <div
                     role="alert"
                     data-testid="quote-moq-refusal"
-                    className="mt-1 text-[11px] text-danger"
+                    className="mt-1 text-[11px] text-critical"
                   >
                     {t(MOQ_REFUSAL_KEY[moq.reason])}
                   </div>
@@ -1976,7 +1976,7 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
                     type="button"
                     data-testid="quote-attachment-remove"
                     onClick={() => setForm({ ...form, attachmentName: '' })}
-                    className="mt-1 text-xs font-semibold text-teal hover:text-teal-hover"
+                    className="mt-1 text-xs font-semibold text-teal-text hover:text-teal-hover"
                   >
                     {t('rfqs.panel.pdfRemove')}
                   </button>

@@ -168,7 +168,7 @@ export const PlannedChangesBar: React.FC<{
               })}
             </span>
             {last.reasons.length > 0 && (
-              <ul className="mt-0.5 text-danger" data-testid="plan-push-result-reasons">
+              <ul className="mt-0.5 text-critical" data-testid="plan-push-result-reasons">
                 {last.reasons.map(([reason, n]) => (
                   <li key={reason}>{t('planGrid.edit.push.resultReason', { n: formatNumber(n), reason: pushReason(reason) })}</li>
                 ))}
@@ -193,7 +193,7 @@ export const PlannedChangesBar: React.FC<{
                   {t('planGrid.edit.banner', { count: entries.length, n: formatNumber(entries.length) })}
                 </span>
               ) : (
-                <span className="text-sm text-danger" data-testid="plan-draft-refused-count">
+                <span className="text-sm text-critical" data-testid="plan-draft-refused-count">
                   {t('planGrid.edit.refusedEdits', { count: refusals, n: formatNumber(refusals) })}
                 </span>
               )}
@@ -214,7 +214,7 @@ export const PlannedChangesBar: React.FC<{
               ))}
               <button
                 type="button"
-                className="text-sm text-action hover:underline"
+                className="text-sm text-action-text hover:underline"
                 aria-expanded={open}
                 onClick={onToggle}
                 data-testid="plan-changes-toggle"
@@ -453,7 +453,7 @@ export const PlannedChangesDetails: React.FC<{ open: boolean }> = ({ open }) => 
                       <span className="text-text-tertiary">{t('planGrid.edit.noReasonOwed')}</span>
                     )}
                     {e.failureReason && (
-                      <div className="mt-0.5 text-[11px] text-danger" role="alert" data-testid={`plan-draft-failure-${e.seamRef}`}>
+                      <div className="mt-0.5 text-[11px] text-critical" role="alert" data-testid={`plan-draft-failure-${e.seamRef}`}>
                         {pushReason(e.failureReason)}
                       </div>
                     )}
@@ -462,7 +462,7 @@ export const PlannedChangesDetails: React.FC<{ open: boolean }> = ({ open }) => 
                     {canPush(e) && (
                       <button
                         type="button"
-                        className="mr-3 text-action hover:underline disabled:text-text-tertiary disabled:no-underline"
+                        className="mr-3 text-action-text hover:underline disabled:text-text-tertiary disabled:no-underline"
                         disabled={pushing || e.planState !== 'PLANNED'}
                         onClick={() => void api.push([e.seamRef])}
                         data-testid={`plan-push-row-${e.seamRef}`}
@@ -491,7 +491,7 @@ export const PlannedChangesDetails: React.FC<{ open: boolean }> = ({ open }) => 
         <ul className="border-t border-info/20 px-4 py-2 text-xs" data-testid="plan-draft-refusals">
           {refusals.map(([key, r]) => (
             <li key={key} className="flex items-center justify-between gap-3 py-0.5" data-testid={`plan-refusal-${key}`}>
-              <span className="text-danger">
+              <span className="text-critical">
                 <Data>{r.rowId.split('|')[0]}</Data> · <Data>{r.bucket}</Data> · “{r.raw}” —{' '}
                 {cellRefusalText(t, r)}
               </span>

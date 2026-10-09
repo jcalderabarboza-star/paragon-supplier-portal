@@ -481,7 +481,7 @@ const SupplierInvoices: React.FC = () => {
           eyebrow={t('supplierInvoices.kpi.disputed.eyebrow')}
           value={formatIDR(sums.disputed, { compact: true })}
           subtitle={
-            <span className="text-danger">
+            <span className="text-critical">
               {t(
                 counts.disputed === 1
                   ? 'supplierInvoices.kpi.invoiceCount.one'
@@ -769,7 +769,7 @@ const SupplierInvoices: React.FC = () => {
                 <Timeline events={buildTimeline(selected, t)} />
                 {selected.status === 'Disputed' && (
                   <div
-                    className="mt-3 bg-danger-soft border-l-2 border-danger rounded px-3 py-2 text-xs text-danger"
+                    className="mt-3 bg-critical-soft border-l-2 border-critical rounded px-3 py-2 text-xs text-critical"
                     data-testid="supplier-invoice-dispute-note"
                   >
                     {t('supplierInvoices.note.disputed')}{' '}
@@ -779,7 +779,7 @@ const SupplierInvoices: React.FC = () => {
                   </div>
                 )}
                 {selected.status === 'Overdue' && (
-                  <div className="mt-3 bg-danger-soft border-l-2 border-danger rounded px-3 py-2 text-xs text-danger">
+                  <div className="mt-3 bg-critical-soft border-l-2 border-critical rounded px-3 py-2 text-xs text-critical">
                     {t('supplierInvoices.note.overdue')}
                   </div>
                 )}
@@ -965,7 +965,7 @@ const SupplierInvoices: React.FC = () => {
                         <div
                           role="alert"
                           data-testid={`invoice-qty-refusal-${l.materialCode}`}
-                          className="mt-1 text-[11px] text-danger"
+                          className="mt-1 text-[11px] text-critical"
                         >
                           {read.reason === 'EXCEEDS_RECEIVED' ? (
                             t(l.basis === 'confirmed' ? 'supplierInvoices.new.qty.refused.exceedsConfirmed' : 'supplierInvoices.new.qty.refused.exceedsReceived', {
@@ -999,7 +999,7 @@ const SupplierInvoices: React.FC = () => {
                 </span>
               </div>
               {!draftRead.ok && newLines.every((l) => readInvoiceQty(newQty[l.materialCode] ?? openingQty(l), l.maxQty).ok) && (
-                <div role="alert" data-testid="invoice-lines-all-zero" className="mt-1 text-[11px] text-danger">
+                <div role="alert" data-testid="invoice-lines-all-zero" className="mt-1 text-[11px] text-critical">
                   {t('supplierInvoices.new.lines.allZero')}
                 </div>
               )}

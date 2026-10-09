@@ -291,7 +291,7 @@ describe('PLN-5 · material labels are never truncated; the code is said once, t
 describe('PLN-5 · a shortfall figure is coloured as the variance; the exception says why', () => {
   it('a shortfall above zero is marked short; zero and dash are not', () => {
     renderWithProviders(<PlanBucketCell value={500} derived shortfall />);
-    expect(screen.getByTestId('tp-cell-short').className).toMatch(/text-danger/);
+    expect(screen.getByTestId('tp-cell-short').className).toMatch(/text-critical/);
     renderWithProviders(<PlanBucketCell value={0} derived shortfall />);
     renderWithProviders(<PlanBucketCell value={null} derived shortfall />);
     expect(screen.getAllByTestId('tp-cell-short')).toHaveLength(1);

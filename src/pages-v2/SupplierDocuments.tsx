@@ -188,11 +188,11 @@ const RefusalBlock: React.FC<{ doc: SupplierDocument }> = ({ doc }) => {
   if (doc.status !== 'Rejected') return null;
   return (
     <div
-      className="mt-1.5 border-l-2 border-l-danger pl-3 py-1 max-w-[22rem]"
+      className="mt-1.5 border-l-2 border-l-critical pl-3 py-1 max-w-[22rem]"
       data-testid={`doc-refusal-${doc.id}`}
     >
       <div className="text-label uppercase mb-0.5">
-        <span className="text-danger">{t('supplierDocuments.refusal.label')}</span>{' '}
+        <span className="text-critical">{t('supplierDocuments.refusal.label')}</span>{' '}
         <Data className="text-text-tertiary normal-case">
           {formatDate(doc.rejectedAt)}
         </Data>{' '}
@@ -485,7 +485,7 @@ const SupplierDocuments: React.FC = () => {
 
       {refused.length > 0 && (
         <div
-          className="bg-danger-soft border-l-2 border-danger rounded px-4 py-3 mb-3 text-sm text-danger flex items-start gap-2"
+          className="bg-critical-soft border-l-2 border-critical rounded px-4 py-3 mb-3 text-sm text-critical flex items-start gap-2"
           data-testid="doc-refused-banner"
         >
           <AlertTriangle size={14} className="shrink-0 mt-0.5" />
@@ -501,7 +501,7 @@ const SupplierDocuments: React.FC = () => {
         </div>
       )}
       {expired.length > 0 && (
-        <div className="bg-danger-soft border-l-2 border-danger rounded px-4 py-3 mb-3 text-sm text-danger flex items-start gap-2">
+        <div className="bg-critical-soft border-l-2 border-critical rounded px-4 py-3 mb-3 text-sm text-critical flex items-start gap-2">
           <AlertTriangle size={14} className="shrink-0 mt-0.5" />
           <div>
             <strong>
@@ -570,7 +570,7 @@ const SupplierDocuments: React.FC = () => {
           eyebrow={t('supplierDocuments.kpi.expired.eyebrow')}
           value={expired.length.toString()}
           subtitle={
-            <span className="text-danger">
+            <span className="text-critical">
               {t('supplierDocuments.kpi.expired.subtitle')}
             </span>
           }
@@ -631,7 +631,7 @@ const SupplierDocuments: React.FC = () => {
                 days === null
                   ? 'text-text-tertiary'
                   : days <= 0
-                    ? 'text-danger'
+                    ? 'text-critical'
                     : days <= 90
                       ? 'text-warning-hover'
                       : 'text-text-tertiary';

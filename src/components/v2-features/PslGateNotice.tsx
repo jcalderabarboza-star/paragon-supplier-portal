@@ -80,7 +80,7 @@ const PslGateNotice: React.FC<{
         eligibility.offenders.map((o) => (
           <p
             key={o.supplierId}
-            className="text-xs text-danger"
+            className="text-xs text-critical"
             data-testid="psl-gate-ineligible"
           >
             {t('psl.gate.ineligible', {
@@ -142,7 +142,7 @@ const PslGateNotice: React.FC<{
       )}
 
       {competition.kind === 'UNDER_FLOOR' && (
-        <p className="text-xs text-danger" data-testid="psl-gate-under-floor">
+        <p className="text-xs text-critical" data-testid="psl-gate-under-floor">
           {t('psl.gate.underFloor', {
             floor: COMPETITION_FLOOR_INVITEES,
             count: competition.eligible,

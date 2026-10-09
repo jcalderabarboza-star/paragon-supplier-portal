@@ -33,7 +33,7 @@ const VARIANT_CLASS: Record<Variant, string> = {
   // blue border + text. It is no longer the CALM weight beside a louder one;
   // it is the ONLY primary weight, and therefore the default below.
   outline:
-    'bg-transparent text-action border border-action hover:bg-action-soft',
+    'bg-transparent text-action-text border border-action hover:bg-action-soft',
 };
 
 const Button: React.FC<ButtonProps> = ({

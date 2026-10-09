@@ -597,7 +597,7 @@ const BuyerShipments: React.FC = () => {
         <KpiCard
           eyebrow={t('shipments.kpi.delayed.eyebrow')}
           value={
-            <span className="text-danger">{formatNumber(counts.delayed)}</span>
+            <span className="text-critical">{formatNumber(counts.delayed)}</span>
           }
           icon={AlertTriangle}
           subtitle={t('shipments.kpi.delayed.subtitle')}
@@ -719,12 +719,12 @@ const BuyerShipments: React.FC = () => {
                   <TableCell>
                     <Data
                       as="div"
-                      className={`text-sm ${late ? 'text-danger font-semibold' : 'text-text-primary'}`}
+                      className={`text-sm ${late ? 'text-critical font-semibold' : 'text-text-primary'}`}
                     >
                       {formatDate(s.estimatedArrival)}
                     </Data>
                     {late && lateBy !== null && (
-                      <div className="text-xs text-danger">
+                      <div className="text-xs text-critical">
                         {t('shipments.table.daysLate', { days: lateBy })}
                       </div>
                     )}
@@ -818,7 +818,7 @@ const BuyerShipments: React.FC = () => {
                             className="w-full rounded-md px-2 py-2 text-xs font-semibold bg-action-soft text-action-hover hover:bg-action/20 transition-colors text-left"
                           >
                             <Data as="div" className="truncate">{cell.asnNumber}</Data>
-                            <div className="text-label text-action/80 truncate">
+                            <div className="text-label text-action-text truncate">
                               {cell.supplierName}
                             </div>
                           </button>
@@ -923,7 +923,7 @@ const BuyerShipments: React.FC = () => {
                     as="div"
                     className={
                       displayOf(selected) === 'Delayed'
-                        ? 'text-danger font-semibold'
+                        ? 'text-critical font-semibold'
                         : 'text-text-primary'
                     }
                   >

@@ -107,13 +107,13 @@ import {
 /** Severity → the card's left edge, the same 3px accent grammar the widget
  *  shell uses (DP2-FLAG-01), so one ladder has one look across the portal. */
 const SEVERITY_EDGE: Record<AlertSeverity, string> = {
-  critical: 'border-l-[3px] border-l-danger',
+  critical: 'border-l-[3px] border-l-critical',
   warning: 'border-l-[3px] border-l-warning',
   info: 'border-l-[3px] border-l-text-tertiary',
 };
 
 const SEVERITY_TEXT: Record<AlertSeverity, string> = {
-  critical: 'text-danger',
+  critical: 'text-critical',
   warning: 'text-warning-hover',
   info: 'text-text-tertiary',
 };
@@ -322,7 +322,7 @@ const BuyerDashboard: React.FC = () => {
     { key: 'valid', label: t('buyerDashboard.chart.halal.valid'), value: halal.valid, className: 'bg-success' },
     { key: 'expiring', label: t('buyerDashboard.chart.halal.expiring'), value: halal.expiring, className: 'bg-warning' },
     { key: 'missing', label: t('buyerDashboard.chart.halal.missing'), value: halal.missing, className: 'bg-text-tertiary' },
-    { key: 'expired', label: t('buyerDashboard.chart.halal.expired'), value: halal.expired, className: 'bg-danger' },
+    { key: 'expired', label: t('buyerDashboard.chart.halal.expired'), value: halal.expired, className: 'bg-critical' },
   ];
 
   const share = (value: number, total: number) => (total === 0 ? 0 : (value / total) * 100);
@@ -350,7 +350,7 @@ const BuyerDashboard: React.FC = () => {
           data-testid="lane-chip-all"
           className={`text-meta rounded-full border px-3 py-1 ${
             activeLane === null
-              ? 'border-action text-action bg-action-soft'
+              ? 'border-action text-action-text bg-action-soft'
               : 'border-border-subtle text-text-secondary'
           }`}
         >
@@ -365,7 +365,7 @@ const BuyerDashboard: React.FC = () => {
             data-testid={`lane-chip-${id}`}
             className={`text-meta rounded-full border px-3 py-1 ${
               activeLane === id
-                ? 'border-action text-action bg-action-soft'
+                ? 'border-action text-action-text bg-action-soft'
                 : 'border-border-subtle text-text-secondary'
             }`}
           >
@@ -525,7 +525,7 @@ const BuyerDashboard: React.FC = () => {
                     key={s.key}
                     className={
                       s.key === 'disputed'
-                        ? 'bg-danger'
+                        ? 'bg-critical'
                         : s.key === 'approved'
                           ? 'bg-teal'
                           : 'bg-navy'
@@ -573,7 +573,7 @@ const BuyerDashboard: React.FC = () => {
             <h2 className="text-section text-text-primary">
               {t('buyerDashboard.chart.ap.title')}
             </h2>
-            <Link to="/buyer/invoices" className="text-meta text-teal hover:underline">
+            <Link to="/buyer/invoices" className="text-meta text-teal-text hover:underline">
               {t('buyerDashboard.chart.viewAll')}
             </Link>
           </div>
@@ -587,7 +587,7 @@ const BuyerDashboard: React.FC = () => {
                 <div className="mt-1 h-2 w-full rounded-full bg-bg-hover overflow-hidden">
                   <span
                     className={`block h-full rounded-full ${
-                      s.key === 'disputed' ? 'bg-danger' : s.key === 'approved' ? 'bg-teal' : 'bg-navy'
+                      s.key === 'disputed' ? 'bg-critical' : s.key === 'approved' ? 'bg-teal' : 'bg-navy'
                     }`}
                     style={{ width: `${share(s.value, ap.total)}%` }}
                   />
@@ -605,7 +605,7 @@ const BuyerDashboard: React.FC = () => {
             <h2 className="text-section text-text-primary">
               {t('buyerDashboard.chart.halal.title')}
             </h2>
-            <Link to="/buyer/compliance" className="text-meta text-teal hover:underline">
+            <Link to="/buyer/compliance" className="text-meta text-teal-text hover:underline">
               {t('buyerDashboard.chart.viewAll')}
             </Link>
           </div>
@@ -638,7 +638,7 @@ const BuyerDashboard: React.FC = () => {
             <h2 className="text-section text-text-primary">
               {t('buyerDashboard.chart.obligations.title')}
             </h2>
-            <Link to="/buyer/contracts" className="text-meta text-teal hover:underline">
+            <Link to="/buyer/contracts" className="text-meta text-teal-text hover:underline">
               {t('buyerDashboard.chart.viewAll')}
             </Link>
           </div>
@@ -762,7 +762,7 @@ const BuyerDashboard: React.FC = () => {
                   <Link
                     to={row.route}
                     data-testid={`queue-open-${row.lane}`}
-                    className="text-action hover:underline"
+                    className="text-action-text hover:underline"
                   >
                     {t('buyerDashboard.queue.open')}
                   </Link>

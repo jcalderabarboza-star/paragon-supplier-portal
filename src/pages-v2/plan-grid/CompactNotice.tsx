@@ -49,7 +49,7 @@ const CompactNotice: React.FC<{
       {aside && <div className="shrink-0">{aside}</div>}
       <button
         type="button"
-        className="shrink-0 font-medium text-action hover:underline"
+        className="shrink-0 font-medium text-action-text hover:underline"
         aria-expanded={open}
         onClick={() => setOpen((o) => !o)}
         data-testid={`${testId}-toggle`}

@@ -79,7 +79,7 @@ export const ModuleDetailDrawer: React.FC<{ code: ModuleCode | null; onClose: ()
                 <li key={f.entity} data-testid={`module-drawer-flow-${f.entity}`}>
                   <div className="flex items-center justify-between gap-2">
                     <Data className="text-xs">{f.entity}</Data>
-                    <Link to="/buyer/process-flows" className="text-xs text-action hover:underline whitespace-nowrap">
+                    <Link to="/buyer/process-flows" className="text-xs text-action-text hover:underline whitespace-nowrap">
                       {t('modules.drawer.guide')}
                     </Link>
                   </div>

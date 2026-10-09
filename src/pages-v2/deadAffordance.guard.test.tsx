@@ -496,7 +496,7 @@ const RESIDUE: ReadonlyArray<{ id: string; ruling: string }> = [];
  *
  * `censusOf` above finds a control by VOCABULARY — `Button`, `button`, `a`, an
  * `on[A-Z]` prop, or an interactive `role`. A `<span>` has none of those, so a
- * `<span className="text-teal underline cursor-pointer">` is invisible to it
+ * `<span className="text-teal-text underline cursor-pointer">` is invisible to it
  * **while looking more clickable than half the buttons in the portal**: teal,
  * underlined, and the cursor changes under the pointer.
  *
@@ -593,8 +593,8 @@ const SHIPPED_DEFECT_81C9840 = `
             <Trans
               i18nKey="registration.review.agreement1.text"
               components={{
-                coc: <span className="text-teal underline cursor-pointer" />,
-                terms: <span className="text-teal underline cursor-pointer" />,
+                coc: <span className="text-teal-text underline cursor-pointer" />,
+                terms: <span className="text-teal-text underline cursor-pointer" />,
               }}
             />
           </span>

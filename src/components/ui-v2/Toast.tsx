@@ -21,7 +21,7 @@ interface ToastProps {
 
 const VARIANT_BORDER: Record<ToastVariant, string> = {
   success: 'border-l-teal',
-  error: 'border-l-danger',
+  error: 'border-l-critical',
   info: 'border-l-info',
   warning: 'border-l-warning',
 };
@@ -34,8 +34,8 @@ const VARIANT_ICON: Record<ToastVariant, LucideIcon> = {
 };
 
 const VARIANT_ICON_COLOR: Record<ToastVariant, string> = {
-  success: 'text-teal',
-  error: 'text-danger',
+  success: 'text-teal-text',
+  error: 'text-critical',
   info: 'text-info',
   warning: 'text-warning-hover',
 };

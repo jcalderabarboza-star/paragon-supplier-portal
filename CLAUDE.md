@@ -831,6 +831,18 @@ nav groups under one neutral key, `nav.glossary`.
 - Semantic color (green/amber/red) is ONLY for true state, in soft/muted
   variants — never saturated decoration. If a chip's color doesn't inform a
   decision, it goes neutral.
+- ⚠️ **UI-1a (2026-10-09, operator rulings) — FOUR THINGS ABOVE AND BELOW ARE AMENDED, AND A
+  GATE HOLDS THEM.** (1) **Text and fill are separate tokens wherever the fill fails as text:**
+  links and button labels take `action-text`, teal words take `teal-text`; `teal` and `action`
+  are fills, borders and icons. The sentence above that allows teal for "low-emphasis
+  view-links" now means `teal-text`. (2) The red token is **`critical`**, renamed from `danger`
+  — the class names only; the `StatusTone` and `StatusPill` variant `'danger'` is a TS name and
+  is unchanged. (3) **SAMPLE / ILLUSTRATIVE / SIMULATED markers take the `sample` token —
+  neutral, dashed, no hue. Amber is for real warnings only.** (4) Nothing renders under 11px and
+  the 13px meta line is 12px. `src/lib/uiGate/` measures the token pairs (4.5:1) and holds every
+  size, weight and colour spelled outside the scale and the tokens to a per-file list that can
+  only shrink. **Derive what is left from `grandfathered.ts`; no count is written here.** The
+  channel demo's messenger chrome is exempt by name.
 - WARNING token is a FILL/TEXT split (DP2-WARN-01), same shape as `action`:
   `warning.DEFAULT` = bright amber `#D97706` for every GRAPHICAL warning use
   (accent-edges, dots, bar fills, dials, chip fills, borders — 3.19:1 on white,

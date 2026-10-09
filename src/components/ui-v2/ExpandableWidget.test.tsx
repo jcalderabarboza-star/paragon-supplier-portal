@@ -118,7 +118,7 @@ describe('ExpandableWidget — DP2-FLAG-01 card-edge signature', () => {
     );
     const classes = container.querySelector('section')!.className.split(/\s+/);
     expect(classes).toContain('border-l-[3px]');
-    expect(classes).toContain('border-l-danger');
+    expect(classes).toContain('border-l-critical');
   });
 
   it('no severity edge when flagSeverity is none', () => {

@@ -830,7 +830,7 @@ const BuyerCompliance: React.FC = () => {
         <KpiCard
           eyebrow={t('compliance.kpi.expired.eyebrow')}
           value={counts.expired.toString()}
-          subtitle={<span className="text-danger">{t('compliance.kpi.expired.subtitle')}</span>}
+          subtitle={<span className="text-critical">{t('compliance.kpi.expired.subtitle')}</span>}
           icon={AlertTriangle}
         />
         <KpiCard
@@ -842,7 +842,7 @@ const BuyerCompliance: React.FC = () => {
         <KpiCard
           eyebrow={t('compliance.kpi.missing.eyebrow')}
           value={counts.missing.toString()}
-          subtitle={<span className="text-danger">{t('compliance.kpi.missing.subtitle')}</span>}
+          subtitle={<span className="text-critical">{t('compliance.kpi.missing.subtitle')}</span>}
           icon={FileQuestion}
         />
         {/* HALAL-UNDERREVIEW: Under Review now has its own visible KPI home —
@@ -955,7 +955,7 @@ const BuyerCompliance: React.FC = () => {
                     <div
                       className={`text-xs mt-0.5 ${
                         days <= 0
-                          ? 'text-danger'
+                          ? 'text-critical'
                           : days <= 90
                             ? 'text-warning-hover'
                             : 'text-text-tertiary'
@@ -1003,7 +1003,7 @@ const BuyerCompliance: React.FC = () => {
                   <span
                     className={`text-xs ${
                       status === 'Expired' || status === 'Missing'
-                        ? 'text-danger'
+                        ? 'text-critical'
                         : status === 'Expiring'
                           ? 'text-warning-hover'
                           : 'text-text-tertiary'

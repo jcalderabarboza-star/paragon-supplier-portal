@@ -99,7 +99,7 @@ const ErrorState: React.FC<ErrorStateProps> = ({
       />
       <div className="py-16 px-6 flex flex-col items-center text-center">
         <div className="inline-flex w-14 h-14 rounded-full bg-bg-hover items-center justify-center mb-4">
-          <AlertTriangle size={24} className="text-danger" />
+          <AlertTriangle size={24} className="text-critical" />
         </div>
         <div className="text-base font-semibold text-text-primary mb-1">
           {t('errorState.heading')}

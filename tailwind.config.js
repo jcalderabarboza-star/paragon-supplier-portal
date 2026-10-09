@@ -16,7 +16,9 @@ export default {
         // Text
         'text-primary': '#0D1B2A',
         'text-secondary': '#354A5F',
-        'text-tertiary': '#6B7785',
+        // UI-1a: was #6B7785, which cleared 4.5:1 on pure white only (4.21 on
+        // bg-hover, 4.40 on bg-page). #5A6675 clears it on every surface token.
+        'text-tertiary': '#5A6675',
         // Brand
         // Blue action/identity system (DP-3 follow-up). Fiori "Morning Horizon".
         //  DEFAULT #0070F2 — primary buttons (white text 4.57:1 AA).
@@ -30,11 +32,16 @@ export default {
           hover: '#0064D9',
           soft: '#E6F0FB',
           muted: '#2A6FBF',
+          // UI-1a: the colour of action TEXT — links, button labels. DEFAULT is a
+          // fill and a border; as text it is 4.41:1 on bg-page.
+          text: '#0064D9',
         },
         'teal': {
           DEFAULT: '#0097A7',
           hover: '#007A8A',
           soft: '#E6F4F7',
+          // UI-1a: teal TEXT. DEFAULT is graphic-only (3.51:1 on white).
+          text: '#00707C',
         },
         'navy': '#0D1B2A',
         // DP2-DATA-NAVY-01: the mono DATA-token colour. A recognizably-blue navy
@@ -55,8 +62,12 @@ export default {
         // AA on both white (6.2:1) and warning-soft (5.6:1), where the bright
         // DEFAULT as text would fail. soft (chip/banner tint) is unchanged.
         'warning': { DEFAULT: '#D97706', hover: '#8A5606', soft: '#FEF3D6' },
-        'danger': { DEFAULT: '#BB0000', soft: '#FCE4E4' },
+        // UI-1a: renamed from `danger` (operator ruling).
+        'critical': { DEFAULT: '#BB0000', soft: '#FCE4E4' },
         'info': { DEFAULT: '#1E5BAE', soft: '#E5F0FF' },
+        // UI-1a: SAMPLE / ILLUSTRATIVE markers. Neutral and dashed, no hue of its
+        // own — amber is for real warnings only (operator ruling).
+        'sample': { DEFAULT: '#354A5F', soft: '#F4F6F8', border: '#D1D8E0' },
         // Borders
         'border-subtle': '#E5E9EE',
         'border-input': '#D1D8E0',
@@ -79,7 +90,8 @@ export default {
         'kpi': ['36px', { lineHeight: '1.1', fontWeight: '600' }],
         'eyebrow': ['12px', { lineHeight: '1.4', letterSpacing: '0.08em', fontWeight: '600' }],
         'label': ['11px', { lineHeight: '1.3', letterSpacing: '0.06em', fontWeight: '600' }],
-        'meta': ['13px', { lineHeight: '1.4', fontWeight: '400' }],
+        // UI-1a: 13px folded into 12px (operator ruling).
+        'meta': ['12px', { lineHeight: '1.4', fontWeight: '400' }],
       },
       borderRadius: {
         'sm': '6px',

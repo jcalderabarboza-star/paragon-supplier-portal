@@ -157,7 +157,7 @@ const LanguageMenu: React.FC = () => {
                 tabIndex={i === activeIndex ? 0 : -1}
                 onClick={() => select(lang.code)}
                 className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left hover:bg-bg-hover focus:bg-bg-hover focus:outline-none ${
-                  isCurrent ? 'text-action font-medium' : 'text-text-secondary'
+                  isCurrent ? 'text-action-text font-medium' : 'text-text-secondary'
                 }`}
               >
                 <span className="w-4 flex-shrink-0" aria-hidden="true">

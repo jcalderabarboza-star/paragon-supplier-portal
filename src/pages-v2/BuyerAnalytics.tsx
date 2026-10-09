@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { legendLabel } from '../lib/chartLegend';
 import { useTranslation } from 'react-i18next';
 import {
   PieChart,
@@ -95,7 +96,7 @@ const GRADE_VARIANT: Record<Grade, 'success' | 'info' | 'warning' | 'danger'> = 
 const TONE_CLASS: Record<KpiTone, string> = {
   success: 'text-success',
   warning: 'text-warning-hover',
-  danger: 'text-danger',
+  danger: 'text-critical',
   neutral: 'text-text-tertiary',
 };
 
@@ -129,7 +130,7 @@ const TrendIcon: React.FC<{ trend: Trend }> = ({ trend }) => {
   if (trend === '↑')
     return <TrendingUp size={14} className="text-success inline-block" aria-hidden="true" />;
   if (trend === '↓')
-    return <TrendingDown size={14} className="text-danger inline-block" aria-hidden="true" />;
+    return <TrendingDown size={14} className="text-critical inline-block" aria-hidden="true" />;
   return <Minus size={14} className="text-text-tertiary inline-block" aria-hidden="true" />;
 };
 
@@ -455,7 +456,7 @@ const BuyerAnalytics: React.FC = () => {
                 dot={{ r: 2 }}
                 name={t('buyerAnalytics.series.otdr')}
               />
-              <Legend iconSize={10} wrapperStyle={{ fontSize: 11 }} />
+              <Legend iconSize={10} wrapperStyle={{ fontSize: 11 }} formatter={legendLabel} />
             </LineChart>
           </ResponsiveContainer>
         </section>
@@ -515,7 +516,7 @@ const BuyerAnalytics: React.FC = () => {
                 dot={{ r: 2 }}
                 name={t('buyerAnalytics.series.cycleTime')}
               />
-              <Legend iconSize={10} wrapperStyle={{ fontSize: 11 }} />
+              <Legend iconSize={10} wrapperStyle={{ fontSize: 11 }} formatter={legendLabel} />
             </ComposedChart>
           </ResponsiveContainer>
         </section>
@@ -604,7 +605,7 @@ const BuyerAnalytics: React.FC = () => {
                 fontSize: 12,
               }}
             />
-            <Legend iconSize={10} wrapperStyle={{ fontSize: 11 }} />
+            <Legend iconSize={10} wrapperStyle={{ fontSize: 11 }} formatter={legendLabel} />
             {/* Channels are CATEGORIES, not state — one ordered accent ramp,
                 never semantic green/red (that read as good/bad here). */}
             <Bar dataKey="whatsapp" stackId="a" fill={CHART_SERIES[0]} name={t('buyerAnalytics.series.whatsapp')} />

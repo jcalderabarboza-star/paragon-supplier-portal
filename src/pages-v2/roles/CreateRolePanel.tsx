@@ -235,7 +235,7 @@ const CreateRolePanel: React.FC<{ onGranted: () => void }> = ({ onGranted }) => 
                     }
                     className={`font-mono text-[11px] rounded px-1.5 py-0.5 border ${
                       on
-                        ? 'border-action text-action bg-action-soft'
+                        ? 'border-action text-action-text bg-action-soft'
                         : 'border-border-subtle text-data-navy'
                     }`}
                   >

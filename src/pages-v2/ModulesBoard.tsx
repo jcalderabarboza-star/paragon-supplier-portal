@@ -90,7 +90,7 @@ const ModulesBoard: React.FC = () => {
             canSet.kind === 'held' ? (
               <Link
                 to="/buyer/platform/modules/admin"
-                className="inline-flex items-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium bg-transparent text-action border border-action hover:bg-action-soft"
+                className="inline-flex items-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium bg-transparent text-action-text border border-action hover:bg-action-soft"
                 data-testid="modules-board-admin-link"
               >
                 <Settings2 size={16} />

@@ -202,7 +202,7 @@ const SupplierStorefront: React.FC = () => {
         <button
           type="button"
           onClick={() => navigate('/marketplace')}
-          className="inline-flex items-center gap-1 text-sm text-teal hover:text-teal-hover font-medium"
+          className="inline-flex items-center gap-1 text-sm text-teal-text hover:text-teal-hover font-medium"
         >
           <ArrowLeft size={14} />
           {t('supplierStorefront.nav.marketplace')}
@@ -258,7 +258,7 @@ const SupplierStorefront: React.FC = () => {
       {/* Hero banner */}
       <div className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm overflow-hidden mb-6">
         <div className="p-8 flex items-center gap-6">
-          <div className="w-20 h-20 shrink-0 rounded-lg bg-teal-soft text-teal flex items-center justify-center text-title">
+          <div className="w-20 h-20 shrink-0 rounded-lg bg-teal-soft text-teal-text flex items-center justify-center text-title">
             {supp.name
               .split(/\s+/)
               .map((w) => w[0])

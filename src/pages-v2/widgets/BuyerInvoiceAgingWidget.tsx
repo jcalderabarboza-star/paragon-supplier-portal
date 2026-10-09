@@ -68,7 +68,7 @@ const BuyerInvoiceAgingWidget: React.FC = () => {
               <TableCell className="text-right font-semibold text-text-primary whitespace-nowrap">
                 <Data>{formatIDR(inv.amount)}</Data>
               </TableCell>
-              <TableCell className="text-right text-danger">
+              <TableCell className="text-right text-critical">
                 <Data>{inv.daysOutstanding}d</Data>
               </TableCell>
               <TableCell>

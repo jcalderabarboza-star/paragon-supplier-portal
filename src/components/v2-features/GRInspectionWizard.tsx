@@ -1243,7 +1243,7 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
             />
           </div>
           {manualNotFound && (
-            <p className="text-xs text-danger">
+            <p className="text-xs text-critical">
               {t('goodsReceipt.wizard.source.notFound')}
             </p>
           )}
@@ -1391,7 +1391,7 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
                         <div
                           role="alert"
                           data-testid={`gr-received-refusal-${i}`}
-                          className="mt-1 text-[11px] text-danger"
+                          className="mt-1 text-[11px] text-critical"
                         >
                           {t(GR_QTY_REFUSAL_KEY[qty.reason])}{' '}
                           <GlossaryTermChip
@@ -1421,7 +1421,7 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
                         <div
                           role="alert"
                           data-testid={`gr-accepted-refusal-${i}`}
-                          className="mt-1 text-[11px] text-danger"
+                          className="mt-1 text-[11px] text-critical"
                         >
                           {t(GR_QTY_REFUSAL_KEY[qty.reason])}{' '}
                           <GlossaryTermChip
@@ -1717,7 +1717,7 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
                 : derivedDisposition === 'Partially Approved'
                   ? 'border-warning/40 bg-warning-soft text-warning-hover'
                   : derivedDisposition === 'Rejected'
-                    ? 'border-danger/40 bg-danger-soft text-danger'
+                    ? 'border-critical/40 bg-critical-soft text-critical'
                     : 'border-border-input bg-bg-hover text-text-secondary'
             }`}
           >
@@ -1826,7 +1826,7 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
         </div>
         <div>
           <div className="text-xs text-text-tertiary">{t('goodsReceipt.wizard.summary.totalRejected')}</div>
-          <div className="font-semibold text-danger">
+          <div className="font-semibold text-critical">
             <Data>{formatNumber(totals.rejected)}</Data>
           </div>
         </div>

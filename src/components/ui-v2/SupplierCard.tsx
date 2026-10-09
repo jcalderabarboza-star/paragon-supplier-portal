@@ -113,7 +113,7 @@ const SupplierCard: React.FC<SupplierCardProps> = ({
         <button
           type="button"
           onClick={onView}
-          className="inline-flex items-center gap-1 text-sm font-medium text-teal hover:text-teal-hover transition-colors"
+          className="inline-flex items-center gap-1 text-sm font-medium text-teal-text hover:text-teal-hover transition-colors"
         >
           {t('marketplace.card.viewProfile')}
           <ArrowUpRight size={14} />

@@ -80,7 +80,7 @@ const DaysBar: React.FC<{ days: number; status: StockStatus }> = ({
   const textVariant = STATUS_VARIANT[status];
   const textClass =
     textVariant === 'danger'
-      ? 'text-danger'
+      ? 'text-critical'
       : textVariant === 'warning'
         ? 'text-warning-hover'
         : textVariant === 'success'
@@ -310,7 +310,7 @@ const SupplierInventory: React.FC = () => {
           eyebrow={t('supplierInventory.kpi.critical.eyebrow')}
           value={counts.critical.toString()}
           subtitle={
-            <span className="text-danger">
+            <span className="text-critical">
               {t('supplierInventory.kpi.pctOfMaterials', {
                 pct: ((counts.critical / myInventory.length) * 100).toFixed(0),
               })}
@@ -365,7 +365,7 @@ const SupplierInventory: React.FC = () => {
       </div>
 
       {counts.critical > 0 && (
-        <div className="bg-danger-soft border-l-2 border-danger rounded px-4 py-3 mb-6 flex items-start gap-2 text-sm text-danger">
+        <div className="bg-critical-soft border-l-2 border-critical rounded px-4 py-3 mb-6 flex items-start gap-2 text-sm text-critical">
           <AlertOctagon size={14} className="shrink-0 mt-0.5" />
           <div>
             <Trans
@@ -450,7 +450,7 @@ const SupplierInventory: React.FC = () => {
                   </TableCell>
                   <TableCell
                     className={`text-right whitespace-nowrap ${
-                      row.qtyInTransit > 0 ? 'text-teal' : 'text-text-tertiary'
+                      row.qtyInTransit > 0 ? 'text-teal-text' : 'text-text-tertiary'
                     }`}
                   >
                     <Data>{row.qtyInTransit > 0 ? fmt(row.qtyInTransit) : '—'}</Data>

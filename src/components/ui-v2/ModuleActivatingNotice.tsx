@@ -36,7 +36,7 @@ export const ModuleActivatingNotice: React.FC<{ code: ModuleCode }> = ({ code })
       {identity.personaType === 'buyer' && (
         <Link
           to="/buyer/process-flows"
-          className="inline-block text-xs text-action hover:underline mt-1"
+          className="inline-block text-xs text-action-text hover:underline mt-1"
           data-testid="module-activating-guide"
         >
           {t('modules.activating.guide')}

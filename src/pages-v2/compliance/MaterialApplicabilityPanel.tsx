@@ -171,7 +171,7 @@ const MaterialApplicabilityPanel: React.FC = () => {
       stateKey === 'pending'
         ? 'text-warning-hover'
         : stateKey === 'unknown'
-          ? 'text-danger'
+          ? 'text-critical'
           : 'text-text-primary';
     return (
       <div className="flex flex-col gap-1" data-testid={`applicability-${regime}-${row.materialCode}`}>
@@ -191,7 +191,7 @@ const MaterialApplicabilityPanel: React.FC = () => {
         {canRule.kind === 'held' ? (
           <button
             type="button"
-            className="self-start text-xs font-medium text-action hover:underline"
+            className="self-start text-xs font-medium text-action-text hover:underline"
             data-testid={`applicability-rule-${regime}-${row.materialCode}`}
             onClick={() =>
               setDraft({ materialCode: row.materialCode, regime, applicable: null, reason: '' })
@@ -241,7 +241,7 @@ const MaterialApplicabilityPanel: React.FC = () => {
           {t('compliance.applicability.loading')}
         </div>
       ) : rulingsQuery.isError ? (
-        <div className="px-5 py-6 text-sm text-danger" role="alert">
+        <div className="px-5 py-6 text-sm text-critical" role="alert">
           {t('compliance.applicability.readFailed')}
         </div>
       ) : shown.length === 0 ? (
@@ -281,7 +281,7 @@ const MaterialApplicabilityPanel: React.FC = () => {
                       ) : (
                         <button
                           type="button"
-                          className="text-xs font-medium text-action hover:underline"
+                          className="text-xs font-medium text-action-text hover:underline"
                           data-testid={`applicability-history-${row.materialCode}`}
                           onClick={() =>
                             setHistoryOf(historyOf === row.materialCode ? null : row.materialCode)

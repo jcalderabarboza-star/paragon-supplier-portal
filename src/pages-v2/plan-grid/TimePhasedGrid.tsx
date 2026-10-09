@@ -166,7 +166,7 @@ export const PlanBucketCell: React.FC<{
   const short = shortfall === true && typeof shown === 'number' && shown > 0;
   return (
     <div
-      className={`flex w-full items-center justify-end gap-1 px-2 ${planned ? 'bg-info-soft' : ''} ${refusal ? 'ring-1 ring-inset ring-danger/60' : flagged ? 'ring-1 ring-inset ring-warning' : ''}`}
+      className={`flex w-full items-center justify-end gap-1 px-2 ${planned ? 'bg-info-soft' : ''} ${refusal ? 'ring-1 ring-inset ring-critical/60' : flagged ? 'ring-1 ring-inset ring-warning' : ''}`}
       data-testid="tp-cell"
       data-reading={reading || undefined}
       title={
@@ -186,7 +186,7 @@ export const PlanBucketCell: React.FC<{
       )}
       {modeled && <ModeledMark />}
       {refusal && (
-        <span className="text-[10px] font-semibold text-danger" data-testid="tp-cell-refusal" aria-label={refusalText}>
+        <span className="text-[10px] font-semibold text-critical" data-testid="tp-cell-refusal" aria-label={refusalText}>
           !
         </span>
       )}
@@ -216,7 +216,7 @@ export const PlanBucketCell: React.FC<{
       {text === '—' ? (
         <span className="text-xs text-text-tertiary">{text}</span>
       ) : (
-        <Data className={`text-xs ${short ? 'font-semibold !text-danger' : ''}`} data-testid={short ? 'tp-cell-short' : undefined}>
+        <Data className={`text-xs ${short ? 'font-semibold !text-critical' : ''}`} data-testid={short ? 'tp-cell-short' : undefined}>
           {text}
         </Data>
       )}
@@ -751,7 +751,7 @@ const TimePhasedGrid: React.FC<{
           <div className="grid w-full grid-cols-[1fr_1fr_1fr_1fr_76px] items-center gap-1 px-2 text-right text-xs" data-testid="tp-aggregates">
             <Data>{planCellText(b.agg.demand, formatNumber)}</Data>
             <Data>{planCellText(b.agg.confirmed, formatNumber)}</Data>
-            <Data className={(b.agg.deficit ?? 0) > 0 ? 'font-semibold !text-danger' : ''}>
+            <Data className={(b.agg.deficit ?? 0) > 0 ? 'font-semibold !text-critical' : ''}>
               {planCellText(b.agg.deficit, formatNumber)}
             </Data>
             <Data>{b.agg.firstShortBucket ?? '—'}</Data>
@@ -760,7 +760,7 @@ const TimePhasedGrid: React.FC<{
                 <span className="text-text-tertiary">—</span>
               ) : (
                 reasons.map((r) => (
-                  <span key={r} className={`mr-1 ${r === 'short' ? 'font-semibold text-danger' : 'text-warning-hover'}`}>
+                  <span key={r} className={`mr-1 ${r === 'short' ? 'font-semibold text-critical' : 'text-warning-hover'}`}>
                     {t(`planGrid.tp.exc.${r}`)}
                   </span>
                 ))
@@ -902,7 +902,7 @@ const TimePhasedGrid: React.FC<{
         )}
         {keyNote && (
           <p
-            className={keyNote.kind === 'refused' ? 'font-medium text-danger' : 'text-text-secondary'}
+            className={keyNote.kind === 'refused' ? 'font-medium text-critical' : 'text-text-secondary'}
             data-testid="tp-key-note"
             data-kind={keyNote.kind}
             role="status"
@@ -913,7 +913,7 @@ const TimePhasedGrid: React.FC<{
       </div>
 
       {factsQuery.data?.horizonRefusal || !generated.ok ? (
-        <p className="text-sm text-danger" data-testid="tp-refused">
+        <p className="text-sm text-critical" data-testid="tp-refused">
           {t('planGrid.tp.refused', {
             reason: factsQuery.data?.horizonRefusal?.reason ?? (generated.ok ? '' : generated.reason),
           })}

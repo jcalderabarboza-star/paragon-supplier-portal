@@ -110,7 +110,7 @@ const Appearances: React.FC<{ appearances: readonly FlowAppearance[] }> = ({ app
           sentence about it here would be the second copy. */}
       <Link
         to="/buyer/process-flows"
-        className="mt-1.5 inline-block text-[11px] text-teal hover:underline"
+        className="mt-1.5 inline-block text-[11px] text-teal-text hover:underline"
       >
         {t('glossary.appears.seeFlows')}
       </Link>
@@ -137,9 +137,9 @@ const Related: React.FC<{
             <button
               type="button"
               onClick={() => onJump(`${r.sourceType}.${r.term}`)}
-              className="text-teal hover:underline"
+              className="text-teal-text hover:underline"
             >
-              <Data className="text-[11px] text-teal">
+              <Data className="text-[11px] text-teal-text">
                 {r.sourceType}.{r.term}
               </Data>
             </button>

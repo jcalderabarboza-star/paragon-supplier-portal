@@ -213,9 +213,9 @@ const BuyerDeliveryAgreements: React.FC = () => {
                   <Link
                     to={`/buyer/contracts/${r.contractId}`}
                     onClick={(e) => e.stopPropagation()}
-                    className="text-action hover:underline"
+                    className="text-action-text hover:underline"
                   >
-                    <Data className="text-xs text-action">{r.contractId}</Data>
+                    <Data className="text-xs text-action-text">{r.contractId}</Data>
                   </Link>
                 </TableCell>
                 <TableCell>
@@ -292,7 +292,7 @@ const BuyerDeliveryAgreements: React.FC = () => {
           selectedView && (
             <Link
               to={`/buyer/contracts/${selectedView.agreement.contractId}`}
-              className="inline-flex items-center gap-1.5 rounded-md border border-action px-3 py-1.5 text-sm font-medium text-action hover:bg-action-soft transition-colors"
+              className="inline-flex items-center gap-1.5 rounded-md border border-action px-3 py-1.5 text-sm font-medium text-action-text hover:bg-action-soft transition-colors"
             >
               <ExternalLink size={14} />
               {t('delivery.rollup.openContract')}

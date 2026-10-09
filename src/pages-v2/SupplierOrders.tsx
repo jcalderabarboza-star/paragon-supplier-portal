@@ -952,7 +952,7 @@ const SupplierOrders: React.FC = () => {
                               <div
                                 role="alert"
                                 data-testid={`po-confirm-refusal-${idx}`}
-                                className="mt-1 text-[11px] text-danger text-right"
+                                className="mt-1 text-[11px] text-critical text-right"
                               >
                                 {t(
                                   PO_QTY_REFUSAL_KEY[
@@ -976,7 +976,7 @@ const SupplierOrders: React.FC = () => {
                               <div
                                 role="alert"
                                 data-testid={`po-confirm-bounds-${idx}`}
-                                className="mt-1 text-[11px] text-danger text-right"
+                                className="mt-1 text-[11px] text-critical text-right"
                               >
                                 {t('supplierOrders.confirm.qty.outOfBounds', {
                                   ordered: li.quantity,
@@ -1098,7 +1098,7 @@ const SupplierOrders: React.FC = () => {
                     <dt className="text-label text-text-tertiary uppercase mb-0.5">
                       {t('supplierOrders.panel.next')}
                     </dt>
-                    <dd className="text-sm font-bold text-teal inline-flex items-center gap-1">
+                    <dd className="text-sm font-bold text-teal-text inline-flex items-center gap-1">
                       {mayShip(selectedLive ?? selected) ? (
                         <>
                           {t('supplierOrders.action.createAsn')} <ChevronRight size={12} />

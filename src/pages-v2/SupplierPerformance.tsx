@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { legendLabel } from '../lib/chartLegend';
 import {
   RadarChart,
   Radar,
@@ -139,7 +140,7 @@ const TrendIcon: React.FC<{ trend: Trend }> = ({ trend }) => {
   if (trend === '↑')
     return <TrendingUp size={14} className="text-success" aria-hidden="true" />;
   if (trend === '↓')
-    return <TrendingDown size={14} className="text-danger" aria-hidden="true" />;
+    return <TrendingDown size={14} className="text-critical" aria-hidden="true" />;
   return <Minus size={14} className="text-text-tertiary" aria-hidden="true" />;
 };
 
@@ -469,7 +470,7 @@ const SupplierPerformance: React.FC = () => {
               <span className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold bg-bg-hover text-text-secondary">
                 {cl(mySupplier.category)}
               </span>
-              <span className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold bg-teal-soft text-teal">
+              <span className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold bg-teal-soft text-teal-text">
                 {t('supplierPerformance.card.tierChannel')}
               </span>
             </div>
@@ -559,7 +560,7 @@ const SupplierPerformance: React.FC = () => {
                     fillOpacity={0.2}
                     strokeWidth={2}
                   />
-                  <Legend iconSize={10} wrapperStyle={{ fontSize: 11 }} />
+                  <Legend iconSize={10} wrapperStyle={{ fontSize: 11 }} formatter={legendLabel} />
                   <Tooltip content={<ChartTooltip />} />
                 </RadarChart>
               </ResponsiveContainer>

@@ -193,7 +193,7 @@ const ReviewSection: React.FC<{
         <button
           type="button"
           onClick={onEdit}
-          className="text-xs font-medium text-teal hover:text-teal-hover"
+          className="text-xs font-medium text-teal-text hover:text-teal-hover"
         >
           {t('contracts.wizard.review.edit')}
         </button>
@@ -725,7 +725,7 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
         <div className="space-y-5">
           <div>
             <label className="text-label text-text-tertiary uppercase block mb-1.5">
-              {t('contracts.wizard.field.title')} <span className="text-danger">*</span>
+              {t('contracts.wizard.field.title')} <span className="text-critical">*</span>
             </label>
             <input
               type="text"
@@ -738,7 +738,7 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="text-label text-text-tertiary uppercase block mb-1.5">
-                {t('contracts.wizard.field.type')} <span className="text-danger">*</span>
+                {t('contracts.wizard.field.type')} <span className="text-critical">*</span>
               </label>
               <select
                 value={draft.type}
@@ -757,7 +757,7 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
             </div>
             <div>
               <label className="text-label text-text-tertiary uppercase block mb-1.5">
-                {t('contracts.wizard.field.category')} <span className="text-danger">*</span>
+                {t('contracts.wizard.field.category')} <span className="text-critical">*</span>
               </label>
               <select
                 value={draft.category}
@@ -775,7 +775,7 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
           </div>
           <div>
             <label className="text-label text-text-tertiary uppercase block mb-1.5">
-              {t('contracts.wizard.field.supplier')} <span className="text-danger">*</span>
+              {t('contracts.wizard.field.supplier')} <span className="text-critical">*</span>
             </label>
             <div className="mb-2">
               <SearchBar
@@ -862,7 +862,7 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="text-label text-text-tertiary uppercase block mb-1.5">
-                {t('contracts.wizard.field.startDate')} <span className="text-danger">*</span>
+                {t('contracts.wizard.field.startDate')} <span className="text-critical">*</span>
               </label>
               <input
                 type="date"
@@ -874,7 +874,7 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
             </div>
             <div>
               <label className="text-label text-text-tertiary uppercase block mb-1.5">
-                {t('contracts.wizard.field.endDate')} <span className="text-danger">*</span>
+                {t('contracts.wizard.field.endDate')} <span className="text-critical">*</span>
               </label>
               <input
                 type="date"
@@ -886,7 +886,7 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
               {draft.startDate &&
                 draft.endDate &&
                 new Date(draft.endDate) <= new Date(draft.startDate) && (
-                  <p className="text-xs text-danger mt-1">
+                  <p className="text-xs text-critical mt-1">
                     {t('contracts.wizard.endBeforeStart')}
                   </p>
                 )}
@@ -918,7 +918,7 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
               <div className="mt-3 max-w-xs">
                 <label className="text-label text-text-tertiary uppercase block mb-1.5">
                   {t('contracts.wizard.field.noticeDays')}{' '}
-                  <span className="text-danger">*</span>
+                  <span className="text-critical">*</span>
                 </label>
                 <input
                   type="text"
@@ -936,7 +936,7 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
                   <div
                     role="alert"
                     data-testid="contract-notice-refusal"
-                    className="mt-1 text-[11px] text-danger"
+                    className="mt-1 text-[11px] text-critical"
                   >
                     {t(CONTRACT_NOTICE_REFUSAL_KEY[noticeRead.reason])}{' '}
                     <GlossaryTermChip
@@ -949,7 +949,7 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
           </div>
           <div>
             <label className="text-label text-text-tertiary uppercase block mb-1.5">
-              {t('contracts.wizard.field.value')} <span className="text-danger">*</span>
+              {t('contracts.wizard.field.value')} <span className="text-critical">*</span>
             </label>
             <input
               type="text"
@@ -968,7 +968,7 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
               <div
                 role="alert"
                 data-testid="contract-value-refusal"
-                className="mt-1 text-[11px] text-danger"
+                className="mt-1 text-[11px] text-critical"
               >
                 {t(CONTRACT_VALUE_REFUSAL_KEY[valueRead.reason])}{' '}
                 <GlossaryTermChip
@@ -983,7 +983,7 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
               <div
                 role="alert"
                 data-testid="contract-value-zero"
-                className="mt-1 text-[11px] text-danger"
+                className="mt-1 text-[11px] text-critical"
               >
                 {t('contracts.wizard.value.mustExceedZero')}
               </div>
@@ -1160,7 +1160,7 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
                           <button
                             type="button"
                             onClick={() => removeObligation(i)}
-                            className="text-text-tertiary hover:text-danger text-xs"
+                            className="text-text-tertiary hover:text-critical text-xs"
                             aria-label={t('contracts.wizard.obl.removeAria')}
                           >
                             {t('contracts.wizard.obl.remove')}
