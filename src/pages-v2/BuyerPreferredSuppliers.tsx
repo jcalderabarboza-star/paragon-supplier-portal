@@ -38,6 +38,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import React, { useMemo, useState } from 'react';
+import { pslNumber } from '../lib/pslNumber';
 import { useTranslation } from 'react-i18next';
 import { Link, useSearchParams } from 'react-router-dom';
 import { ListPlus } from 'lucide-react';
@@ -376,7 +377,7 @@ const BuyerPreferredSuppliers: React.FC = () => {
       id: 'id',
       header: 'PSL',
       kind: 'id',
-      cell: (l) => <Data>{l.id}</Data>,
+      cell: (l) => <Data>{pslNumber(l.id)}</Data>,
     },
     {
       id: 'supplier',

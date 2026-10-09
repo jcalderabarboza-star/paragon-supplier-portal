@@ -39,6 +39,17 @@ export interface Column<T> {
   /** Accessible name when `header` is empty or an icon. */
   ariaLabel?: string;
   /**
+   * The column that NAMES the row reads semibold: a document number already
+   * does, and where the row is named by a supplier or a material instead, that
+   * name does too — so every list has one emphasised column (operator ruling,
+   * 9 October 2026: the material on the discovery list, the supplier on the
+   * delivery overview).
+   *
+   * It is the FIRST `id` or `text` column unless a column says otherwise:
+   * `primary: true` moves it, `primary: false` on that first column declines it.
+   */
+  primary?: boolean;
+  /**
    * The cell holds controls of its own inside a clickable row: a click in it,
    * padding included, does not open the row.
    */
@@ -149,6 +160,8 @@ function DataTable<T>({
   className = '',
 }: DataTableProps<T>): React.ReactElement {
   const d = DENSITY[density];
+  const named = columns.find((c) => c.primary === true) ?? columns.find((c) => c.kind === 'id' || c.kind === 'text');
+  const primaryId = named && named.primary !== false ? named.id : null;
   const table = (
     <table
       className={`w-full border-collapse font-sans font-normal text-text-primary ${d.table} ${card ? '' : className}`}
@@ -193,7 +206,7 @@ function DataTable<T>({
                   <td
                     key={c.id}
                     data-kind={c.kind}
-                    className={`align-middle ${d.td} ${CELL_KIND_CLASS[c.kind]} ${c.className ?? ''}`}
+                    className={`align-middle ${d.td} ${CELL_KIND_CLASS[c.kind]} ${c.id === primaryId ? '!font-semibold' : ''} ${c.className ?? ''}`}
                     onClick={c.stopRowClick ? (e) => e.stopPropagation() : undefined}
                   >
                     {c.cell(row, i)}

@@ -12,7 +12,7 @@ import LivenessPill from '../components/ui-v2/LivenessPill';
 import ModelMarker from '../components/ui-v2/ModelMarker';
 import PlanCellMarker from './plan-grid/PlanCellMarker';
 import FullScreenSection from './plan-grid/FullScreenSection';
-import { dataCell, textCell } from './plan-grid/cells';
+import { dataCell, nameCell } from './plan-grid/cells';
 import { formatDate, formatNumber } from '../lib/format';
 import { statusLabelKey } from '../lib/statusLabel';
 import { mockSuppliers } from '../data/mockSuppliers';
@@ -576,7 +576,7 @@ const BuyerCollaboration: React.FC = () => {
         disabled: true,
         grow: 2,
         minWidth: 160,
-        component: textCell<CoverageRow>((r) => supplierName(r.line.supplierId)),
+        component: nameCell<CoverageRow>((r) => supplierName(r.line.supplierId)),
       },
       {
         title: t('sdc.col.material'),
@@ -967,7 +967,7 @@ const BuyerCollaboration: React.FC = () => {
                 className="flex flex-wrap items-center gap-x-4 gap-y-1 px-4 py-3 text-sm"
               >
                 <MessageCircle size={14} className="shrink-0 text-text-tertiary" aria-hidden="true" />
-                <span className="min-w-[10rem] font-medium text-text-primary">
+                <span className="min-w-[10rem] font-semibold text-text-primary">
                   {supplierName(entry.supplierId)}
                 </span>
                 <span
@@ -1024,7 +1024,7 @@ const BuyerCollaboration: React.FC = () => {
                       return t(chip.key, chip.opts);
                     })()}
                   </span>
-                  <span className="font-medium text-text-primary">
+                  <span className="font-semibold text-text-primary">
                     {supplierName(row.line.supplierId)}
                   </span>
                   <Data className="text-xs">{row.line.materialCode}</Data>
@@ -1089,7 +1089,7 @@ const BuyerCollaboration: React.FC = () => {
                   className="flex flex-wrap items-center gap-3 rounded-lg border border-border-subtle bg-bg-surface px-4 py-3 text-sm"
                 >
                   <span className={CHIP_INFO}>{t('sdc.underReview.chip')}</span>
-                  <span className="font-medium text-text-primary">
+                  <span className="font-semibold text-text-primary">
                     {supplierName(row.line.supplierId)}
                   </span>
                   <Data className="text-xs">{row.line.materialCode}</Data>
@@ -1175,7 +1175,7 @@ const BuyerCollaboration: React.FC = () => {
                   className="flex flex-wrap items-center gap-3 rounded-lg border border-border-subtle bg-bg-surface px-4 py-3 text-sm"
                 >
                   <span className={CHIP_WARNING}>{t('sdc.resolve.raised')}</span>
-                  <span className="font-medium text-text-primary">
+                  <span className="font-semibold text-text-primary">
                     {supplierName(row.line.supplierId)}
                   </span>
                   <Data className="text-xs">{row.line.materialCode}</Data>

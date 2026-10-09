@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { pslNumber } from '../../lib/pslNumber';
 import { useTranslation } from 'react-i18next';
 import { personLabel } from '../../services/identity/personLabel';
 
@@ -272,7 +273,7 @@ const PslListingCard: React.FC<{ listing: PslListing; nowIso: string; highlighte
           {published ? t('psl.published') : t('psl.internal')}
         </StatusPill>
         <Data as="span" className="text-xs text-text-tertiary ml-auto">
-          {listing.id}
+          {pslNumber(listing.id)}
         </Data>
       </div>
 

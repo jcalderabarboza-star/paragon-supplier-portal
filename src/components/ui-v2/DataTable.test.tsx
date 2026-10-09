@@ -243,3 +243,46 @@ describe('CellSub · the one second line', () => {
     expect(el).not.toHaveClass('whitespace-normal');
   });
 });
+
+describe('DataTable · the column that names the row', () => {
+  const cell = (cols: Column<Row>[]): HTMLElement[] => {
+    render(<DataTable columns={cols} rows={ROWS.slice(0, 1)} rowKey={(r) => r.id} />);
+    return screen.getAllByRole('cell');
+  };
+
+  it('is the first text column when the row is named by a name — and only that one', () => {
+    const [name, category] = cell([
+      { id: 'name', header: 'Supplier', kind: 'text', cell: (r) => r.name },
+      { id: 'status', header: 'Category', kind: 'text', cell: (r) => r.status },
+    ]);
+    expect(name).toHaveClass('!font-semibold');
+    expect(category).not.toHaveClass('!font-semibold');
+  });
+
+  it('is the document number when there is one first; the name beside it stays regular', () => {
+    const [id, name] = cell([
+      { id: 'id', header: 'Order', kind: 'id', cell: (r) => r.id },
+      { id: 'name', header: 'Supplier', kind: 'text', cell: (r) => r.name },
+    ]);
+    expect(id).toHaveClass('font-semibold');
+    expect(name).not.toHaveClass('!font-semibold');
+  });
+
+  it('skips a leading checkbox or marker column', () => {
+    const [box, name] = cell([
+      { id: 'pick', header: '', ariaLabel: 'Select', kind: 'status', cell: () => <input type="checkbox" aria-label="pick" /> },
+      { id: 'name', header: 'Material', kind: 'text', cell: (r) => r.name },
+    ]);
+    expect(box).not.toHaveClass('!font-semibold');
+    expect(name).toHaveClass('!font-semibold');
+  });
+
+  it('a column can take it, and the first column can decline it', () => {
+    const [a, b] = cell([
+      { id: 'cat', header: 'Category', kind: 'text', cell: (r) => r.status },
+      { id: 'name', header: 'Material', kind: 'text', primary: true, cell: (r) => r.name },
+    ]);
+    expect(a).not.toHaveClass('!font-semibold');
+    expect(b).toHaveClass('!font-semibold');
+  });
+});
