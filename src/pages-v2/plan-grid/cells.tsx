@@ -32,3 +32,14 @@ export function textCell<T>(
     <div className={`w-full px-2 truncate text-sm ${className}`}>{get(rowData)}</div>
   );
 }
+
+/**
+ * The cell that NAMES the row — the supplier on the consolidation grid. It reads
+ * semibold, as the naming column does on every `DataTable` (operator ruling,
+ * 9 October 2026).
+ */
+export function nameCell<T>(get: (r: T) => React.ReactNode): CellComponent<T> {
+  return ({ rowData }) => (
+    <div className="w-full px-2 truncate text-sm font-semibold text-text-primary">{get(rowData)}</div>
+  );
+}

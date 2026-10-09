@@ -15,7 +15,7 @@ import PageHeader from '../components/ui-v2/PageHeader';
 import PageMetaLine from '../components/ui-v2/PageMetaLine';
 import Data from '../components/ui-v2/Data';
 import LivenessPill from '../components/ui-v2/LivenessPill';
-import { dataCell, textCell } from './plan-grid/cells';
+import { dataCell, nameCell } from './plan-grid/cells';
 import IntakeReviewView from './plan-grid/IntakeReviewView';
 import CompactNotice from './plan-grid/CompactNotice';
 import FullScreenSection from './plan-grid/FullScreenSection';
@@ -168,7 +168,7 @@ const PlanGrid: React.FC = () => {
         disabled: true,
         grow: 2,
         minWidth: 180,
-        component: textCell<AwardDisplayRow>((r) => r.supplierName),
+        component: nameCell<AwardDisplayRow>((r) => r.supplierName),
       },
       ...AWARD_CRITERIA.map((c) => ({
         title: t(c.labelKey),
