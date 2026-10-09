@@ -33,6 +33,7 @@ import {
   type ContractDisplayStatus,
 } from '../../services/data/contractExpiry';
 import Data from '../../components/ui-v2/Data';
+import DataTable from '../../components/ui-v2/DataTable';
 import Timeline, { TimelineEvent } from '../../components/ui-v2/Timeline';
 import type {
   Contract,
@@ -473,54 +474,55 @@ export const ContractDetailBody: React.FC<{
             {t('contracts.panel.noObligations')}
           </p>
         ) : (
-          <div className="border border-border-subtle rounded-md overflow-hidden">
-            <table className="w-full text-xs">
-              <thead className="bg-bg-hover text-text-tertiary uppercase tracking-wider">
-                <tr>
-                  <th className="text-left px-3 py-2 font-semibold">
-                    {t('contracts.panel.obl.col.title')}
-                  </th>
-                  <th className="text-left px-3 py-2 font-semibold">
-                    {t('contracts.panel.obl.col.owner')}
-                  </th>
-                  <th className="text-left px-3 py-2 font-semibold whitespace-nowrap">
-                    {t('contracts.panel.obl.col.due')}
-                  </th>
-                  <th className="text-left px-3 py-2 font-semibold">
-                    {t('contracts.panel.obl.col.status')}
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {obligationsForContract.map((o) => (
-                  <tr key={o.id} className="border-t border-border-subtle">
-                    <td className="px-3 py-2">
-                      <div className="text-text-primary font-medium">{o.title}</div>
-                      <div className="text-text-tertiary text-[10px] uppercase tracking-wider mt-0.5">
-                        {o.category}
-                        {o.recurrence ? ` · ${o.recurrence}` : ''}
-                      </div>
-                    </td>
-                    <td className="px-3 py-2 text-text-secondary">{ownerLabel(t, o.owner)}</td>
-                    <td className="px-3 py-2 text-text-secondary whitespace-nowrap">
-                      <Data>{formatDate(o.dueDate)}</Data>
-                    </td>
-                    <td className="px-3 py-2">
-                      {/* COMPUTED, from the same `nowIso` as `Days until
-                          expiry` above. StatusPill localizes the canonical
-                          token itself, so all three display states keep their
-                          existing EN/ID labels with no key added. */}
-                      <StatusPill
-                        variant={OBLIGATION_DISPLAY_VARIANT[obligationDisplay(o, nowIso)]}
-                      >
-                        {obligationDisplay(o, nowIso)}
-                      </StatusPill>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <DataTable<ContractObligation>
+            density="compact"
+            rows={obligationsForContract}
+            rowKey={(o) => o.id}
+            columns={[
+              {
+                id: 'title',
+                header: t('contracts.panel.obl.col.title'),
+                kind: 'text',
+                cell: (o) => (
+                  <>
+                    <div className="text-text-primary font-medium">{o.title}</div>
+                    <div className="text-text-tertiary text-[10px] uppercase tracking-wider mt-0.5">
+                      {o.category}
+                      {o.recurrence ? ` · ${o.recurrence}` : ''}
+                    </div>
+                  </>
+                ),
+              },
+              {
+                id: 'owner',
+                header: t('contracts.panel.obl.col.owner'),
+                kind: 'text',
+                className: 'text-text-secondary',
+                cell: (o) => ownerLabel(t, o.owner),
+              },
+              {
+                id: 'due',
+                header: t('contracts.panel.obl.col.due'),
+                kind: 'date',
+                headerClassName: 'whitespace-nowrap',
+                cell: (o) => <Data>{formatDate(o.dueDate)}</Data>,
+              },
+              {
+                id: 'status',
+                header: t('contracts.panel.obl.col.status'),
+                kind: 'status',
+                cell: (o) => (
+                  /* COMPUTED, from the same `nowIso` as `Days until
+                     expiry` above. StatusPill localizes the canonical
+                     token itself, so all three display states keep their
+                     existing EN/ID labels with no key added. */
+                  <StatusPill variant={OBLIGATION_DISPLAY_VARIANT[obligationDisplay(o, nowIso)]}>
+                    {obligationDisplay(o, nowIso)}
+                  </StatusPill>
+                ),
+              },
+            ]}
+          />
         )}
       </section>
 

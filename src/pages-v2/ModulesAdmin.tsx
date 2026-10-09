@@ -7,6 +7,7 @@ import PageHeader from '../components/ui-v2/PageHeader';
 import Button from '../components/ui-v2/Button';
 import Switch from '../components/ui-v2/Switch';
 import Data from '../components/ui-v2/Data';
+import DataTable, { type Column } from '../components/ui-v2/DataTable';
 import GlossaryTermChip from '../components/ui-v2/GlossaryTermChip';
 import ActorPreActNotice from '../components/ui-v2/ActorPreActNotice';
 import { HandoffNotice } from '../components/ui-v2/HandoffNotice';
@@ -61,6 +62,8 @@ import { formatSetAt, rowsFor, setByLabel, useModuleLedger } from './modules/mod
 // ─────────────────────────────────────────────────────────────────────────────
 
 type ReadOnly = 'not-held' | 'unattributed' | 'production-sample' | null;
+
+const TOP = '!align-top';
 
 const RowResult: React.FC<{ outcome: ModuleSetOutcome }> = ({ outcome }) => {
   const { t } = useTranslation();
@@ -159,6 +162,137 @@ const ModulesAdmin: React.FC = () => {
       : t('modules.admin.neverUpdated');
   };
 
+  // One row per module. The cells hold controls, so every column reads from
+  // the top of the row, as the table always did.
+  const columns: Column<ModuleSpec>[] = [
+    {
+      id: 'module',
+      header: t('modules.admin.col.module'),
+      kind: 'text',
+      className: TOP,
+      cell: (spec) => {
+        const code = spec.code as ModuleCode;
+        const row = form.modules[code];
+        const alwaysOn = spec.alwaysOn === true;
+        return (
+          <>
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-text-primary">{t(spec.nameKey)}</span>
+              <Data className="text-xs">{code}</Data>
+              <span className="rounded-md border border-border-subtle bg-bg-hover px-1.5 py-0.5 text-[10px] text-text-secondary">
+                {t(`modules.scope.${spec.scope}`)}
+              </span>
+            </div>
+            <RouteChips spec={spec} on={row.enabled} />
+            <div className="text-[11px] text-text-tertiary mt-1" data-testid={`module-last-${code}`}>
+              {alwaysOn ? t('modules.admin.alwaysOn') : lastUpdated(code)}
+            </div>
+            {changed.has(code) && (
+              <input
+                type="text"
+                value={overrides[code] ?? ''}
+                onChange={(e) => setOverrides({ ...overrides, [code]: e.target.value })}
+                placeholder={t('modules.admin.rowReason')}
+                aria-label={t('modules.admin.rowReasonAria', { code })}
+                disabled={disabled}
+                className="mt-2 w-full rounded-md border border-border-input px-2 py-1 text-xs"
+                data-testid={`module-reason-${code}`}
+              />
+            )}
+            {blocked[code] && (
+              <div className="text-xs text-warning-hover mt-1" data-testid={`module-blocked-${code}`}>
+                {t('modules.admin.blocked', { codes: blocked[code]!.join(', ') })}
+              </div>
+            )}
+            {outcomes[code] && <RowResult outcome={outcomes[code]} />}
+          </>
+        );
+      },
+    },
+    {
+      id: 'phase',
+      header: t('modules.admin.col.phase'),
+      kind: 'text',
+      className: `${TOP} w-56`,
+      cell: (spec) => {
+        const code = spec.code as ModuleCode;
+        const row = form.modules[code];
+        return (
+          <>
+            <select
+              value={row.phase}
+              onChange={(e) => edit(setPhase(form, code, e.target.value as ModulePhase))}
+              disabled={disabled || spec.alwaysOn === true}
+              aria-label={t('modules.admin.phaseAria', { code })}
+              className="w-full rounded-md border border-border-input px-2 py-1 text-sm bg-white"
+              data-testid={`module-phase-${code}`}
+            >
+              {MODULE_PHASES.map((p) => (
+                <option key={p} value={p}>
+                  {t(`modules.phase.${p}`)}
+                </option>
+              ))}
+            </select>
+            <p className="text-[11px] text-text-tertiary mt-1">{t(`modules.phaseHelp.${row.phase}`)}</p>
+          </>
+        );
+      },
+    },
+    {
+      id: 'onOff',
+      header: t('modules.admin.col.onOff'),
+      kind: 'status',
+      className: TOP,
+      cell: (spec) => {
+        const code = spec.code as ModuleCode;
+        const row = form.modules[code];
+        const dependants = hardDependantsOf(code);
+        return (
+          <div
+            className="flex items-center gap-2"
+            data-testid={`module-toggle-${code}`}
+            title={dependants.length > 0 ? t('modules.admin.dependedOnBy', { codes: dependants.join(', ') }) : undefined}
+          >
+            <Switch
+              checked={row.enabled}
+              onChange={(on) => edit(setEnabled(form, code, on))}
+              ariaLabel={t('modules.admin.toggleAria', { code })}
+              disabled={disabled || spec.alwaysOn === true}
+            />
+            <span className="text-xs text-text-secondary">{t(row.enabled ? 'modules.admin.on' : 'modules.admin.off')}</span>
+          </div>
+        );
+      },
+    },
+    {
+      id: 'parts',
+      header: t('modules.admin.col.parts'),
+      kind: 'text',
+      className: TOP,
+      cell: (spec) => {
+        const code = spec.code as ModuleCode;
+        const row = form.modules[code];
+        return spec.parts.length === 0 ? (
+          <span className="text-xs text-text-tertiary">—</span>
+        ) : (
+          <ul className="space-y-1">
+            {spec.parts.map((p) => (
+              <li key={p.id} className="flex items-center justify-between gap-2 text-xs text-text-primary">
+                <span>{t(p.nameKey)}</span>
+                <Switch
+                  checked={row.parts[p.id] !== false}
+                  onChange={(on) => edit(setPart(form, code, p.id, on))}
+                  ariaLabel={t('modules.admin.partAria', { part: t(p.nameKey), code })}
+                  disabled={disabled || !row.enabled}
+                />
+              </li>
+            ))}
+          </ul>
+        );
+      },
+    },
+  ];
+
   return (
     <AppShellV2>
       <div data-testid="modules-admin" data-read-only={readOnly ?? 'editable'}>
@@ -222,108 +356,12 @@ const ModulesAdmin: React.FC = () => {
           })}
         </section>
 
-        <div className="bg-white border border-border-subtle rounded-lg overflow-hidden">
-          <table className="w-full text-left">
-            <thead className="bg-bg-hover">
-              <tr className="text-label text-text-tertiary uppercase">
-                <th className="py-2 px-4">{t('modules.admin.col.module')}</th>
-                <th className="py-2 px-4">{t('modules.admin.col.phase')}</th>
-                <th className="py-2 px-4">{t('modules.admin.col.onOff')}</th>
-                <th className="py-2 px-4">{t('modules.admin.col.parts')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {getModules().map((spec) => {
-                const code = spec.code as ModuleCode;
-                const row = form.modules[code];
-                const alwaysOn = spec.alwaysOn === true;
-                const dependants = hardDependantsOf(code);
-                return (
-                  <tr key={code} className="border-t border-border-subtle align-top" data-testid={`module-row-${code}`}>
-                    <td className="py-3 px-4">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium text-text-primary">{t(spec.nameKey)}</span>
-                        <Data className="text-xs">{code}</Data>
-                        <span className="rounded-md border border-border-subtle bg-bg-hover px-1.5 py-0.5 text-[10px] text-text-secondary">
-                          {t(`modules.scope.${spec.scope}`)}
-                        </span>
-                      </div>
-                      <RouteChips spec={spec} on={row.enabled} />
-                      <div className="text-[11px] text-text-tertiary mt-1" data-testid={`module-last-${code}`}>
-                        {alwaysOn ? t('modules.admin.alwaysOn') : lastUpdated(code)}
-                      </div>
-                      {changed.has(code) && (
-                        <input
-                          type="text"
-                          value={overrides[code] ?? ''}
-                          onChange={(e) => setOverrides({ ...overrides, [code]: e.target.value })}
-                          placeholder={t('modules.admin.rowReason')}
-                          aria-label={t('modules.admin.rowReasonAria', { code })}
-                          disabled={disabled}
-                          className="mt-2 w-full rounded-md border border-border-input px-2 py-1 text-xs"
-                          data-testid={`module-reason-${code}`}
-                        />
-                      )}
-                      {blocked[code] && (
-                        <div className="text-xs text-warning-hover mt-1" data-testid={`module-blocked-${code}`}>
-                          {t('modules.admin.blocked', { codes: blocked[code]!.join(', ') })}
-                        </div>
-                      )}
-                      {outcomes[code] && <RowResult outcome={outcomes[code]} />}
-                    </td>
-                    <td className="py-3 px-4 w-56">
-                      <select
-                        value={row.phase}
-                        onChange={(e) => edit(setPhase(form, code, e.target.value as ModulePhase))}
-                        disabled={disabled || alwaysOn}
-                        aria-label={t('modules.admin.phaseAria', { code })}
-                        className="w-full rounded-md border border-border-input px-2 py-1 text-sm bg-white"
-                        data-testid={`module-phase-${code}`}
-                      >
-                        {MODULE_PHASES.map((p) => (
-                          <option key={p} value={p}>
-                            {t(`modules.phase.${p}`)}
-                          </option>
-                        ))}
-                      </select>
-                      <p className="text-[11px] text-text-tertiary mt-1">{t(`modules.phaseHelp.${row.phase}`)}</p>
-                    </td>
-                    <td className="py-3 px-4" title={dependants.length > 0 ? t('modules.admin.dependedOnBy', { codes: dependants.join(', ') }) : undefined}>
-                      <div className="flex items-center gap-2" data-testid={`module-toggle-${code}`}>
-                        <Switch
-                          checked={row.enabled}
-                          onChange={(on) => edit(setEnabled(form, code, on))}
-                          ariaLabel={t('modules.admin.toggleAria', { code })}
-                          disabled={disabled || alwaysOn}
-                        />
-                        <span className="text-xs text-text-secondary">{t(row.enabled ? 'modules.admin.on' : 'modules.admin.off')}</span>
-                      </div>
-                    </td>
-                    <td className="py-3 px-4">
-                      {spec.parts.length === 0 ? (
-                        <span className="text-xs text-text-tertiary">—</span>
-                      ) : (
-                        <ul className="space-y-1">
-                          {spec.parts.map((p) => (
-                            <li key={p.id} className="flex items-center justify-between gap-2 text-xs text-text-primary">
-                              <span>{t(p.nameKey)}</span>
-                              <Switch
-                                checked={row.parts[p.id] !== false}
-                                onChange={(on) => edit(setPart(form, code, p.id, on))}
-                                ariaLabel={t('modules.admin.partAria', { part: t(p.nameKey), code })}
-                                disabled={disabled || !row.enabled}
-                              />
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+        <DataTable
+          columns={columns}
+          rows={getModules()}
+          rowKey={(spec) => spec.code}
+          rowProps={(spec) => ({ 'data-testid': `module-row-${spec.code}` })}
+        />
 
         <section className="mt-5 bg-white border border-border-subtle rounded-lg p-4" data-testid="modules-admin-save">
           <label className="block text-sm font-medium text-text-primary" htmlFor="modules-batch-reason">

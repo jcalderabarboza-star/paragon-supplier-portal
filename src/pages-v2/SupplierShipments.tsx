@@ -15,18 +15,13 @@ import {
   Package,
   Upload,
 } from 'lucide-react';
-import AppShellV2 from '../components/layout-v2/AppShellV2';
-import PageHeader from '../components/ui-v2/PageHeader';
-import PageMetaLine from '../components/ui-v2/PageMetaLine';
+import ListPage from '../components/ui-v2/ListPage';
+import DataTable, { type Column } from '../components/ui-v2/DataTable';
 import ProvenanceMarker from '../components/ui-v2/ProvenanceMarker';
 import KpiCard from '../components/ui-v2/KpiCard';
 import BulkActionsBar from '../components/ui-v2/BulkActionsBar';
 import SubTabs from '../components/ui-v2/SubTabs';
 import StatusPill from '../components/ui-v2/StatusPill';
-import Table from '../components/ui-v2/Table';
-import TableHeader, { TableHeaderCell } from '../components/ui-v2/TableHeader';
-import TableRow from '../components/ui-v2/TableRow';
-import TableCell from '../components/ui-v2/TableCell';
 import Button from '../components/ui-v2/Button';
 import SidePanel from '../components/ui-v2/SidePanel';
 import Wizard, { WizardStep } from '../components/ui-v2/Wizard';
@@ -86,6 +81,9 @@ const fmtDate = (s: string): string => {
 const inputClass =
   'w-full px-3 py-2 text-sm text-text-primary bg-white border border-border-input rounded-md focus:outline-none focus:border-action placeholder:text-text-tertiary';
 const labelClass = 'block text-label text-text-tertiary uppercase mb-1';
+
+type AsnLine = ASN['lineItems'][number];
+type PoLine = PurchaseOrder['lineItems'][number];
 
 interface AsnForm {
   poId: string;
@@ -314,6 +312,45 @@ const ShipmentsList: React.FC<ShipmentsListProps> = ({
     return confirmedPOs.filter((po) => !asnPoRefs.has(po.poNumber));
   }, [confirmedPOs, asns]);
 
+  const lineColumns: Column<AsnLine>[] = [
+    {
+      id: 'material',
+      header: t('supplierShipments.lineItems.col.material'),
+      kind: 'text',
+      cell: (li) => (
+        <>
+          <Data as="div" className="text-[10px] text-text-tertiary">
+            {li.materialCode}
+          </Data>
+          {/* i18n-defer: mock/sample data (material description) */}
+          <div className="text-text-primary">{li.description}</div>
+        </>
+      ),
+    },
+    {
+      id: 'ordered',
+      header: t('supplierShipments.lineItems.col.ordered'),
+      kind: 'number',
+      cell: (li) => <Data>{formatNumber(li.orderedQty)}</Data>,
+    },
+    {
+      id: 'shipped',
+      header: t('supplierShipments.lineItems.col.shipped'),
+      kind: 'number',
+      cell: (li) => (
+        <Data className={li.shippedQty < li.orderedQty ? 'text-warning-hover font-semibold' : ''}>
+          {formatNumber(li.shippedQty)}
+        </Data>
+      ),
+    },
+    {
+      id: 'lot',
+      header: t('supplierShipments.lineItems.col.lot'),
+      kind: 'id',
+      cell: (li) => <Data>{li.lotNumber}</Data>,
+    },
+  ];
+
   return (
     <div className="flex flex-col gap-5">
       {pendingPOs.length > 0 && (
@@ -384,284 +421,239 @@ const ShipmentsList: React.FC<ShipmentsListProps> = ({
             )}
           </h3>
         </div>
-        <Table>
-          <TableHeader>
-            <TableHeaderCell className="w-8">
-              <span className="sr-only">{t('supplierShipments.aria.expand')}</span>
-            </TableHeaderCell>
-            <TableHeaderCell>{t('supplierShipments.col.asn')}</TableHeaderCell>
-            <TableHeaderCell>{t('supplierShipments.col.poRef')}</TableHeaderCell>
-            <TableHeaderCell>{t('supplierShipments.col.status')}</TableHeaderCell>
-            <TableHeaderCell>{t('supplierShipments.col.carrier')}</TableHeaderCell>
-            <TableHeaderCell>{t('supplierShipments.col.tracking')}</TableHeaderCell>
-            <TableHeaderCell>{t('supplierShipments.col.eta')}</TableHeaderCell>
-            <TableHeaderCell className="text-right">
-              {t('supplierShipments.col.actions')}
-            </TableHeaderCell>
-          </TableHeader>
-          <tbody>
-            {filtered.map((asn) => {
-              const isOpen = expanded.has(asn.asnNumber);
-              return (
-                <React.Fragment key={asn.asnNumber}>
-                  <TableRow>
-                    <TableCell>
-                      <button
-                        type="button"
-                        onClick={() => onToggleExpand(asn.asnNumber)}
-                        aria-label={
-                          isOpen
-                            ? t('supplierShipments.aria.collapse')
-                            : t('supplierShipments.aria.expand')
-                        }
-                        className="text-text-tertiary hover:text-text-primary"
+        <DataTable<ASN>
+          card={false}
+          rows={filtered}
+          rowKey={(asn) => asn.asnNumber}
+          empty={t('supplierShipments.list.empty')}
+          columns={[
+            {
+              id: 'expand',
+              header: <span className="sr-only">{t('supplierShipments.aria.expand')}</span>,
+              kind: 'actions',
+              headerClassName: 'w-8',
+              className: 'w-8',
+              cell: (asn) => {
+                const isOpen = expanded.has(asn.asnNumber);
+                return (
+                  <button
+                    type="button"
+                    onClick={() => onToggleExpand(asn.asnNumber)}
+                    aria-label={
+                      isOpen
+                        ? t('supplierShipments.aria.collapse')
+                        : t('supplierShipments.aria.expand')
+                    }
+                    className="text-text-tertiary hover:text-text-primary"
+                  >
+                    {isOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                  </button>
+                );
+              },
+            },
+            {
+              id: 'asn',
+              header: t('supplierShipments.col.asn'),
+              kind: 'id',
+              cell: (asn) => <Data>{asn.asnNumber}</Data>,
+            },
+            {
+              id: 'poRef',
+              header: t('supplierShipments.col.poRef'),
+              kind: 'id',
+              cell: (asn) => <Data>{asn.poReference}</Data>,
+            },
+            {
+              id: 'status',
+              header: t('supplierShipments.col.status'),
+              kind: 'status',
+              cell: (asn) => (
+                <StatusPill variant={STATUS_VARIANT[asn.status]}>{asn.status}</StatusPill>
+              ),
+            },
+            {
+              id: 'carrier',
+              header: t('supplierShipments.col.carrier'),
+              kind: 'text',
+              className: 'whitespace-nowrap',
+              cell: (asn) => <span className="text-text-secondary">{asn.carrier}</span>,
+            },
+            {
+              id: 'tracking',
+              header: t('supplierShipments.col.tracking'),
+              kind: 'id',
+              cell: (asn) => <Data>{asn.trackingNumber}</Data>,
+            },
+            {
+              id: 'eta',
+              header: t('supplierShipments.col.eta'),
+              kind: 'date',
+              cell: (asn) => <Data>{asn.eta ? fmtDate(asn.eta) : '—'}</Data>,
+            },
+            {
+              id: 'actions',
+              header: t('supplierShipments.col.actions'),
+              kind: 'actions',
+              cell: (asn) => (
+                <>
+                  {asn.status === 'Draft' &&
+                    (asnVerbs.submit.kind === 'held' ? (
+                      <Button
+                        variant="outline"
+                        onClick={() => onSubmitAsn(asn.asnNumber)}
                       >
-                        {isOpen ? (
-                          <ChevronDown size={14} />
-                        ) : (
-                          <ChevronRight size={14} />
-                        )}
-                      </button>
-                    </TableCell>
-                    <TableCell>
-                      <Data className="text-xs font-bold text-text-primary whitespace-nowrap">
-                        {asn.asnNumber}
-                      </Data>
-                    </TableCell>
-                    <TableCell className="text-xs text-text-secondary whitespace-nowrap">
-                      <Data>{asn.poReference}</Data>
-                    </TableCell>
-                    <TableCell>
-                      <StatusPill variant={STATUS_VARIANT[asn.status]}>
-                        {asn.status}
-                      </StatusPill>
-                    </TableCell>
-                    <TableCell className="text-text-secondary whitespace-nowrap">
-                      {asn.carrier}
-                    </TableCell>
-                    <TableCell className="text-xs text-text-tertiary whitespace-nowrap">
-                      <Data>{asn.trackingNumber}</Data>
-                    </TableCell>
-                    <TableCell className="text-text-tertiary whitespace-nowrap">
-                      <Data>{asn.eta ? fmtDate(asn.eta) : '—'}</Data>
-                    </TableCell>
-                    <TableCell className="text-right whitespace-nowrap">
-                      {asn.status === 'Draft' &&
-                        (asnVerbs.submit.kind === 'held' ? (
-                          <Button
-                            variant="outline"
-                            onClick={() => onSubmitAsn(asn.asnNumber)}
-                          >
-                            {t('asn.submit.action')}
-                          </Button>
-                        ) : (
-                          <HandoffNotice
-                            availability={asnVerbs.submit}
-                            testId="handoff-asn-submit"
-                          />
-                        ))}
-                      {/* ⚠️ **THIS WAS A BUTTON THAT LIED, AND IT IS NOW THE
-                          WAIT.** It rendered "Resolve", fired an info toast
-                          ("Discrepancy handling pending"), and changed nothing.
-                          Both halves of that were wrong by the time it was read:
-                          `t_asn_resolve_discrepancy` has been dispatchable since
-                          it was authored, and its atom `asn:flag` lives in
-                          `receiving` — a BUYER lane. **No supplier lane holds
-                          it** (`commercial` / `fulfilment` / `back_office`
-                          carry `asn:create` and `asn:submit`, never `:flag`),
-                          so this control could never have been the supplier's
-                          act however well it was wired. `availabilityOfAtom`
-                          therefore returns `withheld` here on every supplier
-                          seat that exists, and the notice names the dock. */}
-                      {asn.status === 'Discrepancy' && (
-                        <HandoffNotice
-                          availability={asnVerbs.resolve}
-                          testId="handoff-asn-resolve"
-                        />
-                      )}
-                      {asn.status !== 'Draft' &&
-                        asn.status !== 'Discrepancy' && (
-                          <span className="text-text-tertiary text-xs">—</span>
-                        )}
-                    </TableCell>
-                  </TableRow>
-                  {isOpen && (
-                    <tr className="bg-bg-page border-t border-border-subtle">
-                      <td
-                        colSpan={8}
-                        className="px-6 py-4"
-                      >
-                        {/* E2E-2 — the receipt recorded against this notice. */}
-                        {asn.status !== 'Draft' && (
-                          <div className="bg-bg-surface border border-border-subtle rounded-md p-4 mb-5">
-                            <ReceivedOnNotice
-                              receipts={receiptsOfNotice(asn.asnNumber, receipts)}
-                              testId={`asn-received-${asn.asnNumber}`}
-                            />
-                          </div>
-                        )}
-                        <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.4fr] gap-5">
-                          <div className="bg-bg-surface border border-border-subtle rounded-md p-4">
-                            <div className="text-label text-text-tertiary uppercase mb-3">
-                              {t('supplierShipments.detail.heading')}
-                            </div>
-                            <dl className="grid grid-cols-[160px_1fr] gap-y-1.5 text-xs">
-                              <dt className="text-text-tertiary">
-                                {t('supplierShipments.detail.origin')}
-                              </dt>
-                              {/* i18n-defer: mock/sample data (origin city) */}
-                              <dd className="text-text-primary">
-                                {asn.details.originCity}
-                              </dd>
-                              <dt className="text-text-tertiary">
-                                {t('supplierShipments.detail.destinationWarehouse')}
-                              </dt>
-                              {/* i18n-defer: mock/sample data (warehouse name) */}
-                              <dd className="text-text-primary">
-                                {asn.details.destinationWarehouse}
-                              </dd>
-                              <dt className="text-text-tertiary">
-                                {t('supplierShipments.detail.totalCartons')}
-                              </dt>
-                              <dd className="text-text-primary">
-                                <Data>
-                                  {asn.details.totalCartons
-                                    ? formatNumber(asn.details.totalCartons)
-                                    : '—'}
-                                </Data>
-                              </dd>
-                              <dt className="text-text-tertiary">
-                                {t('supplierShipments.detail.grossWeight')}
-                              </dt>
-                              <dd className="text-text-primary">
-                                <Data>
-                                  {asn.details.grossWeightKg
-                                    ? `${formatNumber(asn.details.grossWeightKg)} kg`
-                                    : '—'}
-                                </Data>
-                              </dd>
-                              <dt className="text-text-tertiary">
-                                {t('supplierShipments.detail.temperature')}
-                              </dt>
-                              {/* i18n-defer: mock/sample data (temperature requirement) */}
-                              <dd className="text-text-primary">
-                                {asn.details.temperatureRequirement}
-                              </dd>
-                              {/* OPS-3 — what was typed in the form, read back
-                                  from the stored notice. A dash where a field
-                                  was not given. */}
-                              <dt className="text-text-tertiary">
-                                {t('supplierShipments.wizard.review.field.shipDate')}
-                              </dt>
-                              <dd className="text-text-primary" data-testid={`asn-shipdate-${asn.asnNumber}`}>
-                                <Data>{fmtDate(asn.details.shipDate ?? '')}</Data>
-                              </dd>
-                              <dt className="text-text-tertiary">
-                                {t('supplierShipments.wizard.review.field.batch')}
-                              </dt>
-                              <dd className="text-text-primary" data-testid={`asn-batch-${asn.asnNumber}`}>
-                                <Data>{asn.details.batchNumber ?? '—'}</Data>
-                              </dd>
-                              <dt className="text-text-tertiary">
-                                {t('supplierShipments.wizard.review.field.packingList')}
-                              </dt>
-                              <dd className="text-text-primary">
-                                {asn.details.packingListName
-                                  ? t('supplierShipments.wizard.review.packingListName', {
-                                      name: asn.details.packingListName,
-                                    })
-                                  : '—'}
-                              </dd>
-                              <dt className="text-text-tertiary">
-                                {t('supplierShipments.wizard.review.field.notes')}
-                              </dt>
-                              <dd className="text-text-primary" data-testid={`asn-notes-${asn.asnNumber}`}>
-                                {asn.details.notes ?? '—'}
-                              </dd>
-                            </dl>
-                          </div>
-                          <div className="bg-bg-surface border border-border-subtle rounded-md p-4">
-                            <div className="text-label text-text-tertiary uppercase mb-3">
-                              {t('supplierShipments.detail.lineItems', {
-                                count: asn.lineItems.length,
-                              })}
-                            </div>
-                            {asn.lineItems.length === 0 ? (
-                              <div className="text-xs text-text-tertiary">
-                                {t('supplierShipments.detail.noLineItems')}
-                              </div>
-                            ) : (
-                              <table className="w-full text-xs">
-                                <thead>
-                                  <tr className="text-text-tertiary uppercase">
-                                    <th className="text-left py-1">
-                                      {t('supplierShipments.lineItems.col.material')}
-                                    </th>
-                                    <th className="text-right py-1">
-                                      {t('supplierShipments.lineItems.col.ordered')}
-                                    </th>
-                                    <th className="text-right py-1">
-                                      {t('supplierShipments.lineItems.col.shipped')}
-                                    </th>
-                                    <th className="text-right py-1">
-                                      {t('supplierShipments.lineItems.col.lot')}
-                                    </th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {asn.lineItems.map((li) => {
-                                    const short = li.shippedQty < li.orderedQty;
-                                    return (
-                                      <tr
-                                        key={li.materialCode}
-                                        className="border-t border-border-subtle"
-                                      >
-                                        <td className="py-1.5">
-                                          <Data as="div" className="text-[10px] text-text-tertiary">
-                                            {li.materialCode}
-                                          </Data>
-                                          {/* i18n-defer: mock/sample data (material description) */}
-                                          <div className="text-text-primary">
-                                            {li.description}
-                                          </div>
-                                        </td>
-                                        <td className="py-1.5 text-right text-text-secondary">
-                                          <Data>{formatNumber(li.orderedQty)}</Data>
-                                        </td>
-                                        <td
-                                          className={`py-1.5 text-right font-semibold ${short ? 'text-warning-hover' : 'text-text-primary'}`}
-                                        >
-                                          <Data>{formatNumber(li.shippedQty)}</Data>
-                                        </td>
-                                        <td className="py-1.5 text-right text-text-tertiary">
-                                          <Data>{li.lotNumber}</Data>
-                                        </td>
-                                      </tr>
-                                    );
-                                  })}
-                                </tbody>
-                              </table>
-                            )}
-                          </div>
-                        </div>
-                      </td>
-                    </tr>
+                        {t('asn.submit.action')}
+                      </Button>
+                    ) : (
+                      <HandoffNotice
+                        availability={asnVerbs.submit}
+                        testId="handoff-asn-submit"
+                      />
+                    ))}
+                  {/* ⚠️ **THIS WAS A BUTTON THAT LIED, AND IT IS NOW THE
+                      WAIT.** It rendered "Resolve", fired an info toast
+                      ("Discrepancy handling pending"), and changed nothing.
+                      Both halves of that were wrong by the time it was read:
+                      `t_asn_resolve_discrepancy` has been dispatchable since
+                      it was authored, and its atom `asn:flag` lives in
+                      `receiving` — a BUYER lane. **No supplier lane holds
+                      it** (`commercial` / `fulfilment` / `back_office`
+                      carry `asn:create` and `asn:submit`, never `:flag`),
+                      so this control could never have been the supplier's
+                      act however well it was wired. `availabilityOfAtom`
+                      therefore returns `withheld` here on every supplier
+                      seat that exists, and the notice names the dock. */}
+                  {asn.status === 'Discrepancy' && (
+                    <HandoffNotice
+                      availability={asnVerbs.resolve}
+                      testId="handoff-asn-resolve"
+                    />
                   )}
-                </React.Fragment>
-              );
-            })}
-            {filtered.length === 0 && (
-              <tr>
-                <td
-                  colSpan={8}
-                  className="text-center text-sm text-text-tertiary py-10"
-                >
-                  {t('supplierShipments.list.empty')}
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </Table>
+                  {asn.status !== 'Draft' &&
+                    asn.status !== 'Discrepancy' && (
+                      <span className="text-text-tertiary text-xs">—</span>
+                    )}
+                </>
+              ),
+            },
+          ]}
+          rowDetail={(asn) =>
+            expanded.has(asn.asnNumber) ? (
+              <div className="bg-bg-page -mx-4 -my-4 px-6 py-4">
+                {/* E2E-2 — the receipt recorded against this notice. */}
+                {asn.status !== 'Draft' && (
+                  <div className="bg-bg-surface border border-border-subtle rounded-md p-4 mb-5">
+                    <ReceivedOnNotice
+                      receipts={receiptsOfNotice(asn.asnNumber, receipts)}
+                      testId={`asn-received-${asn.asnNumber}`}
+                    />
+                  </div>
+                )}
+                <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.4fr] gap-5">
+                  <div className="bg-bg-surface border border-border-subtle rounded-md p-4">
+                    <div className="text-label text-text-tertiary uppercase mb-3">
+                      {t('supplierShipments.detail.heading')}
+                    </div>
+                    <dl className="grid grid-cols-[160px_1fr] gap-y-1.5 text-xs">
+                      <dt className="text-text-tertiary">
+                        {t('supplierShipments.detail.origin')}
+                      </dt>
+                      {/* i18n-defer: mock/sample data (origin city) */}
+                      <dd className="text-text-primary">
+                        {asn.details.originCity}
+                      </dd>
+                      <dt className="text-text-tertiary">
+                        {t('supplierShipments.detail.destinationWarehouse')}
+                      </dt>
+                      {/* i18n-defer: mock/sample data (warehouse name) */}
+                      <dd className="text-text-primary">
+                        {asn.details.destinationWarehouse}
+                      </dd>
+                      <dt className="text-text-tertiary">
+                        {t('supplierShipments.detail.totalCartons')}
+                      </dt>
+                      <dd className="text-text-primary">
+                        <Data>
+                          {asn.details.totalCartons
+                            ? formatNumber(asn.details.totalCartons)
+                            : '—'}
+                        </Data>
+                      </dd>
+                      <dt className="text-text-tertiary">
+                        {t('supplierShipments.detail.grossWeight')}
+                      </dt>
+                      <dd className="text-text-primary">
+                        <Data>
+                          {asn.details.grossWeightKg
+                            ? `${formatNumber(asn.details.grossWeightKg)} kg`
+                            : '—'}
+                        </Data>
+                      </dd>
+                      <dt className="text-text-tertiary">
+                        {t('supplierShipments.detail.temperature')}
+                      </dt>
+                      {/* i18n-defer: mock/sample data (temperature requirement) */}
+                      <dd className="text-text-primary">
+                        {asn.details.temperatureRequirement}
+                      </dd>
+                      {/* OPS-3 — what was typed in the form, read back
+                          from the stored notice. A dash where a field
+                          was not given. */}
+                      <dt className="text-text-tertiary">
+                        {t('supplierShipments.wizard.review.field.shipDate')}
+                      </dt>
+                      <dd className="text-text-primary" data-testid={`asn-shipdate-${asn.asnNumber}`}>
+                        <Data>{fmtDate(asn.details.shipDate ?? '')}</Data>
+                      </dd>
+                      <dt className="text-text-tertiary">
+                        {t('supplierShipments.wizard.review.field.batch')}
+                      </dt>
+                      <dd className="text-text-primary" data-testid={`asn-batch-${asn.asnNumber}`}>
+                        <Data>{asn.details.batchNumber ?? '—'}</Data>
+                      </dd>
+                      <dt className="text-text-tertiary">
+                        {t('supplierShipments.wizard.review.field.packingList')}
+                      </dt>
+                      <dd className="text-text-primary">
+                        {asn.details.packingListName
+                          ? t('supplierShipments.wizard.review.packingListName', {
+                              name: asn.details.packingListName,
+                            })
+                          : '—'}
+                      </dd>
+                      <dt className="text-text-tertiary">
+                        {t('supplierShipments.wizard.review.field.notes')}
+                      </dt>
+                      <dd className="text-text-primary" data-testid={`asn-notes-${asn.asnNumber}`}>
+                        {asn.details.notes ?? '—'}
+                      </dd>
+                    </dl>
+                  </div>
+                  <div className="bg-bg-surface border border-border-subtle rounded-md p-4">
+                    <div className="text-label text-text-tertiary uppercase mb-3">
+                      {t('supplierShipments.detail.lineItems', {
+                        count: asn.lineItems.length,
+                      })}
+                    </div>
+                    {asn.lineItems.length === 0 ? (
+                      <div className="text-xs text-text-tertiary">
+                        {t('supplierShipments.detail.noLineItems')}
+                      </div>
+                    ) : (
+                      <DataTable<AsnLine>
+                        density="compact"
+                        card={false}
+                        columns={lineColumns}
+                        rows={asn.lineItems}
+                        rowKey={(li) => li.materialCode}
+                      />
+                    )}
+                  </div>
+                </div>
+              </div>
+            ) : null
+          }
+        />
       </div>
     </div>
   );
@@ -1154,53 +1146,57 @@ const SupplierShipments: React.FC = () => {
                 line it is counting, so a single lot for a two-material
                 shipment named the wrong goods on one of them. */}
             <div className="border border-border-subtle rounded-md overflow-hidden">
-              <table className="w-full text-xs" data-testid="asn-line-lots">
-                <thead className="bg-bg-hover text-text-tertiary uppercase tracking-wider">
-                  <tr>
-                    <th className="text-left px-3 py-2 font-semibold">
-                      {t('supplierShipments.lineItems.col.material')}
-                    </th>
-                    <th className="text-right px-3 py-2 font-semibold">
-                      {t('supplierShipments.wizard.details.col.shipping')}
-                    </th>
-                    <th className="text-left px-3 py-2 font-semibold">
-                      {t('supplierShipments.wizard.details.field.lot')}
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(selectedPO?.lineItems ?? []).map((li, idx) => (
-                    <tr key={li.id} className="border-t border-border-subtle">
-                      <td className="px-3 py-2">
+              <DataTable<PoLine>
+                density="compact"
+                card={false}
+                testId="asn-line-lots"
+                rows={selectedPO?.lineItems ?? []}
+                rowKey={(li) => li.id}
+                columns={[
+                  {
+                    id: 'material',
+                    header: t('supplierShipments.lineItems.col.material'),
+                    kind: 'text',
+                    cell: (li) => (
+                      <>
                         <Data as="div" className="text-xs text-text-tertiary">
                           {li.materialCode}
                         </Data>
                         <div className="text-text-primary mt-0.5">{li.description}</div>
-                      </td>
-                      <td className="px-3 py-2 text-right text-text-secondary whitespace-nowrap">
-                        <Data>{`${formatNumber(li.confirmedQty)} ${li.uom}`}</Data>
-                      </td>
-                      <td className="px-3 py-2">
-                        <input
-                          type="text"
-                          aria-label={`${t('supplierShipments.wizard.details.field.lot')} ${li.materialCode}`}
-                          placeholder={t('supplierShipments.placeholder.lot')}
-                          value={form.lots[idx] ?? ''}
-                          onChange={(e) => {
-                            const v = e.target.value;
-                            setForm((f) => {
-                              const lots = [...f.lots];
-                              lots[idx] = v;
-                              return { ...f, lots };
-                            });
-                          }}
-                          className={inputClass}
-                        />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                      </>
+                    ),
+                  },
+                  {
+                    id: 'shipping',
+                    header: t('supplierShipments.wizard.details.col.shipping'),
+                    kind: 'number',
+                    className: 'whitespace-nowrap',
+                    cell: (li) => <Data>{`${formatNumber(li.confirmedQty)} ${li.uom}`}</Data>,
+                  },
+                  {
+                    id: 'lot',
+                    header: t('supplierShipments.wizard.details.field.lot'),
+                    kind: 'text',
+                    cell: (li, idx) => (
+                      <input
+                        type="text"
+                        aria-label={`${t('supplierShipments.wizard.details.field.lot')} ${li.materialCode}`}
+                        placeholder={t('supplierShipments.placeholder.lot')}
+                        value={form.lots[idx] ?? ''}
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          setForm((f) => {
+                            const lots = [...f.lots];
+                            lots[idx] = v;
+                            return { ...f, lots };
+                          });
+                        }}
+                        className={inputClass}
+                      />
+                    ),
+                  },
+                ]}
+              />
             </div>
           </FormSection>
 
@@ -1301,45 +1297,48 @@ const SupplierShipments: React.FC = () => {
             {/* Every order line, at the quantity that ships — the confirmed
                 one — with the lot typed for it. */}
             <div className="border border-border-subtle rounded-md overflow-hidden">
-              <table className="w-full text-xs" data-testid="asn-review-lines">
-                <thead className="bg-bg-hover text-text-tertiary uppercase tracking-wider">
-                  <tr>
-                    <th className="text-left px-3 py-2 font-semibold">
-                      {t('supplierShipments.lineItems.col.material')}
-                    </th>
-                    <th className="text-right px-3 py-2 font-semibold">
-                      {t('supplierShipments.lineItems.col.ordered')}
-                    </th>
-                    <th className="text-right px-3 py-2 font-semibold">
-                      {t('supplierShipments.wizard.details.col.shipping')}
-                    </th>
-                    <th className="text-left px-3 py-2 font-semibold">
-                      {t('supplierShipments.lineItems.col.lot')}
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(selectedPO?.lineItems ?? []).map((li, idx) => (
-                    <tr key={li.id} className="border-t border-border-subtle">
-                      <td className="px-3 py-2">
+              <DataTable<PoLine>
+                density="compact"
+                card={false}
+                testId="asn-review-lines"
+                rows={selectedPO?.lineItems ?? []}
+                rowKey={(li) => li.id}
+                columns={[
+                  {
+                    id: 'material',
+                    header: t('supplierShipments.lineItems.col.material'),
+                    kind: 'text',
+                    cell: (li) => (
+                      <>
                         <Data as="div" className="text-xs text-text-tertiary">
                           {li.materialCode}
                         </Data>
                         <div className="text-text-primary mt-0.5">{li.description}</div>
-                      </td>
-                      <td className="px-3 py-2 text-right text-text-secondary whitespace-nowrap">
-                        <Data>{`${formatNumber(li.quantity)} ${li.uom}`}</Data>
-                      </td>
-                      <td className="px-3 py-2 text-right text-text-primary font-semibold whitespace-nowrap">
-                        <Data>{`${formatNumber(li.confirmedQty)} ${li.uom}`}</Data>
-                      </td>
-                      <td className="px-3 py-2 text-text-secondary">
-                        <Data>{(form.lots[idx] ?? '').trim() || '—'}</Data>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                      </>
+                    ),
+                  },
+                  {
+                    id: 'ordered',
+                    header: t('supplierShipments.lineItems.col.ordered'),
+                    kind: 'number',
+                    className: 'whitespace-nowrap',
+                    cell: (li) => <Data>{`${formatNumber(li.quantity)} ${li.uom}`}</Data>,
+                  },
+                  {
+                    id: 'shipping',
+                    header: t('supplierShipments.wizard.details.col.shipping'),
+                    kind: 'number',
+                    className: 'whitespace-nowrap',
+                    cell: (li) => <Data>{`${formatNumber(li.confirmedQty)} ${li.uom}`}</Data>,
+                  },
+                  {
+                    id: 'lot',
+                    header: t('supplierShipments.lineItems.col.lot'),
+                    kind: 'id',
+                    cell: (_li, idx) => <Data>{(form.lots[idx] ?? '').trim() || '—'}</Data>,
+                  },
+                ]}
+              />
             </div>
           </FormSection>
 
@@ -1358,41 +1357,41 @@ const SupplierShipments: React.FC = () => {
   ];
 
   return (
-    <AppShellV2>
-      <PageHeader
-        breadcrumb={SHIPMENTS_CRUMB}
-        title={t('supplierShipments.header.title')}
-        subtitle={t('supplierShipments.header.subtitle', { name: mySupplier.name })}
-        actions={
-          <BulkActionsBar
-            actions={[
-              {
-                label: t('supplierShipments.action.exportEdi'),
-                icon: Download,
-                onClick: () =>
-                  toast({
-                    variant: 'info',
-                    title: t('supplierShipments.toast.export.title'),
-                    description: t('supplierShipments.toast.export.desc'),
-                  }),
-              },
-            ]}
-          />
-        }
-      />
-
-      <PageMetaLine className="-mt-6 mb-6">
-        {t('supplierShipments.meta.summary', {
-          shipments: asns.length,
-          pos: CONFIRMED_POS.length,
-        })}
-        {/* D-CENSUS-8 — PARTLY REAL, both axes. ASN create + submit dispatch through
-            the wired `advanceShipNotice` target and cascade into goods receipt; the
-            POs being shipped against are fixtures. */}
-        <ProvenanceMarker capability="advanceShipNotices" className="ml-3 align-middle" />
-      </PageMetaLine>
-
-      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-4 mb-6">
+    <ListPage
+      breadcrumb={SHIPMENTS_CRUMB}
+      title={t('supplierShipments.header.title')}
+      subtitle={t('supplierShipments.header.subtitle', { name: mySupplier.name })}
+      actions={
+        <BulkActionsBar
+          actions={[
+            {
+              label: t('supplierShipments.action.exportEdi'),
+              icon: Download,
+              onClick: () =>
+                toast({
+                  variant: 'info',
+                  title: t('supplierShipments.toast.export.title'),
+                  description: t('supplierShipments.toast.export.desc'),
+                }),
+            },
+          ]}
+        />
+      }
+      meta={
+        <>
+          {t('supplierShipments.meta.summary', {
+            shipments: asns.length,
+            pos: CONFIRMED_POS.length,
+          })}
+          {/* D-CENSUS-8 — PARTLY REAL, both axes. ASN create + submit dispatch through
+              the wired `advanceShipNotice` target and cascade into goods receipt; the
+              POs being shipped against are fixtures. */}
+          <ProvenanceMarker capability="advanceShipNotices" className="ml-3 align-middle" />
+        </>
+      }
+      kpiColumns={5}
+      kpis={
+        <>
         <KpiCard
           eyebrow={t('supplierShipments.kpi.draft.eyebrow')}
           value={counts.Draft.toString()}
@@ -1428,8 +1427,9 @@ const SupplierShipments: React.FC = () => {
           onClick={() => setKpiFilter('Discrepancy')}
           active={statusFilter === 'Discrepancy'}
         />
-      </div>
-
+        </>
+      }
+      tabs={
       <SubTabs<TabKey>
         options={[
           { id: 'shipments', label: t('supplierShipments.tab.myShipments'), count: asns.length },
@@ -1442,9 +1442,9 @@ const SupplierShipments: React.FC = () => {
         ]}
         value={tab}
         onChange={setTab}
-        className="mb-5"
       />
-
+      }
+    >
       {tab === 'shipments' && (
         <ShipmentsList
           asns={asns}
@@ -1564,7 +1564,7 @@ const SupplierShipments: React.FC = () => {
           </div>
         )}
       </SidePanel>
-    </AppShellV2>
+    </ListPage>
   );
 };
 

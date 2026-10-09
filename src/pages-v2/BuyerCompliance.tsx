@@ -15,10 +15,9 @@ import {
   XCircle,
   FilePlus2,
 } from 'lucide-react';
-import AppShellV2 from '../components/layout-v2/AppShellV2';
-import PageHeader from '../components/ui-v2/PageHeader';
+import ListPage from '../components/ui-v2/ListPage';
+import DataTable, { type Column } from '../components/ui-v2/DataTable';
 import Data from '../components/ui-v2/Data';
-import PageMetaLine from '../components/ui-v2/PageMetaLine';
 import KpiCard from '../components/ui-v2/KpiCard';
 import BulkActionsBar from '../components/ui-v2/BulkActionsBar';
 import SidePanel from '../components/ui-v2/SidePanel';
@@ -32,10 +31,6 @@ import LivenessPill from '../components/ui-v2/LivenessPill';
 import SessionStampMarker from '../components/ui-v2/SessionStampMarker';
 import { isLive, readinessNote } from '../services/liveness';
 import { formatDate } from '../lib/format';
-import Table from '../components/ui-v2/Table';
-import TableHeader, { TableHeaderCell } from '../components/ui-v2/TableHeader';
-import TableRow from '../components/ui-v2/TableRow';
-import TableCell from '../components/ui-v2/TableCell';
 import Button from '../components/ui-v2/Button';
 import { useToast } from '../hooks/useToast';
 import { useComplianceRegistry, useDocuments, useSuppliers } from '../services/query/hooks';
@@ -409,9 +404,158 @@ const BuyerCompliance: React.FC = () => {
 
   const today = formatDate(TODAY);
 
+  const columns = useMemo<Column<Row>[]>(
+    () => [
+      {
+        id: 'supplier',
+        header: t('compliance.table.supplier'),
+        kind: 'text',
+        cell: ({ entry }) => (
+          <div className="font-semibold text-text-primary">{entry.supplierName}</div>
+        ),
+      },
+      {
+        id: 'certificate',
+        header: t('compliance.table.certificate'),
+        kind: 'text',
+        cell: ({ entry }) => (
+          <div className="text-text-secondary">
+            <div>{t(certTypeLabelKey(entry.certType))}</div>
+            {entry.certNumber && (
+              <Data as="div" className="text-xs text-text-tertiary mt-0.5">
+                {entry.certNumber}
+              </Data>
+            )}
+          </div>
+        ),
+      },
+      {
+        id: 'category',
+        header: t('compliance.table.category'),
+        kind: 'status',
+        cell: ({ category }) => <StatusPill variant="neutral">{category}</StatusPill>,
+      },
+      {
+        id: 'issuedBy',
+        header: t('compliance.table.issuedBy'),
+        kind: 'text',
+        cell: ({ entry }) => <span className="text-text-tertiary">{entry.issuer || '—'}</span>,
+      },
+      {
+        id: 'expiry',
+        header: t('compliance.table.expiry'),
+        kind: 'date',
+        cell: ({ entry, days }) => (
+          <>
+            <div>{formatDate(entry.expiryDate)}</div>
+            {days !== null && (
+              <div
+                className={`font-sans text-xs mt-0.5 ${
+                  days <= 0
+                    ? 'text-critical'
+                    : days <= 90
+                      ? 'text-warning-hover'
+                      : 'text-text-tertiary'
+                }`}
+              >
+                {days <= 0
+                  ? t('compliance.expiry.expiredAgo', { days: Math.abs(days) })
+                  : t('compliance.expiry.remaining', { days })}
+              </div>
+            )}
+          </>
+        ),
+      },
+      {
+        id: 'status',
+        header: t('compliance.table.status'),
+        kind: 'status',
+        cell: ({ status }) => (
+          <StatusPill variant={statusTone(status)}>
+            {status === 'Under Review' ? (
+              <span className="inline-flex items-center gap-1">
+                <RefreshCw size={10} />
+                {status}
+              </span>
+            ) : (
+              status
+            )}
+          </StatusPill>
+        ),
+      },
+      // ── THE SYNC STATE, SAID RATHER THAN INFERRED ──────────────
+      // A stored fact, NOT a projection — the one non-derived column
+      // added since I3.1, and it is stored precisely because nothing
+      // can compute it: there is no transport to ask. Every row reads
+      // the same today because `SapSyncState` has exactly one
+      // reachable member; the column is here so a reader learns that
+      // from the row instead of assuming the opposite from silence.
+      {
+        id: 'sapSync',
+        header: t('compliance.table.sapSync'),
+        kind: 'status',
+        cell: ({ entry }) => (
+          <span
+            data-testid={`sap-sync-${entry.sapSync}`}
+            title={t(`compliance.sapSync.${entry.sapSync}.title`)}
+          >
+            <StatusPill variant="neutral">{t(`compliance.sapSync.${entry.sapSync}`)}</StatusPill>
+          </span>
+        ),
+      },
+      // Descriptive of state, never imperative (D4): the label names
+      // the state; it does not offer an action the SIMULATED cert
+      // cannot back.
+      {
+        id: 'actionRequired',
+        header: t('compliance.table.actionRequired'),
+        kind: 'text',
+        cell: ({ status }) => (
+          <span
+            className={`text-xs ${
+              status === 'Expired' || status === 'Missing'
+                ? 'text-critical'
+                : status === 'Expiring'
+                  ? 'text-warning-hover'
+                  : 'text-text-tertiary'
+            }`}
+          >
+            {t(actionLabelKey(status))}
+          </span>
+        ),
+      },
+      // Remind is gated on remindEligible (lifecycleState Valid) —
+      // the honest projection. Under Review / Missing certs are NOT
+      // remind-eligible (HALAL-UNDERREVIEW mechanism, I3.1).
+      {
+        id: 'remind',
+        header: t('compliance.table.remind'),
+        kind: 'actions',
+        cell: ({ entry, remind }) =>
+          remind && (
+            <Button
+              variant="outline"
+              icon={Bell}
+              onClick={() =>
+                toast({
+                  variant: 'info',
+                  title: t('compliance.toast.reminderQueued', {
+                    supplier: entry.supplierName,
+                  }),
+                  description: t('compliance.toast.reminderDesc'),
+                })
+              }
+            >
+              {t('compliance.action.remind')}
+            </Button>
+          ),
+      },
+    ],
+    [t, toast],
+  );
+
   return (
-    <AppShellV2>
-      <PageHeader
+    <ListPage
         breadcrumb={[t('compliance.crumb.tracker')]}
         title={t('compliance.header.title')}
         subtitle={t('compliance.header.subtitle')}
@@ -455,33 +599,35 @@ const BuyerCompliance: React.FC = () => {
             )}
           </div>
         }
-      />
-
-      <PageMetaLine className="-mt-6 mb-6 flex items-center gap-3">
-        <span>{t('compliance.meta.summary', { count: rows.length, date: today })}</span>
-        {/* Honest-render: capability="compliance" derives SIMULATED (no wired
-            CommandTarget) AND is harvest-gated (I3.3) → amber "Sample — awaiting
-            Track-R harvest". Green is structurally unreachable (two-gate guard). */}
-        <LivenessPill capability="compliance" />
-      </PageMetaLine>
-
-      {/* Waiting-state banner (I3.3, second form) — the SPECIFIC readiness message:
-          this surface is proven and wired to the seam, waiting for the Track-R
-          certificate harvest to land the real registry. Rendered only while the
-          capability is harvest-gated; it disappears the moment the two-gate flip
-          lands (LIVENESS-DATASOURCE-01). Distinct from the legal-deadline banner
-          below (that is about the mandate; this is about data liveness). */}
-      {!isLive('compliance') && readinessNote('compliance') && (
-        <div className="bg-bg-hover border-l-2 border-warning rounded px-4 py-3 mb-4 flex items-start gap-3">
-          <Database size={16} className="text-warning-hover shrink-0 mt-0.5" />
-          <div className="text-sm text-text-secondary">
-            <strong className="text-text-primary">
-              {t('compliance.readiness.title')}
-            </strong>{' '}
-            {t('compliance.readiness.body')}
-          </div>
-        </div>
-      )}
+        meta={
+          <span className="flex items-center gap-3">
+            <span>{t('compliance.meta.summary', { count: rows.length, date: today })}</span>
+            {/* Honest-render: capability="compliance" derives SIMULATED (no wired
+                CommandTarget) AND is harvest-gated (I3.3) → amber "Sample — awaiting
+                Track-R harvest". Green is structurally unreachable (two-gate guard). */}
+            <LivenessPill capability="compliance" />
+          </span>
+        }
+        notices={
+          /* Waiting-state banner (I3.3, second form) — the SPECIFIC readiness message:
+             this surface is proven and wired to the seam, waiting for the Track-R
+             certificate harvest to land the real registry. Rendered only while the
+             capability is harvest-gated; it disappears the moment the two-gate flip
+             lands (LIVENESS-DATASOURCE-01). Distinct from the legal-deadline banner
+             below (that is about the mandate; this is about data liveness). */
+          !isLive('compliance') && readinessNote('compliance') ? (
+            <div className="bg-bg-hover border-l-2 border-warning rounded px-4 py-3 flex items-start gap-3">
+              <Database size={16} className="text-warning-hover shrink-0 mt-0.5" />
+              <div className="text-sm text-text-secondary">
+                <strong className="text-text-primary">
+                  {t('compliance.readiness.title')}
+                </strong>{' '}
+                {t('compliance.readiness.body')}
+              </div>
+            </div>
+          ) : undefined
+        }
+      >
 
       {/* ── §82 · COMPLIANCE'S REVIEW QUEUE ────────────────────────────────
           ⚠️ **THIS SECTION EXISTS BECAUSE ITS ABSENCE WAS THE FINDING.** The
@@ -901,154 +1047,22 @@ const BuyerCompliance: React.FC = () => {
           look disabled, it looks absent. Scrolling the table inside its own box
           keeps every column reachable at every width and fixes the 24px that
           predates this change. */}
-      <div className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm overflow-x-auto mb-6">
-        <Table>
-          <TableHeader>
-            <TableHeaderCell>{t('compliance.table.supplier')}</TableHeaderCell>
-            <TableHeaderCell>{t('compliance.table.certificate')}</TableHeaderCell>
-            <TableHeaderCell>{t('compliance.table.category')}</TableHeaderCell>
-            <TableHeaderCell>{t('compliance.table.issuedBy')}</TableHeaderCell>
-            <TableHeaderCell>{t('compliance.table.expiry')}</TableHeaderCell>
-            <TableHeaderCell>{t('compliance.table.status')}</TableHeaderCell>
-            <TableHeaderCell>{t('compliance.table.sapSync')}</TableHeaderCell>
-            <TableHeaderCell>{t('compliance.table.actionRequired')}</TableHeaderCell>
-            <TableHeaderCell className="text-right">{t('compliance.table.remind')}</TableHeaderCell>
-          </TableHeader>
-          <tbody>
-            {filtered.map(({ entry, status, days, category, remind }) => (
-              // ⚠️ THE ANCHOR AND THE RING ARE THE DEEP-LINK AFFORDANCE HERE.
-              // This page has no per-certificate detail panel — its only
-              // SidePanel is the document-REQUEST flow — so a linked row lands
-              // ON ITSELF, scrolled into view and ringed, the way a glossary
-              // term chip does (operator ruling). No panel is invented.
-              <TableRow
-                key={entry.id}
-                id={recordAnchorId(entry.id)}
-                className={
-                  entry.id === deepLinkedCertId ? 'ring-2 ring-action ring-inset' : ''
-                }
-              >
-                <TableCell>
-                  <div className="font-semibold text-text-primary">
-                    {entry.supplierName}
-                  </div>
-                </TableCell>
-                <TableCell className="text-text-secondary">
-                  <div>{t(certTypeLabelKey(entry.certType))}</div>
-                  {entry.certNumber && (
-                    <Data as="div" className="text-xs text-text-tertiary mt-0.5">
-                      {entry.certNumber}
-                    </Data>
-                  )}
-                </TableCell>
-                <TableCell>
-                  <StatusPill variant="neutral">{category}</StatusPill>
-                </TableCell>
-                <TableCell className="text-text-tertiary">
-                  {entry.issuer || '—'}
-                </TableCell>
-                <TableCell>
-                  <div className="text-sm text-text-secondary whitespace-nowrap">
-                    {formatDate(entry.expiryDate)}
-                  </div>
-                  {days !== null && (
-                    <div
-                      className={`text-xs mt-0.5 ${
-                        days <= 0
-                          ? 'text-critical'
-                          : days <= 90
-                            ? 'text-warning-hover'
-                            : 'text-text-tertiary'
-                      }`}
-                    >
-                      {days <= 0
-                        ? t('compliance.expiry.expiredAgo', { days: Math.abs(days) })
-                        : t('compliance.expiry.remaining', { days })}
-                    </div>
-                  )}
-                </TableCell>
-                <TableCell>
-                  <StatusPill variant={statusTone(status)}>
-                    {status === 'Under Review' ? (
-                      <span className="inline-flex items-center gap-1">
-                        <RefreshCw size={10} />
-                        {status}
-                      </span>
-                    ) : (
-                      status
-                    )}
-                  </StatusPill>
-                </TableCell>
-                {/* ── THE SYNC STATE, SAID RATHER THAN INFERRED ──────────────
-                    A stored fact, NOT a projection — the one non-derived column
-                    added since I3.1, and it is stored precisely because nothing
-                    can compute it: there is no transport to ask. Every row reads
-                    the same today because `SapSyncState` has exactly one
-                    reachable member; the column is here so a reader learns that
-                    from the row instead of assuming the opposite from silence. */}
-                <TableCell>
-                  <span
-                    data-testid={`sap-sync-${entry.sapSync}`}
-                    title={t(`compliance.sapSync.${entry.sapSync}.title`)}
-                  >
-                    <StatusPill variant="neutral">
-                      {t(`compliance.sapSync.${entry.sapSync}`)}
-                    </StatusPill>
-                  </span>
-                </TableCell>
-                <TableCell>
-                  {/* Descriptive of state, never imperative (D4): the label names
-                      the state; it does not offer an action the SIMULATED cert
-                      cannot back. */}
-                  <span
-                    className={`text-xs ${
-                      status === 'Expired' || status === 'Missing'
-                        ? 'text-critical'
-                        : status === 'Expiring'
-                          ? 'text-warning-hover'
-                          : 'text-text-tertiary'
-                    }`}
-                  >
-                    {t(actionLabelKey(status))}
-                  </span>
-                </TableCell>
-                <TableCell className="text-right">
-                  {/* Remind is gated on remindEligible (lifecycleState Valid) —
-                      the honest projection. Under Review / Missing certs are NOT
-                      remind-eligible (HALAL-UNDERREVIEW mechanism, I3.1). */}
-                  {remind && (
-                    <Button
-                      variant="outline"
-                      icon={Bell}
-                      onClick={() =>
-                        toast({
-                          variant: 'info',
-                          title: t('compliance.toast.reminderQueued', {
-                            supplier: entry.supplierName,
-                          }),
-                          description: t('compliance.toast.reminderDesc'),
-                        })
-                      }
-                    >
-                      {t('compliance.action.remind')}
-                    </Button>
-                  )}
-                </TableCell>
-              </TableRow>
-            ))}
-            {filtered.length === 0 && (
-              <tr>
-                <td
-                  colSpan={9}
-                  className="text-center text-sm text-text-tertiary py-10"
-                >
-                  {t('compliance.table.empty')}
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </Table>
-      </div>
+      {/* ⚠️ THE ANCHOR AND THE RING ARE THE DEEP-LINK AFFORDANCE HERE.
+          This page has no per-certificate detail panel — its only
+          SidePanel is the document-REQUEST flow — so a linked row lands
+          ON ITSELF, scrolled into view and ringed, the way a glossary
+          term chip does (operator ruling). No panel is invented. */}
+      <DataTable<Row>
+        className="mb-6"
+        columns={columns}
+        rows={filtered}
+        rowKey={(r) => r.entry.id}
+        rowProps={(r) => ({
+          id: recordAnchorId(r.entry.id),
+          className: r.entry.id === deepLinkedCertId ? 'ring-2 ring-action ring-inset' : '',
+        })}
+        empty={t('compliance.table.empty')}
+      />
 
       <div className="bg-info-soft border-l-2 border-info rounded px-4 py-3 text-sm text-text-primary flex items-start gap-2">
         <Shield size={14} className="text-info shrink-0 mt-0.5" />
@@ -1234,7 +1248,7 @@ const BuyerCompliance: React.FC = () => {
         </SidePanel>
       )}
 
-    </AppShellV2>
+    </ListPage>
   );
 };
 

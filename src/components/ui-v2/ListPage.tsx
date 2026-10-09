@@ -12,6 +12,7 @@ import PageMetaLine from './PageMetaLine';
 //   2  meta      the count / scope line
 //   3  notices   what the reader must know before the figures
 //   4  kpis      the figures, when the page has them
+//      lead      a working section the page shows before its list
 //   5  toolbar   status tabs · filters · search
 //   6  content   the table(s) — `DataTable` — and whatever the page hangs off
 //                them: drawers, dialogs, wizards
@@ -33,6 +34,10 @@ export interface ListPageProps {
   notices?: React.ReactNode;
   /** `KpiCard`s. The grid is supplied here. */
   kpis?: React.ReactNode;
+  /** How many figures sit on one row at full width. Default 4. */
+  kpiColumns?: 3 | 4 | 5;
+  /** A working section the page shows BEFORE its list — it sits under the figures. */
+  lead?: React.ReactNode;
   /** The status tab row (`SubTabs` / `Tabs`). */
   tabs?: React.ReactNode;
   /** `FilterChipsBar`, selects. */
@@ -43,6 +48,8 @@ export interface ListPageProps {
   testId?: string;
 }
 
+const KPI_GRID = { 3: 'xl:grid-cols-3', 4: 'xl:grid-cols-4', 5: 'xl:grid-cols-5' } as const;
+
 const ListPage: React.FC<ListPageProps> = ({
   breadcrumb,
   title,
@@ -51,6 +58,8 @@ const ListPage: React.FC<ListPageProps> = ({
   meta,
   notices,
   kpis,
+  kpiColumns = 4,
+  lead,
   tabs,
   filters,
   search,
@@ -66,7 +75,8 @@ const ListPage: React.FC<ListPageProps> = ({
         </PageMetaLine>
       ) : null}
       {notices ? <div className="mb-6 flex flex-col gap-3">{notices}</div> : null}
-      {kpis ? <div className="mb-8 grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">{kpis}</div> : null}
+      {kpis ? <div className={`mb-8 grid grid-cols-1 gap-5 sm:grid-cols-2 ${KPI_GRID[kpiColumns]}`}>{kpis}</div> : null}
+      {lead ? <div className="mb-8">{lead}</div> : null}
       {tabs ? <div className="mb-5">{tabs}</div> : null}
       {filters ? <div className="mb-4 flex flex-wrap items-center gap-4">{filters}</div> : null}
       {search ? <div className="mb-4">{search}</div> : null}

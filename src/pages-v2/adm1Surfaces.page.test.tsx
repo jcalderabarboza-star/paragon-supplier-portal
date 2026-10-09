@@ -390,7 +390,7 @@ describe('ADM-1 · the document note and the activity view', () => {
     fireEvent.click(screen.getByTestId('super-admin-filter-refused'));
     expect(screen.getByTestId('super-admin-activity-empty')).toHaveTextContent('No recorded act matches this filter.');
     fireEvent.click(screen.getByTestId('super-admin-filter-all'));
-    fireEvent.change(screen.getByTestId('super-admin-search'), { target: { value: 'reapprove' } });
+    fireEvent.change(within(screen.getByTestId('super-admin-search')).getByRole('textbox'), { target: { value: 'reapprove' } });
     expect(screen.getAllByTestId(/^super-admin-act-/)).toHaveLength(1);
   });
 

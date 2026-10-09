@@ -15,10 +15,7 @@
 
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import Table from '../../components/ui-v2/Table';
-import TableHeader, { TableHeaderCell } from '../../components/ui-v2/TableHeader';
-import TableRow from '../../components/ui-v2/TableRow';
-import TableCell from '../../components/ui-v2/TableCell';
+import DataTable, { CellSub, type Column } from '../../components/ui-v2/DataTable';
 import Button from '../../components/ui-v2/Button';
 import Data from '../../components/ui-v2/Data';
 import FilterChipsBar from '../../components/ui-v2/FilterChipsBar';
@@ -157,7 +154,7 @@ const MaterialApplicabilityPanel: React.FC = () => {
     );
   };
 
-  const cell = (row: MaterialApplicabilityRow, regime: RulingRegime) => {
+  const regimeCell = (row: MaterialApplicabilityRow, regime: RulingRegime) => {
     const o = outcomeOf(row, regime);
     const applies = regime === 'halal' ? row.halal.ok && row.halal.required : row.bpom.ok && row.bpom.applicable;
     const stateKey = !o.ok
@@ -204,6 +201,62 @@ const MaterialApplicabilityPanel: React.FC = () => {
     );
   };
 
+  /** Every ruling on a material, both regimes, newest first. */
+  const historyFor = (row: MaterialApplicabilityRow): MaterialRuling[] =>
+    RULING_REGIMES.flatMap((regime) => rulingHistory(rulings, row.materialCode, regime)).sort(
+      (a, b) => b.seq - a.seq,
+    );
+
+  const columns: Column<MaterialApplicabilityRow>[] = [
+    {
+      id: 'material',
+      header: t('compliance.applicability.col.material'),
+      kind: 'id',
+      cell: (row) => (
+        <>
+          <Data as="div">{row.materialCode}</Data>
+          <CellSub>{row.description}</CellSub>
+        </>
+      ),
+    },
+    {
+      id: 'halal',
+      header: t('compliance.applicability.col.halal'),
+      kind: 'status',
+      cell: (row) => regimeCell(row, 'halal'),
+    },
+    {
+      id: 'bpom',
+      header: t('compliance.applicability.col.bpom'),
+      kind: 'status',
+      cell: (row) => regimeCell(row, 'bpom'),
+    },
+    {
+      id: 'history',
+      header: t('compliance.applicability.col.history'),
+      kind: 'actions',
+      cell: (row) => {
+        const history = historyFor(row);
+        return history.length === 0 ? (
+          <span className="text-xs text-text-tertiary">
+            {t('compliance.applicability.history.none')}
+          </span>
+        ) : (
+          <button
+            type="button"
+            className="text-xs font-medium text-action-text hover:underline"
+            data-testid={`applicability-history-${row.materialCode}`}
+            onClick={() => setHistoryOf(historyOf === row.materialCode ? null : row.materialCode)}
+          >
+            {history.length === 1
+              ? t('compliance.applicability.history.one', { count: history.length })
+              : t('compliance.applicability.history.other', { count: history.length })}
+          </button>
+        );
+      },
+    },
+  ];
+
   return (
     <section
       className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm mb-6 overflow-hidden"
@@ -249,151 +302,116 @@ const MaterialApplicabilityPanel: React.FC = () => {
           {t(`compliance.applicability.empty.${filter}`)}
         </div>
       ) : (
-        <Table>
-          <TableHeader>
-            <TableHeaderCell>{t('compliance.applicability.col.material')}</TableHeaderCell>
-            <TableHeaderCell>{t('compliance.applicability.col.halal')}</TableHeaderCell>
-            <TableHeaderCell>{t('compliance.applicability.col.bpom')}</TableHeaderCell>
-            <TableHeaderCell>{t('compliance.applicability.col.history')}</TableHeaderCell>
-          </TableHeader>
-          <tbody>
-            {shown.map((row) => {
-              const history = RULING_REGIMES.flatMap((regime) =>
-                rulingHistory(rulings, row.materialCode, regime),
-              ).sort((a, b) => b.seq - a.seq);
-              const editing = draft?.materialCode === row.materialCode ? draft : null;
-              return (
-                <React.Fragment key={row.materialCode}>
-                  <TableRow>
-                    <TableCell>
-                      <Data as="div" className="text-xs font-bold text-text-primary">
-                        {row.materialCode}
-                      </Data>
-                      <div className="text-xs text-text-tertiary">{row.description}</div>
-                    </TableCell>
-                    <TableCell>{cell(row, 'halal')}</TableCell>
-                    <TableCell>{cell(row, 'bpom')}</TableCell>
-                    <TableCell>
-                      {history.length === 0 ? (
-                        <span className="text-xs text-text-tertiary">
-                          {t('compliance.applicability.history.none')}
-                        </span>
-                      ) : (
-                        <button
-                          type="button"
-                          className="text-xs font-medium text-action-text hover:underline"
-                          data-testid={`applicability-history-${row.materialCode}`}
-                          onClick={() =>
-                            setHistoryOf(historyOf === row.materialCode ? null : row.materialCode)
-                          }
-                        >
-                          {history.length === 1
-                            ? t('compliance.applicability.history.one', { count: history.length })
-                            : t('compliance.applicability.history.other', { count: history.length })}
-                        </button>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                  {historyOf === row.materialCode && history.length > 0 && (
-                    <tr data-testid={`applicability-ledger-${row.materialCode}`}>
-                      <td colSpan={4} className="px-5 py-3 bg-bg-hover">
-                        <ul className="flex flex-col gap-1.5 text-xs text-text-secondary">
-                          {history.map((r) => (
-                            <li key={r.seq}>
-                              <span className="font-semibold text-text-primary">
-                                {t(`compliance.applicability.regime.${r.regime}`)} ·{' '}
-                                {t(
-                                  `compliance.applicability.state.${
-                                    r.applicable ? 'applies' : 'notApplicable'
-                                  }`,
-                                )}
-                              </span>{' '}
-                              — {person(r)}, <Data as="span">{formatDate(r.setAt.slice(0, 10))}</Data>.{' '}
-                              {t('compliance.applicability.history.reason', { reason: r.reason })}
-                            </li>
-                          ))}
-                        </ul>
-                      </td>
-                    </tr>
-                  )}
-                  {editing && (
-                    <tr data-testid="applicability-form">
-                      <td colSpan={4} className="px-5 py-4 bg-bg-hover">
-                        <div className="flex flex-col gap-3 max-w-2xl">
-                          <div className="text-sm font-semibold text-text-primary">
-                            {t('compliance.applicability.form.title', {
-                              regime: t(`compliance.applicability.regime.${editing.regime}`),
-                            })}{' '}
-                            <Data as="span">{editing.materialCode}</Data>
-                          </div>
-                          <div className="flex gap-5 text-sm text-text-primary">
-                            {([true, false] as const).map((v) => (
-                              <label key={String(v)} className="flex items-center gap-1.5 cursor-pointer">
-                                <input
-                                  type="radio"
-                                  name="applicability-choice"
-                                  data-testid={`applicability-choice-${v ? 'yes' : 'no'}`}
-                                  checked={editing.applicable === v}
-                                  onChange={() => setDraft({ ...editing, applicable: v })}
-                                />
-                                {t(
-                                  `compliance.applicability.form.${v ? 'yes' : 'no'}.${editing.regime}`,
-                                )}
-                              </label>
-                            ))}
-                          </div>
-                          <div>
-                            <label
-                              htmlFor="applicability-reason"
-                              className="block text-xs font-medium text-text-tertiary uppercase mb-1"
-                            >
-                              {t('compliance.applicability.form.reason')}
-                            </label>
-                            <textarea
-                              id="applicability-reason"
-                              data-testid="applicability-reason"
-                              rows={2}
-                              value={editing.reason}
-                              onChange={(e) => setDraft({ ...editing, reason: e.target.value })}
-                              placeholder={t('compliance.applicability.form.reasonPlaceholder')}
-                              className="w-full rounded-md border border-border-input bg-white px-3 py-2 text-sm text-text-primary focus:border-action focus:outline-none"
+        <DataTable<MaterialApplicabilityRow>
+          card={false}
+          columns={columns}
+          rows={shown}
+          rowKey={(row) => row.materialCode}
+          rowDetail={(row) => {
+            const history = historyFor(row);
+            const editing = draft?.materialCode === row.materialCode ? draft : null;
+            const ledgerOpen = historyOf === row.materialCode && history.length > 0;
+            if (!ledgerOpen && !editing) return null;
+            return (
+              <div className="flex flex-col gap-3">
+                {ledgerOpen && (
+                  <div
+                    className="rounded bg-bg-hover px-5 py-3"
+                    data-testid={`applicability-ledger-${row.materialCode}`}
+                  >
+                    <ul className="flex flex-col gap-1.5 text-xs text-text-secondary">
+                      {history.map((r) => (
+                        <li key={r.seq}>
+                          <span className="font-semibold text-text-primary">
+                            {t(`compliance.applicability.regime.${r.regime}`)} ·{' '}
+                            {t(
+                              `compliance.applicability.state.${
+                                r.applicable ? 'applies' : 'notApplicable'
+                              }`,
+                            )}
+                          </span>{' '}
+                          — {person(r)}, <Data as="span">{formatDate(r.setAt.slice(0, 10))}</Data>.{' '}
+                          {t('compliance.applicability.history.reason', { reason: r.reason })}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {editing && (
+                  <div className="rounded bg-bg-hover px-5 py-4" data-testid="applicability-form">
+                    <div className="flex flex-col gap-3 max-w-2xl">
+                      <div className="text-sm font-semibold text-text-primary">
+                        {t('compliance.applicability.form.title', {
+                          regime: t(`compliance.applicability.regime.${editing.regime}`),
+                        })}{' '}
+                        <Data as="span">{editing.materialCode}</Data>
+                      </div>
+                      <div className="flex gap-5 text-sm text-text-primary">
+                        {([true, false] as const).map((v) => (
+                          <label key={String(v)} className="flex items-center gap-1.5 cursor-pointer">
+                            <input
+                              type="radio"
+                              name="applicability-choice"
+                              data-testid={`applicability-choice-${v ? 'yes' : 'no'}`}
+                              checked={editing.applicable === v}
+                              onChange={() => setDraft({ ...editing, applicable: v })}
                             />
-                          </div>
-                          {/* Said BEFORE the act: whose name the ruling will carry,
-                              or that this seat names nobody and will be refused. */}
-                          <div className="text-xs text-text-secondary" data-testid="applicability-attribution">
-                            {identity.actor.kind === 'RESOLVED'
-                              ? t('compliance.applicability.form.recordedAs', {
-                                  person: personLabel(identity.actor.person.personId, t),
-                                })
-                              : t('compliance.applicability.form.unattributed')}
-                          </div>
-                          <div className="flex gap-2">
-                            <Button variant="secondary" onClick={() => setDraft(null)}>
-                              {t('compliance.applicability.form.cancel')}
-                            </Button>
-                            <Button
-                              variant="outline"
-                              data-testid="applicability-commit"
-                              disabled={
-                                setRuling.isPending ||
-                                editing.applicable === null ||
-                                editing.reason.trim() === ''
-                              }
-                              onClick={commit}
-                            >
-                              {t('compliance.applicability.form.commit')}
-                            </Button>
-                          </div>
-                        </div>
-                      </td>
-                    </tr>
-                  )}
-                </React.Fragment>
-              );
-            })}
-          </tbody>
-        </Table>
+                            {t(
+                              `compliance.applicability.form.${v ? 'yes' : 'no'}.${editing.regime}`,
+                            )}
+                          </label>
+                        ))}
+                      </div>
+                      <div>
+                        <label
+                          htmlFor="applicability-reason"
+                          className="block text-xs font-medium text-text-tertiary uppercase mb-1"
+                        >
+                          {t('compliance.applicability.form.reason')}
+                        </label>
+                        <textarea
+                          id="applicability-reason"
+                          data-testid="applicability-reason"
+                          rows={2}
+                          value={editing.reason}
+                          onChange={(e) => setDraft({ ...editing, reason: e.target.value })}
+                          placeholder={t('compliance.applicability.form.reasonPlaceholder')}
+                          className="w-full rounded-md border border-border-input bg-white px-3 py-2 text-sm text-text-primary focus:border-action focus:outline-none"
+                        />
+                      </div>
+                      {/* Said BEFORE the act: whose name the ruling will carry,
+                          or that this seat names nobody and will be refused. */}
+                      <div className="text-xs text-text-secondary" data-testid="applicability-attribution">
+                        {identity.actor.kind === 'RESOLVED'
+                          ? t('compliance.applicability.form.recordedAs', {
+                              person: personLabel(identity.actor.person.personId, t),
+                            })
+                          : t('compliance.applicability.form.unattributed')}
+                      </div>
+                      <div className="flex gap-2">
+                        <Button variant="secondary" onClick={() => setDraft(null)}>
+                          {t('compliance.applicability.form.cancel')}
+                        </Button>
+                        <Button
+                          variant="outline"
+                          data-testid="applicability-commit"
+                          disabled={
+                            setRuling.isPending ||
+                            editing.applicable === null ||
+                            editing.reason.trim() === ''
+                          }
+                          onClick={commit}
+                        >
+                          {t('compliance.applicability.form.commit')}
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          }}
+        />
       )}
     </section>
   );

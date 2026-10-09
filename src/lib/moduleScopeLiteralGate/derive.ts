@@ -394,6 +394,24 @@ export function deriveCensus(
         }
         if (ts.isIdentifier(base)) mapped.add(base.text);
       }
+      // UI-1b · `<DataTable rows={CONST} />` IS THE SAME CONSUMPTION. The table
+      // maps its rows inside the component, so the const no longer meets a
+      // `.map()` at its own site — and four grandfathered consts went "dead" the
+      // day their pages moved onto it, while still rendering every literal they
+      // carry. Without this arm the gate would shed them and call it progress.
+      if (
+        ts.isJsxAttribute(n) &&
+        ts.isIdentifier(n.name) &&
+        n.name.text === 'rows' &&
+        n.initializer &&
+        ts.isJsxExpression(n.initializer) &&
+        n.initializer.expression &&
+        ts.isIdentifier(n.initializer.expression) &&
+        ts.isJsxOpeningLikeElement(n.parent.parent) &&
+        n.parent.parent.tagName.getText(sf) === 'DataTable'
+      ) {
+        mapped.add(n.initializer.expression.text);
+      }
       ts.forEachChild(n, findMaps);
     };
     findMaps(sf);

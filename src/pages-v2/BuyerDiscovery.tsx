@@ -21,10 +21,7 @@ import KpiCard from '../components/ui-v2/KpiCard';
 import SubTabs from '../components/ui-v2/SubTabs';
 import StatusPill from '../components/ui-v2/StatusPill';
 import LivenessPill from '../components/ui-v2/LivenessPill';
-import Table from '../components/ui-v2/Table';
-import TableHeader, { TableHeaderCell } from '../components/ui-v2/TableHeader';
-import TableRow from '../components/ui-v2/TableRow';
-import TableCell from '../components/ui-v2/TableCell';
+import DataTable from '../components/ui-v2/DataTable';
 import Button from '../components/ui-v2/Button';
 import { useToast } from '../hooks/useToast';
 import type {
@@ -440,72 +437,93 @@ const BuyerDiscovery: React.FC = () => {
                 {t('discovery.rec.secondSourceTitle')}
               </div>
             </div>
-            <Table>
-              <TableHeader>
-                <TableHeaderCell>{t('discovery.rec.col.material')}</TableHeaderCell>
-                <TableHeaderCell>{t('discovery.rec.col.category')}</TableHeaderCell>
-                <TableHeaderCell>{t('discovery.rec.col.currentSupplier')}</TableHeaderCell>
-                <TableHeaderCell>{t('discovery.rec.col.riskLevel')}</TableHeaderCell>
-                <TableHeaderCell>{t('discovery.rec.col.alternatives')}</TableHeaderCell>
-                <TableHeaderCell className="text-right">{t('discovery.rec.col.action')}</TableHeaderCell>
-              </TableHeader>
-              <tbody>
-                {SINGLE_SOURCE.map((row) => (
-                  <TableRow key={row.material}>
-                    <TableCell>
-                      <div className="font-semibold text-text-primary">
-                        {row.material}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <span className="text-sm text-text-secondary">
-                        {row.category}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <span
-                        className={`text-sm ${
-                          row.currentSupplier === 'Not yet sourced'
-                            ? 'text-critical font-semibold'
-                            : 'text-text-primary'
-                        }`}
-                      >
-                        {row.currentSupplier}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <StatusPill variant={RISK_VARIANT[row.riskLevel]}>
-                        {row.riskLevel}
-                      </StatusPill>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-wrap gap-1.5">
-                        {row.suggestedAlternatives.map((alt) => (
-                          <StatusPill key={alt} variant="info">
-                            {alt}
-                          </StatusPill>
-                        ))}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        variant="outline"
-                        onClick={() =>
-                          toast({
-                            variant: 'info',
-                            title: t('discovery.toast.qualStarted.title', {
-                              name: row.suggestedAlternatives[0],
-                            }),
-                          })
-                        }
-                      >
-                        {t('discovery.action.startQualification')}
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </tbody>
-            </Table>
+            <DataTable<(typeof SINGLE_SOURCE)[number]>
+              card={false}
+              rows={SINGLE_SOURCE}
+              rowKey={(row) => row.material}
+              columns={[
+                {
+                  id: 'material',
+                  header: t('discovery.rec.col.material'),
+                  kind: 'text',
+                  cell: (row) => (
+                    <div className="font-semibold text-text-primary">
+                      {row.material}
+                    </div>
+                  ),
+                },
+                {
+                  id: 'category',
+                  header: t('discovery.rec.col.category'),
+                  kind: 'text',
+                  cell: (row) => (
+                    <span className="text-sm text-text-secondary">
+                      {row.category}
+                    </span>
+                  ),
+                },
+                {
+                  id: 'currentSupplier',
+                  header: t('discovery.rec.col.currentSupplier'),
+                  kind: 'text',
+                  cell: (row) => (
+                    <span
+                      className={`text-sm ${
+                        row.currentSupplier === 'Not yet sourced'
+                          ? 'text-critical font-semibold'
+                          : 'text-text-primary'
+                      }`}
+                    >
+                      {row.currentSupplier}
+                    </span>
+                  ),
+                },
+                {
+                  id: 'riskLevel',
+                  header: t('discovery.rec.col.riskLevel'),
+                  kind: 'status',
+                  cell: (row) => (
+                    <StatusPill variant={RISK_VARIANT[row.riskLevel]}>
+                      {row.riskLevel}
+                    </StatusPill>
+                  ),
+                },
+                {
+                  id: 'alternatives',
+                  header: t('discovery.rec.col.alternatives'),
+                  kind: 'status',
+                  cell: (row) => (
+                    <div className="flex flex-wrap gap-1.5">
+                      {row.suggestedAlternatives.map((alt) => (
+                        <StatusPill key={alt} variant="info">
+                          {alt}
+                        </StatusPill>
+                      ))}
+                    </div>
+                  ),
+                },
+                {
+                  id: 'action',
+                  header: t('discovery.rec.col.action'),
+                  kind: 'actions',
+                  cell: (row) => (
+                    <Button
+                      variant="outline"
+                      onClick={() =>
+                        toast({
+                          variant: 'info',
+                          title: t('discovery.toast.qualStarted.title', {
+                            name: row.suggestedAlternatives[0],
+                          }),
+                        })
+                      }
+                    >
+                      {t('discovery.action.startQualification')}
+                    </Button>
+                  ),
+                },
+              ]}
+            />
           </div>
 
           <div>

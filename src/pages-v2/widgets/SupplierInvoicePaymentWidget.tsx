@@ -5,10 +5,7 @@ import { CreditCard } from 'lucide-react';
 import ExpandableWidget, {
   type FlagSeverity,
 } from '../../components/ui-v2/ExpandableWidget';
-import Table from '../../components/ui-v2/Table';
-import TableHeader, { TableHeaderCell } from '../../components/ui-v2/TableHeader';
-import TableRow from '../../components/ui-v2/TableRow';
-import TableCell from '../../components/ui-v2/TableCell';
+import DataTable from '../../components/ui-v2/DataTable';
 import Data from '../../components/ui-v2/Data';
 import StatusPill from '../../components/ui-v2/StatusPill';
 import { statusTone } from '../../lib/statusTone';
@@ -44,40 +41,43 @@ const SupplierInvoicePaymentWidget: React.FC = () => {
         No invoices are awaiting payment.
       </div>
     ) : (
-      <Table>
-        <TableHeader>
-          <TableHeaderCell>Invoice #</TableHeaderCell>
-          <TableHeaderCell>PO #</TableHeaderCell>
-          <TableHeaderCell className="text-right">Amount</TableHeaderCell>
-          <TableHeaderCell>Due</TableHeaderCell>
-          <TableHeaderCell>Status</TableHeaderCell>
-        </TableHeader>
-        <tbody>
-          {unpaid.map((inv) => (
-            <TableRow key={inv.id}>
-              <TableCell>
-                <Data className="text-xs font-bold text-text-primary">
-                  {inv.invoiceNumber}
-                </Data>
-              </TableCell>
-              <TableCell>
-                <Data className="text-text-secondary">{inv.poNumber}</Data>
-              </TableCell>
-              <TableCell className="text-right font-semibold text-text-primary whitespace-nowrap">
-                <Data>{formatIDR(inv.amount)}</Data>
-              </TableCell>
-              <TableCell className="whitespace-nowrap text-text-secondary">
-                <Data>{formatDate(inv.dueDate)}</Data>
-              </TableCell>
-              <TableCell>
-                <StatusPill variant={statusTone(inv.status)}>
-                  {inv.status}
-                </StatusPill>
-              </TableCell>
-            </TableRow>
-          ))}
-        </tbody>
-      </Table>
+      <DataTable
+        card={false}
+        rows={unpaid}
+        rowKey={(inv) => inv.id}
+        columns={[
+          {
+            id: 'invoice',
+            header: 'Invoice #',
+            kind: 'id',
+            cell: (inv) => <Data>{inv.invoiceNumber}</Data>,
+          },
+          {
+            id: 'po',
+            header: 'PO #',
+            kind: 'id',
+            cell: (inv) => <Data>{inv.poNumber}</Data>,
+          },
+          {
+            id: 'amount',
+            header: 'Amount',
+            kind: 'money',
+            cell: (inv) => <Data>{formatIDR(inv.amount)}</Data>,
+          },
+          {
+            id: 'due',
+            header: 'Due',
+            kind: 'date',
+            cell: (inv) => <Data>{formatDate(inv.dueDate)}</Data>,
+          },
+          {
+            id: 'status',
+            header: 'Status',
+            kind: 'status',
+            cell: (inv) => <StatusPill variant={statusTone(inv.status)}>{inv.status}</StatusPill>,
+          },
+        ]}
+      />
     );
 
   return (

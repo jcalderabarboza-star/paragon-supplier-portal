@@ -5,10 +5,7 @@ import { FileWarning } from 'lucide-react';
 import ExpandableWidget, {
   type FlagSeverity,
 } from '../../components/ui-v2/ExpandableWidget';
-import Table from '../../components/ui-v2/Table';
-import TableHeader, { TableHeaderCell } from '../../components/ui-v2/TableHeader';
-import TableRow from '../../components/ui-v2/TableRow';
-import TableCell from '../../components/ui-v2/TableCell';
+import DataTable from '../../components/ui-v2/DataTable';
 import Data from '../../components/ui-v2/Data';
 import RecordRowLink from './RecordRowLink';
 import StatusPill from '../../components/ui-v2/StatusPill';
@@ -66,50 +63,63 @@ const BuyerComplianceWidget: React.FC = () => {
         {t('widget.compliance.empty')}
       </div>
     ) : (
-      <Table>
-        <TableHeader>
-          <TableHeaderCell>{t('widget.compliance.col.supplier')}</TableHeaderCell>
-          <TableHeaderCell>{t('widget.compliance.col.certificate')}</TableHeaderCell>
-          <TableHeaderCell>{t('widget.compliance.col.expires')}</TableHeaderCell>
-          <TableHeaderCell className="text-right">
-            {t('widget.compliance.col.daysLeft')}
-          </TableHeaderCell>
-          <TableHeaderCell>{t('widget.compliance.col.status')}</TableHeaderCell>
-        </TableHeader>
-        <tbody>
-          {flagged.map(({ entry, status, days }) => (
-            <TableRow key={entry.id} className="relative">
-              <TableCell className="text-text-secondary">
-                {/* /buyer/compliance has no per-certificate detail panel — its
-                    only SidePanel is the document-REQUEST flow — so this lands
-                    on the ROW, scrolled to and highlighted, the way
-                    `Glossary.tsx`'s `?term=` chip does. Operator ruling. */}
+      <DataTable
+        card={false}
+        rows={flagged}
+        rowKey={(r) => r.entry.id}
+        rowProps={() => ({ className: 'relative' })}
+        columns={[
+          /* /buyer/compliance has no per-certificate detail panel — its
+             only SidePanel is the document-REQUEST flow — so this lands
+             on the ROW, scrolled to and highlighted, the way
+             `Glossary.tsx`'s `?term=` chip does. Operator ruling. */
+          {
+            id: 'supplier',
+            header: t('widget.compliance.col.supplier'),
+            kind: 'text',
+            cell: ({ entry }) => (
+              <span className="text-text-secondary">
                 <RecordRowLink
                   path="/buyer/compliance"
                   id={entry.id}
                   name={entry.certNumber}
                   label={entry.supplierName}
                 />
-              </TableCell>
-              <TableCell className="font-medium text-text-primary">
-                {t(certTypeLabelKey(entry.certType))}
-              </TableCell>
-              <TableCell className="whitespace-nowrap text-text-secondary">
-                <Data className="block text-[11px] text-text-tertiary">
-                  {entry.certNumber}
-                </Data>
+              </span>
+            ),
+          },
+          {
+            id: 'certificate',
+            header: t('widget.compliance.col.certificate'),
+            kind: 'text',
+            className: 'font-medium',
+            cell: ({ entry }) => t(certTypeLabelKey(entry.certType)),
+          },
+          {
+            id: 'expires',
+            header: t('widget.compliance.col.expires'),
+            kind: 'date',
+            cell: ({ entry }) => (
+              <>
+                <Data className="block text-[11px] text-text-tertiary">{entry.certNumber}</Data>
                 <Data>{formatDate(entry.expiryDate)}</Data>
-              </TableCell>
-              <TableCell className="text-right text-text-secondary">
-                <Data>{days ?? '—'}d</Data>
-              </TableCell>
-              <TableCell>
-                <StatusPill variant={statusTone(status)}>{status}</StatusPill>
-              </TableCell>
-            </TableRow>
-          ))}
-        </tbody>
-      </Table>
+              </>
+            ),
+          },
+          {
+            id: 'daysLeft',
+            header: t('widget.compliance.col.daysLeft'),
+            kind: 'number',
+            cell: ({ days }) => <Data>{days ?? '—'}d</Data>,
+          },
+          {
+            id: 'status',
+            header: t('widget.compliance.col.status'),
+            kind: 'status',
+            cell: ({ status }) => <StatusPill variant={statusTone(status)}>{status}</StatusPill>,
+          },
+        ]}
+      />
     );
 
   return (

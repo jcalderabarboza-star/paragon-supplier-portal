@@ -41,10 +41,7 @@ import { listingsForSupplier } from '../services/data/pslProjection';
 import { DECLARED_PRESENT } from '../services/data/fixturePresent';
 import { useDeepLinkedRecordId } from '../lib/recordDeepLink';
 import Tabs from '../components/ui-v2/Tabs';
-import Table from '../components/ui-v2/Table';
-import TableHeader, { TableHeaderCell } from '../components/ui-v2/TableHeader';
-import TableRow from '../components/ui-v2/TableRow';
-import TableCell from '../components/ui-v2/TableCell';
+import DataTable from '../components/ui-v2/DataTable';
 import Button from '../components/ui-v2/Button';
 import Data from '../components/ui-v2/Data';
 import LoadingState from '../components/ui-v2/LoadingState';
@@ -491,49 +488,49 @@ const BuyerSupplierProfile: React.FC = () => {
               {t('buyerSupplierProfile.compliance.heading')}
             </span>
           </div>
-          <Table>
-            <TableHeader>
-              <TableHeaderCell>{t('buyerSupplierProfile.compliance.col.document')}</TableHeaderCell>
-              <TableHeaderCell>{t('buyerSupplierProfile.compliance.col.status')}</TableHeaderCell>
-              <TableHeaderCell>{t('buyerSupplierProfile.compliance.col.uploaded')}</TableHeaderCell>
-              <TableHeaderCell>{t('buyerSupplierProfile.compliance.col.expires')}</TableHeaderCell>
-            </TableHeader>
-            <tbody>
-              {certs.map((doc) => (
-                <TableRow key={doc.name}>
-                  <TableCell>
-                    <div className="font-medium text-text-primary">
-                      {doc.name}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <StatusPill variant={COMPLIANCE_VARIANT[doc.status]}>
-                      <span className="inline-flex items-center gap-1">
-                        {COMPLIANCE_ICON[doc.status]}
-                        {COMPLIANCE_LABEL[doc.status]}
-                      </span>
-                    </StatusPill>
-                  </TableCell>
-                  <TableCell className="text-text-secondary">
-                    <Data>{doc.uploaded ?? '—'}</Data>
-                  </TableCell>
-                  <TableCell className="text-text-secondary">
-                    <Data>{doc.expiry ?? '—'}</Data>
-                  </TableCell>
-                </TableRow>
-              ))}
-              {certs.length === 0 && (
-                <tr>
-                  <td
-                    colSpan={4}
-                    className="text-center text-sm text-text-tertiary py-8"
-                  >
-                    {t('buyerSupplierProfile.compliance.empty')}
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </Table>
+          <DataTable<(typeof certs)[number]>
+            card={false}
+            rows={certs}
+            rowKey={(doc) => doc.name}
+            empty={t('buyerSupplierProfile.compliance.empty')}
+            columns={[
+              {
+                id: 'document',
+                header: t('buyerSupplierProfile.compliance.col.document'),
+                kind: 'text',
+                cell: (doc) => (
+                  <div className="font-medium text-text-primary">
+                    {doc.name}
+                  </div>
+                ),
+              },
+              {
+                id: 'status',
+                header: t('buyerSupplierProfile.compliance.col.status'),
+                kind: 'status',
+                cell: (doc) => (
+                  <StatusPill variant={COMPLIANCE_VARIANT[doc.status]}>
+                    <span className="inline-flex items-center gap-1">
+                      {COMPLIANCE_ICON[doc.status]}
+                      {COMPLIANCE_LABEL[doc.status]}
+                    </span>
+                  </StatusPill>
+                ),
+              },
+              {
+                id: 'uploaded',
+                header: t('buyerSupplierProfile.compliance.col.uploaded'),
+                kind: 'date',
+                cell: (doc) => <Data>{doc.uploaded ?? '—'}</Data>,
+              },
+              {
+                id: 'expires',
+                header: t('buyerSupplierProfile.compliance.col.expires'),
+                kind: 'date',
+                cell: (doc) => <Data>{doc.expiry ?? '—'}</Data>,
+              },
+            ]}
+          />
         </section>
       )}
 
@@ -552,52 +549,54 @@ const BuyerSupplierProfile: React.FC = () => {
               {t('buyerSupplierProfile.catalog.heading')}
             </span>
           </div>
-          <Table>
-            <TableHeader>
-              <TableHeaderCell>{t('buyerSupplierProfile.catalog.col.material')}</TableHeaderCell>
-              <TableHeaderCell>{t('buyerSupplierProfile.catalog.col.sapCode')}</TableHeaderCell>
-              <TableHeaderCell>{t('buyerSupplierProfile.catalog.col.moq')}</TableHeaderCell>
-              <TableHeaderCell>{t('buyerSupplierProfile.catalog.col.leadTime')}</TableHeaderCell>
-              <TableHeaderCell className="text-right">{t('buyerSupplierProfile.catalog.col.unitPrice')}</TableHeaderCell>
-              <TableHeaderCell>{t('buyerSupplierProfile.catalog.col.capacity')}</TableHeaderCell>
-            </TableHeader>
-            <tbody>
-              {catalog.map((m) => (
-                <TableRow key={m.id}>
-                  <TableCell>
-                    <div className="font-medium text-text-primary">
-                      {m.material}
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-xs text-text-tertiary">
-                    <Data>{m.sapCode}</Data>
-                  </TableCell>
-                  <TableCell className="text-text-secondary">
-                    <Data>{m.moq} {m.uom}</Data>
-                  </TableCell>
-                  <TableCell className="text-text-secondary">
-                    <Data>{m.leadTime} days</Data>
-                  </TableCell>
-                  <TableCell className="text-right font-semibold text-text-primary">
-                    <Data>Rp {m.unitPrice}</Data>
-                  </TableCell>
-                  <TableCell className="text-text-secondary">
-                    <Data>{m.capacity} {m.uom}/mo</Data>
-                  </TableCell>
-                </TableRow>
-              ))}
-              {catalog.length === 0 && (
-                <tr>
-                  <td
-                    colSpan={6}
-                    className="text-center text-sm text-text-tertiary py-8"
-                  >
-                    {t('buyerSupplierProfile.catalog.empty')}
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </Table>
+          <DataTable<(typeof catalog)[number]>
+            card={false}
+            rows={catalog}
+            rowKey={(m) => m.id}
+            empty={t('buyerSupplierProfile.catalog.empty')}
+            columns={[
+              {
+                id: 'material',
+                header: t('buyerSupplierProfile.catalog.col.material'),
+                kind: 'text',
+                cell: (m) => (
+                  <div className="font-medium text-text-primary">
+                    {m.material}
+                  </div>
+                ),
+              },
+              {
+                id: 'sapCode',
+                header: t('buyerSupplierProfile.catalog.col.sapCode'),
+                kind: 'id',
+                cell: (m) => <Data>{m.sapCode}</Data>,
+              },
+              {
+                id: 'moq',
+                header: t('buyerSupplierProfile.catalog.col.moq'),
+                kind: 'number',
+                cell: (m) => <Data>{m.moq} {m.uom}</Data>,
+              },
+              {
+                id: 'leadTime',
+                header: t('buyerSupplierProfile.catalog.col.leadTime'),
+                kind: 'number',
+                cell: (m) => <Data>{m.leadTime} days</Data>,
+              },
+              {
+                id: 'unitPrice',
+                header: t('buyerSupplierProfile.catalog.col.unitPrice'),
+                kind: 'money',
+                cell: (m) => <Data>Rp {m.unitPrice}</Data>,
+              },
+              {
+                id: 'capacity',
+                header: t('buyerSupplierProfile.catalog.col.capacity'),
+                kind: 'number',
+                cell: (m) => <Data>{m.capacity} {m.uom}/mo</Data>,
+              },
+            ]}
+          />
         </section>
       )}
 
@@ -611,64 +610,76 @@ const BuyerSupplierProfile: React.FC = () => {
               {t('buyerSupplierProfile.performance.subtitle')}
             </p>
           </div>
-          <Table>
-            <TableHeader>
-              <TableHeaderCell>{t('buyerSupplierProfile.performance.col.po')}</TableHeaderCell>
-              <TableHeaderCell>{t('buyerSupplierProfile.performance.col.material')}</TableHeaderCell>
-              <TableHeaderCell>{t('buyerSupplierProfile.performance.col.qty')}</TableHeaderCell>
-              <TableHeaderCell className="text-right">{t('buyerSupplierProfile.performance.col.value')}</TableHeaderCell>
-              <TableHeaderCell>{t('buyerSupplierProfile.performance.col.ordered')}</TableHeaderCell>
-              <TableHeaderCell>{t('buyerSupplierProfile.performance.col.delivery')}</TableHeaderCell>
-              <TableHeaderCell>{t('buyerSupplierProfile.performance.col.otif')}</TableHeaderCell>
-              <TableHeaderCell>{t('buyerSupplierProfile.performance.col.status')}</TableHeaderCell>
-            </TableHeader>
-            <tbody>
-              {recentPOs.map((po) => {
-                const line = po.lineItems[0];
-                const otif = deriveOtif(po);
-                return (
-                  <TableRow key={po.id}>
-                    <TableCell className="text-xs text-text-primary">
-                      <Data>{po.poNumber}</Data>
-                    </TableCell>
-                    <TableCell className="text-text-secondary">
-                      {line?.description ?? '—'}
-                    </TableCell>
-                    <TableCell className="text-text-secondary">
-                      <Data>{line ? `${formatNumber(line.quantity)} ${line.uom}` : '—'}</Data>
-                    </TableCell>
-                    <TableCell className="text-right font-semibold text-text-primary">
-                      <Data>{formatIDR(po.totalValue, { compact: true })}</Data>
-                    </TableCell>
-                    <TableCell className="text-text-secondary">
-                      <Data>{formatDate(po.orderDate)}</Data>
-                    </TableCell>
-                    <TableCell className="text-text-secondary">
-                      <Data>{formatDate(po.confirmedDeliveryDate)}</Data>
-                    </TableCell>
-                    <TableCell>
-                      <StatusPill variant={otif === 'On Time' ? 'success' : 'warning'}>
-                        {otif}
-                      </StatusPill>
-                    </TableCell>
-                    <TableCell>
-                      <StatusPill variant="success">{po.status}</StatusPill>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-              {recentPOs.length === 0 && (
-                <tr>
-                  <td
-                    colSpan={8}
-                    className="text-center text-sm text-text-tertiary py-8"
-                  >
-                    {t('buyerSupplierProfile.performance.empty')}
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </Table>
+          <DataTable<PurchaseOrder>
+            card={false}
+            rows={recentPOs}
+            rowKey={(po) => po.id}
+            empty={t('buyerSupplierProfile.performance.empty')}
+            columns={[
+              {
+                id: 'po',
+                header: t('buyerSupplierProfile.performance.col.po'),
+                kind: 'id',
+                cell: (po) => <Data>{po.poNumber}</Data>,
+              },
+              {
+                id: 'material',
+                header: t('buyerSupplierProfile.performance.col.material'),
+                kind: 'text',
+                cell: (po) => (
+                  <span className="text-text-secondary">
+                    {po.lineItems[0]?.description ?? '—'}
+                  </span>
+                ),
+              },
+              {
+                id: 'qty',
+                header: t('buyerSupplierProfile.performance.col.qty'),
+                kind: 'number',
+                cell: (po) => {
+                  const line = po.lineItems[0];
+                  return <Data>{line ? `${formatNumber(line.quantity)} ${line.uom}` : '—'}</Data>;
+                },
+              },
+              {
+                id: 'value',
+                header: t('buyerSupplierProfile.performance.col.value'),
+                kind: 'money',
+                cell: (po) => <Data>{formatIDR(po.totalValue, { compact: true })}</Data>,
+              },
+              {
+                id: 'ordered',
+                header: t('buyerSupplierProfile.performance.col.ordered'),
+                kind: 'date',
+                cell: (po) => <Data>{formatDate(po.orderDate)}</Data>,
+              },
+              {
+                id: 'delivery',
+                header: t('buyerSupplierProfile.performance.col.delivery'),
+                kind: 'date',
+                cell: (po) => <Data>{formatDate(po.confirmedDeliveryDate)}</Data>,
+              },
+              {
+                id: 'otif',
+                header: t('buyerSupplierProfile.performance.col.otif'),
+                kind: 'status',
+                cell: (po) => {
+                  const otif = deriveOtif(po);
+                  return (
+                    <StatusPill variant={otif === 'On Time' ? 'success' : 'warning'}>
+                      {otif}
+                    </StatusPill>
+                  );
+                },
+              },
+              {
+                id: 'status',
+                header: t('buyerSupplierProfile.performance.col.status'),
+                kind: 'status',
+                cell: (po) => <StatusPill variant="success">{po.status}</StatusPill>,
+              },
+            ]}
+          />
         </section>
       )}
 
@@ -682,46 +693,60 @@ const BuyerSupplierProfile: React.FC = () => {
                 disappeared entirely in Bahasa. Now registry-derived and translated. */}
             <ProvenanceMarker capability="messaging" />
           </div>
-          <Table>
-            <TableHeader>
-              <TableHeaderCell>{t('buyerSupplierProfile.msglog.col.timestamp')}</TableHeaderCell>
-              <TableHeaderCell>{t('buyerSupplierProfile.msglog.col.direction')}</TableHeaderCell>
-              <TableHeaderCell>{t('buyerSupplierProfile.msglog.col.channel')}</TableHeaderCell>
-              <TableHeaderCell>{t('buyerSupplierProfile.msglog.col.type')}</TableHeaderCell>
-              <TableHeaderCell>{t('buyerSupplierProfile.msglog.col.preview')}</TableHeaderCell>
-              <TableHeaderCell>{t('buyerSupplierProfile.msglog.col.status')}</TableHeaderCell>
-            </TableHeader>
-            <tbody>
-              {MSG_LOG.map((m, i) => (
-                <TableRow key={i}>
-                  <TableCell className="text-xs text-text-tertiary whitespace-nowrap">
-                    <Data>{m.ts}</Data>
-                  </TableCell>
-                  <TableCell>
-                    <StatusPill variant={m.direction === 'in' ? 'info' : 'neutral'}>
-                      {m.direction === 'in' ? 'Inbound' : 'Outbound'}
-                    </StatusPill>
-                  </TableCell>
-                  <TableCell className="text-text-secondary capitalize">
-                    {chl(m.channel)}
-                  </TableCell>
-                  <TableCell className="text-text-secondary">
-                    {m.docType}
-                  </TableCell>
-                  <TableCell className="text-text-secondary max-w-md truncate">
-                    {m.preview}
-                  </TableCell>
-                  <TableCell>
-                    <StatusPill
-                      variant={m.status === 'read' ? 'success' : 'neutral'}
-                    >
-                      {m.status}
-                    </StatusPill>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </tbody>
-          </Table>
+          <DataTable<(typeof MSG_LOG)[number]>
+            card={false}
+            rows={MSG_LOG}
+            rowKey={(_m, i) => String(i)}
+            columns={[
+              {
+                id: 'timestamp',
+                header: t('buyerSupplierProfile.msglog.col.timestamp'),
+                kind: 'date',
+                cell: (m) => <Data>{m.ts}</Data>,
+              },
+              {
+                id: 'direction',
+                header: t('buyerSupplierProfile.msglog.col.direction'),
+                kind: 'status',
+                cell: (m) => (
+                  <StatusPill variant={m.direction === 'in' ? 'info' : 'neutral'}>
+                    {m.direction === 'in' ? 'Inbound' : 'Outbound'}
+                  </StatusPill>
+                ),
+              },
+              {
+                id: 'channel',
+                header: t('buyerSupplierProfile.msglog.col.channel'),
+                kind: 'text',
+                cell: (m) => (
+                  <span className="text-text-secondary capitalize">{chl(m.channel)}</span>
+                ),
+              },
+              {
+                id: 'type',
+                header: t('buyerSupplierProfile.msglog.col.type'),
+                kind: 'text',
+                cell: (m) => <span className="text-text-secondary">{m.docType}</span>,
+              },
+              {
+                id: 'preview',
+                header: t('buyerSupplierProfile.msglog.col.preview'),
+                kind: 'text',
+                className: 'max-w-md truncate',
+                cell: (m) => <span className="text-text-secondary">{m.preview}</span>,
+              },
+              {
+                id: 'status',
+                header: t('buyerSupplierProfile.msglog.col.status'),
+                kind: 'status',
+                cell: (m) => (
+                  <StatusPill variant={m.status === 'read' ? 'success' : 'neutral'}>
+                    {m.status}
+                  </StatusPill>
+                ),
+              },
+            ]}
+          />
         </section>
       )}
     </AppShellV2>

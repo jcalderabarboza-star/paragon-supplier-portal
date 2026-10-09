@@ -218,7 +218,7 @@ describe('UI gate 3 · contrast', () => {
 describe('UI gate 4 · list layout', () => {
   it('reads table markup, and not the shared primitives', () => {
     expect(rawTableCount('<table className="w-full"><thead><tr><th scope="col">A</th></tr></thead></table>')).toBe(3);
-    expect(rawTableCount('<Table><TableHeader><TableHeaderCell>A</TableHeaderCell></TableHeader><tbody /></Table>')).toBe(0);
+    expect(rawTableCount('<DataTable columns={columns} rows={rows} rowKey={(r) => r.id} /><tbody />')).toBe(0);
     const files = shippedFiles().map((f) => f.file);
     for (const primitive of TABLE_PRIMITIVES) expect(files).toContain(primitive);
   });

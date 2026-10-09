@@ -5,10 +5,7 @@ import { ClipboardList } from 'lucide-react';
 import ExpandableWidget, {
   type FlagSeverity,
 } from '../../components/ui-v2/ExpandableWidget';
-import Table from '../../components/ui-v2/Table';
-import TableHeader, { TableHeaderCell } from '../../components/ui-v2/TableHeader';
-import TableRow from '../../components/ui-v2/TableRow';
-import TableCell from '../../components/ui-v2/TableCell';
+import DataTable from '../../components/ui-v2/DataTable';
 import Data from '../../components/ui-v2/Data';
 import StatusPill from '../../components/ui-v2/StatusPill';
 import { statusTone } from '../../lib/statusTone';
@@ -58,38 +55,43 @@ const SupplierRfqToRespondWidget: React.FC = () => {
         No open RFQs are awaiting your response.
       </div>
     ) : (
-      <Table>
-        <TableHeader>
-          <TableHeaderCell>RFQ #</TableHeaderCell>
-          <TableHeaderCell>Title</TableHeaderCell>
-          <TableHeaderCell>Category</TableHeaderCell>
-          <TableHeaderCell>Respond by</TableHeaderCell>
-          <TableHeaderCell>Status</TableHeaderCell>
-        </TableHeader>
-        <tbody>
-          {open.map((rfq) => (
-            <TableRow key={rfq.id}>
-              <TableCell>
-                <Data className="text-xs font-bold text-text-primary">
-                  {rfq.rfqNumber}
-                </Data>
-              </TableCell>
-              <TableCell className="text-text-secondary">{rfq.title}</TableCell>
-              <TableCell className="text-text-secondary">
-                {rfq.materialCategory}
-              </TableCell>
-              <TableCell className="whitespace-nowrap text-text-secondary">
-                <Data>{formatDate(rfq.responseDeadline)}</Data>
-              </TableCell>
-              <TableCell>
-                <StatusPill variant={statusTone(rfq.status)}>
-                  {rfq.status}
-                </StatusPill>
-              </TableCell>
-            </TableRow>
-          ))}
-        </tbody>
-      </Table>
+      <DataTable
+        card={false}
+        rows={open}
+        rowKey={(rfq) => rfq.id}
+        columns={[
+          {
+            id: 'rfq',
+            header: 'RFQ #',
+            kind: 'id',
+            cell: (rfq) => <Data>{rfq.rfqNumber}</Data>,
+          },
+          {
+            id: 'title',
+            header: 'Title',
+            kind: 'text',
+            cell: (rfq) => <span className="text-text-secondary">{rfq.title}</span>,
+          },
+          {
+            id: 'category',
+            header: 'Category',
+            kind: 'text',
+            cell: (rfq) => <span className="text-text-secondary">{rfq.materialCategory}</span>,
+          },
+          {
+            id: 'respondBy',
+            header: 'Respond by',
+            kind: 'date',
+            cell: (rfq) => <Data>{formatDate(rfq.responseDeadline)}</Data>,
+          },
+          {
+            id: 'status',
+            header: 'Status',
+            kind: 'status',
+            cell: (rfq) => <StatusPill variant={statusTone(rfq.status)}>{rfq.status}</StatusPill>,
+          },
+        ]}
+      />
     );
 
   return (

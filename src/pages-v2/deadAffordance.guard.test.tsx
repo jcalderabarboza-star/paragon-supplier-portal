@@ -785,8 +785,13 @@ describe('DEAD-AFFORDANCE-01 — the census, at zero', () => {
     // the portal is built from. That reasoning is sound for `Button` and is NOT a
     // licence: any other component that starts spreading props would join the
     // unjudged set in silence. Pinned, it joins this assertion instead.
-    expect([...new Set(ALL.filter((s) => s.cls === 'SPREAD').map((s) => s.file))]).toEqual([
+    //
+    // UI-1b · `DataTable` joins it BY NAME, for the same reason as `Button`: its
+    // row takes `rowProps` — the test id, the aria state and the tone the page
+    // hands it — and the row's click is `onRowClick`, wired in the component.
+    expect([...new Set(ALL.filter((s) => s.cls === 'SPREAD').map((s) => s.file))].sort()).toEqual([
       'src/components/ui-v2/Button.tsx',
+      'src/components/ui-v2/DataTable.tsx',
     ]);
   });
 

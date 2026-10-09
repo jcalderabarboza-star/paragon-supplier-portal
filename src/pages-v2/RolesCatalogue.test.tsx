@@ -105,7 +105,7 @@ describe('⚠️ THE LIST IS DERIVED — one row per system role, no more, no fe
 
   it('search narrows the list and says so when nothing matches', async () => {
     renderWithProviders(<RolesCatalogue />, { identity: BUYER });
-    const box = await screen.findByTestId('roles-search');
+    const box = within(await screen.findByTestId('roles-search')).getByRole('textbox');
     fireEvent.change(box, { target: { value: 'financ' } });
     expect(screen.getByTestId('role-row-finance')).toBeInTheDocument();
     expect(screen.queryByTestId('role-row-receiving')).not.toBeInTheDocument();
@@ -137,7 +137,9 @@ describe('ADM-1 · the creation form is a pop-up, not a section that always stan
     // The button sits in the page header, with the title.
     const button = screen.getByTestId('roles-new');
     expect(button).toHaveTextContent('New role');
-    expect(button.closest('header')).toContainElement(screen.getByRole('heading', { level: 1, name: 'Roles' }));
+    // UI-1b — the header is the shared `PageHeader` (a div, the list frame's
+    // first child), no longer a hand-built `<header>`.
+    expect(button.closest('[data-list-page] > div')).toContainElement(screen.getByRole('heading', { level: 1, name: 'Roles' }));
   });
 
   it('it opens as a dialog named by its title, focus moves into the form, and Escape closes it', async () => {

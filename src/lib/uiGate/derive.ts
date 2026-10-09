@@ -149,13 +149,8 @@ export function colourFindings(text: string): Counts<ColourKind> {
 export const COLOUR_EXEMPT: readonly string[] = ['src/lib/chartPalette.ts', 'src/pages-v2/SupplierWhatsApp.tsx'];
 
 // ── list layout ──────────────────────────────────────────────────────────────
-/** The shared table primitives themselves are the one place a `<table>` is written. */
-export const TABLE_PRIMITIVES: readonly string[] = [
-  'src/components/ui-v2/Table.tsx',
-  'src/components/ui-v2/TableHeader.tsx',
-  'src/components/ui-v2/TableRow.tsx',
-  'src/components/ui-v2/TableCell.tsx',
-];
+/** `DataTable` is the one place a `<table>` is written (UI-1b retired the four primitives). */
+export const TABLE_PRIMITIVES: readonly string[] = ['src/components/ui-v2/DataTable.tsx'];
 
 // `<tbody>` is not counted: the primitives have no body element, so every page
 // that uses them writes one. `DataTable` (UI-1b) is what absorbs it.

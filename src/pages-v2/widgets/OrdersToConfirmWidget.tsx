@@ -4,10 +4,7 @@ import { ClipboardList } from 'lucide-react';
 import ExpandableWidget, {
   type FlagSeverity,
 } from '../../components/ui-v2/ExpandableWidget';
-import Table from '../../components/ui-v2/Table';
-import TableHeader, { TableHeaderCell } from '../../components/ui-v2/TableHeader';
-import TableRow from '../../components/ui-v2/TableRow';
-import TableCell from '../../components/ui-v2/TableCell';
+import DataTable from '../../components/ui-v2/DataTable';
 import Button from '../../components/ui-v2/Button';
 import Data from '../../components/ui-v2/Data';
 import StatusPill from '../../components/ui-v2/StatusPill';
@@ -67,57 +64,63 @@ const OrdersToConfirmWidget: React.FC = () => {
         No purchase orders are awaiting your confirmation.
       </div>
     ) : (
-      <Table>
-        <TableHeader>
-          <TableHeaderCell>PO #</TableHeaderCell>
-          <TableHeaderCell>Order date</TableHeaderCell>
-          <TableHeaderCell className="text-right">Items</TableHeaderCell>
-          <TableHeaderCell className="text-right">Value</TableHeaderCell>
-          <TableHeaderCell>Status</TableHeaderCell>
-          <TableHeaderCell className="text-right">Action</TableHeaderCell>
-        </TableHeader>
-        <tbody>
-          {confirmable.map((po) => (
-            <TableRow key={po.id}>
-              <TableCell>
-                <Data className="text-xs font-bold text-text-primary">
-                  {po.poNumber}
-                </Data>
-              </TableCell>
-              <TableCell className="whitespace-nowrap text-text-secondary">
-                <Data>{formatDate(po.orderDate)}</Data>
-              </TableCell>
-              <TableCell className="text-right text-text-secondary">
-                {po.lineItems.length}
-              </TableCell>
-              <TableCell className="text-right font-semibold text-text-primary whitespace-nowrap">
-                <Data>{formatIDR(po.totalValue)}</Data>
-              </TableCell>
-              <TableCell>
-                <StatusPill variant={statusTone(po.status)}>
-                  {po.status}
-                </StatusPill>
-              </TableCell>
-              <TableCell className="text-right">
-                {confirmAvailability.kind === 'held' ? (
-                  <Button
-                    variant="outline"
-                    onClick={() => confirm(po)}
-                    disabled={confirmMutation.isPending}
-                  >
-                    Confirm
-                  </Button>
-                ) : (
-                  <HandoffNotice
-                    availability={confirmAvailability}
-                    testId="handoff-widget-po-confirm"
-                  />
-                )}
-              </TableCell>
-            </TableRow>
-          ))}
-        </tbody>
-      </Table>
+      <DataTable
+        card={false}
+        rows={confirmable}
+        rowKey={(po) => po.id}
+        columns={[
+          {
+            id: 'po',
+            header: 'PO #',
+            kind: 'id',
+            cell: (po) => <Data>{po.poNumber}</Data>,
+          },
+          {
+            id: 'orderDate',
+            header: 'Order date',
+            kind: 'date',
+            cell: (po) => <Data>{formatDate(po.orderDate)}</Data>,
+          },
+          {
+            id: 'items',
+            header: 'Items',
+            kind: 'number',
+            cell: (po) => po.lineItems.length,
+          },
+          {
+            id: 'value',
+            header: 'Value',
+            kind: 'money',
+            cell: (po) => <Data>{formatIDR(po.totalValue)}</Data>,
+          },
+          {
+            id: 'status',
+            header: 'Status',
+            kind: 'status',
+            cell: (po) => <StatusPill variant={statusTone(po.status)}>{po.status}</StatusPill>,
+          },
+          {
+            id: 'action',
+            header: 'Action',
+            kind: 'actions',
+            cell: (po) =>
+              confirmAvailability.kind === 'held' ? (
+                <Button
+                  variant="outline"
+                  onClick={() => confirm(po)}
+                  disabled={confirmMutation.isPending}
+                >
+                  Confirm
+                </Button>
+              ) : (
+                <HandoffNotice
+                  availability={confirmAvailability}
+                  testId="handoff-widget-po-confirm"
+                />
+              ),
+          },
+        ]}
+      />
     );
 
   return (

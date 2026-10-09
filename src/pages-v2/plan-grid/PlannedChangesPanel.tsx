@@ -26,6 +26,7 @@ import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import Button from '../../components/ui-v2/Button';
 import Data from '../../components/ui-v2/Data';
+import DataTable, { type Column } from '../../components/ui-v2/DataTable';
 import { HandoffNotice } from '../../components/ui-v2/HandoffNotice';
 import { useVerbAvailabilities } from '../../hooks/useVerbAvailability';
 import { useRefusalText } from '../../hooks/useRefusalText';
@@ -307,6 +308,155 @@ export const PlannedChangesDetails: React.FC<{ open: boolean }> = ({ open }) => 
     });
   };
 
+  const columns: Column<PlanDraftEntry>[] = [
+    {
+      id: 'select',
+      header: <span className="sr-only">{t('planGrid.edit.col.select')}</span>,
+      kind: 'text',
+      className: 'w-8',
+      headerClassName: 'w-8',
+      cell: (e) =>
+        reasonOwed(e) && e.planState === 'PLANNED' ? (
+          <input
+            type="checkbox"
+            data-testid={`plan-select-${e.seamRef}`}
+            aria-label={t('planGrid.edit.bulk.selectRow', { cell: `${e.materialCode} ${e.bucket}` })}
+            checked={picked.has(e.seamRef)}
+            disabled={pushing}
+            onChange={(ev) => toggle(e.seamRef, ev.target.checked)}
+          />
+        ) : null,
+    },
+    {
+      id: 'cell',
+      header: t('planGrid.edit.col.cell'),
+      kind: 'id',
+      cell: (e) => (
+        <>
+          <Data>{e.materialCode}</Data> · <Data>{e.bucket}</Data>
+          {e.supplierId && <span className="font-sans font-normal text-text-secondary"> · {supplierName(e.supplierId)}</span>}
+          <span className="ml-2 inline-flex gap-1 font-sans">
+            <span className="rounded-sm border border-info/30 bg-bg-surface px-1 text-[10px] font-semibold uppercase text-info">
+              {t(e.planState === 'PUSHING' ? 'planGrid.edit.state.pushing' : 'planGrid.plan.planned')}
+            </span>
+            {e.origin === 'PASTE' && (
+              <span
+                className="rounded-sm border border-warning/40 bg-warning-soft px-1 text-[10px] font-semibold uppercase text-warning-hover"
+                title={t('planGrid.edit.externalTitle')}
+              >
+                {t('planGrid.edit.external')}
+              </span>
+            )}
+          </span>
+        </>
+      ),
+    },
+    {
+      id: 'baseline',
+      header: t('planGrid.edit.col.baseline'),
+      kind: 'number',
+      cell: (e) => <Data>{e.baseline === null ? '—' : formatNumber(e.baseline)}</Data>,
+    },
+    {
+      id: 'planned',
+      header: t('planGrid.edit.col.planned'),
+      kind: 'number',
+      cell: (e) => (
+        <>
+          {/* R2 · THE READING: what was typed or pasted, and what it
+              was read as under the seat's convention — "12.000" = 12 KG
+              is a slip the planner can see before it is a requisition. */}
+          <span data-testid={`plan-draft-reading-${e.seamRef}`}>
+            <Data>{t('planGrid.edit.reading', { raw: e.raw, value: formatNumber(e.value), uom: e.uom })}</Data>
+          </span>
+          {magnitudeFlag(e) && e.baseline !== null && (
+            <div
+              className="mt-1 flex flex-col items-end gap-0.5 text-left font-sans text-[11px] text-warning-hover"
+              data-testid={`plan-draft-magnitude-${e.seamRef}`}
+            >
+              <span role="alert">
+                {t(e.value > e.baseline ? 'planGrid.edit.magnitude.high' : 'planGrid.edit.magnitude.low', {
+                  baseline: formatNumber(e.baseline),
+                })}
+              </span>
+              <label className="flex items-center gap-1 text-text-primary">
+                <input
+                  type="checkbox"
+                  data-testid={`plan-draft-confirm-${e.seamRef}`}
+                  checked={e.magnitudeConfirmed === true}
+                  disabled={e.planState === 'PUSHING'}
+                  onChange={(ev) => api.confirmMagnitude(e.seamRef, ev.target.checked)}
+                />
+                {t('planGrid.edit.magnitudeConfirm', { value: formatNumber(e.value), uom: e.uom })}
+              </label>
+            </div>
+          )}
+        </>
+      ),
+    },
+    {
+      id: 'reason',
+      header: t('planGrid.edit.col.reason'),
+      kind: 'text',
+      cell: (e) => (
+        <>
+          {reasonOwed(e) ? (
+            <>
+              <input
+                type="text"
+                aria-label={t('planGrid.edit.reasonFor', { cell: `${e.materialCode} ${e.bucket}` })}
+                placeholder={t('planGrid.push.reasonPlaceholder')}
+                className="w-56 rounded-md border border-border-input bg-white px-2 py-0.5 text-xs"
+                value={e.reason}
+                disabled={e.planState === 'PUSHING'}
+                onChange={(ev) => api.setReason(e.seamRef, ev.target.value)}
+              />
+              {blockedBy(e) === 'REASON_REQUIRED' && (
+                <div className="mt-0.5 text-[11px] text-warning-hover">{t('planGrid.push.reasonRequired')}</div>
+              )}
+            </>
+          ) : (
+            <span className="text-text-tertiary">{t('planGrid.edit.noReasonOwed')}</span>
+          )}
+          {e.failureReason && (
+            <div className="mt-0.5 text-[11px] text-critical" role="alert" data-testid={`plan-draft-failure-${e.seamRef}`}>
+              {pushReason(e.failureReason)}
+            </div>
+          )}
+        </>
+      ),
+    },
+    {
+      id: 'actions',
+      header: '',
+      kind: 'actions',
+      cell: (e) => (
+        <>
+          {canPush(e) && (
+            <button
+              type="button"
+              className="mr-3 text-action-text hover:underline disabled:text-text-tertiary disabled:no-underline"
+              disabled={pushing || e.planState !== 'PLANNED'}
+              onClick={() => void api.push([e.seamRef])}
+              data-testid={`plan-push-row-${e.seamRef}`}
+            >
+              {t('planGrid.edit.push.row')}
+            </button>
+          )}
+          <button
+            type="button"
+            className="text-text-secondary hover:underline disabled:text-text-tertiary"
+            disabled={e.planState === 'PUSHING'}
+            onClick={() => api.remove(e.seamRef)}
+            data-testid={`plan-remove-${e.seamRef}`}
+          >
+            {t('planGrid.edit.remove')}
+          </button>
+        </>
+      ),
+    },
+  ];
+
   return (
     <div className="mt-3 rounded-lg border border-info/30 bg-info-soft" data-testid="plan-draft-details">
       {owedRefs.length > 0 && (
@@ -353,138 +503,15 @@ export const PlannedChangesDetails: React.FC<{ open: boolean }> = ({ open }) => 
       )}
 
       {entries.length > 0 && (
-        <table className="w-full text-xs" data-testid="plan-draft-rows">
-          <thead className="text-left text-text-tertiary">
-            <tr>
-              <th className="w-8 px-4 py-1.5 font-medium">
-                <span className="sr-only">{t('planGrid.edit.col.select')}</span>
-              </th>
-              <th className="px-2 py-1.5 font-medium">{t('planGrid.edit.col.cell')}</th>
-              <th className="px-2 py-1.5 text-right font-medium">{t('planGrid.edit.col.baseline')}</th>
-              <th className="px-2 py-1.5 text-right font-medium">{t('planGrid.edit.col.planned')}</th>
-              <th className="px-2 py-1.5 font-medium">{t('planGrid.edit.col.reason')}</th>
-              <th className="px-4 py-1.5" />
-            </tr>
-          </thead>
-          <tbody>
-            {entries.map((e) => {
-              const owed = reasonOwed(e);
-              return (
-                <tr key={e.seamRef} className="border-t border-info/15 align-top" data-testid={`plan-draft-row-${e.seamRef}`}>
-                  <td className="px-4 py-1.5">
-                    {owed && e.planState === 'PLANNED' && (
-                      <input
-                        type="checkbox"
-                        data-testid={`plan-select-${e.seamRef}`}
-                        aria-label={t('planGrid.edit.bulk.selectRow', { cell: `${e.materialCode} ${e.bucket}` })}
-                        checked={picked.has(e.seamRef)}
-                        disabled={pushing}
-                        onChange={(ev) => toggle(e.seamRef, ev.target.checked)}
-                      />
-                    )}
-                  </td>
-                  <td className="px-2 py-1.5">
-                    <Data>{e.materialCode}</Data> · <Data>{e.bucket}</Data>
-                    {e.supplierId && <span className="text-text-secondary"> · {supplierName(e.supplierId)}</span>}
-                    <span className="ml-2 inline-flex gap-1">
-                      <span className="rounded-sm border border-info/30 bg-bg-surface px-1 text-[10px] font-semibold uppercase text-info">
-                        {t(e.planState === 'PUSHING' ? 'planGrid.edit.state.pushing' : 'planGrid.plan.planned')}
-                      </span>
-                      {e.origin === 'PASTE' && (
-                        <span
-                          className="rounded-sm border border-warning/40 bg-warning-soft px-1 text-[10px] font-semibold uppercase text-warning-hover"
-                          title={t('planGrid.edit.externalTitle')}
-                        >
-                          {t('planGrid.edit.external')}
-                        </span>
-                      )}
-                    </span>
-                  </td>
-                  <td className="px-2 py-1.5 text-right">
-                    <Data>{e.baseline === null ? '—' : formatNumber(e.baseline)}</Data>
-                  </td>
-                  <td className="px-2 py-1.5 text-right">
-                    {/* R2 · THE READING: what was typed or pasted, and what it
-                        was read as under the seat's convention — "12.000" = 12 KG
-                        is a slip the planner can see before it is a requisition. */}
-                    <span data-testid={`plan-draft-reading-${e.seamRef}`}>
-                      <Data>{t('planGrid.edit.reading', { raw: e.raw, value: formatNumber(e.value), uom: e.uom })}</Data>
-                    </span>
-                    {magnitudeFlag(e) && e.baseline !== null && (
-                      <div
-                        className="mt-1 flex flex-col items-end gap-0.5 text-left text-[11px] text-warning-hover"
-                        data-testid={`plan-draft-magnitude-${e.seamRef}`}
-                      >
-                        <span role="alert">
-                          {t(e.value > e.baseline ? 'planGrid.edit.magnitude.high' : 'planGrid.edit.magnitude.low', {
-                            baseline: formatNumber(e.baseline),
-                          })}
-                        </span>
-                        <label className="flex items-center gap-1 text-text-primary">
-                          <input
-                            type="checkbox"
-                            data-testid={`plan-draft-confirm-${e.seamRef}`}
-                            checked={e.magnitudeConfirmed === true}
-                            disabled={e.planState === 'PUSHING'}
-                            onChange={(ev) => api.confirmMagnitude(e.seamRef, ev.target.checked)}
-                          />
-                          {t('planGrid.edit.magnitudeConfirm', { value: formatNumber(e.value), uom: e.uom })}
-                        </label>
-                      </div>
-                    )}
-                  </td>
-                  <td className="px-2 py-1.5">
-                    {owed ? (
-                      <>
-                        <input
-                          type="text"
-                          aria-label={t('planGrid.edit.reasonFor', { cell: `${e.materialCode} ${e.bucket}` })}
-                          placeholder={t('planGrid.push.reasonPlaceholder')}
-                          className="w-56 rounded-md border border-border-input bg-white px-2 py-0.5 text-xs"
-                          value={e.reason}
-                          disabled={e.planState === 'PUSHING'}
-                          onChange={(ev) => api.setReason(e.seamRef, ev.target.value)}
-                        />
-                        {blockedBy(e) === 'REASON_REQUIRED' && (
-                          <div className="mt-0.5 text-[11px] text-warning-hover">{t('planGrid.push.reasonRequired')}</div>
-                        )}
-                      </>
-                    ) : (
-                      <span className="text-text-tertiary">{t('planGrid.edit.noReasonOwed')}</span>
-                    )}
-                    {e.failureReason && (
-                      <div className="mt-0.5 text-[11px] text-critical" role="alert" data-testid={`plan-draft-failure-${e.seamRef}`}>
-                        {pushReason(e.failureReason)}
-                      </div>
-                    )}
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-1.5 text-right">
-                    {canPush(e) && (
-                      <button
-                        type="button"
-                        className="mr-3 text-action-text hover:underline disabled:text-text-tertiary disabled:no-underline"
-                        disabled={pushing || e.planState !== 'PLANNED'}
-                        onClick={() => void api.push([e.seamRef])}
-                        data-testid={`plan-push-row-${e.seamRef}`}
-                      >
-                        {t('planGrid.edit.push.row')}
-                      </button>
-                    )}
-                    <button
-                      type="button"
-                      className="text-text-secondary hover:underline disabled:text-text-tertiary"
-                      disabled={e.planState === 'PUSHING'}
-                      onClick={() => api.remove(e.seamRef)}
-                      data-testid={`plan-remove-${e.seamRef}`}
-                    >
-                      {t('planGrid.edit.remove')}
-                    </button>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+        <DataTable
+          columns={columns}
+          rows={entries}
+          rowKey={(e) => e.seamRef}
+          rowProps={(e) => ({ 'data-testid': `plan-draft-row-${e.seamRef}` })}
+          density="compact"
+          card={false}
+          testId="plan-draft-rows"
+        />
       )}
 
       {refusals.length > 0 && (

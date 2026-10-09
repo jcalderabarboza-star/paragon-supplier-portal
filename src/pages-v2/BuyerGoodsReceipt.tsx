@@ -9,9 +9,8 @@ import {
   Plus,
   FlaskConical,
 } from 'lucide-react';
-import AppShellV2 from '../components/layout-v2/AppShellV2';
-import PageHeader from '../components/ui-v2/PageHeader';
-import PageMetaLine from '../components/ui-v2/PageMetaLine';
+import ListPage from '../components/ui-v2/ListPage';
+import DataTable, { type Column } from '../components/ui-v2/DataTable';
 import ProvenanceMarker from '../components/ui-v2/ProvenanceMarker';
 import KpiCard from '../components/ui-v2/KpiCard';
 import BulkActionsBar from '../components/ui-v2/BulkActionsBar';
@@ -19,10 +18,6 @@ import SubTabs from '../components/ui-v2/SubTabs';
 import FilterChipsBar from '../components/ui-v2/FilterChipsBar';
 import SearchBar from '../components/ui-v2/SearchBar';
 import StatusPill from '../components/ui-v2/StatusPill';
-import Table from '../components/ui-v2/Table';
-import TableHeader, { TableHeaderCell } from '../components/ui-v2/TableHeader';
-import TableRow from '../components/ui-v2/TableRow';
-import TableCell from '../components/ui-v2/TableCell';
 import SidePanel from '../components/ui-v2/SidePanel';
 import Data from '../components/ui-v2/Data';
 import Timeline, { TimelineEvent } from '../components/ui-v2/Timeline';
@@ -779,13 +774,217 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
     if (failed) watchSettle(failed.grId, failed.correlationId, failed.fault);
   };
 
+  const discrepancyColumns: Column<ASN>[] = [
+    {
+      id: 'asn',
+      header: t('goodsReceipt.discrepancy.col.asn'),
+      kind: 'id',
+      cell: (asn) => <Data>{asn.asnNumber}</Data>,
+    },
+    {
+      id: 'po',
+      header: t('goodsReceipt.discrepancy.col.po'),
+      kind: 'id',
+      cell: (asn) => <Data>{asn.poReference}</Data>,
+    },
+    {
+      id: 'carrier',
+      header: t('goodsReceipt.discrepancy.col.carrier'),
+      kind: 'text',
+      cell: (asn) => <span className="text-text-secondary">{asn.carrier}</span>,
+    },
+    {
+      id: 'status',
+      header: t('goodsReceipt.discrepancy.col.status'),
+      kind: 'status',
+      // Tone from the `statusTone` SSoT and the LABEL from `StatusPill`'s own
+      // `statusLabelKey` lookup — the raw canonical token is passed
+      // deliberately. Wrapping it in `el()` first would hand the pill an
+      // already-localized string, which in ID resolves to nothing and falls
+      // through to the Indonesian text as a literal.
+      cell: (asn) => <StatusPill variant={statusTone(asn.status)}>{asn.status}</StatusPill>,
+    },
+    {
+      id: 'resolve',
+      header: ' ',
+      kind: 'actions',
+      cell: (asn) =>
+        resolveAvailability.kind === 'held' ? (
+          <Button
+            variant="outline"
+            disabled={resolveDiscrepancyMutation.isPending}
+            onClick={() => handleResolveDiscrepancy(asn.asnNumber)}
+          >
+            {resolveDiscrepancyMutation.isPending
+              ? t('goodsReceipt.discrepancy.resolving')
+              : t('goodsReceipt.discrepancy.action')}
+          </Button>
+        ) : (
+          <HandoffNotice availability={resolveAvailability} testId="handoff-asn-resolve" />
+        ),
+    },
+  ];
+
+  const receiptColumns: Column<GoodsReceipt>[] = [
+    {
+      id: 'grRefs',
+      header: t('goodsReceipt.table.col.grRefs'),
+      kind: 'id',
+      cell: (g) => (
+        <>
+          <div>
+            <Data>{g.grNumber}</Data>
+          </div>
+          <Data as="div" className="text-xs font-normal text-text-tertiary">
+            {g.asnNumber} · {g.poNumber}
+          </Data>
+        </>
+      ),
+    },
+    {
+      id: 'supplier',
+      header: t('goodsReceipt.table.col.supplier'),
+      kind: 'text',
+      cell: (g) => {
+        const sup = supplierById.get(g.supplierId);
+        return (
+          <>
+            <div className="text-sm text-text-primary">{g.supplierName}</div>
+            <div className="text-xs text-text-tertiary">
+              {sup ? COUNTRY_FLAG[sup.country] ?? sup.country : '—'}
+            </div>
+          </>
+        );
+      },
+    },
+    {
+      id: 'received',
+      header: t('goodsReceipt.table.col.received'),
+      kind: 'date',
+      cell: (g) => <Data>{formatDate(g.receivedDate)}</Data>,
+    },
+    {
+      id: 'receivedBy',
+      header: t('goodsReceipt.table.col.receivedBy'),
+      kind: 'text',
+      cell: (g) => (
+        <span className="text-sm text-text-secondary" data-testid={`gr-receiver-${g.id}`}>
+          {/* ADM-1 — the named receiver when the receipt carries one;
+              the receiving post alone on a receipt that predates it. */}
+          {g.receivedByPerson && isAttributed(g.receivedByPerson)
+            ? personLabel(g.receivedByPerson.person.personId, t)
+            : g.receivedBy}
+        </span>
+      ),
+    },
+    {
+      id: 'items',
+      header: t('goodsReceipt.table.col.items'),
+      kind: 'text',
+      cell: (g) => (
+        <span className="text-sm text-text-primary">
+          {g.inspectionResults.length === 1
+            ? t('goodsReceipt.items.count.one', { count: g.inspectionResults.length })
+            : t('goodsReceipt.items.count.other', { count: g.inspectionResults.length })}
+        </span>
+      ),
+    },
+    {
+      id: 'status',
+      header: t('goodsReceipt.table.col.status'),
+      kind: 'status',
+      cell: (g) => <StatusPill variant={STATUS_VARIANT[g.status]}>{g.status}</StatusPill>,
+    },
+    {
+      id: 'disposition',
+      header: t('goodsReceipt.table.col.disposition'),
+      kind: 'text',
+      cell: (g) => <span className="text-sm text-text-secondary">{el(g.disposition)}</span>,
+    },
+    {
+      id: 'sapDoc',
+      header: t('goodsReceipt.table.col.sapDoc'),
+      kind: 'id',
+      cell: (g) => <Data>{g.sapMaterialDoc ?? '—'}</Data>,
+    },
+    {
+      id: 'open',
+      header: ' ',
+      kind: 'actions',
+      cell: () => <ChevronRight size={16} className="text-text-tertiary inline" />,
+    },
+  ];
+
+  const inspectionColumns: Column<InspectionResult>[] = [
+    {
+      id: 'material',
+      header: t('goodsReceipt.panel.col.material'),
+      kind: 'id',
+      cell: (r) => (
+        <>
+          <Data as="div">{r.materialCode}</Data>
+          <div className="text-xs font-normal font-sans text-text-tertiary truncate max-w-[180px]">
+            {r.description}
+          </div>
+          {r.rejectionReason && (
+            <div className="text-xs font-normal font-sans text-critical mt-1 whitespace-normal">
+              {r.rejectionReason}
+            </div>
+          )}
+        </>
+      ),
+    },
+    {
+      id: 'exp',
+      header: t('goodsReceipt.panel.col.exp'),
+      kind: 'number',
+      cell: (r) => <Data>{formatNumber(r.qtyExpected)}</Data>,
+    },
+    {
+      id: 'recv',
+      header: t('goodsReceipt.panel.col.recv'),
+      kind: 'number',
+      cell: (r) => <Data>{formatNumber(r.qtyReceived)}</Data>,
+    },
+    {
+      id: 'acc',
+      header: t('goodsReceipt.panel.col.acc'),
+      kind: 'number',
+      className: 'text-success',
+      cell: (r) => <Data>{formatNumber(r.qtyAccepted)}</Data>,
+    },
+    {
+      id: 'rej',
+      header: t('goodsReceipt.panel.col.rej'),
+      kind: 'number',
+      className: 'text-critical',
+      cell: (r) => <Data>{formatNumber(r.qtyRejected)}</Data>,
+    },
+    {
+      id: 'checks',
+      header: t('goodsReceipt.panel.col.checks'),
+      kind: 'status',
+      cell: (r) => (
+        <div className="flex flex-wrap gap-1">
+          <StatusPill variant={CHECK_VARIANT[r.visualCheck] ?? 'neutral'}>V</StatusPill>
+          <StatusPill variant={CHECK_VARIANT[r.packagingCheck] ?? 'neutral'}>P</StatusPill>
+          {r.halalSealCheck && (
+            <StatusPill variant={CHECK_VARIANT[r.halalSealCheck] ?? 'neutral'}>H</StatusPill>
+          )}
+          {r.bpomLotCheck && (
+            <StatusPill variant={CHECK_VARIANT[r.bpomLotCheck] ?? 'neutral'}>B</StatusPill>
+          )}
+        </div>
+      ),
+    },
+  ];
+
   return (
-    <AppShellV2>
-      <PageHeader
-        breadcrumb={[t('goodsReceipt.crumb.gr')]}
-        title={t('goodsReceipt.header.title')}
-        subtitle={t('goodsReceipt.header.subtitle')}
-        actions={
+    <ListPage
+      breadcrumb={[t('goodsReceipt.crumb.gr')]}
+      title={t('goodsReceipt.header.title')}
+      subtitle={t('goodsReceipt.header.subtitle')}
+      actions={
           // §73 — ONE NOTICE, AT THE ENTRY, AND THE MEASUREMENT IS WHY.
           // "New GR" opens a four-step wizard whose LAST step fires the whole
           // chain in one handler: t_gr_create -> t_gr_start_inspection ->
@@ -827,9 +1026,8 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
             />
           </div>
         }
-      />
-
-      <PageMetaLine className="mb-6">
+      meta={
+        <>
         {counts.all === 1
           ? t('goodsReceipt.meta.count.one', { count: counts.all })
           : t('goodsReceipt.meta.count.other', { count: counts.all })}{' '}
@@ -838,9 +1036,10 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
             Settle genuinely dispatch, run the E4 enforcement checks and write the
             DR-10 trail. The receipts listed are fixtures. */}
         <ProvenanceMarker capability="goodsReceipts" className="ml-3 align-middle" />
-      </PageMetaLine>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        </>
+      }
+      kpis={
+        <>
         <KpiCard
           eyebrow={t('goodsReceipt.kpi.pending.eyebrow')}
           value={formatNumber(counts.pending)}
@@ -867,9 +1066,10 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
           icon={TrendingDown}
           subtitle={t('goodsReceipt.kpi.rejectionRate.subtitle')}
         />
-      </div>
-
-      {/* ── SHIPMENT DISCREPANCIES ────────────────────────────────────────────
+        </>
+      }
+      lead={
+      /* ── SHIPMENT DISCREPANCIES ────────────────────────────────────────────
           The exit from `Discrepancy`, on the desk that entered it.
 
           ⚠️ **IT IS ITS OWN SECTION RATHER THAN A CONTROL IN THE GR PANEL, AND
@@ -887,10 +1087,10 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
           is being hidden from a narrow seat here: with no flagged ASN there is
           no act for anyone, held or not. When a row EXISTS, a seat without
           `asn:flag` gets the notice in the same cell the button would occupy —
-          which is the rule the grammar actually states. */}
-      {discrepancyAsns.length > 0 && (
+          which is the rule the grammar actually states. */
+      discrepancyAsns.length > 0 && (
         <section
-          className="mb-6 border border-border-subtle rounded-lg bg-white overflow-hidden"
+          className="border border-border-subtle rounded-lg bg-white overflow-hidden"
           data-testid="gr-asn-discrepancies"
         >
           <div className="px-6 py-4 border-b border-border-subtle">
@@ -902,62 +1102,16 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
               {t('goodsReceipt.discrepancy.subtitle')}
             </p>
           </div>
-          <Table>
-            <TableHeader>
-              <TableHeaderCell>{t('goodsReceipt.discrepancy.col.asn')}</TableHeaderCell>
-              <TableHeaderCell>{t('goodsReceipt.discrepancy.col.po')}</TableHeaderCell>
-              <TableHeaderCell>{t('goodsReceipt.discrepancy.col.carrier')}</TableHeaderCell>
-              <TableHeaderCell>{t('goodsReceipt.discrepancy.col.status')}</TableHeaderCell>
-              <TableHeaderCell> </TableHeaderCell>
-            </TableHeader>
-            <tbody>
-              {discrepancyAsns.map((asn) => (
-                <TableRow key={asn.asnNumber}>
-                  <TableCell>
-                    <Data className="text-xs font-bold text-text-primary">
-                      {asn.asnNumber}
-                    </Data>
-                  </TableCell>
-                  <TableCell>
-                    <Data className="text-text-secondary">{asn.poReference}</Data>
-                  </TableCell>
-                  <TableCell className="text-text-secondary">{asn.carrier}</TableCell>
-                  <TableCell>
-                    {/* Tone from the `statusTone` SSoT and the LABEL from
-                        `StatusPill`'s own `statusLabelKey` lookup — the raw
-                        canonical token is passed deliberately. Wrapping it in
-                        `el()` first would hand the pill an already-localized
-                        string, which in ID resolves to nothing and falls
-                        through to the Indonesian text as a literal. */}
-                    <StatusPill variant={statusTone(asn.status)}>
-                      {asn.status}
-                    </StatusPill>
-                  </TableCell>
-                  <TableCell className="text-right whitespace-nowrap">
-                    {resolveAvailability.kind === 'held' ? (
-                      <Button
-                        variant="outline"
-                        disabled={resolveDiscrepancyMutation.isPending}
-                        onClick={() => handleResolveDiscrepancy(asn.asnNumber)}
-                      >
-                        {resolveDiscrepancyMutation.isPending
-                          ? t('goodsReceipt.discrepancy.resolving')
-                          : t('goodsReceipt.discrepancy.action')}
-                      </Button>
-                    ) : (
-                      <HandoffNotice
-                        availability={resolveAvailability}
-                        testId="handoff-asn-resolve"
-                      />
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </tbody>
-          </Table>
+          <DataTable
+            columns={discrepancyColumns}
+            rows={discrepancyAsns}
+            rowKey={(asn) => asn.asnNumber}
+            card={false}
+          />
         </section>
-      )}
-
+      )
+      }
+      tabs={
       <SubTabs<GroupTab>
         options={[
           { id: 'all', label: t('goodsReceipt.tab.all'), count: counts.all },
@@ -974,17 +1128,16 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
         ]}
         value={tab}
         onChange={setTab}
-        className="mb-6"
       />
-
-      <div className="flex flex-wrap items-center gap-3 mb-4">
-        <div className="flex-1 min-w-[280px]">
+      }
+      search={
           <SearchBar
             value={search}
             onChange={setSearch}
             placeholder={t('goodsReceipt.search.placeholder')}
           />
-        </div>
+      }
+      filters={
         <FilterChipsBar<DateFilter>
           options={[
             { id: 'today', label: t('goodsReceipt.filter.today') },
@@ -996,106 +1149,15 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
           value={dateFilter}
           onChange={setDateFilter}
         />
-      </div>
-
-      <div className="border border-border-subtle rounded-lg bg-white overflow-hidden">
-        <Table>
-          <TableHeader>
-            <TableHeaderCell>{t('goodsReceipt.table.col.grRefs')}</TableHeaderCell>
-            <TableHeaderCell>{t('goodsReceipt.table.col.supplier')}</TableHeaderCell>
-            <TableHeaderCell>{t('goodsReceipt.table.col.received')}</TableHeaderCell>
-            <TableHeaderCell>{t('goodsReceipt.table.col.receivedBy')}</TableHeaderCell>
-            <TableHeaderCell>{t('goodsReceipt.table.col.items')}</TableHeaderCell>
-            <TableHeaderCell>{t('goodsReceipt.table.col.status')}</TableHeaderCell>
-            <TableHeaderCell>{t('goodsReceipt.table.col.disposition')}</TableHeaderCell>
-            <TableHeaderCell>{t('goodsReceipt.table.col.sapDoc')}</TableHeaderCell>
-            <TableHeaderCell> </TableHeaderCell>
-          </TableHeader>
-          <tbody>
-            {filtered.map((g) => {
-              const sup = supplierById.get(g.supplierId);
-              return (
-                <TableRow
-                  key={g.id}
-                  className="cursor-pointer"
-                  onClick={() => setSelectedId(g.id)}
-                >
-                  <TableCell>
-                    <div className="font-semibold text-text-primary">
-                      <Data>{g.grNumber}</Data>
-                    </div>
-                    <Data as="div" className="text-xs text-text-tertiary">
-                      {g.asnNumber} · {g.poNumber}
-                    </Data>
-                  </TableCell>
-                  <TableCell>
-                    <div className="text-sm text-text-primary">
-                      {g.supplierName}
-                    </div>
-                    <div className="text-xs text-text-tertiary">
-                      {sup
-                        ? COUNTRY_FLAG[sup.country] ?? sup.country
-                        : '—'}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <span className="text-sm text-text-secondary">
-                      <Data>{formatDate(g.receivedDate)}</Data>
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <span className="text-sm text-text-secondary" data-testid={`gr-receiver-${g.id}`}>
-                      {/* ADM-1 — the named receiver when the receipt carries one;
-                          the receiving post alone on a receipt that predates it. */}
-                      {g.receivedByPerson && isAttributed(g.receivedByPerson)
-                        ? personLabel(g.receivedByPerson.person.personId, t)
-                        : g.receivedBy}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <span className="text-sm text-text-primary">
-                      {g.inspectionResults.length === 1
-                        ? t('goodsReceipt.items.count.one', { count: g.inspectionResults.length })
-                        : t('goodsReceipt.items.count.other', { count: g.inspectionResults.length })}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <StatusPill variant={STATUS_VARIANT[g.status]}>
-                      {g.status}
-                    </StatusPill>
-                  </TableCell>
-                  <TableCell>
-                    <span className="text-sm text-text-secondary">
-                      {el(g.disposition)}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <Data className="text-xs text-text-secondary">
-                      {g.sapMaterialDoc ?? '—'}
-                    </Data>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <ChevronRight
-                      size={16}
-                      className="text-text-tertiary inline"
-                    />
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-            {filtered.length === 0 && (
-              <tr>
-                <td
-                  colSpan={9}
-                  className="py-10 text-center text-sm text-text-tertiary"
-                >
-                  {t('goodsReceipt.table.empty')}
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </Table>
-      </div>
+      }
+    >
+      <DataTable
+        columns={receiptColumns}
+        rows={filtered}
+        rowKey={(g) => g.id}
+        onRowClick={(g) => setSelectedId(g.id)}
+        empty={t('goodsReceipt.table.empty')}
+      />
 
       <SidePanel
         open={!!selected}
@@ -1199,89 +1261,13 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
                 {t('goodsReceipt.panel.lineItems')}
               </div>
               <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableHeaderCell>{t('goodsReceipt.panel.col.material')}</TableHeaderCell>
-                    <TableHeaderCell className="text-right">
-                      {t('goodsReceipt.panel.col.exp')}
-                    </TableHeaderCell>
-                    <TableHeaderCell className="text-right">
-                      {t('goodsReceipt.panel.col.recv')}
-                    </TableHeaderCell>
-                    <TableHeaderCell className="text-right">
-                      {t('goodsReceipt.panel.col.acc')}
-                    </TableHeaderCell>
-                    <TableHeaderCell className="text-right">
-                      {t('goodsReceipt.panel.col.rej')}
-                    </TableHeaderCell>
-                    <TableHeaderCell>{t('goodsReceipt.panel.col.checks')}</TableHeaderCell>
-                  </TableHeader>
-                  <tbody>
-                    {selected.inspectionResults.map((r, i) => (
-                      <TableRow key={i}>
-                        <TableCell>
-                          <Data as="div" className="text-xs text-text-primary">
-                            {r.materialCode}
-                          </Data>
-                          <div className="text-xs text-text-tertiary truncate max-w-[180px]">
-                            {r.description}
-                          </div>
-                          {r.rejectionReason && (
-                            <div className="text-xs text-critical mt-1">
-                              {r.rejectionReason}
-                            </div>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-right text-xs">
-                          <Data>{formatNumber(r.qtyExpected)}</Data>
-                        </TableCell>
-                        <TableCell className="text-right text-xs">
-                          <Data>{formatNumber(r.qtyReceived)}</Data>
-                        </TableCell>
-                        <TableCell className="text-right text-xs text-success">
-                          <Data>{formatNumber(r.qtyAccepted)}</Data>
-                        </TableCell>
-                        <TableCell className="text-right text-xs text-critical">
-                          <Data>{formatNumber(r.qtyRejected)}</Data>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex flex-wrap gap-1">
-                            <StatusPill
-                              variant={CHECK_VARIANT[r.visualCheck] ?? 'neutral'}
-                            >
-                              V
-                            </StatusPill>
-                            <StatusPill
-                              variant={
-                                CHECK_VARIANT[r.packagingCheck] ?? 'neutral'
-                              }
-                            >
-                              P
-                            </StatusPill>
-                            {r.halalSealCheck && (
-                              <StatusPill
-                                variant={
-                                  CHECK_VARIANT[r.halalSealCheck] ?? 'neutral'
-                                }
-                              >
-                                H
-                              </StatusPill>
-                            )}
-                            {r.bpomLotCheck && (
-                              <StatusPill
-                                variant={
-                                  CHECK_VARIANT[r.bpomLotCheck] ?? 'neutral'
-                                }
-                              >
-                                B
-                              </StatusPill>
-                            )}
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </tbody>
-                </Table>
+                <DataTable
+                  columns={inspectionColumns}
+                  rows={selected.inspectionResults}
+                  rowKey={(_r, i) => String(i)}
+                  density="compact"
+                  card={false}
+                />
               </div>
               <div className="text-xs text-text-tertiary mt-2">
                 {t('goodsReceipt.panel.legend')}
@@ -1327,7 +1313,7 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
           }
         />
       )}
-    </AppShellV2>
+    </ListPage>
   );
 };
 

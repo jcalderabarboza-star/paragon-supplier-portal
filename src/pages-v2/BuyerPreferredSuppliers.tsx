@@ -42,9 +42,8 @@ import { useTranslation } from 'react-i18next';
 import { Link, useSearchParams } from 'react-router-dom';
 import { ListPlus } from 'lucide-react';
 
-import AppShellV2 from '../components/layout-v2/AppShellV2';
-import PageHeader from '../components/ui-v2/PageHeader';
-import PageMetaLine from '../components/ui-v2/PageMetaLine';
+import ListPage from '../components/ui-v2/ListPage';
+import DataTable, { type Column } from '../components/ui-v2/DataTable';
 import ProvenanceMarker from '../components/ui-v2/ProvenanceMarker';
 import Button from '../components/ui-v2/Button';
 import SidePanel from '../components/ui-v2/SidePanel';
@@ -372,44 +371,63 @@ const BuyerPreferredSuppliers: React.FC = () => {
   const input =
     'border border-border-subtle rounded px-2 py-1.5 text-sm text-text-primary bg-white';
 
-  const renderRow = (l: PslListing): React.ReactNode => {
-    const shown = pslDisplayStatus(l, PSL_TODAY);
-    return (
-      <tr
-        key={l.id}
-        className="border-b border-border-subtle hover:bg-surface-subtle cursor-pointer"
-        onClick={() => {
-          setSelectedId(l.id);
-          setPending(null);
-          setReason('');
-        }}
-        data-testid={`psl-queue-row-${l.id}`}
-      >
-        <td className="py-3 px-3">
-          <Data>{l.id}</Data>
-        </td>
-        <td className="py-3 px-3 text-text-primary">{supplierName(l.supplierId)}</td>
-        <td className="py-3 px-3">
-          <Data className="text-xs">{pslScopeCodes(l).join(', ')}</Data>
-        </td>
-        <td className="py-3 px-3">
-          <StatusPill variant={statusTone(l.status)}>{t(statusLabelKey(l.status) ?? '', { defaultValue: l.status })}</StatusPill>
-        </td>
-        <td className="py-3 px-3">
-          <StatusPill variant={statusTone(shown)}>{t(statusLabelKey(shown) ?? '', { defaultValue: shown })}</StatusPill>
-        </td>
-        <td className="py-3 px-3">
-          <Data className="text-xs">
-            {formatDate(l.validFrom)} — {formatDate(l.validUntil)}
-          </Data>
-        </td>
-      </tr>
-    );
-  };
+  const columns: Column<PslListing>[] = [
+    {
+      id: 'id',
+      header: 'PSL',
+      kind: 'id',
+      cell: (l) => <Data>{l.id}</Data>,
+    },
+    {
+      id: 'supplier',
+      header: t('psl.queue.col.supplier'),
+      kind: 'text',
+      cell: (l) => supplierName(l.supplierId),
+    },
+    {
+      id: 'scope',
+      header: t('psl.queue.col.scope'),
+      kind: 'id',
+      // A list of codes, so it may wrap where a single code may not.
+      cell: (l) => <Data className="whitespace-normal">{pslScopeCodes(l).join(', ')}</Data>,
+    },
+    {
+      id: 'status',
+      header: t('psl.queue.col.status'),
+      kind: 'status',
+      cell: (l) => (
+        <StatusPill variant={statusTone(l.status)}>
+          {t(statusLabelKey(l.status) ?? '', { defaultValue: l.status })}
+        </StatusPill>
+      ),
+    },
+    {
+      id: 'lifecycle',
+      header: t('psl.queue.col.lifecycle'),
+      kind: 'status',
+      cell: (l) => {
+        const shown = pslDisplayStatus(l, PSL_TODAY);
+        return (
+          <StatusPill variant={statusTone(shown)}>
+            {t(statusLabelKey(shown) ?? '', { defaultValue: shown })}
+          </StatusPill>
+        );
+      },
+    },
+    {
+      id: 'validity',
+      header: t('psl.queue.col.validity'),
+      kind: 'date',
+      cell: (l) => (
+        <Data>
+          {formatDate(l.validFrom)} — {formatDate(l.validUntil)}
+        </Data>
+      ),
+    },
+  ];
 
   return (
-    <AppShellV2>
-      <PageHeader
+    <ListPage
         breadcrumb={CRUMB}
         title={t('psl.queue.title')}
         subtitle={t('psl.queue.subtitle')}
@@ -431,32 +449,31 @@ const BuyerPreferredSuppliers: React.FC = () => {
             <HandoffNotice availability={proposeAvailability} testId="handoff-psl-propose" />
           )
         }
-      />
-
-      <PageMetaLine className="-mt-6 mb-4">
-        {/* The list DISPATCHES (gate-1 LIVE) and is SEEDED (gate-2 shut). */}
-        <ProvenanceMarker capability="psl" className="align-middle" />
-      </PageMetaLine>
-
-      <div className="flex gap-2 mb-4">
-        {TABS.map((k) => (
-          <button
-            key={k}
-            type="button"
-            onClick={() => setTab(k)}
-            data-testid={`psl-queue-tab-${k}`}
-            className={`text-sm px-3 py-1.5 rounded border ${
-              tab === k
-                ? 'border-action text-action-text'
-                : 'border-border-subtle text-text-secondary'
-            }`}
-          >
-            {t(`psl.queue.tab.${k}`)}
-            {` (${ROWS_OF[k].length})`}
-          </button>
-        ))}
-      </div>
-
+        meta={
+          /* The list DISPATCHES (gate-1 LIVE) and is SEEDED (gate-2 shut). */
+          <ProvenanceMarker capability="psl" className="align-middle" />
+        }
+        tabs={
+          <div className="flex gap-2">
+            {TABS.map((k) => (
+              <button
+                key={k}
+                type="button"
+                onClick={() => setTab(k)}
+                data-testid={`psl-queue-tab-${k}`}
+                className={`text-sm px-3 py-1.5 rounded border ${
+                  tab === k
+                    ? 'border-action text-action-text'
+                    : 'border-border-subtle text-text-secondary'
+                }`}
+              >
+                {t(`psl.queue.tab.${k}`)}
+                {` (${ROWS_OF[k].length})`}
+              </button>
+            ))}
+          </div>
+        }
+      >
       {isLoading ? <LoadingState /> : null}
       {isError ? <ErrorState error={error} breadcrumb={CRUMB} /> : null}
       {!isLoading && !isError && rows.length === 0 ? (
@@ -469,21 +486,18 @@ const BuyerPreferredSuppliers: React.FC = () => {
       ) : null}
 
       {!isLoading && !isError && rows.length > 0 ? (
-        <div className="border border-border-subtle rounded-lg bg-white overflow-hidden">
-          <table className="w-full text-sm" data-testid="psl-queue-table">
-            <thead className="bg-surface-subtle text-text-tertiary text-xs uppercase">
-              <tr>
-                <th className="text-left py-2 px-3">PSL</th>
-                <th className="text-left py-2 px-3">{t('psl.queue.col.supplier')}</th>
-                <th className="text-left py-2 px-3">{t('psl.queue.col.scope')}</th>
-                <th className="text-left py-2 px-3">{t('psl.queue.col.status')}</th>
-                <th className="text-left py-2 px-3">{t('psl.queue.col.lifecycle')}</th>
-                <th className="text-left py-2 px-3">{t('psl.queue.col.validity')}</th>
-              </tr>
-            </thead>
-            <tbody>{rows.map(renderRow)}</tbody>
-          </table>
-        </div>
+        <DataTable<PslListing>
+          testId="psl-queue-table"
+          columns={columns}
+          rows={rows}
+          rowKey={(l) => l.id}
+          onRowClick={(l) => {
+            setSelectedId(l.id);
+            setPending(null);
+            setReason('');
+          }}
+          rowProps={(l) => ({ 'data-testid': `psl-queue-row-${l.id}` })}
+        />
       ) : null}
 
       {/* ── THE DECIDE PANEL ────────────────────────────────────────────────
@@ -739,7 +753,7 @@ const BuyerPreferredSuppliers: React.FC = () => {
           </div>
         </div>
       </SidePanel>
-    </AppShellV2>
+    </ListPage>
   );
 };
 

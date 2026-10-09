@@ -3,10 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { ShoppingCart } from 'lucide-react';
 import ExpandableWidget from '../../components/ui-v2/ExpandableWidget';
-import Table from '../../components/ui-v2/Table';
-import TableHeader, { TableHeaderCell } from '../../components/ui-v2/TableHeader';
-import TableRow from '../../components/ui-v2/TableRow';
-import TableCell from '../../components/ui-v2/TableCell';
+import DataTable from '../../components/ui-v2/DataTable';
 import Data from '../../components/ui-v2/Data';
 import StatusPill from '../../components/ui-v2/StatusPill';
 import RecordRowLink from './RecordRowLink';
@@ -52,45 +49,49 @@ const BuyerOpenPoWidget: React.FC = () => {
     count === 0 ? (
       <div className="text-sm text-text-tertiary">{t('widget.openPo.empty')}</div>
     ) : (
-      <Table>
-        <TableHeader>
-          <TableHeaderCell>{t('widget.openPo.col.po')}</TableHeaderCell>
-          <TableHeaderCell>{t('widget.openPo.col.supplier')}</TableHeaderCell>
-          <TableHeaderCell>{t('widget.openPo.col.orderDate')}</TableHeaderCell>
-          <TableHeaderCell>{t('widget.openPo.col.status')}</TableHeaderCell>
-        </TableHeader>
-        <tbody>
-          {open.map((po) => (
-            <TableRow key={po.id} className="relative">
-              <TableCell>
-                <RecordRowLink
-                  path="/buyer/orders"
-                  id={po.id}
-                  name={po.poNumber}
-                  label={
-                    <Data className="text-xs font-bold text-text-primary">
-                      {po.poNumber}
-                    </Data>
-                  }
-                />
-              </TableCell>
-              <TableCell className="text-text-secondary">
-                {po.supplierName}
-              </TableCell>
-              <TableCell className="whitespace-nowrap text-text-secondary">
-                <Data>{formatDate(po.orderDate)}</Data>
-              </TableCell>
-              <TableCell>
-                {/* The status pill already SAYS Sent or Viewed. A second chip
-                    repeating "not acknowledged" beside it would be the same
-                    fact twice, and the retired one ('>48h') was a different,
-                    clock-bound claim that no longer exists. */}
-                <StatusPill variant={statusTone(po.status)}>{po.status}</StatusPill>
-              </TableCell>
-            </TableRow>
-          ))}
-        </tbody>
-      </Table>
+      <DataTable
+        card={false}
+        rows={open}
+        rowKey={(po) => po.id}
+        rowProps={() => ({ className: 'relative' })}
+        columns={[
+          {
+            id: 'po',
+            header: t('widget.openPo.col.po'),
+            kind: 'id',
+            cell: (po) => (
+              <RecordRowLink
+                path="/buyer/orders"
+                id={po.id}
+                name={po.poNumber}
+                label={<Data>{po.poNumber}</Data>}
+              />
+            ),
+          },
+          {
+            id: 'supplier',
+            header: t('widget.openPo.col.supplier'),
+            kind: 'text',
+            cell: (po) => <span className="text-text-secondary">{po.supplierName}</span>,
+          },
+          {
+            id: 'orderDate',
+            header: t('widget.openPo.col.orderDate'),
+            kind: 'date',
+            cell: (po) => <Data>{formatDate(po.orderDate)}</Data>,
+          },
+          /* The status pill already SAYS Sent or Viewed. A second chip
+             repeating "not acknowledged" beside it would be the same
+             fact twice, and the retired one ('>48h') was a different,
+             clock-bound claim that no longer exists. */
+          {
+            id: 'status',
+            header: t('widget.openPo.col.status'),
+            kind: 'status',
+            cell: (po) => <StatusPill variant={statusTone(po.status)}>{po.status}</StatusPill>,
+          },
+        ]}
+      />
     );
 
   return (

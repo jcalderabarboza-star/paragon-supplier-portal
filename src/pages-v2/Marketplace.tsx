@@ -3,18 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Globe2, Users, FileText, Clock } from 'lucide-react';
 import { useCategoryLabel } from '../hooks/useCategoryLabel';
-import AppShellV2 from '../components/layout-v2/AppShellV2';
-import PageHeader from '../components/ui-v2/PageHeader';
-import PageMetaLine from '../components/ui-v2/PageMetaLine';
 import ProvenanceMarker from '../components/ui-v2/ProvenanceMarker';
 import KpiCard from '../components/ui-v2/KpiCard';
 import SearchBar from '../components/ui-v2/SearchBar';
 import SupplierCard from '../components/ui-v2/SupplierCard';
 import StatusPill from '../components/ui-v2/StatusPill';
-import Table from '../components/ui-v2/Table';
-import TableHeader, { TableHeaderCell } from '../components/ui-v2/TableHeader';
-import TableRow from '../components/ui-v2/TableRow';
-import TableCell from '../components/ui-v2/TableCell';
+import DataTable from '../components/ui-v2/DataTable';
+import ListPage from '../components/ui-v2/ListPage';
 import LoadingState from '../components/ui-v2/LoadingState';
 import ErrorState from '../components/ui-v2/ErrorState';
 import EmptyState from '../components/ui-v2/EmptyState';
@@ -122,83 +117,79 @@ const Marketplace: React.FC = () => {
     );
 
   return (
-    <AppShellV2>
-      <PageHeader
-        breadcrumb={MARKETPLACE_CRUMB}
-        title={t('marketplace.header.title')}
-        subtitle={t('marketplace.header.subtitle')}
-      />
-
-      {/* D-CENSUS-8 — MARKER-SCOPE-01. This page did carry a "Sample data" badge, but
+    <ListPage
+      breadcrumb={MARKETPLACE_CRUMB}
+      title={t('marketplace.header.title')}
+      subtitle={t('marketplace.header.subtitle')}
+      /* D-CENSUS-8 — MARKER-SCOPE-01. This page did carry a "Sample data" badge, but
           only on the RFQ section below; the supplier grid and the four KPI tiles above
           it — the page's actual claim — were unmarked, and a section badge reads as
           scoped to its section. The page-level marker states the fact once, for the
-          whole route. */}
-      <PageMetaLine className="-mt-6 mb-6">
-        <ProvenanceMarker capability="suppliers" />
-      </PageMetaLine>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 mb-8">
-        <KpiCard
-          eyebrow={t('marketplace.kpi.totalSuppliers.eyebrow')}
-          value={stats.total.toString()}
-          subtitle={t('marketplace.kpi.totalSuppliers.subtitle')}
-          icon={Users}
-        />
-        <KpiCard
-          eyebrow={t('marketplace.kpi.countries.eyebrow')}
-          value={stats.countries.toString()}
-          subtitle={t('marketplace.kpi.countries.subtitle')}
-          icon={Globe2}
-        />
-        <KpiCard
-          eyebrow={t('marketplace.kpi.activeRfqs.eyebrow')}
-          value={stats.activeRfqs.toString()}
-          subtitle={t('marketplace.kpi.activeRfqs.subtitle')}
-          icon={FileText}
-        />
-        <KpiCard
-          eyebrow={t('marketplace.kpi.onboarding.eyebrow')}
-          value="12d"
-          subtitle={t('marketplace.kpi.onboarding.subtitle')}
-          icon={Clock}
-        />
-      </div>
-
-      <div className="mb-5">
-        <div className="text-label text-text-tertiary uppercase mb-2">
-          {t('marketplace.filter.byCategory')}
+          whole route. */
+      meta={<ProvenanceMarker capability="suppliers" />}
+      kpis={
+        <>
+          <KpiCard
+            eyebrow={t('marketplace.kpi.totalSuppliers.eyebrow')}
+            value={stats.total.toString()}
+            subtitle={t('marketplace.kpi.totalSuppliers.subtitle')}
+            icon={Users}
+          />
+          <KpiCard
+            eyebrow={t('marketplace.kpi.countries.eyebrow')}
+            value={stats.countries.toString()}
+            subtitle={t('marketplace.kpi.countries.subtitle')}
+            icon={Globe2}
+          />
+          <KpiCard
+            eyebrow={t('marketplace.kpi.activeRfqs.eyebrow')}
+            value={stats.activeRfqs.toString()}
+            subtitle={t('marketplace.kpi.activeRfqs.subtitle')}
+            icon={FileText}
+          />
+          <KpiCard
+            eyebrow={t('marketplace.kpi.onboarding.eyebrow')}
+            value="12d"
+            subtitle={t('marketplace.kpi.onboarding.subtitle')}
+            icon={Clock}
+          />
+        </>
+      }
+      filters={
+        <div>
+          <div className="text-label text-text-tertiary uppercase mb-2">
+            {t('marketplace.filter.byCategory')}
+          </div>
+          <div className="inline-flex flex-wrap items-center gap-1 bg-bg-hover border border-border-subtle rounded-md p-1">
+            {CATEGORIES.map((cat) => {
+              const active = selectedCats.includes(cat);
+              return (
+                <button
+                  key={cat}
+                  type="button"
+                  onClick={() => toggleCat(cat)}
+                  aria-pressed={active}
+                  className={`flex items-center px-3 py-1.5 text-sm font-medium rounded-[6px] transition-all duration-150 cursor-pointer ${
+                    active
+                      ? 'bg-white text-text-primary shadow-sm'
+                      : 'bg-transparent text-text-tertiary hover:text-text-secondary'
+                  }`}
+                >
+                  {cl(cat)}
+                </button>
+              );
+            })}
+          </div>
         </div>
-        <div className="inline-flex flex-wrap items-center gap-1 bg-bg-hover border border-border-subtle rounded-md p-1">
-          {CATEGORIES.map((cat) => {
-            const active = selectedCats.includes(cat);
-            return (
-              <button
-                key={cat}
-                type="button"
-                onClick={() => toggleCat(cat)}
-                aria-pressed={active}
-                className={`flex items-center px-3 py-1.5 text-sm font-medium rounded-[6px] transition-all duration-150 cursor-pointer ${
-                  active
-                    ? 'bg-white text-text-primary shadow-sm'
-                    : 'bg-transparent text-text-tertiary hover:text-text-secondary'
-                }`}
-              >
-                {cl(cat)}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      <div className="mb-6">
+      }
+      search={
         <SearchBar
           value={search}
           onChange={setSearch}
           placeholder={t('marketplace.search.placeholder')}
         />
-      </div>
-
+      }
+    >
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5 mb-10">
         {filtered.map((s) => (
           <SupplierCard
@@ -248,36 +239,45 @@ const Marketplace: React.FC = () => {
               control was a duplicate of the surface it sat on, and nothing would
               have changed had it worked. */}
         </div>
-        <Table>
-          <TableHeader>
-            <TableHeaderCell>{t('marketplace.rfq.col.rfq')}</TableHeaderCell>
-            <TableHeaderCell>{t('marketplace.rfq.col.material')}</TableHeaderCell>
-            <TableHeaderCell>{t('marketplace.rfq.col.quantity')}</TableHeaderCell>
-            <TableHeaderCell>{t('marketplace.rfq.col.deadline')}</TableHeaderCell>
-            <TableHeaderCell>{t('marketplace.rfq.col.status')}</TableHeaderCell>
-          </TableHeader>
-          <tbody>
-            {OPEN_RFQS.map((r) => (
-              <TableRow key={r.num}>
-                <TableCell className="text-xs text-text-primary">
-                  <Data>{r.num}</Data>
-                </TableCell>
-                <TableCell className="text-text-secondary">
-                  {r.material}
-                </TableCell>
-                <TableCell className="text-text-secondary"><Data>{r.qty}</Data></TableCell>
-                <TableCell className="text-text-secondary">
-                  <Data>{r.deadline}</Data>
-                </TableCell>
-                <TableCell>
-                  <StatusPill variant="info">Open</StatusPill>
-                </TableCell>
-              </TableRow>
-            ))}
-          </tbody>
-        </Table>
+        <DataTable<(typeof OPEN_RFQS)[number]>
+          card={false}
+          rows={OPEN_RFQS}
+          rowKey={(r) => r.num}
+          columns={[
+            {
+              id: 'rfq',
+              header: t('marketplace.rfq.col.rfq'),
+              kind: 'id',
+              cell: (r) => <Data>{r.num}</Data>,
+            },
+            {
+              id: 'material',
+              header: t('marketplace.rfq.col.material'),
+              kind: 'text',
+              cell: (r) => <span className="text-text-secondary">{r.material}</span>,
+            },
+            {
+              id: 'quantity',
+              header: t('marketplace.rfq.col.quantity'),
+              kind: 'number',
+              cell: (r) => <Data>{r.qty}</Data>,
+            },
+            {
+              id: 'deadline',
+              header: t('marketplace.rfq.col.deadline'),
+              kind: 'date',
+              cell: (r) => <Data>{r.deadline}</Data>,
+            },
+            {
+              id: 'status',
+              header: t('marketplace.rfq.col.status'),
+              kind: 'status',
+              cell: () => <StatusPill variant="info">Open</StatusPill>,
+            },
+          ]}
+        />
       </section>
-    </AppShellV2>
+    </ListPage>
   );
 };
 

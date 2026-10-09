@@ -23,9 +23,6 @@ import {
   Wallet,
   LucideIcon,
 } from 'lucide-react';
-import AppShellV2 from '../components/layout-v2/AppShellV2';
-import PageHeader from '../components/ui-v2/PageHeader';
-import PageMetaLine from '../components/ui-v2/PageMetaLine';
 import ProvenanceMarker from '../components/ui-v2/ProvenanceMarker';
 import KpiCard from '../components/ui-v2/KpiCard';
 import BulkActionsBar from '../components/ui-v2/BulkActionsBar';
@@ -37,10 +34,8 @@ import StatusPill from '../components/ui-v2/StatusPill';
 import NextActLine from '../components/ui-v2/NextActLine';
 import { statusTone } from '../lib/statusTone';
 import { stopName } from '../lib/nameStop';
-import Table from '../components/ui-v2/Table';
-import TableHeader, { TableHeaderCell } from '../components/ui-v2/TableHeader';
-import TableRow from '../components/ui-v2/TableRow';
-import TableCell from '../components/ui-v2/TableCell';
+import DataTable, { type Column } from '../components/ui-v2/DataTable';
+import ListPage from '../components/ui-v2/ListPage';
 import SidePanel from '../components/ui-v2/SidePanel';
 import Timeline, { TimelineEvent } from '../components/ui-v2/Timeline';
 import LoadingState from '../components/ui-v2/LoadingState';
@@ -371,10 +366,189 @@ const BuyerOrders: React.FC = () => {
       })
     : '';
 
+  const columns: Column<PurchaseOrder>[] = [
+    {
+      id: 'po',
+      header: t('buyerOrders.table.col.po'),
+      kind: 'id',
+      cell: (po) => (
+        <>
+          <Data as="div">{po.poNumber}</Data>
+          {po.prReference && (
+            <Data as="div" className="text-xs font-normal text-text-tertiary mt-0.5">
+              {po.prReference}
+            </Data>
+          )}
+        </>
+      ),
+    },
+    {
+      id: 'supplier',
+      header: t('buyerOrders.table.col.supplier'),
+      kind: 'text',
+      cell: (po) => {
+        const country = supplierCountryById.get(po.supplierId) ?? '';
+        return (
+          <>
+            <div className="text-sm text-text-primary">{po.supplierName}</div>
+            {country && (
+              <div className="text-xs text-text-tertiary mt-0.5">
+                {COUNTRY_FLAG[country] ?? country}
+              </div>
+            )}
+          </>
+        );
+      },
+    },
+    {
+      id: 'material',
+      header: t('buyerOrders.table.col.material'),
+      kind: 'text',
+      cell: (po) => {
+        const firstLine = po.lineItems[0];
+        const moreLines = po.lineItems.length - 1;
+        return (
+          <>
+            <div className="text-sm text-text-secondary truncate max-w-[18rem]">
+              {firstLine?.description ?? '—'}
+            </div>
+            {moreLines > 0 && (
+              <div className="text-xs text-text-tertiary mt-0.5">
+                {t(
+                  moreLines === 1
+                    ? 'buyerOrders.table.moreLines.one'
+                    : 'buyerOrders.table.moreLines.other',
+                  { count: moreLines },
+                )}
+              </div>
+            )}
+          </>
+        );
+      },
+    },
+    {
+      id: 'orderDate',
+      header: t('buyerOrders.table.col.orderDate'),
+      kind: 'date',
+      cell: (po) => <Data>{formatDate(po.orderDate)}</Data>,
+    },
+    {
+      id: 'delivery',
+      header: t('buyerOrders.table.col.delivery'),
+      kind: 'date',
+      cell: (po) => {
+        const overdue = isOverdue(po);
+        return (
+          <>
+            <div className={overdue ? 'text-critical font-semibold' : undefined}>
+              <Data>{formatDate(po.requestedDeliveryDate)}</Data>
+            </div>
+            {overdue && (
+              <div className="text-xs text-critical mt-0.5 font-sans">
+                {t('buyerOrders.table.overdue', { count: po.daysOverdue })}
+              </div>
+            )}
+          </>
+        );
+      },
+    },
+    {
+      id: 'value',
+      header: t('buyerOrders.table.col.value'),
+      kind: 'money',
+      cell: (po) => <Data>{formatIDR(po.totalValue)}</Data>,
+    },
+    {
+      id: 'channel',
+      header: t('buyerOrders.table.col.channel'),
+      kind: 'text',
+      cell: (po) => {
+        const Channel = CHANNEL_ICON[po.channel];
+        return (
+          <span className="inline-flex items-center gap-1.5 text-sm text-text-secondary">
+            <Channel size={14} className="text-text-tertiary" />
+            {po.channel}
+          </span>
+        );
+      },
+    },
+    {
+      id: 'status',
+      header: t('buyerOrders.table.col.status'),
+      kind: 'status',
+      cell: (po) => (
+        <StatusPill variant={statusTone(po.status)}>{po.status}</StatusPill>
+      ),
+    },
+    {
+      id: 'actions',
+      header: t('buyerOrders.table.col.actions'),
+      kind: 'actions',
+      cell: () => (
+        <ChevronRight size={16} className="text-text-tertiary inline-block" />
+      ),
+    },
+  ];
+
+  const showConfirmed = selectedPO !== null && STATUS_RANK[selectedPO.status] >= 4;
+  const lineColumns: Column<PurchaseOrder['lineItems'][number]>[] = [
+    {
+      id: 'material',
+      header: t('buyerOrders.lines.col.material'),
+      kind: 'text',
+      cell: (li) => (
+        <>
+          <Data as="div" className="text-xs text-text-tertiary">
+            {li.materialCode}
+          </Data>
+          <div className="text-text-primary mt-0.5">{li.description}</div>
+        </>
+      ),
+    },
+    {
+      id: 'qty',
+      header: t('buyerOrders.lines.col.qty'),
+      kind: 'number',
+      className: 'whitespace-nowrap',
+      cell: (li) => (
+        <>
+          <Data>{formatNumber(li.quantity)} {li.uom}</Data>
+          {/* OPS-3 — what the supplier confirmed, under what was
+              ordered. In the same cell: a fifth column pushed
+              the line total out of the panel. */}
+          {showConfirmed && (
+            <div
+              className={`mt-0.5 text-[11px] ${
+                li.confirmedQty < li.quantity
+                  ? 'text-warning-hover font-semibold'
+                  : 'text-text-tertiary'
+              }`}
+              data-testid={`buyer-po-line-confirmed-${li.id}`}
+            >
+              <div className="font-sans">{t('buyerOrders.lines.col.confirmed')}</div>
+              <Data>{formatNumber(li.confirmedQty)} {li.uom}</Data>
+            </div>
+          )}
+        </>
+      ),
+    },
+    {
+      id: 'unit',
+      header: t('buyerOrders.lines.col.unit'),
+      kind: 'money',
+      cell: (li) => <Data>{formatIDR(li.unitPrice)}</Data>,
+    },
+    {
+      id: 'lineTotal',
+      header: t('buyerOrders.lines.col.lineTotal'),
+      kind: 'money',
+      cell: (li) => <Data>{formatIDR(lineTotal(li))}</Data>,
+    },
+  ];
+
   return (
-    <AppShellV2>
-      <PageHeader
-        breadcrumb={ORDERS_CRUMB}
+    <ListPage
+      breadcrumb={ORDERS_CRUMB}
         title={t('buyerOrders.header.title')}
         subtitle={t('buyerOrders.header.subtitle')}
         actions={
@@ -413,23 +587,23 @@ const BuyerOrders: React.FC = () => {
             }}
           />
         }
-      />
-
-      <PageMetaLine className="-mt-6 mb-6">
-        {t(
-          orders.length === 1
-            ? 'buyerOrders.meta.summary.one'
-            : 'buyerOrders.meta.summary.other',
-          { count: orders.length, date: formatDate(maxOrderDate) },
-        )}
-        {/* D-CENSUS-8 — PARTLY REAL, so both axes render. The PO feed is fixture,
-            but `purchaseOrder` is a wired CommandTarget: a supplier confirm/reject
-            genuinely mutates what this page lists and writes the DR-10 trail. A
-            flat "Sample" here would understate a real signal. */}
-        <ProvenanceMarker capability="purchaseOrders" className="ml-3 align-middle" />
-      </PageMetaLine>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 mb-8">
+      meta={
+        <>
+          {t(
+            orders.length === 1
+              ? 'buyerOrders.meta.summary.one'
+              : 'buyerOrders.meta.summary.other',
+            { count: orders.length, date: formatDate(maxOrderDate) },
+          )}
+          {/* D-CENSUS-8 — PARTLY REAL, so both axes render. The PO feed is fixture,
+              but `purchaseOrder` is a wired CommandTarget: a supplier confirm/reject
+              genuinely mutates what this page lists and writes the DR-10 trail. A
+              flat "Sample" here would understate a real signal. */}
+          <ProvenanceMarker capability="purchaseOrders" className="ml-3 align-middle" />
+        </>
+      }
+      kpis={
+        <>
         <KpiCard
           eyebrow={t('buyerOrders.kpi.open.eyebrow')}
           value={kpis.open.toString()}
@@ -458,8 +632,9 @@ const BuyerOrders: React.FC = () => {
           }
           icon={AlertTriangle}
         />
-      </div>
-
+        </>
+      }
+      tabs={
       <SubTabs
         options={[
           { id: 'all', label: t('buyerOrders.tab.all'), count: counts.all },
@@ -471,10 +646,9 @@ const BuyerOrders: React.FC = () => {
         ]}
         value={group}
         onChange={setGroup}
-        className="mb-5"
       />
-
-      <div className="flex items-center justify-between gap-4 mb-4">
+      }
+      filters={
         <FilterChipsBar
           options={[
             { id: '7d', label: t('buyerOrders.range.7d') },
@@ -485,132 +659,23 @@ const BuyerOrders: React.FC = () => {
           value={range}
           onChange={setRange}
         />
-      </div>
-
-      <div className="mb-4">
+      }
+      search={
         <SearchBar
           value={search}
           onChange={setSearch}
           placeholder={t('buyerOrders.search.placeholder')}
         />
-      </div>
+      }
+    >
 
-      <div className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm overflow-hidden">
-        <Table>
-          <TableHeader>
-            <TableHeaderCell>{t('buyerOrders.table.col.po')}</TableHeaderCell>
-            <TableHeaderCell>{t('buyerOrders.table.col.supplier')}</TableHeaderCell>
-            <TableHeaderCell>{t('buyerOrders.table.col.material')}</TableHeaderCell>
-            <TableHeaderCell>{t('buyerOrders.table.col.orderDate')}</TableHeaderCell>
-            <TableHeaderCell>{t('buyerOrders.table.col.delivery')}</TableHeaderCell>
-            <TableHeaderCell className="text-right">{t('buyerOrders.table.col.value')}</TableHeaderCell>
-            <TableHeaderCell>{t('buyerOrders.table.col.channel')}</TableHeaderCell>
-            <TableHeaderCell>{t('buyerOrders.table.col.status')}</TableHeaderCell>
-            <TableHeaderCell className="text-right">{t('buyerOrders.table.col.actions')}</TableHeaderCell>
-          </TableHeader>
-          <tbody>
-            {filtered.map((po) => {
-              const Channel = CHANNEL_ICON[po.channel];
-              const overdue = isOverdue(po);
-              const country = supplierCountryById.get(po.supplierId) ?? '';
-              const firstLine = po.lineItems[0];
-              const moreLines = po.lineItems.length - 1;
-              return (
-                <TableRow
-                  key={po.id}
-                  className="cursor-pointer"
-                  onClick={() => setSelectedPO(po)}
-                >
-                  <TableCell>
-                    <Data as="div" className="font-semibold text-text-primary">
-                      {po.poNumber}
-                    </Data>
-                    {po.prReference && (
-                      <Data as="div" className="text-xs text-text-tertiary mt-0.5">
-                        {po.prReference}
-                      </Data>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <div className="text-sm text-text-primary">
-                      {po.supplierName}
-                    </div>
-                    {country && (
-                      <div className="text-xs text-text-tertiary mt-0.5">
-                        {COUNTRY_FLAG[country] ?? country}
-                      </div>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <div className="text-sm text-text-secondary truncate max-w-[18rem]">
-                      {firstLine?.description ?? '—'}
-                    </div>
-                    {moreLines > 0 && (
-                      <div className="text-xs text-text-tertiary mt-0.5">
-                        {t(
-                          moreLines === 1
-                            ? 'buyerOrders.table.moreLines.one'
-                            : 'buyerOrders.table.moreLines.other',
-                          { count: moreLines },
-                        )}
-                      </div>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-sm text-text-secondary whitespace-nowrap">
-                    <Data>{formatDate(po.orderDate)}</Data>
-                  </TableCell>
-                  <TableCell>
-                    <div
-                      className={`text-sm whitespace-nowrap ${
-                        overdue
-                          ? 'text-critical font-semibold'
-                          : 'text-text-secondary'
-                      }`}
-                    >
-                      <Data>{formatDate(po.requestedDeliveryDate)}</Data>
-                    </div>
-                    {overdue && (
-                      <div className="text-xs text-critical mt-0.5">
-                        {t('buyerOrders.table.overdue', { count: po.daysOverdue })}
-                      </div>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-right font-semibold text-text-primary whitespace-nowrap">
-                    <Data>{formatIDR(po.totalValue)}</Data>
-                  </TableCell>
-                  <TableCell>
-                    <span className="inline-flex items-center gap-1.5 text-sm text-text-secondary">
-                      <Channel size={14} className="text-text-tertiary" />
-                      {po.channel}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <StatusPill variant={statusTone(po.status)}>
-                      {po.status}
-                    </StatusPill>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <ChevronRight
-                      size={16}
-                      className="text-text-tertiary inline-block"
-                    />
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-            {filtered.length === 0 && (
-              <tr>
-                <td
-                  colSpan={9}
-                  className="text-center text-sm text-text-tertiary py-10"
-                >
-                  {t('buyerOrders.table.empty')}
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </Table>
-      </div>
+      <DataTable
+        columns={columns}
+        rows={filtered}
+        rowKey={(po) => po.id}
+        onRowClick={(po) => setSelectedPO(po)}
+        empty={t('buyerOrders.table.empty')}
+      />
 
       {/* ⚠️ THE PANEL HAS NO FOOTER, AND BOTH CONTROLS THAT WERE THERE ARE GONE
           RATHER THAN WIRED — H3, each for its own reason. `View full details`
@@ -736,66 +801,13 @@ const BuyerOrders: React.FC = () => {
                 {t('buyerOrders.panel.lineItems')}
               </h3>
               <div className="border border-border-subtle rounded-md overflow-hidden">
-                <table className="w-full text-xs">
-                  <thead className="bg-bg-hover text-text-tertiary uppercase tracking-wider">
-                    <tr>
-                      <th className="text-left px-3 py-2 font-semibold">
-                        {t('buyerOrders.lines.col.material')}
-                      </th>
-                      <th className="text-right px-3 py-2 font-semibold">
-                        {t('buyerOrders.lines.col.qty')}
-                      </th>
-                      <th className="text-right px-3 py-2 font-semibold">
-                        {t('buyerOrders.lines.col.unit')}
-                      </th>
-                      <th className="text-right px-3 py-2 font-semibold">
-                        {t('buyerOrders.lines.col.lineTotal')}
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {selectedPO.lineItems.map((li) => (
-                      <tr
-                        key={li.id}
-                        className="border-t border-border-subtle"
-                      >
-                        <td className="px-3 py-2">
-                          <Data as="div" className="text-xs text-text-tertiary">
-                            {li.materialCode}
-                          </Data>
-                          <div className="text-text-primary mt-0.5">
-                            {li.description}
-                          </div>
-                        </td>
-                        <td className="px-3 py-2 text-right text-text-secondary whitespace-nowrap">
-                          <Data>{formatNumber(li.quantity)} {li.uom}</Data>
-                          {/* OPS-3 — what the supplier confirmed, under what was
-                              ordered. In the same cell: a fifth column pushed
-                              the line total out of the panel. */}
-                          {STATUS_RANK[selectedPO.status] >= 4 && (
-                            <div
-                              className={`mt-0.5 text-[11px] ${
-                                li.confirmedQty < li.quantity
-                                  ? 'text-warning-hover font-semibold'
-                                  : 'text-text-tertiary'
-                              }`}
-                              data-testid={`buyer-po-line-confirmed-${li.id}`}
-                            >
-                              <div>{t('buyerOrders.lines.col.confirmed')}</div>
-                              <Data>{formatNumber(li.confirmedQty)} {li.uom}</Data>
-                            </div>
-                          )}
-                        </td>
-                        <td className="px-3 py-2 text-right text-text-secondary whitespace-nowrap">
-                          <Data>{formatIDR(li.unitPrice)}</Data>
-                        </td>
-                        <td className="px-3 py-2 text-right font-semibold text-text-primary whitespace-nowrap">
-                          <Data>{formatIDR(lineTotal(li))}</Data>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                  <tfoot>
+                <DataTable
+                  density="compact"
+                  card={false}
+                  columns={lineColumns}
+                  rows={selectedPO.lineItems}
+                  rowKey={(li) => li.id}
+                  footer={
                     <tr className="border-t border-border-subtle bg-bg-hover">
                       <td
                         className="px-3 py-2 text-right font-semibold text-text-tertiary uppercase tracking-wider"
@@ -807,8 +819,8 @@ const BuyerOrders: React.FC = () => {
                         <Data>{formatIDR(selectedPO.totalValue)}</Data>
                       </td>
                     </tr>
-                  </tfoot>
-                </table>
+                  }
+                />
               </div>
             </section>
 
@@ -881,7 +893,7 @@ const BuyerOrders: React.FC = () => {
           </div>
         )}
       </SidePanel>
-    </AppShellV2>
+    </ListPage>
   );
 };
 

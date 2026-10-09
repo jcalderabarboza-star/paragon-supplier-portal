@@ -25,10 +25,7 @@ import {
   TargetStatus,
 } from '../lib/chartPalette';
 import TargetBar from '../components/ui-v2/TargetBar';
-import Table from '../components/ui-v2/Table';
-import TableHeader, { TableHeaderCell } from '../components/ui-v2/TableHeader';
-import TableRow from '../components/ui-v2/TableRow';
-import TableCell from '../components/ui-v2/TableCell';
+import DataTable from '../components/ui-v2/DataTable';
 import Button from '../components/ui-v2/Button';
 import Data from '../components/ui-v2/Data';
 import { useTranslation } from 'react-i18next';
@@ -744,69 +741,80 @@ const SupplierDashboard: React.FC = () => {
                 {t('supplierDashboard.orders.title')}
               </h2>
             </div>
-            <Table>
-              <TableHeader>
-                <TableHeaderCell>{t('supplierDashboard.orders.col.po')}</TableHeaderCell>
-                <TableHeaderCell>{t('supplierDashboard.orders.col.orderDate')}</TableHeaderCell>
-                <TableHeaderCell className="text-right">{t('supplierDashboard.orders.col.items')}</TableHeaderCell>
-                <TableHeaderCell className="text-right">{t('supplierDashboard.orders.col.value')}</TableHeaderCell>
-                <TableHeaderCell>{t('supplierDashboard.orders.col.status')}</TableHeaderCell>
-                <TableHeaderCell className="text-right">{t('supplierDashboard.orders.col.action')}</TableHeaderCell>
-              </TableHeader>
-              <tbody>
-                {sortedPOs.map((po) => {
-                  const isActionable =
-                    po.status === POStatus.SENT ||
-                    po.status === POStatus.ACKNOWLEDGED;
-                  const isConfirmed = mayShip(po);
-                  const btnLabel = isActionable
-                    ? t('supplierDashboard.orders.action.confirm')
-                    : isConfirmed
-                      ? t('supplierDashboard.orders.action.createAsn')
-                      : t('supplierDashboard.orders.action.view');
-                  return (
-                    <TableRow key={po.id}>
-                      <TableCell>
-                        <Data className="text-xs font-bold text-text-primary">
-                          {po.poNumber}
-                        </Data>
-                      </TableCell>
-                      <TableCell className="whitespace-nowrap text-text-secondary">
-                        <Data>{fmtDate(po.orderDate)}</Data>
-                      </TableCell>
-                      <TableCell className="text-right text-text-secondary">
-                        {po.lineItems.length}
-                      </TableCell>
-                      <TableCell className="text-right font-semibold text-text-primary whitespace-nowrap">
-                        <Data>{formatIDR(po.totalValue, { compact: true })}</Data>
-                      </TableCell>
-                      <TableCell>
-                        <StatusPill variant={statusTone(po.status)}>
-                          {po.status}
-                        </StatusPill>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button
-                          variant={isActionable ? 'outline' : 'secondary'}
-                          onClick={() =>
-                            toast({
-                              variant: 'info',
-                              title: isActionable
-                                ? t('supplierDashboard.orders.toast.opening', { po: po.poNumber })
-                                : isConfirmed
-                                  ? t('supplierDashboard.orders.toast.creatingAsn', { po: po.poNumber })
-                                  : t('supplierDashboard.orders.toast.viewing', { po: po.poNumber }),
-                            })
-                          }
-                        >
-                          {btnLabel}
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </tbody>
-            </Table>
+            <DataTable<PurchaseOrder>
+              card={false}
+              rows={sortedPOs}
+              rowKey={(po) => po.id}
+              columns={[
+                {
+                  id: 'po',
+                  header: t('supplierDashboard.orders.col.po'),
+                  kind: 'id',
+                  cell: (po) => <Data>{po.poNumber}</Data>,
+                },
+                {
+                  id: 'orderDate',
+                  header: t('supplierDashboard.orders.col.orderDate'),
+                  kind: 'date',
+                  cell: (po) => <Data>{fmtDate(po.orderDate)}</Data>,
+                },
+                {
+                  id: 'items',
+                  header: t('supplierDashboard.orders.col.items'),
+                  kind: 'number',
+                  cell: (po) => po.lineItems.length,
+                },
+                {
+                  id: 'value',
+                  header: t('supplierDashboard.orders.col.value'),
+                  kind: 'money',
+                  cell: (po) => <Data>{formatIDR(po.totalValue, { compact: true })}</Data>,
+                },
+                {
+                  id: 'status',
+                  header: t('supplierDashboard.orders.col.status'),
+                  kind: 'status',
+                  cell: (po) => (
+                    <StatusPill variant={statusTone(po.status)}>
+                      {po.status}
+                    </StatusPill>
+                  ),
+                },
+                {
+                  id: 'action',
+                  header: t('supplierDashboard.orders.col.action'),
+                  kind: 'actions',
+                  cell: (po) => {
+                    const isActionable =
+                      po.status === POStatus.SENT ||
+                      po.status === POStatus.ACKNOWLEDGED;
+                    const isConfirmed = mayShip(po);
+                    const btnLabel = isActionable
+                      ? t('supplierDashboard.orders.action.confirm')
+                      : isConfirmed
+                        ? t('supplierDashboard.orders.action.createAsn')
+                        : t('supplierDashboard.orders.action.view');
+                    return (
+                      <Button
+                        variant={isActionable ? 'outline' : 'secondary'}
+                        onClick={() =>
+                          toast({
+                            variant: 'info',
+                            title: isActionable
+                              ? t('supplierDashboard.orders.toast.opening', { po: po.poNumber })
+                              : isConfirmed
+                                ? t('supplierDashboard.orders.toast.creatingAsn', { po: po.poNumber })
+                                : t('supplierDashboard.orders.toast.viewing', { po: po.poNumber }),
+                          })
+                        }
+                      >
+                        {btnLabel}
+                      </Button>
+                    );
+                  },
+                },
+              ]}
+            />
           </section>
         </div>
 

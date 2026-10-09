@@ -14,17 +14,12 @@ import {
   Globe,
   LucideIcon,
 } from 'lucide-react';
-import AppShellV2 from '../components/layout-v2/AppShellV2';
-import PageHeader from '../components/ui-v2/PageHeader';
-import PageMetaLine from '../components/ui-v2/PageMetaLine';
+import ListPage from '../components/ui-v2/ListPage';
+import DataTable from '../components/ui-v2/DataTable';
 import ProvenanceMarker from '../components/ui-v2/ProvenanceMarker';
 import KpiCard from '../components/ui-v2/KpiCard';
 import BulkActionsBar from '../components/ui-v2/BulkActionsBar';
 import StatusPill from '../components/ui-v2/StatusPill';
-import Table from '../components/ui-v2/Table';
-import TableHeader, { TableHeaderCell } from '../components/ui-v2/TableHeader';
-import TableRow from '../components/ui-v2/TableRow';
-import TableCell from '../components/ui-v2/TableCell';
 import Button from '../components/ui-v2/Button';
 import SidePanel from '../components/ui-v2/SidePanel';
 import Timeline, { TimelineEvent } from '../components/ui-v2/Timeline';
@@ -390,233 +385,256 @@ const SupplierInvoices: React.FC = () => {
     );
 
   return (
-    <AppShellV2>
-      <PageHeader
-        breadcrumb={invCrumb}
-        title={t('supplierInvoices.header.title')}
-        subtitle={t('supplierInvoices.header.subtitle', {
-          supplier: mySupplier?.name ?? identity.supplierName ?? '',
-        })}
-        actions={
-          // The page-level create is WITHHELD rather than disabled (§73's
-          // pattern). Export holds no atom and is not gated — a read is
-          // ungoverned, not withheld (§75e).
-          <div className="flex items-center gap-3">
-            <HandoffNotice
-              availability={invoiceAvailability}
-              testId="handoff-invoice-create"
-            />
-            <BulkActionsBar
-              actions={[
-                {
-                  label: t('supplierInvoices.action.export'),
-                  icon: Download,
-                  onClick: () =>
-                    toast({
-                      variant: 'info',
-                      title: t('supplierInvoices.toast.export.title'),
-                    }),
-                },
-              ]}
-              {...(invoiceAvailability.kind === 'held'
-                ? {
-                    primary: {
-                      label: t('invoice.create.action'),
-                      icon: Plus,
-                      onClick: () => setNewOpen(true),
-                    },
-                  }
-                : {})}
-            />
-          </div>
-        }
-      />
-
-      <PageMetaLine className="-mt-6 mb-6">
-        {t(
-          INVOICES.length === 1
-            ? 'supplierInvoices.meta.summary.one'
-            : 'supplierInvoices.meta.summary.other',
-          { count: INVOICES.length },
-        )}{' '}
-        <Data>{fmtDate(lastSubmitted)}</Data>
-        {/* D-CENSUS-8 — PARTLY REAL, both axes. Invoice create + submit dispatch
-            through the wired `invoice` target (DR-7); the PO backing them is fixture,
-            and nothing reaches e-Faktur or SAP. */}
-        <ProvenanceMarker capability="invoices" className="ml-3 align-middle" />
-      </PageMetaLine>
-
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-6">
-        <KpiCard
-          eyebrow={t('supplierInvoices.kpi.received.eyebrow')}
-          value={formatIDR(sums.paid, { compact: true })}
-          subtitle={
-            <span className="text-success">
-              {t(
-                counts.paid === 1
-                  ? 'supplierInvoices.kpi.invoiceCount.one'
-                  : 'supplierInvoices.kpi.invoiceCount.other',
-                { count: counts.paid },
-              )}
-            </span>
-          }
-          icon={CheckCircle2}
-        />
-        <KpiCard
-          eyebrow={t('supplierInvoices.kpi.pending.eyebrow')}
-          value={formatIDR(sums.pending, { compact: true })}
-          subtitle={
-            <span className="text-warning-hover">
-              {t(
-                counts.pending === 1
-                  ? 'supplierInvoices.kpi.invoiceCount.one'
-                  : 'supplierInvoices.kpi.invoiceCount.other',
-                { count: counts.pending },
-              )}
-            </span>
-          }
-          icon={Clock}
-        />
-        <KpiCard
-          eyebrow={t('supplierInvoices.kpi.disputed.eyebrow')}
-          value={formatIDR(sums.disputed, { compact: true })}
-          subtitle={
-            <span className="text-critical">
-              {t(
-                counts.disputed === 1
-                  ? 'supplierInvoices.kpi.invoiceCount.one'
-                  : 'supplierInvoices.kpi.invoiceCount.other',
-                { count: counts.disputed },
-              )}
-            </span>
-          }
-          icon={AlertTriangle}
-        />
-      </div>
-
-      {disputed.length > 0 && (
-        <div className="bg-warning-soft border-l-2 border-warning rounded px-4 py-3 mb-6 flex items-start gap-2 text-sm text-warning-hover">
-          <AlertTriangle size={14} className="shrink-0 mt-0.5" />
-          <div>
-            <strong>{t('supplierInvoices.banner.dispute.label')}</strong>
-            <Data>{disputed.map((i) => i.invoiceNumber).join(', ')}</Data>{' '}
-            {t('supplierInvoices.banner.dispute.body')}
-          </div>
+    <ListPage
+      breadcrumb={invCrumb}
+      title={t('supplierInvoices.header.title')}
+      subtitle={t('supplierInvoices.header.subtitle', {
+        supplier: mySupplier?.name ?? identity.supplierName ?? '',
+      })}
+      actions={
+        // The page-level create is WITHHELD rather than disabled (§73's
+        // pattern). Export holds no atom and is not gated — a read is
+        // ungoverned, not withheld (§75e).
+        <div className="flex items-center gap-3">
+          <HandoffNotice
+            availability={invoiceAvailability}
+            testId="handoff-invoice-create"
+          />
+          <BulkActionsBar
+            actions={[
+              {
+                label: t('supplierInvoices.action.export'),
+                icon: Download,
+                onClick: () =>
+                  toast({
+                    variant: 'info',
+                    title: t('supplierInvoices.toast.export.title'),
+                  }),
+              },
+            ]}
+            {...(invoiceAvailability.kind === 'held'
+              ? {
+                  primary: {
+                    label: t('invoice.create.action'),
+                    icon: Plus,
+                    onClick: () => setNewOpen(true),
+                  },
+                }
+              : {})}
+          />
         </div>
-      )}
-
-      <div className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm overflow-hidden mb-6">
-        <Table>
-          <TableHeader>
-            <TableHeaderCell>{t('supplierInvoices.table.invoiceNo')}</TableHeaderCell>
-            <TableHeaderCell>{t('supplierInvoices.table.poRef')}</TableHeaderCell>
-            <TableHeaderCell className="text-right">{t('supplierInvoices.table.amount')}</TableHeaderCell>
-            <TableHeaderCell>{t('supplierInvoices.table.status')}</TableHeaderCell>
-            <TableHeaderCell>{t('supplierInvoices.table.dueDate')}</TableHeaderCell>
-            <TableHeaderCell>{t('supplierInvoices.table.paymentDate')}</TableHeaderCell>
-            <TableHeaderCell className="text-right">{t('supplierInvoices.table.action')}</TableHeaderCell>
-          </TableHeader>
-          <tbody>
-            {INVOICES.map((inv) => {
+      }
+      meta={
+        <>
+            {t(
+              INVOICES.length === 1
+                ? 'supplierInvoices.meta.summary.one'
+                : 'supplierInvoices.meta.summary.other',
+              { count: INVOICES.length },
+            )}{' '}
+            <Data>{fmtDate(lastSubmitted)}</Data>
+            {/* D-CENSUS-8 — PARTLY REAL, both axes. Invoice create + submit dispatch
+                through the wired `invoice` target (DR-7); the PO backing them is fixture,
+                and nothing reaches e-Faktur or SAP. */}
+            <ProvenanceMarker capability="invoices" className="ml-3 align-middle" />
+        </>
+      }
+      notices={
+        disputed.length > 0 ? (
+          <div className="bg-warning-soft border-l-2 border-warning rounded px-4 py-3 flex items-start gap-2 text-sm text-warning-hover">
+            <AlertTriangle size={14} className="shrink-0 mt-0.5" />
+            <div>
+              <strong>{t('supplierInvoices.banner.dispute.label')}</strong>
+              <Data>{disputed.map((i) => i.invoiceNumber).join(', ')}</Data>{' '}
+              {t('supplierInvoices.banner.dispute.body')}
+            </div>
+          </div>
+        ) : undefined
+      }
+      kpiColumns={3}
+      kpis={
+        <>
+          <KpiCard
+            eyebrow={t('supplierInvoices.kpi.received.eyebrow')}
+            value={formatIDR(sums.paid, { compact: true })}
+            subtitle={
+              <span className="text-success">
+                {t(
+                  counts.paid === 1
+                    ? 'supplierInvoices.kpi.invoiceCount.one'
+                    : 'supplierInvoices.kpi.invoiceCount.other',
+                  { count: counts.paid },
+                )}
+              </span>
+            }
+            icon={CheckCircle2}
+          />
+          <KpiCard
+            eyebrow={t('supplierInvoices.kpi.pending.eyebrow')}
+            value={formatIDR(sums.pending, { compact: true })}
+            subtitle={
+              <span className="text-warning-hover">
+                {t(
+                  counts.pending === 1
+                    ? 'supplierInvoices.kpi.invoiceCount.one'
+                    : 'supplierInvoices.kpi.invoiceCount.other',
+                  { count: counts.pending },
+                )}
+              </span>
+            }
+            icon={Clock}
+          />
+          <KpiCard
+            eyebrow={t('supplierInvoices.kpi.disputed.eyebrow')}
+            value={formatIDR(sums.disputed, { compact: true })}
+            subtitle={
+              <span className="text-critical">
+                {t(
+                  counts.disputed === 1
+                    ? 'supplierInvoices.kpi.invoiceCount.one'
+                    : 'supplierInvoices.kpi.invoiceCount.other',
+                  { count: counts.disputed },
+                )}
+              </span>
+            }
+            icon={AlertTriangle}
+          />
+        </>
+      }
+    >
+      <DataTable<SupplierInvoice>
+        className="mb-6"
+        rows={INVOICES}
+        rowKey={(inv) => inv.id}
+        onRowClick={(inv) => openDetail(inv)}
+        columns={[
+          {
+            id: 'invoiceNo',
+            header: t('supplierInvoices.table.invoiceNo'),
+            kind: 'id',
+            cell: (inv) => {
               const Channel = CHANNEL_ICON[inv.channel];
+              return (
+                <>
+                  <Data as="div">{inv.invoiceNumber}</Data>
+                  <div className="inline-flex items-center gap-1 text-[10px] font-sans font-normal text-text-tertiary mt-0.5">
+                    <Channel size={10} />
+                    {t('supplierInvoices.table.via', { channel: inv.channel })}
+                  </div>
+                </>
+              );
+            },
+          },
+          {
+            id: 'poRef',
+            header: t('supplierInvoices.table.poRef'),
+            kind: 'id',
+            cell: (inv) => <Data>{inv.poNumber}</Data>,
+          },
+          {
+            id: 'amount',
+            header: t('supplierInvoices.table.amount'),
+            kind: 'money',
+            cell: (inv) => (
+              <>
+                <div>
+                  <Data>{formatIDR(inv.amount, { compact: true })}</Data>
+                </div>
+                <div className="text-xs text-text-tertiary">
+                  <Data>{formatIDR(inv.amount)}</Data>
+                </div>
+              </>
+            ),
+          },
+          {
+            id: 'status',
+            header: t('supplierInvoices.table.status'),
+            kind: 'status',
+            cell: (inv) => (
+              <StatusPill variant={STATUS_VARIANT[inv.status]}>
+                {inv.status}
+              </StatusPill>
+            ),
+          },
+          {
+            id: 'dueDate',
+            header: t('supplierInvoices.table.dueDate'),
+            kind: 'date',
+            cell: (inv) => <Data>{fmtDate(inv.dueDate)}</Data>,
+          },
+          {
+            id: 'paymentDate',
+            header: t('supplierInvoices.table.paymentDate'),
+            kind: 'date',
+            cell: (inv) =>
+              inv.paymentDate ? (
+                <span className="text-success">
+                  <Data>{fmtDate(inv.paymentDate)}</Data>
+                </span>
+              ) : (
+                <span className="text-text-tertiary">—</span>
+              ),
+          },
+          {
+            id: 'action',
+            header: t('supplierInvoices.table.action'),
+            kind: 'actions',
+            // The cell's controls do not open the row's detail panel.
+            stopRowClick: true,
+            cell: (inv) => {
               const isPaid = isPaidStatus(inv.status);
               return (
-                <TableRow
-                  key={inv.id}
-                  className="cursor-pointer"
-                  onClick={() => openDetail(inv)}
-                >
-                  <TableCell>
-                    <Data as="div" className="text-xs font-bold text-text-primary">
-                      {inv.invoiceNumber}
-                    </Data>
-                    <div className="inline-flex items-center gap-1 text-[10px] text-text-tertiary mt-0.5">
-                      <Channel size={10} />
-                      {t('supplierInvoices.table.via', { channel: inv.channel })}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Data className="text-xs text-text-secondary">
-                      {inv.poNumber}
-                    </Data>
-                  </TableCell>
-                  <TableCell className="text-right whitespace-nowrap">
-                    <div className="font-semibold text-text-primary">
-                      <Data>{formatIDR(inv.amount, { compact: true })}</Data>
-                    </div>
-                    <div className="text-xs text-text-tertiary">
-                      <Data>{formatIDR(inv.amount)}</Data>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <StatusPill variant={STATUS_VARIANT[inv.status]}>
-                      {inv.status}
-                    </StatusPill>
-                  </TableCell>
-                  <TableCell className="text-text-tertiary text-xs whitespace-nowrap">
-                    <Data>{fmtDate(inv.dueDate)}</Data>
-                  </TableCell>
-                  <TableCell className="text-xs whitespace-nowrap">
-                    {inv.paymentDate ? (
-                      <span className="text-success font-semibold">
-                        <Data>{fmtDate(inv.paymentDate)}</Data>
-                      </span>
-                    ) : (
-                      <span className="text-text-tertiary">—</span>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
-                    {isPaid ? (
+                <>
+                  {isPaid ? (
+                    <Button
+                      variant="outline"
+                      icon={Receipt}
+                      onClick={() => {
+                        setSelected(inv);
+                        setPanelMode('remittance');
+                      }}
+                    >
+                      {t('supplierInvoices.action.remittance')}
+                    </Button>
+                  ) : inv.status === 'Draft' ? (
+                    invoiceAvailability.kind === 'held' ? (
                       <Button
                         variant="outline"
-                        icon={Receipt}
-                        onClick={() => {
-                          setSelected(inv);
-                          setPanelMode('remittance');
-                        }}
+                        disabled={submitMutation.isPending}
+                        onClick={() => submitDraft(inv)}
                       >
-                        {t('supplierInvoices.action.remittance')}
-                      </Button>
-                    ) : inv.status === 'Draft' ? (
-                      invoiceAvailability.kind === 'held' ? (
-                        <Button
-                          variant="outline"
-                          disabled={submitMutation.isPending}
-                          onClick={() => submitDraft(inv)}
-                        >
-                          {t('invoice.submit.action')}
-                        </Button>
-                      ) : (
-                        <HandoffNotice
-                          availability={invoiceAvailability}
-                          testId="handoff-invoice-submit"
-                        />
-                      )
-                    ) : inv.status === 'Disputed' ? (
-                      <Button
-                        variant="outline"
-                        onClick={() =>
-                          toast({
-                            variant: 'warning',
-                            title: t('supplierInvoices.toast.resolve.title'),
-                            description: t('supplierInvoices.toast.resolve.desc'),
-                          })
-                        }
-                      >
-                        {t('supplierInvoices.action.resolve')}
+                        {t('invoice.submit.action')}
                       </Button>
                     ) : (
-                      <Button variant="secondary" onClick={() => openDetail(inv)}>
-                        {t('supplierInvoices.action.view')}
-                      </Button>
-                    )}
-                  </TableCell>
-                </TableRow>
+                      <HandoffNotice
+                        availability={invoiceAvailability}
+                        testId="handoff-invoice-submit"
+                      />
+                    )
+                  ) : inv.status === 'Disputed' ? (
+                    <Button
+                      variant="outline"
+                      onClick={() =>
+                        toast({
+                          variant: 'warning',
+                          title: t('supplierInvoices.toast.resolve.title'),
+                          description: t('supplierInvoices.toast.resolve.desc'),
+                        })
+                      }
+                    >
+                      {t('supplierInvoices.action.resolve')}
+                    </Button>
+                  ) : (
+                    <Button variant="secondary" onClick={() => openDetail(inv)}>
+                      {t('supplierInvoices.action.view')}
+                    </Button>
+                  )}
+                </>
               );
-            })}
-          </tbody>
-        </Table>
-      </div>
+            },
+          },
+        ]}
+      />
 
       <div className="bg-info-soft border-l-2 border-info rounded px-4 py-3 text-sm text-text-secondary flex items-start gap-2">
         <FileText size={14} className="text-info shrink-0 mt-0.5" />
@@ -1007,7 +1025,7 @@ const SupplierInvoices: React.FC = () => {
           )}
         </div>
       </SidePanel>
-    </AppShellV2>
+    </ListPage>
   );
 };
 

@@ -20,10 +20,7 @@ import { IllustrativeBanner, IllustrativeMark } from '../components/ui-v2/Illust
 import FormSection from '../components/ui-v2/FormSection';
 import StatusPill from '../components/ui-v2/StatusPill';
 import Button from '../components/ui-v2/Button';
-import Table from '../components/ui-v2/Table';
-import TableHeader, { TableHeaderCell } from '../components/ui-v2/TableHeader';
-import TableRow from '../components/ui-v2/TableRow';
-import TableCell from '../components/ui-v2/TableCell';
+import DataTable from '../components/ui-v2/DataTable';
 import Switch from '../components/ui-v2/Switch';
 import { useToast } from '../hooks/useToast';
 import { useCategoryLabel } from '../hooks/useCategoryLabel';
@@ -434,79 +431,99 @@ const StorefrontEditor: React.FC<StorefrontEditorProps> = ({
               {t('supplierMyStorefront.action.addMaterial')}
             </Button>
           </div>
-          <div className="bg-bg-surface border border-border-subtle rounded-md overflow-hidden">
-            <Table>
-              <TableHeader>
-                <TableHeaderCell>{t('supplierMyStorefront.col.material')}</TableHeaderCell>
-                <TableHeaderCell>{t('supplierMyStorefront.col.category')}</TableHeaderCell>
-                <TableHeaderCell>{t('supplierMyStorefront.col.moq')}</TableHeaderCell>
-                <TableHeaderCell>{t('supplierMyStorefront.col.leadTime')}</TableHeaderCell>
-                <TableHeaderCell>{t('supplierMyStorefront.col.unitPrice')}</TableHeaderCell>
-                <TableHeaderCell>{t('supplierMyStorefront.col.capacity')}</TableHeaderCell>
-                <TableHeaderCell>{t('supplierMyStorefront.col.certs')}</TableHeaderCell>
-                <TableHeaderCell>{t('supplierMyStorefront.col.visible')}</TableHeaderCell>
-                <TableHeaderCell className="text-right">
-                  {t('supplierMyStorefront.col.remove')}
-                </TableHeaderCell>
-              </TableHeader>
-              <tbody>
-                {catalog.map((item) => (
-                  <TableRow key={item.id}>
-                    <TableCell>
-                      <span className="font-semibold text-text-primary">
-                        {item.material}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-text-tertiary text-xs">
-                      {cl(item.category)}
-                    </TableCell>
-                    <TableCell className="text-text-secondary">
-                      <Data>{item.moq} {item.uom}</Data>
-                    </TableCell>
-                    <TableCell className="text-text-secondary">
-                      <Data>{item.leadTime} {t('supplierMyStorefront.days')}</Data>
-                    </TableCell>
-                    <TableCell className="font-semibold text-teal-text">
-                      <Data>{item.currency} {item.unitPrice}/{item.uom}</Data>
-                    </TableCell>
-                    <TableCell className="text-text-secondary">
-                      <Data>{item.capacity}{t('supplierMyStorefront.perMonth')}</Data>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-wrap gap-1">
-                        {item.certs.map((c) => (
-                          <StatusPill key={c} variant="success">
-                            {c}
-                          </StatusPill>
-                        ))}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Switch
-                        checked={item.visible}
-                        onChange={() => toggleCatalogVisibility(item.id)}
-                        ariaLabel={t('supplierMyStorefront.aria.toggleVisibility', {
-                          name: item.material,
-                        })}
-                      />
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <button
-                        type="button"
-                        onClick={() => removeCatalogItem(item.id)}
-                        className="text-text-tertiary hover:text-critical"
-                        aria-label={t('supplierMyStorefront.aria.removeMaterial', {
-                          name: item.material,
-                        })}
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </tbody>
-            </Table>
-          </div>
+          <DataTable<CatalogItem>
+            rows={catalog}
+            rowKey={(item) => item.id}
+            columns={[
+              {
+                id: 'material',
+                header: t('supplierMyStorefront.col.material'),
+                kind: 'text',
+                cell: (item) => (
+                  <span className="font-semibold text-text-primary">
+                    {item.material}
+                  </span>
+                ),
+              },
+              {
+                id: 'category',
+                header: t('supplierMyStorefront.col.category'),
+                kind: 'text',
+                cell: (item) => (
+                  <span className="text-text-tertiary text-xs">{cl(item.category)}</span>
+                ),
+              },
+              {
+                id: 'moq',
+                header: t('supplierMyStorefront.col.moq'),
+                kind: 'number',
+                cell: (item) => <Data>{item.moq} {item.uom}</Data>,
+              },
+              {
+                id: 'leadTime',
+                header: t('supplierMyStorefront.col.leadTime'),
+                kind: 'number',
+                cell: (item) => <Data>{item.leadTime} {t('supplierMyStorefront.days')}</Data>,
+              },
+              {
+                id: 'unitPrice',
+                header: t('supplierMyStorefront.col.unitPrice'),
+                kind: 'money',
+                cell: (item) => <Data>{item.currency} {item.unitPrice}/{item.uom}</Data>,
+              },
+              {
+                id: 'capacity',
+                header: t('supplierMyStorefront.col.capacity'),
+                kind: 'number',
+                cell: (item) => <Data>{item.capacity}{t('supplierMyStorefront.perMonth')}</Data>,
+              },
+              {
+                id: 'certs',
+                header: t('supplierMyStorefront.col.certs'),
+                kind: 'status',
+                cell: (item) => (
+                  <div className="flex flex-wrap gap-1">
+                    {item.certs.map((c) => (
+                      <StatusPill key={c} variant="success">
+                        {c}
+                      </StatusPill>
+                    ))}
+                  </div>
+                ),
+              },
+              {
+                id: 'visible',
+                header: t('supplierMyStorefront.col.visible'),
+                kind: 'status',
+                cell: (item) => (
+                  <Switch
+                    checked={item.visible}
+                    onChange={() => toggleCatalogVisibility(item.id)}
+                    ariaLabel={t('supplierMyStorefront.aria.toggleVisibility', {
+                      name: item.material,
+                    })}
+                  />
+                ),
+              },
+              {
+                id: 'remove',
+                header: t('supplierMyStorefront.col.remove'),
+                kind: 'actions',
+                cell: (item) => (
+                  <button
+                    type="button"
+                    onClick={() => removeCatalogItem(item.id)}
+                    className="text-text-tertiary hover:text-critical"
+                    aria-label={t('supplierMyStorefront.aria.removeMaterial', {
+                      name: item.material,
+                    })}
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                ),
+              },
+            ]}
+          />
           {showAddForm && (
             <div className="mt-4 bg-bg-hover border border-teal/30 rounded-md p-4">
               <div className="text-sm font-semibold text-text-primary mb-3">

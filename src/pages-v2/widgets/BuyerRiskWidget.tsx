@@ -5,10 +5,7 @@ import { ShieldAlert } from 'lucide-react';
 import ExpandableWidget, {
   type FlagSeverity,
 } from '../../components/ui-v2/ExpandableWidget';
-import Table from '../../components/ui-v2/Table';
-import TableHeader, { TableHeaderCell } from '../../components/ui-v2/TableHeader';
-import TableRow from '../../components/ui-v2/TableRow';
-import TableCell from '../../components/ui-v2/TableCell';
+import DataTable from '../../components/ui-v2/DataTable';
 import StatusPill from '../../components/ui-v2/StatusPill';
 import RecordRowLink from './RecordRowLink';
 import { useRiskAlerts } from '../../services/query/hooks';
@@ -47,31 +44,38 @@ const BuyerRiskWidget: React.FC = () => {
     count === 0 ? (
       <div className="text-sm text-text-tertiary">{t('widget.risk.empty')}</div>
     ) : (
-      <Table>
-        <TableHeader>
-          <TableHeaderCell>{t('widget.risk.col.level')}</TableHeaderCell>
-          <TableHeaderCell>{t('widget.risk.col.alert')}</TableHeaderCell>
-          <TableHeaderCell>{t('widget.risk.col.detail')}</TableHeaderCell>
-        </TableHeader>
-        <tbody>
-          {active.map((a) => (
-            <TableRow key={a.id} className="relative">
-              <TableCell>
-                <StatusPill variant={LEVEL_TONE[a.level]}>{a.level}</StatusPill>
-              </TableCell>
-              <TableCell className="font-medium text-text-primary">
-                {/* /buyer/risk has NO per-alert detail panel, so this link does
-                    what the tree's one existing URL-selection site does: it
-                    lands on the row itself, scrolled to and highlighted
-                    (`Glossary.tsx`'s `?term=` chip). No panel is invented and
-                    the page is not redesigned. */}
-                <RecordRowLink path="/buyer/risk" id={a.id} label={a.title} />
-              </TableCell>
-              <TableCell className="text-text-secondary">{a.body}</TableCell>
-            </TableRow>
-          ))}
-        </tbody>
-      </Table>
+      <DataTable
+        card={false}
+        rows={active}
+        rowKey={(a) => a.id}
+        rowProps={() => ({ className: 'relative' })}
+        columns={[
+          {
+            id: 'level',
+            header: t('widget.risk.col.level'),
+            kind: 'status',
+            cell: (a) => <StatusPill variant={LEVEL_TONE[a.level]}>{a.level}</StatusPill>,
+          },
+          /* /buyer/risk has NO per-alert detail panel, so this link does
+             what the tree's one existing URL-selection site does: it
+             lands on the row itself, scrolled to and highlighted
+             (`Glossary.tsx`'s `?term=` chip). No panel is invented and
+             the page is not redesigned. */
+          {
+            id: 'alert',
+            header: t('widget.risk.col.alert'),
+            kind: 'text',
+            className: 'font-medium',
+            cell: (a) => <RecordRowLink path="/buyer/risk" id={a.id} label={a.title} />,
+          },
+          {
+            id: 'detail',
+            header: t('widget.risk.col.detail'),
+            kind: 'text',
+            cell: (a) => <span className="text-text-secondary">{a.body}</span>,
+          },
+        ]}
+      />
     );
 
   return (

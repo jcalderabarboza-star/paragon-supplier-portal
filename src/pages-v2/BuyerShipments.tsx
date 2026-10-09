@@ -15,9 +15,8 @@ import {
   CalendarClock,
   LucideIcon,
 } from 'lucide-react';
-import AppShellV2 from '../components/layout-v2/AppShellV2';
-import PageHeader from '../components/ui-v2/PageHeader';
-import PageMetaLine from '../components/ui-v2/PageMetaLine';
+import ListPage from '../components/ui-v2/ListPage';
+import DataTable, { type Column } from '../components/ui-v2/DataTable';
 import ProvenanceMarker from '../components/ui-v2/ProvenanceMarker';
 import KpiCard from '../components/ui-v2/KpiCard';
 import BulkActionsBar from '../components/ui-v2/BulkActionsBar';
@@ -27,10 +26,6 @@ import SearchBar from '../components/ui-v2/SearchBar';
 import StatusPill from '../components/ui-v2/StatusPill';
 import NextActLine from '../components/ui-v2/NextActLine';
 import { useNextAct } from '../hooks/useVerbAvailability';
-import Table from '../components/ui-v2/Table';
-import TableHeader, { TableHeaderCell } from '../components/ui-v2/TableHeader';
-import TableRow from '../components/ui-v2/TableRow';
-import TableCell from '../components/ui-v2/TableCell';
 import SidePanel from '../components/ui-v2/SidePanel';
 import Data from '../components/ui-v2/Data';
 import Timeline, { TimelineEvent } from '../components/ui-v2/Timeline';
@@ -533,108 +528,289 @@ const BuyerShipments: React.FC = () => {
       />
     );
 
+  // ⚠️ THE PAGE'S SECOND `is it late?` PREDICATE IS GONE. The ETA column read
+  // `(s.delayDays ?? 0) > 0` — a stored field answering the same
+  // question the pill answers from the classifier. It agreed only
+  // because ONE row of eighteen carried the field; every other row
+  // was acquitted by `?? 0` rather than by a measurement.
+  const shipmentColumns: Column<Shipment>[] = [
+    {
+      id: 'asnPo',
+      header: t('shipments.table.col.asnPo'),
+      kind: 'id',
+      cell: (s) => (
+        <>
+          <Data as="div">{s.asnNumber}</Data>
+          <Data as="div" className="text-xs font-normal text-text-tertiary">
+            {s.poNumber}
+          </Data>
+        </>
+      ),
+    },
+    {
+      id: 'supplier',
+      header: t('shipments.table.col.supplier'),
+      kind: 'text',
+      cell: (s) => {
+        const sup = supplierById.get(s.supplierId);
+        return (
+          <>
+            {/* i18n-defer: mock/sample data — supplier proper nouns */}
+            <div className="text-sm text-text-primary">{s.supplierName}</div>
+            <div className="text-xs text-text-tertiary">
+              {sup ? COUNTRY_FLAG[sup.country] ?? sup.country : '—'}
+            </div>
+          </>
+        );
+      },
+    },
+    {
+      id: 'mode',
+      header: t('shipments.table.col.mode'),
+      kind: 'text',
+      cell: (s) => {
+        const Icon = MODE_ICON[s.mode];
+        return (
+          <span className="inline-flex items-center gap-1.5 text-sm text-text-secondary">
+            <Icon size={14} />
+            {ml(s.mode)}
+          </span>
+        );
+      },
+    },
+    {
+      id: 'route',
+      header: t('shipments.table.col.route'),
+      kind: 'text',
+      cell: (s) => (
+        <>
+          <div className="text-xs text-text-secondary">{s.origin}</div>
+          <div className="text-xs text-text-tertiary">→ {s.destination}</div>
+        </>
+      ),
+    },
+    {
+      id: 'shipDate',
+      header: t('shipments.table.col.shipDate'),
+      kind: 'date',
+      cell: (s) => <Data as="span">{formatDate(s.shipDate)}</Data>,
+    },
+    {
+      id: 'eta',
+      header: t('shipments.table.col.eta'),
+      kind: 'date',
+      cell: (s) => {
+        const late = displayOf(s) === 'Delayed';
+        const lateBy = daysLate(s, TODAY);
+        return (
+          <>
+            <Data as="div" className={late ? 'text-critical font-semibold' : ''}>
+              {formatDate(s.estimatedArrival)}
+            </Data>
+            {late && lateBy !== null && (
+              <div className="text-xs text-critical">
+                {t('shipments.table.daysLate', { days: lateBy })}
+              </div>
+            )}
+          </>
+        );
+      },
+    },
+    {
+      id: 'packages',
+      header: t('shipments.table.col.packages'),
+      kind: 'number',
+      cell: (s) => (
+        <>
+          <Data as="div">{formatNumber(s.packageCount)}</Data>
+          <Data as="div" className="text-xs text-text-tertiary">
+            {formatNumber(s.totalWeight)} kg
+          </Data>
+        </>
+      ),
+    },
+    {
+      id: 'dock',
+      header: t('shipments.table.col.dock'),
+      kind: 'text',
+      cell: (s) => (
+        <span className="text-sm text-text-secondary">{s.dockAssignment ?? '—'}</span>
+      ),
+    },
+    {
+      id: 'status',
+      header: t('shipments.table.col.status'),
+      kind: 'status',
+      cell: (s) => (
+        <StatusPill variant={STATUS_VARIANT[displayOf(s)]}>{displayOf(s)}</StatusPill>
+      ),
+    },
+    {
+      id: 'open',
+      header: ' ',
+      kind: 'actions',
+      cell: () => <ChevronRight size={16} className="text-text-tertiary inline" />,
+    },
+  ];
+
+  // The dock schedule: one row per dock, one column per time slot.
+  const dockColumns: Column<string>[] = [
+    {
+      id: 'dock',
+      header: t('shipments.dock.col.dock'),
+      kind: 'text',
+      cell: (d) => <span className="text-sm font-medium">{d}</span>,
+    },
+    ...TIME_SLOTS.map(
+      (slot): Column<string> => ({
+        id: slot,
+        header: slot,
+        kind: 'status',
+        cell: (d) => {
+          const cell = dockSchedule[d]?.[slot];
+          return cell ? (
+            <button
+              type="button"
+              onClick={() => setSelectedId(cell.id)}
+              className="w-full rounded-md px-2 py-2 text-xs font-semibold bg-action-soft text-action-hover hover:bg-action/20 transition-colors text-left"
+            >
+              <Data as="div" className="truncate">{cell.asnNumber}</Data>
+              <div className="text-label text-action-text truncate">
+                {cell.supplierName}
+              </div>
+            </button>
+          ) : (
+            <div className="rounded-md px-2 py-2 bg-bg-hover text-text-tertiary text-center">
+              —
+            </div>
+          );
+        },
+      }),
+    ),
+  ];
+
+  type ShipmentLine = Shipment['lineItems'][number];
+  const lineColumns: Column<ShipmentLine>[] = [
+    {
+      id: 'material',
+      header: t('shipments.panel.col.material'),
+      kind: 'id',
+      cell: (li) => <Data>{li.materialCode}</Data>,
+    },
+    {
+      id: 'description',
+      header: t('shipments.panel.col.description'),
+      kind: 'text',
+      cell: (li) => <span className="text-text-secondary">{li.description}</span>,
+    },
+    {
+      id: 'qty',
+      header: t('shipments.panel.col.qty'),
+      kind: 'number',
+      cell: (li) => <Data>{formatNumber(li.qty)}</Data>,
+    },
+    {
+      id: 'uom',
+      header: t('shipments.panel.col.uom'),
+      kind: 'text',
+      cell: (li) => <span className="text-text-tertiary">{li.uom}</span>,
+    },
+  ];
+
   return (
-    <AppShellV2>
-      <PageHeader
-        breadcrumb={SHIPMENTS_CRUMB}
-        title={t('shipments.header.title')}
-        subtitle={t('shipments.header.subtitle')}
-        actions={
-          <BulkActionsBar
-            actions={[
-              {
-                label: t('shipments.action.export'),
-                icon: FileSpreadsheet,
-                onClick: handleExport,
-              },
-              {
-                label: t('shipments.action.dockSchedule'),
-                icon: CalendarClock,
-                onClick: handleDockSchedule,
-              },
-            ]}
-            primary={{
-              label: t('shipments.action.manualAsn'),
-              icon: Plus,
-              onClick: handleManualASN,
-            }}
+    <ListPage
+      breadcrumb={SHIPMENTS_CRUMB}
+      title={t('shipments.header.title')}
+      subtitle={t('shipments.header.subtitle')}
+      actions={
+        <BulkActionsBar
+          actions={[
+            {
+              label: t('shipments.action.export'),
+              icon: FileSpreadsheet,
+              onClick: handleExport,
+            },
+            {
+              label: t('shipments.action.dockSchedule'),
+              icon: CalendarClock,
+              onClick: handleDockSchedule,
+            },
+          ]}
+          primary={{
+            label: t('shipments.action.manualAsn'),
+            icon: Plus,
+            onClick: handleManualASN,
+          }}
+        />
+      }
+      meta={
+        <>
+          {counts.all === 1
+            ? t('shipments.meta.summary.one', {
+                count: counts.all,
+                date: formatDate(TODAY),
+              })
+            : t('shipments.meta.summary.other', {
+                count: counts.all,
+                date: formatDate(TODAY),
+              })}
+          {/* D-CENSUS-8 — `shipments` is null-backed: the in-transit / at-dock view is
+              a frozen fixture with no logistics feed behind it. This page's toasts
+              claimed "Reminder sent" and "Carrier alerted" over zero write capability;
+              those are retracted in this batch. */}
+          <ProvenanceMarker capability="shipments" className="ml-3 align-middle" />
+        </>
+      }
+      kpis={
+        <>
+          <KpiCard
+            eyebrow={t('shipments.kpi.inTransit.eyebrow')}
+            value={formatNumber(counts.transit)}
+            icon={Anchor}
+            subtitle={t('shipments.kpi.inTransit.subtitle')}
           />
-        }
-      />
-
-      <PageMetaLine className="mb-6">
-        {counts.all === 1
-          ? t('shipments.meta.summary.one', {
-              count: counts.all,
-              date: formatDate(TODAY),
-            })
-          : t('shipments.meta.summary.other', {
-              count: counts.all,
-              date: formatDate(TODAY),
-            })}
-        {/* D-CENSUS-8 — `shipments` is null-backed: the in-transit / at-dock view is
-            a frozen fixture with no logistics feed behind it. This page's toasts
-            claimed "Reminder sent" and "Carrier alerted" over zero write capability;
-            those are retracted in this batch. */}
-        <ProvenanceMarker capability="shipments" className="ml-3 align-middle" />
-      </PageMetaLine>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <KpiCard
-          eyebrow={t('shipments.kpi.inTransit.eyebrow')}
-          value={formatNumber(counts.transit)}
-          icon={Anchor}
-          subtitle={t('shipments.kpi.inTransit.subtitle')}
-        />
-        <KpiCard
-          eyebrow={t('shipments.kpi.atDock.eyebrow')}
-          value={
-            <span className="text-warning-hover">{formatNumber(counts.dock)}</span>
-          }
-          icon={Truck}
-          subtitle={t('shipments.kpi.atDock.subtitle')}
-        />
-        <KpiCard
-          eyebrow={t('shipments.kpi.delayed.eyebrow')}
-          value={
-            <span className="text-critical">{formatNumber(counts.delayed)}</span>
-          }
-          icon={AlertTriangle}
-          subtitle={t('shipments.kpi.delayed.subtitle')}
-        />
-        <KpiCard
-          eyebrow={t('shipments.kpi.arrivingToday.eyebrow')}
-          value={formatNumber(arrivingToday)}
-          icon={Clock}
-          subtitle={formatDate(TODAY)}
-        />
-      </div>
-
-      <SubTabs<GroupTab>
-        options={[
-          { id: 'all', label: t('shipments.tab.all'), count: counts.all },
-          { id: 'pending', label: t('shipments.tab.pending'), count: counts.pending },
-          { id: 'in-transit', label: t('shipments.tab.inTransit'), count: counts.transit },
-          { id: 'at-dock', label: t('shipments.tab.atDock'), count: counts.dock },
-          { id: 'delivered', label: t('shipments.tab.delivered'), count: counts.delivered },
-          { id: 'delayed', label: t('shipments.tab.delayed'), count: counts.delayed },
-        ]}
-        value={tab}
-        onChange={setTab}
-        className="mb-6"
-      />
-
-      <div className="flex flex-wrap items-center gap-3 mb-4">
-        <div className="flex-1 min-w-[280px]">
-          <SearchBar
-            value={search}
-            onChange={setSearch}
-            placeholder={t('shipments.search.placeholder')}
+          <KpiCard
+            eyebrow={t('shipments.kpi.atDock.eyebrow')}
+            value={
+              <span className="text-warning-hover">{formatNumber(counts.dock)}</span>
+            }
+            icon={Truck}
+            subtitle={t('shipments.kpi.atDock.subtitle')}
           />
-        </div>
-        {/* SEAT2-I18N-MODE-01: the chip `id` stays canonical EN (it is matched
-            against `s.mode` data); only the display label localizes via the
-            central modeLabel map. Same display-vs-data split as statusLabel. */}
+          <KpiCard
+            eyebrow={t('shipments.kpi.delayed.eyebrow')}
+            value={
+              <span className="text-critical">{formatNumber(counts.delayed)}</span>
+            }
+            icon={AlertTriangle}
+            subtitle={t('shipments.kpi.delayed.subtitle')}
+          />
+          <KpiCard
+            eyebrow={t('shipments.kpi.arrivingToday.eyebrow')}
+            value={formatNumber(arrivingToday)}
+            icon={Clock}
+            subtitle={formatDate(TODAY)}
+          />
+        </>
+      }
+      tabs={
+        <SubTabs<GroupTab>
+          options={[
+            { id: 'all', label: t('shipments.tab.all'), count: counts.all },
+            { id: 'pending', label: t('shipments.tab.pending'), count: counts.pending },
+            { id: 'in-transit', label: t('shipments.tab.inTransit'), count: counts.transit },
+            { id: 'at-dock', label: t('shipments.tab.atDock'), count: counts.dock },
+            { id: 'delivered', label: t('shipments.tab.delivered'), count: counts.delivered },
+            { id: 'delayed', label: t('shipments.tab.delayed'), count: counts.delayed },
+          ]}
+          value={tab}
+          onChange={setTab}
+        />
+      }
+      filters={
+        // SEAT2-I18N-MODE-01: the chip `id` stays canonical EN (it is matched
+        // against `s.mode` data); only the display label localizes via the
+        // central modeLabel map. Same display-vs-data split as statusLabel.
         <FilterChipsBar<ShipmentMode>
           options={[
             { id: 'Sea', label: ml('Sea') },
@@ -645,130 +821,23 @@ const BuyerShipments: React.FC = () => {
           onChange={toggleMode}
           multiSelect
         />
-      </div>
-
-      <div className="border border-border-subtle rounded-lg bg-white overflow-hidden mb-6">
-        <Table>
-          <TableHeader>
-            <TableHeaderCell>{t('shipments.table.col.asnPo')}</TableHeaderCell>
-            <TableHeaderCell>{t('shipments.table.col.supplier')}</TableHeaderCell>
-            <TableHeaderCell>{t('shipments.table.col.mode')}</TableHeaderCell>
-            <TableHeaderCell>{t('shipments.table.col.route')}</TableHeaderCell>
-            <TableHeaderCell>{t('shipments.table.col.shipDate')}</TableHeaderCell>
-            <TableHeaderCell>{t('shipments.table.col.eta')}</TableHeaderCell>
-            <TableHeaderCell>{t('shipments.table.col.packages')}</TableHeaderCell>
-            <TableHeaderCell>{t('shipments.table.col.dock')}</TableHeaderCell>
-            <TableHeaderCell>{t('shipments.table.col.status')}</TableHeaderCell>
-            <TableHeaderCell> </TableHeaderCell>
-          </TableHeader>
-          <tbody>
-            {filtered.map((s) => {
-              const sup = supplierById.get(s.supplierId);
-              const Icon = MODE_ICON[s.mode];
-              // ⚠️ THE PAGE'S SECOND `is it late?` PREDICATE IS GONE. This read
-              // `(s.delayDays ?? 0) > 0` — a stored field answering the same
-              // question the pill answers from the classifier. It agreed only
-              // because ONE row of eighteen carried the field; every other row
-              // was acquitted by `?? 0` rather than by a measurement.
-              const late = displayOf(s) === 'Delayed';
-              const lateBy = daysLate(s, TODAY);
-              return (
-                <TableRow
-                  key={s.id}
-                  className="cursor-pointer"
-                  onClick={() => setSelectedId(s.id)}
-                >
-                  <TableCell>
-                    <Data as="div" className="font-semibold text-text-primary">
-                      {s.asnNumber}
-                    </Data>
-                    <Data as="div" className="text-xs text-text-tertiary">
-                      {s.poNumber}
-                    </Data>
-                  </TableCell>
-                  <TableCell>
-                    {/* i18n-defer: mock/sample data — supplier proper nouns */}
-                    <div className="text-sm text-text-primary">
-                      {s.supplierName}
-                    </div>
-                    <div className="text-xs text-text-tertiary">
-                      {sup
-                        ? COUNTRY_FLAG[sup.country] ?? sup.country
-                        : '—'}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <span className="inline-flex items-center gap-1.5 text-sm text-text-secondary">
-                      <Icon size={14} />
-                      {ml(s.mode)}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <div className="text-xs text-text-secondary">
-                      {s.origin}
-                    </div>
-                    <div className="text-xs text-text-tertiary">
-                      → {s.destination}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Data as="span" className="text-sm text-text-secondary">
-                      {formatDate(s.shipDate)}
-                    </Data>
-                  </TableCell>
-                  <TableCell>
-                    <Data
-                      as="div"
-                      className={`text-sm ${late ? 'text-critical font-semibold' : 'text-text-primary'}`}
-                    >
-                      {formatDate(s.estimatedArrival)}
-                    </Data>
-                    {late && lateBy !== null && (
-                      <div className="text-xs text-critical">
-                        {t('shipments.table.daysLate', { days: lateBy })}
-                      </div>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <Data as="div" className="text-sm text-text-primary">
-                      {formatNumber(s.packageCount)}
-                    </Data>
-                    <Data as="div" className="text-xs text-text-tertiary">
-                      {formatNumber(s.totalWeight)} kg
-                    </Data>
-                  </TableCell>
-                  <TableCell>
-                    <span className="text-sm text-text-secondary">
-                      {s.dockAssignment ?? '—'}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <StatusPill variant={STATUS_VARIANT[displayOf(s)]}>
-                      {displayOf(s)}
-                    </StatusPill>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <ChevronRight
-                      size={16}
-                      className="text-text-tertiary inline"
-                    />
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-            {filtered.length === 0 && (
-              <tr>
-                <td
-                  colSpan={10}
-                  className="py-10 text-center text-sm text-text-tertiary"
-                >
-                  {t('shipments.table.empty')}
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </Table>
-      </div>
+      }
+      search={
+        <SearchBar
+          value={search}
+          onChange={setSearch}
+          placeholder={t('shipments.search.placeholder')}
+        />
+      }
+    >
+      <DataTable
+        columns={shipmentColumns}
+        rows={filtered}
+        rowKey={(s) => s.id}
+        onRowClick={(s) => setSelectedId(s.id)}
+        empty={t('shipments.table.empty')}
+        className="mb-6"
+      />
 
       {/* OPS-3 — the ship notices suppliers sent in this portal, in their own
           state. They have no carrier record, so they are not rows above. */}
@@ -785,55 +854,13 @@ const BuyerShipments: React.FC = () => {
         defaultOpen={showSchedule}
       >
         <div className="overflow-x-auto">
-          <table className="w-full text-xs border-collapse">
-            <thead>
-              <tr>
-                <th className="text-left text-label text-text-tertiary uppercase py-2 pr-3">
-                  {t('shipments.dock.col.dock')}
-                </th>
-                {TIME_SLOTS.map((t) => (
-                  <th
-                    key={t}
-                    className="text-left text-label text-text-tertiary uppercase py-2 px-1"
-                  >
-                    {t}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {DOCKS.map((d) => (
-                <tr key={d}>
-                  <td className="py-2 pr-3 text-sm font-medium text-text-primary">
-                    {d}
-                  </td>
-                  {TIME_SLOTS.map((t) => {
-                    const cell = dockSchedule[d]?.[t];
-                    return (
-                      <td key={t} className="py-1 px-1">
-                        {cell ? (
-                          <button
-                            type="button"
-                            onClick={() => setSelectedId(cell.id)}
-                            className="w-full rounded-md px-2 py-2 text-xs font-semibold bg-action-soft text-action-hover hover:bg-action/20 transition-colors text-left"
-                          >
-                            <Data as="div" className="truncate">{cell.asnNumber}</Data>
-                            <div className="text-label text-action-text truncate">
-                              {cell.supplierName}
-                            </div>
-                          </button>
-                        ) : (
-                          <div className="rounded-md px-2 py-2 bg-bg-hover text-text-tertiary text-center">
-                            —
-                          </div>
-                        )}
-                      </td>
-                    );
-                  })}
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <DataTable
+            columns={dockColumns}
+            rows={DOCKS}
+            rowKey={(d) => d}
+            density="compact"
+            card={false}
+          />
         </div>
       </FormSection>
 
@@ -964,32 +991,13 @@ const BuyerShipments: React.FC = () => {
               <div className="text-label text-text-tertiary uppercase mb-2">
                 {t('shipments.panel.lineItems')}
               </div>
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="text-xs text-text-tertiary uppercase">
-                    <th className="text-left py-1">{t('shipments.panel.col.material')}</th>
-                    <th className="text-left py-1">{t('shipments.panel.col.description')}</th>
-                    <th className="text-right py-1">{t('shipments.panel.col.qty')}</th>
-                    <th className="text-left py-1 pl-2">{t('shipments.panel.col.uom')}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {selected.lineItems.map((li, i) => (
-                    <tr key={i} className="border-t border-border-subtle">
-                      <td className="py-2 text-text-primary">
-                        <Data>{li.materialCode}</Data>
-                      </td>
-                      <td className="py-2 text-text-secondary">
-                        {li.description}
-                      </td>
-                      <td className="py-2 text-right text-text-primary">
-                        <Data>{formatNumber(li.qty)}</Data>
-                      </td>
-                      <td className="py-2 pl-2 text-text-tertiary">{li.uom}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <DataTable
+                columns={lineColumns}
+                rows={selected.lineItems}
+                rowKey={(_li, i) => String(i)}
+                density="compact"
+                card={false}
+              />
             </section>
 
             <section>
@@ -1031,7 +1039,7 @@ const BuyerShipments: React.FC = () => {
           </div>
         )}
       </SidePanel>
-    </AppShellV2>
+    </ListPage>
   );
 };
 

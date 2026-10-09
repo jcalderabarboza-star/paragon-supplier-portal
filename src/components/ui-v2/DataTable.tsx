@@ -38,7 +38,17 @@ export interface Column<T> {
   headerClassName?: string;
   /** Accessible name when `header` is empty or an icon. */
   ariaLabel?: string;
+  /**
+   * The cell holds controls of its own inside a clickable row: a click in it,
+   * padding included, does not open the row.
+   */
+  stopRowClick?: boolean;
 }
+
+/** The second line of a cell — a description under a code, a reference under a name. */
+export const CellSub: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className = '' }) => (
+  <div className={`mt-0.5 whitespace-normal font-sans text-xs font-normal text-text-tertiary ${className}`}>{children}</div>
+);
 
 type RowAttrs = React.HTMLAttributes<HTMLTableRowElement> & { [dataAttr: `data-${string}`]: string | undefined };
 
@@ -89,7 +99,10 @@ export const CELL_KIND_CLASS: Record<ColumnKind, string> = {
 };
 
 const DENSITY = {
-  comfortable: { table: 'text-sm', th: 'py-3 px-4', td: 'py-4 px-4' },
+  // 12px at the sides, not the 16px the old primitives used: a document number
+  // no longer wraps, and the four pixels a side are what pays for it on a
+  // nine-column list at 1600px (measured: purchase orders, invoices).
+  comfortable: { table: 'text-sm', th: 'py-3 px-3', td: 'py-4 px-3' },
   compact: { table: 'text-xs', th: 'py-2 px-3', td: 'py-2 px-3' },
 } as const;
 
@@ -151,7 +164,11 @@ function DataTable<T>({
                 {...attrs}
               >
                 {columns.map((c) => (
-                  <td key={c.id} className={`align-middle ${d.td} ${CELL_KIND_CLASS[c.kind]} ${c.className ?? ''}`}>
+                  <td
+                    key={c.id}
+                    className={`align-middle ${d.td} ${CELL_KIND_CLASS[c.kind]} ${c.className ?? ''}`}
+                    onClick={c.stopRowClick ? (e) => e.stopPropagation() : undefined}
+                  >
                     {c.cell(row, i)}
                   </td>
                 ))}

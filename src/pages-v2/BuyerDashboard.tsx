@@ -25,10 +25,7 @@ import PageMetaLine from '../components/ui-v2/PageMetaLine';
 import ProvenanceMarker from '../components/ui-v2/ProvenanceMarker';
 import KpiCard from '../components/ui-v2/KpiCard';
 import TargetBar from '../components/ui-v2/TargetBar';
-import Table from '../components/ui-v2/Table';
-import TableHeader, { TableHeaderCell } from '../components/ui-v2/TableHeader';
-import TableRow from '../components/ui-v2/TableRow';
-import TableCell from '../components/ui-v2/TableCell';
+import DataTable from '../components/ui-v2/DataTable';
 import LoadingState from '../components/ui-v2/LoadingState';
 import ErrorState from '../components/ui-v2/ErrorState';
 import EmptyState from '../components/ui-v2/EmptyState';
@@ -715,24 +712,18 @@ const BuyerDashboard: React.FC = () => {
         <h2 className="text-section text-text-primary mb-4">
           {t('buyerDashboard.queue.title')}
         </h2>
-        <Table>
-          <TableHeader>
-            <TableHeaderCell>{t('buyerDashboard.queue.col.lane')}</TableHeaderCell>
-            <TableHeaderCell>{t('buyerDashboard.queue.col.work')}</TableHeaderCell>
-            <TableHeaderCell>{t('buyerDashboard.queue.col.count')}</TableHeaderCell>
-            <TableHeaderCell>{t('buyerDashboard.queue.col.open')}</TableHeaderCell>
-          </TableHeader>
-          <tbody>
-            {visibleRows.length === 0 ? (
-              <TableRow>
-                <TableCell className="text-text-tertiary">
-                  {t('buyerDashboard.queue.noRow')}
-                </TableCell>
-              </TableRow>
-            ) : null}
-            {visibleRows.map((row) => (
-              <TableRow key={row.lane}>
-                <TableCell>
+        <DataTable<(typeof visibleRows)[number]>
+          card={false}
+          rows={visibleRows}
+          rowKey={(row) => row.lane}
+          empty={t('buyerDashboard.queue.noRow')}
+          columns={[
+            {
+              id: 'lane',
+              header: t('buyerDashboard.queue.col.lane'),
+              kind: 'text',
+              cell: (row) => (
+                <>
                   <div className="font-medium text-text-primary">
                     {t(`roles.owner.${row.lane}`)}
                   </div>
@@ -744,33 +735,49 @@ const BuyerDashboard: React.FC = () => {
                       {t('buyerDashboard.queue.handoff')}
                     </div>
                   )}
-                </TableCell>
-                <TableCell className="text-text-secondary">
+                </>
+              ),
+            },
+            {
+              id: 'work',
+              header: t('buyerDashboard.queue.col.work'),
+              kind: 'text',
+              cell: (row) => (
+                <span className="text-text-secondary">
                   <span>{t(`buyerDashboard.queue.${row.lane}.work`)}</span>
                   {row.held ? (
                     <span className={`${BADGE} ml-2`}>{t('buyerDashboard.phaseB.badge')}</span>
                   ) : null}
-                </TableCell>
-                <TableCell>
-                  {row.counts === null ? (
-                    <span className="text-text-tertiary">—</span>
-                  ) : (
-                    <Data>{row.counts.join(' · ')}</Data>
-                  )}
-                </TableCell>
-                <TableCell>
-                  <Link
-                    to={row.route}
-                    data-testid={`queue-open-${row.lane}`}
-                    className="text-action-text hover:underline"
-                  >
-                    {t('buyerDashboard.queue.open')}
-                  </Link>
-                </TableCell>
-              </TableRow>
-            ))}
-          </tbody>
-        </Table>
+                </span>
+              ),
+            },
+            {
+              id: 'count',
+              header: t('buyerDashboard.queue.col.count'),
+              kind: 'number',
+              cell: (row) =>
+                row.counts === null ? (
+                  <span className="text-text-tertiary">—</span>
+                ) : (
+                  <Data>{row.counts.join(' · ')}</Data>
+                ),
+            },
+            {
+              id: 'open',
+              header: t('buyerDashboard.queue.col.open'),
+              kind: 'actions',
+              cell: (row) => (
+                <Link
+                  to={row.route}
+                  data-testid={`queue-open-${row.lane}`}
+                  className="text-action-text hover:underline"
+                >
+                  {t('buyerDashboard.queue.open')}
+                </Link>
+              ),
+            },
+          ]}
+        />
       </section>
 
       {/* ── PRODUCTION LINE RISK + SUPPLIER HEALTH (SAMPLE) ────────────────────
@@ -802,17 +809,17 @@ const BuyerDashboard: React.FC = () => {
             capability="dashboard"
             label={t('buyerDashboard.lines.title')}
           >
-            <Table>
-              <TableHeader>
-                <TableHeaderCell>{t('buyerDashboard.lines.col.line')}</TableHeaderCell>
-                <TableHeaderCell>{t('buyerDashboard.lines.col.category')}</TableHeaderCell>
-                <TableHeaderCell>{t('buyerDashboard.lines.col.cover')}</TableHeaderCell>
-                <TableHeaderCell>{t('buyerDashboard.lines.col.risk')}</TableHeaderCell>
-              </TableHeader>
-              <tbody>
-                {productionLines.map((row) => (
-                  <TableRow key={row.line}>
-                    <TableCell>
+            <DataTable<ProductionLineRow>
+              card={false}
+              rows={productionLines}
+              rowKey={(row) => row.line}
+              columns={[
+                {
+                  id: 'line',
+                  header: t('buyerDashboard.lines.col.line'),
+                  kind: 'text',
+                  cell: (row) => (
+                    <>
                       <div className="font-medium text-text-primary">{row.line}</div>
                       {row.blockedSkus > 0 ? (
                         <div className="text-meta text-text-tertiary">
@@ -824,18 +831,31 @@ const BuyerDashboard: React.FC = () => {
                           )}
                         </div>
                       ) : null}
-                    </TableCell>
-                    <TableCell className="text-text-secondary">{cl(row.category)}</TableCell>
-                    <TableCell className="text-text-primary">
-                      <Data>{row.coverDays}d</Data>
-                    </TableCell>
-                    <TableCell>
-                      <StatusPill variant={RISK_VARIANT[row.risk]}>{row.riskLabel}</StatusPill>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </tbody>
-            </Table>
+                    </>
+                  ),
+                },
+                {
+                  id: 'category',
+                  header: t('buyerDashboard.lines.col.category'),
+                  kind: 'text',
+                  cell: (row) => <span className="text-text-secondary">{cl(row.category)}</span>,
+                },
+                {
+                  id: 'cover',
+                  header: t('buyerDashboard.lines.col.cover'),
+                  kind: 'number',
+                  cell: (row) => <Data>{row.coverDays}d</Data>,
+                },
+                {
+                  id: 'risk',
+                  header: t('buyerDashboard.lines.col.risk'),
+                  kind: 'status',
+                  cell: (row) => (
+                    <StatusPill variant={RISK_VARIANT[row.risk]}>{row.riskLabel}</StatusPill>
+                  ),
+                },
+              ]}
+            />
           </IllustrativeRegion>
         </section>
 

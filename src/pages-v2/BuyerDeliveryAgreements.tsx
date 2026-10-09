@@ -2,19 +2,14 @@ import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { Info, ChevronRight, ExternalLink } from 'lucide-react';
-import AppShellV2 from '../components/layout-v2/AppShellV2';
-import PageHeader from '../components/ui-v2/PageHeader';
-import PageMetaLine from '../components/ui-v2/PageMetaLine';
+import ListPage from '../components/ui-v2/ListPage';
+import DataTable, { type Column } from '../components/ui-v2/DataTable';
 import LivenessPill from '../components/ui-v2/LivenessPill';
 import LoadingState from '../components/ui-v2/LoadingState';
 import EmptyState from '../components/ui-v2/EmptyState';
 import SubTabs from '../components/ui-v2/SubTabs';
 import SearchBar from '../components/ui-v2/SearchBar';
 import FilterChipsBar from '../components/ui-v2/FilterChipsBar';
-import Table from '../components/ui-v2/Table';
-import TableHeader, { TableHeaderCell } from '../components/ui-v2/TableHeader';
-import TableRow from '../components/ui-v2/TableRow';
-import TableCell from '../components/ui-v2/TableCell';
 import StatusPill from '../components/ui-v2/StatusPill';
 import TargetBar from '../components/ui-v2/TargetBar';
 import Data from '../components/ui-v2/Data';
@@ -27,6 +22,7 @@ import {
   bucketCounts,
   type AgreementItemBucket,
   type AgreementItemCounts,
+  type AgreementItemSummary,
 } from '../services/delivery';
 import type { ReleaseType } from '../services/delivery';
 import { SDC_SIMULATED_NOW } from '../services/sdc';
@@ -131,33 +127,130 @@ const BuyerDeliveryAgreements: React.FC = () => {
     return parts.join(' · ');
   };
 
+  const columns: Column<AgreementItemSummary>[] = [
+    {
+      id: 'supplier',
+      header: t('delivery.rollup.col.supplier'),
+      kind: 'text',
+      cell: (r) => <div className="text-sm text-text-primary">{r.supplierName ?? r.supplierId}</div>,
+    },
+    {
+      id: 'contract',
+      header: t('delivery.rollup.col.contract'),
+      kind: 'id',
+      cell: (r) => (
+        /* Deep-link to the contract's own DA tab (where release lives).
+           stopPropagation so the link navigates without also opening
+           the quick-look panel. */
+        <Link
+          to={`/buyer/contracts/${r.contractId}`}
+          onClick={(e) => e.stopPropagation()}
+          className="text-action-text hover:underline"
+        >
+          <Data className="text-action-text">{r.contractId}</Data>
+        </Link>
+      ),
+    },
+    {
+      id: 'material',
+      header: t('delivery.rollup.col.material'),
+      kind: 'id',
+      cell: (r) => (
+        <div className="flex items-center gap-2">
+          <Data>{r.materialCode}</Data>
+          <StatusPill variant="neutral">{r.releaseType}</StatusPill>
+        </div>
+      ),
+    },
+    {
+      id: 'released',
+      header: t('delivery.rollup.col.released'),
+      kind: 'number',
+      cell: (r) => (
+        <div className="w-28 ml-auto">
+          <TargetBar pct={r.releasedPct} />
+          <div className="text-[10px] text-text-tertiary mt-1">
+            <Data>{Math.round(r.releasedPct)}%</Data>
+          </div>
+        </div>
+      ),
+    },
+    {
+      id: 'nextDue',
+      header: t('delivery.rollup.col.nextDue'),
+      kind: 'date',
+      cell: (r) =>
+        r.nextDue ? (
+          <div>
+            <Data>{formatDate(r.nextDue.date)}</Data>
+            <div className="text-[10px] text-text-tertiary uppercase">
+              {t(`delivery.rollup.due.${r.nextDue.kind}`)}
+            </div>
+          </div>
+        ) : (
+          <span className="text-text-tertiary">—</span>
+        ),
+    },
+    {
+      id: 'status',
+      header: t('delivery.rollup.col.status'),
+      kind: 'status',
+      cell: (r) => (
+        <>
+          <StatusPill variant={BUCKET_VARIANT[r.bucket]}>
+            {t(`delivery.rollup.tab.${r.bucket}`)}
+          </StatusPill>
+          <div className="text-[10px] text-text-tertiary mt-0.5">
+            {countsCaption(r.counts, r.bucket)}
+          </div>
+          {r.overToleranceQty !== null && (
+            <div
+              className="text-[10px] text-warning-hover font-semibold mt-0.5"
+              data-testid={`rollup-over-tolerance-${r.agreementId}-${r.itemSeq}`}
+            >
+              {t('delivery.flag.overToleranceShort', {
+                over: formatNumber(r.overToleranceQty),
+              })}
+            </div>
+          )}
+        </>
+      ),
+    },
+    {
+      id: 'open',
+      header: ' ',
+      kind: 'actions',
+      cell: () => <ChevronRight size={16} className="text-text-tertiary inline" />,
+    },
+  ];
+
   return (
-    <AppShellV2>
-      <PageHeader
-        breadcrumb={[t('delivery.crumb.title')]}
-        title={t('delivery.header.title')}
-        subtitle={t('delivery.header.subtitle')}
-        actions={<LivenessPill capability="deliveryAgreements" />}
-      />
-
-      <PageMetaLine className="-mt-6 mb-6 flex items-center gap-3">
-        <span>
-          {t('delivery.meta.summary', { count: views.length, date: formatDate(SDC_SIMULATED_NOW) })}
+    <ListPage
+      breadcrumb={[t('delivery.crumb.title')]}
+      title={t('delivery.header.title')}
+      subtitle={t('delivery.header.subtitle')}
+      actions={<LivenessPill capability="deliveryAgreements" />}
+      meta={
+        <span className="inline-flex items-center gap-3">
+          <span>
+            {t('delivery.meta.summary', { count: views.length, date: formatDate(SDC_SIMULATED_NOW) })}
+          </span>
+          <LivenessPill capability="deliveryAgreements" />
         </span>
-        <LivenessPill capability="deliveryAgreements" />
-      </PageMetaLine>
-
-      {/* Honest framing — this OVERVIEW is read-only + simulated; releasing lives
-          in each contract's own DA tab (the callout points there). */}
-      <div className="bg-info-soft border-l-2 border-info rounded px-4 py-3 mb-6 text-sm text-text-primary flex items-start gap-2">
-        <Info size={14} className="text-info shrink-0 mt-0.5" />
-        <span>
-          <strong className="text-info">{t('delivery.rollup.honestyTitle')}</strong>{' '}
-          {t('delivery.rollup.honestyBody')} {t('delivery.rollup.hint')}
-        </span>
-      </div>
-
-      <SubTabs<Tab> options={tabOptions} value={tab} onChange={setTab} className="mb-6" />
+      }
+      notices={
+        /* Honest framing — this OVERVIEW is read-only + simulated; releasing lives
+           in each contract's own DA tab (the callout points there). */
+        <div className="bg-info-soft border-l-2 border-info rounded px-4 py-3 text-sm text-text-primary flex items-start gap-2">
+          <Info size={14} className="text-info shrink-0 mt-0.5" />
+          <span>
+            <strong className="text-info">{t('delivery.rollup.honestyTitle')}</strong>{' '}
+            {t('delivery.rollup.honestyBody')} {t('delivery.rollup.hint')}
+          </span>
+        </div>
+      }
+      tabs={<SubTabs<Tab> options={tabOptions} value={tab} onChange={setTab} />}
+    >
 
       <div className="flex flex-wrap items-center gap-3 mb-4">
         <div className="flex-1 min-w-[280px]">
@@ -185,98 +278,13 @@ const BuyerDeliveryAgreements: React.FC = () => {
         </div>
       )}
 
-      <div className="border border-border-subtle rounded-lg bg-white overflow-hidden">
-        <Table>
-          <TableHeader>
-            <TableHeaderCell>{t('delivery.rollup.col.supplier')}</TableHeaderCell>
-            <TableHeaderCell>{t('delivery.rollup.col.contract')}</TableHeaderCell>
-            <TableHeaderCell>{t('delivery.rollup.col.material')}</TableHeaderCell>
-            <TableHeaderCell>{t('delivery.rollup.col.released')}</TableHeaderCell>
-            <TableHeaderCell>{t('delivery.rollup.col.nextDue')}</TableHeaderCell>
-            <TableHeaderCell>{t('delivery.rollup.col.status')}</TableHeaderCell>
-            <TableHeaderCell> </TableHeaderCell>
-          </TableHeader>
-          <tbody>
-            {visible.map((r) => (
-              <TableRow
-                key={`${r.agreementId}-${r.itemSeq}`}
-                className="cursor-pointer"
-                onClick={() => setSelected({ agreementId: r.agreementId, itemSeq: r.itemSeq })}
-              >
-                <TableCell>
-                  <div className="text-sm text-text-primary">{r.supplierName ?? r.supplierId}</div>
-                </TableCell>
-                <TableCell>
-                  {/* Deep-link to the contract's own DA tab (where release lives).
-                      stopPropagation so the link navigates without also opening
-                      the quick-look panel. */}
-                  <Link
-                    to={`/buyer/contracts/${r.contractId}`}
-                    onClick={(e) => e.stopPropagation()}
-                    className="text-action-text hover:underline"
-                  >
-                    <Data className="text-xs text-action-text">{r.contractId}</Data>
-                  </Link>
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    <Data className="text-sm">{r.materialCode}</Data>
-                    <StatusPill variant="neutral">{r.releaseType}</StatusPill>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <div className="w-28">
-                    <TargetBar pct={r.releasedPct} />
-                    <div className="text-[10px] text-text-tertiary mt-1">
-                      <Data>{Math.round(r.releasedPct)}%</Data>
-                    </div>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  {r.nextDue ? (
-                    <div>
-                      <Data className="text-sm">{formatDate(r.nextDue.date)}</Data>
-                      <div className="text-[10px] text-text-tertiary uppercase">
-                        {t(`delivery.rollup.due.${r.nextDue.kind}`)}
-                      </div>
-                    </div>
-                  ) : (
-                    <span className="text-text-tertiary">—</span>
-                  )}
-                </TableCell>
-                <TableCell>
-                  <StatusPill variant={BUCKET_VARIANT[r.bucket]}>
-                    {t(`delivery.rollup.tab.${r.bucket}`)}
-                  </StatusPill>
-                  <div className="text-[10px] text-text-tertiary mt-0.5">
-                    {countsCaption(r.counts, r.bucket)}
-                  </div>
-                  {r.overToleranceQty !== null && (
-                    <div
-                      className="text-[10px] text-warning-hover font-semibold mt-0.5"
-                      data-testid={`rollup-over-tolerance-${r.agreementId}-${r.itemSeq}`}
-                    >
-                      {t('delivery.flag.overToleranceShort', {
-                        over: formatNumber(r.overToleranceQty),
-                      })}
-                    </div>
-                  )}
-                </TableCell>
-                <TableCell className="text-right">
-                  <ChevronRight size={16} className="text-text-tertiary inline" />
-                </TableCell>
-              </TableRow>
-            ))}
-            {visible.length === 0 && (
-              <tr>
-                <td colSpan={7} className="py-10 text-center text-sm text-text-tertiary">
-                  {t('delivery.rollup.empty')}
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </Table>
-      </div>
+      <DataTable
+        columns={columns}
+        rows={visible}
+        rowKey={(r) => `${r.agreementId}-${r.itemSeq}`}
+        onRowClick={(r) => setSelected({ agreementId: r.agreementId, itemSeq: r.itemSeq })}
+        empty={t('delivery.rollup.empty')}
+      />
 
       {/* Quick-look drill — the item's READ-ONLY release calendar + a deep-link to
           the contract (where release lives). No release control here. */}
@@ -344,7 +352,7 @@ const BuyerDeliveryAgreements: React.FC = () => {
           </div>
         )}
       </SidePanel>
-    </AppShellV2>
+    </ListPage>
   );
 };
 

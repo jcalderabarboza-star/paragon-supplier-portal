@@ -18,19 +18,14 @@ import {
 // D-CENSUS-8 — the recharts import is gone with the synthetic DOS trend chart it
 // drew. This page now renders no chart, which is the honest state: it has no
 // time-series data, only current positions.
-import AppShellV2 from '../components/layout-v2/AppShellV2';
-import PageHeader from '../components/ui-v2/PageHeader';
-import PageMetaLine from '../components/ui-v2/PageMetaLine';
 import ProvenanceMarker from '../components/ui-v2/ProvenanceMarker';
 import KpiCard from '../components/ui-v2/KpiCard';
 import BulkActionsBar from '../components/ui-v2/BulkActionsBar';
 import SubTabs from '../components/ui-v2/SubTabs';
 import FilterChipsBar from '../components/ui-v2/FilterChipsBar';
 import SearchBar from '../components/ui-v2/SearchBar';
-import Table from '../components/ui-v2/Table';
-import TableHeader, { TableHeaderCell } from '../components/ui-v2/TableHeader';
-import TableRow from '../components/ui-v2/TableRow';
-import TableCell from '../components/ui-v2/TableCell';
+import DataTable, { CellSub, type Column } from '../components/ui-v2/DataTable';
+import ListPage from '../components/ui-v2/ListPage';
 import SidePanel from '../components/ui-v2/SidePanel';
 import Timeline, { TimelineEvent } from '../components/ui-v2/Timeline';
 import LoadingState from '../components/ui-v2/LoadingState';
@@ -375,122 +370,274 @@ const BuyerInventory: React.FC = () => {
 
   const lastSync = '11:42';
 
+  const heatColumns: Column<string>[] = [
+    {
+      id: 'category',
+      header: t('buyerInventory.heatmap.col.category'),
+      kind: 'text',
+      cell: (cat) => <span className="font-medium">{cl(cat)}</span>,
+    },
+    ...BRANDS.map((b): Column<string> => ({
+      id: b,
+      header: b,
+      kind: 'status',
+      cell: (cat) => {
+        const cell = heatmap[cat]?.[b];
+        const avg = cell && cell.count > 0 ? Math.round(cell.dos / cell.count) : 0;
+        return (
+          <div className={`rounded-md px-3 py-2 text-xs font-semibold ${heatColor(avg)}`}>
+            <Data>{avg > 0 ? `${avg}d` : '—'}</Data>
+          </div>
+        );
+      },
+    })),
+  ];
+
+  const columns: Column<InventoryRecord>[] = [
+    {
+      id: 'material',
+      header: t('buyerInventory.table.col.material'),
+      kind: 'id',
+      cell: (it) => (
+        <>
+          <Data as="div">{it.materialCode}</Data>
+          <div className="text-xs font-sans font-normal text-text-tertiary truncate max-w-[260px]">
+            {it.materialDescription}
+          </div>
+        </>
+      ),
+    },
+    {
+      id: 'supplier',
+      header: t('buyerInventory.table.col.supplier'),
+      kind: 'text',
+      cell: (it) => {
+        const sup = supplierById.get(it.supplierId);
+        return (
+          <>
+            <div className="text-sm text-text-primary">{it.supplierName}</div>
+            <div className="text-xs text-text-tertiary">
+              {sup ? COUNTRY_FLAG[sup.country] ?? sup.country : '—'}
+            </div>
+          </>
+        );
+      },
+    },
+    {
+      id: 'category',
+      header: t('buyerInventory.table.col.category'),
+      kind: 'text',
+      cell: (it) => {
+        const sup = supplierById.get(it.supplierId);
+        return <span className="text-sm text-text-secondary">{sup?.category ? cl(sup.category) : '—'}</span>;
+      },
+    },
+    {
+      id: 'onHand',
+      header: t('buyerInventory.table.col.onHand'),
+      kind: 'number',
+      cell: (it) => (
+        <>
+          <div>
+            <Data>{formatNumber(it.qtyOnHand)}</Data>
+          </div>
+          <CellSub>{it.uom}</CellSub>
+        </>
+      ),
+    },
+    {
+      id: 'available',
+      header: t('buyerInventory.table.col.available'),
+      kind: 'number',
+      cell: (it) => (
+        <>
+          <div>
+            <Data>{formatNumber(it.qtyAvailable)}</Data>
+          </div>
+          <CellSub>{it.uom}</CellSub>
+        </>
+      ),
+    },
+    {
+      id: 'dos',
+      header: t('buyerInventory.table.col.dos'),
+      kind: 'status',
+      cell: (it) => {
+        const bucket = dosBucket(it.daysOfSupply);
+        return <StatusPill variant={bucket.variant}>{bucket.label}</StatusPill>;
+      },
+    },
+    {
+      id: 'lastUpdated',
+      header: t('buyerInventory.table.col.lastUpdated'),
+      kind: 'date',
+      cell: (it) => <Data>{formatRelativeTime(it.lastUpdated)}</Data>,
+    },
+    {
+      id: 'source',
+      header: t('buyerInventory.table.col.source'),
+      kind: 'text',
+      cell: (it) => {
+        const Icon = SourceIcon(it.dataSource);
+        return (
+          <span className="inline-flex items-center gap-1.5 text-xs text-text-secondary">
+            <Icon size={14} />
+            {it.dataSource}
+          </span>
+        );
+      },
+    },
+    {
+      id: 'open',
+      header: '',
+      kind: 'actions',
+      cell: () => <ChevronRight size={16} className="text-text-tertiary inline" />,
+    },
+  ];
+
+  const poColumns: Column<(typeof activePOs)[number]>[] = [
+    {
+      id: 'po',
+      header: t('buyerInventory.panel.col.po'),
+      kind: 'id',
+      cell: (po) => <Data>{po.poNumber}</Data>,
+    },
+    {
+      id: 'qty',
+      header: t('buyerInventory.panel.col.qty'),
+      kind: 'number',
+      cell: (po) => {
+        const li = po.lineItems.find((l) => l.materialCode === selected?.materialCode);
+        return (
+          <Data>
+            {li ? formatNumber(li.quantity) : '—'} {li?.uom ?? ''}
+          </Data>
+        );
+      },
+    },
+    {
+      id: 'eta',
+      header: t('buyerInventory.panel.col.eta'),
+      kind: 'date',
+      cell: (po) => <Data>{po.confirmedDeliveryDate || po.requestedDeliveryDate}</Data>,
+    },
+  ];
+
   return (
-    <AppShellV2>
-      <PageHeader
-        breadcrumb={INVENTORY_CRUMB}
-        title={t('buyerInventory.header.title')}
-        subtitle={t('buyerInventory.header.subtitle')}
-        actions={
-          <BulkActionsBar
-            actions={[
-              {
-                label: t('buyerInventory.action.export'),
-                icon: FileSpreadsheet,
-                onClick: handleExport,
-              },
-            ]}
-            primary={{
-              label: t('buyerInventory.action.syncNow'),
-              icon: RefreshCw,
-              onClick: handleSync,
-            }}
+    <ListPage
+      breadcrumb={INVENTORY_CRUMB}
+      title={t('buyerInventory.header.title')}
+      subtitle={t('buyerInventory.header.subtitle')}
+      actions={
+        <BulkActionsBar
+          actions={[
+            {
+              label: t('buyerInventory.action.export'),
+              icon: FileSpreadsheet,
+              onClick: handleExport,
+            },
+          ]}
+          primary={{
+            label: t('buyerInventory.action.syncNow'),
+            icon: RefreshCw,
+            onClick: handleSync,
+          }}
+        />
+      }
+      meta={
+        <>
+          {t(
+            inventory.length === 1
+              ? 'buyerInventory.meta.materials.one'
+              : 'buyerInventory.meta.materials.other',
+            { count: inventory.length, sync: lastSync },
+          )}
+          {/* D-CENSUS-8 — the loudest unmarked page on the portal: it claimed
+              "Real-time", "EDI 846" and "automatically notified" over a frozen array.
+              Those claims are retracted in this batch; this states what the feed is.
+              NOTE INVENTORY-REFERENT-01 (filed): the `inventory` capability is backed
+              to `inventoryDeclaration` while this page reads `mockInventory`, so the
+              verb axis here describes a store this page does not render. */}
+          <ProvenanceMarker capability="inventory" className="ml-3 align-middle" />
+        </>
+      }
+      kpis={
+        <>
+          <KpiCard
+            eyebrow={t('buyerInventory.kpi.totalMaterials.eyebrow')}
+            value={formatNumber(counts.all)}
+            icon={Package}
+            subtitle={t('buyerInventory.kpi.totalMaterials.subtitle')}
           />
-        }
-      />
-
-      <PageMetaLine className="mb-6">
-        {t(
-          inventory.length === 1
-            ? 'buyerInventory.meta.materials.one'
-            : 'buyerInventory.meta.materials.other',
-          { count: inventory.length, sync: lastSync },
-        )}
-        {/* D-CENSUS-8 — the loudest unmarked page on the portal: it claimed
-            "Real-time", "EDI 846" and "automatically notified" over a frozen array.
-            Those claims are retracted in this batch; this states what the feed is.
-            NOTE INVENTORY-REFERENT-01 (filed): the `inventory` capability is backed
-            to `inventoryDeclaration` while this page reads `mockInventory`, so the
-            verb axis here describes a store this page does not render. */}
-        <ProvenanceMarker capability="inventory" className="ml-3 align-middle" />
-      </PageMetaLine>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <KpiCard
-          eyebrow={t('buyerInventory.kpi.totalMaterials.eyebrow')}
-          value={formatNumber(counts.all)}
-          icon={Package}
-          subtitle={t('buyerInventory.kpi.totalMaterials.subtitle')}
-        />
-        <KpiCard
-          eyebrow={t('buyerInventory.kpi.critical.eyebrow')}
-          value={
-            <span className="text-critical">{formatNumber(counts.critical)}</span>
-          }
-          icon={AlertTriangle}
-          subtitle={t('buyerInventory.kpi.critical.subtitle')}
-        />
-        <KpiCard
-          eyebrow={t('buyerInventory.kpi.warning.eyebrow')}
-          value={
-            <span className="text-warning-hover">{formatNumber(counts.warning)}</span>
-          }
-          icon={AlertCircle}
-          subtitle={t('buyerInventory.kpi.warning.subtitle')}
-        />
-        <KpiCard
-          eyebrow={t('buyerInventory.kpi.avgDos.eyebrow')}
-          value={t('buyerInventory.kpi.avgDos.value', { n: avgDos })}
-          icon={Gauge}
-          subtitle={t('buyerInventory.kpi.avgDos.subtitle')}
-        />
-      </div>
-
-      <SubTabs<GroupTab>
-        options={[
-          { id: 'all', label: t('buyerInventory.tab.all'), count: counts.all },
-          {
-            id: 'critical',
-            label: t('buyerInventory.tab.critical'),
-            count: counts.critical,
-          },
-          {
-            id: 'warning',
-            label: t('buyerInventory.tab.warning'),
-            count: counts.warning,
-          },
-          {
-            id: 'healthy',
-            label: t('buyerInventory.tab.healthy'),
-            count: counts.healthy,
-          },
-          {
-            id: 'excess',
-            label: t('buyerInventory.tab.excess'),
-            count: counts.excess,
-          },
-        ]}
-        value={tab}
-        onChange={setTab}
-        className="mb-6"
-      />
-
-      <div className="flex flex-wrap items-center gap-3 mb-4">
-        <div className="flex-1 min-w-[280px]">
-          <SearchBar
-            value={search}
-            onChange={setSearch}
-            placeholder={t('buyerInventory.search.placeholder')}
+          <KpiCard
+            eyebrow={t('buyerInventory.kpi.critical.eyebrow')}
+            value={
+              <span className="text-critical">{formatNumber(counts.critical)}</span>
+            }
+            icon={AlertTriangle}
+            subtitle={t('buyerInventory.kpi.critical.subtitle')}
           />
-        </div>
+          <KpiCard
+            eyebrow={t('buyerInventory.kpi.warning.eyebrow')}
+            value={
+              <span className="text-warning-hover">{formatNumber(counts.warning)}</span>
+            }
+            icon={AlertCircle}
+            subtitle={t('buyerInventory.kpi.warning.subtitle')}
+          />
+          <KpiCard
+            eyebrow={t('buyerInventory.kpi.avgDos.eyebrow')}
+            value={t('buyerInventory.kpi.avgDos.value', { n: avgDos })}
+            icon={Gauge}
+            subtitle={t('buyerInventory.kpi.avgDos.subtitle')}
+          />
+        </>
+      }
+      tabs={
+        <SubTabs<GroupTab>
+          options={[
+            { id: 'all', label: t('buyerInventory.tab.all'), count: counts.all },
+            {
+              id: 'critical',
+              label: t('buyerInventory.tab.critical'),
+              count: counts.critical,
+            },
+            {
+              id: 'warning',
+              label: t('buyerInventory.tab.warning'),
+              count: counts.warning,
+            },
+            {
+              id: 'healthy',
+              label: t('buyerInventory.tab.healthy'),
+              count: counts.healthy,
+            },
+            {
+              id: 'excess',
+              label: t('buyerInventory.tab.excess'),
+              count: counts.excess,
+            },
+          ]}
+          value={tab}
+          onChange={setTab}
+        />
+      }
+      filters={
         <FilterChipsBar<BrandKey>
           options={BRANDS.map((b) => ({ id: b, label: b }))}
           value={selectedBrands}
           onChange={toggleBrand}
           multiSelect
         />
-      </div>
-
+      }
+      search={
+        <SearchBar
+          value={search}
+          onChange={setSearch}
+          placeholder={t('buyerInventory.search.placeholder')}
+        />
+      }
+    >
       {/* DOS Heatmap */}
       <section className="border border-border-subtle rounded-lg bg-white p-6 mb-6">
         <div className="flex items-center justify-between mb-4">
@@ -522,150 +669,23 @@ const BuyerInventory: React.FC = () => {
           </div>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full text-sm border-collapse">
-            <thead>
-              <tr>
-                <th className="text-left text-label text-text-tertiary uppercase py-2 pr-4">
-                  {t('buyerInventory.heatmap.col.category')}
-                </th>
-                {BRANDS.map((b) => (
-                  <th
-                    key={b}
-                    className="text-left text-label text-text-tertiary uppercase py-2 px-2"
-                  >
-                    {b}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {categories.map((cat) => (
-                <tr key={cat}>
-                  <td className="py-2 pr-4 text-text-primary font-medium">
-                    {cl(cat)}
-                  </td>
-                  {BRANDS.map((b) => {
-                    const cell = heatmap[cat]?.[b];
-                    const avg =
-                      cell && cell.count > 0
-                        ? Math.round(cell.dos / cell.count)
-                        : 0;
-                    return (
-                      <td key={b} className="py-1 px-1">
-                        <div
-                          className={`rounded-md px-3 py-2 text-xs font-semibold ${heatColor(
-                            avg
-                          )}`}
-                        >
-                          <Data>{avg > 0 ? `${avg}d` : '—'}</Data>
-                        </div>
-                      </td>
-                    );
-                  })}
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <DataTable
+            columns={heatColumns}
+            rows={categories}
+            rowKey={(cat) => cat}
+            density="compact"
+            card={false}
+          />
         </div>
       </section>
 
-      <div className="border border-border-subtle rounded-lg bg-white overflow-hidden">
-        <Table>
-          <TableHeader>
-            <TableHeaderCell>{t('buyerInventory.table.col.material')}</TableHeaderCell>
-            <TableHeaderCell>{t('buyerInventory.table.col.supplier')}</TableHeaderCell>
-            <TableHeaderCell>{t('buyerInventory.table.col.category')}</TableHeaderCell>
-            <TableHeaderCell className="text-right">{t('buyerInventory.table.col.onHand')}</TableHeaderCell>
-            <TableHeaderCell className="text-right">{t('buyerInventory.table.col.available')}</TableHeaderCell>
-            <TableHeaderCell>{t('buyerInventory.table.col.dos')}</TableHeaderCell>
-            <TableHeaderCell>{t('buyerInventory.table.col.lastUpdated')}</TableHeaderCell>
-            <TableHeaderCell>{t('buyerInventory.table.col.source')}</TableHeaderCell>
-            <TableHeaderCell> </TableHeaderCell>
-          </TableHeader>
-          <tbody>
-            {filtered.map((it) => {
-              const sup = supplierById.get(it.supplierId);
-              const bucket = dosBucket(it.daysOfSupply);
-              const Icon = SourceIcon(it.dataSource);
-              return (
-                <TableRow
-                  key={it.id}
-                  className="cursor-pointer"
-                  onClick={() => setSelectedId(it.id)}
-                >
-                  <TableCell>
-                    <Data as="div" className="text-sm text-text-primary">
-                      {it.materialCode}
-                    </Data>
-                    <div className="text-xs text-text-tertiary truncate max-w-[260px]">
-                      {it.materialDescription}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="text-sm text-text-primary">
-                      {it.supplierName}
-                    </div>
-                    <div className="text-xs text-text-tertiary">
-                      {sup
-                        ? COUNTRY_FLAG[sup.country] ?? sup.country
-                        : '—'}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <span className="text-sm text-text-secondary">
-                      {sup?.category ? cl(sup.category) : '—'}
-                    </span>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="text-sm text-text-primary">
-                      <Data>{formatNumber(it.qtyOnHand)}</Data>
-                    </div>
-                    <div className="text-xs text-text-tertiary">{it.uom}</div>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="text-sm text-text-primary">
-                      <Data>{formatNumber(it.qtyAvailable)}</Data>
-                    </div>
-                    <div className="text-xs text-text-tertiary">{it.uom}</div>
-                  </TableCell>
-                  <TableCell>
-                    <StatusPill variant={bucket.variant}>
-                      {bucket.label}
-                    </StatusPill>
-                  </TableCell>
-                  <TableCell>
-                    <span className="text-sm text-text-secondary">
-                      <Data>{formatRelativeTime(it.lastUpdated)}</Data>
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <span className="inline-flex items-center gap-1.5 text-xs text-text-secondary">
-                      <Icon size={14} />
-                      {it.dataSource}
-                    </span>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <ChevronRight
-                      size={16}
-                      className="text-text-tertiary inline"
-                    />
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-            {filtered.length === 0 && (
-              <tr>
-                <td
-                  colSpan={9}
-                  className="py-10 text-center text-sm text-text-tertiary"
-                >
-                  {t('buyerInventory.table.empty')}
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </Table>
-      </div>
+      <DataTable
+        columns={columns}
+        rows={filtered}
+        rowKey={(it) => it.id}
+        onRowClick={(it) => setSelectedId(it.id)}
+        empty={t('buyerInventory.table.empty')}
+      />
 
       <SidePanel
         open={!!selected}
@@ -797,46 +817,19 @@ const BuyerInventory: React.FC = () => {
                   {t('buyerInventory.panel.noActivePos')}
                 </div>
               ) : (
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="text-xs text-text-tertiary uppercase">
-                      <th className="text-left py-1">{t('buyerInventory.panel.col.po')}</th>
-                      <th className="text-right py-1">{t('buyerInventory.panel.col.qty')}</th>
-                      <th className="text-left py-1 pl-3">{t('buyerInventory.panel.col.eta')}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {activePOs.map((po) => {
-                      const li = po.lineItems.find(
-                        (l) => l.materialCode === selected.materialCode
-                      );
-                      return (
-                        <tr key={po.id} className="border-t border-border-subtle">
-                          <td className="py-2 text-text-primary">
-                            <Data>{po.poNumber}</Data>
-                          </td>
-                          <td className="py-2 text-right text-text-primary">
-                            <Data>
-                              {li ? formatNumber(li.quantity) : '—'} {li?.uom ?? ''}
-                            </Data>
-                          </td>
-                          <td className="py-2 pl-3 text-text-secondary">
-                            <Data>
-                              {po.confirmedDeliveryDate ||
-                                po.requestedDeliveryDate}
-                            </Data>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+                <DataTable
+                  columns={poColumns}
+                  rows={activePOs}
+                  rowKey={(po) => po.id}
+                  density="compact"
+                  card={false}
+                />
               )}
             </section>
           </div>
         )}
       </SidePanel>
-    </AppShellV2>
+    </ListPage>
   );
 };
 

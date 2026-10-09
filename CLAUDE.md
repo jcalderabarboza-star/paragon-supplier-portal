@@ -843,6 +843,15 @@ nav groups under one neutral key, `nav.glossary`.
   size, weight and colour spelled outside the scale and the tokens to a per-file list that can
   only shrink. **Derive what is left from `grandfathered.ts`; no count is written here.** The
   channel demo's messenger chrome is exempt by name.
+- ⚠️ **UI-1b (2026-10-09) — ONE TABLE, ONE LIST PAGE, ONE PAGE-TITLE SIZE.** Every table is
+  `components/ui-v2/DataTable`: a column states its KIND (`id` · `text` · `number` · `money` ·
+  `date` · `status` · `actions`) and the kind, not the page, fixes the cell's type and
+  alignment. A list page is `components/ui-v2/ListPage`, which fixes the ORDER of header, count
+  line, notices, figures, tabs, filters and search. The four `Table*` primitives are deleted and
+  `PageHeader` has no `compact` variant. The DP-3 "TABLES" line below describes what `DataTable`
+  now supplies. **Derive what is still written by hand from `RAW_TABLE_GRANDFATHERED`** — the
+  matrices and the markdown-generated guide table are there because a column list cannot express
+  them, not because they were missed.
 - WARNING token is a FILL/TEXT split (DP2-WARN-01), same shape as `action`:
   `warning.DEFAULT` = bright amber `#D97706` for every GRAPHICAL warning use
   (accent-edges, dots, bar fills, dials, chip fills, borders — 3.19:1 on white,

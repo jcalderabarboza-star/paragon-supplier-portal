@@ -22,9 +22,6 @@ import {
   FastForward,
   Flag,
 } from 'lucide-react';
-import AppShellV2 from '../components/layout-v2/AppShellV2';
-import PageHeader from '../components/ui-v2/PageHeader';
-import PageMetaLine from '../components/ui-v2/PageMetaLine';
 import ProvenanceMarker from '../components/ui-v2/ProvenanceMarker';
 import KpiCard from '../components/ui-v2/KpiCard';
 import BulkActionsBar from '../components/ui-v2/BulkActionsBar';
@@ -35,10 +32,8 @@ import SubTabs from '../components/ui-v2/SubTabs';
 import FilterChipsBar from '../components/ui-v2/FilterChipsBar';
 import SearchBar from '../components/ui-v2/SearchBar';
 import StatusPill from '../components/ui-v2/StatusPill';
-import Table from '../components/ui-v2/Table';
-import TableHeader, { TableHeaderCell } from '../components/ui-v2/TableHeader';
-import TableRow from '../components/ui-v2/TableRow';
-import TableCell from '../components/ui-v2/TableCell';
+import DataTable, { type Column } from '../components/ui-v2/DataTable';
+import ListPage from '../components/ui-v2/ListPage';
 import SidePanel from '../components/ui-v2/SidePanel';
 import Timeline, { TimelineEvent } from '../components/ui-v2/Timeline';
 import ScoreBadge from '../components/ui-v2/ScoreBadge';
@@ -2659,82 +2654,67 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
           </div>
 
           <div className="border border-border-subtle rounded-md overflow-hidden max-h-64 overflow-y-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-bg-hover text-text-tertiary uppercase tracking-wider text-xs sticky top-0">
-                <tr>
-                  <th className="px-3 py-2 text-left font-semibold w-10"></th>
-                  <th className="px-3 py-2 text-left font-semibold">
-                    {t('sourcing.wizard.col.supplier')}
-                  </th>
-                  <th className="px-3 py-2 text-left font-semibold">
-                    {t('sourcing.wizard.col.country')}
-                  </th>
-                  <th className="px-3 py-2 text-left font-semibold">
-                    {t('psl.col.header')}
-                  </th>
-                  <th className="px-3 py-2 text-right font-semibold">
-                    {t('sourcing.wizard.col.otif')}
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {supplierTableFiltered.map((s) => {
-                  const selected = draft.invitedSupplierIds.includes(s.id);
-                  return (
-                    <tr
-                      key={s.id}
-                      className="border-t border-border-subtle hover:bg-bg-hover cursor-pointer"
-                      onClick={() => toggleSupplier(s.id)}
-                    >
-                      <td className="px-3 py-2">
-                        <input
-                          type="checkbox"
-                          checked={selected}
-                          onChange={() => toggleSupplier(s.id)}
-                          onClick={(e) => e.stopPropagation()}
-                          className="accent-teal"
-                        />
-                      </td>
-                      <td className="px-3 py-2 text-text-primary">
-                        {s.name}
-                      </td>
-                      <td className="px-3 py-2 text-text-secondary">
-                        {s.country}
-                      </td>
-                      {/* ⚠️ READ ONLY. P1 SHOWS THE STANDING AND GATES NOTHING.
-                          Every supplier this table lists stays invitable —
-                          including a Suspended one and one whose PSL listing
-                          has lapsed. The gate belongs on `t_rfq_publish` /
-                          `t_rfq_award`'s policy hooks (P2), never on a page:
-                          a page-level gate is invisible to every other caller
-                          of the same verb, which is how this tree's false
-                          affordances got there in the first place. */}
-                      <td className="px-3 py-2">
-                        <PslStatusCell
-                          standing={pslStandingOf(s.id, TODAY)}
-                          compact
-                        />
-                      </td>
-                      <td className="px-3 py-2 text-right text-text-secondary">
-                        {s.otif}%
-                      </td>
-                    </tr>
-                  );
-                })}
-                {supplierTableFiltered.length === 0 && (
-                  <tr>
-                    <td
-                      colSpan={5}
-                      className="text-center text-sm text-text-tertiary py-6"
-                    >
-                      {draft.category
-                        ? t('sourcing.wizard.supplier.noMatch')
-                        : t('sourcing.wizard.supplier.selectCategory')}
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+            <DataTable
+              card={false}
+              density="compact"
+              rows={supplierTableFiltered}
+              rowKey={(s) => s.id}
+              onRowClick={(s) => toggleSupplier(s.id)}
+              empty={
+                draft.category
+                  ? t('sourcing.wizard.supplier.noMatch')
+                  : t('sourcing.wizard.supplier.selectCategory')
+              }
+              columns={[
+                {
+                  id: 'select',
+                  header: '',
+                  kind: 'text',
+                  className: 'w-10',
+                  headerClassName: 'w-10',
+                  cell: (s) => (
+                    <input
+                      type="checkbox"
+                      checked={draft.invitedSupplierIds.includes(s.id)}
+                      onChange={() => toggleSupplier(s.id)}
+                      onClick={(e) => e.stopPropagation()}
+                      className="accent-teal"
+                    />
+                  ),
+                },
+                {
+                  id: 'supplier',
+                  header: t('sourcing.wizard.col.supplier'),
+                  kind: 'text',
+                  cell: (s) => s.name,
+                },
+                {
+                  id: 'country',
+                  header: t('sourcing.wizard.col.country'),
+                  kind: 'text',
+                  cell: (s) => <span className="text-text-secondary">{s.country}</span>,
+                },
+                // ⚠️ READ ONLY. P1 SHOWS THE STANDING AND GATES NOTHING.
+                // Every supplier this table lists stays invitable — including
+                // a Suspended one and one whose PSL listing has lapsed. The
+                // gate belongs on `t_rfq_publish` / `t_rfq_award`'s policy
+                // hooks (P2), never on a page: a page-level gate is invisible
+                // to every other caller of the same verb, which is how this
+                // tree's false affordances got there in the first place.
+                {
+                  id: 'psl',
+                  header: t('psl.col.header'),
+                  kind: 'status',
+                  cell: (s) => <PslStatusCell standing={pslStandingOf(s.id, TODAY)} compact />,
+                },
+                {
+                  id: 'otif',
+                  header: t('sourcing.wizard.col.otif'),
+                  kind: 'number',
+                  cell: (s) => <>{s.otif}%</>,
+                },
+              ]}
+            />
           </div>
 
           <div className="text-sm text-text-secondary">
@@ -3120,9 +3100,183 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
       prev.includes(stage) ? prev.filter((s) => s !== stage) : [...prev, stage],
     );
 
+  const rfqColumns: Column<RFQ>[] = [
+    {
+      id: 'rfq',
+      header: t('sourcing.table.col.rfq'),
+      kind: 'id',
+      cell: (r) => (
+        <>
+          <Data as="div">{r.rfqNumber}</Data>
+          <div className="text-xs font-sans font-normal text-text-tertiary mt-0.5 max-w-[20rem] truncate">
+            {r.title}
+          </div>
+        </>
+      ),
+    },
+    {
+      id: 'category',
+      header: t('sourcing.table.col.category'),
+      kind: 'text',
+      cell: (r) => (
+        <span className="text-text-secondary">{categoryLabel(t, r.materialCategory)}</span>
+      ),
+    },
+    // RFx-3 — THE STAGE, ON EVERY ROW. It was a chip under the number on staged
+    // events only, so a plain RFQ said nothing and the reader could not tell
+    // "at RFQ" from "not staged". The stage is a token, the same in both
+    // languages.
+    {
+      id: 'stage',
+      header: t('sourcing.table.col.stage'),
+      kind: 'status',
+      cell: (r) => (
+        <span data-testid={`rfq-row-stage-${r.id}`}>
+          <StatusPill variant="neutral">{stageOf(r)}</StatusPill>
+        </span>
+      ),
+    },
+    // `text`, not `number`: the cell is a count over a progress bar, and the
+    // bar reads from the left edge.
+    {
+      id: 'responses',
+      header: t('sourcing.table.col.responses'),
+      kind: 'text',
+      cell: (r) => {
+        const responded = r.respondedSupplierIds.length;
+        const invited = r.invitedSupplierIds.length;
+        const pct = invited === 0 ? 0 : (responded / invited) * 100;
+        return (
+          <>
+            <div className="text-sm text-text-primary font-medium">
+              {responded} / {invited}
+            </div>
+            <div className="mt-1 h-1.5 w-24 rounded-full bg-bg-hover overflow-hidden">
+              <div className="h-full rounded-full bg-teal" style={{ width: `${pct}%` }} />
+            </div>
+          </>
+        );
+      },
+    },
+    {
+      id: 'qty',
+      header: t('sourcing.table.col.qty'),
+      kind: 'number',
+      className: 'whitespace-nowrap',
+      cell: (r) => (
+        <Data>
+          {formatNumber(r.totalQty)} {r.uom}
+        </Data>
+      ),
+    },
+    {
+      id: 'estValue',
+      header: t('sourcing.table.col.estValue'),
+      kind: 'money',
+      cell: (r) => <Data>{formatIDR(r.estimatedValue)}</Data>,
+    },
+    {
+      id: 'responseDeadline',
+      header: t('sourcing.table.col.responseDeadline'),
+      kind: 'date',
+      cell: (r) => {
+        const days = daysUntil(r.responseDeadline, nowIso);
+        // Only the tones that carry state stay on the date; the kind owns the rest.
+        const deadlineTone =
+          r.status !== 'Open' || days === null
+            ? ''
+            : days < 3
+              ? 'text-critical font-semibold'
+              : days < 7
+                ? 'text-warning-hover font-semibold'
+                : '';
+        return (
+          <>
+            <Data as="div" className={deadlineTone}>
+              {formatDate(r.responseDeadline)}
+            </Data>
+            {r.status === 'Open' && days !== null && (
+              <div
+                className={`text-xs font-sans mt-0.5 ${
+                  days < 0
+                    ? 'text-critical'
+                    : days < 3
+                      ? 'text-critical'
+                      : days < 7
+                        ? 'text-warning-hover'
+                        : 'text-text-tertiary'
+                }`}
+              >
+                {days < 0
+                  ? t('sourcing.deadline.overdue', {
+                      count: Math.abs(days),
+                    })
+                  : days === 0
+                    ? t('sourcing.deadline.dueToday')
+                    : t('sourcing.deadline.remaining', { count: days })}
+              </div>
+            )}
+          </>
+        );
+      },
+    },
+    {
+      id: 'status',
+      header: t('sourcing.table.col.status'),
+      kind: 'status',
+      cell: (r) => <StatusPill variant={STATUS_VARIANT[r.status]}>{r.status}</StatusPill>,
+    },
+    {
+      id: 'actions',
+      header: t('sourcing.table.col.actions'),
+      kind: 'actions',
+      cell: () => <ChevronRight size={16} className="text-text-tertiary inline-block" />,
+    },
+  ];
+
+  const awardColumns: Column<RFQ>[] = [
+    {
+      id: 'rfq',
+      header: t('sourcing.awards.col.rfq'),
+      kind: 'id',
+      cell: (r) => <Data>{r.rfqNumber}</Data>,
+    },
+    {
+      id: 'title',
+      header: t('sourcing.awards.col.title'),
+      kind: 'text',
+      className: 'max-w-md truncate',
+      cell: (r) => <span className="text-text-secondary">{r.title}</span>,
+    },
+    {
+      id: 'supplier',
+      header: t('sourcing.awards.col.supplier'),
+      kind: 'text',
+      cell: (r) =>
+        r.awardedSupplierId ? (supplierNameById.get(r.awardedSupplierId) ?? '—') : '—',
+    },
+    {
+      id: 'date',
+      header: t('sourcing.awards.col.date'),
+      kind: 'date',
+      cell: (r) => <Data>{r.awardedAt ? formatDate(r.awardedAt) : '—'}</Data>,
+    },
+    {
+      id: 'value',
+      header: t('sourcing.awards.col.value'),
+      kind: 'money',
+      cell: (r) => <Data>{formatIDR(r.estimatedValue)}</Data>,
+    },
+    {
+      id: 'actions',
+      header: t('sourcing.awards.col.actions'),
+      kind: 'actions',
+      cell: () => <ChevronRight size={16} className="text-text-tertiary inline-block" />,
+    },
+  ];
+
   return (
-    <AppShellV2>
-      <PageHeader
+    <ListPage
         breadcrumb={[t('sourcing.crumb.sourcing')]}
         title={t('sourcing.header.title')}
         subtitle={t('sourcing.header.subtitle')}
@@ -3176,9 +3330,8 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
             />
           </div>
         }
-      />
-
-      <PageMetaLine className="-mt-6 mb-6">
+      meta={
+        <>
         {t(
           kpis.active === 1
             ? 'sourcing.meta.summary.one'
@@ -3190,9 +3343,10 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
             PARTLY REAL: award genuinely dispatches through the wired `rfq` target
             and drives the quotation cascade, over a fixture RFQ set. */}
         <ProvenanceMarker capability="rfqs" className="ml-3 align-middle" />
-      </PageMetaLine>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 mb-8">
+        </>
+      }
+      kpis={
+        <>
         <KpiCard
           eyebrow={t('sourcing.kpi.active.eyebrow')}
           value={kpis.active.toString()}
@@ -3231,8 +3385,9 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
           subtitle={t('sourcing.kpi.awarded.subtitle')}
           icon={Award}
         />
-      </div>
-
+        </>
+      }
+      tabs={
       <SubTabs
         options={[
           { id: 'all', label: t('sourcing.tab.all'), count: counts.all },
@@ -3260,10 +3415,10 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
         ]}
         value={group}
         onChange={setGroup}
-        className="mb-5"
       />
-
-      <div className="flex items-center justify-between gap-4 mb-4 flex-wrap">
+      }
+      filters={
+        <>
         <div>
           <div className="text-label text-text-tertiary uppercase mb-2">
             {t('sourcing.filter.byCategory')}
@@ -3278,7 +3433,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
             multiSelect
           />
         </div>
-        <div data-testid="rfq-stage-filter">
+        <div className="ml-auto" data-testid="rfq-stage-filter">
           <div className="text-label text-text-tertiary uppercase mb-2">
             {t('sourcing.filter.byStage')}
           </div>
@@ -3289,151 +3444,25 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
             multiSelect
           />
         </div>
-      </div>
-
-      <div className="mb-4">
+        </>
+      }
+      search={
         <SearchBar
           value={search}
           onChange={setSearch}
           placeholder={t('sourcing.search.placeholder')}
         />
-      </div>
+      }
+    >
 
-      <div className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm overflow-hidden mb-8">
-        <Table>
-          <TableHeader>
-            <TableHeaderCell>{t('sourcing.table.col.rfq')}</TableHeaderCell>
-            <TableHeaderCell>
-              {t('sourcing.table.col.category')}
-            </TableHeaderCell>
-            <TableHeaderCell>{t('sourcing.table.col.stage')}</TableHeaderCell>
-            <TableHeaderCell>
-              {t('sourcing.table.col.responses')}
-            </TableHeaderCell>
-            <TableHeaderCell className="text-right">
-              {t('sourcing.table.col.qty')}
-            </TableHeaderCell>
-            <TableHeaderCell className="text-right">
-              {t('sourcing.table.col.estValue')}
-            </TableHeaderCell>
-            <TableHeaderCell>
-              {t('sourcing.table.col.responseDeadline')}
-            </TableHeaderCell>
-            <TableHeaderCell>{t('sourcing.table.col.status')}</TableHeaderCell>
-            <TableHeaderCell className="text-right">
-              {t('sourcing.table.col.actions')}
-            </TableHeaderCell>
-          </TableHeader>
-          <tbody>
-            {activeFiltered.map((r) => {
-              const responded = r.respondedSupplierIds.length;
-              const invited = r.invitedSupplierIds.length;
-              const pct = invited === 0 ? 0 : (responded / invited) * 100;
-              const days = daysUntil(r.responseDeadline, nowIso);
-              const deadlineTone =
-                r.status !== 'Open' || days === null
-                  ? 'text-text-secondary'
-                  : days < 3
-                    ? 'text-critical font-semibold'
-                    : days < 7
-                      ? 'text-warning-hover font-semibold'
-                      : 'text-text-secondary';
-              return (
-                <TableRow
-                  key={r.id}
-                  className="cursor-pointer"
-                  onClick={() => openRfq(r)}
-                >
-                  <TableCell>
-                    <Data as="div" className="font-semibold text-text-primary">
-                      {r.rfqNumber}
-                    </Data>
-                    <div className="text-xs text-text-tertiary mt-0.5 max-w-[20rem] truncate">
-                      {r.title}
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-sm text-text-secondary">
-                    {categoryLabel(t, r.materialCategory)}
-                  </TableCell>
-                  {/* RFx-3 — THE STAGE, ON EVERY ROW. It was a chip under the
-                      number on staged events only, so a plain RFQ said nothing
-                      and the reader could not tell "at RFQ" from "not staged".
-                      The stage is a token, the same in both languages. */}
-                  <TableCell>
-                    <span data-testid={`rfq-row-stage-${r.id}`}>
-                      <StatusPill variant="neutral">{stageOf(r)}</StatusPill>
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <div className="text-sm text-text-primary font-medium">
-                      {responded} / {invited}
-                    </div>
-                    <div className="mt-1 h-1.5 w-24 rounded-full bg-bg-hover overflow-hidden">
-                      <div
-                        className="h-full rounded-full bg-teal"
-                        style={{ width: `${pct}%` }}
-                      />
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-right text-sm text-text-secondary whitespace-nowrap">
-                    <Data>{formatNumber(r.totalQty)} {r.uom}</Data>
-                  </TableCell>
-                  <TableCell className="text-right font-semibold text-text-primary whitespace-nowrap">
-                    <Data>{formatIDR(r.estimatedValue)}</Data>
-                  </TableCell>
-                  <TableCell>
-                    <Data as="div" className={`text-sm whitespace-nowrap ${deadlineTone}`}>
-                      {formatDate(r.responseDeadline)}
-                    </Data>
-                    {r.status === 'Open' && days !== null && (
-                      <div
-                        className={`text-xs mt-0.5 ${
-                          days < 0
-                            ? 'text-critical'
-                            : days < 3
-                              ? 'text-critical'
-                              : days < 7
-                                ? 'text-warning-hover'
-                                : 'text-text-tertiary'
-                        }`}
-                      >
-                        {days < 0
-                          ? t('sourcing.deadline.overdue', {
-                              count: Math.abs(days),
-                            })
-                          : days === 0
-                            ? t('sourcing.deadline.dueToday')
-                            : t('sourcing.deadline.remaining', { count: days })}
-                      </div>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <StatusPill variant={STATUS_VARIANT[r.status]}>
-                      {r.status}
-                    </StatusPill>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <ChevronRight
-                      size={16}
-                      className="text-text-tertiary inline-block"
-                    />
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-            {activeFiltered.length === 0 && (
-              <tr>
-                <td
-                  colSpan={9}
-                  className="text-center text-sm text-text-tertiary py-10"
-                >
-                  {t('sourcing.table.empty')}
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </Table>
-      </div>
+      <DataTable
+        className="mb-8"
+        columns={rfqColumns}
+        rows={activeFiltered}
+        rowKey={(r) => r.id}
+        onRowClick={(r) => openRfq(r)}
+        empty={t('sourcing.table.empty')}
+      />
 
       {/* Awards history */}
       <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm overflow-hidden">
@@ -3462,69 +3491,14 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
           )}
         </button>
         {awardsOpen && (
-          <Table>
-            <TableHeader>
-              <TableHeaderCell>{t('sourcing.awards.col.rfq')}</TableHeaderCell>
-              <TableHeaderCell>
-                {t('sourcing.awards.col.title')}
-              </TableHeaderCell>
-              <TableHeaderCell>
-                {t('sourcing.awards.col.supplier')}
-              </TableHeaderCell>
-              <TableHeaderCell>
-                {t('sourcing.awards.col.date')}
-              </TableHeaderCell>
-              <TableHeaderCell className="text-right">
-                {t('sourcing.awards.col.value')}
-              </TableHeaderCell>
-              <TableHeaderCell className="text-right">
-                {t('sourcing.awards.col.actions')}
-              </TableHeaderCell>
-            </TableHeader>
-            <tbody>
-              {awarded.map((r) => (
-                <TableRow
-                  key={r.id}
-                  className="cursor-pointer"
-                  onClick={() => openRfq(r)}
-                >
-                  <TableCell className="font-semibold text-text-primary">
-                    <Data>{r.rfqNumber}</Data>
-                  </TableCell>
-                  <TableCell className="text-sm text-text-secondary max-w-md truncate">
-                    {r.title}
-                  </TableCell>
-                  <TableCell className="text-sm text-text-primary">
-                    {r.awardedSupplierId
-                      ? (supplierNameById.get(r.awardedSupplierId) ?? '—')
-                      : '—'}
-                  </TableCell>
-                  <TableCell className="text-sm text-text-secondary whitespace-nowrap">
-                    <Data>{r.awardedAt ? formatDate(r.awardedAt) : '—'}</Data>
-                  </TableCell>
-                  <TableCell className="text-right font-semibold text-text-primary whitespace-nowrap">
-                    <Data>{formatIDR(r.estimatedValue)}</Data>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <ChevronRight
-                      size={16}
-                      className="text-text-tertiary inline-block"
-                    />
-                  </TableCell>
-                </TableRow>
-              ))}
-              {awarded.length === 0 && (
-                <tr>
-                  <td
-                    colSpan={6}
-                    className="text-center text-sm text-text-tertiary py-10"
-                  >
-                    {t('sourcing.awards.empty')}
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </Table>
+          <DataTable
+            card={false}
+            columns={awardColumns}
+            rows={awarded}
+            rowKey={(r) => r.id}
+            onRowClick={(r) => openRfq(r)}
+            empty={t('sourcing.awards.empty')}
+          />
         )}
       </section>
 
@@ -5185,7 +5159,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
           />
         </div>
       )}
-    </AppShellV2>
+    </ListPage>
   );
 };
 
