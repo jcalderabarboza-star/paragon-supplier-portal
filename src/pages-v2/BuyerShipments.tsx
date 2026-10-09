@@ -16,7 +16,7 @@ import {
   LucideIcon,
 } from 'lucide-react';
 import ListPage from '../components/ui-v2/ListPage';
-import DataTable, { type Column } from '../components/ui-v2/DataTable';
+import DataTable, { CellSub, type Column } from '../components/ui-v2/DataTable';
 import ProvenanceMarker from '../components/ui-v2/ProvenanceMarker';
 import KpiCard from '../components/ui-v2/KpiCard';
 import BulkActionsBar from '../components/ui-v2/BulkActionsBar';
@@ -541,9 +541,7 @@ const BuyerShipments: React.FC = () => {
       cell: (s) => (
         <>
           <Data as="div">{s.asnNumber}</Data>
-          <Data as="div" className="text-xs font-normal text-text-tertiary">
-            {s.poNumber}
-          </Data>
+          <CellSub>{s.poNumber}</CellSub>
         </>
       ),
     },
@@ -556,10 +554,8 @@ const BuyerShipments: React.FC = () => {
         return (
           <>
             {/* i18n-defer: mock/sample data — supplier proper nouns */}
-            <div className="text-sm text-text-primary">{s.supplierName}</div>
-            <div className="text-xs text-text-tertiary">
-              {sup ? COUNTRY_FLAG[sup.country] ?? sup.country : '—'}
-            </div>
+            {s.supplierName}
+            <CellSub>{sup ? COUNTRY_FLAG[sup.country] ?? sup.country : '—'}</CellSub>
           </>
         );
       },
@@ -571,7 +567,7 @@ const BuyerShipments: React.FC = () => {
       cell: (s) => {
         const Icon = MODE_ICON[s.mode];
         return (
-          <span className="inline-flex items-center gap-1.5 text-sm text-text-secondary">
+          <span className="inline-flex items-center gap-1.5">
             <Icon size={14} />
             {ml(s.mode)}
           </span>
@@ -584,8 +580,8 @@ const BuyerShipments: React.FC = () => {
       kind: 'text',
       cell: (s) => (
         <>
-          <div className="text-xs text-text-secondary">{s.origin}</div>
-          <div className="text-xs text-text-tertiary">→ {s.destination}</div>
+          {s.origin}
+          <CellSub>→ {s.destination}</CellSub>
         </>
       ),
     },
@@ -604,13 +600,11 @@ const BuyerShipments: React.FC = () => {
         const lateBy = daysLate(s, TODAY);
         return (
           <>
-            <Data as="div" className={late ? 'text-critical font-semibold' : ''}>
+            <Data as="div" className={late ? 'text-critical' : ''}>
               {formatDate(s.estimatedArrival)}
             </Data>
             {late && lateBy !== null && (
-              <div className="text-xs text-critical">
-                {t('shipments.table.daysLate', { days: lateBy })}
-              </div>
+              <CellSub tone="critical">{t('shipments.table.daysLate', { days: lateBy })}</CellSub>
             )}
           </>
         );
@@ -623,9 +617,7 @@ const BuyerShipments: React.FC = () => {
       cell: (s) => (
         <>
           <Data as="div">{formatNumber(s.packageCount)}</Data>
-          <Data as="div" className="text-xs text-text-tertiary">
-            {formatNumber(s.totalWeight)} kg
-          </Data>
+          <CellSub>{formatNumber(s.totalWeight)} kg</CellSub>
         </>
       ),
     },
@@ -633,9 +625,7 @@ const BuyerShipments: React.FC = () => {
       id: 'dock',
       header: t('shipments.table.col.dock'),
       kind: 'text',
-      cell: (s) => (
-        <span className="text-sm text-text-secondary">{s.dockAssignment ?? '—'}</span>
-      ),
+      cell: (s) => s.dockAssignment ?? '—',
     },
     {
       id: 'status',
@@ -659,7 +649,7 @@ const BuyerShipments: React.FC = () => {
       id: 'dock',
       header: t('shipments.dock.col.dock'),
       kind: 'text',
-      cell: (d) => <span className="text-sm font-medium">{d}</span>,
+      cell: (d) => d,
     },
     ...TIME_SLOTS.map(
       (slot): Column<string> => ({
@@ -672,15 +662,13 @@ const BuyerShipments: React.FC = () => {
             <button
               type="button"
               onClick={() => setSelectedId(cell.id)}
-              className="w-full rounded-md px-2 py-2 text-xs font-semibold bg-action-soft text-action-hover hover:bg-action/20 transition-colors text-left"
+              className="w-full rounded-md px-2 py-2 bg-action-soft text-action-hover hover:bg-action/20 transition-colors text-left"
             >
               <Data as="div" className="truncate">{cell.asnNumber}</Data>
-              <div className="text-label text-action-text truncate">
-                {cell.supplierName}
-              </div>
+              <CellSub className="truncate whitespace-nowrap">{cell.supplierName}</CellSub>
             </button>
           ) : (
-            <div className="rounded-md px-2 py-2 bg-bg-hover text-text-tertiary text-center">
+            <div className="rounded-md px-2 py-2 bg-bg-hover text-center">
               —
             </div>
           );
@@ -701,7 +689,7 @@ const BuyerShipments: React.FC = () => {
       id: 'description',
       header: t('shipments.panel.col.description'),
       kind: 'text',
-      cell: (li) => <span className="text-text-secondary">{li.description}</span>,
+      cell: (li) => li.description,
     },
     {
       id: 'qty',
@@ -713,7 +701,7 @@ const BuyerShipments: React.FC = () => {
       id: 'uom',
       header: t('shipments.panel.col.uom'),
       kind: 'text',
-      cell: (li) => <span className="text-text-tertiary">{li.uom}</span>,
+      cell: (li) => li.uom,
     },
   ];
 

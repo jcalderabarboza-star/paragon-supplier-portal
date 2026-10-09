@@ -63,7 +63,7 @@ const BuyerAsnInboundWidget: React.FC = () => {
             id: 'carrier',
             header: t('widget.asnInbound.col.carrier'),
             kind: 'text',
-            cell: (asn) => <span className="text-text-secondary">{asn.carrier}</span>,
+            cell: (asn) => asn.carrier,
           },
           {
             id: 'eta',

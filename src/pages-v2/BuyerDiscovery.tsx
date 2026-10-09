@@ -446,21 +446,13 @@ const BuyerDiscovery: React.FC = () => {
                   id: 'material',
                   header: t('discovery.rec.col.material'),
                   kind: 'text',
-                  cell: (row) => (
-                    <div className="font-semibold text-text-primary">
-                      {row.material}
-                    </div>
-                  ),
+                  cell: (row) => row.material,
                 },
                 {
                   id: 'category',
                   header: t('discovery.rec.col.category'),
                   kind: 'text',
-                  cell: (row) => (
-                    <span className="text-sm text-text-secondary">
-                      {row.category}
-                    </span>
-                  ),
+                  cell: (row) => row.category,
                 },
                 {
                   id: 'currentSupplier',
@@ -468,11 +460,7 @@ const BuyerDiscovery: React.FC = () => {
                   kind: 'text',
                   cell: (row) => (
                     <span
-                      className={`text-sm ${
-                        row.currentSupplier === 'Not yet sourced'
-                          ? 'text-critical font-semibold'
-                          : 'text-text-primary'
-                      }`}
+                      className={row.currentSupplier === 'Not yet sourced' ? 'text-critical' : undefined}
                     >
                       {row.currentSupplier}
                     </span>

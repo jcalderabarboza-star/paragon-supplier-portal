@@ -375,7 +375,7 @@ const BuyerInventory: React.FC = () => {
       id: 'category',
       header: t('buyerInventory.heatmap.col.category'),
       kind: 'text',
-      cell: (cat) => <span className="font-medium">{cl(cat)}</span>,
+      cell: (cat) => cl(cat),
     },
     ...BRANDS.map((b): Column<string> => ({
       id: b,
@@ -385,7 +385,7 @@ const BuyerInventory: React.FC = () => {
         const cell = heatmap[cat]?.[b];
         const avg = cell && cell.count > 0 ? Math.round(cell.dos / cell.count) : 0;
         return (
-          <div className={`rounded-md px-3 py-2 text-xs font-semibold ${heatColor(avg)}`}>
+          <div className={`rounded-md px-3 py-2 ${heatColor(avg)}`}>
             <Data>{avg > 0 ? `${avg}d` : '—'}</Data>
           </div>
         );
@@ -401,9 +401,7 @@ const BuyerInventory: React.FC = () => {
       cell: (it) => (
         <>
           <Data as="div">{it.materialCode}</Data>
-          <div className="text-xs font-sans font-normal text-text-tertiary truncate max-w-[260px]">
-            {it.materialDescription}
-          </div>
+          <CellSub className="truncate whitespace-nowrap max-w-[260px]">{it.materialDescription}</CellSub>
         </>
       ),
     },
@@ -415,10 +413,8 @@ const BuyerInventory: React.FC = () => {
         const sup = supplierById.get(it.supplierId);
         return (
           <>
-            <div className="text-sm text-text-primary">{it.supplierName}</div>
-            <div className="text-xs text-text-tertiary">
-              {sup ? COUNTRY_FLAG[sup.country] ?? sup.country : '—'}
-            </div>
+            {it.supplierName}
+            <CellSub>{sup ? COUNTRY_FLAG[sup.country] ?? sup.country : '—'}</CellSub>
           </>
         );
       },
@@ -429,7 +425,7 @@ const BuyerInventory: React.FC = () => {
       kind: 'text',
       cell: (it) => {
         const sup = supplierById.get(it.supplierId);
-        return <span className="text-sm text-text-secondary">{sup?.category ? cl(sup.category) : '—'}</span>;
+        return sup?.category ? cl(sup.category) : '—';
       },
     },
     {
@@ -480,7 +476,7 @@ const BuyerInventory: React.FC = () => {
       cell: (it) => {
         const Icon = SourceIcon(it.dataSource);
         return (
-          <span className="inline-flex items-center gap-1.5 text-xs text-text-secondary">
+          <span className="inline-flex items-center gap-1.5">
             <Icon size={14} />
             {it.dataSource}
           </span>

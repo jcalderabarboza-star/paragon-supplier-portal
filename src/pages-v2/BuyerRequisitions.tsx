@@ -740,7 +740,7 @@ const BuyerRequisitions: React.FC = () => {
       header: t('requisitions.table.col.material'),
       kind: 'text',
       cell: (pr) => (
-        <div className="font-semibold text-text-primary truncate max-w-[14rem]">
+        <div className="truncate max-w-[14rem]">
           {pr.material}
         </div>
       ),
@@ -749,9 +749,7 @@ const BuyerRequisitions: React.FC = () => {
       id: 'category',
       header: t('requisitions.table.col.category'),
       kind: 'text',
-      cell: (pr) => (
-        <span className="text-sm text-text-secondary">{orSap(pr, 'category')}</span>
-      ),
+      cell: (pr) => orSap(pr, 'category'),
     },
     {
       id: 'qty',
@@ -805,9 +803,7 @@ const BuyerRequisitions: React.FC = () => {
       id: 'requestor',
       header: t('requisitions.table.col.requestor'),
       kind: 'text',
-      cell: (pr) => (
-        <span className="text-sm text-text-secondary">{requestorOf(pr)}</span>
-      ),
+      cell: (pr) => requestorOf(pr),
     },
     {
       id: 'status',
@@ -838,9 +834,7 @@ const BuyerRequisitions: React.FC = () => {
       header: t('requisitions.table.col.linkedDoc'),
       kind: 'id',
       cell: (pr) => (
-        <Data className={pr.linkedDoc ? undefined : 'font-normal text-text-tertiary'}>
-          {pr.linkedDoc || '—'}
-        </Data>
+        <Data>{pr.linkedDoc || '—'}</Data>
       ),
     },
     {

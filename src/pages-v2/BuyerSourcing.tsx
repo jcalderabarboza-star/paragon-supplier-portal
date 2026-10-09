@@ -32,7 +32,7 @@ import SubTabs from '../components/ui-v2/SubTabs';
 import FilterChipsBar from '../components/ui-v2/FilterChipsBar';
 import SearchBar from '../components/ui-v2/SearchBar';
 import StatusPill from '../components/ui-v2/StatusPill';
-import DataTable, { type Column } from '../components/ui-v2/DataTable';
+import DataTable, { CellSub, type Column } from '../components/ui-v2/DataTable';
 import ListPage from '../components/ui-v2/ListPage';
 import SidePanel from '../components/ui-v2/SidePanel';
 import Timeline, { TimelineEvent } from '../components/ui-v2/Timeline';
@@ -2692,7 +2692,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                   id: 'country',
                   header: t('sourcing.wizard.col.country'),
                   kind: 'text',
-                  cell: (s) => <span className="text-text-secondary">{s.country}</span>,
+                  cell: (s) => s.country,
                 },
                 // ⚠️ READ ONLY. P1 SHOWS THE STANDING AND GATES NOTHING.
                 // Every supplier this table lists stays invitable — including
@@ -3108,9 +3108,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
       cell: (r) => (
         <>
           <Data as="div">{r.rfqNumber}</Data>
-          <div className="text-xs font-sans font-normal text-text-tertiary mt-0.5 max-w-[20rem] truncate">
-            {r.title}
-          </div>
+          <CellSub className="max-w-[20rem] truncate">{r.title}</CellSub>
         </>
       ),
     },
@@ -3118,9 +3116,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
       id: 'category',
       header: t('sourcing.table.col.category'),
       kind: 'text',
-      cell: (r) => (
-        <span className="text-text-secondary">{categoryLabel(t, r.materialCategory)}</span>
-      ),
+      cell: (r) => categoryLabel(t, r.materialCategory),
     },
     // RFx-3 — THE STAGE, ON EVERY ROW. It was a chip under the number on staged
     // events only, so a plain RFQ said nothing and the reader could not tell
@@ -3148,7 +3144,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
         const pct = invited === 0 ? 0 : (responded / invited) * 100;
         return (
           <>
-            <div className="text-sm text-text-primary font-medium">
+            <div>
               {responded} / {invited}
             </div>
             <div className="mt-1 h-1.5 w-24 rounded-full bg-bg-hover overflow-hidden">
@@ -3186,9 +3182,9 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
           r.status !== 'Open' || days === null
             ? ''
             : days < 3
-              ? 'text-critical font-semibold'
+              ? 'text-critical'
               : days < 7
-                ? 'text-warning-hover font-semibold'
+                ? 'text-warning-hover'
                 : '';
         return (
           <>
@@ -3196,17 +3192,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
               {formatDate(r.responseDeadline)}
             </Data>
             {r.status === 'Open' && days !== null && (
-              <div
-                className={`text-xs font-sans mt-0.5 ${
-                  days < 0
-                    ? 'text-critical'
-                    : days < 3
-                      ? 'text-critical'
-                      : days < 7
-                        ? 'text-warning-hover'
-                        : 'text-text-tertiary'
-                }`}
-              >
+              <CellSub tone={days < 3 ? 'critical' : days < 7 ? 'warning' : 'neutral'}>
                 {days < 0
                   ? t('sourcing.deadline.overdue', {
                       count: Math.abs(days),
@@ -3214,7 +3200,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                   : days === 0
                     ? t('sourcing.deadline.dueToday')
                     : t('sourcing.deadline.remaining', { count: days })}
-              </div>
+              </CellSub>
             )}
           </>
         );
@@ -3246,7 +3232,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
       header: t('sourcing.awards.col.title'),
       kind: 'text',
       className: 'max-w-md truncate',
-      cell: (r) => <span className="text-text-secondary">{r.title}</span>,
+      cell: (r) => r.title,
     },
     {
       id: 'supplier',

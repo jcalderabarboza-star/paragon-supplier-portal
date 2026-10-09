@@ -26,7 +26,8 @@ import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import Button from '../../components/ui-v2/Button';
 import Data from '../../components/ui-v2/Data';
-import DataTable, { type Column } from '../../components/ui-v2/DataTable';
+import DataTable, { CellSub, type Column } from '../../components/ui-v2/DataTable';
+import StatusPill from '../../components/ui-v2/StatusPill';
 import { HandoffNotice } from '../../components/ui-v2/HandoffNotice';
 import { useVerbAvailabilities } from '../../hooks/useVerbAvailability';
 import { useRefusalText } from '../../hooks/useRefusalText';
@@ -334,20 +335,17 @@ export const PlannedChangesDetails: React.FC<{ open: boolean }> = ({ open }) => 
       cell: (e) => (
         <>
           <Data>{e.materialCode}</Data> · <Data>{e.bucket}</Data>
-          {e.supplierId && <span className="font-sans font-normal text-text-secondary"> · {supplierName(e.supplierId)}</span>}
-          <span className="ml-2 inline-flex gap-1 font-sans">
-            <span className="rounded-sm border border-info/30 bg-bg-surface px-1 text-[10px] font-semibold uppercase text-info">
+          <span className="ml-2 inline-flex gap-1">
+            <StatusPill variant="info">
               {t(e.planState === 'PUSHING' ? 'planGrid.edit.state.pushing' : 'planGrid.plan.planned')}
-            </span>
+            </StatusPill>
             {e.origin === 'PASTE' && (
-              <span
-                className="rounded-sm border border-warning/40 bg-warning-soft px-1 text-[10px] font-semibold uppercase text-warning-hover"
-                title={t('planGrid.edit.externalTitle')}
-              >
-                {t('planGrid.edit.external')}
+              <span title={t('planGrid.edit.externalTitle')}>
+                <StatusPill variant="warning">{t('planGrid.edit.external')}</StatusPill>
               </span>
             )}
           </span>
+          {e.supplierId && <CellSub>{supplierName(e.supplierId)}</CellSub>}
         </>
       ),
     },
@@ -370,25 +368,26 @@ export const PlannedChangesDetails: React.FC<{ open: boolean }> = ({ open }) => 
             <Data>{t('planGrid.edit.reading', { raw: e.raw, value: formatNumber(e.value), uom: e.uom })}</Data>
           </span>
           {magnitudeFlag(e) && e.baseline !== null && (
-            <div
-              className="mt-1 flex flex-col items-end gap-0.5 text-left font-sans text-[11px] text-warning-hover"
-              data-testid={`plan-draft-magnitude-${e.seamRef}`}
-            >
-              <span role="alert">
-                {t(e.value > e.baseline ? 'planGrid.edit.magnitude.high' : 'planGrid.edit.magnitude.low', {
-                  baseline: formatNumber(e.baseline),
-                })}
-              </span>
-              <label className="flex items-center gap-1 text-text-primary">
-                <input
-                  type="checkbox"
-                  data-testid={`plan-draft-confirm-${e.seamRef}`}
-                  checked={e.magnitudeConfirmed === true}
-                  disabled={e.planState === 'PUSHING'}
-                  onChange={(ev) => api.confirmMagnitude(e.seamRef, ev.target.checked)}
-                />
-                {t('planGrid.edit.magnitudeConfirm', { value: formatNumber(e.value), uom: e.uom })}
-              </label>
+            <div className="mt-1 flex flex-col items-end text-left" data-testid={`plan-draft-magnitude-${e.seamRef}`}>
+              <CellSub tone="warning">
+                <span role="alert">
+                  {t(e.value > e.baseline ? 'planGrid.edit.magnitude.high' : 'planGrid.edit.magnitude.low', {
+                    baseline: formatNumber(e.baseline),
+                  })}
+                </span>
+              </CellSub>
+              <CellSub>
+                <label className="flex items-center gap-1">
+                  <input
+                    type="checkbox"
+                    data-testid={`plan-draft-confirm-${e.seamRef}`}
+                    checked={e.magnitudeConfirmed === true}
+                    disabled={e.planState === 'PUSHING'}
+                    onChange={(ev) => api.confirmMagnitude(e.seamRef, ev.target.checked)}
+                  />
+                  {t('planGrid.edit.magnitudeConfirm', { value: formatNumber(e.value), uom: e.uom })}
+                </label>
+              </CellSub>
             </div>
           )}
         </>
@@ -412,15 +411,15 @@ export const PlannedChangesDetails: React.FC<{ open: boolean }> = ({ open }) => 
                 onChange={(ev) => api.setReason(e.seamRef, ev.target.value)}
               />
               {blockedBy(e) === 'REASON_REQUIRED' && (
-                <div className="mt-0.5 text-[11px] text-warning-hover">{t('planGrid.push.reasonRequired')}</div>
+                <CellSub tone="warning">{t('planGrid.push.reasonRequired')}</CellSub>
               )}
             </>
           ) : (
-            <span className="text-text-tertiary">{t('planGrid.edit.noReasonOwed')}</span>
+            t('planGrid.edit.noReasonOwed')
           )}
           {e.failureReason && (
-            <div className="mt-0.5 text-[11px] text-critical" role="alert" data-testid={`plan-draft-failure-${e.seamRef}`}>
-              {pushReason(e.failureReason)}
+            <div role="alert" data-testid={`plan-draft-failure-${e.seamRef}`}>
+              <CellSub tone="critical">{pushReason(e.failureReason)}</CellSub>
             </div>
           )}
         </>
@@ -435,7 +434,7 @@ export const PlannedChangesDetails: React.FC<{ open: boolean }> = ({ open }) => 
           {canPush(e) && (
             <button
               type="button"
-              className="mr-3 text-action-text hover:underline disabled:text-text-tertiary disabled:no-underline"
+              className="mr-3 text-action-text hover:underline disabled:opacity-50 disabled:no-underline"
               disabled={pushing || e.planState !== 'PLANNED'}
               onClick={() => void api.push([e.seamRef])}
               data-testid={`plan-push-row-${e.seamRef}`}
@@ -445,7 +444,7 @@ export const PlannedChangesDetails: React.FC<{ open: boolean }> = ({ open }) => 
           )}
           <button
             type="button"
-            className="text-text-secondary hover:underline disabled:text-text-tertiary"
+            className="text-action-text hover:underline disabled:opacity-50 disabled:no-underline"
             disabled={e.planState === 'PUSHING'}
             onClick={() => api.remove(e.seamRef)}
             data-testid={`plan-remove-${e.seamRef}`}

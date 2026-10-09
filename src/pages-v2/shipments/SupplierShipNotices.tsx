@@ -24,7 +24,7 @@ import { useTranslation } from 'react-i18next';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import StatusPill from '../../components/ui-v2/StatusPill';
 import Data from '../../components/ui-v2/Data';
-import DataTable, { type Column } from '../../components/ui-v2/DataTable';
+import DataTable, { CellSub, type Column } from '../../components/ui-v2/DataTable';
 import { useASNs, useGoodsReceipts } from '../../services/query/hooks';
 import { receiptsOfNotice } from '../../services/data/orderReceipt';
 import { ReceivedOnNotice } from '../../components/v2-features/ReceivedBlock';
@@ -98,7 +98,7 @@ const SupplierShipNotices: React.FC<Props> = ({ search, supplierName }) => {
             onClick={() => toggle(a.asnNumber)}
             aria-expanded={isOpen}
             aria-label={t('shipments.notices.toggle', { asn: a.asnNumber })}
-            className="p-1 text-text-tertiary hover:text-text-primary"
+            className="p-1"
           >
             {isOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
           </button>
@@ -112,9 +112,7 @@ const SupplierShipNotices: React.FC<Props> = ({ search, supplierName }) => {
       cell: (a) => (
         <>
           <Data as="div">{a.asnNumber}</Data>
-          <Data as="div" className="text-xs font-normal text-text-tertiary">
-            {a.poReference}
-          </Data>
+          <CellSub>{a.poReference}</CellSub>
         </>
       ),
     },
@@ -130,10 +128,8 @@ const SupplierShipNotices: React.FC<Props> = ({ search, supplierName }) => {
       kind: 'text',
       cell: (a) => (
         <>
-          <div className="text-text-primary">{dash(a.carrier)}</div>
-          <Data as="div" className="text-xs text-text-tertiary">
-            {dash(a.trackingNumber)}
-          </Data>
+          {dash(a.carrier)}
+          <CellSub>{dash(a.trackingNumber)}</CellSub>
         </>
       ),
     },
@@ -183,11 +179,11 @@ const SupplierShipNotices: React.FC<Props> = ({ search, supplierName }) => {
     {
       id: 'material',
       header: t('shipments.notices.line.material'),
-      kind: 'text',
+      kind: 'id',
       cell: (li) => (
         <>
-          <Data className="text-text-tertiary">{li.materialCode}</Data>{' '}
-          <span className="text-text-primary">{li.description}</span>
+          <Data as="div">{li.materialCode}</Data>
+          <CellSub>{li.description}</CellSub>
         </>
       ),
     },
@@ -202,7 +198,7 @@ const SupplierShipNotices: React.FC<Props> = ({ search, supplierName }) => {
       header: t('shipments.notices.line.shipped'),
       kind: 'number',
       cell: (li) => (
-        <Data className={li.shippedQty < li.orderedQty ? 'text-warning-hover font-semibold' : ''}>
+        <Data className={li.shippedQty < li.orderedQty ? 'text-warning-hover' : ''}>
           {formatNumber(li.shippedQty)}
         </Data>
       ),

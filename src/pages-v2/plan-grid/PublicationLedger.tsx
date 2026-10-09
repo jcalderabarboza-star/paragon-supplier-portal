@@ -80,7 +80,7 @@ const PublicationLedger: React.FC<{ records: readonly PublicationDocument[]; tes
       cell: (r) => (
         <>
           {t(`planGrid.publication.ledger.verb.${r.verb}`)}
-          {r.reason && <span className="text-text-secondary"> — “{r.reason}”</span>}
+          {r.reason && <> — “{r.reason}”</>}
         </>
       ),
     },
@@ -107,17 +107,14 @@ const PublicationLedger: React.FC<{ records: readonly PublicationDocument[]; tes
       id: 'person',
       header: t('planGrid.publication.ledger.person'),
       kind: 'text',
-      cell: (r) => (
-        <span className="text-text-secondary">
-          {r.seeded
-            ? t('planGrid.publication.ledger.seeded')
-            : r.personId
-              ? personLabel(r.personId, t)
-              : ledgerRoleKeys(r.verb).length > 0
-                ? t('planGrid.publication.ledger.noPerson')
-                : '—'}
-        </span>
-      ),
+      cell: (r) =>
+        r.seeded
+          ? t('planGrid.publication.ledger.seeded')
+          : r.personId
+            ? personLabel(r.personId, t)
+            : ledgerRoleKeys(r.verb).length > 0
+              ? t('planGrid.publication.ledger.noPerson')
+              : '—',
     },
   ];
   return (

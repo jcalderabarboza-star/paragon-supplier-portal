@@ -10,7 +10,7 @@ import {
   Mail,
 } from 'lucide-react';
 import ListPage from '../components/ui-v2/ListPage';
-import DataTable from '../components/ui-v2/DataTable';
+import DataTable, { CellSub } from '../components/ui-v2/DataTable';
 import ProvenanceMarker from '../components/ui-v2/ProvenanceMarker';
 import KpiCard from '../components/ui-v2/KpiCard';
 import BulkActionsBar from '../components/ui-v2/BulkActionsBar';
@@ -80,7 +80,7 @@ const DaysBar: React.FC<{ days: number; status: StockStatus }> = ({
         ? 'text-warning-hover'
         : textVariant === 'success'
           ? 'text-success'
-          : 'text-text-secondary';
+          : '';
   return (
     <div className="flex items-center gap-2 min-w-[100px]">
       <div className="flex-1 bg-bg-hover rounded-full h-1.5 min-w-[60px]">
@@ -89,7 +89,7 @@ const DaysBar: React.FC<{ days: number; status: StockStatus }> = ({
           style={{ width: `${pct}%`, background: color }}
         />
       </div>
-      <Data className={`text-xs font-semibold min-w-[28px] text-right ${textClass}`}>
+      <Data className={`min-w-[28px] text-right ${textClass}`}>
         {days}d
       </Data>
     </div>
@@ -352,7 +352,7 @@ const SupplierInventory: React.FC = () => {
                 cell: (d) => (
                   <>
                     <Data>{d.materialCode}</Data>
-                    <div className="text-xs font-sans font-normal whitespace-normal text-text-secondary">{publishedLabelOf(d.materialCode)}</div>
+                    <CellSub>{publishedLabelOf(d.materialCode)}</CellSub>
                   </>
                 ),
               },
@@ -368,17 +368,13 @@ const SupplierInventory: React.FC = () => {
                 kind: 'text',
                 cell: (d) => {
                   const expiries = (d.batches ?? []).map((b) => b.expiryDate).filter((e): e is string => !!e).sort();
-                  return (
-                    <span className="text-xs text-text-secondary">
-                      {d.batches && d.batches.length > 0
-                        ? t('supplierInventory.declared.batches', {
-                            count: d.batches.length,
-                            n: formatNumber(d.batches.length),
-                            expiry: expiries[0] ? formatDate(expiries[0]) : '—',
-                          })
-                        : t('supplierInventory.declared.totalOnly')}
-                    </span>
-                  );
+                  return d.batches && d.batches.length > 0
+                    ? t('supplierInventory.declared.batches', {
+                        count: d.batches.length,
+                        n: formatNumber(d.batches.length),
+                        expiry: expiries[0] ? formatDate(expiries[0]) : '—',
+                      })
+                    : t('supplierInventory.declared.totalOnly');
                 },
               },
               {
@@ -428,9 +424,9 @@ const SupplierInventory: React.FC = () => {
             cell: (row) => (
               <>
                 <Data as="div">{row.materialCode}</Data>
-                <div className="text-sm font-sans font-normal text-text-primary truncate max-w-[14rem]">
+                <CellSub className="truncate whitespace-nowrap max-w-[14rem]">
                   {row.materialDescription}
-                </div>
+                </CellSub>
               </>
             ),
           },
@@ -438,15 +434,7 @@ const SupplierInventory: React.FC = () => {
             id: 'supplier',
             header: t('supplierInventory.col.supplier'),
             kind: 'text',
-            cell: (row) => (
-              <span className="text-text-secondary text-xs">
-                {row.supplierName
-                  .replace('PT ', '')
-                  .split(' ')
-                  .slice(0, 2)
-                  .join(' ')}
-              </span>
-            ),
+            cell: (row) => row.supplierName.replace('PT ', '').split(' ').slice(0, 2).join(' '),
           },
           {
             id: 'onHand',
@@ -468,7 +456,7 @@ const SupplierInventory: React.FC = () => {
             kind: 'number',
             className: 'whitespace-nowrap',
             cell: (row) => (
-              <Data className={row.qtyInTransit > 0 ? 'text-teal-text' : 'text-text-tertiary'}>
+              <Data className={row.qtyInTransit > 0 ? 'text-teal-text' : undefined}>
                 {row.qtyInTransit > 0 ? fmt(row.qtyInTransit) : '—'}
               </Data>
             ),
@@ -477,7 +465,7 @@ const SupplierInventory: React.FC = () => {
             id: 'uom',
             header: t('supplierInventory.col.uom'),
             kind: 'text',
-            cell: (row) => <span className="text-text-tertiary text-xs">{row.uom}</span>,
+            cell: (row) => row.uom,
           },
           {
             id: 'daysSupply',

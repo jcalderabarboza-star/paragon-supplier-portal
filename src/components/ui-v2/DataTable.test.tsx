@@ -1,7 +1,8 @@
 // UI-1b · the one table and the one list page.
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, within, fireEvent } from '@testing-library/react';
-import DataTable, { CELL_KIND_CLASS, type Column, type ColumnKind } from './DataTable';
+import DataTable, { CELL_KIND_CLASS, CellSub, type Column, type ColumnKind } from './DataTable';
+import Data from './Data';
 import ListPage from './ListPage';
 import { renderWithProviders } from '../../test/test-utils';
 
@@ -199,5 +200,46 @@ describe('ListPage', () => {
     const root = screen.getByTestId('lp');
     // the header and the content — nothing else
     expect(root.children).toHaveLength(2);
+  });
+});
+
+describe('Data · a state colour wins over the data navy', () => {
+  // UI-1a renamed the red token to `critical` and this list still said `danger`,
+  // so an overdue figure in a `<Data>` carried navy AND red and rendered navy.
+  it.each(['text-critical', 'text-warning-hover', 'text-success', 'text-info', 'text-action-text', 'text-teal-text', 'text-sample'])(
+    '%s is not joined by text-data-navy',
+    (cls) => {
+      render(<Data className={cls}>42</Data>);
+      const el = screen.getByText('42');
+      expect(el).toHaveClass(cls, 'font-mono');
+      expect(el).not.toHaveClass('text-data-navy');
+    },
+  );
+
+  it('a value with no colour of its own is navy', () => {
+    render(<Data>42</Data>);
+    expect(screen.getByText('42')).toHaveClass('text-data-navy');
+  });
+});
+
+describe('CellSub · the one second line', () => {
+  it('is sans, 12px, regular, grey — and says a condition by tone, not by a class', () => {
+    render(
+      <>
+        <CellSub>PR-1</CellSub>
+        <CellSub tone="critical">2d overdue</CellSub>
+      </>,
+    );
+    expect(screen.getByText('PR-1')).toHaveClass('font-sans', 'text-xs', 'font-normal', 'text-text-tertiary', 'whitespace-normal');
+    const late = screen.getByText('2d overdue');
+    expect(late).toHaveClass('text-critical', 'text-xs', 'font-normal');
+    expect(late).not.toHaveClass('text-text-tertiary');
+  });
+
+  it('truncates when the page asks it to', () => {
+    render(<CellSub className="truncate max-w-xs">a long description</CellSub>);
+    const el = screen.getByText('a long description');
+    expect(el).toHaveClass('truncate');
+    expect(el).not.toHaveClass('whitespace-normal');
   });
 });

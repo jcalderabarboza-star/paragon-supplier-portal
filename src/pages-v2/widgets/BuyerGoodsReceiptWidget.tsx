@@ -59,7 +59,7 @@ const BuyerGoodsReceiptWidget: React.FC = () => {
             id: 'supplier',
             header: t('widget.goodsReceipt.col.supplier'),
             kind: 'text',
-            cell: (gr) => <span className="text-text-secondary">{gr.supplierName}</span>,
+            cell: (gr) => gr.supplierName,
           },
           {
             id: 'received',

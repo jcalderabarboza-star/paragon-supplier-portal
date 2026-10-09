@@ -13,7 +13,7 @@ import {
   BookOpen,
 } from 'lucide-react';
 import ListPage from '../components/ui-v2/ListPage';
-import DataTable, { type Column } from '../components/ui-v2/DataTable';
+import DataTable, { CellSub, type Column } from '../components/ui-v2/DataTable';
 import ProvenanceMarker from '../components/ui-v2/ProvenanceMarker';
 import SessionStampMarker from '../components/ui-v2/SessionStampMarker';
 import KpiCard from '../components/ui-v2/KpiCard';
@@ -141,9 +141,9 @@ function declarationComplete(f: DeclarationForm): boolean {
 /**
  * ⚠️ **THE REFUSAL BLOCK — REASON, TIMESTAMP, AND THE LINE THAT SAYS NOBODY CAN
  * BE NAMED.** It renders the SAME grammar the dispute lane set one tenancy over
- * (`DisputeLedger`, `SupplierForecasts.tsx`): a coloured left rule, an uppercase
- * label, a `Data` timestamp, then the buyer's authored text — read by the party
- * the text is about.
+ * (`DisputeLedger`, `SupplierForecasts.tsx`): a coloured left rule, a label,
+ * a timestamp, then the buyer's authored text — read by the party the text is
+ * about. It sits inside a table cell, so every line is a `CellSub` (UI-1b).
  *
  * ⚠️ **THREE THINGS IT DELIBERATELY DOES NOT DO.**
  * 1. **It does not name a person.** `rejectedBy` is `ActorAttribution`, always
@@ -186,11 +186,9 @@ const RefusalBlock: React.FC<{ doc: SupplierDocument }> = ({ doc }) => {
       className="mt-1.5 border-l-2 border-l-critical pl-3 py-1 max-w-[22rem]"
       data-testid={`doc-refusal-${doc.id}`}
     >
-      <div className="text-label uppercase mb-0.5">
+      <CellSub>
         <span className="text-critical">{t('supplierDocuments.refusal.label')}</span>{' '}
-        <Data className="text-text-tertiary normal-case">
-          {formatDate(doc.rejectedAt)}
-        </Data>{' '}
+        {formatDate(doc.rejectedAt)}{' '}
         {/* ⚠️ **PER VALUE, NOT PER ROW — AND THIS SURFACE IS WHY.** `doc-012` is
             SEEDED with a refusal and can be refused AGAIN (`t_supplierdoc_submit`
             takes `Rejected` as a `from`), so the same id renders a shifted
@@ -203,18 +201,13 @@ const RefusalBlock: React.FC<{ doc: SupplierDocument }> = ({ doc }) => {
           field="rejectedAt"
           value={doc.rejectedAt}
         />
-      </div>
+      </CellSub>
       {/* i18n-defer: mock/sample data (fixture refusal text) */}
-      <div className="text-xs text-text-secondary">
-        <span className="font-semibold text-text-primary">
-          {t('supplierDocuments.refusal.reasonLabel')}:
-        </span>{' '}
-        {doc.rejectionReason}
-      </div>
+      <CellSub>
+        {t('supplierDocuments.refusal.reasonLabel')}: {doc.rejectionReason}
+      </CellSub>
       {doc.rejectedBy?.kind === 'UNATTRIBUTED' && (
-        <div className="text-xs text-text-tertiary mt-0.5 italic">
-          {t('supplierDocuments.refusal.unattributed')}
-        </div>
+        <CellSub className="italic">{t('supplierDocuments.refusal.unattributed')}</CellSub>
       )}
     </div>
   );
@@ -434,27 +427,22 @@ const SupplierDocuments: React.FC = () => {
       kind: 'text',
       cell: (doc) => (
         <>
-          <div className="font-semibold text-text-primary text-sm max-w-[18rem]">
-            {doc.name}
-          </div>
+          <div className="max-w-[18rem]">{doc.name}</div>
           {doc.notes && (
-            <div className="text-xs text-warning-hover mt-0.5 max-w-[18rem]">
+            <CellSub tone="warning" className="max-w-[18rem]">
               ⚠ {doc.notes}
-            </div>
+            </CellSub>
           )}
           <RefusalBlock doc={doc} />
           {/* SUP-1 - when Paragon confirmed it. The date only: the
               person is the buyer's record, not the supplier's. */}
           {doc.verifiedAt && (
-            <div className="text-xs text-text-tertiary mt-1" data-testid={`doc-confirmed-on-${doc.id}`}>
-              {t('supplierDocuments.confirmedOn')}{' '}
-              <Data className="text-text-tertiary normal-case">{formatDate(doc.verifiedAt)}</Data>{' '}
+            <CellSub data-testid={`doc-confirmed-on-${doc.id}`}>
+              {t('supplierDocuments.confirmedOn')} {formatDate(doc.verifiedAt)}{' '}
               <SessionStampMarker documentId={doc.id} field="verifiedAt" value={doc.verifiedAt} />
-            </div>
+            </CellSub>
           )}
-          <div className="text-xs text-text-tertiary mt-0.5">
-            {t('supplierDocuments.row.linked', { value: doc.linkedTo })}
-          </div>
+          <CellSub>{t('supplierDocuments.row.linked', { value: doc.linkedTo })}</CellSub>
         </>
       ),
     },
@@ -471,7 +459,7 @@ const SupplierDocuments: React.FC = () => {
       header: t('supplierDocuments.table.issuedBy'),
       kind: 'text',
       className: 'max-w-[12rem]',
-      cell: (doc) => <span className="text-text-tertiary text-xs">{doc.issuedBy}</span>,
+      cell: (doc) => doc.issuedBy,
     },
     {
       id: 'issued',
@@ -485,16 +473,10 @@ const SupplierDocuments: React.FC = () => {
       kind: 'date',
       cell: (doc) => {
         const days = daysUntil(doc.expiryDate, nowIso);
-        const expiryColor =
-          days === null
-            ? 'text-text-tertiary'
-            : days <= 0
-              ? 'text-critical'
-              : days <= 90
-                ? 'text-warning-hover'
-                : 'text-text-tertiary';
+        const expiryTone =
+          days === null ? 'neutral' : days <= 0 ? 'critical' : days <= 90 ? 'warning' : 'neutral';
         return doc.expiryDate ? (
-          <div>
+          <>
             <Data
               as="div"
               className={days !== null && days <= 90 ? 'text-warning-hover' : undefined}
@@ -502,19 +484,17 @@ const SupplierDocuments: React.FC = () => {
               {formatDate(doc.expiryDate)}
             </Data>
             {days !== null && (
-              <div className={`text-xs font-sans ${expiryColor}`}>
+              <CellSub tone={expiryTone}>
                 {days > 0
                   ? t('supplierDocuments.expiry.remaining', { count: days })
                   : t('supplierDocuments.expiry.expiredAgo', {
                       count: Math.abs(days),
                     })}
-              </div>
+              </CellSub>
             )}
-          </div>
+          </>
         ) : (
-          <span className="text-text-tertiary text-xs font-sans">
-            {t('supplierDocuments.expiry.none')}
-          </span>
+          t('supplierDocuments.expiry.none')
         );
       },
     },
@@ -552,8 +532,8 @@ const SupplierDocuments: React.FC = () => {
     {
       id: 'version',
       header: t('supplierDocuments.table.version'),
-      kind: 'text',
-      cell: (doc) => <Data className="text-text-tertiary text-xs">{doc.version}</Data>,
+      kind: 'id',
+      cell: (doc) => <Data>{doc.version}</Data>,
     },
     {
       id: 'actions',

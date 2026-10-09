@@ -33,7 +33,7 @@ interface DataProps extends React.HTMLAttributes<HTMLElement> {
 // A muted or semantic text colour on the token is intentional and wins over the
 // data-navy default; the near-black primary default is stripped so it lifts.
 const OVERRIDE_COLOR =
-  /\btext-(text-(secondary|tertiary)|success|danger|warning-hover|warning|info|action|teal|white)\b/;
+  /\btext-(text-(secondary|tertiary)|success|critical|danger|warning-hover|warning|info|sample|action|teal|white)\b/;
 
 const Data: React.FC<DataProps> = ({
   as = 'span',

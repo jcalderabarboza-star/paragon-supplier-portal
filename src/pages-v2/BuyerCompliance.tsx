@@ -16,7 +16,7 @@ import {
   FilePlus2,
 } from 'lucide-react';
 import ListPage from '../components/ui-v2/ListPage';
-import DataTable, { type Column } from '../components/ui-v2/DataTable';
+import DataTable, { CellSub, type Column } from '../components/ui-v2/DataTable';
 import Data from '../components/ui-v2/Data';
 import KpiCard from '../components/ui-v2/KpiCard';
 import BulkActionsBar from '../components/ui-v2/BulkActionsBar';
@@ -410,23 +410,17 @@ const BuyerCompliance: React.FC = () => {
         id: 'supplier',
         header: t('compliance.table.supplier'),
         kind: 'text',
-        cell: ({ entry }) => (
-          <div className="font-semibold text-text-primary">{entry.supplierName}</div>
-        ),
+        cell: ({ entry }) => entry.supplierName,
       },
       {
         id: 'certificate',
         header: t('compliance.table.certificate'),
         kind: 'text',
         cell: ({ entry }) => (
-          <div className="text-text-secondary">
-            <div>{t(certTypeLabelKey(entry.certType))}</div>
-            {entry.certNumber && (
-              <Data as="div" className="text-xs text-text-tertiary mt-0.5">
-                {entry.certNumber}
-              </Data>
-            )}
-          </div>
+          <>
+            {t(certTypeLabelKey(entry.certType))}
+            {entry.certNumber && <CellSub>{entry.certNumber}</CellSub>}
+          </>
         ),
       },
       {
@@ -439,7 +433,7 @@ const BuyerCompliance: React.FC = () => {
         id: 'issuedBy',
         header: t('compliance.table.issuedBy'),
         kind: 'text',
-        cell: ({ entry }) => <span className="text-text-tertiary">{entry.issuer || '—'}</span>,
+        cell: ({ entry }) => entry.issuer || '—',
       },
       {
         id: 'expiry',
@@ -447,21 +441,13 @@ const BuyerCompliance: React.FC = () => {
         kind: 'date',
         cell: ({ entry, days }) => (
           <>
-            <div>{formatDate(entry.expiryDate)}</div>
+            {formatDate(entry.expiryDate)}
             {days !== null && (
-              <div
-                className={`font-sans text-xs mt-0.5 ${
-                  days <= 0
-                    ? 'text-critical'
-                    : days <= 90
-                      ? 'text-warning-hover'
-                      : 'text-text-tertiary'
-                }`}
-              >
+              <CellSub tone={days <= 0 ? 'critical' : days <= 90 ? 'warning' : 'neutral'}>
                 {days <= 0
                   ? t('compliance.expiry.expiredAgo', { days: Math.abs(days) })
                   : t('compliance.expiry.remaining', { days })}
-              </div>
+              </CellSub>
             )}
           </>
         ),
@@ -512,13 +498,13 @@ const BuyerCompliance: React.FC = () => {
         kind: 'text',
         cell: ({ status }) => (
           <span
-            className={`text-xs ${
+            className={
               status === 'Expired' || status === 'Missing'
                 ? 'text-critical'
                 : status === 'Expiring'
                   ? 'text-warning-hover'
-                  : 'text-text-tertiary'
-            }`}
+                  : undefined
+            }
           >
             {t(actionLabelKey(status))}
           </span>

@@ -45,9 +45,35 @@ export interface Column<T> {
   stopRowClick?: boolean;
 }
 
-/** The second line of a cell — a description under a code, a reference under a name. */
-export const CellSub: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className = '' }) => (
-  <div className={`mt-0.5 whitespace-normal font-sans text-xs font-normal text-text-tertiary ${className}`}>{children}</div>
+const SUB_TONE = {
+  neutral: 'text-text-tertiary',
+  critical: 'text-critical',
+  warning: 'text-warning-hover',
+  success: 'text-success',
+  info: 'text-info',
+} as const;
+
+/**
+ * The second line of a cell — a description under a code, a reference under a
+ * name, "2d overdue" under a date. ONE style on every list: sans, 12px, regular.
+ * `tone` is for a line that states the row's condition; the default is the
+ * neutral grey. A cell never dresses a second line by hand.
+ */
+export const CellSub: React.FC<{
+  children: React.ReactNode;
+  tone?: keyof typeof SUB_TONE;
+  className?: string;
+  'data-testid'?: string;
+}> = ({ children, tone = 'neutral', className = '', 'data-testid': testId }) => (
+  <div
+    data-testid={testId}
+    data-cell-sub=""
+    // A second line wraps even inside a no-wrap cell — unless the page asks it to
+    // truncate, and then `whitespace-normal` must not be there to win the cascade.
+    className={`mt-0.5 ${/(truncate|whitespace-nowrap)/.test(className) ? '' : 'whitespace-normal'} font-sans text-xs font-normal ${SUB_TONE[tone]} ${className}`}
+  >
+    {children}
+  </div>
 );
 
 type RowAttrs = React.HTMLAttributes<HTMLTableRowElement> & { [dataAttr: `data-${string}`]: string | undefined };
@@ -90,11 +116,11 @@ const RIGHT: Record<ColumnKind, boolean> = {
 /** The body cell's type, by kind. The ONLY place a table cell's type is chosen. */
 export const CELL_KIND_CLASS: Record<ColumnKind, string> = {
   id: 'font-mono font-semibold text-data-navy whitespace-nowrap',
-  text: 'text-text-primary',
-  number: 'font-mono tabular-nums text-data-navy text-right',
-  money: 'font-mono tabular-nums text-data-navy text-right whitespace-nowrap',
-  date: 'font-mono text-data-navy whitespace-nowrap',
-  status: '',
+  text: 'font-sans font-normal text-text-primary',
+  number: 'font-mono font-normal tabular-nums text-data-navy text-right',
+  money: 'font-mono font-normal tabular-nums text-data-navy text-right whitespace-nowrap',
+  date: 'font-mono font-normal text-data-navy whitespace-nowrap',
+  status: 'font-sans font-normal text-text-primary',
   actions: 'text-right whitespace-nowrap',
 };
 
@@ -125,7 +151,7 @@ function DataTable<T>({
   const d = DENSITY[density];
   const table = (
     <table
-      className={`w-full border-collapse text-text-primary ${d.table} ${card ? '' : className}`}
+      className={`w-full border-collapse font-sans font-normal text-text-primary ${d.table} ${card ? '' : className}`}
       aria-label={ariaLabel}
       data-testid={testId}
     >
@@ -166,6 +192,7 @@ function DataTable<T>({
                 {columns.map((c) => (
                   <td
                     key={c.id}
+                    data-kind={c.kind}
                     className={`align-middle ${d.td} ${CELL_KIND_CLASS[c.kind]} ${c.className ?? ''}`}
                     onClick={c.stopRowClick ? (e) => e.stopPropagation() : undefined}
                   >

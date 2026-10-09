@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { BookOpenText, RefreshCw } from 'lucide-react';
 import Data from '../../components/ui-v2/Data';
-import DataTable, { type Column } from '../../components/ui-v2/DataTable';
+import DataTable, { CellSub, type Column } from '../../components/ui-v2/DataTable';
 import StatusPill from '../../components/ui-v2/StatusPill';
 import GlossaryTermChip from '../../components/ui-v2/GlossaryTermChip';
 import { HandoffNotice } from '../../components/ui-v2/HandoffNotice';
@@ -223,17 +223,15 @@ const HistoryTab: React.FC<{ view: FlowView; guide: ProcessGuide | undefined }> 
     {
       id: 'edge',
       header: t('processGuides.history.col.edge'),
-      kind: 'text',
+      kind: 'id',
       className: TOP,
       cell: ({ event: e, elsewhere }) => (
         <>
-          <Data className="text-[11px]">
-            {e.subject ? `${e.subject.from ?? t('processGuides.history.creation')} → ${e.subject.to}` : '—'}
-          </Data>
+          {e.subject ? `${e.subject.from ?? t('processGuides.history.creation')} → ${e.subject.to}` : '—'}
           {elsewhere && e.subject && (
-            <span className="block text-[10px] text-text-tertiary">
+            <CellSub>
               {t('processGuides.history.elsewhere', { entity: e.subject.entity, id: e.subject.entityId })}
-            </span>
+            </CellSub>
           )}
         </>
       ),
@@ -241,21 +239,21 @@ const HistoryTab: React.FC<{ view: FlowView; guide: ProcessGuide | undefined }> 
     {
       id: 'actor',
       header: t('processGuides.history.col.actor'),
-      kind: 'text',
+      kind: 'id',
       className: TOP,
       cell: ({ event: e }) => (
         <>
-          <Data className="block text-[11px]">{e.actor}</Data>
-          <span className="text-[10px] text-text-tertiary">{actorText(e, t)}</span>
+          {e.actor}
+          <CellSub>{actorText(e, t)}</CellSub>
         </>
       ),
     },
     {
       id: 'trigger',
       header: t('processGuides.history.col.trigger'),
-      kind: 'text',
+      kind: 'id',
       className: TOP,
-      cell: ({ event: e }) => <Data className="text-[11px]">{getTransition(e.event)?.trigger ?? '—'}</Data>,
+      cell: ({ event: e }) => getTransition(e.event)?.trigger ?? '—',
     },
     {
       id: 'event',
@@ -267,12 +265,12 @@ const HistoryTab: React.FC<{ view: FlowView; guide: ProcessGuide | undefined }> 
     {
       id: 'outcome',
       header: t('processGuides.history.col.outcome'),
-      kind: 'text',
+      kind: 'id',
       className: TOP,
       cell: ({ event: e }) => (
         <>
-          <Data className="text-[11px]">{e.outcome}</Data>
-          {e.reason && <Data className="block text-[10px] text-text-tertiary">{e.reason}</Data>}
+          {e.outcome}
+          {e.reason && <CellSub>{e.reason}</CellSub>}
         </>
       ),
     },
@@ -353,18 +351,18 @@ const TestDataTab: React.FC<{ guide: ProcessGuide }> = ({ guide }) => {
     {
       id: 'state',
       header: t('processGuides.testdata.col.state'),
-      kind: 'text',
+      kind: 'id',
       className: TOP,
-      cell: (row) => <Data className="text-[11px]">{row.state}</Data>,
+      cell: (row) => row.state,
     },
     {
       id: 'fixtures',
       header: t('processGuides.testdata.col.fixtures'),
-      kind: 'text',
+      kind: 'id',
       className: TOP,
       cell: (row) =>
         row.fixtureIds.length === 0 ? (
-          <span className="text-text-tertiary">{t('processGuides.testdata.none')}</span>
+          <CellSub>{t('processGuides.testdata.none')}</CellSub>
         ) : (
           <span className="flex flex-wrap gap-1.5">
             {row.fixtureIds.map((id) =>
@@ -374,14 +372,12 @@ const TestDataTab: React.FC<{ guide: ProcessGuide }> = ({ guide }) => {
                   to={route}
                   data-testid={`pf-guide-fixture-${id}`}
                   aria-label={t('processGuides.testdata.openAria', { id })}
-                  className="font-mono text-[11px] text-action-text underline-offset-2 hover:underline"
+                  className="text-action-text underline-offset-2 hover:underline"
                 >
                   {id}
                 </Link>
               ) : (
-                <Data key={id} className="text-[11px]">
-                  {id}
-                </Data>
+                <Data key={id}>{id}</Data>
               ),
             )}
           </span>
@@ -400,11 +396,7 @@ const TestDataTab: React.FC<{ guide: ProcessGuide }> = ({ guide }) => {
       kind: 'text',
       className: TOP,
       cell: (row) =>
-        row.note ? (
-          <span className="text-text-secondary">
-            <GuideInline text={row.note} />
-          </span>
-        ) : null,
+        row.note ? <GuideInline text={row.note} /> : null,
     },
   ];
   return (

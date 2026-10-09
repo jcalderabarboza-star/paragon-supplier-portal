@@ -23,7 +23,7 @@
 
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import DataTable, { type Column } from '../ui-v2/DataTable';
+import DataTable, { CellSub, type Column } from '../ui-v2/DataTable';
 import Data from '../ui-v2/Data';
 import { personLabel } from '../../services/identity/personLabel';
 import { formatDate } from '../../lib/format';
@@ -50,14 +50,8 @@ const ChangeHistory: React.FC<{ agreement: SchedulingAgreement }> = ({ agreement
       kind: 'text',
       cell: (row) => (
         <>
-          <span className="text-sm text-text-primary">
-            {t(`delivery.history.act.${row.kind}`)}
-          </span>
-          {row.reason && (
-            <div className="text-[10px] italic text-text-tertiary mt-0.5">
-              {row.reason}
-            </div>
-          )}
+          {t(`delivery.history.act.${row.kind}`)}
+          {row.reason && <CellSub className="italic">{row.reason}</CellSub>}
         </>
       ),
     },
@@ -84,13 +78,9 @@ const ChangeHistory: React.FC<{ agreement: SchedulingAgreement }> = ({ agreement
         row.actor.kind === 'RESOLVED' ? (
           // THE ONE RESOLVER. It is what appends `(SAMPLE)`, so the
           // marker cannot be forgotten at this call site.
-          <span className="text-sm text-text-primary">
-            {personLabel(row.actor.person.personId, t)}
-          </span>
+          personLabel(row.actor.person.personId, t)
         ) : (
-          <span className="text-xs italic text-text-tertiary">
-            {t('delivery.history.noActor')}
-          </span>
+          <span className="italic">{t('delivery.history.noActor')}</span>
         ),
     },
     {

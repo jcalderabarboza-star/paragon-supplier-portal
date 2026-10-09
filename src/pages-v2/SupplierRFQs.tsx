@@ -983,17 +983,14 @@ const AwardsTab: React.FC<{ rows: AwardRow[] }> = ({ rows }) => {
             header: t('rfqs.awards.col.notes'),
             kind: 'text',
             className: 'max-w-[16rem]',
-            cell: (row) => (
-              <span className="text-xs text-text-secondary">
-                {t(
-                  row.result === 'Awarded'
-                    ? 'rfqs.awards.note.won'
-                    : row.result === 'Event Cancelled'
-                      ? 'rfqs.awards.note.cancelled'
-                      : 'rfqs.awards.note.lost',
-                )}
-              </span>
-            ),
+            cell: (row) =>
+              t(
+                row.result === 'Awarded'
+                  ? 'rfqs.awards.note.won'
+                  : row.result === 'Event Cancelled'
+                    ? 'rfqs.awards.note.cancelled'
+                    : 'rfqs.awards.note.lost',
+              ),
           },
         ]}
       />

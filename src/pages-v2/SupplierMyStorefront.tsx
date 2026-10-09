@@ -439,19 +439,13 @@ const StorefrontEditor: React.FC<StorefrontEditorProps> = ({
                 id: 'material',
                 header: t('supplierMyStorefront.col.material'),
                 kind: 'text',
-                cell: (item) => (
-                  <span className="font-semibold text-text-primary">
-                    {item.material}
-                  </span>
-                ),
+                cell: (item) => item.material,
               },
               {
                 id: 'category',
                 header: t('supplierMyStorefront.col.category'),
                 kind: 'text',
-                cell: (item) => (
-                  <span className="text-text-tertiary text-xs">{cl(item.category)}</span>
-                ),
+                cell: (item) => cl(item.category),
               },
               {
                 id: 'moq',
@@ -513,7 +507,7 @@ const StorefrontEditor: React.FC<StorefrontEditorProps> = ({
                   <button
                     type="button"
                     onClick={() => removeCatalogItem(item.id)}
-                    className="text-text-tertiary hover:text-critical"
+                    className="hover:text-critical"
                     aria-label={t('supplierMyStorefront.aria.removeMaterial', {
                       name: item.material,
                     })}

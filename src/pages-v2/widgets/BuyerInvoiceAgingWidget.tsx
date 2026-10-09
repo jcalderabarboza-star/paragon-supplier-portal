@@ -55,7 +55,7 @@ const BuyerInvoiceAgingWidget: React.FC = () => {
             id: 'supplier',
             header: t('widget.invoiceAging.col.supplier'),
             kind: 'text',
-            cell: (inv) => <span className="text-text-secondary">{inv.supplierName}</span>,
+            cell: (inv) => inv.supplierName,
           },
           {
             id: 'amount',

@@ -72,7 +72,7 @@ const BuyerOpenPoWidget: React.FC = () => {
             id: 'supplier',
             header: t('widget.openPo.col.supplier'),
             kind: 'text',
-            cell: (po) => <span className="text-text-secondary">{po.supplierName}</span>,
+            cell: (po) => po.supplierName,
           },
           {
             id: 'orderDate',

@@ -498,11 +498,7 @@ const BuyerSupplierProfile: React.FC = () => {
                 id: 'document',
                 header: t('buyerSupplierProfile.compliance.col.document'),
                 kind: 'text',
-                cell: (doc) => (
-                  <div className="font-medium text-text-primary">
-                    {doc.name}
-                  </div>
-                ),
+                cell: (doc) => doc.name,
               },
               {
                 id: 'status',
@@ -559,11 +555,7 @@ const BuyerSupplierProfile: React.FC = () => {
                 id: 'material',
                 header: t('buyerSupplierProfile.catalog.col.material'),
                 kind: 'text',
-                cell: (m) => (
-                  <div className="font-medium text-text-primary">
-                    {m.material}
-                  </div>
-                ),
+                cell: (m) => m.material,
               },
               {
                 id: 'sapCode',
@@ -626,11 +618,7 @@ const BuyerSupplierProfile: React.FC = () => {
                 id: 'material',
                 header: t('buyerSupplierProfile.performance.col.material'),
                 kind: 'text',
-                cell: (po) => (
-                  <span className="text-text-secondary">
-                    {po.lineItems[0]?.description ?? '—'}
-                  </span>
-                ),
+                cell: (po) => po.lineItems[0]?.description ?? '—',
               },
               {
                 id: 'qty',
@@ -718,22 +706,20 @@ const BuyerSupplierProfile: React.FC = () => {
                 id: 'channel',
                 header: t('buyerSupplierProfile.msglog.col.channel'),
                 kind: 'text',
-                cell: (m) => (
-                  <span className="text-text-secondary capitalize">{chl(m.channel)}</span>
-                ),
+                cell: (m) => <span className="capitalize">{chl(m.channel)}</span>,
               },
               {
                 id: 'type',
                 header: t('buyerSupplierProfile.msglog.col.type'),
                 kind: 'text',
-                cell: (m) => <span className="text-text-secondary">{m.docType}</span>,
+                cell: (m) => m.docType,
               },
               {
                 id: 'preview',
                 header: t('buyerSupplierProfile.msglog.col.preview'),
                 kind: 'text',
                 className: 'max-w-md truncate',
-                cell: (m) => <span className="text-text-secondary">{m.preview}</span>,
+                cell: (m) => m.preview,
               },
               {
                 id: 'status',

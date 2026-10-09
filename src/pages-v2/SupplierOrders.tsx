@@ -8,7 +8,7 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import ListPage from '../components/ui-v2/ListPage';
-import DataTable, { type Column } from '../components/ui-v2/DataTable';
+import DataTable, { CellSub, type Column } from '../components/ui-v2/DataTable';
 import ProvenanceMarker from '../components/ui-v2/ProvenanceMarker';
 import KpiCard from '../components/ui-v2/KpiCard';
 import SubTabs from '../components/ui-v2/SubTabs';
@@ -869,16 +869,14 @@ const SupplierOrders: React.FC = () => {
                     {
                       id: 'material',
                       header: t('supplierOrders.panel.col.material'),
-                      kind: 'text',
+                      kind: 'id',
                       cell: (li) => (
                         <>
-                          <Data as="div" className="text-xs text-text-tertiary">
-                            {li.materialCode}
-                          </Data>
-                          <div className="text-text-primary mt-0.5">
+                          <Data as="div">{li.materialCode}</Data>
+                          <CellSub>
                             {/* i18n-defer: mock/sample data (fixture line-item description) */}
                             {li.description}
-                          </div>
+                          </CellSub>
                         </>
                       ),
                     },
@@ -949,23 +947,21 @@ const SupplierOrders: React.FC = () => {
                                     (the GR-wizard display rule, not the 2e-a
                                     untouched-blank rule). */}
                                 {lineReads[idx] && !lineReads[idx].ok && (
-                                  <div
-                                    role="alert"
-                                    data-testid={`po-confirm-refusal-${idx}`}
-                                    className="mt-1 font-sans text-[11px] text-critical text-right"
-                                  >
-                                    {t(
-                                      PO_QTY_REFUSAL_KEY[
-                                        (lineReads[idx] as { reason: QtyRefusalReason })
-                                          .reason
-                                      ],
-                                    )}{' '}
-                                    <GlossaryTermChip
-                                      refTo={{
-                                        sourceType: 'QtyRefusalReason',
-                                        term: (lineReads[idx] as { reason: QtyRefusalReason }).reason,
-                                      }}
-                                    />
+                                  <div role="alert" data-testid={`po-confirm-refusal-${idx}`}>
+                                    <CellSub tone="critical">
+                                      {t(
+                                        PO_QTY_REFUSAL_KEY[
+                                          (lineReads[idx] as { reason: QtyRefusalReason })
+                                            .reason
+                                        ],
+                                      )}{' '}
+                                      <GlossaryTermChip
+                                        refTo={{
+                                          sourceType: 'QtyRefusalReason',
+                                          term: (lineReads[idx] as { reason: QtyRefusalReason }).reason,
+                                        }}
+                                      />
+                                    </CellSub>
                                   </div>
                                 )}
                                 {/* The bounds mirror — courtesy, not law (see the
@@ -973,15 +969,13 @@ const SupplierOrders: React.FC = () => {
                                     the policy would refuse, in the operator's
                                     language with the line's own bound. */}
                                 {lineReads[idx]?.ok && !lineBounds[idx] && (
-                                  <div
-                                    role="alert"
-                                    data-testid={`po-confirm-bounds-${idx}`}
-                                    className="mt-1 font-sans text-[11px] text-critical text-right"
-                                  >
-                                    {t('supplierOrders.confirm.qty.outOfBounds', {
-                                      ordered: li.quantity,
-                                      uom: li.uom,
-                                    })}
+                                  <div role="alert" data-testid={`po-confirm-bounds-${idx}`}>
+                                    <CellSub tone="critical">
+                                      {t('supplierOrders.confirm.qty.outOfBounds', {
+                                        ordered: li.quantity,
+                                        uom: li.uom,
+                                      })}
+                                    </CellSub>
                                   </div>
                                 )}
                               </>

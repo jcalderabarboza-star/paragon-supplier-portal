@@ -16,7 +16,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import StatusPill from '../ui-v2/StatusPill';
 import Data from '../ui-v2/Data';
-import DataTable, { type Column } from '../ui-v2/DataTable';
+import DataTable, { CellSub, type Column } from '../ui-v2/DataTable';
 import { formatNumber, formatDate } from '../../lib/format';
 import type {
   DeliveryItemView,
@@ -110,9 +110,7 @@ const ReleaseCalendar: React.FC<{
               the PORTAL, not posted to SAP. sapReleaseNumber stays
               absent until Pattern-B binds it — never claim a SAP release. */}
           {line.state === 'released' && (
-            <div className="text-[10px] italic text-text-tertiary mt-0.5">
-              {t('delivery.release.portalNote')}
-            </div>
+            <CellSub className="italic">{t('delivery.release.portalNote')}</CellSub>
           )}
         </>
       ),
@@ -128,22 +126,16 @@ const ReleaseCalendar: React.FC<{
             <StatusPill variant={FULFILLMENT_VARIANT[fv.fulfillment]}>
               {t(`delivery.fulfillment.${fv.fulfillment}`)}
             </StatusPill>
-            {fv.matchedRef && (
-              <Data as="div" className="text-[10px] text-text-tertiary mt-0.5">
-                {fv.matchedRef}
-              </Data>
-            )}
+            {fv.matchedRef && <CellSub>{fv.matchedRef}</CellSub>}
             {/* The inferred flag MUST be visible — a proposal, never
                 authoritative (mirrors derivedFromAsn). Confirmed
                 (explicit-binding) matches carry no such caption. */}
             {fv.inferred && (
-              <div className="text-[10px] italic text-text-tertiary">
-                {t(proposedCaptionKey)}
-              </div>
+              <CellSub className="italic">{t(proposedCaptionKey)}</CellSub>
             )}
           </div>
         ) : (
-          <span className="text-text-tertiary">—</span>
+          '—'
         );
       },
     },
@@ -159,18 +151,14 @@ const ReleaseCalendar: React.FC<{
               {formatNumber(fv.actualQty)} {uom}
             </Data>
             {fv.qtyVariance !== undefined && fv.qtyVariance !== 0 && (
-              <div
-                className={`text-[10px] mt-0.5 ${
-                  fv.qtyVariance < 0 ? 'text-critical' : 'text-warning-hover'
-                }`}
-              >
+              <CellSub tone={fv.qtyVariance < 0 ? 'critical' : 'warning'}>
                 {signedQty(fv.qtyVariance)} {uom}{' '}
                 {t('delivery.calendar.varianceSuffix')}
-              </div>
+              </CellSub>
             )}
           </div>
         ) : (
-          <span className="text-text-tertiary">—</span>
+          '—'
         );
       },
     },

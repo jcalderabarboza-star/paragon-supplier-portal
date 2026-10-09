@@ -30,7 +30,7 @@ import BulkActionsBar from '../components/ui-v2/BulkActionsBar';
 import SubTabs from '../components/ui-v2/SubTabs';
 import FilterChipsBar from '../components/ui-v2/FilterChipsBar';
 import StatusPill from '../components/ui-v2/StatusPill';
-import DataTable, { type Column } from '../components/ui-v2/DataTable';
+import DataTable, { CellSub, type Column } from '../components/ui-v2/DataTable';
 import ListPage from '../components/ui-v2/ListPage';
 import Button from '../components/ui-v2/Button';
 import SidePanel from '../components/ui-v2/SidePanel';
@@ -737,11 +737,11 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
         const Channel = CHANNEL_ICON[inv.channel];
         return (
           <>
-            <div className="text-sm text-text-primary truncate max-w-[14rem]">{inv.supplierName}</div>
-            <div className="inline-flex items-center gap-1 text-xs text-text-tertiary mt-0.5">
+            <div className="truncate max-w-[14rem]">{inv.supplierName}</div>
+            <CellSub className="flex items-center gap-1">
               <Channel size={12} />
               {t('buyerInvoices.table.via', { channel: inv.channel })}
-            </div>
+            </CellSub>
           </>
         );
       },
@@ -759,9 +759,7 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
       cell: (inv) => (
         <>
           <Data as="div">{fmtCompact(inv.amount)}</Data>
-          <Data as="div" className="text-xs text-text-tertiary">
-            {formatIDR(inv.amount)}
-          </Data>
+          <CellSub>{formatIDR(inv.amount)}</CellSub>
         </>
       ),
     },
@@ -779,9 +777,9 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
         <>
           <StatusPill variant={STATUS_VARIANT[inv.status]}>{inv.status}</StatusPill>
           {inv.status === 'Overdue' && (
-            <div className="text-xs text-critical mt-1">
+            <CellSub tone="critical">
               {t('buyerInvoices.table.daysOverdue', { days: inv.daysOutstanding })}
-            </div>
+            </CellSub>
           )}
         </>
       ),
@@ -794,9 +792,9 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
         <>
           <Data as="div">{formatDate(inv.dueDate)}</Data>
           {inv.paymentDate && (
-            <div className="text-xs font-sans text-success">
-              {t('buyerInvoices.table.paid')} <Data>{formatDate(inv.paymentDate)}</Data>
-            </div>
+            <CellSub tone="success">
+              {t('buyerInvoices.table.paid')} {formatDate(inv.paymentDate)}
+            </CellSub>
           )}
         </>
       ),
@@ -806,7 +804,7 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
       header: t('buyerInvoices.table.sapFi'),
       kind: 'id',
       cell: (inv) => (
-        <Data className={inv.sapFiDoc ? 'text-success' : 'text-text-tertiary'}>{inv.sapFiDoc ?? '—'}</Data>
+        <Data className={inv.sapFiDoc ? 'text-success' : undefined}>{inv.sapFiDoc ?? '—'}</Data>
       ),
     },
     {
@@ -823,7 +821,7 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
       id: 'bucket',
       header: t('buyerInvoices.aging.bucket'),
       kind: 'text',
-      cell: (row) => <span className="font-semibold text-text-primary">{agingBucketLabel(row.bucket)}</span>,
+      cell: (row) => agingBucketLabel(row.bucket),
     },
     {
       id: 'count',
@@ -836,9 +834,7 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
       header: t('buyerInvoices.aging.amount'),
       kind: 'money',
       cell: (row) => (
-        <Data className={row.amount > 0 ? undefined : 'text-text-tertiary'}>
-          {row.amount > 0 ? `Rp ${row.amount}jT` : '—'}
-        </Data>
+        <Data>{row.amount > 0 ? `Rp ${row.amount}jT` : '—'}</Data>
       ),
     },
     {

@@ -131,7 +131,6 @@ const SupplierCertsExpiringWidget: React.FC = () => {
             id: 'document',
             header: t('widget.certsExpiring.col.document'),
             kind: 'text',
-            className: 'font-medium',
             cell: (doc) => doc.name,
           },
           {

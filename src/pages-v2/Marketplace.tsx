@@ -254,7 +254,7 @@ const Marketplace: React.FC = () => {
               id: 'material',
               header: t('marketplace.rfq.col.material'),
               kind: 'text',
-              cell: (r) => <span className="text-text-secondary">{r.material}</span>,
+              cell: (r) => r.material,
             },
             {
               id: 'quantity',

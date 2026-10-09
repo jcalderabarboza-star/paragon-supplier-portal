@@ -14,7 +14,7 @@ import {
   CalendarDays,
 } from 'lucide-react';
 import ListPage from '../components/ui-v2/ListPage';
-import DataTable, { type Column } from '../components/ui-v2/DataTable';
+import DataTable, { CellSub, type Column } from '../components/ui-v2/DataTable';
 import ProvenanceMarker from '../components/ui-v2/ProvenanceMarker';
 import { RaisedElsewhereNote, RaisedElsewherePanel } from './contracts/RaisedElsewhere';
 import { HandoffNotice } from '../components/ui-v2/HandoffNotice';
@@ -342,9 +342,9 @@ const ExpiryCell: React.FC<{
 }> = ({ days, display }) => {
   const { t } = useTranslation();
   if (days === null)
-    return <div className="text-sm whitespace-nowrap text-text-tertiary">—</div>;
+    return <div className="whitespace-nowrap">—</div>;
   return (
-    <div className={`text-sm whitespace-nowrap ${CONTRACT_EXPIRY_TONE[display]}`}>
+    <div className={`whitespace-nowrap ${CONTRACT_EXPIRY_TONE[display]}`}>
       {/* The FIGURE keeps its three renderings — `today` is a legible way to
           say zero and is not a state claim. The ruled boundary makes zero PAST,
           which the tone above now says (danger, via `Expired`), so the cell
@@ -1164,7 +1164,7 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
                       <button
                         type="button"
                         onClick={() => removeObligation(i)}
-                        className="text-text-tertiary hover:text-critical text-xs"
+                        className="text-action-text hover:underline"
                         aria-label={t('contracts.wizard.obl.removeAria')}
                       >
                         {t('contracts.wizard.obl.remove')}
@@ -1312,9 +1312,7 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
       cell: (c) => (
         <>
           <Data as="div">{c.contractNumber}</Data>
-          <div className="text-xs text-text-tertiary mt-0.5 max-w-[18rem] truncate">
-            {c.title}
-          </div>
+          <CellSub className="max-w-[18rem] truncate">{c.title}</CellSub>
         </>
       ),
     },
@@ -1326,14 +1324,8 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
         const supplier = supplierById.get(c.supplierId);
         return (
           <>
-            <div className="text-sm text-text-primary">
-              {supplier?.name ?? c.supplierId}
-            </div>
-            {supplier && (
-              <div className="text-xs text-text-tertiary mt-0.5">
-                {COUNTRY_FLAG[supplier.country] ?? supplier.country}
-              </div>
-            )}
+            {supplier?.name ?? c.supplierId}
+            {supplier && <CellSub>{COUNTRY_FLAG[supplier.country] ?? supplier.country}</CellSub>}
           </>
         );
       },
@@ -1355,9 +1347,9 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
             <Data>{formatDate(c.endDate)}</Data>
           </div>
           {c.autoRenewal && (
-            <div className="text-xs text-info mt-0.5 inline-flex items-center gap-1">
+            <CellSub tone="info" className="flex items-center gap-1">
               <RefreshCw size={10} /> {t('contracts.table.autoRenew')}
-            </div>
+            </CellSub>
           )}
         </>
       ),
@@ -1386,7 +1378,7 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
             <ScoreBadge score={c.performanceScore} size="sm" variant="bar" />
           </div>
         ) : (
-          <span className="text-xs text-text-tertiary">—</span>
+          '—'
         ),
     },
     {

@@ -33,7 +33,7 @@ import {
   type ContractDisplayStatus,
 } from '../../services/data/contractExpiry';
 import Data from '../../components/ui-v2/Data';
-import DataTable from '../../components/ui-v2/DataTable';
+import DataTable, { CellSub } from '../../components/ui-v2/DataTable';
 import Timeline, { TimelineEvent } from '../../components/ui-v2/Timeline';
 import type {
   Contract,
@@ -485,11 +485,11 @@ export const ContractDetailBody: React.FC<{
                 kind: 'text',
                 cell: (o) => (
                   <>
-                    <div className="text-text-primary font-medium">{o.title}</div>
-                    <div className="text-text-tertiary text-[10px] uppercase tracking-wider mt-0.5">
+                    {o.title}
+                    <CellSub>
                       {o.category}
                       {o.recurrence ? ` · ${o.recurrence}` : ''}
-                    </div>
+                    </CellSub>
                   </>
                 ),
               },
@@ -497,7 +497,6 @@ export const ContractDetailBody: React.FC<{
                 id: 'owner',
                 header: t('contracts.panel.obl.col.owner'),
                 kind: 'text',
-                className: 'text-text-secondary',
                 cell: (o) => ownerLabel(t, o.owner),
               },
               {

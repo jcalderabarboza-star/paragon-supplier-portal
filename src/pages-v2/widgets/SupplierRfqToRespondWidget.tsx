@@ -70,13 +70,13 @@ const SupplierRfqToRespondWidget: React.FC = () => {
             id: 'title',
             header: 'Title',
             kind: 'text',
-            cell: (rfq) => <span className="text-text-secondary">{rfq.title}</span>,
+            cell: (rfq) => rfq.title,
           },
           {
             id: 'category',
             header: 'Category',
             kind: 'text',
-            cell: (rfq) => <span className="text-text-secondary">{rfq.materialCategory}</span>,
+            cell: (rfq) => rfq.materialCategory,
           },
           {
             id: 'respondBy',

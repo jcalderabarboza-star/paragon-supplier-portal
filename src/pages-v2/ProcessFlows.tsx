@@ -7,7 +7,7 @@ import PageHeader from '../components/ui-v2/PageHeader';
 import PageMetaLine from '../components/ui-v2/PageMetaLine';
 import Data from '../components/ui-v2/Data';
 import StatusPill from '../components/ui-v2/StatusPill';
-import DataTable, { type Column } from '../components/ui-v2/DataTable';
+import DataTable, { CellSub, type Column } from '../components/ui-v2/DataTable';
 import FlowDiagram from './process-flows/FlowDiagram';
 import LifecycleWalk from './process-flows/LifecycleWalk';
 import { looseEndKindKey, reasonKey, ALL_REASONS } from './process-flows/labels';
@@ -143,15 +143,14 @@ const TransitionsTable: React.FC<{ transitions: readonly TransitionView[] }> = (
     {
       id: 'edge',
       header: t('processFlows.col.edge'),
-      kind: 'text',
+      // State names are the schema's own tokens: codes, so the column is `id`.
+      kind: 'id',
       cell: ({ def }) => (
-            <span className="flex flex-wrap items-center gap-1">
-              <Data className="text-[11px] text-text-secondary">
-                {def.from.length > 0 ? def.from.join(' · ') : t('processFlows.badge.birth')}
-              </Data>
-              <span className="text-text-tertiary">→</span>
-              <Data className="text-[11px]">{def.to}</Data>
-            </span>
+        <span className="flex flex-wrap items-center gap-1">
+          <Data>{def.from.length > 0 ? def.from.join(' · ') : t('processFlows.badge.birth')}</Data>
+          <span>→</span>
+          <Data>{def.to}</Data>
+        </span>
       ),
     },
     {
@@ -161,14 +160,14 @@ const TransitionsTable: React.FC<{ transitions: readonly TransitionView[] }> = (
       cell: (tv) => {
         const { def } = tv;
         return (
-          <div className="whitespace-nowrap text-[11px] text-text-secondary">
+          <div className="whitespace-nowrap">
             {t(STEP_KIND_KEY[tv.kind])}
             {/* THE OTHER AXIS, VERBATIM. The badge above answers "can anyone here
                 perform this"; this answers "what fires it". They are two questions
                 and §50 split the fields that answer them, so the row shows both
                 rather than letting one stand in for the other. Raw and
                 untranslated by design — it is the schema token, not prose. */}
-            <span className="ml-1 text-text-tertiary">({def.trigger})</span>
+            <span className="ml-1">({def.trigger})</span>
             {/* ── THE BOUNDARY, NAMED ────────────────────────────────────────────
                 "System-driven" answers WHETHER a person here acts. It does not say
                 WHO does, and for the two reasons that share that badge the answer
@@ -185,16 +184,14 @@ const TransitionsTable: React.FC<{ transitions: readonly TransitionView[] }> = (
                 beside the badge would be the `BuyerInvoices` footer-verb defect
                 (`invoiceActionModel.ts` header) one surface along. */}
             {!def.surfaceable.surfaced && def.surfaceable.because === 'external-fact' ? (
-              <span className="mt-0.5 block text-[10px] text-text-tertiary" data-testid="owner-external">
+              <CellSub data-testid="owner-external">
                 {t('processFlows.owner.ownedBy', {
                   owner: t(EXTERNAL_FACT_OWNER_KEY[def.surfaceable.owner]),
                 })}
-              </span>
+              </CellSub>
             ) : null}
             {!def.surfaceable.surfaced && def.surfaceable.because === 'computed' ? (
-              <span className="mt-0.5 block text-[10px] text-text-tertiary" data-testid="owner-computed">
-                {t('processFlows.owner.computedHere')}
-              </span>
+              <CellSub data-testid="owner-computed">{t('processFlows.owner.computedHere')}</CellSub>
             ) : null}
           </div>
         );
@@ -203,17 +200,18 @@ const TransitionsTable: React.FC<{ transitions: readonly TransitionView[] }> = (
     {
       id: 'role',
       header: t('processFlows.col.role'),
-      kind: 'text',
+      // The required role is an atom (`po:confirm`): a code.
+      kind: 'id',
       cell: (tv) => {
         const { def } = tv;
         return (
           <>
-            <Data className="text-[11px]">{def.requiredRole}</Data>
-            <span className="mt-0.5 block text-[10px] uppercase tracking-wider text-text-tertiary">
+            {def.requiredRole}
+            <CellSub>
               {tv.personas.length > 0
                 ? tv.personas.map((p) => t(`nav.persona.${p}`)).join(' · ')
                 : t('processFlows.role.unmapped')}
-            </span>
+            </CellSub>
           </>
         );
       },
@@ -221,21 +219,14 @@ const TransitionsTable: React.FC<{ transitions: readonly TransitionView[] }> = (
     {
       id: 'contract',
       header: t('processFlows.col.contract'),
-      kind: 'text',
+      // Field names are identifiers: a list of codes, so it may wrap where a
+      // single code may not.
+      kind: 'id',
+      className: '!whitespace-normal',
       cell: ({ def }) => (
         <>
-          {def.requiredFields.length > 0 ? (
-            <Data className="block text-[11px] text-text-secondary">
-              {def.requiredFields.join(', ')}
-            </Data>
-          ) : (
-            <span className="text-[11px] text-text-tertiary">—</span>
-          )}
-          {def.policyHooks.length > 0 ? (
-            <Data className="mt-0.5 block text-[10px] text-text-tertiary">
-              {def.policyHooks.join(', ')}
-            </Data>
-          ) : null}
+          {def.requiredFields.length > 0 ? def.requiredFields.join(', ') : '—'}
+          {def.policyHooks.length > 0 ? <CellSub>{def.policyHooks.join(', ')}</CellSub> : null}
         </>
       ),
     },

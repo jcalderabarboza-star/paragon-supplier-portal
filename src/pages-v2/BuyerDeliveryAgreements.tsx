@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { Info, ChevronRight, ExternalLink } from 'lucide-react';
 import ListPage from '../components/ui-v2/ListPage';
-import DataTable, { type Column } from '../components/ui-v2/DataTable';
+import DataTable, { CellSub, type Column } from '../components/ui-v2/DataTable';
 import LivenessPill from '../components/ui-v2/LivenessPill';
 import LoadingState from '../components/ui-v2/LoadingState';
 import EmptyState from '../components/ui-v2/EmptyState';
@@ -132,7 +132,7 @@ const BuyerDeliveryAgreements: React.FC = () => {
       id: 'supplier',
       header: t('delivery.rollup.col.supplier'),
       kind: 'text',
-      cell: (r) => <div className="text-sm text-text-primary">{r.supplierName ?? r.supplierId}</div>,
+      cell: (r) => r.supplierName ?? r.supplierId,
     },
     {
       id: 'contract',
@@ -169,9 +169,7 @@ const BuyerDeliveryAgreements: React.FC = () => {
       cell: (r) => (
         <div className="w-28 ml-auto">
           <TargetBar pct={r.releasedPct} />
-          <div className="text-[10px] text-text-tertiary mt-1">
-            <Data>{Math.round(r.releasedPct)}%</Data>
-          </div>
+          <CellSub>{Math.round(r.releasedPct)}%</CellSub>
         </div>
       ),
     },
@@ -183,12 +181,10 @@ const BuyerDeliveryAgreements: React.FC = () => {
         r.nextDue ? (
           <div>
             <Data>{formatDate(r.nextDue.date)}</Data>
-            <div className="text-[10px] text-text-tertiary uppercase">
-              {t(`delivery.rollup.due.${r.nextDue.kind}`)}
-            </div>
+            <CellSub>{t(`delivery.rollup.due.${r.nextDue.kind}`)}</CellSub>
           </div>
         ) : (
-          <span className="text-text-tertiary">—</span>
+          '—'
         ),
     },
     {
@@ -200,18 +196,16 @@ const BuyerDeliveryAgreements: React.FC = () => {
           <StatusPill variant={BUCKET_VARIANT[r.bucket]}>
             {t(`delivery.rollup.tab.${r.bucket}`)}
           </StatusPill>
-          <div className="text-[10px] text-text-tertiary mt-0.5">
-            {countsCaption(r.counts, r.bucket)}
-          </div>
+          <CellSub>{countsCaption(r.counts, r.bucket)}</CellSub>
           {r.overToleranceQty !== null && (
-            <div
-              className="text-[10px] text-warning-hover font-semibold mt-0.5"
+            <CellSub
+              tone="warning"
               data-testid={`rollup-over-tolerance-${r.agreementId}-${r.itemSeq}`}
             >
               {t('delivery.flag.overToleranceShort', {
                 over: formatNumber(r.overToleranceQty),
               })}
-            </div>
+            </CellSub>
           )}
         </>
       ),

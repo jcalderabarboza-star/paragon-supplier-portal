@@ -169,13 +169,11 @@ const MaterialApplicabilityPanel: React.FC = () => {
         ? 'text-warning-hover'
         : stateKey === 'unknown'
           ? 'text-critical'
-          : 'text-text-primary';
+          : undefined;
     return (
       <div className="flex flex-col gap-1" data-testid={`applicability-${regime}-${row.materialCode}`}>
-        <span className={`text-sm font-medium ${tone}`}>
-          {t(`compliance.applicability.state.${stateKey}`)}
-        </span>
-        <span className="text-xs text-text-tertiary">
+        <span className={tone}>{t(`compliance.applicability.state.${stateKey}`)}</span>
+        <CellSub>
           {o.ok && o.ruling
             ? t('compliance.applicability.basis.ruling', {
                 person: person(o.ruling),
@@ -184,11 +182,11 @@ const MaterialApplicabilityPanel: React.FC = () => {
             : o.ok
               ? t(`compliance.applicability.basis.master.${regime}`)
               : t('compliance.applicability.basis.none')}
-        </span>
+        </CellSub>
         {canRule.kind === 'held' ? (
           <button
             type="button"
-            className="self-start text-xs font-medium text-action-text hover:underline"
+            className="self-start text-action-text hover:underline"
             data-testid={`applicability-rule-${regime}-${row.materialCode}`}
             onClick={() =>
               setDraft({ materialCode: row.materialCode, regime, applicable: null, reason: '' })
@@ -238,13 +236,11 @@ const MaterialApplicabilityPanel: React.FC = () => {
       cell: (row) => {
         const history = historyFor(row);
         return history.length === 0 ? (
-          <span className="text-xs text-text-tertiary">
-            {t('compliance.applicability.history.none')}
-          </span>
+          t('compliance.applicability.history.none')
         ) : (
           <button
             type="button"
-            className="text-xs font-medium text-action-text hover:underline"
+            className="text-action-text hover:underline"
             data-testid={`applicability-history-${row.materialCode}`}
             onClick={() => setHistoryOf(historyOf === row.materialCode ? null : row.materialCode)}
           >

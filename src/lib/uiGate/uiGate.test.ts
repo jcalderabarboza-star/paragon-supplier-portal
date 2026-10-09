@@ -19,8 +19,10 @@ import { pathToFileURL } from 'node:url';
 import {
   COLOUR_EXEMPT,
   TABLE_PRIMITIVES,
+  cellTypeFindings,
   colourFindings,
   contrastRatio,
+  derivedCellType,
   derivedColour,
   derivedRawTables,
   derivedType,
@@ -245,6 +247,52 @@ describe('UI gate 4 · list layout', () => {
     const asCounts = (m: Record<string, number>): Record<string, { 'raw-table': number }> =>
       Object.fromEntries(Object.entries(m).map(([f, n]) => [f, { 'raw-table': n }]));
     expect(mismatches(asCounts(derivedRawTables()), asCounts(RAW_TABLE_GRANDFATHERED))).toEqual([]);
+  });
+});
+
+describe('UI gate 5 · a cell does not dress itself', () => {
+  const col = (cell: string, extra = ''): string => `const columns = [{ id: 'supplier', header: 'Supplier', kind: 'text', ${extra} cell: (r) => ${cell} }];`;
+
+  it('accepts a cell that leaves its type to the kind', () => {
+    expect(cellTypeFindings(col('<div className="truncate max-w-xs">{r.name}</div>'))).toEqual([]);
+    // a state colour says something about the row; a link colour says it is a link
+    expect(cellTypeFindings(col('<span className="text-critical">{r.due}</span>'))).toEqual([]);
+    expect(cellTypeFindings(col('<Link to="/x" className="text-action-text hover:underline">{r.id}</Link>'))).toEqual([]);
+    // the shared second line and the shared chip own their type
+    expect(cellTypeFindings(col('<><Data>{r.id}</Data><CellSub className="text-critical">{r.note}</CellSub><StatusPill variant="neutral" className="font-medium">{r.s}</StatusPill></>'))).toEqual([]);
+    // a form control in a cell is a control
+    expect(cellTypeFindings(col('<input className="text-sm font-sans" />'))).toEqual([]);
+  });
+
+  it('rejects what the lists really carried', () => {
+    // supplier discovery: the material name, semibold where every other list is regular
+    expect(cellTypeFindings(col('<div className="font-semibold text-text-primary">{r.name}</div>'))).toEqual([
+      'supplier · font-semibold',
+      'supplier · text-text-primary',
+    ]);
+    // purchase orders: a second line dressed by hand
+    expect(cellTypeFindings(col('<Data as="div" className="text-xs text-text-tertiary mt-0.5">{r.pr}</Data>'))).toEqual([
+      'supplier · text-xs',
+      'supplier · text-text-tertiary',
+    ]);
+    // delivery overview: a contract number at its own size
+    expect(cellTypeFindings(col('<span className="font-mono text-[11px] uppercase tracking-wide">{r.c}</span>'))).toEqual([
+      'supplier · font-mono',
+      'supplier · text-[11px]',
+      'supplier · uppercase',
+      'supplier · tracking-wide',
+    ]);
+    // …and a type class on the column itself
+    expect(cellTypeFindings(col('r.name', "className: 'font-medium w-40',"))).toEqual(['supplier · font-medium']);
+  });
+
+  it('reads only column definitions', () => {
+    expect(cellTypeFindings('const x = <div className="font-semibold text-sm">a</div>;')).toEqual([]);
+    expect(cellTypeFindings("const o = { kind: 'banner', cell: () => <b className=\"font-bold\" /> };")).toEqual([]);
+  });
+
+  it('no cell in the tree dresses itself', () => {
+    expect(derivedCellType()).toEqual({});
   });
 });
 

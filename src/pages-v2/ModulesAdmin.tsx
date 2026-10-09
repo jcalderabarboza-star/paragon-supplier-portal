@@ -6,8 +6,8 @@ import AppShellV2 from '../components/layout-v2/AppShellV2';
 import PageHeader from '../components/ui-v2/PageHeader';
 import Button from '../components/ui-v2/Button';
 import Switch from '../components/ui-v2/Switch';
-import Data from '../components/ui-v2/Data';
-import DataTable, { type Column } from '../components/ui-v2/DataTable';
+import DataTable, { CellSub, type Column } from '../components/ui-v2/DataTable';
+import StatusPill from '../components/ui-v2/StatusPill';
 import GlossaryTermChip from '../components/ui-v2/GlossaryTermChip';
 import ActorPreActNotice from '../components/ui-v2/ActorPreActNotice';
 import { HandoffNotice } from '../components/ui-v2/HandoffNotice';
@@ -71,20 +71,22 @@ const RowResult: React.FC<{ outcome: ModuleSetOutcome }> = ({ outcome }) => {
   const testId = `module-result-${outcome.subject}`;
   if (outcome.result.status !== 'failed') {
     return (
-      <div className="text-xs text-success mt-1" data-testid={testId} data-outcome="applied">
-        {t('modules.admin.applied')}
+      <div data-testid={testId} data-outcome="applied">
+        <CellSub tone="success">{t('modules.admin.applied')}</CellSub>
       </div>
     );
   }
   const kind = refusalKindOf(outcome.result.reason);
   return (
-    <div className="text-xs text-critical mt-1 flex flex-wrap items-center gap-1.5" data-testid={testId} data-outcome="refused">
-      <span>
-        {outcome.blockedBy
-          ? t('modules.admin.blockedRefusal', { codes: outcome.blockedBy.join(', ') })
-          : refusalText(outcome.result.reason) ?? outcome.result.reason}
-      </span>
-      {kind && <GlossaryTermChip refTo={{ sourceType: 'CommandRefusal', term: kind }} />}
+    <div data-testid={testId} data-outcome="refused">
+      <CellSub tone="critical" className="flex flex-wrap items-center gap-1.5">
+        <span>
+          {outcome.blockedBy
+            ? t('modules.admin.blockedRefusal', { codes: outcome.blockedBy.join(', ') })
+            : refusalText(outcome.result.reason) ?? outcome.result.reason}
+        </span>
+        {kind && <GlossaryTermChip refTo={{ sourceType: 'CommandRefusal', term: kind }} />}
+      </CellSub>
     </div>
   );
 };
@@ -93,13 +95,13 @@ const RouteChips: React.FC<{ spec: ModuleSpec; on: boolean }> = ({ spec, on }) =
   <div className="flex flex-wrap gap-1 mt-1">
     {spec.routes.map((r) =>
       on && !r.includes(':') ? (
-        <Link key={r} to={r} className="rounded border border-border-subtle px-1 py-0.5 hover:bg-bg-hover">
-          <Data className="text-[10px] text-action-text">{r}</Data>
+        <Link key={r} to={r} className="hover:underline">
+          <StatusPill variant="info">{r}</StatusPill>
         </Link>
       ) : (
-        <span key={r} className="rounded border border-border-subtle px-1 py-0.5">
-          <Data className="text-[10px] text-text-tertiary">{r}</Data>
-        </span>
+        <StatusPill key={r} variant="neutral">
+          {r}
+        </StatusPill>
       ),
     )}
   </div>
@@ -177,16 +179,14 @@ const ModulesAdmin: React.FC = () => {
         return (
           <>
             <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-text-primary">{t(spec.nameKey)}</span>
-              <Data className="text-xs">{code}</Data>
-              <span className="rounded-md border border-border-subtle bg-bg-hover px-1.5 py-0.5 text-[10px] text-text-secondary">
-                {t(`modules.scope.${spec.scope}`)}
-              </span>
+              <span>{t(spec.nameKey)}</span>
+              <span>{code}</span>
+              <StatusPill variant="neutral">{t(`modules.scope.${spec.scope}`)}</StatusPill>
             </div>
             <RouteChips spec={spec} on={row.enabled} />
-            <div className="text-[11px] text-text-tertiary mt-1" data-testid={`module-last-${code}`}>
+            <CellSub data-testid={`module-last-${code}`}>
               {alwaysOn ? t('modules.admin.alwaysOn') : lastUpdated(code)}
-            </div>
+            </CellSub>
             {changed.has(code) && (
               <input
                 type="text"
@@ -200,9 +200,9 @@ const ModulesAdmin: React.FC = () => {
               />
             )}
             {blocked[code] && (
-              <div className="text-xs text-warning-hover mt-1" data-testid={`module-blocked-${code}`}>
+              <CellSub tone="warning" data-testid={`module-blocked-${code}`}>
                 {t('modules.admin.blocked', { codes: blocked[code]!.join(', ') })}
-              </div>
+              </CellSub>
             )}
             {outcomes[code] && <RowResult outcome={outcomes[code]} />}
           </>
@@ -233,7 +233,7 @@ const ModulesAdmin: React.FC = () => {
                 </option>
               ))}
             </select>
-            <p className="text-[11px] text-text-tertiary mt-1">{t(`modules.phaseHelp.${row.phase}`)}</p>
+            <CellSub>{t(`modules.phaseHelp.${row.phase}`)}</CellSub>
           </>
         );
       },
@@ -259,7 +259,7 @@ const ModulesAdmin: React.FC = () => {
               ariaLabel={t('modules.admin.toggleAria', { code })}
               disabled={disabled || spec.alwaysOn === true}
             />
-            <span className="text-xs text-text-secondary">{t(row.enabled ? 'modules.admin.on' : 'modules.admin.off')}</span>
+            <span>{t(row.enabled ? 'modules.admin.on' : 'modules.admin.off')}</span>
           </div>
         );
       },
@@ -273,11 +273,11 @@ const ModulesAdmin: React.FC = () => {
         const code = spec.code as ModuleCode;
         const row = form.modules[code];
         return spec.parts.length === 0 ? (
-          <span className="text-xs text-text-tertiary">—</span>
+          '—'
         ) : (
           <ul className="space-y-1">
             {spec.parts.map((p) => (
-              <li key={p.id} className="flex items-center justify-between gap-2 text-xs text-text-primary">
+              <li key={p.id} className="flex items-center justify-between gap-2">
                 <span>{t(p.nameKey)}</span>
                 <Switch
                   checked={row.parts[p.id] !== false}

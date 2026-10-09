@@ -65,14 +65,13 @@ const BuyerRiskWidget: React.FC = () => {
             id: 'alert',
             header: t('widget.risk.col.alert'),
             kind: 'text',
-            className: 'font-medium',
             cell: (a) => <RecordRowLink path="/buyer/risk" id={a.id} label={a.title} />,
           },
           {
             id: 'detail',
             header: t('widget.risk.col.detail'),
             kind: 'text',
-            cell: (a) => <span className="text-text-secondary">{a.body}</span>,
+            cell: (a) => a.body,
           },
         ]}
       />

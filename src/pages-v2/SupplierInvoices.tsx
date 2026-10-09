@@ -15,7 +15,7 @@ import {
   LucideIcon,
 } from 'lucide-react';
 import ListPage from '../components/ui-v2/ListPage';
-import DataTable from '../components/ui-v2/DataTable';
+import DataTable, { CellSub } from '../components/ui-v2/DataTable';
 import ProvenanceMarker from '../components/ui-v2/ProvenanceMarker';
 import KpiCard from '../components/ui-v2/KpiCard';
 import BulkActionsBar from '../components/ui-v2/BulkActionsBar';
@@ -517,10 +517,10 @@ const SupplierInvoices: React.FC = () => {
               return (
                 <>
                   <Data as="div">{inv.invoiceNumber}</Data>
-                  <div className="inline-flex items-center gap-1 text-[10px] font-sans font-normal text-text-tertiary mt-0.5">
+                  <CellSub className="inline-flex items-center gap-1">
                     <Channel size={10} />
                     {t('supplierInvoices.table.via', { channel: inv.channel })}
-                  </div>
+                  </CellSub>
                 </>
               );
             },
@@ -537,12 +537,8 @@ const SupplierInvoices: React.FC = () => {
             kind: 'money',
             cell: (inv) => (
               <>
-                <div>
-                  <Data>{formatIDR(inv.amount, { compact: true })}</Data>
-                </div>
-                <div className="text-xs text-text-tertiary">
-                  <Data>{formatIDR(inv.amount)}</Data>
-                </div>
+                <Data>{formatIDR(inv.amount, { compact: true })}</Data>
+                <CellSub>{formatIDR(inv.amount)}</CellSub>
               </>
             ),
           },
@@ -572,7 +568,7 @@ const SupplierInvoices: React.FC = () => {
                   <Data>{fmtDate(inv.paymentDate)}</Data>
                 </span>
               ) : (
-                <span className="text-text-tertiary">—</span>
+                '—'
               ),
           },
           {

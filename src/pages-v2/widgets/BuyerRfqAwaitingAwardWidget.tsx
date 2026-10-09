@@ -76,7 +76,7 @@ const BuyerRfqAwaitingAwardWidget: React.FC = () => {
             id: 'title',
             header: t('widget.rfqAward.col.title'),
             kind: 'text',
-            cell: (rfq) => <span className="text-text-secondary">{rfq.title}</span>,
+            cell: (rfq) => rfq.title,
           },
           {
             id: 'quotes',

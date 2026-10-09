@@ -8,6 +8,7 @@ import Dialog from '../components/ui-v2/Dialog';
 import Button from '../components/ui-v2/Button';
 import ListPage from '../components/ui-v2/ListPage';
 import DataTable, { type Column } from '../components/ui-v2/DataTable';
+import StatusPill from '../components/ui-v2/StatusPill';
 import SearchBar from '../components/ui-v2/SearchBar';
 import { customRoleStore } from '../services/transitions/customRoles';
 
@@ -95,28 +96,26 @@ const RolesCatalogue: React.FC = () => {
         id: 'name',
         header: t('roles.page.col.name'),
         kind: 'text',
-        cell: (role) => <span className="font-medium">{t(role.nameKey)}</span>,
+        cell: (role) => t(role.nameKey),
       },
       {
         id: 'description',
         header: t('roles.page.col.description'),
         kind: 'text',
         className: 'max-w-md',
-        cell: (role) => (
-          <span className="text-xs text-text-secondary">{t(role.descriptionKey)}</span>
-        ),
+        cell: (role) => t(role.descriptionKey),
       },
       {
         id: 'kind',
         header: t('roles.page.col.kind'),
         kind: 'status',
         cell: (role) => (
-          <span
-            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] border border-border-subtle text-text-secondary bg-bg-hover whitespace-nowrap"
-            data-testid={`role-badge-${role.id}`}
-          >
-            <Lock size={10} className="text-teal" />
-            {t(role.isSystem ? 'roles.page.systemBadge' : 'roles.page.customBadge')}
+          // The test id sits on the wrapper: `StatusPill` takes none.
+          <span data-testid={`role-badge-${role.id}`}>
+            <StatusPill variant="neutral" className="gap-1 whitespace-nowrap">
+              <Lock size={10} className="text-teal" />
+              {t(role.isSystem ? 'roles.page.systemBadge' : 'roles.page.customBadge')}
+            </StatusPill>
           </span>
         ),
       },
@@ -125,7 +124,7 @@ const RolesCatalogue: React.FC = () => {
         header: t('roles.page.col.scope'),
         kind: 'text',
         cell: (role) => (
-          <span className="text-xs text-text-tertiary font-mono whitespace-nowrap">
+          <span className="whitespace-nowrap">
             {t('roles.page.reach', {
               count: role.modules.length,
               modules: role.modules.length,
@@ -139,7 +138,7 @@ const RolesCatalogue: React.FC = () => {
         header: t('roles.page.col.actions'),
         kind: 'actions',
         cell: () => (
-          <span className="inline-flex items-center gap-1 text-xs text-action-text">
+          <span className="inline-flex items-center gap-1 text-action-text">
             {t('roles.page.view')}
             <ArrowRight size={12} />
           </span>

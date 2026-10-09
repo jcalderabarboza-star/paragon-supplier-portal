@@ -440,21 +440,19 @@ const ExposureTab: React.FC<{ exposure: ExposureRow[] }> = ({ exposure }) => {
             id: 'category',
             header: t('risk.exposure.col.category'),
             kind: 'text',
-            cell: (row) => (
-              <span className="font-semibold text-text-primary">{row.category}</span>
-            ),
+            cell: (row) => row.category,
           },
           {
             id: 'supplier',
             header: t('risk.exposure.col.supplier'),
             kind: 'text',
-            cell: (row) => <span className="text-text-secondary">{row.supplier}</span>,
+            cell: (row) => row.supplier,
           },
           {
             id: 'region',
             header: t('risk.exposure.col.region'),
             kind: 'text',
-            cell: (row) => <span className="text-text-tertiary">{row.region}</span>,
+            cell: (row) => row.region,
           },
           {
             id: 'annualSpend',
@@ -488,9 +486,9 @@ const ExposureTab: React.FC<{ exposure: ExposureRow[] }> = ({ exposure }) => {
             kind: 'status',
             cell: (row) =>
               row.dualSource ? (
-                <span className="text-success font-semibold">✓</span>
+                <span className="text-success">✓</span>
               ) : (
-                <span className="text-critical font-semibold">✗</span>
+                <span className="text-critical">✗</span>
               ),
           },
         ]}
@@ -779,15 +777,13 @@ const ComplianceRisksTab: React.FC<{ compliance: ComplianceRow[] }> = ({
             id: 'supplier',
             header: t('risk.compliance.col.supplier'),
             kind: 'text',
-            cell: (row) => (
-              <span className="font-semibold text-text-primary">{row.supplier}</span>
-            ),
+            cell: (row) => row.supplier,
           },
           {
             id: 'certRequirement',
             header: t('risk.compliance.col.certRequirement'),
             kind: 'text',
-            cell: (row) => <span className="text-text-secondary">{row.type}</span>,
+            cell: (row) => row.type,
           },
           {
             id: 'expiryDate',
@@ -839,9 +835,7 @@ const ComplianceRisksTab: React.FC<{ compliance: ComplianceRow[] }> = ({
             kind: 'actions',
             cell: (row) =>
               row.status === 'ok' ? (
-                <span className="text-meta text-text-tertiary">
-                  ✓ {t('risk.compliance.noAction')}
-                </span>
+                <>✓ {t('risk.compliance.noAction')}</>
               ) : (
                 <Button
                   variant="outline"

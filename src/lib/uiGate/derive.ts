@@ -248,3 +248,108 @@ export function mismatches<K extends string>(
   }
   return out;
 }
+
+// ── cell type (UI-1b) ────────────────────────────────────────────────────────
+//
+// A `DataTable` column states its KIND and the kind fixes the cell's type. That
+// holds only if the page does not then dress the cell itself — and on the first
+// UI-1b build it still did: names were regular on one list, medium on another
+// and semibold on a third; a second line came in six styles (operator review,
+// 9 October 2026, six screenshots with the first columns framed in red).
+//
+// So: inside a column's `cell`, an element the PAGE writes — a `div`, a `span`,
+// a `Data`, a link — may not carry a size, a weight, a family, a case, or a
+// NEUTRAL colour. A state colour (critical, warning, success, info) and a link
+// colour say something about the row and stay. A second line is `CellSub`; a
+// chip is `StatusPill`; both own their type, so both are outside this check.
+//
+// What it cannot see: a page-local component used in a cell (`<ExpiryCell />`)
+// is judged where it is defined, not here.
+import ts from 'typescript';
+
+const CELL_TYPE_TOKEN = new RegExp(
+  B +
+    String.raw`(?:font-(?:thin|extralight|light|normal|medium|semibold|bold|extrabold|black|mono|sans)` +
+    String.raw`|text-(?:xs|sm|base|lg|xl|[2-9]xl|label|meta|eyebrow|section|title|kpi)` +
+    String.raw`|text-\[\d[^\]]*\]` +
+    String.raw`|text-(?:text-primary|text-secondary|text-tertiary|data-navy)` +
+    String.raw`|uppercase|tracking-[a-z]+)` +
+    E,
+  'g',
+);
+
+const COLUMN_KINDS = new Set(['id', 'text', 'number', 'money', 'date', 'status', 'actions']);
+/** Elements the page writes itself. Any other component owns its own type. */
+const PAGE_WRITTEN = new Set(['Data', 'Link', 'RecordRowLink']);
+
+const FORM_CONTROL = new Set(['input', 'select', 'textarea', 'option', 'svg', 'path']);
+
+const propName = (p: ts.ObjectLiteralElementLike): string | null =>
+  (ts.isPropertyAssignment(p) || ts.isShorthandPropertyAssignment(p) || ts.isMethodDeclaration(p)) && ts.isIdentifier(p.name)
+    ? p.name.text
+    : null;
+
+/** `"<column id> · <token>"` for every type class a cell carries on an element the page wrote. */
+export function cellTypeFindings(text: string, fileName = 'x.tsx'): string[] {
+  if (!text.includes('kind:')) return [];
+  const sf = ts.createSourceFile(fileName, text, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+  const out: string[] = [];
+  const scan = (label: string, node: ts.Node): void => {
+    const visit = (n: ts.Node): void => {
+      if (ts.isJsxOpeningElement(n) || ts.isJsxSelfClosingElement(n)) {
+        const tag = n.tagName.getText(sf);
+        // A form control is not cell text: an input in a cell keeps the control's own type.
+        if ((/^[a-z]/.test(tag) && !FORM_CONTROL.has(tag)) || PAGE_WRITTEN.has(tag)) {
+          for (const attr of n.attributes.properties) {
+            if (ts.isJsxAttribute(attr) && attr.name.getText(sf) === 'className' && attr.initializer) {
+              for (const m of attr.initializer.getText(sf).match(CELL_TYPE_TOKEN) ?? []) out.push(`${label} · ${m}`);
+            }
+          }
+        }
+      }
+      ts.forEachChild(n, visit);
+    };
+    visit(node);
+  };
+  const walk = (n: ts.Node): void => {
+    if (ts.isObjectLiteralExpression(n)) {
+      const props = new Map<string, ts.ObjectLiteralElementLike>();
+      for (const p of n.properties) {
+        const name = propName(p);
+        if (name) props.set(name, p);
+      }
+      const kind = props.get('kind');
+      const cell = props.get('cell');
+      if (
+        kind &&
+        cell &&
+        ts.isPropertyAssignment(kind) &&
+        ts.isStringLiteralLike(kind.initializer) &&
+        COLUMN_KINDS.has(kind.initializer.text)
+      ) {
+        const idProp = props.get('id');
+        const label =
+          idProp && ts.isPropertyAssignment(idProp) && ts.isStringLiteralLike(idProp.initializer) ? idProp.initializer.text : '?';
+        scan(label, cell);
+        const cls = props.get('className');
+        if (cls && ts.isPropertyAssignment(cls)) {
+          for (const m of cls.initializer.getText(sf).match(CELL_TYPE_TOKEN) ?? []) out.push(`${label} · ${m}`);
+        }
+      }
+    }
+    ts.forEachChild(n, walk);
+  };
+  walk(sf);
+  return out;
+}
+
+/** File → the cells that still dress themselves. */
+export function derivedCellType(): Record<string, string[]> {
+  const out: Record<string, string[]> = {};
+  for (const f of shippedFiles()) {
+    if (!f.file.endsWith('.tsx') || TABLE_PRIMITIVES.includes(f.file)) continue;
+    const found = cellTypeFindings(f.text, f.file);
+    if (found.length > 0) out[f.file] = found;
+  }
+  return out;
+}

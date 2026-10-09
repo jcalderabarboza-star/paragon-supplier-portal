@@ -535,9 +535,7 @@ const BuyerAnalytics: React.FC = () => {
               id: 'supplier',
               header: t('buyerAnalytics.perf.col.supplier'),
               kind: 'text',
-              cell: (row) => (
-                <span className="font-semibold text-text-primary">{row.supplier}</span>
-              ),
+              cell: (row) => row.supplier,
             },
             {
               id: 'category',
@@ -569,13 +567,13 @@ const BuyerAnalytics: React.FC = () => {
               id: 'ackSpeed',
               header: t('buyerAnalytics.perf.col.ackSpeed'),
               kind: 'text',
-              cell: (row) => <span className="text-text-secondary">{row.ackSpeed}</span>,
+              cell: (row) => row.ackSpeed,
             },
             {
               id: 'invoiceMatch',
               header: t('buyerAnalytics.perf.col.invoiceMatch'),
               kind: 'text',
-              cell: (row) => <span className="text-text-secondary">{row.invoiceMatch}</span>,
+              cell: (row) => row.invoiceMatch,
             },
             {
               id: 'grade',

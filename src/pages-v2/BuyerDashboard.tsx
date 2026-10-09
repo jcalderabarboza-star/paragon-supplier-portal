@@ -25,7 +25,7 @@ import PageMetaLine from '../components/ui-v2/PageMetaLine';
 import ProvenanceMarker from '../components/ui-v2/ProvenanceMarker';
 import KpiCard from '../components/ui-v2/KpiCard';
 import TargetBar from '../components/ui-v2/TargetBar';
-import DataTable from '../components/ui-v2/DataTable';
+import DataTable, { CellSub } from '../components/ui-v2/DataTable';
 import LoadingState from '../components/ui-v2/LoadingState';
 import ErrorState from '../components/ui-v2/ErrorState';
 import EmptyState from '../components/ui-v2/EmptyState';
@@ -724,16 +724,11 @@ const BuyerDashboard: React.FC = () => {
               kind: 'text',
               cell: (row) => (
                 <>
-                  <div className="font-medium text-text-primary">
-                    {t(`roles.owner.${row.lane}`)}
-                  </div>
+                  {t(`roles.owner.${row.lane}`)}
                   {held.has(row.lane) ? null : (
-                    <div
-                      className="text-meta text-text-tertiary"
-                      data-testid={`handoff-${row.lane}`}
-                    >
+                    <CellSub data-testid={`handoff-${row.lane}`}>
                       {t('buyerDashboard.queue.handoff')}
-                    </div>
+                    </CellSub>
                   )}
                 </>
               ),
@@ -743,12 +738,14 @@ const BuyerDashboard: React.FC = () => {
               header: t('buyerDashboard.queue.col.work'),
               kind: 'text',
               cell: (row) => (
-                <span className="text-text-secondary">
+                <>
                   <span>{t(`buyerDashboard.queue.${row.lane}.work`)}</span>
                   {row.held ? (
-                    <span className={`${BADGE} ml-2`}>{t('buyerDashboard.phaseB.badge')}</span>
+                    <span className="ml-2">
+                      <StatusPill variant="neutral">{t('buyerDashboard.phaseB.badge')}</StatusPill>
+                    </span>
                   ) : null}
-                </span>
+                </>
               ),
             },
             {
@@ -757,7 +754,7 @@ const BuyerDashboard: React.FC = () => {
               kind: 'number',
               cell: (row) =>
                 row.counts === null ? (
-                  <span className="text-text-tertiary">—</span>
+                  '—'
                 ) : (
                   <Data>{row.counts.join(' · ')}</Data>
                 ),
@@ -820,16 +817,16 @@ const BuyerDashboard: React.FC = () => {
                   kind: 'text',
                   cell: (row) => (
                     <>
-                      <div className="font-medium text-text-primary">{row.line}</div>
+                      {row.line}
                       {row.blockedSkus > 0 ? (
-                        <div className="text-meta text-text-tertiary">
+                        <CellSub>
                           {t(
                             row.blockedSkus === 1
                               ? 'buyerDashboard.lines.blockedSku.one'
                               : 'buyerDashboard.lines.blockedSku.other',
                             { count: row.blockedSkus },
                           )}
-                        </div>
+                        </CellSub>
                       ) : null}
                     </>
                   ),
@@ -838,7 +835,7 @@ const BuyerDashboard: React.FC = () => {
                   id: 'category',
                   header: t('buyerDashboard.lines.col.category'),
                   kind: 'text',
-                  cell: (row) => <span className="text-text-secondary">{cl(row.category)}</span>,
+                  cell: (row) => cl(row.category),
                 },
                 {
                   id: 'cover',

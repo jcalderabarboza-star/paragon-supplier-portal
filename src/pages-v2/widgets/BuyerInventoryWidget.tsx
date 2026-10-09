@@ -66,7 +66,7 @@ const BuyerInventoryWidget: React.FC = () => {
             id: 'description',
             header: t('widget.inventory.col.description'),
             kind: 'text',
-            cell: (r) => <span className="text-text-secondary">{r.materialDescription}</span>,
+            cell: (r) => r.materialDescription,
           },
           {
             id: 'onHand',

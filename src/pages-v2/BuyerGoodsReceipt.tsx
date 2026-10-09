@@ -10,7 +10,7 @@ import {
   FlaskConical,
 } from 'lucide-react';
 import ListPage from '../components/ui-v2/ListPage';
-import DataTable, { type Column } from '../components/ui-v2/DataTable';
+import DataTable, { CellSub, type Column } from '../components/ui-v2/DataTable';
 import ProvenanceMarker from '../components/ui-v2/ProvenanceMarker';
 import KpiCard from '../components/ui-v2/KpiCard';
 import BulkActionsBar from '../components/ui-v2/BulkActionsBar';
@@ -791,7 +791,7 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
       id: 'carrier',
       header: t('goodsReceipt.discrepancy.col.carrier'),
       kind: 'text',
-      cell: (asn) => <span className="text-text-secondary">{asn.carrier}</span>,
+      cell: (asn) => asn.carrier,
     },
     {
       id: 'status',
@@ -832,12 +832,10 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
       kind: 'id',
       cell: (g) => (
         <>
-          <div>
-            <Data>{g.grNumber}</Data>
-          </div>
-          <Data as="div" className="text-xs font-normal text-text-tertiary">
+          <Data as="div">{g.grNumber}</Data>
+          <CellSub>
             {g.asnNumber} · {g.poNumber}
-          </Data>
+          </CellSub>
         </>
       ),
     },
@@ -849,10 +847,8 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
         const sup = supplierById.get(g.supplierId);
         return (
           <>
-            <div className="text-sm text-text-primary">{g.supplierName}</div>
-            <div className="text-xs text-text-tertiary">
-              {sup ? COUNTRY_FLAG[sup.country] ?? sup.country : '—'}
-            </div>
+            {g.supplierName}
+            <CellSub>{sup ? COUNTRY_FLAG[sup.country] ?? sup.country : '—'}</CellSub>
           </>
         );
       },
@@ -868,7 +864,7 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
       header: t('goodsReceipt.table.col.receivedBy'),
       kind: 'text',
       cell: (g) => (
-        <span className="text-sm text-text-secondary" data-testid={`gr-receiver-${g.id}`}>
+        <span data-testid={`gr-receiver-${g.id}`}>
           {/* ADM-1 — the named receiver when the receipt carries one;
               the receiving post alone on a receipt that predates it. */}
           {g.receivedByPerson && isAttributed(g.receivedByPerson)
@@ -881,13 +877,10 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
       id: 'items',
       header: t('goodsReceipt.table.col.items'),
       kind: 'text',
-      cell: (g) => (
-        <span className="text-sm text-text-primary">
-          {g.inspectionResults.length === 1
-            ? t('goodsReceipt.items.count.one', { count: g.inspectionResults.length })
-            : t('goodsReceipt.items.count.other', { count: g.inspectionResults.length })}
-        </span>
-      ),
+      cell: (g) =>
+        g.inspectionResults.length === 1
+          ? t('goodsReceipt.items.count.one', { count: g.inspectionResults.length })
+          : t('goodsReceipt.items.count.other', { count: g.inspectionResults.length }),
     },
     {
       id: 'status',
@@ -899,7 +892,7 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
       id: 'disposition',
       header: t('goodsReceipt.table.col.disposition'),
       kind: 'text',
-      cell: (g) => <span className="text-sm text-text-secondary">{el(g.disposition)}</span>,
+      cell: (g) => el(g.disposition),
     },
     {
       id: 'sapDoc',
@@ -923,14 +916,8 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
       cell: (r) => (
         <>
           <Data as="div">{r.materialCode}</Data>
-          <div className="text-xs font-normal font-sans text-text-tertiary truncate max-w-[180px]">
-            {r.description}
-          </div>
-          {r.rejectionReason && (
-            <div className="text-xs font-normal font-sans text-critical mt-1 whitespace-normal">
-              {r.rejectionReason}
-            </div>
-          )}
+          <CellSub className="truncate whitespace-nowrap max-w-[180px]">{r.description}</CellSub>
+          {r.rejectionReason && <CellSub tone="critical">{r.rejectionReason}</CellSub>}
         </>
       ),
     },

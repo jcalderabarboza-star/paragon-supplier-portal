@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Info } from 'lucide-react';
 import ListPage from '../components/ui-v2/ListPage';
-import DataTable, { type Column } from '../components/ui-v2/DataTable';
+import DataTable, { CellSub, type Column } from '../components/ui-v2/DataTable';
 import SearchBar from '../components/ui-v2/SearchBar';
 import Data from '../components/ui-v2/Data';
 import { useCurrentIdentity } from '../context/CurrentIdentityContext';
@@ -75,9 +75,9 @@ const SuperAdminActivity: React.FC = () => {
           <>
             <Data>{a.transitionId}</Data>
             {a.status === 'failed' && (
-              <div className="font-sans font-normal text-critical mt-0.5">
+              <CellSub tone="critical">
                 {t(a.refusedForNoReason ? 'superAdmin.activity.refusedNoReason' : 'superAdmin.activity.refused')}
-              </div>
+              </CellSub>
             )}
           </>
         ),
@@ -85,14 +85,12 @@ const SuperAdminActivity: React.FC = () => {
       {
         id: 'document',
         header: t('superAdmin.activity.col.document'),
-        kind: 'text',
+        // A reference, so the column is `id`; the sentence that stands in for a
+        // missing one is a note, not a reference.
+        kind: 'id',
         className: TOP,
         cell: (a) =>
-          a.entityId ? (
-            <Data>{`${a.entity} · ${a.entityId}`}</Data>
-          ) : (
-            <span className="text-text-tertiary">{t('superAdmin.activity.noDocument')}</span>
-          ),
+          a.entityId ? `${a.entity} · ${a.entityId}` : <CellSub>{t('superAdmin.activity.noDocument')}</CellSub>,
       },
       {
         id: 'rule',
@@ -101,14 +99,12 @@ const SuperAdminActivity: React.FC = () => {
         className: TOP,
         cell: (a) =>
           a.bypassedRules.length === 0 ? (
-            <span className="text-text-tertiary">{t('superAdmin.activity.none')}</span>
+            t('superAdmin.activity.none')
           ) : (
             <>
-              <div className="font-semibold text-warning-hover">{t('superAdmin.stamp')}</div>
+              <div className="text-warning-hover">{t('superAdmin.stamp')}</div>
               {a.bypassedRules.map((r) => (
-                <div key={r} className="text-text-primary">
-                  {bypassRuleLabel(r, t, (k) => i18n.exists(k))}
-                </div>
+                <CellSub key={r}>{bypassRuleLabel(r, t, (k) => i18n.exists(k))}</CellSub>
               ))}
             </>
           ),

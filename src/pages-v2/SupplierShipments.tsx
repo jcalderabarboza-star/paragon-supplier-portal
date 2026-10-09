@@ -16,7 +16,7 @@ import {
   Upload,
 } from 'lucide-react';
 import ListPage from '../components/ui-v2/ListPage';
-import DataTable, { type Column } from '../components/ui-v2/DataTable';
+import DataTable, { CellSub, type Column } from '../components/ui-v2/DataTable';
 import ProvenanceMarker from '../components/ui-v2/ProvenanceMarker';
 import KpiCard from '../components/ui-v2/KpiCard';
 import BulkActionsBar from '../components/ui-v2/BulkActionsBar';
@@ -316,14 +316,12 @@ const ShipmentsList: React.FC<ShipmentsListProps> = ({
     {
       id: 'material',
       header: t('supplierShipments.lineItems.col.material'),
-      kind: 'text',
+      kind: 'id',
       cell: (li) => (
         <>
-          <Data as="div" className="text-[10px] text-text-tertiary">
-            {li.materialCode}
-          </Data>
+          <Data as="div">{li.materialCode}</Data>
           {/* i18n-defer: mock/sample data (material description) */}
-          <div className="text-text-primary">{li.description}</div>
+          <CellSub>{li.description}</CellSub>
         </>
       ),
     },
@@ -338,7 +336,7 @@ const ShipmentsList: React.FC<ShipmentsListProps> = ({
       header: t('supplierShipments.lineItems.col.shipped'),
       kind: 'number',
       cell: (li) => (
-        <Data className={li.shippedQty < li.orderedQty ? 'text-warning-hover font-semibold' : ''}>
+        <Data className={li.shippedQty < li.orderedQty ? 'text-warning-hover' : ''}>
           {formatNumber(li.shippedQty)}
         </Data>
       ),
@@ -444,7 +442,6 @@ const ShipmentsList: React.FC<ShipmentsListProps> = ({
                         ? t('supplierShipments.aria.collapse')
                         : t('supplierShipments.aria.expand')
                     }
-                    className="text-text-tertiary hover:text-text-primary"
                   >
                     {isOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                   </button>
@@ -476,7 +473,7 @@ const ShipmentsList: React.FC<ShipmentsListProps> = ({
               header: t('supplierShipments.col.carrier'),
               kind: 'text',
               className: 'whitespace-nowrap',
-              cell: (asn) => <span className="text-text-secondary">{asn.carrier}</span>,
+              cell: (asn) => asn.carrier,
             },
             {
               id: 'tracking',
@@ -530,9 +527,8 @@ const ShipmentsList: React.FC<ShipmentsListProps> = ({
                     />
                   )}
                   {asn.status !== 'Draft' &&
-                    asn.status !== 'Discrepancy' && (
-                      <span className="text-text-tertiary text-xs">—</span>
-                    )}
+                    asn.status !== 'Discrepancy' &&
+                    '—'}
                 </>
               ),
             },
@@ -1156,13 +1152,11 @@ const SupplierShipments: React.FC = () => {
                   {
                     id: 'material',
                     header: t('supplierShipments.lineItems.col.material'),
-                    kind: 'text',
+                    kind: 'id',
                     cell: (li) => (
                       <>
-                        <Data as="div" className="text-xs text-text-tertiary">
-                          {li.materialCode}
-                        </Data>
-                        <div className="text-text-primary mt-0.5">{li.description}</div>
+                        <Data as="div">{li.materialCode}</Data>
+                        <CellSub>{li.description}</CellSub>
                       </>
                     ),
                   },
@@ -1307,13 +1301,11 @@ const SupplierShipments: React.FC = () => {
                   {
                     id: 'material',
                     header: t('supplierShipments.lineItems.col.material'),
-                    kind: 'text',
+                    kind: 'id',
                     cell: (li) => (
                       <>
-                        <Data as="div" className="text-xs text-text-tertiary">
-                          {li.materialCode}
-                        </Data>
-                        <div className="text-text-primary mt-0.5">{li.description}</div>
+                        <Data as="div">{li.materialCode}</Data>
+                        <CellSub>{li.description}</CellSub>
                       </>
                     ),
                   },

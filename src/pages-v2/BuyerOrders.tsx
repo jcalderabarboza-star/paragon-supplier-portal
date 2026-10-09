@@ -34,7 +34,7 @@ import StatusPill from '../components/ui-v2/StatusPill';
 import NextActLine from '../components/ui-v2/NextActLine';
 import { statusTone } from '../lib/statusTone';
 import { stopName } from '../lib/nameStop';
-import DataTable, { type Column } from '../components/ui-v2/DataTable';
+import DataTable, { CellSub, type Column } from '../components/ui-v2/DataTable';
 import ListPage from '../components/ui-v2/ListPage';
 import SidePanel from '../components/ui-v2/SidePanel';
 import Timeline, { TimelineEvent } from '../components/ui-v2/Timeline';
@@ -374,11 +374,7 @@ const BuyerOrders: React.FC = () => {
       cell: (po) => (
         <>
           <Data as="div">{po.poNumber}</Data>
-          {po.prReference && (
-            <Data as="div" className="text-xs font-normal text-text-tertiary mt-0.5">
-              {po.prReference}
-            </Data>
-          )}
+          {po.prReference && <CellSub>{po.prReference}</CellSub>}
         </>
       ),
     },
@@ -390,12 +386,8 @@ const BuyerOrders: React.FC = () => {
         const country = supplierCountryById.get(po.supplierId) ?? '';
         return (
           <>
-            <div className="text-sm text-text-primary">{po.supplierName}</div>
-            {country && (
-              <div className="text-xs text-text-tertiary mt-0.5">
-                {COUNTRY_FLAG[country] ?? country}
-              </div>
-            )}
+            {po.supplierName}
+            {country && <CellSub>{COUNTRY_FLAG[country] ?? country}</CellSub>}
           </>
         );
       },
@@ -409,18 +401,18 @@ const BuyerOrders: React.FC = () => {
         const moreLines = po.lineItems.length - 1;
         return (
           <>
-            <div className="text-sm text-text-secondary truncate max-w-[18rem]">
+            <div className="truncate max-w-[18rem]">
               {firstLine?.description ?? '—'}
             </div>
             {moreLines > 0 && (
-              <div className="text-xs text-text-tertiary mt-0.5">
+              <CellSub>
                 {t(
                   moreLines === 1
                     ? 'buyerOrders.table.moreLines.one'
                     : 'buyerOrders.table.moreLines.other',
                   { count: moreLines },
                 )}
-              </div>
+              </CellSub>
             )}
           </>
         );
@@ -440,13 +432,13 @@ const BuyerOrders: React.FC = () => {
         const overdue = isOverdue(po);
         return (
           <>
-            <div className={overdue ? 'text-critical font-semibold' : undefined}>
-              <Data>{formatDate(po.requestedDeliveryDate)}</Data>
-            </div>
+            <span className={overdue ? 'text-critical' : undefined}>
+              {formatDate(po.requestedDeliveryDate)}
+            </span>
             {overdue && (
-              <div className="text-xs text-critical mt-0.5 font-sans">
+              <CellSub tone="critical">
                 {t('buyerOrders.table.overdue', { count: po.daysOverdue })}
-              </div>
+              </CellSub>
             )}
           </>
         );
@@ -465,7 +457,7 @@ const BuyerOrders: React.FC = () => {
       cell: (po) => {
         const Channel = CHANNEL_ICON[po.channel];
         return (
-          <span className="inline-flex items-center gap-1.5 text-sm text-text-secondary">
+          <span className="inline-flex items-center gap-1.5">
             <Channel size={14} className="text-text-tertiary" />
             {po.channel}
           </span>
@@ -495,13 +487,13 @@ const BuyerOrders: React.FC = () => {
     {
       id: 'material',
       header: t('buyerOrders.lines.col.material'),
-      kind: 'text',
+      // A material code leads the cell, so the column is an `id`; the
+      // description is its second line.
+      kind: 'id',
       cell: (li) => (
         <>
-          <Data as="div" className="text-xs text-text-tertiary">
-            {li.materialCode}
-          </Data>
-          <div className="text-text-primary mt-0.5">{li.description}</div>
+          {li.materialCode}
+          <CellSub>{li.description}</CellSub>
         </>
       ),
     },
@@ -517,17 +509,13 @@ const BuyerOrders: React.FC = () => {
               ordered. In the same cell: a fifth column pushed
               the line total out of the panel. */}
           {showConfirmed && (
-            <div
-              className={`mt-0.5 text-[11px] ${
-                li.confirmedQty < li.quantity
-                  ? 'text-warning-hover font-semibold'
-                  : 'text-text-tertiary'
-              }`}
+            <CellSub
+              tone={li.confirmedQty < li.quantity ? 'warning' : 'neutral'}
               data-testid={`buyer-po-line-confirmed-${li.id}`}
             >
-              <div className="font-sans">{t('buyerOrders.lines.col.confirmed')}</div>
-              <Data>{formatNumber(li.confirmedQty)} {li.uom}</Data>
-            </div>
+              <div>{t('buyerOrders.lines.col.confirmed')}</div>
+              {formatNumber(li.confirmedQty)} {li.uom}
+            </CellSub>
           )}
         </>
       ),

@@ -14,7 +14,7 @@ import FilterChipsBar from '../components/ui-v2/FilterChipsBar';
 import SearchBar from '../components/ui-v2/SearchBar';
 import StatusPill from '../components/ui-v2/StatusPill';
 import { statusTone } from '../lib/statusTone';
-import DataTable, { type Column } from '../components/ui-v2/DataTable';
+import DataTable, { CellSub, type Column } from '../components/ui-v2/DataTable';
 import ListPage from '../components/ui-v2/ListPage';
 import Data from '../components/ui-v2/Data';
 import LoadingState from '../components/ui-v2/LoadingState';
@@ -172,17 +172,13 @@ const BuyerSuppliers: React.FC = () => {
               `relative` (via `rowProps`) because the anchor stretches over
               the row; that is the component's one stated obligation on its
               caller. */}
-          <div className="font-semibold text-text-primary">
-            <RecordRowLink
-              path="/buyer/suppliers"
-              href={`/buyer/suppliers/${s.id}`}
-              id={s.id}
-              label={s.name}
-            />
-          </div>
-          <Data as="div" className="text-xs text-text-tertiary mt-0.5">
-            {s.sapBpNumber}
-          </Data>
+          <RecordRowLink
+            path="/buyer/suppliers"
+            href={`/buyer/suppliers/${s.id}`}
+            id={s.id}
+            label={s.name}
+          />
+          <CellSub>{s.sapBpNumber}</CellSub>
         </>
       ),
     },
@@ -191,26 +187,22 @@ const BuyerSuppliers: React.FC = () => {
       header: t('buyerSuppliers.col.country'),
       kind: 'text',
       cell: (s) => (
-        <span className="text-sm text-text-secondary">
+        <>
           {COUNTRY_FLAG[s.country] ?? s.country} · {s.city}
-        </span>
+        </>
       ),
     },
     {
       id: 'tier',
       header: t('buyerSuppliers.col.tier'),
       kind: 'text',
-      cell: (s) => (
-        <span className="text-sm text-text-secondary">{TIER_LABEL[s.tier]}</span>
-      ),
+      cell: (s) => TIER_LABEL[s.tier],
     },
     {
       id: 'category',
       header: t('buyerSuppliers.col.category'),
       kind: 'text',
-      cell: (s) => (
-        <span className="text-sm text-text-secondary">{cl(s.category)}</span>
-      ),
+      cell: (s) => cl(s.category),
     },
     {
       id: 'compliance',

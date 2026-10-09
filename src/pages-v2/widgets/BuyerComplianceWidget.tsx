@@ -5,7 +5,7 @@ import { FileWarning } from 'lucide-react';
 import ExpandableWidget, {
   type FlagSeverity,
 } from '../../components/ui-v2/ExpandableWidget';
-import DataTable from '../../components/ui-v2/DataTable';
+import DataTable, { CellSub } from '../../components/ui-v2/DataTable';
 import Data from '../../components/ui-v2/Data';
 import RecordRowLink from './RecordRowLink';
 import StatusPill from '../../components/ui-v2/StatusPill';
@@ -78,21 +78,18 @@ const BuyerComplianceWidget: React.FC = () => {
             header: t('widget.compliance.col.supplier'),
             kind: 'text',
             cell: ({ entry }) => (
-              <span className="text-text-secondary">
-                <RecordRowLink
-                  path="/buyer/compliance"
-                  id={entry.id}
-                  name={entry.certNumber}
-                  label={entry.supplierName}
-                />
-              </span>
+              <RecordRowLink
+                path="/buyer/compliance"
+                id={entry.id}
+                name={entry.certNumber}
+                label={entry.supplierName}
+              />
             ),
           },
           {
             id: 'certificate',
             header: t('widget.compliance.col.certificate'),
             kind: 'text',
-            className: 'font-medium',
             cell: ({ entry }) => t(certTypeLabelKey(entry.certType)),
           },
           {
@@ -101,7 +98,7 @@ const BuyerComplianceWidget: React.FC = () => {
             kind: 'date',
             cell: ({ entry }) => (
               <>
-                <Data className="block text-[11px] text-text-tertiary">{entry.certNumber}</Data>
+                <CellSub>{entry.certNumber}</CellSub>
                 <Data>{formatDate(entry.expiryDate)}</Data>
               </>
             ),
