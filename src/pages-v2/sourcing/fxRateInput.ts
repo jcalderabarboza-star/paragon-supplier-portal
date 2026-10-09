@@ -20,6 +20,7 @@
 // ────────────────────────────────────────────────────────────────────────────
 
 import { normalizeQty, type QtyRefusalReason } from '../../lib/localeNumber';
+import { DECLARED_PRESENT_INSTANT } from '../../services/data/fixturePresent';
 
 /**
  * Why a typed rate was refused. Extends the parser's vocabulary with the one
@@ -61,11 +62,15 @@ export type FxVintageOutcome =
 /**
  * Read a typed rate vintage (an ISO `yyyy-mm-dd` from a date input).
  *
- * `now` is injected so the future check is deterministic in specs. Compared at
+ * E2E-1 · ONE CLOCK. "The future" is after the DECLARED PRESENT, the same
+ * instant the staleness read uses; `now` is injectable for specs. Compared at
  * DAY granularity: a rate stated as of today is not in the future merely
  * because the clock has advanced past midnight UTC in some other timezone.
  */
-export function readFxVintage(raw: string, now: Date = new Date()): FxVintageOutcome {
+export function readFxVintage(
+  raw: string,
+  now: Date = new Date(DECLARED_PRESENT_INSTANT),
+): FxVintageOutcome {
   const s = raw.trim();
   if (s === '') return { ok: false, reason: 'EMPTY_VINTAGE' };
   const parsed = new Date(s);

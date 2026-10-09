@@ -16,7 +16,7 @@
 // ────────────────────────────────────────────────────────────────────────────
 
 import { screen, fireEvent, waitFor, within } from '@testing-library/react';
-import { renderWithProviders, BUYER } from '../test/test-utils';
+import { renderWithProviders, BUYER, BUYER_NAMED } from '../test/test-utils';
 import { asnStore } from '../services/data/mock/stores/asnStore';
 import { goodsReceiptStore } from '../services/data/mock/stores/goodsReceiptStore';
 import { MockCommandService } from '../services/data/mock/MockCommandService';
@@ -179,6 +179,8 @@ describe('the loop — the cascade raises it and the resolution clears it', () =
     personaType: 'buyer' as const,
     supplierId: null,
     businessRoles: SEEDED_SEAT_ROLES.buyer,
+    // E2E-1 — a disposition needs a named person (GR_DISPOSER_NAMED).
+    actor: BUYER_NAMED.actor,
   };
 
   /**

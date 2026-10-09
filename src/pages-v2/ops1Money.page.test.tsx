@@ -62,7 +62,8 @@ const FINANCE_NOBODY: CurrentIdentity = { ...BUYER, businessRoles: ['finance'], 
 const SUP_005: CurrentIdentity = { ...SUPPLIER, supplierId: 'sup-005', supplierName: 'Sample Personal Care Emulsifiers GmbH' };
 
 const supplier: QueryScope = { personaType: 'supplier', supplierId: 'sup-005', businessRoles: PERSONA_SYSTEM_ROLES.supplier, actor: NO_PERSON };
-const receiving: QueryScope = { personaType: 'buyer', supplierId: null, businessRoles: PERSONA_SYSTEM_ROLES.buyer, actor: NO_PERSON };
+// E2E-1 — a disposition needs a named person (GR_DISPOSER_NAMED).
+const receiving: QueryScope = { personaType: 'buyer', supplierId: null, businessRoles: PERSONA_SYSTEM_ROLES.buyer, actor: personWith('receiving') };
 const financeScope = (actor: QueryScope['actor']): QueryScope => ({
   personaType: 'buyer', supplierId: null, businessRoles: ['finance'] as QueryScope['businessRoles'], actor,
 });

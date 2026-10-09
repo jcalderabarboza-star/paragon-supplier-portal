@@ -24,8 +24,15 @@ import { asnStore } from './stores/asnStore';
 import { invoiceStore } from './stores/invoiceStore';
 import type { QueryScope, InspectionResult, ASN } from '../types';
 import { PERSONA_SYSTEM_ROLES } from '../../../services/transitions/businessRoles';
+import { SAMPLE_PEOPLE } from '../../../services/identity/sampleRoster';
 
-const buyer: QueryScope = { personaType: 'buyer', supplierId: null, businessRoles: PERSONA_SYSTEM_ROLES.buyer };
+// E2E-1 — a disposition needs a named person (GR_DISPOSER_NAMED).
+const buyer: QueryScope = {
+  personaType: 'buyer',
+  supplierId: null,
+  businessRoles: PERSONA_SYSTEM_ROLES.buyer,
+  actor: { kind: 'RESOLVED', person: { personId: SAMPLE_PEOPLE.find((p) => p.role === 'receiving')!.personId } },
+};
 const svc = new MockCommandService();
 
 // A submitted ASN seeded directly so a GR can be created + posted against the

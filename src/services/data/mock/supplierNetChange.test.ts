@@ -40,6 +40,8 @@ const seat = (roles: readonly SystemRoleId[], personId?: string): QueryScope => 
   ...(personId ? { actor: { kind: 'RESOLVED', person: { personId } } } : {}),
 });
 const PLANNER = seat(['planning']);
+// E2E-1 — publishing, discarding and withdrawing need a named person (PUBLICATION_ACTOR_NAMED).
+const PLANNER_NAMED = seat(['planning'], personFor('planning'));
 const PROCUREMENT_NAMED = seat(['procurement'], personFor('procurement'));
 // SDC-3 · operator ruling: accept and dispute require an ATTRIBUTED actor, so the seat
 // that takes them names the planning sample person. The assertions are unchanged;
@@ -79,7 +81,7 @@ async function publishRevision(move?: { sup: string; code: string; bucket: strin
       supplierId: l.supplierId,
     });
   }
-  const p = await fire(PLANNER, 't_publication_publish', id);
+  const p = await fire(PLANNER_NAMED, 't_publication_publish', id);
   expect(p.status, p.reason).toBe('done');
   return id;
 }
@@ -227,7 +229,7 @@ describe('operator ruling 3 — ONE open draft per grain, a second refused by na
     await fire(PLANNER, 't_publication_allocate', first, {
       materialCode: 'RM-EMUL-3320', periodBucket: '2026-09', supplierId: 'sup-002', forecastQty: 1000, forecastQtyRaw: '1000', basis: 'planner-split',
     });
-    expect((await fire(PLANNER, 't_publication_publish', first)).status).toBe('done');
+    expect((await fire(PLANNER_NAMED, 't_publication_publish', first)).status).toBe('done');
     expect((await open()).status).toBe('done');
   });
 });

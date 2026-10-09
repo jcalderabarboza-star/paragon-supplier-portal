@@ -37,6 +37,7 @@ const seat = (roles: readonly SystemRoleId[], personId?: string): QueryScope => 
   ...(personId ? { actor: { kind: 'RESOLVED', person: { personId } } } : {}),
 });
 const PLANNER = seat(['planning']);
+// E2E-1 — publishing, discarding and withdrawing need a named person (PUBLICATION_ACTOR_NAMED).
 const PLANNER_NAMED = seat(['planning'], personFor('planning'));
 const PROCUREMENT_NAMED = seat(['procurement'], personFor('procurement'));
 const BUYER = seat(PERSONA_SYSTEM_ROLES.buyer);
@@ -108,7 +109,7 @@ describe('PUB_CLASS_PROJECTION_PRESENT — every published line carries a class 
   it('KNOWN-GOOD: a draft whose lines all carry a class publishes', async () => {
     const id = (await open()).entityId!;
     await allocate(id, 'sup-002', 2000, 'RM-EMUL-3320', '2026-09');
-    const r = await fire(PLANNER, 't_publication_publish', id);
+    const r = await fire(PLANNER_NAMED, 't_publication_publish', id);
     expect(r.status, r.reason).toBe('done');
   });
 
@@ -122,7 +123,7 @@ describe('PUB_CLASS_PROJECTION_PRESENT — every published line carries a class 
       ...d,
       lines: d.lines.map((l) => ({ ...l, commitmentClass: undefined as unknown as ForecastLine['commitmentClass'] })),
     });
-    const r = await fire(PLANNER, 't_publication_publish', id);
+    const r = await fire(PLANNER_NAMED, 't_publication_publish', id);
     expect(r.status).toBe('failed');
     expect(r.reason).toMatch(/PUB_CLASS_PROJECTION_PRESENT: lines without a commitment class — RM-EMUL-3320 2026-09 sup-002/);
     expect(doc(id).state).toBe('Draft');
@@ -191,7 +192,7 @@ describe('publishBlockers — the panel asks the hooks’ own predicates', () =>
       expect(s.status, s.reason).toBe('done');
     }
     expect(publishBlockers(doc(id).lines)).toEqual([]);
-    expect((await fire(PLANNER, 't_publication_publish', id)).status).toBe('done');
+    expect((await fire(PLANNER_NAMED, 't_publication_publish', id)).status).toBe('done');
   });
 });
 
@@ -239,12 +240,23 @@ describe('the ledger — opened, published, superseded, withdrawn; the verb and 
   });
 
   it('a withdrawal records its reason', async () => {
-    await fire(PLANNER, 't_publication_withdraw', CURRENT, { reason: 'SOMO re-ran the plan' });
+    // E2E-1 — publishing, discarding and withdrawing need a named person (PUBLICATION_ACTOR_NAMED).
+    // This case withdrew from a seat that named nobody and pinned `personId: null`. That
+    // seat is now refused BY NAME and the record is untouched; the named seat's withdrawal
+    // records its reason AND the person.
+    const before = doc(CURRENT);
+    const unnamed = await fire(PLANNER, 't_publication_withdraw', CURRENT, { reason: 'SOMO re-ran the plan' });
+    expect(unnamed.status).toBe('failed');
+    expect(unnamed.reason).toContain('PUBLICATION_ACTOR_UNATTRIBUTED');
+    expect(doc(CURRENT).state).toBe('Published');
+    expect(doc(CURRENT).ledger).toEqual(before.ledger);
+    const named = await fire(PLANNER_NAMED, 't_publication_withdraw', CURRENT, { reason: 'SOMO re-ran the plan' });
+    expect(named.status, named.reason).toBe('done');
     expect(doc(CURRENT).ledger[doc(CURRENT).ledger.length - 1]).toEqual({
       verb: 't_publication_withdraw',
       at: sdcClock.now(),
       seq: 5,
-      personId: null,
+      personId: personFor('planning'),
       reason: 'SOMO re-ran the plan',
     });
   });

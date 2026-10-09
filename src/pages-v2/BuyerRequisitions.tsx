@@ -46,7 +46,10 @@ import {
   useRequisitionBatch,
 } from '../services/query/commandHooks';
 import { useVerbAvailabilities, useNextAct } from '../hooks/useVerbAvailability';
+import { useCurrentIdentity } from '../context/CurrentIdentityContext';
 import { HandoffNotice } from '../components/ui-v2/HandoffNotice';
+import ActorPreActNotice from '../components/ui-v2/ActorPreActNotice';
+import { namedSeatRefusalKey } from '../lib/namedSeatRefusal';
 import NextActLine from '../components/ui-v2/NextActLine';
 import { DataError } from '../services/data/types';
 import { formatNumber, formatIDR, formatDate } from '../lib/format';
@@ -202,7 +205,14 @@ const emptyForm: NewPRForm = {
 const BuyerRequisitions: React.FC = () => {
   const { toast } = useToast();
   const { t } = useTranslation();
+  const { identity } = useCurrentIdentity();
   const refusalText = useRefusalText();
+  // E2E-1 — approving and rejecting need a named person; that refusal has its
+  // own sentence, in the reader's language (the SUP-1 shape).
+  const seatRefusal = (reason: string | undefined): string | null => {
+    const key = namedSeatRefusalKey(reason);
+    return key ? t(key) : null;
+  };
   const dataErrorText = useDataErrorText();
 
   /**
@@ -517,14 +527,22 @@ const BuyerRequisitions: React.FC = () => {
         toast({
           variant: 'error',
           title: t('requisitions.toast.approveFailed.title', { prNumber: selectedPR.prNumber }),
-          description: refusalText(result.reason) ?? result.reason ?? t('requisitions.toast.actionFailed.desc'),
+          description:
+            seatRefusal(result.reason) ??
+            refusalText(result.reason) ??
+            result.reason ??
+            t('requisitions.toast.actionFailed.desc'),
         });
         return;
       }
       toast({
         variant: 'success',
         title: t('requisitions.toast.approved.title', { prNumber: selectedPR.prNumber }),
-        description: t('requisitions.toast.approved.desc'),
+        // E2E-1 — an approval is only recorded for a named seat now, so the
+        // toast names the person the drawer then shows under "Approved by".
+        description: t('requisitions.toast.approved.desc', {
+          person: renderAttribution(identity.actor),
+        }),
       });
       closePanel();
     } catch (e) {
@@ -552,7 +570,11 @@ const BuyerRequisitions: React.FC = () => {
         toast({
           variant: 'error',
           title: t('requisitions.toast.submitFailed.title', { prNumber: selectedPR.prNumber }),
-          description: refusalText(result.reason) ?? result.reason ?? t('requisitions.toast.actionFailed.desc'),
+          description:
+            seatRefusal(result.reason) ??
+            refusalText(result.reason) ??
+            result.reason ??
+            t('requisitions.toast.actionFailed.desc'),
         });
         return;
       }
@@ -653,7 +675,11 @@ const BuyerRequisitions: React.FC = () => {
         toast({
           variant: 'error',
           title: t('requisitions.toast.rejectFailed.title', { prNumber: selectedPR.prNumber }),
-          description: refusalText(result.reason) ?? result.reason ?? t('requisitions.toast.actionFailed.desc'),
+          description:
+            seatRefusal(result.reason) ??
+            refusalText(result.reason) ??
+            result.reason ??
+            t('requisitions.toast.actionFailed.desc'),
         });
         return;
       }
@@ -1256,26 +1282,20 @@ const BuyerRequisitions: React.FC = () => {
               </section>
             )}
 
-            {/* ⚠️ **THE SEAT SAYS WHAT IT CANNOT RECORD, BEFORE THE ACT** — the
-                §66 precedent, verbatim: a grant is recorded against
-                `UNATTRIBUTED: NO_PERSON_IN_SESSION` and the surface says so
-                first. The ceiling here is UNIFORM, not specific to approval:
-                `overrideCompletes` is literally `isAttributed(overriddenBy)`,
-                so the enforcement override STRUCTURALLY cannot complete without
-                a resolved actor. Approval carries no such predicate — C10's
-                ledger-plus-policy ruling is precisely what keeps the person out
-                of the machine — so it records UNATTRIBUTED like every other
-                governed act and proceeds. That is why this is a NOTICE and not
-                a refusal. */}
+            {/* E2E-1 — SAID BEFORE THE ACT: whose name the decision carries, or
+                that this seat names nobody and will be refused. The notice that
+                stood here said the decision "is recorded as unattributed"; a
+                named person approving read it beside their own name, and by
+                ruling an unnamed seat no longer decides at all
+                (`PR_DECIDER_NAMED`). */}
             {selectedPR.status === 'Pending Approval' &&
               (approveAvailability.kind === 'held' || rejectAvailability.kind === 'held') && (
-                <section
-                  data-testid="pr-attribution-note"
-                  className="rounded-md border border-border-subtle bg-bg-muted px-3 py-2"
-                >
-                  <p className="text-xs text-text-secondary">
-                    {t('requisitions.panel.attributionNote')}
-                  </p>
+                <section className="rounded-md border border-border-subtle bg-bg-muted px-3 py-2">
+                  <ActorPreActNotice
+                    unattributedKey="identity.preAct.namedRequired"
+                    className="text-xs text-text-secondary"
+                    testId="pr-attribution-note"
+                  />
                 </section>
               )}
 

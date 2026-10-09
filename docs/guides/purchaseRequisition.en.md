@@ -24,7 +24,7 @@ Two roles touch it. The **requisitioner** raises a requisition, sends it for app
 
 It starts at **Draft** and, in the tree as built, ends at **Approved** or **Sourcing Event**. The state **PO Created** is the declared ending, but nothing can reach it today: the step that would close the loop (`t_pr_convert`) is authored as a cascade with no link behind it — a purchase order is raised in S/4HANA and is meant to arrive here as a fact. **Rejected** is deliberately not an ending: a rejected requisition returns to the requester's hands and goes round again.
 
-Honest markers. The demo data is **SIMULATED**: the intake surfaces carry the pill *"Sample — awaiting live PR producer (SOMO / Grid)"* and the six fixture rows are authored samples; one further row (`PR-2026-901`) is grown through the real verbs at start-up. No person is signed in, so every approval is recorded against *"Unattributed — no person in session"* and the panel says so before and after the act. The *"Routes to"* band on a requisition is authored on the document, not computed from its value, and the panel says that too.
+Honest markers. The demo data is **SIMULATED**: the intake surfaces carry the pill *"Sample — awaiting live PR producer (SOMO / Grid)"* and the six fixture rows are authored samples; one further row (`PR-2026-901`) is grown through the real verbs at start-up. The seat opens naming nobody, and a seat that names nobody may neither approve nor reject (`pr_decider_named`): the panel says so before the act, and the act is refused with nothing recorded. Adopt a sample user on the identity panel and the decision is recorded against that person, whose label carries *(SAMPLE)* because there is no user directory yet. The *"Routes to"* band on a requisition is authored on the document, not computed from its value, and the panel says that too.
 
 <!-- section:lifecycle -->
 ## 2 · Lifecycle walk
@@ -93,12 +93,12 @@ Honest markers. The demo data is **SIMULATED**: the intake surfaces carry the pi
 - **Operator — do:** agree the need is real and funded. Nothing is sourced or ordered before this.
 - **Operator — fill:** nothing to fill. Who approved is taken from the session, never typed.
 - **Tester — expected state:** Approved
-- **Tester — confirm:** status chip *Approved*; the panel gains an *Approved by* line that today reads *"Unattributed — no person in session"*; the *Approved — ready to source* section appears with **Raise sourcing event**. Toast: *"{number} approved — Recorded against this requisition as unattributed."* A requisitioner seat sees *"Awaiting Procurement"* instead of the button.
+- **Tester — confirm:** status chip *Approved*; the panel gains an *Approved by* line carrying the label of the person on the seat — a sample person is marked *(SAMPLE)*; the *Approved — ready to source* section appears with **Raise sourcing event**. Toast: *"{number} approved — Recorded against this requisition as approved by {person}."* Before the act the panel reads *"This will be recorded against {person}."* From a seat that names nobody it reads instead *"This seat names nobody, so this act will be refused. Adopt a sample user on the identity panel first."*; **Approve** stays live, and pressing it leaves the row at *Pending Approval* with the toast *"{number} was not approved"* and *"Refused: this seat names nobody, and this act is recorded against the person who takes it. Adopt a sample user on the identity panel, then take it again."* A requisitioner seat sees *"Awaiting Procurement"* instead of the button.
 - **Tester — trigger event:** `t_pr_approve`
-- **Checks that can refuse:** `pr_approval_attributed` — two halves of one rule: the request must not try to say who approved (a payload key `approvedBy` is refused by name, whatever its value), and the session must carry an actor. An *unattributed* session actor is accepted — it is an honest record that nobody could be named, and refusing it would make approval unreachable.
+- **Checks that can refuse:** `pr_decider_named` — the seat must name a person (`PR_DECIDER_UNATTRIBUTED`); it runs first, and on a refusal nothing is recorded. A sample person is admitted. `pr_approval_attributed` runs second — two halves of one rule: the request must not try to say who approved (a payload key `approvedBy` is refused by name, whatever its value), and the session must carry an actor.
 - **Glossary:** `POLICY_REJECTED`, `ACTOR_IN_PAYLOAD`, `NO_PERSON_IN_SESSION`.
-- **Honesty:** every approval in the demo is recorded against no person. The *"Routes to"* band shown on the document (Section Head / Procurement Head / VP Procurement) is authored on the fixture — it is not derived from the value and it does not decide who may approve.
-<!-- src: src/services/transitions/flows/purchaseRequisition.flow.ts:87; src/services/transitions/policies.ts:574; src/pages-v2/BuyerRequisitions.tsx:948; src/pages-v2/BuyerRequisitions.tsx:434; src/services/data/mock/MockCommandService.ts:740; src/lib/i18n/requisitions.ts:83; src/lib/i18n/requisitions.ts:175; src/lib/i18n/requisitions.ts:135 -->
+- **Honesty:** every approval is recorded against a named person — in the demo a sample one, marked as such wherever it renders, because there is no user directory yet. The *"Routes to"* band shown on the document (Section Head / Procurement Head / VP Procurement) is authored on the fixture — it is not derived from the value and it does not decide who may approve.
+<!-- src: src/services/transitions/flows/purchaseRequisition.flow.ts:87; src/services/transitions/policies.ts:574; src/pages-v2/BuyerRequisitions.tsx:948; src/pages-v2/BuyerRequisitions.tsx:434; src/services/data/mock/MockCommandService.ts:740; src/lib/i18n/requisitions.ts:83; src/lib/i18n/requisitions.ts:175; src/lib/i18n/requisitions.ts:135; src/services/transitions/flows/purchaseRequisition.flow.ts:94; src/services/transitions/policyHooks.ts:1021; src/services/transitions/policies.ts:2850; src/services/transitions/policies.ts:2912; src/pages-v2/BuyerRequisitions.tsx:1294; src/pages-v2/BuyerRequisitions.tsx:543; src/pages-v2/BuyerRequisitions.tsx:612; src/lib/namedSeatRefusal.ts:21; src/lib/i18n/identity.ts:80-86; src/lib/i18n/requisitions.ts:195 -->
 
 ### t_pr_reject — Reject <!-- transition:t_pr_reject -->
 
@@ -109,12 +109,12 @@ Honest markers. The demo data is **SIMULATED**: the intake surfaces carry the pi
 - **Operator — do:** the decision is no. Write what the requester needs to change; the button stays disabled until the box has text.
 - **Operator — fill:** rejection reason (required, must contain more than spaces).
 - **Tester — expected state:** Rejected
-- **Tester — confirm:** status chip *Rejected*; the panel shows *"Rejected because"* with the text verbatim; toast *"{number} rejected — The reason is recorded on the requisition."*
+- **Tester — confirm:** status chip *Rejected*; the panel shows *"Rejected because"* with the text verbatim; toast *"{number} rejected — The reason is recorded on the requisition."* From a seat that names nobody the panel says so before the act, and **Confirm rejection** toasts *"{number} was not rejected"* with the same refusal sentence as on **Approve**; the row stays *Pending Approval* and no reason is recorded.
 - **Tester — trigger event:** `t_pr_reject`
-- **Checks that can refuse:** `pr_reject_reason_authored` — the reason must be a non-blank string. The required-field check alone admits a string of spaces; this hook is what stops that.
+- **Checks that can refuse:** `pr_decider_named` — the seat must name a person (`PR_DECIDER_UNATTRIBUTED`); it runs first, nothing is recorded, and the reason is not examined. `pr_reject_reason_authored` — the reason must be a non-blank string. The required-field check alone admits a string of spaces; this hook is what stops that.
 - **Glossary:** `MISSING_FIELDS`, `POLICY_REJECTED`.
 - **Honesty:** the reason is persisted on the document and stays there while the requester revises it — only a fresh rejection replaces it. Nothing can prove the text is true or responsive; the guard proves only that something was written.
-<!-- src: src/services/transitions/flows/purchaseRequisition.flow.ts:98; src/services/transitions/policies.ts:485; src/pages-v2/BuyerRequisitions.tsx:937; src/pages-v2/BuyerRequisitions.tsx:967; src/pages-v2/BuyerRequisitions.tsx:563; src/services/data/mock/MockCommandService.ts:718; src/lib/i18n/requisitions.ts:85; src/lib/i18n/requisitions.ts:87 -->
+<!-- src: src/services/transitions/flows/purchaseRequisition.flow.ts:98; src/services/transitions/policies.ts:485; src/pages-v2/BuyerRequisitions.tsx:937; src/pages-v2/BuyerRequisitions.tsx:967; src/pages-v2/BuyerRequisitions.tsx:563; src/services/data/mock/MockCommandService.ts:718; src/lib/i18n/requisitions.ts:85; src/lib/i18n/requisitions.ts:87; src/services/transitions/flows/purchaseRequisition.flow.ts:121; src/services/transitions/policies.ts:2912; src/pages-v2/BuyerRequisitions.tsx:1294; src/lib/namedSeatRefusal.ts:21; src/lib/i18n/identity.ts:83-86 -->
 
 ### t_pr_revise — Revise and return to draft <!-- transition:t_pr_revise -->
 
@@ -167,7 +167,7 @@ Honest markers. The demo data is **SIMULATED**: the intake surfaces carry the pi
 <!-- section:forks -->
 ## 4 · Decision forks and exception paths
 
-- **The decision (at Pending Approval).** Branch A — `t_pr_approve` — **When:** procurement accepts the need as real and funded; no text is asked for, and the record names the session's actor (today: unattributed). Branch B — `t_pr_reject` — **When:** the answer is no; a written reason is required and is shown to the requester verbatim.
+- **The decision (at Pending Approval).** Branch A — `t_pr_approve` — **When:** procurement accepts the need as real and funded; no text is asked for, and the record names the person on the seat. Branch B — `t_pr_reject` — **When:** the answer is no; a written reason is required and is shown to the requester verbatim. **When** the seat names no person: either branch is refused by name (`PR_DECIDER_UNATTRIBUTED`) before anything else is checked, nothing is recorded, and the requisition stays at *Pending Approval*.
 - **Rejection and recourse (at Rejected).** `t_pr_revise` — **When:** the requester has changed the document in response to the reason. It lands at Draft, never straight back in the queue, and `t_pr_submit` is the second half of the revision. There is no other exit: a rejected requisition that nobody revises stays visible as *Rejected* with its reason.
 - **What happens after approval (at Approved).** Branch A — `t_pr_source` — **When:** procurement raises an RFQ from the requisition (the *Raise from requisition* field in the sourcing wizard); the requisition records the RFQ number as its linked document. Branch B — `t_pr_convert` — **When:** never, today. The direct-PO path is declared for a source of supply that already exists and is owned by S/4HANA.
 - **A dead end that is real.** *Sourcing Event* has one declared exit (`t_pr_convert`) and it cannot fire, so a requisition that reaches *Sourcing Event* stays there; the RFQ's own award and the resulting PO live on their own documents.
@@ -180,14 +180,15 @@ Honest markers. The demo data is **SIMULATED**: the intake surfaces carry the pi
 |---|---|---|---|---|
 | SIMULATED — *"Sample — awaiting live PR producer (SOMO / Grid)"* | external (liveness registry) | all states | always, until a real intake producer lands | `/buyer/plan-grid` header pill and cell markers |
 | *"Awaiting Requisitioner"* / *"Awaiting Procurement"* | derived at read (seat vs. atom) | the state the withheld verb acts on | the seat does not hold the verb's atom | `/buyer/purchase-requisition` header (New PR) and panel footer; plan-grid drawer (an intake commit reads *"Awaiting Planning"* since PLN-3) |
-| *"Unattributed — no person in session"* | derived at read | Approved and later | always in the demo — no person is signed in | panel *Approved by* line; approval toast |
+| *"This seat names nobody, so this act will be refused. Adopt a sample user on the identity panel first."* | derived at read (the seat's actor) | Pending Approval | the seat holds approve or reject and names no person; with a sample user adopted the line reads *"This will be recorded against {person}."* | panel, above the footer; on pressing the button, the failure toast |
+| *(SAMPLE)* beside the approver | derived at read (the one person-label resolver) | Approved and later | the approver is a sample person — every approval taken in the demo | panel *Approved by* line; approval toast |
 | *"Authored on the document — not derived from the estimated value."* | authored (display-only) | all states | whenever a *Routes to* band is present; *Not assigned* when it is empty | panel *Key facts* |
 | *Committed → {number}* / *Refused: {reason}* (*Intake review* view); *Pushed → {number}* / *Push failed: {reason}* (plan-grid drawer) | derived at read — the number from the requisition that names the line; the refusal for this session only | ∅ → Draft | after an intake commit succeeds or is refused; a committed line whose requisition is not in this session's store reads *"Committed — its requisition is not in this session’s store"* | plan grid *Intake review* triage column; its drawer footer |
 | *Dismissed* | operator-raised (recorded on the intake line — `t_intake_dismiss`) | intake lines (pre-PR) | a line was set aside on the *Intake review* view; it survives a reload until **Restore** | plan grid *Intake review* view; the line's plan-tab cell |
 
 No time-driven flag is derived for a requisition: the required date is displayed but nothing compares it with the clock (measured — no relational read of `requiredDate` exists).
 
-<!-- src: src/services/liveness/registry.ts:281; src/lib/i18n/widget.ts:25; src/lib/i18n/roles.ts:48; src/pages-v2/BuyerRequisitions.tsx:611; src/pages-v2/BuyerRequisitions.tsx:1368; src/lib/i18n/requisitions.ts:108; src/lib/i18n/requisitions.ts:135; src/lib/i18n/intakeReview.ts:45-49; src/lib/i18n/planGrid.ts:79-85; src/services/data/mock/stores/intakeLineStore.ts:1-56 -->
+<!-- src: src/services/liveness/registry.ts:281; src/lib/i18n/widget.ts:25; src/lib/i18n/roles.ts:48; src/pages-v2/BuyerRequisitions.tsx:611; src/pages-v2/BuyerRequisitions.tsx:1368; src/lib/i18n/requisitions.ts:108; src/lib/i18n/requisitions.ts:135; src/lib/i18n/intakeReview.ts:45-49; src/lib/i18n/planGrid.ts:79-85; src/services/data/mock/stores/intakeLineStore.ts:1-56; src/pages-v2/BuyerRequisitions.tsx:1294; src/lib/i18n/identity.ts:80-86; src/services/identity/personLabel.ts -->
 
 <!-- section:linked -->
 ## 6 · Linked objects
@@ -199,7 +200,7 @@ No time-driven flag is derived for a requisition: the required date is displayed
 | RFQ (sourcing event) | `linkedDoc` = the RFQ's number | Written by the `t_pr_source` cascade from the raising RFQ's number; on the fixtures it was hand-authored. The RFQ carries `sourceRequisitionId` in its creation payload only — the RFQ record itself does not read the requisition back. |
 | Purchase order | `linkedDoc` = a PO number (`PO-2026-00108` on `pr-001`) | Display-only. Nothing in the portal writes a PO number onto a requisition; the two *PO Created* rows are authored. |
 | Intake line (plan grid · *Intake review* view) | `intakeLineId` = the line's id; `source` = `INTERNAL_GRID` or `SOMO`; `periodBucket` | Written only when the requisition came through an intake commit — the line's id, the producer mark and the planning bucket (a bucket, never a required date). The New PR form leaves all three absent. A committed line finds its requisition through `intakeLineId`; the line stores no PR number. |
-| Approver | `approvedBy` (an actor attribution, not a name) | Written from the session on approval. Today always *unattributed*. |
+| Approver | `approvedBy` (an actor attribution, not a name) | Written from the session on approval, and always a named person: a seat that names nobody is refused. In the demo that is a sample person. The fixture rows authored at *Approved* or later carry no approver, so their panel shows no *Approved by* line. |
 | Cost center, requestor, category | plain fields | Authored on the fixture or typed on the form; nothing resolves them against a master. |
 | Approval band | `approvalLevel` (*Routes to*) | Authored; `''` means *Not assigned*. Not a record of who approved. |
 | Estimated value | `estimatedValue` (optional) | Present only when supplied; a dash otherwise. Never a fabricated zero. |
@@ -210,20 +211,20 @@ No time-driven flag is derived for a requisition: the required date is displayed
 <!-- section:history -->
 ## 7 · Status history
 
-Every dispatch writes one `TransitionEvent`: `event` = the transition id, `actor` = `buyer:all` for every buyer seat (the audit actor names the seat, not a person), `ts`, `outcome`, a `correlationId` per command, and on a cascade a `causationId` pointing at the command that caused it. A separate `attribution` field carries who could be named — today *unattributed*. Refused commands are recorded too, with their reason.
+Every dispatch writes one `TransitionEvent`: `event` = the transition id, `actor` = `buyer:all` for every buyer seat (the audit actor names the seat, not a person), `ts`, `outcome`, a `correlationId` per command, and on a cascade a `causationId` pointing at the command that caused it. A separate `attribution` field carries who could be named: always a person on an accepted approval or rejection, and *unattributed* on the other verbs unless the seat has adopted a sample user. Refused commands are recorded too, with their reason.
 
-Worked sequence for `PR-2026-901`, which the start-up seed grows through the real verbs (two scopes — a requisitioner seat raises and submits, a procurement seat approves):
+Worked sequence for `PR-2026-901`, which the start-up seed grows through the real verbs (two scopes — a requisitioner seat that names nobody raises and submits, a procurement seat carrying a sample person approves):
 
 | Time | From → to | Actor (role) | Trigger | Event |
 |---|---|---|---|---|
 | T+0 | ∅ → Draft | requisitioner (`buyer:all`) | creation — `Wardah Floral Accord`, 250 KG | `t_pr_create` |
 | T+1 | Draft → Pending Approval | requisitioner (`buyer:all`) | submit | `t_pr_submit` |
-| T+2 | Pending Approval → Approved | procurement (`buyer:all`) | approve, no `approvedBy` in the payload | `t_pr_approve` |
+| T+2 | Pending Approval → Approved | procurement (`buyer:all`) | approve, no `approvedBy` in the payload; recorded against the sample procurement person | `t_pr_approve` |
 | T+3 (tester) | Approved → Sourcing Event | automation, `causationId` = the RFQ's `correlationId` | procurement raises an RFQ with *Raise from requisition* = `PR-2026-901` | `t_pr_source` |
 
 A tester continuing from T+3 will find no further event: `t_pr_convert` is never emitted.
 
-<!-- src: src/services/transitions/events.ts:26; src/services/transitions/events.ts:127; src/services/data/mock/requisitionSeed.ts:23; src/services/data/mock/requisitionSeed.ts:119 -->
+<!-- src: src/services/transitions/events.ts:26; src/services/transitions/events.ts:127; src/services/data/mock/requisitionSeed.ts:23; src/services/data/mock/requisitionSeed.ts:119; src/services/data/mock/requisitionSeed.ts:90; src/services/transitions/dispatcher.ts:480 -->
 
 <!-- section:troubleshooting -->
 ## 8 · Troubleshooting
@@ -232,6 +233,7 @@ A tester continuing from T+3 will find no further event: `t_pr_convert` is never
 |---|---|---|---|
 | No **New PR** button; header shows *"Awaiting Requisitioner"* | handoff notice in the page header | the seat does not hold `pr:create` (e.g. a procurement-only seat) | act from a seat holding the requisitioner lane, or narrow/adopt on the identity panel |
 | **Approve** / **Reject** missing; footer shows *"Awaiting Procurement"* | handoff notice in the panel footer on a *Pending Approval* row | the seat does not hold `pr:approve` / `pr:reject` — including a **planning** seat that raised the requisition from the grid: planning commits, procurement approves (R1, PLN-3) | route the decision to a procurement seat |
+| Toast *"… was not approved"* or *"… was not rejected"* with *"Refused: this seat names nobody, and this act is recorded against the person who takes it…"* | `POLICY_REJECTED:pr_decider_named` (`PR_DECIDER_UNATTRIBUTED`); the panel said so before the act | the seat names nobody — no sample user is selected on the identity panel | adopt a sample user on the identity panel, then take the act again |
 | Toast *"… was not approved"* with *"Your role is not allowed…"* | `ROLE_NOT_PERMITTED:pr:approve` | a hand-crafted dispatch without the atom (the surface withholds the button) | same as above |
 | Toast *"… was not rejected"* naming *rejectionReason* | `MISSING_FIELDS:rejectionReason` or `POLICY_REJECTED:pr_reject_reason_authored` | the reason box was empty or only spaces | write the reason, then confirm |
 | Toast *"… was not revised"* | `MISSING_FIELDS:revisionNote` / `POLICY_REJECTED:pr_revision_note_authored` | *What changed* left blank | write what changed |
@@ -243,7 +245,7 @@ A tester continuing from T+3 will find no further event: `t_pr_convert` is never
 | Requisition stuck at *Sourcing Event* / never *PO Created* | no exit is offered | `t_pr_convert` has no link; PO conversion is S/4HANA's act | expected today; not a defect to chase |
 | An action on this flow is refused for every seat, whatever the role | the refusal names `MODULE_INACTIVE:REQ`; where the surface checks first, the control reads *"Switched off — Requisitions"* | the Requisitions module is switched off; its pages stay readable | have it switched back on at `/buyer/platform/modules/admin`; no role change helps, because the module check runs before the role check |
 
-<!-- src: src/services/transitions/refusals.ts:61; src/lib/glossary/refusals.glossary.ts:324; src/lib/i18n/requisitions.ts:201; src/services/data/mock/MockCommandService.ts:2918 -->
+<!-- src: src/services/transitions/refusals.ts:61; src/lib/glossary/refusals.glossary.ts:324; src/lib/i18n/requisitions.ts:201; src/services/data/mock/MockCommandService.ts:2918; src/services/transitions/policies.ts:2912; src/lib/namedSeatRefusal.ts:21; src/lib/i18n/identity.ts:85 -->
 
 <!-- section:testdata -->
 ## 9 · Test data
@@ -252,11 +254,11 @@ A tester continuing from T+3 will find no further event: `t_pr_convert` is never
 |---|---|---|---|
 | Draft | `pr-005` | PR-2026-00345 | *Folding Carton 150gsm Wardah*; use it to walk **Submit for approval** |
 | Pending Approval | `pr-004` | PR-2026-00344 | *Halal Glycerin 99.5%*; use it to walk **Approve** or **Reject** |
-| Approved | `PR-2026-901`; `pr-002` | PR-2026-901; PR-2026-00342 | `PR-2026-901` is grown at start-up through create → submit → approve and is the one whose category (`Fragrance`) the sourcing wizard can carry; `pr-002` (*Packaging Primary*) can be sourced but its category is not prefilled |
+| Approved | `PR-2026-901`; `pr-002` | PR-2026-901; PR-2026-00342 | `PR-2026-901` is grown at start-up through create → submit → approve, approved by a sample procurement person, and is the one whose category (`Fragrance`) the sourcing wizard can carry; `pr-002` (*Packaging Primary*) can be sourced but its category is not prefilled, and as an authored row it shows no *Approved by* line |
 | Sourcing Event | `pr-003` | PR-2026-00343 | linked to `RFQ-2026-004` (authored) |
 | PO Created | `pr-001`; `pr-006` | PR-2026-00341; PR-2026-00340 | authored endings; linked to `PO-2026-00108` / `PO-2026-00106`; unreachable by any act |
 | Rejected | — | — | no fixture — reject `PR-2026-00344` to produce one |
 
 All rows are SIMULATED sample data (see §5). Store-assigned numbers for new requisitions continue from `PR-2026-901` upward within a session.
 
-<!-- src: src/services/data/mock/fixtures/buyerRequisitions.ts:22; src/services/data/mock/requisitionSeed.ts:60; src/services/data/mock/stores/purchaseRequisitionStore.ts:42 -->
+<!-- src: src/services/data/mock/fixtures/buyerRequisitions.ts:22; src/services/data/mock/requisitionSeed.ts:60; src/services/data/mock/requisitionSeed.ts:90; src/services/data/mock/stores/purchaseRequisitionStore.ts:42 -->

@@ -185,7 +185,7 @@ function buildModules(): readonly ModuleSpec[] {
     },
     {
       code: 'SDC', nameKey: name('SDC'), descriptionKey: desc('SDC'), scope: 'cross-cutting',
-      routes: ['/buyer/collaboration', '/buyer/chase', '/supplier/forecasts', '/supplier/inventory'],
+      routes: ['/buyer/collaboration', '/buyer/inventory', '/buyer/chase', '/supplier/forecasts', '/supplier/inventory'],
       flows: ['requirementResponse', 'inventoryDeclaration', 'incomingShipment', 'forecastPublication'],
       capabilities: ['forecastPublications', 'inventory'],
       dependsOn: [hard('SUP'), hard('PLN')],
@@ -261,7 +261,7 @@ function buildModules(): readonly ModuleSpec[] {
     },
     {
       code: 'INT', nameKey: name('INT'), descriptionKey: desc('INT'), scope: 'cross-cutting',
-      routes: ['/buyer/analytics', '/buyer/scorecard', '/buyer/risk', '/buyer/inventory', '/supplier/performance'],
+      routes: ['/buyer/analytics', '/buyer/scorecard', '/buyer/risk', '/supplier/performance'],
       flows: [],
       capabilities: ['analytics', 'scorecards', 'risk', 'commodityIntel'],
       dependsOn: [soft('ORD'), soft('INV'), soft('GRC'), soft('SDC')], parts: [],

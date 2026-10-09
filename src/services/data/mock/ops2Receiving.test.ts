@@ -425,7 +425,8 @@ describe('OPS-2 · material applicability — the default, the ruling and the le
 // ═══ 3 · A RECEIPT THAT EXISTS CAN BE WORKED TO ITS END ══════════════════════
 
 describe('OPS-2 · an existing receipt is inspected, held, retested and finished', () => {
-  const receiving = buyer();
+  // E2E-1 — a disposition needs a named person (GR_DISPOSER_NAMED).
+  const receiving = buyer(personWith('receiving'));
   const byNumber = (grNumber: string): GoodsReceipt => {
     const gr = goodsReceiptStore.all().find((g) => g.grNumber === grNumber);
     expect(gr, grNumber).toBeDefined();

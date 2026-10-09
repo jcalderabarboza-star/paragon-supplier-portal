@@ -338,6 +338,39 @@ targets). They measure different things; this file keeps them separate.
 > on. The verb still has no caller on any surface. This closes the one deciding verb the SUP-1
 > block below lists as open; the other verbs in that list are unchanged.
 >
+> **RE-HARVEST (2026-10-09, E2E-1).** A named person decides on three more lanes. No figure moved:
+> service surface, catalog, flows and wired targets are as FIN-1 left them. Three policy hooks are
+> new, each evaluated FIRST on its verbs, and each with one refusal: the commanding scope's `actor`
+> is absent or `UNATTRIBUTED`. A `RESOLVED` actor is admitted, a sample person included. The reason
+> names nobody. On a refusal nothing is stored and the state does not move.
+> `pr_decider_named` — `PR_DECIDER_UNATTRIBUTED` — on `t_pr_approve`, `t_pr_reject`.
+> `publication_actor_named` — `PUBLICATION_ACTOR_UNATTRIBUTED` — on `t_publication_publish`,
+> `t_publication_discard`, `t_publication_withdraw`.
+> `gr_disposer_named` — `GR_DISPOSER_UNATTRIBUTED` — on `t_gr_approve`, `t_gr_partial_approve`,
+> `t_gr_reject`.
+> **A REQUISITION APPROVAL OR REJECTION, A PUBLICATION PUBLISH, DISCARD OR WITHDRAW, AND A
+> GOODS-RECEIPT DISPOSITION ARE THEREFORE REFUSED FOR A SCOPE THAT NAMES NO PERSON.** The hooks
+> that stood on those verbs are unchanged and run after the new one: `pr_approval_attributed` on
+> `t_pr_approve` (it still refuses an `approvedBy` key in the payload, and a scope with no actor);
+> `pr_reject_reason_authored` on `t_pr_reject`; `pub_has_lines`, `pub_firm_lines_approved` and
+> `pub_class_projection_present` on `t_publication_publish`; `pub_text_authored` on
+> `t_publication_withdraw`; the rollup hook and, on the two acceptance verbs, `gr_receipt_compliant`
+> on the goods-receipt dispositions. `t_publication_discard` had no hook and now has this one.
+> **NOT CHANGED, AND STILL OPEN TO A SEAT THAT NAMES NOBODY:** `t_pr_create`, `t_pr_submit`,
+> `t_pr_revise`, `t_publication_open`, `t_publication_allocate`, `t_gr_create`,
+> `t_gr_start_inspection`, `t_gr_record_inspection`, `t_gr_hold`, `t_gr_request_retest`,
+> `t_gr_post`. None of the eight verbs above is in the open list the SUP-1 block below carries, so
+> that list is unchanged.
+> **`t_rfq_create`'s PAYLOAD GAINED ONE OPTIONAL FIELD, `requestedDeliveryDate`** (`YYYY-MM-DD`).
+> It is not a required field and no hook examines it. The target stores it on the event only when
+> it is stated; an absent or empty value stores nothing. **THE SUPPLIER'S READ OF AN EVENT CARRIES
+> THE SAME OPTIONAL `requestedDeliveryDate`**, present only when the event states one.
+> **AN EXCHANGE RATE'S AGE AND ITS FUTURE-DATE CHECK ARE JUDGED AT THE DECLARED PRESENT.** A rate
+> whose `asOf` is more than seven days before the declared present is stale (`FX_STALE`) on the
+> comparison, and a typed `asOf` after the declared present is refused as a future date before
+> `t_rfq_fx_pin` is dispatched. Both read the wall clock until this batch. `rfq_fx_pin_well_formed`
+> is unchanged and examines no clock.
+>
 > **RE-HARVEST (2026-10-08, SUP-1).** A named person decides. No figure moved: service surface,
 > catalog, flows and wired targets are as OPS-3 left them. Six policy hooks are new, each evaluated
 > FIRST on its verbs, and each with one refusal: the commanding scope's `actor` is absent or

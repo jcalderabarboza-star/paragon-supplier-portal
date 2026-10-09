@@ -42,6 +42,9 @@ import {
 } from '../../services/sdc/materialRuling';
 import { DECLARED_PRESENT, DECLARED_PRESENT_INSTANT } from '../../services/data/fixturePresent';
 import { personLabel } from '../../services/identity/personLabel';
+import { useCurrentIdentity } from '../../context/CurrentIdentityContext';
+import ActorPreActNotice from '../ui-v2/ActorPreActNotice';
+import { namedSeatRefusalKey } from '../../lib/namedSeatRefusal';
 import { rolesHolding } from '../../services/transitions/businessRoles';
 import { ownerLabelKeys } from '../../services/transitions/handoff';
 import { blocks, effectiveEnforcement } from '../../lib/enforcement';
@@ -706,6 +709,14 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
   const { toast } = useToast();
   const { t } = useTranslation();
   const refusalText = useRefusalText();
+  // E2E-1 — accepting or rejecting received goods needs a named person
+  // (`GR_DISPOSER_NAMED`); that refusal has its own sentence, in the reader's
+  // language.
+  const { identity } = useCurrentIdentity();
+  const seatRefusal = (reason: string | undefined): string | null => {
+    const key = namedSeatRefusalKey(reason);
+    return key ? t(key) : null;
+  };
   // Display resolver for the shared inspection tokens (Pass/Fail/N/A). The radio
   // state value stays canonical EN (checked/onChange use `v`); only the visible
   // label localizes — the recorded visualCheck/packagingCheck are never touched.
@@ -1751,6 +1762,15 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
           </div>
         )}
 
+        {/* E2E-1 — said before the act: whose name the decision carries, or
+            that this seat names nobody and the decision will be refused. */}
+        {!holdInstead && (
+          <ActorPreActNotice
+            unattributedKey="identity.preAct.namedRequired"
+            testId="gr-dispose-pre-act"
+          />
+        )}
+
         {!holdInstead && derivedDisposition === 'Rejected' && (
           <div>
             {labelFor(t('goodsReceipt.wizard.field.rejectionReasonRequired'))}
@@ -1967,7 +1987,8 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
         title: t(`goodsReceipt.resume.failed.${res.step}`, { grNumber: gr.grNumber }),
         description: missing
           ? t('gr.dispose.missingReason')
-          : (refusalText(res.result.reason) ??
+          : (seatRefusal(res.result.reason) ??
+            refusalText(res.result.reason) ??
             t('gr.dispose.failed.desc', { reason: res.result.reason ?? '' })),
       });
       onComplete();
@@ -1997,6 +2018,19 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
     const asnReference = activeSource?.asnNumber ?? manualASN.trim();
 
     try {
+      // E2E-1 — THE MIRROR OF `GR_DISPOSER_NAMED`, AT THE ENTRANCE. This form
+      // creates the receipt and then decides it; a seat that names nobody would
+      // be refused at the decision with the receipt already created. So the
+      // decision is refused here, before anything is recorded. A hold is not a
+      // decision and stays open to the seat.
+      if (!holdInstead && identity.actor.kind !== 'RESOLVED') {
+        toast({
+          variant: 'warning',
+          title: t('gr.dispose.needsPerson.title'),
+          description: t('identity.refused.namedRequired'),
+        });
+        return;
+      }
       if (resume) {
         await completeResume(resume);
         return;
@@ -2082,7 +2116,9 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
             title: t('gr.dispose.failed.title', { grNumber }),
             description: missing
               ? t('gr.dispose.missingReason')
-              : (refusalText(finalizeRes.reason) ?? t('gr.dispose.failed.desc', { reason: finalizeRes.reason ?? '' })),
+              : (seatRefusal(finalizeRes.reason) ??
+                refusalText(finalizeRes.reason) ??
+                t('gr.dispose.failed.desc', { reason: finalizeRes.reason ?? '' })),
           });
           onComplete();
           return;

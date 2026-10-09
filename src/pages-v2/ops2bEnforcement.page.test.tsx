@@ -13,7 +13,7 @@
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { screen, fireEvent, waitFor } from '@testing-library/react';
-import { renderWithProviders, BUYER } from '../test/test-utils';
+import { renderWithProviders, BUYER, BUYER_NAMED } from '../test/test-utils';
 import { MockCommandService } from '../services/data/mock/MockCommandService';
 import { goodsReceiptStore } from '../services/data/mock/stores/goodsReceiptStore';
 import { asnStore } from '../services/data/mock/stores/asnStore';
@@ -27,7 +27,6 @@ import { receiptComplianceBlocks } from '../services/data/receiptCompliance';
 import { PERSONA_SYSTEM_ROLES } from '../services/transitions/businessRoles';
 import { POLICY_HOOKS } from '../services/transitions/policyHooks';
 import { refusedByPolicy } from '../services/transitions/refusalMessage';
-import { NO_PERSON } from '../context/noPerson';
 import i18n from '../lib/i18n';
 import BuyerGoodsReceipt from './BuyerGoodsReceipt';
 import { useToast } from '../hooks/useToast';
@@ -37,7 +36,8 @@ const buyerScope: QueryScope = {
   personaType: 'buyer',
   supplierId: null,
   businessRoles: PERSONA_SYSTEM_ROLES.buyer,
-  actor: NO_PERSON,
+  // E2E-1 — a disposition needs a named person (GR_DISPOSER_NAMED).
+  actor: BUYER_NAMED.actor,
 };
 
 function ToastSpy() {
@@ -92,8 +92,8 @@ const next = () => screen.getByRole('button', { name: 'Next' });
 const radios = (name: RegExp) => screen.getAllByRole('radio', { name });
 
 /** New GR → pick the ASN → details → quality. */
-const openQualityOn = async (asnNumber: string) => {
-  renderWithProviders(<Receiving />, { identity: BUYER });
+const openQualityOn = async (asnNumber: string, identity = BUYER) => {
+  renderWithProviders(<Receiving />, { identity });
   await screen.findByText('Rejection Rate (30d)');
   fireEvent.click(screen.getByRole('button', { name: /New GR/i }));
   fireEvent.click(await screen.findByText(asnNumber));
@@ -115,7 +115,8 @@ describe('OPS-2b · PO-2025-00105 is received end to end through the form', () =
   it('both lines pass on SAMPLE data once the two checks are answered, and the receipt posts', async () => {
     asnStore.add(asnOf('ASN-OPS2B-105', 'sup-005', 'Sample Personal Care Emulsifiers GmbH', 'PO-2025-00105', ['AI-NIAC-6601', 'AI-HYALU-6610']));
     const before = goodsReceiptStore.all().length;
-    await openQualityOn('ASN-OPS2B-105');
+    // E2E-1 — a disposition needs a named person (GR_DISPOSER_NAMED).
+    await openQualityOn('ASN-OPS2B-105', BUYER_NAMED);
 
     // Each line names the certificate it rests on; the hyaluronate's is the
     // SAMPLE certificate this batch added, and it says so in its number.

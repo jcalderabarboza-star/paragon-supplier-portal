@@ -39,7 +39,7 @@ export const modulesEn: Record<string, string> = {
   'modules.description.SHP': 'Advance shipping notices and the shipments they describe.',
   'modules.description.GRC': 'Receiving goods at the dock, inspecting them and posting the receipt.',
   'modules.description.INV': 'Supplier invoices, matching, disputes and payment release.',
-  'modules.description.INT': 'Analytics, scorecards, risk and inventory views built on the other modules.',
+  'modules.description.INT': 'Analytics, scorecards and risk views built on the other modules.',
 
   'modules.part.applications': 'Applications',
   'modules.part.discovery': 'Discovery & marketplace',
@@ -187,7 +187,7 @@ export const modulesId: Record<string, string> = {
   'modules.description.SHP': 'Pemberitahuan pengiriman (ASN) dan pengiriman yang dijelaskannya.',
   'modules.description.GRC': 'Menerima barang di dok, menginspeksinya, dan memposting penerimaan.',
   'modules.description.INV': 'Faktur pemasok, pencocokan, sengketa, dan pelepasan pembayaran.',
-  'modules.description.INT': 'Analitik, kartu skor, risiko, dan tampilan persediaan yang dibangun di atas modul lain.',
+  'modules.description.INT': 'Analitik, kartu skor, dan tampilan risiko yang dibangun di atas modul lain.',
 
   'modules.part.applications': 'Pengajuan',
   'modules.part.discovery': 'Penemuan & marketplace',

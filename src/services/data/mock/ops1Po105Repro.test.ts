@@ -37,6 +37,8 @@ const named = (role: string): QueryScope => ({
 });
 const approver = named('finance');
 const releaser = named('buyer_all');
+// E2E-1 — a disposition needs a named person (GR_DISPOSER_NAMED).
+const receiver = named('receiving');
 
 const fire = (scope: QueryScope, entity: string, transitionId: string, entityId?: string, payload?: Record<string, unknown>) =>
   svc.dispatch(scope, { transitionId, entity, entityId, payload });
@@ -94,7 +96,7 @@ const twoInvoicesThenReceipt = async (niacinamideAccepted: number): Promise<[str
   });
   expect(gr.status, gr.reason).toBe('done');
   for (const verb of ['t_gr_start_inspection', 't_gr_approve', 't_gr_post']) {
-    const res = await fire(buyer, 'goodsReceipt', verb, gr.entityId);
+    const res = await fire(receiver, 'goodsReceipt', verb, gr.entityId);
     expect(res.status, `${verb}: ${res.reason}`).not.toBe('failed');
   }
   return [ids[0], ids[1]];

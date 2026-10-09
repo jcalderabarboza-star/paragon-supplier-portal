@@ -74,10 +74,10 @@ describe('H1 · the figures D1 §1 states', () => {
     expect(Object.keys(SYSTEM_ROLES).length).toBe(13);
   });
 
-  it('sample roster: 11 people, no person id repeated', () => {
+  it('sample roster: 16 people, no person id repeated', () => {
     // The namespace itself is `simUsrNamespace.test.ts`'s to police (CLAUDE.md:
     // the `sim-usr-` prefix is read as a string in exactly one place).
-    expect(SAMPLE_PEOPLE.length).toBe(11);
+    expect(SAMPLE_PEOPLE.length).toBe(16);
     expect(new Set(SAMPLE_PEOPLE.map((p) => p.personId)).size).toBe(SAMPLE_PEOPLE.length);
   });
 

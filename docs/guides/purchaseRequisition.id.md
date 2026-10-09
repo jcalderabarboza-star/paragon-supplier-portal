@@ -24,7 +24,7 @@ Dua peran menyentuhnya. **Pemohon** (requisitioner) membuat permintaan, mengirim
 
 Prosesnya dimulai di **Draft** (Draf) dan, pada pohon kode sebagaimana dibangun, berakhir di **Approved** (Disetujui) atau **Sourcing Event** (Acara Sourcing). Keadaan **PO Created** (PO Dibuat) adalah akhir yang dideklarasikan, tetapi tidak ada yang bisa mencapainya hari ini: langkah yang akan menutup lingkaran (`t_pr_convert`) ditulis sebagai kaskade tanpa tautan di belakangnya — pesanan pembelian dibuat di S/4HANA dan dimaksudkan tiba di sini sebagai fakta. **Rejected** (Ditolak) sengaja bukan akhir: permintaan yang ditolak kembali ke tangan pemohon dan berputar lagi.
 
-Penanda kejujuran. Data demo bersifat **SIMULASI**: permukaan usulan membawa pil *"Sampel — menunggu produsen PR live (SOMO / Grid)"* dan enam baris fixture adalah sampel yang ditulis tangan; satu baris tambahan (`PR-2026-901`) ditumbuhkan melalui verba sungguhan saat aplikasi dimulai. Tidak ada orang yang masuk sesi, sehingga setiap persetujuan dicatat sebagai *"Tanpa atribusi — tidak ada orang dalam sesi"* dan panel menyatakannya sebelum dan sesudah tindakan. Band *"Diarahkan ke"* pada permintaan ditulis pada dokumen, bukan dihitung dari nilainya, dan panel juga menyatakan itu.
+Penanda kejujuran. Data demo bersifat **SIMULASI**: permukaan usulan membawa pil *"Sampel — menunggu produsen PR live (SOMO / Grid)"* dan enam baris fixture adalah sampel yang ditulis tangan; satu baris tambahan (`PR-2026-901`) ditumbuhkan melalui verba sungguhan saat aplikasi dimulai. Kursi terbuka tanpa menyebut siapa pun, dan kursi yang tidak menyebut siapa pun tidak boleh menyetujui maupun menolak (`pr_decider_named`): panel menyatakannya sebelum tindakan, dan tindakan itu ditolak tanpa ada yang dicatat. Pilih pengguna contoh di panel identitas dan keputusan dicatat atas nama orang itu, yang labelnya membawa *(CONTOH)* karena direktori pengguna belum ada. Band *"Diarahkan ke"* pada permintaan ditulis pada dokumen, bukan dihitung dari nilainya, dan panel juga menyatakan itu.
 
 <!-- section:lifecycle -->
 ## 2 · Alur siklus hidup
@@ -93,12 +93,12 @@ Penanda kejujuran. Data demo bersifat **SIMULASI**: permukaan usulan membawa pil
 - **Operator — lakukan:** setujui bahwa kebutuhannya nyata dan ada dananya. Tidak ada pengadaan atau pemesanan sebelum ini.
 - **Operator — isi:** tidak ada yang diisi. Siapa yang menyetujui diambil dari sesi, tidak pernah diketik.
 - **Penguji — status yang diharapkan:** Approved
-- **Penguji — konfirmasi:** chip status *Disetujui*; panel mendapat baris *Disetujui oleh* yang hari ini berbunyi *"Tanpa atribusi — tidak ada orang dalam sesi"*; bagian *Disetujui — siap disourcing* muncul dengan **Ajukan acara sourcing**. Toast: *"{nomor} disetujui — Dicatat pada permintaan ini tanpa atribusi."* Kursi pemohon melihat *"Menunggu Pengadaan"* alih-alih tombol.
+- **Penguji — konfirmasi:** chip status *Disetujui*; panel mendapat baris *Disetujui oleh* yang memuat label orang pada kursi itu — orang contoh ditandai *(CONTOH)*; bagian *Disetujui — siap disourcing* muncul dengan **Ajukan acara sourcing**. Toast: *"{nomor} disetujui — Dicatat pada permintaan ini sebagai disetujui oleh {person}."* Sebelum tindakan, panel berbunyi *"Ini akan dicatat atas nama {person}."* Dari kursi yang tidak menyebut siapa pun, panel berbunyi *"Kursi ini tidak menyebut siapa pun, sehingga tindakan ini akan ditolak. Pilih pengguna contoh di panel identitas terlebih dahulu."*; **Setujui** tetap aktif, dan bila ditekan baris tetap di *Menunggu Persetujuan* dengan toast *"{nomor} tidak disetujui"* dan *"Ditolak: kursi ini tidak menyebut siapa pun, dan tindakan ini dicatat atas nama orang yang melakukannya. Pilih pengguna contoh di panel identitas, lalu ulangi."* Kursi pemohon melihat *"Menunggu Pengadaan"* alih-alih tombol.
 - **Penguji — peristiwa pemicu:** `t_pr_approve`
-- **Pemeriksaan yang dapat menolak:** `pr_approval_attributed` — dua paruh dari satu aturan: permintaan tidak boleh mencoba menyebut siapa yang menyetujui (kunci payload `approvedBy` ditolak berdasarkan nama, apa pun nilainya), dan sesi harus membawa aktor. Aktor sesi *tanpa atribusi* diterima — itu catatan jujur bahwa tidak ada yang bisa disebutkan, dan menolaknya akan membuat persetujuan tidak terjangkau.
+- **Pemeriksaan yang dapat menolak:** `pr_decider_named` — kursi harus menyebut seseorang (`PR_DECIDER_UNATTRIBUTED`); pemeriksaan ini berjalan lebih dulu, dan pada penolakan tidak ada yang dicatat. Orang contoh diterima. `pr_approval_attributed` berjalan sesudahnya — dua paruh dari satu aturan: permintaan tidak boleh mencoba menyebut siapa yang menyetujui (kunci payload `approvedBy` ditolak berdasarkan nama, apa pun nilainya), dan sesi harus membawa aktor.
 - **Glosarium:** `POLICY_REJECTED`, `ACTOR_IN_PAYLOAD`, `NO_PERSON_IN_SESSION`.
-- **Kejujuran:** setiap persetujuan dalam demo dicatat tanpa orang. Band *"Diarahkan ke"* pada dokumen (Section Head / Procurement Head / VP Procurement) ditulis pada fixture — tidak diturunkan dari nilai dan tidak menentukan siapa yang boleh menyetujui.
-<!-- src: src/services/transitions/flows/purchaseRequisition.flow.ts:87; src/services/transitions/policies.ts:574; src/pages-v2/BuyerRequisitions.tsx:948; src/pages-v2/BuyerRequisitions.tsx:434; src/services/data/mock/MockCommandService.ts:740; src/lib/i18n/requisitions.ts:305; src/lib/i18n/requisitions.ts:382; src/lib/i18n/requisitions.ts:351 -->
+- **Kejujuran:** setiap persetujuan dicatat atas nama orang yang bernama — dalam demo seorang pengguna contoh, ditandai demikian di mana pun ia ditampilkan, karena direktori pengguna belum ada. Band *"Diarahkan ke"* pada dokumen (Section Head / Procurement Head / VP Procurement) ditulis pada fixture — tidak diturunkan dari nilai dan tidak menentukan siapa yang boleh menyetujui.
+<!-- src: src/services/transitions/flows/purchaseRequisition.flow.ts:87; src/services/transitions/policies.ts:574; src/pages-v2/BuyerRequisitions.tsx:948; src/pages-v2/BuyerRequisitions.tsx:434; src/services/data/mock/MockCommandService.ts:740; src/lib/i18n/requisitions.ts:305; src/lib/i18n/requisitions.ts:382; src/lib/i18n/requisitions.ts:351; src/services/transitions/flows/purchaseRequisition.flow.ts:94; src/services/transitions/policyHooks.ts:1021; src/services/transitions/policies.ts:2850; src/services/transitions/policies.ts:2912; src/pages-v2/BuyerRequisitions.tsx:1294; src/pages-v2/BuyerRequisitions.tsx:543; src/pages-v2/BuyerRequisitions.tsx:612; src/lib/namedSeatRefusal.ts:21; src/lib/i18n/identity.ts:143-147; src/lib/i18n/requisitions.ts:420 -->
 
 ### t_pr_reject — Tolak <!-- transition:t_pr_reject -->
 
@@ -109,12 +109,12 @@ Penanda kejujuran. Data demo bersifat **SIMULASI**: permukaan usulan membawa pil
 - **Operator — lakukan:** keputusannya tidak. Tulis apa yang perlu diubah pemohon; tombol tetap nonaktif sampai kotak berisi teks.
 - **Operator — isi:** alasan penolakan (wajib, harus berisi lebih dari sekadar spasi).
 - **Penguji — status yang diharapkan:** Rejected
-- **Penguji — konfirmasi:** chip status *Ditolak*; panel menampilkan *"Ditolak karena"* dengan teks apa adanya; toast *"{nomor} ditolak — Alasannya dicatat pada permintaan."*
+- **Penguji — konfirmasi:** chip status *Ditolak*; panel menampilkan *"Ditolak karena"* dengan teks apa adanya; toast *"{nomor} ditolak — Alasannya dicatat pada permintaan."* Dari kursi yang tidak menyebut siapa pun, panel menyatakannya sebelum tindakan, dan **Konfirmasi penolakan** memunculkan toast *"{nomor} tidak ditolak"* dengan kalimat penolakan yang sama seperti pada **Setujui**; baris tetap di *Menunggu Persetujuan* dan tidak ada alasan yang dicatat.
 - **Penguji — peristiwa pemicu:** `t_pr_reject`
-- **Pemeriksaan yang dapat menolak:** `pr_reject_reason_authored` — alasan harus berupa string yang tidak kosong. Pemeriksaan kolom wajib saja menerima string berisi spasi; hook inilah yang menghentikannya.
+- **Pemeriksaan yang dapat menolak:** `pr_decider_named` — kursi harus menyebut seseorang (`PR_DECIDER_UNATTRIBUTED`); pemeriksaan ini berjalan lebih dulu, tidak ada yang dicatat, dan alasannya tidak diperiksa. `pr_reject_reason_authored` — alasan harus berupa string yang tidak kosong. Pemeriksaan kolom wajib saja menerima string berisi spasi; hook inilah yang menghentikannya.
 - **Glosarium:** `MISSING_FIELDS`, `POLICY_REJECTED`.
 - **Kejujuran:** alasan disimpan pada dokumen dan tetap ada selama pemohon merevisinya — hanya penolakan baru yang menggantikannya. Tidak ada yang bisa membuktikan teks itu benar atau relevan; penjaga hanya membuktikan ada sesuatu yang ditulis.
-<!-- src: src/services/transitions/flows/purchaseRequisition.flow.ts:98; src/services/transitions/policies.ts:485; src/pages-v2/BuyerRequisitions.tsx:937; src/pages-v2/BuyerRequisitions.tsx:967; src/pages-v2/BuyerRequisitions.tsx:563; src/services/data/mock/MockCommandService.ts:718; src/lib/i18n/requisitions.ts:307; src/lib/i18n/requisitions.ts:309 -->
+<!-- src: src/services/transitions/flows/purchaseRequisition.flow.ts:98; src/services/transitions/policies.ts:485; src/pages-v2/BuyerRequisitions.tsx:937; src/pages-v2/BuyerRequisitions.tsx:967; src/pages-v2/BuyerRequisitions.tsx:563; src/services/data/mock/MockCommandService.ts:718; src/lib/i18n/requisitions.ts:307; src/lib/i18n/requisitions.ts:309; src/services/transitions/flows/purchaseRequisition.flow.ts:121; src/services/transitions/policies.ts:2912; src/pages-v2/BuyerRequisitions.tsx:1294; src/lib/namedSeatRefusal.ts:21; src/lib/i18n/identity.ts:144-147 -->
 
 ### t_pr_revise — Revisi dan kembalikan ke draf <!-- transition:t_pr_revise -->
 
@@ -167,7 +167,7 @@ Penanda kejujuran. Data demo bersifat **SIMULASI**: permukaan usulan membawa pil
 <!-- section:forks -->
 ## 4 · Percabangan keputusan dan jalur pengecualian
 
-- **Keputusan (di Pending Approval).** Cabang A — `t_pr_approve` — **Kapan:** pengadaan menerima kebutuhan sebagai nyata dan berdana; tidak ada teks yang diminta, dan catatan menyebut aktor sesi (hari ini: tanpa atribusi). Cabang B — `t_pr_reject` — **Kapan:** jawabannya tidak; alasan tertulis wajib dan ditampilkan apa adanya kepada pemohon.
+- **Keputusan (di Pending Approval).** Cabang A — `t_pr_approve` — **Kapan:** pengadaan menerima kebutuhan sebagai nyata dan berdana; tidak ada teks yang diminta, dan catatan menyebut orang pada kursi itu. Cabang B — `t_pr_reject` — **Kapan:** jawabannya tidak; alasan tertulis wajib dan ditampilkan apa adanya kepada pemohon. **Kapan** kursi tidak menyebut siapa pun: kedua cabang ditolak dengan menyebut nama (`PR_DECIDER_UNATTRIBUTED`) sebelum hal lain diperiksa, tidak ada yang dicatat, dan permintaan tetap di *Pending Approval*.
 - **Penolakan dan jalan kembali (di Rejected).** `t_pr_revise` — **Kapan:** pemohon telah mengubah dokumen menanggapi alasan penolakan. Mendarat di Draft, tidak pernah langsung kembali ke antrean, dan `t_pr_submit` adalah paruh kedua dari revisi. Tidak ada jalan keluar lain: permintaan ditolak yang tidak direvisi siapa pun tetap terlihat sebagai *Rejected* dengan alasannya.
 - **Yang terjadi setelah persetujuan (di Approved).** Cabang A — `t_pr_source` — **Kapan:** pengadaan mengajukan RFQ dari permintaan (kolom *Ajukan dari permintaan* pada wizard sourcing); permintaan mencatat nomor RFQ sebagai dokumen tertautnya. Cabang B — `t_pr_convert` — **Kapan:** tidak pernah, hari ini. Jalur PO langsung dideklarasikan untuk sumber pasokan yang sudah ada dan dimiliki S/4HANA.
 - **Jalan buntu yang nyata.** *Sourcing Event* punya satu jalan keluar yang dideklarasikan (`t_pr_convert`) dan tidak bisa menyala, sehingga permintaan yang mencapai *Sourcing Event* tetap di sana; pemenangan RFQ dan PO yang dihasilkan hidup pada dokumen masing-masing.
@@ -180,14 +180,15 @@ Penanda kejujuran. Data demo bersifat **SIMULASI**: permukaan usulan membawa pil
 |---|---|---|---|---|
 | SIMULASI — *"Sampel — menunggu produsen PR live (SOMO / Grid)"* | eksternal (registri liveness) | semua keadaan | selalu, sampai produsen usulan sungguhan tiba | pil kepala halaman dan penanda sel `/buyer/plan-grid` |
 | *"Menunggu Pemohon"* / *"Menunggu Pengadaan"* | diturunkan saat dibaca (kursi vs. atom) | keadaan tempat verba yang ditahan bertindak | kursi tidak memegang atom verba itu | kepala halaman `/buyer/purchase-requisition` (PR Baru) dan kaki panel; laci grid perencanaan (komit usulan berbunyi *"Menunggu Perencanaan"* sejak PLN-3) |
-| *"Tanpa atribusi — tidak ada orang dalam sesi"* | diturunkan saat dibaca | Approved dan seterusnya | selalu dalam demo — tidak ada orang yang masuk | baris *Disetujui oleh* panel; toast persetujuan |
+| *"Kursi ini tidak menyebut siapa pun, sehingga tindakan ini akan ditolak. Pilih pengguna contoh di panel identitas terlebih dahulu."* | diturunkan saat dibaca (aktor kursi) | Pending Approval | kursi memegang setujui atau tolak dan tidak menyebut siapa pun; dengan pengguna contoh terpilih barisnya berbunyi *"Ini akan dicatat atas nama {person}."* | panel, di atas kaki panel; saat tombol ditekan, toast kegagalan |
+| *(CONTOH)* di samping penyetuju | diturunkan saat dibaca (satu-satunya penentu label orang) | Approved dan seterusnya | penyetujunya orang contoh — setiap persetujuan yang diambil dalam demo | baris *Disetujui oleh* panel; toast persetujuan |
 | *"Ditulis pada dokumen — bukan hasil perhitungan dari nilai estimasi."* | ditulis tangan (hanya tampilan) | semua keadaan | setiap kali band *Diarahkan ke* ada; *Belum ditetapkan* bila kosong | *Fakta utama* panel |
 | *Dikomit → {nomor}* / *Ditolak: {alasan}* (tampilan *Tinjauan usulan*); *Terkirim → {nomor}* / *Pengiriman gagal: {alasan}* (laci grid perencanaan) | diturunkan saat dibaca — nomornya dari permintaan yang menyebut baris itu; penolakannya hanya untuk sesi ini | ∅ → Draft | setelah komit usulan berhasil atau ditolak; baris yang sudah dikomit tetapi permintaannya tidak ada di penyimpanan sesi ini berbunyi *"Dikomit — permintaannya tidak ada di penyimpanan sesi ini"* | kolom triase tampilan *Tinjauan usulan* grid perencanaan; kaki lacinya |
 | *Diabaikan* | diangkat operator (dicatat pada baris usulan — `t_intake_dismiss`) | baris usulan (pra-PR) | baris dikesampingkan di tampilan *Tinjauan usulan*; bertahan setelah muat ulang sampai **Pulihkan** | tampilan *Tinjauan usulan* grid perencanaan; sel tab perencanaan baris itu |
 
 Tidak ada penanda berbasis waktu yang diturunkan untuk permintaan: tanggal dibutuhkan ditampilkan tetapi tidak ada yang membandingkannya dengan jam (terukur — tidak ada pembacaan relasional atas `requiredDate`).
 
-<!-- src: src/services/liveness/registry.ts:281; src/lib/i18n/widget.ts:206; src/lib/i18n/roles.ts:277; src/pages-v2/BuyerRequisitions.tsx:611; src/pages-v2/BuyerRequisitions.tsx:1368; src/lib/i18n/requisitions.ts:330; src/lib/i18n/requisitions.ts:351; src/lib/i18n/intakeReview.ts:92-96; src/lib/i18n/planGrid.ts:343-348; src/services/data/mock/stores/intakeLineStore.ts:1-56 -->
+<!-- src: src/services/liveness/registry.ts:281; src/lib/i18n/widget.ts:206; src/lib/i18n/roles.ts:277; src/pages-v2/BuyerRequisitions.tsx:611; src/pages-v2/BuyerRequisitions.tsx:1368; src/lib/i18n/requisitions.ts:330; src/lib/i18n/requisitions.ts:351; src/lib/i18n/intakeReview.ts:92-96; src/lib/i18n/planGrid.ts:343-348; src/services/data/mock/stores/intakeLineStore.ts:1-56; src/pages-v2/BuyerRequisitions.tsx:1294; src/lib/i18n/identity.ts:143-147; src/services/identity/personLabel.ts -->
 
 <!-- section:linked -->
 ## 6 · Objek tertaut
@@ -199,7 +200,7 @@ Tidak ada penanda berbasis waktu yang diturunkan untuk permintaan: tanggal dibut
 | RFQ (acara sourcing) | `linkedDoc` = nomor RFQ | Ditulis oleh kaskade `t_pr_source` dari nomor RFQ yang mengajukannya; pada fixture ditulis tangan. RFQ membawa `sourceRequisitionId` hanya dalam payload pembuatannya — catatan RFQ sendiri tidak membaca balik permintaan itu. |
 | Pesanan pembelian | `linkedDoc` = nomor PO (`PO-2026-00108` pada `pr-001`) | Hanya tampilan. Tidak ada bagian portal yang menulis nomor PO ke permintaan; dua baris *PO Created* ditulis tangan. |
 | Baris usulan (grid perencanaan · tampilan *Tinjauan usulan*) | `intakeLineId` = id baris; `source` = `INTERNAL_GRID` atau `SOMO`; `periodBucket` | Ditulis hanya bila permintaan datang melalui komit usulan — id baris, tanda produsen dan bucket perencanaan (sebuah bucket, tidak pernah tanggal dibutuhkan). Formulir PR Baru membiarkan ketiganya kosong. Baris yang dikomit menemukan permintaannya lewat `intakeLineId`; baris itu tidak menyimpan nomor PR. |
-| Penyetuju | `approvedBy` (atribusi aktor, bukan nama) | Ditulis dari sesi saat persetujuan. Hari ini selalu *tanpa atribusi*. |
+| Penyetuju | `approvedBy` (atribusi aktor, bukan nama) | Ditulis dari sesi saat persetujuan, dan selalu orang yang bernama: kursi yang tidak menyebut siapa pun ditolak. Dalam demo itu adalah orang contoh. Baris fixture yang ditulis pada *Approved* atau sesudahnya tidak membawa penyetuju, sehingga panelnya tidak menampilkan baris *Disetujui oleh*. |
 | Pusat biaya, pemohon, kategori | kolom biasa | Ditulis pada fixture atau diketik di formulir; tidak ada yang mencocokkannya dengan master. |
 | Band persetujuan | `approvalLevel` (*Diarahkan ke*) | Ditulis tangan; `''` berarti *Belum ditetapkan*. Bukan catatan siapa yang menyetujui. |
 | Nilai estimasi | `estimatedValue` (opsional) | Ada hanya bila disediakan; tanda hubung bila tidak. Tidak pernah nol buatan. |
@@ -210,20 +211,20 @@ Tidak ada penanda berbasis waktu yang diturunkan untuk permintaan: tanggal dibut
 <!-- section:history -->
 ## 7 · Riwayat status
 
-Setiap dispatch menulis satu `TransitionEvent`: `event` = id transisi, `actor` = `buyer:all` untuk setiap kursi pembeli (aktor audit menyebut kursi, bukan orang), `ts`, `outcome`, satu `correlationId` per perintah, dan pada kaskade sebuah `causationId` yang menunjuk perintah penyebabnya. Kolom terpisah `attribution` membawa siapa yang bisa disebutkan — hari ini *tanpa atribusi*. Perintah yang ditolak juga dicatat, beserta alasannya.
+Setiap dispatch menulis satu `TransitionEvent`: `event` = id transisi, `actor` = `buyer:all` untuk setiap kursi pembeli (aktor audit menyebut kursi, bukan orang), `ts`, `outcome`, satu `correlationId` per perintah, dan pada kaskade sebuah `causationId` yang menunjuk perintah penyebabnya. Kolom terpisah `attribution` membawa siapa yang bisa disebutkan: selalu seseorang pada persetujuan atau penolakan yang diterima, dan *tanpa atribusi* pada verba lain kecuali kursi telah memilih pengguna contoh. Perintah yang ditolak juga dicatat, beserta alasannya.
 
-Urutan kerja untuk `PR-2026-901`, yang ditumbuhkan seed awal melalui verba sungguhan (dua lingkup — kursi pemohon membuat dan mengajukan, kursi pengadaan menyetujui):
+Urutan kerja untuk `PR-2026-901`, yang ditumbuhkan seed awal melalui verba sungguhan (dua lingkup — kursi pemohon yang tidak menyebut siapa pun membuat dan mengajukan, kursi pengadaan yang membawa orang contoh menyetujui):
 
 | Waktu | Dari → ke | Aktor (peran) | Pemicu | Event |
 |---|---|---|---|---|
 | T+0 | ∅ → Draft | requisitioner (`buyer:all`) | pembuatan — `Wardah Floral Accord`, 250 KG | `t_pr_create` |
 | T+1 | Draft → Pending Approval | requisitioner (`buyer:all`) | ajukan | `t_pr_submit` |
-| T+2 | Pending Approval → Approved | procurement (`buyer:all`) | setujui, tanpa `approvedBy` dalam payload | `t_pr_approve` |
+| T+2 | Pending Approval → Approved | procurement (`buyer:all`) | setujui, tanpa `approvedBy` dalam payload; dicatat atas nama orang contoh pengadaan | `t_pr_approve` |
 | T+3 (penguji) | Approved → Sourcing Event | automation, `causationId` = `correlationId` RFQ | pengadaan mengajukan RFQ dengan *Ajukan dari permintaan* = `PR-2026-901` | `t_pr_source` |
 
 Penguji yang melanjutkan dari T+3 tidak akan menemukan event lanjutan: `t_pr_convert` tidak pernah dipancarkan.
 
-<!-- src: src/services/transitions/events.ts:26; src/services/transitions/events.ts:127; src/services/data/mock/requisitionSeed.ts:23; src/services/data/mock/requisitionSeed.ts:119 -->
+<!-- src: src/services/transitions/events.ts:26; src/services/transitions/events.ts:127; src/services/data/mock/requisitionSeed.ts:23; src/services/data/mock/requisitionSeed.ts:119; src/services/data/mock/requisitionSeed.ts:90; src/services/transitions/dispatcher.ts:480 -->
 
 <!-- section:troubleshooting -->
 ## 8 · Pemecahan masalah
@@ -232,6 +233,7 @@ Penguji yang melanjutkan dari T+3 tidak akan menemukan event lanjutan: `t_pr_con
 |---|---|---|---|
 | Tidak ada tombol **PR Baru**; kepala halaman menampilkan *"Menunggu Pemohon"* | notis serah-terima di kepala halaman | kursi tidak memegang `pr:create` (mis. kursi khusus pengadaan) | bertindak dari kursi yang memegang jalur pemohon, atau persempit/ambil peran di panel identitas |
 | **Setujui** / **Tolak** tidak ada; kaki panel menampilkan *"Menunggu Pengadaan"* | notis serah-terima di kaki panel pada baris *Menunggu Persetujuan* | kursi tidak memegang `pr:approve` / `pr:reject` — termasuk kursi **perencanaan** yang membuat permintaan itu dari grid: perencanaan mengomit, pengadaan menyetujui (R1, PLN-3) | alihkan keputusan ke kursi pengadaan |
+| Toast *"… tidak disetujui"* atau *"… tidak ditolak"* dengan *"Ditolak: kursi ini tidak menyebut siapa pun, dan tindakan ini dicatat atas nama orang yang melakukannya…"* | `POLICY_REJECTED:pr_decider_named` (`PR_DECIDER_UNATTRIBUTED`); panel sudah menyatakannya sebelum tindakan | kursi tidak menyebut siapa pun — belum ada pengguna contoh yang dipilih di panel identitas | pilih pengguna contoh di panel identitas, lalu ulangi tindakannya |
 | Toast *"… tidak disetujui"* dengan *"Peran Anda tidak diizinkan…"* | `ROLE_NOT_PERMITTED:pr:approve` | dispatch buatan tangan tanpa atom (permukaan menahan tombolnya) | sama seperti di atas |
 | Toast *"… tidak ditolak"* menyebut *rejectionReason* | `MISSING_FIELDS:rejectionReason` atau `POLICY_REJECTED:pr_reject_reason_authored` | kotak alasan kosong atau hanya spasi | tulis alasannya, lalu konfirmasi |
 | Toast *"… tidak direvisi"* | `MISSING_FIELDS:revisionNote` / `POLICY_REJECTED:pr_revision_note_authored` | *Apa yang berubah* dibiarkan kosong | tulis apa yang berubah |
@@ -243,7 +245,7 @@ Penguji yang melanjutkan dari T+3 tidak akan menemukan event lanjutan: `t_pr_con
 | Permintaan tertahan di *Acara Sourcing* / tidak pernah *PO Dibuat* | tidak ada jalan keluar yang ditawarkan | `t_pr_convert` tidak punya tautan; konversi PO adalah tindakan S/4HANA | wajar hari ini; bukan cacat yang perlu dikejar |
 | Tindakan pada alur ini ditolak untuk setiap kursi, apa pun perannya | penolakan menyebut `MODULE_INACTIVE:REQ`; bila permukaan memeriksa lebih dulu, kontrol terbaca *"Dinonaktifkan — Permintaan pembelian"* | modul Permintaan pembelian dinonaktifkan; halamannya tetap dapat dibaca | minta modul diaktifkan kembali di `/buyer/platform/modules/admin`; perubahan peran tidak membantu, karena pemeriksaan modul berjalan sebelum pemeriksaan peran |
 
-<!-- src: src/services/transitions/refusals.ts:61; src/lib/glossary/refusals.glossary.ts:324; src/lib/i18n/requisitions.ts:402; src/services/data/mock/MockCommandService.ts:2918 -->
+<!-- src: src/services/transitions/refusals.ts:61; src/lib/glossary/refusals.glossary.ts:324; src/lib/i18n/requisitions.ts:402; src/services/data/mock/MockCommandService.ts:2918; src/services/transitions/policies.ts:2912; src/lib/namedSeatRefusal.ts:21; src/lib/i18n/identity.ts:146 -->
 
 <!-- section:testdata -->
 ## 9 · Data uji
@@ -252,11 +254,11 @@ Penguji yang melanjutkan dari T+3 tidak akan menemukan event lanjutan: `t_pr_con
 |---|---|---|---|
 | Draft | `pr-005` | PR-2026-00345 | *Folding Carton 150gsm Wardah*; pakai untuk menjalani **Ajukan untuk persetujuan** |
 | Pending Approval | `pr-004` | PR-2026-00344 | *Halal Glycerin 99.5%*; pakai untuk menjalani **Setujui** atau **Tolak** |
-| Approved | `PR-2026-901`; `pr-002` | PR-2026-901; PR-2026-00342 | `PR-2026-901` ditumbuhkan saat aplikasi dimulai melalui buat → ajukan → setujui dan kategorinya (`Fragrance`) bisa dibawa wizard sourcing; `pr-002` (*Packaging Primary*) bisa disourcing tetapi kategorinya tidak diprefill |
+| Approved | `PR-2026-901`; `pr-002` | PR-2026-901; PR-2026-00342 | `PR-2026-901` ditumbuhkan saat aplikasi dimulai melalui buat → ajukan → setujui, disetujui oleh orang contoh pengadaan, dan kategorinya (`Fragrance`) bisa dibawa wizard sourcing; `pr-002` (*Packaging Primary*) bisa disourcing tetapi kategorinya tidak diprefill, dan sebagai baris yang ditulis tangan ia tidak menampilkan baris *Disetujui oleh* |
 | Sourcing Event | `pr-003` | PR-2026-00343 | tertaut ke `RFQ-2026-004` (ditulis tangan) |
 | PO Created | `pr-001`; `pr-006` | PR-2026-00341; PR-2026-00340 | akhir yang ditulis tangan; tertaut ke `PO-2026-00108` / `PO-2026-00106`; tidak terjangkau oleh tindakan apa pun |
 | Rejected | — | — | tidak ada fixture — tolak `PR-2026-00344` untuk menghasilkannya |
 
 Semua baris adalah data sampel SIMULASI (lihat §5). Nomor yang ditetapkan store untuk permintaan baru berlanjut dari `PR-2026-901` ke atas dalam satu sesi.
 
-<!-- src: src/services/data/mock/fixtures/buyerRequisitions.ts:22; src/services/data/mock/requisitionSeed.ts:60; src/services/data/mock/stores/purchaseRequisitionStore.ts:42 -->
+<!-- src: src/services/data/mock/fixtures/buyerRequisitions.ts:22; src/services/data/mock/requisitionSeed.ts:60; src/services/data/mock/requisitionSeed.ts:90; src/services/data/mock/stores/purchaseRequisitionStore.ts:42 -->

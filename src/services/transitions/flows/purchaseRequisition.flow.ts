@@ -90,7 +90,8 @@ export const purchaseRequisitionFlow: FlowDefinition = {
       trigger: 'user',
       requiredRole: 'pr:approve',
       requiredFields: [],
-      policyHooks: [POLICY_HOOKS.PR_APPROVAL_ATTRIBUTED],
+      // E2E-1 — a named person decides; the unnamed seat is refused FIRST.
+      policyHooks: [POLICY_HOOKS.PR_DECIDER_NAMED, POLICY_HOOKS.PR_APPROVAL_ATTRIBUTED],
       surfaceable: { surfaced: true },
       version: 1,
     },
@@ -117,7 +118,7 @@ export const purchaseRequisitionFlow: FlowDefinition = {
       // value-level guard can, exactly as the qty floor cannot tell 2400 from
       // 2.4 — and that limit is stated rather than papered over.
       requiredFields: ['rejectionReason'],
-      policyHooks: [POLICY_HOOKS.PR_REJECT_REASON_AUTHORED],
+      policyHooks: [POLICY_HOOKS.PR_DECIDER_NAMED, POLICY_HOOKS.PR_REJECT_REASON_AUTHORED],
       surfaceable: { surfaced: true },
       version: 1,
     },

@@ -58,6 +58,11 @@ const PLANNING_1: CurrentIdentity = {
 };
 const REQUISITIONER: CurrentIdentity = { ...BUYER_IDENTITY, businessRoles: ['requisitioner'] };
 const PROCUREMENT: CurrentIdentity = { ...BUYER_IDENTITY, businessRoles: ['procurement'] };
+// E2E-1 — approving or rejecting a requisition needs a named person (PR_DECIDER_UNATTRIBUTED).
+const PROCUREMENT_NAMED: CurrentIdentity = {
+  ...PROCUREMENT,
+  actor: { kind: 'RESOLVED', person: { personId: SAMPLE_PEOPLE.find((p) => p.role === 'procurement' && p.ordinal === 1)!.personId } },
+};
 const scopeOf = (roles: readonly string[], personId?: string): QueryScope => ({
   personaType: 'buyer',
   supplierId: null,
@@ -448,7 +453,7 @@ describe('PLN-4 · R3 — bulk submit and bulk approve, each act gated on its ow
     const [a, b] = await twoDrafts();
     const svc = new MockCommandService();
     for (const p of [a, b]) await svc.dispatch(scopeOf(['requisitioner']), { transitionId: 't_pr_submit', entity: 'purchaseRequisition', entityId: p.id });
-    renderWithProviders(<BuyerRequisitions />, { identity: PROCUREMENT });
+    renderWithProviders(<BuyerRequisitions />, { identity: PROCUREMENT_NAMED });
     await screen.findByText(a.prNumber);
     fireEvent.click(screen.getByTestId('pr-select-all'));
     const pending = purchaseRequisitionStore.all().filter((r) => r.status === 'Pending Approval').length;

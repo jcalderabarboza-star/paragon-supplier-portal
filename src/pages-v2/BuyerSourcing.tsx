@@ -87,6 +87,7 @@ import {
   readRfqBudget,
   readRfqTotalQty,
   type RfqDraftRefusal,
+  deliveryDateTooEarly,
 } from './sourcing/rfqCreateModel';
 import {
   codeLessOfKeys,
@@ -232,7 +233,7 @@ type GroupTab = 'all' | 'open' | 'pending' | 'awarded' | 'closed' | 'concluded';
 // a category the wizard happily offers.
 const CATEGORY_OPTIONS: readonly RFQCategory[] = RFQ_CATEGORY_OPTIONS;
 
-const CATEGORY_TO_SUPPLIER_CATEGORY: Record<RFQCategory, string[]> = {
+export const CATEGORY_TO_SUPPLIER_CATEGORY: Record<RFQCategory, string[]> = {
   Fragrance: ['Fragrance'],
   'Active Ingredients': ['Active Ingredient'],
   Packaging: ['Packaging'],
@@ -390,8 +391,9 @@ const isAwardable = (r: RFQ, quoteCount: number): boolean =>
   (r.status === 'Open' || r.status === 'Closed') && quoteCount > 0;
 
 const UOM_OPTIONS = RFQ_UOM_OPTIONS; // C.2 — shared with the prefill membership check
-const INCOTERMS_OPTIONS = ['FOB', 'CIF', 'EXW', 'DDP', 'FCA'];
-const PAYMENT_TERMS_OPTIONS = [
+export const INCOTERMS_OPTIONS = ['FOB', 'CIF', 'EXW', 'DDP', 'FCA'];
+const DEFAULT_INCOTERM = 'CIF';
+export const PAYMENT_TERMS_OPTIONS = [
   'Net 30',
   'Net 45',
   'Net 60',
@@ -987,6 +989,8 @@ interface DraftRfq {
   budget: string;
   responseDeadline: string;
   awardDeadline: string;
+  /** E2E-1 — optional; '' = none stated. */
+  requestedDeliveryDate: string;
   incoterms: string;
   paymentTerms: string;
   currency: 'IDR' | 'USD';
@@ -1023,7 +1027,7 @@ const applyPrefill = (base: DraftRfq, p: RequisitionPrefill): DraftRfq => ({
   sourceRequisitionId: p.sourceRequisitionId,
 });
 
-const EMPTY_DRAFT: DraftRfq = {
+export const EMPTY_DRAFT: DraftRfq = {
   title: '',
   category: '',
   materials: [],
@@ -1032,7 +1036,11 @@ const EMPTY_DRAFT: DraftRfq = {
   budget: '',
   responseDeadline: '',
   awardDeadline: '',
-  incoterms: 'CIF Jakarta',
+  requestedDeliveryDate: '',
+  // E2E-1 — the default MUST be one of the options. It was 'CIF Jakarta', which
+  // is not: the select then showed its first option (FOB) while the draft kept
+  // the unlisted value, and a buyer who left "FOB" showing saved 'CIF Jakarta'.
+  incoterms: DEFAULT_INCOTERM,
   paymentTerms: 'Net 30',
   currency: 'IDR',
   invitedSupplierIds: [],
@@ -2031,6 +2039,10 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
       // RFx-1 — the mirror of `rfq_publish_deadline_current`. No verb edits an
       // event's deadline, so a draft raised past it could only be cancelled.
       if (responseDeadlinePassed(draft.responseDeadline, TODAY)) return false;
+      // E2E-1 — a delivery date is optional; one that is stated falls after
+      // the award deadline, or the supplier is asked to deliver before a winner
+      // exists.
+      if (deliveryDateTooEarly(draft)) return false;
       return new Date(draft.awardDeadline) > new Date(draft.responseDeadline);
     }
     return true;
@@ -2803,6 +2815,26 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                 )}
             </div>
             <div>
+              <label
+                htmlFor="rfq-wizard-delivery-date"
+                className="text-label text-text-tertiary uppercase block mb-1.5"
+              >
+                {t('sourcing.wizard.field.requestedDelivery')}
+              </label>
+              <input
+                id="rfq-wizard-delivery-date"
+                type="date"
+                value={draft.requestedDeliveryDate}
+                onChange={(e) => updateDraft('requestedDeliveryDate', e.target.value)}
+                className="w-full bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-action"
+              />
+              {deliveryDateTooEarly(draft) && (
+                <p className="text-xs text-danger mt-1" data-testid="rfq-delivery-before-award">
+                  {t('sourcing.wizard.deliveryAfterAward')}
+                </p>
+              )}
+            </div>
+            <div>
               <label className="text-label text-text-tertiary uppercase block mb-1.5">
                 {t('sourcing.wizard.field.incoterms')}
               </label>
@@ -2980,6 +3012,10 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
               [
                 t('sourcing.wizard.review.row.awardDeadline'),
                 draft.awardDeadline || '—',
+              ],
+              [
+                t('sourcing.wizard.review.row.requestedDelivery'),
+                draft.requestedDeliveryDate || t('sourcing.wizard.review.deliveryNone'),
               ],
               [t('sourcing.wizard.review.row.incoterms'), draft.incoterms],
               [t('sourcing.wizard.review.row.paymentTerms'), draft.paymentTerms],
@@ -3718,6 +3754,18 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                   <Data as="dd" className="text-text-primary font-medium">
                     {formatDate(selectedRfq.awardDeadline)}
                   </Data>
+                </div>
+                <div>
+                  <dt className="text-text-tertiary">
+                    {t('sourcing.panel.field.requestedDelivery')}
+                  </dt>
+                  <dd className="text-text-primary font-medium" data-testid="rfq-panel-delivery-date">
+                    {selectedRfq.requestedDeliveryDate ? (
+                      <Data as="span">{formatDate(selectedRfq.requestedDeliveryDate)}</Data>
+                    ) : (
+                      t('sourcing.panel.field.requestedDeliveryNone')
+                    )}
+                  </dd>
                 </div>
                 <div>
                   <dt className="text-text-tertiary">

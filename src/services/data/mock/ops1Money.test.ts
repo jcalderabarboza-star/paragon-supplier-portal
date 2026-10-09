@@ -71,7 +71,8 @@ const receiving: QueryScope = {
   personaType: 'buyer',
   supplierId: null,
   businessRoles: PERSONA_SYSTEM_ROLES.buyer,
-  actor: NO_PERSON,
+  // E2E-1 — a disposition needs a named person (GR_DISPOSER_NAMED).
+  actor: personWith('receiving'),
 };
 const finance = (actor: QueryScope['actor']): QueryScope => ({
   personaType: 'buyer',

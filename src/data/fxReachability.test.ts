@@ -163,6 +163,12 @@ describe('rfq-013 — the pinned twin', () => {
     // hold "stale" permanently, and can hold "fresh" for exactly
     // FX_PIN_MAX_AGE_DAYS days. So the fixture owns the refusal, and the ranked
     // outcome is produced by a buyer recording a rate under their own clock.
+    // E2E-1 — and FIRST at the declared present, which is what the page reads.
+    expect(scoreQuotations(thirteen.map(scorable), { pins: rfq('rfq-013').fxPins })).toEqual({
+      kind: 'refused',
+      reason: 'FX_STALE',
+      currencies: ['USD'],
+    });
     for (const now of [new Date(), new Date('2031-01-01T00:00:00.000Z')]) {
       expect(scoreQuotations(thirteen.map(scorable), { pins: rfq('rfq-013').fxPins, now })).toEqual({
         kind: 'refused',
@@ -176,18 +182,18 @@ describe('rfq-013 — the pinned twin', () => {
     // The positive twin. Without it, a pin refused for being unreadable would
     // pass the spec above and look identical from the outside.
     const pin = effectivePin(rfq('rfq-013').fxPins, 'USD')!;
-    expect(isStalePin(pin, new Date('2026-05-17T00:00:00.000Z'))).toBe(false);
+    // The day after the vintage AS SHIPPED — the corpus is re-anchored, so a
+    // literal day here would sit months before the vintage and prove nothing.
+    const dayAfter = new Date(new Date(pin.asOf).getTime() + 86_400_000);
+    expect(isStalePin(pin, dayAfter)).toBe(false);
     expect(
-      scoreQuotations(thirteen.map(scorable), {
-        pins: rfq('rfq-013').fxPins,
-        now: new Date('2026-05-17T00:00:00.000Z'),
-      }).kind,
+      scoreQuotations(thirteen.map(scorable), { pins: rfq('rfq-013').fxPins, now: dayAfter }).kind,
     ).toBe('scored');
   });
 
   it('turns stale exactly FX_PIN_MAX_AGE_DAYS after the vintage, not after the pinning', () => {
     // `asOf` is what ages, never `pinnedAt` — an old rate recorded this morning
-    // is an old rate. Both pins here were recorded on their own vintage date, so
+    // is an old rate. Both pins here were recorded a week after their vintage, so
     // this also states which field the boundary is measured from.
     const pin = effectivePin(rfq('rfq-013').fxPins, 'USD')!;
     const vintage = new Date(pin.asOf).getTime();

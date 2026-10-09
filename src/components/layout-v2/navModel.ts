@@ -94,6 +94,7 @@ export const BUYER_NAV: readonly NavGroup[] = [
     labelKey: 'nav.section.collaborate',
     items: [
       { labelKey: 'nav.buyer.collaboration', icon: Handshake, path: '/buyer/collaboration' },
+      { labelKey: 'nav.buyer.inventory', icon: Boxes, path: '/buyer/inventory' },
       { labelKey: 'nav.buyer.chase', icon: BellRing, path: '/buyer/chase' },
       { labelKey: 'nav.buyer.commHub', icon: MessageCircle, path: '/buyer/comm-hub' },
     ],
@@ -124,7 +125,6 @@ export const BUYER_NAV: readonly NavGroup[] = [
       { labelKey: 'nav.buyer.analytics', icon: BarChart2, path: '/buyer/analytics' },
       { labelKey: 'nav.buyer.scorecard', icon: Award, path: '/buyer/scorecard' },
       { labelKey: 'nav.buyer.risk', icon: AlertTriangle, path: '/buyer/risk' },
-      { labelKey: 'nav.buyer.inventory', icon: Boxes, path: '/buyer/inventory' },
     ],
   },
   {

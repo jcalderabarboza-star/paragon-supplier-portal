@@ -45,6 +45,8 @@ const seat = (roles: readonly SystemRoleId[], role?: SystemRoleId): QueryScope =
 });
 const BUYER = seat(PERSONA_SYSTEM_ROLES.buyer);
 const PLANNER = seat(['planning']);
+// E2E-1 — publishing, discarding and withdrawing need a named person (PUBLICATION_ACTOR_NAMED).
+const PLANNER_NAMED = seat(['planning'], 'planning');
 const PROCUREMENT = seat(['procurement'], 'procurement');
 const supplier = (supplierId: string): QueryScope => ({
   personaType: 'supplier',
@@ -93,7 +95,7 @@ async function publishOneWeeklyLine(qty = 5000, buckets: readonly string[] = ['2
     });
     expect(signed.status, signed.reason).toBe('done');
   }
-  const published = await fire(PLANNER, 't_publication_publish', id);
+  const published = await fire(PLANNER_NAMED, 't_publication_publish', id);
   expect(published.status, published.reason).toBe('done');
   return id;
 }
@@ -236,7 +238,7 @@ describe('SDC-1 · a weekly publish supersedes only the weekly plan (R-SDC e13, 
 describe('SDC-1 · a withdrawal restores nothing it should not', () => {
   it('withdrawing the weekly plan leaves no weekly plan current — and the monthly one untouched', async () => {
     const weekly = await publishOneWeeklyLine();
-    const r = await fire(PLANNER, 't_publication_withdraw', weekly, { reason: 'SOMO re-ran the packaging plan' });
+    const r = await fire(PLANNER_NAMED, 't_publication_withdraw', weekly, { reason: 'SOMO re-ran the packaging plan' });
     expect(r.status, r.reason).toBe('done');
     const pubs = forecastPublicationStore.publications();
     expect(currentPublication(pubs, 'week')).toBeNull();
@@ -247,7 +249,7 @@ describe('SDC-1 · a withdrawal restores nothing it should not', () => {
   it('withdrawing the monthly plan does NOT bring back the plan it superseded', async () => {
     // KNOWN-GOOD first: the superseded seed is in every reader's input, by date the latest left.
     expect(forecastPublicationStore.publications().map((p) => p.publicationId)).toEqual(['PUB-2026-08-RM', MONTHLY]);
-    const r = await fire(PLANNER, 't_publication_withdraw', MONTHLY, { reason: 'SOMO re-ran the plan' });
+    const r = await fire(PLANNER_NAMED, 't_publication_withdraw', MONTHLY, { reason: 'SOMO re-ran the plan' });
     expect(r.status, r.reason).toBe('done');
     const pubs = forecastPublicationStore.publications();
     expect(pubs.map((p) => p.publicationId)).toEqual(['PUB-2026-08-RM']);
@@ -269,9 +271,9 @@ describe('SDC-1 · a withdrawal restores nothing it should not', () => {
     for (const l of forecastPublicationStore.get(id)!.lines.filter((x) => x.commitmentClass === 'firm')) {
       await fire(PROCUREMENT, 't_publication_approve_firm', id, { materialCode: l.materialCode, periodBucket: l.periodBucket, supplierId: l.supplierId });
     }
-    expect((await fire(PLANNER, 't_publication_publish', id)).status).toBe('done');
+    expect((await fire(PLANNER_NAMED, 't_publication_publish', id)).status).toBe('done');
     expect(currentPublication(forecastPublicationStore.publications(), 'month')?.publicationId).toBe(id);
-    expect((await fire(PLANNER, 't_publication_withdraw', id, { reason: 'wrong split' })).status).toBe('done');
+    expect((await fire(PLANNER_NAMED, 't_publication_withdraw', id, { reason: 'wrong split' })).status).toBe('done');
     expect(currentPublication(forecastPublicationStore.publications(), 'month')).toBeNull();
   });
 });

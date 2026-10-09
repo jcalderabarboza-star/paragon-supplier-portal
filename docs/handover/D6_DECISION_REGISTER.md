@@ -72,7 +72,7 @@ None is ratified in the repository. Where the tree or a later ruling has overtak
 | Decision | Where |
 |---|---|
 | Frontend is the specification; build over buy; backend swaps in behind `IDataService` | `docs/Paragon_Platform_Strategic_Spine_v1.md` §2; `Paragon_World_Class_Build_Plan_v1.md` |
-| **The SE Team's 21 work packages and their specifications** (D1 §4) | operator dispatch of 2026-10-01, recorded in D1 §4 of this set |
+| **The SE Team's 23 work packages and their specifications** (D1 §4) | operator dispatch of 2026-10-01, recorded in D1 §4 of this set; SE-22 and SE-23 added by the operator ruling of 2026-10-09 |
 | Handover to the SE Team on 28 October 2026 (likely earlier); our team builds only what defines the specification | operator ruling 2026-09-28, recorded in each design's "Ownership after the handover ruling" table; date restated in the dispatch of 2026-10-01 |
 | AG Grid Enterprise, two developer licences (FORK-G1′), superseding FORK-G1's react-datasheet-grid ruling for the grid's future engine | operator ruling 2026-09-28, recorded in Design 1 §8; **not yet recorded in the tree** (C6 records FORK-G1 as ruled react-datasheet-grid on 2026-07-14) — Seat 2 may add the pointer (D8 §5) |
 | Planning bucket is `month` or ISO `week`; quarters refused | C7 Amendment 1, A1-R1; `src/services/planning/bucket.ts:14-17, :71` |

@@ -96,6 +96,8 @@ export function toSupplierRfqView(rfq: RFQ, supplierId: string, ownDraft?: Stage
     createdAt: rfq.createdAt,
     responseDeadline: rfq.responseDeadline,
     awardDeadline: rfq.awardDeadline,
+    // E2E-1 — the event's own delivery date crosses; it is what the supplier plans to.
+    ...(rfq.requestedDeliveryDate ? { requestedDeliveryDate: rfq.requestedDeliveryDate } : {}),
     invitedSupplierIds: mine(rfq.invitedSupplierIds),
     respondedSupplierIds: mine(rfq.respondedSupplierIds),
     totalQty: rfq.totalQty,

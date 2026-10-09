@@ -1,5 +1,6 @@
 import { screen, fireEvent, waitFor, within } from '@testing-library/react';
 import { renderWithProviders } from '../test/test-utils';
+import { DECLARED_PRESENT } from '../services/data/fixturePresent';
 import { mockDataService } from '../services/data/mock/mockDataService';
 import { withChaos } from '../services/data/mock/withChaos';
 import type { IDataService } from '../services/data/types';
@@ -495,7 +496,7 @@ describe('BuyerSourcing — a comparison with no FX basis withholds the ranking'
     // comparison the engine refused becomes one it can make.
     makeMixed();
     // BOTH currencies, because neither is the base — see the naming test above.
-    const today = new Date().toISOString().slice(0, 10);
+    const today = DECLARED_PRESENT;
     const svc = new MockCommandService();
     for (const quote of ['EUR', 'USD'] as const) {
       const res = await svc.dispatch(
@@ -504,7 +505,8 @@ describe('BuyerSourcing — a comparison with no FX basis withholds the ranking'
           transitionId: 't_rfq_fx_pin',
           entity: 'rfq',
           entityId: 'rfq-009',
-          // Today's vintage — an old one would refuse FX_STALE instead, which
+          // The declared present's vintage (E2E-1, one clock) — an old one would
+          // refuse FX_STALE instead, which
           // is the next test.
           payload: { quote, rate: 18_000, asOf: today, source: 'MANUAL' },
         },
@@ -530,7 +532,7 @@ describe('BuyerSourcing — a comparison with no FX basis withholds the ranking'
         payload: {
           quote: 'USD',
           rate: 17_250,
-          asOf: new Date().toISOString().slice(0, 10),
+          asOf: DECLARED_PRESENT,
           source: 'MANUAL',
         },
       },
@@ -594,7 +596,7 @@ describe('BuyerSourcing — the FX basis is visible, and recordable (2e-c-4)', (
   const makeMixed = () =>
     quotationStore.update('qt-009a', (q) => ({ ...q, currency: 'EUR' }));
 
-  const today = () => new Date().toISOString().slice(0, 10);
+  const today = () => DECLARED_PRESENT;
 
   const recordPin = async (quote: 'EUR' | 'USD', rate: number, asOf = today()) =>
     new MockCommandService().dispatch(
@@ -688,7 +690,7 @@ describe('BuyerSourcing — recording a rate is confirm-before-commit (2e-c-4)',
           payload: {
             quote: 'USD',
             rate: 17_250,
-            asOf: new Date().toISOString().slice(0, 10),
+            asOf: DECLARED_PRESENT,
             source: 'MANUAL',
           },
         },
@@ -758,7 +760,7 @@ describe('BuyerSourcing — recording a rate is confirm-before-commit (2e-c-4)',
       target: { value: '18000' },
     });
     fireEvent.change(screen.getByLabelText('Rate date'), {
-      target: { value: new Date().toISOString().slice(0, 10) },
+      target: { value: DECLARED_PRESENT },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Record rate' }));
 
@@ -820,7 +822,8 @@ describe('BuyerSourcing — recording a rate is confirm-before-commit (2e-c-4)',
 
   it('a FUTURE vintage is refused — it would never age past the staleness gate', async () => {
     await openDialog(/Record EUR rate/);
-    const future = new Date(Date.now() + 86_400_000 * 3).toISOString().slice(0, 10);
+    // E2E-1 — "the future" is after the declared present, not after the wall clock.
+    const future = new Date(Date.parse(DECLARED_PRESENT) + 86_400_000 * 3).toISOString().slice(0, 10);
     fireEvent.change(screen.getByLabelText('Rate date'), { target: { value: future } });
     expect(screen.getByTestId('fx-asof-refusal')).toHaveTextContent(/cannot be true in the future/i);
   });
@@ -891,7 +894,7 @@ describe('BuyerSourcing — a supersede reads as a NEW RECORDED ACT (2e-c-4)', (
       target: { value: '18000' },
     });
     fireEvent.change(screen.getByLabelText('Rate date'), {
-      target: { value: new Date().toISOString().slice(0, 10) },
+      target: { value: DECLARED_PRESENT },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Record new rate' }));
 

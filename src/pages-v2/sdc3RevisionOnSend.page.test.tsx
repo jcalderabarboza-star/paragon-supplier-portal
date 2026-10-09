@@ -147,7 +147,8 @@ describe('SDC-3 · the supplier’s page — an acknowledged line that became a 
       entityId: id,
       payload: { materialCode: 'AI-NIAC-6601', periodBucket: '2026-10', supplierId: 'sup-007', forecastQty: 800, forecastQtyRaw: '800', basis: 'planner-split' },
     });
-    expect((await commands.dispatch(planner, { transitionId: 't_publication_publish', entity: 'forecastPublication', entityId: id, payload: {} })).status).toBe('done');
+    // E2E-1 — publishing, discarding and withdrawing need a named person (PUBLICATION_ACTOR_NAMED).
+    expect((await commands.dispatch({ ...planner, actor: personOf('planning') }, { transitionId: 't_publication_publish', entity: 'forecastPublication', entityId: id, payload: {} })).status).toBe('done');
     renderWithProviders(<SupplierForecasts />, { identity: supplierSeat('sup-007', 'PT Sample Packaging Indonesia'), route: '/supplier/forecasts' });
     const lines = await screen.findByTestId('sdcsup-lines');
     const card = within(lines).getByText('AI-NIAC-6601').closest('div.bg-bg-surface') as HTMLElement;

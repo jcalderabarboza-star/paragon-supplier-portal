@@ -14,8 +14,15 @@ import { goodsReceiptStore } from './stores/goodsReceiptStore';
 import { asnStore } from './stores/asnStore';
 import type { QueryScope, InspectionResult, ASN } from '../types';
 import { PERSONA_SYSTEM_ROLES } from '../../../services/transitions/businessRoles';
+import { SAMPLE_PEOPLE } from '../../../services/identity/sampleRoster';
 
-const buyer: QueryScope = { personaType: 'buyer', supplierId: null, businessRoles: PERSONA_SYSTEM_ROLES.buyer };
+// E2E-1 — a disposition needs a named person (GR_DISPOSER_NAMED).
+const buyer: QueryScope = {
+  personaType: 'buyer',
+  supplierId: null,
+  businessRoles: PERSONA_SYSTEM_ROLES.buyer,
+  actor: { kind: 'RESOLVED', person: { personId: SAMPLE_PEOPLE.find((p) => p.role === 'receiving')!.personId } },
+};
 const svc = new MockCommandService();
 
 // A submitted ASN seeded directly so the GR references a receivable, cascadable
@@ -157,5 +164,57 @@ describe('GR Post to SAP — Option B submitted-interim → settle-finalize', ()
     const final = goodsReceiptStore.get(grId)!;
     expect(final.status).toBe('Posted to SAP');
     expect(final.sapMaterialDoc).toMatch(/^MAT-DOC-/); // real ref, minted on settle
+  });
+});
+
+// ────────────────────────────────────────────────────────────────────────────
+// E2E-1 · A DISPOSITION NEEDS A NAMED PERSON (`GR_DISPOSER_NAMED`). Accepting,
+// partly accepting and rejecting received goods are refused for a seat that
+// names nobody, before the rollup or the compliance predicate is consulted, and
+// the receipt stays where it was. Receiving, inspecting and holding stay open.
+// ────────────────────────────────────────────────────────────────────────────
+describe('E2E-1 · a seat that names nobody does not decide a receipt', () => {
+  const unnamed: QueryScope = { ...buyer, actor: { kind: 'UNATTRIBUTED', reason: 'NO_PERSON_IN_SESSION' } };
+  const noActor: QueryScope = { personaType: 'buyer', supplierId: null, businessRoles: PERSONA_SYSTEM_ROLES.buyer };
+  const as = (scope: QueryScope, transitionId: string, entityId: string, payload?: Record<string, unknown>) =>
+    svc.dispatch(scope, { transitionId, entity: 'goodsReceipt', entityId, payload });
+  const inspected = async (lines: InspectionResult[]) => {
+    asnStore.add(submittedAsn('ASN-TEST-9'));
+    // Created and inspected by the unnamed seat: neither act is a decision.
+    const made = await svc.dispatch(unnamed, {
+      transitionId: 't_gr_create',
+      entity: 'goodsReceipt',
+      entityId: '',
+      payload: { asnReference: 'ASN-TEST-9', inspectionResults: lines },
+    });
+    expect(made.status, made.reason).toBe('done');
+    const started = await as(unnamed, 't_gr_start_inspection', made.entityId!);
+    expect(started.status, started.reason).toBe('done');
+    return made.entityId!;
+  };
+
+  it.each([
+    ['t_gr_approve', [line(100, 0)], undefined],
+    ['t_gr_partial_approve', [line(60, 40)], undefined],
+    ['t_gr_reject', [line(0, 40)], { dispositionReason: 'Whole lot crushed in transit.' }],
+  ] as const)('%s is refused by name for an unattributed seat and for a scope with no actor', async (verb, lines, payload) => {
+    const grId = await inspected([...lines]);
+    const before = goodsReceiptStore.get(grId);
+    for (const scope of [unnamed, noActor]) {
+      const res = await as(scope, verb, grId, payload ? { ...payload } : undefined);
+      expect(res.status).toBe('failed');
+      expect(res.reason).toContain('POLICY_REJECTED:gr_disposer_named:GR_DISPOSER_UNATTRIBUTED');
+      expect(goodsReceiptStore.get(grId)).toEqual(before);
+    }
+    // KNOWN-GOOD — the same receipt, the same verb, a named person: admitted.
+    const ok = await as(buyer, verb, grId, payload ? { ...payload } : undefined);
+    expect(ok.status, ok.reason).toBe('done');
+    expect(goodsReceiptStore.get(grId)!.status).not.toBe(before!.status);
+  });
+
+  it('a hold is not a decision: the unnamed seat places one', async () => {
+    const grId = await inspected([line(100, 0)]);
+    const held = await as(unnamed, 't_gr_hold', grId, { holdReason: 'Awaiting the lab result.' });
+    expect(held.status, held.reason).toBe('done');
   });
 });

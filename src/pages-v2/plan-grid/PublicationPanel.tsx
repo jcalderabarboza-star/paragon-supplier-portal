@@ -34,6 +34,7 @@ import Button from '../../components/ui-v2/Button';
 import Data from '../../components/ui-v2/Data';
 import { HandoffNotice } from '../../components/ui-v2/HandoffNotice';
 import { useCurrentIdentity } from '../../context/CurrentIdentityContext';
+import { namedSeatRefusalKey } from '../../lib/namedSeatRefusal';
 import { useVerbAvailabilities } from '../../hooks/useVerbAvailability';
 import { useRefusalText } from '../../hooks/useRefusalText';
 import { formatDate, formatNumber } from '../../lib/format';
@@ -288,7 +289,10 @@ const PublicationPanel: React.FC<{
 
       {failure && (
         <p className="mt-2 text-xs text-danger" role="alert" data-testid="publication-failure">
-          {refusalText(failure) ?? failure}
+          {/* E2E-1 — publishing and discarding need a named person. */}
+          {(namedSeatRefusalKey(failure) ? t(namedSeatRefusalKey(failure)!) : null) ??
+            refusalText(failure) ??
+            failure}
         </p>
       )}
 
@@ -373,6 +377,14 @@ const DraftBody: React.FC<{
           unsigned.length > 0 && <HandoffNotice availability={avail.approve} testId="handoff-publication-approve" />
         )}
       </div>
+
+      {/* E2E-1 — said before the act: publishing or discarding is recorded
+          against a person, and a seat that names nobody is refused. */}
+      {!named && (avail.publish.kind === 'held' || avail.open.kind === 'held') && (
+        <p className="mt-2 text-xs text-warning-hover" data-testid="publication-act-needs-person">
+          {t('identity.preAct.namedRequired')}
+        </p>
+      )}
 
       <div className="mt-2 flex flex-wrap items-center gap-3">
         {avail.publish.kind === 'held' ? (

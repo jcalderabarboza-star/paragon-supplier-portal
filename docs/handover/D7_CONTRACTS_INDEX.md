@@ -48,7 +48,7 @@ Changed between the two pins: C1, C3, C5, C6, C7, C8, C11, C12 (`git diff --stat
 | 27 liveness capabilities; 5 green; 1 SPEC | D1, D2, D3 | **pinned at H1** by `src/handoverFigures.pin.test.ts` (the count, and the green and `SPEC` subsets by name); `registry.test.ts`, `flipHarness.test.ts` and `feedProvenance.test.ts` test behaviour per capability |
 | 13 system roles | D2 | **pinned at H1** by `src/handoverFigures.pin.test.ts`; `businessRoles.test.ts` pins the bundles both ways |
 | 16 modules | D1, D2 | **pinned at H1** by `src/handoverFigures.pin.test.ts` (the count, `PLT` the only always-on module, every default `Active`) |
-| 11 sample persons | D2, D4 | **pinned at H1** by `src/handoverFigures.pin.test.ts`; `simUsrNamespace.test.ts` pins the namespace |
+| 16 sample persons | D2, D4 | **pinned at H1** by `src/handoverFigures.pin.test.ts`; `simUsrNamespace.test.ts` pins the namespace |
 | 51 routes | D1, D3 | `src/handoverFigures.pin.test.ts` (pinned at H1; the 47 first stated here missed four multi-line declarations); `allRoutes.smoke.test.tsx` mounts every one |
 | C5 tier column | C5 | no instrument; a spec deriving each seam's tier from `WIRED_COMMAND_TARGETS` and file existence would have caught the LivenessRegistry row |
 | C2, C6, C10 | — | unpinned |
