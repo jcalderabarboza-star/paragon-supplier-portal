@@ -353,3 +353,95 @@ export function derivedCellType(): Record<string, string[]> {
   }
   return out;
 }
+
+// ── fields and headings (UI-1c-1) ────────────────────────────────────────────
+//
+// A detail field is `Field` inside `FieldList`; a heading under the page title
+// is `SectionHeading`. Both own their type. So outside the shared components:
+//
+//   · no `<dl>`, `<dt>` or `<dd>` is written by hand
+//   · no `<h2>` … `<h6>` is written by hand
+//   · what a page puts INSIDE a `Field`, or on a `SectionHeading`, carries no
+//     size, weight, family, case or neutral colour — the same rule, and the
+//     same tokens, as a table cell
+//
+// `components/ui-v2/` is where the shared components live and is not scanned
+// for the first two: a component that owns a surface writes its elements.
+
+const SHARED_UI = 'src/components/ui-v2/';
+
+const RAW_FIELD = /<(?:dl|dt|dd)[\s>]/g;
+const RAW_HEADING = /<h[2-6][\s>]/g;
+
+export const rawFieldCount = (text: string): number => (text.match(RAW_FIELD) ?? []).length;
+export const rawHeadingCount = (text: string): number => (text.match(RAW_HEADING) ?? []).length;
+
+function derivedRaw(count: (text: string) => number): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const f of shippedFiles()) {
+    if (!f.file.endsWith('.tsx') || f.file.startsWith(SHARED_UI)) continue;
+    const n = count(f.text);
+    if (n > 0) out[f.file] = n;
+  }
+  return out;
+}
+
+export const derivedRawFields = (): Record<string, number> => derivedRaw(rawFieldCount);
+export const derivedRawHeadings = (): Record<string, number> => derivedRaw(rawHeadingCount);
+
+/** `"<Field|SectionHeading> · <token>"` for every type class the page put on or inside one. */
+export function fieldTypeFindings(text: string, fileName = 'x.tsx'): string[] {
+  if (!/<(?:Field|SectionHeading)[\s>]/.test(text)) return [];
+  const sf = ts.createSourceFile(fileName, text, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+  const out: string[] = [];
+  // `Field` means the shared detail field and nothing else: UI-1c-1 renamed the
+  // page-local form helpers that carried the name to `FormField`, and a file
+  // that defines its own `Field` again is refused by name in the spec.
+  const sharedField = true;
+  const classOf = (n: ts.JsxOpeningElement | ts.JsxSelfClosingElement): string => {
+    for (const attr of n.attributes.properties) {
+      if (ts.isJsxAttribute(attr) && attr.name.getText(sf) === 'className' && attr.initializer) return attr.initializer.getText(sf);
+    }
+    return '';
+  };
+  const scanInside = (label: string, node: ts.Node): void => {
+    const visit = (n: ts.Node): void => {
+      if (ts.isJsxOpeningElement(n) || ts.isJsxSelfClosingElement(n)) {
+        const tag = n.tagName.getText(sf);
+        if ((/^[a-z]/.test(tag) && !FORM_CONTROL.has(tag)) || PAGE_WRITTEN.has(tag)) {
+          for (const m of classOf(n).match(CELL_TYPE_TOKEN) ?? []) out.push(`${label} · ${m}`);
+        }
+      }
+      ts.forEachChild(n, visit);
+    };
+    visit(node);
+  };
+  const walk = (n: ts.Node): void => {
+    if (ts.isJsxElement(n) || ts.isJsxSelfClosingElement(n)) {
+      const open = ts.isJsxElement(n) ? n.openingElement : n;
+      const tag = open.tagName.getText(sf);
+      if ((tag === 'Field' && sharedField) || tag === 'SectionHeading') {
+        for (const m of classOf(open).match(CELL_TYPE_TOKEN) ?? []) out.push(`${tag} · ${m}`);
+        if (ts.isJsxElement(n)) for (const child of n.children) scanInside(tag, child);
+        // `label` and `sub` are written by the page too
+        for (const attr of open.attributes.properties) {
+          if (ts.isJsxAttribute(attr) && ['label', 'sub'].includes(attr.name.getText(sf)) && attr.initializer) scanInside(tag, attr.initializer);
+        }
+        return;
+      }
+    }
+    ts.forEachChild(n, walk);
+  };
+  walk(sf);
+  return out;
+}
+
+export function derivedFieldType(): Record<string, string[]> {
+  const out: Record<string, string[]> = {};
+  for (const f of shippedFiles()) {
+    if (!f.file.endsWith('.tsx') || f.file.startsWith(SHARED_UI)) continue;
+    const found = fieldTypeFindings(f.text, f.file);
+    if (found.length > 0) out[f.file] = found;
+  }
+  return out;
+}

@@ -6,6 +6,8 @@ import AppShellV2 from '../components/layout-v2/AppShellV2';
 import PageHeader from '../components/ui-v2/PageHeader';
 import LivenessPill from '../components/ui-v2/LivenessPill';
 import Data from '../components/ui-v2/Data';
+import SectionHeading from '../components/ui-v2/SectionHeading';
+import StatusPill from '../components/ui-v2/StatusPill';
 import { HandoffNotice } from '../components/ui-v2/HandoffNotice';
 import { useVerbAvailability } from '../hooks/useVerbAvailability';
 import { useModuleActivation } from '../context/ModuleActivationContext';
@@ -104,10 +106,10 @@ const ModulesBoard: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
           {MODULE_PHASES.map((phase: ModulePhase) => (
             <section key={phase} className="bg-bg-hover/40 rounded-lg p-3" data-testid={`modules-column-${phase}`}>
-              <h2 className="text-label text-text-tertiary uppercase mb-3 flex items-center justify-between">
+              <SectionHeading level="group" as="h2" className="mb-3 flex items-center justify-between">
                 <span>{t(`modules.phase.${phase}`)}</span>
-                <span className="font-mono text-data-navy">{columns[phase].length}</span>
-              </h2>
+                <StatusPill variant="neutral">{columns[phase].length}</StatusPill>
+              </SectionHeading>
               <p className="text-[11px] text-text-tertiary mb-3">{t(`modules.phaseHelp.${phase}`)}</p>
               <div className="space-y-3">
                 {columns[phase].map((code) => (

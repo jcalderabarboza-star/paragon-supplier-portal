@@ -8,6 +8,7 @@ import KpiCard from '../components/ui-v2/KpiCard';
 import SearchBar from '../components/ui-v2/SearchBar';
 import SupplierCard from '../components/ui-v2/SupplierCard';
 import StatusPill from '../components/ui-v2/StatusPill';
+import SectionHeading from '../components/ui-v2/SectionHeading';
 import DataTable from '../components/ui-v2/DataTable';
 import ListPage from '../components/ui-v2/ListPage';
 import LoadingState from '../components/ui-v2/LoadingState';
@@ -221,7 +222,7 @@ const Marketplace: React.FC = () => {
       <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm overflow-hidden">
         <div className="px-6 py-4 border-b border-border-subtle flex items-center justify-between">
           <div>
-            <h2 className="text-section text-text-primary flex items-center gap-2">
+            <SectionHeading as="h2" className="flex items-center gap-2">
               {t('marketplace.rfq.title')}
               {/* MARKER-I18N-HOLE-01 — this was a hardcoded English
                   `<StatusPill>Sample data</StatusPill>`, so switching the portal to
@@ -229,7 +230,7 @@ const Marketplace: React.FC = () => {
                   reader most needs the disclosure lost it by changing language.
                   Migrated onto the registry-derived primitive, which is translated. */}
               <ProvenanceMarker capability="suppliers" />
-            </h2>
+            </SectionHeading>
             <p className="text-meta text-text-tertiary">
               {t('marketplace.rfq.subtitle')}
             </p>

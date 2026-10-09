@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { RotateCcw, ChevronRight } from 'lucide-react';
 import Button from '../../components/ui-v2/Button';
 import Data from '../../components/ui-v2/Data';
+import SectionHeading from '../../components/ui-v2/SectionHeading';
 import type { FlowEdge, FlowView } from '../../services/transitions/catalogView';
 import { transitionPurposeKey } from '../../services/transitions/annotations';
 import { isPerformable, STEP_KIND_KEY } from '../../lib/i18n/stepKind';
@@ -69,7 +70,7 @@ const LifecycleWalk: React.FC<LifecycleWalkProps> = ({
     <section className="rounded-md border border-border-subtle bg-bg-surface p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <h3 className="text-section text-text-primary">{t('processFlows.walk.title')}</h3>
+          <SectionHeading as="h3">{t('processFlows.walk.title')}</SectionHeading>
           <p className="mt-1 max-w-prose text-meta text-text-secondary">
             {t('processFlows.walk.contract')}
           </p>

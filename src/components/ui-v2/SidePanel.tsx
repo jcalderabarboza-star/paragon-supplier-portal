@@ -53,6 +53,7 @@
 // ────────────────────────────────────────────────────────────────────────────
 
 import React, { useEffect } from 'react';
+import SectionHeading from './SectionHeading';
 import { X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
@@ -99,9 +100,9 @@ const SidePanel: React.FC<SidePanelProps> = ({
         className="fixed top-0 right-0 z-50 h-screen w-full sm:w-[480px] bg-bg-surface shadow-md border-l border-border-subtle flex flex-col animate-panel-in"
       >
         <header className="flex items-center justify-between gap-4 px-6 py-5 border-b border-border-subtle">
-          <h2 className="text-base font-semibold text-text-primary truncate">
+          <SectionHeading as="h2" className="truncate">
             {title}
-          </h2>
+          </SectionHeading>
           <button
             type="button"
             aria-label={t('ui.closePanel')}

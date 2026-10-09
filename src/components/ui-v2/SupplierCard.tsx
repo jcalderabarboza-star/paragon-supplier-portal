@@ -1,4 +1,5 @@
 import React from 'react';
+import SectionHeading from './SectionHeading';
 import { useTranslation } from 'react-i18next';
 import { ArrowUpRight } from 'lucide-react';
 import StatusPill from './StatusPill';
@@ -52,9 +53,9 @@ const SupplierCard: React.FC<SupplierCardProps> = ({
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <h3 className="text-sm font-semibold text-text-primary truncate">
+            <SectionHeading as="h3" className="truncate">
               {name}
-            </h3>
+            </SectionHeading>
           </div>
           <div className="text-meta text-text-tertiary mt-0.5 flex items-center gap-1.5">
             <span>{countryFlag ?? country}</span>

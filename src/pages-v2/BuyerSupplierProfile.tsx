@@ -44,6 +44,8 @@ import Tabs from '../components/ui-v2/Tabs';
 import DataTable from '../components/ui-v2/DataTable';
 import Button from '../components/ui-v2/Button';
 import Data from '../components/ui-v2/Data';
+import { Field, FieldList } from '../components/ui-v2/Field';
+import SectionHeading from '../components/ui-v2/SectionHeading';
 import LoadingState from '../components/ui-v2/LoadingState';
 import ErrorState from '../components/ui-v2/ErrorState';
 import {
@@ -60,6 +62,9 @@ import { SupplierTier } from '../types/supplier.types';
 import type { ProfileCertStatus, PurchaseOrder } from '../services/data/types';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
+
+// Layout of one ruled row in the overview and communication lists.
+const FIELD_ROW = 'border-b border-border-subtle py-2';
 
 // OTIF label derived page-side from canonical PO fields (there is no OTIF-per-PO
 // service field — a real metric waits for performance analytics to need it):
@@ -386,51 +391,41 @@ const BuyerSupplierProfile: React.FC = () => {
 
       {activeTab === 'overview' && (
         <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6">
-          <h2 className="text-section text-text-primary mb-4">
+          <SectionHeading as="h2" className="mb-4">
             {t('buyerSupplierProfile.overview.heading')}
-          </h2>
-          <dl className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3 text-sm">
-            <div className="flex justify-between border-b border-border-subtle py-2">
-              <dt className="text-text-tertiary">{t('buyerSupplierProfile.overview.legalName')}</dt>
-              <dd className="text-text-primary">{supp.legalName ?? supp.name}</dd>
-            </div>
-            <div className="flex justify-between border-b border-border-subtle py-2">
-              <dt className="text-text-tertiary">{t('buyerSupplierProfile.overview.taxId')}</dt>
-              <dd className="text-text-primary"><Data>{supp.taxId ?? '—'}</Data></dd>
-            </div>
-            <div className="flex justify-between border-b border-border-subtle py-2">
-              <dt className="text-text-tertiary">{t('buyerSupplierProfile.overview.businessReg')}</dt>
-              <dd className="text-text-primary"><Data>{supp.businessRegNo ?? '—'}</Data></dd>
-            </div>
-            <div className="flex justify-between border-b border-border-subtle py-2">
-              <dt className="text-text-tertiary">{t('buyerSupplierProfile.overview.founded')}</dt>
-              <dd className="text-text-primary"><Data>{supp.founded ?? '—'}</Data></dd>
-            </div>
-            <div className="flex justify-between border-b border-border-subtle py-2">
-              <dt className="text-text-tertiary">{t('buyerSupplierProfile.overview.employees')}</dt>
-              <dd className="text-text-primary"><Data>{supp.employees ?? '—'}</Data></dd>
-            </div>
-            <div className="flex justify-between border-b border-border-subtle py-2">
-              <dt className="text-text-tertiary">{t('buyerSupplierProfile.overview.annualRevenue')}</dt>
-              <dd className="text-text-primary"><Data>{supp.annualRevenue ?? '—'}</Data></dd>
-            </div>
-            <div className="flex justify-between border-b border-border-subtle py-2">
-              <dt className="text-text-tertiary">{t('buyerSupplierProfile.overview.paymentTerms')}</dt>
-              <dd className="text-text-primary">{supp.paymentTerms ?? '—'}</dd>
-            </div>
-            <div className="flex justify-between border-b border-border-subtle py-2">
-              <dt className="text-text-tertiary">{t('buyerSupplierProfile.overview.incoterms')}</dt>
-              <dd className="text-text-primary">{supp.incoterms ?? '—'}</dd>
-            </div>
-            <div className="flex justify-between border-b border-border-subtle py-2">
-              <dt className="text-text-tertiary">{t('buyerSupplierProfile.overview.onboarded')}</dt>
-              <dd className="text-text-primary"><Data>{supp.onboardedDate}</Data></dd>
-            </div>
-            <div className="flex justify-between border-b border-border-subtle py-2">
-              <dt className="text-text-tertiary">{t('buyerSupplierProfile.overview.lastActivity')}</dt>
-              <dd className="text-text-primary"><Data>{supp.lastActivityDate}</Data></dd>
-            </div>
-          </dl>
+          </SectionHeading>
+          <FieldList layout="row" className="md:grid md:grid-cols-2 md:gap-x-8 md:gap-y-3">
+            <Field className={FIELD_ROW} label={t('buyerSupplierProfile.overview.legalName')}>
+              {supp.legalName ?? supp.name}
+            </Field>
+            <Field className={FIELD_ROW} kind="id" label={t('buyerSupplierProfile.overview.taxId')}>
+              {supp.taxId ?? '—'}
+            </Field>
+            <Field className={FIELD_ROW} kind="id" label={t('buyerSupplierProfile.overview.businessReg')}>
+              {supp.businessRegNo ?? '—'}
+            </Field>
+            <Field className={FIELD_ROW} kind="date" label={t('buyerSupplierProfile.overview.founded')}>
+              {supp.founded ?? '—'}
+            </Field>
+            <Field className={FIELD_ROW} kind="number" label={t('buyerSupplierProfile.overview.employees')}>
+              {supp.employees ?? '—'}
+            </Field>
+            <Field className={FIELD_ROW} kind="money" label={t('buyerSupplierProfile.overview.annualRevenue')}>
+              {supp.annualRevenue ?? '—'}
+            </Field>
+            <Field className={FIELD_ROW} label={t('buyerSupplierProfile.overview.paymentTerms')}>
+              {supp.paymentTerms ?? '—'}
+            </Field>
+            <Field className={FIELD_ROW} label={t('buyerSupplierProfile.overview.incoterms')}>
+              {supp.incoterms ?? '—'}
+            </Field>
+            <Field className={FIELD_ROW} kind="date" label={t('buyerSupplierProfile.overview.onboarded')}>
+              {supp.onboardedDate}
+            </Field>
+            <Field className={FIELD_ROW} kind="date" label={t('buyerSupplierProfile.overview.lastActivity')}>
+              {supp.lastActivityDate}
+            </Field>
+          </FieldList>
           {supp.intelligenceNote && (
             <div className="mt-5 p-4 bg-teal-soft border border-teal/20 rounded-md text-sm text-text-secondary">
               <strong className="text-text-primary">{t('buyerSupplierProfile.overview.intelNote')}</strong>{' '}
@@ -442,37 +437,31 @@ const BuyerSupplierProfile: React.FC = () => {
 
       {activeTab === 'comm' && (
         <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6">
-          <h2 className="text-section text-text-primary mb-4">
+          <SectionHeading as="h2" className="mb-4">
             {t('buyerSupplierProfile.comm.heading')}
-          </h2>
-          <dl className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3 text-sm">
-            <div className="flex justify-between border-b border-border-subtle py-2">
-              <dt className="text-text-tertiary">{t('buyerSupplierProfile.comm.preferredChannel')}</dt>
-              <dd className="text-text-primary">{chl(supp.preferredChannel)}</dd>
-            </div>
-            <div className="flex justify-between border-b border-border-subtle py-2">
-              <dt className="text-text-tertiary">{t('buyerSupplierProfile.comm.connectivityTier')}</dt>
-              <dd className="text-text-primary">{TIER_LABEL[supp.tier]}</dd>
-            </div>
-            <div className="flex justify-between border-b border-border-subtle py-2">
-              <dt className="text-text-tertiary">{t('buyerSupplierProfile.comm.primaryContact')}</dt>
-              <dd className="text-text-primary">{supp.contactName}</dd>
-            </div>
-            <div className="flex justify-between border-b border-border-subtle py-2">
-              <dt className="text-text-tertiary">{t('buyerSupplierProfile.comm.phone')}</dt>
-              <dd className="text-text-primary">{supp.phone}</dd>
-            </div>
-            <div className="flex justify-between border-b border-border-subtle py-2">
-              <dt className="text-text-tertiary">{t('buyerSupplierProfile.comm.email')}</dt>
-              <dd className="text-text-primary">{supp.email}</dd>
-            </div>
-            <div className="flex justify-between border-b border-border-subtle py-2">
-              <dt className="text-text-tertiary">{t('buyerSupplierProfile.comm.businessHours')}</dt>
-              <dd className="text-text-primary">{t('buyerSupplierProfile.comm.yes')}</dd>
-            </div>
-          </dl>
+          </SectionHeading>
+          <FieldList layout="row" className="md:grid md:grid-cols-2 md:gap-x-8 md:gap-y-3">
+            <Field className={FIELD_ROW} label={t('buyerSupplierProfile.comm.preferredChannel')}>
+              {chl(supp.preferredChannel)}
+            </Field>
+            <Field className={FIELD_ROW} label={t('buyerSupplierProfile.comm.connectivityTier')}>
+              {TIER_LABEL[supp.tier]}
+            </Field>
+            <Field className={FIELD_ROW} label={t('buyerSupplierProfile.comm.primaryContact')}>
+              {supp.contactName}
+            </Field>
+            <Field className={FIELD_ROW} label={t('buyerSupplierProfile.comm.phone')}>
+              {supp.phone}
+            </Field>
+            <Field className={FIELD_ROW} label={t('buyerSupplierProfile.comm.email')}>
+              {supp.email}
+            </Field>
+            <Field className={FIELD_ROW} label={t('buyerSupplierProfile.comm.businessHours')}>
+              {t('buyerSupplierProfile.comm.yes')}
+            </Field>
+          </FieldList>
           {/* ⚠️ `Reset` AND `Save` ARE GONE — H3, and the reason is that there was
-              never anything to save. Everything above is a `<dl>` of `<dt>`/`<dd>`
+              never anything to save. Everything above is a list of label–value
               pairs read straight off the supplier record: this section has no
               input, no local state and no draft, so the pair was not an unwired
               form — it was a form's furniture with no form behind it. Wiring them
@@ -484,9 +473,9 @@ const BuyerSupplierProfile: React.FC = () => {
       {activeTab === 'compliance' && (
         <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm overflow-hidden">
           <div className="flex items-center gap-2 p-4 border-b border-border-subtle">
-            <span className="text-sm font-semibold text-text-primary">
+            <SectionHeading as="h2">
               {t('buyerSupplierProfile.compliance.heading')}
-            </span>
+            </SectionHeading>
           </div>
           <DataTable<(typeof certs)[number]>
             card={false}
@@ -541,9 +530,9 @@ const BuyerSupplierProfile: React.FC = () => {
       {activeTab === 'catalog' && (
         <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm overflow-hidden">
           <div className="flex items-center gap-2 p-4 border-b border-border-subtle">
-            <span className="text-sm font-semibold text-text-primary">
+            <SectionHeading as="h2">
               {t('buyerSupplierProfile.catalog.heading')}
-            </span>
+            </SectionHeading>
           </div>
           <DataTable<(typeof catalog)[number]>
             card={false}
@@ -595,9 +584,9 @@ const BuyerSupplierProfile: React.FC = () => {
       {activeTab === 'performance' && (
         <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm overflow-hidden">
           <div className="p-6 border-b border-border-subtle">
-            <h2 className="text-section text-text-primary mb-1">
+            <SectionHeading as="h2" className="mb-1">
               {t('buyerSupplierProfile.performance.heading')}
-            </h2>
+            </SectionHeading>
             <p className="text-meta text-text-tertiary">
               {t('buyerSupplierProfile.performance.subtitle')}
             </p>
@@ -674,9 +663,9 @@ const BuyerSupplierProfile: React.FC = () => {
       {activeTab === 'msglog' && (
         <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm overflow-hidden">
           <div className="flex items-center gap-2 p-4 border-b border-border-subtle">
-            <span className="text-sm font-semibold text-text-primary">
+            <SectionHeading as="h2">
               {t('buyerSupplierProfile.msglog.heading')}
-            </span>
+            </SectionHeading>
             {/* MARKER-I18N-HOLE-01 — was a hardcoded English literal, so the marker
                 disappeared entirely in Bahasa. Now registry-derived and translated. */}
             <ProvenanceMarker capability="messaging" />

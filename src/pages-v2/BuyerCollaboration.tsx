@@ -53,6 +53,7 @@ import { useRefusalText } from '../hooks/useRefusalText';
 import { useCurrentIdentity } from '../context/CurrentIdentityContext';
 import { sdcRefusalKey } from '../lib/sdcRefusal';
 import type { CommandResult } from '../services/data/types';
+import SectionHeading from '../components/ui-v2/SectionHeading';
 
 // ────────────────────────────────────────────────────────────────────────────
 // BuyerCollaboration (SDC-1b) — the P2 planner consolidation view: the
@@ -329,9 +330,9 @@ const ReasonPanel: React.FC<{
               notice on a panel a narrowing can leave standing open. */}
           <HandoffNotice availability={availability} testId={`${testIds.commit}-handoff`} />
           <section>
-            <h3 className="text-label mb-2 uppercase text-text-tertiary">
+            <SectionHeading level="group" className="mb-2">
               {t('sdc.resolve.section.exchange')}
-            </h3>
+            </SectionHeading>
             <div className="mb-2 text-xs text-text-tertiary">
               <Data>{response.id}</Data> · {supplierName(response.supplierId)} ·{' '}
               <Data>{row.line.periodBucket}</Data>
@@ -340,9 +341,9 @@ const ReasonPanel: React.FC<{
           </section>
 
           <section>
-            <h3 className="text-label mb-2 uppercase text-text-tertiary">
+            <SectionHeading level="group" className="mb-2">
               {t('sdc.resolve.section.supplierSaid')}
-            </h3>
+            </SectionHeading>
             {/* The supplier's own words, unedited and untranslated - a record,
                 not copy. An HONEST BLANK when they stated none: this lane never
                 fabricates a cause on a supplier's behalf. */}
@@ -354,7 +355,7 @@ const ReasonPanel: React.FC<{
           </section>
 
           <section>
-            <h3 className="text-label mb-2 uppercase text-text-tertiary">{copy.heading}</h3>
+            <SectionHeading level="group" className="mb-2">{copy.heading}</SectionHeading>
             <label htmlFor={testIds.input} className="sr-only">
               {copy.srLabel}
             </label>
@@ -936,9 +937,9 @@ const BuyerCollaboration: React.FC = () => {
 
       {/* ── Chase list — the pre-scheduler manual WhatsApp interim ─────────── */}
       <section className="mb-8" data-testid="sdc-chase">
-        <h2 className="mb-1 text-base font-semibold text-text-primary">
+        <SectionHeading className="mb-1">
           {t('sdc.chase.title')}
-        </h2>
+        </SectionHeading>
         <p className="mb-3 text-sm text-text-secondary">{t('sdc.chase.subtitle')}</p>
 
         {/* Supplier response rollup — context for the chase */}
@@ -1000,9 +1001,9 @@ const BuyerCollaboration: React.FC = () => {
           and nothing else behind it. The disputes section below learned that the
           hard way; this copies the shape rather than rediscovering it. */}
       <section className="mb-8" data-testid="sdc-awaiting-review">
-        <h2 className="mb-1 text-base font-semibold text-text-primary">
+        <SectionHeading className="mb-1">
           {t('sdc.review.title')}
-        </h2>
+        </SectionHeading>
         <p className="mb-3 text-sm text-text-secondary">{t('sdc.review.subtitle')}</p>
         <div className="mb-3">
           <HandoffNotice availability={reviewAvailability} testId="handoff-sdc-review" />
@@ -1064,9 +1065,9 @@ const BuyerCollaboration: React.FC = () => {
           were NOT co-reachable on any one document; these are, and the rule
           lands the same way from the other side. */}
       <section className="mb-8" data-testid="sdc-under-review">
-        <h2 className="mb-1 text-base font-semibold text-text-primary">
+        <SectionHeading className="mb-1">
           {t('sdc.underReview.title')}
-        </h2>
+        </SectionHeading>
         <p className="mb-3 text-sm text-text-secondary">{t('sdc.underReview.subtitle')}</p>
         <div className="mb-3 flex flex-col gap-2">
           <HandoffNotice availability={acceptAvailability} testId="handoff-sdc-accept" />
@@ -1156,9 +1157,9 @@ const BuyerCollaboration: React.FC = () => {
           the machine, never filtered on a status literal, so the section empties
           itself the moment a dispute is answered. */}
       <section className="mb-8" data-testid="sdc-disputes">
-        <h2 className="mb-1 text-base font-semibold text-text-primary">
+        <SectionHeading className="mb-1">
           {t('sdc.disputes.title')}
-        </h2>
+        </SectionHeading>
         <p className="mb-3 text-sm text-text-secondary">{t('sdc.disputes.subtitle')}</p>
         <div className="mb-3">
           <HandoffNotice availability={resolveAvailability} testId="handoff-sdc-resolve" />

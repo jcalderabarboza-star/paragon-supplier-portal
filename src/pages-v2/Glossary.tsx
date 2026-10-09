@@ -8,6 +8,7 @@ import PageMetaLine from '../components/ui-v2/PageMetaLine';
 import SearchBar from '../components/ui-v2/SearchBar';
 import StatusPill from '../components/ui-v2/StatusPill';
 import Data from '../components/ui-v2/Data';
+import SectionHeading from '../components/ui-v2/SectionHeading';
 import { GLOSSARY_REGISTRIES } from '../lib/glossary';
 import {
   buildGlossaryView,
@@ -78,10 +79,10 @@ const Appearances: React.FC<{ appearances: readonly FlowAppearance[] }> = ({ app
   if (appearances.length === 0) return null;
   return (
     <div className="mt-3 border-t border-border-subtle pt-2.5">
-      <span className="flex items-center gap-1.5 text-label uppercase tracking-wider text-text-tertiary">
+      <SectionHeading level="group" as="h4" className="flex items-center gap-1.5">
         <GitBranch size={11} aria-hidden="true" />
         {t('glossary.appears.title')}
-      </span>
+      </SectionHeading>
       <ul className="mt-1.5 space-y-1">
         {appearances.map((a) => (
           <li key={a.entity} className="flex flex-wrap items-center gap-1.5 text-[11px]">
@@ -127,10 +128,10 @@ const Related: React.FC<{
   if (related.length === 0) return null;
   return (
     <div className="mt-3 border-t border-border-subtle pt-2.5">
-      <span className="flex items-center gap-1.5 text-label uppercase tracking-wider text-text-tertiary">
+      <SectionHeading level="group" as="h4" className="flex items-center gap-1.5">
         <Link2 size={11} aria-hidden="true" />
         {t('glossary.related.title')}
-      </span>
+      </SectionHeading>
       <ul className="mt-1.5 space-y-1">
         {related.map((r) => (
           <li key={`${r.relation}#${r.sourceType}.${r.term}`} className="text-[11px] leading-relaxed">
@@ -167,13 +168,15 @@ const TermCard: React.FC<{
         highlighted ? 'border-teal ring-1 ring-teal/40' : 'border-border-subtle'
       }`}
     >
-      <h3 className="flex flex-wrap items-baseline gap-2">
-        <Data className="text-[14px]">{view.term}</Data>
+      {/* The term is the heading; the union that defines it sits beside it, outside
+          the heading, so the outline names the word and nothing else. */}
+      <div className="flex flex-wrap items-baseline gap-2">
+        <SectionHeading as="h3">{view.term}</SectionHeading>
         <span className="text-[10px] uppercase tracking-wider text-text-tertiary">
           {t('glossary.term.definedBy')}{' '}
           <Data className="text-[10px] text-text-tertiary">{view.sourceType}</Data>
         </span>
-      </h3>
+      </div>
       {/* THE ONE AUTHORED THING ON THE ROW. The active locale's sentence, read
           straight off the entry — there is no second store of definitions and no
           i18n key for one, which is what keeps a correction to one edit. */}
@@ -265,7 +268,7 @@ const Glossary: React.FC = () => {
           different axis — what is read, what is written, how settled it is, and
           how the appearance lists are matched. */}
       <section className="mb-4 rounded-md border border-border-subtle bg-bg-surface p-4">
-        <h2 className="text-section text-text-primary">{t('glossary.honesty.title')}</h2>
+        <SectionHeading as="h2">{t('glossary.honesty.title')}</SectionHeading>
         <p className="mt-1 max-w-4xl text-meta text-text-secondary">
           {t('glossary.honesty.derived')}
         </p>
@@ -286,18 +289,18 @@ const Glossary: React.FC = () => {
         data-testid="glossary-remedy-gap"
         className="mb-6 rounded-md border border-warning/40 bg-warning-soft/40 p-4"
       >
-        <h2 className="flex items-center gap-2 text-section text-text-primary">
+        <SectionHeading as="h2" className="flex items-center gap-2">
           <HelpCircle size={15} className="text-warning-hover" aria-hidden="true" />
           {t('glossary.remedy.title')}
-        </h2>
+        </SectionHeading>
         <p className="mt-1 max-w-4xl text-meta text-text-secondary">{t('glossary.remedy.body')}</p>
       </section>
 
       <div className="flex flex-col gap-6 lg:flex-row">
         <nav aria-label={t('glossary.filter.aria')} className="w-full shrink-0 lg:w-72">
-          <h2 className="mb-2 text-label uppercase text-text-tertiary">
+          <SectionHeading level="group" as="h2" className="mb-2">
             {t('glossary.filter.title')}
-          </h2>
+          </SectionHeading>
           <ul className="space-y-1">
             <li>
               <button
@@ -359,13 +362,11 @@ const Glossary: React.FC = () => {
             <div className="mt-4 space-y-6">
               {groups.map((g) => (
                 <section key={g.sourceType} data-testid={`glossary-group-${g.sourceType}`}>
-                  <h2 className="mb-2 flex items-center gap-2 text-section text-text-primary">
+                  <SectionHeading as="h2" className="mb-2 flex items-center gap-2">
                     <BookOpen size={14} className="text-teal" aria-hidden="true" />
-                    <Data className="text-[13px]">{g.sourceType}</Data>
-                    <span className="text-[11px] font-normal text-text-tertiary">
-                      {g.rows.length}
-                    </span>
-                  </h2>
+                    {g.sourceType}
+                    <StatusPill variant="neutral">{g.rows.length}</StatusPill>
+                  </SectionHeading>
                   <div className="space-y-2">
                     {g.rows.map((v) => (
                       <TermCard

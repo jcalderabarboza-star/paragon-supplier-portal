@@ -41,6 +41,8 @@ import { useDeepLinkedSelection } from '../lib/recordDeepLink';
 import ErrorState from '../components/ui-v2/ErrorState';
 import EmptyState from '../components/ui-v2/EmptyState';
 import Data from '../components/ui-v2/Data';
+import { Field, FieldList } from '../components/ui-v2/Field';
+import SectionHeading from '../components/ui-v2/SectionHeading';
 import type {
   BuyerInvoice,
   BuyerInvoiceStatus as InvStatus,
@@ -1005,9 +1007,9 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
       {tab === 'analytics' && (
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
           <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6">
-            <h3 className="text-section text-text-primary mb-4 pb-3 border-b border-border-subtle">
+            <SectionHeading as="h3" className="mb-4 pb-3 border-b border-border-subtle">
               {t('buyerInvoices.analytics.monthlyFlow')}
-            </h3>
+            </SectionHeading>
             <ResponsiveContainer width="100%" height={240}>
               <BarChart
                 data={MONTHLY_SPEND}
@@ -1036,9 +1038,9 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
           </section>
 
           <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6">
-            <h3 className="text-section text-text-primary mb-4 pb-3 border-b border-border-subtle">
+            <SectionHeading as="h3" className="mb-4 pb-3 border-b border-border-subtle">
               {t('buyerInvoices.analytics.matchSummary')}
-            </h3>
+            </SectionHeading>
             <div className="grid grid-cols-2 gap-3">
               <MatchTile
                 label={t('buyerInvoices.matchTile.autoMatched')}
@@ -1068,9 +1070,9 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
       {tab === 'aging' && (
         <div className="flex flex-col gap-5">
           <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6">
-            <h3 className="text-section text-text-primary mb-4 pb-3 border-b border-border-subtle">
+            <SectionHeading as="h3" className="mb-4 pb-3 border-b border-border-subtle">
               {t('buyerInvoices.aging.reportTitle')}
-            </h3>
+            </SectionHeading>
             <ResponsiveContainer width="100%" height={240}>
               <BarChart
                 data={AGING_DATA}
@@ -1252,90 +1254,58 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
             {/* ADM-1 — what a Super Admin passed on this invoice, if anything. */}
             <SuperAdminBypassNote entity="invoice" entityId={selected.id} />
             <section>
-              <h3 className="text-label text-text-tertiary uppercase mb-3">
+              <SectionHeading level="group" as="h3" className="mb-3">
                 {t('buyerInvoices.section.keyFacts')}
-              </h3>
-              <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
-                <div>
-                  <dt className="text-text-tertiary">{t('buyerInvoices.field.supplier')}</dt>
-                  <dd className="text-text-primary font-medium">
-                    {selected.supplierName}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-text-tertiary">{t('buyerInvoices.field.poReference')}</dt>
-                  <Data as="dd" className="text-text-primary">
-                    {selected.poNumber}
-                  </Data>
-                </div>
-                <div>
-                  <dt className="text-text-tertiary">{t('buyerInvoices.field.amount')}</dt>
-                  <Data as="dd" className="text-text-primary font-semibold">
-                    {formatIDR(selected.amount)}
-                  </Data>
-                </div>
-                <div>
-                  <dt className="text-text-tertiary">{t('buyerInvoices.field.paymentTerms')}</dt>
-                  <dd className="text-text-primary font-medium">
-                    {selected.paymentTerms}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-text-tertiary">{t('buyerInvoices.field.dueDate')}</dt>
-                  <Data
-                    as="dd"
-                    className={`font-medium ${
-                      selected.status === 'Overdue'
-                        ? 'text-critical'
-                        : 'text-text-primary'
-                    }`}
-                  >
+              </SectionHeading>
+              <FieldList columns={2}>
+                <Field label={t('buyerInvoices.field.supplier')}>{selected.supplierName}</Field>
+                <Field label={t('buyerInvoices.field.poReference')} kind="id">
+                  {selected.poNumber}
+                </Field>
+                <Field label={t('buyerInvoices.field.amount')} kind="money">
+                  {formatIDR(selected.amount)}
+                </Field>
+                <Field label={t('buyerInvoices.field.paymentTerms')}>{selected.paymentTerms}</Field>
+                <Field label={t('buyerInvoices.field.dueDate')} kind="date">
+                  <span className={selected.status === 'Overdue' ? 'text-critical' : undefined}>
                     {formatDate(selected.dueDate)}
-                  </Data>
-                </div>
-                <div>
-                  <dt className="text-text-tertiary">{t('buyerInvoices.field.approver')}</dt>
-                  <dd className="text-text-primary font-medium" data-testid="invoice-approver">
+                  </span>
+                </Field>
+                <Field
+                  label={t('buyerInvoices.field.approver')}
+                  sub={
+                    approvalUnnamed(selected) ? (
+                      <span className="text-warning-hover" data-testid="invoice-approval-unnamed">
+                        {t('buyerInvoices.approval.unnamed')}
+                      </span>
+                    ) : undefined
+                  }
+                >
+                  <span data-testid="invoice-approver">
                     {selected.approvedBy ? renderAttribution(selected.approvedBy) : selected.approver}
-                  </dd>
-                  {approvalUnnamed(selected) && (
-                    <dd className="mt-1 text-xs text-warning-hover" data-testid="invoice-approval-unnamed">
-                      {t('buyerInvoices.approval.unnamed')}
-                    </dd>
-                  )}
-                </div>
+                  </span>
+                </Field>
                 {selected.releasedBy && (
-                  <div>
-                    <dt className="text-text-tertiary">{t('buyerInvoices.field.releasedBy')}</dt>
-                    <dd className="text-text-primary font-medium" data-testid="invoice-releaser">
-                      {renderAttribution(selected.releasedBy)}
-                    </dd>
-                  </div>
+                  <Field label={t('buyerInvoices.field.releasedBy')} data-testid="invoice-releaser">
+                    {renderAttribution(selected.releasedBy)}
+                  </Field>
                 )}
-                <div>
-                  <dt className="text-text-tertiary">{t('buyerInvoices.field.status')}</dt>
-                  <dd>
-                    <StatusPill variant={STATUS_VARIANT[selected.status]}>
-                      {selected.status}
-                    </StatusPill>
-                    <span className="mt-1 block">
-                      <NextActLine act={nextAct} testId="next-act-buyer-invoice" />
-                    </span>
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-text-tertiary">{t('buyerInvoices.field.channel')}</dt>
-                  <dd className="text-text-primary font-medium">
-                    {selected.channel}
-                  </dd>
-                </div>
-              </dl>
+                <Field label={t('buyerInvoices.field.status')} kind="status">
+                  <StatusPill variant={STATUS_VARIANT[selected.status]}>
+                    {selected.status}
+                  </StatusPill>
+                  <span className="mt-1 block">
+                    <NextActLine act={nextAct} testId="next-act-buyer-invoice" />
+                  </span>
+                </Field>
+                <Field label={t('buyerInvoices.field.channel')}>{selected.channel}</Field>
+              </FieldList>
             </section>
 
             <section>
-              <h3 className="text-label text-text-tertiary uppercase mb-3">
+              <SectionHeading level="group" as="h3" className="mb-3">
                 {t('buyerInvoices.section.match')}
-              </h3>
+              </SectionHeading>
               <div
                 className={`border-l-2 rounded px-3 py-3 text-sm ${
                   MATCH_VARIANT[selected.matchStatus] === 'success'
@@ -1366,7 +1336,7 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
               </div>
               {/* OPS-1 — the figures the verdict rests on, beside the verdict. */}
               {selected.matchBasis && (
-                <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm mt-3" data-testid="invoice-match-figures">
+                <FieldList columns={2} className="mt-3" data-testid="invoice-match-figures">
                   {(
                     [
                       ['ordered', selected.matchBasis.orderedValue],
@@ -1375,14 +1345,11 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
                       ['invoiced', selected.matchBasis.invoiced],
                     ] as const
                   ).map(([k, v]) => (
-                    <div key={k}>
-                      <dt className="text-text-tertiary">{t(`buyerInvoices.match.figure.${k}`)}</dt>
-                      <Data as="dd" className="text-text-primary font-medium">
-                        {formatIDR(v)}
-                      </Data>
-                    </div>
+                    <Field key={k} label={t(`buyerInvoices.match.figure.${k}`)} kind="money">
+                      {formatIDR(v)}
+                    </Field>
                   ))}
-                </dl>
+                </FieldList>
               )}
               {selected.matchBasis && poTotalDisagrees(selected.matchBasis) && (
                 <div
@@ -1404,9 +1371,9 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
 
             {selected.lifecycleState === 'Disputed' && (
               <section data-testid="invoice-dispute-reason">
-                <h3 className="text-label text-text-tertiary uppercase mb-3">
+                <SectionHeading level="group" as="h3" className="mb-3">
                   {t('buyerInvoices.section.disputeReason')}
-                </h3>
+                </SectionHeading>
                 <p className="text-sm text-text-primary">
                   {selected.disputeReason || t('buyerInvoices.dispute.noReason')}
                 </p>
@@ -1414,57 +1381,41 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
             )}
 
             <section>
-              <h3 className="text-label text-text-tertiary uppercase mb-3">
+              <SectionHeading level="group" as="h3" className="mb-3">
                 {t('buyerInvoices.section.sapDocs')}
-              </h3>
-              <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
-                <div>
-                  <dt className="text-text-tertiary">{t('buyerInvoices.field.fiDocument')}</dt>
-                  <Data
-                    as="dd"
-                    className={`${
-                      selected.sapFiDoc ? 'text-success' : 'text-text-tertiary'
-                    }`}
-                  >
+              </SectionHeading>
+              <FieldList columns={2}>
+                <Field label={t('buyerInvoices.field.fiDocument')} kind="id">
+                  <span className={selected.sapFiDoc ? 'text-success' : undefined}>
                     {selected.sapFiDoc ?? t('buyerInvoices.field.pending')}
-                  </Data>
-                </div>
-                <div>
-                  <dt className="text-text-tertiary">{t('buyerInvoices.field.grDocument')}</dt>
-                  <Data
-                    as="dd"
-                    className={`${
-                      selected.sapGrDoc ? 'text-success' : 'text-text-tertiary'
-                    }`}
-                  >
+                  </span>
+                </Field>
+                <Field label={t('buyerInvoices.field.grDocument')} kind="id">
+                  <span className={selected.sapGrDoc ? 'text-success' : undefined}>
                     {selected.sapGrDoc ?? t('buyerInvoices.field.pending')}
-                  </Data>
-                </div>
-              </dl>
+                  </span>
+                </Field>
+              </FieldList>
             </section>
 
             <section>
-              <h3 className="text-label text-text-tertiary uppercase mb-3">
+              <SectionHeading level="group" as="h3" className="mb-3">
                 {t('buyerInvoices.section.payment')}
-              </h3>
-              <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
-                <div>
-                  <dt className="text-text-tertiary">{t('buyerInvoices.field.bankAccount')}</dt>
-                  {selected.bankAccount ? (
-                    <Data as="dd" className="text-text-primary font-medium">
-                      {selected.bankAccount}
-                    </Data>
-                  ) : (
-                    <dd className="text-text-secondary">{t('buyerInvoices.field.bankUnknown')}</dd>
-                  )}
-                </div>
-                <div>
-                  <dt className="text-text-tertiary">{t('buyerInvoices.field.paymentDate')}</dt>
-                  <Data as="dd" className="text-text-primary font-medium">
-                    {formatDate(selected.paymentDate)}
-                  </Data>
-                </div>
-              </dl>
+              </SectionHeading>
+              <FieldList columns={2}>
+                {selected.bankAccount ? (
+                  <Field label={t('buyerInvoices.field.bankAccount')} kind="id">
+                    {selected.bankAccount}
+                  </Field>
+                ) : (
+                  <Field label={t('buyerInvoices.field.bankAccount')}>
+                    {t('buyerInvoices.field.bankUnknown')}
+                  </Field>
+                )}
+                <Field label={t('buyerInvoices.field.paymentDate')} kind="date">
+                  {formatDate(selected.paymentDate)}
+                </Field>
+              </FieldList>
             </section>
 
             {panelMode === 'confirming' && (
@@ -1497,9 +1448,9 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
 
             {panelMode === 'disputing' && (
               <section>
-                <h3 className="text-label text-text-tertiary uppercase mb-3">
+                <SectionHeading level="group" as="h3" className="mb-3">
                   {t('buyerInvoices.section.raiseDispute')}
-                </h3>
+                </SectionHeading>
                 <label htmlFor="dispute-reason" className="sr-only">
                   {t('buyerInvoices.dispute.srLabel', { invoiceNumber: selected.invoiceNumber })}
                 </label>
@@ -1519,33 +1470,27 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
 
             {panelMode === 'remittance' && (
               <section>
-                <h3 className="text-label text-text-tertiary uppercase mb-3">
+                <SectionHeading level="group" as="h3" className="mb-3">
                   {t('buyerInvoices.section.remittance')}
-                </h3>
-                <div className="border border-border-subtle rounded-md overflow-hidden">
-                  <table className="w-full text-xs">
-                    <tbody>
-                      {[
-                        [t('buyerInvoices.remit.invoiceNo'), selected.invoiceNumber],
-                        [t('buyerInvoices.field.poReference'), selected.poNumber],
-                        [t('buyerInvoices.field.amount'), formatIDR(selected.amount)],
-                        [t('buyerInvoices.field.paymentDate'), formatDate(selected.paymentDate)],
-                        [t('buyerInvoices.field.bankAccount'), selected.bankAccount],
-                      ].map(([label, value]) => (
-                        <tr
-                          key={label}
-                          className="border-t border-border-subtle first:border-t-0"
-                        >
-                          <td className="px-3 py-2 text-text-tertiary uppercase tracking-wider font-semibold w-1/3">
-                            {label}
-                          </td>
-                          <td className="px-3 py-2 font-semibold text-text-primary">
-                            <Data>{value}</Data>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                </SectionHeading>
+                <div className="border border-border-subtle rounded-md px-3 py-2">
+                  <FieldList layout="row">
+                    <Field label={t('buyerInvoices.remit.invoiceNo')} kind="id">
+                      {selected.invoiceNumber}
+                    </Field>
+                    <Field label={t('buyerInvoices.field.poReference')} kind="id">
+                      {selected.poNumber}
+                    </Field>
+                    <Field label={t('buyerInvoices.field.amount')} kind="money">
+                      {formatIDR(selected.amount)}
+                    </Field>
+                    <Field label={t('buyerInvoices.field.paymentDate')} kind="date">
+                      {formatDate(selected.paymentDate)}
+                    </Field>
+                    <Field label={t('buyerInvoices.field.bankAccount')} kind="id">
+                      {selected.bankAccount}
+                    </Field>
+                  </FieldList>
                 </div>
                 <div className="mt-3 flex justify-end gap-2">
                   <Button

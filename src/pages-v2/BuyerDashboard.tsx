@@ -80,6 +80,7 @@ import {
   type AlertSeverity,
   type MonthRelation,
 } from './dashboard/buyerDashboardDerivations';
+import SectionHeading from '../components/ui-v2/SectionHeading';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // THE BUYER COMMAND CENTER.
@@ -373,9 +374,9 @@ const BuyerDashboard: React.FC = () => {
       </div>
 
       {/* ── C · ALERTS STRIP ───────────────────────────────────────────────── */}
-      <h2 className="text-section text-text-primary mb-3">
+      <SectionHeading className="mb-3">
         {t('buyerDashboard.alerts.title', { count: visibleAlerts.length })}
-      </h2>
+      </SectionHeading>
       {visibleAlerts.length === 0 && (
         <p className="text-sm text-text-secondary mb-8" data-testid="alerts-none-for-lane">
           {t('buyerDashboard.alerts.noneForLane')}
@@ -417,7 +418,7 @@ const BuyerDashboard: React.FC = () => {
           chip does not filter them: a rate over one lane's slice of invoices
           would be a different number wearing the same label. */}
       <div className="flex flex-wrap items-baseline gap-x-3 mb-3" data-testid="kpi-scope">
-        <h2 className="text-section text-text-primary">{t('buyerDashboard.kpi.title')}</h2>
+        <SectionHeading>{t('buyerDashboard.kpi.title')}</SectionHeading>
         <span className={BADGE}>{t('buyerDashboard.kpi.wholePlatform')}</span>
         <span className="text-meta text-text-tertiary">{t('buyerDashboard.kpi.notFiltered')}</span>
       </div>
@@ -549,9 +550,9 @@ const BuyerDashboard: React.FC = () => {
           expanded table's rows link to the record they name. The retired chip
           bar (`BuyerAlertsBar`) does NOT come back with them: the alerts strip
           above says the same thing with more of it. */}
-      <h2 className="text-section text-text-primary mb-3">
+      <SectionHeading className="mb-3">
         {t('buyerDashboard.windows.title')}
-      </h2>
+      </SectionHeading>
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5 mb-8">
         <BuyerInvoiceAgingWidget />
         <BuyerRfqAwaitingAwardWidget />
@@ -567,9 +568,9 @@ const BuyerDashboard: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-8">
         <section className={CARD}>
           <div className="flex items-start justify-between gap-3">
-            <h2 className="text-section text-text-primary">
+            <SectionHeading>
               {t('buyerDashboard.chart.ap.title')}
-            </h2>
+            </SectionHeading>
             <Link to="/buyer/invoices" className="text-meta text-teal-text hover:underline">
               {t('buyerDashboard.chart.viewAll')}
             </Link>
@@ -599,9 +600,9 @@ const BuyerDashboard: React.FC = () => {
 
         <section className={CARD}>
           <div className="flex items-start justify-between gap-3">
-            <h2 className="text-section text-text-primary">
+            <SectionHeading>
               {t('buyerDashboard.chart.halal.title')}
-            </h2>
+            </SectionHeading>
             <Link to="/buyer/compliance" className="text-meta text-teal-text hover:underline">
               {t('buyerDashboard.chart.viewAll')}
             </Link>
@@ -632,9 +633,9 @@ const BuyerDashboard: React.FC = () => {
 
         <section className={CARD}>
           <div className="flex items-start justify-between gap-3">
-            <h2 className="text-section text-text-primary">
+            <SectionHeading>
               {t('buyerDashboard.chart.obligations.title')}
-            </h2>
+            </SectionHeading>
             <Link to="/buyer/contracts" className="text-meta text-teal-text hover:underline">
               {t('buyerDashboard.chart.viewAll')}
             </Link>
@@ -685,18 +686,18 @@ const BuyerDashboard: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-8">
         <section className={PLACEHOLDER} data-testid="phase-b-spend">
           <span className={BADGE}>{t('buyerDashboard.phaseB.badge')}</span>
-          <h2 className="text-section text-text-primary mt-2">
+          <SectionHeading className="mt-2">
             {t('buyerDashboard.phaseB.spend.title')}
-          </h2>
+          </SectionHeading>
           <p className="text-meta text-text-tertiary mt-1">
             {t('buyerDashboard.phaseB.spend.body', { months: poSpan.months })}
           </p>
         </section>
         <section className={PLACEHOLDER} data-testid="phase-b-trend">
           <span className={BADGE}>{t('buyerDashboard.phaseB.badge')}</span>
-          <h2 className="text-section text-text-primary mt-2">
+          <SectionHeading className="mt-2">
             {t('buyerDashboard.phaseB.trend.title')}
-          </h2>
+          </SectionHeading>
           <p className="text-meta text-text-tertiary mt-1">
             {t('buyerDashboard.phaseB.trend.body', {
               months: invoiceSpan.months,
@@ -709,9 +710,9 @@ const BuyerDashboard: React.FC = () => {
 
       {/* ── G · ACTION QUEUE BY LANE ───────────────────────────────────────── */}
       <section className={`${CARD} mb-8`}>
-        <h2 className="text-section text-text-primary mb-4">
+        <SectionHeading className="mb-4">
           {t('buyerDashboard.queue.title')}
-        </h2>
+        </SectionHeading>
         <DataTable<(typeof visibleRows)[number]>
           card={false}
           rows={visibleRows}
@@ -791,9 +792,9 @@ const BuyerDashboard: React.FC = () => {
               <div className="text-eyebrow text-text-tertiary uppercase">
                 {t('buyerDashboard.lines.eyebrow')}
               </div>
-              <h2 className="text-section text-text-primary mt-1">
+              <SectionHeading className="mt-1">
                 {t('buyerDashboard.lines.title')}
-              </h2>
+              </SectionHeading>
             </div>
             {/* DERIVED from the rows, never typed. */}
             <StatusPill variant={linesAtRisk > 0 ? 'warning' : 'success'}>
@@ -860,9 +861,9 @@ const BuyerDashboard: React.FC = () => {
           <div className="text-eyebrow text-text-tertiary uppercase">
             {t('buyerDashboard.health.eyebrow')}
           </div>
-          <h2 className="text-section text-text-primary mt-1">
+          <SectionHeading className="mt-1">
             {t('buyerDashboard.health.title')}
-          </h2>
+          </SectionHeading>
           <p className="text-meta text-text-tertiary mt-1">
             {t('buyerDashboard.health.note')}
           </p>

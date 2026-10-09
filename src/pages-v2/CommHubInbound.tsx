@@ -48,6 +48,7 @@ import { formatNumber, formatDate } from '../lib/format';
 // GL-1 - the glossary destination for this surface's refusals.
 import GlossaryTermChip from '../components/ui-v2/GlossaryTermChip';
 import { useRefusalText } from '../hooks/useRefusalText';
+import SectionHeading from '../components/ui-v2/SectionHeading';
 
 // ────────────────────────────────────────────────────────────────────────────
 // Comm Hub C2 — the INBOUND CONFIRM-BEFORE-COMMIT surface (DEC-COMMS-PRIMARY).
@@ -338,7 +339,7 @@ const CommHubInbound: React.FC = () => {
         <div className="px-4 py-3 border-b border-border-subtle bg-bg-subtle flex items-center gap-3">
           <CalendarClock size={16} className="text-teal shrink-0" aria-hidden="true" />
           <div className="min-w-0">
-            <div className="text-sm font-semibold text-text-primary">{t('commHub.needs.title')}</div>
+            <SectionHeading as="h3">{t('commHub.needs.title')}</SectionHeading>
             <div className="text-xs text-text-tertiary">{t('commHub.needs.subtitle')}</div>
           </div>
           {obligations.length > 0 && (
@@ -436,7 +437,7 @@ const CommHubInbound: React.FC = () => {
         <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-5" data-testid="commhub-source">
           <div className="flex items-center gap-2 mb-4">
             <MessageSquare size={16} className="text-teal" />
-            <h3 className="text-section text-text-primary">{t('commHub.source.title')}</h3>
+            <SectionHeading as="h3">{t('commHub.source.title')}</SectionHeading>
           </div>
 
           <div className="mb-3">
@@ -495,7 +496,7 @@ const CommHubInbound: React.FC = () => {
         <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-5" data-testid="commhub-inference">
           <div className="flex items-center gap-2 mb-4">
             <CheckCircle2 size={16} className="text-teal" />
-            <h3 className="text-section text-text-primary">{t('commHub.infer.title')}</h3>
+            <SectionHeading as="h3">{t('commHub.infer.title')}</SectionHeading>
           </div>
 
           {parsed === null ? (
@@ -504,9 +505,9 @@ const CommHubInbound: React.FC = () => {
             <div className="flex flex-col gap-4">
               {/* Raw message echo + diagnostics (honest render of the inference). */}
               <div className="rounded-md border border-border-subtle bg-bg-hover px-3 py-2">
-                <div className="text-label text-text-tertiary uppercase mb-1">
+                <SectionHeading level="group" as="h4" className="mb-1">
                   {t('commHub.infer.rawTitle')}
-                </div>
+                </SectionHeading>
                 <Data className="text-sm text-text-primary break-words">{message?.rawText}</Data>
               </div>
 
@@ -578,7 +579,7 @@ const CommHubInbound: React.FC = () => {
                   operator confirms (never silent), uom is diagnostic-only. */}
               {hasRows && (
                 <div className="flex flex-col gap-3" data-testid="commhub-rows">
-                  <div className="text-label text-text-tertiary uppercase">{t('commHub.row.title')}</div>
+                  <SectionHeading level="group" as="h4">{t('commHub.row.title')}</SectionHeading>
                   {rows.map((row, i) => {
                     const masterUom = uomOf(row.materialCode);
                     const mismatch =
@@ -676,7 +677,7 @@ const CommHubInbound: React.FC = () => {
               {/* Per-object outcome (honest silence — a refused row shows its reason). */}
               {outcomes && outcomes.length > 0 && (
                 <div className="flex flex-col gap-1.5" data-testid="commhub-result">
-                  <div className="text-label text-text-tertiary uppercase">{t('commHub.result.title')}</div>
+                  <SectionHeading level="group" as="h4">{t('commHub.result.title')}</SectionHeading>
                   {outcomes.map((o, i) => (
                     <div
                       key={i}

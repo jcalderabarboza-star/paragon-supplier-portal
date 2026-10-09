@@ -20,6 +20,8 @@ import ProvenanceMarker from '../components/ui-v2/ProvenanceMarker';
 import KpiCard from '../components/ui-v2/KpiCard';
 import SubTabs from '../components/ui-v2/SubTabs';
 import StatusPill from '../components/ui-v2/StatusPill';
+import { Field, FieldList } from '../components/ui-v2/Field';
+import SectionHeading from '../components/ui-v2/SectionHeading';
 import LivenessPill from '../components/ui-v2/LivenessPill';
 import DataTable from '../components/ui-v2/DataTable';
 import Button from '../components/ui-v2/Button';
@@ -187,10 +189,11 @@ const RecommendationCard: React.FC<{
       <p className="text-sm text-text-primary leading-relaxed mb-3">
         {supplier.whyRecommended}
       </p>
-      <div className="flex items-center gap-2 mb-3">
-        <span className="text-xs text-text-tertiary font-semibold">{t('discovery.rec.covers')}</span>
-        <StatusPill variant="info">{supplier.covers}</StatusPill>
-      </div>
+      <FieldList columns={1} className="mb-3">
+        <Field label={t('discovery.rec.covers')} kind="status" className="flex items-center gap-2">
+          <StatusPill variant="info">{supplier.covers}</StatusPill>
+        </Field>
+      </FieldList>
       {supplier.riskNote && (
         <div className="bg-warning-soft border-l-2 border-warning rounded px-3 py-2 mb-3 text-xs text-warning-hover">
           {supplier.riskNote}
@@ -433,9 +436,9 @@ const BuyerDiscovery: React.FC = () => {
 
           <div className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm overflow-hidden">
             <div className="px-5 py-4 border-b border-border-subtle">
-              <div className="text-sm font-semibold text-text-primary">
+              <SectionHeading as="h3">
                 {t('discovery.rec.secondSourceTitle')}
-              </div>
+              </SectionHeading>
             </div>
             <DataTable<(typeof SINGLE_SOURCE)[number]>
               card={false}
@@ -517,9 +520,9 @@ const BuyerDiscovery: React.FC = () => {
           <div>
             <div className="flex items-center gap-2 mb-1">
               <Sparkles size={16} className="text-teal" />
-              <h3 className="text-section text-text-primary">
+              <SectionHeading as="h3">
                 {t('discovery.rec.matchesTitle')}
-              </h3>
+              </SectionHeading>
             </div>
             <p className="text-sm text-text-tertiary mb-4">
               {t('discovery.rec.matchesSubtitle')}
@@ -552,9 +555,9 @@ const BuyerDiscovery: React.FC = () => {
 
       {tab === 'qualification' && (
         <div>
-          <h3 className="text-section text-text-primary mb-4">
+          <SectionHeading as="h3" className="mb-4">
             {t('discovery.qualTab.title')}
-          </h3>
+          </SectionHeading>
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
             {QUALIFICATIONS.map((q) => (
               <QualificationCard
@@ -575,9 +578,9 @@ const BuyerDiscovery: React.FC = () => {
       {tab === 'intelligence' && (
         <div>
           <div className="flex items-center gap-3 mb-1">
-            <h3 className="text-section text-text-primary">
+            <SectionHeading as="h3">
               {t('discovery.intel.title')}
-            </h3>
+            </SectionHeading>
             {/* CI-0 — the whole tab reads invented category stats; the shared
                 honest-render pill (registry-derived, can only show "Sample")
                 declares that up front. */}

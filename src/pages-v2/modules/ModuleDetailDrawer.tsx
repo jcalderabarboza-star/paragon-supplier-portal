@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import SidePanel from '../../components/ui-v2/SidePanel';
 import Data from '../../components/ui-v2/Data';
+import SectionHeading from '../../components/ui-v2/SectionHeading';
+import { Field, FieldList } from '../../components/ui-v2/Field';
 import { getKnownFlows } from '../../services/transitions';
 import { getModule, type ModuleCode } from '../../services/modules/registry';
 import { useModuleActivation } from '../../context/ModuleActivationContext';
@@ -22,7 +24,7 @@ const Section: React.FC<{ titleKey: string; testId: string; children: React.Reac
   const { t } = useTranslation();
   return (
     <section className="mb-5" data-testid={testId}>
-      <h3 className="text-label text-text-tertiary uppercase mb-2">{t(titleKey)}</h3>
+      <SectionHeading level="group" as="h3" className="mb-2">{t(titleKey)}</SectionHeading>
       {children}
     </section>
   );
@@ -100,16 +102,13 @@ export const ModuleDetailDrawer: React.FC<{ code: ModuleCode | null; onClose: ()
           {spec.parts.length === 0 ? (
             <None />
           ) : (
-            <ul className="space-y-1">
+            <FieldList layout="row">
               {spec.parts.map((p) => (
-                <li key={p.id} className="text-xs text-text-primary flex justify-between gap-2">
-                  <span>{t(p.nameKey)}</span>
-                  <span className="text-text-tertiary">
-                    {t(state.parts[p.id] === false ? 'modules.admin.off' : 'modules.admin.on')}
-                  </span>
-                </li>
+                <Field key={p.id} label={t(p.nameKey)}>
+                  {t(state.parts[p.id] === false ? 'modules.admin.off' : 'modules.admin.on')}
+                </Field>
               ))}
-            </ul>
+            </FieldList>
           )}
         </Section>
 

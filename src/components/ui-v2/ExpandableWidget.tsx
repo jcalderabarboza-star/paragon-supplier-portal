@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import SectionHeading from './SectionHeading';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import {
@@ -165,9 +166,9 @@ const ExpandableWidget: React.FC<ExpandableWidgetProps> = ({
             {Icon ? (
               <Icon size={15} className="text-text-tertiary shrink-0" />
             ) : null}
-            <h2 className="text-sm font-medium text-text-secondary truncate">
+            <SectionHeading level="group" as="h2" className="truncate">
               {title}
-            </h2>
+            </SectionHeading>
           </div>
           <div className="flex items-center gap-2.5 shrink-0">
             <HonestyDot live={live} t={t} />
@@ -236,9 +237,9 @@ const ExpandableWidget: React.FC<ExpandableWidgetProps> = ({
           >
             <header className="flex items-center justify-between gap-4 px-6 py-5 border-b border-border-subtle">
               <div className="flex items-center gap-2 min-w-0">
-                <h2 className="text-title text-text-primary truncate">
+                <SectionHeading as="h2" className="truncate">
                   {title}
-                </h2>
+                </SectionHeading>
                 <span className="inline-flex items-center justify-center min-w-[1.5rem] h-6 px-1.5 rounded-md bg-bg-hover text-text-secondary text-xs font-semibold shrink-0">
                   <Data>{count}</Data>
                 </span>

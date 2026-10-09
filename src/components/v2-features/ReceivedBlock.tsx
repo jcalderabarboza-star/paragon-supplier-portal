@@ -6,6 +6,7 @@ import StatusPill from '../ui-v2/StatusPill';
 import { formatDate, formatIDR, formatNumber } from '../../lib/format';
 import type { OrderReceived, ReceiptRef } from '../../services/data/orderReceipt';
 import type { InvoiceLineItem } from '../../services/data/types';
+import SectionHeading from '../ui-v2/SectionHeading';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // E2E-2 · WHAT WAS RECEIVED, SHOWN ON THE ORDER AND ON THE SHIP NOTICE.
@@ -62,7 +63,7 @@ export const ReceivedOnOrder: React.FC<{ received: OrderReceived; testId?: strin
   return (
     <section data-testid={testId}>
       <div className="flex items-center gap-2 mb-3">
-        <h3 className="text-label text-text-tertiary uppercase">{t('received.order.title')}</h3>
+        <SectionHeading level="group">{t('received.order.title')}</SectionHeading>
         {received.fullyReceived && (
           <span data-testid={`${testId}-full`}>
             <StatusPill variant="success">{t('received.order.full')}</StatusPill>
@@ -109,7 +110,7 @@ export const ReceivedOnNotice: React.FC<{ receipts: readonly ReceiptRef[]; testI
   const { t } = useTranslation();
   return (
     <div data-testid={testId}>
-      <div className="text-label text-text-tertiary uppercase mb-1">{t('received.notice.title')}</div>
+      <SectionHeading level="group" className="mb-1">{t('received.notice.title')}</SectionHeading>
       {receipts.length > 0 ? (
         <ul className="space-y-1">
           {receipts.map((r) => (
@@ -134,7 +135,7 @@ export const InvoicedLines: React.FC<{ lines: readonly InvoiceLineItem[]; testId
   const { t } = useTranslation();
   return (
     <section data-testid={testId}>
-      <h3 className="text-label text-text-tertiary uppercase mb-3">{t('received.invoice.lines')}</h3>
+      <SectionHeading level="group" className="mb-3">{t('received.invoice.lines')}</SectionHeading>
       <ul className="space-y-1">
         {lines.map((l) => (
           <li key={l.materialCode} className="text-sm text-text-primary">

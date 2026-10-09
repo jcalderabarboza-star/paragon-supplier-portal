@@ -18,6 +18,7 @@ import { useTranslation } from 'react-i18next';
 import DataTable, { CellSub, type Column } from '../../components/ui-v2/DataTable';
 import Button from '../../components/ui-v2/Button';
 import Data from '../../components/ui-v2/Data';
+import SectionHeading from '../../components/ui-v2/SectionHeading';
 import FilterChipsBar from '../../components/ui-v2/FilterChipsBar';
 import { HandoffNotice } from '../../components/ui-v2/HandoffNotice';
 import { useToast } from '../../hooks/useToast';
@@ -260,9 +261,7 @@ const MaterialApplicabilityPanel: React.FC = () => {
     >
       <div className="px-5 py-4 border-b border-border-subtle flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="text-sm font-bold text-text-primary">
-            {t('compliance.applicability.title')}
-          </h2>
+          <SectionHeading as="h2">{t('compliance.applicability.title')}</SectionHeading>
           <p className="text-xs text-text-tertiary mt-0.5 max-w-3xl">
             {t('compliance.applicability.subtitle')}
           </p>

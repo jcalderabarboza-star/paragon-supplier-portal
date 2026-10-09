@@ -33,6 +33,8 @@ import {
   type ContractDisplayStatus,
 } from '../../services/data/contractExpiry';
 import Data from '../../components/ui-v2/Data';
+import { Field, FieldList } from '../../components/ui-v2/Field';
+import SectionHeading from '../../components/ui-v2/SectionHeading';
 import DataTable, { CellSub } from '../../components/ui-v2/DataTable';
 import Timeline, { TimelineEvent } from '../../components/ui-v2/Timeline';
 import type {
@@ -307,146 +309,90 @@ export const ContractDetailBody: React.FC<{
   return (
     <div className="space-y-6">
       <section>
-        <h3 className="text-label text-text-tertiary uppercase mb-3">
+        <SectionHeading level="group" as="h3" className="mb-3">
           {t('contracts.panel.keyFacts')}
-        </h3>
-        <dl className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-3 text-sm">
-          <div>
-            <dt className="text-text-tertiary">{t('contracts.panel.field.supplier')}</dt>
-            <dd className="text-text-primary font-medium">
-              {supplierById.get(contract.supplierId)?.name ?? contract.supplierId}
-            </dd>
-          </div>
-          <div>
-            <dt className="text-text-tertiary">{t('contracts.panel.field.type')}</dt>
-            <dd>
-              <StatusPill variant="neutral">{typeLabel(t, contract.type)}</StatusPill>
-            </dd>
-          </div>
-          <div>
-            <dt className="text-text-tertiary">{t('contracts.panel.field.status')}</dt>
-            <dd>
-              <StatusPill variant={STATUS_VARIANT[display]}>
-                {display}
-              </StatusPill>
-              <span className="mt-1 block">
-                <NextActLine act={nextAct} testId="next-act-buyer-contract" />
-              </span>
-            </dd>
-          </div>
-          <div>
-            <dt className="text-text-tertiary">{t('contracts.panel.field.autoRenewal')}</dt>
-            <dd className="text-text-primary font-medium">
-              {contract.autoRenewal ? t('contracts.common.yes') : t('contracts.common.no')}
-            </dd>
-          </div>
-          <div>
-            <dt className="text-text-tertiary">{t('contracts.panel.field.startDate')}</dt>
-            <Data as="dd" className="text-text-primary font-medium">
-              {formatDate(contract.startDate)}
-            </Data>
-          </div>
-          <div>
-            <dt className="text-text-tertiary">{t('contracts.panel.field.endDate')}</dt>
-            <Data as="dd" className="text-text-primary font-medium">
-              {formatDate(contract.endDate)}
-            </Data>
-          </div>
-          <div>
-            <dt className="text-text-tertiary">{t('contracts.panel.field.noticeRequired')}</dt>
-            <Data as="dd" className="text-text-primary font-medium">
-              {t(
-                contract.noticeRequiredDays === 1
-                  ? 'contracts.panel.noticeDays.one'
-                  : 'contracts.panel.noticeDays.other',
-                { count: contract.noticeRequiredDays },
-              )}
-            </Data>
-          </div>
-          <div>
-            <dt className="text-text-tertiary">{t('contracts.panel.field.daysUntilExpiry')}</dt>
-            <dd
-              className={
-                daysToExpiry === null
-                  ? 'text-text-tertiary'
-                  : `font-semibold ${CONTRACT_EXPIRY_TONE[display]}`
-              }
-            >
-              {daysToExpiry === null
-                ? '—'
-                : daysToExpiry < 0
+        </SectionHeading>
+        <FieldList columns={2} className="md:grid-cols-3">
+          <Field label={t('contracts.panel.field.supplier')}>
+            {supplierById.get(contract.supplierId)?.name ?? contract.supplierId}
+          </Field>
+          <Field label={t('contracts.panel.field.type')} kind="status">
+            <StatusPill variant="neutral">{typeLabel(t, contract.type)}</StatusPill>
+          </Field>
+          <Field label={t('contracts.panel.field.status')} kind="status">
+            <StatusPill variant={STATUS_VARIANT[display]}>
+              {display}
+            </StatusPill>
+            <span className="mt-1 block">
+              <NextActLine act={nextAct} testId="next-act-buyer-contract" />
+            </span>
+          </Field>
+          <Field label={t('contracts.panel.field.autoRenewal')}>
+            {contract.autoRenewal ? t('contracts.common.yes') : t('contracts.common.no')}
+          </Field>
+          <Field label={t('contracts.panel.field.startDate')} kind="date">
+            {formatDate(contract.startDate)}
+          </Field>
+          <Field label={t('contracts.panel.field.endDate')} kind="date">
+            {formatDate(contract.endDate)}
+          </Field>
+          <Field label={t('contracts.panel.field.noticeRequired')} kind="number">
+            {t(
+              contract.noticeRequiredDays === 1
+                ? 'contracts.panel.noticeDays.one'
+                : 'contracts.panel.noticeDays.other',
+              { count: contract.noticeRequiredDays },
+            )}
+          </Field>
+          <Field label={t('contracts.panel.field.daysUntilExpiry')} kind="number">
+            {daysToExpiry === null ? (
+              '—'
+            ) : (
+              <span className={CONTRACT_EXPIRY_TONE[display]}>
+                {daysToExpiry < 0
                   ? t('contracts.expiry.daysAgo', { count: Math.abs(daysToExpiry) })
                   : t('contracts.expiry.days', { count: daysToExpiry })}
-            </dd>
-          </div>
-          <div>
-            <dt className="text-text-tertiary">{t('contracts.panel.field.value')}</dt>
-            <Data as="dd" className="text-text-primary font-semibold">
-              {contract.value > 0 ? formatIDR(contract.value) : '—'}
-            </Data>
-          </div>
-          <div>
-            <dt className="text-text-tertiary">{t('contracts.panel.field.currency')}</dt>
-            <dd className="text-text-primary font-medium">{contract.currency}</dd>
-          </div>
-          <div>
-            <dt className="text-text-tertiary">{t('contracts.panel.field.paymentTerms')}</dt>
-            <dd className="text-text-primary font-medium">{contract.paymentTerms}</dd>
-          </div>
-          <div>
-            <dt className="text-text-tertiary">{t('contracts.panel.field.incoterms')}</dt>
-            <dd className="text-text-primary font-medium">{contract.incoterms}</dd>
-          </div>
-          <div>
-            <dt className="text-text-tertiary">{t('contracts.panel.field.signedByBuyer')}</dt>
-            <dd className="text-text-primary font-medium">{contract.signedByBuyer}</dd>
-          </div>
-          <div>
-            <dt className="text-text-tertiary">{t('contracts.panel.field.signedBySupplier')}</dt>
-            <dd className="text-text-primary font-medium">{contract.signedBySupplier}</dd>
-          </div>
-          <div>
-            <dt className="text-text-tertiary">{t('contracts.panel.field.signedDate')}</dt>
-            <Data as="dd" className="text-text-primary font-medium">
-              {contract.signedDate ? formatDate(contract.signedDate) : '—'}
-            </Data>
-          </div>
-          <div>
-            <dt className="text-text-tertiary">{t('contracts.panel.field.category')}</dt>
-            <dd className="text-text-primary font-medium">{catLabel(t, contract.category)}</dd>
-          </div>
-          <div className="col-span-2 md:col-span-3">
-            <dt className="text-text-tertiary">{t('contracts.panel.field.brands')}</dt>
-            <dd className="mt-1 flex flex-wrap gap-1.5">
-              {contract.brands.length === 0 ? (
-                <span className="text-text-tertiary text-sm">—</span>
-              ) : (
-                contract.brands.map((b) => (
-                  <span
-                    key={b}
-                    className="inline-flex items-center rounded-full bg-bg-hover text-text-secondary text-xs px-2 py-0.5"
-                  >
+              </span>
+            )}
+          </Field>
+          <Field label={t('contracts.panel.field.value')} kind="money">
+            {contract.value > 0 ? formatIDR(contract.value) : '—'}
+          </Field>
+          <Field label={t('contracts.panel.field.currency')}>{contract.currency}</Field>
+          <Field label={t('contracts.panel.field.paymentTerms')}>{contract.paymentTerms}</Field>
+          <Field label={t('contracts.panel.field.incoterms')}>{contract.incoterms}</Field>
+          <Field label={t('contracts.panel.field.signedByBuyer')}>{contract.signedByBuyer}</Field>
+          <Field label={t('contracts.panel.field.signedBySupplier')}>{contract.signedBySupplier}</Field>
+          <Field label={t('contracts.panel.field.signedDate')} kind="date">
+            {contract.signedDate ? formatDate(contract.signedDate) : '—'}
+          </Field>
+          <Field label={t('contracts.panel.field.category')}>{catLabel(t, contract.category)}</Field>
+          <Field label={t('contracts.panel.field.brands')} kind="status" wide>
+            {contract.brands.length === 0 ? (
+              '—'
+            ) : (
+              <span className="mt-0.5 flex flex-wrap gap-1.5">
+                {contract.brands.map((b) => (
+                  <StatusPill key={b} variant="neutral">
                     {b}
-                  </span>
-                ))
-              )}
-            </dd>
-          </div>
-          <div className="col-span-2 md:col-span-3 pt-2 flex items-center gap-3">
-            <dt className="text-text-tertiary text-sm">
-              {t('contracts.panel.field.performanceScore')}
-            </dt>
-            <dd>
-              {contract.performanceScore > 0 ? (
-                <ScoreBadge score={contract.performanceScore} size="md" variant="circular" />
-              ) : (
-                <span className="text-text-tertiary text-sm">
-                  {t('contracts.panel.notRated')}
-                </span>
-              )}
-            </dd>
-          </div>
-        </dl>
+                  </StatusPill>
+                ))}
+              </span>
+            )}
+          </Field>
+          <Field
+            label={t('contracts.panel.field.performanceScore')}
+            kind="status"
+            wide
+            className="pt-2 flex items-center gap-3"
+          >
+            {contract.performanceScore > 0 ? (
+              <ScoreBadge score={contract.performanceScore} size="md" variant="circular" />
+            ) : (
+              t('contracts.panel.notRated')
+            )}
+          </Field>
+        </FieldList>
       </section>
 
       <section>
@@ -457,9 +403,9 @@ export const ContractDetailBody: React.FC<{
             `Overdue` and one `In Progress`. A header and the lines under it
             cannot disagree when the header is a fold over the lines. */}
         <div className="flex items-baseline justify-between gap-3 mb-3">
-          <h3 className="text-label text-text-tertiary uppercase">
+          <SectionHeading level="group" as="h3">
             {t('contracts.panel.obligations', { count: rollup.total })}
-          </h3>
+          </SectionHeading>
           {rollup.total > 0 && (
             <span className="text-xs text-text-tertiary" data-testid="obligation-rollup">
               {t('contracts.panel.obligationsMet', {
@@ -526,9 +472,9 @@ export const ContractDetailBody: React.FC<{
       </section>
 
       <section>
-        <h3 className="text-label text-text-tertiary uppercase mb-3">
+        <SectionHeading level="group" as="h3" className="mb-3">
           {t('contracts.panel.lifecycle')}
-        </h3>
+        </SectionHeading>
         <Timeline events={buildContractTimeline(contract, t, display)} />
       </section>
     </div>

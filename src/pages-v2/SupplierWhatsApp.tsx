@@ -15,6 +15,7 @@ import FilterChipsBar from '../components/ui-v2/FilterChipsBar';
 import Button from '../components/ui-v2/Button';
 import NoSupplierIdentity from '../components/ui-v2/NoSupplierIdentity';
 import Data from '../components/ui-v2/Data';
+import SectionHeading from '../components/ui-v2/SectionHeading';
 import { useTranslation } from 'react-i18next';
 import { useCurrentIdentity } from '../context/CurrentIdentityContext';
 
@@ -516,9 +517,9 @@ const WhatsAppPanel: React.FC = () => {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[42%_1fr] gap-6">
       <div className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-5">
-        <h3 className="text-section text-text-primary mb-1">
+        <SectionHeading as="h3" className="mb-1">
           {t('supplierWhatsApp.wa.simulator.title')}
-        </h3>
+        </SectionHeading>
         <p className="text-xs text-text-tertiary mb-4">
           {t('supplierWhatsApp.wa.simulator.subtitle')}
         </p>
@@ -559,16 +560,16 @@ const WhatsAppPanel: React.FC = () => {
 
       <div className="flex flex-col gap-5">
         <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-5">
-          <h3 className="text-section text-text-primary mb-4">
+          <SectionHeading as="h3" className="mb-4">
             {t('supplierWhatsApp.wa.flow.title')}
-          </h3>
+          </SectionHeading>
           <WhatsAppFlow />
         </section>
 
         <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-5">
-          <h3 className="text-section text-text-primary">
+          <SectionHeading as="h3">
             {t('supplierWhatsApp.wa.capabilities.title')}
-          </h3>
+          </SectionHeading>
           <p className="text-xs text-text-tertiary mb-4">
             {t('supplierWhatsApp.wa.capabilities.subtitle')}
           </p>
@@ -596,9 +597,9 @@ const WhatsAppPanel: React.FC = () => {
         </section>
 
         <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-5">
-          <h3 className="text-section text-text-primary">
+          <SectionHeading as="h3">
             {t('supplierWhatsApp.wa.languages.title')}
-          </h3>
+          </SectionHeading>
           <p className="text-xs text-text-tertiary mb-3">
             {t('supplierWhatsApp.wa.languages.subtitle')}
           </p>
@@ -930,9 +931,9 @@ const EmailPanel: React.FC = () => {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[42%_1fr] gap-6">
       <div className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-5">
-        <h3 className="text-section text-text-primary mb-1">
+        <SectionHeading as="h3" className="mb-1">
           {t('supplierWhatsApp.email.simulator.title')}
-        </h3>
+        </SectionHeading>
         <p className="text-xs text-text-tertiary mb-4">
           {t('supplierWhatsApp.email.simulator.subtitle')}
         </p>
@@ -1011,9 +1012,9 @@ const EmailPanel: React.FC = () => {
       </div>
 
       <div className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-5">
-        <h3 className="text-section text-text-primary mb-4">
+        <SectionHeading as="h3" className="mb-4">
           {t('supplierWhatsApp.email.flow.title')}
-        </h3>
+        </SectionHeading>
         <EmailFlow />
       </div>
     </div>
@@ -1244,9 +1245,9 @@ const WeChatPanel: React.FC = () => {
       </div>
 
       <div className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-5">
-        <h3 className="text-section text-text-primary mb-4">
+        <SectionHeading as="h3" className="mb-4">
           {t('supplierWhatsApp.wc.flow.title')}
-        </h3>
+        </SectionHeading>
         <WeChatFlow />
       </div>
     </div>

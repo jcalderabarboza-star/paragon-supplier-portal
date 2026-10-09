@@ -24,6 +24,7 @@ import { useTranslation } from 'react-i18next';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import StatusPill from '../../components/ui-v2/StatusPill';
 import Data from '../../components/ui-v2/Data';
+import { FieldList, Field } from '../../components/ui-v2/Field';
 import DataTable, { CellSub, type Column } from '../../components/ui-v2/DataTable';
 import { useASNs, useGoodsReceipts } from '../../services/query/hooks';
 import { receiptsOfNotice } from '../../services/data/orderReceipt';
@@ -257,28 +258,21 @@ const SupplierShipNotices: React.FC<Props> = ({ search, supplierName }) => {
                     testId={`ship-notice-received-${a.asnNumber}`}
                   />
                 </div>
-                <dl className="grid grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-1.5 text-xs mb-3">
-                  <div>
-                    <dt className="text-text-tertiary">{t('shipments.notices.batch')}</dt>
-                    <dd className="text-text-primary">
-                      <Data>{a.details.batchNumber ?? '—'}</Data>
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className="text-text-tertiary">{t('shipments.notices.packingList')}</dt>
-                    <dd className="text-text-primary">
-                      {a.details.packingListName
-                        ? t('shipments.notices.packingListName', {
-                            name: a.details.packingListName,
-                          })
-                        : '—'}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className="text-text-tertiary">{t('shipments.notices.notes')}</dt>
-                    <dd className="text-text-primary">{a.details.notes ?? '—'}</dd>
-                  </div>
-                </dl>
+                <FieldList columns={2} className="lg:grid-cols-3 mb-3">
+                  <Field label={t('shipments.notices.batch')} kind="id">
+                    {a.details.batchNumber ?? '—'}
+                  </Field>
+                  <Field label={t('shipments.notices.packingList')} kind="text">
+                    {a.details.packingListName
+                      ? t('shipments.notices.packingListName', {
+                          name: a.details.packingListName,
+                        })
+                      : '—'}
+                  </Field>
+                  <Field label={t('shipments.notices.notes')} kind="text">
+                    {a.details.notes ?? '—'}
+                  </Field>
+                </FieldList>
                 <DataTable<NoticeLine>
                   density="compact"
                   card={false}

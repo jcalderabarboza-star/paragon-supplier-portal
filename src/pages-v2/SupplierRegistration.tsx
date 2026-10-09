@@ -226,7 +226,7 @@ interface FieldProps {
   children: React.ReactNode;
 }
 
-const Field: React.FC<FieldProps> = ({ label, required, error, children }) => (
+const FormField: React.FC<FieldProps> = ({ label, required, error, children }) => (
   <div>
     <label className={labelClass}>
       {label}
@@ -447,7 +447,7 @@ const CompanyInfoStep: React.FC<StepProps> = ({ form, setForm, errors }) => {
     >
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="md:col-span-2">
-          <Field label={t('registration.step.company.field.legalName.label')} required error={errors.legalName}>
+          <FormField label={t('registration.step.company.field.legalName.label')} required error={errors.legalName}>
             <input
               className={inputClass}
               value={form.legalName}
@@ -456,25 +456,25 @@ const CompanyInfoStep: React.FC<StepProps> = ({ form, setForm, errors }) => {
               }
               placeholder={t('registration.step.company.field.legalName.placeholder')}
             />
-          </Field>
+          </FormField>
         </div>
-        <Field label={t('registration.step.company.field.npwp.label')} required error={errors.npwp}>
+        <FormField label={t('registration.step.company.field.npwp.label')} required error={errors.npwp}>
           <input
             className={inputClass}
             value={form.npwp}
             onChange={(e) => setForm((f) => ({ ...f, npwp: e.target.value }))}
             placeholder="00.000.000.0-000.000"
           />
-        </Field>
-        <Field label={t('registration.step.company.field.nib.label')}>
+        </FormField>
+        <FormField label={t('registration.step.company.field.nib.label')}>
           <input
             className={inputClass}
             value={form.nib}
             onChange={(e) => setForm((f) => ({ ...f, nib: e.target.value }))}
             placeholder="1234567890123"
           />
-        </Field>
-        <Field label={t('registration.step.company.field.country.label')} required>
+        </FormField>
+        <FormField label={t('registration.step.company.field.country.label')} required>
           <select
             className={inputClass}
             value={form.country}
@@ -488,9 +488,9 @@ const CompanyInfoStep: React.FC<StepProps> = ({ form, setForm, errors }) => {
               </option>
             ))}
           </select>
-        </Field>
+        </FormField>
         {form.country === 'Indonesia' && (
-          <Field label={t('registration.step.company.field.province.label')} required error={errors.province}>
+          <FormField label={t('registration.step.company.field.province.label')} required error={errors.province}>
             <select
               className={inputClass}
               value={form.province}
@@ -503,18 +503,18 @@ const CompanyInfoStep: React.FC<StepProps> = ({ form, setForm, errors }) => {
                 <option key={p}>{p}</option>
               ))}
             </select>
-          </Field>
+          </FormField>
         )}
-        <Field label={t('registration.step.company.field.city.label')} required error={errors.city}>
+        <FormField label={t('registration.step.company.field.city.label')} required error={errors.city}>
           <input
             className={inputClass}
             value={form.city}
             onChange={(e) => setForm((f) => ({ ...f, city: e.target.value }))}
             placeholder={t('registration.step.company.field.city.placeholder')}
           />
-        </Field>
+        </FormField>
         <div className="md:col-span-2">
-          <Field label={t('registration.step.company.field.address.label')} required error={errors.address}>
+          <FormField label={t('registration.step.company.field.address.label')} required error={errors.address}>
             <textarea
               className={`${inputClass} min-h-[80px] resize-y`}
               value={form.address}
@@ -523,10 +523,10 @@ const CompanyInfoStep: React.FC<StepProps> = ({ form, setForm, errors }) => {
               }
               placeholder={t('registration.step.company.field.address.placeholder')}
             />
-          </Field>
+          </FormField>
         </div>
         <div className="md:col-span-2">
-          <Field label={t('registration.step.company.field.website.label')}>
+          <FormField label={t('registration.step.company.field.website.label')}>
             <input
               className={inputClass}
               value={form.website}
@@ -535,7 +535,7 @@ const CompanyInfoStep: React.FC<StepProps> = ({ form, setForm, errors }) => {
               }
               placeholder="https://www.example.com"
             />
-          </Field>
+          </FormField>
         </div>
       </div>
     </FormSection>
@@ -592,7 +592,7 @@ const ContactsStep: React.FC<StepProps> = ({ form, setForm, errors }) => {
               )}
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Field
+              <FormField
                 label={t('registration.step.contacts.field.name.label')}
                 required
                 error={errors[`c${i}name`]}
@@ -603,8 +603,8 @@ const ContactsStep: React.FC<StepProps> = ({ form, setForm, errors }) => {
                   onChange={(e) => updateContact(i, 'name', e.target.value)}
                   placeholder={t('registration.step.contacts.field.name.placeholder')}
                 />
-              </Field>
-              <Field label={t('registration.step.contacts.field.role.label')}>
+              </FormField>
+              <FormField label={t('registration.step.contacts.field.role.label')}>
                 <select
                   className={inputClass}
                   value={c.role}
@@ -616,8 +616,8 @@ const ContactsStep: React.FC<StepProps> = ({ form, setForm, errors }) => {
                     </option>
                   ))}
                 </select>
-              </Field>
-              <Field
+              </FormField>
+              <FormField
                 label={t('registration.step.contacts.field.email.label')}
                 required
                 error={errors[`c${i}email`]}
@@ -628,8 +628,8 @@ const ContactsStep: React.FC<StepProps> = ({ form, setForm, errors }) => {
                   onChange={(e) => updateContact(i, 'email', e.target.value)}
                   placeholder="jane@example.com"
                 />
-              </Field>
-              <Field
+              </FormField>
+              <FormField
                 label={t('registration.step.contacts.field.whatsapp.label')}
                 required
                 error={errors[`c${i}whatsapp`]}
@@ -642,9 +642,9 @@ const ContactsStep: React.FC<StepProps> = ({ form, setForm, errors }) => {
                   }
                   placeholder="+62 812 3456 7890"
                 />
-              </Field>
+              </FormField>
               <div className="md:col-span-2">
-                <Field label={t('registration.step.contacts.field.phone.label')}>
+                <FormField label={t('registration.step.contacts.field.phone.label')}>
                   <input
                     className={inputClass}
                     value={c.phone}
@@ -653,7 +653,7 @@ const ContactsStep: React.FC<StepProps> = ({ form, setForm, errors }) => {
                     }
                     placeholder="+62 21 1234 5678"
                   />
-                </Field>
+                </FormField>
               </div>
             </div>
           </div>
@@ -857,7 +857,7 @@ const DocumentsAndBankStep: React.FC<StepProps> = ({ form, setForm, errors }) =>
         description={t('registration.step.bank.description')}
       >
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Field label={t('registration.step.bank.field.bankName.label')} required error={errors.bankName}>
+          <FormField label={t('registration.step.bank.field.bankName.label')} required error={errors.bankName}>
             <select
               className={inputClass}
               value={form.bankName}
@@ -872,8 +872,8 @@ const DocumentsAndBankStep: React.FC<StepProps> = ({ form, setForm, errors }) =>
                 </option>
               ))}
             </select>
-          </Field>
-          <Field
+          </FormField>
+          <FormField
             label={t('registration.step.bank.field.accountNumber.label')}
             required
             error={errors.accountNumber}
@@ -886,9 +886,9 @@ const DocumentsAndBankStep: React.FC<StepProps> = ({ form, setForm, errors }) =>
               }
               placeholder="1234567890"
             />
-          </Field>
+          </FormField>
           <div className="md:col-span-2">
-            <Field
+            <FormField
               label={t('registration.step.bank.field.accountHolder.label')}
               required
               error={errors.accountHolder}
@@ -901,7 +901,7 @@ const DocumentsAndBankStep: React.FC<StepProps> = ({ form, setForm, errors }) =>
                 }
                 placeholder={t('registration.step.bank.field.accountHolder.placeholder')}
               />
-            </Field>
+            </FormField>
           </div>
         </div>
       </FormSection>
@@ -918,7 +918,7 @@ const KOLBankStep: React.FC<StepProps> = ({ form, setForm, errors }) => {
       description={t('registration.step.kolBank.description')}
     >
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Field label={t('registration.step.bank.field.bankName.label')} required error={errors.bankName}>
+        <FormField label={t('registration.step.bank.field.bankName.label')} required error={errors.bankName}>
           <select
             className={inputClass}
             value={form.bankName}
@@ -933,8 +933,8 @@ const KOLBankStep: React.FC<StepProps> = ({ form, setForm, errors }) => {
               </option>
             ))}
           </select>
-        </Field>
-        <Field label={t('registration.step.bank.field.accountNumber.label')} required error={errors.accountNumber}>
+        </FormField>
+        <FormField label={t('registration.step.bank.field.accountNumber.label')} required error={errors.accountNumber}>
           <input
             className={inputClass}
             value={form.accountNumber}
@@ -943,9 +943,9 @@ const KOLBankStep: React.FC<StepProps> = ({ form, setForm, errors }) => {
             }
             placeholder={t('registration.step.kolBank.field.accountNumber.placeholder')}
           />
-        </Field>
+        </FormField>
         <div className="md:col-span-2">
-          <Field
+          <FormField
             label={t('registration.step.bank.field.accountHolder.label')}
             required
             error={errors.accountHolder}
@@ -958,7 +958,7 @@ const KOLBankStep: React.FC<StepProps> = ({ form, setForm, errors }) => {
               }
               placeholder={t('registration.step.kolBank.field.accountHolder.placeholder')}
             />
-          </Field>
+          </FormField>
         </div>
       </div>
       <div className="bg-warning-soft border-l-2 border-warning rounded px-3 py-2 mt-3 text-xs text-warning-hover">
@@ -1015,7 +1015,7 @@ const InternalSRCategoryStep: React.FC<StepProps & { catError: string }> = ({
         </div>
         {catError && <div className={`${errorClass} mt-2`}>{catError}</div>}
       </div>
-      <Field label={t('registration.step.expansion.field.reason.label')}>
+      <FormField label={t('registration.step.expansion.field.reason.label')}>
         <textarea
           className={`${inputClass} min-h-[80px] resize-y`}
           value={form.expansionReason}
@@ -1024,7 +1024,7 @@ const InternalSRCategoryStep: React.FC<StepProps & { catError: string }> = ({
           }
           placeholder={t('registration.step.expansion.field.reason.placeholder')}
         />
-      </Field>
+      </FormField>
     </FormSection>
   );
 };

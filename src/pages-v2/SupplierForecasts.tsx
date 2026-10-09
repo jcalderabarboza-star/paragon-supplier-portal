@@ -23,6 +23,7 @@ import Button from '../components/ui-v2/Button';
 import SidePanel from '../components/ui-v2/SidePanel';
 import FormSection from '../components/ui-v2/FormSection';
 import Data from '../components/ui-v2/Data';
+import { FieldList, Field } from '../components/ui-v2/Field';
 import { useVerbAvailability, useVerbAvailabilities } from '../hooks/useVerbAvailability';
 import { HandoffNotice } from '../components/ui-v2/HandoffNotice';
 import LivenessPill from '../components/ui-v2/LivenessPill';
@@ -450,34 +451,21 @@ const LineCard: React.FC<{
         )}
       </div>
 
-      <dl className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-4">
-        <div className="bg-bg-hover rounded-md px-3 py-2">
-          <dt className="text-label text-text-tertiary uppercase mb-0.5">
-            {t('sdcSup.line.demand')}
-          </dt>
-          <Data as="dd" className="text-sm font-semibold">
-            {formatNumber(line.forecastQty)} {line.uom}
-          </Data>
-        </div>
-        <div className="bg-bg-hover rounded-md px-3 py-2">
-          <dt className="text-label text-text-tertiary uppercase mb-0.5">
-            {t('sdcSup.line.period')}
-          </dt>
-          <Data as="dd" className="text-sm font-semibold">
-            {line.periodBucket}
-          </Data>
-        </div>
+      <FieldList columns={2} className="sm:grid-cols-3 mt-4">
+        <Field label={t('sdcSup.line.demand')} kind="number" className="bg-bg-hover rounded-md px-3 py-2">
+          {formatNumber(line.forecastQty)} {line.uom}
+        </Field>
+        <Field label={t('sdcSup.line.period')} kind="date" className="bg-bg-hover rounded-md px-3 py-2">
+          {line.periodBucket}
+        </Field>
         {/* B4b-2 · the deadline on every line; OVERDUE is derived at read. */}
         <div className="bg-bg-hover rounded-md px-3 py-2" data-testid="sdcsup-line-deadline" data-overdue={overdue ? 'true' : 'false'}>
-          <dt className="text-label text-text-tertiary uppercase mb-0.5">
-            {t('sdcSup.line.respondBy')}
-          </dt>
-          <dd className="text-sm font-semibold">
-            <Data>{formatDate(dueAt)}</Data>
-            {overdue && <span className="ml-2 text-xs font-semibold text-critical">{t('sdcSup.deadline.overdue')}</span>}
-          </dd>
+          <Field label={t('sdcSup.line.respondBy')} kind="date">
+            {formatDate(dueAt)}
+            {overdue && <span className="ml-2 text-critical">{t('sdcSup.deadline.overdue')}</span>}
+          </Field>
         </div>
-      </dl>
+      </FieldList>
 
       {carriedAnswer && (
         <div className="mt-3 text-xs text-success" data-testid="sdcsup-line-carried-answer">
@@ -777,57 +765,57 @@ const ResponsesTab: React.FC<{
               and `nextActorCopy` returning null is asserted rather than
               described. */}
           <NextActorLine state={r.status} />
-          <dl className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-            {[
-              { label: t('sdcSup.responses.col.material'), value: materialLabel(r.materialCode) },
-              { label: t('sdcSup.responses.col.period'), value: r.periodBucket },
-              {
-                // SDC-2b-EXT: an acknowledgment carries NO qty — the cell reads
-                // "Acknowledged" under a "Response" label; the word "confirmed"
-                // never appears on a visibility response.
-                label: r.acknowledgment
-                  ? t('sdcSup.responses.col.response')
-                  : t('sdcSup.responses.col.confirmed'),
-                value: r.acknowledgment
-                  ? t('sdcSup.responses.ack')
-                  : `${formatNumber(r.forecastConfirmation!.confirmedQty)} ${r.forecastConfirmation!.uom}`,
-              },
-              {
-                label: t('sdcSup.responses.col.committedDate'),
-                value: r.forecastConfirmation?.committedDate
-                  ? formatDate(r.forecastConfirmation.committedDate)
-                  : '—',
-              },
-              { label: t('sdcSup.responses.col.version'), value: `v${r.submissionVersion}` },
-              {
-                label: t('sdcSup.responses.col.submitted'),
-                value: r.submittedAt ? formatDate(r.submittedAt) : '—',
-              },
-            ].map((d) => (
-              <div key={d.label} className="bg-bg-hover rounded-md px-3 py-2">
-                <dt className="text-label text-text-tertiary uppercase mb-0.5">{d.label}</dt>
-                <Data as="dd" className="text-sm font-semibold">
-                  {d.value}
-                </Data>
-              </div>
+          <FieldList columns={2} className="sm:grid-cols-3 lg:grid-cols-6">
+            {(
+              [
+                { kind: 'text', label: t('sdcSup.responses.col.material'), value: materialLabel(r.materialCode) },
+                { kind: 'date', label: t('sdcSup.responses.col.period'), value: r.periodBucket },
+                {
+                  // SDC-2b-EXT: an acknowledgment carries NO qty — the cell reads
+                  // "Acknowledged" under a "Response" label; the word "confirmed"
+                  // never appears on a visibility response.
+                  kind: r.acknowledgment ? 'text' : 'number',
+                  label: r.acknowledgment
+                    ? t('sdcSup.responses.col.response')
+                    : t('sdcSup.responses.col.confirmed'),
+                  value: r.acknowledgment
+                    ? t('sdcSup.responses.ack')
+                    : `${formatNumber(r.forecastConfirmation!.confirmedQty)} ${r.forecastConfirmation!.uom}`,
+                },
+                {
+                  kind: 'date',
+                  label: t('sdcSup.responses.col.committedDate'),
+                  value: r.forecastConfirmation?.committedDate
+                    ? formatDate(r.forecastConfirmation.committedDate)
+                    : '—',
+                },
+                { kind: 'number', label: t('sdcSup.responses.col.version'), value: `v${r.submissionVersion}` },
+                {
+                  kind: 'date',
+                  label: t('sdcSup.responses.col.submitted'),
+                  value: r.submittedAt ? formatDate(r.submittedAt) : '—',
+                },
+              ] as const
+            ).map((d) => (
+              <Field key={d.label} label={d.label} kind={d.kind} className="bg-bg-hover rounded-md px-3 py-2">
+                {d.value}
+              </Field>
             ))}
-          </dl>
-          {r.acknowledgment?.note && (
-            <div className="mt-3 text-xs text-text-secondary">
-              <span className="text-label text-text-tertiary uppercase">
-                {t('sdcSup.responses.note')}
-              </span>{' '}
-              {r.acknowledgment.note}
-            </div>
-          )}
-          {r.rootCause && (
-            <div className="mt-3 text-xs text-text-secondary">
-              <span className="text-label text-text-tertiary uppercase">
-                {t('sdcSup.responses.rootCause')}
-              </span>{' '}
-              {r.rootCause.level1}
-              {r.rootCause.note ? ` — ${r.rootCause.note}` : ''}
-            </div>
+          </FieldList>
+          {(r.acknowledgment?.note || r.rootCause) && (
+            <FieldList columns={1} className="mt-3">
+              {r.acknowledgment?.note && (
+                <Field label={t('sdcSup.responses.note')} kind="text">
+                  {r.acknowledgment.note}
+                </Field>
+              )}
+              {r.rootCause && (
+                <Field label={t('sdcSup.responses.rootCause')} kind="text">
+                  {r.rootCause.level1}
+                  {r.rootCause.note ? ` — ${r.rootCause.note}` : ''}
+                </Field>
+              )}
+            </FieldList>
           )}
           {/* R1b — the buyer's dispute text and its resolution, in order. */}
           <DisputeLedger entries={r.disputeResponse ?? []} />
@@ -1202,42 +1190,24 @@ const ShipmentsTab: React.FC<{
                 )}
               </div>
             </div>
-            <dl className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4">
-              <div className="bg-bg-hover rounded-md px-3 py-2">
-                <dt className="text-label text-text-tertiary uppercase mb-0.5">
-                  {t('sdcSup.ship.col.qty')}
-                </dt>
-                <Data as="dd" className="text-sm font-semibold">
-                  {formatNumber(s.qty)} {s.uom}
-                </Data>
-              </div>
-              <div className="bg-bg-hover rounded-md px-3 py-2">
-                <dt className="text-label text-text-tertiary uppercase mb-0.5">
-                  {t('sdcSup.ship.col.eta')}
-                </dt>
-                <Data as="dd" className="text-sm font-semibold">
-                  {s.eta ? formatDate(s.eta) : '—'}
-                </Data>
-              </div>
-              <div className="bg-bg-hover rounded-md px-3 py-2">
-                <dt className="text-label text-text-tertiary uppercase mb-0.5">
-                  {t('sdcSup.ship.col.etd')}
-                </dt>
-                <Data as="dd" className="text-sm font-semibold">
-                  {s.etd ? formatDate(s.etd) : '—'}
-                </Data>
-              </div>
-              <div className="bg-bg-hover rounded-md px-3 py-2">
-                <dt className="text-label text-text-tertiary uppercase mb-0.5">
-                  {s.direction === 'to-paragon'
-                    ? t('sdcSup.ship.col.asn')
-                    : t('sdcSup.ship.col.awb')}
-                </dt>
-                <Data as="dd" className="text-sm font-semibold">
-                  {s.direction === 'to-paragon' ? (s.asnRef ?? '—') : (s.awb ?? '—')}
-                </Data>
-              </div>
-            </dl>
+            <FieldList columns={2} className="sm:grid-cols-4 mt-4">
+              <Field label={t('sdcSup.ship.col.qty')} kind="number" className="bg-bg-hover rounded-md px-3 py-2">
+                {formatNumber(s.qty)} {s.uom}
+              </Field>
+              <Field label={t('sdcSup.ship.col.eta')} kind="date" className="bg-bg-hover rounded-md px-3 py-2">
+                {s.eta ? formatDate(s.eta) : '—'}
+              </Field>
+              <Field label={t('sdcSup.ship.col.etd')} kind="date" className="bg-bg-hover rounded-md px-3 py-2">
+                {s.etd ? formatDate(s.etd) : '—'}
+              </Field>
+              <Field
+                label={s.direction === 'to-paragon' ? t('sdcSup.ship.col.asn') : t('sdcSup.ship.col.awb')}
+                kind="id"
+                className="bg-bg-hover rounded-md px-3 py-2"
+              >
+                {s.direction === 'to-paragon' ? (s.asnRef ?? '—') : (s.awb ?? '—')}
+              </Field>
+            </FieldList>
             {/* the three advance verbs, each in its OWN slot */}
             <div className="flex items-center justify-end gap-2 flex-wrap mt-4 pt-4 border-t border-border-subtle">
               {/* ONE renderer, not three copies. The per-verb gate is applied in
@@ -2094,20 +2064,14 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
                   {t(CLASS_LABEL_KEY[panelLine.commitmentClass])}
                 </span>
               </div>
-              <div className="flex flex-wrap gap-4 mt-2 text-xs text-text-tertiary">
-                <span>
-                  {t('sdcSup.panel.requested')}{' '}
-                  <Data as="strong" className="text-text-primary">
-                    {formatNumber(panelLine.forecastQty)} {panelLine.uom}
-                  </Data>
-                </span>
-                <span>
-                  {t('sdcSup.line.period')}{' '}
-                  <Data as="strong" className="text-text-primary">
-                    {panelLine.periodBucket}
-                  </Data>
-                </span>
-              </div>
+              <FieldList columns={2} className="mt-2">
+                <Field label={t('sdcSup.panel.requested')} kind="number">
+                  {formatNumber(panelLine.forecastQty)} {panelLine.uom}
+                </Field>
+                <Field label={t('sdcSup.line.period')} kind="date">
+                  {panelLine.periodBucket}
+                </Field>
+              </FieldList>
               {/* A3 — what this revision answers, said before the number is typed. */}
               {revising && (
                 <p className="mt-2 text-xs text-text-secondary" data-testid="sdcsup-revise-note">
@@ -2271,20 +2235,14 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
                 </Data>
                 <span className={CHIP}>{t(CLASS_LABEL_KEY[ackPanelLine.commitmentClass])}</span>
               </div>
-              <div className="flex flex-wrap gap-4 mt-2 text-xs text-text-tertiary">
-                <span>
-                  {t('sdcSup.panel.requested')}{' '}
-                  <Data as="strong" className="text-text-primary">
-                    {formatNumber(ackPanelLine.forecastQty)} {ackPanelLine.uom}
-                  </Data>
-                </span>
-                <span>
-                  {t('sdcSup.line.period')}{' '}
-                  <Data as="strong" className="text-text-primary">
-                    {ackPanelLine.periodBucket}
-                  </Data>
-                </span>
-              </div>
+              <FieldList columns={2} className="mt-2">
+                <Field label={t('sdcSup.panel.requested')} kind="number">
+                  {formatNumber(ackPanelLine.forecastQty)} {ackPanelLine.uom}
+                </Field>
+                <Field label={t('sdcSup.line.period')} kind="date">
+                  {ackPanelLine.periodBucket}
+                </Field>
+              </FieldList>
               <p className="mt-2 text-xs text-text-secondary">{t('sdcSup.ackPanel.desc')}</p>
             </section>
 

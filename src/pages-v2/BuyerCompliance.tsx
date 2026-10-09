@@ -18,6 +18,8 @@ import {
 import ListPage from '../components/ui-v2/ListPage';
 import DataTable, { CellSub, type Column } from '../components/ui-v2/DataTable';
 import Data from '../components/ui-v2/Data';
+import { Field, FieldList } from '../components/ui-v2/Field';
+import SectionHeading from '../components/ui-v2/SectionHeading';
 import KpiCard from '../components/ui-v2/KpiCard';
 import BulkActionsBar from '../components/ui-v2/BulkActionsBar';
 import SidePanel from '../components/ui-v2/SidePanel';
@@ -645,9 +647,7 @@ const BuyerCompliance: React.FC = () => {
           <div className="px-5 py-4 border-b border-border-subtle flex items-center gap-2">
             <Inbox size={16} className="text-action shrink-0" aria-hidden="true" />
             <div>
-              <div className="text-sm font-bold text-text-primary">
-                {t('compliance.queue.title')}
-              </div>
+              <SectionHeading as="h2">{t('compliance.queue.title')}</SectionHeading>
               <div className="text-xs text-text-tertiary mt-0.5">
                 {reviewQueue.length === 1
                   ? t('compliance.queue.subtitle.one', { count: reviewQueue.length })
@@ -687,32 +687,19 @@ const BuyerCompliance: React.FC = () => {
                       )}
                     </div>
                     {doc.declaration ? (
-                      <dl className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1 text-xs">
-                        <div>
-                          <dt className="inline text-text-tertiary">
-                            {t('compliance.queue.field.issuer')}{' '}
-                          </dt>
+                      <FieldList columns={2} className="mt-2">
+                        <Field label={t('compliance.queue.field.issuer')}>
                           {/* i18n-defer: supplier-authored free text */}
-                          <dd className="inline text-text-secondary">
-                            {doc.declaration.issuer}
-                          </dd>
-                        </div>
-                        <div>
-                          <dt className="inline text-text-tertiary">
-                            {t('compliance.queue.field.dates')}{' '}
-                          </dt>
-                          <dd className="inline text-text-secondary">
-                            <Data>{formatDate(doc.declaration.issuedOn)}</Data>
-                            {' → '}
-                            {doc.declaration.expiresOn === null ? (
-                              t('compliance.queue.noExpiry')
-                            ) : (
-                              <Data>{formatDate(doc.declaration.expiresOn)}</Data>
-                            )}
-                          </dd>
-                        </div>
-                        <div className="sm:col-span-2">
-                          {/* ⚠️ **`declaredAt` AND `declaredBy` ARE RENDERED HERE
+                          {doc.declaration.issuer}
+                        </Field>
+                        <Field label={t('compliance.queue.field.dates')} kind="date">
+                          {formatDate(doc.declaration.issuedOn)}
+                          {' → '}
+                          {doc.declaration.expiresOn === null
+                            ? t('compliance.queue.noExpiry')
+                            : formatDate(doc.declaration.expiresOn)}
+                        </Field>
+                        {/* ⚠️ **`declaredAt` AND `declaredBy` ARE RENDERED HERE
                               BECAUSE THE STORED-FIELD GATE SAID THEY WERE NOT.**
                               It flagged both as stored-and-never-read — the
                               `certBasis` shape — and the honest disposal is a
@@ -720,12 +707,21 @@ const BuyerCompliance: React.FC = () => {
                               place: a reviewer needs to know how old a claim is,
                               and the attribution says out loud that this platform
                               cannot name the person who made it. */}
-                          <dt className="inline text-text-tertiary">
-                            {t('compliance.queue.field.declared')}{' '}
-                          </dt>
-                          <dd className="inline text-text-secondary">
-                            <Data>{formatDate(doc.declaration.declaredAt)}</Data>{' '}
-                            {/* ⚠️ **THE ONE STAMP ON THIS PANEL THAT ANSWERS TO
+                        <Field
+                          label={t('compliance.queue.field.declared')}
+                          kind="date"
+                          wide
+                          sub={
+                            doc.declaration.declaredBy.kind === 'UNATTRIBUTED'
+                              ? t('compliance.queue.declaredBy.unattributed')
+                              : personLabel(
+                                  doc.declaration.declaredBy.person.personId,
+                                  t,
+                                )
+                          }
+                        >
+                          {formatDate(doc.declaration.declaredAt)}{' '}
+                          {/* ⚠️ **THE ONE STAMP ON THIS PANEL THAT ANSWERS TO
                                 THE WALL CLOCK.** `declaredAt` is minted by the
                                 store at dispatch (anti-backdating, ruled), while
                                 every neighbouring date here is a fixture literal
@@ -736,33 +732,20 @@ const BuyerCompliance: React.FC = () => {
                                 declaration today, which is exactly why the test
                                 for the seeded arm is written against a value and
                                 not against this site. */}
-                            <SessionStampMarker
-                              documentId={doc.id}
-                              field="declaredAt"
-                              value={doc.declaration.declaredAt}
-                            />
-                            {' · '}
-                            {doc.declaration.declaredBy.kind === 'UNATTRIBUTED'
-                              ? t('compliance.queue.declaredBy.unattributed')
-                              : personLabel(
-                                  doc.declaration.declaredBy.person.personId,
-                                  t,
-                                )}
-                          </dd>
-                        </div>
-                        <div className="sm:col-span-2">
-                          <dt className="inline text-text-tertiary">
-                            {t('compliance.queue.field.scope')}{' '}
-                          </dt>
+                          <SessionStampMarker
+                            documentId={doc.id}
+                            field="declaredAt"
+                            value={doc.declaration.declaredAt}
+                          />
+                        </Field>
+                        <Field label={t('compliance.queue.field.scope')} wide>
                           {/* ⚠️ THE SUPPLIER'S OWN WORDS, RENDERED AS SUCH. This
                               is NOT a material-code list and must never be shown
                               as one — compliance reads it and assigns the codes.
                               i18n-defer: supplier-authored free text. */}
-                          <dd className="inline text-text-secondary">
-                            {doc.declaration.scopeText}
-                          </dd>
-                        </div>
-                      </dl>
+                          {doc.declaration.scopeText}
+                        </Field>
+                      </FieldList>
                     ) : (
                       /* A seeded row that predates the verb: it reached `Under
                          Review` before declarations existed, so there is nothing
@@ -940,9 +923,7 @@ const BuyerCompliance: React.FC = () => {
       <div className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm px-5 py-4 mb-6">
         <div className="flex items-center justify-between gap-3 flex-wrap">
           <div>
-            <div className="text-sm font-bold text-text-primary">
-              {t('compliance.deadline.title')}
-            </div>
+            <SectionHeading as="h2">{t('compliance.deadline.title')}</SectionHeading>
             <div className="text-xs text-text-tertiary mt-0.5 max-w-2xl">
               {t('compliance.deadline.subtitle')}
             </div>
@@ -1121,39 +1102,23 @@ const BuyerCompliance: React.FC = () => {
               <p className="text-sm text-text-secondary">
                 {t('compliance.request.confirm.lead')}
               </p>
-              <dl className="bg-bg-hover rounded px-4 py-3 space-y-3 text-sm">
-                <div>
-                  <dt className="text-label text-text-tertiary uppercase">
-                    {t('compliance.request.field.supplier')}
-                  </dt>
-                  <dd className="text-text-primary font-semibold">
-                    {/* i18n-defer: mock/sample data (supplier name) */}
-                    {reqSupplierName}{' '}
-                    <Data className="text-xs text-text-tertiary">
-                      {reqSupplier}
-                    </Data>
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-label text-text-tertiary uppercase">
-                    {t('compliance.request.field.category')}
-                  </dt>
-                  <dd className="text-text-primary">
-                    {t(
-                      REQUEST_CATEGORIES.find((c) => c.id === reqCategory)
-                        ?.labelKey ?? 'compliance.request.category.other',
-                    )}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-label text-text-tertiary uppercase">
-                    {t('compliance.request.field.note')}
-                  </dt>
+              <FieldList columns={1} className="bg-bg-hover rounded px-4 py-3">
+                <Field label={t('compliance.request.field.supplier')} sub={reqSupplier}>
+                  {/* i18n-defer: mock/sample data (supplier name) */}
+                  {reqSupplierName}
+                </Field>
+                <Field label={t('compliance.request.field.category')}>
+                  {t(
+                    REQUEST_CATEGORIES.find((c) => c.id === reqCategory)
+                      ?.labelKey ?? 'compliance.request.category.other',
+                  )}
+                </Field>
+                <Field label={t('compliance.request.field.note')}>
                   {/* i18n-defer: buyer-authored free text, shown to the
                       supplier word for word. */}
-                  <dd className="text-text-secondary">{reqNote.trim()}</dd>
-                </div>
-              </dl>
+                  {reqNote.trim()}
+                </Field>
+              </FieldList>
               <ActorPreActNotice unattributedKey="identity.preAct.namedRequired" testId="supplierdoc-request-pre-act" />
             </div>
           ) : (

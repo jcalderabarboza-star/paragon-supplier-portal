@@ -40,6 +40,8 @@ import PageMetaLine from '../components/ui-v2/PageMetaLine';
 import ProvenanceMarker from '../components/ui-v2/ProvenanceMarker';
 import { IllustrativeBanner, IllustrativeMark } from '../components/ui-v2/IllustrativeNotice';
 import Data from '../components/ui-v2/Data';
+import SectionHeading from '../components/ui-v2/SectionHeading';
+import { FieldList, Field } from '../components/ui-v2/Field';
 import TargetBar from '../components/ui-v2/TargetBar';
 import Tabs from '../components/ui-v2/Tabs';
 import StatusPill from '../components/ui-v2/StatusPill';
@@ -240,31 +242,22 @@ const PslStandingRow: React.FC<{ view: SupplierPslView }> = ({ view }) => {
         </span>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
-        <div>
-          <span className="block text-xs text-text-tertiary">{t('psl.supplier.scope')}</span>
+      <FieldList columns={1} className="sm:grid-cols-3">
+        <Field label={t('psl.supplier.scope')} kind="text">
           {view.scope.map((item) => (
             <span key={item.code} className="block">
-              <Data className="text-xs">{item.code}</Data>
-              {item.label ? (
-                <span className="text-text-secondary text-xs"> {item.label}</span>
-              ) : null}
+              <Data>{item.code}</Data>
+              {item.label ? <span> {item.label}</span> : null}
             </span>
           ))}
-        </div>
-        <div>
-          <span className="block text-xs text-text-tertiary">{t('psl.supplier.from')}</span>
-          <Data className="text-xs">{formatDate(view.validFrom)}</Data>
-        </div>
-        <div>
-          <span className="block text-xs text-text-tertiary">{t('psl.supplier.until')}</span>
-          {view.effectiveUntil ? (
-            <Data className="text-xs">{formatDate(view.effectiveUntil)}</Data>
-          ) : (
-            <span className="text-xs text-text-secondary">{t('psl.supplier.noEnd')}</span>
-          )}
-        </div>
-      </div>
+        </Field>
+        <Field label={t('psl.supplier.from')} kind="date">
+          {formatDate(view.validFrom)}
+        </Field>
+        <Field label={t('psl.supplier.until')} kind="date">
+          {view.effectiveUntil ? formatDate(view.effectiveUntil) : t('psl.supplier.noEnd')}
+        </Field>
+      </FieldList>
 
       {/* R-D / R-F — one line per state, and the three are mutually exclusive
           because `displayStatus` is one word. Each states a DATE and asks for
@@ -307,9 +300,9 @@ const PslStandingSection: React.FC = () => {
       data-testid="supplier-psl-section"
       className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6 mb-6"
     >
-      <h2 className="text-section text-text-primary mb-1 pb-3 border-b border-border-subtle">
+      <SectionHeading as="h2" className="mb-1 pb-3 border-b border-border-subtle">
         {t('psl.supplier.title')}
-      </h2>
+      </SectionHeading>
       <p className="text-xs text-text-tertiary mb-4">
         {t('psl.supplier.subtitle')}
         {/* ⚠️ THE MARKER IS NOT DECORATION HERE. The `psl` capability derives
@@ -506,7 +499,7 @@ const SupplierPerformance: React.FC = () => {
           <PslStandingSection />
 
           <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6 mb-6">
-            <h2 className="text-section text-text-primary mb-4 pb-3 border-b border-border-subtle">
+            <SectionHeading as="h2" className="mb-4 pb-3 border-b border-border-subtle">
               {kpis.length === 1
                 ? t('supplierPerformance.overview.scorecardTitle.one', {
                     count: kpis.length,
@@ -515,7 +508,7 @@ const SupplierPerformance: React.FC = () => {
                     count: kpis.length,
                   })}{' '}
               <IllustrativeMark />
-            </h2>
+            </SectionHeading>
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
               {kpis.map((k) => (
                 <KpiProgressTile key={k.name} k={k} />
@@ -525,10 +518,10 @@ const SupplierPerformance: React.FC = () => {
 
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-5 mb-6">
             <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6">
-              <h2 className="text-section text-text-primary mb-4 pb-3 border-b border-border-subtle">
+              <SectionHeading as="h2" className="mb-4 pb-3 border-b border-border-subtle">
                 {t('supplierPerformance.overview.radarTitle')}{' '}
                 <IllustrativeMark />
-              </h2>
+              </SectionHeading>
               <ResponsiveContainer width="100%" height={280}>
                 <RadarChart
                   data={radar}
@@ -567,13 +560,13 @@ const SupplierPerformance: React.FC = () => {
             </section>
 
             <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6">
-              <h2 className="flex items-center gap-2 text-section text-text-primary mb-4 pb-3 border-b border-border-subtle">
+              <SectionHeading as="h2" className="flex items-center gap-2 mb-4 pb-3 border-b border-border-subtle">
                 {t('supplierPerformance.overview.gradeHistoryTitle')}{' '}
                 <IllustrativeMark />
                 <StatusPill variant="neutral">
                   {t('supplierPerformance.sampleData')}
                 </StatusPill>
-              </h2>
+              </SectionHeading>
               <ResponsiveContainer width="100%" height={180}>
                 <BarChart
                   data={GRADE_HISTORY}
@@ -615,11 +608,11 @@ const SupplierPerformance: React.FC = () => {
           </div>
 
           <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6">
-            <h2 className="text-section text-text-primary mb-4 pb-3 border-b border-border-subtle">
+            <SectionHeading as="h2" className="mb-4 pb-3 border-b border-border-subtle">
               {t('supplierPerformance.overview.poPerfTitle', {
                 name: mySupplier.name,
               })}
-            </h2>
+            </SectionHeading>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
               {[
                 {
@@ -664,10 +657,10 @@ const SupplierPerformance: React.FC = () => {
       {activeTab === 'trends' && (
         <>
           <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6 mb-6">
-            <h2 className="text-section text-text-primary mb-4 pb-3 border-b border-border-subtle">
+            <SectionHeading as="h2" className="mb-4 pb-3 border-b border-border-subtle">
               {t('supplierPerformance.trends.otifTitle')}{' '}
               <IllustrativeMark />
-            </h2>
+            </SectionHeading>
             <ResponsiveContainer width="100%" height={240}>
               <LineChart
                 data={trend}
@@ -691,10 +684,10 @@ const SupplierPerformance: React.FC = () => {
           </section>
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
             <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6">
-              <h2 className="text-section text-text-primary mb-4 pb-3 border-b border-border-subtle">
+              <SectionHeading as="h2" className="mb-4 pb-3 border-b border-border-subtle">
                 {t('supplierPerformance.trends.asnTitle')}{' '}
                 <IllustrativeMark />
-              </h2>
+              </SectionHeading>
               <ResponsiveContainer width="100%" height={200}>
                 <LineChart
                   data={trend}
@@ -716,10 +709,10 @@ const SupplierPerformance: React.FC = () => {
               </ResponsiveContainer>
             </section>
             <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6">
-              <h2 className="text-section text-text-primary mb-4 pb-3 border-b border-border-subtle">
+              <SectionHeading as="h2" className="mb-4 pb-3 border-b border-border-subtle">
                 {t('supplierPerformance.trends.poaTitle')}{' '}
                 <IllustrativeMark />
-              </h2>
+              </SectionHeading>
               <ResponsiveContainer width="100%" height={200}>
                 <LineChart
                   data={trend}

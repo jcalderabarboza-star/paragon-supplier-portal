@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Info } from 'lucide-react';
 
 import Button from '../../components/ui-v2/Button';
+import SectionHeading from '../../components/ui-v2/SectionHeading';
 import { EXTERNAL_FACT_OWNER_KEY } from '../../lib/i18n/externalFactOwner';
 import { contractDraftOwner } from '../../services/transitions/contractDraftOwner';
 
@@ -69,9 +70,9 @@ export const RaisedElsewherePanel: React.FC<{
       className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-lg border border-border-subtle bg-bg-surface p-6 space-y-5"
     >
       <div className="space-y-2">
-        <h2 className="text-lg font-semibold text-text-primary">
+        <SectionHeading as="h2">
           {t('contracts.wizard.raisedElsewhere.headline')}
-        </h2>
+        </SectionHeading>
         {owner && (
           <p className="text-sm text-text-secondary">
             {t('contracts.wizard.raisedElsewhere.ownedBy', {
@@ -85,9 +86,9 @@ export const RaisedElsewherePanel: React.FC<{
       </div>
 
       <div className="space-y-2">
-        <h3 className="text-label uppercase text-text-tertiary">
+        <SectionHeading level="group" as="h3">
           {t('contracts.wizard.raisedElsewhere.collected')}
-        </h3>
+        </SectionHeading>
         {summary}
       </div>
 

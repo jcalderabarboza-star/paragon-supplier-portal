@@ -43,6 +43,8 @@ import { useDeepLinkedSelection } from '../lib/recordDeepLink';
 import ErrorState from '../components/ui-v2/ErrorState';
 import EmptyState from '../components/ui-v2/EmptyState';
 import Data from '../components/ui-v2/Data';
+import { Field, FieldList } from '../components/ui-v2/Field';
+import SectionHeading from '../components/ui-v2/SectionHeading';
 import { usePurchaseOrders, useSuppliers, useGoodsReceipts } from '../services/query/hooks';
 import { receivedOnOrder } from '../services/data/orderReceipt';
 import { ReceivedOnOrder } from '../components/v2-features/ReceivedBlock';
@@ -683,111 +685,81 @@ const BuyerOrders: React.FC = () => {
         {selectedPO && (
           <div className="space-y-6">
             <section>
-              <h3 className="text-label text-text-tertiary uppercase mb-3">
+              <SectionHeading level="group" as="h3" className="mb-3">
                 {t('buyerOrders.panel.keyFacts')}
-              </h3>
-              <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
-                <div>
-                  <dt className="text-text-tertiary">{t('buyerOrders.panel.field.orderDate')}</dt>
-                  <Data as="dd" className="text-text-primary font-medium">
-                    {formatDate(selectedPO.orderDate)}
-                  </Data>
-                </div>
-                <div>
-                  <dt className="text-text-tertiary">{t('buyerOrders.panel.field.deliveryDate')}</dt>
-                  <Data
-                    as="dd"
-                    className={`font-medium ${
-                      isOverdue(selectedPO)
-                        ? 'text-critical'
-                        : 'text-text-primary'
-                    }`}
-                  >
+              </SectionHeading>
+              <FieldList columns={2}>
+                <Field label={t('buyerOrders.panel.field.orderDate')} kind="date">
+                  {formatDate(selectedPO.orderDate)}
+                </Field>
+                <Field label={t('buyerOrders.panel.field.deliveryDate')} kind="date">
+                  <span className={isOverdue(selectedPO) ? 'text-critical' : undefined}>
                     {formatDate(selectedPO.requestedDeliveryDate)}
-                  </Data>
-                </div>
-                <div>
-                  <dt className="text-text-tertiary">{t('buyerOrders.panel.field.totalValue')}</dt>
-                  <Data as="dd" className="text-text-primary font-semibold">
-                    {formatIDR(selectedPO.totalValue)}
-                  </Data>
-                </div>
+                  </span>
+                </Field>
+                <Field label={t('buyerOrders.panel.field.totalValue')} kind="money">
+                  {formatIDR(selectedPO.totalValue)}
+                </Field>
                 {/* OPS-3 — what the supplier confirmed: the date, the time of
                     the act when one is on record, and the note. The same
                     stored values the supplier's own panel reads. */}
                 {STATUS_RANK[selectedPO.status] >= 4 && (
-                  <div data-testid="buyer-po-confirmed-delivery">
-                    <dt className="text-text-tertiary">
-                      {t('buyerOrders.panel.field.confirmedDelivery')}
-                    </dt>
-                    <Data as="dd" className="text-text-primary font-medium">
-                      {formatDate(selectedPO.confirmedDeliveryDate)}
-                    </Data>
-                  </div>
+                  <Field
+                    label={t('buyerOrders.panel.field.confirmedDelivery')}
+                    kind="date"
+                    data-testid="buyer-po-confirmed-delivery"
+                  >
+                    {formatDate(selectedPO.confirmedDeliveryDate)}
+                  </Field>
                 )}
                 {STATUS_RANK[selectedPO.status] >= 4 && selectedPO.confirmedAt && (
-                  <div data-testid="buyer-po-confirmed-at">
-                    <dt className="text-text-tertiary">
-                      {t('buyerOrders.panel.field.confirmedOn')}
-                    </dt>
-                    <Data as="dd" className="text-text-primary font-medium">
-                      {formatDateTime(selectedPO.confirmedAt)}
-                    </Data>
-                  </div>
+                  <Field
+                    label={t('buyerOrders.panel.field.confirmedOn')}
+                    kind="date"
+                    data-testid="buyer-po-confirmed-at"
+                  >
+                    {formatDateTime(selectedPO.confirmedAt)}
+                  </Field>
                 )}
                 {STATUS_RANK[selectedPO.status] >= 4 && selectedPO.confirmationNote && (
-                  <div className="col-span-2" data-testid="buyer-po-confirmation-note">
-                    <dt className="text-text-tertiary">
-                      {t('buyerOrders.panel.field.supplierNote')}
-                    </dt>
-                    <dd className="text-text-primary">{selectedPO.confirmationNote}</dd>
-                  </div>
+                  <Field
+                    label={t('buyerOrders.panel.field.supplierNote')}
+                    wide
+                    data-testid="buyer-po-confirmation-note"
+                  >
+                    {selectedPO.confirmationNote}
+                  </Field>
                 )}
-                <div>
-                  <dt className="text-text-tertiary">{t('buyerOrders.panel.field.channel')}</dt>
-                  <dd className="text-text-primary font-medium">
-                    {selectedPO.channel}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-text-tertiary">{t('buyerOrders.panel.field.status')}</dt>
-                  <dd>
-                    <StatusPill variant={statusTone(selectedPO.status)}>
-                      {selectedPO.status}
-                    </StatusPill>
-                    {/* The buyer's half of the same silence. `Confirmed`,
-                        `Partially Delivered` and `Delivered` are all stranded
-                        on this machine — every exit is an S/4HANA goods
-                        movement — so the buyer watching a PO had a status word
-                        and no indication that the wait is SAP's, not the
-                        supplier's. Derived from the canonical state. */}
-                    <span className="mt-1 block">
-                      <NextActLine act={nextAct} testId="next-act-buyer-po" />
-                    </span>
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-text-tertiary">{t('buyerOrders.panel.field.currency')}</dt>
-                  <dd className="text-text-primary font-medium">
-                    {selectedPO.currency}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-text-tertiary">{t('buyerOrders.panel.field.incoterms')}</dt>
-                  {/* i18n-defer: hardcoded sample terms — Incoterms/payment-term codes kept verbatim (glossary: loanwords/codes) */}
-                  <dd className="text-text-primary font-medium">CIF Jakarta</dd>
-                </div>
-                <div>
-                  <dt className="text-text-tertiary">{t('buyerOrders.panel.field.paymentTerms')}</dt>
-                  <dd className="text-text-primary font-medium">Net 30</dd>
-                </div>
-              </dl>
+                <Field label={t('buyerOrders.panel.field.channel')}>
+                  {selectedPO.channel}
+                </Field>
+                <Field label={t('buyerOrders.panel.field.status')} kind="status">
+                  <StatusPill variant={statusTone(selectedPO.status)}>
+                    {selectedPO.status}
+                  </StatusPill>
+                  {/* The buyer's half of the same silence. `Confirmed`,
+                      `Partially Delivered` and `Delivered` are all stranded
+                      on this machine — every exit is an S/4HANA goods
+                      movement — so the buyer watching a PO had a status word
+                      and no indication that the wait is SAP's, not the
+                      supplier's. Derived from the canonical state. */}
+                  <span className="mt-1 block">
+                    <NextActLine act={nextAct} testId="next-act-buyer-po" />
+                  </span>
+                </Field>
+                <Field label={t('buyerOrders.panel.field.currency')}>
+                  {selectedPO.currency}
+                </Field>
+                {/* i18n-defer: hardcoded sample terms — Incoterms/payment-term codes kept verbatim (glossary: loanwords/codes) */}
+                <Field label={t('buyerOrders.panel.field.incoterms')}>CIF Jakarta</Field>
+                <Field label={t('buyerOrders.panel.field.paymentTerms')}>Net 30</Field>
+              </FieldList>
             </section>
 
             <section>
-              <h3 className="text-label text-text-tertiary uppercase mb-3">
+              <SectionHeading level="group" as="h3" className="mb-3">
                 {t('buyerOrders.panel.lineItems')}
-              </h3>
+              </SectionHeading>
               <div className="border border-border-subtle rounded-md overflow-hidden">
                 <DataTable
                   density="compact"
@@ -820,9 +792,9 @@ const BuyerOrders: React.FC = () => {
             />
 
             <section>
-              <h3 className="text-label text-text-tertiary uppercase mb-3">
+              <SectionHeading level="group" as="h3" className="mb-3">
                 {t('buyerOrders.panel.lifecycle')}
-              </h3>
+              </SectionHeading>
               <Timeline events={buildTimeline(selectedPO, t)} />
             </section>
 

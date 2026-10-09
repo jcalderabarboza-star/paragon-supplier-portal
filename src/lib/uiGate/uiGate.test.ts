@@ -24,6 +24,12 @@ import {
   contrastRatio,
   derivedCellType,
   derivedColour,
+  derivedFieldType,
+  derivedRawFields,
+  derivedRawHeadings,
+  fieldTypeFindings,
+  rawFieldCount,
+  rawHeadingCount,
   derivedRawTables,
   derivedType,
   mismatches,
@@ -293,6 +299,63 @@ describe('UI gate 5 · a cell does not dress itself', () => {
 
   it('no cell in the tree dresses itself', () => {
     expect(derivedCellType()).toEqual({});
+  });
+});
+
+describe('UI gate 6 · fields and headings', () => {
+  it('reads a hand-written field and a hand-written heading, and not the shared ones', () => {
+    expect(rawFieldCount('<dl className="grid"><div><dt className="text-text-tertiary">A</dt><dd>1</dd></div></dl>')).toBe(3);
+    expect(rawFieldCount('<FieldList><Field label="A">1</Field></FieldList>')).toBe(0);
+    expect(rawHeadingCount('<h2 className="text-lg font-semibold">A</h2><h3>B</h3><h4>C</h4>')).toBe(3);
+    // the page title is `PageHeader`'s, and is not a section heading
+    expect(rawHeadingCount('<h1>Title</h1><SectionHeading>A</SectionHeading><SectionHeading level="group">B</SectionHeading>')).toBe(0);
+  });
+
+  it('accepts a field that leaves its type to the kind', () => {
+    expect(fieldTypeFindings('<Field label="Supplier" kind="text"><span className="truncate">{name}</span></Field>')).toEqual([]);
+    expect(fieldTypeFindings('<Field label="Due" kind="date"><span className="text-critical">{due}</span></Field>')).toEqual([]);
+    expect(fieldTypeFindings('<Field label="Status" kind="status"><StatusPill variant="info" className="font-medium">Open</StatusPill></Field>')).toEqual([]);
+    expect(fieldTypeFindings('<SectionHeading className="mb-3 flex items-center gap-2">Line items</SectionHeading>')).toEqual([]);
+  });
+
+  it('rejects what the drawers really carried', () => {
+    // purchase orders drawer: the total, semibold where the order date was medium
+    expect(fieldTypeFindings('<Field label="Total"><Data className="text-text-primary font-semibold">{v}</Data></Field>')).toEqual([
+      'Field · text-text-primary',
+      'Field · font-semibold',
+    ]);
+    // a label dressed by hand
+    expect(fieldTypeFindings('<Field label={<span className="uppercase text-[11px]">Qty</span>}>{q}</Field>')).toEqual([
+      'Field · uppercase',
+      'Field · text-[11px]',
+    ]);
+    // a heading resized
+    expect(fieldTypeFindings('<SectionHeading className="text-lg font-bold">A</SectionHeading>')).toEqual([
+      'SectionHeading · text-lg',
+      'SectionHeading · font-bold',
+    ]);
+  });
+
+  it('no detail field in the tree is written by hand', () => {
+    expect(derivedRawFields()).toEqual({});
+  });
+
+  it('no heading under a page title is written by hand', () => {
+    expect(derivedRawHeadings()).toEqual({});
+  });
+
+  it('`Field` names the shared detail field only — no page defines its own', () => {
+    // A page-local `Field` hid a detail helper from this gate once (the listing
+    // card). A form helper is `FormField` until the form components replace it.
+    const local = shippedFiles()
+      .filter((f) => f.file.endsWith('.tsx') && f.file !== 'src/components/ui-v2/Field.tsx')
+      .filter((f) => /(?:const|function)\s+Field[^A-Za-z]/.test(f.text))
+      .map((f) => f.file);
+    expect(local).toEqual([]);
+  });
+
+  it('no field or heading in the tree dresses itself', () => {
+    expect(derivedFieldType()).toEqual({});
   });
 });
 

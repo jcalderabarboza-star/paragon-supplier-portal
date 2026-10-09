@@ -5,6 +5,8 @@ import { BookOpenText, RefreshCw } from 'lucide-react';
 import Data from '../../components/ui-v2/Data';
 import DataTable, { CellSub, type Column } from '../../components/ui-v2/DataTable';
 import StatusPill from '../../components/ui-v2/StatusPill';
+import SectionHeading from '../../components/ui-v2/SectionHeading';
+import { Field, FieldList } from '../../components/ui-v2/Field';
 import GlossaryTermChip from '../../components/ui-v2/GlossaryTermChip';
 import { HandoffNotice } from '../../components/ui-v2/HandoffNotice';
 import { useVerbAvailability } from '../../hooks/useVerbAvailability';
@@ -87,7 +89,7 @@ const TOP = '!align-top';
 
 const Box: React.FC<{ title: string; children: React.ReactNode; testId?: string }> = ({ title, children, testId }) => (
   <section className="rounded-md border border-border-subtle bg-bg-surface p-4" data-testid={testId}>
-    <h4 className="mb-2 text-label uppercase text-text-tertiary">{title}</h4>
+    <SectionHeading level="group" as="h4" className="mb-2">{title}</SectionHeading>
     {children}
   </section>
 );
@@ -111,11 +113,11 @@ const SeatNotice: React.FC<{ tv: TransitionView }> = ({ tv }) => {
   return <HandoffNotice availability={availability} testId={`pf-guide-handoff-${tv.def.id}`} />;
 };
 
-const Field: React.FC<{ label: string; text: string }> = ({ label, text }) => (
-  <div className="text-[12px] leading-relaxed text-text-secondary">
-    <span className="mr-1 font-semibold text-text-primary">{label}:</span>
-    {text.includes('\n') ? <GuideMarkdown source={text} className="mt-1" /> : <GuideInline text={text} />}
-  </div>
+/** One authored line of a step: the shared detail field, its value the guide's own text. */
+const GuideField: React.FC<{ label: string; text: string; className?: string }> = ({ label, text, className }) => (
+  <Field label={label} className={className}>
+    {text.includes('\n') ? <GuideMarkdown source={text} /> : <GuideInline text={text} />}
+  </Field>
 );
 
 const StepCard: React.FC<{ guide: ProcessGuide; step: GuideStep; tv: TransitionView | undefined }> = ({
@@ -134,60 +136,59 @@ const StepCard: React.FC<{ guide: ProcessGuide; step: GuideStep; tv: TransitionV
     >
       <header className="flex flex-wrap items-center gap-2">
         <Data className="text-[12px]">{step.transitionId}</Data>
-        <span className="text-[13px] font-semibold text-text-primary">{step.label}</span>
+        <SectionHeading as="h4">{step.label}</SectionHeading>
         <StatusPill variant="neutral" className="text-[10px]">
           {t(`processGuides.stepKind.${step.stepKind}`)}
         </StatusPill>
         <Data className="ml-auto text-[10px] text-text-tertiary">{key}</Data>
       </header>
-      <div className="mt-2 space-y-1">
-        <Field label={t('processGuides.step.role')} text={step.role} />
-        <Field label={t('processGuides.step.fromTo')} text={step.fromTo} />
-      </div>
+      <FieldList className="mt-2">
+        <GuideField label={t('processGuides.step.role')} text={step.role} />
+        <GuideField label={t('processGuides.step.fromTo')} text={step.fromTo} />
+      </FieldList>
       <div className="mt-3 grid gap-3 md:grid-cols-2">
         <div className="space-y-1.5 rounded-md border border-border-subtle p-3" data-testid={`pf-guide-operator-${step.transitionId}`}>
-          <h5 className="text-label uppercase text-text-tertiary">{t('processGuides.step.operator')}</h5>
-          <Field label={t('processGuides.step.where')} text={step.operator.where} />
-          <Field label={t('processGuides.step.do')} text={step.operator.do} />
-          <Field label={t('processGuides.step.fill')} text={step.operator.fill} />
+          <SectionHeading level="group" as="h5">{t('processGuides.step.operator')}</SectionHeading>
+          <FieldList columns={1}>
+            <GuideField label={t('processGuides.step.where')} text={step.operator.where} />
+            <GuideField label={t('processGuides.step.do')} text={step.operator.do} />
+            <GuideField label={t('processGuides.step.fill')} text={step.operator.fill} />
+          </FieldList>
         </div>
         <div className="space-y-1.5 rounded-md border border-border-subtle p-3" data-testid={`pf-guide-tester-${step.transitionId}`}>
-          <h5 className="text-label uppercase text-text-tertiary">{t('processGuides.step.tester')}</h5>
-          <Field label={t('processGuides.step.expected')} text={step.tester.expectedState} />
-          <Field label={t('processGuides.step.confirm')} text={step.tester.confirm} />
-          <div className="text-[12px] text-text-secondary">
-            <span className="mr-1 font-semibold text-text-primary">{t('processGuides.step.trigger')}:</span>
-            <Data className="text-[11px]">{step.tester.triggerEvent}</Data>
-          </div>
+          <SectionHeading level="group" as="h5">{t('processGuides.step.tester')}</SectionHeading>
+          <FieldList columns={1}>
+            <GuideField label={t('processGuides.step.expected')} text={step.tester.expectedState} />
+            <GuideField label={t('processGuides.step.confirm')} text={step.tester.confirm} />
+            <Field label={t('processGuides.step.trigger')} kind="id">
+              {step.tester.triggerEvent}
+            </Field>
+          </FieldList>
         </div>
       </div>
-      <div className="mt-3 space-y-1.5">
-        <Field label={t('processGuides.step.checks')} text={step.checks} />
+      <FieldList columns={1} className="mt-3">
+        <GuideField label={t('processGuides.step.checks')} text={step.checks} />
         {step.glossary.length > 0 && (
-          <div className="flex flex-wrap items-center gap-1 text-[12px]">
-            <span className="mr-1 font-semibold text-text-primary">{t('processGuides.step.glossary')}:</span>
-            {step.glossary.map((term) => {
-              const ref = glossaryRefFor(term);
-              return ref ? (
-                <GlossaryTermChip key={term} refTo={ref} />
-              ) : (
-                <Data key={term} className="text-[10px]">
-                  {term}
-                </Data>
-              );
-            })}
-          </div>
+          <Field label={t('processGuides.step.glossary')} kind="status">
+            <span className="flex flex-wrap items-center gap-1">
+              {step.glossary.map((term) => {
+                const ref = glossaryRefFor(term);
+                return ref ? <GlossaryTermChip key={term} refTo={ref} /> : <Data key={term}>{term}</Data>;
+              })}
+            </span>
+          </Field>
         )}
-        <div className="border-l-2 border-warning/50 pl-2">
-          <Field label={t('processGuides.step.honesty')} text={step.honesty} />
-        </div>
+        <GuideField
+          label={t('processGuides.step.honesty')}
+          text={step.honesty}
+          className="border-l-2 border-warning/50 pl-2"
+        />
         {tv && tv.def.trigger === 'user' && (
-          <div className="flex flex-wrap items-center gap-2 text-[12px]">
-            <span className="font-semibold text-text-primary">{t('processGuides.step.yourSeat')}:</span>
+          <Field label={t('processGuides.step.yourSeat')} kind="status">
             <SeatNotice tv={tv} />
-          </div>
+          </Field>
         )}
-      </div>
+      </FieldList>
     </article>
   );
 };
@@ -517,10 +518,10 @@ const GuideTabs: React.FC<{ view: FlowView; overview: React.ReactNode }> = ({ vi
   return (
     <section className="space-y-4" data-testid="pf-guide">
       <div className="rounded-md border border-border-subtle bg-bg-surface p-4">
-        <h3 className="flex items-center gap-2 text-section text-text-primary">
+        <SectionHeading as="h3" className="flex items-center gap-2">
           <BookOpenText size={16} className="text-teal" aria-hidden="true" />
           {t('processGuides.title')}
-        </h3>
+        </SectionHeading>
         {guide && (
           <p className="mt-1 max-w-4xl text-[11px] text-text-tertiary" data-testid="pf-guide-authored">
             {t('processGuides.authored', { sha: guide.sourceSha.slice(0, 8) })}

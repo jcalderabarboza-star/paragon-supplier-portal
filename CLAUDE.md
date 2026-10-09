@@ -852,6 +852,15 @@ nav groups under one neutral key, `nav.glossary`.
   now supplies. **Derive what is still written by hand from `RAW_TABLE_GRANDFATHERED`** — the
   matrices and the markdown-generated guide table are there because a column list cannot express
   them, not because they were missed.
+- ⚠️ **UI-1c-1 (2026-10-09) — ONE DETAIL FIELD, TWO HEADING LEVELS, ONE NAMING COLUMN.** A fact
+  on a drawer or a detail page is `components/ui-v2/Field` inside `FieldList`: the value states
+  a KIND as a table column does and reads at regular weight — only a document number is
+  semibold — so a date is the same date in a row and in the drawer the row opens. A heading
+  under a page title is `components/ui-v2/SectionHeading`, `level="section"` or `"group"`, and
+  there is no third. In a `DataTable` the column that NAMES the row (the first `id` or `text`
+  column) is semibold. No `<dl>` / `<dt>` / `<dd>` and no `<h2>`…`<h6>` is written outside the
+  shared components, and `Field` names the shared detail field only — a page-local form helper
+  is `FormField` until the form components replace it. `uiGate` holds all of it.
 - WARNING token is a FILL/TEXT split (DP2-WARN-01), same shape as `action`:
   `warning.DEFAULT` = bright amber `#D97706` for every GRAPHICAL warning use
   (accent-edges, dots, bar fills, dials, chip fills, borders — 3.19:1 on white,
