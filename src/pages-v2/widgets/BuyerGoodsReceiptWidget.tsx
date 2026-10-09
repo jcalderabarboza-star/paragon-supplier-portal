@@ -3,10 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { PackageCheck } from 'lucide-react';
 import ExpandableWidget from '../../components/ui-v2/ExpandableWidget';
-import Table from '../../components/ui-v2/Table';
-import TableHeader, { TableHeaderCell } from '../../components/ui-v2/TableHeader';
-import TableRow from '../../components/ui-v2/TableRow';
-import TableCell from '../../components/ui-v2/TableCell';
+import DataTable from '../../components/ui-v2/DataTable';
 import Data from '../../components/ui-v2/Data';
 import RecordRowLink from './RecordRowLink';
 import StatusPill from '../../components/ui-v2/StatusPill';
@@ -33,47 +30,51 @@ const BuyerGoodsReceiptWidget: React.FC = () => {
         {t('widget.goodsReceipt.empty')}
       </div>
     ) : (
-      <Table>
-        <TableHeader>
-          <TableHeaderCell>{t('widget.goodsReceipt.col.gr')}</TableHeaderCell>
-          <TableHeaderCell>{t('widget.goodsReceipt.col.po')}</TableHeaderCell>
-          <TableHeaderCell>{t('widget.goodsReceipt.col.supplier')}</TableHeaderCell>
-          <TableHeaderCell>{t('widget.goodsReceipt.col.received')}</TableHeaderCell>
-          <TableHeaderCell>{t('widget.goodsReceipt.col.status')}</TableHeaderCell>
-        </TableHeader>
-        <tbody>
-          {needing.map((gr) => (
-            <TableRow key={gr.id} className="relative">
-              <TableCell>
-                <RecordRowLink
-                  path="/buyer/goods-receipt"
-                  id={gr.id}
-                  name={gr.grNumber}
-                  label={
-                    <Data className="text-xs font-bold text-text-primary">
-                      {gr.grNumber}
-                    </Data>
-                  }
-                />
-              </TableCell>
-              <TableCell>
-                <Data className="text-text-secondary">{gr.poNumber}</Data>
-              </TableCell>
-              <TableCell className="text-text-secondary">
-                {gr.supplierName}
-              </TableCell>
-              <TableCell className="whitespace-nowrap text-text-secondary">
-                <Data>{formatDate(gr.receivedDate)}</Data>
-              </TableCell>
-              <TableCell>
-                <StatusPill variant={statusTone(gr.status)}>
-                  {gr.status}
-                </StatusPill>
-              </TableCell>
-            </TableRow>
-          ))}
-        </tbody>
-      </Table>
+      <DataTable
+        card={false}
+        rows={needing}
+        rowKey={(gr) => gr.id}
+        rowProps={() => ({ className: 'relative' })}
+        columns={[
+          {
+            id: 'gr',
+            header: t('widget.goodsReceipt.col.gr'),
+            kind: 'id',
+            cell: (gr) => (
+              <RecordRowLink
+                path="/buyer/goods-receipt"
+                id={gr.id}
+                name={gr.grNumber}
+                label={<Data>{gr.grNumber}</Data>}
+              />
+            ),
+          },
+          {
+            id: 'po',
+            header: t('widget.goodsReceipt.col.po'),
+            kind: 'id',
+            cell: (gr) => <Data>{gr.poNumber}</Data>,
+          },
+          {
+            id: 'supplier',
+            header: t('widget.goodsReceipt.col.supplier'),
+            kind: 'text',
+            cell: (gr) => gr.supplierName,
+          },
+          {
+            id: 'received',
+            header: t('widget.goodsReceipt.col.received'),
+            kind: 'date',
+            cell: (gr) => <Data>{formatDate(gr.receivedDate)}</Data>,
+          },
+          {
+            id: 'status',
+            header: t('widget.goodsReceipt.col.status'),
+            kind: 'status',
+            cell: (gr) => <StatusPill variant={statusTone(gr.status)}>{gr.status}</StatusPill>,
+          },
+        ]}
+      />
     );
 
   return (

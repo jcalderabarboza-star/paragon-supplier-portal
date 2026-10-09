@@ -3,10 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { CreditCard } from 'lucide-react';
 import ExpandableWidget from '../../components/ui-v2/ExpandableWidget';
-import Table from '../../components/ui-v2/Table';
-import TableHeader, { TableHeaderCell } from '../../components/ui-v2/TableHeader';
-import TableRow from '../../components/ui-v2/TableRow';
-import TableCell from '../../components/ui-v2/TableCell';
+import DataTable from '../../components/ui-v2/DataTable';
 import Data from '../../components/ui-v2/Data';
 import StatusPill from '../../components/ui-v2/StatusPill';
 import RecordRowLink from './RecordRowLink';
@@ -35,51 +32,51 @@ const BuyerInvoiceAgingWidget: React.FC = () => {
     count === 0 ? (
       <div className="text-sm text-text-tertiary">{t('widget.invoiceAging.empty')}</div>
     ) : (
-      <Table>
-        <TableHeader>
-          <TableHeaderCell>{t('widget.invoiceAging.col.invoice')}</TableHeaderCell>
-          <TableHeaderCell>{t('widget.invoiceAging.col.supplier')}</TableHeaderCell>
-          <TableHeaderCell className="text-right">
-            {t('widget.invoiceAging.col.amount')}
-          </TableHeaderCell>
-          <TableHeaderCell className="text-right">
-            {t('widget.invoiceAging.col.daysPastDue')}
-          </TableHeaderCell>
-          <TableHeaderCell>{t('widget.invoiceAging.col.match')}</TableHeaderCell>
-        </TableHeader>
-        <tbody>
-          {overdue.map((inv) => (
-            <TableRow key={inv.id} className="relative">
-              <TableCell>
-                <RecordRowLink
-                  path="/buyer/invoices"
-                  id={inv.id}
-                  name={inv.invoiceNumber}
-                  label={
-                    <Data className="text-xs font-bold text-text-primary">
-                      {inv.invoiceNumber}
-                    </Data>
-                  }
-                />
-              </TableCell>
-              <TableCell className="text-text-secondary">
-                {inv.supplierName}
-              </TableCell>
-              <TableCell className="text-right font-semibold text-text-primary whitespace-nowrap">
-                <Data>{formatIDR(inv.amount)}</Data>
-              </TableCell>
-              <TableCell className="text-right text-critical">
-                <Data>{inv.daysOutstanding}d</Data>
-              </TableCell>
-              <TableCell>
-                <StatusPill variant={statusTone(inv.matchStatus)}>
-                  {inv.matchStatus}
-                </StatusPill>
-              </TableCell>
-            </TableRow>
-          ))}
-        </tbody>
-      </Table>
+      <DataTable
+        card={false}
+        rows={overdue}
+        rowKey={(inv) => inv.id}
+        rowProps={() => ({ className: 'relative' })}
+        columns={[
+          {
+            id: 'invoice',
+            header: t('widget.invoiceAging.col.invoice'),
+            kind: 'id',
+            cell: (inv) => (
+              <RecordRowLink
+                path="/buyer/invoices"
+                id={inv.id}
+                name={inv.invoiceNumber}
+                label={<Data>{inv.invoiceNumber}</Data>}
+              />
+            ),
+          },
+          {
+            id: 'supplier',
+            header: t('widget.invoiceAging.col.supplier'),
+            kind: 'text',
+            cell: (inv) => inv.supplierName,
+          },
+          {
+            id: 'amount',
+            header: t('widget.invoiceAging.col.amount'),
+            kind: 'money',
+            cell: (inv) => <Data>{formatIDR(inv.amount)}</Data>,
+          },
+          {
+            id: 'daysPastDue',
+            header: t('widget.invoiceAging.col.daysPastDue'),
+            kind: 'number',
+            cell: (inv) => <span className="text-critical">{inv.daysOutstanding}d</span>,
+          },
+          {
+            id: 'match',
+            header: t('widget.invoiceAging.col.match'),
+            kind: 'status',
+            cell: (inv) => <StatusPill variant={statusTone(inv.matchStatus)}>{inv.matchStatus}</StatusPill>,
+          },
+        ]}
+      />
     );
 
   return (

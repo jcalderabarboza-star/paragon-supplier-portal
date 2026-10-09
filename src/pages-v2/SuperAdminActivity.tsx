@@ -1,14 +1,16 @@
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Info, Search } from 'lucide-react';
-import AppShellV2 from '../components/layout-v2/AppShellV2';
-import PageHeader from '../components/ui-v2/PageHeader';
+import { Info } from 'lucide-react';
+import ListPage from '../components/ui-v2/ListPage';
+import DataTable, { CellSub, type Column } from '../components/ui-v2/DataTable';
+import SearchBar from '../components/ui-v2/SearchBar';
 import Data from '../components/ui-v2/Data';
 import { useCurrentIdentity } from '../context/CurrentIdentityContext';
 import { readAuditEvents } from '../services/audit/auditTrail';
 import {
   filterSuperAdminActs,
   superAdminActs,
+  type SuperAdminAct,
   type SuperAdminActFilter,
 } from '../services/audit/superAdminActivity';
 import { maySeeSuperAdminActivity } from '../services/identity/superAdmin';
@@ -33,6 +35,10 @@ import { formatSetAt } from './modules/moduleLedger';
 // i18n-defer: filter ids, not copy — each renders through `superAdmin.activity.filter.<id>`.
 const FILTERS: readonly SuperAdminActFilter[] = ['all', 'bypassed', 'refused'];
 
+// A row here runs to several lines (a refusal under the verb, the checks that
+// stood aside), so every cell reads from the top, as the table always did.
+const TOP = '!align-top';
+
 const SuperAdminActivity: React.FC = () => {
   const { t, i18n } = useTranslation();
   const { identity } = useCurrentIdentity();
@@ -44,142 +50,166 @@ const SuperAdminActivity: React.FC = () => {
   const acts = useMemo(() => (allowed ? superAdminActs(readAuditEvents()) : []), [allowed]);
   const rows = filterSuperAdminActs(acts, filter, q);
 
-  return (
-    <AppShellV2>
-      <div data-testid="super-admin-activity">
-        <PageHeader
-          breadcrumb={[t('superAdmin.activity.crumb')]}
-          title={t('superAdmin.activity.title')}
-          subtitle={t('superAdmin.activity.subtitle')}
-        />
-
-        {!allowed ? (
-          <section
-            className="rounded-lg border border-border-subtle bg-bg-hover px-4 py-3 text-sm text-text-primary"
-            data-testid="super-admin-activity-not-for-seat"
-          >
-            {t('superAdmin.activity.notForSeat')}
-          </section>
-        ) : (
+  const columns = useMemo<Column<SuperAdminAct>[]>(
+    () => [
+      {
+        id: 'when',
+        header: t('superAdmin.activity.col.when'),
+        kind: 'date',
+        className: TOP,
+        cell: (a) => <Data>{formatSetAt(a.at)}</Data>,
+      },
+      {
+        id: 'who',
+        header: t('superAdmin.activity.col.who'),
+        kind: 'text',
+        className: `${TOP} whitespace-nowrap`,
+        cell: (a) => personLabel(a.personId, t),
+      },
+      {
+        id: 'what',
+        header: t('superAdmin.activity.col.what'),
+        kind: 'id',
+        className: TOP,
+        cell: (a) => (
           <>
-            <div
-              className="mb-5 border border-border-subtle rounded-lg bg-bg-hover p-4 flex gap-3"
-              data-testid="super-admin-activity-session"
-            >
-              <Info size={16} className="text-teal shrink-0 mt-0.5" />
-              <p className="text-xs text-text-secondary leading-relaxed">
-                {t('superAdmin.activity.session')}
-              </p>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-2 mb-4">
-              {FILTERS.map((f) => (
-                <button
-                  key={f}
-                  type="button"
-                  onClick={() => setFilter(f)}
-                  aria-pressed={filter === f}
-                  data-testid={`super-admin-filter-${f}`}
-                  className={`text-meta rounded-full border px-3 py-1 ${
-                    filter === f
-                      ? 'border-action text-action-text bg-action-soft'
-                      : 'border-border-subtle text-text-secondary'
-                  }`}
-                >
-                  {t(`superAdmin.activity.filter.${f}`)}
-                </button>
-              ))}
-              <label className="relative ml-auto w-full sm:w-80">
-                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary" />
-                <input
-                  type="search"
-                  value={q}
-                  onChange={(e) => setQ(e.target.value)}
-                  aria-label={t('superAdmin.activity.search')}
-                  placeholder={t('superAdmin.activity.search')}
-                  data-testid="super-admin-search"
-                  className="w-full pl-8 pr-3 py-2 text-sm border border-border-input rounded-md bg-white"
-                />
-              </label>
-              <span className="text-meta text-text-tertiary" data-testid="super-admin-count">
-                {t('superAdmin.activity.count', { count: rows.length })}
-              </span>
-            </div>
-
-            {rows.length === 0 ? (
-              <p
-                className="rounded-lg border border-dashed border-border-subtle p-6 text-sm text-text-secondary"
-                data-testid="super-admin-activity-empty"
-              >
-                {t(acts.length === 0 ? 'superAdmin.activity.empty' : 'superAdmin.activity.emptyFiltered')}
-              </p>
-            ) : (
-              <div className="bg-white border border-border-subtle rounded-lg overflow-x-auto">
-                <table className="w-full text-left" data-testid="super-admin-activity-table">
-                  <thead className="bg-bg-hover">
-                    <tr className="text-label text-text-tertiary uppercase">
-                      {(['when', 'who', 'what', 'document', 'rule', 'reason'] as const).map((c) => (
-                        <th key={c} className="py-2 px-4 font-medium">
-                          {t(`superAdmin.activity.col.${c}`)}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {rows.map((a) => (
-                      <tr
-                        key={a.id}
-                        className="border-t border-border-subtle align-top"
-                        data-testid={`super-admin-act-${a.id}`}
-                        data-bypassed={a.bypassedRules.length > 0 ? 'yes' : 'no'}
-                        data-status={a.status}
-                      >
-                        <td className="py-3 px-4 text-xs whitespace-nowrap">
-                          <Data>{formatSetAt(a.at)}</Data>
-                        </td>
-                        <td className="py-3 px-4 text-xs text-text-primary whitespace-nowrap">
-                          {personLabel(a.personId, t)}
-                        </td>
-                        <td className="py-3 px-4 text-xs">
-                          <Data>{a.transitionId}</Data>
-                          {a.status === 'failed' && (
-                            <div className="text-critical mt-0.5">
-                              {t(a.refusedForNoReason ? 'superAdmin.activity.refusedNoReason' : 'superAdmin.activity.refused')}
-                            </div>
-                          )}
-                        </td>
-                        <td className="py-3 px-4 text-xs">
-                          {a.entityId ? (
-                            <Data>{`${a.entity} · ${a.entityId}`}</Data>
-                          ) : (
-                            <span className="text-text-tertiary">{t('superAdmin.activity.noDocument')}</span>
-                          )}
-                        </td>
-                        <td className="py-3 px-4 text-xs">
-                          {a.bypassedRules.length === 0 ? (
-                            <span className="text-text-tertiary">{t('superAdmin.activity.none')}</span>
-                          ) : (
-                            <>
-                              <div className="font-semibold text-warning-hover">{t('superAdmin.stamp')}</div>
-                              {a.bypassedRules.map((r) => (
-                                <div key={r} className="text-text-primary">
-                                  {bypassRuleLabel(r, t, (k) => i18n.exists(k))}
-                                </div>
-                              ))}
-                            </>
-                          )}
-                        </td>
-                        <td className="py-3 px-4 text-xs text-text-primary max-w-xs">{a.reason ?? ''}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+            <Data>{a.transitionId}</Data>
+            {a.status === 'failed' && (
+              <CellSub tone="critical">
+                {t(a.refusedForNoReason ? 'superAdmin.activity.refusedNoReason' : 'superAdmin.activity.refused')}
+              </CellSub>
             )}
           </>
-        )}
-      </div>
-    </AppShellV2>
+        ),
+      },
+      {
+        id: 'document',
+        header: t('superAdmin.activity.col.document'),
+        // A reference, so the column is `id`; the sentence that stands in for a
+        // missing one is a note, not a reference.
+        kind: 'id',
+        className: TOP,
+        cell: (a) =>
+          a.entityId ? `${a.entity} · ${a.entityId}` : <CellSub>{t('superAdmin.activity.noDocument')}</CellSub>,
+      },
+      {
+        id: 'rule',
+        header: t('superAdmin.activity.col.rule'),
+        kind: 'text',
+        className: TOP,
+        cell: (a) =>
+          a.bypassedRules.length === 0 ? (
+            t('superAdmin.activity.none')
+          ) : (
+            <>
+              <div className="text-warning-hover">{t('superAdmin.stamp')}</div>
+              {a.bypassedRules.map((r) => (
+                <CellSub key={r}>{bypassRuleLabel(r, t, (k) => i18n.exists(k))}</CellSub>
+              ))}
+            </>
+          ),
+      },
+      {
+        id: 'reason',
+        header: t('superAdmin.activity.col.reason'),
+        kind: 'text',
+        className: `${TOP} max-w-xs`,
+        cell: (a) => a.reason ?? '',
+      },
+    ],
+    [t, i18n],
+  );
+
+  return (
+    <ListPage
+      testId="super-admin-activity"
+      breadcrumb={[t('superAdmin.activity.crumb')]}
+      title={t('superAdmin.activity.title')}
+      subtitle={t('superAdmin.activity.subtitle')}
+      meta={
+        allowed ? (
+          <span data-testid="super-admin-count">
+            {t('superAdmin.activity.count', { count: rows.length })}
+          </span>
+        ) : undefined
+      }
+      notices={
+        allowed ? (
+          <div
+            className="border border-border-subtle rounded-lg bg-bg-hover p-4 flex gap-3"
+            data-testid="super-admin-activity-session"
+          >
+            <Info size={16} className="text-teal shrink-0 mt-0.5" />
+            <p className="text-xs text-text-secondary leading-relaxed">
+              {t('superAdmin.activity.session')}
+            </p>
+          </div>
+        ) : undefined
+      }
+      filters={
+        allowed ? (
+          <div className="flex flex-wrap items-center gap-2">
+            {FILTERS.map((f) => (
+              <button
+                key={f}
+                type="button"
+                onClick={() => setFilter(f)}
+                aria-pressed={filter === f}
+                data-testid={`super-admin-filter-${f}`}
+                className={`text-meta rounded-full border px-3 py-1 ${
+                  filter === f
+                    ? 'border-action text-action-text bg-action-soft'
+                    : 'border-border-subtle text-text-secondary'
+                }`}
+              >
+                {t(`superAdmin.activity.filter.${f}`)}
+              </button>
+            ))}
+          </div>
+        ) : undefined
+      }
+      search={
+        allowed ? (
+          // The test id sits on the wrapper: `SearchBar` owns its input.
+          <div data-testid="super-admin-search">
+            <SearchBar
+              value={q}
+              onChange={setQ}
+              placeholder={t('superAdmin.activity.search')}
+              ariaLabel={t('superAdmin.activity.search')}
+            />
+          </div>
+        ) : undefined
+      }
+    >
+      {!allowed ? (
+        <section
+          className="rounded-lg border border-border-subtle bg-bg-hover px-4 py-3 text-sm text-text-primary"
+          data-testid="super-admin-activity-not-for-seat"
+        >
+          {t('superAdmin.activity.notForSeat')}
+        </section>
+      ) : rows.length === 0 ? (
+        <p
+          className="rounded-lg border border-dashed border-border-subtle p-6 text-sm text-text-secondary"
+          data-testid="super-admin-activity-empty"
+        >
+          {t(acts.length === 0 ? 'superAdmin.activity.empty' : 'superAdmin.activity.emptyFiltered')}
+        </p>
+      ) : (
+        <DataTable
+          testId="super-admin-activity-table"
+          columns={columns}
+          rows={rows}
+          rowKey={(a) => a.id}
+          rowProps={(a) => ({
+            'data-testid': `super-admin-act-${a.id}`,
+            'data-bypassed': a.bypassedRules.length > 0 ? 'yes' : 'no',
+            'data-status': a.status,
+          })}
+        />
+      )}
+    </ListPage>
   );
 };
 

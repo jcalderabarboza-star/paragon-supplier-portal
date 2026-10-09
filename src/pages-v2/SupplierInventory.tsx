@@ -9,19 +9,14 @@ import {
   Database,
   Mail,
 } from 'lucide-react';
-import AppShellV2 from '../components/layout-v2/AppShellV2';
-import PageHeader from '../components/ui-v2/PageHeader';
-import PageMetaLine from '../components/ui-v2/PageMetaLine';
+import ListPage from '../components/ui-v2/ListPage';
+import DataTable, { CellSub } from '../components/ui-v2/DataTable';
 import ProvenanceMarker from '../components/ui-v2/ProvenanceMarker';
 import KpiCard from '../components/ui-v2/KpiCard';
 import BulkActionsBar from '../components/ui-v2/BulkActionsBar';
 import FilterChipsBar from '../components/ui-v2/FilterChipsBar';
 import SearchBar from '../components/ui-v2/SearchBar';
 import StatusPill from '../components/ui-v2/StatusPill';
-import Table from '../components/ui-v2/Table';
-import TableHeader, { TableHeaderCell } from '../components/ui-v2/TableHeader';
-import TableRow from '../components/ui-v2/TableRow';
-import TableCell from '../components/ui-v2/TableCell';
 import Data from '../components/ui-v2/Data';
 import { useTranslation, Trans } from 'react-i18next';
 import { statusLabelKey } from '../lib/statusLabel';
@@ -85,7 +80,7 @@ const DaysBar: React.FC<{ days: number; status: StockStatus }> = ({
         ? 'text-warning-hover'
         : textVariant === 'success'
           ? 'text-success'
-          : 'text-text-secondary';
+          : '';
   return (
     <div className="flex items-center gap-2 min-w-[100px]">
       <div className="flex-1 bg-bg-hover rounded-full h-1.5 min-w-[60px]">
@@ -94,7 +89,7 @@ const DaysBar: React.FC<{ days: number; status: StockStatus }> = ({
           style={{ width: `${pct}%`, background: color }}
         />
       </div>
-      <Data className={`text-xs font-semibold min-w-[28px] text-right ${textClass}`}>
+      <Data className={`min-w-[28px] text-right ${textClass}`}>
         {days}d
       </Data>
     </div>
@@ -207,12 +202,11 @@ const SupplierInventory: React.FC = () => {
     setFilterStatus((prev) => (prev === s ? 'All' : s));
 
   return (
-    <AppShellV2>
-      <PageHeader
-        breadcrumb={INVENTORY_CRUMB}
-        title={t('supplierInventory.header.title')}
-        subtitle={t('supplierInventory.header.subtitle')}
-        actions={
+    <ListPage
+      breadcrumb={INVENTORY_CRUMB}
+      title={t('supplierInventory.header.title')}
+      subtitle={t('supplierInventory.header.subtitle')}
+      actions={
           <BulkActionsBar
             actions={[
               {
@@ -238,26 +232,104 @@ const SupplierInventory: React.FC = () => {
                 }),
             }}
           />
-        }
-      />
-
-      <PageMetaLine className="-mt-6 mb-6">
-        {myInventory.length === 1
-          ? t('supplierInventory.meta.materials.one', {
-              count: myInventory.length,
-            })
-          : t('supplierInventory.meta.materials.other', {
-              count: myInventory.length,
-            })}{' '}
-        · {t('supplierInventory.meta.lastSync')}{' '}
-        <Data>{fmtDate(maxLastUpdated)}</Data>
-        {/* D-CENSUS-8 — this page claimed "Live stock visibility" and told the supplier
-            that Paragon "has been automatically notified" of critical stock. Nothing
-            notifies anyone. Both retracted in this batch. The feed axis names the
-            specific waiting state (a live supplier feed, F1). */}
-        <ProvenanceMarker capability="inventory" className="ml-3 align-middle" />
-      </PageMetaLine>
-
+      }
+      meta={
+        <>
+            {myInventory.length === 1
+              ? t('supplierInventory.meta.materials.one', {
+                  count: myInventory.length,
+                })
+              : t('supplierInventory.meta.materials.other', {
+                  count: myInventory.length,
+                })}{' '}
+            · {t('supplierInventory.meta.lastSync')}{' '}
+            <Data>{fmtDate(maxLastUpdated)}</Data>
+            {/* D-CENSUS-8 — this page claimed "Live stock visibility" and told the supplier
+                that Paragon "has been automatically notified" of critical stock. Nothing
+                notifies anyone. Both retracted in this batch. The feed axis names the
+                specific waiting state (a live supplier feed, F1). */}
+            <ProvenanceMarker capability="inventory" className="ml-3 align-middle" />
+        </>
+      }
+      notices={
+        counts.critical > 0 ? (
+          <div className="bg-critical-soft border-l-2 border-critical rounded px-4 py-3 flex items-start gap-2 text-sm text-critical">
+            <AlertOctagon size={14} className="shrink-0 mt-0.5" />
+            <div>
+              <Trans
+                i18nKey={
+                  counts.critical === 1
+                    ? 'supplierInventory.banner.critical.one'
+                    : 'supplierInventory.banner.critical.other'
+                }
+                values={{ count: counts.critical }}
+                components={{ strong: <strong /> }}
+              />
+            </div>
+          </div>
+        ) : undefined
+      }
+      kpis={
+        <>
+          <KpiCard
+            eyebrow={t('supplierInventory.kpi.critical.eyebrow')}
+            value={counts.critical.toString()}
+            subtitle={
+              <span className="text-critical">
+                {t('supplierInventory.kpi.pctOfMaterials', {
+                  pct: ((counts.critical / myInventory.length) * 100).toFixed(0),
+                })}
+              </span>
+            }
+            icon={AlertOctagon}
+            onClick={() => setKpiFilter(StockStatus.CRITICAL)}
+            active={filterStatus === StockStatus.CRITICAL}
+          />
+          <KpiCard
+            eyebrow={t('supplierInventory.kpi.low.eyebrow')}
+            value={counts.low.toString()}
+            subtitle={
+              <span className="text-warning-hover">
+                {t('supplierInventory.kpi.pctOfMaterials', {
+                  pct: ((counts.low / myInventory.length) * 100).toFixed(0),
+                })}
+              </span>
+            }
+            icon={AlertTriangle}
+            onClick={() => setKpiFilter(StockStatus.LOW)}
+            active={filterStatus === StockStatus.LOW}
+          />
+          <KpiCard
+            eyebrow={t('supplierInventory.kpi.normal.eyebrow')}
+            value={counts.normal.toString()}
+            subtitle={
+              <span className="text-success">
+                {t('supplierInventory.kpi.pctOfMaterials', {
+                  pct: ((counts.normal / myInventory.length) * 100).toFixed(0),
+                })}
+              </span>
+            }
+            icon={CheckCircle2}
+            onClick={() => setKpiFilter(StockStatus.NORMAL)}
+            active={filterStatus === StockStatus.NORMAL}
+          />
+          <KpiCard
+            eyebrow={t('supplierInventory.kpi.excess.eyebrow')}
+            value={counts.excess.toString()}
+            subtitle={
+              <span className="text-text-secondary">
+                {t('supplierInventory.kpi.pctOfMaterials', {
+                  pct: ((counts.excess / myInventory.length) * 100).toFixed(0),
+                })}
+              </span>
+            }
+            icon={Layers}
+            onClick={() => setKpiFilter(StockStatus.EXCESS)}
+            active={filterStatus === StockStatus.EXCESS}
+          />
+        </>
+      }
+    >
       <section className="mb-6 rounded-lg border border-border-subtle bg-bg-surface px-4 py-3" data-testid="inventory-declared">
         <h2 className="text-base font-semibold text-text-primary">{t('supplierInventory.declared.title')}</h2>
         <p className="mb-3 text-sm text-text-secondary">{t('supplierInventory.declared.subtitle')}</p>
@@ -266,121 +338,58 @@ const SupplierInventory: React.FC = () => {
             {t('supplierInventory.declared.none')}
           </p>
         ) : (
-          <Table>
-            <TableHeader>
-              <TableHeaderCell>{t('supplierInventory.declared.col.material')}</TableHeaderCell>
-              <TableHeaderCell>{t('supplierInventory.declared.col.total')}</TableHeaderCell>
-              <TableHeaderCell>{t('supplierInventory.declared.col.batches')}</TableHeaderCell>
-              <TableHeaderCell>{t('supplierInventory.declared.col.asOf')}</TableHeaderCell>
-            </TableHeader>
-            <tbody>
-              {declared.map((d) => {
-                const expiries = (d.batches ?? []).map((b) => b.expiryDate).filter((e): e is string => !!e).sort();
-                return (
-                  <TableRow key={d.id} data-testid={`inventory-declared-${d.materialCode}`}>
-                    <TableCell>
-                      <Data className="text-xs">{d.materialCode}</Data>
-                      <div className="text-xs text-text-secondary">{publishedLabelOf(d.materialCode)}</div>
-                    </TableCell>
-                    <TableCell>
-                      <Data>{formatNumber(d.totalQty)} {d.uom}</Data>
-                    </TableCell>
-                    <TableCell className="text-xs text-text-secondary">
-                      {d.batches && d.batches.length > 0
-                        ? t('supplierInventory.declared.batches', {
-                            count: d.batches.length,
-                            n: formatNumber(d.batches.length),
-                            expiry: expiries[0] ? formatDate(expiries[0]) : '—',
-                          })
-                        : t('supplierInventory.declared.totalOnly')}
-                    </TableCell>
-                    <TableCell>
-                      <Data className="text-xs">{formatDate(d.declaredAt)}</Data>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </tbody>
-          </Table>
+          <DataTable<(typeof declared)[number]>
+            card={false}
+            density="compact"
+            rows={declared}
+            rowKey={(d) => d.id}
+            rowProps={(d) => ({ 'data-testid': `inventory-declared-${d.materialCode}` })}
+            columns={[
+              {
+                id: 'material',
+                header: t('supplierInventory.declared.col.material'),
+                kind: 'id',
+                cell: (d) => (
+                  <>
+                    <Data>{d.materialCode}</Data>
+                    <CellSub>{publishedLabelOf(d.materialCode)}</CellSub>
+                  </>
+                ),
+              },
+              {
+                id: 'total',
+                header: t('supplierInventory.declared.col.total'),
+                kind: 'number',
+                cell: (d) => <Data>{formatNumber(d.totalQty)} {d.uom}</Data>,
+              },
+              {
+                id: 'batches',
+                header: t('supplierInventory.declared.col.batches'),
+                kind: 'text',
+                cell: (d) => {
+                  const expiries = (d.batches ?? []).map((b) => b.expiryDate).filter((e): e is string => !!e).sort();
+                  return d.batches && d.batches.length > 0
+                    ? t('supplierInventory.declared.batches', {
+                        count: d.batches.length,
+                        n: formatNumber(d.batches.length),
+                        expiry: expiries[0] ? formatDate(expiries[0]) : '—',
+                      })
+                    : t('supplierInventory.declared.totalOnly');
+                },
+              },
+              {
+                id: 'asOf',
+                header: t('supplierInventory.declared.col.asOf'),
+                kind: 'date',
+                cell: (d) => <Data>{formatDate(d.declaredAt)}</Data>,
+              },
+            ]}
+          />
         )}
       </section>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-5 mb-6">
-        <KpiCard
-          eyebrow={t('supplierInventory.kpi.critical.eyebrow')}
-          value={counts.critical.toString()}
-          subtitle={
-            <span className="text-critical">
-              {t('supplierInventory.kpi.pctOfMaterials', {
-                pct: ((counts.critical / myInventory.length) * 100).toFixed(0),
-              })}
-            </span>
-          }
-          icon={AlertOctagon}
-          onClick={() => setKpiFilter(StockStatus.CRITICAL)}
-          active={filterStatus === StockStatus.CRITICAL}
-        />
-        <KpiCard
-          eyebrow={t('supplierInventory.kpi.low.eyebrow')}
-          value={counts.low.toString()}
-          subtitle={
-            <span className="text-warning-hover">
-              {t('supplierInventory.kpi.pctOfMaterials', {
-                pct: ((counts.low / myInventory.length) * 100).toFixed(0),
-              })}
-            </span>
-          }
-          icon={AlertTriangle}
-          onClick={() => setKpiFilter(StockStatus.LOW)}
-          active={filterStatus === StockStatus.LOW}
-        />
-        <KpiCard
-          eyebrow={t('supplierInventory.kpi.normal.eyebrow')}
-          value={counts.normal.toString()}
-          subtitle={
-            <span className="text-success">
-              {t('supplierInventory.kpi.pctOfMaterials', {
-                pct: ((counts.normal / myInventory.length) * 100).toFixed(0),
-              })}
-            </span>
-          }
-          icon={CheckCircle2}
-          onClick={() => setKpiFilter(StockStatus.NORMAL)}
-          active={filterStatus === StockStatus.NORMAL}
-        />
-        <KpiCard
-          eyebrow={t('supplierInventory.kpi.excess.eyebrow')}
-          value={counts.excess.toString()}
-          subtitle={
-            <span className="text-text-secondary">
-              {t('supplierInventory.kpi.pctOfMaterials', {
-                pct: ((counts.excess / myInventory.length) * 100).toFixed(0),
-              })}
-            </span>
-          }
-          icon={Layers}
-          onClick={() => setKpiFilter(StockStatus.EXCESS)}
-          active={filterStatus === StockStatus.EXCESS}
-        />
-      </div>
-
-      {counts.critical > 0 && (
-        <div className="bg-critical-soft border-l-2 border-critical rounded px-4 py-3 mb-6 flex items-start gap-2 text-sm text-critical">
-          <AlertOctagon size={14} className="shrink-0 mt-0.5" />
-          <div>
-            <Trans
-              i18nKey={
-                counts.critical === 1
-                  ? 'supplierInventory.banner.critical.one'
-                  : 'supplierInventory.banner.critical.other'
-              }
-              values={{ count: counts.critical }}
-              components={{ strong: <strong /> }}
-            />
-          </div>
-        </div>
-      )}
-
+      {/* The search and the chips stay beside the table they filter: the
+          declared-stock section above is content, not part of the toolbar. */}
       <div className="flex flex-col gap-3 mb-4">
         <SearchBar
           value={search}
@@ -402,97 +411,96 @@ const SupplierInventory: React.FC = () => {
         </div>
       </div>
 
-      <div className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm overflow-hidden mb-6">
-        <Table>
-          <TableHeader>
-            <TableHeaderCell>{t('supplierInventory.col.material')}</TableHeaderCell>
-            <TableHeaderCell>{t('supplierInventory.col.supplier')}</TableHeaderCell>
-            <TableHeaderCell className="text-right">
-              {t('supplierInventory.col.onHand')}
-            </TableHeaderCell>
-            <TableHeaderCell className="text-right">
-              {t('supplierInventory.col.available')}
-            </TableHeaderCell>
-            <TableHeaderCell className="text-right">
-              {t('supplierInventory.col.inTransit')}
-            </TableHeaderCell>
-            <TableHeaderCell>{t('supplierInventory.col.uom')}</TableHeaderCell>
-            <TableHeaderCell>{t('supplierInventory.col.daysSupply')}</TableHeaderCell>
-            <TableHeaderCell>{t('supplierInventory.col.status')}</TableHeaderCell>
-            <TableHeaderCell>{t('supplierInventory.col.source')}</TableHeaderCell>
-            <TableHeaderCell>{t('supplierInventory.col.lastUpdated')}</TableHeaderCell>
-          </TableHeader>
-          <tbody>
-            {filtered.map((row) => {
-              const sourceVariant = SOURCE_VARIANT[row.dataSource] ?? 'neutral';
-              return (
-                <TableRow key={row.id}>
-                  <TableCell>
-                    <Data as="div" className="text-xs font-semibold text-text-primary">
-                      {row.materialCode}
-                    </Data>
-                    <div className="text-sm text-text-primary truncate max-w-[14rem]">
-                      {row.materialDescription}
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-text-secondary text-xs">
-                    {row.supplierName
-                      .replace('PT ', '')
-                      .split(' ')
-                      .slice(0, 2)
-                      .join(' ')}
-                  </TableCell>
-                  <TableCell className="text-right font-semibold text-text-primary whitespace-nowrap">
-                    <Data>{fmt(row.qtyOnHand)}</Data>
-                  </TableCell>
-                  <TableCell className="text-right text-text-primary whitespace-nowrap">
-                    <Data>{fmt(row.qtyAvailable)}</Data>
-                  </TableCell>
-                  <TableCell
-                    className={`text-right whitespace-nowrap ${
-                      row.qtyInTransit > 0 ? 'text-teal-text' : 'text-text-tertiary'
-                    }`}
-                  >
-                    <Data>{row.qtyInTransit > 0 ? fmt(row.qtyInTransit) : '—'}</Data>
-                  </TableCell>
-                  <TableCell className="text-text-tertiary text-xs">
-                    {row.uom}
-                  </TableCell>
-                  <TableCell>
-                    <DaysBar
-                      days={row.daysOfSupply}
-                      status={row.stockStatus}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <StatusPill variant={STATUS_VARIANT[row.stockStatus]}>
-                      {row.stockStatus}
-                    </StatusPill>
-                  </TableCell>
-                  <TableCell>
-                    <StatusPill variant={sourceVariant}>
-                      {row.dataSource}
-                    </StatusPill>
-                  </TableCell>
-                  <TableCell className="text-text-tertiary text-xs whitespace-nowrap">
-                    <Data>{fmtDate(row.lastUpdated)}</Data>
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-            {filtered.length === 0 && (
-              <tr>
-                <td
-                  colSpan={10}
-                  className="text-center text-sm text-text-tertiary py-10"
-                >
-                  {t('supplierInventory.table.empty')}
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </Table>
-      </div>
+      <DataTable<(typeof filtered)[number]>
+        className="mb-6"
+        rows={filtered}
+        rowKey={(row) => row.id}
+        empty={t('supplierInventory.table.empty')}
+        columns={[
+          {
+            id: 'material',
+            header: t('supplierInventory.col.material'),
+            kind: 'id',
+            cell: (row) => (
+              <>
+                <Data as="div">{row.materialCode}</Data>
+                <CellSub className="truncate whitespace-nowrap max-w-[14rem]">
+                  {row.materialDescription}
+                </CellSub>
+              </>
+            ),
+          },
+          {
+            id: 'supplier',
+            header: t('supplierInventory.col.supplier'),
+            kind: 'text',
+            cell: (row) => row.supplierName.replace('PT ', '').split(' ').slice(0, 2).join(' '),
+          },
+          {
+            id: 'onHand',
+            header: t('supplierInventory.col.onHand'),
+            kind: 'number',
+            className: 'whitespace-nowrap',
+            cell: (row) => <Data>{fmt(row.qtyOnHand)}</Data>,
+          },
+          {
+            id: 'available',
+            header: t('supplierInventory.col.available'),
+            kind: 'number',
+            className: 'whitespace-nowrap',
+            cell: (row) => <Data>{fmt(row.qtyAvailable)}</Data>,
+          },
+          {
+            id: 'inTransit',
+            header: t('supplierInventory.col.inTransit'),
+            kind: 'number',
+            className: 'whitespace-nowrap',
+            cell: (row) => (
+              <Data className={row.qtyInTransit > 0 ? 'text-teal-text' : undefined}>
+                {row.qtyInTransit > 0 ? fmt(row.qtyInTransit) : '—'}
+              </Data>
+            ),
+          },
+          {
+            id: 'uom',
+            header: t('supplierInventory.col.uom'),
+            kind: 'text',
+            cell: (row) => row.uom,
+          },
+          {
+            id: 'daysSupply',
+            header: t('supplierInventory.col.daysSupply'),
+            kind: 'status',
+            cell: (row) => <DaysBar days={row.daysOfSupply} status={row.stockStatus} />,
+          },
+          {
+            id: 'status',
+            header: t('supplierInventory.col.status'),
+            kind: 'status',
+            cell: (row) => (
+              <StatusPill variant={STATUS_VARIANT[row.stockStatus]}>
+                {row.stockStatus}
+              </StatusPill>
+            ),
+          },
+          {
+            id: 'source',
+            header: t('supplierInventory.col.source'),
+            kind: 'status',
+            cell: (row) => (
+              <StatusPill variant={SOURCE_VARIANT[row.dataSource] ?? 'neutral'}>
+                {row.dataSource}
+              </StatusPill>
+            ),
+          },
+          {
+            id: 'lastUpdated',
+            header: t('supplierInventory.col.lastUpdated'),
+            kind: 'date',
+            cell: (row) => <Data>{fmtDate(row.lastUpdated)}</Data>,
+          },
+        ]}
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
         <div className="bg-info-soft border-l-2 border-info rounded px-4 py-3 text-sm text-text-secondary flex items-start gap-2">
@@ -514,7 +522,7 @@ const SupplierInventory: React.FC = () => {
           </span>
         </div>
       </div>
-    </AppShellV2>
+    </ListPage>
   );
 };
 

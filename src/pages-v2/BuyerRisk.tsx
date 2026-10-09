@@ -37,10 +37,7 @@ import SubTabs from '../components/ui-v2/SubTabs';
 import FilterChipsBar from '../components/ui-v2/FilterChipsBar';
 import StatusPill from '../components/ui-v2/StatusPill';
 import { CHART_SEMANTIC, CHART_IDENTITY, MAP_BASE } from '../lib/chartPalette';
-import Table from '../components/ui-v2/Table';
-import TableHeader, { TableHeaderCell } from '../components/ui-v2/TableHeader';
-import TableRow from '../components/ui-v2/TableRow';
-import TableCell from '../components/ui-v2/TableCell';
+import DataTable from '../components/ui-v2/DataTable';
 import Button from '../components/ui-v2/Button';
 import LoadingState from '../components/ui-v2/LoadingState';
 import ErrorState from '../components/ui-v2/ErrorState';
@@ -434,50 +431,68 @@ const ExposureTab: React.FC<{ exposure: ExposureRow[] }> = ({ exposure }) => {
           tone="success"
         />
       </div>
-      <Table>
-        <TableHeader>
-          <TableHeaderCell>{t('risk.exposure.col.category')}</TableHeaderCell>
-          <TableHeaderCell>{t('risk.exposure.col.supplier')}</TableHeaderCell>
-          <TableHeaderCell>{t('risk.exposure.col.region')}</TableHeaderCell>
-          <TableHeaderCell className="text-right">{t('risk.exposure.col.annualSpend')}</TableHeaderCell>
-          <TableHeaderCell>{t('risk.exposure.col.daysOfStock')}</TableHeaderCell>
-          <TableHeaderCell>{t('risk.exposure.col.risk')}</TableHeaderCell>
-          <TableHeaderCell>{t('risk.exposure.col.dualSource')}</TableHeaderCell>
-        </TableHeader>
-        <tbody>
-          {exposure.map((row) => (
-            <TableRow key={row.category + row.supplier}>
-              <TableCell>
-                <span className="font-semibold text-text-primary">
-                  {row.category}
-                </span>
-              </TableCell>
-              <TableCell className="text-text-secondary">{row.supplier}</TableCell>
-              <TableCell className="text-text-tertiary">{row.region}</TableCell>
-              <TableCell className="text-right font-semibold text-text-primary">
-                <Data>${(row.spend / 1000).toFixed(1)}M</Data>
-              </TableCell>
-              <TableCell>
-                <StatusPill variant={dosVariant(row.dos)}>
-                  {row.dos}d
-                </StatusPill>
-              </TableCell>
-              <TableCell>
-                <StatusPill variant={severityTone(row.risk)}>
-                  {row.risk}
-                </StatusPill>
-              </TableCell>
-              <TableCell>
-                {row.dualSource ? (
-                  <span className="text-success font-semibold">✓</span>
-                ) : (
-                  <span className="text-critical font-semibold">✗</span>
-                )}
-              </TableCell>
-            </TableRow>
-          ))}
-        </tbody>
-      </Table>
+      <DataTable<ExposureRow>
+        card={false}
+        rows={exposure}
+        rowKey={(row) => row.category + row.supplier}
+        columns={[
+          {
+            id: 'category',
+            header: t('risk.exposure.col.category'),
+            kind: 'text',
+            cell: (row) => row.category,
+          },
+          {
+            id: 'supplier',
+            header: t('risk.exposure.col.supplier'),
+            kind: 'text',
+            cell: (row) => row.supplier,
+          },
+          {
+            id: 'region',
+            header: t('risk.exposure.col.region'),
+            kind: 'text',
+            cell: (row) => row.region,
+          },
+          {
+            id: 'annualSpend',
+            header: t('risk.exposure.col.annualSpend'),
+            kind: 'money',
+            cell: (row) => <Data>${(row.spend / 1000).toFixed(1)}M</Data>,
+          },
+          {
+            id: 'daysOfStock',
+            header: t('risk.exposure.col.daysOfStock'),
+            kind: 'status',
+            cell: (row) => (
+              <StatusPill variant={dosVariant(row.dos)}>
+                {row.dos}d
+              </StatusPill>
+            ),
+          },
+          {
+            id: 'risk',
+            header: t('risk.exposure.col.risk'),
+            kind: 'status',
+            cell: (row) => (
+              <StatusPill variant={severityTone(row.risk)}>
+                {row.risk}
+              </StatusPill>
+            ),
+          },
+          {
+            id: 'dualSource',
+            header: t('risk.exposure.col.dualSource'),
+            kind: 'status',
+            cell: (row) =>
+              row.dualSource ? (
+                <span className="text-success">✓</span>
+              ) : (
+                <span className="text-critical">✗</span>
+              ),
+          },
+        ]}
+      />
     </div>
   );
 };
@@ -747,97 +762,101 @@ const ComplianceRisksTab: React.FC<{ compliance: ComplianceRow[] }> = ({
         </div>
       )}
 
-      <div className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm overflow-hidden">
-        <Table>
-          <TableHeader>
-            <TableHeaderCell>{t('risk.compliance.col.supplier')}</TableHeaderCell>
-            <TableHeaderCell>{t('risk.compliance.col.certRequirement')}</TableHeaderCell>
-            <TableHeaderCell>{t('risk.compliance.col.expiryDate')}</TableHeaderCell>
-            <TableHeaderCell>{t('risk.compliance.col.daysLeft')}</TableHeaderCell>
-            <TableHeaderCell>{t('risk.compliance.col.status')}</TableHeaderCell>
-            <TableHeaderCell className="text-right">{t('risk.compliance.col.action')}</TableHeaderCell>
-          </TableHeader>
-          <tbody>
-            {compliance.map((stored) => {
-              // SUP-2 - the days column is computed from the expiry date while
-              // the pill and the action read the row's stored status, so a row
-              // could read "92d overdue" beside "Valid - no action". A date
-              // that has passed is expired, whatever the row stores.
-              const overdue = (daysLeftOf(stored) ?? 0) < 0;
-              const row = overdue ? { ...stored, status: 'expired' as const } : stored;
-              const statusLabel =
-                row.status === 'expired'
+      <DataTable<ComplianceRow>
+        rows={compliance.map((stored) => {
+          // SUP-2 - the days column is computed from the expiry date while
+          // the pill and the action read the row's stored status, so a row
+          // could read "92d overdue" beside "Valid - no action". A date
+          // that has passed is expired, whatever the row stores.
+          const overdue = (daysLeftOf(stored) ?? 0) < 0;
+          return overdue ? { ...stored, status: 'expired' as const } : stored;
+        })}
+        rowKey={(row) => row.supplier + row.type}
+        columns={[
+          {
+            id: 'supplier',
+            header: t('risk.compliance.col.supplier'),
+            kind: 'text',
+            cell: (row) => row.supplier,
+          },
+          {
+            id: 'certRequirement',
+            header: t('risk.compliance.col.certRequirement'),
+            kind: 'text',
+            cell: (row) => row.type,
+          },
+          {
+            id: 'expiryDate',
+            header: t('risk.compliance.col.expiryDate'),
+            kind: 'date',
+            cell: (row) => <Data>{row.expires}</Data>,
+          },
+          {
+            id: 'daysLeft',
+            header: t('risk.compliance.col.daysLeft'),
+            kind: 'number',
+            cell: (row) => (
+              <Data
+                className={
+                  row.status === 'expired'
+                    ? 'text-critical'
+                    : row.status === 'expiring'
+                      ? 'text-warning-hover'
+                      : 'text-success'
+                }
+              >
+                {(() => {
+                  const d = daysLeftOf(row);
+                  if (d === null) return '—';
+                  return d < 0
+                    ? t('risk.compliance.overdue', { days: Math.abs(d) })
+                    : `${d}d`;
+                })()}
+              </Data>
+            ),
+          },
+          {
+            id: 'status',
+            header: t('risk.compliance.col.status'),
+            kind: 'status',
+            cell: (row) => (
+              <StatusPill variant={COMPLIANCE_VARIANT[row.status]}>
+                {row.status === 'expired'
                   ? 'Expired'
                   : row.status === 'expiring'
                     ? 'Expiring soon'
-                    : 'Valid';
-              return (
-                <TableRow key={row.supplier + row.type}>
-                  <TableCell>
-                    <span className="font-semibold text-text-primary">
-                      {row.supplier}
-                    </span>
-                  </TableCell>
-                  <TableCell className="text-text-secondary">
-                    {row.type}
-                  </TableCell>
-                  <TableCell className="text-text-tertiary">
-                    <Data>{row.expires}</Data>
-                  </TableCell>
-                  <TableCell>
-                    <Data
-                      className={`font-bold ${
+                    : 'Valid'}
+              </StatusPill>
+            ),
+          },
+          {
+            id: 'action',
+            header: t('risk.compliance.col.action'),
+            kind: 'actions',
+            cell: (row) =>
+              row.status === 'ok' ? (
+                <>✓ {t('risk.compliance.noAction')}</>
+              ) : (
+                <Button
+                  variant="outline"
+                  onClick={() =>
+                    toast({
+                      variant: row.status === 'expired' ? 'warning' : 'info',
+                      title:
                         row.status === 'expired'
-                          ? 'text-critical'
-                          : row.status === 'expiring'
-                            ? 'text-warning-hover'
-                            : 'text-success'
-                      }`}
-                    >
-                      {(() => {
-                        const d = daysLeftOf(row);
-                        if (d === null) return '—';
-                        return d < 0
-                          ? t('risk.compliance.overdue', { days: Math.abs(d) })
-                          : `${d}d`;
-                      })()}
-                    </Data>
-                  </TableCell>
-                  <TableCell>
-                    <StatusPill variant={COMPLIANCE_VARIANT[row.status]}>
-                      {statusLabel}
-                    </StatusPill>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {row.status === 'ok' ? (
-                      <span className="text-meta text-text-tertiary">
-                        ✓ {t('risk.compliance.noAction')}
-                      </span>
-                    ) : (
-                      <Button
-                        variant="outline"
-                        onClick={() =>
-                          toast({
-                            variant: row.status === 'expired' ? 'warning' : 'info',
-                            title:
-                              row.status === 'expired'
-                                ? t('risk.toast.urgentRenewal', { supplier: row.supplier })
-                                : t('risk.toast.reminderSent', { supplier: row.supplier }),
-                          })
-                        }
-                      >
-                        {row.status === 'expired'
-                          ? t('risk.compliance.urgentRenewal')
-                          : t('risk.compliance.sendReminder')}
-                      </Button>
-                    )}
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-          </tbody>
-        </Table>
-      </div>
+                          ? t('risk.toast.urgentRenewal', { supplier: row.supplier })
+                          : t('risk.toast.reminderSent', { supplier: row.supplier }),
+                    })
+                  }
+                >
+                  {row.status === 'expired'
+                    ? t('risk.compliance.urgentRenewal')
+                    : t('risk.compliance.sendReminder')}
+                </Button>
+              ),
+          },
+        ]}
+      />
       <div className="bg-info-soft border-l-2 border-info rounded px-4 py-3 text-meta text-text-secondary">
         {t('risk.compliance.differentAnglePrefix')}
         <strong className="text-info">{t('risk.compliance.complianceTracker')}</strong>

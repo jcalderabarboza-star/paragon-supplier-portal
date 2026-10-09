@@ -23,20 +23,15 @@ import {
   Globe,
   LucideIcon,
 } from 'lucide-react';
-import AppShellV2 from '../components/layout-v2/AppShellV2';
 import { CHART_SERIES, CHART_SEMANTIC, CHART_GRID } from '../lib/chartPalette';
-import PageHeader from '../components/ui-v2/PageHeader';
-import PageMetaLine from '../components/ui-v2/PageMetaLine';
 import ProvenanceMarker from '../components/ui-v2/ProvenanceMarker';
 import KpiCard from '../components/ui-v2/KpiCard';
 import BulkActionsBar from '../components/ui-v2/BulkActionsBar';
 import SubTabs from '../components/ui-v2/SubTabs';
 import FilterChipsBar from '../components/ui-v2/FilterChipsBar';
 import StatusPill from '../components/ui-v2/StatusPill';
-import Table from '../components/ui-v2/Table';
-import TableHeader, { TableHeaderCell } from '../components/ui-v2/TableHeader';
-import TableRow from '../components/ui-v2/TableRow';
-import TableCell from '../components/ui-v2/TableCell';
+import DataTable, { CellSub, type Column } from '../components/ui-v2/DataTable';
+import ListPage from '../components/ui-v2/ListPage';
 import Button from '../components/ui-v2/Button';
 import SidePanel from '../components/ui-v2/SidePanel';
 import SuperAdminBypassNote from '../components/v2-features/SuperAdminBypassNote';
@@ -727,127 +722,261 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
     ? t('buyerInvoices.panel.title', { invoiceNumber: selected.invoiceNumber })
     : '';
 
-  return (
-    <AppShellV2>
-      <PageHeader
-        breadcrumb={crumb}
-        title={t('buyerInvoices.header.title')}
-        subtitle={t('buyerInvoices.header.subtitle')}
-        actions={
-          <BulkActionsBar
-            actions={[
-              {
-                label: t('buyerInvoices.action.sapApExport'),
-                icon: Database,
-                onClick: () =>
-                  toast({
-                    title: t('buyerInvoices.toast.sapExport.title'),
-                  }),
-              },
-              {
-                label: t('buyerInvoices.action.exportReport'),
-                icon: FileSpreadsheet,
-                onClick: () =>
-                  toast({
-                    variant: 'info',
-                    title: t('buyerInvoices.toast.agingReport.title'),
-                  }),
-              },
-            ]}
-          />
-        }
-      />
-
-      <PageMetaLine className="-mt-6 mb-6">
-        {t(
-          invoices.length === 1
-            ? 'buyerInvoices.meta.summary.one'
-            : 'buyerInvoices.meta.summary.other',
-          { count: invoices.length },
-        )}{' '}
-        {lastUpdated}
-        {/* D-CENSUS-8 — PARTLY REAL, both axes. Dispute / Resolve / Release-payment /
-            Settle all dispatch through the wired `invoice` target (the Option-B SAP
-            boundary is simulated at `settle`, not faked earlier). Feed is fixture. */}
-        <ProvenanceMarker capability="invoices" className="ml-3 align-middle" />
-      </PageMetaLine>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 mb-6">
-        <KpiCard
-          eyebrow={t('buyerInvoices.kpi.pendingApproval.eyebrow')}
-          value={fmtCompact(sums.pendingApproval)}
-          subtitle={invoiceCount(pendingApprovalCount)}
-          icon={Clock}
-        />
-        <KpiCard
-          eyebrow={t('buyerInvoices.kpi.released.eyebrow')}
-          value={fmtCompact(sums.released)}
-          subtitle={invoiceCount(counts.released)}
-          icon={CheckCircle2}
-        />
-        <KpiCard
-          eyebrow={t('buyerInvoices.kpi.disputed.eyebrow')}
-          value={fmtCompact(sums.disputed)}
-          subtitle={invoiceCount(counts.disputed)}
-          icon={AlertTriangle}
-        />
-        <KpiCard
-          eyebrow={t('buyerInvoices.kpi.overdue.eyebrow')}
-          value={fmtCompact(sums.overdue)}
-          subtitle={invoiceCount(counts.overdue)}
-          icon={AlertOctagon}
-        />
-      </div>
-
-      {overdueInvoices.length > 0 && (
-        <div className="bg-critical-soft border-l-2 border-critical rounded px-4 py-3 mb-3 text-sm text-critical flex items-start gap-2">
-          <AlertOctagon size={14} className="shrink-0 mt-0.5" />
-          <div>
-            <strong>
-              {t(
-                overdueInvoices.length === 1
-                  ? 'buyerInvoices.banner.overdue.label.one'
-                  : 'buyerInvoices.banner.overdue.label.other',
-                { count: overdueInvoices.length },
-              )}
-            </strong>
-            {overdueInvoices
-              .map((i) =>
-                t('buyerInvoices.banner.overdue.item', {
-                  invoice: i.invoiceNumber,
-                  days: i.daysOutstanding,
-                }),
-              )
-              .join(' · ')}
-          </div>
-        </div>
-      )}
-
-      {disputedInvoices.length > 0 && (
-        <div className="bg-warning-soft border-l-2 border-warning rounded px-4 py-3 mb-6 text-sm text-warning-hover flex items-start gap-2">
-          <AlertTriangle size={14} className="shrink-0 mt-0.5" />
-          <div>
-            <strong>{t('buyerInvoices.banner.dispute.label')}</strong>
-            {disputedInvoices.map((i) => i.invoiceNumber).join(', ')}
-            {t('buyerInvoices.banner.dispute.body')}
-          </div>
-        </div>
-      )}
-
-      <SubTabs<TabKey>
-        options={[
-          { id: 'queue', label: t('buyerInvoices.tab.queue') },
-          { id: 'analytics', label: t('buyerInvoices.tab.analytics') },
-          { id: 'aging', label: t('buyerInvoices.tab.aging') },
-        ]}
-        value={tab}
-        onChange={setTab}
-        className="mb-5"
-      />
-
-      {tab === 'queue' && (
+  const queueColumns: Column<(typeof filtered)[number]>[] = [
+    {
+      id: 'invoiceNo',
+      header: t('buyerInvoices.table.invoiceNo'),
+      kind: 'id',
+      cell: (inv) => <Data as="div">{inv.invoiceNumber}</Data>,
+    },
+    {
+      id: 'supplier',
+      header: t('buyerInvoices.table.supplier'),
+      kind: 'text',
+      cell: (inv) => {
+        const Channel = CHANNEL_ICON[inv.channel];
+        return (
+          <>
+            <div className="truncate max-w-[14rem]">{inv.supplierName}</div>
+            <CellSub className="flex items-center gap-1">
+              <Channel size={12} />
+              {t('buyerInvoices.table.via', { channel: inv.channel })}
+            </CellSub>
+          </>
+        );
+      },
+    },
+    {
+      id: 'poRef',
+      header: t('buyerInvoices.table.poRef'),
+      kind: 'id',
+      cell: (inv) => <Data>{inv.poNumber}</Data>,
+    },
+    {
+      id: 'amount',
+      header: t('buyerInvoices.table.amount'),
+      kind: 'money',
+      cell: (inv) => (
         <>
-          <div className="mb-4">
+          <Data as="div">{fmtCompact(inv.amount)}</Data>
+          <CellSub>{formatIDR(inv.amount)}</CellSub>
+        </>
+      ),
+    },
+    {
+      id: 'match',
+      header: t('buyerInvoices.table.match'),
+      kind: 'status',
+      cell: (inv) => <StatusPill variant={MATCH_VARIANT[inv.matchStatus]}>{inv.matchStatus}</StatusPill>,
+    },
+    {
+      id: 'status',
+      header: t('buyerInvoices.table.status'),
+      kind: 'status',
+      cell: (inv) => (
+        <>
+          <StatusPill variant={STATUS_VARIANT[inv.status]}>{inv.status}</StatusPill>
+          {inv.status === 'Overdue' && (
+            <CellSub tone="critical">
+              {t('buyerInvoices.table.daysOverdue', { days: inv.daysOutstanding })}
+            </CellSub>
+          )}
+        </>
+      ),
+    },
+    {
+      id: 'dueDate',
+      header: t('buyerInvoices.table.dueDate'),
+      kind: 'date',
+      cell: (inv) => (
+        <>
+          <Data as="div">{formatDate(inv.dueDate)}</Data>
+          {inv.paymentDate && (
+            <CellSub tone="success">
+              {t('buyerInvoices.table.paid')} {formatDate(inv.paymentDate)}
+            </CellSub>
+          )}
+        </>
+      ),
+    },
+    {
+      id: 'sapFi',
+      header: t('buyerInvoices.table.sapFi'),
+      kind: 'id',
+      cell: (inv) => (
+        <Data className={inv.sapFiDoc ? 'text-success' : undefined}>{inv.sapFiDoc ?? '—'}</Data>
+      ),
+    },
+    {
+      id: 'actions',
+      header: t('buyerInvoices.table.actions'),
+      kind: 'actions',
+      cell: () => <ChevronRight size={16} className="text-text-tertiary inline-block" />,
+    },
+  ];
+
+  const agingTotal = AGING_DATA.reduce((a, b) => a + b.amount, 0);
+  const agingColumns: Column<(typeof AGING_DATA)[number]>[] = [
+    {
+      id: 'bucket',
+      header: t('buyerInvoices.aging.bucket'),
+      kind: 'text',
+      cell: (row) => agingBucketLabel(row.bucket),
+    },
+    {
+      id: 'count',
+      header: t('buyerInvoices.aging.count'),
+      kind: 'number',
+      cell: (row) => row.count,
+    },
+    {
+      id: 'amount',
+      header: t('buyerInvoices.aging.amount'),
+      kind: 'money',
+      cell: (row) => (
+        <Data>{row.amount > 0 ? `Rp ${row.amount}jT` : '—'}</Data>
+      ),
+    },
+    {
+      id: 'pctAp',
+      header: t('buyerInvoices.aging.pctAp'),
+      kind: 'number',
+      cell: (row) => (
+        <Data>{row.amount > 0 ? `${agingTotal > 0 ? ((row.amount / agingTotal) * 100).toFixed(1) : '0.0'}%` : '—'}</Data>
+      ),
+    },
+    {
+      id: 'risk',
+      header: t('buyerInvoices.aging.risk'),
+      kind: 'status',
+      cell: (row) => (row.amount > 0 ? <StatusPill variant={row.risk}>{row.riskLabel}</StatusPill> : null),
+    },
+  ];
+
+  return (
+    <ListPage
+      breadcrumb={crumb}
+      title={t('buyerInvoices.header.title')}
+      subtitle={t('buyerInvoices.header.subtitle')}
+      actions={
+        <BulkActionsBar
+          actions={[
+            {
+              label: t('buyerInvoices.action.sapApExport'),
+              icon: Database,
+              onClick: () =>
+                toast({
+                  title: t('buyerInvoices.toast.sapExport.title'),
+                }),
+            },
+            {
+              label: t('buyerInvoices.action.exportReport'),
+              icon: FileSpreadsheet,
+              onClick: () =>
+                toast({
+                  variant: 'info',
+                  title: t('buyerInvoices.toast.agingReport.title'),
+                }),
+            },
+          ]}
+        />
+      }
+      meta={
+        <>
+          {t(
+            invoices.length === 1
+              ? 'buyerInvoices.meta.summary.one'
+              : 'buyerInvoices.meta.summary.other',
+            { count: invoices.length },
+          )}{' '}
+          {lastUpdated}
+          {/* D-CENSUS-8 — PARTLY REAL, both axes. Dispute / Resolve / Release-payment /
+              Settle all dispatch through the wired `invoice` target (the Option-B SAP
+              boundary is simulated at `settle`, not faked earlier). Feed is fixture. */}
+          <ProvenanceMarker capability="invoices" className="ml-3 align-middle" />
+        </>
+      }
+      notices={
+        overdueInvoices.length > 0 || disputedInvoices.length > 0 ? (
+          <>
+            {overdueInvoices.length > 0 && (
+              <div className="bg-critical-soft border-l-2 border-critical rounded px-4 py-3 text-sm text-critical flex items-start gap-2">
+                <AlertOctagon size={14} className="shrink-0 mt-0.5" />
+                <div>
+                  <strong>
+                    {t(
+                      overdueInvoices.length === 1
+                        ? 'buyerInvoices.banner.overdue.label.one'
+                        : 'buyerInvoices.banner.overdue.label.other',
+                      { count: overdueInvoices.length },
+                    )}
+                  </strong>
+                  {overdueInvoices
+                    .map((i) =>
+                      t('buyerInvoices.banner.overdue.item', {
+                        invoice: i.invoiceNumber,
+                        days: i.daysOutstanding,
+                      }),
+                    )
+                    .join(' · ')}
+                </div>
+              </div>
+            )}
+
+            {disputedInvoices.length > 0 && (
+              <div className="bg-warning-soft border-l-2 border-warning rounded px-4 py-3 text-sm text-warning-hover flex items-start gap-2">
+                <AlertTriangle size={14} className="shrink-0 mt-0.5" />
+                <div>
+                  <strong>{t('buyerInvoices.banner.dispute.label')}</strong>
+                  {disputedInvoices.map((i) => i.invoiceNumber).join(', ')}
+                  {t('buyerInvoices.banner.dispute.body')}
+                </div>
+              </div>
+            )}
+          </>
+        ) : undefined
+      }
+      kpis={
+        <>
+          <KpiCard
+            eyebrow={t('buyerInvoices.kpi.pendingApproval.eyebrow')}
+            value={fmtCompact(sums.pendingApproval)}
+            subtitle={invoiceCount(pendingApprovalCount)}
+            icon={Clock}
+          />
+          <KpiCard
+            eyebrow={t('buyerInvoices.kpi.released.eyebrow')}
+            value={fmtCompact(sums.released)}
+            subtitle={invoiceCount(counts.released)}
+            icon={CheckCircle2}
+          />
+          <KpiCard
+            eyebrow={t('buyerInvoices.kpi.disputed.eyebrow')}
+            value={fmtCompact(sums.disputed)}
+            subtitle={invoiceCount(counts.disputed)}
+            icon={AlertTriangle}
+          />
+          <KpiCard
+            eyebrow={t('buyerInvoices.kpi.overdue.eyebrow')}
+            value={fmtCompact(sums.overdue)}
+            subtitle={invoiceCount(counts.overdue)}
+            icon={AlertOctagon}
+          />
+        </>
+      }
+      tabs={
+        <SubTabs<TabKey>
+          options={[
+            { id: 'queue', label: t('buyerInvoices.tab.queue') },
+            { id: 'analytics', label: t('buyerInvoices.tab.analytics') },
+            { id: 'aging', label: t('buyerInvoices.tab.aging') },
+          ]}
+          value={tab}
+          onChange={setTab}
+        />
+      }
+      filters={
+        tab === 'queue' ? (
             <FilterChipsBar<StatusFilter>
               options={STATUS_OPTIONS.map((id) => ({
                 id,
@@ -860,114 +989,17 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
               value={statusFilter}
               onChange={setStatusFilter}
             />
-          </div>
-
-          <div className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm overflow-hidden">
-            <Table>
-              <TableHeader>
-                <TableHeaderCell>{t('buyerInvoices.table.invoiceNo')}</TableHeaderCell>
-                <TableHeaderCell>{t('buyerInvoices.table.supplier')}</TableHeaderCell>
-                <TableHeaderCell>{t('buyerInvoices.table.poRef')}</TableHeaderCell>
-                <TableHeaderCell className="text-right">{t('buyerInvoices.table.amount')}</TableHeaderCell>
-                <TableHeaderCell>{t('buyerInvoices.table.match')}</TableHeaderCell>
-                <TableHeaderCell>{t('buyerInvoices.table.status')}</TableHeaderCell>
-                <TableHeaderCell>{t('buyerInvoices.table.dueDate')}</TableHeaderCell>
-                <TableHeaderCell>{t('buyerInvoices.table.sapFi')}</TableHeaderCell>
-                <TableHeaderCell className="text-right">{t('buyerInvoices.table.actions')}</TableHeaderCell>
-              </TableHeader>
-              <tbody>
-                {filtered.map((inv) => {
-                  const Channel = CHANNEL_ICON[inv.channel];
-                  return (
-                    <TableRow
-                      key={inv.id}
-                      className="cursor-pointer"
-                      onClick={() => openInvoice(inv)}
-                    >
-                      <TableCell>
-                        <Data as="div" className="text-xs font-semibold text-text-primary">
-                          {inv.invoiceNumber}
-                        </Data>
-                      </TableCell>
-                      <TableCell>
-                        <div className="text-sm text-text-primary truncate max-w-[14rem]">
-                          {inv.supplierName}
-                        </div>
-                        <div className="inline-flex items-center gap-1 text-xs text-text-tertiary mt-0.5">
-                          <Channel size={12} />
-                          {t('buyerInvoices.table.via', { channel: inv.channel })}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Data className="text-xs text-text-secondary">
-                          {inv.poNumber}
-                        </Data>
-                      </TableCell>
-                      <TableCell className="text-right whitespace-nowrap">
-                        <Data as="div" className="font-semibold text-text-primary">
-                          {fmtCompact(inv.amount)}
-                        </Data>
-                        <Data as="div" className="text-xs text-text-tertiary">
-                          {formatIDR(inv.amount)}
-                        </Data>
-                      </TableCell>
-                      <TableCell>
-                        <StatusPill variant={MATCH_VARIANT[inv.matchStatus]}>
-                          {inv.matchStatus}
-                        </StatusPill>
-                      </TableCell>
-                      <TableCell>
-                        <StatusPill variant={STATUS_VARIANT[inv.status]}>
-                          {inv.status}
-                        </StatusPill>
-                        {inv.status === 'Overdue' && (
-                          <div className="text-xs text-critical mt-1">
-                            {t('buyerInvoices.table.daysOverdue', { days: inv.daysOutstanding })}
-                          </div>
-                        )}
-                      </TableCell>
-                      <TableCell className="whitespace-nowrap">
-                        <Data as="div" className="text-sm text-text-secondary">
-                          {formatDate(inv.dueDate)}
-                        </Data>
-                        {inv.paymentDate && (
-                          <div className="text-xs text-success">
-                            {t('buyerInvoices.table.paid')} <Data>{formatDate(inv.paymentDate)}</Data>
-                          </div>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <Data
-                          className={`text-xs ${
-                            inv.sapFiDoc ? 'text-success' : 'text-text-tertiary'
-                          }`}
-                        >
-                          {inv.sapFiDoc ?? '—'}
-                        </Data>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <ChevronRight
-                          size={16}
-                          className="text-text-tertiary inline-block"
-                        />
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-                {filtered.length === 0 && (
-                  <tr>
-                    <td
-                      colSpan={9}
-                      className="text-center text-sm text-text-tertiary py-10"
-                    >
-                      {t('buyerInvoices.table.empty')}
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </Table>
-          </div>
-        </>
+        ) : undefined
+      }
+    >
+      {tab === 'queue' && (
+        <DataTable
+          columns={queueColumns}
+          rows={filtered}
+          rowKey={(inv) => inv.id}
+          onRowClick={(inv) => openInvoice(inv)}
+          empty={t('buyerInvoices.table.empty')}
+        />
       )}
 
       {tab === 'analytics' && (
@@ -1062,57 +1094,7 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
             </ResponsiveContainer>
           </section>
 
-          <div className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm overflow-hidden">
-            <Table>
-              <TableHeader>
-                <TableHeaderCell>{t('buyerInvoices.aging.bucket')}</TableHeaderCell>
-                <TableHeaderCell className="text-right">{t('buyerInvoices.aging.count')}</TableHeaderCell>
-                <TableHeaderCell className="text-right">{t('buyerInvoices.aging.amount')}</TableHeaderCell>
-                <TableHeaderCell className="text-right">{t('buyerInvoices.aging.pctAp')}</TableHeaderCell>
-                <TableHeaderCell>{t('buyerInvoices.aging.risk')}</TableHeaderCell>
-              </TableHeader>
-              <tbody>
-                {AGING_DATA.map((row) => {
-                  const total = AGING_DATA.reduce((a, b) => a + b.amount, 0);
-                  const pct =
-                    total > 0 ? ((row.amount / total) * 100).toFixed(1) : '0.0';
-                  return (
-                    <TableRow key={row.bucket}>
-                      <TableCell>
-                        <span className="font-semibold text-text-primary">
-                          {agingBucketLabel(row.bucket)}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-right text-text-secondary">
-                        {row.count}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Data
-                          className={`font-semibold ${
-                            row.amount > 0
-                              ? 'text-text-primary'
-                              : 'text-text-tertiary'
-                          }`}
-                        >
-                          {row.amount > 0 ? `Rp ${row.amount}jT` : '—'}
-                        </Data>
-                      </TableCell>
-                      <TableCell className="text-right text-text-secondary">
-                        <Data>{row.amount > 0 ? `${pct}%` : '—'}</Data>
-                      </TableCell>
-                      <TableCell>
-                        {row.amount > 0 && (
-                          <StatusPill variant={row.risk}>
-                            {row.riskLabel}
-                          </StatusPill>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </tbody>
-            </Table>
-          </div>
+          <DataTable columns={agingColumns} rows={AGING_DATA} rowKey={(row) => row.bucket} />
 
           <div className="bg-info-soft border-l-2 border-info rounded px-4 py-3 text-sm text-text-primary flex items-start gap-2">
             <Database size={14} className="text-info shrink-0 mt-0.5" />
@@ -1582,7 +1564,7 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
           </div>
         )}
       </SidePanel>
-    </AppShellV2>
+    </ListPage>
   );
 };
 

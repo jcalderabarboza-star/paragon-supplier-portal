@@ -77,7 +77,7 @@ const StatusPill: React.FC<StatusPillProps> = ({
   const label = localize(children);
   return (
     <span
-      className={`inline-flex items-center rounded-sm border px-2 py-0.5 text-xs font-medium ${VARIANT_CLASS[variant]} ${className}`}
+      className={`inline-flex items-center rounded-sm border px-2 py-0.5 font-sans text-xs font-medium ${VARIANT_CLASS[variant]} ${className}`}
     >
       {label}
     </span>

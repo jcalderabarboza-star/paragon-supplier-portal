@@ -16,6 +16,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import Data from '../../components/ui-v2/Data';
+import DataTable, { type Column } from '../../components/ui-v2/DataTable';
 import { formatDate } from '../../lib/format';
 import { personLabel } from '../../services/identity/personLabel';
 import { getTransition } from '../../services/transitions/registry';
@@ -65,54 +66,71 @@ export function ledgerRows(records: readonly PublicationDocument[]): readonly Le
 const PublicationLedger: React.FC<{ records: readonly PublicationDocument[]; testId: string }> = ({ records, testId }) => {
   const { t } = useTranslation();
   const rows = ledgerRows(records);
+  const columns: Column<LedgerRow>[] = [
+    {
+      id: 'when',
+      header: t('planGrid.publication.ledger.when'),
+      kind: 'date',
+      cell: (r) => <Data>{formatDate(r.at)}</Data>,
+    },
+    {
+      id: 'act',
+      header: t('planGrid.publication.ledger.act'),
+      kind: 'text',
+      cell: (r) => (
+        <>
+          {t(`planGrid.publication.ledger.verb.${r.verb}`)}
+          {r.reason && <> — “{r.reason}”</>}
+        </>
+      ),
+    },
+    {
+      id: 'publication',
+      header: t('planGrid.publication.ledger.publication'),
+      kind: 'id',
+      cell: (r) => (
+        <>
+          <Data>{r.publicationId}</Data> · <Data>{r.planVersion}</Data>
+        </>
+      ),
+    },
+    {
+      id: 'role',
+      header: t('planGrid.publication.ledger.role'),
+      kind: 'text',
+      cell: (r) => {
+        const roles = ledgerRoleKeys(r.verb);
+        return roles.length > 0 ? roles.map((k) => t(k)).join(' / ') : t('planGrid.publication.ledger.machine');
+      },
+    },
+    {
+      id: 'person',
+      header: t('planGrid.publication.ledger.person'),
+      kind: 'text',
+      cell: (r) =>
+        r.seeded
+          ? t('planGrid.publication.ledger.seeded')
+          : r.personId
+            ? personLabel(r.personId, t)
+            : ledgerRoleKeys(r.verb).length > 0
+              ? t('planGrid.publication.ledger.noPerson')
+              : '—',
+    },
+  ];
   return (
     <div data-testid={testId}>
       <div className="mb-1 text-label uppercase text-text-tertiary">{t('planGrid.publication.ledger.title')}</div>
       {rows.length === 0 ? (
         <p className="text-xs text-text-tertiary">{t('planGrid.publication.ledger.empty')}</p>
       ) : (
-        <table className="w-full text-xs">
-          <thead className="text-left text-text-tertiary">
-            <tr>
-              <th className="py-1 pr-2 font-medium">{t('planGrid.publication.ledger.when')}</th>
-              <th className="py-1 pr-2 font-medium">{t('planGrid.publication.ledger.act')}</th>
-              <th className="py-1 pr-2 font-medium">{t('planGrid.publication.ledger.publication')}</th>
-              <th className="py-1 pr-2 font-medium">{t('planGrid.publication.ledger.role')}</th>
-              <th className="py-1 font-medium">{t('planGrid.publication.ledger.person')}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((r, i) => {
-              const roles = ledgerRoleKeys(r.verb);
-              return (
-                <tr key={`${r.publicationId}-${r.verb}-${i}`} className="border-t border-border-subtle align-top" data-testid="publication-ledger-row">
-                  <td className="py-1 pr-2">
-                    <Data>{formatDate(r.at)}</Data>
-                  </td>
-                  <td className="py-1 pr-2">
-                    {t(`planGrid.publication.ledger.verb.${r.verb}`)}
-                    {r.reason && <span className="text-text-secondary"> — “{r.reason}”</span>}
-                  </td>
-                  <td className="py-1 pr-2">
-                    <Data>{r.publicationId}</Data> · <Data>{r.planVersion}</Data>
-                  </td>
-                  <td className="py-1 pr-2">
-                    {roles.length > 0 ? roles.map((k) => t(k)).join(' / ') : t('planGrid.publication.ledger.machine')}
-                  </td>
-                  <td className="py-1 text-text-secondary">
-                    {r.seeded
-                      ? t('planGrid.publication.ledger.seeded')
-                      : r.personId
-                        ? personLabel(r.personId, t)
-                        : roles.length > 0
-                          ? t('planGrid.publication.ledger.noPerson')
-                          : '—'}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+        <DataTable
+          columns={columns}
+          rows={rows}
+          rowKey={(r, i) => `${r.publicationId}-${r.verb}-${i}`}
+          rowProps={() => ({ 'data-testid': 'publication-ledger-row' })}
+          density="compact"
+          card={false}
+        />
       )}
     </div>
   );

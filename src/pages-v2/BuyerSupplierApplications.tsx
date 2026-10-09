@@ -63,19 +63,14 @@ import { Clock, Eye, CheckCircle2, FilePlus2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { personLabel } from '../services/identity/personLabel';
 
-import AppShellV2 from '../components/layout-v2/AppShellV2';
-import PageHeader from '../components/ui-v2/PageHeader';
-import PageMetaLine from '../components/ui-v2/PageMetaLine';
+import ListPage from '../components/ui-v2/ListPage';
+import DataTable, { type Column } from '../components/ui-v2/DataTable';
 import ProvenanceMarker from '../components/ui-v2/ProvenanceMarker';
 import KpiCard from '../components/ui-v2/KpiCard';
 import Data from '../components/ui-v2/Data';
 import SubTabs from '../components/ui-v2/SubTabs';
 import SearchBar from '../components/ui-v2/SearchBar';
 import StatusPill from '../components/ui-v2/StatusPill';
-import Table from '../components/ui-v2/Table';
-import TableHeader, { TableHeaderCell } from '../components/ui-v2/TableHeader';
-import TableRow from '../components/ui-v2/TableRow';
-import TableCell from '../components/ui-v2/TableCell';
 import Button from '../components/ui-v2/Button';
 import SidePanel from '../components/ui-v2/SidePanel';
 import FormSection from '../components/ui-v2/FormSection';
@@ -492,9 +487,51 @@ const BuyerSupplierApplications: React.FC = () => {
         ? t('applications.declared.count.one', { count: 1 })
         : t('applications.declared.count.other', { count: a.declarations.length });
 
+  /** The header, the count line and the notices render in every state; the
+   *  figures, the tabs and the search only once the read has answered. */
+  const ready = !isLoading && !isError;
+
+  const columns: Column<SupplierApplication>[] = [
+    {
+      id: 'number',
+      header: t('applications.col.number'),
+      kind: 'id',
+      cell: (a) => <Data>{a.applicationNumber}</Data>,
+    },
+    {
+      id: 'company',
+      header: t('applications.col.company'),
+      kind: 'text',
+      cell: (a) => a.companyName,
+    },
+    {
+      id: 'type',
+      header: t('applications.col.type'),
+      kind: 'text',
+      cell: (a) => a.requestType,
+    },
+    {
+      id: 'declared',
+      header: t('applications.col.declared'),
+      kind: 'text',
+      cell: (a) => declaredLabel(a),
+    },
+    {
+      id: 'submitted',
+      header: t('applications.col.submitted'),
+      kind: 'date',
+      cell: (a) => <Data>{formatDate(a.submittedAt)}</Data>,
+    },
+    {
+      id: 'status',
+      header: t('applications.col.status'),
+      kind: 'status',
+      cell: (a) => <StatusPill variant={STATUS_VARIANT[a.status]}>{a.status}</StatusPill>,
+    },
+  ];
+
   return (
-    <AppShellV2>
-      <PageHeader
+    <ListPage
         breadcrumb={APPLICATIONS_CRUMB}
         title={t('applications.title')}
         subtitle={t('applications.subtitle')}
@@ -518,42 +555,36 @@ const BuyerSupplierApplications: React.FC = () => {
             />
           )
         }
-      />
-      <PageMetaLine className="-mt-6 mb-6">
-        {t('applications.meta.note')}
-        <ProvenanceMarker capability="supplierApplications" className="ml-3 align-middle" />
-      </PageMetaLine>
-
-      {isLoading && <LoadingState breadcrumb={APPLICATIONS_CRUMB} />}
-      {isError && (
-        <ErrorState
-          breadcrumb={APPLICATIONS_CRUMB}
-          title={t('applications.error.title')}
-          error={error}
-        />
-      )}
-
-      {!isLoading && !isError && (
-        <>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-            <KpiCard
-              icon={Clock}
-              eyebrow={t('applications.kpi.waiting')}
-              value={counts.waiting.toString()}
-            />
-            <KpiCard
-              icon={Eye}
-              eyebrow={t('applications.kpi.inReview')}
-              value={counts.inReview.toString()}
-            />
-            <KpiCard
-              icon={CheckCircle2}
-              eyebrow={t('applications.kpi.decided')}
-              value={counts.decided.toString()}
-            />
-          </div>
-
-          <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+        meta={
+          <>
+            {t('applications.meta.note')}
+            <ProvenanceMarker capability="supplierApplications" className="ml-3 align-middle" />
+          </>
+        }
+        kpiColumns={3}
+        kpis={
+          ready ? (
+            <>
+              <KpiCard
+                icon={Clock}
+                eyebrow={t('applications.kpi.waiting')}
+                value={counts.waiting.toString()}
+              />
+              <KpiCard
+                icon={Eye}
+                eyebrow={t('applications.kpi.inReview')}
+                value={counts.inReview.toString()}
+              />
+              <KpiCard
+                icon={CheckCircle2}
+                eyebrow={t('applications.kpi.decided')}
+                value={counts.decided.toString()}
+              />
+            </>
+          ) : undefined
+        }
+        tabs={
+          ready ? (
             <SubTabs<Tab>
               options={[
                 { id: 'all', label: t('applications.tab.all'), count: applications.length },
@@ -564,13 +595,29 @@ const BuyerSupplierApplications: React.FC = () => {
               value={tab}
               onChange={setTab}
             />
+          ) : undefined
+        }
+        search={
+          ready ? (
             <SearchBar
               value={search}
               onChange={setSearch}
               placeholder={t('applications.search.placeholder')}
             />
-          </div>
+          ) : undefined
+        }
+      >
+      {isLoading && <LoadingState breadcrumb={APPLICATIONS_CRUMB} />}
+      {isError && (
+        <ErrorState
+          breadcrumb={APPLICATIONS_CRUMB}
+          title={t('applications.error.title')}
+          error={error}
+        />
+      )}
 
+      {ready && (
+        <>
           {applications.length === 0 ? (
             <EmptyState
               breadcrumb={APPLICATIONS_CRUMB}
@@ -586,42 +633,17 @@ const BuyerSupplierApplications: React.FC = () => {
               message={t('applications.empty.filtered.body')}
             />
           ) : (
-            <Table>
-              <TableHeader>
-                <TableHeaderCell>{t('applications.col.number')}</TableHeaderCell>
-                <TableHeaderCell>{t('applications.col.company')}</TableHeaderCell>
-                <TableHeaderCell>{t('applications.col.type')}</TableHeaderCell>
-                <TableHeaderCell>{t('applications.col.declared')}</TableHeaderCell>
-                <TableHeaderCell>{t('applications.col.submitted')}</TableHeaderCell>
-                <TableHeaderCell>{t('applications.col.status')}</TableHeaderCell>
-              </TableHeader>
-              <tbody>
-                {filtered.map((a) => (
-                  <TableRow
-                    key={a.id}
-                    onClick={() => {
-                      setSelectedId(a.id);
-                      setPending(null);
-                      setReason('');
-                    }}
-                    data-testid={`application-row-${a.applicationNumber}`}
-                  >
-                    <TableCell>
-                      <Data>{a.applicationNumber}</Data>
-                    </TableCell>
-                    <TableCell>{a.companyName}</TableCell>
-                    <TableCell>{a.requestType}</TableCell>
-                    <TableCell>{declaredLabel(a)}</TableCell>
-                    <TableCell>
-                      <Data>{formatDate(a.submittedAt)}</Data>
-                    </TableCell>
-                    <TableCell>
-                      <StatusPill variant={STATUS_VARIANT[a.status]}>{a.status}</StatusPill>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </tbody>
-            </Table>
+            <DataTable<SupplierApplication>
+              columns={columns}
+              rows={filtered}
+              rowKey={(a) => a.id}
+              onRowClick={(a) => {
+                setSelectedId(a.id);
+                setPending(null);
+                setReason('');
+              }}
+              rowProps={(a) => ({ 'data-testid': `application-row-${a.applicationNumber}` })}
+            />
           )}
         </>
       )}
@@ -1060,7 +1082,7 @@ const BuyerSupplierApplications: React.FC = () => {
           </div>
         )}
       </SidePanel>
-    </AppShellV2>
+    </ListPage>
   );
 };
 

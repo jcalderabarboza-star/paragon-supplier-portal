@@ -38,10 +38,7 @@ import { IllustrativeBanner, IllustrativeMark } from '../components/ui-v2/Illust
 import BulkActionsBar from '../components/ui-v2/BulkActionsBar';
 import FilterChipsBar from '../components/ui-v2/FilterChipsBar';
 import StatusPill from '../components/ui-v2/StatusPill';
-import Table from '../components/ui-v2/Table';
-import TableHeader, { TableHeaderCell } from '../components/ui-v2/TableHeader';
-import TableRow from '../components/ui-v2/TableRow';
-import TableCell from '../components/ui-v2/TableCell';
+import DataTable from '../components/ui-v2/DataTable';
 import LoadingState from '../components/ui-v2/LoadingState';
 import ErrorState from '../components/ui-v2/ErrorState';
 import EmptyState from '../components/ui-v2/EmptyState';
@@ -529,56 +526,73 @@ const BuyerAnalytics: React.FC = () => {
             <IllustrativeMark />
           </h2>
         </div>
-        <Table>
-          <TableHeader>
-            <TableHeaderCell>{t('buyerAnalytics.perf.col.supplier')}</TableHeaderCell>
-            <TableHeaderCell>{t('buyerAnalytics.perf.col.category')}</TableHeaderCell>
-            <TableHeaderCell>{t('buyerAnalytics.perf.col.otif')}</TableHeaderCell>
-            <TableHeaderCell>{t('buyerAnalytics.perf.col.otdr')}</TableHeaderCell>
-            <TableHeaderCell>{t('buyerAnalytics.perf.col.ackSpeed')}</TableHeaderCell>
-            <TableHeaderCell>{t('buyerAnalytics.perf.col.invoiceMatch')}</TableHeaderCell>
-            <TableHeaderCell>{t('buyerAnalytics.perf.col.grade')}</TableHeaderCell>
-            <TableHeaderCell>{t('buyerAnalytics.perf.col.trend')}</TableHeaderCell>
-          </TableHeader>
-          <tbody>
-            {perfTable.map((row) => (
-              <TableRow key={row.supplier}>
-                <TableCell>
-                  <span className="font-semibold text-text-primary">
-                    {row.supplier}
-                  </span>
-                </TableCell>
-                <TableCell>
-                  <StatusPill variant="neutral">{row.category}</StatusPill>
-                </TableCell>
-                <TableCell>
-                  <StatusPill variant={rateVariant(row.otif)}>
-                    {row.otif}%
-                  </StatusPill>
-                </TableCell>
-                <TableCell>
-                  <StatusPill variant={rateVariant(row.otdr)}>
-                    {row.otdr}%
-                  </StatusPill>
-                </TableCell>
-                <TableCell className="text-text-secondary">
-                  {row.ackSpeed}
-                </TableCell>
-                <TableCell className="text-text-secondary">
-                  {row.invoiceMatch}
-                </TableCell>
-                <TableCell>
-                  <StatusPill variant={GRADE_VARIANT[row.grade]}>
-                    {row.grade}
-                  </StatusPill>
-                </TableCell>
-                <TableCell>
-                  <TrendIcon trend={row.trend} />
-                </TableCell>
-              </TableRow>
-            ))}
-          </tbody>
-        </Table>
+        <DataTable<(typeof perfTable)[number]>
+          card={false}
+          rows={perfTable}
+          rowKey={(row) => row.supplier}
+          columns={[
+            {
+              id: 'supplier',
+              header: t('buyerAnalytics.perf.col.supplier'),
+              kind: 'text',
+              cell: (row) => row.supplier,
+            },
+            {
+              id: 'category',
+              header: t('buyerAnalytics.perf.col.category'),
+              kind: 'status',
+              cell: (row) => <StatusPill variant="neutral">{row.category}</StatusPill>,
+            },
+            {
+              id: 'otif',
+              header: t('buyerAnalytics.perf.col.otif'),
+              kind: 'status',
+              cell: (row) => (
+                <StatusPill variant={rateVariant(row.otif)}>
+                  {row.otif}%
+                </StatusPill>
+              ),
+            },
+            {
+              id: 'otdr',
+              header: t('buyerAnalytics.perf.col.otdr'),
+              kind: 'status',
+              cell: (row) => (
+                <StatusPill variant={rateVariant(row.otdr)}>
+                  {row.otdr}%
+                </StatusPill>
+              ),
+            },
+            {
+              id: 'ackSpeed',
+              header: t('buyerAnalytics.perf.col.ackSpeed'),
+              kind: 'text',
+              cell: (row) => row.ackSpeed,
+            },
+            {
+              id: 'invoiceMatch',
+              header: t('buyerAnalytics.perf.col.invoiceMatch'),
+              kind: 'text',
+              cell: (row) => row.invoiceMatch,
+            },
+            {
+              id: 'grade',
+              header: t('buyerAnalytics.perf.col.grade'),
+              kind: 'status',
+              cell: (row) => (
+                <StatusPill variant={GRADE_VARIANT[row.grade]}>
+                  {row.grade}
+                </StatusPill>
+              ),
+            },
+            {
+              id: 'trend',
+              header: t('buyerAnalytics.perf.col.trend'),
+              kind: 'status',
+              cell: (row) => <TrendIcon trend={row.trend} />,
+            },
+          ]}
+        />
       </section>
 
       <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6">

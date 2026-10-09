@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ChevronLeft, Lock, Info } from 'lucide-react';
 import AppShellV2 from '../components/layout-v2/AppShellV2';
+import PageHeader from '../components/ui-v2/PageHeader';
 import NotFound from './NotFound';
 import { findRoleView, deriveRoleViews } from './roles/roleModel';
 
@@ -49,9 +50,16 @@ const RoleDetail: React.FC = () => {
           {t('roles.page.back')}
         </button>
 
-        <header className="mb-5">
+        {/* UI-1b — one page-title size: the shared header carries the name and
+            the description; the id, the badge and the counts sit under it. */}
+        <PageHeader
+          breadcrumb={['SET-RL · ROLES']}
+          title={t(role.nameKey)}
+          subtitle={t(role.descriptionKey)}
+        />
+        <div className="-mt-6 mb-5">
           <div className="flex items-center gap-2">
-            <h1 className="text-xl font-semibold text-text-primary">{t(role.nameKey)}</h1>
+            <span className="font-mono text-xs text-data-navy">{role.id}</span>
             <span
               className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] border border-border-subtle text-text-secondary bg-bg-hover"
               data-testid={`role-badge-${role.id}`}
@@ -60,8 +68,6 @@ const RoleDetail: React.FC = () => {
               {t(role.isSystem ? 'roles.page.systemBadge' : 'roles.page.customBadge')}
             </span>
           </div>
-          <div className="font-mono text-xs text-data-navy mt-0.5">{role.id}</div>
-          <p className="text-sm text-text-secondary mt-2">{t(role.descriptionKey)}</p>
           <p className="text-xs text-text-tertiary mt-1" data-testid={`role-counts-${role.id}`}>
             {t('roles.page.countSummary', {
               permissions: role.atoms.length,
@@ -69,7 +75,7 @@ const RoleDetail: React.FC = () => {
               surfaced: role.surfacedCount,
             })}
           </p>
-        </header>
+        </div>
 
         {/* — MODULES — */}
         <section className="bg-white border border-border-subtle rounded-lg p-4 mb-4">

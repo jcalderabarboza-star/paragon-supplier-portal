@@ -78,9 +78,10 @@ import { navSectionKeyFor } from '../components/layout-v2/navModel';
  * H1 · routes that open under a nav group and still draw no breadcrumb, each
  * with its reason. BILATERAL: a route here that starts drawing one is red.
  */
-const NO_BREADCRUMB: Readonly<Record<string, string>> = {
-  '/buyer/roles/:roleId': 'a role detail page headed by its back link to Roles and the role name; no eyebrow',
-};
+// UI-1b · EMPTY. `/buyer/roles/:roleId` stood here ("headed by its back link to
+// Roles and the role name; no eyebrow") until the role detail took the shared
+// `PageHeader`, which draws the eyebrow — the bilateral arm below said to remove it.
+const NO_BREADCRUMB: Readonly<Record<string, string>> = {};
 
 const BUYER: CurrentIdentity = {
   personaType: 'buyer',

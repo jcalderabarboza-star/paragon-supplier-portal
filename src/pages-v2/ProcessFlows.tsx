@@ -7,10 +7,7 @@ import PageHeader from '../components/ui-v2/PageHeader';
 import PageMetaLine from '../components/ui-v2/PageMetaLine';
 import Data from '../components/ui-v2/Data';
 import StatusPill from '../components/ui-v2/StatusPill';
-import Table from '../components/ui-v2/Table';
-import TableHeader, { TableHeaderCell } from '../components/ui-v2/TableHeader';
-import TableRow from '../components/ui-v2/TableRow';
-import TableCell from '../components/ui-v2/TableCell';
+import DataTable, { CellSub, type Column } from '../components/ui-v2/DataTable';
 import FlowDiagram from './process-flows/FlowDiagram';
 import LifecycleWalk from './process-flows/LifecycleWalk';
 import { looseEndKindKey, reasonKey, ALL_REASONS } from './process-flows/labels';
@@ -133,112 +130,146 @@ const LooseEndRow: React.FC<{ end: AnnotatedLooseEnd }> = ({ end }) => {
   );
 };
 
-const TransitionRow: React.FC<{ tv: TransitionView }> = ({ tv }) => {
+const TransitionsTable: React.FC<{ transitions: readonly TransitionView[] }> = ({ transitions }) => {
   const { t } = useTranslation();
-  const { def } = tv;
-  // PF-2. `null` is unreachable for a registered verb (the bilateral test makes
-  // it so) — and it renders as NOTHING rather than as an echoed key, because a
-  // reader shown `processFlows.purpose.t_whatever` has been handed a defect
-  // dressed as a sentence.
-  const purpose = transitionPurposeKey(def.id);
-  return (
-    <>
-    <TableRow className={purpose ? '!border-b-0' : ''}>
-      <TableCell className="py-3 align-top">
-        <Data className="text-[11px]">{def.id}</Data>
-      </TableCell>
-      <TableCell className="py-3">
+  const columns: Column<TransitionView>[] = [
+    {
+      id: 'transition',
+      header: t('processFlows.col.transition'),
+      kind: 'id',
+      className: '!align-top',
+      cell: ({ def }) => <Data>{def.id}</Data>,
+    },
+    {
+      id: 'edge',
+      header: t('processFlows.col.edge'),
+      // State names are the schema's own tokens: codes, so the column is `id`.
+      kind: 'id',
+      cell: ({ def }) => (
         <span className="flex flex-wrap items-center gap-1">
-          <Data className="text-[11px] text-text-secondary">
-            {def.from.length > 0 ? def.from.join(' · ') : t('processFlows.badge.birth')}
-          </Data>
-          <span className="text-text-tertiary">→</span>
-          <Data className="text-[11px]">{def.to}</Data>
+          <Data>{def.from.length > 0 ? def.from.join(' · ') : t('processFlows.badge.birth')}</Data>
+          <span>→</span>
+          <Data>{def.to}</Data>
         </span>
-      </TableCell>
-      <TableCell className="py-3 whitespace-nowrap text-[11px] text-text-secondary">
-        {t(STEP_KIND_KEY[tv.kind])}
-        {/* THE OTHER AXIS, VERBATIM. The badge above answers "can anyone here
-            perform this"; this answers "what fires it". They are two questions
-            and §50 split the fields that answer them, so the row shows both
-            rather than letting one stand in for the other. Raw and
-            untranslated by design — it is the schema token, not prose. */}
-        <span className="ml-1 text-text-tertiary">({def.trigger})</span>
-        {/* ── THE BOUNDARY, NAMED ────────────────────────────────────────────
-            "System-driven" answers WHETHER a person here acts. It does not say
-            WHO does, and for the two reasons that share that badge the answer
-            is not the same KIND of answer: `external-fact` means a system
-            outside Paragon owns the act, `computed` means this platform derives
-            it from what it already holds. Collapsed, an S/4HANA goods movement
-            and a match verdict read identically — one is a seam, the other is
-            our own arithmetic, and a reader planning an integration cannot tell
-            them apart.
+      ),
+    },
+    {
+      id: 'step',
+      header: t('processFlows.col.step'),
+      kind: 'text',
+      cell: (tv) => {
+        const { def } = tv;
+        return (
+          <div className="whitespace-nowrap">
+            {t(STEP_KIND_KEY[tv.kind])}
+            {/* THE OTHER AXIS, VERBATIM. The badge above answers "can anyone here
+                perform this"; this answers "what fires it". They are two questions
+                and §50 split the fields that answer them, so the row shows both
+                rather than letting one stand in for the other. Raw and
+                untranslated by design — it is the schema token, not prose. */}
+            <span className="ml-1">({def.trigger})</span>
+            {/* ── THE BOUNDARY, NAMED ────────────────────────────────────────────
+                "System-driven" answers WHETHER a person here acts. It does not say
+                WHO does, and for the two reasons that share that badge the answer
+                is not the same KIND of answer: `external-fact` means a system
+                outside Paragon owns the act, `computed` means this platform derives
+                it from what it already holds. Collapsed, an S/4HANA goods movement
+                and a match verdict read identically — one is a seam, the other is
+                our own arithmetic, and a reader planning an integration cannot tell
+                them apart.
 
-            DERIVED, NEVER AUTHORED, and this line is where that is cheapest to
-            get wrong: the owner is read off `surfaceable`, so moving a verb
-            between owners moves this text with it. A `Record<Status, Owner>`
-            beside the badge would be the `BuyerInvoices` footer-verb defect
-            (`invoiceActionModel.ts` header) one surface along. */}
-        {!def.surfaceable.surfaced && def.surfaceable.because === 'external-fact' ? (
-          <span className="mt-0.5 block text-[10px] text-text-tertiary" data-testid="owner-external">
-            {t('processFlows.owner.ownedBy', {
-              owner: t(EXTERNAL_FACT_OWNER_KEY[def.surfaceable.owner]),
-            })}
-          </span>
-        ) : null}
-        {!def.surfaceable.surfaced && def.surfaceable.because === 'computed' ? (
-          <span className="mt-0.5 block text-[10px] text-text-tertiary" data-testid="owner-computed">
-            {t('processFlows.owner.computedHere')}
-          </span>
-        ) : null}
-      </TableCell>
-      <TableCell className="py-3">
-        <Data className="text-[11px]">{def.requiredRole}</Data>
-        <span className="mt-0.5 block text-[10px] uppercase tracking-wider text-text-tertiary">
-          {tv.personas.length > 0
-            ? tv.personas.map((p) => t(`nav.persona.${p}`)).join(' · ')
-            : t('processFlows.role.unmapped')}
-        </span>
-      </TableCell>
-      <TableCell className="py-3">
-        {def.requiredFields.length > 0 ? (
-          <Data className="block text-[11px] text-text-secondary">
-            {def.requiredFields.join(', ')}
-          </Data>
-        ) : (
-          <span className="text-[11px] text-text-tertiary">—</span>
-        )}
-        {def.policyHooks.length > 0 ? (
-          <Data className="mt-0.5 block text-[10px] text-text-tertiary">
-            {def.policyHooks.join(', ')}
-          </Data>
-        ) : null}
-      </TableCell>
-      <TableCell className="py-3">
-        <DerivedFlags tv={tv} />
-      </TableCell>
-    </TableRow>
-    {/* PF-2 — THE PURPOSE GETS ITS OWN FULL-WIDTH ROW, and the reason is
-        measured rather than aesthetic. Inside the first column the sentence was
-        laid out at 132px — twelve lines of eleven-pixel text beside a one-line
-        id — because the other five columns already claim the table's width.
-        Spanning the row costs the table NOTHING horizontally (it was already
-        863px against an 816px wrapper before this batch) and gives the sentence
-        a readable measure. The teal rule marks it as the authored line: the one
-        thing in this table nothing derived. */}
-    {purpose && (
-      <TableRow className="hover:bg-transparent">
-        <TableCell colSpan={6} className="!py-0 !pt-0 pb-3">
+                DERIVED, NEVER AUTHORED, and this line is where that is cheapest to
+                get wrong: the owner is read off `surfaceable`, so moving a verb
+                between owners moves this text with it. A `Record<Status, Owner>`
+                beside the badge would be the `BuyerInvoices` footer-verb defect
+                (`invoiceActionModel.ts` header) one surface along. */}
+            {!def.surfaceable.surfaced && def.surfaceable.because === 'external-fact' ? (
+              <CellSub data-testid="owner-external">
+                {t('processFlows.owner.ownedBy', {
+                  owner: t(EXTERNAL_FACT_OWNER_KEY[def.surfaceable.owner]),
+                })}
+              </CellSub>
+            ) : null}
+            {!def.surfaceable.surfaced && def.surfaceable.because === 'computed' ? (
+              <CellSub data-testid="owner-computed">{t('processFlows.owner.computedHere')}</CellSub>
+            ) : null}
+          </div>
+        );
+      },
+    },
+    {
+      id: 'role',
+      header: t('processFlows.col.role'),
+      // The required role is an atom (`po:confirm`): a code.
+      kind: 'id',
+      cell: (tv) => {
+        const { def } = tv;
+        return (
+          <>
+            {def.requiredRole}
+            <CellSub>
+              {tv.personas.length > 0
+                ? tv.personas.map((p) => t(`nav.persona.${p}`)).join(' · ')
+                : t('processFlows.role.unmapped')}
+            </CellSub>
+          </>
+        );
+      },
+    },
+    {
+      id: 'contract',
+      header: t('processFlows.col.contract'),
+      // Field names are identifiers: a list of codes, so it may wrap where a
+      // single code may not.
+      kind: 'id',
+      className: '!whitespace-normal',
+      cell: ({ def }) => (
+        <>
+          {def.requiredFields.length > 0 ? def.requiredFields.join(', ') : '—'}
+          {def.policyHooks.length > 0 ? <CellSub>{def.policyHooks.join(', ')}</CellSub> : null}
+        </>
+      ),
+    },
+    {
+      id: 'links',
+      header: t('processFlows.col.links'),
+      kind: 'status',
+      cell: (tv) => <DerivedFlags tv={tv} />,
+    },
+  ];
+  return (
+    <DataTable
+      density="compact"
+      card={false}
+      columns={columns}
+      rows={transitions}
+      rowKey={(tv) => tv.def.id}
+      // The row hands its bottom rule to the purpose row beneath it.
+      rowProps={(tv) => (transitionPurposeKey(tv.def.id) ? { className: '!border-b-0' } : {})}
+      // PF-2. `null` is unreachable for a registered verb (the bilateral test makes
+      // it so) — and it renders as NOTHING rather than as an echoed key, because a
+      // reader shown `processFlows.purpose.t_whatever` has been handed a defect
+      // dressed as a sentence.
+      // PF-2 — THE PURPOSE GETS ITS OWN FULL-WIDTH ROW, and the reason is
+      // measured rather than aesthetic. Inside the first column the sentence was
+      // laid out at 132px — twelve lines of eleven-pixel text beside a one-line
+      // id — because the other five columns already claim the table's width.
+      // Spanning the row costs the table NOTHING horizontally (it was already
+      // 863px against an 816px wrapper before this batch) and gives the sentence
+      // a readable measure. The teal rule marks it as the authored line: the one
+      // thing in this table nothing derived.
+      rowDetail={(tv) => {
+        const purpose = transitionPurposeKey(tv.def.id);
+        return purpose ? (
           <p
-            data-testid={`pf-purpose-${def.id}`}
+            data-testid={`pf-purpose-${tv.def.id}`}
             className="max-w-prose border-l-2 border-teal/40 pl-3 text-[11px] leading-relaxed text-text-secondary"
           >
             {t(purpose)}
           </p>
-        </TableCell>
-      </TableRow>
-    )}
-    </>
+        ) : null;
+      }}
+    />
   );
 };
 
@@ -488,21 +519,7 @@ const ProcessFlows: React.FC = () => {
                   </p>
                 </div>
                 <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableHeaderCell>{t('processFlows.col.transition')}</TableHeaderCell>
-                      <TableHeaderCell>{t('processFlows.col.edge')}</TableHeaderCell>
-                      <TableHeaderCell>{t('processFlows.col.step')}</TableHeaderCell>
-                      <TableHeaderCell>{t('processFlows.col.role')}</TableHeaderCell>
-                      <TableHeaderCell>{t('processFlows.col.contract')}</TableHeaderCell>
-                      <TableHeaderCell>{t('processFlows.col.links')}</TableHeaderCell>
-                    </TableHeader>
-                    <tbody>
-                      {view.transitions.map((tv) => (
-                        <TransitionRow key={tv.def.id} tv={tv} />
-                      ))}
-                    </tbody>
-                  </Table>
+                  <TransitionsTable transitions={view.transitions} />
                 </div>
               </section>
               </>

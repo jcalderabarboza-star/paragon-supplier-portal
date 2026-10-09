@@ -23,15 +23,14 @@
 
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import Table from '../ui-v2/Table';
-import TableHeader, { TableHeaderCell } from '../ui-v2/TableHeader';
-import TableRow from '../ui-v2/TableRow';
-import TableCell from '../ui-v2/TableCell';
+import DataTable, { CellSub, type Column } from '../ui-v2/DataTable';
 import Data from '../ui-v2/Data';
 import { personLabel } from '../../services/identity/personLabel';
 import { formatDate } from '../../lib/format';
 import { deriveAgreementHistory } from '../../services/delivery/history';
 import type { SchedulingAgreement } from '../../services/delivery';
+
+type HistoryRow = ReturnType<typeof deriveAgreementHistory>[number];
 
 /**
  * One agreement's recorded acts, newest first.
@@ -43,6 +42,54 @@ import type { SchedulingAgreement } from '../../services/delivery';
 const ChangeHistory: React.FC<{ agreement: SchedulingAgreement }> = ({ agreement }) => {
   const { t } = useTranslation();
   const rows = deriveAgreementHistory(agreement);
+
+  const columns: Column<HistoryRow>[] = [
+    {
+      id: 'act',
+      header: t('delivery.history.colAct'),
+      kind: 'text',
+      cell: (row) => (
+        <>
+          {t(`delivery.history.act.${row.kind}`)}
+          {row.reason && <CellSub className="italic">{row.reason}</CellSub>}
+        </>
+      ),
+    },
+    {
+      id: 'line',
+      header: t('delivery.history.colLine'),
+      kind: 'id',
+      cell: (row) => (
+        <Data>
+          {row.releaseSeq === undefined
+            ? t('delivery.history.itemRef', { material: row.materialCode })
+            : t('delivery.history.lineRef', {
+                material: row.materialCode,
+                seq: row.releaseSeq,
+              })}
+        </Data>
+      ),
+    },
+    {
+      id: 'actor',
+      header: t('delivery.history.colActor'),
+      kind: 'text',
+      cell: (row) =>
+        row.actor.kind === 'RESOLVED' ? (
+          // THE ONE RESOLVER. It is what appends `(SAMPLE)`, so the
+          // marker cannot be forgotten at this call site.
+          personLabel(row.actor.person.personId, t)
+        ) : (
+          <span className="italic">{t('delivery.history.noActor')}</span>
+        ),
+    },
+    {
+      id: 'when',
+      header: t('delivery.history.colWhen'),
+      kind: 'date',
+      cell: (row) => <Data>{formatDate(row.at)}</Data>,
+    },
+  ];
 
   return (
     <section
@@ -59,56 +106,7 @@ const ChangeHistory: React.FC<{ agreement: SchedulingAgreement }> = ({ agreement
         <div className="px-4 py-6 text-sm text-text-tertiary">{t('delivery.history.empty')}</div>
       ) : (
         <>
-          <Table>
-            <TableHeader>
-              <TableHeaderCell>{t('delivery.history.colAct')}</TableHeaderCell>
-              <TableHeaderCell>{t('delivery.history.colLine')}</TableHeaderCell>
-              <TableHeaderCell>{t('delivery.history.colActor')}</TableHeaderCell>
-              <TableHeaderCell>{t('delivery.history.colWhen')}</TableHeaderCell>
-            </TableHeader>
-            <tbody>
-              {rows.map((row) => (
-                <TableRow key={row.key}>
-                  <TableCell>
-                    <span className="text-sm text-text-primary">
-                      {t(`delivery.history.act.${row.kind}`)}
-                    </span>
-                    {row.reason && (
-                      <div className="text-[10px] italic text-text-tertiary mt-0.5">
-                        {row.reason}
-                      </div>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <Data className="text-xs">
-                      {row.releaseSeq === undefined
-                        ? t('delivery.history.itemRef', { material: row.materialCode })
-                        : t('delivery.history.lineRef', {
-                            material: row.materialCode,
-                            seq: row.releaseSeq,
-                          })}
-                    </Data>
-                  </TableCell>
-                  <TableCell>
-                    {row.actor.kind === 'RESOLVED' ? (
-                      // THE ONE RESOLVER. It is what appends `(SAMPLE)`, so the
-                      // marker cannot be forgotten at this call site.
-                      <span className="text-sm text-text-primary">
-                        {personLabel(row.actor.person.personId, t)}
-                      </span>
-                    ) : (
-                      <span className="text-xs italic text-text-tertiary">
-                        {t('delivery.history.noActor')}
-                      </span>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <Data className="text-sm">{formatDate(row.at)}</Data>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </tbody>
-          </Table>
+          <DataTable columns={columns} rows={rows} rowKey={(row) => row.key} card={false} />
           <div className="px-4 py-2 text-[10px] italic text-text-tertiary border-t border-border-subtle">
             {t('delivery.history.seedNote')}
           </div>

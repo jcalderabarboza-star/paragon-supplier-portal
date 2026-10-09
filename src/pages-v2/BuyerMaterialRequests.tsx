@@ -71,19 +71,14 @@ import { useTranslation } from 'react-i18next';
 import { personLabel } from '../services/identity/personLabel';
 import { personNamingRefusalKey } from './personNamingRefusal';
 
-import AppShellV2 from '../components/layout-v2/AppShellV2';
-import PageHeader from '../components/ui-v2/PageHeader';
-import PageMetaLine from '../components/ui-v2/PageMetaLine';
+import ListPage from '../components/ui-v2/ListPage';
+import DataTable, { type Column } from '../components/ui-v2/DataTable';
 import ProvenanceMarker from '../components/ui-v2/ProvenanceMarker';
 import KpiCard from '../components/ui-v2/KpiCard';
 import Data from '../components/ui-v2/Data';
 import SubTabs from '../components/ui-v2/SubTabs';
 import SearchBar from '../components/ui-v2/SearchBar';
 import StatusPill from '../components/ui-v2/StatusPill';
-import Table from '../components/ui-v2/Table';
-import TableHeader, { TableHeaderCell } from '../components/ui-v2/TableHeader';
-import TableRow from '../components/ui-v2/TableRow';
-import TableCell from '../components/ui-v2/TableCell';
 import Button from '../components/ui-v2/Button';
 import SidePanel from '../components/ui-v2/SidePanel';
 import SuperAdminBypassNote from '../components/v2-features/SuperAdminBypassNote';
@@ -443,9 +438,50 @@ const BuyerMaterialRequests: React.FC = () => {
     }
   };
 
+  /** The header and the count line render in every state; the figures, the
+   *  tabs and the search only once the read has answered. */
+  const ready = !isLoading && !isError;
+
+  const columns: Column<MaterialRequest>[] = [
+    {
+      id: 'number',
+      header: t('materialRequests.col.number'),
+      kind: 'id',
+      cell: (r) => <Data>{r.requestNumber}</Data>,
+    },
+    {
+      id: 'material',
+      header: t('materialRequests.col.material'),
+      kind: 'text',
+      // i18n-defer: the material's name in the buyer's own words.
+      cell: (r) => r.requestedLabel,
+    },
+    {
+      id: 'category',
+      header: t('materialRequests.col.category'),
+      kind: 'text',
+      cell: (r) => categoryLabel(t, r.category),
+    },
+    {
+      id: 'origin',
+      header: t('materialRequests.col.origin'),
+      kind: 'text',
+      cell: (r) => originLabel(r),
+    },
+    {
+      id: 'status',
+      header: t('materialRequests.col.status'),
+      kind: 'status',
+      cell: (r) => (
+        <StatusPill variant={STATUS_VARIANT[r.status]}>
+          {t(`materialRequests.status.${r.status}`)}
+        </StatusPill>
+      ),
+    },
+  ];
+
   return (
-    <AppShellV2>
-      <PageHeader
+    <ListPage
         breadcrumb={CRUMB}
         title={t('materialRequests.title')}
         subtitle={t('materialRequests.subtitle')}
@@ -469,47 +505,40 @@ const BuyerMaterialRequests: React.FC = () => {
             />
           )
         }
-      />
-      <PageMetaLine className="-mt-6 mb-6">
-        {t('materialRequests.meta.note')}
-        <ProvenanceMarker capability="materialRequests" className="ml-3 align-middle" />
-      </PageMetaLine>
-
-      {isLoading && <LoadingState breadcrumb={CRUMB} />}
-      {isError && (
-        <ErrorState
-          breadcrumb={CRUMB}
-          title={t('materialRequests.error.title')}
-          error={error}
-        />
-      )}
-
-      {!isLoading && !isError && (
-        <>
-          <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-6">
-            <KpiCard
-              icon={Clock}
-              eyebrow={t('materialRequests.kpi.submitted')}
-              value={counts.submitted.toString()}
-            />
-            <KpiCard
-              icon={Eye}
-              eyebrow={t('materialRequests.kpi.underReview')}
-              value={counts.underReview.toString()}
-            />
-            <KpiCard
-              icon={CheckCircle2}
-              eyebrow={t('materialRequests.kpi.approved')}
-              value={counts.approved.toString()}
-            />
-            <KpiCard
-              icon={Clock}
-              eyebrow={t('materialRequests.kpi.rejected')}
-              value={counts.rejected.toString()}
-            />
-          </div>
-
-          <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+        meta={
+          <>
+            {t('materialRequests.meta.note')}
+            <ProvenanceMarker capability="materialRequests" className="ml-3 align-middle" />
+          </>
+        }
+        kpis={
+          ready ? (
+            <>
+              <KpiCard
+                icon={Clock}
+                eyebrow={t('materialRequests.kpi.submitted')}
+                value={counts.submitted.toString()}
+              />
+              <KpiCard
+                icon={Eye}
+                eyebrow={t('materialRequests.kpi.underReview')}
+                value={counts.underReview.toString()}
+              />
+              <KpiCard
+                icon={CheckCircle2}
+                eyebrow={t('materialRequests.kpi.approved')}
+                value={counts.approved.toString()}
+              />
+              <KpiCard
+                icon={Clock}
+                eyebrow={t('materialRequests.kpi.rejected')}
+                value={counts.rejected.toString()}
+              />
+            </>
+          ) : undefined
+        }
+        tabs={
+          ready ? (
             <SubTabs<Tab>
               options={[
                 { id: 'all', label: t('materialRequests.tab.all'), count: requests.length },
@@ -537,13 +566,29 @@ const BuyerMaterialRequests: React.FC = () => {
               value={tab}
               onChange={setTab}
             />
+          ) : undefined
+        }
+        search={
+          ready ? (
             <SearchBar
               value={search}
               onChange={setSearch}
               placeholder={t('materialRequests.search.placeholder')}
             />
-          </div>
+          ) : undefined
+        }
+      >
+      {isLoading && <LoadingState breadcrumb={CRUMB} />}
+      {isError && (
+        <ErrorState
+          breadcrumb={CRUMB}
+          title={t('materialRequests.error.title')}
+          error={error}
+        />
+      )}
 
+      {ready && (
+        <>
           {requests.length === 0 ? (
             <EmptyState
               breadcrumb={CRUMB}
@@ -559,41 +604,17 @@ const BuyerMaterialRequests: React.FC = () => {
               message={t('materialRequests.empty.filtered.body')}
             />
           ) : (
-            <Table>
-              <TableHeader>
-                <TableHeaderCell>{t('materialRequests.col.number')}</TableHeaderCell>
-                <TableHeaderCell>{t('materialRequests.col.material')}</TableHeaderCell>
-                <TableHeaderCell>{t('materialRequests.col.category')}</TableHeaderCell>
-                <TableHeaderCell>{t('materialRequests.col.origin')}</TableHeaderCell>
-                <TableHeaderCell>{t('materialRequests.col.status')}</TableHeaderCell>
-              </TableHeader>
-              <tbody>
-                {filtered.map((r) => (
-                  <TableRow
-                    key={r.id}
-                    onClick={() => {
-                      setSelectedId(r.id);
-                      setPending(null);
-                      setJustification('');
-                    }}
-                    data-testid={`material-request-row-${r.requestNumber}`}
-                  >
-                    <TableCell>
-                      <Data>{r.requestNumber}</Data>
-                    </TableCell>
-                    {/* i18n-defer: the material's name in the buyer's own words. */}
-                    <TableCell>{r.requestedLabel}</TableCell>
-                    <TableCell>{categoryLabel(t, r.category)}</TableCell>
-                    <TableCell>{originLabel(r)}</TableCell>
-                    <TableCell>
-                      <StatusPill variant={STATUS_VARIANT[r.status]}>
-                        {t(`materialRequests.status.${r.status}`)}
-                      </StatusPill>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </tbody>
-            </Table>
+            <DataTable<MaterialRequest>
+              columns={columns}
+              rows={filtered}
+              rowKey={(r) => r.id}
+              onRowClick={(r) => {
+                setSelectedId(r.id);
+                setPending(null);
+                setJustification('');
+              }}
+              rowProps={(r) => ({ 'data-testid': `material-request-row-${r.requestNumber}` })}
+            />
           )}
         </>
       )}
@@ -994,7 +1015,7 @@ const BuyerMaterialRequests: React.FC = () => {
           </div>
         )}
       </SidePanel>
-    </AppShellV2>
+    </ListPage>
   );
 };
 

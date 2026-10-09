@@ -3,10 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { Truck } from 'lucide-react';
 import ExpandableWidget from '../../components/ui-v2/ExpandableWidget';
-import Table from '../../components/ui-v2/Table';
-import TableHeader, { TableHeaderCell } from '../../components/ui-v2/TableHeader';
-import TableRow from '../../components/ui-v2/TableRow';
-import TableCell from '../../components/ui-v2/TableCell';
+import DataTable from '../../components/ui-v2/DataTable';
 import Data from '../../components/ui-v2/Data';
 import StatusPill from '../../components/ui-v2/StatusPill';
 import { statusTone } from '../../lib/statusTone';
@@ -30,52 +27,58 @@ const BuyerAsnInboundWidget: React.FC = () => {
     count === 0 ? (
       <div className="text-sm text-text-tertiary">{t('widget.asnInbound.empty')}</div>
     ) : (
-      <Table>
-        <TableHeader>
-          <TableHeaderCell>{t('widget.asnInbound.col.asn')}</TableHeaderCell>
-          <TableHeaderCell>{t('widget.asnInbound.col.poRef')}</TableHeaderCell>
-          <TableHeaderCell>{t('widget.asnInbound.col.carrier')}</TableHeaderCell>
-          <TableHeaderCell>{t('widget.asnInbound.col.eta')}</TableHeaderCell>
-          <TableHeaderCell>{t('widget.asnInbound.col.status')}</TableHeaderCell>
-        </TableHeader>
-        <tbody>
-          {pending.map((asn) => (
-            <TableRow key={asn.asnNumber} className="relative">
-              <TableCell>
-                {/* ⚠️ **THESE ROWS ARE DELIBERATELY NOT LINKS, AND THE REASON IS
-                    A MEASUREMENT.** Every other window drills into its record;
-                    this one has nowhere to drill to. Derived: the ASN corpus
-                    and the shipment corpus DO NOT JOIN — ASNs are numbered
-                    `ASN-2025-*` and every shipment's `asnNumber` is
-                    `ASN-2026-*`, so the intersection is empty and a link to
-                    `/buyer/shipments` would land on a board that has never
-                    heard of this row. The only other surface that reads ASNs is
-                    the goods-receipt page, where an ASN opens the RECEIVING
-                    WIZARD — a write path, not a detail view, and one with an
-                    open finding against its interior.
-                    A link that goes nowhere is the dead affordance the ratchet
-                    exists to stop, so the window keeps its count, its rows and
-                    its CTA, and offers no click it cannot honour. */}
-                <Data className="text-xs font-bold text-text-primary">
-                  {asn.asnNumber}
-                </Data>
-              </TableCell>
-              <TableCell>
-                <Data className="text-text-secondary">{asn.poReference}</Data>
-              </TableCell>
-              <TableCell className="text-text-secondary">{asn.carrier}</TableCell>
-              <TableCell className="whitespace-nowrap text-text-secondary">
-                <Data>{formatDate(asn.eta)}</Data>
-              </TableCell>
-              <TableCell>
-                <StatusPill variant={statusTone(asn.status)}>
-                  {asn.status}
-                </StatusPill>
-              </TableCell>
-            </TableRow>
-          ))}
-        </tbody>
-      </Table>
+      <DataTable
+        card={false}
+        rows={pending}
+        rowKey={(asn) => asn.asnNumber}
+        rowProps={() => ({ className: 'relative' })}
+        columns={[
+          /* ⚠️ **THESE ROWS ARE DELIBERATELY NOT LINKS, AND THE REASON IS
+             A MEASUREMENT.** Every other window drills into its record;
+             this one has nowhere to drill to. Derived: the ASN corpus
+             and the shipment corpus DO NOT JOIN — ASNs are numbered
+             `ASN-2025-*` and every shipment's `asnNumber` is
+             `ASN-2026-*`, so the intersection is empty and a link to
+             `/buyer/shipments` would land on a board that has never
+             heard of this row. The only other surface that reads ASNs is
+             the goods-receipt page, where an ASN opens the RECEIVING
+             WIZARD — a write path, not a detail view, and one with an
+             open finding against its interior.
+             A link that goes nowhere is the dead affordance the ratchet
+             exists to stop, so the window keeps its count, its rows and
+             its CTA, and offers no click it cannot honour. */
+          {
+            id: 'asn',
+            header: t('widget.asnInbound.col.asn'),
+            kind: 'id',
+            cell: (asn) => <Data>{asn.asnNumber}</Data>,
+          },
+          {
+            id: 'poRef',
+            header: t('widget.asnInbound.col.poRef'),
+            kind: 'id',
+            cell: (asn) => <Data>{asn.poReference}</Data>,
+          },
+          {
+            id: 'carrier',
+            header: t('widget.asnInbound.col.carrier'),
+            kind: 'text',
+            cell: (asn) => asn.carrier,
+          },
+          {
+            id: 'eta',
+            header: t('widget.asnInbound.col.eta'),
+            kind: 'date',
+            cell: (asn) => <Data>{formatDate(asn.eta)}</Data>,
+          },
+          {
+            id: 'status',
+            header: t('widget.asnInbound.col.status'),
+            kind: 'status',
+            cell: (asn) => <StatusPill variant={statusTone(asn.status)}>{asn.status}</StatusPill>,
+          },
+        ]}
+      />
     );
 
   return (

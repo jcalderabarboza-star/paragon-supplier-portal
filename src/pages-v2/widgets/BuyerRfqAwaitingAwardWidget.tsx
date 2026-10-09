@@ -3,10 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { Gavel } from 'lucide-react';
 import ExpandableWidget from '../../components/ui-v2/ExpandableWidget';
-import Table from '../../components/ui-v2/Table';
-import TableHeader, { TableHeaderCell } from '../../components/ui-v2/TableHeader';
-import TableRow from '../../components/ui-v2/TableRow';
-import TableCell from '../../components/ui-v2/TableCell';
+import DataTable from '../../components/ui-v2/DataTable';
 import Data from '../../components/ui-v2/Data';
 import StatusPill from '../../components/ui-v2/StatusPill';
 import RecordRowLink from './RecordRowLink';
@@ -56,47 +53,51 @@ const BuyerRfqAwaitingAwardWidget: React.FC = () => {
     count === 0 ? (
       <div className="text-sm text-text-tertiary">{t('widget.rfqAward.empty')}</div>
     ) : (
-      <Table>
-        <TableHeader>
-          <TableHeaderCell>{t('widget.rfqAward.col.rfq')}</TableHeaderCell>
-          <TableHeaderCell>{t('widget.rfqAward.col.title')}</TableHeaderCell>
-          <TableHeaderCell className="text-right">
-            {t('widget.rfqAward.col.quotes')}
-          </TableHeaderCell>
-          <TableHeaderCell>{t('widget.rfqAward.col.awardBy')}</TableHeaderCell>
-          <TableHeaderCell>{t('widget.rfqAward.col.status')}</TableHeaderCell>
-        </TableHeader>
-        <tbody>
-          {pending.map((rfq) => (
-            <TableRow key={rfq.id} className="relative">
-              <TableCell>
-                <RecordRowLink
-                  path="/buyer/sourcing"
-                  id={rfq.id}
-                  name={rfq.rfqNumber}
-                  label={
-                    <Data className="text-xs font-bold text-text-primary">
-                      {rfq.rfqNumber}
-                    </Data>
-                  }
-                />
-              </TableCell>
-              <TableCell className="text-text-secondary">{rfq.title}</TableCell>
-              <TableCell className="text-right text-text-secondary">
-                <Data>{quoteCounts.get(rfq.id) ?? 0}</Data>
-              </TableCell>
-              <TableCell className="whitespace-nowrap text-text-secondary">
-                <Data>{formatDate(rfq.awardDeadline)}</Data>
-              </TableCell>
-              <TableCell>
-                <StatusPill variant={statusTone(rfq.status)}>
-                  {rfq.status}
-                </StatusPill>
-              </TableCell>
-            </TableRow>
-          ))}
-        </tbody>
-      </Table>
+      <DataTable
+        card={false}
+        rows={pending}
+        rowKey={(rfq) => rfq.id}
+        rowProps={() => ({ className: 'relative' })}
+        columns={[
+          {
+            id: 'rfq',
+            header: t('widget.rfqAward.col.rfq'),
+            kind: 'id',
+            cell: (rfq) => (
+              <RecordRowLink
+                path="/buyer/sourcing"
+                id={rfq.id}
+                name={rfq.rfqNumber}
+                label={<Data>{rfq.rfqNumber}</Data>}
+              />
+            ),
+          },
+          {
+            id: 'title',
+            header: t('widget.rfqAward.col.title'),
+            kind: 'text',
+            cell: (rfq) => rfq.title,
+          },
+          {
+            id: 'quotes',
+            header: t('widget.rfqAward.col.quotes'),
+            kind: 'number',
+            cell: (rfq) => <Data>{quoteCounts.get(rfq.id) ?? 0}</Data>,
+          },
+          {
+            id: 'awardBy',
+            header: t('widget.rfqAward.col.awardBy'),
+            kind: 'date',
+            cell: (rfq) => <Data>{formatDate(rfq.awardDeadline)}</Data>,
+          },
+          {
+            id: 'status',
+            header: t('widget.rfqAward.col.status'),
+            kind: 'status',
+            cell: (rfq) => <StatusPill variant={statusTone(rfq.status)}>{rfq.status}</StatusPill>,
+          },
+        ]}
+      />
     );
 
   return (

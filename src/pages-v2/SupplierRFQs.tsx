@@ -14,17 +14,12 @@ import {
   Upload,
   LucideIcon,
 } from 'lucide-react';
-import AppShellV2 from '../components/layout-v2/AppShellV2';
-import PageHeader from '../components/ui-v2/PageHeader';
-import PageMetaLine from '../components/ui-v2/PageMetaLine';
+import ListPage from '../components/ui-v2/ListPage';
+import DataTable from '../components/ui-v2/DataTable';
 import ProvenanceMarker from '../components/ui-v2/ProvenanceMarker';
 import KpiCard from '../components/ui-v2/KpiCard';
 import SubTabs from '../components/ui-v2/SubTabs';
 import StatusPill from '../components/ui-v2/StatusPill';
-import Table from '../components/ui-v2/Table';
-import TableHeader, { TableHeaderCell } from '../components/ui-v2/TableHeader';
-import TableRow from '../components/ui-v2/TableRow';
-import TableCell from '../components/ui-v2/TableCell';
 import Button from '../components/ui-v2/Button';
 import SidePanel from '../components/ui-v2/SidePanel';
 import FormSection from '../components/ui-v2/FormSection';
@@ -939,68 +934,66 @@ const AwardsTab: React.FC<{ rows: AwardRow[] }> = ({ rows }) => {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm overflow-hidden">
-        <Table>
-          <TableHeader>
-            <TableHeaderCell>{t('rfqs.awards.col.rfq')}</TableHeaderCell>
-            <TableHeaderCell>{t('rfqs.awards.col.material')}</TableHeaderCell>
-            <TableHeaderCell>{t('rfqs.awards.col.result')}</TableHeaderCell>
-            <TableHeaderCell>{t('rfqs.awards.col.awardDate')}</TableHeaderCell>
-            <TableHeaderCell className="text-right">{t('rfqs.awards.col.contractValue')}</TableHeaderCell>
-            <TableHeaderCell>{t('rfqs.awards.col.poIssued')}</TableHeaderCell>
-            <TableHeaderCell>{t('rfqs.awards.col.notes')}</TableHeaderCell>
-          </TableHeader>
-          <tbody>
-            {rows.map((row, i) => (
-              <TableRow key={i}>
-                <TableCell>
-                  <Data className="text-xs font-bold text-text-primary">
-                    {row.rfqNumber}
-                  </Data>
-                </TableCell>
-                <TableCell className="text-text-primary">
-                  {row.material}
-                </TableCell>
-                <TableCell>
-                  <StatusPill
-                    variant={row.result === 'Awarded' ? 'success' : 'neutral'}
-                  >
-                    {row.result}
-                  </StatusPill>
-                </TableCell>
-                <TableCell className="text-text-tertiary text-sm whitespace-nowrap">
-                  <Data>{row.awardDate}</Data>
-                </TableCell>
-                <TableCell
-                  className={`text-right font-semibold whitespace-nowrap ${
-                    row.contractValue !== '—'
-                      ? 'text-success'
-                      : 'text-text-tertiary'
-                  }`}
-                >
-                  <Data>{row.contractValue}</Data>
-                </TableCell>
-                <TableCell
-                  className={`text-xs ${
-                    row.poIssued !== '—' ? 'text-info' : 'text-text-tertiary'
-                  }`}
-                >
-                  <Data>{row.poIssued}</Data>
-                </TableCell>
-                <TableCell className="text-xs text-text-secondary max-w-[16rem]">
-                  {t(
-                    row.result === 'Awarded'
-                      ? 'rfqs.awards.note.won'
-                      : row.result === 'Event Cancelled'
-                        ? 'rfqs.awards.note.cancelled'
-                        : 'rfqs.awards.note.lost',
-                  )}
-                </TableCell>
-              </TableRow>
-            ))}
-          </tbody>
-        </Table>
-      </div>
+      <DataTable<AwardRow>
+        rows={rows}
+        rowKey={(_row, i) => String(i)}
+        columns={[
+          {
+            id: 'rfq',
+            header: t('rfqs.awards.col.rfq'),
+            kind: 'id',
+            cell: (row) => <Data>{row.rfqNumber}</Data>,
+          },
+          {
+            id: 'material',
+            header: t('rfqs.awards.col.material'),
+            kind: 'text',
+            cell: (row) => row.material,
+          },
+          {
+            id: 'result',
+            header: t('rfqs.awards.col.result'),
+            kind: 'status',
+            cell: (row) => (
+              <StatusPill variant={row.result === 'Awarded' ? 'success' : 'neutral'}>
+                {row.result}
+              </StatusPill>
+            ),
+          },
+          {
+            id: 'awardDate',
+            header: t('rfqs.awards.col.awardDate'),
+            kind: 'date',
+            cell: (row) => <Data>{row.awardDate}</Data>,
+          },
+          {
+            id: 'contractValue',
+            header: t('rfqs.awards.col.contractValue'),
+            kind: 'money',
+            cell: (row) => <Data>{row.contractValue}</Data>,
+          },
+          {
+            id: 'poIssued',
+            header: t('rfqs.awards.col.poIssued'),
+            kind: 'id',
+            cell: (row) => <Data>{row.poIssued}</Data>,
+          },
+          {
+            id: 'notes',
+            header: t('rfqs.awards.col.notes'),
+            kind: 'text',
+            className: 'max-w-[16rem]',
+            cell: (row) =>
+              t(
+                row.result === 'Awarded'
+                  ? 'rfqs.awards.note.won'
+                  : row.result === 'Event Cancelled'
+                    ? 'rfqs.awards.note.cancelled'
+                    : 'rfqs.awards.note.lost',
+              ),
+          },
+        ]}
+      />
 
       <div className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm px-5 py-4 flex items-center gap-5 flex-wrap">
         <div className="flex-1 min-w-[16rem]">
@@ -1445,25 +1438,25 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
   };
 
   return (
-    <AppShellV2>
-      <PageHeader
-        breadcrumb={crumb}
-        title={t('rfqs.header.title')}
-        subtitle={t('rfqs.header.subtitle', { supplier: mySupplier.name })}
-      />
-
-      <PageMetaLine className="-mt-6 mb-6">
-        {openCount}{' '}
-        {t(openCount !== 1 ? 'rfqs.meta.event.other' : 'rfqs.meta.event.one')} ·{' '}
-        {awaitingCount}{' '}
-        {t(awaitingCount !== 1 ? 'rfqs.meta.quote.other' : 'rfqs.meta.quote.one')}
-        {/* D-CENSUS-8 — PARTLY REAL, both axes. Quotation submit dispatches through
-            the wired `quotation` target and drives the real RFQ→award cascade; the
-            RFQs being answered are fixtures. */}
-        <ProvenanceMarker capability="rfqs" className="ml-3 align-middle" />
-      </PageMetaLine>
-
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-6">
+    <ListPage
+      breadcrumb={crumb}
+      title={t('rfqs.header.title')}
+      subtitle={t('rfqs.header.subtitle', { supplier: mySupplier.name })}
+      meta={
+        <>
+          {openCount}{' '}
+          {t(openCount !== 1 ? 'rfqs.meta.event.other' : 'rfqs.meta.event.one')} ·{' '}
+          {awaitingCount}{' '}
+          {t(awaitingCount !== 1 ? 'rfqs.meta.quote.other' : 'rfqs.meta.quote.one')}
+          {/* D-CENSUS-8 — PARTLY REAL, both axes. Quotation submit dispatches through
+              the wired `quotation` target and drives the real RFQ→award cascade; the
+              RFQs being answered are fixtures. */}
+          <ProvenanceMarker capability="rfqs" className="ml-3 align-middle" />
+        </>
+      }
+      kpiColumns={3}
+      kpis={
+        <>
         <KpiCard
           eyebrow={t('rfqs.kpi.open.eyebrow')}
           value={openCount.toString()}
@@ -1482,18 +1475,20 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
           subtitle={<span className="text-warning-hover">{t('rfqs.kpi.award.subtitle')}</span>}
           icon={Trophy}
         />
-      </div>
-
-      <SubTabs<TabKey>
-        options={[
-          { id: 'open', label: t('rfqs.tab.open'), count: openCount },
-          { id: 'quotes', label: t('rfqs.tab.quotes'), count: submittedCount },
-          { id: 'history', label: t('rfqs.tab.history'), count: awardRows.length },
-        ]}
-        value={activeTab}
-        onChange={setActiveTab}
-        className="mb-5"
-      />
+        </>
+      }
+      tabs={
+        <SubTabs<TabKey>
+          options={[
+            { id: 'open', label: t('rfqs.tab.open'), count: openCount },
+            { id: 'quotes', label: t('rfqs.tab.quotes'), count: submittedCount },
+            { id: 'history', label: t('rfqs.tab.history'), count: awardRows.length },
+          ]}
+          value={activeTab}
+          onChange={setActiveTab}
+        />
+      }
+    >
 
       {activeTab === 'open' && (
         <OpenRFQsTab
@@ -1989,7 +1984,7 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
           </div>
         )}
       </SidePanel>
-    </AppShellV2>
+    </ListPage>
   );
 };
 

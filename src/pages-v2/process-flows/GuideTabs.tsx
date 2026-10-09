@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { BookOpenText, RefreshCw } from 'lucide-react';
 import Data from '../../components/ui-v2/Data';
+import DataTable, { CellSub, type Column } from '../../components/ui-v2/DataTable';
 import StatusPill from '../../components/ui-v2/StatusPill';
 import GlossaryTermChip from '../../components/ui-v2/GlossaryTermChip';
 import { HandoffNotice } from '../../components/ui-v2/HandoffNotice';
@@ -80,6 +81,9 @@ function glossaryRefFor(term: string): GlossaryRef | null {
   const registry = GLOSSARY_REGISTRIES.find((r) => term in r.entries);
   return registry ? ({ sourceType: registry.sourceType, term } as GlossaryRef) : null;
 }
+
+// A history or test-data row runs to several lines; every cell reads from the top.
+const TOP = '!align-top';
 
 const Box: React.FC<{ title: string; children: React.ReactNode; testId?: string }> = ({ title, children, testId }) => (
   <section className="rounded-md border border-border-subtle bg-bg-surface p-4" data-testid={testId}>
@@ -207,6 +211,71 @@ const HistoryTab: React.FC<{ view: FlowView; guide: ProcessGuide | undefined }> 
   const chosen = documents.includes(picked) ? picked : (documents[0] ?? '');
   const groups = chosen ? historyFor(events, view.entity, chosen) : [];
 
+  type HistoryRow = (typeof groups)[number]['rows'][number];
+  const historyColumns: Column<HistoryRow>[] = [
+    {
+      id: 'time',
+      header: t('processGuides.history.col.time'),
+      kind: 'date',
+      className: TOP,
+      cell: ({ event: e }) => <Data>{formatSetAt(e.ts)}</Data>,
+    },
+    {
+      id: 'edge',
+      header: t('processGuides.history.col.edge'),
+      kind: 'id',
+      className: TOP,
+      cell: ({ event: e, elsewhere }) => (
+        <>
+          {e.subject ? `${e.subject.from ?? t('processGuides.history.creation')} → ${e.subject.to}` : '—'}
+          {elsewhere && e.subject && (
+            <CellSub>
+              {t('processGuides.history.elsewhere', { entity: e.subject.entity, id: e.subject.entityId })}
+            </CellSub>
+          )}
+        </>
+      ),
+    },
+    {
+      id: 'actor',
+      header: t('processGuides.history.col.actor'),
+      kind: 'id',
+      className: TOP,
+      cell: ({ event: e }) => (
+        <>
+          {e.actor}
+          <CellSub>{actorText(e, t)}</CellSub>
+        </>
+      ),
+    },
+    {
+      id: 'trigger',
+      header: t('processGuides.history.col.trigger'),
+      kind: 'id',
+      className: TOP,
+      cell: ({ event: e }) => getTransition(e.event)?.trigger ?? '—',
+    },
+    {
+      id: 'event',
+      header: t('processGuides.history.col.event'),
+      kind: 'id',
+      className: TOP,
+      cell: ({ event: e }) => <Data>{e.event}</Data>,
+    },
+    {
+      id: 'outcome',
+      header: t('processGuides.history.col.outcome'),
+      kind: 'id',
+      className: TOP,
+      cell: ({ event: e }) => (
+        <>
+          {e.outcome}
+          {e.reason && <CellSub>{e.reason}</CellSub>}
+        </>
+      ),
+    },
+  ];
+
   return (
     <div className="grid gap-4 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
       <Box title={t('processGuides.tab.history')} testId="pf-guide-history-live">
@@ -253,55 +322,14 @@ const HistoryTab: React.FC<{ view: FlowView; guide: ProcessGuide | undefined }> 
                     <p className="border-b border-border-subtle bg-bg-hover px-2 py-1 text-[11px] text-text-tertiary">
                       {t('processGuides.history.group', { anchor: g.anchor })}
                     </p>
-                    <table className="w-full text-[11px]">
-                      <thead>
-                        <tr className="text-left text-text-tertiary">
-                          <th className="px-2 py-1 font-semibold">{t('processGuides.history.col.time')}</th>
-                          <th className="px-2 py-1 font-semibold">{t('processGuides.history.col.edge')}</th>
-                          <th className="px-2 py-1 font-semibold">{t('processGuides.history.col.actor')}</th>
-                          <th className="px-2 py-1 font-semibold">{t('processGuides.history.col.trigger')}</th>
-                          <th className="px-2 py-1 font-semibold">{t('processGuides.history.col.event')}</th>
-                          <th className="px-2 py-1 font-semibold">{t('processGuides.history.col.outcome')}</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {g.rows.map(({ event: e, elsewhere }) => (
-                          <tr
-                            key={`${e.correlationId}-${e.outcome}-${e.ts}`}
-                            data-testid={`pf-guide-history-row-${e.event}`}
-                            className="border-t border-border-subtle align-top"
-                          >
-                            <td className="px-2 py-1">
-                              <Data className="text-[11px]">{formatSetAt(e.ts)}</Data>
-                            </td>
-                            <td className="px-2 py-1">
-                              <Data className="text-[11px]">
-                                {e.subject ? `${e.subject.from ?? t('processGuides.history.creation')} → ${e.subject.to}` : '—'}
-                              </Data>
-                              {elsewhere && e.subject && (
-                                <span className="block text-[10px] text-text-tertiary">
-                                  {t('processGuides.history.elsewhere', { entity: e.subject.entity, id: e.subject.entityId })}
-                                </span>
-                              )}
-                            </td>
-                            <td className="px-2 py-1">
-                              <Data className="block text-[11px]">{e.actor}</Data>
-                              <span className="text-[10px] text-text-tertiary">{actorText(e, t)}</span>
-                            </td>
-                            <td className="px-2 py-1">
-                              <Data className="text-[11px]">{getTransition(e.event)?.trigger ?? '—'}</Data>
-                            </td>
-                            <td className="px-2 py-1">
-                              <Data className="text-[11px]">{e.event}</Data>
-                            </td>
-                            <td className="px-2 py-1">
-                              <Data className="text-[11px]">{e.outcome}</Data>
-                              {e.reason && <Data className="block text-[10px] text-text-tertiary">{e.reason}</Data>}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                    <DataTable
+                      density="compact"
+                      card={false}
+                      columns={historyColumns}
+                      rows={g.rows}
+                      rowKey={({ event: e }) => `${e.correlationId}-${e.outcome}-${e.ts}`}
+                      rowProps={({ event: e }) => ({ 'data-testid': `pf-guide-history-row-${e.event}` })}
+                    />
                   </div>
                 ))}
               </div>
@@ -319,55 +347,66 @@ const HistoryTab: React.FC<{ view: FlowView; guide: ProcessGuide | undefined }> 
 const TestDataTab: React.FC<{ guide: ProcessGuide }> = ({ guide }) => {
   const { t } = useTranslation();
   const route = GUIDE_LIST_ROUTE[guide.entity];
+  const columns: Column<ProcessGuide['testData'][number]>[] = [
+    {
+      id: 'state',
+      header: t('processGuides.testdata.col.state'),
+      kind: 'id',
+      className: TOP,
+      cell: (row) => row.state,
+    },
+    {
+      id: 'fixtures',
+      header: t('processGuides.testdata.col.fixtures'),
+      kind: 'id',
+      className: TOP,
+      cell: (row) =>
+        row.fixtureIds.length === 0 ? (
+          <CellSub>{t('processGuides.testdata.none')}</CellSub>
+        ) : (
+          <span className="flex flex-wrap gap-1.5">
+            {row.fixtureIds.map((id) =>
+              route ? (
+                <Link
+                  key={id}
+                  to={route}
+                  data-testid={`pf-guide-fixture-${id}`}
+                  aria-label={t('processGuides.testdata.openAria', { id })}
+                  className="text-action-text underline-offset-2 hover:underline"
+                >
+                  {id}
+                </Link>
+              ) : (
+                <Data key={id}>{id}</Data>
+              ),
+            )}
+          </span>
+        ),
+    },
+    {
+      id: 'number',
+      header: t('processGuides.testdata.col.number'),
+      kind: 'text',
+      className: TOP,
+      cell: (row) => (row.number ? <GuideInline text={row.number} /> : '—'),
+    },
+    {
+      id: 'note',
+      header: t('processGuides.testdata.col.note'),
+      kind: 'text',
+      className: TOP,
+      cell: (row) =>
+        row.note ? <GuideInline text={row.note} /> : null,
+    },
+  ];
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-[12px]" data-testid="pf-guide-testdata">
-        <thead className="bg-bg-hover text-left text-text-tertiary">
-          <tr>
-            <th className="px-2 py-1.5 font-semibold">{t('processGuides.testdata.col.state')}</th>
-            <th className="px-2 py-1.5 font-semibold">{t('processGuides.testdata.col.fixtures')}</th>
-            <th className="px-2 py-1.5 font-semibold">{t('processGuides.testdata.col.number')}</th>
-            <th className="px-2 py-1.5 font-semibold">{t('processGuides.testdata.col.note')}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {guide.testData.map((row) => (
-            <tr key={row.state} className="border-t border-border-subtle align-top">
-              <td className="px-2 py-1.5">
-                <Data className="text-[11px]">{row.state}</Data>
-              </td>
-              <td className="px-2 py-1.5">
-                {row.fixtureIds.length === 0 ? (
-                  <span className="text-text-tertiary">{t('processGuides.testdata.none')}</span>
-                ) : (
-                  <span className="flex flex-wrap gap-1.5">
-                    {row.fixtureIds.map((id) =>
-                      route ? (
-                        <Link
-                          key={id}
-                          to={route}
-                          data-testid={`pf-guide-fixture-${id}`}
-                          aria-label={t('processGuides.testdata.openAria', { id })}
-                          className="font-mono text-[11px] text-action-text underline-offset-2 hover:underline"
-                        >
-                          {id}
-                        </Link>
-                      ) : (
-                        <Data key={id} className="text-[11px]">
-                          {id}
-                        </Data>
-                      ),
-                    )}
-                  </span>
-                )}
-              </td>
-              <td className="px-2 py-1.5">{row.number ? <GuideInline text={row.number} /> : '—'}</td>
-              <td className="px-2 py-1.5 text-text-secondary">{row.note ? <GuideInline text={row.note} /> : null}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <DataTable
+      testId="pf-guide-testdata"
+      density="compact"
+      columns={columns}
+      rows={guide.testData}
+      rowKey={(row) => row.state}
+    />
   );
 };
 

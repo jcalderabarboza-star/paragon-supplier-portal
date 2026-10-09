@@ -7,19 +7,14 @@ import {
   ChevronRight,
   AlertCircle,
 } from 'lucide-react';
-import AppShellV2 from '../components/layout-v2/AppShellV2';
-import PageHeader from '../components/ui-v2/PageHeader';
-import PageMetaLine from '../components/ui-v2/PageMetaLine';
+import ListPage from '../components/ui-v2/ListPage';
+import DataTable, { CellSub, type Column } from '../components/ui-v2/DataTable';
 import ProvenanceMarker from '../components/ui-v2/ProvenanceMarker';
 import KpiCard from '../components/ui-v2/KpiCard';
 import SubTabs from '../components/ui-v2/SubTabs';
 import StatusPill from '../components/ui-v2/StatusPill';
 import NextActLine from '../components/ui-v2/NextActLine';
 import { statusTone } from '../lib/statusTone';
-import Table from '../components/ui-v2/Table';
-import TableHeader, { TableHeaderCell } from '../components/ui-v2/TableHeader';
-import TableRow from '../components/ui-v2/TableRow';
-import TableCell from '../components/ui-v2/TableCell';
 import Button from '../components/ui-v2/Button';
 import SidePanel from '../components/ui-v2/SidePanel';
 import Data from '../components/ui-v2/Data';
@@ -56,6 +51,7 @@ import { formatIDR, formatNumber, formatDate, formatDateTime } from '../lib/form
 
 type TabKey = 'all' | 'action' | 'progress' | 'completed';
 type PanelMode = 'detail' | 'editing' | 'confirmed' | 'change-request';
+type PoLine = PurchaseOrder['lineItems'][number];
 
 const ACTION_STATUSES: POStatus[] = [POStatus.SENT, POStatus.ACKNOWLEDGED];
 // OPS-3 — the states an order holds once a confirmation is on it.
@@ -489,29 +485,82 @@ const SupplierOrders: React.FC = () => {
     return t('supplierOrders.action.view');
   };
 
+  const orderColumns: Column<PurchaseOrder>[] = [
+    {
+      id: 'po',
+      header: t('supplierOrders.col.po'),
+      kind: 'id',
+      cell: (po) => <Data>{po.poNumber}</Data>,
+    },
+    {
+      id: 'orderDate',
+      header: t('supplierOrders.col.orderDate'),
+      kind: 'date',
+      cell: (po) => <Data>{fmtDate(po.orderDate)}</Data>,
+    },
+    {
+      id: 'requestedDelivery',
+      header: t('supplierOrders.col.requestedDelivery'),
+      kind: 'date',
+      cell: (po) => <Data>{fmtDate(po.requestedDeliveryDate)}</Data>,
+    },
+    {
+      id: 'items',
+      header: t('supplierOrders.col.items'),
+      kind: 'number',
+      cell: (po) => po.lineItems.length,
+    },
+    {
+      id: 'value',
+      header: t('supplierOrders.col.value'),
+      kind: 'money',
+      cell: (po) => <Data>{formatIDR(po.totalValue, { compact: true })}</Data>,
+    },
+    {
+      id: 'status',
+      header: t('supplierOrders.col.status'),
+      kind: 'status',
+      cell: (po) => <StatusPill variant={statusTone(po.status)}>{po.status}</StatusPill>,
+    },
+    {
+      id: 'action',
+      header: t('supplierOrders.col.action'),
+      kind: 'actions',
+      cell: (po) => (
+        <Button
+          variant={
+            ACTION_STATUSES.includes(po.status) && canConfirmHere ? 'outline' : 'secondary'
+          }
+          onClick={(e) => handleRowAction(po, e)}
+        >
+          {panelActionLabel(po)}
+        </Button>
+      ),
+    },
+  ];
+
   return (
-    <AppShellV2>
-      <PageHeader
-        breadcrumb={ORDERS_CRUMB}
-        title={t('supplierOrders.header.title')}
-        subtitle={t('supplierOrders.header.subtitle', { supplier: mySupplier.name })}
-      />
-
-      <PageMetaLine className="-mt-6 mb-6">
-        {MY_POS.length === 1
-          ? t('supplierOrders.meta.orders.one', { count: MY_POS.length })
-          : t('supplierOrders.meta.orders.other', { count: MY_POS.length })}{' '}
-        · {t('supplierOrders.meta.lastUpdated')}{' '}
-        <Data>{fmtDate(maxOrderDate)}</Data>
-        {/* D-CENSUS-8 — PARTLY REAL, both axes. This is the clearest case the census
-            named: Confirm/Reject here genuinely dispatch through the wired
-            `purchaseOrder` target, run the legality + role + field gates and write
-            the DR-10 trail. A flat "Sample" would teach the reader to discount a
-            true signal; a green "Live" would claim the orders are real. Both. */}
-        <ProvenanceMarker capability="purchaseOrders" className="ml-3 align-middle" />
-      </PageMetaLine>
-
-      <div className="grid grid-cols-2 sm:grid-cols-2 xl:grid-cols-4 gap-5 mb-6">
+    <ListPage
+      breadcrumb={ORDERS_CRUMB}
+      title={t('supplierOrders.header.title')}
+      subtitle={t('supplierOrders.header.subtitle', { supplier: mySupplier.name })}
+      meta={
+        <>
+          {MY_POS.length === 1
+            ? t('supplierOrders.meta.orders.one', { count: MY_POS.length })
+            : t('supplierOrders.meta.orders.other', { count: MY_POS.length })}{' '}
+          · {t('supplierOrders.meta.lastUpdated')}{' '}
+          <Data>{fmtDate(maxOrderDate)}</Data>
+          {/* D-CENSUS-8 — PARTLY REAL, both axes. This is the clearest case the census
+              named: Confirm/Reject here genuinely dispatch through the wired
+              `purchaseOrder` target, run the legality + role + field gates and write
+              the DR-10 trail. A flat "Sample" would teach the reader to discount a
+              true signal; a green "Live" would claim the orders are real. Both. */}
+          <ProvenanceMarker capability="purchaseOrders" className="ml-3 align-middle" />
+        </>
+      }
+      kpis={
+        <>
         <KpiCard
           eyebrow={t('supplierOrders.kpi.openOrders.eyebrow')}
           value={counts.action.toString()}
@@ -548,20 +597,21 @@ const SupplierOrders: React.FC = () => {
           }
           icon={CheckCircle2}
         />
-      </div>
-
-      <SubTabs<TabKey>
-        options={[
-          { id: 'all', label: t('supplierOrders.tab.all'), count: counts.all },
-          { id: 'action', label: t('supplierOrders.tab.action'), count: counts.action },
-          { id: 'progress', label: t('supplierOrders.tab.progress'), count: counts.progress },
-          { id: 'completed', label: t('supplierOrders.tab.completed'), count: counts.completed },
-        ]}
-        value={activeTab}
-        onChange={setActiveTab}
-        className="mb-5"
-      />
-
+        </>
+      }
+      tabs={
+        <SubTabs<TabKey>
+          options={[
+            { id: 'all', label: t('supplierOrders.tab.all'), count: counts.all },
+            { id: 'action', label: t('supplierOrders.tab.action'), count: counts.action },
+            { id: 'progress', label: t('supplierOrders.tab.progress'), count: counts.progress },
+            { id: 'completed', label: t('supplierOrders.tab.completed'), count: counts.completed },
+          ]}
+          value={activeTab}
+          onChange={setActiveTab}
+        />
+      }
+    >
       {counts.action > 0 && activeTab !== 'completed' && (
         <div className="bg-warning-soft border-l-2 border-warning rounded px-4 py-3 mb-4 flex items-start gap-2 text-sm text-warning-hover">
           <AlertCircle size={14} className="shrink-0 mt-0.5" />
@@ -580,73 +630,13 @@ const SupplierOrders: React.FC = () => {
         </div>
       )}
 
-      <div className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm overflow-hidden">
-        <Table>
-          <TableHeader>
-            <TableHeaderCell>{t('supplierOrders.col.po')}</TableHeaderCell>
-            <TableHeaderCell>{t('supplierOrders.col.orderDate')}</TableHeaderCell>
-            <TableHeaderCell>{t('supplierOrders.col.requestedDelivery')}</TableHeaderCell>
-            <TableHeaderCell className="text-right">{t('supplierOrders.col.items')}</TableHeaderCell>
-            <TableHeaderCell className="text-right">{t('supplierOrders.col.value')}</TableHeaderCell>
-            <TableHeaderCell>{t('supplierOrders.col.status')}</TableHeaderCell>
-            <TableHeaderCell className="text-right">{t('supplierOrders.col.action')}</TableHeaderCell>
-          </TableHeader>
-          <tbody>
-            {displayPOs.map((po) => (
-              <TableRow
-                key={po.id}
-                className="cursor-pointer"
-                onClick={() => openOrderPanel(po, 'detail')}
-              >
-                <TableCell>
-                  <Data className="text-xs font-bold text-text-primary">
-                    {po.poNumber}
-                  </Data>
-                </TableCell>
-                <TableCell className="whitespace-nowrap text-text-secondary">
-                  <Data>{fmtDate(po.orderDate)}</Data>
-                </TableCell>
-                <TableCell className="whitespace-nowrap text-text-secondary">
-                  <Data>{fmtDate(po.requestedDeliveryDate)}</Data>
-                </TableCell>
-                <TableCell className="text-right text-text-secondary">
-                  {po.lineItems.length}
-                </TableCell>
-                <TableCell className="text-right font-semibold text-text-primary whitespace-nowrap">
-                  <Data>{formatIDR(po.totalValue, { compact: true })}</Data>
-                </TableCell>
-                <TableCell>
-                  <StatusPill variant={statusTone(po.status)}>
-                    {po.status}
-                  </StatusPill>
-                </TableCell>
-                <TableCell className="text-right">
-                  <Button
-                    variant={
-                      ACTION_STATUSES.includes(po.status) && canConfirmHere
-                        ? 'outline'
-                        : 'secondary'
-                    }
-                    onClick={(e) => handleRowAction(po, e)}
-                  >
-                    {panelActionLabel(po)}
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
-            {displayPOs.length === 0 && (
-              <tr>
-                <td
-                  colSpan={7}
-                  className="text-center text-sm text-text-tertiary py-10"
-                >
-                  {t('supplierOrders.table.empty')}
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </Table>
-      </div>
+      <DataTable<PurchaseOrder>
+        columns={orderColumns}
+        rows={displayPOs}
+        rowKey={(po) => po.id}
+        onRowClick={(po) => openOrderPanel(po, 'detail')}
+        empty={t('supplierOrders.table.empty')}
+      />
 
       <SidePanel
         open={selected !== null}
@@ -870,126 +860,131 @@ const SupplierOrders: React.FC = () => {
                   : t('supplierOrders.panel.lineItems')}
               </h3>
               <div className="border border-border-subtle rounded-md overflow-hidden">
-                <table className="w-full text-xs">
-                  <thead className="bg-bg-hover text-text-tertiary uppercase tracking-wider">
-                    <tr>
-                      <th className="text-left px-3 py-2 font-semibold">
-                        {t('supplierOrders.panel.col.material')}
-                      </th>
-                      <th className="text-right px-3 py-2 font-semibold">
-                        {t('supplierOrders.panel.col.ordered')}
-                      </th>
-                      {(effectivePanelMode === 'editing' || showsConfirmation) && (
-                        <th className="text-right px-3 py-2 font-semibold">
-                          {t('supplierOrders.panel.col.confirmed')}
-                        </th>
-                      )}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {selected.lineItems.map((li, idx) => (
-                      <tr
-                        key={li.id}
-                        className="border-t border-border-subtle"
-                      >
-                        <td className="px-3 py-2">
-                          <Data as="div" className="text-xs text-text-tertiary">
-                            {li.materialCode}
-                          </Data>
-                          <div className="text-text-primary mt-0.5">
+                <DataTable<PoLine>
+                  density="compact"
+                  card={false}
+                  rows={selected.lineItems}
+                  rowKey={(li) => li.id}
+                  columns={[
+                    {
+                      id: 'material',
+                      header: t('supplierOrders.panel.col.material'),
+                      kind: 'id',
+                      cell: (li) => (
+                        <>
+                          <Data as="div">{li.materialCode}</Data>
+                          <CellSub>
                             {/* i18n-defer: mock/sample data (fixture line-item description) */}
                             {li.description}
-                          </div>
-                        </td>
-                        <td className="px-3 py-2 text-right text-text-secondary whitespace-nowrap">
-                          <Data>{formatNumber(li.quantity)} {li.uom}</Data>
-                        </td>
-                        {effectivePanelMode !== 'editing' && showsConfirmation && (
-                          <td
-                            className="px-3 py-2 text-right text-text-secondary whitespace-nowrap"
-                            data-testid={`po-line-confirmed-${idx}`}
-                          >
-                            <Data>
-                              {formatNumber(
-                                (selectedLive ?? selected).lineItems[idx]?.confirmedQty ?? 0,
-                              )}{' '}
-                              {li.uom}
-                            </Data>
-                          </td>
-                        )}
-                        {effectivePanelMode === 'editing' && (
-                          <td className="px-3 py-2 text-right">
-                            {/* Ruling 6.2: text + inputMode, never type="number" —
-                                the browser must not adjudicate the separators
-                                this cell's parser exists to adjudicate. min/max
-                                were number-input affordances that never bound
-                                anything; the bound is enforced by the policy and
-                                mirrored below. */}
-                            <input
-                              type="text"
-                              inputMode="decimal"
-                              value={confirmedQtyRaws[idx] ?? ''}
-                              onChange={(e) => {
-                                const v = e.target.value;
-                                setConfirmedQtyRaws((prev) => {
-                                  const next = [...prev];
-                                  next[idx] = v;
-                                  return next;
-                                });
-                              }}
-                              aria-label={`${t('supplierOrders.panel.col.confirmed')} ${li.materialCode}`}
-                              aria-invalid={
-                                !(lineReads[idx]?.ok ?? true) || !lineBounds[idx]
-                              }
-                              className={`${inputClass} text-right`}
-                              style={{ width: 100, display: 'inline-block' }}
-                            />
-                            {/* Seeded cells: every blank is operator-cleared, so
-                                a refusal shows whenever the cell does not read
-                                (the GR-wizard display rule, not the 2e-a
-                                untouched-blank rule). */}
-                            {lineReads[idx] && !lineReads[idx].ok && (
-                              <div
-                                role="alert"
-                                data-testid={`po-confirm-refusal-${idx}`}
-                                className="mt-1 text-[11px] text-critical text-right"
-                              >
-                                {t(
-                                  PO_QTY_REFUSAL_KEY[
-                                    (lineReads[idx] as { reason: QtyRefusalReason })
-                                      .reason
-                                  ],
-                                )}{' '}
-                                <GlossaryTermChip
-                                  refTo={{
-                                    sourceType: 'QtyRefusalReason',
-                                    term: (lineReads[idx] as { reason: QtyRefusalReason }).reason,
+                          </CellSub>
+                        </>
+                      ),
+                    },
+                    {
+                      id: 'ordered',
+                      header: t('supplierOrders.panel.col.ordered'),
+                      kind: 'number',
+                      className: 'whitespace-nowrap',
+                      cell: (li) => (
+                        <Data>{formatNumber(li.quantity)} {li.uom}</Data>
+                      ),
+                    },
+                    ...(effectivePanelMode !== 'editing' && showsConfirmation
+                      ? [
+                          {
+                            id: 'confirmed',
+                            header: t('supplierOrders.panel.col.confirmed'),
+                            kind: 'number',
+                            className: 'whitespace-nowrap',
+                            cell: (li, idx) => (
+                              <span data-testid={`po-line-confirmed-${idx}`}>
+                                <Data>
+                                  {formatNumber(
+                                    (selectedLive ?? selected).lineItems[idx]?.confirmedQty ?? 0,
+                                  )}{' '}
+                                  {li.uom}
+                                </Data>
+                              </span>
+                            ),
+                          } satisfies Column<PoLine>,
+                        ]
+                      : []),
+                    ...(effectivePanelMode === 'editing'
+                      ? [
+                          {
+                            id: 'confirmed',
+                            header: t('supplierOrders.panel.col.confirmed'),
+                            kind: 'number',
+                            cell: (li, idx) => (
+                              <>
+                                {/* Ruling 6.2: text + inputMode, never type="number" —
+                                    the browser must not adjudicate the separators
+                                    this cell's parser exists to adjudicate. min/max
+                                    were number-input affordances that never bound
+                                    anything; the bound is enforced by the policy and
+                                    mirrored below. */}
+                                <input
+                                  type="text"
+                                  inputMode="decimal"
+                                  value={confirmedQtyRaws[idx] ?? ''}
+                                  onChange={(e) => {
+                                    const v = e.target.value;
+                                    setConfirmedQtyRaws((prev) => {
+                                      const next = [...prev];
+                                      next[idx] = v;
+                                      return next;
+                                    });
                                   }}
+                                  aria-label={`${t('supplierOrders.panel.col.confirmed')} ${li.materialCode}`}
+                                  aria-invalid={
+                                    !(lineReads[idx]?.ok ?? true) || !lineBounds[idx]
+                                  }
+                                  className={`${inputClass} font-sans text-right`}
+                                  style={{ width: 100, display: 'inline-block' }}
                                 />
-                              </div>
-                            )}
-                            {/* The bounds mirror — courtesy, not law (see the
-                                derivation block). Renders only for a READ number
-                                the policy would refuse, in the operator's
-                                language with the line's own bound. */}
-                            {lineReads[idx]?.ok && !lineBounds[idx] && (
-                              <div
-                                role="alert"
-                                data-testid={`po-confirm-bounds-${idx}`}
-                                className="mt-1 text-[11px] text-critical text-right"
-                              >
-                                {t('supplierOrders.confirm.qty.outOfBounds', {
-                                  ordered: li.quantity,
-                                  uom: li.uom,
-                                })}
-                              </div>
-                            )}
-                          </td>
-                        )}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                                {/* Seeded cells: every blank is operator-cleared, so
+                                    a refusal shows whenever the cell does not read
+                                    (the GR-wizard display rule, not the 2e-a
+                                    untouched-blank rule). */}
+                                {lineReads[idx] && !lineReads[idx].ok && (
+                                  <div role="alert" data-testid={`po-confirm-refusal-${idx}`}>
+                                    <CellSub tone="critical">
+                                      {t(
+                                        PO_QTY_REFUSAL_KEY[
+                                          (lineReads[idx] as { reason: QtyRefusalReason })
+                                            .reason
+                                        ],
+                                      )}{' '}
+                                      <GlossaryTermChip
+                                        refTo={{
+                                          sourceType: 'QtyRefusalReason',
+                                          term: (lineReads[idx] as { reason: QtyRefusalReason }).reason,
+                                        }}
+                                      />
+                                    </CellSub>
+                                  </div>
+                                )}
+                                {/* The bounds mirror — courtesy, not law (see the
+                                    derivation block). Renders only for a READ number
+                                    the policy would refuse, in the operator's
+                                    language with the line's own bound. */}
+                                {lineReads[idx]?.ok && !lineBounds[idx] && (
+                                  <div role="alert" data-testid={`po-confirm-bounds-${idx}`}>
+                                    <CellSub tone="critical">
+                                      {t('supplierOrders.confirm.qty.outOfBounds', {
+                                        ordered: li.quantity,
+                                        uom: li.uom,
+                                      })}
+                                    </CellSub>
+                                  </div>
+                                )}
+                              </>
+                            ),
+                          } satisfies Column<PoLine>,
+                        ]
+                      : []),
+                  ]}
+                />
               </div>
             </section>
 
@@ -1123,7 +1118,7 @@ const SupplierOrders: React.FC = () => {
           </div>
         )}
       </SidePanel>
-    </AppShellV2>
+    </ListPage>
   );
 };
 

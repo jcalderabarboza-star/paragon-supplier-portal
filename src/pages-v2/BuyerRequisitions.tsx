@@ -12,9 +12,6 @@ import {
   FileSpreadsheet,
   ChevronRight,
 } from 'lucide-react';
-import AppShellV2 from '../components/layout-v2/AppShellV2';
-import PageHeader from '../components/ui-v2/PageHeader';
-import PageMetaLine from '../components/ui-v2/PageMetaLine';
 import ProvenanceMarker from '../components/ui-v2/ProvenanceMarker';
 import KpiCard from '../components/ui-v2/KpiCard';
 import Data from '../components/ui-v2/Data';
@@ -22,10 +19,8 @@ import BulkActionsBar from '../components/ui-v2/BulkActionsBar';
 import SubTabs from '../components/ui-v2/SubTabs';
 import SearchBar from '../components/ui-v2/SearchBar';
 import StatusPill from '../components/ui-v2/StatusPill';
-import Table from '../components/ui-v2/Table';
-import TableHeader, { TableHeaderCell } from '../components/ui-v2/TableHeader';
-import TableRow from '../components/ui-v2/TableRow';
-import TableCell from '../components/ui-v2/TableCell';
+import DataTable, { type Column } from '../components/ui-v2/DataTable';
+import ListPage from '../components/ui-v2/ListPage';
 import Button from '../components/ui-v2/Button';
 import SidePanel from '../components/ui-v2/SidePanel';
 import FormSection from '../components/ui-v2/FormSection';
@@ -155,7 +150,7 @@ const ProcurementFlow: React.FC = () => {
     warning: 'bg-warning-soft text-warning-hover border-warning/30',
   };
   return (
-    <div className="bg-bg-surface border border-border-subtle rounded-lg px-5 py-4 mb-6">
+    <div className="bg-bg-surface border border-border-subtle rounded-lg px-5 py-4">
       <div className="text-label text-text-tertiary uppercase mb-3">
         {t('requisitions.flow.label')}
       </div>
@@ -698,10 +693,163 @@ const BuyerRequisitions: React.FC = () => {
     }
   };
 
+  const columns: Column<PurchaseRequisition>[] = [
+    {
+      // A checkbox column: `status` is the kind that leaves the cell left-set
+      // and untyped. The header control carries its own accessible name.
+      id: 'select',
+      header: (
+        <input
+          type="checkbox"
+          aria-label={t('requisitions.bulk.selectAll')}
+          data-testid="pr-select-all"
+          disabled={!!bulkProgress || !filtered.some(isBulkEligible)}
+          checked={filtered.some(isBulkEligible) && filtered.filter(isBulkEligible).every((p) => picked.has(p.id))}
+          onChange={(e) => setPicked(e.target.checked ? new Set(filtered.filter(isBulkEligible).map((p) => p.id)) : new Set())}
+        />
+      ),
+      kind: 'status',
+      cell: (pr) =>
+        isBulkEligible(pr) && (
+          <input
+            type="checkbox"
+            aria-label={t('requisitions.bulk.selectRow', { number: pr.prNumber })}
+            data-testid={`pr-select-${pr.id}`}
+            disabled={!!bulkProgress}
+            checked={picked.has(pr.id)}
+            onClick={(e) => e.stopPropagation()}
+            onChange={(e) =>
+              setPicked((cur) => {
+                const next = new Set(cur);
+                if (e.target.checked) next.add(pr.id);
+                else next.delete(pr.id);
+                return next;
+              })
+            }
+          />
+        ),
+    },
+    {
+      id: 'pr',
+      header: t('requisitions.table.col.pr'),
+      kind: 'id',
+      cell: (pr) => <Data as="div">{pr.prNumber}</Data>,
+    },
+    {
+      id: 'material',
+      header: t('requisitions.table.col.material'),
+      kind: 'text',
+      cell: (pr) => (
+        <div className="truncate max-w-[14rem]">
+          {pr.material}
+        </div>
+      ),
+    },
+    {
+      id: 'category',
+      header: t('requisitions.table.col.category'),
+      kind: 'text',
+      cell: (pr) => orSap(pr, 'category'),
+    },
+    {
+      id: 'qty',
+      header: t('requisitions.table.col.qty'),
+      kind: 'number',
+      className: 'whitespace-nowrap',
+      cell: (pr) => <Data>{formatNumber(pr.quantity)} {pr.uom}</Data>,
+    },
+    {
+      // PLN-4 · R3 · the planning bucket the requirement sits in — a
+      // grain, never a day, so it is its own column beside Required.
+      // The test id sat on the `td`; `DataTable` owns the `td`, so it is on a
+      // span that fills the cell's content.
+      id: 'bucket',
+      header: t('requisitions.table.col.bucket'),
+      kind: 'date',
+      cell: (pr) => (
+        <span data-testid={`pr-bucket-${pr.id}`}>
+          <Data>{pr.periodBucket ?? '—'}</Data>
+        </span>
+      ),
+    },
+    {
+      id: 'origin',
+      header: t('requisitions.table.col.origin'),
+      kind: 'status',
+      className: 'whitespace-nowrap',
+      cell: (pr) => (
+        <span data-testid={`pr-origin-${pr.id}`}>
+          <span title={pr.intakeLineId}>
+            <StatusPill variant="neutral">
+              {t(prOrigin(pr) === 'intake' ? 'requisitions.origin.intake' : 'requisitions.origin.manual')}
+            </StatusPill>
+          </span>
+        </span>
+      ),
+    },
+    {
+      id: 'required',
+      header: t('requisitions.table.col.required'),
+      kind: 'date',
+      cell: (pr) => orSap(pr, 'requiredDate', (v) => <Data>{formatDate(v)}</Data>),
+    },
+    {
+      id: 'estValue',
+      header: t('requisitions.table.col.estValue'),
+      kind: 'money',
+      cell: (pr) => <Data>{formatIDR(pr.estimatedValue, { compact: true })}</Data>,
+    },
+    {
+      id: 'requestor',
+      header: t('requisitions.table.col.requestor'),
+      kind: 'text',
+      cell: (pr) => requestorOf(pr),
+    },
+    {
+      id: 'status',
+      header: t('requisitions.table.col.status'),
+      kind: 'status',
+      cell: (pr) => (
+        <StatusPill variant={STATUS_VARIANT[pr.status]}>{pr.status}</StatusPill>
+      ),
+    },
+    {
+      id: 'source',
+      header: t('requisitions.table.col.source'),
+      kind: 'status',
+      cell: (pr) => {
+        const hasPIR = pr.sourceOfSupply === 'PIR exists';
+        /* PLN-4 · R3 · an EMPTY source is not "None" — nobody has said. */
+        return isSetInSap(pr, 'sourceOfSupply') ? (
+          orSap(pr, 'sourceOfSupply')
+        ) : (
+          <StatusPill variant={hasPIR ? 'success' : 'warning'}>
+            {hasPIR ? 'PIR' : t('requisitions.source.none')}
+          </StatusPill>
+        );
+      },
+    },
+    {
+      id: 'linkedDoc',
+      header: t('requisitions.table.col.linkedDoc'),
+      kind: 'id',
+      cell: (pr) => (
+        <Data>{pr.linkedDoc || '—'}</Data>
+      ),
+    },
+    {
+      id: 'actions',
+      header: t('requisitions.table.col.actions'),
+      kind: 'actions',
+      cell: () => (
+        <ChevronRight size={16} className="text-text-tertiary inline-block" />
+      ),
+    },
+  ];
+
   return (
-    <AppShellV2>
-      <PageHeader
-        breadcrumb={REQUISITIONS_CRUMB}
+    <ListPage
+      breadcrumb={REQUISITIONS_CRUMB}
         title={t('requisitions.header.title')}
         subtitle={t('requisitions.header.subtitle')}
         actions={
@@ -751,25 +899,25 @@ const BuyerRequisitions: React.FC = () => {
             />
           </div>
         }
-      />
-
-      <PageMetaLine className="-mt-6 mb-6">
-        {t(
-          prs.length === 1
-            ? 'requisitions.meta.summary.one'
-            : 'requisitions.meta.summary.other',
-          { count: prs.length, date: formatDate(maxCreatedDate) },
-        )}
-        {/* D-CENSUS-8 — PARTLY REAL, both axes. The PR CommandTarget is wired
-            (G1.1) so a create genuinely dispatches; gate-2 still holds the feed
-            SIMULATED (no live producer — SOMO F2 / Grid G1.2), which is why the
-            feed axis reads the specific "awaiting live PR producer" text. */}
-        <ProvenanceMarker capability="purchaseRequisitions" className="ml-3 align-middle" />
-      </PageMetaLine>
-
-      <ProcurementFlow />
-
-      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-5 mb-8">
+      meta={
+        <>
+          {t(
+            prs.length === 1
+              ? 'requisitions.meta.summary.one'
+              : 'requisitions.meta.summary.other',
+            { count: prs.length, date: formatDate(maxCreatedDate) },
+          )}
+          {/* D-CENSUS-8 — PARTLY REAL, both axes. The PR CommandTarget is wired
+              (G1.1) so a create genuinely dispatches; gate-2 still holds the feed
+              SIMULATED (no live producer — SOMO F2 / Grid G1.2), which is why the
+              feed axis reads the specific "awaiting live PR producer" text. */}
+          <ProvenanceMarker capability="purchaseRequisitions" className="ml-3 align-middle" />
+        </>
+      }
+      notices={<ProcurementFlow />}
+      kpiColumns={5}
+      kpis={
+        <>
         <KpiCard
           eyebrow={t('requisitions.kpi.draft.eyebrow')}
           value={counts.draft.toString()}
@@ -800,8 +948,9 @@ const BuyerRequisitions: React.FC = () => {
           subtitle={t('requisitions.kpi.po.subtitle')}
           icon={ShoppingCart}
         />
-      </div>
-
+        </>
+      }
+      tabs={
       <SubTabs<GroupTab>
         options={[
           { id: 'all', label: t('requisitions.tab.all'), count: counts.all },
@@ -813,17 +962,16 @@ const BuyerRequisitions: React.FC = () => {
         ]}
         value={group}
         onChange={setGroup}
-        className="mb-5"
       />
-
-      <div className="mb-4">
+      }
+      search={
         <SearchBar
           value={search}
           onChange={setSearch}
           placeholder={t('requisitions.search.placeholder')}
         />
-      </div>
-
+      }
+    >
       {/* ── PLN-4 · R3 · the bulk acts, over the rows ticked below ────────── */}
       {(pickedRows.length > 0 || bulkProgress || bulkResult) && (
         <div
@@ -897,149 +1045,13 @@ const BuyerRequisitions: React.FC = () => {
         </div>
       )}
 
-      <div className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm overflow-hidden">
-        <Table>
-          <TableHeader>
-            <TableHeaderCell>
-              <input
-                type="checkbox"
-                aria-label={t('requisitions.bulk.selectAll')}
-                data-testid="pr-select-all"
-                disabled={!!bulkProgress || !filtered.some(isBulkEligible)}
-                checked={filtered.some(isBulkEligible) && filtered.filter(isBulkEligible).every((p) => picked.has(p.id))}
-                onChange={(e) => setPicked(e.target.checked ? new Set(filtered.filter(isBulkEligible).map((p) => p.id)) : new Set())}
-              />
-            </TableHeaderCell>
-            <TableHeaderCell>{t('requisitions.table.col.pr')}</TableHeaderCell>
-            <TableHeaderCell>{t('requisitions.table.col.material')}</TableHeaderCell>
-            <TableHeaderCell>{t('requisitions.table.col.category')}</TableHeaderCell>
-            <TableHeaderCell className="text-right">{t('requisitions.table.col.qty')}</TableHeaderCell>
-            <TableHeaderCell>{t('requisitions.table.col.bucket')}</TableHeaderCell>
-            <TableHeaderCell>{t('requisitions.table.col.origin')}</TableHeaderCell>
-            <TableHeaderCell>{t('requisitions.table.col.required')}</TableHeaderCell>
-            <TableHeaderCell className="text-right">{t('requisitions.table.col.estValue')}</TableHeaderCell>
-            <TableHeaderCell>{t('requisitions.table.col.requestor')}</TableHeaderCell>
-            <TableHeaderCell>{t('requisitions.table.col.status')}</TableHeaderCell>
-            <TableHeaderCell>{t('requisitions.table.col.source')}</TableHeaderCell>
-            <TableHeaderCell>{t('requisitions.table.col.linkedDoc')}</TableHeaderCell>
-            <TableHeaderCell className="text-right">{t('requisitions.table.col.actions')}</TableHeaderCell>
-          </TableHeader>
-          <tbody>
-            {filtered.map((pr) => {
-              const hasPIR = pr.sourceOfSupply === 'PIR exists';
-              return (
-                <TableRow
-                  key={pr.id}
-                  className="cursor-pointer"
-                  onClick={() => setSelectedRow(pr)}
-                >
-                  <TableCell>
-                    {isBulkEligible(pr) && (
-                      <input
-                        type="checkbox"
-                        aria-label={t('requisitions.bulk.selectRow', { number: pr.prNumber })}
-                        data-testid={`pr-select-${pr.id}`}
-                        disabled={!!bulkProgress}
-                        checked={picked.has(pr.id)}
-                        onClick={(e) => e.stopPropagation()}
-                        onChange={(e) =>
-                          setPicked((cur) => {
-                            const next = new Set(cur);
-                            if (e.target.checked) next.add(pr.id);
-                            else next.delete(pr.id);
-                            return next;
-                          })
-                        }
-                      />
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <Data as="div" className="text-xs font-semibold text-text-primary">
-                      {pr.prNumber}
-                    </Data>
-                  </TableCell>
-                  <TableCell>
-                    <div className="font-semibold text-text-primary truncate max-w-[14rem]">
-                      {pr.material}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <span className="text-sm text-text-secondary">
-                      {orSap(pr, 'category')}
-                    </span>
-                  </TableCell>
-                  <TableCell className="text-right whitespace-nowrap text-sm text-text-primary">
-                    <Data>{formatNumber(pr.quantity)} {pr.uom}</Data>
-                  </TableCell>
-                  {/* PLN-4 · R3 · the planning bucket the requirement sits in — a
-                      grain, never a day, so it is its own column beside Required. */}
-                  <TableCell className="whitespace-nowrap text-sm text-text-secondary" data-testid={`pr-bucket-${pr.id}`}>
-                    <Data>{pr.periodBucket ?? '—'}</Data>
-                  </TableCell>
-                  <TableCell className="whitespace-nowrap" data-testid={`pr-origin-${pr.id}`}>
-                    <span title={pr.intakeLineId}>
-                      <StatusPill variant="neutral">
-                        {t(prOrigin(pr) === 'intake' ? 'requisitions.origin.intake' : 'requisitions.origin.manual')}
-                      </StatusPill>
-                    </span>
-                  </TableCell>
-                  <TableCell className="whitespace-nowrap text-sm text-text-secondary">
-                    {orSap(pr, 'requiredDate', (v) => <Data>{formatDate(v)}</Data>)}
-                  </TableCell>
-                  <TableCell className="text-right font-semibold text-text-primary whitespace-nowrap">
-                    <Data>{formatIDR(pr.estimatedValue, { compact: true })}</Data>
-                  </TableCell>
-                  <TableCell>
-                    <span className="text-sm text-text-secondary">
-                      {requestorOf(pr)}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <StatusPill variant={STATUS_VARIANT[pr.status]}>
-                      {pr.status}
-                    </StatusPill>
-                  </TableCell>
-                  <TableCell>
-                    {/* PLN-4 · R3 · an EMPTY source is not "None" — nobody has said. */}
-                    {isSetInSap(pr, 'sourceOfSupply') ? (
-                      orSap(pr, 'sourceOfSupply')
-                    ) : (
-                      <StatusPill variant={hasPIR ? 'success' : 'warning'}>
-                        {hasPIR ? 'PIR' : t('requisitions.source.none')}
-                      </StatusPill>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <Data
-                      className={`text-xs ${
-                        pr.linkedDoc ? 'text-text-primary' : 'text-text-tertiary'
-                      }`}
-                    >
-                      {pr.linkedDoc || '—'}
-                    </Data>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <ChevronRight
-                      size={16}
-                      className="text-text-tertiary inline-block"
-                    />
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-            {filtered.length === 0 && (
-              <tr>
-                <td
-                  colSpan={14}
-                  className="text-center text-sm text-text-tertiary py-10"
-                >
-                  {t('requisitions.table.empty')}
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </Table>
-      </div>
+      <DataTable
+        columns={columns}
+        rows={filtered}
+        rowKey={(pr) => pr.id}
+        onRowClick={(pr) => setSelectedRow(pr)}
+        empty={t('requisitions.table.empty')}
+      />
 
       <div className="mt-6 bg-info-soft border-l-2 border-info rounded px-4 py-3 text-sm text-text-primary flex items-start gap-2">
         <ClipboardList size={14} className="text-info shrink-0 mt-0.5" />
@@ -1814,7 +1826,7 @@ const BuyerRequisitions: React.FC = () => {
           </FormSection>
         </div>
       </SidePanel>
-    </AppShellV2>
+    </ListPage>
   );
 };
 

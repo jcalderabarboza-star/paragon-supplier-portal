@@ -5,10 +5,7 @@ import { FileWarning } from 'lucide-react';
 import ExpandableWidget, {
   type FlagSeverity,
 } from '../../components/ui-v2/ExpandableWidget';
-import Table from '../../components/ui-v2/Table';
-import TableHeader, { TableHeaderCell } from '../../components/ui-v2/TableHeader';
-import TableRow from '../../components/ui-v2/TableRow';
-import TableCell from '../../components/ui-v2/TableCell';
+import DataTable from '../../components/ui-v2/DataTable';
 import Data from '../../components/ui-v2/Data';
 import StatusPill from '../../components/ui-v2/StatusPill';
 import { formatDate } from '../../lib/format';
@@ -125,43 +122,47 @@ const SupplierCertsExpiringWidget: React.FC = () => {
         {t('widget.certsExpiring.empty')}
       </div>
     ) : (
-      <Table>
-        <TableHeader>
-          <TableHeaderCell>{t('widget.certsExpiring.col.document')}</TableHeaderCell>
-          <TableHeaderCell>{t('widget.certsExpiring.col.expires')}</TableHeaderCell>
-          <TableHeaderCell>{t('widget.certsExpiring.col.status')}</TableHeaderCell>
-        </TableHeader>
-        <tbody>
-          {rows.map((doc) => (
-            <TableRow key={doc.id}>
-              <TableCell className="font-medium text-text-primary">
-                {doc.name}
-              </TableCell>
-              <TableCell className="whitespace-nowrap text-text-secondary">
-                <Data>{doc.expiryDate ? formatDate(doc.expiryDate) : '—'}</Data>
-              </TableCell>
-              <TableCell>
-                {/* The PROJECTED state, never `doc.status`. Rendering the stored
-                    literal here is what let the widget label an already-expired
-                    certificate as merely "Expiring Soon" — a hazard of the
-                    SOURCE, not a count. The number that stood in this comment
-                    (`116 days ago`) is retired: it was measured off the authored
-                    fixture literals before `8c68d77` shifted them, and a sibling
-                    comment written a day earlier said `84` for the same fact. */}
-                {documentDisplayState(doc, nowIso) === 'expired' ? (
-                  <StatusPill variant="danger">
-                    {t('widget.certsExpiring.state.expired')}
-                  </StatusPill>
-                ) : (
-                  <StatusPill variant="warning">
-                    {t('widget.certsExpiring.state.expiring')}
-                  </StatusPill>
-                )}
-              </TableCell>
-            </TableRow>
-          ))}
-        </tbody>
-      </Table>
+      <DataTable
+        card={false}
+        rows={rows}
+        rowKey={(doc) => doc.id}
+        columns={[
+          {
+            id: 'document',
+            header: t('widget.certsExpiring.col.document'),
+            kind: 'text',
+            cell: (doc) => doc.name,
+          },
+          {
+            id: 'expires',
+            header: t('widget.certsExpiring.col.expires'),
+            kind: 'date',
+            cell: (doc) => <Data>{doc.expiryDate ? formatDate(doc.expiryDate) : '—'}</Data>,
+          },
+          /* The PROJECTED state, never `doc.status`. Rendering the stored
+             literal here is what let the widget label an already-expired
+             certificate as merely "Expiring Soon" — a hazard of the
+             SOURCE, not a count. The number that stood in this comment
+             (`116 days ago`) is retired: it was measured off the authored
+             fixture literals before `8c68d77` shifted them, and a sibling
+             comment written a day earlier said `84` for the same fact. */
+          {
+            id: 'status',
+            header: t('widget.certsExpiring.col.status'),
+            kind: 'status',
+            cell: (doc) =>
+              documentDisplayState(doc, nowIso) === 'expired' ? (
+                <StatusPill variant="danger">
+                  {t('widget.certsExpiring.state.expired')}
+                </StatusPill>
+              ) : (
+                <StatusPill variant="warning">
+                  {t('widget.certsExpiring.state.expiring')}
+                </StatusPill>
+              ),
+          },
+        ]}
+      />
     );
 
   return (

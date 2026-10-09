@@ -5,10 +5,7 @@ import { Boxes } from 'lucide-react';
 import ExpandableWidget, {
   type FlagSeverity,
 } from '../../components/ui-v2/ExpandableWidget';
-import Table from '../../components/ui-v2/Table';
-import TableHeader, { TableHeaderCell } from '../../components/ui-v2/TableHeader';
-import TableRow from '../../components/ui-v2/TableRow';
-import TableCell from '../../components/ui-v2/TableCell';
+import DataTable from '../../components/ui-v2/DataTable';
 import Data from '../../components/ui-v2/Data';
 import RecordRowLink from './RecordRowLink';
 import StatusPill from '../../components/ui-v2/StatusPill';
@@ -46,53 +43,55 @@ const BuyerInventoryWidget: React.FC = () => {
     count === 0 ? (
       <div className="text-sm text-text-tertiary">{t('widget.inventory.empty')}</div>
     ) : (
-      <Table>
-        <TableHeader>
-          <TableHeaderCell>{t('widget.inventory.col.material')}</TableHeaderCell>
-          <TableHeaderCell>{t('widget.inventory.col.description')}</TableHeaderCell>
-          <TableHeaderCell className="text-right">
-            {t('widget.inventory.col.onHand')}
-          </TableHeaderCell>
-          <TableHeaderCell className="text-right">
-            {t('widget.inventory.col.daysSupply')}
-          </TableHeaderCell>
-          <TableHeaderCell>{t('widget.inventory.col.status')}</TableHeaderCell>
-        </TableHeader>
-        <tbody>
-          {low.map((r) => (
-            <TableRow key={r.id} className="relative">
-              <TableCell>
-                <RecordRowLink
-                  path="/buyer/inventory"
-                  id={r.id}
-                  name={r.materialCode}
-                  label={
-                    <Data className="text-xs font-bold text-text-primary">
-                      {r.materialCode}
-                    </Data>
-                  }
-                />
-              </TableCell>
-              <TableCell className="text-text-secondary">
-                {r.materialDescription}
-              </TableCell>
-              <TableCell className="text-right text-text-secondary">
-                <Data>
-                  {r.qtyOnHand} {r.uom}
-                </Data>
-              </TableCell>
-              <TableCell className="text-right text-text-secondary">
-                <Data>{r.daysOfSupply}d</Data>
-              </TableCell>
-              <TableCell>
-                <StatusPill variant={statusTone(r.stockStatus)}>
-                  {r.stockStatus}
-                </StatusPill>
-              </TableCell>
-            </TableRow>
-          ))}
-        </tbody>
-      </Table>
+      <DataTable
+        card={false}
+        rows={low}
+        rowKey={(r) => r.id}
+        rowProps={() => ({ className: 'relative' })}
+        columns={[
+          {
+            id: 'material',
+            header: t('widget.inventory.col.material'),
+            kind: 'id',
+            cell: (r) => (
+              <RecordRowLink
+                path="/buyer/inventory"
+                id={r.id}
+                name={r.materialCode}
+                label={<Data>{r.materialCode}</Data>}
+              />
+            ),
+          },
+          {
+            id: 'description',
+            header: t('widget.inventory.col.description'),
+            kind: 'text',
+            cell: (r) => r.materialDescription,
+          },
+          {
+            id: 'onHand',
+            header: t('widget.inventory.col.onHand'),
+            kind: 'number',
+            cell: (r) => (
+              <Data>
+                {r.qtyOnHand} {r.uom}
+              </Data>
+            ),
+          },
+          {
+            id: 'daysSupply',
+            header: t('widget.inventory.col.daysSupply'),
+            kind: 'number',
+            cell: (r) => <Data>{r.daysOfSupply}d</Data>,
+          },
+          {
+            id: 'status',
+            header: t('widget.inventory.col.status'),
+            kind: 'status',
+            cell: (r) => <StatusPill variant={statusTone(r.stockStatus)}>{r.stockStatus}</StatusPill>,
+          },
+        ]}
+      />
     );
 
   return (

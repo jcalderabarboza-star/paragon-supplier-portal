@@ -13,9 +13,8 @@ import {
   RefreshCw,
   CalendarDays,
 } from 'lucide-react';
-import AppShellV2 from '../components/layout-v2/AppShellV2';
-import PageHeader from '../components/ui-v2/PageHeader';
-import PageMetaLine from '../components/ui-v2/PageMetaLine';
+import ListPage from '../components/ui-v2/ListPage';
+import DataTable, { CellSub, type Column } from '../components/ui-v2/DataTable';
 import ProvenanceMarker from '../components/ui-v2/ProvenanceMarker';
 import { RaisedElsewhereNote, RaisedElsewherePanel } from './contracts/RaisedElsewhere';
 import { HandoffNotice } from '../components/ui-v2/HandoffNotice';
@@ -26,10 +25,6 @@ import SubTabs from '../components/ui-v2/SubTabs';
 import FilterChipsBar from '../components/ui-v2/FilterChipsBar';
 import SearchBar from '../components/ui-v2/SearchBar';
 import StatusPill from '../components/ui-v2/StatusPill';
-import Table from '../components/ui-v2/Table';
-import TableHeader, { TableHeaderCell } from '../components/ui-v2/TableHeader';
-import TableRow from '../components/ui-v2/TableRow';
-import TableCell from '../components/ui-v2/TableCell';
 import ScoreBadge from '../components/ui-v2/ScoreBadge';
 import Data from '../components/ui-v2/Data';
 import Button from '../components/ui-v2/Button';
@@ -347,9 +342,9 @@ const ExpiryCell: React.FC<{
 }> = ({ days, display }) => {
   const { t } = useTranslation();
   if (days === null)
-    return <div className="text-sm whitespace-nowrap text-text-tertiary">—</div>;
+    return <div className="whitespace-nowrap">—</div>;
   return (
-    <div className={`text-sm whitespace-nowrap ${CONTRACT_EXPIRY_TONE[display]}`}>
+    <div className={`whitespace-nowrap ${CONTRACT_EXPIRY_TONE[display]}`}>
       {/* The FIGURE keeps its three renderings — `today` is a legible way to
           say zero and is not a state claim. The ruled boundary makes zero PAST,
           which the tone above now says (danger, via `Expired`), so the cell
@@ -1111,66 +1106,73 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
                   count: draft.obligations.length,
                 })}
               </h4>
-              <div className="border border-border-subtle rounded-md overflow-hidden">
-                <table className="w-full text-sm">
-                  <thead className="bg-bg-hover text-text-tertiary uppercase tracking-wider text-xs">
-                    <tr>
-                      <th className="text-left px-3 py-2">{t('contracts.wizard.obl.col.title')}</th>
-                      <th className="text-left px-3 py-2">{t('contracts.wizard.obl.col.owner')}</th>
-                      <th className="text-left px-3 py-2 whitespace-nowrap">
-                        {t('contracts.wizard.obl.col.dueDate')}
-                      </th>
-                      <th className="text-right px-3 py-2 w-10"></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {draft.obligations.map((o, i) => (
-                      <tr key={i} className="border-t border-border-subtle">
-                        <td className="px-3 py-2 text-text-primary">
-                          {o.title}
-                        </td>
-                        <td className="px-3 py-2">
-                          <select
-                            value={o.owner}
-                            onChange={(e) =>
-                              updateObligation(
-                                i,
-                                'owner',
-                                e.target.value as DraftObligation['owner'],
-                              )
-                            }
-                            className="bg-white border border-border-input rounded-md px-2 h-8 text-xs focus:outline-none focus:border-action"
-                          >
-                            <option value="Buyer">{t('contracts.owner.buyer')}</option>
-                            <option value="Supplier">{t('contracts.owner.supplier')}</option>
-                            <option value="Both">{t('contracts.owner.both')}</option>
-                          </select>
-                        </td>
-                        <td className="px-3 py-2">
-                          <input
-                            type="date"
-                            value={o.dueDate}
-                            onChange={(e) =>
-                              updateObligation(i, 'dueDate', e.target.value)
-                            }
-                            className="bg-white border border-border-input rounded-md px-2 h-8 text-xs focus:outline-none focus:border-action"
-                          />
-                        </td>
-                        <td className="px-3 py-2 text-right">
-                          <button
-                            type="button"
-                            onClick={() => removeObligation(i)}
-                            className="text-text-tertiary hover:text-critical text-xs"
-                            aria-label={t('contracts.wizard.obl.removeAria')}
-                          >
-                            {t('contracts.wizard.obl.remove')}
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <DataTable<DraftObligation>
+                density="compact"
+                rows={draft.obligations}
+                rowKey={(_o, i) => String(i)}
+                columns={[
+                  {
+                    id: 'title',
+                    header: t('contracts.wizard.obl.col.title'),
+                    kind: 'text',
+                    cell: (o) => o.title,
+                  },
+                  {
+                    id: 'owner',
+                    header: t('contracts.wizard.obl.col.owner'),
+                    kind: 'text',
+                    cell: (o, i) => (
+                      <select
+                        value={o.owner}
+                        onChange={(e) =>
+                          updateObligation(
+                            i,
+                            'owner',
+                            e.target.value as DraftObligation['owner'],
+                          )
+                        }
+                        className="bg-white border border-border-input rounded-md px-2 h-8 text-xs focus:outline-none focus:border-action"
+                      >
+                        <option value="Buyer">{t('contracts.owner.buyer')}</option>
+                        <option value="Supplier">{t('contracts.owner.supplier')}</option>
+                        <option value="Both">{t('contracts.owner.both')}</option>
+                      </select>
+                    ),
+                  },
+                  {
+                    id: 'dueDate',
+                    header: t('contracts.wizard.obl.col.dueDate'),
+                    kind: 'date',
+                    headerClassName: 'whitespace-nowrap',
+                    cell: (o, i) => (
+                      <input
+                        type="date"
+                        value={o.dueDate}
+                        onChange={(e) =>
+                          updateObligation(i, 'dueDate', e.target.value)
+                        }
+                        className="bg-white border border-border-input rounded-md px-2 h-8 text-xs focus:outline-none focus:border-action"
+                      />
+                    ),
+                  },
+                  {
+                    id: 'remove',
+                    header: '',
+                    kind: 'actions',
+                    headerClassName: 'w-10',
+                    cell: (_o, i) => (
+                      <button
+                        type="button"
+                        onClick={() => removeObligation(i)}
+                        className="text-action-text hover:underline"
+                        aria-label={t('contracts.wizard.obl.removeAria')}
+                      >
+                        {t('contracts.wizard.obl.remove')}
+                      </button>
+                    ),
+                  },
+                ]}
+              />
             </div>
           )}
         </div>
@@ -1302,13 +1304,105 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
       prev.includes(t) ? prev.filter((x) => x !== t) : [...prev, t],
     );
 
+  const columns: Column<Contract>[] = [
+    {
+      id: 'number',
+      header: t('contracts.table.col.number'),
+      kind: 'id',
+      cell: (c) => (
+        <>
+          <Data as="div">{c.contractNumber}</Data>
+          <CellSub className="max-w-[18rem] truncate">{c.title}</CellSub>
+        </>
+      ),
+    },
+    {
+      id: 'supplier',
+      header: t('contracts.table.col.supplier'),
+      kind: 'text',
+      cell: (c) => {
+        const supplier = supplierById.get(c.supplierId);
+        return (
+          <>
+            {supplier?.name ?? c.supplierId}
+            {supplier && <CellSub>{COUNTRY_FLAG[supplier.country] ?? supplier.country}</CellSub>}
+          </>
+        );
+      },
+    },
+    {
+      id: 'type',
+      header: t('contracts.table.col.type'),
+      kind: 'status',
+      cell: (c) => <StatusPill variant="neutral">{typeLabel(t, c.type)}</StatusPill>,
+    },
+    {
+      id: 'period',
+      header: t('contracts.table.col.period'),
+      kind: 'date',
+      cell: (c) => (
+        <>
+          <div>
+            <Data>{formatDate(c.startDate)}</Data> →{' '}
+            <Data>{formatDate(c.endDate)}</Data>
+          </div>
+          {c.autoRenewal && (
+            <CellSub tone="info" className="flex items-center gap-1">
+              <RefreshCw size={10} /> {t('contracts.table.autoRenew')}
+            </CellSub>
+          )}
+        </>
+      ),
+    },
+    {
+      id: 'expiry',
+      header: t('contracts.table.col.expiry'),
+      kind: 'status',
+      cell: (c) => (
+        <ExpiryCell days={daysUntil(c.endDate, nowIso)} display={displayOf(c)} />
+      ),
+    },
+    {
+      id: 'value',
+      header: t('contracts.table.col.value'),
+      kind: 'money',
+      cell: (c) => <Data>{c.value > 0 ? formatIDR(c.value) : '—'}</Data>,
+    },
+    {
+      id: 'performance',
+      header: t('contracts.table.col.performance'),
+      kind: 'number',
+      cell: (c) =>
+        c.performanceScore > 0 ? (
+          <div className="w-32 ml-auto">
+            <ScoreBadge score={c.performanceScore} size="sm" variant="bar" />
+          </div>
+        ) : (
+          '—'
+        ),
+    },
+    {
+      id: 'status',
+      header: t('contracts.table.col.status'),
+      kind: 'status',
+      cell: (c) => (
+        <StatusPill variant={STATUS_VARIANT[displayOf(c)]}>{displayOf(c)}</StatusPill>
+      ),
+    },
+    {
+      id: 'actions',
+      header: t('contracts.table.col.actions'),
+      kind: 'actions',
+      cell: () => <ChevronRight size={16} className="text-text-tertiary inline-block" />,
+    },
+  ];
+
   return (
-    <AppShellV2>
-      <PageHeader
-        breadcrumb={[t('contracts.crumb.contracts')]}
-        title={t('contracts.header.title')}
-        subtitle={t('contracts.header.subtitle')}
-        actions={
+    <ListPage
+      breadcrumb={[t('contracts.crumb.contracts')]}
+      title={t('contracts.header.title')}
+      subtitle={t('contracts.header.subtitle')}
+      actions={
           <div className="flex flex-col items-end gap-1">
           <BulkActionsBar
             actions={[
@@ -1353,66 +1447,66 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
           />
           </div>
         }
-      />
-
-      <PageMetaLine className="-mt-6 mb-6">
-        {t(
-          contracts.length === 1
-            ? 'contracts.meta.summary.one'
-            : 'contracts.meta.summary.other',
-          { count: contracts.length, date: formatDate(lastUpdated) },
-        )}
-        {/* D-CENSUS-8 — `contracts` is null-backed: no contract lifecycle target is
-            wired, and SAP owns contract identity. The create wizard on this page
-            no longer mints one (CTR-FABRICATION-01, retired at f5338c2 and held
-            closed by C11 V15's document-number gate); the marker states the feed
-            fact. */}
-        <ProvenanceMarker capability="contracts" className="ml-3 align-middle" />
-      </PageMetaLine>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 mb-8">
-        <KpiCard
-          eyebrow={t('contracts.kpi.active.eyebrow')}
-          value={kpis.active.toString()}
-          subtitle={t('contracts.kpi.active.subtitle')}
-          icon={ScrollText}
+      meta={
+        <>
+            {t(
+              contracts.length === 1
+                ? 'contracts.meta.summary.one'
+                : 'contracts.meta.summary.other',
+              { count: contracts.length, date: formatDate(lastUpdated) },
+            )}
+            {/* D-CENSUS-8 — `contracts` is null-backed: no contract lifecycle target is
+                wired, and SAP owns contract identity. The create wizard on this page
+                no longer mints one (CTR-FABRICATION-01, retired at f5338c2 and held
+                closed by C11 V15's document-number gate); the marker states the feed
+                fact. */}
+            <ProvenanceMarker capability="contracts" className="ml-3 align-middle" />
+        </>
+      }
+      kpis={
+        <>
+          <KpiCard
+            eyebrow={t('contracts.kpi.active.eyebrow')}
+            value={kpis.active.toString()}
+            subtitle={t('contracts.kpi.active.subtitle')}
+            icon={ScrollText}
+          />
+          <KpiCard
+            eyebrow={t('contracts.kpi.expiring.eyebrow')}
+            value={kpis.expiringSoon.toString()}
+            subtitle={t('contracts.kpi.expiring.subtitle')}
+            icon={AlertTriangle}
+          />
+          <KpiCard
+            eyebrow={t('contracts.kpi.overdue.eyebrow')}
+            value={overdueObligations.toString()}
+            subtitle={t('contracts.kpi.overdue.subtitle')}
+            icon={FileText}
+          />
+          <KpiCard
+            eyebrow={t('contracts.kpi.value.eyebrow')}
+            value={formatIDR(kpis.totalValue)}
+            subtitle={t('contracts.kpi.value.subtitle')}
+            icon={Wallet}
+          />
+        </>
+      }
+      tabs={
+        <SubTabs
+          options={[
+            { id: 'all', label: t('contracts.tab.all'), count: counts.all },
+            { id: 'active', label: t('contracts.tab.active'), count: counts.active },
+            { id: 'expiring', label: t('contracts.tab.expiring'), count: counts.expiring },
+            { id: 'expired', label: t('contracts.tab.expired'), count: counts.expired },
+            { id: 'renewed', label: t('contracts.tab.renewed'), count: counts.renewed },
+            { id: 'draft', label: t('contracts.tab.draft'), count: counts.draft },
+            { id: 'terminated', label: t('contracts.tab.terminated'), count: counts.terminated },
+          ]}
+          value={group}
+          onChange={setGroup}
         />
-        <KpiCard
-          eyebrow={t('contracts.kpi.expiring.eyebrow')}
-          value={kpis.expiringSoon.toString()}
-          subtitle={t('contracts.kpi.expiring.subtitle')}
-          icon={AlertTriangle}
-        />
-        <KpiCard
-          eyebrow={t('contracts.kpi.overdue.eyebrow')}
-          value={overdueObligations.toString()}
-          subtitle={t('contracts.kpi.overdue.subtitle')}
-          icon={FileText}
-        />
-        <KpiCard
-          eyebrow={t('contracts.kpi.value.eyebrow')}
-          value={formatIDR(kpis.totalValue)}
-          subtitle={t('contracts.kpi.value.subtitle')}
-          icon={Wallet}
-        />
-      </div>
-
-      <SubTabs
-        options={[
-          { id: 'all', label: t('contracts.tab.all'), count: counts.all },
-          { id: 'active', label: t('contracts.tab.active'), count: counts.active },
-          { id: 'expiring', label: t('contracts.tab.expiring'), count: counts.expiring },
-          { id: 'expired', label: t('contracts.tab.expired'), count: counts.expired },
-          { id: 'renewed', label: t('contracts.tab.renewed'), count: counts.renewed },
-          { id: 'draft', label: t('contracts.tab.draft'), count: counts.draft },
-          { id: 'terminated', label: t('contracts.tab.terminated'), count: counts.terminated },
-        ]}
-        value={group}
-        onChange={setGroup}
-        className="mb-5"
-      />
-
-      <div className="flex items-center justify-between gap-4 mb-4 flex-wrap">
+      }
+      filters={
         <div>
           <div className="text-label text-text-tertiary uppercase mb-2">
             {t('contracts.filter.byType')}
@@ -1424,119 +1518,23 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
             multiSelect
           />
         </div>
-      </div>
-
-      <div className="mb-4">
+      }
+      search={
         <SearchBar
           value={search}
           onChange={setSearch}
           placeholder={t('contracts.search.placeholder')}
         />
-      </div>
-
-      <div className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm overflow-hidden mb-8">
-        <Table>
-          <TableHeader>
-            <TableHeaderCell>{t('contracts.table.col.number')}</TableHeaderCell>
-            <TableHeaderCell>{t('contracts.table.col.supplier')}</TableHeaderCell>
-            <TableHeaderCell>{t('contracts.table.col.type')}</TableHeaderCell>
-            <TableHeaderCell>{t('contracts.table.col.period')}</TableHeaderCell>
-            <TableHeaderCell>{t('contracts.table.col.expiry')}</TableHeaderCell>
-            <TableHeaderCell className="text-right">{t('contracts.table.col.value')}</TableHeaderCell>
-            <TableHeaderCell>{t('contracts.table.col.performance')}</TableHeaderCell>
-            <TableHeaderCell>{t('contracts.table.col.status')}</TableHeaderCell>
-            <TableHeaderCell className="text-right">{t('contracts.table.col.actions')}</TableHeaderCell>
-          </TableHeader>
-          <tbody>
-            {filtered.map((c) => {
-              const supplier = supplierById.get(c.supplierId);
-              return (
-                <TableRow
-                  key={c.id}
-                  className="cursor-pointer"
-                  onClick={() => openContract(c)}
-                >
-                  <TableCell>
-                    <Data as="div" className="font-semibold text-text-primary">
-                      {c.contractNumber}
-                    </Data>
-                    <div className="text-xs text-text-tertiary mt-0.5 max-w-[18rem] truncate">
-                      {c.title}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="text-sm text-text-primary">
-                      {supplier?.name ?? c.supplierId}
-                    </div>
-                    {supplier && (
-                      <div className="text-xs text-text-tertiary mt-0.5">
-                        {COUNTRY_FLAG[supplier.country] ?? supplier.country}
-                      </div>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <StatusPill variant="neutral">{typeLabel(t, c.type)}</StatusPill>
-                  </TableCell>
-                  <TableCell>
-                    <div className="text-sm text-text-secondary whitespace-nowrap">
-                      <Data>{formatDate(c.startDate)}</Data> →{' '}
-                      <Data>{formatDate(c.endDate)}</Data>
-                    </div>
-                    {c.autoRenewal && (
-                      <div className="text-xs text-info mt-0.5 inline-flex items-center gap-1">
-                        <RefreshCw size={10} /> {t('contracts.table.autoRenew')}
-                      </div>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <ExpiryCell
-                      days={daysUntil(c.endDate, nowIso)}
-                      display={displayOf(c)}
-                    />
-                  </TableCell>
-                  <TableCell className="text-right font-semibold text-text-primary whitespace-nowrap">
-                    <Data>{c.value > 0 ? formatIDR(c.value) : '—'}</Data>
-                  </TableCell>
-                  <TableCell>
-                    {c.performanceScore > 0 ? (
-                      <div className="w-32">
-                        <ScoreBadge
-                          score={c.performanceScore}
-                          size="sm"
-                          variant="bar"
-                        />
-                      </div>
-                    ) : (
-                      <span className="text-xs text-text-tertiary">—</span>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <StatusPill variant={STATUS_VARIANT[displayOf(c)]}>
-                      {displayOf(c)}
-                    </StatusPill>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <ChevronRight
-                      size={16}
-                      className="text-text-tertiary inline-block"
-                    />
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-            {filtered.length === 0 && (
-              <tr>
-                <td
-                  colSpan={9}
-                  className="text-center text-sm text-text-tertiary py-10"
-                >
-                  {t('contracts.table.empty')}
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </Table>
-      </div>
+      }
+    >
+      <DataTable
+        className="mb-8"
+        columns={columns}
+        rows={filtered}
+        rowKey={(c) => c.id}
+        onRowClick={(c) => openContract(c)}
+        empty={t('contracts.table.empty')}
+      />
 
       {/* Renewal pipeline */}
       <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm overflow-hidden">
@@ -1643,7 +1641,7 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
           />
         </div>
       )}
-    </AppShellV2>
+    </ListPage>
   );
 };
 

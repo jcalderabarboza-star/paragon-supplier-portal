@@ -159,7 +159,7 @@ describe('⚠️ IT RENDERS, AND NOTHING IN THE LIST WAS TOUCHED TO MAKE IT', ()
     await grantOne();
     renderWithProviders(<RolesCatalogue />, { identity: BUYER });
     await screen.findByTestId('roles-table');
-    const box = screen.getByTestId('roles-search');
+    const box = within(screen.getByTestId('roles-search')).getByRole('textbox');
     const { fireEvent } = await import('@testing-library/react');
     fireEvent.change(box, { target: { value: 'night' } });
     expect(await screen.findByTestId(`role-row-${ID}`)).toBeInTheDocument();

@@ -192,8 +192,10 @@ export function inRenewalHorizon(
  * cell.
  */
 export const CONTRACT_EXPIRY_TONE: Record<ContractDisplayStatus, string> = {
-  Expired: 'text-critical font-semibold',
-  Expiring: 'text-warning-hover font-semibold',
+  // UI-1b: colour only. The weight was the page dressing a table cell; the
+  // state is said by the colour, and the cell's type is the column kind's.
+  Expired: 'text-critical',
+  Expiring: 'text-warning-hover',
   Active: 'text-success',
   Renewed: 'text-success',
   Draft: 'text-text-tertiary',

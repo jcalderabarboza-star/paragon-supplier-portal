@@ -57,8 +57,15 @@
 
 /* ─── Global Reset ───────────────────────────────────────────────────────────── */
 
-* {
+/* UI-1b: the family is set ONCE, on the root, and inherits. It was set on `*`,
+   which gave every element its own sans — so a mono table column lost its face
+   on anything the page wrapped in a plain tag, and each such cell then had to
+   say `font-mono` for itself. That is how the lists drifted apart. */
+html {
   font-family: var(--font-sans);
+}
+
+* {
   box-sizing: border-box;
 }
 

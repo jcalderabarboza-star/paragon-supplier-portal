@@ -7,9 +7,6 @@ import {
   UserPlus,
   ChevronRight,
 } from 'lucide-react';
-import AppShellV2 from '../components/layout-v2/AppShellV2';
-import PageHeader from '../components/ui-v2/PageHeader';
-import PageMetaLine from '../components/ui-v2/PageMetaLine';
 import ProvenanceMarker from '../components/ui-v2/ProvenanceMarker';
 import BulkActionsBar from '../components/ui-v2/BulkActionsBar';
 import SubTabs from '../components/ui-v2/SubTabs';
@@ -17,10 +14,8 @@ import FilterChipsBar from '../components/ui-v2/FilterChipsBar';
 import SearchBar from '../components/ui-v2/SearchBar';
 import StatusPill from '../components/ui-v2/StatusPill';
 import { statusTone } from '../lib/statusTone';
-import Table from '../components/ui-v2/Table';
-import TableHeader, { TableHeaderCell } from '../components/ui-v2/TableHeader';
-import TableRow from '../components/ui-v2/TableRow';
-import TableCell from '../components/ui-v2/TableCell';
+import DataTable, { CellSub, type Column } from '../components/ui-v2/DataTable';
+import ListPage from '../components/ui-v2/ListPage';
 import Data from '../components/ui-v2/Data';
 import LoadingState from '../components/ui-v2/LoadingState';
 import ErrorState from '../components/ui-v2/ErrorState';
@@ -162,10 +157,109 @@ const BuyerSuppliers: React.FC = () => {
       />
     );
 
+  const columns: Column<(typeof filtered)[number]>[] = [
+    {
+      id: 'supplier',
+      header: t('buyerSuppliers.col.supplier'),
+      kind: 'text',
+      cell: (s) => (
+        <>
+          {/* ⚠️ A REAL ANCHOR, NOT A `<tr onClick>`. This row carried
+              `onClick={() => navigate(...)}`, which is invisible to the
+              keyboard, to "open in a new tab" and to a screen reader's
+              link list — `RecordRowLink`'s own header names that defect
+              and the Directory was still carrying it. The row gains
+              `relative` (via `rowProps`) because the anchor stretches over
+              the row; that is the component's one stated obligation on its
+              caller. */}
+          <RecordRowLink
+            path="/buyer/suppliers"
+            href={`/buyer/suppliers/${s.id}`}
+            id={s.id}
+            label={s.name}
+          />
+          <CellSub>{s.sapBpNumber}</CellSub>
+        </>
+      ),
+    },
+    {
+      id: 'country',
+      header: t('buyerSuppliers.col.country'),
+      kind: 'text',
+      cell: (s) => (
+        <>
+          {COUNTRY_FLAG[s.country] ?? s.country} · {s.city}
+        </>
+      ),
+    },
+    {
+      id: 'tier',
+      header: t('buyerSuppliers.col.tier'),
+      kind: 'text',
+      cell: (s) => TIER_LABEL[s.tier],
+    },
+    {
+      id: 'category',
+      header: t('buyerSuppliers.col.category'),
+      kind: 'text',
+      cell: (s) => cl(s.category),
+    },
+    {
+      id: 'compliance',
+      header: t('buyerSuppliers.col.compliance'),
+      kind: 'status',
+      cell: (s) => (
+        <div className="flex flex-wrap gap-1.5">
+          {s.halalCertified && (
+            <StatusPill variant="success">Halal</StatusPill>
+          )}
+          {s.bpomRegistered && (
+            <StatusPill variant="info">BPOM</StatusPill>
+          )}
+          {!s.halalCertified && !s.bpomRegistered && (
+            <StatusPill variant="neutral">None</StatusPill>
+          )}
+        </div>
+      ),
+    },
+    {
+      // ⚠️ THE PSL CELL READS LISTING DATA, NEVER `s.halalCertified`.
+      // The boolean beside it is a SECOND, coarser compliance
+      // vocabulary (one flag per supplier for a supplier × material ×
+      // clock fact); reading it here would hand the PSL column a
+      // third one. Ruling 6: retire nothing, and do not join to it.
+      id: 'psl',
+      header: t('psl.col.header'),
+      kind: 'status',
+      cell: (s) => <PslStatusCell standing={pslBySupplier.get(s.id)!} />,
+    },
+    {
+      id: 'otif',
+      header: t('buyerSuppliers.col.otif'),
+      kind: 'number',
+      cell: (s) => <Data>{s.otif}%</Data>,
+    },
+    {
+      id: 'status',
+      header: t('buyerSuppliers.col.status'),
+      kind: 'status',
+      cell: (s) => (
+        <StatusPill variant={statusTone(s.status)}>{s.status}</StatusPill>
+      ),
+    },
+    {
+      id: 'actions',
+      header: t('buyerSuppliers.col.actions'),
+      kind: 'actions',
+      cell: () => (
+        <ChevronRight size={16} className="text-text-tertiary inline-block" />
+      ),
+    },
+  ];
+
   return (
-    <AppShellV2>
-      <PageHeader
-        breadcrumb={SUPPLIERS_CRUMB}
+    <ListPage
+      breadcrumb={SUPPLIERS_CRUMB}
         title={t('buyerSuppliers.header.title')}
         subtitle={t('buyerSuppliers.header.subtitle')}
         actions={
@@ -214,38 +308,38 @@ const BuyerSuppliers: React.FC = () => {
             }}
           />
         }
-      />
-
-      <PageMetaLine className="-mt-6 mb-6">
-        {counts.total === 1
-          ? t('buyerSuppliers.meta.records.one', { count: counts.total })
-          : t('buyerSuppliers.meta.records.other', { count: counts.total })}{' '}
-        · {t('buyerSuppliers.meta.lastUpdated')} <Data>{lastUpdated}</Data>
-        {/* D-CENSUS-8 — supplier master carried NO marker while the transactional
-            lanes all wore one, so the least-real surface read as the most
-            trustworthy. `suppliers` is null-backed → feed axis only, no verb axis. */}
-        <ProvenanceMarker capability="suppliers" className="ml-3 align-middle" />
-      </PageMetaLine>
-
-      <SubTabs
-        options={[
-          {
-            id: 'suppliers',
-            label: t('buyerSuppliers.tab.suppliers'),
-            count: counts.total,
-          },
-          {
-            id: 'invitations',
-            label: t('buyerSuppliers.tab.invitations'),
-            count: 3,
-          },
-        ]}
-        value={group}
-        onChange={setGroup}
-        className="mb-5"
-      />
-
-      <div className="flex items-center justify-between gap-4 mb-4">
+      meta={
+        <>
+          {counts.total === 1
+            ? t('buyerSuppliers.meta.records.one', { count: counts.total })
+            : t('buyerSuppliers.meta.records.other', { count: counts.total })}{' '}
+          · {t('buyerSuppliers.meta.lastUpdated')} <Data>{lastUpdated}</Data>
+          {/* D-CENSUS-8 — supplier master carried NO marker while the transactional
+              lanes all wore one, so the least-real surface read as the most
+              trustworthy. `suppliers` is null-backed → feed axis only, no verb axis. */}
+          <ProvenanceMarker capability="suppliers" className="ml-3 align-middle" />
+        </>
+      }
+      tabs={
+        <SubTabs
+          options={[
+            {
+              id: 'suppliers',
+              label: t('buyerSuppliers.tab.suppliers'),
+              count: counts.total,
+            },
+            {
+              id: 'invitations',
+              label: t('buyerSuppliers.tab.invitations'),
+              count: 3,
+            },
+          ]}
+          value={group}
+          onChange={setGroup}
+        />
+      }
+      filters={
+        <>
         <FilterChipsBar
           options={[
             {
@@ -277,122 +371,25 @@ const BuyerSuppliers: React.FC = () => {
           value={pslFilter}
           onChange={setPslFilter}
         />
-      </div>
-
-      <div className="mb-4">
+        </>
+      }
+      search={
         <SearchBar
           value={search}
           onChange={setSearch}
           placeholder={t('buyerSuppliers.search.placeholder')}
         />
-      </div>
+      }
+    >
 
-      <div className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm overflow-hidden">
-        <Table>
-          <TableHeader>
-            <TableHeaderCell>{t('buyerSuppliers.col.supplier')}</TableHeaderCell>
-            <TableHeaderCell>{t('buyerSuppliers.col.country')}</TableHeaderCell>
-            <TableHeaderCell>{t('buyerSuppliers.col.tier')}</TableHeaderCell>
-            <TableHeaderCell>{t('buyerSuppliers.col.category')}</TableHeaderCell>
-            <TableHeaderCell>{t('buyerSuppliers.col.compliance')}</TableHeaderCell>
-            <TableHeaderCell>{t('psl.col.header')}</TableHeaderCell>
-            <TableHeaderCell className="text-right">
-              {t('buyerSuppliers.col.otif')}
-            </TableHeaderCell>
-            <TableHeaderCell>{t('buyerSuppliers.col.status')}</TableHeaderCell>
-            <TableHeaderCell className="text-right">
-              {t('buyerSuppliers.col.actions')}
-            </TableHeaderCell>
-          </TableHeader>
-          <tbody>
-            {filtered.map((s) => (
-              <TableRow key={s.id} className="relative cursor-pointer">
-                <TableCell>
-                  {/* ⚠️ A REAL ANCHOR, NOT A `<tr onClick>`. This row carried
-                      `onClick={() => navigate(...)}`, which is invisible to the
-                      keyboard, to "open in a new tab" and to a screen reader's
-                      link list — `RecordRowLink`'s own header names that defect
-                      and the Directory was still carrying it. `TableRow` gains
-                      `relative` because the anchor stretches over the row; that
-                      is the component's one stated obligation on its caller. */}
-                  <div className="font-semibold text-text-primary">
-                    <RecordRowLink
-                      path="/buyer/suppliers"
-                      href={`/buyer/suppliers/${s.id}`}
-                      id={s.id}
-                      label={s.name}
-                    />
-                  </div>
-                  <Data as="div" className="text-xs text-text-tertiary mt-0.5">
-                    {s.sapBpNumber}
-                  </Data>
-                </TableCell>
-                <TableCell>
-                  <span className="text-sm text-text-secondary">
-                    {COUNTRY_FLAG[s.country] ?? s.country} · {s.city}
-                  </span>
-                </TableCell>
-                <TableCell>
-                  <span className="text-sm text-text-secondary">
-                    {TIER_LABEL[s.tier]}
-                  </span>
-                </TableCell>
-                <TableCell>
-                  <span className="text-sm text-text-secondary">
-                    {cl(s.category)}
-                  </span>
-                </TableCell>
-                <TableCell>
-                  <div className="flex flex-wrap gap-1.5">
-                    {s.halalCertified && (
-                      <StatusPill variant="success">Halal</StatusPill>
-                    )}
-                    {s.bpomRegistered && (
-                      <StatusPill variant="info">BPOM</StatusPill>
-                    )}
-                    {!s.halalCertified && !s.bpomRegistered && (
-                      <StatusPill variant="neutral">None</StatusPill>
-                    )}
-                  </div>
-                </TableCell>
-                {/* ⚠️ THE PSL CELL READS LISTING DATA, NEVER `s.halalCertified`.
-                    The boolean beside it is a SECOND, coarser compliance
-                    vocabulary (one flag per supplier for a supplier × material ×
-                    clock fact); reading it here would hand the PSL column a
-                    third one. Ruling 6: retire nothing, and do not join to it. */}
-                <TableCell>
-                  <PslStatusCell standing={pslBySupplier.get(s.id)!} />
-                </TableCell>
-                <TableCell className="text-right font-semibold text-text-primary">
-                  <Data>{s.otif}%</Data>
-                </TableCell>
-                <TableCell>
-                  <StatusPill variant={statusTone(s.status)}>
-                    {s.status}
-                  </StatusPill>
-                </TableCell>
-                <TableCell className="text-right">
-                  <ChevronRight
-                    size={16}
-                    className="text-text-tertiary inline-block"
-                  />
-                </TableCell>
-              </TableRow>
-            ))}
-            {filtered.length === 0 && (
-              <tr>
-                <td
-                  colSpan={9}
-                  className="text-center text-sm text-text-tertiary py-10"
-                >
-                  {t('buyerSuppliers.table.noMatch')}
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </Table>
-      </div>
-    </AppShellV2>
+      <DataTable
+        columns={columns}
+        rows={filtered}
+        rowKey={(s) => s.id}
+        rowProps={() => ({ className: 'relative cursor-pointer' })}
+        empty={t('buyerSuppliers.table.noMatch')}
+      />
+    </ListPage>
   );
 };
 
