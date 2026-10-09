@@ -72,7 +72,13 @@ export const pslCapSettingFlow: FlowDefinition = {
       requiredRole: 'psl:cap-set',
       // `setBy` left this list with `t_enforcement_set`'s, and for its reason.
       requiredFields: ['days'],
-      policyHooks: [POLICY_HOOKS.PSL_DEFAULT_CAP_WITHIN_CEILING],
+      // FIN-1 - a seat that names nobody is refused FIRST, by name: the entry
+      // is recorded under `setBy`, and an entry against nobody is a decision
+      // on the ledger that no one took.
+      policyHooks: [
+        POLICY_HOOKS.PSL_CAP_SETTER_NAMED,
+        POLICY_HOOKS.PSL_DEFAULT_CAP_WITHIN_CEILING,
+      ],
       surfaceable: {
         surfaced: false,
         because: 'ruled-unsurfaced',

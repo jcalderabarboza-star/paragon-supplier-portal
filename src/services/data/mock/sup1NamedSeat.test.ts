@@ -73,6 +73,12 @@ const RULED: ReadonlyArray<{ hook: PolicyHookId; head: string; verbs: readonly s
     head: 'INVENTORY_RECORDER_UNATTRIBUTED',
     verbs: ['t_inventorydeclaration_record'],
   },
+  // FIN-1 - the portal default cap, ruled with the six and landed after.
+  {
+    hook: POLICY_HOOKS.PSL_CAP_SETTER_NAMED,
+    head: 'PSL_CAP_SETTER_UNATTRIBUTED',
+    verbs: ['t_psl_cap_set'],
+  },
 ];
 
 /** Proposing, raising, picking up and the supplier's own acts stay open. */
@@ -135,7 +141,7 @@ describe('SUP-1 · which verbs need a named person — derived from the flows', 
     }
   });
 
-  it('the six in the surface key map are the six ruled, and no seventh', () => {
+  it('the hooks in the surface key map are exactly the ruled ones', () => {
     expect([...NAMED_SEAT_HOOKS].sort()).toEqual(RULED.map((r) => r.hook).sort());
   });
 

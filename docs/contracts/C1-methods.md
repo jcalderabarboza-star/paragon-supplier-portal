@@ -328,6 +328,16 @@ targets). They measure different things; this file keeps them separate.
 > `UNATTRIBUTED`, or that records no approver, is not guarded:** its release is admitted from any
 > seat holding `invoice:pay`. Approval itself has no new refusal.
 >
+> **RE-HARVEST (2026-10-08, FIN-1).** The portal default validity cap needs a named person. No
+> figure moved: service surface, catalog, flows and wired targets are as SUP-1 left them. One policy
+> hook is new. **`t_psl_cap_set` GAINED `psl_cap_setter_named`**, evaluated FIRST, before
+> `psl_default_cap_within_ceiling`. One refusal, `PSL_CAP_SETTER_UNATTRIBUTED`: the commanding
+> scope's `actor` is absent or `UNATTRIBUTED`. A `RESOLVED` actor is admitted, a sample person
+> included. The reason names nobody. On a refusal nothing is appended to the ledger, and the days
+> are not examined. **A LEDGER ENTRY'S `setBy` IS THEREFORE ALWAYS A NAMED PERSON** from this batch
+> on. The verb still has no caller on any surface. This closes the one deciding verb the SUP-1
+> block below lists as open; the other verbs in that list are unchanged.
+>
 > **RE-HARVEST (2026-10-08, SUP-1).** A named person decides. No figure moved: service surface,
 > catalog, flows and wired targets are as OPS-3 left them. Six policy hooks are new, each evaluated
 > FIRST on its verbs, and each with one refusal: the commanding scope's `actor` is absent or
@@ -346,7 +356,7 @@ targets). They measure different things; this file keeps them separate.
 > `t_inventorydeclaration_record`.
 > **NOT CHANGED, AND STILL OPEN TO A SEAT THAT NAMES NOBODY:** `t_application_submit`,
 > `t_application_start_review`, `t_supplierdoc_declare`, `t_supplierdoc_submit`, `t_psl_propose`,
-> `t_psl_cap_set`, `t_materialrequest_submit`, `t_materialrequest_start_review`,
+> `t_psl_cap_set` (**closed at FIN-1, below**), `t_materialrequest_submit`, `t_materialrequest_start_review`,
 > `t_inventorydeclaration_declare`.
 > **THE TWO FOUR-EYES HOOKS NOW HAVE A NAMED DECIDER TO COMPARE.** `psl_decider_not_proposer` and
 > `materialrequest_decider_not_requester` are unchanged; they refuse when the proposer or requester

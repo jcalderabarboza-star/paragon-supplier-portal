@@ -59,7 +59,8 @@ const COMPLIANCE: QueryScope = {
 // runs first on the seven deciding verbs), so those verbs are dispatched from
 // the two seats below. The roles are the lanes' own, unchanged; only the actor
 // differs, and it is read off the roster. `PROCUREMENT` and `COMPLIANCE` stay
-// unnamed for the proposal and for `t_psl_cap_set`, which the hook is not on.
+// unnamed for the proposal. FIN-1: `t_psl_cap_set` needs a named person too
+// (`PSL_CAP_SETTER_NAMED`), so the cap is set from `DECIDER`.
 /** The deciding lane, acting as a named sample person. */
 const DECIDER: QueryScope = {
   ...COMPLIANCE,
@@ -606,9 +607,9 @@ describe('t_psl_cap_override — the per-listing cap, and the ceiling BOTH WAYS'
 // ─────────────────────────────────────────────────────────────────────────────
 describe('t_psl_cap_set — the PORTAL DEFAULT, and what it makes true', () => {
   const setting = (days: number): Promise<CommandResult> =>
-    // The actor rides the SCOPE, not the payload (C10 §6.2 / R-PAYLOAD). The
-    // recorded value is unchanged — `COMPLIANCE` already carries `NO_PERSON`.
-    commands.dispatch(COMPLIANCE, {
+    // The actor rides the SCOPE, not the payload (C10 §6.2 / R-PAYLOAD).
+    // FIN-1: a named compliance person, because an unnamed seat is refused.
+    commands.dispatch(DECIDER, {
       transitionId: 't_psl_cap_set',
       entity: 'pslCapSetting',
       entityId: PSL_DEFAULT_CAP_SETTING_ID,
@@ -621,6 +622,33 @@ describe('t_psl_cap_set — the PORTAL DEFAULT, and what it makes true', () => {
     expect(pslCapSettingStore.all()).toHaveLength(1);
     expect(pslCapSettingStore.all()[0].days).toBe(200);
     expect(pslCapSettingStore.all()[0].setAt.length).toBeGreaterThan(10);
+  });
+
+  it('FIN-1 — the entry names the person who set it', async () => {
+    await setting(200);
+    expect(pslCapSettingStore.all()[0].setBy).toEqual(DECIDER.actor);
+  });
+
+  it('FIN-1 — a seat that names nobody is refused by name, and nothing is recorded', async () => {
+    const r = await commands.dispatch(COMPLIANCE, {
+      transitionId: 't_psl_cap_set',
+      entity: 'pslCapSetting',
+      entityId: PSL_DEFAULT_CAP_SETTING_ID,
+      payload: { days: 200 },
+    });
+    expect(r.status).toBe('failed');
+    expect(r.reason).toContain('POLICY_REJECTED:psl_cap_setter_named:PSL_CAP_SETTER_UNATTRIBUTED');
+    expect(pslCapSettingStore.all()).toEqual([]);
+    // The named refusal comes before the ceiling check: an unnamed seat asking
+    // for too many days is told about the seat, not about the days.
+    const over = await commands.dispatch(COMPLIANCE, {
+      transitionId: 't_psl_cap_set',
+      entity: 'pslCapSetting',
+      entityId: PSL_DEFAULT_CAP_SETTING_ID,
+      payload: { days: PSL_CAP_CEILING_DAYS + 1 },
+    });
+    expect(over.reason).toContain('PSL_CAP_SETTER_UNATTRIBUTED');
+    expect(over.reason).not.toContain('PSL_DEFAULT_CAP_ABOVE_CEILING');
   });
 
   it('⚠️ AND IT MAKES `NO_SETTING_RECORDED` MEAN WHAT IT SAYS — the whole point of P3', async () => {
@@ -650,7 +678,7 @@ describe('t_psl_cap_set — the PORTAL DEFAULT, and what it makes true', () => {
     // never run its assertion and would pass on the rejection.
     let code = 'NOT_REFUSED';
     try {
-      await commands.dispatch(COMPLIANCE, {
+      await commands.dispatch(DECIDER, {
         transitionId: 't_psl_cap_set',
         entity: 'pslCapSetting',
         entityId: 'psl.not_a_setting',

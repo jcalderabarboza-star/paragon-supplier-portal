@@ -279,12 +279,7 @@ const SupplierDashboard: React.FC = () => {
     () =>
       MY_POS.filter((po) => {
         if (po.status !== POStatus.CONFIRMED) return false;
-        const delivery = new Date(po.requestedDeliveryDate);
-        const today = new Date(TODAY);
-        const daysLeft = Math.ceil(
-          (delivery.getTime() - today.getTime()) / 86_400_000,
-        );
-        return daysLeft <= 7;
+        return (daysUntil(po.requestedDeliveryDate, TODAY) ?? 0) <= 7;
       }),
     [MY_POS],
   );
@@ -340,8 +335,8 @@ const SupplierDashboard: React.FC = () => {
         ? 'Needs Attention'
         : 'At Risk';
 
-  // i18n-defer: mock/sample data — the briefing is badged "Sample data"; these
-  // action titles/descs/badges/labels are fixture narratives, kept EN by design.
+  // FIN-1 - every action below is translated. The note that stood here kept the
+  // ship-notice and profile actions in English as "fixture narratives".
   const allActions: ActionItem[] = [
     // SUP-2 - built from this supplier's own orders, and absent when none
     // awaits confirmation. No "overdue" hours: nothing here records when an
@@ -432,22 +427,43 @@ const SupplierDashboard: React.FC = () => {
           },
         ]
       : [],
+    // FIN-1 - the badge used to print the raw difference, so an order whose
+    // requested date had passed read "Delivery in -517d". Counted from the
+    // declared present, with one sentence for ahead, one for today and one for
+    // passed. Translated: it reads this supplier's own order.
     ...asnDueOrders.map((po) => {
-      const days = Math.ceil(
-        (new Date(po.requestedDeliveryDate).getTime() - new Date(TODAY).getTime()) /
-          86_400_000,
-      );
+      const days = daysUntil(po.requestedDeliveryDate, nowIso) ?? 0;
       return {
         id: `asn-${po.id}`,
         Icon: Truck,
         iconClass: 'text-teal',
         iconBg: 'bg-teal-soft',
-        title: `Create ASN for ${po.poNumber}`,
-        badge: `Delivery in ${days}d`,
-        badgeVariant: 'info' as const,
-        desc: `${po.supplierName} · ${fmtDate(po.requestedDeliveryDate)} — ASN must be submitted before delivery`,
+        title: t('supplierDashboard.briefing.asn.title', { po: po.poNumber }),
+        badge:
+          days > 0
+            ? t(
+                days === 1
+                  ? 'supplierDashboard.briefing.asn.badgeAhead.one'
+                  : 'supplierDashboard.briefing.asn.badgeAhead.other',
+                { count: days },
+              )
+            : days === 0
+              ? t('supplierDashboard.briefing.asn.badgeToday')
+              : t(
+                  days === -1
+                    ? 'supplierDashboard.briefing.asn.badgePassed.one'
+                    : 'supplierDashboard.briefing.asn.badgePassed.other',
+                  { count: -days },
+                ),
+        badgeVariant: days < 0 ? ('warning' as const) : ('info' as const),
+        desc: t(
+          days < 0
+            ? 'supplierDashboard.briefing.asn.descPassed'
+            : 'supplierDashboard.briefing.asn.desc',
+          { date: fmtDate(po.requestedDeliveryDate) },
+        ),
         primary: true,
-        btnLabel: 'Create ASN',
+        btnLabel: t('supplierDashboard.briefing.asn.cta'),
         time: '~5 min',
       };
     }),
@@ -456,12 +472,12 @@ const SupplierDashboard: React.FC = () => {
       Icon: User,
       iconClass: 'text-teal',
       iconBg: 'bg-teal-soft',
-      title: 'Complete company profile',
-      badge: 'When ready',
+      title: t('supplierDashboard.briefing.profile.title'),
+      badge: t('supplierDashboard.briefing.profile.badge'),
       badgeVariant: 'neutral',
-      desc: 'Add bank account details and payment preferences to enable Net 15 payment terms',
+      desc: t('supplierDashboard.briefing.profile.desc'),
       primary: false,
-      btnLabel: 'Update profile',
+      btnLabel: t('supplierDashboard.briefing.profile.cta'),
       time: '~10 min',
     },
   ];

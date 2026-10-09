@@ -743,7 +743,7 @@ describe('THE LEGITIMATE PATHS — the half a "refuse everyone" fix would break'
     // PSL P3 — the cap ledger. A degenerate single-state machine like the
     // enforcement one, so the landing is an APPEND rather than a state change:
     // the ledger grows and the state is where it always was.
-    const capped = await svc.dispatch(buyerSeat('compliance'), {
+    const capped = await svc.dispatch(named('compliance'), {
       transitionId: 't_psl_cap_set', entity: 'pslCapSetting',
       entityId: PSL_SETTING_IDS[0],
       payload: { days: 200 },

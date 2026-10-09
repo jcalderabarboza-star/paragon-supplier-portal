@@ -1009,6 +1009,10 @@ export const POLICY_HOOKS = {
   ROLE_GRANTER_NAMED: 'role_granter_named',
   /** A buyer recording a supplier's stock on the supplier's behalf. */
   INVENTORY_RECORDER_NAMED: 'inventory_recorder_named',
+  /** FIN-1 - the portal default validity cap (`t_psl_cap_set`). Ruled with the
+   *  six above and landed after them: whoever sets the default bounds every
+   *  listing without a cap of its own, so the ledger entry names a person. */
+  PSL_CAP_SETTER_NAMED: 'psl_cap_setter_named',
 } as const;
 
 for (const name of Object.values(POLICY_HOOKS)) registerPolicyHook(name);
