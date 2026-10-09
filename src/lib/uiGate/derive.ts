@@ -445,3 +445,73 @@ export function derivedFieldType(): Record<string, string[]> {
   }
   return out;
 }
+
+// ── forms (UI-1c-2) ──────────────────────────────────────────────────────────
+//
+// A form control is `TextInput`, `Select`, `TextArea`, `Checkbox` or `Radio`;
+// a label is `FormField` or `FieldLabel` (`components/ui-v2/Form.tsx`). They own
+// the box, the height and the type — 40px, one border, one label. So outside
+// `components/ui-v2/`:
+//
+//   · no `<input>`, `<select>`, `<textarea>` or `<label>` is written by hand
+//   · what a page passes as `className` to a shared form component sets no
+//     height, size, weight, family, case, colour, border or radius
+//
+// An `<input>` that is not a form control in this sense is not counted: a file
+// picker, a hidden field, a range slider, a colour swatch.
+
+const RAW_CONTROL = /<(input|select|textarea|label)\b([^>]*)>/g;
+const NOT_A_CONTROL = /type=(?:"|'|\{['"])(?:file|hidden|range|color)/;
+
+export function rawControlCount(text: string): number {
+  let n = 0;
+  for (const m of text.matchAll(RAW_CONTROL)) {
+    if (m[1] === 'input' && NOT_A_CONTROL.test(m[2])) continue;
+    n += 1;
+  }
+  return n;
+}
+
+export const derivedRawControls = (): Record<string, number> => derivedRaw(rawControlCount);
+
+const FORM_COMPONENTS = new Set(['TextInput', 'Select', 'TextArea', 'Checkbox', 'Radio', 'FormField', 'FieldLabel']);
+/** What a shared form component owns besides its type: its box. */
+const CONTROL_BOX_TOKEN = new RegExp(
+  B + String.raw`(?:h-(?:\d+|\[[^\]]+\])|min-h-(?:\d+|\[[^\]]+\])|py-[\d.]+|rounded(?:-(?:[a-z0-9]+|\[[^\]]+\]))?|border(?:-[a-z0-9/-]+)?|bg-[a-z0-9/-]+)` + E,
+  'g',
+);
+
+/** `"<Component> · <token>"` for every dressing class a page passed to a shared form component. */
+export function formDressFindings(text: string, fileName = 'x.tsx'): string[] {
+  if (!/<(?:TextInput|Select|TextArea|Checkbox|Radio|FormField|FieldLabel)[\s/>]/.test(text)) return [];
+  if (!/from\s+['"][^'"]*ui-v2\/Form['"]/.test(text)) return [];
+  const sf = ts.createSourceFile(fileName, text, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+  const out: string[] = [];
+  const walk = (n: ts.Node): void => {
+    if (ts.isJsxOpeningElement(n) || ts.isJsxSelfClosingElement(n)) {
+      const tag = n.tagName.getText(sf);
+      if (FORM_COMPONENTS.has(tag)) {
+        for (const attr of n.attributes.properties) {
+          if (ts.isJsxAttribute(attr) && attr.name.getText(sf) === 'className' && attr.initializer) {
+            const cls = attr.initializer.getText(sf);
+            for (const m of cls.match(CELL_TYPE_TOKEN) ?? []) out.push(`${tag} · ${m}`);
+            for (const m of cls.match(CONTROL_BOX_TOKEN) ?? []) out.push(`${tag} · ${m}`);
+          }
+        }
+      }
+    }
+    ts.forEachChild(n, walk);
+  };
+  walk(sf);
+  return out;
+}
+
+export function derivedFormDress(): Record<string, string[]> {
+  const out: Record<string, string[]> = {};
+  for (const f of shippedFiles()) {
+    if (!f.file.endsWith('.tsx') || f.file.startsWith(SHARED_UI)) continue;
+    const found = formDressFindings(f.text, f.file);
+    if (found.length > 0) out[f.file] = found;
+  }
+  return out;
+}

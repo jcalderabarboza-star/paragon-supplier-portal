@@ -25,6 +25,10 @@ import {
   derivedCellType,
   derivedColour,
   derivedFieldType,
+  derivedFormDress,
+  derivedRawControls,
+  formDressFindings,
+  rawControlCount,
   derivedRawFields,
   derivedRawHeadings,
   fieldTypeFindings,
@@ -356,6 +360,62 @@ describe('UI gate 6 · fields and headings', () => {
 
   it('no field or heading in the tree dresses itself', () => {
     expect(derivedFieldType()).toEqual({});
+  });
+});
+
+describe('UI gate 7 · forms', () => {
+  it('reads a hand-written control and label, across lines, and not the shared ones', () => {
+    expect(rawControlCount('<label className="text-xs">A<input\n  type="text"\n  className="h-9 border"\n/></label>')).toBe(2);
+    expect(rawControlCount('<select value={v}><option>a</option></select><textarea rows={3} />')).toBe(2);
+    expect(rawControlCount('<FormField label="A"><TextInput /></FormField><Select /><TextArea /><Checkbox>x</Checkbox>')).toBe(0);
+  });
+
+  it('does not count an input that is not a form control', () => {
+    expect(rawControlCount('<input type="file" ref={ref} className="hidden" /><input type="hidden" name="x" />')).toBe(0);
+    expect(rawControlCount('<input type={"file"} /><input type="range" min={0} />')).toBe(0);
+    // …and does count a checkbox or a radio written by hand
+    expect(rawControlCount('<input type="checkbox" checked={c} /><input type="radio" />')).toBe(2);
+  });
+
+  const withImport = (jsx: string): string => `import { TextInput } from '../components/ui-v2/Form';\nconst x = ${jsx};`;
+
+  it('accepts a control that leaves its box and type alone', () => {
+    expect(formDressFindings(withImport('<TextInput className="w-32 flex-1" mono />'))).toEqual([]);
+    expect(formDressFindings(withImport('<FormField label="A" className="col-span-2 mt-3"><Select className="max-w-xs" /></FormField>'))).toEqual([]);
+  });
+
+  it('rejects what the forms really carried', () => {
+    // the roles search: its own height, radius and border
+    expect(formDressFindings(withImport('<TextInput className="h-[38px] rounded-[10px] border border-border-input" />'))).toEqual([
+      'TextInput · h-[38px]',
+      'TextInput · rounded-[10px]',
+      'TextInput · border',
+      'TextInput · border-border-input',
+    ]);
+    // a compact control in a wizard
+    expect(formDressFindings(withImport('<Select className="h-8 text-xs py-1" />'))).toEqual([
+      'Select · text-xs',
+      'Select · h-8',
+      'Select · py-1',
+    ]);
+    // a label dressed by hand
+    expect(formDressFindings(withImport('<FormField label="A" className="text-[10px] uppercase text-text-tertiary"><TextInput /></FormField>'))).toEqual([
+      'FormField · text-[10px]',
+      'FormField · uppercase',
+      'FormField · text-text-tertiary',
+    ]);
+  });
+
+  it('judges only the shared components, not a page-local helper of the same name', () => {
+    expect(formDressFindings('const Select = (p) => <div />;\nconst x = <Select className="h-8 text-xs" />;')).toEqual([]);
+  });
+
+  it('no form control or label in the tree is written by hand', () => {
+    expect(derivedRawControls()).toEqual({});
+  });
+
+  it('no page dresses a shared form component', () => {
+    expect(derivedFormDress()).toEqual({});
   });
 });
 
