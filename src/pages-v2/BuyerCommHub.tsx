@@ -132,10 +132,10 @@ const BuyerCommHub: React.FC = () => {
       </PageMetaLine>
 
       {/* Honest framing — no live channel; nothing is sent from here. */}
-      <div className="bg-warning-soft border border-warning/30 rounded-lg px-4 py-3 mb-6 text-sm text-text-primary flex items-start gap-2">
-        <Info size={16} className="text-warning-hover shrink-0 mt-0.5" aria-hidden="true" />
+      <div className="bg-sample-soft border border-dashed border-sample-border rounded-lg px-4 py-3 mb-6 text-sm text-text-primary flex items-start gap-2">
+        <Info size={16} className="text-sample shrink-0 mt-0.5" aria-hidden="true" />
         <div>
-          <div className="font-semibold text-warning-hover">{t('buyerCommHub.honesty.title')}</div>
+          <div className="font-semibold text-sample">{t('buyerCommHub.honesty.title')}</div>
           <p className="mt-0.5 text-text-secondary">{t('buyerCommHub.honesty.body')}</p>
         </div>
       </div>
@@ -169,8 +169,8 @@ const BuyerCommHub: React.FC = () => {
                     {t(`buyerCommHub.status.${entry.status}`)}
                   </StatusPill>
                   {/* Honesty: no transport — every ask reads composed, never sent. */}
-                  <span className="ml-auto inline-flex items-center gap-1.5 text-xs text-warning-hover">
-                    <span className="h-1.5 w-1.5 rounded-full border border-warning" aria-hidden="true" />
+                  <span className="ml-auto inline-flex items-center gap-1.5 text-xs text-sample">
+                    <span className="h-1.5 w-1.5 rounded-full border border-dashed border-sample" aria-hidden="true" />
                     {t('buyerCommHub.outbound.composedNotSent')}
                   </span>
                 </div>

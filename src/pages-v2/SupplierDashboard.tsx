@@ -131,14 +131,14 @@ interface ActionItem {
 // Ledger register (DP2-FLAG-01) for the briefing rows: severity reads as a 3px
 // left edge + a small dot, not a colored chip — consistent with the widget cards.
 const BRIEF_EDGE: Record<ActionItem['badgeVariant'], string> = {
-  danger: 'border-l-danger',
+  danger: 'border-l-critical',
   warning: 'border-l-warning',
   info: 'border-l-text-tertiary',
   success: 'border-l-success',
   neutral: 'border-l-border-subtle',
 };
 const BRIEF_DOT: Record<ActionItem['badgeVariant'], string> = {
-  danger: 'bg-danger',
+  danger: 'bg-critical',
   warning: 'bg-warning',
   info: 'bg-text-tertiary',
   success: 'bg-success',
@@ -356,8 +356,8 @@ const SupplierDashboard: React.FC = () => {
           {
             id: 'po-confirm',
             Icon: AlertTriangle,
-            iconClass: 'text-danger',
-            iconBg: 'bg-danger-soft',
+            iconClass: 'text-critical',
+            iconBg: 'bg-critical-soft',
             title: t(
               needsConfirm.length === 1
                 ? 'supplierDashboard.briefing.po.title.one'
@@ -603,7 +603,7 @@ const SupplierDashboard: React.FC = () => {
           value={unpaidInvoices.toString()}
           subtitle={
             unpaidInvoices > 0 ? (
-              <span className="text-danger">
+              <span className="text-critical">
                 {t('supplierDashboard.kpi.unpaidInvoices.pending')}
               </span>
             ) : (
@@ -721,7 +721,7 @@ const SupplierDashboard: React.FC = () => {
                               });
                               dismiss(action.id);
                             }}
-                            className="inline-flex items-center gap-1 text-sm font-medium text-action hover:underline"
+                            className="inline-flex items-center gap-1 text-sm font-medium text-action-text hover:underline"
                           >
                             {action.btnLabel}
                             <span aria-hidden="true">→</span>

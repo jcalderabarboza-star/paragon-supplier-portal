@@ -192,7 +192,7 @@ export function inRenewalHorizon(
  * cell.
  */
 export const CONTRACT_EXPIRY_TONE: Record<ContractDisplayStatus, string> = {
-  Expired: 'text-danger font-semibold',
+  Expired: 'text-critical font-semibold',
   Expiring: 'text-warning-hover font-semibold',
   Active: 'text-success',
   Renewed: 'text-success',
@@ -207,7 +207,7 @@ export const CONTRACT_EXPIRY_TONE: Record<ContractDisplayStatus, string> = {
  *  anyway because a partial map is how an unreachable branch becomes a blank
  *  chip the day the membership rule changes. */
 export const CONTRACT_EXPIRY_CHIP: Record<ContractDisplayStatus, string> = {
-  Expired: 'bg-danger-soft text-danger',
+  Expired: 'bg-critical-soft text-critical',
   Expiring: 'bg-warning-soft text-warning-hover',
   Active: 'bg-info-soft text-info',
   Renewed: 'bg-info-soft text-info',

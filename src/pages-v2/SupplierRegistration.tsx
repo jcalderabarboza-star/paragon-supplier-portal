@@ -217,7 +217,7 @@ const emptyDoc = (): DocState => ({
 const inputClass =
   'w-full px-3 py-2 text-sm text-text-primary bg-white border border-border-input rounded-md focus:outline-none focus:border-action placeholder:text-text-tertiary';
 const labelClass = 'block text-label text-text-tertiary uppercase mb-1';
-const errorClass = 'text-danger text-xs mt-1';
+const errorClass = 'text-critical text-xs mt-1';
 
 interface FieldProps {
   label: string;
@@ -230,7 +230,7 @@ const Field: React.FC<FieldProps> = ({ label, required, error, children }) => (
   <div>
     <label className={labelClass}>
       {label}
-      {required && <span className="text-danger ml-0.5">*</span>}
+      {required && <span className="text-critical ml-0.5">*</span>}
     </label>
     {children}
     {error && <div className={errorClass}>{error}</div>}
@@ -256,7 +256,7 @@ const PageHeader: React.FC = () => {
           </div>
           <a
             href="mailto:supplier-support@paragon.id"
-            className="text-xs font-semibold text-teal hover:text-teal-hover"
+            className="text-xs font-semibold text-teal-text hover:text-teal-hover"
           >
             supplier-support@paragon.id
           </a>
@@ -271,7 +271,7 @@ const PageFooter: React.FC = () => (
     © Paragon Corp ·{' '}
     <a
       href="mailto:supplier-support@paragon.id"
-      className="text-teal hover:text-teal-hover"
+      className="text-teal-text hover:text-teal-hover"
     >
       supplier-support@paragon.id
     </a>
@@ -334,7 +334,7 @@ const RequestTypeSelector: React.FC<{
               {selected && (
                 <CheckCircle2
                   size={20}
-                  className="text-teal shrink-0"
+                  className="text-teal-text shrink-0"
                   aria-hidden="true"
                 />
               )}
@@ -584,7 +584,7 @@ const ContactsStep: React.FC<StepProps> = ({ form, setForm, errors }) => {
                 <button
                   type="button"
                   onClick={() => removeContact(i)}
-                  className="inline-flex items-center gap-1 text-xs font-semibold text-danger hover:underline"
+                  className="inline-flex items-center gap-1 text-xs font-semibold text-critical hover:underline"
                 >
                   <X size={12} />
                   {t('registration.contacts.remove')}
@@ -663,7 +663,7 @@ const ContactsStep: React.FC<StepProps> = ({ form, setForm, errors }) => {
         <button
           type="button"
           onClick={addContact}
-          className="mt-3 w-full border-2 border-dashed border-teal/40 text-teal font-semibold py-2 rounded-md hover:bg-teal-soft text-sm inline-flex items-center justify-center gap-2"
+          className="mt-3 w-full border-2 border-dashed border-teal/40 text-teal-text font-semibold py-2 rounded-md hover:bg-teal-soft text-sm inline-flex items-center justify-center gap-2"
         >
           <Plus size={14} />
           {t('registration.contacts.add')}
@@ -747,11 +747,11 @@ const CategoriesStep: React.FC<StepProps & { catError: string }> = ({
                 />
                 <Icon
                   size={18}
-                  className={active ? 'text-action' : 'text-text-tertiary'}
+                  className={active ? 'text-action-text' : 'text-text-tertiary'}
                 />
                 <div className="min-w-0">
                   <div
-                    className={`text-sm font-bold ${active ? 'text-action' : 'text-text-primary'}`}
+                    className={`text-sm font-bold ${active ? 'text-action-text' : 'text-text-primary'}`}
                   >
                     {t(ch.labelKey)}
                   </div>
@@ -984,7 +984,7 @@ const InternalSRCategoryStep: React.FC<StepProps & { catError: string }> = ({
       <div className="mb-4">
         <label className={labelClass}>
           {t('registration.step.expansion.field.categories.label')}
-          <span className="text-danger ml-0.5">*</span>
+          <span className="text-critical ml-0.5">*</span>
         </label>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
           {SUPPLY_CATEGORIES.map((cat) => (
@@ -1079,7 +1079,7 @@ const ReviewStep: React.FC<ReviewStepProps> = ({ form, setForm, errors, requestT
           >
             {form.contacts.map((c, i) => (
               <div key={i} className="mb-3 last:mb-0">
-                <div className="text-xs font-bold text-teal mb-1">
+                <div className="text-xs font-bold text-teal-text mb-1">
                   {t('registration.contacts.label', { index: i + 1 })}
                 </div>
                 <Row label={t('registration.review.field.name')} value={c.name} />
@@ -1148,7 +1148,7 @@ const ReviewStep: React.FC<ReviewStepProps> = ({ form, setForm, errors, requestT
           >
             {form.contacts.map((c, i) => (
               <div key={i} className="mb-3 last:mb-0">
-                <div className="text-xs font-bold text-teal mb-1">
+                <div className="text-xs font-bold text-teal-text mb-1">
                   {t('registration.contacts.label', { index: i + 1 })}
                 </div>
                 <Row label={t('registration.review.field.name')} value={c.name} />

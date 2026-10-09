@@ -406,6 +406,7 @@ describe('⚠️ THE TWO-REGEX COMMENT STRIP IS EXTINCT — derived, not listed'
         'lib/envGate/derive.ts',
         'lib/projectionGate/dayCounts.ts',
         'lib/projectionGate/derive.ts',
+        'lib/uiGate/derive.ts',
         'pages-v2/buyerInvoicesEscalateHonesty.test.ts',
         'pages-v2/deadAffordance.guard.test.tsx',
         // Added by H2. The external-claim guard asks "does a toast claim a file,

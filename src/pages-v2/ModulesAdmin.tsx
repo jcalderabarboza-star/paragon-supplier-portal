@@ -75,7 +75,7 @@ const RowResult: React.FC<{ outcome: ModuleSetOutcome }> = ({ outcome }) => {
   }
   const kind = refusalKindOf(outcome.result.reason);
   return (
-    <div className="text-xs text-danger mt-1 flex flex-wrap items-center gap-1.5" data-testid={testId} data-outcome="refused">
+    <div className="text-xs text-critical mt-1 flex flex-wrap items-center gap-1.5" data-testid={testId} data-outcome="refused">
       <span>
         {outcome.blockedBy
           ? t('modules.admin.blockedRefusal', { codes: outcome.blockedBy.join(', ') })
@@ -91,7 +91,7 @@ const RouteChips: React.FC<{ spec: ModuleSpec; on: boolean }> = ({ spec, on }) =
     {spec.routes.map((r) =>
       on && !r.includes(':') ? (
         <Link key={r} to={r} className="rounded border border-border-subtle px-1 py-0.5 hover:bg-bg-hover">
-          <Data className="text-[10px] text-action">{r}</Data>
+          <Data className="text-[10px] text-action-text">{r}</Data>
         </Link>
       ) : (
         <span key={r} className="rounded border border-border-subtle px-1 py-0.5">

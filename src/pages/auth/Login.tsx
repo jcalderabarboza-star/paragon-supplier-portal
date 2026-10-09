@@ -6,9 +6,6 @@ import { mockSuppliers } from '../../data/mockSuppliers';
 import { SEEDED_SEAT_ROLES } from '../../services/transitions/businessRoles';
 import { NO_PERSON } from '../../context/noPerson';
 
-const NAVY = '#0D1B2A';
-const TEAL = '#0097A7';
-
 const SEED_SUPPLIER_ID = 'sup-007';
 const SEED_SUPPLIER_NAME =
   mockSuppliers.find((s) => s.id === SEED_SUPPLIER_ID)?.name ?? null;
@@ -80,91 +77,49 @@ const Login: React.FC = () => {
   const handleViewAsBuyer = signInAsBuyer;
   const handleViewAsSupplier = signInAsSupplier;
 
+  // UI-1a · THIS PAGE IS ON THE TOKENS (operator ruling). It carried fourteen
+  // hex literals in inline styles, two of them unreadable (2.30:1 and 2.56:1).
+  // The supplier arm's solid button is `teal-hover`, not `teal`: white on the
+  // palette teal is 3.51:1.
+  const buyer = activeTab === 'buyer';
   return (
-    <div style={{
-      display: 'flex',
-      flexDirection: 'column',
-      justifyContent: 'center',
-      alignItems: 'center',
-      minHeight: '100vh',
-      background: NAVY,
-      padding: '2rem 1rem',
-    }}>
+    <div className="flex min-h-screen flex-col items-center justify-center bg-navy px-4 py-8">
       {/* Card */}
-      <div style={{
-        background: 'white',
-        width: '100%',
-        maxWidth: '400px',
-        borderRadius: '12px',
-        padding: '40px',
-        boxShadow: '0 20px 60px rgba(0,0,0,0.4)',
-      }}>
+      <div className="w-full max-w-[400px] rounded-lg bg-bg-surface p-10 shadow-md">
         {/* Logo + brand */}
-        <div style={{ textAlign: 'center', marginBottom: '28px' }}>
-          <div style={{
-            width: '48px', height: '48px', borderRadius: '50%',
-            background: TEAL, display: 'flex', alignItems: 'center',
-            justifyContent: 'center', margin: '0 auto 12px',
-          }}>
-            <span style={{ color: 'white', fontWeight: 700, fontSize: '22px' }}>P</span>
+        <div className="mb-7 text-center">
+          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-teal-hover">
+            <span className="text-section text-white">P</span>
           </div>
-          <div style={{ fontWeight: 700, fontSize: '16px', color: NAVY, letterSpacing: '0.05em' }}>
-            PARAGON CORP
-          </div>
-          <div style={{ color: TEAL, fontSize: '13px', fontWeight: 600, marginTop: '2px' }}>
-            {t('login.brand.portal')}
-          </div>
-          <div style={{ color: '#94A3B8', fontSize: '12px', fontStyle: 'italic', marginTop: '6px' }}>
-            Portal Kolaborasi Pemasok
-          </div>
+          <div className="text-section tracking-wide text-text-primary">PARAGON CORP</div>
+          <div className="mt-0.5 text-xs font-semibold text-teal-text">{t('login.brand.portal')}</div>
+          <div className="mt-1.5 text-xs italic text-text-tertiary">Portal Kolaborasi Pemasok</div>
         </div>
 
         {/* Tabs */}
-        <div style={{ display: 'flex', borderBottom: '1px solid #E2E8F0', marginBottom: '24px' }}>
-          {([['buyer', 'login.tab.buyer'], ['supplier', 'login.tab.supplier']] as const).map(([tab, labelKey]) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              style={{
-                flex: 1,
-                padding: '10px 0',
-                border: 'none',
-                background: 'transparent',
-                cursor: 'pointer',
-                fontSize: '13px',
-                fontWeight: activeTab === tab ? 700 : 500,
-                color: activeTab === tab ? (tab === 'buyer' ? NAVY : TEAL) : '#94A3B8',
-                borderBottom: activeTab === tab
-                  ? `2px solid ${tab === 'buyer' ? NAVY : TEAL}`
-                  : '2px solid transparent',
-                marginBottom: '-1px',
-                fontFamily: 'inherit',
-                transition: 'all 0.15s',
-              }}
-            >
-              {t(labelKey)}
-            </button>
-          ))}
+        <div className="mb-6 flex border-b border-border-subtle">
+          {([['buyer', 'login.tab.buyer'], ['supplier', 'login.tab.supplier']] as const).map(([tab, labelKey]) => {
+            const active = activeTab === tab;
+            const tone = tab === 'buyer' ? 'border-navy text-text-primary' : 'border-teal text-teal-text';
+            return (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`-mb-px flex-1 border-b-2 bg-transparent py-2.5 text-sm transition-colors ${
+                  active ? `font-semibold ${tone}` : 'border-transparent font-medium text-text-tertiary'
+                }`}
+              >
+                {t(labelKey)}
+              </button>
+            );
+          })}
         </div>
 
         {/* Sign-in */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '20px' }}>
+        <div className="mb-5 flex flex-col gap-3.5">
           <button
             onClick={handleSignIn}
-            style={{
-              width: '100%',
-              padding: '11px',
-              border: 'none',
-              borderRadius: '6px',
-              background: activeTab === 'buyer' ? NAVY : TEAL,
-              color: 'white',
-              fontSize: '14px',
-              fontWeight: 700,
-              cursor: 'pointer',
-              fontFamily: 'inherit',
-              marginTop: '2px',
-              letterSpacing: '0.02em',
-            }}
+            className={`mt-0.5 w-full rounded-sm p-3 text-sm font-semibold text-white ${buyer ? 'bg-navy' : 'bg-teal-hover'}`}
           >
             {t('login.demo.signIn')}
           </button>
@@ -172,9 +127,7 @@ const Login: React.FC = () => {
           {/* ⚠️ THE DISCLOSURE SITS UNDER THE CONTROL IT IS ABOUT — H3. This is the
               one string on the page that has to be here: the button above does not
               authenticate anybody, and a reader cannot tell that from the button. */}
-          <div style={{ fontSize: '11px', lineHeight: 1.5, color: '#475569' }}>
-            {t('login.demo.note')}
-          </div>
+          <div className="text-xs leading-relaxed text-text-secondary">{t('login.demo.note')}</div>
 
           {/* ⚠️ `Forgot password?` IS GONE — H3. It carried `onClick={() => {}}`:
               the only control in the whole tree that was dead by an EXPLICIT empty
@@ -183,13 +136,10 @@ const Login: React.FC = () => {
               There is no password to forget — the field above it is gone for the
               same reason — so there was nothing to send anyone to. */}
           {activeTab === 'supplier' && (
-            <div style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
+            <div className="flex items-center justify-start">
               <button
                 onClick={() => navigate('/register')}
-                style={{
-                  border: 'none', background: 'none', cursor: 'pointer',
-                  color: TEAL, fontSize: '12px', fontWeight: 500, fontFamily: 'inherit', padding: 0,
-                }}
+                className="bg-transparent p-0 text-xs font-medium text-teal-text hover:underline"
               >
                 {t('login.register')}
               </button>
@@ -198,39 +148,23 @@ const Login: React.FC = () => {
         </div>
 
         {/* Divider */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', margin: '20px 0' }}>
-          <div style={{ flex: 1, height: '1px', background: '#E2E8F0' }} />
-          <span style={{ fontSize: '11px', color: '#94A3B8', whiteSpace: 'nowrap', fontWeight: 500 }}>
-            {t('login.divider')}
-          </span>
-          <div style={{ flex: 1, height: '1px', background: '#E2E8F0' }} />
+        <div className="my-5 flex items-center gap-3">
+          <div className="h-px flex-1 bg-border-subtle" />
+          <span className="whitespace-nowrap text-xs font-medium text-text-tertiary">{t('login.divider')}</span>
+          <div className="h-px flex-1 bg-border-subtle" />
         </div>
 
         {/* Demo buttons */}
-        <div style={{ display: 'flex', gap: '8px' }}>
+        <div className="flex gap-2">
           <button
             onClick={handleViewAsBuyer}
-            style={{
-              flex: 1, padding: '9px', border: `1.5px solid #CBD5E1`,
-              borderRadius: '6px', background: 'white', cursor: 'pointer',
-              fontSize: '12px', fontWeight: 600, color: NAVY,
-              fontFamily: 'inherit', transition: 'border-color 0.15s',
-            }}
-            onMouseEnter={e => (e.currentTarget.style.borderColor = NAVY)}
-            onMouseLeave={e => (e.currentTarget.style.borderColor = '#CBD5E1')}
+            className="flex-1 rounded-sm border border-border-input bg-bg-surface p-2 text-xs font-semibold text-text-primary transition-colors hover:border-navy"
           >
             {t('login.viewAsBuyer')}
           </button>
           <button
             onClick={handleViewAsSupplier}
-            style={{
-              flex: 1, padding: '9px', border: `1.5px solid #CBD5E1`,
-              borderRadius: '6px', background: 'white', cursor: 'pointer',
-              fontSize: '12px', fontWeight: 600, color: NAVY,
-              fontFamily: 'inherit', transition: 'border-color 0.15s',
-            }}
-            onMouseEnter={e => (e.currentTarget.style.borderColor = TEAL)}
-            onMouseLeave={e => (e.currentTarget.style.borderColor = '#CBD5E1')}
+            className="flex-1 rounded-sm border border-border-input bg-bg-surface p-2 text-xs font-semibold text-text-primary transition-colors hover:border-teal"
           >
             {t('login.viewAsSupplier')}
           </button>
@@ -238,9 +172,7 @@ const Login: React.FC = () => {
       </div>
 
       {/* Footer */}
-      <div style={{ marginTop: '24px', fontSize: '11px', color: '#475569', textAlign: 'center' }}>
-        {t('login.footer')}
-      </div>
+      <div className="mt-6 text-center text-xs text-white">{t('login.footer')}</div>
     </div>
   );
 };

@@ -152,7 +152,7 @@ const XlsxImportPanel: React.FC<XlsxImportPanelProps> = ({ onImport, onCancel })
       {/* File-tier honest silence: a bad file imports nothing. */}
       {failure && (
         <div
-          className="flex items-start gap-2 rounded-md border border-danger/30 bg-danger-soft px-3 py-2 text-sm text-danger"
+          className="flex items-start gap-2 rounded-md border border-critical/30 bg-critical-soft px-3 py-2 text-sm text-critical"
           data-testid="sdcsup-import-failure"
         >
           <AlertTriangle size={16} className="mt-0.5 shrink-0" />
@@ -300,7 +300,7 @@ const XlsxImportPanel: React.FC<XlsxImportPanelProps> = ({ onImport, onCancel })
             <button
               type="button"
               onClick={reset}
-              className="text-sm text-action hover:underline"
+              className="text-sm text-action-text hover:underline"
               data-testid="sdcsup-import-another"
             >
               {t('sdcSup.bulk.import.another')}

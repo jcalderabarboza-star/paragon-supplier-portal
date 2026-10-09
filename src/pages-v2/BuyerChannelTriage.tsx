@@ -484,7 +484,7 @@ const BuyerChannelTriage: React.FC<BuyerChannelTriageProps> = ({ onRecorded }) =
                     <span className="text-label text-text-tertiary uppercase mr-2">{t('commHub.infer.matched')}</span>
                     <span className="inline-flex flex-wrap gap-1">
                       {parsed.diagnostics.matchedTokens.map((tok, i) => (
-                        <Data key={i} className="rounded bg-teal-soft px-1.5 py-0.5 text-teal">
+                        <Data key={i} className="rounded bg-teal-soft px-1.5 py-0.5 text-teal-text">
                           {tok}
                         </Data>
                       ))}
@@ -548,7 +548,7 @@ const BuyerChannelTriage: React.FC<BuyerChannelTriageProps> = ({ onRecorded }) =
                             </span>
                             <button
                               type="button"
-                              className="shrink-0 font-medium text-action hover:underline"
+                              className="shrink-0 font-medium text-action-text hover:underline"
                               onClick={() => removeRow(i)}
                               data-testid={`triage-row-remove-${i}`}
                             >
@@ -632,7 +632,7 @@ const BuyerChannelTriage: React.FC<BuyerChannelTriageProps> = ({ onRecorded }) =
                   <div className="flex flex-col gap-1.5 border-t border-border-subtle pt-3" data-testid="triage-result">
                     <div className="text-label text-text-tertiary uppercase">{t('buyerCommHub.triage.resultTitle')}</div>
                     {outcomes.map((o, i) => (
-                      <div key={i} className={`flex items-start gap-2 text-xs ${o.ok ? 'text-success' : 'text-danger'}`}>
+                      <div key={i} className={`flex items-start gap-2 text-xs ${o.ok ? 'text-success' : 'text-critical'}`}>
                         {o.ok ? (
                           <CheckCircle2 size={14} className="mt-0.5 shrink-0" aria-hidden="true" />
                         ) : (

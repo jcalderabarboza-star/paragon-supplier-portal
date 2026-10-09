@@ -595,7 +595,7 @@ const FieldRefusal: React.FC<{ messageKey: string | null; testId: string; t: TFu
   t,
 }) =>
   messageKey === null ? null : (
-    <div role="alert" data-testid={testId} className="mt-1 text-[11px] text-danger">
+    <div role="alert" data-testid={testId} className="mt-1 text-[11px] text-critical">
       {t(messageKey)}
     </div>
   );
@@ -817,7 +817,7 @@ const ReviewSection: React.FC<{
       <button
         type="button"
         onClick={onEdit}
-        className="text-xs font-medium text-teal hover:text-teal-hover"
+        className="text-xs font-medium text-teal-text hover:text-teal-hover"
       >
         {t('sourcing.wizard.review.edit')}
       </button>
@@ -2284,7 +2284,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                 href="#/buyer/process-flows?flow=rfq"
                 target="_blank"
                 rel="noreferrer"
-                className="text-action hover:underline"
+                className="text-action-text hover:underline"
                 data-testid="rfq-start-stage-guide-link"
               >
                 {t('sourcing.wizard.stage.guideLink')}
@@ -2342,7 +2342,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
           <div>
             <label className="text-label text-text-tertiary uppercase block mb-1.5">
               {t('sourcing.wizard.field.title')}{' '}
-              <span className="text-danger">*</span>
+              <span className="text-critical">*</span>
             </label>
             <input
               type="text"
@@ -2356,7 +2356,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
             <div>
               <label className="text-label text-text-tertiary uppercase block mb-1.5">
                 {t('sourcing.wizard.field.category')}{' '}
-                <span className="text-danger">*</span>
+                <span className="text-critical">*</span>
               </label>
               <select
                 value={draft.category}
@@ -2400,7 +2400,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                 <div
                   role="alert"
                   data-testid="rfq-budget-refusal"
-                  className="mt-1 text-[11px] text-danger"
+                  className="mt-1 text-[11px] text-critical"
                 >
                   {t(RFQ_BUDGET_REFUSAL_KEY[budgetRead.reason])}{' '}
                   <GlossaryTermChip
@@ -2413,7 +2413,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
           <div>
             <label className="text-label text-text-tertiary uppercase block mb-1.5">
               {t('sourcing.wizard.field.materials')}{' '}
-              <span className="text-danger">*</span>
+              <span className="text-critical">*</span>
             </label>
             {draft.category ? (
               <div className="flex flex-wrap gap-2">
@@ -2533,7 +2533,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
             <div className="md:col-span-2">
               <label className="text-label text-text-tertiary uppercase block mb-1.5">
                 {t('sourcing.wizard.field.totalQty')}{' '}
-                <span className="text-danger">*</span>
+                <span className="text-critical">*</span>
               </label>
               {/* Ruling 6.2 — the parse CANNOT fire behind `type="number"`,
                   which is what 2e-b-4a's smoke proved on a live id-ID browser:
@@ -2561,7 +2561,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                 <div
                   role="alert"
                   data-testid="rfq-qty-refusal"
-                  className="mt-1 text-[11px] text-danger"
+                  className="mt-1 text-[11px] text-critical"
                 >
                   {t(RFQ_QTY_REFUSAL_KEY[qtyRead.reason])}{' '}
                   <GlossaryTermChip
@@ -2738,7 +2738,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
           </div>
 
           <div className="text-sm text-text-secondary">
-            <span className="inline-flex items-center gap-1.5 bg-teal-soft text-teal rounded-full px-3 py-1 text-xs font-semibold">
+            <span className="inline-flex items-center gap-1.5 bg-teal-soft text-teal-text rounded-full px-3 py-1 text-xs font-semibold">
               {t(
                 draft.invitedSupplierIds.length === 1
                   ? 'sourcing.wizard.selectedCount.one'
@@ -2778,7 +2778,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
             <div>
               <label className="text-label text-text-tertiary uppercase block mb-1.5">
                 {t('sourcing.wizard.field.responseDeadline')}{' '}
-                <span className="text-danger">*</span>
+                <span className="text-critical">*</span>
               </label>
               <input
                 type="date"
@@ -2789,7 +2789,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                 className="w-full bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-action"
               />
               {draft.responseDeadline && responseDeadlinePassed(draft.responseDeadline, TODAY) && (
-                <p className="text-xs text-danger mt-1" data-testid="rfq-deadline-past">
+                <p className="text-xs text-critical mt-1" data-testid="rfq-deadline-past">
                   {t('sourcing.wizard.deadlinePast')}
                 </p>
               )}
@@ -2797,7 +2797,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
             <div>
               <label className="text-label text-text-tertiary uppercase block mb-1.5">
                 {t('sourcing.wizard.field.awardDeadline')}{' '}
-                <span className="text-danger">*</span>
+                <span className="text-critical">*</span>
               </label>
               <input
                 type="date"
@@ -2809,7 +2809,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                 draft.awardDeadline &&
                 new Date(draft.awardDeadline) <=
                   new Date(draft.responseDeadline) && (
-                  <p className="text-xs text-danger mt-1">
+                  <p className="text-xs text-critical mt-1">
                     {t('sourcing.wizard.awardAfterResponse')}
                   </p>
                 )}
@@ -2829,7 +2829,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                 className="w-full bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-action"
               />
               {deliveryDateTooEarly(draft) && (
-                <p className="text-xs text-danger mt-1" data-testid="rfq-delivery-before-award">
+                <p className="text-xs text-critical mt-1" data-testid="rfq-delivery-before-award">
                   {t('sourcing.wizard.deliveryAfterAward')}
                 </p>
               )}
@@ -3334,7 +3334,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                 r.status !== 'Open' || days === null
                   ? 'text-text-secondary'
                   : days < 3
-                    ? 'text-danger font-semibold'
+                    ? 'text-critical font-semibold'
                     : days < 7
                       ? 'text-warning-hover font-semibold'
                       : 'text-text-secondary';
@@ -3389,9 +3389,9 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                       <div
                         className={`text-xs mt-0.5 ${
                           days < 0
-                            ? 'text-danger'
+                            ? 'text-critical'
                             : days < 3
-                              ? 'text-danger'
+                              ? 'text-critical'
                               : days < 7
                                 ? 'text-warning-hover'
                                 : 'text-text-tertiary'
@@ -3932,7 +3932,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                   {selectedRfq.status === 'Draft' &&
                     (responseDeadlinePassed(selectedRfq.responseDeadline, TODAY) ? (
                       <span
-                        className="text-xs text-danger font-semibold self-center"
+                        className="text-xs text-critical font-semibold self-center"
                         data-testid="rfq-publish-deadline-past"
                       >
                         {selectedRfq.responseDeadline
@@ -4047,7 +4047,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                     <Button
                       variant="secondary"
                       icon={Ban}
-                      className="text-danger"
+                      className="text-critical"
                       disabled={cancelMutation.isPending || asking === 'cancel'}
                       onClick={() => setAsking('cancel')}
                       data-testid="rfq-cancel"
@@ -4064,7 +4064,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                     a seat narrowed while the question stands open loses it. */}
                 {asking === 'cancel' && rfqVerbs.cancel.kind === 'held' && (
                   <div
-                    className="mt-3 border border-danger/30 bg-danger-soft rounded-md p-3"
+                    className="mt-3 border border-critical/30 bg-critical-soft rounded-md p-3"
                     data-testid="rfq-cancel-ask"
                   >
                     <p className="text-sm text-text-primary mb-3">
@@ -4080,7 +4080,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                     <div className="flex flex-wrap gap-2">
                       <Button
                         variant="outline"
-                        className="text-danger border-danger"
+                        className="text-critical border-critical"
                         disabled={cancelMutation.isPending}
                         onClick={handleCancel}
                         data-testid="rfq-cancel-yes"
@@ -4213,7 +4213,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                                   rfiAnswersOf(selectedRfq).find((a) => a.supplierId === id),
                                 ) !== '' && (
                                   <span
-                                    className="text-xs text-danger font-semibold"
+                                    className="text-xs text-critical font-semibold"
                                     data-testid={`rfq-advance-knockout-${id}`}
                                   >
                                     {t('sourcing.advance.failedKnockout', {
@@ -4303,7 +4303,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                 {/* RFx-1 — CONCLUDE, ASKED A SECOND TIME, WITH THE REASON. */}
                 {asking === 'conclude' && rfqVerbs.conclude.kind === 'held' && (
                   <div
-                    className="mt-3 border border-danger/30 bg-danger-soft rounded-md p-3"
+                    className="mt-3 border border-critical/30 bg-critical-soft rounded-md p-3"
                     data-testid="rfq-conclude-ask"
                   >
                     <p className="text-sm text-text-primary mb-3">
@@ -4331,7 +4331,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                     <div className="flex flex-wrap gap-2">
                       <Button
                         variant="outline"
-                        className="text-danger border-danger"
+                        className="text-critical border-critical"
                         disabled={concludeReason.trim() === '' || concludeMutation.isPending}
                         onClick={handleConclude}
                         data-testid="rfq-conclude-yes"
@@ -4500,7 +4500,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                             >
                               {q.id === topRankedId && (
                                 <span className="flex flex-col items-start gap-0.5 mb-1">
-                                  <span className="inline-flex items-center gap-1 text-label text-teal uppercase">
+                                  <span className="inline-flex items-center gap-1 text-label text-teal-text uppercase">
                                     <Trophy size={10} />{' '}
                                     {t('sourcing.cmp.topRanked')}
                                   </span>
@@ -4835,7 +4835,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                                       type="button"
                                       onClick={() => handleReview(q.id)}
                                       disabled={reviewMutation.isPending}
-                                      className="text-xs font-semibold text-action hover:text-action-hover disabled:opacity-50"
+                                      className="text-xs font-semibold text-action-text hover:text-action-hover disabled:opacity-50"
                                     >
                                       {t('sourcing.cmp.moveToReview')}
                                     </button>

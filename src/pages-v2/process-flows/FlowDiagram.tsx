@@ -69,7 +69,7 @@ const Badge: React.FC<{ tone: 'neutral' | 'teal' | 'warning'; children: React.Re
 }) => {
   const cls =
     tone === 'teal'
-      ? 'bg-teal-soft text-teal-hover border-teal/30'
+      ? 'bg-teal-soft text-teal-text border-teal/30'
       : tone === 'warning'
         ? 'bg-warning-soft text-warning-hover border-warning/40'
         : 'bg-bg-hover text-text-tertiary border-border-subtle';

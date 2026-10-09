@@ -318,10 +318,10 @@ const CommHubInbound: React.FC = () => {
       </PageMetaLine>
 
       {/* Honesty banner — operator-fed, no live channel. */}
-      <div className="mb-6 flex items-start gap-2 rounded-lg border border-warning/30 bg-warning-soft px-4 py-3 text-sm text-text-primary">
-        <Info size={16} className="mt-0.5 shrink-0 text-warning-hover" />
+      <div className="mb-6 flex items-start gap-2 rounded-lg border border-dashed border-sample-border bg-sample-soft px-4 py-3 text-sm text-text-primary">
+        <Info size={16} className="mt-0.5 shrink-0 text-sample" />
         <div>
-          <div className="font-semibold text-warning-hover">{t('commHub.honesty.title')}</div>
+          <div className="font-semibold text-sample">{t('commHub.honesty.title')}</div>
           <p className="mt-0.5 text-text-secondary">{t('commHub.honesty.body')}</p>
         </div>
       </div>
@@ -367,13 +367,13 @@ const CommHubInbound: React.FC = () => {
                 <li
                   key={o.key}
                   className={`px-4 py-3 flex items-start gap-3 border-l-[3px] ${
-                    o.kind === 'overdue' ? 'border-l-danger' : 'border-l-warning'
+                    o.kind === 'overdue' ? 'border-l-critical' : 'border-l-warning'
                   } ${idx < shown.length - 1 ? 'border-b border-border-subtle' : ''}`}
                   data-testid="commhub-needs-row"
                 >
                   <div className="w-8 h-8 rounded-md flex items-center justify-center shrink-0 bg-bg-hover">
                     {o.kind === 'overdue' ? (
-                      <AlertTriangle size={15} className="text-danger" aria-hidden="true" />
+                      <AlertTriangle size={15} className="text-critical" aria-hidden="true" />
                     ) : (
                       <Clock size={15} className="text-warning-hover" aria-hidden="true" />
                     )}
@@ -408,7 +408,7 @@ const CommHubInbound: React.FC = () => {
             <div className="px-4 py-2.5 border-t border-border-subtle bg-bg-subtle">
               <Link
                 to="/supplier/delivery-agreements"
-                className="inline-flex items-center gap-1.5 text-xs font-semibold text-action hover:text-action-hover"
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-action-text hover:text-action-hover"
                 data-testid="commhub-needs-viewall"
               >
                 {t('commHub.needs.viewAll')}
@@ -529,7 +529,7 @@ const CommHubInbound: React.FC = () => {
                   </span>
                   <span className="inline-flex flex-wrap gap-1">
                     {parsed.diagnostics.matchedTokens.map((tok, i) => (
-                      <Data key={i} className="rounded bg-teal-soft px-1.5 py-0.5 text-teal">
+                      <Data key={i} className="rounded bg-teal-soft px-1.5 py-0.5 text-teal-text">
                         {tok}
                       </Data>
                     ))}
@@ -594,7 +594,7 @@ const CommHubInbound: React.FC = () => {
                           </span>
                           <button
                             type="button"
-                            className="shrink-0 font-medium text-action hover:underline"
+                            className="shrink-0 font-medium text-action-text hover:underline"
                             onClick={() => removeRow(i)}
                             data-testid={`commhub-row-remove-${i}`}
                           >
@@ -680,7 +680,7 @@ const CommHubInbound: React.FC = () => {
                   {outcomes.map((o, i) => (
                     <div
                       key={i}
-                      className={`flex items-start gap-2 text-xs ${o.ok ? 'text-success' : 'text-danger'}`}
+                      className={`flex items-start gap-2 text-xs ${o.ok ? 'text-success' : 'text-critical'}`}
                     >
                       {o.ok ? (
                         <CheckCircle2 size={14} className="mt-0.5 shrink-0" />

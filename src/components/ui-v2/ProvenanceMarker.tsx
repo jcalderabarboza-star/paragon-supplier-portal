@@ -55,10 +55,10 @@ const ProvenanceMarker: React.FC<{
       className={`inline-flex flex-wrap items-center gap-x-3 gap-y-1 ${className}`}
     >
       {fixture && (
-        <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-warning-hover">
+        <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-sample">
           <span
             aria-hidden="true"
-            className="h-1.5 w-1.5 rounded-full border border-warning"
+            className="h-1.5 w-1.5 rounded-full border border-dashed border-sample"
           />
           {feedLabel}
         </span>

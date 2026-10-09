@@ -131,12 +131,12 @@ const SupplierDeliveryAgreements: React.FC = () => {
               <li
                 key={o.key}
                 className={`px-4 py-3 flex items-start gap-3 border-l-[3px] ${
-                  o.kind === 'overdue' ? 'border-l-danger' : 'border-l-warning'
+                  o.kind === 'overdue' ? 'border-l-critical' : 'border-l-warning'
                 } ${idx < obligations.length - 1 ? 'border-b border-border-subtle' : ''}`}
               >
                 <div className="w-8 h-8 rounded-md flex items-center justify-center shrink-0 bg-bg-hover">
                   {o.kind === 'overdue' ? (
-                    <AlertTriangle size={15} className="text-danger" />
+                    <AlertTriangle size={15} className="text-critical" />
                   ) : (
                     <Clock size={15} className="text-warning-hover" />
                   )}

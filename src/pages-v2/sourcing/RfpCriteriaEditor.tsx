@@ -240,7 +240,7 @@ const RfpCriteriaEditor: React.FC<{ rfq: RFQ }> = ({ rfq }) => {
                 </button>
                 <button
                   type="button"
-                  className="p-1 text-text-tertiary hover:text-danger"
+                  className="p-1 text-text-tertiary hover:text-critical"
                   onClick={() => setRows((rs) => rs.filter((_, x) => x !== i))}
                   aria-label={t('sourcing.rfp.editor.remove', { criterion: criterionLabel(i + 1) })}
                   data-testid={`rfp-editor-remove-${i + 1}`}
@@ -321,7 +321,7 @@ const RfpCriteriaEditor: React.FC<{ rfq: RFQ }> = ({ rfq }) => {
 
       {rows.length > 0 && (
         <p
-          className={`text-xs font-semibold mt-3 ${sumIsWhole ? 'text-success' : 'text-danger'}`}
+          className={`text-xs font-semibold mt-3 ${sumIsWhole ? 'text-success' : 'text-critical'}`}
           data-testid="rfp-editor-sum"
           data-whole={sumIsWhole ? 'true' : 'false'}
         >
@@ -331,7 +331,7 @@ const RfpCriteriaEditor: React.FC<{ rfq: RFQ }> = ({ rfq }) => {
         </p>
       )}
       {problem !== null && (
-        <p className="text-xs text-danger font-semibold mt-2" data-testid="rfp-editor-problem">
+        <p className="text-xs text-critical font-semibold mt-2" data-testid="rfp-editor-problem">
           {t(`sourcing.rfp.problem.${problem.code}`, { criterion: criterionLabel(problem.number) })}
         </p>
       )}

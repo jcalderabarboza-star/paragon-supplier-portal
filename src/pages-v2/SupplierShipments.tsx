@@ -184,7 +184,7 @@ const DockAppointments: React.FC<{
         </div>
       )}
       {state === 'error' && (
-        <div className="text-sm text-danger" role="alert">
+        <div className="text-sm text-critical" role="alert">
           {t('supplierShipments.dock.readFailed')}
         </div>
       )}
@@ -1146,7 +1146,7 @@ const SupplierShipments: React.FC = () => {
               </div>
             </div>
             {(packagesRead.kind === 'refused' || weightRead.kind === 'refused') && (
-              <div role="alert" data-testid="asn-number-refusal" className="text-xs text-danger">
+              <div role="alert" data-testid="asn-number-refusal" className="text-xs text-critical">
                 {t('supplierShipments.wizard.details.numberRefused')}
               </div>
             )}
@@ -1223,7 +1223,7 @@ const SupplierShipments: React.FC = () => {
                     })
                   }
                 />
-                <span className="inline-flex items-center gap-2 px-3 py-1.5 border border-border-input rounded-md text-sm text-teal font-semibold bg-bg-surface">
+                <span className="inline-flex items-center gap-2 px-3 py-1.5 border border-border-input rounded-md text-sm text-teal-text font-semibold bg-bg-surface">
                   <Upload size={14} />
                   {t('supplierShipments.wizard.details.chooseFile')}
                 </span>

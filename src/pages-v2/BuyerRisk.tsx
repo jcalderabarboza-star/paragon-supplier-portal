@@ -163,7 +163,7 @@ const TAB_DEFS: { id: TabKey; labelKey: string }[] = [
 ];
 
 const ALERT_VARIANT: Record<AlertLevel, { bg: string; border: string; text: string; Icon: LucideIcon }> = {
-  critical: { bg: 'bg-danger-soft', border: 'border-danger', text: 'text-danger', Icon: AlertOctagon },
+  critical: { bg: 'bg-critical-soft', border: 'border-critical', text: 'text-critical', Icon: AlertOctagon },
   warning: { bg: 'bg-warning-soft', border: 'border-warning', text: 'text-warning-hover', Icon: AlertTriangle },
   info: { bg: 'bg-info-soft', border: 'border-info', text: 'text-info', Icon: Info },
 };
@@ -311,7 +311,7 @@ const GeopoliticalTab: React.FC<{ geoRisks: GeoRisk[] }> = ({ geoRisks }) => {
       const sevVariant = severityTone(r.severity);
       const sevSoftBg =
         sevVariant === 'danger'
-          ? 'bg-danger-soft'
+          ? 'bg-critical-soft'
           : sevVariant === 'warning'
             ? 'bg-warning-soft'
             : 'bg-success-soft';
@@ -340,7 +340,7 @@ const GeopoliticalTab: React.FC<{ geoRisks: GeoRisk[] }> = ({ geoRisks }) => {
                 as="div"
                 className={`text-2xl font-semibold leading-none ${
                   sevVariant === 'danger'
-                    ? 'text-danger'
+                    ? 'text-critical'
                     : sevVariant === 'warning'
                       ? 'text-warning-hover'
                       : 'text-success'
@@ -359,7 +359,7 @@ const GeopoliticalTab: React.FC<{ geoRisks: GeoRisk[] }> = ({ geoRisks }) => {
               <div className="text-sm text-text-secondary">{r.impact}</div>
               <div
                 className={`text-sm font-semibold mt-2 ${
-                  sevVariant === 'danger' ? 'text-danger' : 'text-warning-hover'
+                  sevVariant === 'danger' ? 'text-critical' : 'text-warning-hover'
                 }`}
               >
                 {r.exposure}
@@ -471,7 +471,7 @@ const ExposureTab: React.FC<{ exposure: ExposureRow[] }> = ({ exposure }) => {
                 {row.dualSource ? (
                   <span className="text-success font-semibold">✓</span>
                 ) : (
-                  <span className="text-danger font-semibold">✗</span>
+                  <span className="text-critical font-semibold">✗</span>
                 )}
               </TableCell>
             </TableRow>
@@ -492,7 +492,7 @@ const SummaryStat: React.FC<{
       as="div"
       className={`text-kpi ${
         tone === 'danger'
-          ? 'text-danger'
+          ? 'text-critical'
           : tone === 'warning'
             ? 'text-warning-hover'
             : 'text-success'
@@ -537,7 +537,7 @@ const ScenarioTab: React.FC<{ scenarios: Scenario[] }> = ({ scenarios }) => {
         onChange={setActiveScenario}
       />
 
-      <section className="bg-danger-soft border-l-2 border-danger rounded-lg px-5 py-4">
+      <section className="bg-critical-soft border-l-2 border-critical rounded-lg px-5 py-4">
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div className="flex-1 min-w-0">
             {/* i18n-defer: mock/sample data — scenario title/description/impact seeded from fixtures */}
@@ -550,7 +550,7 @@ const ScenarioTab: React.FC<{ scenarios: Scenario[] }> = ({ scenarios }) => {
             <div className="flex flex-wrap gap-6">
               {Object.entries(featured.impact).map(([k, v]) => (
                 <div key={k}>
-                  <div className="text-lg font-bold text-danger">{v}</div>
+                  <div className="text-lg font-bold text-critical">{v}</div>
                   <div className="text-[10px] text-text-tertiary uppercase tracking-wider mt-0.5">
                     {k.replace(/([A-Z])/g, ' $1')}
                   </div>
@@ -655,7 +655,7 @@ const ScenarioTab: React.FC<{ scenarios: Scenario[] }> = ({ scenarios }) => {
       <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-5">
         <div className="flex items-center gap-2 mb-3">
           <Sparkles size={16} className="text-teal" />
-          <span className="text-sm font-bold text-teal">{t('risk.scenario.ariaRecommendation')}</span>
+          <span className="text-sm font-bold text-teal-text">{t('risk.scenario.ariaRecommendation')}</span>
           {/* "AI-Powered" is a StatusPill child — left as-is per the central-maps rule */}
           <StatusPill variant="info">
             AI-Powered
@@ -670,7 +670,7 @@ const ScenarioTab: React.FC<{ scenarios: Scenario[] }> = ({ scenarios }) => {
           </strong>{' '}
           simultaneously. Activate Cape rerouting now for continuity, while
           building 90-day safety stock for your top 12 critical SKUs. Estimated
-          total cost: <strong className="text-teal">$1.06M</strong> vs. $3.2M
+          total cost: <strong className="text-teal-text">$1.06M</strong> vs. $3.2M
           revenue-at-risk if no action taken.
         </p>
         {/* The trailing "Last updated 2 hours ago" clause is removed: it claimed a
@@ -788,7 +788,7 @@ const ComplianceRisksTab: React.FC<{ compliance: ComplianceRow[] }> = ({
                     <Data
                       className={`font-bold ${
                         row.status === 'expired'
-                          ? 'text-danger'
+                          ? 'text-critical'
                           : row.status === 'expiring'
                             ? 'text-warning-hover'
                             : 'text-success'
@@ -897,7 +897,7 @@ const CommodityTab: React.FC<{ commodities: Commodity[] }> = ({
                   {formatNumber(c.current)}
                 </Data>
                 <div
-                  className={`text-xs font-semibold ${up ? 'text-danger' : 'text-success'}`}
+                  className={`text-xs font-semibold ${up ? 'text-critical' : 'text-success'}`}
                 >
                   {up ? (
                     <TrendingUp size={12} className="inline-block mr-1" />
@@ -943,7 +943,7 @@ const CommodityTab: React.FC<{ commodities: Commodity[] }> = ({
               </span>
               <span className="ml-auto">
                 {breached ? (
-                  <span className="text-danger font-semibold">
+                  <span className="text-critical font-semibold">
                     {t('risk.commodity.thresholdBreached')}
                   </span>
                 ) : (
@@ -971,13 +971,13 @@ const CommodityTab: React.FC<{ commodities: Commodity[] }> = ({
               className="flex items-center gap-2 text-sm text-text-secondary"
             >
               <span
-                className={over ? 'text-danger font-bold' : 'text-success font-bold'}
+                className={over ? 'text-critical font-bold' : 'text-success font-bold'}
               >
                 {over ? '⚠' : '✓'}
               </span>
               <span className="font-semibold text-text-primary">{c.name}</span>
               <span className="text-text-tertiary">—</span>
-              <span className={over ? 'text-danger' : 'text-text-secondary'}>
+              <span className={over ? 'text-critical' : 'text-text-secondary'}>
                 {over
                   ? t('risk.commodity.alertTriggered', {
                       current: c.current,

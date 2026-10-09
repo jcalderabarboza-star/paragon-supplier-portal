@@ -618,7 +618,7 @@ describe('⚠️ DP2-PALETTE-01 · A HEX REACHED THROUGH A MEMBER EXPRESSION (M5
     expect(
       synthViolations(`
         interface ToneStyle { text: string; stroke: string; bg: string; }
-        const TONE: ToneStyle = { text: 'text-teal', stroke: '#0097A7', bg: 'bg-teal-soft' };
+        const TONE: ToneStyle = { text: 'text-teal-text', stroke: '#0097A7', bg: 'bg-teal-soft' };
         export const C = () => { const t = TONE; return <circle stroke={t.stroke} />; };
       `),
     ).toEqual(["t.stroke -> '#0097A7'"]);

@@ -82,7 +82,7 @@ type TabKey = 'gaps' | 'qualification' | 'intelligence' | 'search';
 
 const scoreColorClass = (score: number): string => {
   if (score >= 90) return 'text-success';
-  if (score >= 80) return 'text-teal';
+  if (score >= 80) return 'text-teal-text';
   return 'text-warning-hover';
 };
 
@@ -114,7 +114,7 @@ const QualificationCard: React.FC<{ item: QualificationItem; onUpdate: () => voi
               ? 'bg-action text-white'
               : 'bg-bg-hover text-text-tertiary';
           const labelClass = isActive
-            ? 'text-teal font-semibold'
+            ? 'text-teal-text font-semibold'
             : 'text-text-tertiary';
           return (
             <React.Fragment key={labelKey}>
@@ -151,7 +151,7 @@ const QualificationCard: React.FC<{ item: QualificationItem; onUpdate: () => voi
         <button
           type="button"
           onClick={onUpdate}
-          className="inline-flex items-center gap-1 text-xs font-medium text-teal hover:text-teal-hover"
+          className="inline-flex items-center gap-1 text-xs font-medium text-teal-text hover:text-teal-hover"
         >
           {t('discovery.qual.updateStatus')} <ArrowRight size={12} />
         </button>
@@ -216,14 +216,14 @@ const RecommendationCard: React.FC<{
 
 const TrendIcon: React.FC<{ dir: MarketIntelCard['priceDir'] }> = ({ dir }) => {
   if (dir === 'up')
-    return <TrendingUp size={18} className="text-danger" aria-hidden="true" />;
+    return <TrendingUp size={18} className="text-critical" aria-hidden="true" />;
   if (dir === 'down')
     return <TrendingDown size={18} className="text-success" aria-hidden="true" />;
   return <Minus size={18} className="text-warning-hover" aria-hidden="true" />;
 };
 
 const trendColorClass = (dir: MarketIntelCard['priceDir']): string => {
-  if (dir === 'up') return 'text-danger';
+  if (dir === 'up') return 'text-critical';
   if (dir === 'down') return 'text-success';
   return 'text-warning-hover';
 };
@@ -430,7 +430,7 @@ const BuyerDiscovery: React.FC = () => {
 
       {tab === 'gaps' && (
         <div className="flex flex-col gap-6">
-          <div className="bg-danger-soft border-l-2 border-danger rounded px-4 py-3 text-sm text-danger font-medium">
+          <div className="bg-critical-soft border-l-2 border-critical rounded px-4 py-3 text-sm text-critical font-medium">
             {t('discovery.rec.dualSourceBanner')}
           </div>
 
@@ -466,7 +466,7 @@ const BuyerDiscovery: React.FC = () => {
                       <span
                         className={`text-sm ${
                           row.currentSupplier === 'Not yet sourced'
-                            ? 'text-danger font-semibold'
+                            ? 'text-critical font-semibold'
                             : 'text-text-primary'
                         }`}
                       >
@@ -610,7 +610,7 @@ const BuyerDiscovery: React.FC = () => {
                     <div className="text-[11px] text-text-tertiary">{t('discovery.intel.global')}</div>
                   </div>
                   <div>
-                    <div className="text-lg font-bold text-teal">
+                    <div className="text-lg font-bold text-teal-text">
                       {card.suppliersParagon}
                     </div>
                     <div className="text-[11px] text-text-tertiary">{t('discovery.intel.inNetwork')}</div>

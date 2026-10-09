@@ -333,7 +333,7 @@ describe('the display maps are total over the status union', () => {
     ];
     expect(Object.keys(CONTRACT_EXPIRY_TONE).sort()).toEqual([...all].sort());
     expect(Object.keys(CONTRACT_EXPIRY_CHIP).sort()).toEqual([...all].sort());
-    expect(CONTRACT_EXPIRY_TONE.Expired).toContain('danger');
+    expect(CONTRACT_EXPIRY_TONE.Expired).toContain('critical');
     expect(CONTRACT_EXPIRY_TONE.Expiring).toContain('warning');
     expect(CONTRACT_EXPIRY_TONE.Active).toContain('success');
     // ⚠️ The deliberate change of colour, pinned so it cannot drift back: a

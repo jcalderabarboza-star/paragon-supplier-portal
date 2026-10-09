@@ -164,7 +164,7 @@ const BuyerChase: React.FC = () => {
               <div>
                 <Link
                   to="/buyer/comm-hub"
-                  className="inline-flex items-center gap-1.5 rounded-md border border-action px-3 py-1.5 text-sm font-medium text-action hover:bg-action-soft transition-colors"
+                  className="inline-flex items-center gap-1.5 rounded-md border border-action px-3 py-1.5 text-sm font-medium text-action-text hover:bg-action-soft transition-colors"
                 >
                   <MessageCircle size={14} />
                   {t('chase.pushWhatsApp')}

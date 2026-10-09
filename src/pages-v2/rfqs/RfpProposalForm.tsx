@@ -164,7 +164,7 @@ const RfpProposalForm: React.FC<Props> = ({ rfq, supplierId, onClose }) => {
               />
               {unanswered && (
                 <div
-                  className="text-xs text-danger font-semibold mt-1"
+                  className="text-xs text-critical font-semibold mt-1"
                   data-testid={`rfp-criterion-missing-${rfq.id}-${c.id}`}
                 >
                   {t('rfqs.rfp.missing')}
@@ -197,7 +197,7 @@ const RfpProposalForm: React.FC<Props> = ({ rfq, supplierId, onClose }) => {
               <span className="font-mono">{name}</span>
               <button
                 type="button"
-                className="p-0.5 text-text-tertiary hover:text-danger"
+                className="p-0.5 text-text-tertiary hover:text-critical"
                 onClick={() => setDocuments((d) => d.filter((x) => x !== name))}
                 aria-label={t('rfqs.rfp.documents.remove', { name })}
               >

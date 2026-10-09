@@ -116,7 +116,7 @@ const dosBucket = (
       tab: 'critical',
       label: `${dos}d`,
       variant: 'danger',
-      cellCls: 'bg-danger-soft text-danger',
+      cellCls: 'bg-critical-soft text-critical',
     };
   if (dos < 30)
     return {
@@ -425,7 +425,7 @@ const BuyerInventory: React.FC = () => {
         <KpiCard
           eyebrow={t('buyerInventory.kpi.critical.eyebrow')}
           value={
-            <span className="text-danger">{formatNumber(counts.critical)}</span>
+            <span className="text-critical">{formatNumber(counts.critical)}</span>
           }
           icon={AlertTriangle}
           subtitle={t('buyerInventory.kpi.critical.subtitle')}
@@ -504,7 +504,7 @@ const BuyerInventory: React.FC = () => {
           </div>
           <div className="flex items-center gap-3 text-xs text-text-tertiary">
             <span className="inline-flex items-center gap-1">
-              <span className="inline-block w-3 h-3 rounded bg-danger-soft" />
+              <span className="inline-block w-3 h-3 rounded bg-critical-soft" />
               {'< 14d'}
             </span>
             <span className="inline-flex items-center gap-1">

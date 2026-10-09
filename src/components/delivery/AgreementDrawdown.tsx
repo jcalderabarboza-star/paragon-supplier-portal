@@ -195,9 +195,9 @@ const AgreementCard: React.FC<{
               {linkContract ? (
                 <Link
                   to={`/buyer/contracts/${agreement.contractId}`}
-                  className="text-action hover:underline"
+                  className="text-action-text hover:underline"
                 >
-                  <Data className="text-xs text-action">{agreement.contractId}</Data>
+                  <Data className="text-xs text-action-text">{agreement.contractId}</Data>
                 </Link>
               ) : (
                 <Data className="text-xs">{agreement.contractId}</Data>

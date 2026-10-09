@@ -800,7 +800,7 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
       </div>
 
       {overdueInvoices.length > 0 && (
-        <div className="bg-danger-soft border-l-2 border-danger rounded px-4 py-3 mb-3 text-sm text-danger flex items-start gap-2">
+        <div className="bg-critical-soft border-l-2 border-critical rounded px-4 py-3 mb-3 text-sm text-critical flex items-start gap-2">
           <AlertOctagon size={14} className="shrink-0 mt-0.5" />
           <div>
             <strong>
@@ -921,7 +921,7 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
                           {inv.status}
                         </StatusPill>
                         {inv.status === 'Overdue' && (
-                          <div className="text-xs text-danger mt-1">
+                          <div className="text-xs text-critical mt-1">
                             {t('buyerInvoices.table.daysOverdue', { days: inv.daysOutstanding })}
                           </div>
                         )}
@@ -1163,7 +1163,7 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
                           {t('buyerInvoices.action.retrySettle')}
                         </Button>
                       ) : (
-                        <span className="text-xs text-danger self-center">
+                        <span className="text-xs text-critical self-center">
                           {t('buyerInvoices.settle.notRetryable')}
                         </span>
                       )
@@ -1304,7 +1304,7 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
                     as="dd"
                     className={`font-medium ${
                       selected.status === 'Overdue'
-                        ? 'text-danger'
+                        ? 'text-critical'
                         : 'text-text-primary'
                     }`}
                   >
@@ -1359,7 +1359,7 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
                   MATCH_VARIANT[selected.matchStatus] === 'success'
                     ? 'bg-success-soft border-success text-success'
                     : MATCH_VARIANT[selected.matchStatus] === 'danger'
-                      ? 'bg-danger-soft border-danger text-danger'
+                      ? 'bg-critical-soft border-critical text-critical'
                       : 'bg-bg-hover border-border-subtle text-text-secondary'
                 }`}
               >
@@ -1595,7 +1595,7 @@ interface MatchTileProps {
 const MATCH_TILE_CLASS: Record<MatchTileProps['variant'], string> = {
   success: 'bg-success-soft text-success',
   warning: 'bg-warning-soft text-warning-hover',
-  danger: 'bg-danger-soft text-danger',
+  danger: 'bg-critical-soft text-critical',
   neutral: 'bg-bg-hover text-text-secondary',
 };
 

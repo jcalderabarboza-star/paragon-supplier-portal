@@ -474,7 +474,7 @@ const LineCard: React.FC<{
           </dt>
           <dd className="text-sm font-semibold">
             <Data>{formatDate(dueAt)}</Data>
-            {overdue && <span className="ml-2 text-xs font-semibold text-danger">{t('sdcSup.deadline.overdue')}</span>}
+            {overdue && <span className="ml-2 text-xs font-semibold text-critical">{t('sdcSup.deadline.overdue')}</span>}
           </dd>
         </div>
       </dl>
@@ -1921,10 +1921,10 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
       {/* FLAG-2: the governed LIVE lane is empty — the sample renders ONLY under
           this explicit banner (the honest empty state of the live lane, stated). */}
       {!liveFeed && (
-        <div className="mb-6 flex items-start gap-2 rounded-lg border border-warning/30 bg-warning-soft px-4 py-3 text-sm text-text-primary">
-          <Info size={16} className="mt-0.5 shrink-0 text-warning-hover" />
+        <div className="mb-6 flex items-start gap-2 rounded-lg border border-dashed border-sample-border bg-sample-soft px-4 py-3 text-sm text-text-primary">
+          <Info size={16} className="mt-0.5 shrink-0 text-sample" />
           <div>
-            <div className="font-semibold text-warning-hover">{t('sdcSup.honesty.title')}</div>
+            <div className="font-semibold text-sample">{t('sdcSup.honesty.title')}</div>
             <p className="mt-0.5 text-text-secondary">{t('sdcSup.honesty.body')}</p>
           </div>
         </div>
@@ -2148,7 +2148,7 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
                   <div
                     role="alert"
                     data-testid="confirm-qty-refusal"
-                    className="mt-1 text-[11px] text-danger"
+                    className="mt-1 text-[11px] text-critical"
                   >
                     {t(CONFIRM_REFUSAL_KEY[confirmQty.reason])}{' '}
                     <GlossaryTermChip
@@ -2202,7 +2202,7 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
               <div>
                 <label className={labelClass} htmlFor="sdcsup-rootcause">
                   {t('sdcSup.panel.rootCause.level1')}
-                  {rootCauseRequired && <span className="text-danger"> *</span>}
+                  {rootCauseRequired && <span className="text-critical"> *</span>}
                 </label>
                 <select
                   id="sdcsup-rootcause"
@@ -2471,7 +2471,7 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
                 <div
                   data-testid="soh-batch-sum"
                   className={`text-xs ${
-                    sohBatchMismatch || !sohNormalized.ok ? 'text-danger' : 'text-text-secondary'
+                    sohBatchMismatch || !sohNormalized.ok ? 'text-critical' : 'text-text-secondary'
                   }`}
                 >
                   {sohNormalized.ok ? (
@@ -2613,7 +2613,7 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
                   id="sdcsup-ship-qty-hint"
                   role="alert"
                   data-testid="ship-qty-refusal"
-                  className="mt-1 text-xs text-danger"
+                  className="mt-1 text-xs text-critical"
                 >
                   {t(SHIP_REFUSAL_KEY[shipQty.reason])}{' '}
                   <GlossaryTermChip

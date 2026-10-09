@@ -65,7 +65,7 @@ export interface ExpandableWidgetProps {
 
 // DP2-FLAG-01 (card scale): the severity accent is the card's own 3px left edge.
 const EDGE_CLASS: Record<FlagSeverity, string> = {
-  critical: 'border-l-[3px] border-l-danger',
+  critical: 'border-l-[3px] border-l-critical',
   warning: 'border-l-[3px] border-l-warning',
   info: 'border-l-[3px] border-l-text-tertiary',
   none: '',
@@ -79,13 +79,13 @@ const EDGE_CLASS: Record<FlagSeverity, string> = {
 const HonestyDot: React.FC<{ live: boolean; t: TFunction }> = ({ live, t }) => (
   <span
     className={`inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider ${
-      live ? 'text-success' : 'text-warning-hover'
+      live ? 'text-success' : 'text-sample'
     }`}
   >
     <span
       aria-hidden="true"
       className={`h-1.5 w-1.5 rounded-full ${
-        live ? 'bg-success' : 'border border-warning'
+        live ? 'bg-success' : 'border border-dashed border-sample'
       }`}
     />
     {live ? t('widget.honesty.live') : t('widget.honesty.sample')}
@@ -153,7 +153,7 @@ const ExpandableWidget: React.FC<ExpandableWidgetProps> = ({
   const detailText =
     flagLabel ?? (flagSeverity === 'none' ? t('widget.allClear') : `${count}`);
   const detailClass =
-    flagSeverity === 'critical' ? 'text-danger' : 'text-text-tertiary';
+    flagSeverity === 'critical' ? 'text-critical' : 'text-text-tertiary';
 
   return (
     <>
@@ -210,7 +210,7 @@ const ExpandableWidget: React.FC<ExpandableWidgetProps> = ({
                 type="button"
                 onClick={onAction}
                 disabled={actionDisabled}
-                className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-action hover:underline disabled:cursor-not-allowed disabled:no-underline disabled:opacity-50"
+                className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-action-text hover:underline disabled:cursor-not-allowed disabled:no-underline disabled:opacity-50"
               >
                 {actionLabel}
                 <span aria-hidden="true">→</span>

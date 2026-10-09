@@ -496,7 +496,7 @@ const BulkStockEntryGrid: React.FC<BulkStockEntryGridProps> = ({
       {materialCode && (
         <div
           className={`text-sm ${
-            liveUnit && !liveUnit.ok ? 'text-danger' : 'text-text-secondary'
+            liveUnit && !liveUnit.ok ? 'text-critical' : 'text-text-secondary'
           }`}
           data-testid="sdcsup-bulk-summary"
         >

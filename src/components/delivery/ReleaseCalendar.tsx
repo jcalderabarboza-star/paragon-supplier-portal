@@ -156,7 +156,7 @@ const ReleaseCalendar: React.FC<{
                         {fv.qtyVariance !== undefined && fv.qtyVariance !== 0 && (
                           <div
                             className={`text-[10px] mt-0.5 ${
-                              fv.qtyVariance < 0 ? 'text-danger' : 'text-warning-hover'
+                              fv.qtyVariance < 0 ? 'text-critical' : 'text-warning-hover'
                             }`}
                           >
                             {signedQty(fv.qtyVariance)} {uom}{' '}

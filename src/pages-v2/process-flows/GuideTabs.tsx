@@ -348,7 +348,7 @@ const TestDataTab: React.FC<{ guide: ProcessGuide }> = ({ guide }) => {
                           to={route}
                           data-testid={`pf-guide-fixture-${id}`}
                           aria-label={t('processGuides.testdata.openAria', { id })}
-                          className="font-mono text-[11px] text-action underline-offset-2 hover:underline"
+                          className="font-mono text-[11px] text-action-text underline-offset-2 hover:underline"
                         >
                           {id}
                         </Link>
@@ -456,9 +456,9 @@ const GuideTabs: React.FC<{ view: FlowView; overview: React.ReactNode }> = ({ vi
               <Link
                 to={GUIDE_LIST_ROUTE[guide.entity]}
                 data-testid="pf-guide-linked-list"
-                className="inline-flex items-center gap-1 text-[12px] text-action hover:underline"
+                className="inline-flex items-center gap-1 text-[12px] text-action-text hover:underline"
               >
-                {t('processGuides.linked.openList')} · <Data className="text-[11px] text-action">{GUIDE_LIST_ROUTE[guide.entity]}</Data>
+                {t('processGuides.linked.openList')} · <Data className="text-[11px] text-action-text">{GUIDE_LIST_ROUTE[guide.entity]}</Data>
               </Link>
             )}
           </div>
@@ -508,7 +508,7 @@ const GuideTabs: React.FC<{ view: FlowView; overview: React.ReactNode }> = ({ vi
               onClick={() => setTab(k)}
               className={`-mb-px rounded-t-md border px-3 py-1.5 text-[12px] transition-colors ${
                 tab === k
-                  ? 'border-border-subtle border-b-bg-surface bg-bg-surface font-semibold text-action'
+                  ? 'border-border-subtle border-b-bg-surface bg-bg-surface font-semibold text-action-text'
                   : 'border-transparent text-text-secondary hover:bg-bg-hover'
               }`}
             >

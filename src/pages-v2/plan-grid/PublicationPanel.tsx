@@ -187,7 +187,7 @@ const PublicationPanel: React.FC<{
   const toggle = collapsible ? (
     <button
       type="button"
-      className="shrink-0 text-xs font-medium text-action hover:underline"
+      className="shrink-0 text-xs font-medium text-action-text hover:underline"
       aria-expanded={open}
       onClick={onToggle}
       data-testid="publication-toggle"
@@ -288,7 +288,7 @@ const PublicationPanel: React.FC<{
       )}
 
       {failure && (
-        <p className="mt-2 text-xs text-danger" role="alert" data-testid="publication-failure">
+        <p className="mt-2 text-xs text-critical" role="alert" data-testid="publication-failure">
           {/* E2E-1 — publishing and discarding need a named person. */}
           {(namedSeatRefusalKey(failure) ? t(namedSeatRefusalKey(failure)!) : null) ??
             refusalText(failure) ??

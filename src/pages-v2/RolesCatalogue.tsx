@@ -91,7 +91,7 @@ const RoleRow: React.FC<{ role: RoleView }> = ({ role }) => {
         })}
       </td>
       <td className="py-3 px-4 align-middle text-right">
-        <span className="inline-flex items-center gap-1 text-xs text-action whitespace-nowrap">
+        <span className="inline-flex items-center gap-1 text-xs text-action-text whitespace-nowrap">
           {t('roles.page.view')}
           <ArrowRight size={12} />
         </span>

@@ -151,7 +151,7 @@ const PolicyEditor: React.FC<{
             <div
               role="alert"
               data-testid="policy-pct-refusal"
-              className="mt-1 text-[11px] text-danger"
+              className="mt-1 text-[11px] text-critical"
             >
               {t(PCT_REFUSAL_KEY[pctRead.reason])}{' '}
               <GlossaryTermChip refTo={{ sourceType: 'QtyRefusalReason', term: pctRead.reason }} />

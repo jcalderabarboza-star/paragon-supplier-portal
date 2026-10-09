@@ -563,14 +563,14 @@ const BuyerOrders: React.FC = () => {
                     <div
                       className={`text-sm whitespace-nowrap ${
                         overdue
-                          ? 'text-danger font-semibold'
+                          ? 'text-critical font-semibold'
                           : 'text-text-secondary'
                       }`}
                     >
                       <Data>{formatDate(po.requestedDeliveryDate)}</Data>
                     </div>
                     {overdue && (
-                      <div className="text-xs text-danger mt-0.5">
+                      <div className="text-xs text-critical mt-0.5">
                         {t('buyerOrders.table.overdue', { count: po.daysOverdue })}
                       </div>
                     )}
@@ -646,7 +646,7 @@ const BuyerOrders: React.FC = () => {
                     as="dd"
                     className={`font-medium ${
                       isOverdue(selectedPO)
-                        ? 'text-danger'
+                        ? 'text-critical'
                         : 'text-text-primary'
                     }`}
                   >
@@ -830,7 +830,7 @@ const BuyerOrders: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setCommsOpen((v) => !v)}
-                className="flex items-center gap-2 text-sm font-medium text-teal hover:text-teal-hover"
+                className="flex items-center gap-2 text-sm font-medium text-teal-text hover:text-teal-hover"
               >
                 {commsOpen ? (
                   <ChevronUp size={14} />

@@ -102,7 +102,7 @@ const SupplierShipNotices: React.FC<Props> = ({ search, supplierName }) => {
       {query.isPending ? (
         <div className="px-4 py-6 text-sm text-text-tertiary">{t('shipments.notices.loading')}</div>
       ) : query.isError ? (
-        <div className="px-4 py-6 text-sm text-danger" role="alert">
+        <div className="px-4 py-6 text-sm text-critical" role="alert">
           {t('shipments.notices.failed')}
         </div>
       ) : shown.length === 0 ? (

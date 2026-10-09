@@ -177,7 +177,7 @@ const CHIP = 'inline-flex items-center gap-1 rounded-sm border px-1.5 py-0.5 tex
 const CHIP_NEUTRAL = `${CHIP} border-border-subtle bg-bg-hover text-text-secondary`;
 const CHIP_SUCCESS = `${CHIP} border-success/30 bg-success-soft text-success`;
 const CHIP_WARNING = `${CHIP} border-warning/30 bg-warning-soft text-warning-hover`;
-const CHIP_DANGER = `${CHIP} border-danger/30 bg-danger-soft text-danger`;
+const CHIP_DANGER = `${CHIP} border-critical/30 bg-critical-soft text-critical`;
 const CHIP_INFO = `${CHIP} border-info/30 bg-info-soft text-info`;
 
 // SDC-4d — the coverage entry is JOINED INTO the row (not read from a column
@@ -641,13 +641,13 @@ const BuyerCollaboration: React.FC = () => {
         component: ({ rowData }: CellProps<CoverageRow>) => (
           <div className="w-full px-2 text-right">
             {rowData.state.kind === 'short' ? (
-              <Data className="text-xs text-danger">
+              <Data className="text-xs text-critical">
                 −{formatNumber(rowData.state.deficitQty)} {rowData.line.uom}
               </Data>
             ) : rowData.state.kind === 'revised-after-accept' ? (
               // A3 — the CUT, against the figure the buyer accepted: that is the
               // gap a plan is now standing on, whatever the demand says.
-              <Data className="text-xs text-danger">
+              <Data className="text-xs text-critical">
                 −{formatNumber(rowData.state.cutQty)} {rowData.line.uom}
               </Data>
             ) : (
@@ -860,7 +860,7 @@ const BuyerCollaboration: React.FC = () => {
             onClick={() => setPeriod('all')}
             className={`rounded-md border px-3 py-1.5 text-sm ${
               period === 'all'
-                ? 'border-action bg-action-soft text-action'
+                ? 'border-action bg-action-soft text-action-text'
                 : 'border-border-subtle bg-bg-surface text-text-secondary hover:bg-bg-hover'
             }`}
           >
@@ -873,7 +873,7 @@ const BuyerCollaboration: React.FC = () => {
               onClick={() => setPeriod(bucket)}
               className={`inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm ${
                 period === bucket
-                  ? 'border-action bg-action-soft text-action'
+                  ? 'border-action bg-action-soft text-action-text'
                   : 'border-border-subtle bg-bg-surface text-text-secondary hover:bg-bg-hover'
               }`}
             >
@@ -1045,7 +1045,7 @@ const BuyerCollaboration: React.FC = () => {
                           outcomeOf(row, response, 'review'),
                         )
                       }
-                      className="ml-auto rounded-md border border-action bg-transparent px-3 py-1.5 text-xs font-medium text-action transition-colors hover:bg-action-soft disabled:opacity-50"
+                      className="ml-auto rounded-md border border-action bg-transparent px-3 py-1.5 text-xs font-medium text-action-text transition-colors hover:bg-action-soft disabled:opacity-50"
                     >
                       {t('sdc.review.cta')}
                     </button>
@@ -1111,7 +1111,7 @@ const BuyerCollaboration: React.FC = () => {
                             outcomeOf(row, response, 'accept'),
                           )
                         }
-                        className="rounded-md border border-action bg-transparent px-3 py-1.5 text-xs font-medium text-action transition-colors hover:bg-action-soft disabled:opacity-50"
+                        className="rounded-md border border-action bg-transparent px-3 py-1.5 text-xs font-medium text-action-text transition-colors hover:bg-action-soft disabled:opacity-50"
                       >
                         {t('sdc.accept.cta')}
                       </button>
@@ -1193,7 +1193,7 @@ const BuyerCollaboration: React.FC = () => {
                       setResolving(row);
                       setAnswer('');
                     }}
-                    className="ml-auto rounded-md border border-action bg-transparent px-3 py-1.5 text-xs font-medium text-action transition-colors hover:bg-action-soft"
+                    className="ml-auto rounded-md border border-action bg-transparent px-3 py-1.5 text-xs font-medium text-action-text transition-colors hover:bg-action-soft"
                   >
                     {t('sdc.resolve.cta')}
                   </button>

@@ -80,8 +80,8 @@ const FlowProvenance: React.FC<{ view: FlowView }> = ({ view }) => {
   const { t } = useTranslation();
   return (
     <span className="inline-flex flex-wrap items-center gap-x-3 gap-y-1">
-      <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-warning-hover">
-        <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full border border-warning" />
+      <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-sample">
+        <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full border border-dashed border-sample" />
         {view.feed === null
           ? t('processFlows.provenance.noReadSurface')
           : t('processFlows.provenance.fixtureFeed', { capability: view.capability })}
@@ -254,7 +254,7 @@ const GuideCardLine: React.FC<{ entity: string }> = ({ entity }) => {
   if (!guide) return null;
   return (
     <span data-testid={`pf-flow-guide-${entity}`} className="mt-1 block">
-      <span className="text-[10px] font-semibold uppercase tracking-wider text-teal">{t('processGuides.catalog.guide')}</span>
+      <span className="text-[10px] font-semibold uppercase tracking-wider text-teal-text">{t('processGuides.catalog.guide')}</span>
       <span className="mt-0.5 line-clamp-2 block text-[11px] leading-snug text-text-secondary">
         {firstParagraphText(guide.sections.summary)}
       </span>
