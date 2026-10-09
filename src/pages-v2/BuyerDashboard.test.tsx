@@ -423,6 +423,9 @@ describe('⚠️ THE ACTION QUEUE — lanes, filtering and handoff', () => {
   it('⚠️ A LANE THE SEAT DOES NOT HOLD RENDERS AS A HANDOFF, under All lanes', async () => {
     renderWithProviders(<BuyerDashboard />, { identity: seatWith(['finance']) });
     await screen.findByText('Good morning — here is what needs you today');
+    // ADM-1 — a one-lane seat opens on ITS lane, so the other lanes' rows are
+    // reached by choosing All lanes, which is what this test is about.
+    fireEvent.click(screen.getByTestId('lane-chip-all'));
 
     // The row the seat holds carries no handoff…
     expect(screen.queryByTestId('handoff-finance')).not.toBeInTheDocument();
@@ -442,6 +445,7 @@ describe('⚠️ THE ACTION QUEUE — lanes, filtering and handoff', () => {
   it('a receiving-only seat sees its own row un-handed-off', async () => {
     renderWithProviders(<BuyerDashboard />, { identity: seatWith(['receiving']) });
     await screen.findByText('Good morning — here is what needs you today');
+    fireEvent.click(screen.getByTestId('lane-chip-all')); // ADM-1: it opens on its own lane
     expect(screen.queryByTestId('handoff-receiving')).not.toBeInTheDocument();
     expect(screen.getByTestId('handoff-finance')).toBeInTheDocument();
   });
@@ -460,7 +464,10 @@ describe('⚠️ THE ACTION QUEUE — lanes, filtering and handoff', () => {
     for (const absent of ['procurement', 'receiving', 'compliance', 'planning', 'requisitioner']) {
       expect(screen.queryByTestId(`lane-chip-${absent}`), absent).not.toBeInTheDocument();
     }
-    // …but the rows are all still there, handed off.
+    // …but the rows are all still there, handed off — under All lanes (ADM-1:
+    // the one-lane seat opened on its own lane, where only its row shows).
+    expect(screen.getAllByTestId(/^queue-open-/)).toHaveLength(1);
+    fireEvent.click(screen.getByTestId('lane-chip-all'));
     expect(screen.getAllByTestId(/^queue-open-/).length).toBeGreaterThan(1);
     expect(screen.getAllByTestId(/^handoff-/).length).toBe(4);
   });

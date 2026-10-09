@@ -27,7 +27,12 @@ export const buyerDashboardEn: Record<string, string> = {
   'buyerDashboard.header.derived': 'Figures derived, except the panels marked illustrative',
   // — Lane view chips —
   'buyerDashboard.lane.all': 'All lanes',
-  'buyerDashboard.lane.legend': 'Filters the action queue',
+  'buyerDashboard.lane.legend': 'Filters the alerts and the action queue',
+  // ADM-1 — the KPI row is whole-platform and is not filtered by a lane chip.
+  'buyerDashboard.kpi.title': 'Key figures',
+  'buyerDashboard.kpi.wholePlatform': 'Whole platform',
+  'buyerDashboard.kpi.notFiltered': 'Not filtered by lane.',
+  'buyerDashboard.alerts.noneForLane': 'No alert group belongs to this lane right now.',
   // — Alerts strip —
   'buyerDashboard.alerts.title': 'Alerts · {{count}} exception groups',
   'buyerDashboard.alerts.severity.critical': 'Critical',
@@ -162,7 +167,11 @@ export const buyerDashboardId: Record<string, string> = {
   'buyerDashboard.header.derived': 'Angka diturunkan, kecuali panel yang ditandai ilustratif',
   // — Lane view chips —
   'buyerDashboard.lane.all': 'Semua jalur',
-  'buyerDashboard.lane.legend': 'Menyaring antrean tindakan',
+  'buyerDashboard.lane.legend': 'Menyaring peringatan dan antrean tindakan',
+  'buyerDashboard.kpi.title': 'Angka kunci',
+  'buyerDashboard.kpi.wholePlatform': 'Seluruh platform',
+  'buyerDashboard.kpi.notFiltered': 'Tidak disaring menurut jalur.',
+  'buyerDashboard.alerts.noneForLane': 'Saat ini tidak ada kelompok peringatan milik jalur ini.',
   // — Alerts strip —
   'buyerDashboard.alerts.title': 'Peringatan · {{count}} kelompok pengecualian',
   'buyerDashboard.alerts.severity.critical': 'Kritis',

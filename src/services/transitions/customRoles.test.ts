@@ -179,14 +179,15 @@ describe('⚠️ TENANCY — A CUSTOM ROLE MAY NOT SPAN TENANCIES', () => {
     );
   });
 
-  it('⚠️ `admin` CANNOT BE A PARENT — a copy of it would span by construction', () => {
-    const refusal = copyableParentRefusal('admin');
-    expect(refusal).toContain('spans both tenancies');
-    expect(sideOfSystemRole('admin')).toBeNull();
-    // Known-good: every other system role IS copyable.
-    for (const id of Object.keys(SYSTEM_ROLES).filter((r) => r !== 'admin')) {
+  it('⚠️ EVERY SYSTEM ROLE IS ON ONE SIDE (ADM-1) — and an id that is not a role is refused as a parent', () => {
+    // It read "`admin` CANNOT BE A PARENT — a copy of it would span by
+    // construction". Since ADM-1 no system role spans the tenancies, so every
+    // one is a legal parent and the refusal that remains is the unknown id.
+    for (const id of Object.keys(SYSTEM_ROLES)) {
       expect(copyableParentRefusal(id), `'${id}' should be copyable`).toBeNull();
+      expect(sideOfSystemRole(id as never), `'${id}' is on no side`).not.toBeNull();
     }
+    expect(copyableParentRefusal('not-a-role')).toContain('is not a system role');
   });
 
   it('a parent that is not a system role at all is refused', () => {
@@ -344,9 +345,11 @@ describe('⚠️ THE TENANCY GATE STILL LIVES AT THE VERB — a stored row is re
     expect(customRoleStore.readState().rejected[0].reason).toContain('already a system role');
   });
 
-  it('a row copying `admin` is refused — the cross-tenancy exception stays seeded-only', () => {
-    store(def({ parent: 'admin' as never }));
-    expect(customRoleStore.readState().rejected[0].reason).toContain('spans both tenancies');
+  it('a row copying a parent that is not a system role is refused, by name', () => {
+    // It copied `admin`, refused for spanning tenancies; since ADM-1 `admin` is a
+    // buyer-side role. The gate at the read still refuses a bad parent.
+    store(def({ parent: 'not-a-role' as never }));
+    expect(customRoleStore.readState().rejected[0].reason).toContain('is not a system role');
   });
 
   it('a machine-only atom is refused', () => {

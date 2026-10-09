@@ -59,7 +59,9 @@ import {
   useMaterialRulings,
 } from '../services/query/hooks';
 import type { MaterialRuling } from '../services/sdc/materialRuling';
-import type { EnforcementSetting } from '../lib/enforcement';
+import { isAttributed, type EnforcementSetting } from '../lib/enforcement';
+import { personLabel } from '../services/identity/personLabel';
+import { formatSetAt } from './modules/moduleLedger';
 import type {
   GoodsReceipt,
   GRStatus,
@@ -1042,8 +1044,12 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
                     </span>
                   </TableCell>
                   <TableCell>
-                    <span className="text-sm text-text-secondary">
-                      {g.receivedBy}
+                    <span className="text-sm text-text-secondary" data-testid={`gr-receiver-${g.id}`}>
+                      {/* ADM-1 — the named receiver when the receipt carries one;
+                          the receiving post alone on a receipt that predates it. */}
+                      {g.receivedByPerson && isAttributed(g.receivedByPerson)
+                        ? personLabel(g.receivedByPerson.person.personId, t)
+                        : g.receivedBy}
                     </span>
                   </TableCell>
                   <TableCell>
@@ -1153,7 +1159,24 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
                 </div>
                 <div>
                   <div className="text-xs text-text-tertiary">{t('goodsReceipt.panel.field.receivedBy')}</div>
-                  <div className="text-text-primary">{selected.receivedBy}</div>
+                  {/* ADM-1 — WHO and WHEN. The person is the seat's, stamped when
+                      the receipt was raised; the post is what the wizard chose. */}
+                  {selected.receivedByPerson && isAttributed(selected.receivedByPerson) ? (
+                    <div className="text-text-primary" data-testid="gr-panel-receiver">
+                      {personLabel(selected.receivedByPerson.person.personId, t)}
+                      <span className="text-text-tertiary"> · {selected.receivedBy}</span>
+                      {selected.receivedAt && (
+                        <div className="text-xs text-text-tertiary" data-testid="gr-panel-received-at">
+                          {t('goodsReceipt.panel.field.recordedAt')} <Data>{formatSetAt(selected.receivedAt)}</Data>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="text-text-primary" data-testid="gr-panel-receiver">
+                      {selected.receivedBy}
+                      <div className="text-xs text-text-tertiary">{t('goodsReceipt.panel.field.noNamedReceiver')}</div>
+                    </div>
+                  )}
                 </div>
                 <div>
                   <div className="text-xs text-text-tertiary">{t('goodsReceipt.panel.field.status')}</div>

@@ -41,14 +41,22 @@ import {
   PackagePlus,
   ListChecks,
   Blocks,
+  History,
 } from 'lucide-react';
 import { matchPath } from 'react-router-dom';
 import { routeOffReason, type ModuleActivationView } from '../../services/modules/activation';
+import { maySeeSuperAdminActivity } from '../../services/identity/superAdmin';
 
 export interface NavItem {
   readonly labelKey: string;
   readonly icon: LucideIcon;
   readonly path: string;
+  /**
+   * ADM-1 — when present, the item is listed only for a seat this admits. The
+   * one use is the Super Admin activity view (the Super Admin and Compliance).
+   * Absent on every other item, which every seat sees.
+   */
+  readonly visibleTo?: (seat: { readonly businessRoles?: readonly string[] }) => boolean;
 }
 
 export interface NavGroup {
@@ -142,6 +150,12 @@ export const BUYER_NAV: readonly NavGroup[] = [
     items: [
       { labelKey: 'nav.buyer.modules', icon: Blocks, path: '/buyer/platform/modules' },
       { labelKey: 'nav.buyer.roles', icon: ShieldCheck, path: '/buyer/roles' },
+      {
+        labelKey: 'superAdmin.activity.nav',
+        icon: History,
+        path: '/buyer/platform/super-admin-activity',
+        visibleTo: maySeeSuperAdminActivity,
+      },
       { labelKey: 'nav.buyer.processFlows', icon: Workflow, path: '/buyer/process-flows' },
       // GL-1 — the glossary. LISTED IN BOTH PERSONAS' NAV, under one
       // persona-neutral key and one persona-neutral path, because the term chips
@@ -283,8 +297,17 @@ export function navSectionKeyFor(pathname: string): string | null {
  * never a dead link; the route still renders read-only if reached), and a
  * group left with no item leaves too, so an empty group never renders.
  */
-export function visibleNav(groups: readonly NavGroup[], activation: ModuleActivationView): NavGroup[] {
+export function visibleNav(
+  groups: readonly NavGroup[],
+  activation: ModuleActivationView,
+  seat: { readonly businessRoles?: readonly string[] } = {},
+): NavGroup[] {
   return groups
-    .map((g) => ({ ...g, items: g.items.filter((item) => routeOffReason(item.path, activation) === null) }))
+    .map((g) => ({
+      ...g,
+      items: g.items.filter(
+        (item) => routeOffReason(item.path, activation) === null && (item.visibleTo?.(seat) ?? true),
+      ),
+    }))
     .filter((g) => g.items.length > 0);
 }

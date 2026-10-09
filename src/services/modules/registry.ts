@@ -127,7 +127,10 @@ function buildModules(): readonly ModuleSpec[] {
         '/buyer/process-flows', '/glossary', '/', '*',
         // M2 · Design 5 §A.5 — the roadmap board and the admin page. In PLT, so
         // the page that switches modules can never be switched off itself.
-        '/buyer/platform/modules', '/buyer/platform/modules/admin'],
+        '/buyer/platform/modules', '/buyer/platform/modules/admin',
+        // ADM-1 — the Super Admin activity view. In PLT, so the record of what
+        // a Super Admin did cannot be switched off.
+        '/buyer/platform/super-admin-activity'],
       flows: ['role', 'moduleActivation'],
       capabilities: ['identity', 'dashboard'], dependsOn: [], parts: [],
     },

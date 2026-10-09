@@ -68,7 +68,10 @@ export const goodsReceiptFlow: FlowDefinition = {
       // VERBATIM from the caller (the server derives ownership and every ref
       // from the parent, but not the inspected lines). The second hook binds
       // those lines to what the parent document actually declared.
+      // ADM-1 — and the receipt names its receiver, so an unnamed seat is
+      // refused first: nothing else about the receipt is read for nobody.
       policyHooks: [
+        POLICY_HOOKS.GR_RECEIVER_NAMED,
         POLICY_HOOKS.GR_CREATE_SHIPMENT_RECEIVED,
         POLICY_HOOKS.GR_INSPECTION_MATERIALS_DECLARED,
       ],

@@ -71,6 +71,8 @@ export const ATTRIBUTION_KEYS: readonly string[] = Object.freeze([
   // either becomes real or becomes a lie.
   'activeChangedBy',
   'adjustedBy',
+  // ADM-1 — the named receiver of a goods receipt, written from `scope.actor`.
+  'receivedByPerson',
   'approvedBy',
   'attribution',
   'by',

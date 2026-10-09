@@ -614,7 +614,7 @@ bindPolicyHook(POLICY_HOOKS.RFQ_FX_PIN_WELL_FORMED, rfqFxPinWellFormed);
 // then depend on WHEN the command was dispatched, which is a clock deciding a
 // transition by another route. An unset check baselines at MAXIMUM_RIGOUR, so
 // THE FIRST EVER SETTING BELOW FULL RIGOUR IS A LOOSENING and must be named.
-const enforcementSetGoverned: PolicyHookFn = ({ entityId, payload, target, scope }) => {
+const enforcementSetGoverned: PolicyHookFn = ({ entityId, payload, target, scope, exempt }) => {
   const mode = payload.mode;
   if (typeof mode !== 'string' || !isEnforcementMode(mode)) {
     return {
@@ -703,7 +703,9 @@ const enforcementSetGoverned: PolicyHookFn = ({ entityId, payload, target, scope
   if (
     rigour(mode) < rigour(baseline) &&
     isAttributed(actor) &&
-    isSampleActor(actor.person.personId)
+    isSampleActor(actor.person.personId) &&
+    // ADM-1 — the Super Admin is exempt, by name and with a recorded reason.
+    !exempt?.('SAMPLE_ACTOR_CANNOT_LOOSEN')
   ) {
     return {
       ok: false,
@@ -1211,7 +1213,7 @@ bindPolicyHook(POLICY_HOOKS.MATERIALREQUEST_REFUSAL_AUTHORED, ({ payload }) => {
 // run requiring an admit.
 bindPolicyHook(
   POLICY_HOOKS.MATERIALREQUEST_DECIDER_NOT_REQUESTER,
-  ({ entityId, target, scope }) => {
+  ({ entityId, target, scope, exempt }) => {
     const row = target.readEntity?.(entityId) as
       | { submittedBy?: ActorAttribution }
       | null
@@ -1223,7 +1225,8 @@ bindPolicyHook(
       decider &&
       isAttributed(requester) &&
       isAttributed(decider) &&
-      requester.person.personId === decider.person.personId
+      requester.person.personId === decider.person.personId &&
+      !exempt?.('MATERIALREQUEST_DECIDER_IS_REQUESTER')
     ) {
       return {
         ok: false,
@@ -2034,7 +2037,7 @@ bindPolicyHook(POLICY_HOOKS.PSL_DECISION_AUTHORED, ({ payload }) => {
 // CANNOT FIRE PROVES NOTHING** (rule 4): `pslCommand.test.ts` fires it at a
 // SYNTHETIC RESOLVED pair and requires a refusal BY NAME, beside the real-tree
 // run requiring an admit.
-bindPolicyHook(POLICY_HOOKS.PSL_DECIDER_NOT_PROPOSER, ({ entityId, target, scope }) => {
+bindPolicyHook(POLICY_HOOKS.PSL_DECIDER_NOT_PROPOSER, ({ entityId, target, scope, exempt }) => {
   const row = readPslListing(target, entityId);
   const proposer = row?.proposedBy;
   const decider = scope.actor;
@@ -2043,7 +2046,8 @@ bindPolicyHook(POLICY_HOOKS.PSL_DECIDER_NOT_PROPOSER, ({ entityId, target, scope
     decider &&
     isAttributed(proposer) &&
     isAttributed(decider) &&
-    proposer.person.personId === decider.person.personId
+    proposer.person.personId === decider.person.personId &&
+    !exempt?.('PSL_DECIDER_IS_PROPOSER')
   ) {
     return {
       ok: false,
@@ -2077,7 +2081,7 @@ bindPolicyHook(POLICY_HOOKS.PSL_DECIDER_NOT_PROPOSER, ({ entityId, target, scope
 // mitigation and it is not enforcement. This hook is the enforcement.
 bindPolicyHook(
   POLICY_HOOKS.PSL_RESTRICTIVE_STATUS_APPROVED,
-  ({ entityId, target, payload, scope }) => {
+  ({ entityId, target, payload, scope, exempt }) => {
     // The designation under judgement: the payload's on a change, the row's on
     // a grant or a renew (neither of which carries one).
     const stated = authored(payload.status);
@@ -2089,6 +2093,7 @@ bindPolicyHook(
       atomsForSeat(scope.businessRoles ?? []),
     );
     if (verdict.kind !== 'SEAT_HOLDS_BOTH') return { ok: true };
+    if (exempt?.('PSL_SEAT_HOLDS_BOTH_AUTHORITIES')) return { ok: true };
     return {
       ok: false,
       reason:
@@ -2530,7 +2535,7 @@ export function drawdownLoosens(from: TolerancePolicy, to: TolerancePolicy): boo
  * TIGHTENING stays available to any attributed seat. The safest act is always
  * reachable — `lib/enforcement.ts`'s rule, one lane over.
  */
-const deliveryPolicyGoverned: PolicyHookFn = ({ entityId, payload, target, scope }) => {
+const deliveryPolicyGoverned: PolicyHookFn = ({ entityId, payload, target, scope, exempt }) => {
   const resolved = target.readEntity(entityId) as ResolvedItem | null;
   if (!resolved) return { ok: false, reason: 'entity missing' };
 
@@ -2597,7 +2602,7 @@ const deliveryPolicyGoverned: PolicyHookFn = ({ entityId, payload, target, scope
         'requires a NAMED actor, and this seat carries no person.',
     };
   }
-  if (isSampleActor(actor.person.personId)) {
+  if (isSampleActor(actor.person.personId) && !exempt?.('SAMPLE_ACTOR_CANNOT_LOOSEN')) {
     return {
       ok: false,
       reason:
@@ -2778,7 +2783,7 @@ bindPolicyHook(POLICY_HOOKS.INTAKE_OVERRIDE_REASONED, ({ payload, target, entity
 // is the same direction every four-eyes check in this file takes — stricter when
 // an actor resolves. Closing it means refusing unattributed approval itself,
 // which is a ruling about whether the unattributed seat may decide money at all.
-bindPolicyHook(POLICY_HOOKS.INVOICE_RELEASER_NOT_APPROVER, ({ entityId, target, scope }) => {
+bindPolicyHook(POLICY_HOOKS.INVOICE_RELEASER_NOT_APPROVER, ({ entityId, target, scope, exempt }) => {
   const inv = target.readEntity(entityId) as { approvedBy?: unknown } | null;
   const approver = asActorAttribution(inv?.approvedBy);
   // OPS-2 (operator ruling) — an approval that names nobody does not release
@@ -2801,7 +2806,10 @@ bindPolicyHook(POLICY_HOOKS.INVOICE_RELEASER_NOT_APPROVER, ({ entityId, target, 
         'is released by a named person who is not the approver — this seat names nobody',
     };
   }
-  if (approver.person.personId === releaser.person.personId) {
+  if (
+    approver.person.personId === releaser.person.personId &&
+    !exempt?.('INVOICE_RELEASER_IS_APPROVER')
+  ) {
     return {
       ok: false,
       reason:
@@ -2926,6 +2934,16 @@ bindPolicyHook(
   namedSeatHook(
     'PUBLICATION_ACTOR_UNATTRIBUTED',
     'publishing, discarding or withdrawing a forecast publication is recorded against the person who did it',
+  ),
+);
+// ADM-1 (operator ruling, 9 October 2026) — a goods receipt records the NAMED
+// receiver. The target stamps the seat's person and the instant on the receipt;
+// a seat that names nobody is refused here, before a receipt is minted.
+bindPolicyHook(
+  POLICY_HOOKS.GR_RECEIVER_NAMED,
+  namedSeatHook(
+    'GR_RECEIVER_UNATTRIBUTED',
+    'a goods receipt is recorded against the person who received the goods',
   ),
 );
 bindPolicyHook(

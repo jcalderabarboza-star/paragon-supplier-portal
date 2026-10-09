@@ -41,7 +41,7 @@ const SidebarV2: React.FC = () => {
   // link). Its route still renders read-only if reached; the dashboard is PLT
   // and never leaves. A group left with no item leaves too (`visibleNav`).
   const activation = useModuleActivation();
-  const groups = visibleNav(persona === 'buyer' ? BUYER_NAV : SUPPLIER_NAV, activation);
+  const groups = visibleNav(persona === 'buyer' ? BUYER_NAV : SUPPLIER_NAV, activation, identity);
 
   const navRef = useRef<HTMLElement>(null);
   useLayoutEffect(() => {

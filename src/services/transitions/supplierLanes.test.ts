@@ -127,8 +127,9 @@ describe('⚠️ THE TENANCY ANSWER IS UNCHANGED — the whole point of keeping 
     }
   });
 
-  it('`admin` still spans both sides — it is the union of every lane', () => {
-    for (const a of PERSONA_ROLES.supplier) expect(SYSTEM_ROLES.admin).toContain(a);
+  it('`admin` holds the buyer side and no supplier act (ADM-1) — it no longer spans both', () => {
+    expect(PERSONA_ROLES.supplier.length).toBeGreaterThan(0);
+    for (const a of PERSONA_ROLES.supplier) expect(SYSTEM_ROLES.admin, a).not.toContain(a);
     for (const a of SYSTEM_ROLES.buyer_all) expect(SYSTEM_ROLES.admin).toContain(a);
   });
 });
@@ -171,8 +172,9 @@ describe('THE OFFER AND THE SEED', () => {
     for (const r of SEEDED_SEAT_ROLES.supplier) {
       expect(sideOfSystemRole(r), `'${r}' is not on the supplier side`).toBe('supplier');
     }
-    // Known-BAD control beside the known-good sweep.
-    expect(sideOfSystemRole('admin')).toBeNull();
+    // Known-BAD control beside the known-good sweep: a buyer-side role is not
+    // on the supplier side (`admin` among them since ADM-1).
+    expect(sideOfSystemRole('admin')).toBe('buyer');
     expect(sideOfSystemRole('procurement')).toBe('buyer');
   });
 });

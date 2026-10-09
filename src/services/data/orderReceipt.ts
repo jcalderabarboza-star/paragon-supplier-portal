@@ -164,6 +164,27 @@ export interface InvoicePrefillLine {
   readonly unitPrice: number;
   /** Accepted against this order line — the ceiling, and what the form opens on. */
   readonly maxQty: number;
+  /**
+   * ADM-1 — WHAT `maxQty` IS. `confirmed` while no receipt is posted on the
+   * order (the supplier's confirmed quantity); `accepted` from the first posted
+   * receipt on (the quantity received and accepted). One order has one basis.
+   */
+  readonly basis: InvoiceCeilingBasis;
+}
+
+export type InvoiceCeilingBasis = 'confirmed' | 'accepted';
+
+/**
+ * ADM-1 (operator ruling, 9 October 2026) — invoicing before a receipt is
+ * allowed. The ceiling is the confirmed quantity until a receipt is posted on
+ * the order, and the accepted quantity from then on; the match waits for the
+ * receipt either way (`matchInvoicesForPo` writes nothing without one).
+ */
+export function invoiceCeilingBasis(
+  poNumber: string,
+  receipts: readonly GoodsReceipt[],
+): InvoiceCeilingBasis {
+  return receiptsOnOrder(poNumber, receipts).length === 0 ? 'confirmed' : 'accepted';
 }
 
 /** The lines an invoice on this order opens on. A line with nothing accepted is kept, at zero. */
@@ -171,12 +192,14 @@ export function invoiceLinesFor(
   po: Pick<PurchaseOrder, 'poNumber' | 'lineItems'>,
   receipts: readonly GoodsReceipt[],
 ): readonly InvoicePrefillLine[] {
+  const basis = invoiceCeilingBasis(po.poNumber, receipts);
   return receivedOnOrder(po, receipts).lines.map((l) => ({
     materialCode: l.materialCode,
     description: l.description,
     uom: l.uom,
     unitPrice: l.unitPrice,
-    maxQty: l.accepted,
+    maxQty: basis === 'confirmed' ? l.confirmedQty : l.accepted,
+    basis,
   }));
 }
 
@@ -188,6 +211,8 @@ export type InvoiceLinesRefusal =
   | { readonly code: 'INVOICE_LINE_NOT_ON_ORDER'; readonly materialCode: string }
   | { readonly code: 'INVOICE_LINE_PRICE_NOT_ORDER_PRICE'; readonly materialCode: string; readonly orderPrice: number }
   | { readonly code: 'INVOICE_LINE_EXCEEDS_RECEIVED'; readonly materialCode: string; readonly qty: number; readonly maxQty: number }
+  | { readonly code: 'INVOICE_LINE_EXCEEDS_CONFIRMED'; readonly materialCode: string; readonly qty: number; readonly maxQty: number }
+  | { readonly code: 'INVOICE_LINES_REQUIRED' }
   | { readonly code: 'INVOICE_NOTHING_INVOICED' }
   | { readonly code: 'INVOICE_AMOUNT_NOT_LINES_TOTAL'; readonly amount: number; readonly linesTotal: number };
 
@@ -227,6 +252,9 @@ export function invoiceLinesRefusal(
   lines: readonly InvoiceLine[],
   amount: number,
 ): InvoiceLinesRefusal | null {
+  // ADM-1 — an invoice states its lines. A list of none is refused before
+  // anything else is read, because there is nothing else to read.
+  if (lines.length === 0) return { code: 'INVOICE_LINES_REQUIRED' };
   const allowed = invoiceLinesFor(po, receipts);
   const seen = new Set<string>();
   for (const l of lines) {
@@ -239,7 +267,12 @@ export function invoiceLinesRefusal(
       return { code: 'INVOICE_LINE_PRICE_NOT_ORDER_PRICE', materialCode: l.materialCode, orderPrice: cap.unitPrice };
     }
     if (l.qty > cap.maxQty) {
-      return { code: 'INVOICE_LINE_EXCEEDS_RECEIVED', materialCode: l.materialCode, qty: l.qty, maxQty: cap.maxQty };
+      return {
+        code: cap.basis === 'confirmed' ? 'INVOICE_LINE_EXCEEDS_CONFIRMED' : 'INVOICE_LINE_EXCEEDS_RECEIVED',
+        materialCode: l.materialCode,
+        qty: l.qty,
+        maxQty: cap.maxQty,
+      };
     }
   }
   if (!lines.some((l) => l.qty > 0)) return { code: 'INVOICE_NOTHING_INVOICED' };

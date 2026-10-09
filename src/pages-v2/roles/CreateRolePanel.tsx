@@ -79,9 +79,10 @@ const CreateRolePanel: React.FC<{ onGranted: () => void }> = ({ onGranted }) => 
     [identity.businessRoles],
   );
 
-  // Only roles on the seat's own side are offerable parents. `admin` is absent
-  // from both persona lists by construction (it is not on a side), which is the
-  // same fact that makes it un-copyable at the verb.
+  // Only roles on the seat's own side are offerable parents. Since ADM-1 the
+  // two administrator roles are on the buyer side and so are offered; a copy of
+  // `super_admin` holds its permissions and never its exemption, which belongs
+  // to the role id (`services/identity/superAdmin.ts`).
   const parents = PERSONA_SYSTEM_ROLES[identity.personaType];
   const [parent, setParent] = useState<SystemRoleId>(parents[0]);
   const [roleId, setRoleId] = useState('');
@@ -98,10 +99,7 @@ const CreateRolePanel: React.FC<{ onGranted: () => void }> = ({ onGranted }) => 
 
   if (availability.kind !== 'held') {
     return (
-      <section
-        className="mb-5 border border-border-subtle rounded-lg bg-bg-hover p-4 flex gap-3"
-        data-testid="roles-create-gate"
-      >
+      <section className="flex gap-3" data-testid="roles-create-gate">
         <ShieldCheck size={16} className="text-teal shrink-0 mt-0.5" />
         <div>
           <div className="flex items-center gap-2">
@@ -161,12 +159,9 @@ const CreateRolePanel: React.FC<{ onGranted: () => void }> = ({ onGranted }) => 
   };
 
   return (
-    <section
-      className="mb-5 border border-border-subtle rounded-lg bg-white p-4"
-      data-testid="roles-create"
-    >
-      <div className="text-sm font-medium text-text-primary">{t('roles.page.createTitle')}</div>
-      <p className="text-xs text-text-secondary leading-relaxed mt-1 mb-3">
+    <section data-testid="roles-create">
+      {/* ADM-1 — the title is the dialog's; the form opens on its intro. */}
+      <p className="text-xs text-text-secondary leading-relaxed mb-3">
         {t('roles.page.createIntro')}
       </p>
 

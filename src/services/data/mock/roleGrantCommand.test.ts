@@ -187,13 +187,14 @@ describe('⚠️ TENANCY IS REFUSED AT THE VERB, NOT AT THE SURFACE', () => {
     expect(customRoleStore.all()).toEqual([]);
   });
 
-  it('`admin` cannot be copied — the one cross-tenancy role stays the only one', async () => {
-    // A non-empty `adds`, deliberately: an empty one is refused by rule 5
-    // (`MISSING_FIELDS:adds`) BEFORE any policy runs, and this test is about the
-    // policy's tenancy arm rather than about field presence.
-    const result = await svc.dispatch(compliance, grant({ adds: ['invoice:dispute'] }, 'admin'));
+  it('a copy of `admin` cannot reach the supplier side — the tenancy arm, at the verb', async () => {
+    // It read "`admin` cannot be copied — the one cross-tenancy role". Since
+    // ADM-1 `admin` is a buyer-side role, so the copy is judged like any buyer
+    // parent: a supplier atom is refused by name, per atom.
+    const result = await svc.dispatch(compliance, grant({ adds: ['po:confirm'] }, 'admin'));
     expect(result.status).toBe('failed');
-    expect(result.reason).toContain('spans both tenancies');
+    expect(result.reason).toContain('po:confirm');
+    expect(result.reason).not.toContain('spans both tenancies');
   });
 
   it('an unknown parent is NOT_FOUND, never a silently-minted role', async () => {

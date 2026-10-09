@@ -110,6 +110,7 @@ export const ROLE_LABEL_KEY: Readonly<Record<SystemRoleId, string>> = Object.fre
   back_office: 'roles.owner.back_office',
   buyer_all: 'roles.owner.buyer_all',
   admin: 'roles.owner.admin',
+  super_admin: 'roles.owner.super_admin',
 });
 
 /**
@@ -149,6 +150,7 @@ export const ROLE_ORDER: readonly SystemRoleId[] = [
   // a role added tomorrow is a `tsc` failure rather than a silent omission.
   'buyer_all',
   'admin',
+  'super_admin',
 ];
 
 export function ownerLabelKeys(owners: readonly SystemRoleId[]): readonly string[] {

@@ -11,6 +11,7 @@ import {
 } from '../sdc/fixtures';
 import { readFileSync } from 'node:fs';
 import { PERSONA_SYSTEM_ROLES } from './businessRoles';
+import { SAMPLE_PEOPLE } from '../identity/sampleRoster';
 import { NO_PERSON } from '../../context/noPerson';
 import type { QueryScope } from '../data/types';
 
@@ -92,7 +93,14 @@ describe('ROUND TRIP — the wire value a real dispatcher emits', () => {
     );
     expect(shp, 'no arrived shipment in the fixtures').toBeDefined();
 
-    const res = await svc.dispatch(seat(PERSONA_SYSTEM_ROLES.buyer), {
+    // ADM-1 — a receipt names its receiver, so the seat names a person; an
+    // unnamed one is refused by `gr_receiver_named` before this hook speaks.
+    const res = await svc.dispatch(
+      {
+        ...seat(['receiving']),
+        actor: { kind: 'RESOLVED', person: { personId: SAMPLE_PEOPLE.find((p) => p.role === 'receiving')!.personId } },
+      },
+      {
       transitionId: 't_gr_create',
       entity: 'goodsReceipt',
       payload: {
@@ -103,7 +111,8 @@ describe('ROUND TRIP — the wire value a real dispatcher emits', () => {
           { materialCode: 'RM-NOT-ON-THIS-SHIPMENT', qtyReceived: 1, disposition: 'Accepted' },
         ],
       },
-    });
+    },
+    );
 
     expect(res.status).toBe('failed');
     // The MEASURED wire value — asserted, not described.

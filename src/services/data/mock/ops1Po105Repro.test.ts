@@ -81,14 +81,23 @@ const twoInvoicesThenReceipt = async (niacinamideAccepted: number): Promise<[str
   expect(confirm.status, confirm.reason).toBe('done');
   const ids: string[] = [];
   for (let i = 0; i < 2; i++) {
-    const created = await fire(supplier, 'invoice', 't_invoice_create', undefined, { poReference: PO, amount: 2 * B });
+    // ADM-1 — an invoice states its lines: the order's two, at the confirmed quantity.
+    const created = await fire(supplier, 'invoice', 't_invoice_create', undefined, {
+      poReference: PO,
+      amount: 2 * B,
+      lines: [
+        { materialCode: 'AI-NIAC-6601', qty: 5000, unitPrice: 220_000 },
+        { materialCode: 'AI-HYALU-6610', qty: 300, unitPrice: 3_000_000 },
+      ],
+    });
     expect(created.status, created.reason).toBe('done');
     const submitted = await fire(supplier, 'invoice', 't_invoice_submit', created.entityId, { amount: 2 * B });
     expect(submitted.status, submitted.reason).toBe('done');
     ids.push(created.entityId!);
   }
   asnStore.add(asn('ASN-REPRO-1'));
-  const gr = await fire(buyer, 'goodsReceipt', 't_gr_create', undefined, {
+  // ADM-1 — raised by the named receiver: a receipt records who received.
+  const gr = await fire(receiver, 'goodsReceipt', 't_gr_create', undefined, {
     asnReference: 'ASN-REPRO-1',
     receivedDate: '2026-08-31',
     receivedBy: 'QC Inspector',

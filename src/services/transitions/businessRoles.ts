@@ -75,7 +75,8 @@ export type SystemRoleId =
   | 'fulfilment'
   | 'back_office'
   | 'buyer_all'
-  | 'admin';
+  | 'admin'
+  | 'super_admin';
 
 /**
  * ⚠️ **`automation` IS NOT A BUSINESS ROLE AND MUST NEVER BECOME ONE.**
@@ -539,10 +540,11 @@ const SUPPLIER_LANE_IDS = Object.freeze([
  * Derived, never hand-listed, for `admin`'s reason: a lane that gains an atom
  * tomorrow gives it to the manager in the same commit.
  *
- * ⚠️ **IT IS NOT A SMALLER `admin`, AND THE TWO EXCLUSIONS ARE THE WHOLE
- * DISTINCTION** (operator ruling). `admin` is **the IT seat** — both tenancies,
- * plus authority over the role system itself. `buyer_all` is **the manager's
- * seat** — one side, no authority over roles. *A department head who can do
+ * ⚠️ **IT IS NOT A SMALLER `admin`, AND THE EXCLUSION IS THE WHOLE
+ * DISTINCTION** (operator ruling). `admin` is **the administrator's seat** —
+ * every buyer lane plus authority over the role system itself (it also spanned
+ * the supplier side until ADM-1). `buyer_all` is **the manager's seat** — the
+ * same lanes, no authority over roles. *A department head who can do
  * everything their team does is not an IT administrator who can do everything
  * anyone does*, and collapsing them would hand a manager reach into the supplier
  * side and into the role catalogue, neither of which the job needs.
@@ -566,45 +568,51 @@ const BUYER_ALL_ATOMS: readonly TransitionRole[] = Object.freeze(
 );
 
 /**
- * ⚠️ **THE SUPER ADMIN, AND IT IS DERIVED — THE UNION OF EVERY LANE BUNDLE.**
+ * ⚠️ **THE TWO ADMINISTRATOR SEATS — ONE BUNDLE, TWO ROLES (ADM-1, operator
+ * ruling of 9 October 2026).**
  *
- * Hand-listing them would put a copy of every other bundle in a place
- * nothing checks, and it would go stale the first time a lane gains an atom.
- * Composing it means **`admin` cannot drift by construction**: add `rfq:cancel`
- * to `procurement` tomorrow and `admin` holds it in the same commit, with no
- * edit here and none on the page.
+ * Both hold every BUYER-side lane atom, `role:grant` and the other governance
+ * atoms included, and neither holds a supplier tenant's act. Derived from the
+ * lane list, never hand-listed: a lane that gains an atom tomorrow gives it to
+ * both in the same commit.
  *
- * ⚠️ **AND THE EXCLUSION IS WHAT MAKES THE BUNDLE RIGHT.** It is the union of
- * what PEOPLE hold — the buyer side plus the supplier side, disjoint, derived at
- * read rather than restated here (the figures that stood in this sentence were
- * measured stale by one the day `role:grant` landed, §77f) — and
- * it deliberately does NOT include the 12 machine-only atoms in
- * `AUTOMATION_ATOMS`. **A super admin cannot fire S/4HANA's or the TMS's acts,
- * because those have no human owner by construction** (operator ruling), and
- * that is precisely the thing a super admin should not be able to override
- * invisibly either. A super admin bounded by what a human can legitimately do is
- * a role; one bounded by nothing is the wildcard with a name.
+ *   · `admin` — **Admin (operations)**. Broad rights, NO exemption: every
+ *     four-eyes and segregation check refuses this seat as it refuses any other.
+ *   · `super_admin` — **Super Admin (the Architect)**. The same atoms, and the
+ *     one seat the four-eyes checks and the sample-identity governance locks
+ *     stand aside for — by name, with a stated reason, on the record
+ *     (`services/identity/superAdmin.ts`, and the dispatcher's step 7).
  *
- * ⚠️ **AND `buyer:all` WAS NEVER TOTAL, MEASURED.** The retired persona grant
- * reached 48 atoms — 36 assignable plus the 12 now in the automation grant — and
- * **touched zero supplier atoms**: the two sides are disjoint and the tenancy
- * boundary always held. "Wildcard" was accurate about its SHAPE (unconditional
- * breadth within a side) and loose about its REACH. So `admin` is genuinely
- * wider than the thing this arc retired, which is why it is named on the
- * catalogue rather than quietly granted.
+ * ⚠️ **THE EXEMPTION IS NOT AN ATOM AND IS NOT IN THIS BUNDLE.** The two bundles
+ * are equal by construction, and `adm1Roles.test.ts` asserts it; what tells the
+ * roles apart is the role id the dispatcher reads, which is why a custom role
+ * copied from `super_admin` inherits the atoms and never the exemption.
+ *
+ * ⚠️ **RETRACTED, QUOTED RATHER THAN EDITED.** `admin` was *"the IT seat — both
+ * tenancies, plus authority over the role system itself"*, the union of every
+ * lane bundle, supplier lanes included. By ruling an administrator never holds
+ * a supplier tenant's acts, so the supplier lanes left the bundle and the role
+ * moved onto the buyer side. The machine-only atoms in `AUTOMATION_ATOMS` stay
+ * out, as before: those acts have no human owner by construction.
  */
 const ADMIN_ATOMS: readonly TransitionRole[] = Object.freeze([
-  ...new Set(Object.values(LANE_BUNDLES).flat()),
+  ...new Set(BUYER_LANE_IDS.flatMap((id) => LANE_BUNDLES[id])),
 ]);
+const SUPER_ADMIN_ATOMS: readonly TransitionRole[] = Object.freeze([...ADMIN_ATOMS]);
 
 /**
- * THE SEEDED BUNDLES, the two supersets included. Ordered with the lanes first,
- * then the manager's seat, then the IT seat — so the catalogue reads narrow to
+ * THE SEEDED BUNDLES, the supersets included. Ordered with the lanes first,
+ * then the manager's seat, then the two administrator seats — so the catalogue reads narrow to
  * wide and a reader meets the two wide roles adjacently, which is where the
  * distinction between them is easiest to see.
  */
 export const SYSTEM_ROLES: Readonly<Record<SystemRoleId, readonly TransitionRole[]>> =
-  Object.freeze({ ...LANE_BUNDLES, buyer_all: BUYER_ALL_ATOMS, admin: ADMIN_ATOMS });
+  Object.freeze({
+    ...LANE_BUNDLES,
+    buyer_all: BUYER_ALL_ATOMS,
+    admin: ADMIN_ATOMS,
+    super_admin: SUPER_ADMIN_ATOMS,
+  });
 
 /**
  * The machine grant. Every atom required by a buyer transition that is
@@ -712,12 +720,11 @@ export function atomsFor(roles: readonly BusinessRoleId[]): readonly TransitionR
  * **make it holdable, do not seed it**, and a single constant cannot express
  * both halves of that sentence.
  *
- * ⚠️ **`admin` IS ABSENT HERE ON PURPOSE, AND IT IS NOT AN OVERSIGHT.** It spans
- * BOTH tenancies, so listing it under `buyer` would make `PERSONA_ROLES.buyer`
- * span supplier atoms — and `personaCan('buyer', 'po:confirm')` would become
- * true, collapsing the tenancy answer that `nextActorFrom`, `catalogView` and
- * the `surfaceable` per-persona invariant all read. A persona is a SIDE; admin
- * is not on a side. It is a catalogue role, not a seat-picker option.
+ * ⚠️ **`admin` AND `super_admin` ARE PRESENT SINCE ADM-1, AND THE SENTENCE THAT
+ * KEPT `admin` OUT IS RETRACTED WITH ITS PREMISE.** It read *"It spans BOTH
+ * tenancies, so listing it under `buyer` would make `PERSONA_ROLES.buyer` span
+ * supplier atoms"*. Neither administrator role holds a supplier atom any more,
+ * so both are on one side and collapse no tenancy answer — `buyer_all`'s case.
  *
  * ⚠️ **`buyer_all` IS PRESENT FOR THE MIRROR-IMAGE REASON.** It is on a side —
  * one side, by construction — so it collapses nothing: its atoms are a SUBSET of
@@ -731,7 +738,13 @@ export const PERSONA_SYSTEM_ROLES: Readonly<
   // ⚠️ **THE ANCHOR LEADS, MIRRORING THE SUPPLIER ROW** — narrowest first, so a
   // catalogue reader meets the role that grants nothing before the ones that
   // grant something, and the two sides read the same way round.
-  buyer: Object.freeze(['buyer', ...BUYER_LANE_IDS, 'buyer_all'] as readonly SystemRoleId[]),
+  buyer: Object.freeze([
+    'buyer',
+    ...BUYER_LANE_IDS,
+    'buyer_all',
+    'admin',
+    'super_admin',
+  ] as readonly SystemRoleId[]),
   supplier: Object.freeze(['supplier', ...SUPPLIER_LANE_IDS] as readonly SystemRoleId[]),
 });
 
@@ -815,6 +828,7 @@ export const SEEDED_SEAT_ROLES: Readonly<
  */
 export const SUPERSET_ROLES: ReadonlySet<SystemRoleId> = new Set<SystemRoleId>([
   'admin',
+  'super_admin',
   'buyer_all',
 ]);
 

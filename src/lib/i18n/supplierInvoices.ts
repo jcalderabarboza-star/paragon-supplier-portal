@@ -120,8 +120,14 @@ export const supplierInvoicesEn: Record<string, string> = {
   'supplierInvoices.new.noPos': 'No confirmed POs available to invoice.',
   // — New invoice: the lines (E2E-2). The amount is no longer typed; it is the
   // total of the lines, each capped at the quantity received and accepted.
-  'supplierInvoices.new.nothingReceived':
-    'Nothing has been received and accepted on this order yet, so there is nothing to invoice. An invoice is raised for what Paragon has received.',
+  // ADM-1 — invoicing before a receipt is allowed again (operator ruling).
+  'supplierInvoices.new.beforeReceipt':
+    'No receipt is posted on this order yet. You may invoice up to the confirmed quantity; the invoice is matched once Paragon posts the receipt, and waits until then.',
+  'supplierInvoices.new.lines.noteConfirmed':
+    'Each quantity opens on what you confirmed. You may invoice less, never more. Once a receipt is posted the most you can invoice is what was received and accepted.',
+  'supplierInvoices.new.lines.confirmed': 'Confirmed',
+  'supplierInvoices.new.qty.refused.exceedsConfirmed':
+    'More than was confirmed on this line ({{max}} {{uom}}). No receipt is posted yet, so invoice that quantity or less.',
   'supplierInvoices.new.lines.title': 'Lines to invoice',
   'supplierInvoices.new.lines.note':
     'Each quantity opens on what was received and accepted. You may invoice less, never more. Whether the invoice matches the order and the receipt is decided after you submit it.',
@@ -257,8 +263,13 @@ export const supplierInvoicesId: Record<string, string> = {
   'supplierInvoices.new.poPlaceholder': 'Pilih PO yang dikonfirmasi…',
   'supplierInvoices.new.noPos': 'Tidak ada PO dikonfirmasi yang tersedia untuk difakturkan.',
   // — Faktur baru: baris (E2E-2) —
-  'supplierInvoices.new.nothingReceived':
-    'Belum ada yang diterima dan disetujui pada pesanan ini, sehingga belum ada yang dapat difakturkan. Faktur dibuat untuk apa yang telah diterima Paragon.',
+  'supplierInvoices.new.beforeReceipt':
+    'Belum ada penerimaan yang diposting pada pesanan ini. Anda boleh memfakturkan hingga kuantitas yang dikonfirmasi; faktur dicocokkan setelah Paragon memposting penerimaan, dan menunggu sampai saat itu.',
+  'supplierInvoices.new.lines.noteConfirmed':
+    'Setiap kuantitas dibuka pada jumlah yang Anda konfirmasi. Anda boleh memfakturkan lebih sedikit, tidak pernah lebih banyak. Setelah penerimaan diposting, batas tertinggi adalah jumlah yang diterima dan disetujui.',
+  'supplierInvoices.new.lines.confirmed': 'Dikonfirmasi',
+  'supplierInvoices.new.qty.refused.exceedsConfirmed':
+    'Lebih banyak daripada yang dikonfirmasi pada baris ini ({{max}} {{uom}}). Belum ada penerimaan yang diposting, jadi fakturkan kuantitas itu atau kurang.',
   'supplierInvoices.new.lines.title': 'Baris yang difakturkan',
   'supplierInvoices.new.lines.note':
     'Setiap kuantitas dibuka pada jumlah yang diterima dan disetujui. Anda boleh memfakturkan lebih sedikit, tidak pernah lebih banyak. Apakah faktur cocok dengan pesanan dan penerimaan diputuskan setelah Anda mengajukannya.',

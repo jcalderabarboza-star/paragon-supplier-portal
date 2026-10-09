@@ -63,7 +63,10 @@ const seat = (roles: readonly string[], actor?: QueryScope['actor']): QueryScope
   businessRoles: roles as QueryScope['businessRoles'],
   ...(actor ? { actor } : {}),
 });
-const buyer = (actor?: QueryScope['actor']) => seat(PERSONA_SYSTEM_ROLES.buyer, actor);
+// ADM-1 — every buyer role EXCEPT the Super Admin: a seat that held it and named
+// a person would be exempt from the four-eyes checks this file measures.
+const buyer = (actor?: QueryScope['actor']) =>
+  seat(PERSONA_SYSTEM_ROLES.buyer.filter((r) => r !== 'super_admin'), actor);
 const supplier: QueryScope = {
   personaType: 'supplier',
   supplierId: 'sup-007',

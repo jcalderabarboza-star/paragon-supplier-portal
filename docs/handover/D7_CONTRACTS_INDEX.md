@@ -46,10 +46,10 @@ Changed since the v1 pin: C1, C5, C7, C10, C12 and the README (`git diff --name-
 | dead-control residue 0 | D1, D5 | `deadAffordance.guard.test.tsx:689-703` |
 | 12 refusals and their order | D2 | `COMMAND_REFUSALS` order test (`refusals.ts`) |
 | 27 liveness capabilities; 5 green; 1 SPEC | D1, D2, D3 | **pinned at H1** by `src/handoverFigures.pin.test.ts` (the count, and the green and `SPEC` subsets by name); `registry.test.ts`, `flipHarness.test.ts` and `feedProvenance.test.ts` test behaviour per capability |
-| 13 system roles | D2 | **pinned at H1** by `src/handoverFigures.pin.test.ts`; `businessRoles.test.ts` pins the bundles both ways |
+| 14 system roles (13 at the `handover-v2` tag) | D2 | **pinned at H1** by `src/handoverFigures.pin.test.ts`; `businessRoles.test.ts` pins the bundles both ways |
 | 16 modules | D1, D2 | **pinned at H1** by `src/handoverFigures.pin.test.ts` (the count, `PLT` the only always-on module, every default `Active`) |
-| 16 sample persons | D2, D4 | **pinned at H1** by `src/handoverFigures.pin.test.ts`; `simUsrNamespace.test.ts` pins the namespace |
-| 51 routes | D1, D3 | `src/handoverFigures.pin.test.ts` (pinned at H1; the 47 first stated here missed four multi-line declarations); `allRoutes.smoke.test.tsx` mounts every one |
+| 18 sample persons (16 at the `handover-v2` tag) | D2, D4 | **pinned at H1** by `src/handoverFigures.pin.test.ts`; `simUsrNamespace.test.ts` pins the namespace |
+| 52 routes (51 at the `handover-v2` tag) | D1, D3 | `src/handoverFigures.pin.test.ts` (pinned at H1; the 47 first stated here missed four multi-line declarations); `allRoutes.smoke.test.tsx` mounts every one |
 | C5 tier column | C5 | no instrument; a spec deriving each seam's tier from `WIRED_COMMAND_TARGETS` and file existence would have caught the LivenessRegistry row |
 | 8,686 tests / 481 files / 7 gate tests | D1, D2 | `scripts/floor.json`, asserted by `npm run gates` as a floor |
 | 6 `localStorage` keys | D1, D4 | no pin; the grep in D4's method line |

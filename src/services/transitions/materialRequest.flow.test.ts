@@ -203,7 +203,7 @@ describe('⚠️ THE TWO AUTHORITIES ARE IN DIFFERENT LANES', () => {
     // ⚠️ AND THE LANE LIST ABOVE IS PINNED TO THE MODULE, both directions, so a
     // seventh lane cannot appear without this file noticing.
     const declaredBuyerLanes = (Object.keys(SYSTEM_ROLES) as SystemRoleId[]).filter(
-      (r) => r !== 'buyer' && r !== 'buyer_all' && r !== 'admin' && r !== 'supplier' &&
+      (r) => r !== 'buyer' && r !== 'buyer_all' && r !== 'admin' && r !== 'super_admin' && r !== 'supplier' &&
         r !== 'commercial' && r !== 'fulfilment' && r !== 'back_office',
     );
     expect([...declaredBuyerLanes].sort()).toEqual([...BUYER_LANES].sort());

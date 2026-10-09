@@ -467,6 +467,9 @@ describe('⚠️ THE TWO-REGEX COMMENT STRIP IS EXTINCT — derived, not listed'
         'services/data/pslListings.fixture.test.ts',
         'services/data/pslNoSupplierRead.test.ts',
         'services/data/pslReadIsClockIndependent.test.ts',
+        // ADM-1 — derives the checks a Super Admin passes from `policies.ts`'s
+        // source, whose comments name the same heads in prose.
+        'services/data/mock/adm1SuperAdmin.test.ts',
         'services/data/mock/chaosAmbience.test.ts',
         'services/sdc/__tests__/deriveC9FieldList.ts',
         'services/transitions/businessRoles.test.ts',

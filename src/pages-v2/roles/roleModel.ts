@@ -43,7 +43,8 @@ export interface RoleVerb {
 
 export interface RoleView {
   readonly id: BusinessRoleId;
-  /** `both` is `admin` — it spans the tenancies rather than sitting on a side. */
+  /** `both` is no system role since ADM-1 (`admin` moved to the buyer side); it
+   *  remains the answer for a custom role whose parent is on no side. */
   readonly side: 'buyer' | 'supplier' | 'both';
   readonly isSystem: boolean;
   /** The system role a CUSTOM role copies. Absent on a system role. */
@@ -122,7 +123,7 @@ export function deriveRoleViews(): readonly RoleView[] {
   const system = (Object.keys(SYSTEM_ROLES) as SystemRoleId[]).map((id) =>
     view(
       id,
-      id === 'admin' ? 'both' : buyerSide.has(id) ? 'buyer' : 'supplier',
+      buyerSide.has(id) ? 'buyer' : 'supplier',
       SYSTEM_ROLES[id],
       `roles.owner.${id}`,
       `roles.desc.${id}`,

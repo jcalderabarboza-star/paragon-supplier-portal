@@ -87,6 +87,7 @@ import { processGuidesEn, processGuidesId } from './i18n/processGuides';
 import { glossaryEn, glossaryId } from './i18n/glossary';
 // — Surface residuals: the seat-identity guard (was hardcoded English) —
 import { identityEn, identityId } from './i18n/identity';
+import { superAdminEn, superAdminId } from './i18n/superAdmin';
 // — The read path's failure surface, shared by 31 pages —
 import { errorStateEn, errorStateId } from './i18n/errorState';
 import { loadingStateEn, loadingStateId } from './i18n/loadingState';
@@ -169,6 +170,7 @@ export const resources = {
       // — GL-1 glossary (chrome only) —
       ...glossaryEn,
       ...identityEn,
+      ...superAdminEn,
       ...errorStateEn,
       ...loadingStateEn,
       ...emptyStateEn,
@@ -710,6 +712,7 @@ export const resources = {
       // — GL-1 glossary (chrome only) —
       ...glossaryId,
       ...identityId,
+      ...superAdminId,
       ...errorStateId,
       ...loadingStateId,
       ...emptyStateId,

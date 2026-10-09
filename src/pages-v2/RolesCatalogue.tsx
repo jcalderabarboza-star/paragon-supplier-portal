@@ -1,10 +1,12 @@
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import { Info, Lock, Users, ArrowRight, Search, AlertTriangle } from 'lucide-react';
+import { Info, Lock, Users, ArrowRight, Search, AlertTriangle, Plus } from 'lucide-react';
 import AppShellV2 from '../components/layout-v2/AppShellV2';
 import { deriveRoleViews, roleTotals, type RoleView } from './roles/roleModel';
 import CreateRolePanel from './roles/CreateRolePanel';
+import Dialog from '../components/ui-v2/Dialog';
+import Button from '../components/ui-v2/Button';
 import { useNavSection } from '../components/ui-v2/PageHeader';
 import { customRoleStore } from '../services/transitions/customRoles';
 
@@ -113,6 +115,9 @@ const RolesCatalogue: React.FC = () => {
   const store = useMemo(() => customRoleStore.readState(), [version]);
   const totals = useMemo(() => roleTotals(views), [views]);
   const [q, setQ] = useState('');
+  // ADM-1 — the creation form is a pop-up opened from the header, not a
+  // section that always stands on the page.
+  const [creating, setCreating] = useState(false);
 
   const needle = q.trim().toLowerCase();
   const filtered = views.filter(
@@ -139,13 +144,23 @@ const RolesCatalogue: React.FC = () => {
           which is a different thing from a page width. The div survives only to
           carry its testid. */}
       <div data-testid="roles-catalogue">
-        <header className="mb-4">
+        <header className="mb-4 flex items-start justify-between gap-4">
+          <div>
           {/* H1 — the first segment is the sidebar group, derived (`useNavSection`). */}
           <div className="text-label text-text-tertiary uppercase font-mono" data-testid="page-breadcrumb">
             {[section, 'SET-RL · ROLES'].filter(Boolean).join(' · ')}
           </div>
           <h1 className="text-xl font-semibold text-text-primary">{t('roles.page.title')}</h1>
           <p className="text-sm text-text-secondary">{t('roles.page.subtitle')}</p>
+          </div>
+          <Button
+            variant="outline"
+            icon={Plus}
+            onClick={() => setCreating(true)}
+            data-testid="roles-new"
+          >
+            {t('roles.page.newRole')}
+          </Button>
         </header>
 
         {/* KPI tiles — only the three we can DERIVE. */}
@@ -160,7 +175,6 @@ const RolesCatalogue: React.FC = () => {
             sub={t('roles.page.kpi.rolesSplit', {
               buyer: totals.bySide.buyer,
               supplier: totals.bySide.supplier,
-              both: totals.bySide.both,
             })}
           />
           <KpiTile
@@ -223,7 +237,19 @@ const RolesCatalogue: React.FC = () => {
           </section>
         )}
 
-        <CreateRolePanel onGranted={() => setVersion((v) => v + 1)} />
+        <Dialog
+          open={creating}
+          onClose={() => setCreating(false)}
+          title={t('roles.page.createTitle')}
+          testId="roles-create-dialog"
+        >
+          <CreateRolePanel
+            onGranted={() => {
+              setVersion((v) => v + 1);
+              setCreating(false);
+            }}
+          />
+        </Dialog>
 
         <div
           className="mb-5 border border-border-subtle rounded-lg p-4 flex gap-3"

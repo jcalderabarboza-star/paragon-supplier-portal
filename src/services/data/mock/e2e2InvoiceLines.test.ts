@@ -22,6 +22,7 @@ import { getKnownFlows } from '../../transitions';
 import { POLICY_HOOKS } from '../../transitions/policyHooks';
 import { PERSONA_SYSTEM_ROLES } from '../../transitions/businessRoles';
 import { invoiceLinesFor } from '../orderReceipt';
+import { resolvePolicyHook } from '../../transitions/policies';
 import type { QueryScope } from '../types';
 
 /** The seeded order that is Confirmed and fully received (pinned in `orderReceipt.test.ts`). */
@@ -55,8 +56,12 @@ describe('E2E-2 · the population and the wiring', () => {
     expect(invoiceLinesFor(po, goodsReceiptStore.all())).toEqual([
       expect.objectContaining({ materialCode: MATERIAL, unitPrice: PRICE, maxQty: ACCEPTED }),
     ]);
+    // ADM-1 — an order with nothing received opens on its CONFIRMED quantity.
+    // It read "every line's ceiling is 0".
     const none = purchaseOrderStore.all().find((p) => p.poNumber === PO_NOTHING)!;
-    expect(invoiceLinesFor(none, goodsReceiptStore.all()).every((l) => l.maxQty === 0)).toBe(true);
+    expect(invoiceLinesFor(none, goodsReceiptStore.all()).map((l) => [l.materialCode, l.maxQty, l.basis])).toEqual([
+      ['PK-PETB-8801', 200_000, 'confirmed'],
+    ]);
   });
 
   it('the amount check stands on the two verbs that land on Submitted, and on no other', () => {
@@ -100,10 +105,19 @@ describe('E2E-2 · admitted', () => {
     expect(invoiceStore.get(res.entityId!)!.lines).toEqual(lines(5_000));
   });
 
-  it('an invoice that states no lines is not examined, and stores none', async () => {
-    const res = await create(supplier('sup-002'), { poReference: PO, amount: 999_999_999_999 });
-    expect(res.status, res.reason).toBe('done');
-    expect('lines' in invoiceStore.get(res.entityId!)!).toBe(false);
+  it('ADM-1 · an invoice that states no lines is REFUSED by name, and nothing is stored', async () => {
+    // It read "is not examined, and stores none" and admitted Rp 999,999,999,999
+    // with nothing behind it. By ruling an invoice states its lines.
+    const before = invoiceStore.all().length;
+    for (const payload of [
+      { poReference: PO, amount: 999_999_999_999 },
+      { poReference: PO, amount: 0, lines: [] },
+    ]) {
+      const res = await create(supplier('sup-002'), payload);
+      expect(res.status).toBe('failed');
+      expect(res.reason).toContain('POLICY_REJECTED:invoice_lines_within_received:INVOICE_LINES_REQUIRED:');
+    }
+    expect(invoiceStore.all()).toHaveLength(before);
   });
 
   const submitFull = async () => {
@@ -166,11 +180,18 @@ describe('E2E-2 · the lines check cannot be undone at submit', () => {
     }
   });
 
-  it('an invoice with no lines still submits the amount it states — that path is unchanged', async () => {
-    const made = await create(supplier('sup-002'), { poReference: PO, amount: 100 });
-    const res = await submit(made.entityId!, 250);
-    expect(res.status, res.reason).toBe('done');
-    expect(invoiceStore.get(made.entityId!)!.amount).toBe(250);
+  it('ADM-1 · a SEEDED invoice with no lines (it predates the ruling) is still not examined at submit', async () => {
+    // It created a line-less draft through the dispatcher, which is refused
+    // now. The path the hook leaves open is the one for rows that already
+    // exist without lines — asserted on the hook, with a row of that shape.
+    const hook = resolvePolicyHook(POLICY_HOOKS.INVOICE_AMOUNT_IS_LINES_TOTAL)!;
+    const legacy = { id: 'legacy', status: 'Draft', amount: 100 };
+    const target = { readEntity: () => legacy } as never;
+    const ctx = { entityId: 'legacy', currentState: 'Draft', toState: 'Submitted', target, scope: supplier('sup-002') };
+    expect(hook({ ...ctx, payload: { amount: 250 } })).toEqual({ ok: true });
+    // …and the same hook DOES refuse the same amount on a row that states lines.
+    const lined = { ...legacy, lines: lines(1) };
+    expect(hook({ ...ctx, target: { readEntity: () => lined } as never, payload: { amount: 250 } }).ok).toBe(false);
   });
 });
 
@@ -193,12 +214,31 @@ describe('E2E-2 · refused, by name, with nothing created', () => {
     expect(reason).toContain(MATERIAL);
   });
 
-  it('anything at all on an order with nothing received', async () => {
+  it('ADM-1 · on an order with nothing received: more than the CONFIRMED quantity, and no more', async () => {
+    // It refused "anything at all" here. By ruling the ceiling before a receipt
+    // is the confirmed quantity — so one more than that is refused by its own
+    // name, and the confirmed quantity itself is admitted (the known-good half).
     await refused(
-      { poReference: PO_NOTHING, amount: 1_600, lines: lines(1, 1_600, 'PK-PETB-8801') },
-      'INVOICE_LINE_EXCEEDS_RECEIVED',
+      { poReference: PO_NOTHING, amount: 200_001 * 1_600, lines: lines(200_001, 1_600, 'PK-PETB-8801') },
+      'INVOICE_LINE_EXCEEDS_CONFIRMED',
       supplier('sup-007'),
     );
+    const ok = await create(supplier('sup-007'), {
+      poReference: PO_NOTHING,
+      amount: 200_000 * 1_600,
+      lines: lines(200_000, 1_600, 'PK-PETB-8801'),
+    });
+    expect(ok.status, ok.reason).toBe('done');
+    // The match waits for the receipt: submitted, and still Pending.
+    const sub = await svc.dispatch(supplier('sup-007'), {
+      transitionId: 't_invoice_submit',
+      entity: 'invoice',
+      entityId: ok.entityId!,
+      payload: { amount: 200_000 * 1_600 },
+    });
+    expect(sub.status, sub.reason).toBe('done');
+    expect(invoiceStore.get(ok.entityId!)).toMatchObject({ status: 'Submitted', matchStatus: 'Pending' });
+    expect(invoiceStore.get(ok.entityId!)!.matchBasis).toBeUndefined();
   });
 
   it('a price other than the order\'s', async () => {

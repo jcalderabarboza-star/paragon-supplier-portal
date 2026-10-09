@@ -115,7 +115,7 @@ Module activation and plan drafts are deliberately **not** in browser storage.
 
 ## 6 · Identity samples
 
-`src/services/identity/sampleRoster.ts` holds 16 `sim-usr-*` rows (role plus ordinal, no names) and is the registry labels resolve against. Five of the eight supplier rows were added at E2E-1 (#417) so that every sourcing category offers two suppliers a tester can sit as; the same batch made the start-up seed approve its requisition as a sample procurement person and re-dated the stale exchange-rate specimen (`rfq-013`) so it is still stale on the declared present. The backend replaces it with the `Person` registry C10 §3 specifies, minting a permanent `personId` per person (D-ID-1) and binding it to an IdP subject (`SubjectBinding`) — SE-3. Nothing in the tree implements either. Keep the roster for seeds and tests (Design 4 batch B4).
+`src/services/identity/sampleRoster.ts` holds 18 `sim-usr-*` rows (role plus ordinal, no names; 16 at the `handover-v2` tag, one Admin and one Super Admin added at ADM-1) and is the registry labels resolve against. Five of the eight supplier rows were added at E2E-1 (#417) so that every sourcing category offers two suppliers a tester can sit as; the same batch made the start-up seed approve its requisition as a sample procurement person and re-dated the stale exchange-rate specimen (`rfq-013`) so it is still stale on the declared present. The backend replaces it with the `Person` registry C10 §3 specifies, minting a permanent `personId` per person (D-ID-1) and binding it to an IdP subject (`SubjectBinding`) — SE-3. Nothing in the tree implements either. Keep the roster for seeds and tests (Design 4 batch B4).
 
 ## 7 · What is deliberately not in this list
 

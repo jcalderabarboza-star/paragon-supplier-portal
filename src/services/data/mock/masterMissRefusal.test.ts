@@ -34,11 +34,19 @@ import type { ASN, QueryScope } from '../types';
 import { MOCK_ASNS } from './fixtures/supplierShipments';
 import type { InspectionResult } from '../../../data/mockGoodsReceipts';
 import { PERSONA_SYSTEM_ROLES } from '../../../services/transitions/businessRoles';
+import { SAMPLE_PEOPLE } from '../../identity/sampleRoster';
 
 const svc = new MockCommandService();
 // `supplierId` was MISSING — a scope shape production never builds. It survived
 // on `undefined == null` being true, so every null-check passed by accident.
-const buyer: QueryScope = { personaType: 'buyer', supplierId: null, businessRoles: PERSONA_SYSTEM_ROLES.buyer };
+// ADM-1 — a receipt names its receiver, so the seat that raises one names a
+// person (`gr_receiver_named` runs first and would otherwise speak for every case).
+const buyer: QueryScope = {
+  personaType: 'buyer',
+  supplierId: null,
+  businessRoles: PERSONA_SYSTEM_ROLES.buyer.filter((r) => r !== 'super_admin'),
+  actor: { kind: 'RESOLVED', person: { personId: SAMPLE_PEOPLE.find((p) => p.role === 'receiving')!.personId } },
+};
 // sup-002 collaborates on RM-EMUL-3310 (a relationship row) — so creation scope
 // PASSES for it, and the master gate is what the bogus cases actually hit.
 const sup002: QueryScope = { personaType: 'supplier', supplierId: 'sup-002', businessRoles: PERSONA_SYSTEM_ROLES.supplier };

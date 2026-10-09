@@ -48,6 +48,8 @@ import PageMetaLine from '../components/ui-v2/PageMetaLine';
 import ProvenanceMarker from '../components/ui-v2/ProvenanceMarker';
 import Button from '../components/ui-v2/Button';
 import SidePanel from '../components/ui-v2/SidePanel';
+import SuperAdminBypassNote from '../components/v2-features/SuperAdminBypassNote';
+import { isSuperAdminSeat } from '../services/identity/superAdmin';
 import StatusPill from '../components/ui-v2/StatusPill';
 import Data from '../components/ui-v2/Data';
 import LoadingState from '../components/ui-v2/LoadingState';
@@ -239,7 +241,10 @@ const BuyerPreferredSuppliers: React.FC = () => {
         : null,
     [selected, identity.businessRoles],
   );
-  const seatBlocksGrant = seatVerdict?.kind === 'SEAT_HOLDS_BOTH';
+  // ADM-1 — the Super Admin is exempt from the seat check: the dispatcher
+  // admits the decision with a stated reason and records the bypass, so the
+  // panel must not withhold what the dispatcher will take.
+  const seatBlocksGrant = seatVerdict?.kind === 'SEAT_HOLDS_BOTH' && !isSuperAdminSeat(identity);
 
   const supplierName = (id: string): string =>
     mockSuppliers.find((s) => s.id === id)?.name ?? id;
@@ -493,6 +498,8 @@ const BuyerPreferredSuppliers: React.FC = () => {
       >
         {selected ? (
           <div className="flex flex-col gap-4 text-sm" data-testid="psl-decide-panel">
+            {/* ADM-1 — what a Super Admin passed on this listing, if anything. */}
+            <SuperAdminBypassNote entity="psl" entityId={selected.id} />
             <div className="flex gap-2 flex-wrap">
               <StatusPill variant={statusTone(selected.status)}>
                 {t(statusLabelKey(selected.status) ?? '', { defaultValue: selected.status })}

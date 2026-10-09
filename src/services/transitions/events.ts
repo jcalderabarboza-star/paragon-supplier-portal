@@ -113,6 +113,14 @@ export interface TransitionEvent {
    * it WOULD have landed; for a state-preserving verb, the same state.
    */
   readonly subject?: TransitionSubject;
+  /**
+   * ADM-1 — "Super Admin — four-eyes bypassed". Present ONLY on an act a Super
+   * Admin seat took past a four-eyes, segregation or sample-identity check:
+   * the refusal heads that stood aside, and the one-line reason stated for it.
+   * Absent on every other event, a Super Admin's ordinary acts included — those
+   * are found by `scope.businessRoles`, which every event already carries.
+   */
+  readonly bypass?: import('../identity/superAdmin').SuperAdminBypass;
 }
 
 /** The document an event is about (`TransitionEvent.subject`). */

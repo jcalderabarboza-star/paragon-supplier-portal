@@ -39,7 +39,8 @@ export const rolesEn: Record<string, string> = {
   'roles.owner.fulfilment': 'Supplier Fulfilment',
   'roles.owner.back_office': 'Supplier Back Office',
   'roles.owner.buyer_all': 'Buyer Operations Lead',
-  'roles.owner.admin': 'Super Admin',
+  'roles.owner.admin': 'Admin',
+  'roles.owner.super_admin': 'Super Admin',
 
   // — THE HANDOFF LINE. "Awaiting Finance", never a missing button. —
   //   The operator's binding constraint, in one string: a verb this seat does
@@ -124,7 +125,9 @@ export const rolesEn: Record<string, string> = {
   // ⚠️ THE SPLIT, DERIVED AND ON SCREEN. "Six" was `PERSONA_SYSTEM_ROLES.buyer`
   // stated as the population. Showing both figures beside the total is what
   // stops the subset being mistaken for the whole a second time.
-  'roles.page.kpi.rolesSplit': '{{buyer}} buyer · {{supplier}} supplier · {{both}} cross-tenancy',
+  'roles.page.kpi.rolesSplit': '{{buyer}} buyer · {{supplier}} supplier',
+  // ADM-1 — the button that opens the creation form as a pop-up.
+  'roles.page.newRole': 'New role',
   'roles.page.kpi.permissions': 'Distinct permissions',
   'roles.page.kpi.actions': 'Governed actions',
   'roles.page.search': 'Search roles by name or code…',
@@ -163,19 +166,21 @@ export const rolesEn: Record<string, string> = {
   // ⚠️ **THE DESCRIPTION STATES WHAT IT IS NOT, AND THE SEGREGATION IT
   // DISSOLVES** (operator ruling). Two roles on this page are wide, and a reader
   // choosing between them must be able to tell them apart ON THE PAGE: `admin`
-  // is the IT seat (both tenancies + the role system), `buyer_all` is the
-  // manager's seat (one side, no role authority). And §76d's crossing is
+  // and `super_admin` are the administrator seats (the buyer side + the role
+  // system; ADM-1), `buyer_all` is the manager's seat (no role authority). And §76d's crossing is
   // LEGITIMATE for a manager and must therefore be READABLE RATHER THAN
   // IMPLIED: a seat holding `pr:revise` AND `pr:approve` can revise a
   // requisition and approve the one it just revised. Naming it is the whole
   // difference between a dissolved control and an undetected one.
   'roles.desc.buyer_all':
-    'Every buyer act a lane performs, held as one role — the manager’s seat. It grants nothing on the supplier side, and no authority over roles: creating or changing a role stays with Compliance, because whoever can edit roles can grant themselves any permission. For the seat that spans both sides AND the role catalogue, see Super Admin. ⚠️ It dissolves a separation of duties: this seat can revise a requisition and approve the one it just revised.',
-  // ⚠️ THE EXCLUSION IS STATED IN THE ROLE'S OWN DESCRIPTION (operator ruling).
-  // A super admin bounded by what a human can legitimately do is a role; one
-  // bounded by nothing is the wildcard with a name.
+    'Every buyer act a lane performs, held as one role — the manager’s seat. It grants nothing on the supplier side, and no authority over roles: creating or changing a role stays with Compliance, because whoever can edit roles can grant themselves any permission. For the seats that also hold the role catalogue, see Admin and Super Admin. ⚠️ It dissolves a separation of duties: this seat can revise a requisition and approve the one it just revised.',
+  // ⚠️ THE EXCLUSION AND THE EXEMPTION ARE STATED IN THE ROLES' OWN
+  // DESCRIPTIONS (operator ruling, ADM-1). The two hold the same permissions; a
+  // reader must learn ON THE PAGE that only one of them passes four-eyes.
   'roles.desc.admin':
-    'Every permission a person can hold, on both sides — the union of every other role. It cannot fire the platform’s own acts: goods movements from S/4HANA, carrier and TMS updates and the match cascade have no human owner, and a super admin should not be able to override that invisibly either.',
+    'Operations administrator. Every buyer-side permission, governance included: roles, modules, enforcement and tolerances. It holds no supplier-side act, and it is NOT exempt from anything — a four-eyes or separation-of-duties check refuses this seat as it refuses any other.',
+  'roles.desc.super_admin':
+    'The Architect. The same permissions as Admin, and the one seat the four-eyes and separation-of-duties checks stand aside for. Every act it takes is recorded; when a check is passed, the record says which one and carries the one-line reason the Super Admin must state. It holds no supplier-side act and cannot fire the platform’s own acts (S/4HANA, carrier, TMS, the match cascade). This is a sample holder: in production a Super Admin is a real, named person.',
 
   'roles.page.verbsHeader': 'Actions it can take',
   'roles.page.holdsNone': 'Holds no action a person can take on a screen today.',
@@ -272,7 +277,8 @@ export const rolesId: Record<string, string> = {
   'roles.owner.fulfilment': 'Pemenuhan Pemasok',
   'roles.owner.back_office': 'Administrasi Pemasok',
   'roles.owner.buyer_all': 'Kepala Operasi Pembelian',
-  'roles.owner.admin': 'Super Admin',
+  'roles.owner.admin': 'Admin',
+  'roles.owner.super_admin': 'Super Admin',
 
   'roles.handoff.awaiting': 'Menunggu {{owner}}',
   'roles.handoff.awaitingHint': 'Peran Anda tidak dapat melakukan tindakan ini.',
@@ -318,7 +324,8 @@ export const rolesId: Record<string, string> = {
   // Indonesian does not inflect for number — one arm serves every count.
   'roles.page.reach_other': '{{modules}} modul · {{permissions}} izin',
   'roles.page.kpi.roles': 'Peran',
-  'roles.page.kpi.rolesSplit': '{{buyer}} pembeli · {{supplier}} pemasok · {{both}} lintas-tenansi',
+  'roles.page.kpi.rolesSplit': '{{buyer}} pembeli · {{supplier}} pemasok',
+  'roles.page.newRole': 'Peran baru',
   'roles.page.kpi.permissions': 'Izin berbeda',
   'roles.page.kpi.actions': 'Tindakan yang diatur',
   'roles.page.search': 'Cari peran berdasarkan nama atau kode…',
@@ -340,9 +347,11 @@ export const rolesId: Record<string, string> = {
   'roles.desc.back_office':
     'Bagian administrasi. Mengajukan faktur, mengunggah dokumen pemasok dan mengarsipkan sertifikat kepatuhan, serta mengakui permintaan visibilitas yang tidak meminta komitmen. Peran ini tidak bisa menawar, mengonfirmasi pesanan atau mengirim barang.',
   'roles.desc.buyer_all':
-    'Setiap tindakan pembeli yang dilakukan sebuah jalur, dipegang sebagai satu peran — kursi manajer. Tidak memberi apa pun di sisi pemasok, dan tidak ada wewenang atas peran: membuat atau mengubah peran tetap milik Kepatuhan, karena siapa pun yang dapat menyunting peran dapat memberikan izin apa pun kepada dirinya sendiri. Untuk kursi yang mencakup kedua sisi DAN katalog peran, lihat Super Admin. ⚠️ Peran ini meniadakan pemisahan tugas: kursi ini dapat merevisi permintaan pembelian lalu menyetujui permintaan yang baru saja direvisinya.',
+    'Setiap tindakan pembeli yang dilakukan sebuah jalur, dipegang sebagai satu peran — kursi manajer. Tidak memberi apa pun di sisi pemasok, dan tidak ada wewenang atas peran: membuat atau mengubah peran tetap milik Kepatuhan, karena siapa pun yang dapat menyunting peran dapat memberikan izin apa pun kepada dirinya sendiri. Untuk kursi yang juga memegang katalog peran, lihat Admin dan Super Admin. ⚠️ Peran ini meniadakan pemisahan tugas: kursi ini dapat merevisi permintaan pembelian lalu menyetujui permintaan yang baru saja direvisinya.',
   'roles.desc.admin':
-    'Setiap izin yang dapat dipegang seseorang, di kedua sisi — gabungan dari semua peran lain. Tidak dapat menjalankan tindakan platform itu sendiri: pergerakan barang dari S/4HANA, pembaruan pengangkut dan TMS, serta kaskade pencocokan tidak memiliki pemilik manusia, dan super admin pun tidak boleh menimpanya secara tidak terlihat.',
+    'Administrator operasional. Setiap izin di sisi pembeli, termasuk tata kelola: peran, modul, penegakan, dan toleransi. Tidak memegang tindakan sisi pemasok, dan TIDAK dikecualikan dari apa pun — pemeriksaan empat-mata atau pemisahan tugas menolak kursi ini seperti kursi lainnya.',
+  'roles.desc.super_admin':
+    'Sang Arsitek. Izin yang sama dengan Admin, dan satu-satunya kursi yang dilewatkan oleh pemeriksaan empat-mata dan pemisahan tugas. Setiap tindakannya dicatat; bila sebuah pemeriksaan dilewati, catatan menyebut pemeriksaan itu dan memuat alasan satu baris yang wajib dinyatakan Super Admin. Tidak memegang tindakan sisi pemasok dan tidak dapat menjalankan tindakan platform itu sendiri (S/4HANA, pengangkut, TMS, kaskade pencocokan). Ini pemegang contoh: di produksi, Super Admin adalah orang nyata yang bernama.',
 
   'roles.page.verbsHeader': 'Tindakan yang dapat dilakukan',
   'roles.page.holdsNone': 'Belum memegang tindakan yang dapat dilakukan seseorang di layar.',

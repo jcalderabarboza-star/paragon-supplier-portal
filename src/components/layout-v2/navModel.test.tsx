@@ -90,7 +90,8 @@ describe('N1 — the order is pinned, stage by stage', () => {
       ['nav.section.pay', ['/buyer/invoices']],
       ['nav.section.suppliers', ['/buyer/suppliers', '/buyer/supplier-applications', '/buyer/compliance']],
       ['nav.section.insights', ['/buyer/analytics', '/buyer/scorecard', '/buyer/risk']],
-      ['nav.section.platform', ['/buyer/platform/modules', '/buyer/roles', '/buyer/process-flows', '/glossary']],
+      // ADM-1 — the Super Admin activity view sits after Roles.
+      ['nav.section.platform', ['/buyer/platform/modules', '/buyer/roles', '/buyer/platform/super-admin-activity', '/buyer/process-flows', '/glossary']],
     ]);
   });
 
@@ -198,9 +199,27 @@ describe('every group and item label exists in EN and in ID', () => {
 describe('a module switched off removes its items; a group left empty never renders', () => {
   const visible = (groups: readonly NavGroup[], view: ModuleActivationView) => shape(visibleNav(groups, view));
 
-  it('KNOWN-GOOD: with every module on, nothing is removed', () => {
-    expect(visible(BUYER_NAV, defaultActivation())).toEqual(shape(BUYER_NAV));
+  it('KNOWN-GOOD: with every module on, nothing is removed for a seat that may see every item', () => {
+    // ADM-1 — one item is for the Super Admin and Compliance; the seat is passed
+    // so this stays a statement about MODULES. The seat rule has its own test.
+    expect(shape(visibleNav(BUYER_NAV, defaultActivation(), { businessRoles: ['compliance'] }))).toEqual(shape(BUYER_NAV));
     expect(visible(SUPPLIER_NAV, defaultActivation())).toEqual(shape(SUPPLIER_NAV));
+  });
+
+  it('ADM-1: the Super Admin activity item is listed for the Super Admin and Compliance, and for no other seat', () => {
+    const platform = (roles: readonly string[]): string[] =>
+      visibleNav(BUYER_NAV, defaultActivation(), { businessRoles: roles })
+        .find((g) => g.labelKey === 'nav.section.platform')!
+        .items.map((i) => i.path);
+    const item = '/buyer/platform/super-admin-activity';
+    expect(platform(['super_admin'])).toContain(item);
+    expect(platform(['compliance'])).toContain(item);
+    for (const role of ['admin', 'buyer_all', 'procurement', 'finance']) {
+      expect(platform([role]), role).not.toContain(item);
+      // …and nothing else left with it.
+      expect(platform([role])).toEqual(platform(['compliance']).filter((p) => p !== item));
+    }
+    expect(visibleNav(BUYER_NAV, defaultActivation()).flatMap((g) => g.items.map((i) => i.path))).not.toContain(item);
   });
 
   it('PSL off removes Preferred suppliers and keeps the rest of Source', () => {

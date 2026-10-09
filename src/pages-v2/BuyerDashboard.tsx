@@ -69,7 +69,7 @@ import {
   PRESENT_ISO,
   accountsPayableOpen,
   alertGroups,
-  buyerLaneIds,
+  activeLaneFor,
   goodsReceiptVarianceRate,
   halalCertificateStatus,
   heldLanes,
@@ -166,7 +166,9 @@ const BuyerDashboard: React.FC = () => {
   const { t } = useTranslation();
   const cl = useCategoryLabel();
   const { identity } = useCurrentIdentity();
-  const [lane, setLane] = useState<SystemRoleId | null>(null);
+  // ADM-1 — what the person picked on this visit: a lane, `'all'`, or nothing
+  // yet (then a one-lane seat opens on its lane — `activeLaneFor`).
+  const [lane, setLane] = useState<SystemRoleId | 'all' | null>(null);
 
   const DASH_CRUMB = [
     t('buyerDashboard.crumb.commandCenter'),
@@ -297,14 +299,18 @@ const BuyerDashboard: React.FC = () => {
   // were a filter on your own. The rows for those lanes are still listed under
   // "All lanes" — marked as a handoff — which is where a seat learns that the
   // work exists and whose it is.
-  const held = new Set(heldLanes(identity.businessRoles));
-  const lanes = buyerLaneIds().filter((id) => held.has(id));
+  const lanes = heldLanes(identity.businessRoles);
+  const held = new Set(lanes);
   // A seat narrowed WHILE a chip is selected must not be stranded on a filter it
   // can no longer reach (component state outlives the seat — `SupplierShipments`
   // is the precedent). An unheld selection falls back to All lanes.
-  const activeLane = lane !== null && held.has(lane) ? lane : null;
+  const activeLane = activeLaneFor(lane, lanes);
   const visibleRows =
     activeLane === null ? rows : rows.filter((r) => r.lane === activeLane);
+  // ADM-1 — the chips filter the ALERTS too. Each group carries its owning
+  // lane; a chip shows only its lane's groups and All lanes shows every one.
+  const visibleAlerts =
+    activeLane === null ? alerts : alerts.filter((g) => g.lane === activeLane);
 
   const apStages = [
     { key: 'submitted', label: t('buyerDashboard.chart.ap.stage.submitted'), value: ap.submitted },
@@ -339,7 +345,7 @@ const BuyerDashboard: React.FC = () => {
       <div className="flex flex-wrap items-center gap-2 mb-6">
         <button
           type="button"
-          onClick={() => setLane(null)}
+          onClick={() => setLane('all')}
           aria-pressed={activeLane === null}
           data-testid="lane-chip-all"
           className={`text-meta rounded-full border px-3 py-1 ${
@@ -371,20 +377,32 @@ const BuyerDashboard: React.FC = () => {
 
       {/* ── C · ALERTS STRIP ───────────────────────────────────────────────── */}
       <h2 className="text-section text-text-primary mb-3">
-        {t('buyerDashboard.alerts.title', { count: alerts.length })}
+        {t('buyerDashboard.alerts.title', { count: visibleAlerts.length })}
       </h2>
+      {visibleAlerts.length === 0 && (
+        <p className="text-sm text-text-secondary mb-8" data-testid="alerts-none-for-lane">
+          {t('buyerDashboard.alerts.noneForLane')}
+        </p>
+      )}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 mb-8">
-        {alerts.map((g) => (
+        {visibleAlerts.map((g) => (
           <Link
             key={g.id}
             to={g.route}
             data-testid={`alert-${g.id}`}
+            data-lane={g.lane}
             className={`${CARD} ${SEVERITY_EDGE[g.severity]} block hover:bg-bg-hover`}
           >
-            <div
-              className={`text-[10px] font-semibold uppercase tracking-wider ${SEVERITY_TEXT[g.severity]}`}
-            >
-              {t(`buyerDashboard.alerts.severity.${g.severity}`)}
+            <div className="flex items-center justify-between gap-2">
+              <span
+                className={`text-[10px] font-semibold uppercase tracking-wider ${SEVERITY_TEXT[g.severity]}`}
+              >
+                {t(`buyerDashboard.alerts.severity.${g.severity}`)}
+              </span>
+              {/* ADM-1 — the owning lane, on the card. */}
+              <span className={BADGE} data-testid={`alert-lane-${g.id}`}>
+                {t(`roles.owner.${g.lane}`)}
+              </span>
             </div>
             <div className="flex items-baseline gap-2 mt-1">
               <Data className="text-hero">{g.count}</Data>
@@ -397,7 +415,15 @@ const BuyerDashboard: React.FC = () => {
         ))}
       </div>
 
-      {/* ── D · KPI ROW ────────────────────────────────────────────────────── */}
+      {/* ── D · KPI ROW ──────────────────────────────────────────────────────
+          ADM-1 — the KPI cards are WHOLE-PLATFORM figures and say so. A lane
+          chip does not filter them: a rate over one lane's slice of invoices
+          would be a different number wearing the same label. */}
+      <div className="flex flex-wrap items-baseline gap-x-3 mb-3" data-testid="kpi-scope">
+        <h2 className="text-section text-text-primary">{t('buyerDashboard.kpi.title')}</h2>
+        <span className={BADGE}>{t('buyerDashboard.kpi.wholePlatform')}</span>
+        <span className="text-meta text-text-tertiary">{t('buyerDashboard.kpi.notFiltered')}</span>
+      </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5 mb-8">
         <KpiCard
           eyebrow={t('buyerDashboard.kpi.matchRate.label')}

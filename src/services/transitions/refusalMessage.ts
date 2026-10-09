@@ -45,6 +45,10 @@
 import { refusalKindOf } from './refusals';
 import { POLICY_HOOKS } from './policyHooks';
 import { COMMAND_REFUSAL_GLOSSARY, DATA_ERROR_GLOSSARY } from '../../lib/glossary';
+import {
+  SUPER_ADMIN_REASON_REQUIRED,
+  SUPER_ADMIN_REASON_REQUIRED_TEXT,
+} from '../identity/superAdmin';
 
 /**
  * The locale split used by the glossary page (`pages-v2/Glossary.tsx`), copied
@@ -110,6 +114,11 @@ export function describeRefusal(
 ): string | null {
   const kind = refusalKindOf(reason);
   if (!kind) return null;
+  // ADM-1 — a bypass with no stated reason. Its own sentence, whole: the
+  // generic one would append the developer trail in English to both locales.
+  if (reason?.includes(`${SUPER_ADMIN_REASON_REQUIRED}:`)) {
+    return indonesian(language) ? SUPER_ADMIN_REASON_REQUIRED_TEXT.id : SUPER_ADMIN_REASON_REQUIRED_TEXT.en;
+  }
   const entry = COMMAND_REFUSAL_GLOSSARY[kind];
   const sentence = indonesian(language) ? entry.id : entry.en;
   const detail = refusalDetailOf(reason);

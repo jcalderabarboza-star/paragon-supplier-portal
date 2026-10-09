@@ -314,6 +314,14 @@ mechanisms whose success signals said nothing about the damage they did.
 > different facts. A **non-sample** `RESOLVED` actor is still admitted, probed in
 > a spec, or the locks would delete the lane rather than guard it.
 >
+> ⚠️ **AND SINCE ADM-1 (2026-10-09) ONE SEAT IS EXEMPT FROM THE LOOSENING LOCK AND FROM THE
+> FOUR-EYES CHECKS: THE SUPER ADMIN, BY NAME, WITH A RECORDED REASON** (operator ruling). The
+> check asks the dispatcher (`exempt(head)`) where it would refuse; the act is refused
+> `SUPER_ADMIN_REASON_REQUIRED` without a one-line reason, and the event carries the heads and the
+> reason. `admin` holds the same atoms and is NOT exempt. `overrideCompletes` is unchanged — it
+> reads an override, not a scope. **Derive which refusals stand aside from the `exempt?.(` calls
+> in `policies.ts`; `adm1SuperAdmin.test.ts` holds that set equal to the labelled one.**
+>
 > ⚠️ **ROSTER MEMBERSHIP, NEVER A `sim-usr-` PREFIX MATCH.** The prefix may be
 > read as a string to decide something in exactly ONE place —
 > `simUsrNamespace.test.ts`, the C10 §6.3 pin, whose job is policing the
@@ -327,6 +335,12 @@ mechanisms whose success signals said nothing about the damage they did.
 > `SYSTEM_ROLES` × `getKnownFlows()`. It is UNGATED deliberately: **no page in
 > this platform has ever gated on role**, no atom could express it (C10 §3.3),
 > and the gate is filed as the precondition of EDITABILITY, not of reading.
+> ⚠️ **RETRACTED FOR ONE PAGE, 2026-10-09 (ADM-1), QUOTED RATHER THAN EDITED.** *"no page in
+> this platform has ever gated on role"* held until the Super Admin activity view
+> (`/buyer/platform/super-admin-activity`): by operator ruling it is read by the Super Admin and
+> Compliance only. It asks ROLE IDS, not an atom — the view fires no transition, so no atom could
+> express it (`maySeeSuperAdminActivity`). `/buyer/roles` stays ungated. **Derive which seats a
+> nav item admits from `visibleTo` in `navModel.ts`, never from a sentence here.**
 > Nothing persists a custom role — no store, no target — so duplicate-and-narrow
 > is a store, a verb and a merge rule, not a page feature.
 >

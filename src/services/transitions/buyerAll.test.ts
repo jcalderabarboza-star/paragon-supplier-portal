@@ -85,10 +85,12 @@ describe('⚠️ WHAT IT GRANTS — derived, and bilateral', () => {
     for (const a of SYSTEM_ROLES.buyer_all) {
       expect(supplier.has(a), `'${a}' is a supplier atom`).toBe(false);
     }
-    // Known-GOOD control: a supplier atom that genuinely exists, and which
-    // `admin` DOES hold — so this is measuring tenancy, not an empty set.
+    // Known-GOOD control: a supplier atom that genuinely exists, and which the
+    // supplier's own lane DOES hold — so this is measuring tenancy, not an empty
+    // set. (It read "`admin` DOES hold" until ADM-1 took the supplier side out
+    // of the administrator bundles.)
     expect(supplier.has('po:confirm')).toBe(true);
-    expect(SYSTEM_ROLES.admin).toContain('po:confirm');
+    expect(SYSTEM_ROLES.fulfilment).toContain('po:confirm');
     expect(SYSTEM_ROLES.buyer_all).not.toContain('po:confirm');
   });
 
@@ -113,14 +115,15 @@ describe('⚠️ IT IS STRICTLY NARROWER THAN `admin` — the two seats are diff
     expect(SYSTEM_ROLES.admin.length).toBeGreaterThan(SYSTEM_ROLES.buyer_all.length);
   });
 
-  it('and the difference is exactly: the supplier side, plus `role:grant`', () => {
+  it('and the difference is exactly `role:grant` (ADM-1: the supplier side left `admin`)', () => {
     // Named, not counted — the difference IS the ruling, so it is asserted as a
     // set rather than as a size that would drift the day a lane gains an atom.
     const diff = new Set(
       SYSTEM_ROLES.admin.filter((a) => !SYSTEM_ROLES.buyer_all.includes(a)),
     );
-    const expected = new Set<string>([...atomsOfSide('supplier'), 'role:grant']);
-    expect(diff).toEqual(expected);
+    expect(diff).toEqual(new Set<string>(['role:grant']));
+    // …and nothing the manager's seat holds is missing from the administrator's.
+    expect(SYSTEM_ROLES.buyer_all.filter((a) => !SYSTEM_ROLES.admin.includes(a))).toEqual([]);
   });
 });
 
@@ -155,14 +158,17 @@ describe('⚠️ HOLDABLE, AND NOT SEEDED — the split the ruling required', ()
     const unseeded = (PERSONA_SYSTEM_ROLES.buyer as readonly string[]).filter(
       (r) => !(SEEDED_SEAT_ROLES.buyer as readonly string[]).includes(r),
     );
-    expect([...unseeded].sort()).toEqual(['buyer', 'buyer_all']);
+    // ADM-1 added the two administrator roles to the offer; neither is seeded.
+    expect([...unseeded].sort()).toEqual(['admin', 'buyer', 'buyer_all', 'super_admin']);
   });
 
   it('it is on the BUYER side, so it collapses no tenancy answer', () => {
     expect(sideOfSystemRole('buyer_all')).toBe('buyer');
-    // `admin` is the one that is on NO side — which is why it is not offerable.
-    expect(sideOfSystemRole('admin')).toBeNull();
-    expect(PERSONA_SYSTEM_ROLES.buyer as readonly string[]).not.toContain('admin');
+    // ADM-1 — `admin` and `super_admin` are on the buyer side too. No system
+    // role is on no side any more; a role this platform does not have still is.
+    expect(sideOfSystemRole('admin')).toBe('buyer');
+    expect(sideOfSystemRole('super_admin')).toBe('buyer');
+    expect(sideOfSystemRole('not-a-role' as never)).toBeNull();
   });
 
   it('⚠️ `PERSONA_ROLES.buyer` IS UNCHANGED BY ITS PRESENCE — it adds no atom', () => {
@@ -219,8 +225,10 @@ describe('⚠️ IT IS A SUPERSET, NOT AN OWNER — the handoff must not name it
 describe('⚠️ THE COPY DEAD END IS ASSERTED, NOT HIDDEN', () => {
   it('the verb ACCEPTS it as a parent — it is on a side', () => {
     expect(copyableParentRefusal('buyer_all')).toBeNull();
-    // Known-BAD control beside the known-good one.
-    expect(copyableParentRefusal('admin')).toContain('spans both tenancies');
+    // Known-BAD control beside the known-good one. (It was `admin`, refused for
+    // spanning tenancies; since ADM-1 it spans none, so the control is an id
+    // this platform does not have.)
+    expect(copyableParentRefusal('not-a-role')).toContain('is not a system role');
   });
 
   it('⚠️ …AND THERE IS NOTHING TO ADD TO IT, WHICH IS WHY IT IS NOT THE COPY PARENT', () => {

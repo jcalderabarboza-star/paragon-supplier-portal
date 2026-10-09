@@ -21,6 +21,7 @@ export const NAMED_SEAT_HOOKS: readonly PolicyHookId[] = [
   POLICY_HOOKS.PR_DECIDER_NAMED,
   POLICY_HOOKS.PUBLICATION_ACTOR_NAMED,
   POLICY_HOOKS.GR_DISPOSER_NAMED,
+  POLICY_HOOKS.GR_RECEIVER_NAMED,
 ];
 
 /** The i18n key for a refusal one of these hooks produced, else `null`. */

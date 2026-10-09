@@ -1876,6 +1876,15 @@ export interface CommandInput {
    */
   idempotencyKey?: string;
   /**
+   * ADM-1 — the one-line reason a Super Admin states when the act passes a
+   * four-eyes, segregation or sample-identity check. Read ONLY when such a
+   * check stood aside; then it is required (`SUPER_ADMIN_REASON_REQUIRED`) and
+   * recorded on the event. Ignored for every other seat and every other act.
+   * It is on the input and not in the payload because it is about the command,
+   * not about the document.
+   */
+  bypassReason?: string;
+  /**
    * The governed-decision provenance (C6-LOCK). Present only when this dispatch
    * carries a human override — the dispatcher stamps `wasAdjusted` onto it and
    * forwards the result to the audit event; it participates in NO validation

@@ -1033,6 +1033,8 @@ export const POLICY_HOOKS = {
   PUBLICATION_ACTOR_NAMED: 'publication_actor_named',
   /** Goods-receipt disposition: accept, partly accept, reject. */
   GR_DISPOSER_NAMED: 'gr_disposer_named',
+  /** ADM-1 — raising a goods receipt: the receipt records the NAMED receiver. */
+  GR_RECEIVER_NAMED: 'gr_receiver_named',
 } as const;
 
 for (const name of Object.values(POLICY_HOOKS)) registerPolicyHook(name);
