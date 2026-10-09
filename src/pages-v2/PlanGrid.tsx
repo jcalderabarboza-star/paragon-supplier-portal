@@ -204,11 +204,10 @@ const PlanGrid: React.FC = () => {
 
   return (
     <AppShellV2>
-      {/* PLN-5 · the chrome is summarised so the grid starts above the fold at
-          1600×900 (it began at 929 px on built main): a compact header, the
-          sandbox notice in one line, tight tabs. Nothing is removed. */}
+      {/* PLN-5 summarised the chrome so the grid starts higher: the sandbox
+          notice in one line, tight tabs. UI-1b took back the compact header —
+          one page-title size everywhere (operator ruling, 9 October 2026). */}
       <PageHeader
-        compact
         breadcrumb={PLAN_CRUMB}
         title={t('planGrid.header.title')}
         subtitle={t('planGrid.header.subtitle')}

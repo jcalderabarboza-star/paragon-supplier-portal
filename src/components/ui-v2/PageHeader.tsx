@@ -9,12 +9,11 @@ interface PageHeaderProps {
   title: string;
   subtitle?: string;
   actions?: React.ReactNode;
-  /**
-   * PLN-5 · a working surface's header: one size down and tight below, so the
-   * work starts above the fold (the plan grid at 1600×900). Same content.
-   */
-  compact?: boolean;
 }
+
+// UI-1b · ONE PAGE-TITLE SIZE (operator ruling, 9 October 2026). The `compact`
+// variant PLN-5 added for the plan grid is gone: a second title size is how the
+// Roles pages came to build a third by hand.
 
 /**
  * H1 · the sidebar group the current location opens under, translated, or null.
@@ -46,20 +45,19 @@ const PageHeaderView: React.FC<PageHeaderProps & { section: string | null }> = (
   title,
   subtitle,
   actions,
-  compact = false,
 }) => {
   const crumbs = section ? [section, ...breadcrumb] : breadcrumb;
   return (
-    <div className={`flex items-start justify-between gap-4 ${compact ? 'mb-2' : 'mb-8'}`}>
+    <div className="flex items-start justify-between gap-4 mb-8">
       <div className="min-w-0">
         <div className="text-eyebrow text-text-tertiary uppercase" data-testid="page-breadcrumb">
           {crumbs.join(' · ')}
         </div>
-        <h1 className={compact ? 'mt-0.5 text-xl font-semibold text-text-primary' : 'text-title text-text-primary mt-1'}>
+        <h1 className="text-title text-text-primary mt-1">
           {title}
         </h1>
         {subtitle ? (
-          <p className={compact ? 'mt-0.5 text-sm text-text-secondary' : 'text-base text-text-secondary mt-2 max-w-prose'}>
+          <p className="text-base text-text-secondary mt-2 max-w-prose">
             {subtitle}
           </p>
         ) : null}

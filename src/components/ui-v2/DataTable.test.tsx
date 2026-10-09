@@ -1,0 +1,203 @@
+// UI-1b · the one table and the one list page.
+import { describe, it, expect, vi } from 'vitest';
+import { render, screen, within, fireEvent } from '@testing-library/react';
+import DataTable, { CELL_KIND_CLASS, type Column, type ColumnKind } from './DataTable';
+import ListPage from './ListPage';
+import { renderWithProviders } from '../../test/test-utils';
+
+interface Row {
+  id: string;
+  name: string;
+  qty: number;
+  amount: string;
+  due: string;
+  status: string;
+}
+
+const ROWS: Row[] = [
+  { id: 'PO-1', name: 'Alpha', qty: 10, amount: 'Rp 1.000', due: '01 Aug 2026', status: 'Open' },
+  { id: 'PO-2', name: 'Beta', qty: 20, amount: 'Rp 2.000', due: '02 Aug 2026', status: 'Closed' },
+];
+
+const COLUMNS: Column<Row>[] = [
+  { id: 'id', header: 'Order', kind: 'id', cell: (r) => r.id },
+  { id: 'name', header: 'Supplier', kind: 'text', cell: (r) => r.name },
+  { id: 'qty', header: 'Qty', kind: 'number', cell: (r) => r.qty },
+  { id: 'amount', header: 'Value', kind: 'money', cell: (r) => r.amount },
+  { id: 'due', header: 'Due', kind: 'date', cell: (r) => r.due },
+  { id: 'status', header: 'Status', kind: 'status', cell: (r) => r.status },
+  { id: 'actions', header: '', ariaLabel: 'Actions', kind: 'actions', cell: () => <button type="button">Open</button> },
+];
+
+describe('DataTable', () => {
+  it('draws one header cell per column and one row per record', () => {
+    render(<DataTable columns={COLUMNS} rows={ROWS} rowKey={(r) => r.id} ariaLabel="Orders" />);
+    const table = screen.getByRole('table', { name: 'Orders' });
+    expect(within(table).getAllByRole('columnheader')).toHaveLength(COLUMNS.length);
+    // header row + two records
+    expect(within(table).getAllByRole('row')).toHaveLength(3);
+    expect(within(table).getByRole('columnheader', { name: 'Actions' })).toBeInTheDocument();
+  });
+
+  it('the KIND fixes the cell type — the page does not', () => {
+    render(<DataTable columns={COLUMNS} rows={ROWS.slice(0, 1)} rowKey={(r) => r.id} />);
+    const cells = screen.getAllByRole('cell');
+    COLUMNS.forEach((c, i) => {
+      for (const cls of CELL_KIND_CLASS[c.kind].split(' ').filter(Boolean)) expect(cells[i]).toHaveClass(cls);
+    });
+    // a document number is mono and semibold; a name is neither
+    expect(cells[0]).toHaveClass('font-mono', 'font-semibold');
+    expect(cells[1]).not.toHaveClass('font-mono');
+  });
+
+  it('every header cell is the same label, whatever the column', () => {
+    render(<DataTable columns={COLUMNS} rows={ROWS} rowKey={(r) => r.id} />);
+    for (const th of screen.getAllByRole('columnheader')) expect(th).toHaveClass('text-label', 'text-text-tertiary', 'uppercase');
+  });
+
+  it('numbers, money and actions sit right, in the header and in the body', () => {
+    render(<DataTable columns={COLUMNS} rows={ROWS.slice(0, 1)} rowKey={(r) => r.id} />);
+    const right: ColumnKind[] = ['number', 'money', 'actions'];
+    const heads = screen.getAllByRole('columnheader');
+    const cells = screen.getAllByRole('cell');
+    COLUMNS.forEach((c, i) => {
+      if (right.includes(c.kind)) {
+        expect(heads[i]).toHaveClass('text-right');
+        expect(cells[i]).toHaveClass('text-right');
+      } else {
+        expect(heads[i]).toHaveClass('text-left');
+        expect(cells[i]).not.toHaveClass('text-right');
+      }
+    });
+  });
+
+  it('a row is a control only when the page makes it one', () => {
+    const onRowClick = vi.fn();
+    const { rerender } = render(<DataTable columns={COLUMNS} rows={ROWS} rowKey={(r) => r.id} />);
+    expect(screen.getAllByRole('row')[1]).not.toHaveClass('cursor-pointer');
+    rerender(<DataTable columns={COLUMNS} rows={ROWS} rowKey={(r) => r.id} onRowClick={onRowClick} />);
+    const row = screen.getAllByRole('row')[2];
+    expect(row).toHaveClass('cursor-pointer');
+    fireEvent.click(row);
+    expect(onRowClick).toHaveBeenCalledWith(ROWS[1], 1);
+  });
+
+  it('carries per-row attributes, and keeps its own classes beside the page’s', () => {
+    render(
+      <DataTable
+        columns={COLUMNS}
+        rows={ROWS}
+        rowKey={(r) => r.id}
+        rowProps={(r) => ({ 'data-testid': `row-${r.id}`, className: 'bg-critical-soft' })}
+      />,
+    );
+    const row = screen.getByTestId('row-PO-2');
+    expect(row).toHaveClass('bg-critical-soft', 'border-b');
+  });
+
+  it('says what an empty table says, across every column', () => {
+    render(<DataTable columns={COLUMNS} rows={[]} rowKey={(r: Row) => r.id} empty="No orders match" />);
+    const cell = screen.getByText('No orders match');
+    expect(cell).toHaveAttribute('colspan', String(COLUMNS.length));
+  });
+
+  it('an empty table with nothing to say draws no body row', () => {
+    render(<DataTable columns={COLUMNS} rows={[]} rowKey={(r: Row) => r.id} />);
+    expect(screen.getAllByRole('row')).toHaveLength(1);
+  });
+
+  it('draws a group heading before a row and a detail after it, each full width', () => {
+    render(
+      <DataTable
+        columns={COLUMNS}
+        rows={ROWS}
+        rowKey={(r) => r.id}
+        groupHeader={(r) => (r.id === 'PO-1' ? 'Group A' : null)}
+        rowDetail={(r) => (r.id === 'PO-2' ? 'Detail of PO-2' : null)}
+      />,
+    );
+    const rows = screen.getAllByRole('row');
+    // header, group, PO-1, PO-2, detail
+    expect(rows).toHaveLength(5);
+    expect(within(rows[1]).getByText('Group A')).toHaveAttribute('colspan', String(COLUMNS.length));
+    expect(within(rows[4]).getByText('Detail of PO-2')).toHaveAttribute('colspan', String(COLUMNS.length));
+  });
+
+  it('compact is tighter and one size down; the card can be left off', () => {
+    const { container, rerender } = render(<DataTable columns={COLUMNS} rows={ROWS} rowKey={(r) => r.id} />);
+    expect(screen.getByRole('table')).toHaveClass('text-sm');
+    expect(container.firstElementChild?.tagName).toBe('DIV');
+    expect(container.firstElementChild).toHaveClass('rounded-lg', 'border');
+    rerender(<DataTable columns={COLUMNS} rows={ROWS} rowKey={(r) => r.id} density="compact" card={false} />);
+    expect(screen.getByRole('table')).toHaveClass('text-xs');
+    expect(container.firstElementChild?.tagName).toBe('TABLE');
+    expect(screen.getAllByRole('cell')[0]).toHaveClass('py-2', 'px-3');
+  });
+
+  it('draws a foot when given one', () => {
+    render(
+      <DataTable
+        columns={COLUMNS}
+        rows={ROWS}
+        rowKey={(r) => r.id}
+        footer={
+          <tr>
+            <td colSpan={COLUMNS.length}>Total 30</td>
+          </tr>
+        }
+      />,
+    );
+    expect(screen.getByText('Total 30').closest('tfoot')).not.toBeNull();
+  });
+});
+
+describe('ListPage', () => {
+  const parts = {
+    breadcrumb: ['Orders'],
+    title: 'Purchase Orders',
+    subtitle: 'Every order',
+    actions: <button type="button">New PO</button>,
+    meta: <span data-testid="p-meta">21 orders</span>,
+    notices: <div data-testid="p-notice">Sample data</div>,
+    kpis: <div data-testid="p-kpi">KPI</div>,
+    tabs: <div data-testid="p-tabs">Tabs</div>,
+    filters: <div data-testid="p-filters">Filters</div>,
+    search: <div data-testid="p-search">Search</div>,
+  };
+
+  it('one title size, from the shared header', () => {
+    renderWithProviders(
+      <ListPage {...parts}>
+        <div data-testid="p-content">Table</div>
+      </ListPage>,
+    );
+    const h1 = screen.getByRole('heading', { level: 1, name: 'Purchase Orders' });
+    expect(h1).toHaveClass('text-title');
+    expect(screen.getByRole('button', { name: 'New PO' })).toBeInTheDocument();
+  });
+
+  it('the parts come in ONE order, whatever order the page names them in', () => {
+    renderWithProviders(
+      <ListPage {...parts}>
+        <div data-testid="p-content">Table</div>
+      </ListPage>,
+    );
+    const order = ['p-meta', 'p-notice', 'p-kpi', 'p-tabs', 'p-filters', 'p-search', 'p-content'].map((id) => screen.getByTestId(id));
+    const h1 = screen.getByRole('heading', { level: 1 });
+    expect(h1.compareDocumentPosition(order[0]) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    for (let i = 1; i < order.length; i++) {
+      expect(order[i - 1].compareDocumentPosition(order[i]) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    }
+  });
+
+  it('a part the page does not have leaves no gap behind', () => {
+    renderWithProviders(
+      <ListPage breadcrumb={['Orders']} title="Purchase Orders" testId="lp">
+        <div data-testid="p-content">Table</div>
+      </ListPage>,
+    );
+    const root = screen.getByTestId('lp');
+    // the header and the content — nothing else
+    expect(root.children).toHaveLength(2);
+  });
+});
