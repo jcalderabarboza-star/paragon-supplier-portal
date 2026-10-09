@@ -163,7 +163,7 @@ export const buyerInvoicesEn: Record<string, string> = {
   'buyerInvoices.match.cause.ALREADY_INVOICED':
     'Earlier invoices on this purchase order already claim what was received: {{already}} is already invoiced and {{payable}} is left to pay.',
   'buyerInvoices.match.cause.EXCEEDS_ORDER':
-    'The invoice is above the whole order at purchase-order prices: {{invoiced}} invoiced against {{ordered}} ordered. An invoice carries a total and no lines, so the portal cannot say which price or quantity differs.',
+    'The invoice is above the whole order at purchase-order prices: {{invoiced}} invoiced against {{ordered}} ordered. The match compares totals and does not read an invoice\u2019s lines, so the portal cannot say which price or quantity differs.',
   'buyerInvoices.match.figure.ordered':
     'Ordered (confirmed quantity × PO price)',
   'buyerInvoices.match.figure.received':
@@ -372,7 +372,7 @@ export const buyerInvoicesId: Record<string, string> = {
   'buyerInvoices.match.cause.ALREADY_INVOICED':
     'Faktur sebelumnya pada pesanan pembelian ini sudah menagih yang diterima: {{already}} sudah ditagih dan {{payable}} tersisa untuk dibayar.',
   'buyerInvoices.match.cause.EXCEEDS_ORDER':
-    'Faktur melebihi seluruh pesanan pada harga pesanan pembelian: {{invoiced}} ditagih terhadap {{ordered}} dipesan. Faktur memuat total tanpa baris, sehingga portal tidak dapat menyebutkan harga atau kuantitas mana yang berbeda.',
+    'Faktur melebihi seluruh pesanan pada harga pesanan pembelian: {{invoiced}} ditagih terhadap {{ordered}} dipesan. Pencocokan membandingkan total dan tidak membaca baris faktur, sehingga portal tidak dapat menyebutkan harga atau kuantitas mana yang berbeda.',
   'buyerInvoices.match.figure.ordered':
     'Dipesan (kuantitas dikonfirmasi × harga PO)',
   'buyerInvoices.match.figure.received':

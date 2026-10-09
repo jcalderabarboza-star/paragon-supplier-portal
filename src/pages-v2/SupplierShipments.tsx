@@ -52,8 +52,12 @@ import {
   usePurchaseOrders,
   useASNs,
   useShipments,
+  useGoodsReceipts,
 } from '../services/query/hooks';
+import { receivedOnOrder, receiptsOfNotice } from '../services/data/orderReceipt';
+import { ReceivedOnNotice } from '../components/v2-features/ReceivedBlock';
 import type { AsnStatus, ASN, PurchaseOrder, Shipment } from '../services/data/types';
+import type { GoodsReceipt } from '../data/mockGoodsReceipts';
 import { statusTone } from '../lib/statusTone';
 import { useRefusalText } from '../hooks/useRefusalText';
 import { refusalDetailOf } from '../services/transitions/refusalMessage';
@@ -266,6 +270,8 @@ interface ShipmentsListProps {
   onSubmitAsn: (asnNumber: string) => void;
   onCreateAsnForPO: (poId: string) => void;
   confirmedPOs: PurchaseOrder[];
+  /** E2E-2 — the supplier's own receipts; each notice shows its own. */
+  receipts: readonly GoodsReceipt[];
 }
 
 const ShipmentsList: React.FC<ShipmentsListProps> = ({
@@ -276,6 +282,7 @@ const ShipmentsList: React.FC<ShipmentsListProps> = ({
   onSubmitAsn,
   onCreateAsnForPO,
   confirmedPOs,
+  receipts,
 }) => {
   const { t } = useTranslation();
   // ⚠️ TWO VERBS, TWO SLOTS — never one notice speaking for both (§76). They
@@ -484,6 +491,15 @@ const ShipmentsList: React.FC<ShipmentsListProps> = ({
                         colSpan={8}
                         className="px-6 py-4"
                       >
+                        {/* E2E-2 — the receipt recorded against this notice. */}
+                        {asn.status !== 'Draft' && (
+                          <div className="bg-bg-surface border border-border-subtle rounded-md p-4 mb-5">
+                            <ReceivedOnNotice
+                              receipts={receiptsOfNotice(asn.asnNumber, receipts)}
+                              testId={`asn-received-${asn.asnNumber}`}
+                            />
+                          </div>
+                        )}
                         <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.4fr] gap-5">
                           <div className="bg-bg-surface border border-border-subtle rounded-md p-4">
                             <div className="text-label text-text-tertiary uppercase mb-3">
@@ -700,9 +716,15 @@ const SupplierShipments: React.FC = () => {
 
   const mySupplier = supplierQuery.data ?? null;
   const asns = useMemo(() => asnsQuery.data?.items ?? [], [asnsQuery.data]);
+  // E2E-2 — the supplier's own receipts. A confirmed order that is fully
+  // received is not offered for a new ship notice, and each notice shows the
+  // receipt recorded against it.
+  const receiptsQuery = useGoodsReceipts();
+  const receipts = useMemo(() => receiptsQuery.data?.items ?? [], [receiptsQuery.data]);
   const CONFIRMED_POS = useMemo(
-    () => posQuery.data?.items ?? [],
-    [posQuery.data],
+    () =>
+      (posQuery.data?.items ?? []).filter((po) => !receivedOnOrder(po, receipts).fullyReceived),
+    [posQuery.data, receipts],
   );
 
   const counts = useMemo(() => {
@@ -1432,6 +1454,7 @@ const SupplierShipments: React.FC = () => {
           onSubmitAsn={openSubmitForm}
           onCreateAsnForPO={createAsnForPO}
           confirmedPOs={CONFIRMED_POS}
+          receipts={receipts}
         />
       )}
 

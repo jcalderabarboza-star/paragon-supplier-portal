@@ -29,6 +29,7 @@ import type { CodeLessReason } from '../../data/materialCatalogReason';
 import type { PslStatus } from '../data/pslListing';
 import type {
   CommandResult,
+  InvoiceLineItem,
   CommandStatus,
   QueryScope,
   InspectionResult,
@@ -1129,6 +1130,8 @@ export interface InvoiceCreateVars {
   /** The parent PO the invoice bills against (must be the supplier's own, Confirmed). */
   poReference: string;
   amount: number;
+  /** E2E-2 — the invoiced lines; `amount` is their total. */
+  lines?: readonly InvoiceLineItem[];
   dueDate?: string;
   submittedDate?: string;
   bankAccount?: string;

@@ -138,6 +138,15 @@ export const POLICY_HOOKS = {
   RFQ_FX_PIN_WELL_FORMED: 'rfq_fx_pin_well_formed',
   /** Invoice create: the parent PO (payload.poReference) must be Confirmed. */
   INVOICE_CREATE_PO_CONFIRMED: 'invoice_create_po_confirmed',
+  /** E2E-2 — when an invoice states its lines, each is on the order, at the
+   *  order's price, for no more than was received and accepted against it, and
+   *  the amount is the lines' total. An invoice that states no lines is not
+   *  examined here; the match judges its amount. */
+  INVOICE_LINES_WITHIN_RECEIVED: 'invoice_lines_within_received',
+  /** E2E-2 — an invoice that carries lines keeps their total as its amount: a
+   *  later verb that states a different amount is refused. Without it the
+   *  lines check at create could be undone at submit. */
+  INVOICE_AMOUNT_IS_LINES_TOTAL: 'invoice_amount_is_lines_total',
   /** Invoice match: the match sub-flow must have rolled up to a clean Matched
    *  before the header can advance Submitted → Matched (census G2). */
   INVOICE_ROLLUP_MATCHED: 'invoice_rollup_matched',

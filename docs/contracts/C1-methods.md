@@ -371,6 +371,51 @@ targets). They measure different things; this file keeps them separate.
 > `t_rfq_fx_pin` is dispatched. Both read the wall clock until this batch. `rfq_fx_pin_well_formed`
 > is unchanged and examines no clock.
 >
+> **RE-HARVEST (2026-10-09, E2E-2).** What was received is read on the order and the ship notice,
+> and an invoice states its lines. No figure moved: service surface, catalog, flows and wired
+> targets are as E2E-1 left them. Two policy hooks are new, both on the invoice.
+> `invoice_lines_within_received` — on `t_invoice_create`, evaluated SECOND, after
+> `invoice_create_po_confirmed`. **A PAYLOAD THAT STATES NO `lines` IS NOT EXAMINED BY IT**; its
+> amount is judged by the match, as before. When the payload states `lines` — a list of
+> `{ materialCode, qty, unitPrice }` — the hook refuses, with nothing created, under one of six
+> heads: `INVOICE_LINES_MALFORMED` (`lines` is not such a list with a quantity and a price that are
+> numbers of zero or more, or a material is stated on more than one line);
+> `INVOICE_LINE_NOT_ON_ORDER` (a line's material is not a line of the order);
+> `INVOICE_LINE_PRICE_NOT_ORDER_PRICE` (a line's price is not the order's unit price);
+> `INVOICE_LINE_EXCEEDS_RECEIVED` (a line's quantity is more than was received and accepted against
+> that order line); `INVOICE_NOTHING_INVOICED` (no line invoices a quantity above zero);
+> `INVOICE_AMOUNT_NOT_LINES_TOTAL` (`amount` is not Σ `qty` × `unitPrice` over the lines). The lines
+> are read in the order stated and the first refusal is the one returned.
+> `invoice_amount_is_lines_total` — on `t_invoice_submit` and `t_invoice_resolve`, the two invoice
+> verbs that land on `Submitted`; neither had a hook. One refusal, `INVOICE_AMOUNT_NOT_LINES_TOTAL`:
+> the stored invoice carries lines and the payload states an `amount` that is not their total. The
+> invoice is left as it was. **AN INVOICE THAT CARRIES NO LINES, AND A PAYLOAD THAT STATES NO
+> `amount`, ARE NOT EXAMINED**: an invoice with no lines still submits the amount it states. It
+> stands there so the lines check at create cannot be undone by submitting a different amount.
+> **`t_invoice_create`'s PAYLOAD GAINED ONE OPTIONAL FIELD, `lines`.** It is not a required field.
+> The target stores the lines on the invoice only when they are stated; `amount` is then their
+> total. **THE STORED INVOICE, THE SUPPLIER'S INVOICE READ AND THE BUYER'S INVOICE READ EACH CARRY
+> THE SAME OPTIONAL `lines`**, present only when the invoice states them. A seeded invoice states
+> none.
+> **THE MATCH IS UNCHANGED AND STILL JUDGES.** It reads the invoice's amount, never its lines, so an
+> invoice admitted line by line can still come out not `Matched` — for one, when an earlier invoice
+> on the order already claims what was received. `invoice_rollup_matched` is unchanged.
+> **"RECEIVED ON AN ORDER" AND "RECEIVED ON A SHIP NOTICE" ARE DERIVED READS OVER
+> `getGoodsReceipts`. NO SERVICE METHOD WAS ADDED, AND NOTHING IS WRITTEN TO AN ORDER OR A SHIP
+> NOTICE.** Both read the receipt states the match reads — `Posting to SAP` and `Posted to SAP`; a
+> receipt that is only inspected, held or rejected is not read. On an order, accepted quantity is
+> allocated by the match's own rule: pooled per material across those receipts and handed to the
+> order's lines in order, each line taking no more than its confirmed quantity. An order is fully
+> received when every line that confirmed a quantity has all of it accepted; an order that
+> confirmed no quantity is never fully received. On a ship notice, the receipts read are those
+> whose `asnNumber` is the notice's own number. A supplier scope reads its own receipts, as
+> `getGoodsReceipts` already scoped them. The lines check on `t_invoice_create` reads the same
+> allocation.
+> **NO VERB ON `purchaseOrder` OR `advanceShipNotice` CHANGED.** `t_asn_create` has no new hook and
+> no new refusal: a supplier is not offered a new ship notice for a `Confirmed` order that is fully
+> received, and that is the surfaces withholding the offer, not the dispatcher refusing the verb.
+> An order's status and a ship notice's status are not moved by a receipt.
+>
 > **RE-HARVEST (2026-10-08, SUP-1).** A named person decides. No figure moved: service surface,
 > catalog, flows and wired targets are as OPS-3 left them. Six policy hooks are new, each evaluated
 > FIRST on its verbs, and each with one refusal: the commanding scope's `actor` is absent or

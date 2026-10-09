@@ -66,6 +66,7 @@ import {
   useInvoiceResolve,
 } from '../services/query/commandHooks';
 import { formatIDR, formatDate } from '../lib/format';
+import { InvoicedLines } from '../components/v2-features/ReceivedBlock';
 import {
   invoiceActionsFor,
   invoiceCommitAction,
@@ -1410,6 +1411,11 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
                 </div>
               )}
             </section>
+
+            {/* E2E-2 — the lines the supplier invoiced, when it stated any. */}
+            {selected.lines && selected.lines.length > 0 && (
+              <InvoicedLines lines={selected.lines} testId="buyer-invoice-lines" />
+            )}
 
             {selected.lifecycleState === 'Disputed' && (
               <section data-testid="invoice-dispute-reason">

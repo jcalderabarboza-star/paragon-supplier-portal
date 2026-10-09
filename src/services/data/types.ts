@@ -616,6 +616,20 @@ export interface Invoice {
   releasedBy?: ActorAttribution;
   /** OPS-1 — the reason finance wrote when it disputed the invoice; both sides read it. */
   disputeReason?: string;
+  /**
+   * E2E-2 — the lines the supplier invoiced: material, quantity and the
+   * order's unit price. Absent on a seeded invoice and on one created with an
+   * amount only; `amount` is their total whenever they are present
+   * (`invoice_lines_within_received`).
+   */
+  lines?: readonly InvoiceLineItem[];
+}
+
+/** E2E-2 — one invoiced line. */
+export interface InvoiceLineItem {
+  readonly materialCode: string;
+  readonly qty: number;
+  readonly unitPrice: number;
 }
 
 /** OPS-1 — why an invoice is, or is not, within what may be paid on its PO. */
@@ -660,6 +674,8 @@ export interface SupplierInvoice {
   remittanceNote: string | null;
   /** OPS-1 — the reason Paragon finance wrote, while the invoice is disputed. */
   disputeReason?: string;
+  /** E2E-2 — the lines the supplier invoiced, when it stated any. */
+  lines?: readonly InvoiceLineItem[];
 }
 
 /** BUYER-persona projection labels of `InvoiceStatus` (+ computed Overdue). */
@@ -717,6 +733,8 @@ export interface BuyerInvoice {
   approvedBy?: ActorAttribution;
   releasedBy?: ActorAttribution;
   disputeReason?: string;
+  /** E2E-2 — the lines the supplier invoiced, when it stated any. */
+  lines?: readonly InvoiceLineItem[];
 }
 
 export type AsnStatus =
