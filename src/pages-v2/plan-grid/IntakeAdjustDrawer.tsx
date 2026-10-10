@@ -196,7 +196,7 @@ const IntakeAdjustDrawer: React.FC<{ line: IntakeLine | null }> = ({ line }) => 
           </Data>
           {line.producerAdjusted && (
             <div
-              className="mt-1 text-[11px] text-text-tertiary"
+              className="mt-1 text-xs text-text-tertiary"
               data-testid={`producer-adjusted-${line.id}`}
             >
               {t('planGrid.adjusted.byProducer', {
@@ -231,10 +231,10 @@ const IntakeAdjustDrawer: React.FC<{ line: IntakeLine | null }> = ({ line }) => 
           <span className="ml-2 text-xs text-text-tertiary">{line.uom}</span>
           {/* Names the raw-editable convention, so canonical digits in a field
               beside a grouped display chip reads as deliberate, not broken. */}
-          <div id={`accepted-hint-${line.id}`} className="mt-1 text-[11px] text-text-tertiary">
+          <div id={`accepted-hint-${line.id}`} className="mt-1 text-xs text-text-tertiary">
             {t('planGrid.push.qty.hint')}
           </div>
-          <div className="mt-1.5 text-[11px]">
+          <div className="mt-1.5 text-xs">
             {parsed.ok ? (
               <StatusPill variant={adjusted ? 'warning' : 'neutral'}>
                 {/* The PLANNER's change, measured from the producer's
@@ -274,7 +274,7 @@ const IntakeAdjustDrawer: React.FC<{ line: IntakeLine | null }> = ({ line }) => 
               onChange={(e) => setReason((r) => ({ ...r, [line.id]: e.target.value }))}
             />
             {blocked && (
-              <div className="mt-1 text-[11px] text-warning-hover">
+              <div className="mt-1 text-xs text-warning-hover">
                 {t('planGrid.push.reasonRequired')}
               </div>
             )}
@@ -284,7 +284,7 @@ const IntakeAdjustDrawer: React.FC<{ line: IntakeLine | null }> = ({ line }) => 
 
       {/* Push action + committed / failed feedback */}
       <div className="flex items-center justify-between gap-3 border-t border-border-subtle px-4 py-3">
-        <div className="text-[11px]">
+        <div className="text-xs">
           {/* ⚠️ **A COMMITTED LINE WITH NO NUMBER IS A SESSION BOUNDARY, NOT A
               FAILED COMMIT** — the triage persists and the requisition store
               does not, so a line committed before a reload is `Committed` with

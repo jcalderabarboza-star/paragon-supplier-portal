@@ -39,7 +39,7 @@ import StatusPill from '../components/ui-v2/StatusPill';
 import { Card } from '../components/ui-v2/Card';
 import Notice, { type NoticeTone } from '../components/ui-v2/Notice';
 import { IconButton, RowButton } from '../components/ui-v2/Actions';
-import { CHART_SEMANTIC, CHART_IDENTITY, MAP_BASE } from '../lib/chartPalette';
+import { CHART_SEMANTIC, CHART_IDENTITY, MAP_BASE, chartLabel } from '../lib/chartPalette';
 import DataTable from '../components/ui-v2/DataTable';
 import Button from '../components/ui-v2/Button';
 import LoadingState from '../components/ui-v2/LoadingState';
@@ -123,7 +123,6 @@ const SCENARIO_LIBRARY_IDS = ['me', 'tw', 'pa'] as const;
 const TOKEN_SUCCESS = CHART_SEMANTIC.success;
 const TOKEN_WARNING = CHART_SEMANTIC.warning;
 const TOKEN_DANGER = CHART_SEMANTIC.danger;
-const TOKEN_MUTED = CHART_SEMANTIC.neutral;
 
 // MAP-BASE-AXIS-01 — the SUBSTRATE axis, bound in the same idiom as the STATE
 // axis above. These are the geography the risk dots are plotted ON; they are
@@ -277,7 +276,7 @@ const WorldMap: React.FC = () => {
         ].map((l, i) => (
           <g key={l.label} transform={`translate(20, ${360 + i * 16})`}>
             <circle r={4} cx={6} cy={0} fill={l.color} />
-            <text x={14} y={4} fontSize={11} fill={TOKEN_MUTED}>
+            <text x={14} y={4} {...chartLabel({})}>
               {l.label}
             </text>
           </g>
@@ -313,10 +312,10 @@ const GeopoliticalTab: React.FC<{ geoRisks: GeoRisk[] }> = ({ geoRisks }) => {
           <div
             className={`${sevSoftBg} px-5 py-4 flex items-center gap-4 border-b border-border-subtle`}
           >
-            <span className="text-2xl leading-none">{r.flag}</span>
+            <span className="text-section leading-none">{r.flag}</span>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="font-bold text-sm text-text-primary">
+                <span className="font-semibold text-sm text-text-primary">
                   {r.country}
                 </span>
                 <StatusPill variant={sevVariant}>{r.severity}</StatusPill>
@@ -328,7 +327,7 @@ const GeopoliticalTab: React.FC<{ geoRisks: GeoRisk[] }> = ({ geoRisks }) => {
             <div className="text-right shrink-0">
               <Data
                 as="div"
-                className={`text-2xl font-semibold leading-none ${
+                className={`text-kpi leading-none ${
                   sevVariant === 'danger'
                     ? 'text-critical'
                     : sevVariant === 'warning'
@@ -338,7 +337,7 @@ const GeopoliticalTab: React.FC<{ geoRisks: GeoRisk[] }> = ({ geoRisks }) => {
               >
                 {r.score}
               </Data>
-              <div className="text-[10px] text-text-tertiary mt-0.5">{t('risk.geo.riskScore')}</div>
+              <div className="text-xs text-text-tertiary mt-0.5">{t('risk.geo.riskScore')}</div>
             </div>
           </div>
           <div className="px-5 py-4 grid grid-cols-1 md:grid-cols-3 gap-5">
@@ -549,7 +548,7 @@ const ScenarioTab: React.FC<{ scenarios: Scenario[] }> = ({ scenarios }) => {
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div className="flex-1 min-w-0">
             {/* i18n-defer: mock/sample data — scenario title/description/impact seeded from fixtures */}
-            <div className="text-base font-bold text-text-primary mb-1">
+            <div className="text-section text-text-primary mb-1">
               {featured.title}
             </div>
             <div className="text-sm text-text-secondary mb-4">
@@ -558,8 +557,8 @@ const ScenarioTab: React.FC<{ scenarios: Scenario[] }> = ({ scenarios }) => {
             <div className="flex flex-wrap gap-6">
               {Object.entries(featured.impact).map(([k, v]) => (
                 <div key={k}>
-                  <div className="text-lg font-bold text-critical">{v}</div>
-                  <div className="text-[10px] text-text-tertiary uppercase tracking-wider mt-0.5">
+                  <div className="text-section text-critical">{v}</div>
+                  <div className="text-label text-text-tertiary uppercase mt-0.5">
                     {k.replace(/([A-Z])/g, ' $1')}
                   </div>
                 </div>
@@ -596,7 +595,7 @@ const ScenarioTab: React.FC<{ scenarios: Scenario[] }> = ({ scenarios }) => {
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     {/* i18n-defer: mock/sample data — alternative name/cost/leadTime/details seeded from fixtures */}
-                    <span className="font-bold text-sm text-text-primary">
+                    <span className="font-semibold text-sm text-text-primary">
                       {alt.name}
                     </span>
                     <StatusPill variant={feasVariant}>
@@ -660,7 +659,7 @@ const ScenarioTab: React.FC<{ scenarios: Scenario[] }> = ({ scenarios }) => {
       <Card as="section">
         <div className="flex items-center gap-2 mb-3">
           <Sparkles size={16} className="text-teal" />
-          <span className="text-sm font-bold text-teal-text">{t('risk.scenario.ariaRecommendation')}</span>
+          <span className="text-sm font-semibold text-teal-text">{t('risk.scenario.ariaRecommendation')}</span>
           {/* "AI-Powered" is a StatusPill child — left as-is per the central-maps rule */}
           <StatusPill variant="info">
             AI-Powered
@@ -888,7 +887,7 @@ const CommodityTab: React.FC<{ commodities: Commodity[] }> = ({
           >
             <div className="flex items-start justify-between gap-3 mb-3">
               <div className="min-w-0">
-                <div className="font-bold text-sm text-text-primary">
+                <div className="font-semibold text-sm text-text-primary">
                   {c.name}
                 </div>
                 <div className="text-xs text-text-tertiary">{c.unit}</div>
@@ -943,7 +942,7 @@ const CommodityTab: React.FC<{ commodities: Commodity[] }> = ({
                       : t('risk.commodity.dirBelow'),
                 })}
               </span>
-              <span className="font-bold" style={{ color: c.color }}>
+              <span className="font-semibold" style={{ color: c.color }}>
                 {formatNumber(c.alert)} {c.unit}
               </span>
               <span className="ml-auto">
@@ -976,7 +975,7 @@ const CommodityTab: React.FC<{ commodities: Commodity[] }> = ({
               className="flex items-center gap-2 text-sm text-text-secondary"
             >
               <span
-                className={over ? 'text-critical font-bold' : 'text-success font-bold'}
+                className={over ? 'text-critical font-semibold' : 'text-success font-semibold'}
               >
                 {over ? '⚠' : '✓'}
               </span>

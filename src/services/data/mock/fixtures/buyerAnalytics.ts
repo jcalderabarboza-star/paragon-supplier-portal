@@ -14,14 +14,17 @@ import type {
   AnalyticsPerfRow,
   AnalyticsSummary,
 } from '../../types';
+import { CHART_AXIS, CHART_INFO, CHART_MID, CHART_SEMANTIC, CHART_SERIES } from '../../../../lib/chartPalette';
 
-const TOKEN_TEAL = '#0097A7';
-const TOKEN_NAVY = '#0D1B2A';
-const TOKEN_MID = '#354A5F';
-const TOKEN_SUCCESS = '#107E3E';
-const TOKEN_WARNING = '#B45309';
-const TOKEN_INFO = '#1E5BAE';
-const TOKEN_MUTED = '#6B7785';
+// The seven slices take their colours from the chart palette, as every chart
+// does: the pie has more categories than the series ramp has slots.
+const TOKEN_TEAL = CHART_SERIES[0];
+const TOKEN_NAVY = CHART_SERIES[1];
+const TOKEN_MID = CHART_MID;
+const TOKEN_SUCCESS = CHART_SEMANTIC.success;
+const TOKEN_WARNING = CHART_SEMANTIC.warning;
+const TOKEN_INFO = CHART_INFO;
+const TOKEN_MUTED = CHART_AXIS;
 
 export const SPEND_CAT: SpendCategoryRow[] = [
   { category: 'Active Ingredients', value: 1260, color: TOKEN_TEAL },

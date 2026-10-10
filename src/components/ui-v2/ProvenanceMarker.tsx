@@ -55,7 +55,7 @@ const ProvenanceMarker: React.FC<{
       className={`inline-flex flex-wrap items-center gap-x-3 gap-y-1 ${className}`}
     >
       {fixture && (
-        <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-sample">
+        <span className="inline-flex items-center gap-1.5 text-label uppercase text-sample">
           <span
             aria-hidden="true"
             className="h-1.5 w-1.5 rounded-full border border-dashed border-sample"
@@ -64,7 +64,7 @@ const ProvenanceMarker: React.FC<{
         </span>
       )}
       {dispatches && (
-        <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-info">
+        <span className="inline-flex items-center gap-1.5 text-label uppercase text-info">
           <span
             aria-hidden="true"
             className="h-1.5 w-1.5 rounded-sm bg-info"

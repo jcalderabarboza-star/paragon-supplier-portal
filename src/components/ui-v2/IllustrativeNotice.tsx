@@ -41,7 +41,7 @@ export const IllustrativeMark: React.FC<{ className?: string }> = ({ className =
     <span
       data-testid="illustrative-mark"
       title={t('illustrative.mark.title')}
-      className={`inline-flex items-center gap-1 align-middle whitespace-nowrap text-[9px] font-semibold uppercase tracking-wider text-text-secondary border border-dashed border-border-input rounded px-1 py-px ${className}`}
+      className={`inline-flex items-center gap-1 align-middle whitespace-nowrap text-label uppercase text-text-secondary border border-dashed border-border-input rounded px-1 py-px ${className}`}
     >
       <FlaskConical size={9} aria-hidden="true" />
       {t('illustrative.mark')}

@@ -47,8 +47,11 @@ import { useToast } from '../hooks/useToast';
 import {
   CHART_SERIES,
   CHART_SEMANTIC,
-  CHART_MID,
   CHART_GRID,
+  CHART_TICK,
+  CHART_LEGEND_STYLE,
+  CHART_TOOLTIP_STYLE,
+  chartLabel,
   targetStatus,
 } from '../lib/chartPalette';
 import {
@@ -79,10 +82,8 @@ const PERIOD_IDS: Period[] = ['30d', '90d', 'ytd'];
 // BuyerAnalytics migration flagged in Commit 1 (non-channel charts now central).
 const TOKEN_TEAL = CHART_SERIES[0];
 const TOKEN_NAVY = CHART_SERIES[1];
-const TOKEN_MID = CHART_MID;
 const TOKEN_WARNING = CHART_SEMANTIC.warning;
 const TOKEN_DANGER = CHART_SEMANTIC.danger;
-const TOKEN_MUTED = CHART_SEMANTIC.neutral;
 const TOKEN_BORDER = CHART_GRID;
 
 const GRADE_VARIANT: Record<Grade, 'success' | 'info' | 'warning' | 'danger'> = {
@@ -381,24 +382,22 @@ const BuyerAnalytics: React.FC = () => {
                   horizontal={false}
                   stroke={TOKEN_BORDER}
                 />
-                <XAxis type="number" tick={{ fontSize: 10, fill: TOKEN_MUTED }} />
+                <XAxis type="number" tick={CHART_TICK} />
                 <YAxis
                   type="category"
                   dataKey="supplier"
                   width={130}
-                  tick={{ fontSize: 10, fill: TOKEN_MUTED }}
+                  tick={CHART_TICK}
                 />
                 <Tooltip content={<ChartTooltip />} />
                 <Bar
                   dataKey="spend"
                   fill={TOKEN_TEAL}
                   radius={[0, 4, 4, 0]}
-                  label={{
-                    position: 'right',
-                    fontSize: 10,
-                    fill: TOKEN_MID,
+                  label={chartLabel({
+                    position: 'right' as const,
                     formatter: (v: number) => `${v}jT`,
-                  }}
+                  })}
                 />
               </BarChart>
             </ResponsiveContainer>
@@ -420,24 +419,23 @@ const BuyerAnalytics: React.FC = () => {
               <CartesianGrid strokeDasharray="3 3" stroke={TOKEN_BORDER} />
               <XAxis
                 dataKey="month"
-                tick={{ fontSize: 10, fill: TOKEN_MUTED }}
+                tick={CHART_TICK}
                 interval={1}
               />
               <YAxis
                 domain={[75, 100]}
-                tick={{ fontSize: 10, fill: TOKEN_MUTED }}
+                tick={CHART_TICK}
               />
               <Tooltip content={<ChartTooltip />} />
               <ReferenceLine
                 y={90}
                 stroke={TOKEN_DANGER}
                 strokeDasharray="4 2"
-                label={{
+                label={chartLabel({
                   value: t('buyerAnalytics.otif.target'),
                   fill: TOKEN_DANGER,
-                  fontSize: 9,
-                  position: 'insideTopRight',
-                }}
+                  position: 'insideTopRight' as const,
+                })}
               />
               <Line
                 type="monotone"
@@ -455,7 +453,7 @@ const BuyerAnalytics: React.FC = () => {
                 dot={{ r: 2 }}
                 name={t('buyerAnalytics.series.otdr')}
               />
-              <Legend iconSize={10} wrapperStyle={{ fontSize: 11 }} formatter={legendLabel} />
+              <Legend iconSize={10} wrapperStyle={CHART_LEGEND_STYLE} formatter={legendLabel} />
             </LineChart>
           </ResponsiveContainer>
         </Card>
@@ -473,31 +471,27 @@ const BuyerAnalytics: React.FC = () => {
               <CartesianGrid strokeDasharray="3 3" stroke={TOKEN_BORDER} />
               <XAxis
                 dataKey="month"
-                tick={{ fontSize: 10, fill: TOKEN_MUTED }}
+                tick={CHART_TICK}
                 interval={1}
               />
               <YAxis
                 yAxisId="left"
-                tick={{ fontSize: 10, fill: TOKEN_MUTED }}
-                label={{
+                tick={CHART_TICK}
+                label={chartLabel({
                   value: t('buyerAnalytics.poVolume.axisPos'),
                   angle: -90,
                   position: 'insideLeft',
-                  fontSize: 9,
-                  fill: TOKEN_MUTED,
-                }}
+                })}
               />
               <YAxis
                 yAxisId="right"
                 orientation="right"
-                tick={{ fontSize: 10, fill: TOKEN_MUTED }}
-                label={{
+                tick={CHART_TICK}
+                label={chartLabel({
                   value: t('buyerAnalytics.poVolume.axisHours'),
                   angle: 90,
                   position: 'insideRight',
-                  fontSize: 9,
-                  fill: TOKEN_MUTED,
-                }}
+                })}
               />
               <Tooltip content={<ChartTooltip />} />
               <Bar
@@ -515,7 +509,7 @@ const BuyerAnalytics: React.FC = () => {
                 dot={{ r: 2 }}
                 name={t('buyerAnalytics.series.cycleTime')}
               />
-              <Legend iconSize={10} wrapperStyle={{ fontSize: 11 }} formatter={legendLabel} />
+              <Legend iconSize={10} wrapperStyle={CHART_LEGEND_STYLE} formatter={legendLabel} />
             </ComposedChart>
           </ResponsiveContainer>
         </Card>
@@ -608,20 +602,16 @@ const BuyerAnalytics: React.FC = () => {
             margin={{ top: 10, right: 20, bottom: 0, left: -10 }}
           >
             <CartesianGrid strokeDasharray="3 3" stroke={TOKEN_BORDER} />
-            <XAxis dataKey="month" tick={{ fontSize: 11, fill: TOKEN_MUTED }} />
+            <XAxis dataKey="month" tick={CHART_TICK} />
             <YAxis
-              tick={{ fontSize: 11, fill: TOKEN_MUTED }}
+              tick={CHART_TICK}
               tickFormatter={(v: number) => `${v}%`}
             />
             <Tooltip
               formatter={(v: number) => [`${v}%`, '']}
-              contentStyle={{
-                border: `1px solid ${TOKEN_BORDER}`,
-                borderRadius: 6,
-                fontSize: 12,
-              }}
+              contentStyle={CHART_TOOLTIP_STYLE}
             />
-            <Legend iconSize={10} wrapperStyle={{ fontSize: 11 }} formatter={legendLabel} />
+            <Legend iconSize={10} wrapperStyle={CHART_LEGEND_STYLE} formatter={legendLabel} />
             {/* Channels are CATEGORIES, not state — one ordered accent ramp,
                 never semantic green/red (that read as good/bad here). */}
             <Bar dataKey="whatsapp" stackId="a" fill={CHART_SERIES[0]} name={t('buyerAnalytics.series.whatsapp')} />

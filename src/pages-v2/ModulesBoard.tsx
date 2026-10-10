@@ -53,10 +53,10 @@ const ModuleCard: React.FC<{ code: ModuleCode; onOpen: (c: ModuleCode) => void }
       </div>
       <div className="text-sm font-medium text-text-primary mt-1">{t(spec.nameKey)}</div>
       <p className="text-xs text-text-secondary mt-1 line-clamp-2">{t(spec.descriptionKey)}</p>
-      <div className="text-[11px] text-text-tertiary mt-2" data-testid={`module-card-counts-${code}`}>
+      <div className="text-xs text-text-tertiary mt-2" data-testid={`module-card-counts-${code}`}>
         {t('modules.board.counts', { routes: f.routes, verbs: f.verbs })}
       </div>
-      <div className="text-[11px] text-text-tertiary mt-0.5" data-testid={`module-card-deps-${code}`}>
+      <div className="text-xs text-text-tertiary mt-0.5" data-testid={`module-card-deps-${code}`}>
         {f.needs.length === 0 && f.reads.length === 0
           ? t('modules.board.needsNothing')
           : [
@@ -111,7 +111,7 @@ const ModulesBoard: React.FC = () => {
                 <span>{t(`modules.phase.${phase}`)}</span>
                 <StatusPill variant="neutral">{columns[phase].length}</StatusPill>
               </SectionHeading>
-              <p className="text-[11px] text-text-tertiary mb-3">{t(`modules.phaseHelp.${phase}`)}</p>
+              <p className="text-xs text-text-tertiary mb-3">{t(`modules.phaseHelp.${phase}`)}</p>
               <div className="space-y-3">
                 {columns[phase].map((code) => (
                   <ModuleCard key={code} code={code} onOpen={setOpen} />

@@ -65,7 +65,7 @@ export const ModuleDetailDrawer: React.FC<{ code: ModuleCode | null; onClose: ()
             <ul className="flex flex-wrap gap-1.5">
               {spec.routes.map((r) => (
                 <li key={r} className="rounded border border-border-subtle bg-bg-hover px-1.5 py-0.5">
-                  <Data className="text-[11px]">{r}</Data>
+                  <Data className="text-xs">{r}</Data>
                 </li>
               ))}
             </ul>
@@ -88,7 +88,7 @@ export const ModuleDetailDrawer: React.FC<{ code: ModuleCode | null; onClose: ()
                   <div className="mt-1 flex flex-wrap gap-1">
                     {f.transitions.map((tr) => (
                       <span key={tr.id} className="rounded bg-bg-hover px-1 py-0.5">
-                        <Data className="text-[10px] text-text-secondary">{tr.id}</Data>
+                        <Data className="text-label text-text-secondary">{tr.id}</Data>
                       </span>
                     ))}
                   </div>

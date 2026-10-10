@@ -886,6 +886,20 @@ nav groups under one neutral key, `nav.glossary`.
   A `<button>`:** `deadAffordance.guard` names the pressed components in its control
   vocabulary for that reason — a census keyed on the tag loses every control the day the tag
   changes, with nothing going red.
+- ⚠️ **UI-1c-4 (2026-10-10) — THE SCALE AND THE TOKENS HAVE NO EXCEPTIONS LEFT BUT THE NAMED
+  ONES.** `TYPE_GRANDFATHERED` is EMPTY: no arbitrary size, no bold, no off-scale size and no
+  inline `fontSize` outside the scale. The files exempt by name are in `TYPE_EXEMPT` and
+  `COLOUR_EXEMPT` (`lib/uiGate/derive.ts`), each with its reason — the chart palette, where a
+  chart's text and colours are WRITTEN, and the messenger demo. **A chart's text comes from
+  `lib/chartPalette.ts`** (`CHART_TICK` · `CHART_LEGEND_STYLE` · `CHART_TOOLTIP_STYLE` ·
+  `chartLabel`): 11px is the smallest type the portal renders, and the axis grey is the
+  `text-tertiary` grey. **A grade is `components/ui-v2/GradeBadge`** (`GradeBadge` · `GradeChip`
+  · `GRADE_TONE`): one ramp, in tokens, where three pages each held a copy in raw hex; grade C
+  takes the DP2-WARN-01 split. The sentence above that reads *"Grade A–D ramps are a separate
+  axis, not yet unified here"* is overtaken by it. The heaviest weight is semibold — a bare
+  `<strong>` is 600, set once in the base layer. **Derive what the colour list still holds from
+  `COLOUR_GRANDFATHERED`; it is the legacy stylesheet's own variables, and folding those onto
+  the tokens is not done.**
 - WARNING token is a FILL/TEXT split (DP2-WARN-01), same shape as `action`:
   `warning.DEFAULT` = bright amber `#D97706` for every GRAPHICAL warning use
   (accent-edges, dots, bar fills, dials, chip fills, borders — 3.19:1 on white,

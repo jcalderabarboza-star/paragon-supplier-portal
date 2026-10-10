@@ -220,7 +220,7 @@ const BuyerSupplierProfile: React.FC = () => {
     return (
       <AppShellV2>
         <div className="py-20 text-center">
-          <div className="text-lg font-semibold text-text-primary mb-2">
+          <div className="text-section text-text-primary mb-2">
             {t('buyerSupplierProfile.notFound.title')}
           </div>
           <Button
@@ -309,7 +309,7 @@ const BuyerSupplierProfile: React.FC = () => {
       {/* Overview card */}
       <Card padding="lg" className="mb-6">
         <div className="flex items-start gap-5">
-          <div className="w-16 h-16 shrink-0 rounded-lg bg-action-soft text-action-hover flex items-center justify-center text-xl font-semibold">
+          <div className="w-16 h-16 shrink-0 rounded-lg bg-action-soft text-action-hover flex items-center justify-center text-section">
             {initials}
           </div>
           <div className="flex-1 min-w-0">

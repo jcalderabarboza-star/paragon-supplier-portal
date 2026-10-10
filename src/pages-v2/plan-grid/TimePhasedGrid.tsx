@@ -182,19 +182,19 @@ export const PlanBucketCell: React.FC<{
       }
     >
       {flagged && (
-        <span className="text-[10px] font-semibold text-warning-hover" data-testid="tp-cell-magnitude" aria-label={t('planGrid.edit.push.magnitudeUnconfirmed')}>
+        <span className="text-label text-warning-hover" data-testid="tp-cell-magnitude" aria-label={t('planGrid.edit.push.magnitudeUnconfirmed')}>
           ×?
         </span>
       )}
       {modeled && <ModeledMark />}
       {refusal && (
-        <span className="text-[10px] font-semibold text-critical" data-testid="tp-cell-refusal" aria-label={refusalText}>
+        <span className="text-label text-critical" data-testid="tp-cell-refusal" aria-label={refusalText}>
           !
         </span>
       )}
       {planned && (
         <span
-          className="text-[9px] font-semibold uppercase text-info"
+          className="text-label uppercase text-info"
           data-testid="tp-cell-planned"
           title={t('planGrid.edit.plannedTitle')}
         >
@@ -202,13 +202,13 @@ export const PlanBucketCell: React.FC<{
         </span>
       )}
       {committed && !planned && (
-        <span className="text-[9px] font-semibold uppercase text-text-tertiary" title={t('planGrid.plan.committed')}>
+        <span className="text-label uppercase text-text-tertiary" title={t('planGrid.plan.committed')}>
           ✓
         </span>
       )}
       {dismissed && !planned && (
         <span
-          className="text-[9px] font-semibold uppercase text-text-tertiary"
+          className="text-label uppercase text-text-tertiary"
           data-testid="tp-cell-dismissed"
           title={t('planGrid.edit.dismissedTitle')}
         >
@@ -351,8 +351,8 @@ export const PlanRowLabel: React.FC<{ row: PlanRow }> = ({ row }) => {
         <span className="whitespace-nowrap text-xs font-medium text-text-primary" data-testid="tp-material-label">
           {row.materialLabel}
         </span>
-        <span className="flex items-center gap-1 whitespace-nowrap text-[11px] text-text-tertiary">
-          <Data className="text-[11px] font-semibold">{row.materialCode}</Data>
+        <span className="flex items-center gap-1 whitespace-nowrap text-xs leading-[13px] text-text-tertiary">
+          <Data className="font-semibold">{row.materialCode}</Data>
           <span>· {row.uom} ·</span>
           <span data-testid="tp-measure">{measure}</span>
           {modeled}
@@ -368,7 +368,7 @@ export const PlanRowLabel: React.FC<{ row: PlanRow }> = ({ row }) => {
         data-testid="tp-supplier-row-label"
         title={t('planGrid.tp.supplierRow', { measure, supplier })}
       >
-        <span className="flex items-center gap-1 text-[11px] text-text-tertiary">
+        <span className="flex items-center gap-1 text-xs leading-[13px] text-text-tertiary">
           <span data-testid="tp-measure">{measure}</span>
           {modeled}
         </span>
@@ -730,7 +730,7 @@ const TimePhasedGrid: React.FC<{
   const aggregates = useMemo(
     () => ({
       title: (
-        <div className="grid w-full grid-cols-[1fr_1fr_1fr_1fr_76px] gap-1 px-2 text-right text-[10px] leading-[12px]" data-testid="tp-agg-header" title={t('planGrid.tp.aggregates')}>
+        <div className="grid w-full grid-cols-[1fr_1fr_1fr_1fr_76px] gap-1 px-2 text-right text-label leading-[12px]" data-testid="tp-agg-header" title={t('planGrid.tp.aggregates')}>
           <span>{t('planGrid.tp.agg.demand')}</span>
           <span>{t('planGrid.tp.agg.confirmed')}</span>
           <span className="inline-flex items-center justify-end gap-0.5">
@@ -757,7 +757,7 @@ const TimePhasedGrid: React.FC<{
               {planCellText(b.agg.deficit, formatNumber)}
             </Data>
             <Data>{b.agg.firstShortBucket ?? '—'}</Data>
-            <span className="truncate text-left text-[11px]" data-testid="tp-exception-reason" title={reasons.map((r) => t(`planGrid.tp.exc.${r}Title`)).join(' · ') || undefined}>
+            <span className="truncate text-left text-xs" data-testid="tp-exception-reason" title={reasons.map((r) => t(`planGrid.tp.exc.${r}Title`)).join(' · ') || undefined}>
               {reasons.length === 0 ? (
                 <span className="text-text-tertiary">—</span>
               ) : (

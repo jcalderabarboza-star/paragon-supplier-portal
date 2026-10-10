@@ -31,7 +31,7 @@ const TONE: ToneStyle = {
 const CIRCULAR_SIZE: Record<Size, { px: number; stroke: number; font: string }> = {
   sm: { px: 40, stroke: 4, font: 'text-xs' },
   md: { px: 64, stroke: 6, font: 'text-base' },
-  lg: { px: 96, stroke: 8, font: 'text-xl' },
+  lg: { px: 96, stroke: 8, font: 'text-section' },
 };
 
 const ScoreBadge: React.FC<ScoreBadgeProps> = ({

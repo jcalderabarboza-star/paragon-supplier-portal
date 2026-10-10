@@ -545,20 +545,51 @@ describe('DP2-PALETTE-01 — no raw hex in any paint position, tree-wide', () =>
     expect(consumedHexBindings(chrome)).toEqual([]);
   });
 
-  it('⚠️ AND THE THREE GRADE RAMPS ARE ACQUITTED ON POSITION, NOT ON A REASON', () => {
-    // The eight retired rows, re-derived. Each file still declares its ramp and
-    // still holds raw hex; none of it sits in a paint position. If any ramp is
-    // ever wired to an SVG paint, the zero above turns red on its own.
+  // ⚠️ RETIRED AT UI-1c-4, QUOTED RATHER THAN DELETED. The probe below acquitted
+  // three page-local grade ramps that held raw hex OUTSIDE a paint position, and
+  // its own vacuity control required the hex to still be there. UI-1c-4 wrote
+  // the ramp once, in tokens, in `components/ui-v2/GradeBadge.tsx`, and the three
+  // pages stopped declaring one — so both of its controls would now fail on a
+  // tree that is BETTER, and with them satisfied it could no longer fail at all.
+  // What it protected is held by the STRONGER claim that replaces it.
+  //
+  //     it('⚠️ AND THE THREE GRADE RAMPS ARE ACQUITTED ON POSITION, NOT ON A REASON', () => {
+  //       // The eight retired rows, re-derived. Each file still declares its ramp and
+  //       // still holds raw hex; none of it sits in a paint position. If any ramp is
+  //       // ever wired to an SVG paint, the zero above turns red on its own.
+  //       for (const f of [
+  //         'pages-v2/BuyerScorecard.tsx',
+  //         'pages-v2/SupplierPerformance.tsx',
+  //         'pages-v2/SupplierDashboard.tsx',
+  //       ]) {
+  //         const src = readSrc(f);
+  //         expect(src, `${f} no longer declares a grade ramp — this probe is vacuous`).toMatch(
+  //           /GRADE_TONE\s*:\s*Record<\s*Grade\s*,/,
+  //         );
+  //         expect(src, `${f} no longer holds raw hex — this probe is vacuous`).toMatch(/'#[0-9A-F]{6}'/);
+  //         expect(paintHexHits(src), `${f} now paints with a raw hex`).toEqual([]);
+  //       }
+  //     });
+
+  it('⚠️ THERE IS ONE GRADE RAMP, IN TOKENS — no page declares its own, and none holds a raw hex', () => {
+    const shared = readSrc('components/ui-v2/GradeBadge.tsx');
+    // the ramp exists, covers every grade, and is spelled in token classes
+    expect(shared).toMatch(/export const GRADE_TONE\s*:\s*Record<\s*GradeLetter\s*,/);
+    for (const g of ['A', 'B', 'C', 'D', 'F']) expect(shared).toContain(`  ${g}: { box: '`);
+    expect(shared, 'the shared ramp must not hold a raw hex').not.toMatch(/#[0-9A-Fa-f]{6}(?![0-9A-Za-z])/);
+    expect(paintHexHits(shared)).toEqual([]);
+    // CONTROL — the matcher can fail: the retired ramp's own spelling is found
+    expect("A: { stroke: '#107E3E', soft: '#E8F5EC' },").toMatch(/'#[0-9A-Fa-f]{6}'/);
     for (const f of [
       'pages-v2/BuyerScorecard.tsx',
       'pages-v2/SupplierPerformance.tsx',
       'pages-v2/SupplierDashboard.tsx',
     ]) {
       const src = readSrc(f);
-      expect(src, `${f} no longer declares a grade ramp — this probe is vacuous`).toMatch(
-        /GRADE_TONE\s*:\s*Record<\s*Grade\s*,/,
-      );
-      expect(src, `${f} no longer holds raw hex — this probe is vacuous`).toMatch(/'#[0-9A-F]{6}'/);
+      // the page really draws a grade, through the shared component
+      expect(src, `${f} no longer draws a grade — this probe is vacuous`).toContain("ui-v2/GradeBadge'");
+      expect(src, `${f} declares a grade ramp of its own`).not.toMatch(/const GRADE_TONE(?![A-Za-z_])/);
+      expect(src, `${f} holds a raw hex`).not.toMatch(/'#[0-9A-Fa-f]{6}'/);
       expect(paintHexHits(src), `${f} now paints with a raw hex`).toEqual([]);
     }
   });

@@ -119,7 +119,7 @@ const BuyerChase: React.FC = () => {
               {/* Forecast-response staleness (the data family). */}
               {view.dataReasons.length > 0 && (
                 <div>
-                  <div className="text-[10px] uppercase tracking-wide text-text-tertiary mb-1.5">
+                  <div className="text-label uppercase text-text-tertiary mb-1.5">
                     {t('chase.section.forecast')}
                   </div>
                   <div className="flex flex-wrap gap-2">
@@ -137,7 +137,7 @@ const BuyerChase: React.FC = () => {
                   hard/soft split (a firm miss reads danger). */}
               {view.commitmentEntries.length > 0 && (
                 <div>
-                  <div className="text-[10px] uppercase tracking-wide text-text-tertiary mb-1.5">
+                  <div className="text-label uppercase text-text-tertiary mb-1.5">
                     {t('chase.section.commitment')}
                   </div>
                   <ul className="flex flex-col divide-y divide-border-subtle">

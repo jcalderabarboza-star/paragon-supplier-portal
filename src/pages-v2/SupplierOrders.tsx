@@ -1034,14 +1034,12 @@ const SupplierOrders: React.FC = () => {
                   <Field
                     label={t('supplierOrders.panel.deliveryShort')}
                     kind="date"
-                    className="bg-white rounded px-3 py-2 border border-border-subtle"
                   >
                     {formatDate((selectedLive ?? selected).confirmedDeliveryDate)}
                   </Field>
                   <Field
                     label={t('supplierOrders.panel.totalQty')}
                     kind="number"
-                    className="bg-white rounded px-3 py-2 border border-border-subtle"
                   >
                     {`${formatNumber(
                       (selectedLive ?? selected).lineItems.reduce(
@@ -1053,7 +1051,6 @@ const SupplierOrders: React.FC = () => {
                   <Field
                     label={t('supplierOrders.panel.next')}
                     kind="text"
-                    className="bg-white rounded px-3 py-2 border border-border-subtle"
                   >
                     <span className="text-teal-text inline-flex items-center gap-1">
                       {mayShip(selectedLive ?? selected) ? (

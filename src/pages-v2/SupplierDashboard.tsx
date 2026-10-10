@@ -18,6 +18,7 @@ import ProvenanceMarker from '../components/ui-v2/ProvenanceMarker';
 import { IllustrativeMark } from '../components/ui-v2/IllustrativeNotice';
 import KpiCard from '../components/ui-v2/KpiCard';
 import StatusPill from '../components/ui-v2/StatusPill';
+import { GradeBadge } from '../components/ui-v2/GradeBadge';
 import { statusTone } from '../lib/statusTone';
 import {
   targetStatus,
@@ -106,13 +107,6 @@ const CHANNEL_KEY: Record<PreferredChannel, string> = {
   [PreferredChannel.API]: 'supplierDashboard.channel.api',
 };
 
-const GRADE_TONE: Record<Grade, { stroke: string; soft: string }> = {
-  A: { stroke: '#107E3E', soft: '#E8F5EC' },
-  B: { stroke: '#1E5BAE', soft: '#E5F0FF' },
-  C: { stroke: '#B45309', soft: '#FEF3D6' },
-  D: { stroke: '#BB0000', soft: '#FCE4E4' },
-  F: { stroke: '#BB0000', soft: '#FCE4E4' },
-};
 
 interface ActionItem {
   id: string;
@@ -169,25 +163,6 @@ const BRIEF_DOT: Record<ActionItem['badgeVariant'], string> = {
 // not discover it as a surprise.
 
 
-const GradeBadge: React.FC<{ grade: Grade; size?: 'sm' | 'md' }> = ({
-  grade,
-  size = 'md',
-}) => {
-  const tone = GRADE_TONE[grade];
-  const px = size === 'sm' ? 'w-10 h-10 text-base' : 'w-16 h-16 text-3xl';
-  return (
-    <div
-      className={`rounded-md flex items-center justify-center font-semibold ${px}`}
-      style={{
-        background: tone.soft,
-        color: tone.stroke,
-        border: `3px solid ${tone.stroke}`,
-      }}
-    >
-      {grade}
-    </div>
-  );
-};
 
 
 const SupplierDashboard: React.FC = () => {
@@ -561,10 +536,10 @@ const SupplierDashboard: React.FC = () => {
           </div>
           <div className="flex items-center gap-6 shrink-0">
             <div className="text-center">
-              <div className="text-[10px] text-text-tertiary uppercase tracking-wider mb-2">
+              <div className="text-label text-text-tertiary uppercase mb-2">
                 {t('supplierDashboard.identity.grade')}
               </div>
-              <GradeBadge grade={grade} />
+              <GradeBadge grade={grade} shape="tile" />
               <div className="text-xs text-text-secondary mt-1">
                 {mySupplier.otif >= 90 ? '94' : mySupplier.otif >= 80 ? '82' : '70'} / 100
               </div>
@@ -663,7 +638,7 @@ const SupplierDashboard: React.FC = () => {
                 <div className="inline-flex w-12 h-12 rounded-full bg-success-soft items-center justify-center mb-3">
                   <CheckCircle2 size={24} className="text-success" />
                 </div>
-                <div className="text-base font-semibold text-success mb-1">
+                <div className="text-section text-success mb-1">
                   {t('supplierDashboard.briefing.done.title')}
                 </div>
                 <div className="text-sm text-text-tertiary">
@@ -825,7 +800,7 @@ const SupplierDashboard: React.FC = () => {
               <SectionHeading as="h2">
                 {t('supplierDashboard.perf.title')}
               </SectionHeading>
-              <GradeBadge grade={grade} size="sm" />
+              <GradeBadge grade={grade} shape="tile" size="sm" />
             </div>
             <div className="flex flex-col gap-4">
               {[
@@ -847,7 +822,7 @@ const SupplierDashboard: React.FC = () => {
                         {m.label}
                       </span>
                       <span
-                        className="text-sm font-bold"
+                        className="text-sm font-semibold"
                         style={{ color: TARGET_STATUS[status].text }}
                       >
                         {m.value}%

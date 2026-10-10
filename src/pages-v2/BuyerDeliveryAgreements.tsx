@@ -317,25 +317,25 @@ const BuyerDeliveryAgreements: React.FC = () => {
 
             <div className="grid grid-cols-2 gap-3 text-sm">
               <div>
-                <div className="text-[10px] text-text-tertiary uppercase">{t('delivery.kpi.agreed')}</div>
+                <div className="text-label text-text-tertiary uppercase">{t('delivery.kpi.agreed')}</div>
                 <Data className="text-sm">
                   {formatNumber(selectedItem.ledger.agreedTotalQty)} {selectedItem.item.uom}
                 </Data>
               </div>
               <div>
-                <div className="text-[10px] text-text-tertiary uppercase">{t('delivery.kpi.released')}</div>
+                <div className="text-label text-text-tertiary uppercase">{t('delivery.kpi.released')}</div>
                 <Data className="text-sm">
                   {formatNumber(selectedItem.ledger.releasedQty)} {selectedItem.item.uom}
                 </Data>
               </div>
               <div>
-                <div className="text-[10px] text-text-tertiary uppercase">{t('delivery.kpi.delivered')}</div>
+                <div className="text-label text-text-tertiary uppercase">{t('delivery.kpi.delivered')}</div>
                 <Data className="text-sm">
                   {formatNumber(selectedItem.ledger.deliveredQty)} {selectedItem.item.uom}
                 </Data>
               </div>
               <div>
-                <div className="text-[10px] text-text-tertiary uppercase">{t('delivery.kpi.remaining')}</div>
+                <div className="text-label text-text-tertiary uppercase">{t('delivery.kpi.remaining')}</div>
                 <Data className="text-sm">
                   {formatNumber(selectedItem.ledger.remainingQty)} {selectedItem.item.uom}
                 </Data>

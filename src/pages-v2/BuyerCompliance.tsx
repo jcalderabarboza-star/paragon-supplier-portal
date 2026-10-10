@@ -855,7 +855,7 @@ const BuyerCompliance: React.FC = () => {
           className="mb-6 overflow-hidden"
           data-testid="doc-confirmed-list"
         >
-          <div className="px-5 py-3 border-b border-border-subtle text-sm font-bold text-text-primary">
+          <div className="px-5 py-3 border-b border-border-subtle text-sm font-semibold text-text-primary">
             {t('compliance.confirmed.title')}
           </div>
           <ul className="divide-y divide-border-subtle">
@@ -1087,7 +1087,8 @@ const BuyerCompliance: React.FC = () => {
               <p className="text-sm text-text-secondary">
                 {t('compliance.request.confirm.lead')}
               </p>
-              <FieldList columns={1} className="bg-bg-hover rounded px-4 py-3">
+              <Card tone="inset">
+              <FieldList columns={1}>
                 <Field label={t('compliance.request.field.supplier')} sub={reqSupplier}>
                   {/* i18n-defer: mock/sample data (supplier name) */}
                   {reqSupplierName}
@@ -1104,6 +1105,7 @@ const BuyerCompliance: React.FC = () => {
                   {reqNote.trim()}
                 </Field>
               </FieldList>
+              </Card>
               <ActorPreActNotice unattributedKey="identity.preAct.namedRequired" testId="supplierdoc-request-pre-act" />
             </div>
           ) : (

@@ -32,7 +32,7 @@ const PlanCellMarker: React.FC<{
     <span className={`inline-flex items-center gap-1.5 ${className}`}>
       {/* Source tier — green only if the registry greens it */}
       <span
-        className={`inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider ${
+        className={`inline-flex items-center gap-1 text-label uppercase ${
           live ? 'text-success' : 'text-sample'
         }`}
       >

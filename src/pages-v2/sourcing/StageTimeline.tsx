@@ -61,8 +61,8 @@ export const StageTimeline: React.FC<StageTimelineProps> = ({ event, testId = 's
                 {state === 'done' && <Check size={13} className="text-success" />}
                 {stage}
               </div>
-              <div className="text-[11px] text-text-tertiary">{t(`sourcing.stage.name.${stage}`)}</div>
-              <div className="text-[11px] text-text-secondary mt-1">
+              <div className="text-xs text-text-tertiary">{t(`sourcing.stage.name.${stage}`)}</div>
+              <div className="text-xs text-text-secondary mt-1">
                 {left ? (
                   <>
                     {t('sourcing.stage.left')} <Data>{formatDate(left.advancedAt)}</Data>

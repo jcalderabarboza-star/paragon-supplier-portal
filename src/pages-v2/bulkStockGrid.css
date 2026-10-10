@@ -10,5 +10,5 @@
  * plan-grid/planGrid.css (imported alongside this file); this sheet adds only
  * the danger tint, scoped to `.sdc-bulk-grid` so no other DSG is affected. */
 .sdc-bulk-grid .dsg-cell.sdc-bulk-cell-danger {
-  background-color: #fce4e4; /* danger.soft — the DP semantic danger tint */
+  background-color: theme('colors.critical.soft'); /* danger.soft — the DP semantic danger tint */
 }

@@ -412,7 +412,7 @@ const RFQCard: React.FC<RFQCardProps> = ({
       className={`bg-bg-surface border border-border-subtle rounded-lg shadow-sm mb-4 border-l-2 ${accentClass} overflow-hidden`}
     >
       <div className="flex items-center gap-3 px-4 py-3 border-b border-border-subtle flex-wrap">
-        <Data className="text-sm font-bold text-text-primary">
+        <Data className="text-sm font-semibold text-text-primary">
           {rfq.rfqNumber}
         </Data>
         {rfq.deadlinePassed ? (
@@ -440,7 +440,7 @@ const RFQCard: React.FC<RFQCardProps> = ({
 
       <div className="px-4 py-4">
         <div className="flex items-center gap-3 mb-3 flex-wrap">
-          <span className="text-base font-bold text-text-primary">
+          <span className="text-base font-semibold text-text-primary">
             {rfq.material}
           </span>
           <StatusPill variant="info">{rfq.category}</StatusPill>
@@ -752,11 +752,11 @@ const NotShortlistedCard: React.FC<{ rfq: RFQ; supplierId: string }> = ({ rfq, s
       data-testid={`rfq-not-shortlisted-${rfq.id}`}
     >
       <div className="flex items-center gap-3 px-4 py-3 border-b border-border-subtle flex-wrap">
-        <Data className="text-sm font-bold text-text-primary">{rfq.rfqNumber}</Data>
+        <Data className="text-sm font-semibold text-text-primary">{rfq.rfqNumber}</Data>
         <StatusPill variant="neutral">{t('rfqs.notShortlisted.pill')}</StatusPill>
       </div>
       <div className="px-4 py-4">
-        <div className="text-base font-bold text-text-primary mb-2">{rfq.title}</div>
+        <div className="text-base font-semibold text-text-primary mb-2">{rfq.title}</div>
         <p className="text-sm text-text-secondary mb-1">
           {t('rfqs.notShortlisted.line', { from: advance.from, to: advance.to })}{' '}
           <Data>{formatDate(advance.advancedAt)}</Data>
@@ -842,7 +842,7 @@ const MyQuotesTab: React.FC<{ quotes: SubmittedQuote[] }> = ({ quotes }) => {
           <div className="flex items-start justify-between gap-3 mb-3 flex-wrap">
             <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
-                <Data className="text-sm font-bold text-text-primary">
+                <Data className="text-sm font-semibold text-text-primary">
                   {q.rfqNumber}
                 </Data>
                 <StatusPill variant="neutral">

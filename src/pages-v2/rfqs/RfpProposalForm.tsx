@@ -205,7 +205,7 @@ const RfpProposalForm: React.FC<Props> = ({ rfq, supplierId, onClose }) => {
           ))}
         </ul>
       )}
-      <div className="text-[11px] text-text-tertiary mt-1 mb-3" data-testid={`rfp-documents-note-${rfq.id}`}>
+      <div className="text-xs text-text-tertiary mt-1 mb-3" data-testid={`rfp-documents-note-${rfq.id}`}>
         {t('rfqs.rfp.documents.note')}
       </div>
 

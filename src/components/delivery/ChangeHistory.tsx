@@ -110,7 +110,7 @@ const ChangeHistory: React.FC<{ agreement: SchedulingAgreement }> = ({ agreement
       ) : (
         <>
           <DataTable columns={columns} rows={rows} rowKey={(row) => row.key} card={false} />
-          <div className="px-4 py-2 text-[10px] italic text-text-tertiary border-t border-border-subtle">
+          <div className="px-4 py-2 text-xs italic text-text-tertiary border-t border-border-subtle">
             {t('delivery.history.seedNote')}
           </div>
         </>

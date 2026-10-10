@@ -231,14 +231,14 @@ const CreateRolePanel: React.FC<{ onGranted: () => void }> = ({ onGranted }) => 
             against the person who made it, and a seat that names nobody is
             refused - so the line says which of the two this seat is. */}
         <p
-          className="text-[11px] text-text-tertiary leading-relaxed"
+          className="text-xs text-text-tertiary leading-relaxed"
           data-testid="role-create-persistence"
         >
           {t('roles.page.createPersistence')}
         </p>
         <ActorPreActNotice
           unattributedKey="identity.preAct.namedRequired"
-          className="text-[11px] text-text-tertiary leading-relaxed"
+          className="text-xs text-text-tertiary leading-relaxed"
           testId="role-create-actor"
         />
 

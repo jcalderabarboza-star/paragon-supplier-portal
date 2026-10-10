@@ -88,7 +88,7 @@ const PolicyEditor: React.FC<{
         <span className="text-label uppercase text-text-tertiary">
           {t('delivery.policy.edit.title')}
         </span>
-        <span className="text-[10px] text-text-tertiary">
+        <span className="text-xs text-text-tertiary">
           {t('delivery.policy.edit.contractDefault', { policy: fmtPolicy(contractDefault) })}
         </span>
       </div>

@@ -920,7 +920,7 @@ const SupplierInvoices: React.FC = () => {
                         <div
                           role="alert"
                           data-testid={`invoice-qty-refusal-${l.materialCode}`}
-                          className="mt-1 text-[11px] text-critical"
+                          className="mt-1 text-xs text-critical"
                         >
                           {read.reason === 'EXCEEDS_RECEIVED' ? (
                             t(l.basis === 'confirmed' ? 'supplierInvoices.new.qty.refused.exceedsConfirmed' : 'supplierInvoices.new.qty.refused.exceedsReceived', {
@@ -953,7 +953,7 @@ const SupplierInvoices: React.FC = () => {
                 </Field>
               </FieldList>
               {!draftRead.ok && newLines.every((l) => readInvoiceQty(newQty[l.materialCode] ?? openingQty(l), l.maxQty).ok) && (
-                <div role="alert" data-testid="invoice-lines-all-zero" className="mt-1 text-[11px] text-critical">
+                <div role="alert" data-testid="invoice-lines-all-zero" className="mt-1 text-xs text-critical">
                   {t('supplierInvoices.new.lines.allZero')}
                 </div>
               )}

@@ -790,7 +790,7 @@ const BuyerCollaboration: React.FC = () => {
                   bridgeability is UNKNOWN. Marked, never assumed no-risk. */}
               {st.expiryBlind && (
                 <span
-                  className="text-[10px] italic text-text-tertiary"
+                  className="text-xs italic text-text-tertiary"
                   title={t('sdc.coverage.expiryBlindTitle')}
                 >
                   {t('sdc.coverage.expiryBlind')}

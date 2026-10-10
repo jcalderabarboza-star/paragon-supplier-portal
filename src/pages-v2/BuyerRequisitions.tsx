@@ -157,7 +157,7 @@ const ProcurementFlow: React.FC = () => {
               <StatusPill variant={s.tone} size="sm">
                 {s.label}
               </StatusPill>
-              <span className="text-[10px] text-text-tertiary mt-1 text-center">
+              <span className="text-xs text-text-tertiary mt-1 text-center">
                 {s.sub}
               </span>
             </div>

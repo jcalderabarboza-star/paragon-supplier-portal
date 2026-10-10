@@ -7,3 +7,13 @@
 @layer base {
   html { font-family: 'Inter', system-ui, sans-serif; }
 }
+
+/* UI-1c-4: the portal's heaviest weight is semibold. A bare <strong> — a lead-in
+   inside a notice, bold in a guide — took the base layer's `bolder`, which is a
+   fourth weight nobody chose. In the base layer, so a weight utility still wins. */
+@layer base {
+  strong,
+  b {
+    font-weight: 600;
+  }
+}

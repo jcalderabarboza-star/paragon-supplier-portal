@@ -175,7 +175,7 @@ const FlowDiagram: React.FC<FlowDiagramProps> = ({ view, cursor, idPrefix }) => 
               ].join(' ')}
               style={{ left: node.x, top: node.y, width: NODE_W, height: NODE_H }}
             >
-              <span className="font-mono text-[11px] leading-tight text-data-navy break-words">
+              <span className="font-mono text-xs leading-tight text-data-navy break-words">
                 {node.name}
               </span>
               <span className="flex flex-wrap items-center gap-1">
@@ -215,7 +215,7 @@ const FlowDiagram: React.FC<FlowDiagramProps> = ({ view, cursor, idPrefix }) => 
               style={{ left: laid.labelX, top: laid.labelY }}
             >
               <span
-                className="whitespace-nowrap rounded-sm bg-bg-page/95 px-1 font-mono text-[10px] text-text-secondary"
+                className="whitespace-nowrap rounded-sm bg-bg-page/95 px-1 font-mono text-xs text-text-secondary"
                 title={laid.edge.transitionId}
               >
                 {verbOf(laid.edge.transitionId)}
@@ -242,7 +242,7 @@ const FlowDiagram: React.FC<FlowDiagramProps> = ({ view, cursor, idPrefix }) => 
             { kind: 'creation' as StepKind, stroke: BIRTH, dash: undefined },
           ]
         ).map((item) => (
-          <span key={item.kind} className="inline-flex items-center gap-1.5 text-[11px] text-text-tertiary">
+          <span key={item.kind} className="inline-flex items-center gap-1.5 text-xs text-text-tertiary">
             <svg width="26" height="8" aria-hidden="true">
               <path
                 d="M 0 4 L 26 4"
@@ -255,13 +255,13 @@ const FlowDiagram: React.FC<FlowDiagramProps> = ({ view, cursor, idPrefix }) => 
             {kindLabel(item.kind)}
           </span>
         ))}
-        <span className="inline-flex items-center gap-1.5 text-[11px] text-text-tertiary">
+        <span className="inline-flex items-center gap-1.5 text-xs text-text-tertiary">
           <svg width="26" height="8" aria-hidden="true">
             <path d="M 0 4 L 26 4" stroke={CROSS} strokeWidth="1.5" strokeDasharray="2 4" fill="none" />
           </svg>
           {t('processFlows.legend.cascade')}
         </span>
-        <span className="inline-flex items-center gap-1.5 text-[11px] text-text-tertiary">
+        <span className="inline-flex items-center gap-1.5 text-xs text-text-tertiary">
           <svg width="26" height="8" aria-hidden="true">
             <path d="M 0 4 L 26 4" stroke={CROSS} strokeWidth="1.5" strokeDasharray="10 4 2 4" fill="none" />
           </svg>

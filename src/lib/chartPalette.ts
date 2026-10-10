@@ -161,6 +161,12 @@ export const targetStatus = (
  */
 export const CHART_IDENTITY = '#2A6FBF';
 
+/**
+ * The `info` token as a chart colour: one category among several, where the
+ * series ramp has run out of slots. Not a state, and not identity.
+ */
+export const CHART_INFO = '#1E5BAE';
+
 /** Grid / axis hairline on light surfaces. */
 export const CHART_GRID = '#E5E9EE';
 
@@ -196,7 +202,7 @@ export const CHART_TOOLTIP_STYLE = {
  * figure on a bar. Pass what is particular to it (`value`, `position`, `angle`,
  * a state colour as `fill`); the size is not yours to pass.
  */
-export const chartLabel = <T extends object>(extra: T): T & { fontSize: number; fill: string } => ({
+export const chartLabel = <const T extends object>(extra: T): T & { fontSize: number; fill: string } => ({
   fill: CHART_AXIS,
   ...extra,
   fontSize: CHART_TEXT_SIZE,

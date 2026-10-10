@@ -184,7 +184,7 @@ const ReleaseCalendar: React.FC<{
       />
 
       {/* eta-proxy known-limitation — recorded, not papered over. */}
-      <div className="text-[10px] text-text-tertiary mt-2 italic">
+      <div className="text-xs text-text-tertiary mt-2 italic">
         {t('delivery.calendar.etaFootnote')}
       </div>
     </>
