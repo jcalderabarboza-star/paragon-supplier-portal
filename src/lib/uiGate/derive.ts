@@ -217,7 +217,15 @@ function byFile<K extends string>(
   return out;
 }
 
-export const derivedType = (): Record<string, Counts<TypeKind>> => byFile(typeFindings, []);
+/**
+ * Files outside the type scale BY NAME, each with its reason:
+ *   · the chart palette is where a chart's text size is written, as its colours are
+ *   · the channel demo imitates an external messenger; its type is that
+ *     product's chrome (operator ruling, 9 October 2026)
+ */
+export const TYPE_EXEMPT: readonly string[] = ['src/lib/chartPalette.ts', 'src/pages-v2/SupplierWhatsApp.tsx'];
+
+export const derivedType = (): Record<string, Counts<TypeKind>> => byFile(typeFindings, TYPE_EXEMPT);
 export const derivedColour = (): Record<string, Counts<ColourKind>> => byFile(colourFindings, COLOUR_EXEMPT);
 
 export function derivedRawTables(): Record<string, number> {
