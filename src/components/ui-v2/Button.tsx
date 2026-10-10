@@ -19,6 +19,8 @@ import { LucideIcon } from 'lucide-react';
 // It was unreachable only by luck: all 181 `<Button>` sites in the tree pass an
 // explicit variant, so nothing rendered through it — a latent trap, not a live
 // defect, and it closes here with the rest.
+// UI-1c-3: ONE HEIGHT, 40px — the height of a form control, so a button and an
+// input sit on one line in a filter row. `className` is layout only.
 type Variant = 'secondary' | 'outline';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -46,7 +48,7 @@ const Button: React.FC<ButtonProps> = ({
   return (
     <button
       type="button"
-      className={`inline-flex items-center justify-center gap-2 rounded-md px-4 py-2.5 font-sans text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${VARIANT_CLASS[variant]} ${className}`}
+      className={`inline-flex items-center justify-center gap-2 min-h-10 rounded-md px-4 py-2 font-sans text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${VARIANT_CLASS[variant]} ${className}`}
       {...rest}
     >
       {Icon ? <Icon size={16} /> : null}

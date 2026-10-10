@@ -10,6 +10,11 @@ type Variant = 'success' | 'warning' | 'danger' | 'info' | 'neutral';
 interface StatusPillProps {
   variant?: Variant;
   children: React.ReactNode;
+  /**
+   * UI-1c-3: `sm` is for a chip inside a dense diagram or a grid cell — 11px,
+   * the smallest type the portal renders. Everything else is the default.
+   */
+  size?: 'md' | 'sm';
   className?: string;
 }
 
@@ -35,6 +40,7 @@ const VARIANT_CLASS: Record<Variant, string> = {
 const StatusPill: React.FC<StatusPillProps> = ({
   variant = 'neutral',
   children,
+  size = 'md',
   className = '',
 }) => {
   const { t } = useTranslation();
@@ -77,7 +83,8 @@ const StatusPill: React.FC<StatusPillProps> = ({
   const label = localize(children);
   return (
     <span
-      className={`inline-flex items-center rounded-sm border px-2 py-0.5 font-sans text-xs font-medium ${VARIANT_CLASS[variant]} ${className}`}
+      data-size={size}
+      className={`inline-flex items-center rounded-sm border font-sans ${size === 'sm' ? 'px-1.5 py-px text-label' : 'px-2 py-0.5 text-xs font-medium'} ${VARIANT_CLASS[variant]} ${className}`}
     >
       {label}
     </span>

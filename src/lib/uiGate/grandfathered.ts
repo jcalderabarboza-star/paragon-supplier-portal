@@ -8,7 +8,7 @@
 //
 // No total is written in this comment. The rows are the count.
 // ─────────────────────────────────────────────────────────────────────────────
-import type { ColourKind, Counts, TypeKind } from './derive';
+import type { BoxKind, ColourKind, Counts, TypeKind } from './derive';
 
 export const TYPE_GRANDFATHERED: Record<string, Counts<TypeKind>> = {
   'src/components/delivery/AgreementDrawdown.tsx': { 'arbitrary-size': 4 },
@@ -107,3 +107,10 @@ export const RAW_TABLE_GRANDFATHERED: Record<string, number> = {
 
 /** Routed pages that draw a table without `ListPage` / `DataTable`. */
 export const LIST_LAYOUT_GRANDFATHERED: readonly string[] = [];
+
+/**
+ * Elements that still draw their own box or chip. A row here is a box that is
+ * not a card and not a notice — a drop zone, a diagram node, a floating menu,
+ * the messenger's chrome — or one still to migrate. The list can only shrink.
+ */
+export const RAW_BOX_GRANDFATHERED: Record<string, Counts<BoxKind>> = {};
