@@ -19,6 +19,7 @@ import DataTable, { CellSub, type Column } from '../../components/ui-v2/DataTabl
 import Button from '../../components/ui-v2/Button';
 import Data from '../../components/ui-v2/Data';
 import SectionHeading from '../../components/ui-v2/SectionHeading';
+import { FormField, Radio, TextArea } from '../../components/ui-v2/Form';
 import FilterChipsBar from '../../components/ui-v2/FilterChipsBar';
 import { HandoffNotice } from '../../components/ui-v2/HandoffNotice';
 import { useToast } from '../../hooks/useToast';
@@ -343,37 +344,32 @@ const MaterialApplicabilityPanel: React.FC = () => {
                       </div>
                       <div className="flex gap-5 text-sm text-text-primary">
                         {([true, false] as const).map((v) => (
-                          <label key={String(v)} className="flex items-center gap-1.5 cursor-pointer">
-                            <input
-                              type="radio"
-                              name="applicability-choice"
-                              data-testid={`applicability-choice-${v ? 'yes' : 'no'}`}
-                              checked={editing.applicable === v}
-                              onChange={() => setDraft({ ...editing, applicable: v })}
-                            />
+                          <Radio
+                            key={String(v)}
+                            name="applicability-choice"
+                            data-testid={`applicability-choice-${v ? 'yes' : 'no'}`}
+                            checked={editing.applicable === v}
+                            onChange={() => setDraft({ ...editing, applicable: v })}
+                          >
                             {t(
                               `compliance.applicability.form.${v ? 'yes' : 'no'}.${editing.regime}`,
                             )}
-                          </label>
+                          </Radio>
                         ))}
                       </div>
-                      <div>
-                        <label
-                          htmlFor="applicability-reason"
-                          className="block text-xs font-medium text-text-tertiary uppercase mb-1"
-                        >
-                          {t('compliance.applicability.form.reason')}
-                        </label>
-                        <textarea
+                      <FormField
+                        label={t('compliance.applicability.form.reason')}
+                        htmlFor="applicability-reason"
+                      >
+                        <TextArea
                           id="applicability-reason"
                           data-testid="applicability-reason"
                           rows={2}
                           value={editing.reason}
                           onChange={(e) => setDraft({ ...editing, reason: e.target.value })}
                           placeholder={t('compliance.applicability.form.reasonPlaceholder')}
-                          className="w-full rounded-md border border-border-input bg-white px-3 py-2 text-sm text-text-primary focus:border-action focus:outline-none"
                         />
-                      </div>
+                      </FormField>
                       {/* Said BEFORE the act: whose name the ruling will carry,
                           or that this seat names nobody and will be refused. */}
                       <div className="text-xs text-text-secondary" data-testid="applicability-attribution">

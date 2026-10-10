@@ -31,6 +31,8 @@ import NoSupplierIdentity from '../components/ui-v2/NoSupplierIdentity';
 import LoadingState from '../components/ui-v2/LoadingState';
 import ErrorState from '../components/ui-v2/ErrorState';
 import Data from '../components/ui-v2/Data';
+import SectionHeading from '../components/ui-v2/SectionHeading';
+import { Checkbox, FormField, Select, TextArea, TextInput } from '../components/ui-v2/Form';
 import {
   useCurrentSupplier,
   useStorefrontCatalog,
@@ -76,10 +78,6 @@ const CERT_LABEL: Record<ProfileCertStatus, string> = {
   missing: 'Missing',
   pending: 'Pending',
 };
-
-const inputClass =
-  'w-full px-3 py-2 text-sm text-text-primary bg-white border border-border-input rounded-md focus:outline-none focus:border-action placeholder:text-text-tertiary';
-const labelClass = 'block text-label text-text-tertiary uppercase mb-1';
 
 interface NewMaterial {
   material: string;
@@ -348,16 +346,13 @@ const StorefrontEditor: React.FC<StorefrontEditorProps> = ({
           </div>
           {editProfile ? (
             <div>
-              <div className="mb-3">
-                <label className={labelClass}>
-                  {t('supplierMyStorefront.field.companyDescription')}
-                </label>
-                <textarea
-                  className={`${inputClass} min-h-[96px] resize-y`}
+              <FormField className="mb-3" label={t('supplierMyStorefront.field.companyDescription')}>
+                <TextArea
+                  className="resize-y"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                 />
-              </div>
+              </FormField>
               <div className="flex gap-2">
                 <Button
                   variant="outline"
@@ -524,38 +519,27 @@ const StorefrontEditor: React.FC<StorefrontEditorProps> = ({
                 {t('supplierMyStorefront.addForm.title')}
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
-                <div>
-                  <label className={labelClass}>
-                    {t('supplierMyStorefront.addForm.materialName')}
-                  </label>
-                  <input
-                    className={inputClass}
+                <FormField label={t('supplierMyStorefront.addForm.materialName')}>
+                  <TextInput
                     placeholder={t('supplierMyStorefront.addForm.materialNamePlaceholder')}
                     value={newMaterial.material}
                     onChange={(e) =>
                       setNewMaterial({ ...newMaterial, material: e.target.value })
                     }
                   />
-                </div>
-                <div>
-                  <label className={labelClass}>
-                    {t('supplierMyStorefront.addForm.sapCode')}
-                  </label>
-                  <input
-                    className={inputClass}
+                </FormField>
+                <FormField label={t('supplierMyStorefront.addForm.sapCode')}>
+                  <TextInput
+                    mono
                     placeholder={t('supplierMyStorefront.addForm.sapCodePlaceholder')}
                     value={newMaterial.sapCode}
                     onChange={(e) =>
                       setNewMaterial({ ...newMaterial, sapCode: e.target.value })
                     }
                   />
-                </div>
-                <div>
-                  <label className={labelClass}>
-                    {t('supplierMyStorefront.addForm.category')}
-                  </label>
-                  <select
-                    className={inputClass}
+                </FormField>
+                <FormField label={t('supplierMyStorefront.addForm.category')}>
+                  <Select
                     value={newMaterial.category}
                     onChange={(e) =>
                       setNewMaterial({ ...newMaterial, category: e.target.value })
@@ -567,28 +551,21 @@ const StorefrontEditor: React.FC<StorefrontEditorProps> = ({
                         {cl(c)}
                       </option>
                     ))}
-                  </select>
-                </div>
+                  </Select>
+                </FormField>
                 <div className="grid grid-cols-[1fr_80px] gap-2">
-                  <div>
-                    <label className={labelClass}>
-                      {t('supplierMyStorefront.addForm.moq')}
-                    </label>
-                    <input
+                  <FormField label={t('supplierMyStorefront.addForm.moq')}>
+                    <TextInput
+                      mono
                       type="number"
-                      className={inputClass}
                       value={newMaterial.moq}
                       onChange={(e) =>
                         setNewMaterial({ ...newMaterial, moq: e.target.value })
                       }
                     />
-                  </div>
-                  <div>
-                    <label className={labelClass}>
-                      {t('supplierMyStorefront.addForm.uom')}
-                    </label>
-                    <select
-                      className={inputClass}
+                  </FormField>
+                  <FormField label={t('supplierMyStorefront.addForm.uom')}>
+                    <Select
                       value={newMaterial.uom}
                       onChange={(e) =>
                         setNewMaterial({ ...newMaterial, uom: e.target.value })
@@ -597,30 +574,24 @@ const StorefrontEditor: React.FC<StorefrontEditorProps> = ({
                       {UOM_OPTIONS.map((u) => (
                         <option key={u}>{u}</option>
                       ))}
-                    </select>
-                  </div>
+                    </Select>
+                  </FormField>
                 </div>
-                <div>
-                  <label className={labelClass}>
-                    {t('supplierMyStorefront.addForm.leadTime')}
-                  </label>
-                  <input
+                <FormField label={t('supplierMyStorefront.addForm.leadTime')}>
+                  <TextInput
+                    mono
                     type="number"
-                    className={inputClass}
                     value={newMaterial.leadTime}
                     onChange={(e) =>
                       setNewMaterial({ ...newMaterial, leadTime: e.target.value })
                     }
                   />
-                </div>
+                </FormField>
                 <div className="grid grid-cols-[1fr_80px] gap-2">
-                  <div>
-                    <label className={labelClass}>
-                      {t('supplierMyStorefront.addForm.unitPrice')}
-                    </label>
-                    <input
+                  <FormField label={t('supplierMyStorefront.addForm.unitPrice')}>
+                    <TextInput
+                      mono
                       type="number"
-                      className={inputClass}
                       value={newMaterial.unitPrice}
                       onChange={(e) =>
                         setNewMaterial({
@@ -629,13 +600,9 @@ const StorefrontEditor: React.FC<StorefrontEditorProps> = ({
                         })
                       }
                     />
-                  </div>
-                  <div>
-                    <label className={labelClass}>
-                      {t('supplierMyStorefront.addForm.ccy')}
-                    </label>
-                    <select
-                      className={inputClass}
+                  </FormField>
+                  <FormField label={t('supplierMyStorefront.addForm.ccy')}>
+                    <Select
                       value={newMaterial.currency}
                       onChange={(e) =>
                         setNewMaterial({
@@ -647,16 +614,13 @@ const StorefrontEditor: React.FC<StorefrontEditorProps> = ({
                       {CURRENCY_OPTIONS.map((c) => (
                         <option key={c}>{c}</option>
                       ))}
-                    </select>
-                  </div>
+                    </Select>
+                  </FormField>
                 </div>
-                <div>
-                  <label className={labelClass}>
-                    {t('supplierMyStorefront.addForm.capacity')}
-                  </label>
-                  <input
+                <FormField label={t('supplierMyStorefront.addForm.capacity')}>
+                  <TextInput
+                    mono
                     type="number"
-                    className={inputClass}
                     value={newMaterial.capacity}
                     onChange={(e) =>
                       setNewMaterial({
@@ -665,26 +629,22 @@ const StorefrontEditor: React.FC<StorefrontEditorProps> = ({
                       })
                     }
                   />
-                </div>
+                </FormField>
               </div>
               <div className="mb-3">
-                <label className={labelClass}>
+                <SectionHeading level="group" as="h4" className="mb-1">
                   {t('supplierMyStorefront.addForm.certifications')}
-                </label>
+                </SectionHeading>
                 <div className="flex flex-wrap gap-3">
                   {CERT_OPTIONS.map((c) => (
-                    <label
+                    <Checkbox
                       key={c}
-                      className="flex items-center gap-1.5 text-sm text-text-secondary cursor-pointer"
+                      checked={newMaterial.certs.includes(c)}
+                      onChange={() => toggleNewCert(c)}
+                      className="cursor-pointer"
                     >
-                      <input
-                        type="checkbox"
-                        checked={newMaterial.certs.includes(c)}
-                        onChange={() => toggleNewCert(c)}
-                        className="accent-teal"
-                      />
                       {c}
-                    </label>
+                    </Checkbox>
                   ))}
                 </div>
               </div>
@@ -842,13 +802,12 @@ const StorefrontEditor: React.FC<StorefrontEditorProps> = ({
           </div>
           <div className="flex flex-wrap items-end gap-5">
             <div>
-              <label className={labelClass}>
+              <SectionHeading level="group" as="h4" className="mb-1">
                 {t('supplierMyStorefront.field.businessHours')}
-              </label>
+              </SectionHeading>
               <div className="flex items-center gap-2">
-                <input
+                <TextInput
                   type="time"
-                  className={inputClass}
                   style={{ width: 120 }}
                   value={bizHoursStart}
                   onChange={(e) => setBizHoursStart(e.target.value)}
@@ -856,9 +815,8 @@ const StorefrontEditor: React.FC<StorefrontEditorProps> = ({
                 <span className="text-text-tertiary">
                   {t('supplierMyStorefront.field.to')}
                 </span>
-                <input
+                <TextInput
                   type="time"
-                  className={inputClass}
                   style={{ width: 120 }}
                   value={bizHoursEnd}
                   onChange={(e) => setBizHoursEnd(e.target.value)}
@@ -866,17 +824,17 @@ const StorefrontEditor: React.FC<StorefrontEditorProps> = ({
               </div>
             </div>
             <div>
-              <label className={labelClass}>
+              <SectionHeading level="group" as="h4" className="mb-1">
                 {t('supplierMyStorefront.field.timezone')}
-              </label>
+              </SectionHeading>
               <div className="px-3 py-2 bg-bg-hover border border-border-subtle rounded-md text-sm text-text-primary">
                 {cp.timezone}
               </div>
             </div>
             <div>
-              <div className={labelClass}>
+              <SectionHeading level="group" as="h4" className="mb-1">
                 {t('supplierMyStorefront.field.currentStatus')}
-              </div>
+              </SectionHeading>
               <StatusPill variant={bizHours ? 'success' : 'neutral'}>
                 {bizHours
                   ? t('supplierMyStorefront.status.open', { time: localTime })

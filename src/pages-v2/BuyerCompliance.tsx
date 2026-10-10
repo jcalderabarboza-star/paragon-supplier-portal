@@ -20,6 +20,7 @@ import DataTable, { CellSub, type Column } from '../components/ui-v2/DataTable';
 import Data from '../components/ui-v2/Data';
 import { Field, FieldList } from '../components/ui-v2/Field';
 import SectionHeading from '../components/ui-v2/SectionHeading';
+import { FormField, Select, TextArea } from '../components/ui-v2/Form';
 import KpiCard from '../components/ui-v2/KpiCard';
 import BulkActionsBar from '../components/ui-v2/BulkActionsBar';
 import SidePanel from '../components/ui-v2/SidePanel';
@@ -807,19 +808,15 @@ const BuyerCompliance: React.FC = () => {
                     className="mt-3 bg-bg-hover rounded px-3 py-3"
                     data-testid={`doc-reject-form-${doc.id}`}
                   >
-                    <label className="block">
-                      <span className="block text-label text-text-tertiary uppercase mb-1">
-                        {t('compliance.queue.reject.label')}
-                      </span>
-                      <textarea
+                    <FormField label={t('compliance.queue.reject.label')}>
+                      <TextArea
                         rows={2}
                         data-testid="doc-reject-reason"
-                        className="w-full px-3 py-2 text-sm text-text-primary bg-white border border-border-input rounded-md focus:outline-none focus:border-action placeholder:text-text-tertiary"
                         placeholder={t('compliance.queue.reject.placeholder')}
                         value={rejectReason}
                         onChange={(e) => setRejectReason(e.target.value)}
                       />
-                    </label>
+                    </FormField>
                     <p className="text-xs text-text-tertiary mt-1">
                       {t('compliance.queue.reject.hint')}
                     </p>
@@ -1127,13 +1124,9 @@ const BuyerCompliance: React.FC = () => {
                 {t('compliance.request.panel.lead')}
               </p>
 
-              <label className="block">
-                <span className="block text-label text-text-tertiary uppercase mb-1">
-                  {t('compliance.request.field.supplier')}
-                </span>
-                <select
+              <FormField label={t('compliance.request.field.supplier')}>
+                <Select
                   data-testid="doc-request-supplier"
-                  className="w-full px-3 py-2 text-sm text-text-primary bg-white border border-border-input rounded-md focus:outline-none focus:border-action"
                   value={reqSupplier}
                   onChange={(e) => setReqSupplier(e.target.value)}
                 >
@@ -1152,16 +1145,12 @@ const BuyerCompliance: React.FC = () => {
                       {sup.name}
                     </option>
                   ))}
-                </select>
-              </label>
+                </Select>
+              </FormField>
 
-              <label className="block">
-                <span className="block text-label text-text-tertiary uppercase mb-1">
-                  {t('compliance.request.field.category')}
-                </span>
-                <select
+              <FormField label={t('compliance.request.field.category')}>
+                <Select
                   data-testid="doc-request-category"
-                  className="w-full px-3 py-2 text-sm text-text-primary bg-white border border-border-input rounded-md focus:outline-none focus:border-action"
                   value={reqCategory}
                   onChange={(e) =>
                     setReqCategory(e.target.value as SupplierDocumentCategory | '')
@@ -1175,25 +1164,21 @@ const BuyerCompliance: React.FC = () => {
                       {t(c.labelKey)}
                     </option>
                   ))}
-                </select>
-              </label>
+                </Select>
+              </FormField>
 
-              <label className="block">
-                <span className="block text-label text-text-tertiary uppercase mb-1">
-                  {t('compliance.request.field.note')}
-                </span>
-                <textarea
+              <FormField
+                label={t('compliance.request.field.note')}
+                hint={t('compliance.request.field.noteHint')}
+              >
+                <TextArea
                   rows={3}
                   data-testid="doc-request-note"
-                  className="w-full px-3 py-2 text-sm text-text-primary bg-white border border-border-input rounded-md focus:outline-none focus:border-action placeholder:text-text-tertiary"
                   placeholder={t('compliance.request.field.notePlaceholder')}
                   value={reqNote}
                   onChange={(e) => setReqNote(e.target.value)}
                 />
-                <span className="block text-xs text-text-tertiary mt-1">
-                  {t('compliance.request.field.noteHint')}
-                </span>
-              </label>
+              </FormField>
             </div>
           )}
         </SidePanel>

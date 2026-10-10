@@ -84,6 +84,7 @@ import Button from '../components/ui-v2/Button';
 import SidePanel from '../components/ui-v2/SidePanel';
 import SuperAdminBypassNote from '../components/v2-features/SuperAdminBypassNote';
 import FormSection from '../components/ui-v2/FormSection';
+import { FormField, Select, TextArea, TextInput } from '../components/ui-v2/Form';
 import LoadingState from '../components/ui-v2/LoadingState';
 import ErrorState from '../components/ui-v2/ErrorState';
 import EmptyState from '../components/ui-v2/EmptyState';
@@ -637,32 +638,24 @@ const BuyerMaterialRequests: React.FC = () => {
         ) : (
           <div className="space-y-6" data-testid="material-request-raise-form">
             <FormSection title={t('materialRequests.raise.section.what')}>
-              <label className="block">
-                <span className="text-label text-text-tertiary uppercase block mb-1.5">
-                  {t('materialRequests.raise.field.label')}
-                </span>
-                <input
+              <FormField
+                label={t('materialRequests.raise.field.label')}
+                hint={t('materialRequests.raise.field.label.hint')}
+              >
+                <TextInput
                   type="text"
                   value={raise.requestedLabel}
                   onChange={(e) => setRaise({ ...raise, requestedLabel: e.target.value })}
                   placeholder={t('materialRequests.raise.placeholder.label')}
-                  className="w-full border border-border-input rounded px-3 py-2 text-sm"
                   data-testid="material-request-label"
                 />
-                <span className="text-xs text-text-tertiary mt-1 block">
-                  {t('materialRequests.raise.field.label.hint')}
-                </span>
-              </label>
-              <label className="block">
-                <span className="text-label text-text-tertiary uppercase block mb-1.5">
-                  {t('materialRequests.raise.field.category')}
-                </span>
-                <select
+              </FormField>
+              <FormField label={t('materialRequests.raise.field.category')}>
+                <Select
                   value={raise.category}
                   onChange={(e) =>
                     setRaise({ ...raise, category: e.target.value as RFQCategory })
                   }
-                  className="w-full border border-border-input rounded px-3 py-2 text-sm"
                   data-testid="material-request-category"
                 >
                   {/* DERIVED from the closed union's own runtime list, never a
@@ -673,48 +666,39 @@ const BuyerMaterialRequests: React.FC = () => {
                       {categoryLabel(t, c)}
                     </option>
                   ))}
-                </select>
-              </label>
-              <label className="block">
-                <span className="text-label text-text-tertiary uppercase block mb-1.5">
-                  {t('materialRequests.raise.field.need')}
-                </span>
-                <textarea
+                </Select>
+              </FormField>
+              <FormField
+                label={t('materialRequests.raise.field.need')}
+                hint={t('materialRequests.raise.field.need.hint')}
+              >
+                <TextArea
                   value={raise.need}
                   onChange={(e) => setRaise({ ...raise, need: e.target.value })}
                   placeholder={t('materialRequests.raise.placeholder.need')}
                   rows={3}
-                  className="w-full border border-border-input rounded px-3 py-2 text-sm"
                   data-testid="material-request-need"
                 />
-                <span className="text-xs text-text-tertiary mt-1 block">
-                  {t('materialRequests.raise.field.need.hint')}
-                </span>
-              </label>
+              </FormField>
             </FormSection>
 
             <FormSection title={t('materialRequests.raise.section.optional')}>
-              <label className="block">
-                <span className="text-label text-text-tertiary uppercase block mb-1.5">
-                  {t('materialRequests.raise.field.specification')}
-                </span>
-                <input
+              <FormField label={t('materialRequests.raise.field.specification')}>
+                <TextInput
                   type="text"
                   value={raise.specification ?? ''}
                   onChange={(e) => setRaise({ ...raise, specification: e.target.value })}
-                  className="w-full border border-border-input rounded px-3 py-2 text-sm"
                   data-testid="material-request-specification"
                 />
-              </label>
-              <label className="block">
-                <span className="text-label text-text-tertiary uppercase block mb-1.5">
-                  {t('materialRequests.raise.field.uom')}
-                </span>
-                <input
+              </FormField>
+              <FormField
+                label={t('materialRequests.raise.field.uom')}
+                hint={t('materialRequests.raise.field.uom.hint')}
+              >
+                <TextInput
                   type="text"
                   value={raise.expectedUom ?? ''}
                   onChange={(e) => setRaise({ ...raise, expectedUom: e.target.value })}
-                  className="w-full border border-border-input rounded px-3 py-2 text-sm"
                   data-testid="material-request-uom"
                 />
                 {/* ⚠️ THE FIELD IS LABELLED AS THE REQUESTER'S CLAIM, in the
@@ -722,10 +706,7 @@ const BuyerMaterialRequests: React.FC = () => {
                     There is no single UOM union in this tree to validate
                     against — three sets, no mapper — so validating here would
                     mean minting a fourth. */}
-                <span className="text-xs text-text-tertiary mt-1 block">
-                  {t('materialRequests.raise.field.uom.hint')}
-                </span>
-              </label>
+              </FormField>
             </FormSection>
 
             <p className="text-xs text-text-tertiary">
@@ -925,21 +906,17 @@ const BuyerMaterialRequests: React.FC = () => {
                 </div>
               ) : (
                 <div className="space-y-4" data-testid="material-request-reject-confirm">
-                  <label className="block">
-                    <span className="text-label text-text-tertiary uppercase block mb-1.5">
-                      {t('materialRequests.reject.field.justification')}
-                    </span>
-                    <textarea
+                  <FormField
+                    label={t('materialRequests.reject.field.justification')}
+                    hint={t('materialRequests.reject.field.justification.hint')}
+                  >
+                    <TextArea
                       value={justification}
                       onChange={(e) => setJustification(e.target.value)}
                       rows={3}
-                      className="w-full border border-border-input rounded px-3 py-2 text-sm"
                       data-testid="material-request-justification"
                     />
-                    <span className="text-xs text-text-tertiary mt-1 block">
-                      {t('materialRequests.reject.field.justification.hint')}
-                    </span>
-                  </label>
+                  </FormField>
                   <p className="text-sm text-text-secondary">
                     {t('materialRequests.confirm.reject')}
                   </p>

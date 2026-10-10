@@ -18,6 +18,7 @@ import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import {
   COLOUR_EXEMPT,
+  RAW_CONTROL_EXEMPT,
   TABLE_PRIMITIVES,
   cellTypeFindings,
   colourFindings,
@@ -410,8 +411,14 @@ describe('UI gate 7 · forms', () => {
     expect(formDressFindings('const Select = (p) => <div />;\nconst x = <Select className="h-8 text-xs" />;')).toEqual([]);
   });
 
-  it('no form control or label in the tree is written by hand', () => {
-    expect(derivedRawControls()).toEqual({});
+  it('no form control or label in the tree is written by hand — but for three, by name', () => {
+    expect(derivedRawControls()).toEqual(RAW_CONTROL_EXEMPT);
+    // an exemption is a file that exists and is named for one control, never a wildcard
+    const files = shippedFiles().map((f) => f.file);
+    for (const [file, n] of Object.entries(RAW_CONTROL_EXEMPT)) {
+      expect(files).toContain(file);
+      expect(n).toBe(1);
+    }
   });
 
   it('no page dresses a shared form component', () => {

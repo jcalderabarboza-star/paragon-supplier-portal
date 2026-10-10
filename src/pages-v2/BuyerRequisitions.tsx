@@ -26,6 +26,7 @@ import ListPage from '../components/ui-v2/ListPage';
 import Button from '../components/ui-v2/Button';
 import SidePanel from '../components/ui-v2/SidePanel';
 import FormSection from '../components/ui-v2/FormSection';
+import { Checkbox, FieldLabel, FormField, Select, TextArea, TextInput } from '../components/ui-v2/Form';
 import LoadingState from '../components/ui-v2/LoadingState';
 import ErrorState from '../components/ui-v2/ErrorState';
 import EmptyState from '../components/ui-v2/EmptyState';
@@ -115,11 +116,6 @@ const UNATTRIBUTED_KEY: Record<UnattributedReason, string> = {
   NO_PERSON_IN_SESSION: 'requisitions.panel.unattributed.noPerson',
   IDENTITY_PROVIDER_UNAVAILABLE: 'requisitions.panel.unattributed.idpDown',
 };
-
-const inputClass =
-  'w-full px-3 py-2 text-sm text-text-primary bg-white border border-border-input rounded-md focus:outline-none focus:border-action placeholder:text-text-tertiary';
-const labelClass =
-  'block text-label text-text-tertiary uppercase mb-1';
 
 const COST_CENTERS = [
   'CC-RD-001 — R&D',
@@ -701,8 +697,7 @@ const BuyerRequisitions: React.FC = () => {
       // and untyped. The header control carries its own accessible name.
       id: 'select',
       header: (
-        <input
-          type="checkbox"
+        <Checkbox
           aria-label={t('requisitions.bulk.selectAll')}
           data-testid="pr-select-all"
           disabled={!!bulkProgress || !filtered.some(isBulkEligible)}
@@ -713,8 +708,7 @@ const BuyerRequisitions: React.FC = () => {
       kind: 'status',
       cell: (pr) =>
         isBulkEligible(pr) && (
-          <input
-            type="checkbox"
+          <Checkbox
             aria-label={t('requisitions.bulk.selectRow', { number: pr.prNumber })}
             data-testid={`pr-select-${pr.id}`}
             disabled={!!bulkProgress}
@@ -1249,13 +1243,12 @@ const BuyerRequisitions: React.FC = () => {
                 <SectionHeading level="group" as="h3" className="mb-3">
                   {t('requisitions.panel.rejectSection')}
                 </SectionHeading>
-                <label htmlFor="pr-reject-reason" className="sr-only">
+                <FieldLabel htmlFor="pr-reject-reason" className="sr-only">
                   {t('requisitions.panel.rejectSrLabel', { number: selectedPR.prNumber })}
-                </label>
-                <textarea
+                </FieldLabel>
+                <TextArea
                   id="pr-reject-reason"
                   data-testid="pr-reject-reason"
-                  className="w-full text-sm border border-border-subtle rounded-md px-3 py-2 bg-bg-surface text-text-primary"
                   rows={3}
                   placeholder={t('requisitions.panel.rejectPlaceholder')}
                   value={rejectReason}
@@ -1278,13 +1271,12 @@ const BuyerRequisitions: React.FC = () => {
                 <SectionHeading level="group" as="h3" className="mb-3">
                   {t('requisitions.panel.reviseSection')}
                 </SectionHeading>
-                <label htmlFor="pr-revise-note" className="sr-only">
+                <FieldLabel htmlFor="pr-revise-note" className="sr-only">
                   {t('requisitions.panel.reviseSrLabel', { number: selectedPR.prNumber })}
-                </label>
-                <textarea
+                </FieldLabel>
+                <TextArea
                   id="pr-revise-note"
                   data-testid="pr-revise-note"
-                  className="w-full text-sm border border-border-subtle rounded-md px-3 py-2 bg-bg-surface text-text-primary"
                   rows={3}
                   placeholder={t('requisitions.panel.revisePlaceholder')}
                   value={reviseNote}
@@ -1658,62 +1650,55 @@ const BuyerRequisitions: React.FC = () => {
             title={t('requisitions.new.step1.title')}
             description={t('requisitions.new.step1.desc')}
           >
-            <div>
-              <label className={labelClass}>{t('requisitions.new.field.material')}</label>
-              <input
-                className={inputClass}
+            <FormField label={t('requisitions.new.field.material')}>
+              <TextInput
                 placeholder={t('requisitions.new.placeholder.material')}
                 value={form.material}
                 onChange={(e) =>
                   setForm({ ...form, material: e.target.value })
                 }
               />
-            </div>
+            </FormField>
             <div className="grid grid-cols-[1fr_100px] gap-3">
-              <div>
-                <label className={labelClass}>{t('requisitions.new.field.quantity')}</label>
+              {/* An untouched blank does not nag; a TYPED token that cannot be
+                  read says so, and says what to type instead. */}
+              <FormField
+                label={t('requisitions.new.field.quantity')}
+                hint={t('requisitions.new.qty.hint')}
+                error={
+                  form.qty.trim() !== '' && !parsedQty.ok && (
+                    <div role="alert" data-testid="new-pr-qty-refusal">
+                      {t(QTY_REFUSAL_KEY[parsedQty.reason])}{' '}
+                      <GlossaryTermChip
+                        refTo={{ sourceType: 'QtyRefusalReason', term: parsedQty.reason }}
+                      />
+                    </div>
+                  )
+                }
+              >
                 {/* type=text + inputmode=decimal (ruling 6.2): type=number
                     rejects the separators this field exists to adjudicate. */}
-                <input
+                <TextInput
+                  mono
                   type="text"
                   inputMode="decimal"
-                  className={inputClass}
                   placeholder={t('requisitions.new.placeholder.quantity')}
                   aria-label={t('requisitions.new.field.quantity')}
                   aria-invalid={form.qty.trim() !== '' && !parsedQty.ok}
                   value={form.qty}
                   onChange={(e) => setForm({ ...form, qty: e.target.value })}
                 />
-                {/* An untouched blank does not nag; a TYPED token that cannot be
-                    read says so, and says what to type instead. */}
-                {form.qty.trim() !== '' && !parsedQty.ok && (
-                  <div
-                    role="alert"
-                    data-testid="new-pr-qty-refusal"
-                    className="mt-1 text-[11px] text-critical"
-                  >
-                    {t(QTY_REFUSAL_KEY[parsedQty.reason])}{' '}
-                    <GlossaryTermChip
-                      refTo={{ sourceType: 'QtyRefusalReason', term: parsedQty.reason }}
-                    />
-                  </div>
-                )}
-                <div className="mt-1 text-[11px] text-text-tertiary">
-                  {t('requisitions.new.qty.hint')}
-                </div>
-              </div>
-              <div>
-                <label className={labelClass}>{t('requisitions.new.field.uom')}</label>
-                <select
-                  className={inputClass}
+              </FormField>
+              <FormField label={t('requisitions.new.field.uom')}>
+                <Select
                   value={form.uom}
                   onChange={(e) => setForm({ ...form, uom: e.target.value })}
                 >
                   {UOM_OPTIONS.map((u) => (
                     <option key={u}>{u}</option>
                   ))}
-                </select>
-              </div>
+                </Select>
+              </FormField>
             </div>
           </FormSection>
 
@@ -1723,19 +1708,15 @@ const BuyerRequisitions: React.FC = () => {
             description={t('requisitions.new.step2.desc')}
           >
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className={labelClass}>{t('requisitions.new.field.requiredDate')}</label>
-                <input
+              <FormField label={t('requisitions.new.field.requiredDate')}>
+                <TextInput
                   type="date"
-                  className={inputClass}
                   value={form.date}
                   onChange={(e) => setForm({ ...form, date: e.target.value })}
                 />
-              </div>
-              <div>
-                <label className={labelClass}>{t('requisitions.new.field.costCenter')}</label>
-                <select
-                  className={inputClass}
+              </FormField>
+              <FormField label={t('requisitions.new.field.costCenter')}>
+                <Select
                   value={form.costCenter}
                   onChange={(e) =>
                     setForm({ ...form, costCenter: e.target.value })
@@ -1747,13 +1728,11 @@ const BuyerRequisitions: React.FC = () => {
                       {c}
                     </option>
                   ))}
-                </select>
-              </div>
+                </Select>
+              </FormField>
             </div>
-            <div>
-              <label className={labelClass}>{t('requisitions.new.field.priority')}</label>
-              <select
-                className={inputClass}
+            <FormField label={t('requisitions.new.field.priority')}>
+              <Select
                 value={form.priority}
                 onChange={(e) =>
                   setForm({ ...form, priority: e.target.value })
@@ -1764,8 +1743,8 @@ const BuyerRequisitions: React.FC = () => {
                     {el(p)}
                   </option>
                 ))}
-              </select>
-            </div>
+              </Select>
+            </FormField>
           </FormSection>
 
           <FormSection
@@ -1773,8 +1752,8 @@ const BuyerRequisitions: React.FC = () => {
             title={t('requisitions.new.step3.title')}
             description={t('requisitions.new.step3.desc')}
           >
-            <textarea
-              className={`${inputClass} min-h-[72px] resize-y`}
+            <TextArea
+              className="resize-y"
               placeholder={t('requisitions.new.placeholder.justification')}
               value={form.justification}
               onChange={(e) =>

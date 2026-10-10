@@ -861,6 +861,15 @@ nav groups under one neutral key, `nav.glossary`.
   column) is semibold. No `<dl>` / `<dt>` / `<dd>` and no `<h2>`…`<h6>` is written outside the
   shared components, and `Field` names the shared detail field only — a page-local form helper
   is `FormField` until the form components replace it. `uiGate` holds all of it.
+- ⚠️ **UI-1c-2 (2026-10-10, operator ruling: 40px everywhere, no compact tier) — ONE FORM.** A
+  control is `TextInput`, `Select` or `TextArea`; a choice is `Checkbox`, `Radio` or
+  `ChoiceCard`; a label is `FormField` or `FieldLabel` (`components/ui-v2/Form.tsx`). They own
+  the box, the height and the type, so `className` on them is layout only — a width, a margin —
+  and a control given a width drops its own `w-full` rather than fighting it. No `<input>`,
+  `<select>`, `<textarea>` or `<label>` is written outside the shared components; a file
+  picker, a hidden field and a range slider are not form controls in this sense. **Derive the
+  exemptions from `RAW_CONTROL_EXEMPT` in `lib/uiGate/derive.ts`, never from a sentence here**
+  — each is a named file with a count, and the guard holds the tree EQUAL to it.
 - WARNING token is a FILL/TEXT split (DP2-WARN-01), same shape as `action`:
   `warning.DEFAULT` = bright amber `#D97706` for every GRAPHICAL warning use
   (accent-edges, dots, bar fills, dials, chip fills, borders — 3.19:1 on white,

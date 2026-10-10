@@ -24,6 +24,7 @@ import KpiCard from '../ui-v2/KpiCard';
 import TargetBar from '../ui-v2/TargetBar';
 import Data from '../ui-v2/Data';
 import Button from '../ui-v2/Button';
+import { FieldLabel, FormField, Select, TextInput } from '../ui-v2/Form';
 import ReleaseCalendar from './ReleaseCalendar';
 import PolicyEditor from './PolicyEditor';
 import HandoffNotice from '../ui-v2/HandoffNotice';
@@ -531,21 +532,21 @@ const ItemBlock: React.FC<{
           <span className="text-label text-text-tertiary uppercase">
             {t('delivery.release.section')}
           </span>
-          <label className="sr-only" htmlFor={`horizon-${agreementId}-${item.lineSeq}`}>
+          <FieldLabel className="sr-only" htmlFor={`horizon-${agreementId}-${item.lineSeq}`}>
             {t('delivery.release.horizonLabel')}
-          </label>
-          <select
+          </FieldLabel>
+          <Select
             id={`horizon-${agreementId}-${item.lineSeq}`}
             value={effectiveHorizon}
             onChange={(e) => setHorizon(e.target.value)}
-            className="rounded-md border border-border-input bg-bg-surface px-2 py-1.5 text-sm text-text-primary"
+            className="w-auto"
           >
             {draftDates.map((d) => (
               <option key={d} value={d}>
                 {formatDate(d)}
               </option>
             ))}
-          </select>
+          </Select>
           <Button
             variant="outline"
             icon={Send}
@@ -590,31 +591,24 @@ const ItemBlock: React.FC<{
           </div>
           <p className="text-xs text-text-secondary mb-3">{t('delivery.adjust.hint')}</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
-            <div>
-              <label className="block text-xs text-text-tertiary mb-1" htmlFor="adjust-date">
-                {t('delivery.adjust.dateLabel')}
-              </label>
-              <input
+            <FormField label={t('delivery.adjust.dateLabel')} htmlFor="adjust-date">
+              <TextInput
                 id="adjust-date"
                 type="date"
                 value={adjustDate}
                 onChange={(e) => setAdjustDate(e.target.value)}
-                className="w-full border border-border-subtle rounded px-2 py-1.5 text-sm"
               />
-            </div>
-            <div>
-              <label className="block text-xs text-text-tertiary mb-1" htmlFor="adjust-qty">
-                {t('delivery.adjust.qtyLabel')}
-              </label>
-              <input
+            </FormField>
+            <FormField label={t('delivery.adjust.qtyLabel')} htmlFor="adjust-qty">
+              <TextInput
                 id="adjust-qty"
                 type="number"
                 min="1"
                 value={adjustQty}
                 onChange={(e) => setAdjustQty(e.target.value)}
-                className="w-full border border-border-subtle rounded px-2 py-1.5 text-sm"
+                mono
               />
-            </div>
+            </FormField>
           </div>
           <div className="flex items-center gap-2">
             <Button

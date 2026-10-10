@@ -27,6 +27,7 @@ import { useTranslation } from 'react-i18next';
 import Button from '../../components/ui-v2/Button';
 import Data from '../../components/ui-v2/Data';
 import DataTable, { CellSub, type Column } from '../../components/ui-v2/DataTable';
+import { Checkbox, FormField, TextInput } from '../../components/ui-v2/Form';
 import StatusPill from '../../components/ui-v2/StatusPill';
 import { HandoffNotice } from '../../components/ui-v2/HandoffNotice';
 import { useVerbAvailabilities } from '../../hooks/useVerbAvailability';
@@ -318,8 +319,7 @@ export const PlannedChangesDetails: React.FC<{ open: boolean }> = ({ open }) => 
       headerClassName: 'w-8',
       cell: (e) =>
         reasonOwed(e) && e.planState === 'PLANNED' ? (
-          <input
-            type="checkbox"
+          <Checkbox
             data-testid={`plan-select-${e.seamRef}`}
             aria-label={t('planGrid.edit.bulk.selectRow', { cell: `${e.materialCode} ${e.bucket}` })}
             checked={picked.has(e.seamRef)}
@@ -377,16 +377,14 @@ export const PlannedChangesDetails: React.FC<{ open: boolean }> = ({ open }) => 
                 </span>
               </CellSub>
               <CellSub>
-                <label className="flex items-center gap-1">
-                  <input
-                    type="checkbox"
-                    data-testid={`plan-draft-confirm-${e.seamRef}`}
-                    checked={e.magnitudeConfirmed === true}
-                    disabled={e.planState === 'PUSHING'}
-                    onChange={(ev) => api.confirmMagnitude(e.seamRef, ev.target.checked)}
-                  />
+                <Checkbox
+                  data-testid={`plan-draft-confirm-${e.seamRef}`}
+                  checked={e.magnitudeConfirmed === true}
+                  disabled={e.planState === 'PUSHING'}
+                  onChange={(ev) => api.confirmMagnitude(e.seamRef, ev.target.checked)}
+                >
                   {t('planGrid.edit.magnitudeConfirm', { value: formatNumber(e.value), uom: e.uom })}
-                </label>
+                </Checkbox>
               </CellSub>
             </div>
           )}
@@ -401,11 +399,11 @@ export const PlannedChangesDetails: React.FC<{ open: boolean }> = ({ open }) => 
         <>
           {reasonOwed(e) ? (
             <>
-              <input
+              <TextInput
                 type="text"
                 aria-label={t('planGrid.edit.reasonFor', { cell: `${e.materialCode} ${e.bucket}` })}
                 placeholder={t('planGrid.push.reasonPlaceholder')}
-                className="w-56 rounded-md border border-border-input bg-white px-2 py-0.5 text-xs"
+                className="w-56"
                 value={e.reason}
                 disabled={e.planState === 'PUSHING'}
                 onChange={(ev) => api.setReason(e.seamRef, ev.target.value)}
@@ -460,31 +458,28 @@ export const PlannedChangesDetails: React.FC<{ open: boolean }> = ({ open }) => 
     <div className="mt-3 rounded-lg border border-info/30 bg-info-soft" data-testid="plan-draft-details">
       {owedRefs.length > 0 && (
         <div className="flex flex-wrap items-end gap-3 border-b border-info/20 px-4 py-2.5 text-xs" data-testid="plan-bulk-reason-bar">
-          <label className="flex items-center gap-1.5 pb-1 text-text-primary">
-            <input
-              type="checkbox"
-              data-testid="plan-select-owed"
-              checked={allOwedPicked}
-              disabled={pushing}
-              onChange={(ev) => {
-                setBulkNote(null);
-                setPicked(ev.target.checked ? new Set(owedRefs) : new Set());
-              }}
-            />
+          <Checkbox
+            className="pb-1"
+            data-testid="plan-select-owed"
+            checked={allOwedPicked}
+            disabled={pushing}
+            onChange={(ev) => {
+              setBulkNote(null);
+              setPicked(ev.target.checked ? new Set(owedRefs) : new Set());
+            }}
+          >
             {t('planGrid.edit.bulk.selectOwed', { n: formatNumber(owedRefs.length) })}
-          </label>
-          <label className="flex min-w-[18rem] flex-col gap-0.5">
-            <span className="text-text-tertiary">{t('planGrid.edit.bulk.label')}</span>
-            <input
+          </Checkbox>
+          <FormField label={t('planGrid.edit.bulk.label')} className="min-w-[18rem]">
+            <TextInput
               type="text"
               data-testid="plan-bulk-reason"
-              className="rounded-md border border-border-input bg-white px-2 py-1 text-xs"
               placeholder={t('planGrid.push.reasonPlaceholder')}
               value={bulkReason}
               disabled={pushing}
               onChange={(ev) => setBulkReason(ev.target.value)}
             />
-          </label>
+          </FormField>
           <Button
             variant="outline"
             disabled={pushing || chosen.length === 0 || bulkReason.trim() === ''}

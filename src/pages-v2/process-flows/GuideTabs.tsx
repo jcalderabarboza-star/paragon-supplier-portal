@@ -6,6 +6,7 @@ import Data from '../../components/ui-v2/Data';
 import DataTable, { CellSub, type Column } from '../../components/ui-v2/DataTable';
 import StatusPill from '../../components/ui-v2/StatusPill';
 import SectionHeading from '../../components/ui-v2/SectionHeading';
+import { FieldLabel, Select } from '../../components/ui-v2/Form';
 import { Field, FieldList } from '../../components/ui-v2/Field';
 import GlossaryTermChip from '../../components/ui-v2/GlossaryTermChip';
 import { HandoffNotice } from '../../components/ui-v2/HandoffNotice';
@@ -286,22 +287,23 @@ const HistoryTab: React.FC<{ view: FlowView; guide: ProcessGuide | undefined }> 
         ) : (
           <>
             <div className="mb-3 flex flex-wrap items-center gap-2">
-              <label className="text-[12px] text-text-secondary" htmlFor="pf-guide-history-pick">
+              <FieldLabel htmlFor="pf-guide-history-pick">
                 {t('processGuides.history.pick')}
-              </label>
-              <select
+              </FieldLabel>
+              <Select
                 id="pf-guide-history-pick"
                 data-testid="pf-guide-history-pick"
                 value={chosen}
                 onChange={(e) => setPicked(e.target.value)}
-                className="rounded-md border border-border-subtle bg-bg-surface px-2 py-1 font-mono text-[12px]"
+                mono
+                className="w-auto"
               >
                 {documents.map((d) => (
                   <option key={d} value={d}>
                     {d}
                   </option>
                 ))}
-              </select>
+              </Select>
               <button
                 type="button"
                 data-testid="pf-guide-history-refresh"

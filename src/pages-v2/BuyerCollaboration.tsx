@@ -54,6 +54,7 @@ import { useCurrentIdentity } from '../context/CurrentIdentityContext';
 import { sdcRefusalKey } from '../lib/sdcRefusal';
 import type { CommandResult } from '../services/data/types';
 import SectionHeading from '../components/ui-v2/SectionHeading';
+import { FieldLabel, TextArea } from '../components/ui-v2/Form';
 
 // ────────────────────────────────────────────────────────────────────────────
 // BuyerCollaboration (SDC-1b) — the P2 planner consolidation view: the
@@ -356,13 +357,12 @@ const ReasonPanel: React.FC<{
 
           <section>
             <SectionHeading level="group" className="mb-2">{copy.heading}</SectionHeading>
-            <label htmlFor={testIds.input} className="sr-only">
+            <FieldLabel htmlFor={testIds.input} className="sr-only">
               {copy.srLabel}
-            </label>
-            <textarea
+            </FieldLabel>
+            <TextArea
               id={testIds.input}
               data-testid={testIds.input}
-              className="w-full rounded-md border border-border-subtle bg-bg-surface px-3 py-2 text-sm text-text-primary"
               rows={4}
               placeholder={copy.placeholder}
               value={answer}

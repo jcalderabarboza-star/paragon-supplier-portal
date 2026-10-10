@@ -26,6 +26,7 @@ import Timeline, { TimelineEvent } from '../components/ui-v2/Timeline';
 import Data from '../components/ui-v2/Data';
 import { FieldList, Field } from '../components/ui-v2/Field';
 import SectionHeading from '../components/ui-v2/SectionHeading';
+import { TextInput, Select, FormField, FieldLabel } from '../components/ui-v2/Form';
 import { useToast } from '../hooks/useToast';
 import { useCurrentIdentity } from '../context/CurrentIdentityContext';
 import NoSupplierIdentity from '../components/ui-v2/NoSupplierIdentity';
@@ -843,13 +844,13 @@ const SupplierInvoices: React.FC = () => {
           <p className="text-sm text-text-secondary">
             {t('supplierInvoices.new.intro')}
           </p>
-          <div>
-            <label htmlFor="new-po" className="text-label text-text-tertiary uppercase block mb-1">
-              {t('supplierInvoices.new.poLabel')}
-            </label>
-            <select
+          <FormField
+            label={t('supplierInvoices.new.poLabel')}
+            htmlFor="new-po"
+            hint={confirmablePos.length === 0 && t('supplierInvoices.new.noPos')}
+          >
+            <Select
               id="new-po"
-              className="w-full text-sm border border-border-subtle rounded-md px-3 py-2 bg-bg-surface text-text-primary"
               value={newPoRef}
               onChange={(e) => choosePo(e.target.value)}
             >
@@ -859,13 +860,8 @@ const SupplierInvoices: React.FC = () => {
                   {po.poNumber}
                 </option>
               ))}
-            </select>
-            {confirmablePos.length === 0 && (
-              <div className="mt-1 text-xs text-text-tertiary">
-                {t('supplierInvoices.new.noPos')}
-              </div>
-            )}
-          </div>
+            </Select>
+          </FormField>
           {/* E2E-2 — THE LINES. Opened on the order's own lines at the order's
               prices and the quantity received and accepted; the supplier may
               lower a quantity and never raise it past that. The amount is the
@@ -909,15 +905,15 @@ const SupplierInvoices: React.FC = () => {
                           {formatNumber(l.maxQty)} {l.uom}
                         </Field>
                       </FieldList>
-                      <label htmlFor={inputId} className="text-label text-text-tertiary uppercase block mt-2 mb-1">
+                      <FieldLabel htmlFor={inputId} className="mt-2 mb-1">
                         {t('supplierInvoices.new.lines.qtyLabel', { material: l.materialCode })}
-                      </label>
+                      </FieldLabel>
                       {/* Ruling 6.2: text + inputMode, never type="number". */}
-                      <input
+                      <TextInput
                         id={inputId}
                         type="text"
+                        mono
                         inputMode="decimal"
-                        className="w-full text-sm border border-border-subtle rounded-md px-3 py-2 bg-bg-surface text-text-primary"
                         value={raw}
                         aria-invalid={!read.ok}
                         onChange={(e) => setNewQty((q) => ({ ...q, [l.materialCode]: e.target.value }))}

@@ -58,6 +58,7 @@ import 'react-datasheet-grid/dist/style.css';
 import './planGrid.css';
 import { useTranslation } from 'react-i18next';
 import Data from '../../components/ui-v2/Data';
+import { Checkbox, FormField, Select, TextInput } from '../../components/ui-v2/Form';
 import LivenessPill from '../../components/ui-v2/LivenessPill';
 import CompactNotice from './CompactNotice';
 import { formatNumber } from '../../lib/format';
@@ -835,22 +836,20 @@ const TimePhasedGrid: React.FC<{
             </span>
           </div>
         )}
-        <label className="flex min-w-[16rem] flex-col gap-1">
-          <span className="text-label uppercase text-text-tertiary">{t('planGrid.tp.search')}</span>
-          <input
+        <FormField label={t('planGrid.tp.search')} className="min-w-[16rem]">
+          <TextInput
+            type="text"
             data-testid="tp-search"
-            className="rounded-md border border-border-input bg-bg-surface px-2 py-1.5"
             value={filter.search}
             placeholder={t('planGrid.tp.searchPlaceholder')}
             onChange={(e) => setFilter({ ...filter, search: e.target.value })}
           />
-        </label>
-        <label className="flex flex-col gap-1">
-          <span className="text-label uppercase text-text-tertiary">{t('planGrid.tp.sortBy')}</span>
+        </FormField>
+        <FormField label={t('planGrid.tp.sortBy')}>
           <div className="flex gap-1">
-            <select
+            <Select
               data-testid="tp-sort-col"
-              className="rounded-md border border-border-input bg-bg-surface px-2 py-1.5"
+              className="flex-1"
               value={sort.colId}
               disabled={filter.exceptionsOnly}
               onChange={(e) => setSort({ ...sort, colId: e.target.value as PlanSortColumn })}
@@ -860,7 +859,7 @@ const TimePhasedGrid: React.FC<{
                   {t(c.labelKey)}
                 </option>
               ))}
-            </select>
+            </Select>
             <button
               type="button"
               data-testid="tp-sort-dir"
@@ -871,17 +870,16 @@ const TimePhasedGrid: React.FC<{
               {t(sort.dir === 'asc' ? 'planGrid.tp.asc' : 'planGrid.tp.desc')}
             </button>
           </div>
-        </label>
-        <label className="flex items-center gap-2 pb-1.5">
-          <input
-            type="checkbox"
-            data-testid="tp-exceptions"
-            checked={filter.exceptionsOnly}
-            disabled={lockedExceptions}
-            onChange={(e) => setFilter({ ...filter, exceptionsOnly: e.target.checked })}
-          />
-          <span>{t('planGrid.tp.exceptions')}</span>
-        </label>
+        </FormField>
+        <Checkbox
+          className="pb-1.5"
+          data-testid="tp-exceptions"
+          checked={filter.exceptionsOnly}
+          disabled={lockedExceptions}
+          onChange={(e) => setFilter({ ...filter, exceptionsOnly: e.target.checked })}
+        >
+          {t('planGrid.tp.exceptions')}
+        </Checkbox>
         <p className="ml-auto pb-1.5 text-xs text-text-tertiary" data-testid="tp-summary">
           {t('planGrid.tp.summary', {
             materials: formatNumber(visible.length),

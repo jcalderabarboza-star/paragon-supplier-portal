@@ -60,6 +60,7 @@ import type {
   KpiTrend,
 } from '../services/data/types';
 import SectionHeading from '../components/ui-v2/SectionHeading';
+import { Select } from '../components/ui-v2/Form';
 import { Field, FieldList } from '../components/ui-v2/Field';
 
 type Grade = ScorecardGradeLetter;
@@ -253,10 +254,10 @@ const BuyerScorecard: React.FC = () => {
         title={t('buyerScorecard.header.title')}
         subtitle={t('buyerScorecard.header.subtitle')}
         actions={
-          <select
+          <Select
             value={selectedId}
             onChange={(e) => setSelectedId(e.target.value)}
-            className="h-10 min-w-[260px] px-3 text-sm text-text-primary bg-bg-surface border border-border-input rounded-md focus:outline-none focus:border-action cursor-pointer"
+            className="w-auto min-w-[260px]"
             aria-label={t('buyerScorecard.header.selectSupplier')}
           >
             {suppliers.map((s) => (
@@ -264,7 +265,7 @@ const BuyerScorecard: React.FC = () => {
                 {s.name}
               </option>
             ))}
-          </select>
+          </Select>
         }
       />
 

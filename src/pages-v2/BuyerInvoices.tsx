@@ -43,6 +43,7 @@ import EmptyState from '../components/ui-v2/EmptyState';
 import Data from '../components/ui-v2/Data';
 import { Field, FieldList } from '../components/ui-v2/Field';
 import SectionHeading from '../components/ui-v2/SectionHeading';
+import { TextArea, FieldLabel } from '../components/ui-v2/Form';
 import type {
   BuyerInvoice,
   BuyerInvoiceStatus as InvStatus,
@@ -1451,12 +1452,11 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
                 <SectionHeading level="group" as="h3" className="mb-3">
                   {t('buyerInvoices.section.raiseDispute')}
                 </SectionHeading>
-                <label htmlFor="dispute-reason" className="sr-only">
+                <FieldLabel htmlFor="dispute-reason" className="sr-only">
                   {t('buyerInvoices.dispute.srLabel', { invoiceNumber: selected.invoiceNumber })}
-                </label>
-                <textarea
+                </FieldLabel>
+                <TextArea
                   id="dispute-reason"
-                  className="w-full text-sm border border-border-subtle rounded-md px-3 py-2 bg-bg-surface text-text-primary"
                   rows={3}
                   placeholder={t('buyerInvoices.dispute.placeholder')}
                   value={disputeReason}

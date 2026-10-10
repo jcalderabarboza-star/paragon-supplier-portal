@@ -3,6 +3,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import {
   Checkbox,
+  ChoiceCard,
   FieldLabel,
   FormField,
   FORM_ERROR_CLASS,
@@ -162,5 +163,87 @@ describe('Checkbox and Radio', () => {
   it('a box with no words takes its name from aria-label', () => {
     render(<Checkbox aria-label="Select row" />);
     expect(screen.getByLabelText('Select row')).toHaveAttribute('type', 'checkbox');
+  });
+});
+
+describe('a control and the width the page gives it', () => {
+  it('fills its field by default', () => {
+    render(<TextInput aria-label="a" />);
+    expect(screen.getByLabelText('a')).toHaveClass('w-full');
+  });
+
+  it('takes the page’s width instead — w-full is left out, not overridden', () => {
+    render(
+      <>
+        <TextInput aria-label="a" className="w-32" />
+        <Select aria-label="b" className="w-56" />
+        <TextArea aria-label="c" className="w-72" />
+      </>,
+    );
+    for (const [name, w] of [['a', 'w-32'], ['b', 'w-56'], ['c', 'w-72']] as const) {
+      expect(screen.getByLabelText(name)).toHaveClass(w);
+      expect(screen.getByLabelText(name)).not.toHaveClass('w-full');
+    }
+  });
+
+  it('a flex or max-width rule sits beside w-full', () => {
+    render(<TextInput aria-label="a" className="max-w-md flex-1" />);
+    expect(screen.getByLabelText('a')).toHaveClass('w-full', 'max-w-md', 'flex-1');
+  });
+
+  it('is a text input unless the page says otherwise', () => {
+    render(
+      <>
+        <TextInput aria-label="a" />
+        <TextInput aria-label="b" type="date" />
+      </>,
+    );
+    expect(screen.getByLabelText('a')).toHaveAttribute('type', 'text');
+    expect(screen.getByLabelText('b')).toHaveAttribute('type', 'date');
+  });
+});
+
+describe('FormField · a refusal is announced once', () => {
+  it('does not wrap an error that already announces itself in a second alert', () => {
+    render(
+      <FormField label="Value" error={<span role="alert" data-testid="refusal">Enter a value</span>}>
+        <TextInput />
+      </FormField>,
+    );
+    expect(screen.getAllByRole('alert')).toHaveLength(1);
+    expect(screen.getByTestId('refusal')).toHaveAttribute('role', 'alert');
+  });
+});
+
+describe('ChoiceCard', () => {
+  it('the whole card is the label: a click on the card makes the choice', () => {
+    const onChange = vi.fn();
+    render(
+      <ChoiceCard type="checkbox" checked={false} onChange={onChange} data-testid="box">
+        <span>Annual audit</span>
+        <span>Due every twelve months</span>
+      </ChoiceCard>,
+    );
+    const card = screen.getByTestId('box').closest('label')!;
+    expect(card).toHaveClass('rounded-lg', 'border', 'p-3', 'cursor-pointer');
+    fireEvent.click(card);
+    expect(onChange).toHaveBeenCalledTimes(1);
+  });
+
+  it('a selected card says so with the action border and tint, not with weight', () => {
+    const { rerender } = render(
+      <ChoiceCard type="radio" checked={false} onChange={() => {}} data-testid="r">
+        External
+      </ChoiceCard>,
+    );
+    const card = (): HTMLElement => screen.getByTestId('r').closest('label')!;
+    expect(card()).toHaveClass('border-border-subtle');
+    rerender(
+      <ChoiceCard type="radio" checked onChange={() => {}} data-testid="r">
+        External
+      </ChoiceCard>,
+    );
+    expect(card()).toHaveClass('border-action', 'bg-action-soft', 'font-normal');
+    expect(screen.getByTestId('r')).toHaveAttribute('type', 'radio');
   });
 });

@@ -6,6 +6,7 @@ import PlanCellMarker from './PlanCellMarker';
 import { useIntakeCommit } from '../../services/query/commandHooks';
 import { INTAKE_TRIAGE_ATOM } from '../../services/transitions/flows/intakeLine.flow';
 import { HandoffNotice } from '../../components/ui-v2/HandoffNotice';
+import { TextInput } from '../../components/ui-v2/Form';
 import { useVerbAvailability } from '../../hooks/useVerbAvailability';
 import { DataError, type IntakeLine } from '../../services/data/types';
 import { formatNumber } from '../../lib/format';
@@ -212,13 +213,14 @@ const IntakeAdjustDrawer: React.FC<{ line: IntakeLine | null }> = ({ line }) => 
           {/* type=text + inputmode=decimal (ruling 6.2): type=number silently
               rejects the separators this field exists to adjudicate, so the fix
               could never fire behind it. The mobile keypad is preserved. */}
-          <input
+          <TextInput
+            mono
             type="text"
             inputMode="decimal"
             aria-label={`${t('planGrid.push.col.accepted')} — ${line.material}`}
             aria-describedby={`accepted-hint-${line.id}`}
             aria-invalid={!parsed.ok}
-            className="w-32 rounded-md border border-border-input bg-white px-2 py-1 text-right font-mono text-sm text-data-navy focus:border-action focus:outline-none disabled:bg-bg-hover disabled:text-text-tertiary"
+            className="w-32 text-right"
             value={raw}
             disabled={committed}
             onChange={(e) => setAcceptedRaw((a) => ({ ...a, [line.id]: e.target.value }))}
@@ -266,11 +268,11 @@ const IntakeAdjustDrawer: React.FC<{ line: IntakeLine | null }> = ({ line }) => 
             <div className="mb-1 text-label uppercase tracking-wider text-text-tertiary">
               {t('planGrid.push.col.reason')}
             </div>
-            <input
+            <TextInput
               type="text"
               aria-label={`${t('planGrid.push.col.reason')} — ${line.material}`}
               placeholder={t('planGrid.push.reasonPlaceholder')}
-              className="w-full max-w-md rounded-md border border-border-input bg-white px-2 py-1 text-sm text-text-primary focus:border-action focus:outline-none"
+              className="max-w-md"
               value={why}
               onChange={(e) => setReason((r) => ({ ...r, [line.id]: e.target.value }))}
             />

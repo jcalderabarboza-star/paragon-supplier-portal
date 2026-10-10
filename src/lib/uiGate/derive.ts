@@ -515,3 +515,20 @@ export function derivedFormDress(): Record<string, string[]> {
   }
   return out;
 }
+
+/**
+ * Hand-written controls that stay, BY NAME, each with its reason. Held equal to
+ * the derivation both ways: a file that gains one is a new violation, and a
+ * file that loses its one must leave this list.
+ *
+ *   · the channel demo imitates an external messenger; its chat box is that
+ *     product's chrome (operator ruling, 9 October 2026)
+ *   · the planning grid's bucket editor is a GRID CELL: it fills a 30px row the
+ *     grid owns, and at 40px it would overflow it
+ *   · the top bar's global search is shell chrome, drawn with the shell
+ */
+export const RAW_CONTROL_EXEMPT: Record<string, number> = {
+  'src/components/layout-v2/TopBarV2.tsx': 1,
+  'src/pages-v2/SupplierWhatsApp.tsx': 1,
+  'src/pages-v2/plan-grid/TimePhasedGrid.tsx': 1,
+};

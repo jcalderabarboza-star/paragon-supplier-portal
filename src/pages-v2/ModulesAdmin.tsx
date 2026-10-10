@@ -6,6 +6,7 @@ import AppShellV2 from '../components/layout-v2/AppShellV2';
 import PageHeader from '../components/ui-v2/PageHeader';
 import Button from '../components/ui-v2/Button';
 import Switch from '../components/ui-v2/Switch';
+import { FormField, Select, TextArea, TextInput } from '../components/ui-v2/Form';
 import DataTable, { CellSub, type Column } from '../components/ui-v2/DataTable';
 import StatusPill from '../components/ui-v2/StatusPill';
 import GlossaryTermChip from '../components/ui-v2/GlossaryTermChip';
@@ -188,14 +189,14 @@ const ModulesAdmin: React.FC = () => {
               {alwaysOn ? t('modules.admin.alwaysOn') : lastUpdated(code)}
             </CellSub>
             {changed.has(code) && (
-              <input
+              <TextInput
                 type="text"
                 value={overrides[code] ?? ''}
                 onChange={(e) => setOverrides({ ...overrides, [code]: e.target.value })}
                 placeholder={t('modules.admin.rowReason')}
                 aria-label={t('modules.admin.rowReasonAria', { code })}
                 disabled={disabled}
-                className="mt-2 w-full rounded-md border border-border-input px-2 py-1 text-xs"
+                className="mt-2"
                 data-testid={`module-reason-${code}`}
               />
             )}
@@ -219,12 +220,11 @@ const ModulesAdmin: React.FC = () => {
         const row = form.modules[code];
         return (
           <>
-            <select
+            <Select
               value={row.phase}
               onChange={(e) => edit(setPhase(form, code, e.target.value as ModulePhase))}
               disabled={disabled || spec.alwaysOn === true}
               aria-label={t('modules.admin.phaseAria', { code })}
-              className="w-full rounded-md border border-border-input px-2 py-1 text-sm bg-white"
               data-testid={`module-phase-${code}`}
             >
               {MODULE_PHASES.map((p) => (
@@ -232,7 +232,7 @@ const ModulesAdmin: React.FC = () => {
                   {t(`modules.phase.${p}`)}
                 </option>
               ))}
-            </select>
+            </Select>
             <CellSub>{t(`modules.phaseHelp.${row.phase}`)}</CellSub>
           </>
         );
@@ -364,18 +364,16 @@ const ModulesAdmin: React.FC = () => {
         />
 
         <section className="mt-5 bg-white border border-border-subtle rounded-lg p-4" data-testid="modules-admin-save">
-          <label className="block text-sm font-medium text-text-primary" htmlFor="modules-batch-reason">
-            {t('modules.admin.reason')}
-          </label>
-          <textarea
-            id="modules-batch-reason"
-            value={reason}
-            onChange={(e) => setReason(e.target.value)}
-            disabled={disabled}
-            rows={2}
-            className="mt-1 w-full rounded-md border border-border-input px-2 py-1 text-sm"
-            data-testid="modules-batch-reason"
-          />
+          <FormField label={t('modules.admin.reason')} htmlFor="modules-batch-reason">
+            <TextArea
+              id="modules-batch-reason"
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              disabled={disabled}
+              rows={2}
+              data-testid="modules-batch-reason"
+            />
+          </FormField>
           <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
             <span className="text-xs text-text-tertiary" data-testid="modules-admin-change-count">
               {t('modules.admin.changeCount', { count: changes.length })}

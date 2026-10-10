@@ -47,6 +47,7 @@ import ListPage from '../components/ui-v2/ListPage';
 import DataTable, { type Column } from '../components/ui-v2/DataTable';
 import ProvenanceMarker from '../components/ui-v2/ProvenanceMarker';
 import Button from '../components/ui-v2/Button';
+import { FormField, Select, TextArea, TextInput } from '../components/ui-v2/Form';
 import SidePanel from '../components/ui-v2/SidePanel';
 import SuperAdminBypassNote from '../components/v2-features/SuperAdminBypassNote';
 import { isSuperAdminSeat } from '../services/identity/superAdmin';
@@ -357,21 +358,6 @@ const BuyerPreferredSuppliers: React.FC = () => {
     }
   };
 
-  const FormField: React.FC<{ label: string; hint?: string; children: React.ReactNode }> = ({
-    label,
-    hint,
-    children,
-  }) => (
-    <label className="flex flex-col gap-1 text-sm">
-      <span className="text-text-secondary">{label}</span>
-      {children}
-      {hint ? <span className="text-xs text-text-tertiary">{hint}</span> : null}
-    </label>
-  );
-
-  const input =
-    'border border-border-subtle rounded px-2 py-1.5 text-sm text-text-primary bg-white';
-
   const columns: Column<PslListing>[] = [
     {
       id: 'id',
@@ -580,8 +566,7 @@ const BuyerPreferredSuppliers: React.FC = () => {
                       })}
                     </p>
                     <FormField label={t('psl.form.reason')} hint={t('psl.form.reason.hint')}>
-                      <textarea
-                        className={input}
+                      <TextArea
                         rows={3}
                         value={reason}
                         onChange={(e) => setReason(e.target.value)}
@@ -603,8 +588,7 @@ const BuyerPreferredSuppliers: React.FC = () => {
                 ) : (
                   <>
                     <FormField label={t('psl.form.reason')} hint={t('psl.form.reason.hint')}>
-                      <textarea
-                        className={input}
+                      <TextArea
                         rows={3}
                         value={reason}
                         onChange={(e) => setReason(e.target.value)}
@@ -653,8 +637,7 @@ const BuyerPreferredSuppliers: React.FC = () => {
         <div className="flex flex-col gap-3 text-sm" data-testid="psl-propose-panel">
           <ActorPreActNotice unattributedKey="psl.notice.unattributed" testId="psl-pre-act-drawer" />
           <FormField label={t('psl.form.supplier')}>
-            <select
-              className={input}
+            <Select
               value={draft.supplierId}
               onChange={(e) => setDraft({ ...draft, supplierId: e.target.value })}
               data-testid="psl-form-supplier"
@@ -665,22 +648,21 @@ const BuyerPreferredSuppliers: React.FC = () => {
                   {s.name}
                 </option>
               ))}
-            </select>
+            </Select>
           </FormField>
           <FormField
             label={t('psl.form.materialCodes')}
             hint={t('psl.form.materialCodes.hint')}
           >
-            <input
-              className={input}
+            <TextInput
+              mono
               value={draft.materialCodes}
               onChange={(e) => setDraft({ ...draft, materialCodes: e.target.value })}
               data-testid="psl-form-codes"
             />
           </FormField>
           <FormField label={t('psl.form.status')}>
-            <select
-              className={input}
+            <Select
               value={draft.status}
               onChange={(e) => setDraft({ ...draft, status: e.target.value as PslStatus })}
               data-testid="psl-form-status"
@@ -690,21 +672,19 @@ const BuyerPreferredSuppliers: React.FC = () => {
                   {t(statusLabelKey(s) ?? '', { defaultValue: s })}
                 </option>
               ))}
-            </select>
+            </Select>
           </FormField>
           <FormField label={t('psl.form.validFrom')}>
-            <input
+            <TextInput
               type="date"
-              className={input}
               value={draft.validFrom}
               onChange={(e) => setDraft({ ...draft, validFrom: e.target.value })}
               data-testid="psl-form-from"
             />
           </FormField>
           <FormField label={t('psl.form.validUntil')}>
-            <input
+            <TextInput
               type="date"
-              className={input}
               value={draft.validUntil}
               onChange={(e) => setDraft({ ...draft, validUntil: e.target.value })}
               data-testid="psl-form-until"
@@ -714,8 +694,7 @@ const BuyerPreferredSuppliers: React.FC = () => {
             label={t('psl.form.justification')}
             hint={t('psl.form.justification.hint')}
           >
-            <textarea
-              className={input}
+            <TextArea
               rows={3}
               value={draft.justification}
               onChange={(e) => setDraft({ ...draft, justification: e.target.value })}
@@ -723,8 +702,7 @@ const BuyerPreferredSuppliers: React.FC = () => {
             />
           </FormField>
           <FormField label={t('psl.form.reason')} hint={t('psl.form.reason.hint')}>
-            <textarea
-              className={input}
+            <TextArea
               rows={2}
               value={draft.reason}
               onChange={(e) => setDraft({ ...draft, reason: e.target.value })}
@@ -732,8 +710,7 @@ const BuyerPreferredSuppliers: React.FC = () => {
             />
           </FormField>
           <FormField label={t('psl.form.evidence')} hint={t('psl.form.evidence.hint')}>
-            <input
-              className={input}
+            <TextInput
               value={draft.evidenceRefs}
               onChange={(e) => setDraft({ ...draft, evidenceRefs: e.target.value })}
               data-testid="psl-form-evidence"

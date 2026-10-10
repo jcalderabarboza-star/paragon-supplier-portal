@@ -2,6 +2,8 @@ import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ShieldCheck } from 'lucide-react';
 import Button from '../../components/ui-v2/Button';
+import SectionHeading from '../../components/ui-v2/SectionHeading';
+import { FORM_HINT_CLASS, FormField, Select, TextInput } from '../../components/ui-v2/Form';
 import HandoffNotice from '../../components/ui-v2/HandoffNotice';
 import { useCurrentIdentity } from '../../context/CurrentIdentityContext';
 import { useToast } from '../../hooks/useToast';
@@ -47,24 +49,6 @@ import { namedSeatRefusalKey } from '../../lib/namedSeatRefusal';
 // read `deriveRoleViews()`, which now yields custom roles too. This file is the
 // WRITE path and the gate; the READ path did not learn that custom roles exist.
 // ─────────────────────────────────────────────────────────────────────────────
-
-const FormField: React.FC<{
-  labelKey: string;
-  hintKey?: string;
-  children: React.ReactNode;
-}> = ({ labelKey, hintKey, children }) => {
-  const { t } = useTranslation();
-  return (
-    <label className="block">
-      <span className="text-label text-text-tertiary uppercase">{t(labelKey)}</span>
-      {children}
-      {hintKey && <span className="block text-[11px] text-text-tertiary mt-0.5">{t(hintKey)}</span>}
-    </label>
-  );
-};
-
-const INPUT_CLASS =
-  'w-full mt-1 px-3 py-2 text-sm border border-border-subtle rounded-md bg-white';
 
 const CreateRolePanel: React.FC<{ onGranted: () => void }> = ({ onGranted }) => {
   const { t } = useTranslation();
@@ -167,9 +151,8 @@ const CreateRolePanel: React.FC<{ onGranted: () => void }> = ({ onGranted }) => 
 
       <form className="flex flex-col gap-3" onSubmit={submit}>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <FormField labelKey="roles.page.createParent">
-            <select
-              className={INPUT_CLASS}
+          <FormField label={t('roles.page.createParent')}>
+            <Select
               data-testid="role-create-parent"
               value={parent}
               onChange={(e) => {
@@ -182,11 +165,11 @@ const CreateRolePanel: React.FC<{ onGranted: () => void }> = ({ onGranted }) => 
                   {t(`roles.owner.${p}`)}
                 </option>
               ))}
-            </select>
+            </Select>
           </FormField>
-          <FormField labelKey="roles.page.createId" hintKey="roles.page.createIdHint">
-            <input
-              className={`${INPUT_CLASS} font-mono`}
+          <FormField label={t('roles.page.createId')} hint={t('roles.page.createIdHint')}>
+            <TextInput
+              mono
               data-testid="role-create-id"
               value={roleId}
               onChange={(e) => setRoleId(e.target.value)}
@@ -194,25 +177,24 @@ const CreateRolePanel: React.FC<{ onGranted: () => void }> = ({ onGranted }) => 
           </FormField>
         </div>
 
-        <FormField labelKey="roles.page.createName">
-          <input
-            className={INPUT_CLASS}
+        <FormField label={t('roles.page.createName')}>
+          <TextInput
             data-testid="role-create-name"
             value={displayName}
             onChange={(e) => setDisplayName(e.target.value)}
           />
         </FormField>
 
-        <FormField labelKey="roles.page.createDescription">
-          <input
-            className={INPUT_CLASS}
+        <FormField label={t('roles.page.createDescription')}>
+          <TextInput
             data-testid="role-create-description"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
           />
         </FormField>
 
-        <FormField labelKey="roles.page.createAdds" hintKey="roles.page.createAddsHint">
+        <div>
+          <SectionHeading level="group" as="h4">{t('roles.page.createAdds')}</SectionHeading>
           {addable.length === 0 ? (
             <p className="text-xs text-text-tertiary mt-1" data-testid="role-create-adds-none">
               {t('roles.page.createAddsNone')}
@@ -245,7 +227,8 @@ const CreateRolePanel: React.FC<{ onGranted: () => void }> = ({ onGranted }) => 
               })}
             </div>
           )}
-        </FormField>
+          <p className={`mt-1 ${FORM_HINT_CLASS}`}>{t('roles.page.createAddsHint')}</p>
+        </div>
 
         {/* THE ATTRIBUTION, STATED BEFORE THE ACT. SUP-1: a grant is recorded
             against the person who made it, and a seat that names nobody is

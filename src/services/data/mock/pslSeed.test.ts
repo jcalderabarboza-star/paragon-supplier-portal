@@ -101,6 +101,20 @@ describe('⚠️ EVERY ROW WAS PRODUCED BY AN ACT — not written into the store
       for (const h of r.statusHistory) {
         expect(h.at, r.id).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/);
       }
+    }
+    // ⚠️ "NOT ON ITS OWN VALIDITY DAY" SEPARATES A STORE-ASSIGNED INSTANT FROM AN
+    // AUTHORED ONE ON EVERY DAY BUT ONE: the day the suite runs ON a row's
+    // validity day, when a store-assigned instant falls there too. That is what
+    // happened to psl-009 on 10 October 2026. A row whose validity day is today
+    // cannot be told apart by day, so it is set aside BY THAT TEST — and the
+    // rest must still be discriminated, and must be most of the store, or the
+    // assertion has stopped looking at anything.
+    const today = new Date().toISOString().slice(0, 10);
+    const rows = pslStore.all();
+    const tellable = rows.filter((r) => r.validFrom.slice(0, 10) !== today);
+    expect(tellable.length).toBeGreaterThanOrEqual(rows.length - 2);
+    expect(tellable.length).toBeGreaterThan(5);
+    for (const r of tellable) {
       expect(r.statusHistory[0].at.slice(0, 10), r.id).not.toBe(r.validFrom.slice(0, 10));
     }
   });

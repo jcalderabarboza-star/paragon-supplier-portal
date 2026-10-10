@@ -28,14 +28,19 @@ export const FORM_HINT_CLASS = 'font-sans text-xs font-normal text-text-tertiary
 export const FORM_ERROR_CLASS = 'font-sans text-xs font-normal text-critical';
 
 const CONTROL_BASE =
-  'w-full rounded-md border bg-bg-surface px-3 text-sm font-normal text-text-primary ' +
+  'rounded-md border bg-bg-surface px-3 text-sm font-normal text-text-primary ' +
   'placeholder:text-text-tertiary focus:outline-none focus:border-action ' +
   'disabled:cursor-not-allowed disabled:bg-bg-hover disabled:text-text-tertiary';
 
 /** The control's box and type. The ONLY place a form control is dressed. */
-export function controlClass(opts: { mono?: boolean; invalid?: boolean; area?: boolean } = {}): string {
+export function controlClass(opts: { mono?: boolean; invalid?: boolean; area?: boolean; width?: string } = {}): string {
   return [
     CONTROL_BASE,
+    // A control fills its field unless the page gives it a width. `w-full` is
+    // left out then, not overridden: in the built CSS it sorts after `w-32`,
+    // and a class that loses the cascade is a width the page asked for and did
+    // not get.
+    /(?:^|\s)w-/.test(opts.width ?? '') ? '' : 'w-full',
     opts.area ? 'min-h-[80px] py-2' : 'h-10',
     opts.mono ? 'font-mono' : 'font-sans',
     opts.invalid ? 'border-critical' : 'border-border-input',
@@ -52,13 +57,13 @@ interface Dressing {
 export type TextInputProps = Omit<React.InputHTMLAttributes<HTMLInputElement>, 'size'> & Dressing;
 
 export const TextInput = React.forwardRef<HTMLInputElement, TextInputProps>(
-  ({ mono, invalid, className = '', type = 'text', ...rest }, ref) => (
+  ({ mono, invalid, className = '', ...rest }, ref) => (
     <input
       ref={ref}
-      type={type}
+      type="text"
       aria-invalid={invalid || undefined}
       data-control="input"
-      className={`${controlClass({ mono, invalid })} ${className}`}
+      className={`${controlClass({ mono, invalid, width: className })} ${className}`}
       {...rest}
     />
   ),
@@ -73,7 +78,7 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
       ref={ref}
       aria-invalid={invalid || undefined}
       data-control="select"
-      className={`${controlClass({ mono, invalid })} ${className}`}
+      className={`${controlClass({ mono, invalid, width: className })} ${className}`}
       {...rest}
     >
       {children}
@@ -90,7 +95,7 @@ export const TextArea = React.forwardRef<HTMLTextAreaElement, TextAreaProps>(
       ref={ref}
       aria-invalid={invalid || undefined}
       data-control="textarea"
-      className={`${controlClass({ mono, invalid, area: true })} ${className}`}
+      className={`${controlClass({ mono, invalid, area: true, width: className })} ${className}`}
       {...rest}
     />
   ),
@@ -131,6 +136,9 @@ interface FormFieldProps {
   'data-testid'?: string;
 }
 
+const announcesItself = (node: React.ReactNode): boolean =>
+  React.isValidElement<{ role?: string }>(node) && typeof node.props.role === 'string';
+
 /** A label, its control, and what is said about it. */
 export const FormField: React.FC<FormFieldProps> = ({
   label,
@@ -157,7 +165,9 @@ export const FormField: React.FC<FormFieldProps> = ({
     <>
       {hint ? <span className={`mt-1 block ${FORM_HINT_CLASS}`}>{hint}</span> : null}
       {error ? (
-        <span role="alert" className={`mt-1 block ${FORM_ERROR_CLASS}`}>
+        // An error element that already announces itself (it carries its own
+        // `role`) is not wrapped in a second alert: a refusal is said once.
+        <span role={announcesItself(error) ? undefined : 'alert'} className={`mt-1 block ${FORM_ERROR_CLASS}`}>
           {error}
         </span>
       ) : null}
@@ -202,3 +212,30 @@ export const Checkbox = choice('checkbox', 'checkbox');
 Checkbox.displayName = 'Checkbox';
 export const Radio = choice('radio', 'radio');
 Radio.displayName = 'Radio';
+
+type ChoiceCardProps = Omit<React.InputHTMLAttributes<HTMLInputElement>, 'type' | 'size'> & {
+  type: 'checkbox' | 'radio';
+  /** What the card says: a title, a line under it, a chip. */
+  children: React.ReactNode;
+};
+
+/**
+ * A choice drawn as a CARD: the whole card is the label, so a click anywhere on
+ * it — its padding included — makes the choice. A selected card takes the
+ * action border and tint. For a row of options each with more to say than a few
+ * words (a registration type, a suggested obligation, a channel).
+ */
+export const ChoiceCard = React.forwardRef<HTMLInputElement, ChoiceCardProps>(
+  ({ type, children, className = '', checked, disabled, ...rest }, ref) => (
+    <label
+      data-choice="card"
+      className={`flex cursor-pointer items-start gap-3 rounded-lg border p-3 font-sans text-sm font-normal text-text-primary transition-colors ${
+        checked ? 'border-action bg-action-soft' : 'border-border-subtle bg-bg-surface hover:bg-bg-hover'
+      } ${disabled ? 'cursor-not-allowed opacity-60' : ''} ${className}`}
+    >
+      <input ref={ref} type={type} checked={checked} disabled={disabled} className="mt-0.5 h-4 w-4 shrink-0 accent-action" {...rest} />
+      <span className="min-w-0 flex-1">{children}</span>
+    </label>
+  ),
+);
+ChoiceCard.displayName = 'ChoiceCard';

@@ -22,6 +22,7 @@ import { useTranslation } from 'react-i18next';
 import { ArrowDown, ArrowUp, ListChecks, Plus, Save, Trash2 } from 'lucide-react';
 import Button from '../../components/ui-v2/Button';
 import { HandoffNotice } from '../../components/ui-v2/HandoffNotice';
+import { Checkbox, FormField, Select, TextInput } from '../../components/ui-v2/Form';
 import { useToast } from '../../hooks/useToast';
 import { useRefusalText } from '../../hooks/useRefusalText';
 import { useVerbAvailability } from '../../hooks/useVerbAvailability';
@@ -38,10 +39,6 @@ import {
   type RfpCriterion,
 } from '../../data/rfpEvaluation';
 import { formatNumber } from '../../lib/format';
-
-const inputClass =
-  'w-full bg-white border border-border-input rounded-md px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-action';
-const labelClass = 'text-label text-text-tertiary uppercase block mb-1';
 
 /** One criterion while it is being written. The weight is TEXT until it is sent. */
 interface Row {
@@ -249,41 +246,32 @@ const RfpCriteriaEditor: React.FC<{ rfq: RFQ }> = ({ rfq }) => {
                 </button>
               </span>
             </div>
-            <label className={labelClass} htmlFor={`rfp-editor-name-${r.id}`}>
-              {t('sourcing.rfp.editor.name')}
-            </label>
-            <input
+            <FormField label={t('sourcing.rfp.editor.name')} htmlFor={`rfp-editor-name-${r.id}`} className="mb-2">
+            <TextInput
               id={`rfp-editor-name-${r.id}`}
               type="text"
               value={r.name}
               onChange={(e) => patch(i, { name: e.target.value })}
-              className={`${inputClass} mb-2`}
               data-testid={`rfp-editor-name-${i + 1}`}
             />
+            </FormField>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-              <div>
-                <label className={labelClass} htmlFor={`rfp-editor-weight-${r.id}`}>
-                  {t('sourcing.rfp.editor.weight')}
-                </label>
-                <input
+              <FormField label={t('sourcing.rfp.editor.weight')} htmlFor={`rfp-editor-weight-${r.id}`}>
+                <TextInput
                   id={`rfp-editor-weight-${r.id}`}
                   type="text"
                   inputMode="decimal"
                   value={r.weightText}
                   onChange={(e) => patch(i, { weightText: e.target.value })}
-                  className={`${inputClass} font-mono`}
+                  mono
                   data-testid={`rfp-editor-weight-${i + 1}`}
                 />
-              </div>
-              <div>
-                <label className={labelClass} htmlFor={`rfp-editor-group-${r.id}`}>
-                  {t('sourcing.rfp.editor.group')}
-                </label>
-                <select
+              </FormField>
+              <FormField label={t('sourcing.rfp.editor.group')} htmlFor={`rfp-editor-group-${r.id}`}>
+                <Select
                   id={`rfp-editor-group-${r.id}`}
                   value={r.group}
                   onChange={(e) => patch(i, { group: e.target.value })}
-                  className={inputClass}
                   data-testid={`rfp-editor-group-${i + 1}`}
                 >
                   <option value="">{t('sourcing.rfp.editor.groupNone')}</option>
@@ -292,19 +280,17 @@ const RfpCriteriaEditor: React.FC<{ rfq: RFQ }> = ({ rfq }) => {
                       {t(`sourcing.rfp.group.${g}`)}
                     </option>
                   ))}
-                </select>
-              </div>
+                </Select>
+              </FormField>
             </div>
-            <label className="flex items-center gap-2 text-sm text-text-primary mt-2">
-              <input
-                type="checkbox"
-                className="accent-teal"
+            <Checkbox
+                className="mt-2"
                 checked={r.required}
                 onChange={(e) => patch(i, { required: e.target.checked })}
                 data-testid={`rfp-editor-required-${i + 1}`}
-              />
+            >
               {t('sourcing.rfp.editor.required')}
-            </label>
+            </Checkbox>
           </li>
         ))}
       </ol>

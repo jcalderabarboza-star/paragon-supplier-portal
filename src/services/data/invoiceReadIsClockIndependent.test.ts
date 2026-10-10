@@ -109,12 +109,19 @@ describe('POPULATION CONTROLS — nothing below means anything without these', (
     // FAILED TO MOVE THE CLOCK also produces. Without this the file is a set of
     // tests that cannot fail.
     const before = new Date().toISOString().slice(0, 10);
-    const restore = installClock(P_MS + 40 * MS);
+    // ⚠️ THE TARGET MUST BE A DIFFERENT DAY FROM TODAY, OR THIS CONTROL CANNOT
+    // SEE THE CLOCK MOVE. It was a fixed P+40, and on 10 October 2026 the wall
+    // clock WAS P+40: the proxy moved the calendar onto the day it was already
+    // on and the control went red for a clock that worked. On that one day the
+    // target is P+41. The assertion is unchanged: the day must change, and
+    // change to the target.
+    const day = (ms: number): string => new REAL(ms).toISOString().slice(0, 10);
+    const target = day(P_MS + 40 * MS) === before ? P_MS + 41 * MS : P_MS + 40 * MS;
+    expect(day(target)).not.toBe(before);
+    const restore = installClock(target);
     try {
       expect(new Date().toISOString().slice(0, 10)).not.toBe(before);
-      expect(new Date().toISOString().slice(0, 10)).toBe(
-        new REAL(P_MS + 40 * MS).toISOString().slice(0, 10),
-      );
+      expect(new Date().toISOString().slice(0, 10)).toBe(day(target));
     } finally {
       restore();
     }

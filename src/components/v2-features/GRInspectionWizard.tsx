@@ -3,6 +3,16 @@ import Wizard, { WizardStep } from '../ui-v2/Wizard';
 import FormSection from '../ui-v2/FormSection';
 import Data from '../ui-v2/Data';
 import { Field, FieldList } from '../ui-v2/Field';
+import SectionHeading from '../ui-v2/SectionHeading';
+import {
+  TextInput,
+  Select,
+  TextArea,
+  Checkbox,
+  Radio,
+  FormField,
+  FORM_LABEL_CLASS,
+} from '../ui-v2/Form';
 import { useToast } from '../../hooks/useToast';
 import { useTranslation } from 'react-i18next';
 import { useEnumLabel } from '../../hooks/useEnumLabel';
@@ -283,16 +293,10 @@ interface GrSource {
   lines: LineDraft[];
 }
 
-const labelFor = (text: string) => (
-  <label className="block text-xs font-medium text-text-tertiary uppercase mb-1">
-    {text}
-  </label>
+// A caption over a value the wizard derives and nobody types.
+const readoutCaption = (text: string) => (
+  <span className={`mb-1 block ${FORM_LABEL_CLASS}`}>{text}</span>
 );
-
-const inputCls =
-  'w-full rounded-md border border-border-input bg-white px-3 py-2 text-sm text-text-primary focus:border-action focus:outline-none';
-
-const radioCls = 'flex items-center gap-1.5 text-sm text-text-primary cursor-pointer';
 
 // B4b-2 · the shared `formatNumber` (seat convention), not a local id-ID copy.
 
@@ -336,12 +340,13 @@ const RegulatoryCheck: React.FC<RegulatoryCheckProps> = ({
   testId,
 }) => (
   <div>
-    {labelFor(label)}
+    <SectionHeading level="group" as="h4" className="mb-1">
+      {label}
+    </SectionHeading>
     <div className="flex gap-4">
       {(['Pass', 'Fail'] as const).map((v) => (
-        <label key={v} className={radioCls}>
-          <input
-            type="radio"
+          <Radio
+            key={v}
             name={name}
             value={v}
             // A line renders up to four Pass/Fail pairs, so an accessible name of
@@ -355,9 +360,9 @@ const RegulatoryCheck: React.FC<RegulatoryCheckProps> = ({
             aria-required
             checked={value === v}
             onChange={() => onChange(v)}
-          />
+          >
           {el(v)}
-        </label>
+          </Radio>
       ))}
     </div>
     {value === undefined && (
@@ -1218,16 +1223,15 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
         </div>
       ) : (
         <div className="flex flex-col gap-2">
-          <div>
-            {labelFor(t('goodsReceipt.wizard.field.asnNumber'))}
-            <input
+          <FormField label={t('goodsReceipt.wizard.field.asnNumber')}>
+            <TextInput
               type="text"
+              mono
               value={manualASN}
               onChange={(e) => setManualASN(e.target.value)}
               placeholder="ASN-2026-XXX"
-              className={inputCls}
             />
-          </div>
+          </FormField>
           {manualNotFound && (
             <p className="text-xs text-critical">
               {t('goodsReceipt.wizard.source.notFound')}
@@ -1262,25 +1266,21 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
       )}
       <FormSection title={t('goodsReceipt.wizard.section.receiptInfo')}>
         <div className="grid grid-cols-2 gap-4">
-          <div>
-            {labelFor(t('goodsReceipt.wizard.field.receivedDate'))}
-            <input
+          <FormField label={t('goodsReceipt.wizard.field.receivedDate')}>
+            <TextInput
               type="date"
               value={receivedDate}
               // The date and the receiver belong to the receipt's creation; a
               // resumed receipt shows them and does not rewrite them.
               disabled={!!resume}
               onChange={(e) => setReceivedDate(e.target.value)}
-              className={inputCls}
             />
-          </div>
-          <div>
-            {labelFor(t('goodsReceipt.wizard.field.receivedBy'))}
-            <select
+          </FormField>
+          <FormField label={t('goodsReceipt.wizard.field.receivedBy')}>
+            <Select
               value={receivedBy}
               disabled={!!resume}
               onChange={(e) => setReceivedBy(e.target.value)}
-              className={inputCls}
             >
               {resume && !ROLES.includes(receivedBy) && (
                 <option value={receivedBy}>{receivedBy}</option>
@@ -1290,32 +1290,28 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
                   {r}
                 </option>
               ))}
-            </select>
-          </div>
-          <div>
-            {labelFor(t('goodsReceipt.wizard.field.warehouseLocation'))}
-            <select
+            </Select>
+          </FormField>
+          <FormField label={t('goodsReceipt.wizard.field.warehouseLocation')}>
+            <Select
               value={warehouse}
               onChange={(e) => setWarehouse(e.target.value)}
-              className={inputCls}
             >
               {LOCATIONS.map((l) => (
                 <option key={l} value={l}>
                   {l}
                 </option>
               ))}
-            </select>
-          </div>
-          <div className="col-span-2">
-            {labelFor(t('goodsReceipt.wizard.field.notes'))}
-            <textarea
+            </Select>
+          </FormField>
+          <FormField label={t('goodsReceipt.wizard.field.notes')} className="col-span-2">
+            <TextArea
               rows={2}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder={t('goodsReceipt.wizard.placeholder.notes')}
-              className={inputCls}
             />
-          </div>
+          </FormField>
         </div>
       </FormSection>
 
@@ -1353,7 +1349,7 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
                   </div>
                   <div className="grid grid-cols-4 gap-3">
                     <div>
-                      {labelFor(t('goodsReceipt.wizard.field.received'))}
+                      <FormField label={t('goodsReceipt.wizard.field.received')}>
                       {/* Ruling 6.2, and load-bearing twice over here. A number
                           input REJECTS a comma-grouped token outright — "1,500"
                           leaves `.value` empty in en-US, no id-ID browser
@@ -1361,8 +1357,9 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
                           path to a silent zero that satisfied every guard.
                           `min` goes with the type: `received >= 0` is enforced
                           in `receiptValid`, where it is actually checked. */}
-                      <input
+                      <TextInput
                         type="text"
+                        mono
                         inputMode="decimal"
                         aria-label={t('goodsReceipt.wizard.aria.received', { code: l.materialCode })}
                         aria-invalid={!qty.ok && qty.field === 'received'}
@@ -1370,8 +1367,8 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
                         onChange={(e) =>
                           updateLine(i, { qtyReceivedRaw: e.target.value })
                         }
-                        className={inputCls}
                       />
+                      </FormField>
                       {!qty.ok && qty.field === 'received' && (
                         <div
                           role="alert"
@@ -1386,13 +1383,14 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
                       )}
                     </div>
                     <div>
-                      {labelFor(t('goodsReceipt.wizard.field.accepted'))}
+                      <FormField label={t('goodsReceipt.wizard.field.accepted')}>
                       {/* `max` went with the type too — `accepted <= received`
                           is enforced in `receiptValid`. An input attribute that
                           vanishes with the type change was never the guarantee
                           (the 2e-b-4b precedent). */}
-                      <input
+                      <TextInput
                         type="text"
+                        mono
                         inputMode="decimal"
                         aria-label={t('goodsReceipt.wizard.aria.accepted', { code: l.materialCode })}
                         aria-invalid={!qty.ok && qty.field === 'accepted'}
@@ -1400,8 +1398,8 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
                         onChange={(e) =>
                           updateLine(i, { qtyAcceptedRaw: e.target.value })
                         }
-                        className={inputCls}
                       />
+                      </FormField>
                       {!qty.ok && qty.field === 'accepted' && (
                         <div
                           role="alert"
@@ -1416,7 +1414,7 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
                       )}
                     </div>
                     <div>
-                      {labelFor(t('goodsReceipt.wizard.field.rejected'))}
+                      {readoutCaption(t('goodsReceipt.wizard.field.rejected'))}
                       <div className="rounded-md border border-border-input bg-bg-hover px-3 py-2 text-sm text-text-secondary">
                         <Data>{rejected === null ? '—' : formatNumber(rejected)}</Data>
                       </div>
@@ -1427,9 +1425,8 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
                           a quantity that does not exist. Same principle as the
                           receipt guard, applied to the surface. */}
                       {rejected !== null && rejected > 0 && (
-                        <>
-                          {labelFor(t('goodsReceipt.wizard.field.rejectionReason'))}
-                          <textarea
+                        <FormField label={t('goodsReceipt.wizard.field.rejectionReason')}>
+                          <TextArea
                             rows={2}
                             aria-label={t('goodsReceipt.wizard.aria.rejectionReason', { code: l.materialCode })}
                             value={l.rejectionReason}
@@ -1439,9 +1436,8 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
                               })
                             }
                             placeholder={t('goodsReceipt.wizard.placeholder.rejectionReason')}
-                            className={inputCls}
                           />
-                        </>
+                        </FormField>
                       )}
                     </div>
                   </div>
@@ -1481,36 +1477,38 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                {labelFor(t('goodsReceipt.wizard.field.visualInspection'))}
+                <SectionHeading level="group" as="h4" className="mb-1">
+                  {t('goodsReceipt.wizard.field.visualInspection')}
+                </SectionHeading>
                 <div className="flex gap-4">
                   {(['Pass', 'Fail'] as const).map((v) => (
-                    <label key={v} className={radioCls}>
-                      <input
-                        type="radio"
+                      <Radio
+                        key={v}
                         name={`vis-${i}`}
                         value={v}
                         checked={l.visualCheck === v}
                         onChange={() => updateLine(i, { visualCheck: v })}
-                      />
+                      >
                       {el(v)}
-                    </label>
+                      </Radio>
                   ))}
                 </div>
               </div>
               <div>
-                {labelFor(t('goodsReceipt.wizard.field.packagingIntegrity'))}
+                <SectionHeading level="group" as="h4" className="mb-1">
+                  {t('goodsReceipt.wizard.field.packagingIntegrity')}
+                </SectionHeading>
                 <div className="flex gap-4">
                   {(['Pass', 'Fail', 'N/A'] as const).map((v) => (
-                    <label key={v} className={radioCls}>
-                      <input
-                        type="radio"
+                      <Radio
+                        key={v}
                         name={`pkg-${i}`}
                         value={v}
                         checked={l.packagingCheck === v}
                         onChange={() => updateLine(i, { packagingCheck: v })}
-                      />
+                      >
                       {el(v)}
-                    </label>
+                      </Radio>
                   ))}
                 </div>
               </div>
@@ -1654,16 +1652,14 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
             </div>
 
             <div className="flex items-center justify-between pt-2 border-t border-border-subtle">
-              <label className="flex items-center gap-2 text-sm text-text-primary cursor-pointer">
-                <input
-                  type="checkbox"
+              <Checkbox
                   checked={l.labSampleRequired}
                   onChange={(e) =>
                     updateLine(i, { labSampleRequired: e.target.checked })
                   }
-                />
+              >
                 {t('goodsReceipt.wizard.labSampleRequired')}
-              </label>
+              </Checkbox>
               {l.labSampleRequired && (
                 <div className="text-xs text-text-secondary">
                   {t('goodsReceipt.wizard.labRequestId')}{' '}
@@ -1694,7 +1690,7 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
     <div className="flex flex-col gap-5">
       <FormSection title={t('goodsReceipt.wizard.section.finalDisposition')}>
         <div>
-          {labelFor(t('goodsReceipt.wizard.field.headerDisposition'))}
+          {readoutCaption(t('goodsReceipt.wizard.field.headerDisposition'))}
           <div
             className={`inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm font-semibold ${
               derivedDisposition === 'Approved'
@@ -1720,27 +1716,25 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
 
         {/* OPS-2 — the hold. Not a disposition and not derived: the inspector
             says the lot is not ready to be decided, and why. */}
-        <label className="flex items-center gap-2 text-sm text-text-primary cursor-pointer">
-          <input
-            type="checkbox"
+        <Checkbox
             data-testid="gr-hold-instead"
             checked={holdInstead}
             onChange={(e) => setHoldInstead(e.target.checked)}
-          />
+        >
           {t('goodsReceipt.wizard.hold.choose')}
-        </label>
+        </Checkbox>
         {holdInstead && (
           <div>
-            {labelFor(t('goodsReceipt.wizard.hold.reason'))}
-            <textarea
+            <FormField label={t('goodsReceipt.wizard.hold.reason')}>
+            <TextArea
               rows={2}
               data-testid="gr-hold-reason"
               aria-label={t('goodsReceipt.wizard.hold.reason')}
               value={holdReason}
               onChange={(e) => setHoldReason(e.target.value)}
-              className={inputCls}
               placeholder={t('goodsReceipt.wizard.hold.placeholder')}
             />
+            </FormField>
             <p className="mt-1.5 text-xs text-text-tertiary">
               {t('goodsReceipt.wizard.hold.note')}
             </p>
@@ -1760,42 +1754,36 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
         )}
 
         {!holdInstead && derivedDisposition === 'Rejected' && (
-          <div>
-            {labelFor(t('goodsReceipt.wizard.field.rejectionReasonRequired'))}
-            <textarea
+          <FormField label={t('goodsReceipt.wizard.field.rejectionReasonRequired')}>
+            <TextArea
               rows={2}
               aria-label={t('goodsReceipt.wizard.aria.headerRejectionReason')}
               value={dispositionReason}
               onChange={(e) => setDispositionReason(e.target.value)}
-              className={inputCls}
               placeholder={t('goodsReceipt.wizard.placeholder.fullLotRejection')}
             />
-          </div>
+          </FormField>
         )}
 
         {!holdInstead &&
           (derivedDisposition === 'Approved' ||
           derivedDisposition === 'Partially Approved') && (
-          <label className="flex items-center gap-2 text-sm text-text-primary cursor-pointer">
-            <input
-              type="checkbox"
+          <Checkbox
               checked={autoPostSap}
               onChange={(e) => setAutoPostSap(e.target.checked)}
-            />
+          >
             {t('goodsReceipt.wizard.autoPostSap')}
-          </label>
+          </Checkbox>
         )}
 
-        <div>
-          {labelFor(t('goodsReceipt.wizard.field.finalNotes'))}
-          <textarea
+        <FormField label={t('goodsReceipt.wizard.field.finalNotes')}>
+          <TextArea
             rows={2}
             value={finalNotes}
             onChange={(e) => setFinalNotes(e.target.value)}
-            className={inputCls}
             placeholder={t('goodsReceipt.wizard.placeholder.optional')}
           />
-        </div>
+        </FormField>
       </FormSection>
 
       <FieldList columns={4} className="border border-border-subtle rounded-lg p-4 bg-bg-hover">
