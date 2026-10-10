@@ -58,7 +58,7 @@ export const NextActLine: React.FC<{
         data-testid={testId}
         data-next-act="theirs"
       >
-        <span className="uppercase tracking-wider text-[10px] mr-1">{t('nextAct.label')}</span>
+        <span className="uppercase text-label mr-1">{t('nextAct.label')}</span>
         {t('roles.handoff.awaiting', { owner })}
       </span>
     );
@@ -80,7 +80,7 @@ export const NextActLine: React.FC<{
       data-testid={testId}
       data-next-act={act.kind}
     >
-      <span className="uppercase tracking-wider text-[10px] mr-1">{t('nextAct.label')}</span>
+      <span className="uppercase text-label mr-1">{t('nextAct.label')}</span>
       {text}
     </span>
   );

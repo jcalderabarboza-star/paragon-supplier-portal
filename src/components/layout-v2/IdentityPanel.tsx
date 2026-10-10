@@ -342,7 +342,7 @@ const IdentityPanel: React.FC = () => {
                       <span className="flex items-center gap-1 shrink-0">
                         {/* The SAMPLE marker travels on every row, not only the
                             selected one (operator ruling I4). */}
-                        <span className="text-[10px] tracking-wide text-sample border border-dashed border-sample-border bg-sample-soft rounded px-1 py-px">
+                        <span className="text-label text-sample border border-dashed border-sample-border bg-sample-soft rounded px-1 py-px">
                           {t('identity.switcher.sampleBadge')}
                         </span>
                         {isActing && <Check size={14} className="text-action" />}

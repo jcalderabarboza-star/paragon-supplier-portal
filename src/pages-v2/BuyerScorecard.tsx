@@ -34,6 +34,9 @@ import {
   CHART_SEMANTIC,
   CHART_MID,
   CHART_GRID,
+  CHART_TICK,
+  CHART_LEGEND_STYLE,
+  chartLabel,
   targetStatus,
   TARGET_STATUS,
 } from '../lib/chartPalette';
@@ -44,6 +47,7 @@ import PageMetaLine from '../components/ui-v2/PageMetaLine';
 import ProvenanceMarker from '../components/ui-v2/ProvenanceMarker';
 import { IllustrativeBanner, IllustrativeMark } from '../components/ui-v2/IllustrativeNotice';
 import StatusPill from '../components/ui-v2/StatusPill';
+import { GradeBadge, GRADE_TONE } from '../components/ui-v2/GradeBadge';
 import Button from '../components/ui-v2/Button';
 import { Card } from '../components/ui-v2/Card';
 import Notice from '../components/ui-v2/Notice';
@@ -57,7 +61,6 @@ import { useSupplierScorecards } from '../services/query/hooks';
 import type {
   ScorecardKpi,
   ScorecardRadarAxis,
-  ScorecardGradeLetter,
   CommLogEntry,
   KpiTrend,
 } from '../services/data/types';
@@ -65,7 +68,6 @@ import SectionHeading from '../components/ui-v2/SectionHeading';
 import { Select } from '../components/ui-v2/Form';
 import { Field, FieldList } from '../components/ui-v2/Field';
 
-type Grade = ScorecardGradeLetter;
 type Trend = KpiTrend;
 
 const COUNTRY_FLAGS: Record<string, string> = {
@@ -87,12 +89,6 @@ const TARGET_RADAR: ScorecardRadarAxis[] = [
 
 const OTIF_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-const GRADE_TONE: Record<Grade, { stroke: string; soft: string; text: string }> = {
-  A: { stroke: '#107E3E', soft: '#E8F5EC', text: 'text-success' },
-  B: { stroke: '#1E5BAE', soft: '#E5F0FF', text: 'text-info' },
-  C: { stroke: '#B45309', soft: '#FEF3D6', text: 'text-warning-hover' },
-  D: { stroke: '#BB0000', soft: '#FCE4E4', text: 'text-critical' },
-};
 
 const COMM_STATUS_VARIANT: Record<CommLogEntry['status'], 'success' | 'warning' | 'neutral'> = {
   Completed: 'success',
@@ -107,7 +103,6 @@ const TOKEN_TEAL = CHART_SERIES[0];
 const TOKEN_MID = CHART_MID;
 const TOKEN_SUCCESS = CHART_SEMANTIC.success;
 const TOKEN_DANGER = CHART_SEMANTIC.danger;
-const TOKEN_MUTED = CHART_SEMANTIC.neutral;
 const TOKEN_BORDER = CHART_GRID;
 
 interface ChartTooltipPayload {
@@ -135,25 +130,6 @@ const ChartTooltip: React.FC<ChartTooltipProps> = ({ active, payload, label }) =
   );
 };
 
-const GradeBadge: React.FC<{ grade: Grade }> = ({ grade }) => {
-  const tone = GRADE_TONE[grade];
-  return (
-    <div
-      className="w-20 h-20 rounded-full flex items-center justify-center"
-      style={{
-        backgroundColor: tone.soft,
-        border: `4px solid ${tone.stroke}`,
-      }}
-    >
-      <span
-        className="text-kpi"
-        style={{ color: tone.stroke }}
-      >
-        {grade}
-      </span>
-    </div>
-  );
-};
 
 const TrendIcon: React.FC<{ trend: Trend }> = ({ trend }) => {
   if (trend === '↑')
@@ -335,23 +311,16 @@ const BuyerScorecard: React.FC = () => {
 
           <div className="flex flex-col items-center gap-2 shrink-0">
             <GradeBadge grade={supp.grade} />
-            <div className="text-base font-bold text-text-primary">
+            <div className="text-section text-text-primary">
               {supp.score}/100
             </div>
             <IllustrativeMark />
-            <span
-              className="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold"
-              style={{
-                backgroundColor: `${tone.soft}`,
-                color: tone.stroke,
-                border: `1px solid ${tone.stroke}55`,
-              }}
-            >
+            <StatusPill variant={tone.pill}>
               {/* i18n-defer: supp.status is a fixture relationship-status string
                   (Preferred/Approved/Conditional…) with no central map — the
                   string is the data; kept canonical EN. */}
               {supp.status}
-            </span>
+            </StatusPill>
           </div>
         </div>
       </Card>
@@ -382,11 +351,11 @@ const BuyerScorecard: React.FC = () => {
               <PolarGrid stroke={TOKEN_BORDER} />
               <PolarAngleAxis
                 dataKey="axis"
-                tick={{ fontSize: 11, fill: TOKEN_MID }}
+                tick={CHART_TICK}
               />
               <PolarRadiusAxis
                 domain={[0, 100]}
-                tick={{ fontSize: 9, fill: TOKEN_MUTED }}
+                tick={CHART_TICK}
                 axisLine={false}
                 tickCount={6}
               />
@@ -405,7 +374,7 @@ const BuyerScorecard: React.FC = () => {
                 fillOpacity={0.2}
                 strokeWidth={2}
               />
-              <Legend iconSize={10} wrapperStyle={{ fontSize: 11 }} formatter={legendLabel} />
+              <Legend iconSize={10} wrapperStyle={CHART_LEGEND_STYLE} formatter={legendLabel} />
               <Tooltip content={<ChartTooltip />} />
             </RadarChart>
           </ResponsiveContainer>
@@ -425,17 +394,17 @@ const BuyerScorecard: React.FC = () => {
               margin={{ top: 10, right: 40, bottom: 0, left: -10 }}
             >
               <CartesianGrid strokeDasharray="3 3" stroke={TOKEN_BORDER} />
-              <XAxis dataKey="month" tick={{ fontSize: 10, fill: TOKEN_MUTED }} />
+              <XAxis dataKey="month" tick={CHART_TICK} />
               <YAxis
                 yAxisId="pct"
                 domain={[60, 100]}
-                tick={{ fontSize: 10, fill: TOKEN_MUTED }}
+                tick={CHART_TICK}
               />
               <YAxis
                 yAxisId="hrs"
                 orientation="right"
                 domain={[0, 40]}
-                tick={{ fontSize: 10, fill: TOKEN_MUTED }}
+                tick={CHART_TICK}
                 tickFormatter={(v: number) => `${v}h`}
               />
               <Tooltip content={<ChartTooltip />} />
@@ -444,12 +413,11 @@ const BuyerScorecard: React.FC = () => {
                 y={95}
                 stroke={TOKEN_SUCCESS}
                 strokeDasharray="4 2"
-                label={{
+                label={chartLabel({
                   value: t('buyerScorecard.trends.otifTarget'),
                   fill: TOKEN_SUCCESS,
-                  fontSize: 9,
-                  position: 'insideTopRight',
-                }}
+                  position: 'insideTopRight' as const,
+                })}
               />
               <Line
                 yAxisId="pct"
@@ -481,7 +449,7 @@ const BuyerScorecard: React.FC = () => {
                 name={t('buyerScorecard.series.defectRate')}
                 strokeDasharray="2 2"
               />
-              <Legend iconSize={10} wrapperStyle={{ fontSize: 11 }} formatter={legendLabel} />
+              <Legend iconSize={10} wrapperStyle={CHART_LEGEND_STYLE} formatter={legendLabel} />
             </LineChart>
           </ResponsiveContainer>
         </Card>
@@ -566,7 +534,7 @@ const BuyerScorecard: React.FC = () => {
                   <div className="flex-1 min-w-0">
                     {/* i18n-defer: log.type + log.message are fixture comm-log
                         narrative (data) — kept canonical EN. */}
-                    <div className="text-xs font-bold text-text-secondary mb-0.5">
+                    <div className="text-xs font-semibold text-text-secondary mb-0.5">
                       {log.type}
                     </div>
                     <div className="text-sm text-text-secondary">

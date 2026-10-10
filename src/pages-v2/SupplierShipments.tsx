@@ -205,7 +205,7 @@ const DockAppointments: React.FC<{
           >
             <div className="flex items-start justify-between mb-4 gap-3 flex-wrap">
               <div>
-                <Data as="div" className="text-base font-bold text-text-primary">
+                <Data as="div" className="text-sm font-semibold text-text-primary">
                   {s.asnNumber}
                 </Data>
                 <div className="text-xs text-text-tertiary mt-0.5">
@@ -216,6 +216,7 @@ const DockAppointments: React.FC<{
               {/* The raw status token: `StatusPill` resolves its own label. */}
               <StatusPill variant={statusTone(s.status)}>{s.status}</StatusPill>
             </div>
+            <Card tone="inset">
             <FieldList columns={1} className="sm:grid-cols-2">
               {(
                 [
@@ -228,7 +229,6 @@ const DockAppointments: React.FC<{
                 <Field
                   key={label}
                   kind={kind}
-                  className="px-3 py-2 bg-bg-hover rounded-md"
                   label={
                     <span className="inline-flex items-center gap-1.5">
                       <Icon size={14} className="shrink-0" />
@@ -240,6 +240,7 @@ const DockAppointments: React.FC<{
                 </Field>
               ))}
             </FieldList>
+            </Card>
           </Card>
         ))}
 
@@ -373,7 +374,7 @@ const ShipmentsList: React.FC<ShipmentsListProps> = ({
                   key={po.id}
                   className="grid grid-cols-1 sm:grid-cols-[140px_1fr_180px_140px] gap-3 items-center"
                 >
-                  <Data className="font-bold text-text-primary">
+                  <Data className="font-semibold text-text-primary">
                     {po.poNumber}
                   </Data>
                   <span
@@ -938,7 +939,7 @@ const SupplierShipments: React.FC = () => {
                 >
                   <div className="flex items-start justify-between gap-3 flex-wrap">
                     <div className="min-w-0">
-                      <Data as="div" className="text-sm font-bold text-text-primary">
+                      <Data as="div" className="text-sm font-semibold text-text-primary">
                         {po.poNumber}
                       </Data>
                       {/* OPS-3 — EVERY line of the order, with the quantity
@@ -1206,6 +1207,7 @@ const SupplierShipments: React.FC = () => {
             title={t('supplierShipments.wizard.review.summary.title')}
             description={t('supplierShipments.wizard.review.summary.desc')}
           >
+            <Card tone="inset">
             <FieldList columns={1} className="sm:grid-cols-2">
               {(
                 [
@@ -1233,11 +1235,12 @@ const SupplierShipments: React.FC = () => {
                   [t('supplierShipments.wizard.review.field.notes'), form.notes.trim() || '—', 'text'],
                 ] as const
               ).map(([k, v, kind]) => (
-                <Field key={k} label={k} kind={kind} className="bg-bg-hover rounded-md px-3 py-2">
+                <Field key={k} label={k} kind={kind}>
                   {v}
                 </Field>
               ))}
             </FieldList>
+            </Card>
             {/* Every order line, at the quantity that ships — the confirmed
                 one — with the lot typed for it. */}
             <Card padding="none" className="overflow-hidden">

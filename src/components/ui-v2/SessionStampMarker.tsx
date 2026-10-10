@@ -75,7 +75,7 @@ const SessionStampMarker: React.FC<{
   });
   return (
     <span
-      className={`inline-flex items-center gap-1.5 align-middle text-[10px] font-semibold uppercase tracking-wider text-info ${className}`}
+      className={`inline-flex items-center gap-1.5 align-middle text-label uppercase text-info ${className}`}
       title={note}
       data-testid={`session-stamp-${field}-${documentId}`}
     >

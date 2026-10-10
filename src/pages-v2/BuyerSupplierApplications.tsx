@@ -982,7 +982,7 @@ const BuyerSupplierApplications: React.FC = () => {
                 className="space-y-3"
                 data-testid="application-approve-confirm"
               >
-                <div className="text-sm font-bold text-text-primary">
+                <div className="text-sm font-semibold text-text-primary">
                   {t('applications.confirm.approve.title')}
                 </div>
                 <p className="text-sm text-text-secondary">
@@ -1011,7 +1011,7 @@ const BuyerSupplierApplications: React.FC = () => {
                 className="space-y-3"
                 data-testid="application-reject-confirm"
               >
-                <div className="text-sm font-bold text-text-primary">
+                <div className="text-sm font-semibold text-text-primary">
                   {t('applications.confirm.reject.title')}
                 </div>
                 <p className="text-sm text-text-secondary">

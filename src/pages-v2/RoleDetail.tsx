@@ -86,7 +86,7 @@ const RoleDetail: React.FC = () => {
             {role.modules.map((m) => (
               <li
                 key={m}
-                className="font-mono text-[11px] text-data-navy bg-bg-hover border border-border-subtle rounded px-1.5 py-0.5"
+                className="font-mono text-xs text-data-navy bg-bg-hover border border-border-subtle rounded px-1.5 py-0.5"
               >
                 {m}
               </li>
@@ -104,7 +104,7 @@ const RoleDetail: React.FC = () => {
             {role.atoms.map((a) => (
               <li
                 key={a}
-                className="font-mono text-[11px] text-data-navy border border-border-subtle rounded px-1.5 py-0.5"
+                className="font-mono text-xs text-data-navy border border-border-subtle rounded px-1.5 py-0.5"
               >
                 {a}
               </li>
@@ -127,9 +127,9 @@ const RoleDetail: React.FC = () => {
                 <li key={v.id} className="text-xs flex items-center gap-2">
                   <span className="font-mono text-data-navy">{v.id}</span>
                   <span className="text-text-tertiary">·</span>
-                  <span className="font-mono text-[10px] text-text-tertiary">{v.entity}</span>
+                  <span className="font-mono text-text-tertiary">{v.entity}</span>
                   {!v.wired && (
-                    <span className="text-[10px] text-text-tertiary italic">
+                    <span className="text-text-tertiary italic">
                       {t('roles.page.unwiredNote')}
                     </span>
                   )}

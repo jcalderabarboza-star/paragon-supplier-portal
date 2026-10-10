@@ -81,14 +81,14 @@ const FlowProvenance: React.FC<{ view: FlowView }> = ({ view }) => {
   const { t } = useTranslation();
   return (
     <span className="inline-flex flex-wrap items-center gap-x-3 gap-y-1">
-      <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-sample">
+      <span className="inline-flex items-center gap-1.5 text-label uppercase text-sample">
         <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full border border-dashed border-sample" />
         {view.feed === null
           ? t('processFlows.provenance.noReadSurface')
           : t('processFlows.provenance.fixtureFeed', { capability: view.capability })}
       </span>
       <span
-        className={`inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider ${
+        className={`inline-flex items-center gap-1.5 text-label uppercase ${
           view.dispatches ? 'text-info' : 'text-text-tertiary'
         }`}
       >
@@ -268,7 +268,7 @@ const TransitionsTable: React.FC<{ transitions: readonly TransitionView[] }> = (
         return purpose ? (
           <p
             data-testid={`pf-purpose-${tv.def.id}`}
-            className="max-w-prose border-l-2 border-teal/40 pl-3 text-[11px] leading-relaxed text-text-secondary"
+            className="max-w-prose border-l-2 border-teal/40 pl-3 text-xs leading-relaxed text-text-secondary"
           >
             {t(purpose)}
           </p>
@@ -290,8 +290,8 @@ const GuideCardLine: React.FC<{ entity: string }> = ({ entity }) => {
   if (!guide) return null;
   return (
     <span data-testid={`pf-flow-guide-${entity}`} className="mt-1 block">
-      <span className="text-[10px] font-semibold uppercase tracking-wider text-teal-text">{t('processGuides.catalog.guide')}</span>
-      <span className="mt-0.5 line-clamp-2 block text-[11px] leading-snug text-text-secondary">
+      <span className="text-label uppercase text-teal-text">{t('processGuides.catalog.guide')}</span>
+      <span className="mt-0.5 line-clamp-2 block text-xs leading-snug text-text-secondary">
         {firstParagraphText(guide.sections.summary)}
       </span>
     </span>
@@ -390,15 +390,15 @@ const ProcessFlows: React.FC = () => {
                     className="w-full"
                   >
                     <span className="flex items-center justify-between gap-2">
-                      <Data className="text-[12px]">{flow.entity}</Data>
+                      <Data className="text-xs">{flow.entity}</Data>
                       {flow.looseEnds.length > 0 && (
-                        <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-warning-hover">
+                        <span className="inline-flex items-center gap-1 text-label text-warning-hover">
                           <AlertTriangle size={11} aria-hidden="true" />
                           {flow.looseEnds.length}
                         </span>
                       )}
                     </span>
-                    <span className="mt-0.5 block text-[11px] text-text-tertiary">
+                    <span className="mt-0.5 block text-xs text-text-tertiary">
                       {t('processFlows.catalog.counts', {
                         states: flow.stateCount,
                         transitions: flow.transitionCount,
@@ -421,8 +421,8 @@ const ProcessFlows: React.FC = () => {
           </SectionHeading>
           <ul className="space-y-1.5">
             {ALL_REASONS.map((reason) => (
-              <li key={reason} className="text-[11px] leading-relaxed text-text-tertiary">
-                <Data className="text-[10px] font-semibold text-warning-hover">{reason}</Data>
+              <li key={reason} className="text-xs leading-relaxed text-text-tertiary">
+                <Data className="text-label text-warning-hover">{reason}</Data>
                 {' — '}
                 {t(reasonKey(reason))}
               </li>

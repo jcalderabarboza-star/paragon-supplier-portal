@@ -25,7 +25,7 @@ const ModelMarker: React.FC<{
 }> = ({ label, title, className = '' }) => (
   <span
     title={title}
-    className={`inline-flex items-center gap-1 text-[9px] font-semibold uppercase tracking-wider text-text-secondary border border-dashed border-border-input rounded px-1 py-px ${className}`}
+    className={`inline-flex items-center gap-1 text-label uppercase text-text-secondary border border-dashed border-border-input rounded px-1 py-px ${className}`}
   >
     <Sigma size={9} aria-hidden="true" />
     {label}

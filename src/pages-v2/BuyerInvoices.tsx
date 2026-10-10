@@ -23,7 +23,7 @@ import {
   Globe,
   LucideIcon,
 } from 'lucide-react';
-import { CHART_SERIES, CHART_SEMANTIC, CHART_GRID } from '../lib/chartPalette';
+import { CHART_SERIES, CHART_SEMANTIC, CHART_GRID, CHART_TICK } from '../lib/chartPalette';
 import ProvenanceMarker from '../components/ui-v2/ProvenanceMarker';
 import KpiCard from '../components/ui-v2/KpiCard';
 import BulkActionsBar from '../components/ui-v2/BulkActionsBar';
@@ -182,7 +182,6 @@ const UNATTRIBUTED_KEY: Record<UnattributedReason, string> = {
 // not page-local hex. Values unchanged — pure de-dup.
 const TOKEN_SUCCESS = CHART_SEMANTIC.success;
 const TOKEN_TEAL = CHART_SERIES[0];
-const TOKEN_MUTED = CHART_SEMANTIC.neutral;
 
 interface ChartTooltipPayload {
   name: string;
@@ -1017,8 +1016,8 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
                 margin={{ top: 10, right: 10, bottom: 0, left: -10 }}
               >
                 <CartesianGrid strokeDasharray="3 3" stroke={CHART_GRID} />
-                <XAxis dataKey="month" tick={{ fontSize: 11, fill: TOKEN_MUTED }} />
-                <YAxis tick={{ fontSize: 11, fill: TOKEN_MUTED }} />
+                <XAxis dataKey="month" tick={CHART_TICK} />
+                <YAxis tick={CHART_TICK} />
                 <Tooltip content={<ChartTooltip />} />
                 <Bar
                   dataKey="paid"
@@ -1083,9 +1082,9 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
                 <XAxis
                   dataKey="bucket"
                   tickFormatter={agingBucketLabel}
-                  tick={{ fontSize: 11, fill: TOKEN_MUTED }}
+                  tick={CHART_TICK}
                 />
-                <YAxis tick={{ fontSize: 11, fill: TOKEN_MUTED }} />
+                <YAxis tick={CHART_TICK} />
                 <Tooltip content={<ChartTooltip />} />
                 <Bar
                   dataKey="amount"

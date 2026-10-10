@@ -581,7 +581,7 @@ const BuyerChannelTriage: React.FC<BuyerChannelTriageProps> = ({ onRecorded }) =
                             </FormField>
                           </div>
                           {mismatch && (
-                            <div className="text-[11px] text-warning-hover">
+                            <div className="text-xs text-warning-hover">
                               {t('commHub.row.uomMismatch', { msg: parsed.diagnostics.uom, master: masterUom })}
                             </div>
                           )}

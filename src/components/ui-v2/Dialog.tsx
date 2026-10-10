@@ -100,7 +100,7 @@ const Dialog: React.FC<DialogProps> = ({
         aria-hidden="true"
         onClick={onClose}
         data-testid={testId ? `${testId}-scrim` : undefined}
-        className="fixed inset-0 bg-[rgba(13,27,42,0.4)] animate-overlay-in"
+        className="fixed inset-0 bg-navy/40 animate-overlay-in"
       />
       <div
         ref={panelRef}

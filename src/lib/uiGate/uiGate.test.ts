@@ -27,6 +27,7 @@ import {
   rawBoxFindings,
   rawButtonCount,
   TABLE_PRIMITIVES,
+  TYPE_EXEMPT,
   cellTypeFindings,
   colourFindings,
   contrastRatio,
@@ -143,6 +144,9 @@ describe('UI gate 2 · colour tokens', () => {
   it('exempts by name only files that exist', () => {
     const files = shippedFiles().map((f) => f.file);
     for (const exempt of COLOUR_EXEMPT) expect(files).toContain(exempt);
+    for (const exempt of TYPE_EXEMPT) expect(files).toContain(exempt);
+    // an exemption is a named file, never a directory or a pattern
+    for (const exempt of [...COLOUR_EXEMPT, ...TYPE_EXEMPT]) expect(exempt).toMatch(/\.(tsx?|css)$/);
   });
 
   it('holds every file to its grandfathered count, both ways', () => {

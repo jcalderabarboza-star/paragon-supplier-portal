@@ -840,7 +840,7 @@ const ComparisonRow: React.FC<{
   <tr className="border-t border-border-subtle">
     <th
       scope="row"
-      className="text-left px-2 py-2 font-medium text-text-tertiary uppercase tracking-wider text-[10px] w-36 min-w-[9rem] align-middle"
+      className="text-left px-2 py-2 text-label text-text-tertiary uppercase w-36 min-w-[9rem] align-middle"
     >
       {label}
       {tag && (
@@ -881,7 +881,7 @@ const SpreadCell: React.FC<{ result: QuoteSpread; t: TFunction }> = ({
   if (result.kind === 'silent') {
     // Honest silence — a specific reason, never a fabricated percentage.
     return (
-      <span className="text-[10px] text-text-tertiary whitespace-normal">
+      <span className="text-xs text-text-tertiary whitespace-normal">
         {t(SPREAD_SILENT_KEY[result.reason])}
       </span>
     );
@@ -901,7 +901,7 @@ const SpreadCell: React.FC<{ result: QuoteSpread; t: TFunction }> = ({
       </span>
       {/* The modeled anchor renders in the QUOTE's own currency — IDR is never
           shown as the basis for a USD deal (CI-2 currency-leg ruling). */}
-      <span className="text-[10px] text-text-tertiary whitespace-nowrap">
+      <span className="text-xs text-text-tertiary whitespace-nowrap">
         {t('sourcing.cmp.spread.vsModel', {
           value: formatMoney(shouldCost.midPerKg, currency),
         })}
@@ -4781,7 +4781,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
           prior basis is kept — because "edit" would describe a mutation that
           cannot happen and would misrepresent what the trail will show. */}
       {pinDraft && selectedRfq && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[rgba(13,27,42,0.4)]">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-navy/40">
           <div
             role="dialog"
             aria-modal="true"
@@ -4942,7 +4942,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
       )}
 
       {wizardOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[rgba(13,27,42,0.4)]">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-navy/40">
           <Wizard
             steps={wizardSteps}
             currentStep={wizardStep}

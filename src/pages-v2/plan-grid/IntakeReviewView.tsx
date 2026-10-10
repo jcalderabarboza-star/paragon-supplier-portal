@@ -181,7 +181,7 @@ export const IntakeTriageCell: React.FC<{ line: IntakeLine }> = ({ line }) => {
         </div>
       )}
       {refusal && (
-        <div className="text-[11px] text-critical" role="alert">
+        <div className="text-xs text-critical" role="alert">
           {refusalText(refusal) ?? t('intakeReview.failed.label', { reason: refusal })}
         </div>
       )}
@@ -260,7 +260,7 @@ export function intakeReviewColumns(
         <div className="w-full px-2 text-right leading-tight">
           <Data className="text-xs">{`${formatNumber(rowData.acceptedQty)} ${rowData.uom}`}</Data>
           {rowData.producerAdjusted && (
-            <div className="text-[10px] text-text-tertiary" data-testid={`producer-adjusted-${rowData.id}`}>
+            <div className="text-xs text-text-tertiary" data-testid={`producer-adjusted-${rowData.id}`}>
               {t('planGrid.adjusted.byProducer', {
                 producer: t(`planGrid.source.${rowData.source}`),
                 from: formatNumber(rowData.suggestedQty),

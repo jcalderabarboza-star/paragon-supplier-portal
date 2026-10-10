@@ -32,6 +32,8 @@ import {
   CHART_SEMANTIC,
   CHART_MID,
   CHART_GRID,
+  CHART_TICK,
+  CHART_LEGEND_STYLE,
   targetStatus,
   TARGET_STATUS,
 } from '../lib/chartPalette';
@@ -45,6 +47,7 @@ import { FieldList, Field } from '../components/ui-v2/Field';
 import TargetBar from '../components/ui-v2/TargetBar';
 import Tabs from '../components/ui-v2/Tabs';
 import StatusPill from '../components/ui-v2/StatusPill';
+import { GradeBadge, GradeChip, GRADE_TONE } from '../components/ui-v2/GradeBadge';
 import Button from '../components/ui-v2/Button';
 import { Card } from '../components/ui-v2/Card';
 import Notice from '../components/ui-v2/Notice';
@@ -84,15 +87,8 @@ const TOKEN_MID = CHART_MID;
 const TOKEN_SUCCESS = CHART_SEMANTIC.success;
 const TOKEN_WARNING = CHART_SEMANTIC.warning;
 const TOKEN_DANGER = CHART_SEMANTIC.danger;
-const TOKEN_MUTED = CHART_SEMANTIC.neutral;
 const TOKEN_BORDER = CHART_GRID;
 
-const GRADE_TONE: Record<Grade, { stroke: string; soft: string }> = {
-  A: { stroke: '#107E3E', soft: '#E8F5EC' },
-  B: { stroke: '#1E5BAE', soft: '#E5F0FF' },
-  C: { stroke: '#B45309', soft: '#FEF3D6' },
-  D: { stroke: '#BB0000', soft: '#FCE4E4' },
-};
 
 const CURRENT_GRADE: Grade = 'B';
 const CURRENT_SCORE = 82;
@@ -168,31 +164,15 @@ const KpiProgressTile: React.FC<{ k: Kpi }> = ({ k }) => {
   );
 };
 
-const GradeBadge: React.FC<{ grade: Grade; score: number }> = ({ grade, score }) => {
+const GradeSummary: React.FC<{ grade: Grade; score: number }> = ({ grade, score }) => {
   const { t } = useTranslation();
   const tone = GRADE_TONE[grade];
   return (
     <div className="flex flex-col items-center gap-2 shrink-0">
-      <div
-        className="w-20 h-20 rounded-full flex items-center justify-center"
-        style={{ backgroundColor: tone.soft, border: `4px solid ${tone.stroke}` }}
-      >
-        <span className="text-kpi" style={{ color: tone.stroke }}>
-          {grade}
-        </span>
-      </div>
-      <div className="text-base font-bold text-text-primary">{score}/100</div>
+      <GradeBadge grade={grade} />
+      <div className="text-section text-text-primary">{score}/100</div>
       <IllustrativeMark />
-      <span
-        className="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold"
-        style={{
-          backgroundColor: `${tone.soft}33`,
-          color: tone.stroke,
-          border: `1px solid ${tone.stroke}55`,
-        }}
-      >
-        {t('supplierPerformance.grade.paragonGrade')}
-      </span>
+      <StatusPill variant={tone.pill}>{t('supplierPerformance.grade.paragonGrade')}</StatusPill>
     </div>
   );
 };
@@ -492,7 +472,7 @@ const SupplierPerformance: React.FC = () => {
               </span>
             </div>
           </div>
-          <GradeBadge grade={CURRENT_GRADE} score={CURRENT_SCORE} />
+          <GradeSummary grade={CURRENT_GRADE} score={CURRENT_SCORE} />
         </div>
       </Card>
 
@@ -534,11 +514,11 @@ const SupplierPerformance: React.FC = () => {
                   <PolarGrid stroke={TOKEN_BORDER} />
                   <PolarAngleAxis
                     dataKey="axis"
-                    tick={{ fontSize: 11, fill: TOKEN_MID }}
+                    tick={{ ...CHART_TICK, fill: TOKEN_MID }}
                   />
                   <PolarRadiusAxis
                     domain={[0, 100]}
-                    tick={{ fontSize: 9, fill: TOKEN_MUTED }}
+                    tick={CHART_TICK}
                     axisLine={false}
                     tickCount={6}
                   />
@@ -557,7 +537,7 @@ const SupplierPerformance: React.FC = () => {
                     fillOpacity={0.2}
                     strokeWidth={2}
                   />
-                  <Legend iconSize={10} wrapperStyle={{ fontSize: 11 }} formatter={legendLabel} />
+                  <Legend iconSize={10} wrapperStyle={CHART_LEGEND_STYLE} formatter={legendLabel} />
                   <Tooltip content={<ChartTooltip />} />
                 </RadarChart>
               </ResponsiveContainer>
@@ -577,35 +557,15 @@ const SupplierPerformance: React.FC = () => {
                   margin={{ top: 10, right: 10, bottom: 0, left: -10 }}
                 >
                   <CartesianGrid strokeDasharray="3 3" stroke={TOKEN_BORDER} />
-                  <XAxis dataKey="month" tick={{ fontSize: 10, fill: TOKEN_MUTED }} />
-                  <YAxis domain={[60, 100]} tick={{ fontSize: 10, fill: TOKEN_MUTED }} />
+                  <XAxis dataKey="month" tick={CHART_TICK} />
+                  <YAxis domain={[60, 100]} tick={CHART_TICK} />
                   <Tooltip content={<ChartTooltip />} />
                   <Bar dataKey="score" fill={TOKEN_TEAL} radius={[4, 4, 0, 0]} name={t('supplierPerformance.chart.score')} />
                 </BarChart>
               </ResponsiveContainer>
               <div className="flex gap-2 mt-3 flex-wrap">
                 {GRADE_HISTORY.map(({ month, grade, score }) => {
-                  const tone = GRADE_TONE[grade];
-                  return (
-                    <div
-                      key={month}
-                      className="rounded-md px-2.5 py-1.5 text-center"
-                      style={{
-                        backgroundColor: tone.soft,
-                        border: `1px solid ${tone.stroke}55`,
-                      }}
-                    >
-                      <div className="text-[9px] font-semibold" style={{ color: tone.stroke }}>
-                        {month}
-                      </div>
-                      <div className="text-sm font-bold" style={{ color: tone.stroke }}>
-                        {grade}
-                      </div>
-                      <div className="text-[9px]" style={{ color: tone.stroke }}>
-                        {score}
-                      </div>
-                    </div>
-                  );
+                  return <GradeChip key={month} grade={grade} label={month} figure={score} />;
                 })}
               </div>
             </Card>
@@ -671,8 +631,8 @@ const SupplierPerformance: React.FC = () => {
                 margin={{ top: 10, right: 20, bottom: 0, left: -10 }}
               >
                 <CartesianGrid strokeDasharray="3 3" stroke={TOKEN_BORDER} />
-                <XAxis dataKey="week" tick={{ fontSize: 9, fill: TOKEN_MUTED }} interval={1} />
-                <YAxis domain={[70, 100]} tick={{ fontSize: 10, fill: TOKEN_MUTED }} />
+                <XAxis dataKey="week" tick={CHART_TICK} interval={1} />
+                <YAxis domain={[70, 100]} tick={CHART_TICK} />
                 <Tooltip content={<ChartTooltip />} />
                 <Line
                   type="monotone"
@@ -698,8 +658,8 @@ const SupplierPerformance: React.FC = () => {
                   margin={{ top: 10, right: 10, bottom: 0, left: -10 }}
                 >
                   <CartesianGrid strokeDasharray="3 3" stroke={TOKEN_BORDER} />
-                  <XAxis dataKey="week" tick={{ fontSize: 8, fill: TOKEN_MUTED }} interval={2} />
-                  <YAxis domain={[90, 100]} tick={{ fontSize: 10, fill: TOKEN_MUTED }} />
+                  <XAxis dataKey="week" tick={CHART_TICK} interval={2} />
+                  <YAxis domain={[90, 100]} tick={CHART_TICK} />
                   <Tooltip content={<ChartTooltip />} />
                   <Line
                     type="monotone"
@@ -723,8 +683,8 @@ const SupplierPerformance: React.FC = () => {
                   margin={{ top: 10, right: 10, bottom: 0, left: -10 }}
                 >
                   <CartesianGrid strokeDasharray="3 3" stroke={TOKEN_BORDER} />
-                  <XAxis dataKey="week" tick={{ fontSize: 8, fill: TOKEN_MUTED }} interval={2} />
-                  <YAxis tick={{ fontSize: 10, fill: TOKEN_MUTED }} />
+                  <XAxis dataKey="week" tick={CHART_TICK} interval={2} />
+                  <YAxis tick={CHART_TICK} />
                   <Tooltip content={<ChartTooltip />} />
                   <Line
                     type="monotone"
@@ -756,7 +716,7 @@ const SupplierPerformance: React.FC = () => {
               >
                 <div className="flex items-start justify-between gap-3 mb-3 flex-wrap">
                   <div className="min-w-0">
-                    <div className="text-base font-semibold text-text-primary mb-2">
+                    <div className="text-section text-text-primary mb-2">
                       {item.kpi}
                     </div>
                     <div className="flex flex-wrap gap-2">

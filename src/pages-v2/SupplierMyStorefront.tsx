@@ -280,7 +280,7 @@ const StorefrontEditor: React.FC<StorefrontEditorProps> = ({
                 {t('supplierMyStorefront.completeness.title')}
               </span>
               <span
-                className={`text-sm font-bold ${
+                className={`text-sm font-semibold ${
                   completenessVariant === 'success'
                     ? 'text-success'
                     : 'text-warning-hover'
@@ -756,7 +756,7 @@ const StorefrontEditor: React.FC<StorefrontEditorProps> = ({
                   tone="inset"
                   className="flex items-center gap-3"
                 >
-                  <span className="text-2xl shrink-0">{cfg.icon}</span>
+                  <span className="text-section shrink-0">{cfg.icon}</span>
                   <div className="flex-1 min-w-0">
                     {/* cfg.label / cfg.description are shared CHANNEL_CONFIG data
                         (proper-noun channel names + technical protocol copy) — i18n-defer */}
@@ -802,6 +802,7 @@ const StorefrontEditor: React.FC<StorefrontEditorProps> = ({
               <div className="flex items-center gap-2">
                 <TextInput
                   type="time"
+                  aria-label={t('supplierMyStorefront.field.opensAt')}
                   style={{ width: 120 }}
                   value={bizHoursStart}
                   onChange={(e) => setBizHoursStart(e.target.value)}
@@ -811,6 +812,7 @@ const StorefrontEditor: React.FC<StorefrontEditorProps> = ({
                 </span>
                 <TextInput
                   type="time"
+                  aria-label={t('supplierMyStorefront.field.closesAt')}
                   style={{ width: 120 }}
                   value={bizHoursEnd}
                   onChange={(e) => setBizHoursEnd(e.target.value)}
@@ -856,7 +858,7 @@ const StorefrontEditor: React.FC<StorefrontEditorProps> = ({
                 tone="inset"
                 className="text-center"
               >
-                <Data as="div" className={`text-xl font-semibold ${s.tone}`}>
+                <Data as="div" className={`text-section ${s.tone}`}>
                   {s.value}
                 </Data>
                 <div className="text-xs text-text-tertiary mt-1">

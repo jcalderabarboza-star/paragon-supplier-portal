@@ -79,7 +79,7 @@ const EDGE_CLASS: Record<FlagSeverity, string> = {
 // live===true).
 const HonestyDot: React.FC<{ live: boolean; t: TFunction }> = ({ live, t }) => (
   <span
-    className={`inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider ${
+    className={`inline-flex items-center gap-1.5 text-label uppercase ${
       live ? 'text-success' : 'text-sample'
     }`}
   >
@@ -226,7 +226,7 @@ const ExpandableWidget: React.FC<ExpandableWidgetProps> = ({
           <div
             aria-hidden
             onClick={() => setExpanded(false)}
-            className="fixed inset-0 z-40 bg-[rgba(13,27,42,0.4)]"
+            className="fixed inset-0 z-40 bg-navy/40"
           />
           <div
             ref={dialogRef}

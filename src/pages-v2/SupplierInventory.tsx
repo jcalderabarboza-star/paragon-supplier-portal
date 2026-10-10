@@ -35,6 +35,7 @@ import { useInventory } from '../services/query/hooks';
 import { useOwnInventoryDeclarations } from '../services/query/sdcSupplierHooks';
 import { publishedLabelOf } from '../services/planning/publishedMaterial';
 import { formatDate, formatNumber } from '../lib/format';
+import { CHART_MID, CHART_SEMANTIC } from '../lib/chartPalette';
 
 const STATUS_VARIANT: Record<StockStatus, 'success' | 'warning' | 'danger' | 'neutral'> = {
   [StockStatus.CRITICAL]: 'danger',
@@ -44,10 +45,10 @@ const STATUS_VARIANT: Record<StockStatus, 'success' | 'warning' | 'danger' | 'ne
 };
 
 const STATUS_BAR_COLOR: Record<StockStatus, string> = {
-  [StockStatus.CRITICAL]: '#BB0000',
-  [StockStatus.LOW]: '#B45309',
-  [StockStatus.NORMAL]: '#107E3E',
-  [StockStatus.EXCESS]: '#354A5F',
+  [StockStatus.CRITICAL]: CHART_SEMANTIC.danger,
+  [StockStatus.LOW]: CHART_SEMANTIC.warning,
+  [StockStatus.NORMAL]: CHART_SEMANTIC.success,
+  [StockStatus.EXCESS]: CHART_MID,
 };
 
 const SOURCE_VARIANT: Record<string, 'info' | 'success' | 'neutral'> = {

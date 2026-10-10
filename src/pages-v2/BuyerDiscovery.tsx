@@ -122,11 +122,11 @@ const QualificationCard: React.FC<{ item: QualificationItem; onUpdate: () => voi
             <React.Fragment key={labelKey}>
               <div className="flex flex-col items-center text-center flex-1 min-w-0">
                 <div
-                  className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold ${dotClass}`}
+                  className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold ${dotClass}`}
                 >
                   {isDone ? '✓' : stepNum}
                 </div>
-                <div className={`text-[10px] mt-1 leading-tight ${labelClass}`}>
+                <div className={`text-xs mt-1 leading-tight ${labelClass}`}>
                   {label}
                 </div>
               </div>
@@ -173,17 +173,17 @@ const RecommendationCard: React.FC<{
       <div className="flex items-start justify-between gap-3 mb-3">
         <div className="min-w-0">
           <div className="text-base font-semibold text-text-primary">
-            <span className="mr-2 text-lg">{supplier.flag}</span>
+            <span className="mr-2 text-base">{supplier.flag}</span>
             {supplier.name}
           </div>
           <div className="text-xs text-text-tertiary mt-0.5">{supplier.country}</div>
         </div>
         <div className="text-right shrink-0">
-          <div className={`text-xl font-bold ${scoreColorClass(supplier.matchScore)}`}>
+          <div className={`text-section ${scoreColorClass(supplier.matchScore)}`}>
             {supplier.matchScore}
             <span className="text-xs font-medium">/100</span>
           </div>
-          <div className={`text-[10px] font-semibold ${scoreColorClass(supplier.matchScore)}`}>
+          <div className={`text-label ${scoreColorClass(supplier.matchScore)}`}>
             {t('discovery.card.matchScore')}
           </div>
         </div>
@@ -607,23 +607,23 @@ const BuyerDiscovery: React.FC = () => {
                   </div>
                   <div className="text-right shrink-0">
                     <TrendIcon dir={card.priceDir} />
-                    <div className={`text-[11px] font-semibold mt-1 ${trendColorClass(card.priceDir)}`}>
+                    <div className={`text-xs font-semibold mt-1 ${trendColorClass(card.priceDir)}`}>
                       {card.priceTrend}
                     </div>
                   </div>
                 </div>
                 <div className="flex items-center gap-6 mb-4">
                   <div>
-                    <div className="text-lg font-bold text-text-primary">
+                    <div className="text-section text-text-primary">
                       {card.suppliersGlobal}
                     </div>
-                    <div className="text-[11px] text-text-tertiary">{t('discovery.intel.global')}</div>
+                    <div className="text-xs text-text-tertiary">{t('discovery.intel.global')}</div>
                   </div>
                   <div>
-                    <div className="text-lg font-bold text-teal-text">
+                    <div className="text-section text-teal-text">
                       {card.suppliersParagon}
                     </div>
-                    <div className="text-[11px] text-text-tertiary">{t('discovery.intel.inNetwork')}</div>
+                    <div className="text-xs text-text-tertiary">{t('discovery.intel.inNetwork')}</div>
                   </div>
                 </div>
                 <Notice tone="info">

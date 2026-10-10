@@ -219,7 +219,7 @@ const RfiAnswerForm: React.FC<Props> = ({ rfq, supplierId, onClose }) => {
                 {t('rfqs.rfi.document.recorded')} <span className="font-mono">{v}</span>
               </div>
             )}
-            <div className="text-[11px] text-text-tertiary mt-1" data-testid={`${testId}-note`}>
+            <div className="text-xs text-text-tertiary mt-1" data-testid={`${testId}-note`}>
               {t('rfqs.rfi.document.note')}
             </div>
           </div>
@@ -245,7 +245,7 @@ const RfiAnswerForm: React.FC<Props> = ({ rfq, supplierId, onClose }) => {
               >
                 <span className="font-mono text-text-secondary mr-1.5">{questionLabel(i + 1)}</span>
                 {q.prompt}
-                <span className="ml-2 text-[11px] font-normal text-text-tertiary">
+                <span className="ml-2 text-xs font-normal text-text-tertiary">
                   {t(q.required ? 'rfqs.rfi.required' : 'rfqs.rfi.optional')}
                 </span>
               </div>

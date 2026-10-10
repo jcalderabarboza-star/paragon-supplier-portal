@@ -14,11 +14,12 @@ import type {
   Commodity,
   Scenario,
 } from '../../types';
+import { CHART_INFO, CHART_MID, CHART_SEMANTIC, CHART_SERIES } from '../../../../lib/chartPalette';
 
-const TOKEN_TEAL = '#0097A7';
-const TOKEN_MID = '#354A5F';
-const TOKEN_INFO = '#1E5BAE';
-const TOKEN_WARNING = '#B45309';
+const TOKEN_TEAL = CHART_SERIES[0];
+const TOKEN_MID = CHART_MID;
+const TOKEN_INFO = CHART_INFO;
+const TOKEN_WARNING = CHART_SEMANTIC.warning;
 
 export const ALERTS: RiskAlert[] = [
   { id: 'a1', level: 'critical',

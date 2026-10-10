@@ -54,7 +54,7 @@ const KpiTile: React.FC<{
   return (
     <Card data-testid={testId}>
       <div className="text-label text-text-tertiary uppercase">{t(labelKey)}</div>
-      <div className="text-2xl font-semibold text-data-navy font-mono mt-1">{value}</div>
+      <div className="text-kpi font-mono tabular-nums text-data-navy mt-1">{value}</div>
       {sub && <div className="text-xs text-text-tertiary font-mono mt-0.5">{sub}</div>}
     </Card>
   );

@@ -15,7 +15,6 @@ import {
   Checkbox,
   Radio,
   FormField,
-  FORM_LABEL_CLASS,
 } from '../ui-v2/Form';
 import { useToast } from '../../hooks/useToast';
 import { useTranslation } from 'react-i18next';
@@ -297,11 +296,6 @@ interface GrSource {
   lines: LineDraft[];
 }
 
-// A caption over a value the wizard derives and nobody types.
-const readoutCaption = (text: string) => (
-  <span className={`mb-1 block ${FORM_LABEL_CLASS}`}>{text}</span>
-);
-
 // B4b-2 · the shared `formatNumber` (seat convention), not a local id-ID copy.
 
 // ── CP-3 · `REQUIRED-OPENS-PRE-ANSWERED-01` — ONE control, BOTH regulatory
@@ -373,7 +367,7 @@ const RegulatoryCheck: React.FC<RegulatoryCheckProps> = ({
       <div
         data-testid={testId}
         role="status"
-        className="mt-1 text-[11px] text-warning-hover"
+        className="mt-1 text-xs text-warning-hover"
       >
         {unansweredText}
       </div>
@@ -1366,7 +1360,7 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
                         <div
                           role="alert"
                           data-testid={`gr-received-refusal-${i}`}
-                          className="mt-1 text-[11px] text-critical"
+                          className="mt-1 text-xs text-critical"
                         >
                           {t(GR_QTY_REFUSAL_KEY[qty.reason])}{' '}
                           <GlossaryTermChip
@@ -1397,7 +1391,7 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
                         <div
                           role="alert"
                           data-testid={`gr-accepted-refusal-${i}`}
-                          className="mt-1 text-[11px] text-critical"
+                          className="mt-1 text-xs text-critical"
                         >
                           {t(GR_QTY_REFUSAL_KEY[qty.reason])}{' '}
                           <GlossaryTermChip
@@ -1406,12 +1400,11 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
                         </div>
                       )}
                     </div>
-                    <div>
-                      {readoutCaption(t('goodsReceipt.wizard.field.rejected'))}
-                      <div className="rounded-md border border-border-input bg-bg-hover px-3 py-2 text-sm text-text-secondary">
-                        <Data>{rejected === null ? '—' : formatNumber(rejected)}</Data>
-                      </div>
-                    </div>
+                    <FieldList columns={1}>
+                      <Field label={t('goodsReceipt.wizard.field.rejected')} kind="number">
+                        {rejected === null ? '—' : formatNumber(rejected)}
+                      </Field>
+                    </FieldList>
                     <div className="col-span-4">
                       {/* The reason field is only ASKABLE of a readable pair —
                           nobody can be asked to justify a rejection derived from
@@ -1683,8 +1676,21 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
   const stepFourContent = (
     <div className="flex flex-col gap-5">
       <FormSection title={t('goodsReceipt.wizard.section.finalDisposition')}>
-        <div>
-          {readoutCaption(t('goodsReceipt.wizard.field.headerDisposition'))}
+        <FieldList columns={1}>
+          <Field
+            label={t('goodsReceipt.wizard.field.headerDisposition')}
+            kind="status"
+            sub={
+              <>
+                {totals.items === 1
+                  ? t('goodsReceipt.wizard.rollup.prefix.one', { count: totals.items })
+                  : t('goodsReceipt.wizard.rollup.prefix.other', { count: totals.items })}{' '}
+                <Data>{formatNumber(totals.accepted)}</Data> {t('goodsReceipt.wizard.rollup.acceptedWord')}{' '}
+                <Data>{formatNumber(totals.rejected)}</Data> {t('goodsReceipt.wizard.rollup.rejectedWord')}{' '}
+                {t('goodsReceipt.wizard.rollup.notEditable')}
+              </>
+            }
+          >
           <StatusPill
             variant={
               derivedDisposition === 'Approved'
@@ -1698,15 +1704,8 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
           >
             {dispositionLabel(derivedDisposition)}
           </StatusPill>
-          <p className="mt-1.5 text-xs text-text-tertiary">
-            {totals.items === 1
-              ? t('goodsReceipt.wizard.rollup.prefix.one', { count: totals.items })
-              : t('goodsReceipt.wizard.rollup.prefix.other', { count: totals.items })}{' '}
-            <Data>{formatNumber(totals.accepted)}</Data> {t('goodsReceipt.wizard.rollup.acceptedWord')}{' '}
-            <Data>{formatNumber(totals.rejected)}</Data> {t('goodsReceipt.wizard.rollup.rejectedWord')}{' '}
-            {t('goodsReceipt.wizard.rollup.notEditable')}
-          </p>
-        </div>
+          </Field>
+        </FieldList>
 
         {/* OPS-2 — the hold. Not a disposition and not derived: the inspector
             says the lot is not ready to be decided, and why. */}
@@ -2098,7 +2097,7 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[rgba(13,27,42,0.5)]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-navy/50">
       <Wizard
         steps={steps}
         currentStep={step}

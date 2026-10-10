@@ -367,7 +367,7 @@ const LineCard: React.FC<{
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div className="min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <Data className="text-sm font-bold text-text-primary">{line.materialCode}</Data>
+            <Data className="text-sm font-semibold text-text-primary">{line.materialCode}</Data>
             <StatusPill variant="neutral" size="sm" className="gap-1">
               {line.commitmentClass === 'firm' && <Lock size={11} aria-hidden="true" />}
               {t(CLASS_LABEL_KEY[line.commitmentClass])}
@@ -671,7 +671,7 @@ const ResponsesTab: React.FC<{
         >
           <div className="flex items-start justify-between gap-3 mb-3 flex-wrap">
             <div className="flex items-center gap-2 flex-wrap">
-              <Data className="text-sm font-bold text-text-primary">{r.id}</Data>
+              <Data className="text-sm font-semibold text-text-primary">{r.id}</Data>
               <StatusPill variant="neutral">
                 <Data>{r.materialCode}</Data>
               </StatusPill>
@@ -876,7 +876,7 @@ const DeclarationsTab: React.FC<{
               <div className="flex items-start justify-between gap-3 flex-wrap">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <Data className="text-sm font-bold text-text-primary">{d.materialCode}</Data>
+                    <Data className="text-sm font-semibold text-text-primary">{d.materialCode}</Data>
                     <StatusPill variant="neutral" size="sm">
                       {grain === 'batch-grain'
                         ? t('sdcSup.stock.grain.batch')
@@ -888,7 +888,7 @@ const DeclarationsTab: React.FC<{
                   </div>
                 </div>
                 <div className="text-right">
-                  <Data className="text-lg font-bold text-text-primary">
+                  <Data className="text-section text-text-primary">
                     {formatNumber(d.totalQty)} {d.uom}
                   </Data>
                   <div className="text-xs text-text-tertiary mt-0.5">
@@ -1150,7 +1150,7 @@ const ShipmentsTab: React.FC<{
             <div className="flex items-start justify-between gap-3 flex-wrap">
               <div className="min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <Data className="text-sm font-bold text-text-primary">{s.materialCode}</Data>
+                  <Data className="text-sm font-semibold text-text-primary">{s.materialCode}</Data>
                   <StatusPill variant="neutral" size="sm">{t(DIRECTION_LABEL_KEY[s.direction])}</StatusPill>
                 </div>
                 <div className="text-base font-semibold text-text-primary mt-1">
@@ -1174,7 +1174,7 @@ const ShipmentsTab: React.FC<{
                     className="flex items-center gap-1.5"
                     data-testid="ship-asn-tracking"
                   >
-                    <span className="text-[10px] uppercase tracking-wide text-text-tertiary">
+                    <span className="text-label uppercase text-text-tertiary">
                       {t('sdcSup.ship.asnAxis', { asn: asnTracking.asnRef })}
                     </span>
                     <StatusPill variant={statusTone(asnTracking.asnStatus)}>
@@ -2048,7 +2048,7 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
           <div className="space-y-5">
             <Card as="section" tone="inset">
               <div className="flex items-center gap-2 flex-wrap">
-                <Data className="text-sm font-bold text-text-primary">
+                <Data className="text-sm font-semibold text-text-primary">
                   {panelLine.materialCode}
                 </Data>
                 <StatusPill variant="neutral" size="sm" className="gap-1">
@@ -2206,7 +2206,7 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
           <div className="space-y-5">
             <Card as="section" tone="inset">
               <div className="flex items-center gap-2 flex-wrap">
-                <Data className="text-sm font-bold text-text-primary">
+                <Data className="text-sm font-semibold text-text-primary">
                   {ackPanelLine.materialCode}
                 </Data>
                 <StatusPill variant="neutral" size="sm">{t(CLASS_LABEL_KEY[ackPanelLine.commitmentClass])}</StatusPill>

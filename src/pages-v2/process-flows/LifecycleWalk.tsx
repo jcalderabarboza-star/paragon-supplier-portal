@@ -99,8 +99,8 @@ const LifecycleWalk: React.FC<LifecycleWalkProps> = ({
               <Data
                 className={
                   i === path.length - 1
-                    ? 'rounded-sm bg-action-soft px-1.5 py-0.5 text-[11px]'
-                    : 'text-[11px] text-text-tertiary'
+                    ? 'rounded-sm bg-action-soft px-1.5 py-0.5 text-xs'
+                    : 'text-xs text-text-tertiary'
                 }
               >
                 {state}
@@ -138,7 +138,7 @@ const LifecycleWalk: React.FC<LifecycleWalkProps> = ({
               <span className="text-meta text-text-secondary">
                 {t('processFlows.walk.seedAt')}
               </span>
-              <Data className="text-[11px]">{seed}</Data>
+              <Data className="text-xs">{seed}</Data>
             </CardButton>
           ))}
 
@@ -165,17 +165,17 @@ const LifecycleWalk: React.FC<LifecycleWalkProps> = ({
             >
               <span className="min-w-0 flex-1">
                 <span className="flex min-w-0 flex-wrap items-center gap-2">
-                  <Data className="text-[11px]">{verbOf(edge.transitionId)}</Data>
+                  <Data className="text-xs">{verbOf(edge.transitionId)}</Data>
                   <ChevronRight size={12} className="text-text-tertiary" />
-                  <Data className="text-[11px]">{edge.to}</Data>
-                  <span className="text-[10px] uppercase tracking-wider text-text-tertiary">
+                  <Data className="text-xs">{edge.to}</Data>
+                  <span className="text-label uppercase text-text-tertiary">
                     {edge.settlement
                       ? t('processFlows.walk.viaSettlement')
                       : t(STEP_KIND_KEY[edge.kind])}
                   </span>
                 </span>
                 {purpose && (
-                  <p className="mt-1 max-w-prose text-[11px] leading-relaxed text-text-secondary">
+                  <p className="mt-1 max-w-prose text-xs leading-relaxed text-text-secondary">
                     {t(purpose)}
                   </p>
                 )}

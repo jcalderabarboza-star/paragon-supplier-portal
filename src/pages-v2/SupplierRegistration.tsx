@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import {
   Building2,
   ClipboardCheck,
@@ -227,7 +227,7 @@ const PageHeader: React.FC = () => {
     <header className="bg-bg-surface border-b border-border-subtle px-4 sm:px-8 py-4">
       <div className="max-w-3xl mx-auto flex items-center justify-between">
         <div>
-          <div className="text-base sm:text-lg font-bold text-navy tracking-widest">
+          <div className="text-section text-navy tracking-widest">
             PARAGONCORP
           </div>
           <div className="text-xs text-text-tertiary mt-0.5">
@@ -297,7 +297,7 @@ const RequestTypeSelector: React.FC<{
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex flex-wrap items-center gap-2 mb-1">
-                  <span className="text-sm font-bold text-text-primary">
+                  <span className="text-sm font-semibold text-text-primary">
                     {t(rt.labelKey)}
                   </span>
                   <StatusPill variant="info">{t(rt.badgeKey)}</StatusPill>
@@ -551,7 +551,7 @@ const ContactsStep: React.FC<StepProps> = ({ form, setForm, errors }) => {
             tone="inset"
           >
             <div className="flex items-center justify-between mb-3">
-              <span className="text-sm font-bold text-text-primary">
+              <span className="text-sm font-semibold text-text-primary">
                 {t('registration.contacts.label', { index: i + 1 })}
               </span>
               {form.contacts.length > 1 && (
@@ -722,6 +722,8 @@ const CategoriesStep: React.FC<StepProps & { catError: string }> = ({
 
 const DocumentsAndBankStep: React.FC<StepProps> = ({ form, setForm, errors }) => {
   const { t } = useTranslation();
+  // Each upload button opens ITS file input by key, not by where it sits.
+  const fileInputs = useRef<Record<string, HTMLInputElement | null>>({});
   const setDoc = (key: string, patch: Partial<DocState>) =>
     setForm((f) => ({
       ...f,
@@ -769,9 +771,7 @@ const DocumentsAndBankStep: React.FC<StepProps> = ({ form, setForm, errors }) =>
                 <Button
                   variant={d.uploaded ? 'secondary' : 'outline'}
                   className="whitespace-nowrap"
-                  onClick={(e) =>
-                    (e.currentTarget.nextElementSibling as HTMLInputElement | null)?.click()
-                  }
+                  onClick={() => fileInputs.current[doc.key]?.click()}
                 >
                   {d.uploaded ? (
                     <>
@@ -787,6 +787,9 @@ const DocumentsAndBankStep: React.FC<StepProps> = ({ form, setForm, errors }) =>
                 </Button>
                 <input
                   type="file"
+                  ref={(el) => {
+                    fileInputs.current[doc.key] = el;
+                  }}
                   className="hidden"
                   accept=".pdf,.jpg,.jpeg,.png"
                   onChange={(e) =>
@@ -1018,7 +1021,7 @@ const ReviewStep: React.FC<ReviewStepProps> = ({ form, setForm, errors, requestT
           >
             {form.contacts.map((c, i) => (
               <div key={i} className="mb-3 last:mb-0">
-                <div className="text-xs font-bold text-teal-text mb-1">
+                <div className="text-xs font-semibold text-teal-text mb-1">
                   {t('registration.contacts.label', { index: i + 1 })}
                 </div>
                 <Row label={t('registration.review.field.name')} value={c.name} />
@@ -1087,7 +1090,7 @@ const ReviewStep: React.FC<ReviewStepProps> = ({ form, setForm, errors, requestT
           >
             {form.contacts.map((c, i) => (
               <div key={i} className="mb-3 last:mb-0">
-                <div className="text-xs font-bold text-teal-text mb-1">
+                <div className="text-xs font-semibold text-teal-text mb-1">
                   {t('registration.contacts.label', { index: i + 1 })}
                 </div>
                 <Row label={t('registration.review.field.name')} value={c.name} />

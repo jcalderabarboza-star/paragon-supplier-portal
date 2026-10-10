@@ -21,7 +21,7 @@
  * scrolled figures showed through the key columns (browser QA). */
 .tp-grid .dsg-cell-gutter,
 .tp-grid .dsg-cell-sticky-right {
-  background: #ffffff;
+  background: theme('colors.bg-surface');
   z-index: 2;
 }
 
@@ -32,8 +32,23 @@
  * a read-only one (the engine's grey #9da6ab was 2.5:1, under the 3:1 a focus
  * indicator needs), so the planner can always see where the keyboard is. */
 .plan-dsg {
-  --dsg-header-text-color: #354a5f;
-  --dsg-header-active-text-color: #0d1b2a;
-  --dsg-selection-border-color: #0070f2;
-  --dsg-selection-disabled-border-color: #354a5f;
+  --dsg-header-text-color: theme('colors.text-secondary');
+  --dsg-header-active-text-color: theme('colors.navy');
+  --dsg-selection-border-color: theme('colors.action.DEFAULT');
+  --dsg-selection-disabled-border-color: theme('colors.text-secondary');
+}
+
+/* UI-1c-4 · the engine sets no size on its cells and 1rem on its input, so a
+ * grid read at 16px beside tables at 14px. Every plan grid (and the bulk stock
+ * grid, which carries `.plan-dsg` too) reads its cells, its editors and the
+ * add-row count at 14px and its header at 12px. Row heights are the grids' own
+ * `rowHeight` / `headerRowHeight` props and are untouched. */
+.plan-dsg .dsg-container,
+.plan-dsg .dsg-input,
+.plan-dsg .dsg-add-row-input {
+  font-size: 0.875rem;
+}
+
+.plan-dsg .dsg-cell-header {
+  font-size: 0.75rem;
 }

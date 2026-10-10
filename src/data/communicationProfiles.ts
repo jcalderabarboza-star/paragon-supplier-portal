@@ -164,12 +164,12 @@ export type CountryCode = keyof typeof COUNTRY_PROFILES;
 // which a page-level "Sample" pill does not
 // (DISCLOSURE-TRAVELS-WITH-THE-VALUE-01).
 export const CHANNEL_CONFIG = {
-  whatsapp: { label: 'WhatsApp',    icon: '📱', color: '#107E3E', description: 'Designed: messaging, interactive buttons, document sharing (not connected)' },
-  wechat:   { label: 'WeChat Work', icon: '💬', color: '#07C160', description: 'Designed: WeCom for Chinese business suppliers, formal B2B messaging (not connected)' },
-  email:    { label: 'Email',       icon: '📧', color: '#BB0000', description: 'Designed: structured email with reply parsing, DKIM/DMARC (not connected)' },
-  api:      { label: 'REST API',    icon: '⚙️', color: '#0097A7', description: 'Designed: system-to-system, OAuth 2.0, CloudEvents webhooks (not connected)' },
-  edi:      { label: 'EDI',         icon: '🔗', color: '#0D1B2A', description: 'Designed: X12 / EDIFACT over AS2/SFTP (no integration provider selected)' },
-  portal:   { label: 'Web Portal',  icon: '🌐', color: '#354A5F', description: 'Browser-based portal, PWA mobile support' },
+  whatsapp: { label: 'WhatsApp',    icon: '📱', description: 'Designed: messaging, interactive buttons, document sharing (not connected)' },
+  wechat:   { label: 'WeChat Work', icon: '💬', description: 'Designed: WeCom for Chinese business suppliers, formal B2B messaging (not connected)' },
+  email:    { label: 'Email',       icon: '📧', description: 'Designed: structured email with reply parsing, DKIM/DMARC (not connected)' },
+  api:      { label: 'REST API',    icon: '⚙️', description: 'Designed: system-to-system, OAuth 2.0, CloudEvents webhooks (not connected)' },
+  edi:      { label: 'EDI',         icon: '🔗', description: 'Designed: X12 / EDIFACT over AS2/SFTP (no integration provider selected)' },
+  portal:   { label: 'Web Portal',  icon: '🌐', description: 'Browser-based portal, PWA mobile support' },
 } as const;
 
 // Multilingual PO notification templates

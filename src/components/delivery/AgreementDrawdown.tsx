@@ -430,7 +430,7 @@ const ItemBlock: React.FC<{
             <StatusPill variant="neutral">{t('delivery.policy.reference')}</StatusPill>
           )}
           {showPolicyHistory && ledger.policyDeviation && (
-            <span className="text-[10px] italic text-warning-hover">
+            <span className="text-xs italic text-warning-hover">
               {t('delivery.policy.deviation')}
             </span>
           )}
@@ -460,7 +460,7 @@ const ItemBlock: React.FC<{
           Buyer-only: the contract-default, edit date, and reason are buyer-internal
           governance history — the supplier mirror passes showPolicyHistory=false. */}
       {showPolicyHistory && ledger.policyDeviation && (
-        <div className="mb-4 text-[11px] text-text-tertiary">
+        <div className="mb-4 text-xs text-text-tertiary">
           {t('delivery.policy.deviation.detail', {
             def: formatPolicy(t, policy.contractDefault),
             date: policy.activeChangedAt ? formatDate(policy.activeChangedAt) : '—',
@@ -492,7 +492,7 @@ const ItemBlock: React.FC<{
 
       <div className="mb-5">
         <TargetBar pct={drawdownPct} />
-        <div className="text-[10px] text-text-tertiary mt-1">
+        <div className="text-xs text-text-tertiary mt-1">
           {t('delivery.drawdown.label', { pct: Math.round(drawdownPct) })}
         </div>
       </div>
@@ -644,7 +644,7 @@ const ItemBlock: React.FC<{
                     <div className="flex items-center gap-1.5 flex-wrap">
                       {pastDated ? (
                         <span
-                          className="text-[11px] text-warning-hover"
+                          className="text-xs text-warning-hover"
                           data-testid={`delivery-past-draft-${line.releaseSeq}`}
                         >
                           {t(canAdjust ? 'delivery.release.pastAdjust' : 'delivery.release.past')}

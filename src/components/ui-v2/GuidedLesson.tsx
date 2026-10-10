@@ -75,7 +75,7 @@ const GuidedLesson: React.FC<GuidedLessonProps> = ({
                   onClick={() => setCurrent(i)}
                   aria-current={active ? 'step' : undefined}
                   aria-label={s.title}
-                  className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-semibold transition-colors cursor-pointer ${
+                  className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold transition-colors cursor-pointer ${
                     done
                       ? 'bg-action text-white'
                       : active

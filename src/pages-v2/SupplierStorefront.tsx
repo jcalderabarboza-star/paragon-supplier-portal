@@ -145,7 +145,7 @@ const SupplierStorefront: React.FC = () => {
     return (
       <AppShellV2>
         <div className="py-20 text-center">
-          <div className="text-lg font-semibold text-text-primary mb-2">
+          <div className="text-section text-text-primary mb-2">
             {t('supplierStorefront.notFound.title')}
           </div>
           <Button

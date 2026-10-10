@@ -88,21 +88,21 @@ const Appearances: React.FC<{ appearances: readonly FlowAppearance[] }> = ({ app
       </SectionHeading>
       <ul className="mt-1.5 space-y-1">
         {appearances.map((a) => (
-          <li key={a.entity} className="flex flex-wrap items-center gap-1.5 text-[11px]">
-            <Data className="text-[11px]">{a.entity}</Data>
+          <li key={a.entity} className="flex flex-wrap items-center gap-1.5 text-xs">
+            <Data className="text-xs">{a.entity}</Data>
             {a.kinds.map((k) => (
               <StatusPill key={k} variant="neutral" size="sm">
                 {t(APPEARANCE_KIND_KEY[k])}
               </StatusPill>
             ))}
             {a.isInitial && (
-              <span className="text-[10px] text-text-tertiary">{t('glossary.appears.initial')}</span>
+              <span className="text-xs text-text-tertiary">{t('glossary.appears.initial')}</span>
             )}
             {a.isTerminal && (
-              <span className="text-[10px] text-text-tertiary">{t('glossary.appears.terminal')}</span>
+              <span className="text-xs text-text-tertiary">{t('glossary.appears.terminal')}</span>
             )}
             {a.transitionIds.length > 0 && (
-              <span className="text-[10px] text-text-tertiary">
+              <span className="text-xs text-text-tertiary">
                 {t('glossary.appears.edges', { count: a.transitionIds.length })}
               </span>
             )}
@@ -114,7 +114,7 @@ const Appearances: React.FC<{ appearances: readonly FlowAppearance[] }> = ({ app
           sentence about it here would be the second copy. */}
       <Link
         to="/buyer/process-flows"
-        className="mt-1.5 inline-block text-[11px] text-teal-text hover:underline"
+        className="mt-1.5 inline-block text-xs text-teal-text hover:underline"
       >
         {t('glossary.appears.seeFlows')}
       </Link>
@@ -137,11 +137,11 @@ const Related: React.FC<{
       </SectionHeading>
       <ul className="mt-1.5 space-y-1">
         {related.map((r) => (
-          <li key={`${r.relation}#${r.sourceType}.${r.term}`} className="text-[11px] leading-relaxed">
+          <li key={`${r.relation}#${r.sourceType}.${r.term}`} className="text-xs leading-relaxed">
             <LinkButton
               onClick={() => onJump(`${r.sourceType}.${r.term}`)}
             >
-              <Data className="text-[11px] text-teal-text">
+              <Data className="text-xs text-teal-text">
                 {r.sourceType}.{r.term}
               </Data>
             </LinkButton>
@@ -173,9 +173,9 @@ const TermCard: React.FC<{
           the heading, so the outline names the word and nothing else. */}
       <div className="flex flex-wrap items-baseline gap-2">
         <SectionHeading as="h3">{view.term}</SectionHeading>
-        <span className="text-[10px] uppercase tracking-wider text-text-tertiary">
+        <span className="text-label uppercase text-text-tertiary">
           {t('glossary.term.definedBy')}{' '}
-          <Data className="text-[10px] text-text-tertiary">{view.sourceType}</Data>
+          <Data className="text-label text-text-tertiary">{view.sourceType}</Data>
         </span>
       </div>
       {/* THE ONE AUTHORED THING ON THE ROW. The active locale's sentence, read
@@ -184,7 +184,7 @@ const TermCard: React.FC<{
       <p className="mt-1.5 max-w-prose text-meta leading-relaxed text-text-secondary">
         {indonesian ? view.entry.id : view.entry.en}
       </p>
-      <Data className="mt-1.5 block text-[10px] text-text-tertiary">{view.sourceFile}</Data>
+      <Data className="mt-1.5 block text-xs text-text-tertiary">{view.sourceFile}</Data>
       <Appearances appearances={view.appearances} />
       <Related related={view.related} onJump={onJump} />
     </article>
@@ -311,7 +311,7 @@ const Glossary: React.FC = () => {
                 padding="sm"
               >
                 <span className="text-text-primary">{t('glossary.filter.all')}</span>
-                <span className="text-[11px] text-text-tertiary">{all.length}</span>
+                <span className="text-xs text-text-tertiary">{all.length}</span>
               </RowButton>
             </li>
             {GLOSSARY_REGISTRIES.map((r) => {
@@ -326,8 +326,8 @@ const Glossary: React.FC = () => {
                     selected={active}
                     padding="sm"
                   >
-                    <Data className="truncate text-[11px]">{r.sourceType}</Data>
-                    <span className="text-[11px] text-text-tertiary">{count}</span>
+                    <Data className="truncate text-xs">{r.sourceType}</Data>
+                    <span className="text-xs text-text-tertiary">{count}</span>
                   </RowButton>
                 </li>
               );

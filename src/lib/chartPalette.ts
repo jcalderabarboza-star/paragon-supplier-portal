@@ -36,7 +36,7 @@ export const CHART_SEMANTIC = {
   success: '#107E3E',
   warning: '#B45309',
   danger: '#BB0000',
-  neutral: '#6B7785',
+  neutral: '#5A6675',
 } as const;
 
 /**
@@ -110,7 +110,7 @@ export const MAP_BASE = {
  */
 export const EDGE_INK = {
   operator: '#354A5F', // a person acts (mirrors CHART_MID / the `mid` token)
-  system: '#6B7785', // the platform acts (mirrors CHART_AXIS / text-tertiary)
+  system: '#5A6675', // the platform acts (mirrors CHART_AXIS / text-tertiary)
   cross: '#0097A7', // cascade or settlement, crossing documents (teal accent)
   birth: '#1E3A5F', // a creation edge (mirrors the data-navy token)
 } as const;
@@ -161,11 +161,52 @@ export const targetStatus = (
  */
 export const CHART_IDENTITY = '#2A6FBF';
 
+/**
+ * The `info` token as a chart colour: one category among several, where the
+ * series ramp has run out of slots. Not a state, and not identity.
+ */
+export const CHART_INFO = '#1E5BAE';
+
 /** Grid / axis hairline on light surfaces. */
 export const CHART_GRID = '#E5E9EE';
 
 /** Axis tick / label text on light surfaces (mirrors the text-tertiary token). */
-export const CHART_AXIS = '#6B7785';
+export const CHART_AXIS = '#5A6675';
+
+// ── chart TEXT (UI-1c-4) ─────────────────────────────────────────────────────
+// A chart's words are written here and nowhere else, as its colours are. The
+// residue census found 47 `fontSize` props on axes, legends, labels and
+// tooltips, at 8, 9, 10, 11 and 12 px. 11 px is the smallest type the portal
+// renders (operator ruling, 9 October 2026), so that is what a tick, a legend
+// entry and an in-chart label are; a tooltip, which is read rather than
+// glanced at, is 12.
+
+/** The size of a tick, a legend entry and a label drawn inside a chart. */
+export const CHART_TEXT_SIZE = 11;
+
+/** `tick={CHART_TICK}` on an axis. */
+export const CHART_TICK = { fontSize: CHART_TEXT_SIZE, fill: CHART_AXIS } as const;
+
+/** `wrapperStyle={CHART_LEGEND_STYLE}` on a legend. */
+export const CHART_LEGEND_STYLE = { fontSize: CHART_TEXT_SIZE } as const;
+
+/** `contentStyle={CHART_TOOLTIP_STYLE}` on a tooltip the chart library draws. */
+export const CHART_TOOLTIP_STYLE = {
+  border: `1px solid ${CHART_GRID}`,
+  borderRadius: 10,
+  fontSize: 12,
+} as const;
+
+/**
+ * A label drawn inside the chart — an axis title, a reference line's name, a
+ * figure on a bar. Pass what is particular to it (`value`, `position`, `angle`,
+ * a state colour as `fill`); the size is not yours to pass.
+ */
+export const chartLabel = <const T extends object>(extra: T): T & { fontSize: number; fill: string } => ({
+  fill: CHART_AXIS,
+  ...extra,
+  fontSize: CHART_TEXT_SIZE,
+});
 
 /** Hover-cursor band fill behind bars/points (mirrors the bg-hover token). */
 export const CHART_CURSOR = '#F4F6F8';

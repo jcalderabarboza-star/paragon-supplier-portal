@@ -10,12 +10,18 @@ import { parseInline, parseMarkdown, type Block, type Inline } from '../../guide
 // mono data grammar (DP-3); everything else is sans prose.
 // ────────────────────────────────────────────────────────────────────────────
 
-export const InlineText: React.FC<{ inline: readonly Inline[] }> = ({ inline }) => (
+// `bare` is for text that sits INSIDE a `Field` value: the code span and the
+// bold bring no size, weight or colour of their own, so the field's type applies.
+export const InlineText: React.FC<{ inline: readonly Inline[]; bare?: boolean }> = ({ inline, bare = false }) => (
   <>
     {inline.map((x, i) => {
-      if (x.kind === 'code') return <Data key={i} className="text-[11px]">{x.text}</Data>;
+      if (x.kind === 'code') return bare ? <Data key={i}>{x.text}</Data> : <Data key={i} className="text-xs">{x.text}</Data>;
       if (x.kind === 'strong') {
-        return (
+        return bare ? (
+          <strong key={i}>
+            <InlineText inline={x.children} bare />
+          </strong>
+        ) : (
           <strong key={i} className="font-semibold text-text-primary">
             <InlineText inline={x.children} />
           </strong>
@@ -27,26 +33,33 @@ export const InlineText: React.FC<{ inline: readonly Inline[] }> = ({ inline }) 
 );
 
 /** One line of guide text (a step field), inline markup only. */
-export const GuideInline: React.FC<{ text: string }> = ({ text }) => <InlineText inline={parseInline(text)} />;
+export const GuideInline: React.FC<{ text: string; bare?: boolean }> = ({ text, bare }) => (
+  <InlineText inline={parseInline(text)} bare={bare} />
+);
 
 const BlockView: React.FC<{ block: Block }> = ({ block }) => {
   switch (block.kind) {
     case 'heading':
+      // `##` names a block of the guide; `###` and `####` label a cluster inside it.
       return (
-        <SectionHeading level="group" as="h4" className="mt-3">
+        <SectionHeading
+          level={block.level <= 2 ? 'section' : 'group'}
+          as={block.level <= 2 ? 'h4' : block.level === 3 ? 'h5' : 'h6'}
+          className="mt-3"
+        >
           <InlineText inline={block.inline} />
         </SectionHeading>
       );
     case 'paragraph':
       return (
-        <p className="max-w-prose text-[12px] leading-relaxed text-text-secondary">
+        <p className="max-w-prose text-xs leading-relaxed text-text-secondary">
           <InlineText inline={block.inline} />
         </p>
       );
     case 'list': {
       const Tag = block.ordered ? 'ol' : 'ul';
       return (
-        <Tag className={`ml-4 space-y-1 text-[12px] leading-relaxed text-text-secondary ${block.ordered ? 'list-decimal' : 'list-disc'}`}>
+        <Tag className={`ml-4 space-y-1 text-xs leading-relaxed text-text-secondary ${block.ordered ? 'list-decimal' : 'list-disc'}`}>
           {block.items.map((it, i) => (
             <li key={i}>
               <InlineText inline={it.inline} />
@@ -61,7 +74,7 @@ const BlockView: React.FC<{ block: Block }> = ({ block }) => {
     case 'table':
       return (
         <div className="overflow-x-auto">
-          <table className="w-full border-collapse text-[11px]">
+          <table className="w-full border-collapse text-xs">
             <thead>
               <tr className="bg-bg-hover">
                 {block.header.map((h, i) => (

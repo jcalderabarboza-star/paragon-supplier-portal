@@ -121,7 +121,7 @@ const SeatNotice: React.FC<{ tv: TransitionView }> = ({ tv }) => {
 /** One authored line of a step: the shared detail field, its value the guide's own text. */
 const GuideField: React.FC<{ label: string; text: string; className?: string }> = ({ label, text, className }) => (
   <Field label={label} className={className}>
-    {text.includes('\n') ? <GuideMarkdown source={text} /> : <GuideInline text={text} />}
+    {text.includes('\n') ? <GuideMarkdown source={text} /> : <GuideInline text={text} bare />}
   </Field>
 );
 
@@ -140,12 +140,12 @@ const StepCard: React.FC<{ guide: ProcessGuide; step: GuideStep; tv: TransitionV
       data-citation={key}
     >
       <header className="flex flex-wrap items-center gap-2">
-        <Data className="text-[12px]">{step.transitionId}</Data>
+        <Data className="text-xs">{step.transitionId}</Data>
         <SectionHeading as="h4">{step.label}</SectionHeading>
         <StatusPill variant="neutral" size="sm">
           {t(`processGuides.stepKind.${step.stepKind}`)}
         </StatusPill>
-        <Data className="ml-auto text-[10px] text-text-tertiary">{key}</Data>
+        <Data className="ml-auto text-xs text-text-tertiary">{key}</Data>
       </header>
       <FieldList className="mt-2">
         <GuideField label={t('processGuides.step.role')} text={step.role} />
@@ -285,7 +285,7 @@ const HistoryTab: React.FC<{ view: FlowView; guide: ProcessGuide | undefined }> 
   return (
     <div className="grid gap-4 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
       <Box title={t('processGuides.tab.history')} testId="pf-guide-history-live">
-        <p className="mb-3 text-[11px] text-text-tertiary">{t('processGuides.history.sinkNote')}</p>
+        <p className="mb-3 text-xs text-text-tertiary">{t('processGuides.history.sinkNote')}</p>
         {documents.length === 0 ? (
           <p className="text-meta text-text-tertiary">{t('processGuides.history.noDocuments')}</p>
         ) : (
@@ -325,7 +325,7 @@ const HistoryTab: React.FC<{ view: FlowView; guide: ProcessGuide | undefined }> 
               <div className="space-y-3" data-testid="pf-guide-history-events">
                 {groups.map((g) => (
                   <div key={g.anchor} className="rounded-md border border-border-subtle">
-                    <p className="border-b border-border-subtle bg-bg-hover px-2 py-1 text-[11px] text-text-tertiary">
+                    <p className="border-b border-border-subtle bg-bg-hover px-2 py-1 text-xs text-text-tertiary">
                       {t('processGuides.history.group', { anchor: g.anchor })}
                     </p>
                     <DataTable
@@ -486,7 +486,7 @@ const GuideTabs: React.FC<{ view: FlowView; overview: React.ReactNode }> = ({ vi
                 <ul className="space-y-1.5">
                   {flagged.map((tv) => (
                     <li key={tv.def.id} className="flex flex-wrap items-center gap-2">
-                      <Data className="text-[11px]">{tv.def.id}</Data>
+                      <Data className="text-xs">{tv.def.id}</Data>
                       <DerivedFlags tv={tv} />
                     </li>
                   ))}
@@ -503,9 +503,9 @@ const GuideTabs: React.FC<{ view: FlowView; overview: React.ReactNode }> = ({ vi
               <Link
                 to={GUIDE_LIST_ROUTE[guide.entity]}
                 data-testid="pf-guide-linked-list"
-                className="inline-flex items-center gap-1 text-[12px] text-action-text hover:underline"
+                className="inline-flex items-center gap-1 text-xs text-action-text hover:underline"
               >
-                {t('processGuides.linked.openList')} · <Data className="text-[11px] text-action-text">{GUIDE_LIST_ROUTE[guide.entity]}</Data>
+                {t('processGuides.linked.openList')} · <Data className="text-xs text-action-text">{GUIDE_LIST_ROUTE[guide.entity]}</Data>
               </Link>
             )}
           </div>
@@ -530,7 +530,7 @@ const GuideTabs: React.FC<{ view: FlowView; overview: React.ReactNode }> = ({ vi
           {t('processGuides.title')}
         </SectionHeading>
         {guide && (
-          <p className="mt-1 max-w-4xl text-[11px] text-text-tertiary" data-testid="pf-guide-authored">
+          <p className="mt-1 max-w-4xl text-xs text-text-tertiary" data-testid="pf-guide-authored">
             {t('processGuides.authored', { sha: guide.sourceSha.slice(0, 8) })}
           </p>
         )}
@@ -560,9 +560,9 @@ const GuideTabs: React.FC<{ view: FlowView; overview: React.ReactNode }> = ({ vi
           ))}
         </div>
         {citation && (
-          <p className="mt-2 text-[10px] text-text-tertiary">
+          <p className="mt-2 text-xs text-text-tertiary">
             {t('processGuides.citation')}{' '}
-            <Data className="text-[10px] text-text-tertiary" data-testid="pf-guide-citation">
+            <Data className="text-xs text-text-tertiary" data-testid="pf-guide-citation">
               {citation}
             </Data>
           </p>

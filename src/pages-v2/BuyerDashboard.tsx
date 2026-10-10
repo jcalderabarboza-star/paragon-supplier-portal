@@ -36,10 +36,11 @@ import { ToggleChip } from '../components/ui-v2/Actions';
 import IllustrativeRegion from '../components/ui-v2/IllustrativeRegion';
 import { formatDate, formatIDR, formatMonth } from '../lib/format';
 import {
-  CHART_AXIS,
   CHART_CURSOR,
   CHART_GRID,
   CHART_SERIES,
+  CHART_TICK,
+  CHART_TOOLTIP_STYLE,
   SEMANTIC_STATE,
 } from '../lib/chartPalette';
 import { useCurrentIdentity } from '../context/CurrentIdentityContext';
@@ -377,7 +378,7 @@ const BuyerDashboard: React.FC = () => {
           >
             <div className="flex items-center justify-between gap-2">
               <span
-                className={`text-[10px] font-semibold uppercase tracking-wider ${SEVERITY_TEXT[g.severity]}`}
+                className={`text-label uppercase ${SEVERITY_TEXT[g.severity]}`}
               >
                 {t(`buyerDashboard.alerts.severity.${g.severity}`)}
               </span>
@@ -633,16 +634,16 @@ const BuyerDashboard: React.FC = () => {
                 <CartesianGrid stroke={CHART_GRID} vertical={false} />
                 <XAxis
                   dataKey="label"
-                  tick={{ fontSize: 10, fill: CHART_AXIS }}
+                  tick={CHART_TICK}
                   interval={0}
                   angle={-35}
                   textAnchor="end"
                   height={52}
                 />
-                <YAxis tick={{ fontSize: 11, fill: CHART_AXIS }} allowDecimals={false} />
+                <YAxis tick={CHART_TICK} allowDecimals={false} />
                 <Tooltip
                   cursor={{ fill: CHART_CURSOR }}
-                  contentStyle={{ border: `1px solid ${CHART_GRID}`, borderRadius: 10, fontSize: 12 }}
+                  contentStyle={CHART_TOOLTIP_STYLE}
                 />
                 <Bar dataKey="count" radius={[4, 4, 0, 0]}>
                   {months.map((b) => (
@@ -872,20 +873,16 @@ const BuyerDashboard: React.FC = () => {
                   <CartesianGrid stroke={CHART_GRID} vertical={false} />
                   <XAxis
                     dataKey="name"
-                    tick={{ fontSize: 11, fill: CHART_AXIS }}
+                    tick={CHART_TICK}
                     interval={0}
                     angle={-20}
                     textAnchor="end"
                     height={60}
                   />
-                  <YAxis domain={[0, 100]} tick={{ fontSize: 11, fill: CHART_AXIS }} />
+                  <YAxis domain={[0, 100]} tick={CHART_TICK} />
                   <Tooltip
                     cursor={{ fill: CHART_CURSOR }}
-                    contentStyle={{
-                      border: `1px solid ${CHART_GRID}`,
-                      borderRadius: 10,
-                      fontSize: 12,
-                    }}
+                    contentStyle={CHART_TOOLTIP_STYLE}
                   />
                   <Bar dataKey="score" radius={[6, 6, 0, 0]}>
                     {supplierHealth.map((row) => (
