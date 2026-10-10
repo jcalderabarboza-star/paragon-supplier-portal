@@ -4,6 +4,7 @@ import { STEP_KIND_KEY } from '../../lib/i18n/stepKind';
 import type { FlowView, StepKind } from '../../services/transitions/catalogView';
 import { layoutFlow, verbOf, NODE_W, NODE_H, type LaidOutEdge } from './flowLayout';
 import { EDGE_INK } from '../../lib/chartPalette';
+import StatusPill from '../../components/ui-v2/StatusPill';
 
 // ────────────────────────────────────────────────────────────────────────────
 // PF-1 · THE FLOW DIAGRAM. Every mark on it is a fact the schema declares.
@@ -66,21 +67,11 @@ const MARKERS: readonly { key: string; color: string }[] = [
 const Badge: React.FC<{ tone: 'neutral' | 'teal' | 'warning'; children: React.ReactNode }> = ({
   tone,
   children,
-}) => {
-  const cls =
-    tone === 'teal'
-      ? 'bg-teal-soft text-teal-text border-teal/30'
-      : tone === 'warning'
-        ? 'bg-warning-soft text-warning-hover border-warning/40'
-        : 'bg-bg-hover text-text-tertiary border-border-subtle';
-  return (
-    <span
-      className={`inline-flex items-center whitespace-nowrap rounded-sm border px-1 py-px text-[9px] font-semibold uppercase tracking-wider ${cls}`}
-    >
-      {children}
-    </span>
-  );
-};
+}) => (
+  <StatusPill variant={tone === 'teal' ? 'info' : tone} size="sm" className="whitespace-nowrap">
+    {children}
+  </StatusPill>
+);
 
 interface FlowDiagramProps {
   view: FlowView;

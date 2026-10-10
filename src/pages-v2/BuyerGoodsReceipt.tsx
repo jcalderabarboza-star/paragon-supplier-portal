@@ -22,6 +22,7 @@ import SidePanel from '../components/ui-v2/SidePanel';
 import Data from '../components/ui-v2/Data';
 import Timeline, { TimelineEvent } from '../components/ui-v2/Timeline';
 import Button from '../components/ui-v2/Button';
+import { Card } from '../components/ui-v2/Card';
 import GRInspectionWizard, { type FailedSettle } from '../components/v2-features/GRInspectionWizard';
 import { useToast } from '../hooks/useToast';
 import { useTranslation } from 'react-i18next';
@@ -1078,8 +1079,10 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
           `asn:flag` gets the notice in the same cell the button would occupy —
           which is the rule the grammar actually states. */
       discrepancyAsns.length > 0 && (
-        <section
-          className="border border-border-subtle rounded-lg bg-white overflow-hidden"
+        <Card
+          as="section"
+          padding="none"
+          className="overflow-hidden"
           data-testid="gr-asn-discrepancies"
         >
           <div className="px-6 py-4 border-b border-border-subtle">
@@ -1097,7 +1100,7 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
             rowKey={(asn) => asn.asnNumber}
             card={false}
           />
-        </section>
+        </Card>
       )
       }
       tabs={
@@ -1249,9 +1252,9 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
                 <SectionHeading level="group" className="mb-2">
                   {t('goodsReceipt.panel.inspectionNotes')}
                 </SectionHeading>
-                <p className="text-sm text-text-secondary border border-border-subtle rounded-md p-3 bg-bg-hover">
-                  {selected.notes}
-                </p>
+                <Card tone="inset">
+                  <p className="text-sm text-text-secondary">{selected.notes}</p>
+                </Card>
               </section>
             )}
 

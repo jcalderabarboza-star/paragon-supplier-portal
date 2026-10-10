@@ -24,6 +24,9 @@ import SectionHeading from '../components/ui-v2/SectionHeading';
 import DataTable, { type Column } from '../components/ui-v2/DataTable';
 import ListPage from '../components/ui-v2/ListPage';
 import Button from '../components/ui-v2/Button';
+import { Card } from '../components/ui-v2/Card';
+import Notice from '../components/ui-v2/Notice';
+import { LinkButton } from '../components/ui-v2/Actions';
 import SidePanel from '../components/ui-v2/SidePanel';
 import FormSection from '../components/ui-v2/FormSection';
 import { Checkbox, FieldLabel, FormField, Select, TextArea, TextInput } from '../components/ui-v2/Form';
@@ -142,13 +145,8 @@ const ProcurementFlow: React.FC = () => {
     { label: t('requisitions.flow.createPo.label'), sub: t('requisitions.flow.createPo.sub'), tone: 'success' },
     { label: t('requisitions.flow.sourcingEvent.label'), sub: t('requisitions.flow.sourcingEvent.sub'), tone: 'warning' },
   ];
-  const TONE: Record<string, string> = {
-    neutral: 'bg-bg-hover text-text-secondary border-border-subtle',
-    success: 'bg-success-soft text-success border-success/30',
-    warning: 'bg-warning-soft text-warning-hover border-warning/30',
-  };
   return (
-    <div className="bg-bg-surface border border-border-subtle rounded-lg px-5 py-4">
+    <Card>
       <SectionHeading level="group" as="h3" className="mb-3">
         {t('requisitions.flow.label')}
       </SectionHeading>
@@ -156,11 +154,9 @@ const ProcurementFlow: React.FC = () => {
         {steps.map((s, i) => (
           <React.Fragment key={s.label}>
             <div className="flex flex-col items-center min-w-[90px]">
-              <span
-                className={`px-3 py-1.5 rounded-sm border text-[11px] font-semibold text-center ${TONE[s.tone]}`}
-              >
+              <StatusPill variant={s.tone} size="sm">
                 {s.label}
-              </span>
+              </StatusPill>
               <span className="text-[10px] text-text-tertiary mt-1 text-center">
                 {s.sub}
               </span>
@@ -171,7 +167,7 @@ const ProcurementFlow: React.FC = () => {
           </React.Fragment>
         ))}
       </div>
-    </div>
+    </Card>
   );
 };
 
@@ -970,12 +966,10 @@ const BuyerRequisitions: React.FC = () => {
     >
       {/* ── PLN-4 · R3 · the bulk acts, over the rows ticked below ────────── */}
       {(pickedRows.length > 0 || bulkProgress || bulkResult) && (
-        <div
-          className="mb-3 flex flex-wrap items-center gap-3 rounded-lg border border-info/30 bg-info-soft px-4 py-2.5 text-sm"
-          data-testid="pr-bulk-bar"
-        >
+        <Notice tone="info" className="mb-3" data-testid="pr-bulk-bar">
+          <div className="flex flex-wrap items-center gap-3">
           {bulkProgress ? (
-            <span className="font-semibold text-info" role="status" aria-live="polite" data-testid="pr-bulk-progress">
+            <span role="status" aria-live="polite" data-testid="pr-bulk-progress">
               {t(bulkProgress.verb === 't_pr_approve' ? 'requisitions.bulk.approving' : 'requisitions.bulk.submitting', {
                 done: formatNumber(Math.min(bulkProgress.done + 1, bulkProgress.total)),
                 total: formatNumber(bulkProgress.total),
@@ -983,7 +977,7 @@ const BuyerRequisitions: React.FC = () => {
             </span>
           ) : pickedRows.length > 0 ? (
             <>
-              <span className="font-semibold text-text-primary" data-testid="pr-bulk-count">
+              <span data-testid="pr-bulk-count">
                 {t('requisitions.bulk.selected', { count: pickedRows.length, n: formatNumber(pickedRows.length) })}
               </span>
               {pickedOf('t_pr_submit').length > 0 &&
@@ -1005,20 +999,19 @@ const BuyerRequisitions: React.FC = () => {
                 ) : (
                   <HandoffNotice availability={approveAvailability} testId="handoff-pr-bulk-approve" />
                 ))}
-              <button
-                type="button"
-                className="text-text-secondary hover:underline"
+              <LinkButton
+                tone="muted"
                 onClick={() => setPicked(new Set())}
                 data-testid="pr-bulk-clear"
               >
                 {t('requisitions.bulk.clear')}
-              </button>
+              </LinkButton>
             </>
           ) : null}
           {bulkResult && !bulkProgress && (
             <div className="flex w-full items-start justify-between gap-3" role="status" data-testid="pr-bulk-result">
               <div>
-                <span className="font-semibold text-text-primary">
+                <span>
                   {t(bulkResult.verb === 't_pr_approve' ? 'requisitions.bulk.approved' : 'requisitions.bulk.submitted', {
                     done: formatNumber(bulkResult.done),
                     refused: formatNumber(bulkResult.total - bulkResult.done),
@@ -1026,19 +1019,20 @@ const BuyerRequisitions: React.FC = () => {
                   })}
                 </span>
                 {bulkResult.refused.length > 0 && (
-                  <ul className="mt-0.5 text-xs text-critical" data-testid="pr-bulk-refusals">
+                  <ul className="mt-0.5" data-testid="pr-bulk-refusals">
                     {bulkResult.refused.map(([reason, n]) => (
                       <li key={reason}>{t('requisitions.bulk.refusedLine', { n: formatNumber(n), reason })}</li>
                     ))}
                   </ul>
                 )}
               </div>
-              <button type="button" className="text-text-secondary hover:underline" onClick={() => setBulkResult(null)}>
+              <LinkButton tone="muted" onClick={() => setBulkResult(null)}>
                 {t('requisitions.bulk.dismiss')}
-              </button>
+              </LinkButton>
             </div>
           )}
-        </div>
+          </div>
+        </Notice>
       )}
 
       <DataTable
@@ -1049,13 +1043,9 @@ const BuyerRequisitions: React.FC = () => {
         empty={t('requisitions.table.empty')}
       />
 
-      <div className="mt-6 bg-info-soft border-l-2 border-info rounded px-4 py-3 text-sm text-text-primary flex items-start gap-2">
-        <ClipboardList size={14} className="text-info shrink-0 mt-0.5" />
-        <span>
-          <strong className="text-info">{t('requisitions.footnote.title')}</strong>{' '}
-          {t('requisitions.footnote.body')}
-        </span>
-      </div>
+      <Notice tone="info" icon={ClipboardList} title={t('requisitions.footnote.title')} className="mt-6">
+        {t('requisitions.footnote.body')}
+      </Notice>
 
       <SidePanel
         open={selectedPR !== null}
@@ -1296,28 +1286,26 @@ const BuyerRequisitions: React.FC = () => {
                 (`PR_DECIDER_NAMED`). */}
             {selectedPR.status === 'Pending Approval' &&
               (approveAvailability.kind === 'held' || rejectAvailability.kind === 'held') && (
-                <section className="rounded-md border border-border-subtle bg-bg-muted px-3 py-2">
+                <Notice tone="neutral">
                   <ActorPreActNotice
                     unattributedKey="identity.preAct.namedRequired"
                     className="text-xs text-text-secondary"
                     testId="pr-attribution-note"
                   />
-                </section>
+                </Notice>
               )}
 
             {/* The recorded rejection, read back on the document it belongs to.
                 This is the half the invoice lane never built — there the
                 required text reaches the store seam and is discarded. */}
             {selectedPR.rejectionReason && (
-              <section
+              <Notice
+                tone="critical"
                 data-testid="pr-rejection-reason"
-                className="rounded-md border border-critical/30 bg-critical-soft/40 px-3 py-2"
+                title={t('requisitions.panel.rejectedBecause')}
               >
-                <SectionHeading level="group" as="h3" className="mb-1">
-                  {t('requisitions.panel.rejectedBecause')}
-                </SectionHeading>
-                <p className="text-sm text-text-primary">{selectedPR.rejectionReason}</p>
-              </section>
+                <p>{selectedPR.rejectionReason}</p>
+              </Notice>
             )}
 
             {/* What changed, read back on the document it belongs to — the
@@ -1326,15 +1314,13 @@ const BuyerRequisitions: React.FC = () => {
                 what was done about it, and an approver looking at a
                 re-submitted requisition needs to read them together. */}
             {selectedPR.revisionNote && (
-              <section
+              <Notice
+                tone="neutral"
                 data-testid="pr-revision-note"
-                className="rounded-md border border-border-subtle bg-bg-muted px-3 py-2"
+                title={t('requisitions.panel.revisedBecause')}
               >
-                <SectionHeading level="group" as="h3" className="mb-1">
-                  {t('requisitions.panel.revisedBecause')}
-                </SectionHeading>
-                <p className="text-sm text-text-primary">{selectedPR.revisionNote}</p>
-              </section>
+                <p>{selectedPR.revisionNote}</p>
+              </Notice>
             )}
 
             {/* ⚠️ APPROVED IS A DEAD END TODAY AND THE SURFACE SAYS SO.
@@ -1363,14 +1349,12 @@ const BuyerRequisitions: React.FC = () => {
                 that the account is now true, and it says what remains undone
                 (PO conversion) instead of claiming everything is. */}
             {selectedPR.status === 'Approved' && (
-              <section
+              <Notice
+                tone="neutral"
                 data-testid="pr-approved-terminal"
-                className="rounded-md border border-border-subtle bg-bg-muted px-3 py-2"
+                title={t('requisitions.panel.sourcing.title')}
               >
-                <SectionHeading level="group" as="h3" className="mb-1">
-                  {t('requisitions.panel.sourcing.title')}
-                </SectionHeading>
-                <p className="text-sm text-text-secondary mb-2">
+                <p className="mb-2">
                   {t('requisitions.panel.sourcing.body')}
                 </p>
                 {sourcingAvailability.kind === 'held' ? (
@@ -1392,7 +1376,7 @@ const BuyerRequisitions: React.FC = () => {
                     testId="handoff-pr-sourcing"
                   />
                 )}
-              </section>
+              </Notice>
             )}
 
             {/* ⚠️ §68 — THIS NOTE USED TO EXPLAIN WHY NOTHING HERE SUBMITTED
@@ -1403,17 +1387,15 @@ const BuyerRequisitions: React.FC = () => {
                 an account of where the document IS — retiring it would leave a
                 lone button and no context. */}
             {selectedPR.status === 'Draft' && (
-              <section
+              <Notice
+                tone="neutral"
                 data-testid="pr-draft-note"
-                className="rounded-md border border-border-subtle bg-bg-muted px-3 py-2"
+                title={t('requisitions.panel.draftNote.title')}
               >
-                <SectionHeading level="group" as="h3" className="mb-1">
-                  {t('requisitions.panel.draftNote.title')}
-                </SectionHeading>
-                <p className="text-sm text-text-secondary">
+                <p>
                   {t('requisitions.panel.draftNote.body')}
                 </p>
-              </section>
+              </Notice>
             )}
 
             <section>
@@ -1579,29 +1561,22 @@ const BuyerRequisitions: React.FC = () => {
                 {t('requisitions.panel.source.title')}
               </SectionHeading>
               {isSetInSap(selectedPR, 'sourceOfSupply') ? (
-                <div className="border-l-2 border-border-subtle rounded bg-bg-subtle px-3 py-3 text-sm" data-testid="pr-source-set-in-sap">
-                  <div className="font-semibold text-text-primary">{t('requisitions.setInSap')}</div>
-                  <div className="text-text-secondary mt-1">{t('requisitions.panel.source.setInSap')}</div>
-                </div>
+                <Notice tone="neutral" data-testid="pr-source-set-in-sap" title={t('requisitions.setInSap')}>
+                  {t('requisitions.panel.source.setInSap')}
+                </Notice>
               ) : (
-              <div
-                className={`border-l-2 rounded px-3 py-3 text-sm ${
+              <Notice
+                tone={selectedPR.sourceOfSupply === 'PIR exists' ? 'success' : 'warning'}
+                title={
                   selectedPR.sourceOfSupply === 'PIR exists'
-                    ? 'bg-success-soft border-success text-success'
-                    : 'bg-warning-soft border-warning text-warning-hover'
-                }`}
-              >
-                <div className="font-semibold">
-                  {selectedPR.sourceOfSupply === 'PIR exists'
                     ? t('requisitions.panel.source.found')
-                    : t('requisitions.panel.source.none')}
-                </div>
-                <div className="text-text-secondary mt-1">
+                    : t('requisitions.panel.source.none')
+                }
+              >
                   {selectedPR.sourceOfSupply === 'PIR exists'
                     ? t('requisitions.panel.source.pirExists', { material: selectedPR.material })
                     : t('requisitions.panel.source.noPir', { material: selectedPR.material })}
-                </div>
-              </div>
+              </Notice>
               )}
               {selectedPR.linkedDoc && (
                 <div className="mt-3 text-sm text-text-secondary">
@@ -1760,9 +1735,9 @@ const BuyerRequisitions: React.FC = () => {
                 setForm({ ...form, justification: e.target.value })
               }
             />
-            <div className="bg-info-soft border-l-2 border-info rounded px-3 py-2 text-xs text-text-primary">
+            <Notice tone="info">
               {t('requisitions.new.info')}
-            </div>
+            </Notice>
           </FormSection>
         </div>
       </SidePanel>

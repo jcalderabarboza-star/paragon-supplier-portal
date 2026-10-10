@@ -2,6 +2,9 @@ import React, { useRef, useState } from 'react';
 import { Upload, X, AlertTriangle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import Button from '../components/ui-v2/Button';
+import { Card } from '../components/ui-v2/Card';
+import Notice from '../components/ui-v2/Notice';
+import { LinkButton, IconButton } from '../components/ui-v2/Actions';
 import { FormField, Select } from '../components/ui-v2/Form';
 import { parseWorkbook, type FileParseReason, type ParsedWorkbook } from '../services/sdc';
 import type { QtyRefusalReason } from '../lib/localeNumber';
@@ -125,8 +128,9 @@ const XlsxImportPanel: React.FC<XlsxImportPanelProps> = ({ onImport, onCancel })
   };
 
   return (
-    <div
-      className="flex flex-col gap-4 rounded-lg border border-action/30 bg-action-soft/40 p-4"
+    <Card
+      tone="inset"
+      className="flex flex-col gap-4"
       data-testid="sdcsup-import-panel"
     >
       <div className="flex items-center justify-between gap-3">
@@ -136,25 +140,22 @@ const XlsxImportPanel: React.FC<XlsxImportPanelProps> = ({ onImport, onCancel })
             {t('sdcSup.bulk.import.title')}
           </span>
         </div>
-        <button
-          type="button"
+        <IconButton
+          icon={X}
           onClick={onCancel}
           aria-label={t('sdcSup.bulk.import.cancel')}
-          className="text-text-tertiary hover:text-text-primary"
-        >
-          <X size={18} />
-        </button>
+        />
       </div>
 
       {/* File-tier honest silence: a bad file imports nothing. */}
       {failure && (
-        <div
-          className="flex items-start gap-2 rounded-md border border-critical/30 bg-critical-soft px-3 py-2 text-sm text-critical"
+        <Notice
+          tone="critical"
+          icon={AlertTriangle}
           data-testid="sdcsup-import-failure"
         >
-          <AlertTriangle size={16} className="mt-0.5 shrink-0" />
           <span>{t(FILE_REASON_KEY[failure])}</span>
-        </div>
+        </Notice>
       )}
 
       {/* STEP 1 — file drop / picker (shown until a book parses). */}
@@ -250,16 +251,13 @@ const XlsxImportPanel: React.FC<XlsxImportPanelProps> = ({ onImport, onCancel })
               a field empty. The list is capped at 5 and the remainder is
               COUNTED, never silently dropped. */}
           {preview && preview.refused.length > 0 && (
-            <div
-              className="flex items-start gap-2 rounded-md border border-warning/40 bg-warning-soft px-3 py-2 text-sm"
+            <Notice
+              tone="warning"
+              icon={AlertTriangle}
+              title={t('sdcSup.bulk.import.unreadable.title', { count: preview.refused.length })}
               data-testid="sdcsup-import-unreadable"
             >
-              <AlertTriangle size={16} className="mt-0.5 shrink-0 text-warning" />
-              <div className="text-text-primary">
-                <div className="font-semibold text-warning-hover">
-                  {t('sdcSup.bulk.import.unreadable.title', { count: preview.refused.length })}
-                </div>
-                <ul className="mt-1 space-y-0.5 text-text-secondary">
+                <ul className="mt-1 space-y-0.5">
                   {preview.refused.slice(0, UNREADABLE_SHOWN).map((r) => (
                     <li key={r.index}>
                       {t('sdcSup.bulk.import.unreadable.row', {
@@ -272,28 +270,25 @@ const XlsxImportPanel: React.FC<XlsxImportPanelProps> = ({ onImport, onCancel })
                   ))}
                 </ul>
                 {preview.refused.length > UNREADABLE_SHOWN && (
-                  <div className="mt-0.5 text-text-tertiary">
+                  <div className="mt-0.5">
                     {t('sdcSup.bulk.import.unreadable.more', {
                       count: preview.refused.length - UNREADABLE_SHOWN,
                     })}
                   </div>
                 )}
-                <p className="mt-1 text-text-secondary">
+                <p className="mt-1">
                   {t('sdcSup.bulk.import.unreadable.body')}
                 </p>
-              </div>
-            </div>
+            </Notice>
           )}
 
           <div className="flex items-center justify-between gap-3">
-            <button
-              type="button"
+            <LinkButton
               onClick={reset}
-              className="text-sm text-action-text hover:underline"
               data-testid="sdcsup-import-another"
             >
               {t('sdcSup.bulk.import.another')}
-            </button>
+            </LinkButton>
             <div className="flex gap-2">
               <Button variant="secondary" onClick={onCancel}>
                 {t('sdcSup.bulk.import.cancel')}
@@ -311,7 +306,7 @@ const XlsxImportPanel: React.FC<XlsxImportPanelProps> = ({ onImport, onCancel })
           </div>
         </div>
       )}
-    </div>
+    </Card>
   );
 };
 

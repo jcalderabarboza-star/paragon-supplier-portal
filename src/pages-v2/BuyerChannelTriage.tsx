@@ -4,6 +4,9 @@ import { Inbox, Info, MessageSquare, Send, RotateCcw, CheckCircle2, AlertTriangl
 import Button from '../components/ui-v2/Button';
 import Data from '../components/ui-v2/Data';
 import StatusPill from '../components/ui-v2/StatusPill';
+import { Card } from '../components/ui-v2/Card';
+import Notice from '../components/ui-v2/Notice';
+import { LinkButton } from '../components/ui-v2/Actions';
 import { useToast } from '../hooks/useToast';
 import { useSuppliers } from '../services/query/hooks';
 import { useInventoryRecord, usePublications } from '../services/query/sdcBuyerHooks';
@@ -358,7 +361,7 @@ const BuyerChannelTriage: React.FC<BuyerChannelTriageProps> = ({ onRecorded }) =
       </div>
       <p className="text-sm text-text-tertiary mb-4">{t('buyerCommHub.triage.subtitle')}</p>
 
-      <div className="border border-border-subtle rounded-lg bg-white p-5 flex flex-col gap-5">
+      <Card className="flex flex-col gap-5">
         {/* ── The binding, FIRST — whose conversation is this? ─────────────── */}
         <FormField
           label={t('buyerCommHub.triage.supplierLabel')}
@@ -381,19 +384,18 @@ const BuyerChannelTriage: React.FC<BuyerChannelTriageProps> = ({ onRecorded }) =
         </FormField>
 
         {subjectSupplierId === '' ? (
-          <div className="rounded-md border border-border-subtle bg-bg-subtle px-4 py-6 text-center text-sm text-text-tertiary">
+          <Notice tone="neutral">
             {t('buyerCommHub.triage.pickSupplierFirst')}
-          </div>
+          </Notice>
         ) : (
           <>
             {/* Recording-for banner — the bound subject, shown read-only. */}
-            <div className="flex items-center gap-2 rounded-md border border-action/30 bg-action-soft px-3 py-2 text-sm">
-              <MessageSquare size={14} className="text-action shrink-0" aria-hidden="true" />
-              <span className="text-text-secondary">
+            <Notice tone="info" icon={MessageSquare}>
+              <span>
                 {t('buyerCommHub.triage.recordingFor')}{' '}
-                <strong className="text-text-primary">{subjectName}</strong>
+                <strong>{subjectName}</strong>
               </span>
-            </div>
+            </Notice>
 
             {/* ── Gate 1 — the message source ──────────────────────────────── */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -453,10 +455,10 @@ const BuyerChannelTriage: React.FC<BuyerChannelTriageProps> = ({ onRecorded }) =
                 </div>
 
                 {/* Raw message echo. */}
-                <div className="rounded-md border border-border-subtle bg-bg-hover px-3 py-2">
+                <Card tone="inset">
                   <SectionHeading level="group" as="h4" className="mb-1">{t('buyerCommHub.triage.rawTitle')}</SectionHeading>
                   <Data className="text-sm text-text-primary break-words">{message?.rawText}</Data>
-                </div>
+                </Card>
 
                 <div className="flex flex-wrap items-center gap-2 text-xs">
                   <StatusPill variant="neutral">
@@ -497,22 +499,20 @@ const BuyerChannelTriage: React.FC<BuyerChannelTriageProps> = ({ onRecorded }) =
                 )}
 
                 {parsed.diagnostics.qtyReason && (
-                  <div className="flex items-start gap-2 rounded-md border border-warning/30 bg-warning-soft px-3 py-2 text-xs text-warning-hover">
-                    <AlertTriangle size={14} className="mt-0.5 shrink-0" aria-hidden="true" />
+                  <Notice tone="warning" icon={AlertTriangle}>
                     <span>
                       {t('commHub.infer.qtyRefused', { reason: t(QTY_REASON_KEY[parsed.diagnostics.qtyReason]) })}{' '}
                       <GlossaryTermChip
                         refTo={{ sourceType: 'QtyRefusalReason', term: parsed.diagnostics.qtyReason }}
                       />
                     </span>
-                  </div>
+                  </Notice>
                 )}
 
                 {!hasRows && (
-                  <div className="rounded-md border border-border-subtle bg-bg-hover px-3 py-3">
-                    <div className="text-sm font-semibold text-text-primary">{t('commHub.infer.noParse.title')}</div>
-                    <p className="mt-0.5 text-xs text-text-secondary">{t('commHub.infer.noParse.body')}</p>
-                  </div>
+                  <Notice tone="neutral" title={t('commHub.infer.noParse.title')}>
+                    <p>{t('commHub.infer.noParse.body')}</p>
+                  </Notice>
                 )}
 
                 {hasRows && (
@@ -531,20 +531,19 @@ const BuyerChannelTriage: React.FC<BuyerChannelTriageProps> = ({ onRecorded }) =
                         masterUom !== null &&
                         parsed.diagnostics.uom.toUpperCase() !== masterUom.toUpperCase();
                       return (
-                        <div key={i} className="rounded-md border border-border-subtle bg-bg-hover p-3 flex flex-col gap-2">
+                        <Card key={i} tone="inset" className="flex flex-col gap-2">
                           <div className="flex items-start justify-between gap-2 text-xs text-text-tertiary">
                             <span>
                               {t('commHub.row.supplierWrote')}:{' '}
                               <Data className="text-text-secondary">{row.rawMaterial || '—'}</Data>
                             </span>
-                            <button
-                              type="button"
-                              className="shrink-0 font-medium text-action-text hover:underline"
+                            <LinkButton
+                              className="shrink-0"
                               onClick={() => removeRow(i)}
                               data-testid={`triage-row-remove-${i}`}
                             >
                               {t('commHub.row.remove')}
-                            </button>
+                            </LinkButton>
                           </div>
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                             <FormField
@@ -586,7 +585,7 @@ const BuyerChannelTriage: React.FC<BuyerChannelTriageProps> = ({ onRecorded }) =
                               {t('commHub.row.uomMismatch', { msg: parsed.diagnostics.uom, master: masterUom })}
                             </div>
                           )}
-                        </div>
+                        </Card>
                       );
                     })}
 
@@ -653,7 +652,7 @@ const BuyerChannelTriage: React.FC<BuyerChannelTriageProps> = ({ onRecorded }) =
           <Info size={13} className="mt-0.5 shrink-0 text-warning-hover" aria-hidden="true" />
           <span>{t('buyerCommHub.triage.honestyNote')}</span>
         </div>
-      </div>
+      </Card>
     </section>
   );
 };

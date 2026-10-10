@@ -36,6 +36,9 @@ import BulkActionsBar from '../components/ui-v2/BulkActionsBar';
 import SubTabs from '../components/ui-v2/SubTabs';
 import FilterChipsBar from '../components/ui-v2/FilterChipsBar';
 import StatusPill from '../components/ui-v2/StatusPill';
+import { Card } from '../components/ui-v2/Card';
+import Notice, { type NoticeTone } from '../components/ui-v2/Notice';
+import { IconButton, RowButton } from '../components/ui-v2/Actions';
 import { CHART_SEMANTIC, CHART_IDENTITY, MAP_BASE } from '../lib/chartPalette';
 import DataTable from '../components/ui-v2/DataTable';
 import Button from '../components/ui-v2/Button';
@@ -159,10 +162,10 @@ const TAB_DEFS: { id: TabKey; labelKey: string }[] = [
   { id: 'commodity', labelKey: 'risk.tab.commodity' },
 ];
 
-const ALERT_VARIANT: Record<AlertLevel, { bg: string; border: string; text: string; Icon: LucideIcon }> = {
-  critical: { bg: 'bg-critical-soft', border: 'border-critical', text: 'text-critical', Icon: AlertOctagon },
-  warning: { bg: 'bg-warning-soft', border: 'border-warning', text: 'text-warning-hover', Icon: AlertTriangle },
-  info: { bg: 'bg-info-soft', border: 'border-info', text: 'text-info', Icon: Info },
+const ALERT_VARIANT: Record<AlertLevel, { tone: NoticeTone; Icon: LucideIcon }> = {
+  critical: { tone: 'critical', Icon: AlertOctagon },
+  warning: { tone: 'warning', Icon: AlertTriangle },
+  info: { tone: 'info', Icon: Info },
 };
 
 const AlertBanner: React.FC<{
@@ -173,33 +176,22 @@ const AlertBanner: React.FC<{
 }> = ({ alert, onDismiss, highlighted = false }) => {
   const { t } = useTranslation();
   const v = ALERT_VARIANT[alert.level];
-  const Icon = v.Icon;
   return (
     // ⚠️ THE ANCHOR AND THE RING ARE THE WHOLE DEEP-LINK AFFORDANCE HERE.
     // This page has no per-alert detail panel and inventing one would be a
     // redesign, so a linked row lands ON ITSELF — scrolled into view and
     // ringed — exactly as a glossary term chip does (operator ruling).
-    <div
+    <Notice
       id={recordAnchorId(alert.id)}
-      className={`${v.bg} border-l-2 ${v.border} rounded px-4 py-3 mb-2 flex items-start gap-3 ${
-        highlighted ? 'ring-2 ring-action ring-offset-2' : ''
-      }`}
+      tone={v.tone}
+      icon={v.Icon}
+      className={`mb-2 ${highlighted ? 'ring-2 ring-action ring-offset-2' : ''}`}
+      // i18n-defer: mock/sample data — alert title/body seeded from fixtures
+      title={alert.title}
+      action={<IconButton icon={X} onClick={onDismiss} aria-label={t('risk.alert.dismiss')} />}
     >
-      <Icon size={16} className={`shrink-0 mt-0.5 ${v.text}`} />
-      <div className="flex-1 min-w-0">
-        {/* i18n-defer: mock/sample data — alert title/body seeded from fixtures */}
-        <div className={`text-sm font-semibold ${v.text}`}>{alert.title}</div>
-        <div className="text-xs text-text-secondary mt-1">{alert.body}</div>
-      </div>
-      <button
-        type="button"
-        onClick={onDismiss}
-        className="text-text-tertiary hover:text-text-secondary shrink-0"
-        aria-label={t('risk.alert.dismiss')}
-      >
-        <X size={14} />
-      </button>
-    </div>
+      {alert.body}
+    </Notice>
   );
 };
 
@@ -216,7 +208,7 @@ const WorldMap: React.FC = () => {
     { label: t('risk.map.region.dallas'), cx: 190, cy: 215, color: CHART_IDENTITY, size: 5 },
   ];
   return (
-    <div className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-5">
+    <Card>
       <div className="text-sm font-semibold text-text-primary mb-3">
         {t('risk.map.title')}
       </div>
@@ -291,7 +283,7 @@ const WorldMap: React.FC = () => {
           </g>
         ))}
       </svg>
-    </div>
+    </Card>
   );
 };
 
@@ -313,9 +305,10 @@ const GeopoliticalTab: React.FC<{ geoRisks: GeoRisk[] }> = ({ geoRisks }) => {
             ? 'bg-warning-soft'
             : 'bg-success-soft';
       return (
-        <div
+        <Card
           key={r.country}
-          className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm overflow-hidden"
+          padding="none"
+          className="overflow-hidden"
         >
           <div
             className={`${sevSoftBg} px-5 py-4 flex items-center gap-4 border-b border-border-subtle`}
@@ -387,7 +380,7 @@ const GeopoliticalTab: React.FC<{ geoRisks: GeoRisk[] }> = ({ geoRisks }) => {
               </div>
             </div>
           </div>
-        </div>
+        </Card>
       );
     })}
   </div>
@@ -408,7 +401,7 @@ const ExposureTab: React.FC<{ exposure: ExposureRow[] }> = ({ exposure }) => {
   const dualSourced = exposure.filter((r) => r.dualSource).length;
 
   return (
-    <div className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm">
+    <Card padding="none">
       <div className="grid grid-cols-2 md:grid-cols-4 px-5 py-4 border-b border-border-subtle">
         <SummaryStat
           label={t('risk.exposure.totalExposed')}
@@ -493,7 +486,7 @@ const ExposureTab: React.FC<{ exposure: ExposureRow[] }> = ({ exposure }) => {
           },
         ]}
       />
-    </div>
+    </Card>
   );
 };
 
@@ -593,16 +586,13 @@ const ScenarioTab: React.FC<{ scenarios: Scenario[] }> = ({ scenarios }) => {
             const open = expandedAlt === alt.id;
             const feasVariant = FEASIBILITY_VARIANT[alt.feasibility];
             return (
-              <div
+              <Card
                 key={alt.id}
-                className={`bg-bg-surface border rounded-lg shadow-sm overflow-hidden transition-colors ${
-                  open ? 'border-action' : 'border-border-subtle'
-                }`}
+                padding="none"
+                className="overflow-hidden"
               >
-                <button
-                  type="button"
+                <RowButton
                   onClick={() => setExpandedAlt(open ? null : alt.id)}
-                  className="w-full px-5 py-3 flex items-center justify-between gap-4 text-left"
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     {/* i18n-defer: mock/sample data — alternative name/cost/leadTime/details seeded from fixtures */}
@@ -626,7 +616,7 @@ const ScenarioTab: React.FC<{ scenarios: Scenario[] }> = ({ scenarios }) => {
                       <ChevronDown size={14} className="text-text-tertiary" />
                     )}
                   </div>
-                </button>
+                </RowButton>
                 {open && (
                   <div className="px-5 pb-4 border-t border-border-subtle">
                     <div className="text-sm text-text-secondary leading-relaxed mt-3">
@@ -661,13 +651,13 @@ const ScenarioTab: React.FC<{ scenarios: Scenario[] }> = ({ scenarios }) => {
                     </div>
                   </div>
                 )}
-              </div>
+              </Card>
             );
           })}
         </div>
       </div>
 
-      <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-5">
+      <Card as="section">
         <div className="flex items-center gap-2 mb-3">
           <Sparkles size={16} className="text-teal" />
           <span className="text-sm font-bold text-teal-text">{t('risk.scenario.ariaRecommendation')}</span>
@@ -695,7 +685,7 @@ const ScenarioTab: React.FC<{ scenarios: Scenario[] }> = ({ scenarios }) => {
         <div className="text-xs text-text-tertiary mt-3">
           Confidence: 84% · Based on 6 similar disruption scenarios
         </div>
-      </section>
+      </Card>
     </div>
   );
 };
@@ -726,21 +716,27 @@ const ComplianceRisksTab: React.FC<{ compliance: ComplianceRow[] }> = ({
   return (
     <div className="flex flex-col gap-4">
       {!bannerDismissed && halalItem && (
-        <div className="bg-warning-soft border-l-2 border-warning rounded px-4 py-3 flex items-start gap-3">
-          <AlertTriangle size={16} className="text-warning-hover shrink-0 mt-0.5" />
-          <div className="flex-1 min-w-0">
-            <span className="text-sm font-bold text-text-primary">
-              {t('risk.compliance.actionRequired')}
-            </span>
+        <Notice
+          tone="warning"
+          icon={AlertTriangle}
+          title={t('risk.compliance.actionRequired')}
+          action={
+            <IconButton
+              icon={X}
+              onClick={() => setBannerDismissed(true)}
+              aria-label={t('risk.compliance.dismissBanner')}
+            />
+          }
+        >
             {/* Interpolated supplier/type/expires/days stay canonical (fixture data) */}
-            <span className="text-sm text-text-secondary">
+            <span>
               {t(
                 (daysLeftOf(halalItem) ?? 0) < 0
                   ? 'risk.compliance.certExpiredPrefix'
                   : 'risk.compliance.certWarnPrefix',
                 { supplier: halalItem.supplier, type: halalItem.type },
               )}
-              <strong className="text-warning-hover">
+              <strong>
                 {t(
                   (daysLeftOf(halalItem) ?? 0) < 0
                     ? 'risk.compliance.certExpiredDays'
@@ -750,16 +746,7 @@ const ComplianceRisksTab: React.FC<{ compliance: ComplianceRow[] }> = ({
               </strong>
               {t('risk.compliance.certWarnSuffix', { expires: halalItem.expires })}
             </span>
-          </div>
-          <button
-            type="button"
-            onClick={() => setBannerDismissed(true)}
-            className="text-text-tertiary hover:text-text-secondary shrink-0"
-            aria-label={t('risk.compliance.dismissBanner')}
-          >
-            <X size={14} />
-          </button>
-        </div>
+        </Notice>
       )}
 
       <DataTable<ComplianceRow>
@@ -857,11 +844,11 @@ const ComplianceRisksTab: React.FC<{ compliance: ComplianceRow[] }> = ({
           },
         ]}
       />
-      <div className="bg-info-soft border-l-2 border-info rounded px-4 py-3 text-meta text-text-secondary">
+      <Notice tone="info">
         {t('risk.compliance.differentAnglePrefix')}
-        <strong className="text-info">{t('risk.compliance.complianceTracker')}</strong>
+        <strong>{t('risk.compliance.complianceTracker')}</strong>
         {t('risk.compliance.differentAngleSuffix')}
-      </div>
+      </Notice>
     </div>
   );
 };
@@ -895,9 +882,8 @@ const CommodityTab: React.FC<{ commodities: Commodity[] }> = ({
         const up = c.change > 0;
         const breached = c.alertDir === 'above' && c.current >= c.alert;
         return (
-          <div
+          <Card
             key={c.name}
-            className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-5"
             style={{ borderLeft: `4px solid ${c.color}` }}
           >
             <div className="flex items-start justify-between gap-3 mb-3">
@@ -972,12 +958,12 @@ const CommodityTab: React.FC<{ commodities: Commodity[] }> = ({
                 )}
               </span>
             </div>
-          </div>
+          </Card>
         );
       })}
     </div>
 
-    <div className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-5">
+    <Card>
       <div className="text-sm font-semibold text-text-primary mb-3">
         {t('risk.commodity.impactAlertsTitle')}
       </div>
@@ -1012,7 +998,7 @@ const CommodityTab: React.FC<{ commodities: Commodity[] }> = ({
           );
         })}
       </div>
-    </div>
+    </Card>
   </div>
   );
 };

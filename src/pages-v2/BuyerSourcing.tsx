@@ -44,6 +44,9 @@ import { Checkbox, ChoiceCard, FormField, Radio, Select, TextArea, TextInput } f
 import LivenessPill from '../components/ui-v2/LivenessPill';
 import ModelMarker from '../components/ui-v2/ModelMarker';
 import Button from '../components/ui-v2/Button';
+import { Card } from '../components/ui-v2/Card';
+import Notice from '../components/ui-v2/Notice';
+import { LinkButton, ToggleChip, RowButton } from '../components/ui-v2/Actions';
 import Wizard, { WizardStep } from '../components/ui-v2/Wizard';
 import {
   RFQ_CATEGORY_OPTIONS,
@@ -594,7 +597,7 @@ const FxBasisPanel: React.FC<{
   onPin: (c: BidCurrency) => void;
   t: TFunction;
 }> = ({ currencies, pins, onPin, t }) => (
-  <div className="mb-3 rounded-md border border-border-subtle bg-surface-subtle px-3 py-2">
+  <Card tone="inset" className="mb-3">
     <div className="flex items-center gap-2 mb-2">
       <SectionHeading level="group" as="h4">
         {t('sourcing.cmp.fx.basis.title')}
@@ -659,7 +662,7 @@ const FxBasisPanel: React.FC<{
         );
       })}
     </ul>
-  </div>
+  </Card>
 );
 
 // 2e-c-5 — the `isSpreadCurrency` guard that lived here is GONE. Policy is still
@@ -799,16 +802,14 @@ const ReviewSection: React.FC<{
 }> = ({ label, rows, onEdit }) => {
   const { t } = useTranslation();
   return (
-  <section className="border border-border-subtle rounded-md">
+  <Card as="section" padding="none" className="overflow-hidden">
     <header className="flex items-center justify-between px-4 py-2 bg-bg-hover">
       <SectionHeading level="group" as="h4">{label}</SectionHeading>
-      <button
-        type="button"
+      <LinkButton
         onClick={onEdit}
-        className="text-xs font-medium text-teal-text hover:text-teal-hover"
       >
         {t('sourcing.wizard.review.edit')}
-      </button>
+      </LinkButton>
     </header>
     <FieldList layout="row" className="px-4 py-3 divide-y divide-border-subtle">
       {rows.map(([k, v]) => (
@@ -817,7 +818,7 @@ const ReviewSection: React.FC<{
         </Field>
       ))}
     </FieldList>
-  </section>
+  </Card>
   );
 };
 
@@ -843,12 +844,9 @@ const ComparisonRow: React.FC<{
     >
       {label}
       {tag && (
-        <span
-          title={tagTitle}
-          className="ml-1.5 inline-block normal-case tracking-normal text-[9px] font-medium text-text-tertiary border border-border-subtle rounded px-1 py-px align-middle"
-        >
+        <StatusPill variant="neutral" size="sm" title={tagTitle} className="ml-1.5 align-middle">
           {tag}
-        </span>
+        </StatusPill>
       )}
     </th>
     {children}
@@ -921,13 +919,10 @@ const SpreadCell: React.FC<{ result: QuoteSpread; t: TFunction }> = ({
             "not the other branch" and would have claimed an FX conversion for a
             currency with no FX pair at all. */}
         {basis === 'FX_CONVERTED' && (
-          <span
-            title={t('sourcing.cmp.fxTitle')}
-            className="inline-flex items-center gap-1 text-[9px] font-semibold uppercase tracking-wider text-text-secondary border border-dashed border-border-input rounded px-1 py-px"
-          >
+          <StatusPill variant="neutral" size="sm" title={t('sourcing.cmp.fxTitle')} className="gap-1">
             <ArrowLeftRight size={9} aria-hidden="true" />
             {t('sourcing.cmp.fx')}
-          </span>
+          </StatusPill>
         )}
       </span>
     </div>
@@ -2282,12 +2277,12 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                  only a placeholder looks broken and says nothing; this names WHY
                  there is nothing to choose — a sourcing event is raised from an
                  APPROVED requisition, and none is waiting. */
-              <p
-                className="text-sm text-text-tertiary border border-border-subtle rounded-md px-3 py-2 bg-bg-hover"
+              <Notice
+                tone="neutral"
                 data-testid="rfq-source-empty"
               >
                 {t('sourcing.wizard.sourceRequisition.none')}
-              </p>
+              </Notice>
             ) : (
                 <Select
                   id="rfq-source-requisition"
@@ -2390,21 +2385,16 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                   const m = e.label;
                   const selected = draft.materials.includes(k);
                   return (
-                    <button
+                    <ToggleChip
                       key={k}
-                      type="button"
                       data-testid={
                         e.kind === 'CODED' ? 'catalog-chip-coded' : 'catalog-chip-codeless'
                       }
                       onClick={() => toggleMaterial(k)}
-                      className={`px-3 py-1.5 rounded-full text-sm transition-colors ${
-                        selected
-                          ? 'bg-action text-white border border-action'
-                          : 'bg-bg-surface text-text-secondary border border-border-input hover:border-action'
-                      }`}
+                      selected={selected}
                     >
                       {m}
-                    </button>
+                    </ToggleChip>
                   );
                 })}
                 {/* ⚠️ THE RFQ SAYS SO WHILE THE BUYER CAN STILL ACT ON IT.
@@ -2563,7 +2553,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
       content: (
         <div className="space-y-5">
           {aiRecommendedSuppliers.length > 0 && (
-            <div className="bg-teal-soft border border-teal/20 rounded-md p-4">
+            <Card tone="inset">
               <div className="flex items-center gap-2 mb-3">
                 <Sparkles size={16} className="text-teal" />
                 <SectionHeading as="h4">
@@ -2599,7 +2589,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                   );
                 })}
               </div>
-            </div>
+            </Card>
           )}
 
           <div>
@@ -2674,14 +2664,14 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
           </div>
 
           <div className="text-sm text-text-secondary">
-            <span className="inline-flex items-center gap-1.5 bg-teal-soft text-teal-text rounded-full px-3 py-1 text-xs font-semibold">
+            <StatusPill variant="neutral">
               {t(
                 draft.invitedSupplierIds.length === 1
                   ? 'sourcing.wizard.selectedCount.one'
                   : 'sourcing.wizard.selectedCount.other',
                 { count: draft.invitedSupplierIds.length },
               )}
-            </span>
+            </StatusPill>
             {/* Said to the reader, not only in a comment: the column informs,
                 it does not restrict. A status chip beside a checkbox reads as a
                 constraint unless the surface says otherwise. */}
@@ -3390,11 +3380,9 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
       />
 
       {/* Awards history */}
-      <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm overflow-hidden">
-        <button
-          type="button"
+      <Card as="section" padding="none" className="overflow-hidden">
+        <RowButton
           onClick={() => setAwardsOpen((v) => !v)}
-          className="w-full flex items-center justify-between px-6 py-4 hover:bg-bg-hover transition-colors"
         >
           <div className="text-left">
             <SectionHeading as="h2">
@@ -3414,7 +3402,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
           ) : (
             <ChevronDown size={16} className="text-text-tertiary" />
           )}
-        </button>
+        </RowButton>
         {awardsOpen && (
           <DataTable
             card={false}
@@ -3425,7 +3413,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
             empty={t('sourcing.awards.empty')}
           />
         )}
-      </section>
+      </Card>
 
       <SidePanel
         open={selectedRfq !== null}
@@ -3477,8 +3465,8 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                 `codesOfKeys`, and no verb in this platform edits an RFQ's
                 materials afterwards. */}
             {requestsForSelected.length > 0 && (
-              <section
-                className="text-xs text-text-tertiary border border-border-subtle rounded-md p-3"
+              <Notice
+                tone="neutral"
                 data-testid="rfq-material-request-line"
               >
                 {requestsForSelected.some((r) => r.status === 'Submitted' || r.status === 'Under Review')
@@ -3494,10 +3482,10 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                         .map((r) => t(`materialRequests.status.${r.status}`))
                         .join(', '),
                     })}
-              </section>
+              </Notice>
             )}
             {selectedRfq.status === 'Awarded' && (
-              <section className="bg-success-soft border border-success/30 rounded-md p-4">
+              <Card as="section" tone="inset">
                 <div className="flex items-center gap-2 mb-3">
                   <Trophy size={16} className="text-success" />
                   <SectionHeading as="h3">
@@ -3527,14 +3515,15 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                   {/* Award mints no PO — issuance is a separate buyer verb. */}
                   <Field label={t('sourcing.panel.poIssued')}>—</Field>
                 </FieldList>
-              </section>
+              </Card>
             )}
 
             {/* RFx-1 — CONCLUDED WITHOUT AN AWARD: when, at which stage, and
                 why, in the buyer's own words. */}
             {selectedRfq.status === 'Concluded' && (
-              <section
-                className="bg-bg-hover border border-border-subtle rounded-md p-4"
+              <Card
+                as="section"
+                tone="inset"
                 data-testid="rfq-concluded-summary"
               >
                 <div className="flex items-center gap-2 mb-3">
@@ -3550,7 +3539,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                     {selectedRfq.concludeReason || '—'}
                   </Field>
                 </FieldList>
-              </section>
+              </Card>
             )}
 
             {/* ⚠️ PSL P2 — THE VERDICT ON A REAL EVENT.
@@ -3880,11 +3869,12 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                 {/* SRC-1 — THE SECOND ASK. Gated on the atom as the button is:
                     a seat narrowed while the question stands open loses it. */}
                 {asking === 'cancel' && rfqVerbs.cancel.kind === 'held' && (
-                  <div
-                    className="mt-3 border border-critical/30 bg-critical-soft rounded-md p-3"
+                  <Notice
+                    tone="critical"
+                    className="mt-3"
                     data-testid="rfq-cancel-ask"
                   >
-                    <p className="text-sm text-text-primary mb-3">
+                    <p className="mb-3">
                       {t(
                         quotesForSelected.length === 0
                           ? 'sourcing.cancel.ask.none'
@@ -3897,7 +3887,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                     <div className="flex flex-wrap gap-2">
                       <Button
                         variant="outline"
-                        className="text-critical border-critical"
+                        tone="critical"
                         disabled={cancelMutation.isPending}
                         onClick={handleCancel}
                         data-testid="rfq-cancel-yes"
@@ -3908,12 +3898,12 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                         {t('sourcing.cancel.ask.no')}
                       </Button>
                     </div>
-                  </div>
+                  </Notice>
                 )}
                 {/* RFx-1 — THE SHORTLIST. Gated on the atom as the button is. */}
                 {asking === 'advance' && rfqVerbs.advance.kind === 'held' && nextStage !== null && (
-                  <div
-                    className="mt-3 border border-border-subtle bg-bg-surface rounded-md p-3"
+                  <Card
+                    className="mt-3"
                     data-testid="rfq-advance-form"
                   >
                     <p className="text-sm text-text-primary mb-3">
@@ -3932,8 +3922,9 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                       </p>
                     )}
                     {advanceRanked && (
-                      <div
-                        className="border border-border-subtle bg-bg-hover rounded-md p-2 mb-2"
+                      <Card
+                        tone="inset"
+                        className="mb-2"
                         data-testid="rfq-advance-rank-preselect"
                       >
                         <p className="text-xs text-text-tertiary mb-2">{t('sourcing.advance.rank.note')}</p>
@@ -3981,7 +3972,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                             {t('sourcing.advance.rank.minApply')}
                           </Button>
                         </div>
-                      </div>
+                      </Card>
                     )}
                     <ul className="space-y-1 mb-3">
                       {selectedRfq.invitedSupplierIds.map((id) => {
@@ -4098,15 +4089,16 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                         {t('sourcing.advance.no')}
                       </Button>
                     </div>
-                  </div>
+                  </Card>
                 )}
                 {/* RFx-1 — CONCLUDE, ASKED A SECOND TIME, WITH THE REASON. */}
                 {asking === 'conclude' && rfqVerbs.conclude.kind === 'held' && (
-                  <div
-                    className="mt-3 border border-critical/30 bg-critical-soft rounded-md p-3"
+                  <Notice
+                    tone="critical"
+                    className="mt-3"
                     data-testid="rfq-conclude-ask"
                   >
-                    <p className="text-sm text-text-primary mb-3">
+                    <p className="mb-3">
                       {t(
                         quotesForSelected.length === 0
                           ? 'sourcing.conclude.ask.none'
@@ -4133,7 +4125,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                     <div className="flex flex-wrap gap-2">
                       <Button
                         variant="outline"
-                        className="text-critical border-critical"
+                        tone="critical"
                         disabled={concludeReason.trim() === '' || concludeMutation.isPending}
                         onClick={handleConclude}
                         data-testid="rfq-conclude-yes"
@@ -4144,7 +4136,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                         {t('sourcing.conclude.ask.no')}
                       </Button>
                     </div>
-                  </div>
+                  </Notice>
                 )}
                 {!named && (
                   <p className="text-xs text-text-tertiary mt-3" data-testid="rfq-unattributed-note">
@@ -4184,11 +4176,12 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                   </p>
                 )}
                 {stageAnswers.length === 0 ? (
-                  <div className="text-sm text-text-tertiary p-4 border border-border-subtle rounded-md text-center">
+                  <Notice tone="neutral">
                     {t('sourcing.interest.empty')}
-                  </div>
+                  </Notice>
                 ) : (
-                  <ul className="divide-y divide-border-subtle border border-border-subtle rounded-md">
+                  <Card padding="none">
+                  <ul className="divide-y divide-border-subtle">
                     {stageAnswers.map((a) => (
                       <li
                         key={a.id}
@@ -4199,9 +4192,9 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                           <span className="font-semibold text-text-primary">
                             {supplierNameById.get(a.supplierId) ?? a.supplierId}
                           </span>
-                          <span className="text-xs font-semibold text-text-secondary border border-border-subtle rounded px-1">
+                          <StatusPill variant="neutral">
                             {a.stage}
-                          </span>
+                          </StatusPill>
                           <Data className="text-xs text-text-tertiary ml-auto">
                             {formatDate(a.respondedAt)}
                           </Data>
@@ -4212,6 +4205,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                       </li>
                     ))}
                   </ul>
+                  </Card>
                 )}
               </section>
             )}
@@ -4232,10 +4226,11 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                   Names the currencies, so the buyer knows exactly which pin to
                   record rather than being told something is wrong. */}
               {scoring.kind === 'refused' && (
-                <div
+                <Notice
+                  tone="warning"
                   role="status"
                   data-testid="fx-refusal"
-                  className="mb-3 text-xs text-warning-hover bg-warning-soft border border-warning rounded-md px-3 py-2"
+                  className="mb-3"
                 >
                   {t(FX_REFUSAL_KEY[scoring.reason], {
                     currencies: scoring.currencies.join(', '),
@@ -4253,7 +4248,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                   <GlossaryTermChip
                     refTo={{ sourceType: 'FxRefusalReason', term: scoring.reason }}
                   />
-                </div>
+                </Notice>
               )}
               {/* 2e-c-4 — THE RECORDED BASIS, on screen. A buyer must be able to
                   answer "what rate ranked this comparison, and how old is it?"
@@ -4270,10 +4265,10 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                 />
               )}
               {quotesForSelected.length === 0 ? (
-                <div className="text-sm text-text-tertiary p-4 border border-border-subtle rounded-md text-center">
+                <Notice tone="neutral">
                   {/* RFx-1 — at RFI and RFP no quotation can exist yet. */}
                   {selectedStage === 'RFQ' ? t('sourcing.cmp.empty') : t('sourcing.cmp.emptyBeforeRfq')}
-                </div>
+                </Notice>
               ) : (
                 <div className="overflow-x-auto -mx-6 px-6">
                   {/* RFQ-DRAWER-01: one horizontally-scrolling table, no sticky
@@ -4307,12 +4302,9 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                                     {t('sourcing.cmp.topRanked')}
                                   </span>
                                   {COMPOSITE_LIVENESS === 'simulated' && (
-                                    <span
-                                      title={t('sourcing.cmp.simulatedTitle')}
-                                      className="inline-block normal-case text-[9px] font-medium text-text-tertiary border border-border-subtle rounded px-1 py-px"
-                                    >
+                                    <StatusPill variant="neutral" size="sm" title={t('sourcing.cmp.simulatedTitle')}>
                                       {t('sourcing.cmp.simulated')}
-                                    </span>
+                                    </StatusPill>
                                   )}
                                 </span>
                               )}
@@ -4633,14 +4625,12 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                                     `Submitted` quote has the act at all. */}
                                 {q.status === 'Submitted' &&
                                   (rfqVerbs.review.kind === 'held' ? (
-                                    <button
-                                      type="button"
+                                    <LinkButton
                                       onClick={() => handleReview(q.id)}
                                       disabled={reviewMutation.isPending}
-                                      className="text-xs font-semibold text-action-text hover:text-action-hover disabled:opacity-50"
                                     >
                                       {t('sourcing.cmp.moveToReview')}
-                                    </button>
+                                    </LinkButton>
                                   ) : (
                                     <HandoffNotice
                                       availability={rfqVerbs.review}
@@ -4680,7 +4670,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                 with one silent invitee showed the "Award" choice with nothing
                 to commit it. */}
             {isAwardable(selectedRfq, quotesForSelected.length) && (
-                <section className="bg-teal-soft border border-teal/20 rounded-md p-4" data-testid="rfq-award-section">
+                <Card as="section" tone="inset" data-testid="rfq-award-section">
                   <SectionHeading as="h3" className="mb-2">
                     {t('sourcing.award.title')}
                   </SectionHeading>
@@ -4739,8 +4729,8 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                     )}
                   </div>
                   {asking === 'award' && rfqVerbs.award.kind === 'held' && selectedPricedQuote && (
-                    <div
-                      className="mt-3 border border-border-subtle bg-bg-surface rounded-md p-3"
+                    <Card
+                      className="mt-3"
                       data-testid="rfq-award-ask"
                     >
                       <p className="text-sm text-text-primary mb-3">
@@ -4774,9 +4764,9 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                           {t('sourcing.award.ask.no')}
                         </Button>
                       </div>
-                    </div>
+                    </Card>
                   )}
-                </section>
+                </Card>
               )}
           </div>
         )}
@@ -4823,23 +4813,24 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                 rate must see the one they are superseding, or they cannot tell
                 whether they are correcting a typo or reacting to a real move. */}
             {pinDraft.superseding && (
-              <div
+              <Notice
+                tone="neutral"
                 data-testid="fx-supersede-prior"
-                className="mb-4 rounded-md border border-border-subtle bg-surface-subtle px-3 py-2 text-xs"
+                className="mb-4"
               >
-                <span className="text-text-tertiary">
+                <span>
                   {t('sourcing.fx.dialog.prior')}{' '}
                 </span>
-                <Data as="span" className="font-semibold">
+                <Data as="span">
                   {formatMoney(pinDraft.superseding.rate, pinDraft.superseding.base)}
                 </Data>
-                <span className="text-text-secondary">
+                <span>
                   {' '}
                   {t('sourcing.cmp.fx.basis.asOf', {
                     date: formatDate(pinDraft.superseding.asOf),
                   })}
                 </span>
-              </div>
+              </Notice>
             )}
 
             <div className="flex flex-col gap-3">

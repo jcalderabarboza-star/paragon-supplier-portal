@@ -1,6 +1,7 @@
 import React from 'react';
 import { FlaskConical } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import Notice from './Notice';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SUP-2 · "ILLUSTRATIVE — NOT MEASURED" (operator ruling).
@@ -28,17 +29,9 @@ export const IllustrativeBanner: React.FC<{
 }> = ({ bodyKey }) => {
   const { t } = useTranslation();
   return (
-    <div
-      role="note"
-      data-testid="illustrative-banner"
-      className="mb-6 flex items-start gap-3 rounded border border-dashed border-border-input bg-bg-hover px-4 py-3"
-    >
-      <FlaskConical size={16} aria-hidden="true" className="text-text-tertiary shrink-0 mt-0.5" />
-      <p className="text-sm text-text-secondary">
-        <strong className="text-text-primary">{t('illustrative.banner.title')}</strong>{' '}
-        {t(bodyKey)}
-      </p>
-    </div>
+    <Notice tone="sample" icon={FlaskConical} title={t('illustrative.banner.title')} className="mb-6" data-testid="illustrative-banner">
+      {t(bodyKey)}
+    </Notice>
   );
 };
 

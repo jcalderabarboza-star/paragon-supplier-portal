@@ -31,6 +31,8 @@ import { Field, FieldList, type FieldKind } from '../components/ui-v2/Field';
 import SectionHeading from '../components/ui-v2/SectionHeading';
 import { Checkbox, ChoiceCard, FormField, Radio, Select, TextInput } from '../components/ui-v2/Form';
 import Button from '../components/ui-v2/Button';
+import { Card, CardButton } from '../components/ui-v2/Card';
+import { LinkButton, ToggleChip } from '../components/ui-v2/Actions';
 import Wizard, { WizardStep } from '../components/ui-v2/Wizard';
 import { useToast } from '../hooks/useToast';
 import LoadingState from '../components/ui-v2/LoadingState';
@@ -187,19 +189,17 @@ const ReviewSection: React.FC<{
 }> = ({ label, rows, onEdit }) => {
   const { t } = useTranslation();
   return (
-  <section className="border border-border-subtle rounded-md">
+  <Card as="section" padding="none" className="overflow-hidden">
     <header className="flex items-center justify-between px-4 py-2 bg-bg-hover">
       <SectionHeading level="group" as="h4">
         {label}
       </SectionHeading>
       {onEdit && (
-        <button
-          type="button"
+        <LinkButton
           onClick={onEdit}
-          className="text-xs font-medium text-teal-text hover:text-teal-hover"
         >
           {t('contracts.wizard.review.edit')}
-        </button>
+        </LinkButton>
       )}
     </header>
     <FieldList layout="row" className="px-4 py-3 gap-0 divide-y divide-border-subtle">
@@ -209,7 +209,7 @@ const ReviewSection: React.FC<{
         </Field>
       ))}
     </FieldList>
-  </section>
+  </Card>
   );
 };
 
@@ -825,18 +825,13 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
               {BRAND_OPTIONS.map((b) => {
                 const selected = draft.brands.includes(b);
                 return (
-                  <button
+                  <ToggleChip
                     key={b}
-                    type="button"
+                    selected={selected}
                     onClick={() => toggleBrand(b)}
-                    className={`px-3 py-1.5 rounded-full text-sm transition-colors ${
-                      selected
-                        ? 'bg-action text-white border border-action'
-                        : 'bg-bg-surface text-text-secondary border border-border-input hover:border-action'
-                    }`}
                   >
                     {b}
-                  </button>
+                  </ToggleChip>
                 );
               })}
             </div>
@@ -1116,14 +1111,12 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
                     kind: 'actions',
                     headerClassName: 'w-10',
                     cell: (_o, i) => (
-                      <button
-                        type="button"
+                      <LinkButton
                         onClick={() => removeObligation(i)}
-                        className="text-action-text hover:underline"
                         aria-label={t('contracts.wizard.obl.removeAria')}
                       >
                         {t('contracts.wizard.obl.remove')}
-                      </button>
+                      </LinkButton>
                     ),
                   },
                 ]}
@@ -1492,7 +1485,7 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
       />
 
       {/* Renewal pipeline */}
-      <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm overflow-hidden">
+      <Card as="section" padding="none" className="overflow-hidden">
         <div className="px-6 py-4 border-b border-border-subtle">
           <div className="text-label text-text-tertiary uppercase">
             {t('contracts.pipeline.eyebrow')}
@@ -1528,11 +1521,10 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
                   {items.map((c) => {
                     const supplier = supplierById.get(c.supplierId);
                     return (
-                      <button
+                      <CardButton
                         key={c.id}
-                        type="button"
                         onClick={() => openContract(c)}
-                        className="text-left flex items-start gap-3 p-3 rounded-md border border-border-subtle hover:border-teal hover:shadow-sm transition-all"
+                        className="flex items-start gap-3"
                       >
                         <span
                           className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
@@ -1555,7 +1547,7 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
                             className="text-info shrink-0 mt-0.5"
                           />
                         )}
-                      </button>
+                      </CardButton>
                     );
                   })}
                 </div>
@@ -1563,7 +1555,7 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
             ))}
           </ul>
         )}
-      </section>
+      </Card>
 
       {/* ⚠️ THE WALKTHROUGH ENDS SOMEWHERE. `stoppedDraft` is what the buyer
           entered; the panel states who owns the act and shows it back to them.

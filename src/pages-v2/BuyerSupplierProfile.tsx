@@ -28,6 +28,9 @@ import PageMetaLine from '../components/ui-v2/PageMetaLine';
 import ProvenanceMarker from '../components/ui-v2/ProvenanceMarker';
 import KpiCard from '../components/ui-v2/KpiCard';
 import StatusPill from '../components/ui-v2/StatusPill';
+import { Card } from '../components/ui-v2/Card';
+import Notice from '../components/ui-v2/Notice';
+import { LinkButton } from '../components/ui-v2/Actions';
 import { statusTone } from '../lib/statusTone';
 import PslListingsSection from '../components/v2-features/PslListingsSection';
 // ⚠️ B-S4c — THE PSL COMES THROUGH THE SERVICE, NOT A FROZEN FIXTURE.
@@ -247,14 +250,12 @@ const BuyerSupplierProfile: React.FC = () => {
   return (
     <AppShellV2>
       <div className="mb-4">
-        <button
-          type="button"
+        <LinkButton
+          icon={ArrowLeft}
           onClick={() => navigate('/buyer/suppliers')}
-          className="inline-flex items-center gap-1 text-sm text-teal-text hover:text-teal-hover font-medium"
         >
-          <ArrowLeft size={14} />
           {t('buyerSupplierProfile.back.directory')}
-        </button>
+        </LinkButton>
       </div>
 
       <PageHeader
@@ -306,7 +307,7 @@ const BuyerSupplierProfile: React.FC = () => {
       </PageMetaLine>
 
       {/* Overview card */}
-      <div className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6 mb-6">
+      <Card padding="lg" className="mb-6">
         <div className="flex items-start gap-5">
           <div className="w-16 h-16 shrink-0 rounded-lg bg-action-soft text-action-hover flex items-center justify-center text-xl font-semibold">
             {initials}
@@ -350,7 +351,7 @@ const BuyerSupplierProfile: React.FC = () => {
             </div>
           </div>
         </div>
-      </div>
+      </Card>
 
       {/* KPI strip */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-6">
@@ -390,7 +391,7 @@ const BuyerSupplierProfile: React.FC = () => {
       />
 
       {activeTab === 'overview' && (
-        <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6">
+        <Card as="section" padding="lg">
           <SectionHeading as="h2" className="mb-4">
             {t('buyerSupplierProfile.overview.heading')}
           </SectionHeading>
@@ -427,16 +428,15 @@ const BuyerSupplierProfile: React.FC = () => {
             </Field>
           </FieldList>
           {supp.intelligenceNote && (
-            <div className="mt-5 p-4 bg-teal-soft border border-teal/20 rounded-md text-sm text-text-secondary">
-              <strong className="text-text-primary">{t('buyerSupplierProfile.overview.intelNote')}</strong>{' '}
+            <Notice tone="info" title={t('buyerSupplierProfile.overview.intelNote')} className="mt-5">
               {supp.intelligenceNote}
-            </div>
+            </Notice>
           )}
-        </section>
+        </Card>
       )}
 
       {activeTab === 'comm' && (
-        <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6">
+        <Card as="section" padding="lg">
           <SectionHeading as="h2" className="mb-4">
             {t('buyerSupplierProfile.comm.heading')}
           </SectionHeading>
@@ -467,11 +467,11 @@ const BuyerSupplierProfile: React.FC = () => {
               form — it was a form's furniture with no form behind it. Wiring them
               would have meant BUILDING the editable preferences this page does
               not have, which the H3 ruling forbids. */}
-        </section>
+        </Card>
       )}
 
       {activeTab === 'compliance' && (
-        <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm overflow-hidden">
+        <Card as="section" padding="none" className="overflow-hidden">
           <div className="flex items-center gap-2 p-4 border-b border-border-subtle">
             <SectionHeading as="h2">
               {t('buyerSupplierProfile.compliance.heading')}
@@ -516,7 +516,7 @@ const BuyerSupplierProfile: React.FC = () => {
               },
             ]}
           />
-        </section>
+        </Card>
       )}
 
       {activeTab === 'psl' && (
@@ -528,7 +528,7 @@ const BuyerSupplierProfile: React.FC = () => {
       )}
 
       {activeTab === 'catalog' && (
-        <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm overflow-hidden">
+        <Card as="section" padding="none" className="overflow-hidden">
           <div className="flex items-center gap-2 p-4 border-b border-border-subtle">
             <SectionHeading as="h2">
               {t('buyerSupplierProfile.catalog.heading')}
@@ -578,11 +578,11 @@ const BuyerSupplierProfile: React.FC = () => {
               },
             ]}
           />
-        </section>
+        </Card>
       )}
 
       {activeTab === 'performance' && (
-        <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm overflow-hidden">
+        <Card as="section" padding="none" className="overflow-hidden">
           <div className="p-6 border-b border-border-subtle">
             <SectionHeading as="h2" className="mb-1">
               {t('buyerSupplierProfile.performance.heading')}
@@ -657,11 +657,11 @@ const BuyerSupplierProfile: React.FC = () => {
               },
             ]}
           />
-        </section>
+        </Card>
       )}
 
       {activeTab === 'msglog' && (
-        <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm overflow-hidden">
+        <Card as="section" padding="none" className="overflow-hidden">
           <div className="flex items-center gap-2 p-4 border-b border-border-subtle">
             <SectionHeading as="h2">
               {t('buyerSupplierProfile.msglog.heading')}
@@ -722,7 +722,7 @@ const BuyerSupplierProfile: React.FC = () => {
               },
             ]}
           />
-        </section>
+        </Card>
       )}
     </AppShellV2>
   );

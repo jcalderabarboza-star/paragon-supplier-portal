@@ -24,6 +24,7 @@ import {
 } from '../../services/data/pslListing';
 import type { ActorAttribution } from '../../lib/enforcement';
 import Button from '../ui-v2/Button';
+import { Card } from '../ui-v2/Card';
 import { Select, TextArea, TextInput } from '../ui-v2/Form';
 import { HandoffNotice } from '../ui-v2/HandoffNotice';
 import { useVerbAvailabilities } from '../../hooks/useVerbAvailability';
@@ -624,13 +625,14 @@ const PslListingsSection: React.FC<{
       <p className="text-sm text-text-tertiary mt-1 mb-4">{t('psl.section.subtitle')}</p>
 
       {listings.length === 0 ? (
-        <div
-          className="border border-border-subtle rounded-lg p-6 text-center bg-bg-surface"
+        <Card
+          padding="lg"
+          className="text-center"
           data-testid="psl-section-empty"
         >
           <p className="text-sm text-text-secondary">{t('psl.section.empty')}</p>
           <p className="text-xs text-text-tertiary mt-1">{t('psl.section.emptyHint')}</p>
-        </div>
+        </Card>
       ) : (
         <div className="space-y-4">
           {listings.map((l) => (

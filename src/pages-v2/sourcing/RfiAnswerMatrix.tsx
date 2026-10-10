@@ -24,6 +24,7 @@ import {
 } from '../../data/rfiQuestionnaire';
 import type { StageResponse } from '../../data/rfqStage';
 import { answerText } from '../rfqs/rfiAnswerModel';
+import Notice from '../../components/ui-v2/Notice';
 
 /** The answers suppliers submitted at this event's RFI stage, in the order they arrived. */
 export const rfiAnswersOf = (rfq: Pick<RFQ, 'stageResponses'>): readonly StageResponse[] =>
@@ -68,12 +69,9 @@ const RfiAnswerMatrix: React.FC<{
 
   if (rows.length === 0) {
     return (
-      <div
-        className="text-sm text-text-tertiary p-4 border border-border-subtle rounded-md text-center"
-        data-testid="rfi-matrix-empty"
-      >
+      <Notice tone="neutral" data-testid="rfi-matrix-empty">
         {t('sourcing.rfi.matrix.empty')}
-      </div>
+      </Notice>
     );
   }
 

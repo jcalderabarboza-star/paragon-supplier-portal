@@ -31,6 +31,8 @@ import SubTabs from '../components/ui-v2/SubTabs';
 import FilterChipsBar from '../components/ui-v2/FilterChipsBar';
 import SearchBar from '../components/ui-v2/SearchBar';
 import StatusPill from '../components/ui-v2/StatusPill';
+import { Card } from '../components/ui-v2/Card';
+import { LinkButton } from '../components/ui-v2/Actions';
 import NextActLine from '../components/ui-v2/NextActLine';
 import { statusTone } from '../lib/statusTone';
 import { stopName } from '../lib/nameStop';
@@ -799,16 +801,10 @@ const BuyerOrders: React.FC = () => {
             </section>
 
             <section>
-              <button
-                type="button"
+              <LinkButton
                 onClick={() => setCommsOpen((v) => !v)}
-                className="flex items-center gap-2 text-sm font-medium text-teal-text hover:text-teal-hover"
+                icon={commsOpen ? ChevronUp : ChevronDown}
               >
-                {commsOpen ? (
-                  <ChevronUp size={14} />
-                ) : (
-                  <ChevronDown size={14} />
-                )}
                 {commsOpen
                   ? t('buyerOrders.comms.hide')
                   : t('buyerOrders.comms.show')}{' '}
@@ -818,15 +814,16 @@ const BuyerOrders: React.FC = () => {
                     : 'buyerOrders.comms.history.other',
                   { count: buildComms(selectedPO).length },
                 )}
-              </button>
+              </LinkButton>
               {commsOpen && (
                 <ul className="mt-3 space-y-3">
                   {buildComms(selectedPO).map((m, i) => {
                     const Icon = CHANNEL_ICON[m.channel];
                     return (
-                      <li
+                      <Card
+                        as="li"
                         key={i}
-                        className="flex gap-3 p-3 border border-border-subtle rounded-md"
+                        className="flex gap-3"
                       >
                         <Icon
                           size={14}
@@ -844,7 +841,7 @@ const BuyerOrders: React.FC = () => {
                             {m.preview}
                           </p>
                         </div>
-                      </li>
+                      </Card>
                     );
                   })}
                 </ul>

@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ShieldCheck } from 'lucide-react';
 import Button from '../../components/ui-v2/Button';
+import { ToggleChip } from '../../components/ui-v2/Actions';
 import SectionHeading from '../../components/ui-v2/SectionHeading';
 import { FORM_HINT_CLASS, FormField, Select, TextInput } from '../../components/ui-v2/Form';
 import HandoffNotice from '../../components/ui-v2/HandoffNotice';
@@ -207,22 +208,18 @@ const CreateRolePanel: React.FC<{ onGranted: () => void }> = ({ onGranted }) => 
               {addable.map((a) => {
                 const on = adds.includes(a);
                 return (
-                  <button
-                    type="button"
+                  <ToggleChip
+                    mono
+                    selected={on}
                     key={a}
                     data-testid={`role-create-add-${a}`}
                     aria-pressed={on}
                     onClick={() =>
                       setAdds(on ? adds.filter((x) => x !== a) : [...adds, a])
                     }
-                    className={`font-mono text-[11px] rounded px-1.5 py-0.5 border ${
-                      on
-                        ? 'border-action text-action-text bg-action-soft'
-                        : 'border-border-subtle text-data-navy'
-                    }`}
                   >
                     {a}
-                  </button>
+                  </ToggleChip>
                 );
               })}
             </div>

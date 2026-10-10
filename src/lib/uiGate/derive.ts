@@ -566,7 +566,7 @@ const CHIP_PAD = one(String.raw`px-(?:0\.5|1|1\.5|2|2\.5|3)`);
 const NOT_A_BOX = new Set(['input', 'select', 'textarea', 'button', 'img', 'svg', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'canvas', 'video', 'iframe', 'kbd', 'code', 'pre']);
 const INLINE = new Set(['span', 'em', 'strong', 'b', 'i', 'small', 'mark']);
 
-export type BoxKind = 'box' | 'chip';
+export type BoxKind = 'box' | 'chip' | 'class-const';
 
 function intrinsicClassNames(text: string, fileName: string): { tag: string; cls: string }[] {
   if (!/className=/.test(text)) return [];
@@ -589,6 +589,36 @@ function intrinsicClassNames(text: string, fileName: string): { tag: string; cls
   return out;
 }
 
+/**
+ * A box or a chip spelled as a CLASS CONSTANT — `const CARD = 'rounded-lg border …'`.
+ * The element that wears it carries only `className={CARD}`, so the element
+ * matcher sees no border at all: the first build of this gate read the dashboard
+ * and the collaboration page as clean while every card on one and every chip on
+ * the other was drawn by hand. Read off string literals that sit OUTSIDE a JSX
+ * attribute.
+ */
+function classConstCount(text: string, fileName: string): number {
+  if (!/rounded/.test(text)) return 0;
+  const sf = ts.createSourceFile(fileName, text, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+  let n = 0;
+  const inJsxAttr = (node: ts.Node): boolean => {
+    for (let p: ts.Node | undefined = node.parent; p; p = p.parent) if (ts.isJsxAttribute(p)) return true;
+    return false;
+  };
+  const walk = (node: ts.Node): void => {
+    if ((ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node) || ts.isTemplateExpression(node)) && !inJsxAttr(node)) {
+      const cls = node.getText(sf);
+      const rounded = ROUNDED.test(cls);
+      const bordered = FULL_BORDER.test(cls);
+      if ((bordered && rounded) || (rounded && CHIP_PAD.test(cls) && FILL.test(cls)) || (LEFT_RULE.test(cls) && FILL.test(cls))) n += 1;
+      return;
+    }
+    ts.forEachChild(node, walk);
+  };
+  walk(sf);
+  return n;
+}
+
 /** How many elements in this source draw their own box, and how many their own chip. */
 export function rawBoxFindings(text: string, fileName = 'x.tsx'): Counts<BoxKind> {
   const out: Counts<BoxKind> = {};
@@ -602,6 +632,8 @@ export function rawBoxFindings(text: string, fileName = 'x.tsx'): Counts<BoxKind
     }
     if ((bordered && rounded) || (LEFT_RULE.test(cls) && FILL.test(cls))) out.box = (out.box ?? 0) + 1;
   }
+  const consts = classConstCount(text, fileName);
+  if (consts > 0) out['class-const'] = consts;
   return out;
 }
 

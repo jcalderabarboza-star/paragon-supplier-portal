@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { Info, ChevronRight, ExternalLink } from 'lucide-react';
 import ListPage from '../components/ui-v2/ListPage';
+import { buttonClass } from '../components/ui-v2/Button';
 import DataTable, { CellSub, type Column } from '../components/ui-v2/DataTable';
 import LivenessPill from '../components/ui-v2/LivenessPill';
 import LoadingState from '../components/ui-v2/LoadingState';
@@ -11,6 +12,7 @@ import SubTabs from '../components/ui-v2/SubTabs';
 import SearchBar from '../components/ui-v2/SearchBar';
 import FilterChipsBar from '../components/ui-v2/FilterChipsBar';
 import StatusPill from '../components/ui-v2/StatusPill';
+import Notice from '../components/ui-v2/Notice';
 import TargetBar from '../components/ui-v2/TargetBar';
 import Data from '../components/ui-v2/Data';
 import SidePanel from '../components/ui-v2/SidePanel';
@@ -235,13 +237,11 @@ const BuyerDeliveryAgreements: React.FC = () => {
       notices={
         /* Honest framing — this OVERVIEW is read-only + simulated; releasing lives
            in each contract's own DA tab (the callout points there). */
-        <div className="bg-info-soft border-l-2 border-info rounded px-4 py-3 text-sm text-text-primary flex items-start gap-2">
-          <Info size={14} className="text-info shrink-0 mt-0.5" />
+        <Notice tone="info" icon={Info} title={t('delivery.rollup.honestyTitle')}>
           <span>
-            <strong className="text-info">{t('delivery.rollup.honestyTitle')}</strong>{' '}
             {t('delivery.rollup.honestyBody')} {t('delivery.rollup.hint')}
           </span>
-        </div>
+        </Notice>
       }
       tabs={<SubTabs<Tab> options={tabOptions} value={tab} onChange={setTab} />}
     >
@@ -294,7 +294,7 @@ const BuyerDeliveryAgreements: React.FC = () => {
           selectedView && (
             <Link
               to={`/buyer/contracts/${selectedView.agreement.contractId}`}
-              className="inline-flex items-center gap-1.5 rounded-md border border-action px-3 py-1.5 text-sm font-medium text-action-text hover:bg-action-soft transition-colors"
+              className={buttonClass('outline')}
             >
               <ExternalLink size={14} />
               {t('delivery.rollup.openContract')}

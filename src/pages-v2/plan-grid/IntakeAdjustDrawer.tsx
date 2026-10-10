@@ -2,6 +2,9 @@ import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import Data from '../../components/ui-v2/Data';
 import Button from '../../components/ui-v2/Button';
+import { Card } from '../../components/ui-v2/Card';
+import Notice from '../../components/ui-v2/Notice';
+import StatusPill from '../../components/ui-v2/StatusPill';
 import PlanCellMarker from './PlanCellMarker';
 import { useIntakeCommit } from '../../services/query/commandHooks';
 import { INTAKE_TRIAGE_ATOM } from '../../services/transitions/flows/intakeLine.flow';
@@ -93,9 +96,9 @@ const IntakeAdjustDrawer: React.FC<{ line: IntakeLine | null }> = ({ line }) => 
 
   if (!line) {
     return (
-      <div className="rounded-lg border border-dashed border-border-subtle bg-bg-surface px-4 py-8 text-center text-sm text-text-tertiary">
+      <Notice tone="neutral">
         {t('planGrid.drawer.empty')}
-      </div>
+      </Notice>
     );
   }
 
@@ -165,7 +168,7 @@ const IntakeAdjustDrawer: React.FC<{ line: IntakeLine | null }> = ({ line }) => 
   };
 
   return (
-    <div className="rounded-lg border border-border-subtle bg-bg-surface">
+    <Card padding="none">
       {/* Selected-line header — material + producer + honest marker */}
       <div className="flex items-start justify-between gap-3 border-b border-border-subtle px-4 py-3">
         <div>
@@ -233,31 +236,25 @@ const IntakeAdjustDrawer: React.FC<{ line: IntakeLine | null }> = ({ line }) => 
           </div>
           <div className="mt-1.5 text-[11px]">
             {parsed.ok ? (
-              <span
-                className={`inline-flex items-center rounded-sm border px-1.5 py-0.5 font-medium ${
-                  adjusted
-                    ? 'border-warning/30 bg-warning-soft text-warning-hover'
-                    : 'border-border-subtle bg-bg-hover text-text-tertiary'
-                }`}
-              >
+              <StatusPill variant={adjusted ? 'warning' : 'neutral'}>
                 {/* The PLANNER's change, measured from the producer's
                     delivered quantity — the only move that owes a reason. */}
                 {adjusted
                   ? `${t('planGrid.adjusted.byPlanner')} · ${formatNumber(line.acceptedQty)}→${formatNumber(parsed.value)}`
                   : t('planGrid.adjusted.asDelivered')}
-              </span>
+              </StatusPill>
             ) : (
               // The refusal REPLACES the adjusted chip: with no readable
               // quantity there is no adjustment to report, and reporting one
               // anyway would be the fabrication this whole batch exists to kill.
-              <span
+              <Notice
+                tone="critical"
                 role="alert"
                 data-testid="accepted-qty-refusal"
-                className="inline-flex items-center rounded-sm border border-critical/30 bg-critical-soft px-1.5 py-0.5 font-medium text-critical"
               >
                 {t(QTY_REFUSAL_KEY[parsed.reason])}{' '}
                 <GlossaryTermChip refTo={{ sourceType: 'QtyRefusalReason', term: parsed.reason }} />
-              </span>
+              </Notice>
             )}
           </div>
         </div>
@@ -321,7 +318,7 @@ const IntakeAdjustDrawer: React.FC<{ line: IntakeLine | null }> = ({ line }) => 
           <HandoffNotice availability={pushAvailability} testId="handoff-plangrid-push" />
         )}
       </div>
-    </div>
+    </Card>
   );
 };
 

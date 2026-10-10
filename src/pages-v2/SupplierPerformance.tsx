@@ -46,6 +46,8 @@ import TargetBar from '../components/ui-v2/TargetBar';
 import Tabs from '../components/ui-v2/Tabs';
 import StatusPill from '../components/ui-v2/StatusPill';
 import Button from '../components/ui-v2/Button';
+import { Card } from '../components/ui-v2/Card';
+import Notice from '../components/ui-v2/Notice';
 import { useTranslation, Trans } from 'react-i18next';
 import { useEnumLabel } from '../hooks/useEnumLabel';
 import { useCategoryLabel } from '../hooks/useCategoryLabel';
@@ -150,7 +152,7 @@ const KpiProgressTile: React.FC<{ k: Kpi }> = ({ k }) => {
   const { t } = useTranslation();
   const status = targetStatus(k.pct, k.targetPct);
   return (
-    <div className="bg-bg-hover border border-border-subtle rounded-md px-4 py-3">
+    <Card tone="inset">
       <div className="flex items-start justify-between gap-2 mb-1">
         <div className="text-label text-text-tertiary uppercase">{k.name}</div>
         <TrendIcon trend={k.trend} />
@@ -162,7 +164,7 @@ const KpiProgressTile: React.FC<{ k: Kpi }> = ({ k }) => {
         {t('supplierPerformance.kpi.targetLabel')}: {k.target}
       </div>
       <TargetBar pct={k.pct} target={k.targetPct} trackClass="bg-bg-surface" />
-    </div>
+    </Card>
   );
 };
 
@@ -226,9 +228,9 @@ const PslStandingRow: React.FC<{ view: SupplierPslView }> = ({ view }) => {
   const { t } = useTranslation();
   const codes = view.scope.map((x) => x.code).join(', ');
   return (
-    <div
+    <Card
+      tone="inset"
       data-testid={`supplier-psl-row-${view.viewKey}`}
-      className="border border-border-subtle rounded-lg p-4 bg-bg-surface"
     >
       <div className="flex flex-wrap items-center gap-2 mb-3">
         <StatusPill variant={statusTone(view.status)}>
@@ -286,7 +288,7 @@ const PslStandingRow: React.FC<{ view: SupplierPslView }> = ({ view }) => {
           {t('psl.supplier.withdrawnLine', { date: formatDate(view.withdrawnAt) })}
         </p>
       ) : null}
-    </div>
+    </Card>
   );
 };
 
@@ -296,9 +298,11 @@ const PslStandingSection: React.FC = () => {
   const views = query.data?.items ?? [];
 
   return (
-    <section
+    <Card
+      as="section"
+      padding="lg"
       data-testid="supplier-psl-section"
-      className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6 mb-6"
+      className="mb-6"
     >
       <SectionHeading as="h2" className="mb-1 pb-3 border-b border-border-subtle">
         {t('psl.supplier.title')}
@@ -325,7 +329,7 @@ const PslStandingSection: React.FC = () => {
           ))}
         </div>
       )}
-    </section>
+    </Card>
   );
 };
 
@@ -452,7 +456,7 @@ const SupplierPerformance: React.FC = () => {
 
       <IllustrativeBanner bodyKey="supplierPerformance.illustrative.body" />
 
-      <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6 mb-6">
+      <Card as="section" padding="lg" className="mb-6">
         <div className="flex items-start justify-between gap-6 flex-wrap">
           <div className="min-w-0 flex-1">
             <div className="text-section text-text-primary mb-2">
@@ -460,12 +464,12 @@ const SupplierPerformance: React.FC = () => {
               {mySupplier.name}
             </div>
             <div className="flex flex-wrap gap-2 mb-3">
-              <span className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold bg-bg-hover text-text-secondary">
+              <StatusPill variant="neutral">
                 {cl(mySupplier.category)}
-              </span>
-              <span className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold bg-teal-soft text-teal-text">
+              </StatusPill>
+              <StatusPill variant="info">
                 {t('supplierPerformance.card.tierChannel')}
-              </span>
+              </StatusPill>
             </div>
             <div className="flex flex-wrap gap-5 text-xs text-text-secondary">
               <span>
@@ -490,7 +494,7 @@ const SupplierPerformance: React.FC = () => {
           </div>
           <GradeBadge grade={CURRENT_GRADE} score={CURRENT_SCORE} />
         </div>
-      </section>
+      </Card>
 
       <Tabs tabs={TABS} active={activeTab} onChange={setActiveTab} className="mb-6" />
 
@@ -498,7 +502,7 @@ const SupplierPerformance: React.FC = () => {
         <>
           <PslStandingSection />
 
-          <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6 mb-6">
+          <Card as="section" padding="lg" className="mb-6">
             <SectionHeading as="h2" className="mb-4 pb-3 border-b border-border-subtle">
               {kpis.length === 1
                 ? t('supplierPerformance.overview.scorecardTitle.one', {
@@ -514,10 +518,10 @@ const SupplierPerformance: React.FC = () => {
                 <KpiProgressTile key={k.name} k={k} />
               ))}
             </div>
-          </section>
+          </Card>
 
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-5 mb-6">
-            <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6">
+            <Card as="section" padding="lg">
               <SectionHeading as="h2" className="mb-4 pb-3 border-b border-border-subtle">
                 {t('supplierPerformance.overview.radarTitle')}{' '}
                 <IllustrativeMark />
@@ -557,9 +561,9 @@ const SupplierPerformance: React.FC = () => {
                   <Tooltip content={<ChartTooltip />} />
                 </RadarChart>
               </ResponsiveContainer>
-            </section>
+            </Card>
 
-            <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6">
+            <Card as="section" padding="lg">
               <SectionHeading as="h2" className="flex items-center gap-2 mb-4 pb-3 border-b border-border-subtle">
                 {t('supplierPerformance.overview.gradeHistoryTitle')}{' '}
                 <IllustrativeMark />
@@ -604,10 +608,10 @@ const SupplierPerformance: React.FC = () => {
                   );
                 })}
               </div>
-            </section>
+            </Card>
           </div>
 
-          <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6">
+          <Card as="section" padding="lg">
             <SectionHeading as="h2" className="mb-4 pb-3 border-b border-border-subtle">
               {t('supplierPerformance.overview.poPerfTitle', {
                 name: mySupplier.name,
@@ -650,13 +654,13 @@ const SupplierPerformance: React.FC = () => {
                 </div>
               ))}
             </div>
-          </section>
+          </Card>
         </>
       )}
 
       {activeTab === 'trends' && (
         <>
-          <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6 mb-6">
+          <Card as="section" padding="lg" className="mb-6">
             <SectionHeading as="h2" className="mb-4 pb-3 border-b border-border-subtle">
               {t('supplierPerformance.trends.otifTitle')}{' '}
               <IllustrativeMark />
@@ -681,9 +685,9 @@ const SupplierPerformance: React.FC = () => {
                 />
               </LineChart>
             </ResponsiveContainer>
-          </section>
+          </Card>
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
-            <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6">
+            <Card as="section" padding="lg">
               <SectionHeading as="h2" className="mb-4 pb-3 border-b border-border-subtle">
                 {t('supplierPerformance.trends.asnTitle')}{' '}
                 <IllustrativeMark />
@@ -707,8 +711,8 @@ const SupplierPerformance: React.FC = () => {
                   />
                 </LineChart>
               </ResponsiveContainer>
-            </section>
-            <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6">
+            </Card>
+            <Card as="section" padding="lg">
               <SectionHeading as="h2" className="mb-4 pb-3 border-b border-border-subtle">
                 {t('supplierPerformance.trends.poaTitle')}{' '}
                 <IllustrativeMark />
@@ -732,7 +736,7 @@ const SupplierPerformance: React.FC = () => {
                   />
                 </LineChart>
               </ResponsiveContainer>
-            </section>
+            </Card>
           </div>
         </>
       )}
@@ -799,15 +803,12 @@ const SupplierPerformance: React.FC = () => {
               </section>
             );
           })}
-          <section className="bg-bg-hover border border-border-subtle rounded-md px-4 py-3 flex items-start gap-3">
-            <Info size={16} className="text-info mt-0.5 shrink-0" />
-            <div className="text-xs text-text-secondary leading-relaxed">
-              <span className="font-semibold text-text-primary">
-                {t('supplierPerformance.actions.tierSystem.label')}
-              </span>{' '}
-              {t('supplierPerformance.actions.tierSystem.body')}
-            </div>
-          </section>
+          <Notice tone="neutral" icon={Info}>
+            <strong>
+              {t('supplierPerformance.actions.tierSystem.label')}
+            </strong>{' '}
+            {t('supplierPerformance.actions.tierSystem.body')}
+          </Notice>
         </div>
       )}
     </AppShellV2>

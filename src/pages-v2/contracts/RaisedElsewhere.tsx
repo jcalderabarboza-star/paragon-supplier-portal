@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { Info } from 'lucide-react';
 
 import Button from '../../components/ui-v2/Button';
+import { Card } from '../../components/ui-v2/Card';
+import Notice from '../../components/ui-v2/Notice';
 import SectionHeading from '../../components/ui-v2/SectionHeading';
 import { EXTERNAL_FACT_OWNER_KEY } from '../../lib/i18n/externalFactOwner';
 import { contractDraftOwner } from '../../services/transitions/contractDraftOwner';
@@ -34,17 +36,13 @@ export const RaisedElsewhereNote: React.FC = () => {
   const owner = contractDraftOwner();
   if (!owner) return null;
   return (
-    <p
-      data-testid="contract-raised-elsewhere-note"
-      className="flex items-start gap-2 rounded-md border border-info/30 bg-info-soft px-3 py-2 text-xs text-text-secondary"
-    >
-      <Info aria-hidden="true" className="mt-0.5 h-3.5 w-3.5 shrink-0 text-info" />
+    <Notice tone="info" icon={Info} data-testid="contract-raised-elsewhere-note">
       <span>
         {t('contracts.wizard.raisedElsewhere.note', {
           owner: t(EXTERNAL_FACT_OWNER_KEY[owner]),
         })}
       </span>
-    </p>
+    </Notice>
   );
 };
 
@@ -65,9 +63,10 @@ export const RaisedElsewherePanel: React.FC<{
   const { t } = useTranslation();
   const owner = contractDraftOwner();
   return (
-    <div
+    <Card
+      padding="lg"
       data-testid="contract-raised-elsewhere-panel"
-      className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-lg border border-border-subtle bg-bg-surface p-6 space-y-5"
+      className="w-full max-w-2xl max-h-[90vh] overflow-y-auto space-y-5"
     >
       <div className="space-y-2">
         <SectionHeading as="h2">
@@ -100,6 +99,6 @@ export const RaisedElsewherePanel: React.FC<{
           {t('contracts.wizard.raisedElsewhere.close')}
         </Button>
       </div>
-    </div>
+    </Card>
   );
 };

@@ -129,7 +129,11 @@ const settersOf = (src: string): Set<string> =>
 const stateNameOf = (c: string): string => c.charAt(0).toLowerCase() + c.slice(1);
 
 /** A control by VOCABULARY — in the population whether or not it has a handler. */
-const CONTROL_TAGS = new Set(['Button', 'button', 'a']);
+// UI-1c-3 · the pressed components are IN the vocabulary. They are what a
+// page's `<button>` became; left out, every converted control would have left
+// this population on the day it was converted, with nothing going red.
+const PRESSED = ['LinkButton', 'IconButton', 'ToggleChip', 'RowButton', 'CardButton'] as const;
+const CONTROL_TAGS = new Set<string>(['Button', 'button', 'a', ...PRESSED]);
 /** Props whose value is an array of action DESCRIPTOR objects (`BulkActionsBar`). */
 const ACTION_PROPS = new Set(['actions', 'primary', 'secondary', 'rowActions', 'menuItems']);
 /** react-query lifecycle callbacks are NOT affordances (toastHonesty's rule). */
@@ -523,7 +527,7 @@ const RESIDUE: ReadonlyArray<{ id: string; ruling: string }> = [];
  * because that is where a reader's cursor is. Convicting it would accuse the one
  * row in the tree that got accessibility RIGHT, so the rule reads inside.
  */
-const POINTER_TAGS_EXEMPT = new Set(['a', 'button', 'Button', 'input', 'select', 'textarea', 'label']);
+const POINTER_TAGS_EXEMPT = new Set<string>(['a', 'button', 'Button', 'input', 'select', 'textarea', 'label', ...PRESSED]);
 
 interface PointerSite {
   readonly file: string;
@@ -659,6 +663,27 @@ describe('DEAD-AFFORDANCE-01 — the census, at zero', () => {
     expect(live!.cls, 'and it must be acquitted, not convicted').toBe('LIVE');
   });
 
+  it('CONTROL+ a control that became a pressed component is still IN the population', () => {
+    // UI-1c-3 turned 98 hand-written `<button>`s into `LinkButton`, `IconButton`,
+    // `ToggleChip`, `RowButton` and `CardButton`. A census keyed on the tag would
+    // have dropped every one of them on that day and stayed green. So: each
+    // pressed component is found somewhere in `src/`, and a NAMED converted
+    // control — the contract wizard's review "Edit" — is found, judged and live.
+    const tags = new Set(ALL.map((s) => s.tag));
+    for (const tag of PRESSED) expect(tags, `${tag} must be in the census`).toContain(tag);
+    const edit = ALL.find(
+      (s) => s.file === 'src/pages-v2/BuyerContracts.tsx' && s.tag === 'LinkButton' && s.key === 'contracts.wizard.review.edit',
+    );
+    expect(edit, 'the converted Edit control must be IN the population').toBeDefined();
+    expect(edit!.cls, 'and it must be judged, not skipped').not.toBe('SPREAD');
+    // a pressed component with no handler is convicted, as a `Button` with none is
+    const dead = censusOf(
+      'C:/synthetic/src/SyntheticPressed.tsx',
+      "export const X = () => { const { t } = useTranslation(); return <LinkButton>{t('synthetic.pressed.dead')}</LinkButton>; };",
+    ).filter((s) => s.cls === 'DEAD');
+    expect(dead.map((s) => s.key)).toEqual(['synthetic.pressed.dead']);
+  });
+
   it('CONTROL= components that are never interactive are not swept in', () => {
     // ⚠️ `KpiCard` and `TableCell` are deliberately NOT in this list, and the
     // reason is a correction to this control rather than to the population: both
@@ -789,8 +814,16 @@ describe('DEAD-AFFORDANCE-01 — the census, at zero', () => {
     // UI-1b · `DataTable` joins it BY NAME, for the same reason as `Button`: its
     // row takes `rowProps` — the test id, the aria state and the tone the page
     // hands it — and the row's click is `onRowClick`, wired in the component.
+    //
+    // UI-1c-3 · the pressed components join it BY NAME, and for `Button`'s reason:
+    // `LinkButton`, `IconButton`, `ToggleChip`, `RowButton` and `CardButton` are
+    // what a page's `<button>` became, and the page's `onClick` arrives in the
+    // spread. A page that writes one of them with no handler is judged at the
+    // page, as a `<Button>` with none is.
     expect([...new Set(ALL.filter((s) => s.cls === 'SPREAD').map((s) => s.file))].sort()).toEqual([
+      'src/components/ui-v2/Actions.tsx',
       'src/components/ui-v2/Button.tsx',
+      'src/components/ui-v2/Card.tsx',
       'src/components/ui-v2/DataTable.tsx',
     ]);
   });

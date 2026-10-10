@@ -78,7 +78,8 @@ describe('Notice', () => {
     render(<Notice data-testid="n">Body</Notice>);
     const n = screen.getByTestId('n');
     has(n, NOTICE_BOX);
-    expect(n).toHaveClass('border-l-4', 'rounded-r-md', 'px-4', 'py-3');
+    expect(n).toHaveClass('border-l-2', 'rounded-r-sm', 'px-4', 'py-3');
+    expect(NOTICE_TONE.info.box).toBe('border-info bg-info-soft');
     expect(n.className.split(' ')).not.toContain('border');
     expect(n).toHaveAttribute('role', 'note');
   });
@@ -104,6 +105,8 @@ describe('Notice', () => {
         Compliance has not ruled.
       </Notice>,
     );
+    expect(NOTICE_TITLE).toBe('font-semibold text-text-primary');
+    expect(NOTICE_BODY).toBe('text-text-secondary');
     has(screen.getByText('Pending a ruling'), NOTICE_TITLE);
     has(screen.getByText('Compliance has not ruled.'), NOTICE_BODY);
     expect(screen.getByTestId('n')).toHaveClass('text-sm', 'font-normal', 'font-sans');

@@ -34,6 +34,7 @@ import ErrorState from '../components/ui-v2/ErrorState';
 import EmptyState from '../components/ui-v2/EmptyState';
 import Data from '../components/ui-v2/Data';
 import StatusPill from '../components/ui-v2/StatusPill';
+import { Card } from '../components/ui-v2/Card';
 import { useToast } from '../hooks/useToast';
 import {
   useInventory,
@@ -637,7 +638,7 @@ const BuyerInventory: React.FC = () => {
       }
     >
       {/* DOS Heatmap */}
-      <section className="border border-border-subtle rounded-lg bg-white p-6 mb-6">
+      <Card as="section" padding="lg" className="mb-6">
         <div className="flex items-center justify-between mb-4">
           <div>
             <div className="text-label text-text-tertiary uppercase mb-1">
@@ -675,7 +676,7 @@ const BuyerInventory: React.FC = () => {
             card={false}
           />
         </div>
-      </section>
+      </Card>
 
       <DataTable
         columns={columns}

@@ -31,6 +31,8 @@
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import Button from '../../components/ui-v2/Button';
+import { Card } from '../../components/ui-v2/Card';
+import { LinkButton } from '../../components/ui-v2/Actions';
 import Data from '../../components/ui-v2/Data';
 import SectionHeading from '../../components/ui-v2/SectionHeading';
 import { Field, FieldList } from '../../components/ui-v2/Field';
@@ -188,27 +190,27 @@ const PublicationPanel: React.FC<{
   if (ws.isLoading) return null;
 
   const toggle = collapsible ? (
-    <button
-      type="button"
-      className="shrink-0 text-xs font-medium text-action-text hover:underline"
+    <LinkButton
+      className="shrink-0"
       aria-expanded={open}
       onClick={onToggle}
       data-testid="publication-toggle"
     >
       {open ? t('planGrid.publication.fold') : t('planGrid.publication.unfold')}
-    </button>
+    </LinkButton>
   ) : null;
 
   if (collapsible && !open) {
     const cover = draft ? allocationCoverage(draft) : null;
     return (
-      <section
-        className="mb-2 flex items-center gap-3 rounded-md border border-border-subtle bg-bg-surface px-3 py-1.5 text-xs"
+      <Card
+        as="section"
+        className="mb-2 flex items-center gap-3"
         data-testid="publication-panel"
         data-open="false"
       >
         <SectionHeading as="h3" className="shrink-0">{t('planGrid.publication.title')}</SectionHeading>
-        <span className="min-w-0 flex-1 truncate text-text-secondary" data-testid="publication-summary">
+        <span className="min-w-0 flex-1 truncate text-xs text-text-secondary" data-testid="publication-summary">
           {draft && cover
             ? t('planGrid.publication.summaryDraft', {
                 id: draft.publicationId,
@@ -220,12 +222,12 @@ const PublicationPanel: React.FC<{
           {current && <> · {t('planGrid.publication.current', { id: current.publicationId, version: current.planVersion })}</>}
         </span>
         {toggle}
-      </section>
+      </Card>
     );
   }
 
   return (
-    <section className="mb-3 rounded-lg border border-border-subtle bg-bg-surface px-4 py-3 text-sm" data-testid="publication-panel" data-open="true">
+    <Card as="section" className="mb-3" data-testid="publication-panel" data-open="true">
       <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
         <SectionHeading as="h3">{t('planGrid.publication.title')}</SectionHeading>
         {toggle}
@@ -296,10 +298,10 @@ const PublicationPanel: React.FC<{
         </p>
       )}
 
-      <div className="mt-3 border-t border-border-subtle pt-2">
+      <div className="mt-3 border-t border-border-subtle pt-2 text-sm">
         <PublicationLedger records={records.filter((r) => r.grain === grain)} testId="publication-ledger-grid" />
       </div>
-    </section>
+    </Card>
   );
 };
 

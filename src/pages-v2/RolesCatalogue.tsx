@@ -9,6 +9,9 @@ import Button from '../components/ui-v2/Button';
 import ListPage from '../components/ui-v2/ListPage';
 import DataTable, { type Column } from '../components/ui-v2/DataTable';
 import StatusPill from '../components/ui-v2/StatusPill';
+import { Card } from '../components/ui-v2/Card';
+import Notice from '../components/ui-v2/Notice';
+import Data from '../components/ui-v2/Data';
 import SearchBar from '../components/ui-v2/SearchBar';
 import { customRoleStore } from '../services/transitions/customRoles';
 
@@ -49,11 +52,11 @@ const KpiTile: React.FC<{
 }> = ({ labelKey, value, testId, sub }) => {
   const { t } = useTranslation();
   return (
-    <div className="bg-white border border-border-subtle rounded-lg p-4" data-testid={testId}>
+    <Card data-testid={testId}>
       <div className="text-label text-text-tertiary uppercase">{t(labelKey)}</div>
       <div className="text-2xl font-semibold text-data-navy font-mono mt-1">{value}</div>
       {sub && <div className="text-xs text-text-tertiary font-mono mt-0.5">{sub}</div>}
-    </div>
+    </Card>
   );
 };
 
@@ -178,36 +181,27 @@ const RolesCatalogue: React.FC = () => {
       notices={
         <>
           {/* — THE HONEST MARKER (D-CENSUS-8) — */}
-          <div
-            className="border border-border-subtle rounded-lg bg-bg-hover p-4 flex gap-3"
+          <Notice
+            tone="neutral"
+            icon={Info}
+            title={t('roles.page.readOnlyTitle')}
             data-testid="roles-readonly-marker"
           >
-            <Info size={16} className="text-teal shrink-0 mt-0.5" />
-            <div>
-              <div className="text-sm font-medium text-text-primary">
-                {t('roles.page.readOnlyTitle')}
-              </div>
-              <p className="text-xs text-text-secondary leading-relaxed mt-1">
-                {t('roles.page.readOnlyBody', { count: totals.roles })}
-              </p>
-            </div>
-          </div>
+            <p>{t('roles.page.readOnlyBody', { count: totals.roles })}</p>
+          </Notice>
 
           {(store.unreadable || store.rejected.length > 0) && (
-            <section
-              className="border border-warning rounded-lg bg-warning-soft p-4 flex gap-3"
+            <Notice
+              tone="warning"
+              icon={AlertTriangle}
+              title={t(
+                store.unreadable
+                  ? 'roles.page.storeUnreadableTitle'
+                  : 'roles.page.storeRejectedTitle',
+              )}
               data-testid="roles-store-notice"
             >
-              <AlertTriangle size={16} className="text-warning shrink-0 mt-0.5" />
-              <div>
-                <div className="text-sm font-medium text-warning-hover">
-                  {t(
-                    store.unreadable
-                      ? 'roles.page.storeUnreadableTitle'
-                      : 'roles.page.storeRejectedTitle',
-                  )}
-                </div>
-                <p className="text-xs text-text-secondary leading-relaxed mt-1">
+                <p>
                   {t(
                     store.unreadable
                       ? 'roles.page.storeUnreadableBody'
@@ -217,32 +211,25 @@ const RolesCatalogue: React.FC = () => {
                 {store.rejected.length > 0 && (
                   <ul className="mt-2 flex flex-col gap-0.5" data-testid="roles-store-rejected">
                     {store.rejected.map((r) => (
-                      <li key={r.id} className="text-xs text-text-secondary">
-                        <span className="font-mono text-data-navy">{r.id}</span>
+                      <li key={r.id}>
+                        <Data>{r.id}</Data>
                         {' — '}
                         {r.reason}
                       </li>
                     ))}
                   </ul>
                 )}
-              </div>
-            </section>
+            </Notice>
           )}
 
-          <div
-            className="border border-border-subtle rounded-lg p-4 flex gap-3"
+          <Notice
+            tone="neutral"
+            icon={Users}
+            title={t('roles.page.usersDeferredTitle')}
             data-testid="roles-users-deferred"
           >
-            <Users size={16} className="text-text-tertiary shrink-0 mt-0.5" />
-            <div>
-              <div className="text-sm font-medium text-text-primary">
-                {t('roles.page.usersDeferredTitle')}
-              </div>
-              <p className="text-xs text-text-secondary leading-relaxed mt-1">
-                {t('roles.page.usersDeferredBody')}
-              </p>
-            </div>
-          </div>
+            <p>{t('roles.page.usersDeferredBody')}</p>
+          </Notice>
         </>
       }
       // KPI tiles — only the three we can DERIVE.

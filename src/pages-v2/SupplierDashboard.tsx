@@ -27,6 +27,8 @@ import {
 import TargetBar from '../components/ui-v2/TargetBar';
 import DataTable from '../components/ui-v2/DataTable';
 import Button from '../components/ui-v2/Button';
+import { Card } from '../components/ui-v2/Card';
+import { LinkButton } from '../components/ui-v2/Actions';
 import Data from '../components/ui-v2/Data';
 import SectionHeading from '../components/ui-v2/SectionHeading';
 import { useTranslation } from 'react-i18next';
@@ -544,7 +546,7 @@ const SupplierDashboard: React.FC = () => {
         <ProvenanceMarker capability="dashboard" className="ml-3 align-middle" />
       </PageMetaLine>
 
-      <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6 mb-6">
+      <Card as="section" padding="lg" className="mb-6">
         <div className="flex items-center justify-between gap-6 flex-wrap">
           <div className="min-w-0">
             <div className="text-section text-text-primary mb-1">
@@ -581,7 +583,7 @@ const SupplierDashboard: React.FC = () => {
             </div>
           </div>
         </div>
-      </section>
+      </Card>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-5 mb-6">
         <KpiCard
@@ -635,7 +637,7 @@ const SupplierDashboard: React.FC = () => {
 
       <div className="grid grid-cols-1 xl:grid-cols-[3fr_2fr] gap-5">
         <div className="flex flex-col gap-5">
-          <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm overflow-hidden">
+          <Card as="section" padding="none" className="overflow-hidden">
             <div className="px-5 py-4 border-b border-border-subtle flex items-center justify-between">
               <div>
                 <div className="flex items-center gap-2">
@@ -703,8 +705,7 @@ const SupplierDashboard: React.FC = () => {
                           {action.desc}
                         </div>
                         <div className="flex items-center gap-3">
-                          <button
-                            type="button"
+                          <LinkButton
                             onClick={() => {
                               // R1 — the description was a hardcoded template
                               // literal asserting "<label> workflow initiated."
@@ -719,11 +720,10 @@ const SupplierDashboard: React.FC = () => {
                               });
                               dismiss(action.id);
                             }}
-                            className="inline-flex items-center gap-1 text-sm font-medium text-action-text hover:underline"
                           >
                             {action.btnLabel}
                             <span aria-hidden="true">→</span>
-                          </button>
+                          </LinkButton>
                           <span className="text-xs text-text-tertiary inline-flex items-center gap-1">
                             <Clock size={11} /> {action.time}
                           </span>
@@ -734,9 +734,9 @@ const SupplierDashboard: React.FC = () => {
                 })}
               </div>
             )}
-          </section>
+          </Card>
 
-          <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm overflow-hidden">
+          <Card as="section" padding="none" className="overflow-hidden">
             <div className="px-5 py-4 border-b border-border-subtle">
               <SectionHeading as="h2">
                 {t('supplierDashboard.orders.title')}
@@ -816,11 +816,11 @@ const SupplierDashboard: React.FC = () => {
                 },
               ]}
             />
-          </section>
+          </Card>
         </div>
 
         <div className="flex flex-col gap-5">
-          <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-5">
+          <Card as="section">
             <div className="flex items-center justify-between mb-4">
               <SectionHeading as="h2">
                 {t('supplierDashboard.perf.title')}
@@ -861,9 +861,9 @@ const SupplierDashboard: React.FC = () => {
             <div className="mt-4 pt-3 border-t border-border-subtle text-xs text-text-tertiary italic">
               {t('supplierDashboard.perf.footnote')}
             </div>
-          </section>
+          </Card>
 
-          <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-5">
+          <Card as="section">
             <SectionHeading as="h2" className="mb-4">
               {t('supplierDashboard.docs.title')}
             </SectionHeading>
@@ -919,7 +919,7 @@ const SupplierDashboard: React.FC = () => {
                 );
               })}
             </div>
-          </section>
+          </Card>
         </div>
       </div>
     </AppShellV2>

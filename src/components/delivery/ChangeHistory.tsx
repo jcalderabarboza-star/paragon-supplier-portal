@@ -25,6 +25,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import DataTable, { CellSub, type Column } from '../ui-v2/DataTable';
 import Data from '../ui-v2/Data';
+import { Card } from '../ui-v2/Card';
 import { personLabel } from '../../services/identity/personLabel';
 import { formatDate } from '../../lib/format';
 import { deriveAgreementHistory } from '../../services/delivery/history';
@@ -92,8 +93,10 @@ const ChangeHistory: React.FC<{ agreement: SchedulingAgreement }> = ({ agreement
   ];
 
   return (
-    <section
-      className="border border-border-subtle rounded-lg bg-white overflow-hidden mt-6"
+    <Card
+      as="section"
+      padding="none"
+      className="overflow-hidden mt-6"
       data-testid="delivery-change-history"
     >
       <div className="px-4 py-3 border-b border-border-subtle bg-bg-subtle">
@@ -112,7 +115,7 @@ const ChangeHistory: React.FC<{ agreement: SchedulingAgreement }> = ({ agreement
           </div>
         </>
       )}
-    </section>
+    </Card>
   );
 };
 

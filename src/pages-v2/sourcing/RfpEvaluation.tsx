@@ -25,6 +25,8 @@ import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Save } from 'lucide-react';
 import Button from '../../components/ui-v2/Button';
+import { Card } from '../../components/ui-v2/Card';
+import Notice from '../../components/ui-v2/Notice';
 import { Field, FieldList } from '../../components/ui-v2/Field';
 import SectionHeading from '../../components/ui-v2/SectionHeading';
 import { HandoffNotice } from '../../components/ui-v2/HandoffNotice';
@@ -212,12 +214,9 @@ export const RfpRanking: React.FC<{
 
   if (ranking.length === 0) {
     return (
-      <div
-        className="text-sm text-text-tertiary p-4 border border-border-subtle rounded-md text-center"
-        data-testid="rfp-ranking-empty"
-      >
+      <Notice tone="neutral" data-testid="rfp-ranking-empty">
         {t('sourcing.rfp.ranking.empty')}
-      </div>
+      </Notice>
     );
   }
 
@@ -357,12 +356,9 @@ const RfpEvaluation: React.FC<{
     <div data-testid="rfp-evaluation">
       <SectionHeading level="group" as="h4" className="mt-4 mb-2">{t('sourcing.rfp.proposals.title')}</SectionHeading>
       {proposals.length === 0 ? (
-        <div
-          className="text-sm text-text-tertiary p-4 border border-border-subtle rounded-md text-center"
-          data-testid="rfp-proposals-empty"
-        >
+        <Notice tone="neutral" data-testid="rfp-proposals-empty">
           {t(atRfp ? 'sourcing.rfp.proposals.empty' : 'sourcing.rfp.proposals.notYet')}
-        </div>
+        </Notice>
       ) : (
         <>
           {closedReason !== null && (
@@ -379,9 +375,9 @@ const RfpEvaluation: React.FC<{
             {proposals.map((p) => {
               const name = supplierNameById.get(p.supplierId) ?? p.supplierId;
               return (
-                <li
+                <Card
+                  as="li"
                   key={p.id}
-                  className="border border-border-subtle rounded-md p-3"
                   data-testid={`rfp-proposal-${p.supplierId}`}
                 >
                   <div className="text-sm font-semibold text-text-primary mb-2">{name}</div>
@@ -427,7 +423,7 @@ const RfpEvaluation: React.FC<{
                       evaluatorId={evaluatorId}
                     />
                   )}
-                </li>
+                </Card>
               );
             })}
           </ul>

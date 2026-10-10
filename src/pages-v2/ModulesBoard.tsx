@@ -4,10 +4,12 @@ import { useTranslation } from 'react-i18next';
 import { Settings2 } from 'lucide-react';
 import AppShellV2 from '../components/layout-v2/AppShellV2';
 import PageHeader from '../components/ui-v2/PageHeader';
+import { buttonClass } from '../components/ui-v2/Button';
 import LivenessPill from '../components/ui-v2/LivenessPill';
 import Data from '../components/ui-v2/Data';
 import SectionHeading from '../components/ui-v2/SectionHeading';
 import StatusPill from '../components/ui-v2/StatusPill';
+import { CardButton } from '../components/ui-v2/Card';
 import { HandoffNotice } from '../components/ui-v2/HandoffNotice';
 import { useVerbAvailability } from '../hooks/useVerbAvailability';
 import { useModuleActivation } from '../context/ModuleActivationContext';
@@ -29,9 +31,9 @@ import { ModuleDetailDrawer } from './modules/ModuleDetailDrawer';
 const ScopeChip: React.FC<{ code: ModuleCode }> = ({ code }) => {
   const { t } = useTranslation();
   return (
-    <span className="rounded-md border border-border-subtle bg-bg-hover px-1.5 py-0.5 text-[10px] text-text-secondary whitespace-nowrap">
+    <StatusPill variant="neutral" size="sm" className="whitespace-nowrap">
       {t(`modules.scope.${getModule(code).scope}`)}
-    </span>
+    </StatusPill>
   );
 };
 
@@ -40,10 +42,9 @@ const ModuleCard: React.FC<{ code: ModuleCode; onOpen: (c: ModuleCode) => void }
   const spec = getModule(code);
   const f = cardFacts(code);
   return (
-    <button
-      type="button"
+    <CardButton
       onClick={() => onOpen(code)}
-      className="w-full text-left bg-white border border-border-subtle rounded-lg p-3 hover:bg-bg-hover transition-colors"
+      className="w-full"
       data-testid={`module-card-${code}`}
     >
       <div className="flex items-center justify-between gap-2">
@@ -70,7 +71,7 @@ const ModuleCard: React.FC<{ code: ModuleCode; onOpen: (c: ModuleCode) => void }
           <LivenessPill capability={f.mainCapability as Capability} />
         </div>
       )}
-    </button>
+    </CardButton>
   );
 };
 
@@ -92,7 +93,7 @@ const ModulesBoard: React.FC = () => {
             canSet.kind === 'held' ? (
               <Link
                 to="/buyer/platform/modules/admin"
-                className="inline-flex items-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium bg-transparent text-action-text border border-action hover:bg-action-soft"
+                className={buttonClass('outline')}
                 data-testid="modules-board-admin-link"
               >
                 <Settings2 size={16} />

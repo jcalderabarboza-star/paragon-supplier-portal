@@ -22,6 +22,8 @@ import FilterChipsBar from '../components/ui-v2/FilterChipsBar';
 import SearchBar from '../components/ui-v2/SearchBar';
 import StatusPill from '../components/ui-v2/StatusPill';
 import Button from '../components/ui-v2/Button';
+import Notice from '../components/ui-v2/Notice';
+import { LinkButton } from '../components/ui-v2/Actions';
 import SidePanel from '../components/ui-v2/SidePanel';
 import GuidedLesson from '../components/ui-v2/GuidedLesson';
 import Data from '../components/ui-v2/Data';
@@ -646,12 +648,11 @@ const SupplierDocuments: React.FC = () => {
         refused.length + expired.length + expiringSoon.length + awaitingUpload.length > 0 ? (
           <>
             {refused.length > 0 && (
-              <div
-                className="bg-critical-soft border-l-2 border-critical rounded px-4 py-3 text-sm text-critical flex items-start gap-2"
+              <Notice
+                tone="critical"
+                icon={AlertTriangle}
                 data-testid="doc-refused-banner"
               >
-                <AlertTriangle size={14} className="shrink-0 mt-0.5" />
-                <div>
                   <strong>
                     {refused.length === 1
                       ? t('supplierDocuments.alert.refused.one', { count: refused.length })
@@ -659,13 +660,10 @@ const SupplierDocuments: React.FC = () => {
                   </strong>
                   {/* i18n-defer: mock/sample data (fixture document names) */}
                   {refused.map((d) => d.name.split('—')[0].trim()).join(' · ')}
-                </div>
-              </div>
+              </Notice>
             )}
             {expired.length > 0 && (
-              <div className="bg-critical-soft border-l-2 border-critical rounded px-4 py-3 text-sm text-critical flex items-start gap-2">
-                <AlertTriangle size={14} className="shrink-0 mt-0.5" />
-                <div>
+              <Notice tone="critical" icon={AlertTriangle}>
                   <strong>
                     {expired.length === 1
                       ? t('supplierDocuments.alert.expired.one', { count: expired.length })
@@ -673,13 +671,10 @@ const SupplierDocuments: React.FC = () => {
                   </strong>
                   {/* i18n-defer: mock/sample data (fixture document names) */}
                   {expired.map((d) => d.name.split('—')[0].trim()).join(' · ')}
-                </div>
-              </div>
+              </Notice>
             )}
             {expiringSoon.length > 0 && (
-              <div className="bg-warning-soft border-l-2 border-warning rounded px-4 py-3 text-sm text-warning-hover flex items-start gap-2">
-                <Clock size={14} className="shrink-0 mt-0.5" />
-                <div>
+              <Notice tone="warning" icon={Clock}>
                   <strong>
                     {expiringSoon.length === 1
                       ? t('supplierDocuments.alert.expiring.one', { count: expiringSoon.length })
@@ -687,22 +682,18 @@ const SupplierDocuments: React.FC = () => {
                   </strong>
                   {/* i18n-defer: mock/sample data (fixture document names) */}
                   {expiringSoon.map((d) => d.name.split('—')[0].trim()).join(' · ')}
-                </div>
-              </div>
+              </Notice>
             )}
             {awaitingUpload.length > 0 && (
-              <div className="bg-bg-hover border-l-2 border-border-input rounded px-4 py-3 text-sm text-text-secondary flex items-start gap-2">
-                <UploadCloud size={14} className="shrink-0 mt-0.5 text-text-tertiary" />
-                <div>
-                  <strong className="text-text-primary">
+              <Notice tone="neutral" icon={UploadCloud}>
+                  <strong>
                     {awaitingUpload.length === 1
                       ? t('supplierDocuments.alert.awaiting.one', { count: awaitingUpload.length })
                       : t('supplierDocuments.alert.awaiting.other', { count: awaitingUpload.length })}{' '}
                   </strong>
                   {/* i18n-defer: mock/sample data (fixture linked-to refs) */}
                   {awaitingUpload.map((d) => d.linkedTo).join(' · ')}
-                </div>
-              </div>
+              </Notice>
             )}
           </>
         ) : undefined
@@ -781,10 +772,8 @@ const SupplierDocuments: React.FC = () => {
         columns={columns}
       />
 
-      <div className="bg-warning-soft border-l-2 border-warning rounded px-4 py-3 text-sm text-text-secondary flex items-start gap-2">
-        <FileText size={14} className="text-warning-hover shrink-0 mt-0.5" />
-        <div>
-          <strong className="text-warning-hover">
+      <Notice tone="warning" icon={FileText}>
+          <strong>
             {t('supplierDocuments.bpjph.title')}
           </strong>{' '}
           {t('supplierDocuments.bpjph.body')}{' '}
@@ -792,7 +781,7 @@ const SupplierDocuments: React.FC = () => {
             href="https://halal.go.id"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-warning-hover font-semibold inline-flex items-center gap-1 hover:underline"
+            className="inline-flex items-center gap-1 underline"
           >
             halal.go.id
             <ExternalLink size={11} />
@@ -800,17 +789,14 @@ const SupplierDocuments: React.FC = () => {
           {/* Deadline-floor discoverable entry (I3.4): findable without being
               mid-action on a specific document. Opens the read-only walkthrough. */}
           <div className="mt-2">
-            <button
-              type="button"
+            <LinkButton
+              icon={BookOpen}
               onClick={() => setLessonOpen(true)}
-              className="inline-flex items-center gap-1.5 text-action-hover font-semibold hover:underline"
             >
-              <BookOpen size={14} aria-hidden="true" />
               {t('learn.halalRenewal.entry')}
-            </button>
+            </LinkButton>
           </div>
-        </div>
-      </div>
+      </Notice>
 
       {/* I3.4 — the halal-renewal walkthrough, in a read-only SidePanel. No footer
           actions here: GuidedLesson owns its own Back/Next/Done nav and has NO
@@ -888,9 +874,9 @@ const SupplierDocuments: React.FC = () => {
                 {t('supplierDocuments.row.linked', { value: activeDoc.linkedTo })}
               </div>
               {activeDoc.notes && (
-                <div className="mt-2 bg-warning-soft border-l-2 border-warning rounded px-3 py-2 text-xs text-warning-hover">
+                <Notice tone="warning" className="mt-2">
                   {activeDoc.notes}
-                </div>
+                </Notice>
               )}
             </section>
           )}
@@ -903,18 +889,16 @@ const SupplierDocuments: React.FC = () => {
                   notice. The claim is precisely bounded: the platform CAN read a
                   file (XlsxImportPanel parses a workbook one lane over); what it
                   has no seam for is KEEPING or FORWARDING one. */}
-              <section
-                className="bg-bg-hover border-l-2 border-action rounded px-4 py-3"
+              <Notice
+                tone="info"
+                icon={FileText}
+                title={t('supplierDocuments.panel.noFile.title')}
                 data-testid="declaration-nofile-notice"
               >
-                <div className="text-sm font-semibold text-text-primary flex items-center gap-2">
-                  <FileText size={14} className="text-action shrink-0" aria-hidden="true" />
-                  {t('supplierDocuments.panel.noFile.title')}
-                </div>
-                <p className="text-xs text-text-secondary mt-1 leading-relaxed">
+                <p>
                   {t('supplierDocuments.panel.noFile.body')}
                 </p>
-              </section>
+              </Notice>
 
               <section className="space-y-4">
                 <SectionHeading level="group" as="h3">
@@ -1011,13 +995,12 @@ const SupplierDocuments: React.FC = () => {
               </section>
             </>
           ) : (
-            <section
-              className="bg-success-soft border-l-2 border-success rounded px-4 py-3 text-sm text-success font-semibold flex items-center gap-2"
+            <Notice
+              tone="success"
+              icon={CheckCircle2}
+              title={t('supplierDocuments.panel.declaredMsg')}
               data-testid="declaration-recorded"
-            >
-              <CheckCircle2 size={16} />
-              {t('supplierDocuments.panel.declaredMsg')}
-            </section>
+            />
           )}
         </div>
       </SidePanel>

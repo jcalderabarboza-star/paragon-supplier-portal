@@ -7,7 +7,9 @@ import { channelLabelKey } from '../../lib/channelLabel';
 
 type Variant = 'success' | 'warning' | 'danger' | 'info' | 'neutral';
 
-interface StatusPillProps {
+// UI-1c-3: every other attribute of the chip — a `title`, a `data-testid`, an
+// `aria-*` — passes through to it, so a page never wraps a pill to name it.
+interface StatusPillProps extends Omit<React.HTMLAttributes<HTMLSpanElement>, 'className' | 'children'> {
   variant?: Variant;
   children: React.ReactNode;
   /**
@@ -42,6 +44,7 @@ const StatusPill: React.FC<StatusPillProps> = ({
   children,
   size = 'md',
   className = '',
+  ...rest
 }) => {
   const { t } = useTranslation();
   // Localize known canonical labels from the central maps; anything else
@@ -84,7 +87,8 @@ const StatusPill: React.FC<StatusPillProps> = ({
   return (
     <span
       data-size={size}
-      className={`inline-flex items-center rounded-sm border font-sans ${size === 'sm' ? 'px-1.5 py-px text-label' : 'px-2 py-0.5 text-xs font-medium'} ${VARIANT_CLASS[variant]} ${className}`}
+      className={`inline-flex items-center rounded-sm border font-sans normal-case tracking-normal ${size === 'sm' ? 'px-1.5 py-px text-label' : 'px-2 py-0.5 text-xs font-medium'} ${VARIANT_CLASS[variant]} ${className}`}
+      {...rest}
     >
       {label}
     </span>

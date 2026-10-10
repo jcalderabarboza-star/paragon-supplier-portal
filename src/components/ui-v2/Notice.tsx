@@ -24,20 +24,23 @@ import type { LucideIcon } from 'lucide-react';
 
 export type NoticeTone = 'info' | 'warning' | 'critical' | 'success' | 'neutral' | 'sample';
 
-export const NOTICE_TONE: Record<NoticeTone, { box: string; icon: string }> = {
-  info: { box: 'border-action bg-action-soft', icon: 'text-action' },
-  warning: { box: 'border-warning bg-warning-soft', icon: 'text-warning' },
-  critical: { box: 'border-critical bg-critical-soft', icon: 'text-critical' },
-  success: { box: 'border-success bg-success-soft', icon: 'text-success' },
-  neutral: { box: 'border-border-input bg-bg-hover', icon: 'text-text-tertiary' },
-  sample: { box: 'border-dashed border-sample-border bg-sample-soft', icon: 'text-text-tertiary' },
+export const NOTICE_TONE: Record<NoticeTone, { box: string; iconClass: string }> = {
+  // `info`, not `action`: a notice is read, not pressed.
+  info: { box: 'border-info bg-info-soft', iconClass: 'text-info' },
+  warning: { box: 'border-warning bg-warning-soft', iconClass: 'text-warning' },
+  critical: { box: 'border-critical bg-critical-soft', iconClass: 'text-critical' },
+  success: { box: 'border-success bg-success-soft', iconClass: 'text-success' },
+  neutral: { box: 'border-border-input bg-bg-hover', iconClass: 'text-text-tertiary' },
+  sample: { box: 'border-dashed border-sample-border bg-sample-soft', iconClass: 'text-text-tertiary' },
 };
 
-export const NOTICE_BOX = 'rounded-r-md border-l-4 px-4 py-3 font-sans text-sm font-normal';
+export const NOTICE_BOX = 'rounded-r-sm border-l-2 px-4 py-3 font-sans text-sm font-normal';
 export const NOTICE_TITLE = 'font-semibold text-text-primary';
 export const NOTICE_BODY = 'text-text-secondary';
 
-interface NoticeProps {
+// Every other attribute of the box — an `id`, a `data-*`, an `aria-*` — passes
+// through to it.
+interface NoticeProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'title' | 'className' | 'role' | 'children'> {
   tone?: NoticeTone;
   /** The notice in a few words. Left out, the body stands alone. */
   title?: React.ReactNode;
@@ -53,9 +56,7 @@ interface NoticeProps {
   role?: 'note' | 'alert' | 'status';
   /** Layout only. */
   className?: string;
-  id?: string;
   'data-testid'?: string;
-  'aria-live'?: 'polite' | 'assertive' | 'off';
 }
 
 const Notice: React.FC<NoticeProps> = ({
@@ -66,21 +67,17 @@ const Notice: React.FC<NoticeProps> = ({
   action,
   role = 'note',
   className = '',
-  id,
-  'data-testid': testId,
-  'aria-live': live,
+  ...rest
 }) => {
   const hasBody = children !== undefined && children !== null && children !== false;
   return (
     <div
-      id={id}
       role={role}
-      aria-live={live}
-      data-testid={testId}
       data-notice={tone}
       className={`flex items-start gap-3 ${NOTICE_BOX} ${NOTICE_TONE[tone].box} ${className}`}
+      {...rest}
     >
-      {Icon ? <Icon size={16} aria-hidden="true" className={`mt-0.5 shrink-0 ${NOTICE_TONE[tone].icon}`} /> : null}
+      {Icon ? <Icon size={16} aria-hidden="true" className={`mt-0.5 shrink-0 ${NOTICE_TONE[tone].iconClass}`} /> : null}
       <div className="min-w-0 flex-1">
         {title ? <div className={NOTICE_TITLE}>{title}</div> : null}
         {hasBody ? <div className={`${NOTICE_BODY} ${title ? 'mt-0.5' : ''}`}>{children}</div> : null}

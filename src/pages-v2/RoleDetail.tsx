@@ -4,6 +4,9 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ChevronLeft, Lock, Info } from 'lucide-react';
 import AppShellV2 from '../components/layout-v2/AppShellV2';
 import PageHeader from '../components/ui-v2/PageHeader';
+import { Card } from '../components/ui-v2/Card';
+import { LinkButton } from '../components/ui-v2/Actions';
+import StatusPill from '../components/ui-v2/StatusPill';
 import NotFound from './NotFound';
 import { findRoleView, deriveRoleViews } from './roles/roleModel';
 
@@ -40,15 +43,15 @@ const RoleDetail: React.FC = () => {
           catalogue it links from was `max-w-6xl`, so the two halves of one
           module disagreed. The div survives only to carry its testid. */}
       <div data-testid={`role-detail-${role.id}`}>
-        <button
-          type="button"
+        <LinkButton
+          tone="muted"
+          icon={ChevronLeft}
           onClick={() => navigate('/buyer/roles')}
           data-testid="role-detail-back"
-          className="inline-flex items-center gap-1 text-xs text-text-secondary hover:text-text-primary mb-3"
+          className="mb-3"
         >
-          <ChevronLeft size={14} />
           {t('roles.page.back')}
-        </button>
+        </LinkButton>
 
         {/* UI-1b — one page-title size: the shared header carries the name and
             the description; the id, the badge and the counts sit under it. */}
@@ -60,13 +63,10 @@ const RoleDetail: React.FC = () => {
         <div className="-mt-6 mb-5">
           <div className="flex items-center gap-2">
             <span className="font-mono text-xs text-data-navy">{role.id}</span>
-            <span
-              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] border border-border-subtle text-text-secondary bg-bg-hover"
-              data-testid={`role-badge-${role.id}`}
-            >
+            <StatusPill variant="neutral" className="gap-1" data-testid={`role-badge-${role.id}`}>
               <Lock size={10} className="text-teal" />
               {t(role.isSystem ? 'roles.page.systemBadge' : 'roles.page.customBadge')}
-            </span>
+            </StatusPill>
           </div>
           <p className="text-xs text-text-tertiary mt-1" data-testid={`role-counts-${role.id}`}>
             {t('roles.page.countSummary', {
@@ -78,7 +78,7 @@ const RoleDetail: React.FC = () => {
         </div>
 
         {/* — MODULES — */}
-        <section className="bg-white border border-border-subtle rounded-lg p-4 mb-4">
+        <Card as="section" className="mb-4">
           <div className="text-label text-text-tertiary uppercase">
             {t('roles.page.modulesHeader')}
           </div>
@@ -92,11 +92,11 @@ const RoleDetail: React.FC = () => {
               </li>
             ))}
           </ul>
-        </section>
+        </Card>
 
         {/* — PERMISSIONS. The permission IS the requiredRole string (C10 §3.3);
             there is no other kind, so they are shown as themselves. — */}
-        <section className="bg-white border border-border-subtle rounded-lg p-4 mb-4">
+        <Card as="section" className="mb-4">
           <div className="text-label text-text-tertiary uppercase">
             {t('roles.page.permissionsHeader')}
           </div>
@@ -110,10 +110,10 @@ const RoleDetail: React.FC = () => {
               </li>
             ))}
           </ul>
-        </section>
+        </Card>
 
         {/* — THE ACTS — */}
-        <section className="bg-white border border-border-subtle rounded-lg p-4">
+        <Card as="section">
           <div className="text-label text-text-tertiary uppercase">
             {t('roles.page.verbsHeader')}
           </div>
@@ -137,7 +137,7 @@ const RoleDetail: React.FC = () => {
               ))}
             </ul>
           )}
-        </section>
+        </Card>
 
         <div className="mt-4 flex gap-2 text-xs text-text-tertiary" data-testid="role-detail-marker">
           <Info size={12} className="shrink-0 mt-0.5" />

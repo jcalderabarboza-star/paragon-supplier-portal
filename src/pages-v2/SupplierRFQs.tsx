@@ -21,6 +21,9 @@ import KpiCard from '../components/ui-v2/KpiCard';
 import SubTabs from '../components/ui-v2/SubTabs';
 import StatusPill from '../components/ui-v2/StatusPill';
 import Button from '../components/ui-v2/Button';
+import { Card } from '../components/ui-v2/Card';
+import Notice from '../components/ui-v2/Notice';
+import { LinkButton, ToggleChip } from '../components/ui-v2/Actions';
 import SidePanel from '../components/ui-v2/SidePanel';
 import FormSection from '../components/ui-v2/FormSection';
 import Data from '../components/ui-v2/Data';
@@ -467,21 +470,13 @@ const RFQCard: React.FC<RFQCardProps> = ({
             </Field>
           </FieldList>
           {showLongReqs && (
-            <button
-              type="button"
+            <LinkButton
               onClick={() => setExpanded(!expanded)}
-              className="mt-1 text-xs font-semibold text-teal-text hover:text-teal-hover inline-flex items-center gap-1"
+              className="mt-1"
+              iconAfter={expanded ? ChevronUp : ChevronDown}
             >
-              {expanded ? (
-                <>
-                  {t('rfqs.card.showLess')} <ChevronUp size={11} />
-                </>
-              ) : (
-                <>
-                  {t('rfqs.card.showMore')} <ChevronDown size={11} />
-                </>
-              )}
-            </button>
+              {expanded ? t('rfqs.card.showLess') : t('rfqs.card.showMore')}
+            </LinkButton>
           )}
         </div>
 
@@ -599,8 +594,9 @@ const RFQCard: React.FC<RFQCardProps> = ({
           />
         )}
         {interestFormShown && !asksQuestionnaire && !asksProposal && (
-          <div
-            className="border border-border-subtle bg-bg-hover rounded-md p-3 mb-3"
+          <Card
+            tone="inset"
+            className="mb-3"
             data-testid={`rfq-interest-form-${rfq.id}`}
           >
             <FormField label={t('rfqs.interest.note')} htmlFor={`rfq-interest-note-${rfq.id}`}>
@@ -631,7 +627,7 @@ const RFQCard: React.FC<RFQCardProps> = ({
                 {t('rfqs.panel.cancel')}
               </Button>
             </div>
-          </div>
+          </Card>
         )}
 
         <div className="flex items-center gap-3 flex-wrap">
@@ -726,13 +722,13 @@ const RFQCard: React.FC<RFQCardProps> = ({
           >
             {t('rfqs.card.askQuestion')}
           </Button>
-          <button
-            type="button"
+          <LinkButton
+            tone="critical"
             onClick={() => onDecline(rfq.rfqNumber)}
-            className="ml-auto text-xs text-critical hover:underline font-semibold"
+            className="ml-auto"
           >
             {t('rfqs.card.decline')}
-          </button>
+          </LinkButton>
         </div>
       </div>
     </div>
@@ -750,8 +746,9 @@ const NotShortlistedCard: React.FC<{ rfq: RFQ; supplierId: string }> = ({ rfq, s
   const advance = notShortlistedAdvanceOf(rfq, supplierId);
   if (advance === null) return null;
   return (
-    <div
-      className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm mb-4 border-l-2 border-l-border-subtle overflow-hidden"
+    <Card
+      padding="none"
+      className="mb-4 overflow-hidden"
       data-testid={`rfq-not-shortlisted-${rfq.id}`}
     >
       <div className="flex items-center gap-3 px-4 py-3 border-b border-border-subtle flex-wrap">
@@ -770,7 +767,7 @@ const NotShortlistedCard: React.FC<{ rfq: RFQ; supplierId: string }> = ({ rfq, s
         </p>
         <StageTimeline event={rfq} testId={`rfq-stage-timeline-${rfq.id}`} />
       </div>
-    </div>
+    </Card>
   );
 };
 
@@ -787,7 +784,7 @@ const OpenRFQsTab: React.FC<{
   const supplierId = identity.supplierId ?? '';
   if (rfqs.length === 0 && notShortlisted.length === 0) {
     return (
-      <div className="bg-bg-surface border border-border-subtle rounded-lg py-12 px-6 text-center">
+      <Card padding="lg" className="text-center">
         <div className="inline-flex w-12 h-12 rounded-full bg-bg-hover items-center justify-center mb-3">
           <Inbox size={20} className="text-text-tertiary" />
         </div>
@@ -797,7 +794,7 @@ const OpenRFQsTab: React.FC<{
         <div className="text-sm text-text-tertiary">
           {t('rfqs.open.emptyBody')}
         </div>
-      </div>
+      </Card>
     );
   }
   return (
@@ -824,7 +821,7 @@ const MyQuotesTab: React.FC<{ quotes: SubmittedQuote[] }> = ({ quotes }) => {
 
   if (quotes.length === 0) {
     return (
-      <div className="bg-bg-surface border border-border-subtle rounded-lg py-12 px-6 text-center">
+      <Card padding="lg" className="text-center">
         <div className="inline-flex w-12 h-12 rounded-full bg-bg-hover items-center justify-center mb-3">
           <Send size={20} className="text-text-tertiary" />
         </div>
@@ -834,26 +831,23 @@ const MyQuotesTab: React.FC<{ quotes: SubmittedQuote[] }> = ({ quotes }) => {
         <div className="text-sm text-text-tertiary">
           {t('rfqs.quotes.emptyBody')}
         </div>
-      </div>
+      </Card>
     );
   }
 
   return (
     <div className="flex flex-col gap-4">
       {quotes.map((q) => (
-        <div
-          key={q.quoteNumber}
-          className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm border-l-2 border-l-teal p-5"
-        >
+        <Card key={q.quoteNumber}>
           <div className="flex items-start justify-between gap-3 mb-3 flex-wrap">
             <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
                 <Data className="text-sm font-bold text-text-primary">
                   {q.rfqNumber}
                 </Data>
-                <Data className="text-xs bg-bg-hover text-text-secondary rounded-full px-2 py-0.5 font-semibold">
-                  {q.quoteNumber}
-                </Data>
+                <StatusPill variant="neutral">
+                  <Data className="text-text-secondary">{q.quoteNumber}</Data>
+                </StatusPill>
               </div>
               <div className="text-base font-semibold text-text-primary mt-1">
                 {q.material}
@@ -885,7 +879,7 @@ const MyQuotesTab: React.FC<{ quotes: SubmittedQuote[] }> = ({ quotes }) => {
               </Field>
             ))}
           </FieldList>
-        </div>
+        </Card>
       ))}
     </div>
   );
@@ -901,7 +895,7 @@ const AwardsTab: React.FC<{ rows: AwardRow[] }> = ({ rows }) => {
 
   if (rows.length === 0) {
     return (
-      <div className="bg-bg-surface border border-border-subtle rounded-lg py-12 px-6 text-center">
+      <Card padding="lg" className="text-center">
         <div className="inline-flex w-12 h-12 rounded-full bg-bg-hover items-center justify-center mb-3">
           <Trophy size={20} className="text-text-tertiary" />
         </div>
@@ -911,7 +905,7 @@ const AwardsTab: React.FC<{ rows: AwardRow[] }> = ({ rows }) => {
         <div className="text-sm text-text-tertiary">
           {t('rfqs.awards.emptyBody')}
         </div>
-      </div>
+      </Card>
     );
   }
 
@@ -978,7 +972,7 @@ const AwardsTab: React.FC<{ rows: AwardRow[] }> = ({ rows }) => {
         ]}
       />
 
-      <div className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm px-5 py-4 flex items-center gap-5 flex-wrap">
+      <Card className="flex items-center gap-5 flex-wrap">
         <div className="flex-1 min-w-[16rem]">
           <div className="text-sm text-text-primary mb-2">
             <strong>
@@ -1000,7 +994,7 @@ const AwardsTab: React.FC<{ rows: AwardRow[] }> = ({ rows }) => {
           <div className="text-kpi font-mono tabular-nums text-success">{pct}%</div>
           <div className="text-xs text-text-tertiary">{t('rfqs.awards.winRateLabel')}</div>
         </div>
-      </div>
+      </Card>
     </div>
   );
 };
@@ -1530,7 +1524,7 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
       >
         {effectiveQuotePanelRFQ && (
           <div className="space-y-5">
-            <section className="bg-bg-hover border border-border-subtle rounded-md px-4 py-3">
+            <Card as="section" tone="inset">
               <div className="text-sm font-semibold text-text-primary">
                 {effectiveQuotePanelRFQ.material}
               </div>
@@ -1546,7 +1540,7 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
                   )}
                 </Field>
               </FieldList>
-            </section>
+            </Card>
 
             <FormSection
               eyebrow={t('rfqs.panel.step1.eyebrow')}
@@ -1699,13 +1693,14 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
                     every other guard on this surface is inline). Submit stays
                     disabled until this is ticked. */}
                 {leadTime.ok && leadTime.requiresSameDayAck && (
-                  <div
+                  <Notice
+                    tone="warning"
                     data-testid="quote-leadtime-sameday"
-                    className="mt-2 rounded border border-warning bg-warning-soft px-3 py-2"
+                    className="mt-2"
                   >
-                    <div className="text-[11px] text-warning-hover">
+                    <p>
                       {t('rfqs.panel.leadTime.sameDay.note')}
-                    </div>
+                    </p>
                     <Checkbox
                       className="mt-2"
                       checked={form.sameDayAck}
@@ -1716,7 +1711,7 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
                     >
                       {t('rfqs.panel.leadTime.sameDay.ack')}
                     </Checkbox>
-                  </div>
+                  </Notice>
                 )}
               </div>
               <FormField
@@ -1800,10 +1795,8 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
                   certificate had lapsed, and one holding none of the three. The
                   state is the one My Documents shows (`documentDisplayState`,
                   same instant), so the two pages cannot disagree. */}
-              <div
-                data-testid="quote-certificates"
-                className="border border-border-subtle rounded px-3 py-2 text-xs text-text-secondary flex flex-col gap-1.5"
-              >
+              <Card data-testid="quote-certificates">
+                <div className="text-xs text-text-secondary flex flex-col gap-1.5">
                 {docsQuery.isPending ? (
                   <span className="text-text-tertiary">{t('rfqs.panel.certs.loading')}</span>
                 ) : docsQuery.isError ? (
@@ -1836,7 +1829,8 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
                     );
                   })
                 )}
-              </div>
+                </div>
+              </Card>
             </FormSection>
 
             <FormSection
@@ -1861,18 +1855,13 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
                 </SectionHeading>
                 <div className="flex gap-2">
                   {(['yes', 'no'] as const).map((v) => (
-                    <button
+                    <ToggleChip
                       key={v}
-                      type="button"
                       onClick={() => setForm({ ...form, canSample: v })}
-                      className={`px-4 py-1.5 rounded-md text-sm font-semibold border transition-colors ${
-                        form.canSample === v
-                          ? 'bg-action-soft border-action text-action-hover'
-                          : 'bg-bg-surface border-border-input text-text-tertiary hover:text-text-secondary'
-                      }`}
+                      selected={form.canSample === v}
                     >
                       {v === 'yes' ? t('rfqs.panel.yes') : t('rfqs.panel.no')}
-                    </button>
+                    </ToggleChip>
                   ))}
                 </div>
                 {form.canSample === 'yes' && (
@@ -1923,14 +1912,13 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
                   />
                 </div>
                 {form.attachmentName && (
-                  <button
-                    type="button"
+                  <LinkButton
                     data-testid="quote-attachment-remove"
                     onClick={() => setForm({ ...form, attachmentName: '' })}
-                    className="mt-1 text-xs font-semibold text-teal-text hover:text-teal-hover"
+                    className="mt-1"
                   >
                     {t('rfqs.panel.pdfRemove')}
-                  </button>
+                  </LinkButton>
                 )}
               </FormField>
             </FormSection>

@@ -32,6 +32,8 @@ import Data from '../../components/ui-v2/Data';
 import Button from '../../components/ui-v2/Button';
 import { FormField, Select, TextInput } from '../../components/ui-v2/Form';
 import { HandoffNotice } from '../../components/ui-v2/HandoffNotice';
+import Notice from '../../components/ui-v2/Notice';
+import StatusPill from '../../components/ui-v2/StatusPill';
 import PlanCellMarker from './PlanCellMarker';
 import IntakeAdjustDrawer from './IntakeAdjustDrawer';
 import FullScreenSection from './FullScreenSection';
@@ -140,15 +142,15 @@ export const IntakeTriageCell: React.FC<{ line: IntakeLine }> = ({ line }) => {
       )}
       {line.state === 'Dismissed' && (
         <div className="flex items-center gap-1.5">
-          <span className="inline-flex items-center rounded-sm border border-border-subtle bg-bg-hover px-1.5 py-0.5 text-[11px] font-medium text-text-tertiary">
+          <StatusPill variant="neutral" size="sm">
             {t('intakeReview.dismissed.label')}
-          </span>
+          </StatusPill>
           {held && (
             <Button
               variant="secondary"
-              className="!px-2 !py-0.5 text-xs"
               disabled={busy}
               aria-label={t('intakeReview.restore.aria', { material: line.material })}
+              className="whitespace-nowrap"
               onClick={() => api.restore(line)}
             >
               {t('intakeReview.action.restore')}
@@ -160,18 +162,18 @@ export const IntakeTriageCell: React.FC<{ line: IntakeLine }> = ({ line }) => {
         <div className="flex items-center gap-1.5">
           <Button
             variant="outline"
-            className="!px-2 !py-0.5 text-xs"
             disabled={busy}
             aria-label={t('intakeReview.accept.aria', { material: line.material })}
+            className="whitespace-nowrap"
             onClick={() => api.accept(line)}
           >
             {busy ? t('intakeReview.action.accepting') : t('intakeReview.action.accept')}
           </Button>
           <Button
             variant="secondary"
-            className="!px-2 !py-0.5 text-xs"
             disabled={busy}
             aria-label={t('intakeReview.dismiss.aria', { material: line.material })}
+            className="whitespace-nowrap"
             onClick={() => api.dismiss(line)}
           >
             {t('intakeReview.action.dismiss')}
@@ -202,17 +204,16 @@ export function intakeReviewColumns(
       minWidth: 96,
       component: ({ rowData }: CellProps<IntakeLine>) => (
         <div className="w-full px-2">
-          <button
-            type="button"
+          <Button
+            variant="secondary"
             aria-label={t('planGrid.intake.select.action', { material: rowData.material })}
             onClick={(e) => {
               e.stopPropagation();
               select(rowData.id);
             }}
-            className="inline-flex items-center rounded-md border border-action/40 bg-action-soft px-2 py-0.5 text-xs text-action-text hover:border-action"
           >
             {t('planGrid.intake.col.select')}
-          </button>
+          </Button>
         </div>
       ),
     },
@@ -300,7 +301,8 @@ export function intakeReviewColumns(
     {
       title: t('intakeReview.col.actions'),
       disabled: true,
-      minWidth: 250,
+      // Two 40px buttons side by side, in the longer of the two languages.
+      minWidth: 330,
       component: ({ rowData }: CellProps<IntakeLine>) => <IntakeTriageCell line={rowData} />,
     },
   ];
@@ -336,14 +338,10 @@ const IntakeReviewBody: React.FC = () => {
         <HandoffNotice availability={api.availability} testId="handoff-intake-triage" />
       </div>
 
-      <div className="mb-4 flex items-start gap-2 rounded-lg border border-info/30 bg-info-soft px-4 py-3 text-sm text-text-primary">
-        <Info size={16} className="mt-0.5 shrink-0 text-info" />
-        <div>
-          <div className="font-semibold text-info">{t('intakeReview.honesty.title')}</div>
-          <p className="mt-0.5 text-text-secondary">{t('intakeReview.honesty.body')}</p>
-          <p className="mt-1 text-text-secondary">{t('intakeReview.adjustHint')}</p>
-        </div>
-      </div>
+      <Notice tone="info" icon={Info} title={t('intakeReview.honesty.title')} className="mb-4">
+        <p>{t('intakeReview.honesty.body')}</p>
+        <p className="mt-1">{t('intakeReview.adjustHint')}</p>
+      </Notice>
 
       <div className="mb-3 flex flex-wrap items-center gap-3">
         <TextInput
@@ -379,9 +377,9 @@ const IntakeReviewBody: React.FC = () => {
             // An empty list is said only once the read has answered: "no lines"
             // while loading would be a statement about the queue nobody made.
             intakeQuery.isSuccess && visible.length === 0 ? (
-              <div className="rounded-lg border border-dashed border-border-subtle bg-bg-surface px-4 py-8 text-center text-sm text-text-tertiary" data-testid="intake-empty">
+              <Notice tone="neutral" data-testid="intake-empty">
                 {t('intakeReview.empty')}
-              </div>
+              </Notice>
             ) : (
               <div
                 className="plan-dsg overflow-hidden rounded-lg border border-border-subtle bg-bg-surface"

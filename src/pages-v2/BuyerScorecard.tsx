@@ -45,6 +45,8 @@ import ProvenanceMarker from '../components/ui-v2/ProvenanceMarker';
 import { IllustrativeBanner, IllustrativeMark } from '../components/ui-v2/IllustrativeNotice';
 import StatusPill from '../components/ui-v2/StatusPill';
 import Button from '../components/ui-v2/Button';
+import { Card } from '../components/ui-v2/Card';
+import Notice from '../components/ui-v2/Notice';
 import LoadingState from '../components/ui-v2/LoadingState';
 import ErrorState from '../components/ui-v2/ErrorState';
 import EmptyState from '../components/ui-v2/EmptyState';
@@ -165,7 +167,7 @@ const KpiProgressTile: React.FC<{ k: ScorecardKpi }> = ({ k }) => {
   const { t } = useTranslation();
   const status = targetStatus(k.pct, k.targetPct);
   return (
-    <div className="bg-bg-hover border border-border-subtle rounded-md px-4 py-3">
+    <Card tone="inset">
       <div className="flex items-start justify-between gap-2 mb-1">
         {/* i18n-defer: k.name is a fixture-seeded KPI metric name (data) */}
         <div className="text-label text-text-tertiary uppercase">{k.name}</div>
@@ -178,7 +180,7 @@ const KpiProgressTile: React.FC<{ k: ScorecardKpi }> = ({ k }) => {
         {t('buyerScorecard.kpi.target')}: {k.target}
       </div>
       <TargetBar pct={k.pct} target={k.targetPct} trackClass="bg-bg-surface" />
-    </div>
+    </Card>
   );
 };
 
@@ -287,7 +289,7 @@ const BuyerScorecard: React.FC = () => {
 
       {/* DP-1: the supplier identity hero restyles from a solid navy fill to a
           light surface — navy text, teal accents, semantic grade badge kept. */}
-      <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6 mb-6">
+      <Card as="section" padding="lg" className="mb-6">
         <div className="flex items-start justify-between gap-6 flex-wrap">
           <div className="min-w-0 flex-1">
             <div className="text-section text-text-primary mb-2">
@@ -295,14 +297,14 @@ const BuyerScorecard: React.FC = () => {
               {supp.name}
             </div>
             <div className="flex flex-wrap gap-2 mb-3">
-              <span className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold bg-bg-hover text-text-secondary border border-border-subtle">
+              <StatusPill variant="neutral">
                 {cl(supp.category)}
-              </span>
+              </StatusPill>
               {/* i18n-defer: supp.tier is a composite fixture string
                   ("Tier 3 — API" …) — data, no central map; kept canonical EN. */}
-              <span className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold bg-teal-soft text-teal-text">
+              <StatusPill variant="neutral">
                 {supp.tier}
-              </span>
+              </StatusPill>
             </div>
             <FieldList columns={2} className="max-w-sm">
               <Field label={t('buyerScorecard.hero.sapBp')} kind="id">
@@ -352,9 +354,9 @@ const BuyerScorecard: React.FC = () => {
             </span>
           </div>
         </div>
-      </section>
+      </Card>
 
-      <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6 mb-6">
+      <Card as="section" padding="lg" className="mb-6">
         <SectionHeading className="mb-4 pb-3 border-b border-border-subtle">
           {t('buyerScorecard.kpi.title')}{' '}
           <IllustrativeMark />
@@ -364,10 +366,10 @@ const BuyerScorecard: React.FC = () => {
             <KpiProgressTile key={k.name} k={k} />
           ))}
         </div>
-      </section>
+      </Card>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-5 mb-6">
-        <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6">
+        <Card as="section" padding="lg">
           <SectionHeading className="mb-4 pb-3 border-b border-border-subtle">
             {t('buyerScorecard.radar.title')}{' '}
             <IllustrativeMark />
@@ -407,9 +409,9 @@ const BuyerScorecard: React.FC = () => {
               <Tooltip content={<ChartTooltip />} />
             </RadarChart>
           </ResponsiveContainer>
-        </section>
+        </Card>
 
-        <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6">
+        <Card as="section" padding="lg">
           <SectionHeading className="mb-1 pb-3 border-b border-border-subtle">
             {t('buyerScorecard.trends.title')}{' '}
             <IllustrativeMark />
@@ -482,24 +484,22 @@ const BuyerScorecard: React.FC = () => {
               <Legend iconSize={10} wrapperStyle={{ fontSize: 11 }} formatter={legendLabel} />
             </LineChart>
           </ResponsiveContainer>
-        </section>
+        </Card>
       </div>
 
       {supp.impPlan && (
-        <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6 mb-6">
-          <div className="bg-critical-soft border-l-2 border-critical rounded px-4 py-3 mb-4 text-sm text-critical font-semibold flex items-center gap-2">
-            <AlertTriangle size={14} />
-            {t('buyerScorecard.imp.banner')}
-          </div>
+        <Card as="section" padding="lg" className="mb-6">
+          <Notice tone="critical" icon={AlertTriangle} title={t('buyerScorecard.imp.banner')} className="mb-4" />
           <SectionHeading className="mb-4 pb-3 border-b border-border-subtle">
             {t('buyerScorecard.imp.title')}{' '}
             <IllustrativeMark />
           </SectionHeading>
           <div className="flex flex-col gap-2 mb-4">
             {improvementActions.map((a) => (
-              <div
+              <Card
                 key={a.item}
-                className="flex items-center justify-between gap-3 px-4 py-3 bg-critical-soft/40 border border-critical-soft rounded-md"
+                tone="inset"
+                className="flex items-center justify-between gap-3"
               >
                 <div className="min-w-0">
                   {/* i18n-defer: a.item is fixture action-item narrative (data) */}
@@ -516,7 +516,7 @@ const BuyerScorecard: React.FC = () => {
                   </div>
                   <StatusPill variant="neutral">{a.status}</StatusPill>
                 </div>
-              </div>
+              </Card>
             ))}
           </div>
           <Button
@@ -532,10 +532,10 @@ const BuyerScorecard: React.FC = () => {
           >
             {t('buyerScorecard.imp.send')}
           </Button>
-        </section>
+        </Card>
       )}
 
-      <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6">
+      <Card as="section" padding="lg">
         <SectionHeading className="mb-4 pb-3 border-b border-border-subtle">
           {t('buyerScorecard.comm.title')}{' '}
           <IllustrativeMark />
@@ -549,9 +549,10 @@ const BuyerScorecard: React.FC = () => {
             {supp.commLog.map((log, i) => {
               const Icon = channelIcon(log.channel);
               return (
-                <div
+                <Card
                   key={i}
-                  className="flex items-start gap-4 px-4 py-3 bg-bg-hover border border-border-subtle rounded-md"
+                  tone="inset"
+                  className="flex items-start gap-4"
                 >
                   <div className="shrink-0 text-center min-w-[88px]">
                     <div className="text-xs text-text-tertiary whitespace-nowrap">
@@ -575,12 +576,12 @@ const BuyerScorecard: React.FC = () => {
                   <StatusPill variant={COMM_STATUS_VARIANT[log.status]}>
                     {log.status}
                   </StatusPill>
-                </div>
+                </Card>
               );
             })}
           </div>
         )}
-      </section>
+      </Card>
     </AppShellV2>
   );
 };

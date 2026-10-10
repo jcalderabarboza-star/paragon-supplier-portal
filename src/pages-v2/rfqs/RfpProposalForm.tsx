@@ -22,6 +22,8 @@ import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Save, Send, X } from 'lucide-react';
 import Button from '../../components/ui-v2/Button';
+import { Card } from '../../components/ui-v2/Card';
+import { IconButton } from '../../components/ui-v2/Actions';
 import { FormField, TextArea } from '../../components/ui-v2/Form';
 import { useToast } from '../../hooks/useToast';
 import { useRefusalText } from '../../hooks/useRefusalText';
@@ -130,8 +132,9 @@ const RfpProposalForm: React.FC<Props> = ({ rfq, supplierId, onClose }) => {
   };
 
   return (
-    <div
-      className="border border-border-subtle bg-bg-hover rounded-md p-3 mb-3"
+    <Card
+      tone="inset"
+      className="mb-3"
       data-testid={`rfp-proposal-form-${rfq.id}`}
     >
       <p className="text-xs text-text-tertiary mb-3">{t('rfqs.rfp.form.intro')}</p>
@@ -192,14 +195,12 @@ const RfpProposalForm: React.FC<Props> = ({ rfq, supplierId, onClose }) => {
           {documents.map((name) => (
             <li key={name} className="flex items-center gap-2 text-xs text-text-primary">
               <span className="font-mono">{name}</span>
-              <button
-                type="button"
-                className="p-0.5 text-text-tertiary hover:text-critical"
+              <IconButton
+                icon={X}
+                tone="critical"
                 onClick={() => setDocuments((d) => d.filter((x) => x !== name))}
                 aria-label={t('rfqs.rfp.documents.remove', { name })}
-              >
-                <X size={12} />
-              </button>
+              />
             </li>
           ))}
         </ul>
@@ -240,7 +241,7 @@ const RfpProposalForm: React.FC<Props> = ({ rfq, supplierId, onClose }) => {
           {t('rfqs.panel.cancel')}
         </Button>
       </div>
-    </div>
+    </Card>
   );
 };
 

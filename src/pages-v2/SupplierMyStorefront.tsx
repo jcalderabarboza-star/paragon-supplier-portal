@@ -20,6 +20,8 @@ import { IllustrativeBanner, IllustrativeMark } from '../components/ui-v2/Illust
 import FormSection from '../components/ui-v2/FormSection';
 import StatusPill from '../components/ui-v2/StatusPill';
 import Button from '../components/ui-v2/Button';
+import { Card } from '../components/ui-v2/Card';
+import { IconButton, RowButton } from '../components/ui-v2/Actions';
 import DataTable from '../components/ui-v2/DataTable';
 import Switch from '../components/ui-v2/Switch';
 import { useToast } from '../hooks/useToast';
@@ -119,15 +121,13 @@ const AdvisorPanel: React.FC<{ completeness: number }> = ({ completeness }) => {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   return (
-    <div className="bg-teal-soft border border-teal/30 rounded-md overflow-hidden">
-      <button
-        type="button"
+    <Card padding="none" className="overflow-hidden">
+      <RowButton
         onClick={() => setOpen(!open)}
-        className="w-full px-4 py-3 flex items-center justify-between text-sm font-semibold text-teal-text"
       >
         <span>{t('supplierMyStorefront.advisor.title')}</span>
         {open ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-      </button>
+      </RowButton>
       {open && (
         <div className="px-4 pb-4 border-t border-teal/20 text-sm text-text-secondary leading-relaxed">
           <div className="mt-3 mb-1 font-semibold text-text-primary">
@@ -142,7 +142,7 @@ const AdvisorPanel: React.FC<{ completeness: number }> = ({ completeness }) => {
           </ul>
         </div>
       )}
-    </div>
+    </Card>
   );
 };
 
@@ -272,7 +272,7 @@ const StorefrontEditor: React.FC<StorefrontEditorProps> = ({
 
       <IllustrativeBanner bodyKey="supplierMyStorefront.illustrative.body" />
 
-      <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-5 mb-6">
+      <Card as="section" className="mb-6">
         <div className="flex items-center gap-6">
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between mb-2">
@@ -325,7 +325,7 @@ const StorefrontEditor: React.FC<StorefrontEditorProps> = ({
             </div>
           </div>
         </div>
-      </section>
+      </Card>
 
       <div className="flex flex-col gap-5">
         <FormSection
@@ -499,22 +499,20 @@ const StorefrontEditor: React.FC<StorefrontEditorProps> = ({
                 header: t('supplierMyStorefront.col.remove'),
                 kind: 'actions',
                 cell: (item) => (
-                  <button
-                    type="button"
+                  <IconButton
+                    icon={Trash2}
+                    tone="critical"
                     onClick={() => removeCatalogItem(item.id)}
-                    className="hover:text-critical"
                     aria-label={t('supplierMyStorefront.aria.removeMaterial', {
                       name: item.material,
                     })}
-                  >
-                    <Trash2 size={14} />
-                  </button>
+                  />
                 ),
               },
             ]}
           />
           {showAddForm && (
-            <div className="mt-4 bg-bg-hover border border-teal/30 rounded-md p-4">
+            <Card tone="inset" className="mt-4">
               <div className="text-sm font-semibold text-text-primary mb-3">
                 {t('supplierMyStorefront.addForm.title')}
               </div>
@@ -656,7 +654,7 @@ const StorefrontEditor: React.FC<StorefrontEditorProps> = ({
                   {t('supplierMyStorefront.action.cancel')}
                 </Button>
               </div>
-            </div>
+            </Card>
           )}
         </FormSection>
 
@@ -676,9 +674,10 @@ const StorefrontEditor: React.FC<StorefrontEditorProps> = ({
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {certs.map((cert, i) => (
-              <div
+              <Card
                 key={cert.name}
-                className="flex items-center gap-3 px-4 py-3 bg-bg-hover border border-border-subtle rounded-md"
+                tone="inset"
+                className="flex items-center gap-3"
               >
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-semibold text-text-primary mb-1">
@@ -715,7 +714,7 @@ const StorefrontEditor: React.FC<StorefrontEditorProps> = ({
                     })}
                   />
                 </div>
-              </div>
+              </Card>
             ))}
           </div>
         </FormSection>
@@ -744,23 +743,18 @@ const StorefrontEditor: React.FC<StorefrontEditorProps> = ({
                 cfg: primaryCfg,
                 labelKey: 'supplierMyStorefront.channel.primary',
                 variant: 'info' as const,
-                accent: true,
               },
               {
                 cfg: fallbackCfg,
                 labelKey: 'supplierMyStorefront.channel.fallback',
                 variant: 'neutral' as const,
-                accent: false,
               },
-            ].map(({ cfg, labelKey, variant, accent }, i) =>
+            ].map(({ cfg, labelKey, variant }, i) =>
               cfg ? (
-                <div
+                <Card
                   key={labelKey}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-md border ${
-                    accent
-                      ? 'bg-teal-soft border-teal/30'
-                      : 'bg-bg-hover border-border-subtle'
-                  }`}
+                  tone="inset"
+                  className="flex items-center gap-3"
                 >
                   <span className="text-2xl shrink-0">{cfg.icon}</span>
                   <div className="flex-1 min-w-0">
@@ -774,7 +768,7 @@ const StorefrontEditor: React.FC<StorefrontEditorProps> = ({
                     </div>
                   </div>
                   <StatusPill variant={variant}>{t(labelKey)}</StatusPill>
-                </div>
+                </Card>
               ) : (
                 <div key={i} />
               ),
@@ -857,9 +851,10 @@ const StorefrontEditor: React.FC<StorefrontEditorProps> = ({
               { label: t('supplierMyStorefront.stat.winRate'), value: '67%', tone: 'text-success' },
               { label: t('supplierMyStorefront.stat.categoryRank'), value: '#3 / 31', tone: 'text-warning-hover' },
             ].map((s) => (
-              <div
+              <Card
                 key={s.label}
-                className="px-4 py-3 bg-bg-hover border border-border-subtle rounded-md text-center"
+                tone="inset"
+                className="text-center"
               >
                 <Data as="div" className={`text-xl font-semibold ${s.tone}`}>
                   {s.value}
@@ -868,7 +863,7 @@ const StorefrontEditor: React.FC<StorefrontEditorProps> = ({
                   {s.label}
                 </div>
                 <IllustrativeMark className="mt-1" />
-              </div>
+              </Card>
             ))}
           </div>
           <AdvisorPanel completeness={completeness} />

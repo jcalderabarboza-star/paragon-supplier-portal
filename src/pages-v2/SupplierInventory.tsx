@@ -17,6 +17,8 @@ import BulkActionsBar from '../components/ui-v2/BulkActionsBar';
 import FilterChipsBar from '../components/ui-v2/FilterChipsBar';
 import SearchBar from '../components/ui-v2/SearchBar';
 import StatusPill from '../components/ui-v2/StatusPill';
+import { Card } from '../components/ui-v2/Card';
+import Notice from '../components/ui-v2/Notice';
 import Data from '../components/ui-v2/Data';
 import SectionHeading from '../components/ui-v2/SectionHeading';
 import { useTranslation, Trans } from 'react-i18next';
@@ -254,9 +256,7 @@ const SupplierInventory: React.FC = () => {
       }
       notices={
         counts.critical > 0 ? (
-          <div className="bg-critical-soft border-l-2 border-critical rounded px-4 py-3 flex items-start gap-2 text-sm text-critical">
-            <AlertOctagon size={14} className="shrink-0 mt-0.5" />
-            <div>
+          <Notice tone="critical" icon={AlertOctagon}>
               <Trans
                 i18nKey={
                   counts.critical === 1
@@ -266,8 +266,7 @@ const SupplierInventory: React.FC = () => {
                 values={{ count: counts.critical }}
                 components={{ strong: <strong /> }}
               />
-            </div>
-          </div>
+          </Notice>
         ) : undefined
       }
       kpis={
@@ -331,7 +330,7 @@ const SupplierInventory: React.FC = () => {
         </>
       }
     >
-      <section className="mb-6 rounded-lg border border-border-subtle bg-bg-surface px-4 py-3" data-testid="inventory-declared">
+      <Card as="section" className="mb-6" data-testid="inventory-declared">
         <SectionHeading as="h2">{t('supplierInventory.declared.title')}</SectionHeading>
         <p className="mb-3 text-sm text-text-secondary">{t('supplierInventory.declared.subtitle')}</p>
         {declared.length === 0 ? (
@@ -387,7 +386,7 @@ const SupplierInventory: React.FC = () => {
             ]}
           />
         )}
-      </section>
+      </Card>
 
       {/* The search and the chips stay beside the table they filter: the
           declared-stock section above is content, not part of the toolbar. */}
@@ -504,24 +503,22 @@ const SupplierInventory: React.FC = () => {
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-        <div className="bg-info-soft border-l-2 border-info rounded px-4 py-3 text-sm text-text-secondary flex items-start gap-2">
-          <Database size={14} className="text-info shrink-0 mt-0.5" />
+        <Notice tone="info" icon={Database}>
           <span>
-            <strong className="text-info">
+            <strong>
               {t('supplierInventory.info.dataSources.label')}
             </strong>{' '}
             {t('supplierInventory.info.dataSources.body')}
           </span>
-        </div>
-        <div className="bg-warning-soft border-l-2 border-warning rounded px-4 py-3 text-sm text-text-secondary flex items-start gap-2">
-          <Mail size={14} className="text-warning-hover shrink-0 mt-0.5" />
+        </Notice>
+        <Notice tone="warning" icon={Mail}>
           <span>
-            <strong className="text-warning-hover">
+            <strong>
               {t('supplierInventory.info.thresholds.label')}
             </strong>{' '}
             {t('supplierInventory.info.thresholds.body')}
           </span>
-        </div>
+        </Notice>
       </div>
     </ListPage>
   );

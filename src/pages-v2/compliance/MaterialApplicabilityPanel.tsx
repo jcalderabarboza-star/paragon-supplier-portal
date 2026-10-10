@@ -17,6 +17,8 @@ import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import DataTable, { CellSub, type Column } from '../../components/ui-v2/DataTable';
 import Button from '../../components/ui-v2/Button';
+import { Card } from '../../components/ui-v2/Card';
+import { LinkButton } from '../../components/ui-v2/Actions';
 import Data from '../../components/ui-v2/Data';
 import SectionHeading from '../../components/ui-v2/SectionHeading';
 import { FormField, Radio, TextArea } from '../../components/ui-v2/Form';
@@ -186,16 +188,15 @@ const MaterialApplicabilityPanel: React.FC = () => {
               : t('compliance.applicability.basis.none')}
         </CellSub>
         {canRule.kind === 'held' ? (
-          <button
-            type="button"
-            className="self-start text-action-text hover:underline"
+          <LinkButton
+            className="self-start"
             data-testid={`applicability-rule-${regime}-${row.materialCode}`}
             onClick={() =>
               setDraft({ materialCode: row.materialCode, regime, applicable: null, reason: '' })
             }
           >
             {t('compliance.applicability.action.rule')}
-          </button>
+          </LinkButton>
         ) : null}
       </div>
     );
@@ -240,24 +241,24 @@ const MaterialApplicabilityPanel: React.FC = () => {
         return history.length === 0 ? (
           t('compliance.applicability.history.none')
         ) : (
-          <button
-            type="button"
-            className="text-action-text hover:underline"
+          <LinkButton
             data-testid={`applicability-history-${row.materialCode}`}
             onClick={() => setHistoryOf(historyOf === row.materialCode ? null : row.materialCode)}
           >
             {history.length === 1
               ? t('compliance.applicability.history.one', { count: history.length })
               : t('compliance.applicability.history.other', { count: history.length })}
-          </button>
+          </LinkButton>
         );
       },
     },
   ];
 
   return (
-    <section
-      className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm mb-6 overflow-hidden"
+    <Card
+      as="section"
+      padding="none"
+      className="mb-6 overflow-hidden"
       data-testid="material-applicability"
     >
       <div className="px-5 py-4 border-b border-border-subtle flex flex-wrap items-start justify-between gap-3">
@@ -404,7 +405,7 @@ const MaterialApplicabilityPanel: React.FC = () => {
           }}
         />
       )}
-    </section>
+    </Card>
   );
 };
 

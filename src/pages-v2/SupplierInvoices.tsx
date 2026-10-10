@@ -21,6 +21,8 @@ import KpiCard from '../components/ui-v2/KpiCard';
 import BulkActionsBar from '../components/ui-v2/BulkActionsBar';
 import StatusPill from '../components/ui-v2/StatusPill';
 import Button from '../components/ui-v2/Button';
+import { Card } from '../components/ui-v2/Card';
+import Notice from '../components/ui-v2/Notice';
 import SidePanel from '../components/ui-v2/SidePanel';
 import Timeline, { TimelineEvent } from '../components/ui-v2/Timeline';
 import Data from '../components/ui-v2/Data';
@@ -444,14 +446,11 @@ const SupplierInvoices: React.FC = () => {
       }
       notices={
         disputed.length > 0 ? (
-          <div className="bg-warning-soft border-l-2 border-warning rounded px-4 py-3 flex items-start gap-2 text-sm text-warning-hover">
-            <AlertTriangle size={14} className="shrink-0 mt-0.5" />
-            <div>
+          <Notice tone="warning" icon={AlertTriangle}>
               <strong>{t('supplierInvoices.banner.dispute.label')}</strong>
               <Data>{disputed.map((i) => i.invoiceNumber).join(', ')}</Data>{' '}
               {t('supplierInvoices.banner.dispute.body')}
-            </div>
-          </div>
+          </Notice>
         ) : undefined
       }
       kpiColumns={3}
@@ -635,14 +634,11 @@ const SupplierInvoices: React.FC = () => {
         ]}
       />
 
-      <div className="bg-info-soft border-l-2 border-info rounded px-4 py-3 text-sm text-text-secondary flex items-start gap-2">
-        <FileText size={14} className="text-info shrink-0 mt-0.5" />
-        <span>
+      <Notice tone="info" icon={FileText}>
           {t('supplierInvoices.ariba.pre')}
-          <strong className="text-info">{t('supplierInvoices.ariba.strong')}</strong>
+          <strong>{t('supplierInvoices.ariba.strong')}</strong>
           {t('supplierInvoices.ariba.post')}
-        </span>
-      </div>
+      </Notice>
 
       <SidePanel
         open={selected !== null}
@@ -747,20 +743,21 @@ const SupplierInvoices: React.FC = () => {
                 </SectionHeading>
                 <Timeline events={buildTimeline(selected, t)} />
                 {selected.status === 'Disputed' && (
-                  <div
-                    className="mt-3 bg-critical-soft border-l-2 border-critical rounded px-3 py-2 text-xs text-critical"
+                  <Notice
+                    tone="critical"
+                    className="mt-3"
                     data-testid="supplier-invoice-dispute-note"
                   >
                     {t('supplierInvoices.note.disputed')}{' '}
                     {selected.disputeReason
                       ? t('supplierInvoices.note.disputeReason', { reason: selected.disputeReason })
                       : t('supplierInvoices.note.disputeNoReason')}
-                  </div>
+                  </Notice>
                 )}
                 {selected.status === 'Overdue' && (
-                  <div className="mt-3 bg-critical-soft border-l-2 border-critical rounded px-3 py-2 text-xs text-critical">
+                  <Notice tone="critical" className="mt-3">
                     {t('supplierInvoices.note.overdue')}
-                  </div>
+                  </Notice>
                 )}
               </section>
             )}
@@ -775,20 +772,21 @@ const SupplierInvoices: React.FC = () => {
                     credited sentence is kept for the state the bank's fact
                     produces, and only for it. */}
                 {selected.status === 'Remittance Received' ? (
-                  <div
-                    className="bg-success-soft border-l-2 border-success rounded px-4 py-3 mb-3 text-sm text-success font-semibold flex items-center gap-2"
+                  <Notice
+                    tone="success"
+                    icon={CheckCircle2}
+                    title={t('supplierInvoices.remittance.processed')}
+                    className="mb-3"
                     data-testid="supplier-remittance-confirmed"
-                  >
-                    <CheckCircle2 size={14} />
-                    {t('supplierInvoices.remittance.processed')}
-                  </div>
+                  />
                 ) : (
-                  <div
-                    className="bg-bg-hover border-l-2 border-border-subtle rounded px-4 py-3 mb-3 text-sm text-text-secondary"
+                  <Notice
+                    tone="neutral"
+                    className="mb-3"
                     data-testid="supplier-payment-released"
                   >
                     {t('supplierInvoices.remittance.released')}
-                  </div>
+                  </Notice>
                 )}
                 <FieldList columns={2}>
                   <Field label={t('supplierInvoices.remittance.invoiceNo')} kind="id">
@@ -808,10 +806,10 @@ const SupplierInvoices: React.FC = () => {
                   </Field>
                 </FieldList>
                 {selected.remittanceNote && (
-                  <div className="mt-3 text-xs text-text-secondary bg-bg-hover rounded px-3 py-2 border border-border-subtle">
-                    <strong className="text-text-primary">{t('supplierInvoices.remittance.paymentNote')}</strong>{' '}
+                  <Notice tone="neutral" className="mt-3">
+                    <strong>{t('supplierInvoices.remittance.paymentNote')}</strong>{' '}
                     {selected.remittanceNote}
-                  </div>
+                  </Notice>
                 )}
               </section>
             )}
@@ -885,9 +883,9 @@ const SupplierInvoices: React.FC = () => {
                   const read = readInvoiceQty(raw, l.maxQty);
                   const inputId = `new-qty-${l.materialCode}`;
                   return (
-                    <li
+                    <Card
+                      as="li"
                       key={l.materialCode}
-                      className="rounded-md border border-border-subtle px-3 py-2"
                       data-testid={`invoice-line-${l.materialCode}`}
                     >
                       <div className="text-sm text-text-primary">
@@ -945,7 +943,7 @@ const SupplierInvoices: React.FC = () => {
                           <Data>{formatIDR(read.value * l.unitPrice)}</Data>
                         </div>
                       )}
-                    </li>
+                    </Card>
                   );
                 })}
               </ul>

@@ -25,6 +25,12 @@ type Variant = 'secondary' | 'outline';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: Variant;
+  /**
+   * UI-1c-3: the act destroys something — cancel an event, conclude without an
+   * award. The outline and its label take the critical colour. It is a colour on
+   * the one outline, not a second weight: there is still no solid button.
+   */
+  tone?: 'critical';
   icon?: LucideIcon;
 }
 
@@ -38,8 +44,20 @@ const VARIANT_CLASS: Record<Variant, string> = {
     'bg-transparent text-action-text border border-action hover:bg-action-soft',
 };
 
+const CRITICAL_CLASS = 'bg-transparent text-critical border border-critical hover:bg-critical-soft';
+
+/**
+ * The button's box and type, for the one thing that must LOOK like a button and
+ * cannot BE one: a router `Link` that goes somewhere. It is the same string the
+ * component wears, so a link dressed with it follows every change made here.
+ */
+export function buttonClass(variant: Variant = 'outline', tone?: 'critical'): string {
+  return `inline-flex items-center justify-center gap-2 min-h-10 rounded-md px-4 py-2 font-sans text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${tone === 'critical' ? CRITICAL_CLASS : VARIANT_CLASS[variant]}`;
+}
+
 const Button: React.FC<ButtonProps> = ({
   variant = 'outline',
+  tone,
   icon: Icon,
   children,
   className = '',
@@ -48,7 +66,7 @@ const Button: React.FC<ButtonProps> = ({
   return (
     <button
       type="button"
-      className={`inline-flex items-center justify-center gap-2 min-h-10 rounded-md px-4 py-2 font-sans text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${VARIANT_CLASS[variant]} ${className}`}
+      className={`${buttonClass(variant, tone)} ${className}`}
       {...rest}
     >
       {Icon ? <Icon size={16} /> : null}

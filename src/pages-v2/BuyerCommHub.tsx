@@ -10,6 +10,8 @@ import LoadingState from '../components/ui-v2/LoadingState';
 import ErrorState from '../components/ui-v2/ErrorState';
 import StatusPill from '../components/ui-v2/StatusPill';
 import Data from '../components/ui-v2/Data';
+import { Card } from '../components/ui-v2/Card';
+import Notice from '../components/ui-v2/Notice';
 import { useUnifiedChase } from '../services/query/chaseHooks';
 import { useConsolidationRows } from '../services/query/sdcBuyerHooks';
 import { useSuppliers } from '../services/query/hooks';
@@ -133,13 +135,9 @@ const BuyerCommHub: React.FC = () => {
       </PageMetaLine>
 
       {/* Honest framing — no live channel; nothing is sent from here. */}
-      <div className="bg-sample-soft border border-dashed border-sample-border rounded-lg px-4 py-3 mb-6 text-sm text-text-primary flex items-start gap-2">
-        <Info size={16} className="text-sample shrink-0 mt-0.5" aria-hidden="true" />
-        <div>
-          <div className="font-semibold text-sample">{t('buyerCommHub.honesty.title')}</div>
-          <p className="mt-0.5 text-text-secondary">{t('buyerCommHub.honesty.body')}</p>
-        </div>
-      </div>
+      <Notice tone="sample" icon={Info} title={t('buyerCommHub.honesty.title')} className="mb-6">
+        <p>{t('buyerCommHub.honesty.body')}</p>
+      </Notice>
 
       {/* ── Outbound requests (chase-derived; composed — not sent) ─────────── */}
       <section className="mb-8" data-testid="commhub-outbound">
@@ -150,15 +148,16 @@ const BuyerCommHub: React.FC = () => {
         <p className="text-sm text-text-tertiary mb-4">{t('buyerCommHub.outbound.subtitle')}</p>
 
         {queue.length === 0 ? (
-          <div className="border border-border-subtle rounded-lg bg-white px-6 py-8 text-center text-sm text-text-tertiary">
-            {t('buyerCommHub.outbound.empty')}
-          </div>
+          <Card padding="lg">
+            <p className="text-center text-sm text-text-tertiary">{t('buyerCommHub.outbound.empty')}</p>
+          </Card>
         ) : (
           <div className="space-y-3">
             {queue.map((entry) => (
-              <div
+              <Card
                 key={entry.supplierId}
-                className="border border-border-subtle rounded-lg bg-white overflow-hidden"
+                padding="none"
+                className="overflow-hidden"
                 data-testid="commhub-outbound-row"
               >
                 <div className="flex flex-wrap items-center gap-3 px-4 py-3 border-b border-border-subtle bg-bg-subtle">
@@ -216,7 +215,7 @@ const BuyerCommHub: React.FC = () => {
                     )}
                   </div>
                 </div>
-              </div>
+              </Card>
             ))}
           </div>
         )}
@@ -231,19 +230,20 @@ const BuyerCommHub: React.FC = () => {
         <p className="text-sm text-text-tertiary mb-4">{t('buyerCommHub.provenance.subtitle')}</p>
 
         {provenance.length === 0 ? (
-          <div className="border border-border-subtle rounded-lg bg-white px-6 py-8 text-center text-sm text-text-tertiary">
-            {t('buyerCommHub.provenance.empty')}
-          </div>
+          <Card padding="lg">
+            <p className="text-center text-sm text-text-tertiary">{t('buyerCommHub.provenance.empty')}</p>
+          </Card>
         ) : (
           <ul className="space-y-2">
             {provenance.map((ref, i) => (
-              <li
+              <Card
+                as="li"
                 key={`${ref.channelMessageId}-${i}`}
-                className="border border-border-subtle rounded-lg bg-white px-4 py-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm"
+                className="flex flex-wrap items-center gap-x-4 gap-y-1"
                 data-testid="commhub-provenance-row"
               >
                 <StatusPill variant="success">{t('buyerCommHub.provenance.recorded')}</StatusPill>
-                <span className="text-text-secondary">
+                <span className="text-sm text-text-secondary">
                   {t('buyerCommHub.provenance.message')} <Data className="text-text-primary">{ref.channelMessageId}</Data>
                 </span>
                 <span className="text-text-tertiary text-xs">
@@ -254,7 +254,7 @@ const BuyerCommHub: React.FC = () => {
                     ? <>{t('buyerCommHub.provenance.correlation')} <Data className="text-text-secondary">{ref.causationAnchor}</Data></>
                     : t('buyerCommHub.provenance.noCorrelation')}
                 </span>
-              </li>
+              </Card>
             ))}
           </ul>
         )}

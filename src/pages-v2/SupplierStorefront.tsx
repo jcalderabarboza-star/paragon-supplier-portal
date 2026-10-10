@@ -26,6 +26,8 @@ import KpiCard from '../components/ui-v2/KpiCard';
 import StatusPill from '../components/ui-v2/StatusPill';
 import Tabs from '../components/ui-v2/Tabs';
 import Button from '../components/ui-v2/Button';
+import { Card } from '../components/ui-v2/Card';
+import { LinkButton } from '../components/ui-v2/Actions';
 import LoadingState from '../components/ui-v2/LoadingState';
 import ErrorState from '../components/ui-v2/ErrorState';
 import Data from '../components/ui-v2/Data';
@@ -202,14 +204,12 @@ const SupplierStorefront: React.FC = () => {
   return (
     <AppShellV2>
       <div className="mb-4">
-        <button
-          type="button"
+        <LinkButton
+          icon={ArrowLeft}
           onClick={() => navigate('/marketplace')}
-          className="inline-flex items-center gap-1 text-sm text-teal-text hover:text-teal-hover font-medium"
         >
-          <ArrowLeft size={14} />
           {t('supplierStorefront.nav.marketplace')}
-        </button>
+        </LinkButton>
       </div>
 
       <PageHeader
@@ -259,7 +259,7 @@ const SupplierStorefront: React.FC = () => {
       </PageMetaLine>
 
       {/* Hero banner */}
-      <div className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm overflow-hidden mb-6">
+      <Card padding="none" className="overflow-hidden mb-6">
         <div className="p-8 flex items-center gap-6">
           <div className="w-20 h-20 shrink-0 rounded-lg bg-teal-soft text-teal-text flex items-center justify-center text-title">
             {supp.name
@@ -298,7 +298,7 @@ const SupplierStorefront: React.FC = () => {
             </p>
           </div>
         </div>
-      </div>
+      </Card>
 
       {/* KPI strip */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-6">
@@ -342,17 +342,16 @@ const SupplierStorefront: React.FC = () => {
       />
 
       {activeTab === 'catalog' && products.length === 0 && (
-        <div className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-8 text-center text-sm text-text-tertiary">
-          {t('supplierStorefront.catalog.empty')}
-        </div>
+        <Card padding="lg" className="text-center">
+          <span className="text-sm text-text-tertiary">{t('supplierStorefront.catalog.empty')}</span>
+        </Card>
       )}
 
       {activeTab === 'catalog' && products.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
           {products.map((p) => (
-            <div
+            <Card
               key={p.code}
-              className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-5"
             >
               <Data as="div" className="text-xs text-text-tertiary">
                 {p.code}
@@ -383,13 +382,13 @@ const SupplierStorefront: React.FC = () => {
                   {t('supplierStorefront.catalog.requestQuote')}
                 </Button>
               </div>
-            </div>
+            </Card>
           ))}
         </div>
       )}
 
       {activeTab === 'certs' && (
-        <div className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm divide-y divide-border-subtle">
+        <Card padding="none" className="divide-y divide-border-subtle">
           {certifications.map((c) => (
             <div
               key={c.name}
@@ -411,11 +410,11 @@ const SupplierStorefront: React.FC = () => {
               </StatusPill>
             </div>
           ))}
-        </div>
+        </Card>
       )}
 
       {activeTab === 'track' && (
-        <div className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6">
+        <Card padding="lg">
           <div className="flex items-center gap-2 mb-5">
             <SectionHeading as="h2">
               {t('supplierStorefront.track.title')}
@@ -449,12 +448,12 @@ const SupplierStorefront: React.FC = () => {
               );
             })}
           </ol>
-        </div>
+        </Card>
       )}
 
       {activeTab === 'contact' && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-          <div className="lg:col-span-2 bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6">
+          <Card padding="lg" className="lg:col-span-2">
             <div className="flex items-center gap-2 mb-4">
               <ChannelIcon size={18} className="text-teal" />
               <SectionHeading as="h2">
@@ -507,9 +506,9 @@ const SupplierStorefront: React.FC = () => {
                 {t('supplierStorefront.contact.send')}
               </Button>
             </div>
-          </div>
+          </Card>
 
-          <div className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6 space-y-4">
+          <Card padding="lg" className="space-y-4">
             <SectionHeading as="h3">
               {t('supplierStorefront.contact.primaryContact')}
             </SectionHeading>
@@ -545,7 +544,7 @@ const SupplierStorefront: React.FC = () => {
                 </div>
               )}
             </div>
-          </div>
+          </Card>
         </div>
       )}
     </AppShellV2>

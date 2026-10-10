@@ -23,6 +23,7 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import StatusPill from '../../components/ui-v2/StatusPill';
+import Notice from '../../components/ui-v2/Notice';
 import NextActLine from '../../components/ui-v2/NextActLine';
 import { useNextAct } from '../../hooks/useVerbAvailability';
 import ScoreBadge from '../../components/ui-v2/ScoreBadge';
@@ -416,9 +417,9 @@ export const ContractDetailBody: React.FC<{
           )}
         </div>
         {obligationsForContract.length === 0 ? (
-          <p className="text-sm text-text-tertiary p-4 border border-border-subtle rounded-md text-center">
+          <Notice tone="neutral">
             {t('contracts.panel.noObligations')}
-          </p>
+          </Notice>
         ) : (
           <DataTable<ContractObligation>
             density="compact"
@@ -486,18 +487,10 @@ export const ContractDetailBody: React.FC<{
 export const ContractDocsList: React.FC<{ contract: Contract }> = () => {
   const { t } = useTranslation();
   return (
-    <div className="p-6 border border-border-subtle rounded-md text-center">
-      <ShieldCheck
-        size={20}
-        className="text-text-tertiary mx-auto mb-2"
-        aria-hidden="true"
-      />
-      <div className="text-sm font-semibold text-text-primary mb-1">
-        {t('contracts.docs.empty.title')}
-      </div>
-      <p className="text-meta text-text-tertiary max-w-md mx-auto">
+    <Notice tone="neutral" icon={ShieldCheck} title={t('contracts.docs.empty.title')}>
+      <p>
         {t('contracts.docs.empty.body')}
       </p>
-    </div>
+    </Notice>
   );
 };

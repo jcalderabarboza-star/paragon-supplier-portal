@@ -11,6 +11,8 @@ import ErrorState from '../components/ui-v2/ErrorState';
 import NoSupplierIdentity from '../components/ui-v2/NoSupplierIdentity';
 import AgreementCard from '../components/delivery/AgreementDrawdown';
 import Data from '../components/ui-v2/Data';
+import { Card } from '../components/ui-v2/Card';
+import Notice from '../components/ui-v2/Notice';
 import { useDeliveryAgreements } from '../services/query/deliveryHooks';
 import { shapeObligations } from '../services/chase';
 import { useCurrentIdentity } from '../context/CurrentIdentityContext';
@@ -91,19 +93,17 @@ const SupplierDeliveryAgreements: React.FC = () => {
 
       {/* Honest framing — this mirror is the supplier's own read-only view;
           releasing schedules and confirming deliveries are Paragon's actions. */}
-      <div className="bg-info-soft border-l-2 border-info rounded px-4 py-3 mb-6 text-sm text-text-primary flex items-start gap-2">
-        <Info size={14} className="text-info shrink-0 mt-0.5" />
-        <span>
-          <strong className="text-info">{t('delivery.supplier.readonlyTitle')}</strong>{' '}
-          {t('delivery.supplier.readonlyBody')}
-        </span>
-      </div>
+      <Notice tone="info" icon={Info} title={t('delivery.supplier.readonlyTitle')} className="mb-6">
+        {t('delivery.supplier.readonlyBody')}
+      </Notice>
 
       {/* SDC-5e — the supplier's OWN obligations ("what Paragon needs from you"):
           own upcoming + overdue deliveries, read-only, own-facing tone (no chase
           vocabulary). Derived from the same views the cards below render. */}
-      <section
-        className="border border-border-subtle rounded-lg bg-white overflow-hidden mb-6"
+      <Card
+        as="section"
+        padding="none"
+        className="overflow-hidden mb-6"
         data-testid="supplier-obligations"
       >
         <div className="px-4 py-3 border-b border-border-subtle bg-bg-subtle flex items-center gap-3">
@@ -167,7 +167,7 @@ const SupplierDeliveryAgreements: React.FC = () => {
             ))}
           </ul>
         )}
-      </section>
+      </Card>
 
       <div className="space-y-8">
         {views.map((view) => (

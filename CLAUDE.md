@@ -870,6 +870,22 @@ nav groups under one neutral key, `nav.glossary`.
   picker, a hidden field and a range slider are not form controls in this sense. **Derive the
   exemptions from `RAW_CONTROL_EXEMPT` in `lib/uiGate/derive.ts`, never from a sentence here**
   — each is a named file with a count, and the guard holds the tree EQUAL to it.
+- ⚠️ **UI-1c-3 (2026-10-10, operator ruling: notices are the left-rule style everywhere) — ONE
+  CARD, ONE NOTICE, ONE OF EACH THING THAT IS PRESSED.** A box is `components/ui-v2/Card`
+  (`padding` none · md · lg; `tone="inset"` for a grey block INSIDE a card) or
+  `components/ui-v2/Notice` (a left rule on a tint; `tone="sample"` is neutral and dashed). What
+  is pressed is `Button` (one height, 40px; `tone="critical"` for a destructive act — still an
+  outline, there is no solid button), or `LinkButton` · `IconButton` · `ToggleChip` ·
+  `RowButton` (`components/ui-v2/Actions`), or `CardButton`. A chip is `StatusPill`
+  (`size="sm"` inside a diagram or a grid cell). No `<button>` is written outside the shared
+  components, and no element draws its own border-and-radius or its own left rule on a tint —
+  including through a class CONSTANT, which is how the dashboard's cards hid from the first
+  build of the guard. **Derive what still draws its own box from `RAW_BOX_GRANDFATHERED` and
+  what still writes a `<button>` from `RAW_BUTTON_EXEMPT`; each row states its reason, and no
+  count is written here.** ⚠️ **A CONVERTED CONTROL MUST STAY IN EVERY CENSUS THAT COUNTED IT AS
+  A `<button>`:** `deadAffordance.guard` names the pressed components in its control
+  vocabulary for that reason — a census keyed on the tag loses every control the day the tag
+  changes, with nothing going red.
 - WARNING token is a FILL/TEXT split (DP2-WARN-01), same shape as `action`:
   `warning.DEFAULT` = bright amber `#D97706` for every GRAPHICAL warning use
   (accent-edges, dots, bar fills, dials, chip fills, borders — 3.19:1 on white,

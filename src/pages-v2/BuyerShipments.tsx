@@ -30,6 +30,7 @@ import SidePanel from '../components/ui-v2/SidePanel';
 import Data from '../components/ui-v2/Data';
 import Timeline, { TimelineEvent } from '../components/ui-v2/Timeline';
 import Button from '../components/ui-v2/Button';
+import { Card, CardButton } from '../components/ui-v2/Card';
 import FormSection from '../components/ui-v2/FormSection';
 import { useToast } from '../hooks/useToast';
 import type {
@@ -659,14 +660,13 @@ const BuyerShipments: React.FC = () => {
         cell: (d) => {
           const cell = dockSchedule[d]?.[slot];
           return cell ? (
-            <button
-              type="button"
+            <CardButton
               onClick={() => setSelectedId(cell.id)}
-              className="w-full rounded-md px-2 py-2 bg-action-soft text-action-hover hover:bg-action/20 transition-colors text-left"
+              className="w-full"
             >
               <Data as="div" className="truncate">{cell.asnNumber}</Data>
               <CellSub className="truncate whitespace-nowrap">{cell.supplierName}</CellSub>
-            </button>
+            </CardButton>
           ) : (
             <div className="rounded-md px-2 py-2 bg-bg-hover text-center">
               —
@@ -995,7 +995,7 @@ const BuyerShipments: React.FC = () => {
               <Timeline events={buildTimeline(selected)} />
             </section>
 
-            <section className="border border-border-subtle rounded-lg p-4 bg-bg-hover">
+            <Card as="section" tone="inset">
               <div className="text-label text-text-tertiary uppercase mb-1">
                 {t('shipments.panel.dockAssignment')}
               </div>
@@ -1023,7 +1023,7 @@ const BuyerShipments: React.FC = () => {
                   </Button>
                 </div>
               )}
-            </section>
+            </Card>
           </div>
         )}
       </SidePanel>

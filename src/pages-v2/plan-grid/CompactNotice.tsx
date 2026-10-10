@@ -13,14 +13,11 @@
 import React, { useState } from 'react';
 import { Info } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-
-const TONE = {
-  info: { box: 'border-info/30 bg-info-soft', title: 'text-info' },
-  warning: { box: 'border-warning/40 bg-warning-soft', title: 'text-warning-hover' },
-} as const;
+import Notice, { type NoticeTone } from '../../components/ui-v2/Notice';
+import { LinkButton } from '../../components/ui-v2/Actions';
 
 const CompactNotice: React.FC<{
-  tone: keyof typeof TONE;
+  tone: NoticeTone;
   title: string;
   body: string;
   /** Beside the toggle — a liveness pill, say. */
@@ -38,25 +35,30 @@ const CompactNotice: React.FC<{
 }) => {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
-  const c = TONE[tone];
   return (
-    <div className={`flex items-start gap-2 rounded-md border px-3 py-1.5 text-xs ${c.box} ${className}`} data-testid={testId} data-open={open}>
-      <Info size={14} className={`mt-px shrink-0 ${c.title}`} aria-hidden="true" />
-      <div className={`min-w-0 flex-1 ${open ? '' : 'truncate'}`} title={open ? undefined : `${title} — ${body}`}>
-        <span className={`font-semibold ${c.title}`}>{title}</span>
-        <span className="text-text-secondary"> — {body}</span>
+    <Notice
+      tone={tone}
+      icon={Info}
+      className={className}
+      data-testid={testId}
+      action={
+        <span className="flex items-center gap-2">
+          {aside}
+          <LinkButton
+            aria-expanded={open}
+            onClick={() => setOpen((o) => !o)}
+            data-testid={`${testId}-toggle`}
+          >
+            {open ? t('planGrid.chrome.less') : t('planGrid.chrome.more')}
+          </LinkButton>
+        </span>
+      }
+    >
+      <div className={open ? '' : 'truncate'} title={open ? undefined : `${title} — ${body}`} data-open={open}>
+        <strong>{title}</strong>
+        <span> — {body}</span>
       </div>
-      {aside && <div className="shrink-0">{aside}</div>}
-      <button
-        type="button"
-        className="shrink-0 font-medium text-action-text hover:underline"
-        aria-expanded={open}
-        onClick={() => setOpen((o) => !o)}
-        data-testid={`${testId}-toggle`}
-      >
-        {open ? t('planGrid.chrome.less') : t('planGrid.chrome.more')}
-      </button>
-    </div>
+    </Notice>
   );
 };
 

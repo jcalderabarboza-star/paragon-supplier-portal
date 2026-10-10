@@ -38,6 +38,7 @@ import { IllustrativeBanner, IllustrativeMark } from '../components/ui-v2/Illust
 import BulkActionsBar from '../components/ui-v2/BulkActionsBar';
 import FilterChipsBar from '../components/ui-v2/FilterChipsBar';
 import StatusPill from '../components/ui-v2/StatusPill';
+import { Card } from '../components/ui-v2/Card';
 import DataTable from '../components/ui-v2/DataTable';
 import LoadingState from '../components/ui-v2/LoadingState';
 import ErrorState from '../components/ui-v2/ErrorState';
@@ -328,7 +329,7 @@ const BuyerAnalytics: React.FC = () => {
         </div>
       )}
 
-      <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6 mb-6">
+      <Card as="section" padding="lg" className="mb-6">
         <SectionHeading className="mb-4 pb-3 border-b border-border-subtle">
           {t('buyerAnalytics.spend.title')}{' '}
           <IllustrativeMark />
@@ -403,10 +404,10 @@ const BuyerAnalytics: React.FC = () => {
             </ResponsiveContainer>
           </div>
         </div>
-      </section>
+      </Card>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-5 mb-6">
-        <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6">
+        <Card as="section" padding="lg">
           <SectionHeading className="mb-4 pb-3 border-b border-border-subtle">
             {t('buyerAnalytics.otif.title')}{' '}
             <IllustrativeMark />
@@ -457,9 +458,9 @@ const BuyerAnalytics: React.FC = () => {
               <Legend iconSize={10} wrapperStyle={{ fontSize: 11 }} formatter={legendLabel} />
             </LineChart>
           </ResponsiveContainer>
-        </section>
+        </Card>
 
-        <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6">
+        <Card as="section" padding="lg">
           <SectionHeading className="mb-4 pb-3 border-b border-border-subtle">
             {t('buyerAnalytics.poVolume.title')}{' '}
             <IllustrativeMark />
@@ -517,10 +518,10 @@ const BuyerAnalytics: React.FC = () => {
               <Legend iconSize={10} wrapperStyle={{ fontSize: 11 }} formatter={legendLabel} />
             </ComposedChart>
           </ResponsiveContainer>
-        </section>
+        </Card>
       </div>
 
-      <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm overflow-hidden mb-6">
+      <Card as="section" padding="none" className="overflow-hidden mb-6">
         <div className="px-6 py-4 border-b border-border-subtle">
           <SectionHeading>
             {t('buyerAnalytics.perf.title')}{' '}
@@ -594,9 +595,9 @@ const BuyerAnalytics: React.FC = () => {
             },
           ]}
         />
-      </section>
+      </Card>
 
-      <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6">
+      <Card as="section" padding="lg">
         <SectionHeading className="mb-4 pb-3 border-b border-border-subtle">
           {t('buyerAnalytics.channel.title')}{' '}
           <IllustrativeMark />
@@ -635,7 +636,7 @@ const BuyerAnalytics: React.FC = () => {
             />
           </BarChart>
         </ResponsiveContainer>
-      </section>
+      </Card>
     </AppShellV2>
   );
 };

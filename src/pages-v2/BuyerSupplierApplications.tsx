@@ -74,6 +74,7 @@ import SubTabs from '../components/ui-v2/SubTabs';
 import SearchBar from '../components/ui-v2/SearchBar';
 import StatusPill from '../components/ui-v2/StatusPill';
 import Button from '../components/ui-v2/Button';
+import { Card } from '../components/ui-v2/Card';
 import SidePanel from '../components/ui-v2/SidePanel';
 import FormSection from '../components/ui-v2/FormSection';
 import { FieldLabel, FormField, Select, TextArea, TextInput } from '../components/ui-v2/Form';
@@ -976,8 +977,9 @@ const BuyerSupplierApplications: React.FC = () => {
 
             {/* CONFIRM BEFORE COMMIT — approve. No text box: nothing to author. */}
             {selected.status === 'Under Review' && pending === 'approve' && (
-              <div
-                className="rounded-md border border-border-subtle bg-bg-hover p-4 space-y-3"
+              <Card
+                tone="inset"
+                className="space-y-3"
                 data-testid="application-approve-confirm"
               >
                 <div className="text-sm font-bold text-text-primary">
@@ -999,13 +1001,14 @@ const BuyerSupplierApplications: React.FC = () => {
                     {t('applications.action.cancel')}
                   </Button>
                 </div>
-              </div>
+              </Card>
             )}
 
             {/* CONFIRM BEFORE COMMIT — reject, and the reason is required. */}
             {selected.status === 'Under Review' && pending === 'reject' && (
-              <div
-                className="rounded-md border border-border-subtle bg-bg-hover p-4 space-y-3"
+              <Card
+                tone="inset"
+                className="space-y-3"
                 data-testid="application-reject-confirm"
               >
                 <div className="text-sm font-bold text-text-primary">
@@ -1039,7 +1042,7 @@ const BuyerSupplierApplications: React.FC = () => {
                     {t('applications.action.cancel')}
                   </Button>
                 </div>
-              </div>
+              </Card>
             )}
           </div>
         )}

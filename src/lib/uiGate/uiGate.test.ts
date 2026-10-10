@@ -455,6 +455,17 @@ describe('UI gate 8 · cards, notices, buttons, chips', () => {
     expect(rawBoxFindings('<span className="rounded bg-action-soft px-1.5 text-xs">3</span>')).toEqual({ chip: 1 });
   });
 
+  it('reads a box or a chip spelled as a class constant', () => {
+    // the dashboard's cards, as they stood
+    expect(rawBoxFindings("const CARD = 'bg-bg-surface rounded-lg shadow-sm border border-border-subtle p-6';\nconst x = <div className={CARD} />;")).toEqual({ 'class-const': 1 });
+    // the collaboration page's chips: a base and a tone built on it
+    expect(
+      rawBoxFindings("const CHIP = 'inline-flex rounded-sm border px-1.5 py-0.5';\nconst CHIP_OK = `${CHIP} border-success/30 bg-success-soft`;"),
+    ).toEqual({ 'class-const': 1 });
+    // a string that is not a box
+    expect(rawBoxFindings("const ROW = 'flex items-center gap-2 border-b border-border-subtle';")).toEqual({});
+  });
+
   it('does not read a rule, a divider, a dot or a control as a box', () => {
     expect(rawBoxFindings('<div className="border-b border-border-subtle py-2">x</div>')).toEqual({});
     expect(rawBoxFindings('<div className="rounded-lg bg-bg-hover p-4">x</div>')).toEqual({});
