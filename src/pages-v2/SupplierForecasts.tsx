@@ -24,6 +24,7 @@ import SidePanel from '../components/ui-v2/SidePanel';
 import FormSection from '../components/ui-v2/FormSection';
 import Data from '../components/ui-v2/Data';
 import { FieldList, Field } from '../components/ui-v2/Field';
+import { FormField, Select, TextArea, TextInput } from '../components/ui-v2/Form';
 import { useVerbAvailability, useVerbAvailabilities } from '../hooks/useVerbAvailability';
 import { HandoffNotice } from '../components/ui-v2/HandoffNotice';
 import LivenessPill from '../components/ui-v2/LivenessPill';
@@ -149,10 +150,6 @@ const ROOT_CAUSE_LEVELS = ['capacity', 'material', 'logistics', 'quality', 'othe
 // Quiet-outlined chip (DP-3 status-chip grammar — soft tint, thin border).
 const CHIP =
   'inline-flex items-center gap-1 rounded-sm border px-1.5 py-0.5 text-[11px] font-medium border-border-subtle bg-bg-hover text-text-secondary';
-
-const inputClass =
-  'w-full px-3 py-2 text-sm text-text-primary bg-white border border-border-input rounded-md focus:outline-none focus:border-action placeholder:text-text-tertiary';
-const labelClass = 'block text-label text-text-tertiary uppercase mb-1';
 
 interface ConfirmForm {
   confirmedQty: string;
@@ -2090,14 +2087,25 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
               title={t('sdcSup.panel.qty.title')}
               description={t('sdcSup.panel.qty.desc')}
             >
-              <div>
-                <label className={labelClass} htmlFor="sdcsup-qty">
-                  {t('sdcSup.panel.qtyLabel', { uom: panelLine.uom })}
-                </label>
+              <FormField
+                label={t('sdcSup.panel.qtyLabel', { uom: panelLine.uom })}
+                htmlFor="sdcsup-qty"
+                hint={<span id="sdcsup-qty-hint">{t('sdcSup.panel.qty.hint')}</span>}
+                error={
+                  form.confirmedQty.trim() !== '' && !confirmQty.ok && (
+                    <span role="alert" data-testid="confirm-qty-refusal">
+                      {t(CONFIRM_REFUSAL_KEY[confirmQty.reason])}{' '}
+                      <GlossaryTermChip
+                        refTo={{ sourceType: 'QtyRefusalReason', term: confirmQty.reason }}
+                      />
+                    </span>
+                  )
+                }
+              >
                 {/* type=text + inputmode=decimal (ruling 6.2): type=number
                     rejects the separators this field exists to adjudicate, so
                     the fix could never fire behind it. */}
-                <input
+                <TextInput
                   id="sdcsup-qty"
                   type="text"
                   inputMode="decimal"
@@ -2106,24 +2114,9 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
                   aria-describedby="sdcsup-qty-hint"
                   value={form.confirmedQty}
                   onChange={(e) => setForm({ ...form, confirmedQty: e.target.value })}
-                  className={inputClass}
+                  mono
                 />
-                {form.confirmedQty.trim() !== '' && !confirmQty.ok && (
-                  <div
-                    role="alert"
-                    data-testid="confirm-qty-refusal"
-                    className="mt-1 text-[11px] text-critical"
-                  >
-                    {t(CONFIRM_REFUSAL_KEY[confirmQty.reason])}{' '}
-                    <GlossaryTermChip
-                      refTo={{ sourceType: 'QtyRefusalReason', term: confirmQty.reason }}
-                    />
-                  </div>
-                )}
-                <div id="sdcsup-qty-hint" className="mt-1 text-[11px] text-text-tertiary">
-                  {t('sdcSup.panel.qty.hint')}
-                </div>
-              </div>
+              </FormField>
             </FormSection>
 
             <FormSection
@@ -2131,31 +2124,23 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
               title={t('sdcSup.panel.date.title')}
               description={t('sdcSup.panel.date.desc')}
             >
-              <div>
-                <label className={labelClass} htmlFor="sdcsup-date">
-                  {t('sdcSup.panel.committedDate')}
-                </label>
-                <input
+              <FormField label={t('sdcSup.panel.committedDate')} htmlFor="sdcsup-date">
+                <TextInput
                   id="sdcsup-date"
                   type="date"
                   value={form.committedDate}
                   onChange={(e) => setForm({ ...form, committedDate: e.target.value })}
-                  className={inputClass}
                 />
-              </div>
-              <div>
-                <label className={labelClass} htmlFor="sdcsup-constraint">
-                  {t('sdcSup.panel.capacityConstraint')}
-                </label>
-                <input
+              </FormField>
+              <FormField label={t('sdcSup.panel.capacityConstraint')} htmlFor="sdcsup-constraint">
+                <TextInput
                   id="sdcsup-constraint"
                   type="text"
                   placeholder={t('sdcSup.panel.capacityPlaceholder')}
                   value={form.capacityConstraint}
                   onChange={(e) => setForm({ ...form, capacityConstraint: e.target.value })}
-                  className={inputClass}
                 />
-              </div>
+              </FormField>
             </FormSection>
 
             <FormSection
@@ -2163,16 +2148,15 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
               title={t('sdcSup.panel.rootCause.title')}
               description={t('sdcSup.panel.rootCause.desc')}
             >
-              <div>
-                <label className={labelClass} htmlFor="sdcsup-rootcause">
-                  {t('sdcSup.panel.rootCause.level1')}
-                  {rootCauseRequired && <span className="text-critical"> *</span>}
-                </label>
-                <select
+              <FormField
+                label={t('sdcSup.panel.rootCause.level1')}
+                htmlFor="sdcsup-rootcause"
+                required={rootCauseRequired}
+              >
+                <Select
                   id="sdcsup-rootcause"
                   value={form.rootCauseLevel1}
                   onChange={(e) => setForm({ ...form, rootCauseLevel1: e.target.value })}
-                  className={inputClass}
                 >
                   <option value="">{t('sdcSup.panel.rootCause.select')}</option>
                   {ROOT_CAUSE_LEVELS.map((level) => (
@@ -2180,21 +2164,18 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
                       {t(`sdcSup.rootCause.${level}`)}
                     </option>
                   ))}
-                </select>
-              </div>
-              <div>
-                <label className={labelClass} htmlFor="sdcsup-rootcause-note">
-                  {t('sdcSup.panel.rootCause.note')}
-                </label>
-                <textarea
+                </Select>
+              </FormField>
+              <FormField label={t('sdcSup.panel.rootCause.note')} htmlFor="sdcsup-rootcause-note">
+                <TextArea
                   id="sdcsup-rootcause-note"
                   rows={3}
                   placeholder={t('sdcSup.panel.rootCause.notePlaceholder')}
                   value={form.rootCauseNote}
                   onChange={(e) => setForm({ ...form, rootCauseNote: e.target.value })}
-                  className={`${inputClass} resize-y`}
+                  className="resize-y"
                 />
-              </div>
+              </FormField>
             </FormSection>
           </div>
         )}
@@ -2246,19 +2227,16 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
               <p className="mt-2 text-xs text-text-secondary">{t('sdcSup.ackPanel.desc')}</p>
             </section>
 
-            <div>
-              <label className={labelClass} htmlFor="sdcsup-ack-note">
-                {t('sdcSup.ackPanel.note')}
-              </label>
-              <textarea
+            <FormField label={t('sdcSup.ackPanel.note')} htmlFor="sdcsup-ack-note">
+              <TextArea
                 id="sdcsup-ack-note"
                 rows={3}
                 placeholder={t('sdcSup.ackPanel.notePlaceholder')}
                 value={ackNote}
                 onChange={(e) => setAckNote(e.target.value)}
-                className={`${inputClass} resize-y`}
+                className="resize-y"
               />
-            </div>
+            </FormField>
           </div>
         )}
       </SidePanel>
@@ -2292,15 +2270,11 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
             title={t('sdcSup.stock.panel.material.title')}
             description={t('sdcSup.stock.panel.material.desc')}
           >
-            <div>
-              <label className={labelClass} htmlFor="sdcsup-soh-material">
-                {t('sdcSup.stock.panel.materialLabel')}
-              </label>
-              <select
+            <FormField label={t('sdcSup.stock.panel.materialLabel')} htmlFor="sdcsup-soh-material">
+              <Select
                 id="sdcsup-soh-material"
                 value={sohForm.materialCode}
                 onChange={(e) => setSohForm({ ...sohForm, materialCode: e.target.value })}
-                className={inputClass}
               >
                 <option value="">{t('sdcSup.stock.panel.materialSelect')}</option>
                 {materials.map((m) => (
@@ -2308,8 +2282,8 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
                     {m.materialCode} — {m.label} ({m.uom})
                   </option>
                 ))}
-              </select>
-            </div>
+              </Select>
+            </FormField>
           </FormSection>
 
           <FormSection
@@ -2317,12 +2291,13 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
             title={t('sdcSup.stock.panel.total.title')}
             description={t('sdcSup.stock.panel.total.desc')}
           >
-            <div>
-              <label className={labelClass} htmlFor="sdcsup-soh-total">
-                {t('sdcSup.stock.panel.totalLabel', { uom: sohUom || '—' })}
-              </label>
+            <FormField
+              label={t('sdcSup.stock.panel.totalLabel', { uom: sohUom || '—' })}
+              htmlFor="sdcsup-soh-total"
+              hint={t('sdcSup.panel.qty.hint')}
+            >
               {/* 6.2 — see the confirm field: the separators are the point. */}
-              <input
+              <TextInput
                 id="sdcsup-soh-total"
                 type="text"
                 inputMode="decimal"
@@ -2330,12 +2305,9 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
                 aria-invalid={sohForm.totalQty.trim() !== '' && !sohNormalized.ok}
                 value={sohForm.totalQty}
                 onChange={(e) => setSohForm({ ...sohForm, totalQty: e.target.value })}
-                className={inputClass}
+                mono
               />
-              <div className="mt-1 text-[11px] text-text-tertiary">
-                {t('sdcSup.panel.qty.hint')}
-              </div>
-            </div>
+            </FormField>
           </FormSection>
 
           <FormSection
@@ -2349,9 +2321,8 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
                   key={i}
                   className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_1fr_auto] gap-2 items-end rounded-md border border-border-subtle bg-bg-hover p-3"
                 >
-                  <div>
-                    <label className={labelClass}>{t('sdcSup.stock.panel.batchNumber')}</label>
-                    <input
+                  <FormField label={t('sdcSup.stock.panel.batchNumber')}>
+                    <TextInput
                       type="text"
                       aria-label={`${t('sdcSup.stock.panel.batchNumber')} ${i + 1}`}
                       value={b.batchNumber}
@@ -2361,14 +2332,11 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
                         batches[i] = { ...b, batchNumber: e.target.value };
                         setSohForm({ ...sohForm, batches });
                       }}
-                      className={inputClass}
+                      mono
                     />
-                  </div>
-                  <div>
-                    <label className={labelClass}>
-                      {t('sdcSup.stock.panel.batchQty', { uom: sohUom || '—' })}
-                    </label>
-                    <input
+                  </FormField>
+                  <FormField label={t('sdcSup.stock.panel.batchQty', { uom: sohUom || '—' })}>
+                    <TextInput
                       type="text"
                       inputMode="decimal"
                       aria-label={`${t('sdcSup.stock.panel.batchQtyLabel')} ${i + 1}`}
@@ -2378,12 +2346,11 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
                         batches[i] = { ...b, qty: e.target.value };
                         setSohForm({ ...sohForm, batches });
                       }}
-                      className={inputClass}
+                      mono
                     />
-                  </div>
-                  <div>
-                    <label className={labelClass}>{t('sdcSup.stock.panel.batchExpiry')}</label>
-                    <input
+                  </FormField>
+                  <FormField label={t('sdcSup.stock.panel.batchExpiry')}>
+                    <TextInput
                       type="date"
                       value={b.expiryDate}
                       onChange={(e) => {
@@ -2391,9 +2358,8 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
                         batches[i] = { ...b, expiryDate: e.target.value };
                         setSohForm({ ...sohForm, batches });
                       }}
-                      className={inputClass}
                     />
-                  </div>
+                  </FormField>
                   <Button
                     variant="secondary"
                     icon={Trash2}
@@ -2494,15 +2460,11 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
             title={t('sdcSup.ship.panel.material.title')}
             description={t('sdcSup.ship.panel.material.desc')}
           >
-            <div>
-              <label className={labelClass} htmlFor="sdcsup-ship-material">
-                {t('sdcSup.stock.panel.materialLabel')}
-              </label>
-              <select
+            <FormField label={t('sdcSup.stock.panel.materialLabel')} htmlFor="sdcsup-ship-material">
+              <Select
                 id="sdcsup-ship-material"
                 value={shipForm.materialCode}
                 onChange={(e) => setShipMaterial(e.target.value)}
-                className={inputClass}
               >
                 <option value="">{t('sdcSup.stock.panel.materialSelect')}</option>
                 {materials.map((m) => (
@@ -2510,20 +2472,20 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
                     {m.materialCode} — {m.label} ({m.uom})
                   </option>
                 ))}
-              </select>
-            </div>
-            <div>
-              <label className={labelClass} htmlFor="sdcsup-ship-direction">
-                {t('sdcSup.ship.panel.directionLabel')}
-              </label>
-              <select
+              </Select>
+            </FormField>
+            <FormField
+              label={t('sdcSup.ship.panel.directionLabel')}
+              htmlFor="sdcsup-ship-direction"
+              hint={shipForm.materialCode && !p2dLegal && t('sdcSup.ship.panel.p2dHint')}
+            >
+              <Select
                 id="sdcsup-ship-direction"
                 value={shipForm.direction}
                 disabled={!shipForm.materialCode}
                 onChange={(e) =>
                   setShipForm({ ...shipForm, direction: e.target.value as ShipmentDirection | '' })
                 }
-                className={inputClass}
               >
                 <option value="">{t('sdcSup.ship.panel.directionSelect')}</option>
                 <option value="to-paragon">{t('sdcSup.ship.dir.toParagon')}</option>
@@ -2532,13 +2494,8 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
                 {p2dLegal && (
                   <option value="principal-to-distributor">{t('sdcSup.ship.dir.p2d')}</option>
                 )}
-              </select>
-              {shipForm.materialCode && !p2dLegal && (
-                <p className="mt-1 text-xs italic text-text-tertiary">
-                  {t('sdcSup.ship.panel.p2dHint')}
-                </p>
-              )}
-            </div>
+              </Select>
+            </FormField>
           </FormSection>
 
           <FormSection
@@ -2546,16 +2503,31 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
             title={t('sdcSup.ship.panel.detail.title')}
             description={t('sdcSup.ship.panel.detail.desc')}
           >
-            <div>
-              <label className={labelClass} htmlFor="sdcsup-ship-qty">
-                {t('sdcSup.ship.panel.qtyLabel', { uom: shipUom || '—' })}
-              </label>
+            <FormField
+              label={t('sdcSup.ship.panel.qtyLabel', { uom: shipUom || '—' })}
+              htmlFor="sdcsup-ship-qty"
+              hint={
+                !(shipForm.qty.trim() !== '' && !shipQty.ok) && (
+                  <span id="sdcsup-ship-qty-hint">{t('sdcSup.ship.qty.hint')}</span>
+                )
+              }
+              error={
+                shipForm.qty.trim() !== '' && !shipQty.ok && (
+                  <span id="sdcsup-ship-qty-hint" role="alert" data-testid="ship-qty-refusal">
+                    {t(SHIP_REFUSAL_KEY[shipQty.reason])}{' '}
+                    <GlossaryTermChip
+                      refTo={{ sourceType: 'QtyRefusalReason', term: shipQty.reason }}
+                    />
+                  </span>
+                )
+              }
+            >
               {/* CP-0 · 6.2 — text + inputmode, not type="number": a fix behind
                   a number field cannot fire, because the browser filters the
                   input space to what `Number` happens to accept. The widened
                   space is safe ONLY because the parse landed in this same
                   commit (the NaN-through-the-spine hazard). */}
-              <input
+              <TextInput
                 id="sdcsup-ship-qty"
                 type="text"
                 inputMode="decimal"
@@ -2564,51 +2536,26 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
                 aria-describedby="sdcsup-ship-qty-hint"
                 value={shipForm.qty}
                 onChange={(e) => setShipForm({ ...shipForm, qty: e.target.value })}
-                className={inputClass}
+                mono
               />
-              {shipForm.qty.trim() !== '' && !shipQty.ok ? (
-                <p
-                  id="sdcsup-ship-qty-hint"
-                  role="alert"
-                  data-testid="ship-qty-refusal"
-                  className="mt-1 text-xs text-critical"
-                >
-                  {t(SHIP_REFUSAL_KEY[shipQty.reason])}{' '}
-                  <GlossaryTermChip
-                    refTo={{ sourceType: 'QtyRefusalReason', term: shipQty.reason }}
-                  />
-                </p>
-              ) : (
-                <p id="sdcsup-ship-qty-hint" className="mt-1 text-xs text-text-tertiary">
-                  {t('sdcSup.ship.qty.hint')}
-                </p>
-              )}
-            </div>
+            </FormField>
             <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className={labelClass} htmlFor="sdcsup-ship-etd">
-                  {t('sdcSup.ship.panel.etd')}
-                </label>
-                <input
+              <FormField label={t('sdcSup.ship.panel.etd')} htmlFor="sdcsup-ship-etd">
+                <TextInput
                   id="sdcsup-ship-etd"
                   type="date"
                   value={shipForm.etd}
                   onChange={(e) => setShipForm({ ...shipForm, etd: e.target.value })}
-                  className={inputClass}
                 />
-              </div>
-              <div>
-                <label className={labelClass} htmlFor="sdcsup-ship-eta">
-                  {t('sdcSup.ship.panel.eta')}
-                </label>
-                <input
+              </FormField>
+              <FormField label={t('sdcSup.ship.panel.eta')} htmlFor="sdcsup-ship-eta">
+                <TextInput
                   id="sdcsup-ship-eta"
                   type="date"
                   value={shipForm.eta}
                   onChange={(e) => setShipForm({ ...shipForm, eta: e.target.value })}
-                  className={inputClass}
                 />
-              </div>
+              </FormField>
             </div>
           </FormSection>
 
@@ -2620,20 +2567,16 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
               title={t('sdcSup.ship.panel.link.title')}
               description={t('sdcSup.ship.panel.link.desc')}
             >
-              <div>
-                <label className={labelClass} htmlFor="sdcsup-ship-asn">
-                  {t('sdcSup.ship.panel.asnLabel')}
-                </label>
+              <FormField label={t('sdcSup.ship.panel.asnLabel')} htmlFor="sdcsup-ship-asn">
                 {ownAsns.length === 0 ? (
                   <p className="text-xs italic text-text-tertiary">
                     {t('sdcSup.ship.panel.noAsns')}
                   </p>
                 ) : (
-                  <select
+                  <Select
                     id="sdcsup-ship-asn"
                     value={shipForm.asnRef}
                     onChange={(e) => setShipAsn(e.target.value)}
-                    className={inputClass}
                   >
                     <option value="">{t('sdcSup.ship.panel.asnSelect')}</option>
                     {ownAsns.map((a) => (
@@ -2641,9 +2584,9 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
                         {a.asnNumber} · {a.status} · {a.trackingNumber}
                       </option>
                     ))}
-                  </select>
+                  </Select>
                 )}
-              </div>
+              </FormField>
               {shipForm.awb && (
                 <div className="text-xs text-text-secondary">
                   {t('sdcSup.ship.panel.awbEcho')}{' '}
@@ -2660,19 +2603,16 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
               title={t('sdcSup.ship.panel.awbTitle')}
               description={t('sdcSup.ship.panel.awbDesc')}
             >
-              <div>
-                <label className={labelClass} htmlFor="sdcsup-ship-awb">
-                  {t('sdcSup.ship.panel.awbLabel')}
-                </label>
-                <input
+              <FormField label={t('sdcSup.ship.panel.awbLabel')} htmlFor="sdcsup-ship-awb">
+                <TextInput
                   id="sdcsup-ship-awb"
                   type="text"
                   placeholder="e.g. AWB-88231145"
                   value={shipForm.awb}
                   onChange={(e) => setShipForm({ ...shipForm, awb: e.target.value })}
-                  className={inputClass}
+                  mono
                 />
-              </div>
+              </FormField>
             </FormSection>
           )}
         </div>

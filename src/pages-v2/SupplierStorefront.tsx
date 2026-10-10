@@ -31,6 +31,7 @@ import ErrorState from '../components/ui-v2/ErrorState';
 import Data from '../components/ui-v2/Data';
 import { Field, FieldList } from '../components/ui-v2/Field';
 import SectionHeading from '../components/ui-v2/SectionHeading';
+import { FormField, TextArea } from '../components/ui-v2/Form';
 import { PreferredChannel } from '../types/supplier.types';
 import { useSupplier, useStorefrontProducts } from '../services/query/hooks';
 import { useCategoryLabel } from '../hooks/useCategoryLabel';
@@ -465,22 +466,20 @@ const SupplierStorefront: React.FC = () => {
             <p className="text-meta text-text-tertiary mb-4">
               {t(`supplierStorefront.channelHint.${supp.preferredChannel}`)}
             </p>
-            <label
+            <FormField
               htmlFor="storefront-message"
-              className="text-label text-text-tertiary uppercase block mb-1.5"
+              label={t('supplierStorefront.contact.message')}
             >
-              {t('supplierStorefront.contact.message')}
-            </label>
-            <textarea
-              id="storefront-message"
-              rows={6}
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              placeholder={t('supplierStorefront.contact.messagePlaceholder', {
-                name: supp.contactName.split(' ')[0],
-              })}
-              className="w-full bg-white border border-border-input rounded-md p-3 text-sm text-text-primary placeholder:text-text-tertiary focus:outline-none focus:border-action transition-colors"
-            />
+              <TextArea
+                id="storefront-message"
+                rows={6}
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                placeholder={t('supplierStorefront.contact.messagePlaceholder', {
+                  name: supp.contactName.split(' ')[0],
+                })}
+              />
+            </FormField>
             <div className="mt-4 flex justify-end gap-2">
               <Button
                 variant="secondary"

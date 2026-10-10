@@ -28,6 +28,7 @@ import Button from '../../components/ui-v2/Button';
 import { Field, FieldList } from '../../components/ui-v2/Field';
 import SectionHeading from '../../components/ui-v2/SectionHeading';
 import { HandoffNotice } from '../../components/ui-v2/HandoffNotice';
+import { FieldLabel, Select, TextInput } from '../../components/ui-v2/Form';
 import { useToast } from '../../hooks/useToast';
 import { useRefusalText } from '../../hooks/useRefusalText';
 import { useVerbAvailability } from '../../hooks/useVerbAvailability';
@@ -56,9 +57,6 @@ import {
   type RfpCriterion,
 } from '../../data/rfpEvaluation';
 import { formatDate, formatNumber } from '../../lib/format';
-
-const inputClass =
-  'w-full bg-white border border-border-input rounded-md px-2 py-1.5 text-sm text-text-primary focus:outline-none focus:border-action';
 
 interface SheetValues {
   readonly scores: Readonly<Record<string, string>>;
@@ -150,15 +148,15 @@ const ScoreSheet: React.FC<{
       <ul className="space-y-2">
         {criteria.map((c, i) => (
           <li key={c.id} className="grid grid-cols-[minmax(0,1fr)_5rem] md:grid-cols-[minmax(0,14rem)_5rem_minmax(0,1fr)] gap-2 items-center">
-            <label htmlFor={`rfp-score-${supplierId}-${c.id}`} className="text-xs text-text-primary">
+            <FieldLabel htmlFor={`rfp-score-${supplierId}-${c.id}`}>
               <span className="font-mono text-text-secondary mr-1.5">{criterionLabel(i + 1)}</span>
               {c.name}
-            </label>
-            <select
+            </FieldLabel>
+            <Select
               id={`rfp-score-${supplierId}-${c.id}`}
               value={values.scores[c.id] ?? ''}
               onChange={(e) => setValues((v) => ({ ...v, scores: { ...v.scores, [c.id]: e.target.value } }))}
-              className={`${inputClass} font-mono`}
+              mono
               data-testid={`rfp-score-${supplierId}-${c.id}`}
             >
               <option value="">{t('sourcing.rfp.score.pick')}</option>
@@ -167,14 +165,14 @@ const ScoreSheet: React.FC<{
                   {s}
                 </option>
               ))}
-            </select>
-            <input
+            </Select>
+            <TextInput
               type="text"
               value={values.comments[c.id] ?? ''}
               onChange={(e) => setValues((v) => ({ ...v, comments: { ...v.comments, [c.id]: e.target.value } }))}
               aria-label={t('sourcing.rfp.score.commentFor', { criterion: criterionLabel(i + 1) })}
               placeholder={t('sourcing.rfp.score.comment')}
-              className={`${inputClass} col-span-2 md:col-span-1`}
+              className="col-span-2 md:col-span-1"
               data-testid={`rfp-score-comment-${supplierId}-${c.id}`}
             />
           </li>

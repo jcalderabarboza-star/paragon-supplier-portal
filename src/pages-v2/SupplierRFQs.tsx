@@ -26,6 +26,7 @@ import FormSection from '../components/ui-v2/FormSection';
 import Data from '../components/ui-v2/Data';
 import { FieldList, Field } from '../components/ui-v2/Field';
 import SectionHeading from '../components/ui-v2/SectionHeading';
+import { Checkbox, FormField, Select, TextArea, TextInput } from '../components/ui-v2/Form';
 import { useToast } from '../hooks/useToast';
 import { useCurrentIdentity } from '../context/CurrentIdentityContext';
 import NoSupplierIdentity from '../components/ui-v2/NoSupplierIdentity';
@@ -308,10 +309,6 @@ const MOQ_REFUSAL_KEY: Record<MoqRefusalReason, string> = {
   AMBIGUOUS_QTY: 'rfqs.panel.moq.refused.ambiguous',
   ZERO_MOQ: 'rfqs.panel.moq.refused.zero',
 };
-
-const inputClass =
-  'w-full px-3 py-2 text-sm text-text-primary bg-white border border-border-input rounded-md focus:outline-none focus:border-action placeholder:text-text-tertiary';
-const labelClass = 'block text-label text-text-tertiary uppercase mb-1';
 
 interface QuoteForm {
   unitPrice: string;
@@ -606,17 +603,15 @@ const RFQCard: React.FC<RFQCardProps> = ({
             className="border border-border-subtle bg-bg-hover rounded-md p-3 mb-3"
             data-testid={`rfq-interest-form-${rfq.id}`}
           >
-            <label className={labelClass} htmlFor={`rfq-interest-note-${rfq.id}`}>
-              {t('rfqs.interest.note')}
-            </label>
-            <textarea
-              id={`rfq-interest-note-${rfq.id}`}
-              rows={2}
-              value={interestNote}
-              onChange={(e) => setInterestNote(e.target.value)}
-              className={`${inputClass} h-auto py-2`}
-              data-testid={`rfq-interest-note-${rfq.id}`}
-            />
+            <FormField label={t('rfqs.interest.note')} htmlFor={`rfq-interest-note-${rfq.id}`}>
+              <TextArea
+                id={`rfq-interest-note-${rfq.id}`}
+                rows={2}
+                value={interestNote}
+                onChange={(e) => setInterestNote(e.target.value)}
+                data-testid={`rfq-interest-note-${rfq.id}`}
+              />
+            </FormField>
             <div className="flex flex-wrap gap-2 mt-2">
               <Button
                 variant="outline"
@@ -1558,8 +1553,17 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
               title={t('rfqs.panel.step1.title')}
               description={t('rfqs.panel.step1.desc')}
             >
-              <div>
-                <label className={labelClass}>{t('rfqs.panel.unitPrice')}</label>
+              <FormField
+                label={t('rfqs.panel.unitPrice')}
+                hint={t('rfqs.panel.price.hint')}
+                error={
+                  /* An untouched blank does not nag; a TYPED price that cannot be
+                     read — or a zero, which can — says so, and says what to do. */
+                  form.unitPrice.trim() !== '' && !bidPrice.ok && (
+                    <span role="alert" data-testid="quote-price-refusal">{t(PRICE_REFUSAL_KEY[bidPrice.reason])}</span>
+                  )
+                }
+              >
                 <div className="flex gap-2">
                   {/* Ruling 6.2 — `type="number"` filtered the input space to what
                       `Number` happens to accept, which is what made the parse look
@@ -1567,7 +1571,7 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
                       our code could refuse it, and let the catastrophic "1.500"
                       through untouched. Text + inputmode lets the supplier type
                       what they actually type, and makes the parser load-bearing. */}
-                  <input
+                  <TextInput
                     type="text"
                     inputMode="decimal"
                     // Not "0" / "0.00": a placeholder must never model a value the
@@ -1579,13 +1583,13 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
                     onChange={(e) =>
                       setForm({ ...form, unitPrice: e.target.value })
                     }
-                    className={inputClass}
+                    mono
                   />
                   {/* 2e-c-1 — the options ARE the policy list, not a copy of it
                       that drifted from it. They used to be three hand-written
                       <option> tags, which is how the form came to offer a
                       currency the Quotation entity could not represent. */}
-                  <select
+                  <Select
                     // The control had no accessible name at all: a screen reader
                     // announced an unlabelled combobox next to the price.
                     aria-label={t('rfqs.field.currency')}
@@ -1600,33 +1604,18 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
                         setForm({ ...form, currency: next });
                       }
                     }}
-                    className={inputClass}
                     style={{ width: 100 }}
                   >
                     {BID_CURRENCIES.map((c) => (
                       <option key={c}>{c}</option>
                     ))}
-                  </select>
+                  </Select>
                 </div>
-                <div className="mt-1 text-[11px] text-text-tertiary">
-                  {t('rfqs.panel.price.hint')}
-                </div>
-                {/* An untouched blank does not nag; a TYPED price that cannot be
-                    read — or a zero, which can — says so, and says what to do. */}
-                {form.unitPrice.trim() !== '' && !bidPrice.ok && (
-                  <div
-                    role="alert"
-                    data-testid="quote-price-refusal"
-                    className="mt-1 text-[11px] text-critical"
-                  >
-                    {t(PRICE_REFUSAL_KEY[bidPrice.reason])}
-                  </div>
-                )}
-              </div>
+              </FormField>
               <div>
-                <label className={labelClass}>
+                <SectionHeading level="group" as="h4" className="mb-1">
                   {t('rfqs.panel.totalPrice')}
-                </label>
+                </SectionHeading>
                 <div
                   className={`px-3 py-2 bg-bg-hover border border-border-subtle rounded-md text-sm font-semibold ${
                     totalPrice === '—' ? 'text-text-tertiary' : 'text-text-primary'
@@ -1646,68 +1635,66 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
               description={t('rfqs.panel.step2.desc')}
             >
               <div>
-                <label className={labelClass}>{t('rfqs.panel.leadTime')}</label>
-                <div className="flex gap-2">
-                  {/* Ruling 6.2, carried into 2e-b-1 because the refusal DEPENDS
-                      on it: `type="number"` erases "abc" to "" before React sees
-                      it, and blank is now legal — so the browser would silently
-                      convert an unreadable lead time into an honest-looking
-                      absence, and the supplier would never be told. The
-                      placeholder was "0" — a field modelling the one value that
-                      now scores best and needs an explicit acknowledgement. */}
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    placeholder="14"
-                    aria-label={t('rfqs.field.leadTime')}
-                    aria-invalid={!leadTime.ok}
-                    value={form.leadTimeNum}
-                    onChange={(e) =>
-                      setForm({
-                        ...form,
-                        leadTimeNum: e.target.value,
-                        // Editing the number retracts any same-day affirmation —
-                        // an ack belongs to the value it was given for.
-                        sameDayAck: false,
-                      })
-                    }
-                    className={inputClass}
-                  />
-                  <select
-                    value={form.leadTimeUnit}
-                    onChange={(e) =>
-                      setForm({
-                        ...form,
-                        leadTimeUnit: e.target.value as LeadTimeUnit,
-                        sameDayAck: false,
-                      })
-                    }
-                    className={inputClass}
-                    style={{ width: 100 }}
-                  >
-                    <option value="days">{t('rfqs.unit.days')}</option>
-                    <option value="weeks">{t('rfqs.unit.weeks')}</option>
-                  </select>
-                </div>
-                {/* The estimate framing, stated once on the field itself
-                    (2e-b-1a): required so the bid is comparable, indicative
-                    because a firm date cannot honestly be given before final
-                    quantity, PO date and capacity are known. */}
-                <div className="mt-1 text-[11px] text-text-tertiary">
-                  {t('rfqs.panel.leadTime.hint')}
-                </div>
-                {/* An untouched blank does not nag on sight — it refuses at the
-                    gate, and says so on the field once the supplier has engaged
-                    with the form (the price precedent, 2e-a). */}
-                {!leadTime.ok && form.unitPrice.trim() !== '' && (
-                  <div
-                    role="alert"
-                    data-testid="quote-leadtime-refusal"
-                    className="mt-1 text-[11px] text-critical"
-                  >
-                    {t(LEAD_TIME_REFUSAL_KEY[leadTime.reason])}
+                <FormField
+                  label={t('rfqs.panel.leadTime')}
+                  // The estimate framing, stated once on the field itself
+                  // (2e-b-1a): required so the bid is comparable, indicative
+                  // because a firm date cannot honestly be given before final
+                  // quantity, PO date and capacity are known.
+                  hint={t('rfqs.panel.leadTime.hint')}
+                  error={
+                    /* An untouched blank does not nag on sight — it refuses at the
+                       gate, and says so on the field once the supplier has engaged
+                       with the form (the price precedent, 2e-a). */
+                    !leadTime.ok && form.unitPrice.trim() !== '' && (
+                      <span role="alert" data-testid="quote-leadtime-refusal">
+                        {t(LEAD_TIME_REFUSAL_KEY[leadTime.reason])}
+                      </span>
+                    )
+                  }
+                >
+                  <div className="flex gap-2">
+                    {/* Ruling 6.2, carried into 2e-b-1 because the refusal DEPENDS
+                        on it: `type="number"` erases "abc" to "" before React sees
+                        it, and blank is now legal — so the browser would silently
+                        convert an unreadable lead time into an honest-looking
+                        absence, and the supplier would never be told. The
+                        placeholder was "0" — a field modelling the one value that
+                        now scores best and needs an explicit acknowledgement. */}
+                    <TextInput
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="14"
+                      aria-label={t('rfqs.field.leadTime')}
+                      aria-invalid={!leadTime.ok}
+                      value={form.leadTimeNum}
+                      onChange={(e) =>
+                        setForm({
+                          ...form,
+                          leadTimeNum: e.target.value,
+                          // Editing the number retracts any same-day affirmation —
+                          // an ack belongs to the value it was given for.
+                          sameDayAck: false,
+                        })
+                      }
+                      mono
+                    />
+                    <Select
+                      value={form.leadTimeUnit}
+                      onChange={(e) =>
+                        setForm({
+                          ...form,
+                          leadTimeUnit: e.target.value as LeadTimeUnit,
+                          sameDayAck: false,
+                        })
+                      }
+                      style={{ width: 100 }}
+                    >
+                      <option value="days">{t('rfqs.unit.days')}</option>
+                      <option value="weeks">{t('rfqs.unit.weeks')}</option>
+                    </Select>
                   </div>
-                )}
+                </FormField>
                 {/* THE HARD GATE — inline, in the flow of the form (no modal:
                     every other guard on this surface is inline). Submit stays
                     disabled until this is ticked. */}
@@ -1719,23 +1706,30 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
                     <div className="text-[11px] text-warning-hover">
                       {t('rfqs.panel.leadTime.sameDay.note')}
                     </div>
-                    <label className="mt-2 flex items-center gap-2 text-[11px] text-text-secondary">
-                      <input
-                        type="checkbox"
-                        checked={form.sameDayAck}
-                        aria-label={t('rfqs.panel.leadTime.sameDay.ack')}
-                        onChange={(e) =>
-                          setForm({ ...form, sameDayAck: e.target.checked })
-                        }
-                      />
+                    <Checkbox
+                      className="mt-2"
+                      checked={form.sameDayAck}
+                      aria-label={t('rfqs.panel.leadTime.sameDay.ack')}
+                      onChange={(e) =>
+                        setForm({ ...form, sameDayAck: e.target.checked })
+                      }
+                    >
                       {t('rfqs.panel.leadTime.sameDay.ack')}
-                    </label>
+                    </Checkbox>
                   </div>
                 )}
               </div>
-              <div>
-                <label className={labelClass}>{t('rfqs.panel.validUntil')}</label>
-                <input
+              <FormField
+                label={t('rfqs.panel.validUntil')}
+                error={
+                  validityPast && (
+                    <span role="alert" data-testid="quote-validity-refusal">
+                      {t('rfqs.panel.validUntil.past', { today: formatDate(TODAY) })}
+                    </span>
+                  )
+                }
+              >
+                <TextInput
                   type="date"
                   aria-label={t('rfqs.field.validUntil')}
                   aria-invalid={validityPast}
@@ -1746,42 +1740,43 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
                   onChange={(e) =>
                     setForm({ ...form, validUntil: e.target.value })
                   }
-                  className={inputClass}
                 />
-                {validityPast && (
-                  <div
-                    role="alert"
-                    data-testid="quote-validity-refusal"
-                    className="mt-1 text-[11px] text-critical"
-                  >
-                    {t('rfqs.panel.validUntil.past', { today: formatDate(TODAY) })}
-                  </div>
-                )}
-              </div>
-              <div>
-                <label className={labelClass}>{t('rfqs.panel.paymentTerms')}</label>
-                <input
+              </FormField>
+              <FormField
+                label={t('rfqs.panel.paymentTerms')}
+                hint={
+                  <span data-testid="quote-payment-terms-note">
+                    {t('rfqs.panel.paymentTerms.note', { terms: effectiveQuotePanelRFQ.paymentTerms })}
+                  </span>
+                }
+              >
+                <TextInput
                   type="text"
                   aria-label={t('rfqs.field.paymentTerms')}
                   value={form.paymentTerms}
                   onChange={(e) => setForm({ ...form, paymentTerms: e.target.value })}
-                  className={inputClass}
                   data-testid="quote-payment-terms"
                 />
-                <div className="mt-1 text-[11px] text-text-tertiary" data-testid="quote-payment-terms-note">
-                  {t('rfqs.panel.paymentTerms.note', { terms: effectiveQuotePanelRFQ.paymentTerms })}
-                </div>
-              </div>
-              <div>
-                <label className={labelClass}>
-                  {t('rfqs.panel.moq')}
-                </label>
+              </FormField>
+              <FormField
+                label={t('rfqs.panel.moq')}
+                // The default, stated on the field rather than hidden in the
+                // placeholder — a placeholder disappears the moment anyone
+                // types, which is exactly when "blank means X" stops being
+                // readable.
+                hint={t('rfqs.panel.moq.hint')}
+                error={
+                  !moq.ok && (
+                    <span role="alert" data-testid="quote-moq-refusal">{t(MOQ_REFUSAL_KEY[moq.reason])}</span>
+                  )
+                }
+              >
                 {/* Ruling 6.2, and load-bearing here for the same reason as the
                     lead time: `type="number"` erases an unreadable token to ""
                     before React sees it, and "" is LEGAL on this field — so the
                     browser would quietly convert a minimum the supplier typed
                     into the "no minimum" default, and nobody would be told. */}
-                <input
+                <TextInput
                   type="text"
                   inputMode="numeric"
                   placeholder={t('rfqs.panel.moqPlaceholder')}
@@ -1789,25 +1784,9 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
                   aria-invalid={!moq.ok}
                   value={form.moq}
                   onChange={(e) => setForm({ ...form, moq: e.target.value })}
-                  className={inputClass}
+                  mono
                 />
-                {/* The default, stated on the field rather than hidden in the
-                    placeholder — a placeholder disappears the moment anyone
-                    types, which is exactly when "blank means X" stops being
-                    readable. */}
-                <div className="mt-1 text-[11px] text-text-tertiary">
-                  {t('rfqs.panel.moq.hint')}
-                </div>
-                {!moq.ok && (
-                  <div
-                    role="alert"
-                    data-testid="quote-moq-refusal"
-                    className="mt-1 text-[11px] text-critical"
-                  >
-                    {t(MOQ_REFUSAL_KEY[moq.reason])}
-                  </div>
-                )}
-              </div>
+              </FormField>
             </FormSection>
 
             <FormSection
@@ -1865,22 +1844,21 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
               title={t('rfqs.panel.step4.title')}
               description={t('rfqs.panel.step4.desc')}
             >
-              <div>
-                <label className={labelClass}>{t('rfqs.panel.notes')}</label>
-                <textarea
+              <FormField label={t('rfqs.panel.notes')}>
+                <TextArea
                   value={form.notes}
                   onChange={(e) =>
                     setForm({ ...form, notes: e.target.value })
                   }
                   rows={3}
                   placeholder={t('rfqs.panel.notesPlaceholder')}
-                  className={`${inputClass} resize-y`}
+                  className="resize-y"
                 />
-              </div>
+              </FormField>
               <div>
-                <label className={labelClass}>
+                <SectionHeading level="group" as="h4" className="mb-1">
                   {t('rfqs.panel.canSample')}
-                </label>
+                </SectionHeading>
                 <div className="flex gap-2">
                   {(['yes', 'no'] as const).map((v) => (
                     <button
@@ -1898,9 +1876,8 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
                   ))}
                 </div>
                 {form.canSample === 'yes' && (
-                  <div className="mt-2">
-                    <label className={labelClass}>{t('rfqs.panel.sampleLeadTime')}</label>
-                    <input
+                  <FormField label={t('rfqs.panel.sampleLeadTime')} className="mt-2">
+                    <TextInput
                       type="text"
                       placeholder={t('rfqs.panel.sampleLeadPlaceholder')}
                       value={form.sampleLeadTime}
@@ -1910,16 +1887,15 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
                           sampleLeadTime: e.target.value,
                         })
                       }
-                      className={inputClass}
                       style={{ width: 200 }}
                     />
-                  </div>
+                  </FormField>
                 )}
               </div>
-              <div>
-                <label className={labelClass}>
-                  {t('rfqs.panel.pdf')}
-                </label>
+              <FormField
+                label={t('rfqs.panel.pdf')}
+                hint={<span data-testid="quote-attachment-note">{t('rfqs.panel.pdfNote')}</span>}
+              >
                 {/* SRC-2 — THE DROP ZONE TAKES A FILE NOW. It was a dashed box with
                     no input behind it: "click to attach" attached nothing. The
                     input covers the box, so a click and a drop both land on it.
@@ -1956,10 +1932,7 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
                     {t('rfqs.panel.pdfRemove')}
                   </button>
                 )}
-                <div className="mt-1 text-[11px] text-text-tertiary" data-testid="quote-attachment-note">
-                  {t('rfqs.panel.pdfNote')}
-                </div>
-              </div>
+              </FormField>
             </FormSection>
           </div>
         )}

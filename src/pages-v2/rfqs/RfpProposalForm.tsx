@@ -22,6 +22,7 @@ import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Save, Send, X } from 'lucide-react';
 import Button from '../../components/ui-v2/Button';
+import { FormField, TextArea } from '../../components/ui-v2/Form';
 import { useToast } from '../../hooks/useToast';
 import { useRefusalText } from '../../hooks/useRefusalText';
 import {
@@ -39,10 +40,6 @@ import {
 } from '../../data/rfpEvaluation';
 import { formatNumber } from '../../lib/format';
 import { interestRefusalKey, namedCriteria, refusedForCriteria } from './rfiAnswerModel';
-
-const inputClass =
-  'w-full px-3 py-2 text-sm text-text-primary bg-white border border-border-input rounded-md focus:outline-none focus:border-action placeholder:text-text-tertiary';
-const labelClass = 'block text-label text-text-tertiary uppercase mb-1';
 
 interface Props {
   /** The event, as this supplier reads it: its criteria and its own draft. */
@@ -144,52 +141,52 @@ const RfpProposalForm: React.FC<Props> = ({ rfq, supplierId, onClose }) => {
           const fieldId = `rfp-${rfq.id}-${c.id}`;
           return (
             <li key={c.id} data-testid={`rfp-criterion-${rfq.id}-${c.id}`}>
-              <label htmlFor={fieldId} className="block text-sm font-semibold text-text-primary mb-1.5">
-                <span className="font-mono text-text-secondary mr-1.5">{criterionLabel(i + 1)}</span>
-                {c.name}
-                <span className="ml-2 text-[11px] font-normal text-text-tertiary">
-                  {t('rfqs.rfp.weight', { weight: formatNumber(c.weight) })}
-                  {c.group ? ` · ${t(`rfqs.rfp.group.${c.group}`)}` : ''}
-                  {' · '}
-                  {t(c.required ? 'rfqs.rfi.required' : 'rfqs.rfi.optional')}
-                </span>
-              </label>
-              <textarea
-                id={fieldId}
-                rows={3}
-                value={values[c.id] ?? ''}
-                onChange={(e) => setValues((s) => ({ ...s, [c.id]: e.target.value }))}
-                className={`${inputClass} h-auto`}
-                data-testid={`rfp-response-${rfq.id}-${c.id}`}
-              />
-              {unanswered && (
-                <div
-                  className="text-xs text-critical font-semibold mt-1"
-                  data-testid={`rfp-criterion-missing-${rfq.id}-${c.id}`}
-                >
-                  {t('rfqs.rfp.missing')}
-                </div>
-              )}
+              <FormField
+                htmlFor={fieldId}
+                label={`${criterionLabel(i + 1)} ${c.name}`}
+                hint={
+                  <>
+                    {t('rfqs.rfp.weight', { weight: formatNumber(c.weight) })}
+                    {c.group ? ` · ${t(`rfqs.rfp.group.${c.group}`)}` : ''}
+                    {' · '}
+                    {t(c.required ? 'rfqs.rfi.required' : 'rfqs.rfi.optional')}
+                  </>
+                }
+                error={
+                  unanswered && (
+                    <span data-testid={`rfp-criterion-missing-${rfq.id}-${c.id}`}>
+                      {t('rfqs.rfp.missing')}
+                    </span>
+                  )
+                }
+              >
+                <TextArea
+                  id={fieldId}
+                  rows={3}
+                  value={values[c.id] ?? ''}
+                  onChange={(e) => setValues((s) => ({ ...s, [c.id]: e.target.value }))}
+                  data-testid={`rfp-response-${rfq.id}-${c.id}`}
+                />
+              </FormField>
             </li>
           );
         })}
       </ol>
 
-      <label className={labelClass} htmlFor={`rfp-documents-${rfq.id}`}>
-        {t('rfqs.rfp.documents.label')}
-      </label>
-      <input
-        id={`rfp-documents-${rfq.id}`}
-        type="file"
-        multiple
-        onChange={(e) => {
-          const names = Array.from(e.target.files ?? []).map((f) => f.name);
-          setDocuments((d) => normalizeDocuments([...d, ...names]));
-          e.target.value = '';
-        }}
-        className="block text-sm text-text-secondary"
-        data-testid={`rfp-documents-${rfq.id}`}
-      />
+      <FormField label={t('rfqs.rfp.documents.label')} htmlFor={`rfp-documents-${rfq.id}`}>
+        <input
+          id={`rfp-documents-${rfq.id}`}
+          type="file"
+          multiple
+          onChange={(e) => {
+            const names = Array.from(e.target.files ?? []).map((f) => f.name);
+            setDocuments((d) => normalizeDocuments([...d, ...names]));
+            e.target.value = '';
+          }}
+          className="block text-sm text-text-secondary"
+          data-testid={`rfp-documents-${rfq.id}`}
+        />
+      </FormField>
       {documents.length > 0 && (
         <ul className="mt-2 space-y-1" data-testid={`rfp-documents-list-${rfq.id}`}>
           {documents.map((name) => (
@@ -211,17 +208,15 @@ const RfpProposalForm: React.FC<Props> = ({ rfq, supplierId, onClose }) => {
         {t('rfqs.rfp.documents.note')}
       </div>
 
-      <label className={labelClass} htmlFor={`rfp-note-${rfq.id}`}>
-        {t('rfqs.interest.note')}
-      </label>
-      <textarea
-        id={`rfp-note-${rfq.id}`}
-        rows={2}
-        value={note}
-        onChange={(e) => setNote(e.target.value)}
-        className={`${inputClass} h-auto py-2`}
-        data-testid={`rfp-note-${rfq.id}`}
-      />
+      <FormField label={t('rfqs.interest.note')} htmlFor={`rfp-note-${rfq.id}`}>
+        <TextArea
+          id={`rfp-note-${rfq.id}`}
+          rows={2}
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+          data-testid={`rfp-note-${rfq.id}`}
+        />
+      </FormField>
       <div className="flex flex-wrap gap-2 mt-3">
         <Button
           variant="outline"

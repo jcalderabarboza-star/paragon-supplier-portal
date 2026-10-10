@@ -20,6 +20,7 @@ import type { QtyRefusalReason } from '../../lib/localeNumber';
 import { readTolerancePct, seedTolerancePct } from './tolerancePctModel';
 // GL-1 - the glossary destination for this surface's refusals.
 import GlossaryTermChip from '../ui-v2/GlossaryTermChip';
+import { Checkbox, FormField, Select, TextInput } from '../ui-v2/Form';
 
 const ENFORCEMENTS: readonly DrawdownEnforcement[] = ['flag', 'ignore', 'block'];
 
@@ -113,16 +114,28 @@ const PolicyEditor: React.FC<{
 
       {/* The two knobs (custom-editable; a quick-pick just prefills them). */}
       <div className="flex flex-wrap items-end gap-4">
-        <div className="flex flex-col gap-1">
-          <label className="text-[10px] uppercase text-text-tertiary" htmlFor="policy-tolerance">
-            {t('delivery.policy.edit.tolerance')}
-          </label>
+        <FormField
+          label={t('delivery.policy.edit.tolerance')}
+          htmlFor="policy-tolerance"
+          error={
+            pctInvalid && !pctRead.ok ? (
+              <span role="alert" data-testid="policy-pct-refusal">
+                {t(PCT_REFUSAL_KEY[pctRead.reason])}{' '}
+                <GlossaryTermChip refTo={{ sourceType: 'QtyRefusalReason', term: pctRead.reason }} />
+              </span>
+            ) : undefined
+          }
+        >
+          {/* THE SILENCE, BROKEN. `pctInvalid` previously fed only `canSave`, so
+              a refused tolerance disabled Save and explained nothing — which is
+              how the default locale's own decimal form became unenterable
+              without anyone being told. */}
           <div className="flex items-center gap-2">
             {/* Ruling 6.2: text, keeping the inputMode it already had. It was
                 the `type="number"` that ate "2,5"; `min={0}` never bound the
                 parse (a negative is NOT_NUMERIC, and `setActivePolicy` refuses a
                 negative fraction independently as of 2f-d). */}
-            <input
+            <TextInput
               id="policy-tolerance"
               type="text"
               inputMode="decimal"
@@ -130,70 +143,47 @@ const PolicyEditor: React.FC<{
               disabled={unlimited || pending}
               aria-invalid={pctInvalid}
               onChange={(e) => setPct(e.target.value)}
-              className="w-24 rounded-md border border-border-input bg-bg-surface px-2 py-1.5 text-sm text-text-primary disabled:opacity-50"
+              mono
+              className="w-24"
             />
             <span className="text-xs text-text-tertiary">%</span>
-            <label className="flex items-center gap-1 text-xs text-text-secondary">
-              <input
-                type="checkbox"
-                checked={unlimited}
-                disabled={pending}
-                onChange={(e) => setUnlimited(e.target.checked)}
-              />
-              {t('delivery.policy.edit.unlimited')}
-            </label>
-          </div>
-          {/* THE SILENCE, BROKEN. `pctInvalid` previously fed only `canSave`, so
-              a refused tolerance disabled Save and explained nothing — which is
-              how the default locale's own decimal form became unenterable
-              without anyone being told. */}
-          {pctInvalid && !pctRead.ok && (
-            <div
-              role="alert"
-              data-testid="policy-pct-refusal"
-              className="mt-1 text-[11px] text-critical"
+            <Checkbox
+              checked={unlimited}
+              disabled={pending}
+              onChange={(e) => setUnlimited(e.target.checked)}
             >
-              {t(PCT_REFUSAL_KEY[pctRead.reason])}{' '}
-              <GlossaryTermChip refTo={{ sourceType: 'QtyRefusalReason', term: pctRead.reason }} />
-            </div>
-          )}
-        </div>
+              {t('delivery.policy.edit.unlimited')}
+            </Checkbox>
+          </div>
+        </FormField>
 
-        <div className="flex flex-col gap-1">
-          <label className="text-[10px] uppercase text-text-tertiary" htmlFor="policy-enforcement">
-            {t('delivery.policy.edit.enforcement')}
-          </label>
-          <select
+        <FormField label={t('delivery.policy.edit.enforcement')} htmlFor="policy-enforcement">
+          <Select
             id="policy-enforcement"
             value={enforcement}
             disabled={pending}
             onChange={(e) => setEnforcement(e.target.value as DrawdownEnforcement)}
-            className="rounded-md border border-border-input bg-bg-surface px-2 py-1.5 text-sm text-text-primary"
           >
             {ENFORCEMENTS.map((e) => (
               <option key={e} value={e}>
                 {t(`delivery.policy.edit.enforcement.${e}`)}
               </option>
             ))}
-          </select>
-        </div>
+          </Select>
+        </FormField>
       </div>
 
       {/* Required reason — an unattributable deviation is refused at the service. */}
-      <div className="flex flex-col gap-1">
-        <label className="text-[10px] uppercase text-text-tertiary" htmlFor="policy-reason">
-          {t('delivery.policy.edit.reason')}
-        </label>
-        <input
+      <FormField label={t('delivery.policy.edit.reason')} htmlFor="policy-reason">
+        <TextInput
           id="policy-reason"
           type="text"
           value={reason}
           disabled={pending}
           placeholder={t('delivery.policy.edit.reasonPlaceholder')}
           onChange={(e) => setReason(e.target.value)}
-          className="w-full rounded-md border border-border-input bg-bg-surface px-2 py-1.5 text-sm text-text-primary"
         />
-      </div>
+      </FormField>
 
       <div className="flex flex-wrap items-center gap-2">
         <Button

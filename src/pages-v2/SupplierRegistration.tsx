@@ -12,7 +12,7 @@ import {
   MessageCircle,
   Globe,
   Send,
-  Radio,
+  RadioIcon,
   LucideIcon,
 } from 'lucide-react';
 import { useTranslation, Trans } from 'react-i18next';
@@ -22,6 +22,8 @@ import FormSection from '../components/ui-v2/FormSection';
 import StatusPill from '../components/ui-v2/StatusPill';
 import Button from '../components/ui-v2/Button';
 import ProvenanceMarker from '../components/ui-v2/ProvenanceMarker';
+import SectionHeading from '../components/ui-v2/SectionHeading';
+import { Checkbox, ChoiceCard, FormField, Select, TextArea, TextInput } from '../components/ui-v2/Form';
 
 type RequestType = 'External SR' | 'Internal SR' | 'KOL';
 
@@ -111,7 +113,7 @@ const CHANNELS: ChannelOption[] = [
   { value: 'WhatsApp', Icon: MessageCircle, labelKey: 'registration.channel.whatsapp.label', descKey: 'registration.channel.whatsapp.desc' },
   { value: 'Web Portal', Icon: Globe, labelKey: 'registration.channel.web.label', descKey: 'registration.channel.web.desc' },
   { value: 'API', Icon: Send, labelKey: 'registration.channel.api.label', descKey: 'registration.channel.api.desc' },
-  { value: 'EDI', Icon: Radio, labelKey: 'registration.channel.edi.label', descKey: 'registration.channel.edi.desc' },
+  { value: 'EDI', Icon: RadioIcon, labelKey: 'registration.channel.edi.label', descKey: 'registration.channel.edi.desc' },
 ];
 
 interface DocumentMeta {
@@ -214,28 +216,7 @@ const emptyDoc = (): DocState => ({
   expiry: '',
 });
 
-const inputClass =
-  'w-full px-3 py-2 text-sm text-text-primary bg-white border border-border-input rounded-md focus:outline-none focus:border-action placeholder:text-text-tertiary';
-const labelClass = 'block text-label text-text-tertiary uppercase mb-1';
 const errorClass = 'text-critical text-xs mt-1';
-
-interface FieldProps {
-  label: string;
-  required?: boolean;
-  error?: string;
-  children: React.ReactNode;
-}
-
-const FormField: React.FC<FieldProps> = ({ label, required, error, children }) => (
-  <div>
-    <label className={labelClass}>
-      {label}
-      {required && <span className="text-critical ml-0.5">*</span>}
-    </label>
-    {children}
-    {error && <div className={errorClass}>{error}</div>}
-  </div>
-);
 
 const PageHeader: React.FC = () => {
   const { t } = useTranslation();
@@ -448,8 +429,7 @@ const CompanyInfoStep: React.FC<StepProps> = ({ form, setForm, errors }) => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="md:col-span-2">
           <FormField label={t('registration.step.company.field.legalName.label')} required error={errors.legalName}>
-            <input
-              className={inputClass}
+            <TextInput
               value={form.legalName}
               onChange={(e) =>
                 setForm((f) => ({ ...f, legalName: e.target.value }))
@@ -459,24 +439,23 @@ const CompanyInfoStep: React.FC<StepProps> = ({ form, setForm, errors }) => {
           </FormField>
         </div>
         <FormField label={t('registration.step.company.field.npwp.label')} required error={errors.npwp}>
-          <input
-            className={inputClass}
+          <TextInput
+            mono
             value={form.npwp}
             onChange={(e) => setForm((f) => ({ ...f, npwp: e.target.value }))}
             placeholder="00.000.000.0-000.000"
           />
         </FormField>
         <FormField label={t('registration.step.company.field.nib.label')}>
-          <input
-            className={inputClass}
+          <TextInput
+            mono
             value={form.nib}
             onChange={(e) => setForm((f) => ({ ...f, nib: e.target.value }))}
             placeholder="1234567890123"
           />
         </FormField>
         <FormField label={t('registration.step.company.field.country.label')} required>
-          <select
-            className={inputClass}
+          <Select
             value={form.country}
             onChange={(e) =>
               setForm((f) => ({ ...f, country: e.target.value, province: '' }))
@@ -487,12 +466,11 @@ const CompanyInfoStep: React.FC<StepProps> = ({ form, setForm, errors }) => {
                 {t(c.key)}
               </option>
             ))}
-          </select>
+          </Select>
         </FormField>
         {form.country === 'Indonesia' && (
           <FormField label={t('registration.step.company.field.province.label')} required error={errors.province}>
-            <select
-              className={inputClass}
+            <Select
               value={form.province}
               onChange={(e) =>
                 setForm((f) => ({ ...f, province: e.target.value }))
@@ -502,12 +480,11 @@ const CompanyInfoStep: React.FC<StepProps> = ({ form, setForm, errors }) => {
               {INDONESIAN_PROVINCES.map((p) => (
                 <option key={p}>{p}</option>
               ))}
-            </select>
+            </Select>
           </FormField>
         )}
         <FormField label={t('registration.step.company.field.city.label')} required error={errors.city}>
-          <input
-            className={inputClass}
+          <TextInput
             value={form.city}
             onChange={(e) => setForm((f) => ({ ...f, city: e.target.value }))}
             placeholder={t('registration.step.company.field.city.placeholder')}
@@ -515,8 +492,8 @@ const CompanyInfoStep: React.FC<StepProps> = ({ form, setForm, errors }) => {
         </FormField>
         <div className="md:col-span-2">
           <FormField label={t('registration.step.company.field.address.label')} required error={errors.address}>
-            <textarea
-              className={`${inputClass} min-h-[80px] resize-y`}
+            <TextArea
+              className="resize-y"
               value={form.address}
               onChange={(e) =>
                 setForm((f) => ({ ...f, address: e.target.value }))
@@ -527,8 +504,7 @@ const CompanyInfoStep: React.FC<StepProps> = ({ form, setForm, errors }) => {
         </div>
         <div className="md:col-span-2">
           <FormField label={t('registration.step.company.field.website.label')}>
-            <input
-              className={inputClass}
+            <TextInput
               value={form.website}
               onChange={(e) =>
                 setForm((f) => ({ ...f, website: e.target.value }))
@@ -597,16 +573,14 @@ const ContactsStep: React.FC<StepProps> = ({ form, setForm, errors }) => {
                 required
                 error={errors[`c${i}name`]}
               >
-                <input
-                  className={inputClass}
+                <TextInput
                   value={c.name}
                   onChange={(e) => updateContact(i, 'name', e.target.value)}
                   placeholder={t('registration.step.contacts.field.name.placeholder')}
                 />
               </FormField>
               <FormField label={t('registration.step.contacts.field.role.label')}>
-                <select
-                  className={inputClass}
+                <Select
                   value={c.role}
                   onChange={(e) => updateContact(i, 'role', e.target.value)}
                 >
@@ -615,15 +589,14 @@ const ContactsStep: React.FC<StepProps> = ({ form, setForm, errors }) => {
                       {t(r.key)}
                     </option>
                   ))}
-                </select>
+                </Select>
               </FormField>
               <FormField
                 label={t('registration.step.contacts.field.email.label')}
                 required
                 error={errors[`c${i}email`]}
               >
-                <input
-                  className={inputClass}
+                <TextInput
                   value={c.email}
                   onChange={(e) => updateContact(i, 'email', e.target.value)}
                   placeholder="jane@example.com"
@@ -634,8 +607,7 @@ const ContactsStep: React.FC<StepProps> = ({ form, setForm, errors }) => {
                 required
                 error={errors[`c${i}whatsapp`]}
               >
-                <input
-                  className={inputClass}
+                <TextInput
                   value={c.whatsapp}
                   onChange={(e) =>
                     updateContact(i, 'whatsapp', e.target.value)
@@ -645,8 +617,7 @@ const ContactsStep: React.FC<StepProps> = ({ form, setForm, errors }) => {
               </FormField>
               <div className="md:col-span-2">
                 <FormField label={t('registration.step.contacts.field.phone.label')}>
-                  <input
-                    className={inputClass}
+                  <TextInput
                     value={c.phone}
                     onChange={(e) =>
                       updateContact(i, 'phone', e.target.value)
@@ -698,22 +669,14 @@ const CategoriesStep: React.FC<StepProps & { catError: string }> = ({
           {SUPPLY_CATEGORIES.map((cat) => {
             const checked = form.selCats.includes(cat.value);
             return (
-              <label
+              <ChoiceCard
                 key={cat.value}
-                className={`flex items-center gap-2 px-3 py-2 rounded-md cursor-pointer border-2 text-sm transition-colors ${
-                  checked
-                    ? 'border-action bg-action-soft text-text-primary font-semibold'
-                    : 'border-border-subtle bg-bg-surface text-text-secondary hover:bg-bg-hover'
-                }`}
+                type="checkbox"
+                checked={checked}
+                onChange={() => toggleCat(cat.value)}
               >
-                <input
-                  type="checkbox"
-                  checked={checked}
-                  onChange={() => toggleCat(cat.value)}
-                  className="accent-action"
-                />
                 {t(cat.key)}
-              </label>
+              </ChoiceCard>
             );
           })}
         </div>
@@ -730,34 +693,28 @@ const CategoriesStep: React.FC<StepProps & { catError: string }> = ({
             const active = form.channel === ch.value;
             const Icon = ch.Icon;
             return (
-              <label
+              <ChoiceCard
                 key={ch.value}
-                className={`flex items-center gap-3 px-4 py-3 rounded-md cursor-pointer border-2 transition-colors ${
-                  active
-                    ? 'border-action bg-action-soft'
-                    : 'border-border-subtle bg-bg-surface hover:bg-bg-hover'
-                }`}
+                type="radio"
+                name="channel"
+                checked={active}
+                onChange={() => setForm((f) => ({ ...f, channel: ch.value }))}
               >
-                <input
-                  type="radio"
-                  name="channel"
-                  checked={active}
-                  onChange={() => setForm((f) => ({ ...f, channel: ch.value }))}
-                  className="accent-action"
-                />
-                <Icon
-                  size={18}
-                  className={active ? 'text-action-text' : 'text-text-tertiary'}
-                />
-                <div className="min-w-0">
-                  <div
-                    className={`text-sm font-bold ${active ? 'text-action-text' : 'text-text-primary'}`}
-                  >
-                    {t(ch.labelKey)}
-                  </div>
-                  <div className="text-xs text-text-tertiary">{t(ch.descKey)}</div>
-                </div>
-              </label>
+                <span className="flex items-center gap-3">
+                  <Icon
+                    size={18}
+                    className={active ? 'text-action-text' : 'text-text-tertiary'}
+                  />
+                  <span className="min-w-0">
+                    <span
+                      className="block font-medium"
+                    >
+                      {t(ch.labelKey)}
+                    </span>
+                    <span className="block text-xs text-text-tertiary">{t(ch.descKey)}</span>
+                  </span>
+                </span>
+              </ChoiceCard>
             );
           })}
         </div>
@@ -800,27 +757,23 @@ const DocumentsAndBankStep: React.FC<StepProps> = ({ form, setForm, errors }) =>
                   )}
                 </div>
                 {doc.hasExpiry && d.uploaded && (
-                  <div>
-                    <label className="block text-[10px] text-text-tertiary uppercase mb-0.5">
-                      {t('registration.documents.expiry')}
-                    </label>
-                    <input
+                  <FormField label={t('registration.documents.expiry')}>
+                    <TextInput
                       type="date"
-                      className={`${inputClass} text-xs`}
                       style={{ width: 140 }}
                       value={d.expiry}
                       onChange={(e) =>
                         setDoc(doc.key, { expiry: e.target.value })
                       }
                     />
-                  </div>
+                  </FormField>
                 )}
-                <label
-                  className={`inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md font-semibold text-xs cursor-pointer whitespace-nowrap ${
-                    d.uploaded
-                      ? 'bg-success-soft text-success'
-                      : 'bg-action text-white hover:bg-action-hover'
-                  }`}
+                <Button
+                  variant={d.uploaded ? 'secondary' : 'outline'}
+                  className="whitespace-nowrap"
+                  onClick={(e) =>
+                    (e.currentTarget.nextElementSibling as HTMLInputElement | null)?.click()
+                  }
                 >
                   {d.uploaded ? (
                     <>
@@ -833,18 +786,18 @@ const DocumentsAndBankStep: React.FC<StepProps> = ({ form, setForm, errors }) =>
                       {t('registration.documents.upload')}
                     </>
                   )}
-                  <input
-                    type="file"
-                    className="hidden"
-                    accept=".pdf,.jpg,.jpeg,.png"
-                    onChange={(e) =>
-                      setDoc(doc.key, {
-                        uploaded: !!e.target.files?.[0],
-                        fileName: e.target.files?.[0]?.name ?? '',
-                      })
-                    }
-                  />
-                </label>
+                </Button>
+                <input
+                  type="file"
+                  className="hidden"
+                  accept=".pdf,.jpg,.jpeg,.png"
+                  onChange={(e) =>
+                    setDoc(doc.key, {
+                      uploaded: !!e.target.files?.[0],
+                      fileName: e.target.files?.[0]?.name ?? '',
+                    })
+                  }
+                />
               </div>
             );
           })}
@@ -858,8 +811,7 @@ const DocumentsAndBankStep: React.FC<StepProps> = ({ form, setForm, errors }) =>
       >
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField label={t('registration.step.bank.field.bankName.label')} required error={errors.bankName}>
-            <select
-              className={inputClass}
+            <Select
               value={form.bankName}
               onChange={(e) =>
                 setForm((f) => ({ ...f, bankName: e.target.value }))
@@ -871,15 +823,15 @@ const DocumentsAndBankStep: React.FC<StepProps> = ({ form, setForm, errors }) =>
                   {b === 'Other' ? t('registration.option.other') : b}
                 </option>
               ))}
-            </select>
+            </Select>
           </FormField>
           <FormField
             label={t('registration.step.bank.field.accountNumber.label')}
             required
             error={errors.accountNumber}
           >
-            <input
-              className={inputClass}
+            <TextInput
+              mono
               value={form.accountNumber}
               onChange={(e) =>
                 setForm((f) => ({ ...f, accountNumber: e.target.value }))
@@ -893,8 +845,7 @@ const DocumentsAndBankStep: React.FC<StepProps> = ({ form, setForm, errors }) =>
               required
               error={errors.accountHolder}
             >
-              <input
-                className={inputClass}
+              <TextInput
                 value={form.accountHolder}
                 onChange={(e) =>
                   setForm((f) => ({ ...f, accountHolder: e.target.value }))
@@ -919,8 +870,7 @@ const KOLBankStep: React.FC<StepProps> = ({ form, setForm, errors }) => {
     >
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <FormField label={t('registration.step.bank.field.bankName.label')} required error={errors.bankName}>
-          <select
-            className={inputClass}
+          <Select
             value={form.bankName}
             onChange={(e) =>
               setForm((f) => ({ ...f, bankName: e.target.value }))
@@ -932,11 +882,11 @@ const KOLBankStep: React.FC<StepProps> = ({ form, setForm, errors }) => {
                 {b === 'Other' ? t('registration.option.other') : b}
               </option>
             ))}
-          </select>
+          </Select>
         </FormField>
         <FormField label={t('registration.step.bank.field.accountNumber.label')} required error={errors.accountNumber}>
-          <input
-            className={inputClass}
+          <TextInput
+            mono
             value={form.accountNumber}
             onChange={(e) =>
               setForm((f) => ({ ...f, accountNumber: e.target.value }))
@@ -950,8 +900,7 @@ const KOLBankStep: React.FC<StepProps> = ({ form, setForm, errors }) => {
             required
             error={errors.accountHolder}
           >
-            <input
-              className={inputClass}
+            <TextInput
               value={form.accountHolder}
               onChange={(e) =>
                 setForm((f) => ({ ...f, accountHolder: e.target.value }))
@@ -982,42 +931,34 @@ const InternalSRCategoryStep: React.FC<StepProps & { catError: string }> = ({
       description={t('registration.step.expansion.description')}
     >
       <div className="mb-4">
-        <label className={labelClass}>
+        <SectionHeading level="group" as="h4" className="mb-1">
           {t('registration.step.expansion.field.categories.label')}
           <span className="text-critical ml-0.5">*</span>
-        </label>
+        </SectionHeading>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
           {SUPPLY_CATEGORIES.map((cat) => (
-            <label
+            <ChoiceCard
               key={cat.value}
-              className={`flex items-center gap-2 px-3 py-2 rounded-md cursor-pointer border-2 text-sm transition-colors ${
-                form.selCats.includes(cat.value)
-                  ? 'border-action bg-action-soft text-text-primary font-semibold'
-                  : 'border-border-subtle bg-bg-surface text-text-secondary hover:bg-bg-hover'
-              }`}
+              type="checkbox"
+              checked={form.selCats.includes(cat.value)}
+              onChange={() =>
+                setForm((f) => ({
+                  ...f,
+                  selCats: f.selCats.includes(cat.value)
+                    ? f.selCats.filter((c) => c !== cat.value)
+                    : [...f.selCats, cat.value],
+                }))
+              }
             >
-              <input
-                type="checkbox"
-                checked={form.selCats.includes(cat.value)}
-                onChange={() =>
-                  setForm((f) => ({
-                    ...f,
-                    selCats: f.selCats.includes(cat.value)
-                      ? f.selCats.filter((c) => c !== cat.value)
-                      : [...f.selCats, cat.value],
-                  }))
-                }
-                className="accent-teal"
-              />
               {t(cat.key)}
-            </label>
+            </ChoiceCard>
           ))}
         </div>
         {catError && <div className={`${errorClass} mt-2`}>{catError}</div>}
       </div>
       <FormField label={t('registration.step.expansion.field.reason.label')}>
-        <textarea
-          className={`${inputClass} min-h-[80px] resize-y`}
+        <TextArea
+          className="resize-y"
           value={form.expansionReason}
           onChange={(e) =>
             setForm((f) => ({ ...f, expansionReason: e.target.value }))
@@ -1165,16 +1106,13 @@ const ReviewStep: React.FC<ReviewStepProps> = ({ form, setForm, errors, requestT
         eyebrow={t('registration.review.agreements.eyebrow')}
         title={t('registration.review.agreements.title')}
       >
-        <label className="flex items-start gap-3 cursor-pointer mb-2">
-          <input
-            type="checkbox"
-            checked={form.agreed1}
-            onChange={(e) =>
-              setForm((f) => ({ ...f, agreed1: e.target.checked }))
-            }
-            className="mt-1 accent-teal"
-          />
-          <span className="text-sm text-text-secondary">
+        <Checkbox
+          checked={form.agreed1}
+          onChange={(e) =>
+            setForm((f) => ({ ...f, agreed1: e.target.checked }))
+          }
+          className="w-full cursor-pointer mb-2"
+        >
             <Trans
               i18nKey="registration.review.agreement1.text"
               /* ⚠️ NOT LINKS — H3, and this pair is the one member of the
@@ -1190,22 +1128,17 @@ const ReviewStep: React.FC<ReviewStepProps> = ({ form, setForm, errors, requestT
                 terms: <span className="font-semibold text-text-primary" />,
               }}
             />
-          </span>
-        </label>
+        </Checkbox>
         {errors.agreed1 && <div className={errorClass}>{errors.agreed1}</div>}
-        <label className="flex items-start gap-3 cursor-pointer mt-2">
-          <input
-            type="checkbox"
-            checked={form.agreed2}
-            onChange={(e) =>
-              setForm((f) => ({ ...f, agreed2: e.target.checked }))
-            }
-            className="mt-1 accent-teal"
-          />
-          <span className="text-sm text-text-secondary">
-            {t('registration.review.agreement2')}
-          </span>
-        </label>
+        <Checkbox
+          checked={form.agreed2}
+          onChange={(e) =>
+            setForm((f) => ({ ...f, agreed2: e.target.checked }))
+          }
+          className="w-full cursor-pointer mt-2"
+        >
+          {t('registration.review.agreement2')}
+        </Checkbox>
         {errors.agreed2 && <div className={errorClass}>{errors.agreed2}</div>}
       </FormSection>
     </div>

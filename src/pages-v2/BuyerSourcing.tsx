@@ -40,6 +40,7 @@ import ScoreBadge from '../components/ui-v2/ScoreBadge';
 import Data from '../components/ui-v2/Data';
 import { Field, FieldList } from '../components/ui-v2/Field';
 import SectionHeading from '../components/ui-v2/SectionHeading';
+import { Checkbox, ChoiceCard, FormField, Radio, Select, TextArea, TextInput } from '../components/ui-v2/Form';
 import LivenessPill from '../components/ui-v2/LivenessPill';
 import ModelMarker from '../components/ui-v2/ModelMarker';
 import Button from '../components/ui-v2/Button';
@@ -478,12 +479,6 @@ const ScoreOrSilence: React.FC<{ score: number | undefined }> = ({ score }) =>
     <ScoreBadge score={score} size="sm" variant="bar" />
   );
 
-// Field chrome for the FX-pin dialog — same tokens as the supplier quote form,
-// so the portal's two governed numeric-entry surfaces read identically.
-const inputClass =
-  'w-full px-3 py-2 text-sm text-text-primary bg-white border border-border-input rounded-md focus:outline-none focus:border-action placeholder:text-text-tertiary';
-const labelClass = 'block text-label text-text-tertiary uppercase mb-1';
-
 // ── CP-0 · 2e-c-4 — the recorded FX basis, made visible ─────────────────────
 //
 // D-1 requires a pin to be auditable. An audit trail nobody can read from the
@@ -586,13 +581,9 @@ const fxVintageRefusalKey = (raw: string): string | null => {
 
 /** A field-level refusal line in the pin dialog — same DOM as before, so the
  *  `fx-rate-refusal` / `fx-asof-refusal` witnesses are untouched. */
-const FieldRefusal: React.FC<{ messageKey: string | null; testId: string; t: TFunction }> = ({
-  messageKey,
-  testId,
-  t,
-}) =>
+const fieldRefusal = (messageKey: string | null, testId: string, t: TFunction): React.ReactNode =>
   messageKey === null ? null : (
-    <div role="alert" data-testid={testId} className="mt-1 text-[11px] text-critical">
+    <div role="alert" data-testid={testId}>
       {t(messageKey)}
     </div>
   );
@@ -2247,26 +2238,20 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
               aria-label={t('sourcing.wizard.field.stage')}
             >
               {RFQ_STAGES.map((s) => (
-                <label
+                <ChoiceCard
                   key={s}
-                  className={`border rounded-md px-3 py-2 cursor-pointer ${
-                    draft.stage === s ? 'border-action bg-action-soft/40' : 'border-border-subtle'
-                  }`}
-                >
-                  <input
-                    type="radio"
+                  type="radio"
                     name="rfq-start-stage"
                     value={s}
                     checked={draft.stage === s}
                     onChange={() => updateDraft('stage', s)}
-                    className="accent-teal mr-2"
                     data-testid={`rfq-start-stage-${s}`}
-                  />
+                >
                   <span className="text-sm font-semibold text-text-primary">{s}</span>
                   <span className="block text-xs text-text-tertiary mt-0.5">
                     {t(`sourcing.wizard.stage.${s}`)}
                   </span>
-                </label>
+                </ChoiceCard>
               ))}
             </div>
             {/* RFx-3 — ONE LINE PER STAGE, beside its choice above, each saying
@@ -2287,13 +2272,11 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
               </a>
             </p>
           </div>
-          <div>
-            <label
-              htmlFor="rfq-source-requisition"
-              className="text-label text-text-tertiary uppercase block mb-1.5"
-            >
-              {t('sourcing.wizard.field.sourceRequisition')}
-            </label>
+          <FormField
+            label={t('sourcing.wizard.field.sourceRequisition')}
+            htmlFor="rfq-source-requisition"
+            hint={sourceablePrs.length === 0 ? undefined : t('sourcing.wizard.sourceRequisition.help')}
+          >
             {sourceablePrs.length === 0 ? (
               /* ⚠️ AN HONEST EMPTY STATE, NOT A BLANK CONTROL. A `<select>` with
                  only a placeholder looks broken and says nothing; this names WHY
@@ -2306,8 +2289,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                 {t('sourcing.wizard.sourceRequisition.none')}
               </p>
             ) : (
-              <>
-                <select
+                <Select
                   id="rfq-source-requisition"
                   data-testid="rfq-source-select"
                   value={draft.sourceRequisitionId ?? ''}
@@ -2318,7 +2300,6 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                         .map(prefillFromRequisition)[0] ?? null,
                     )
                   }
-                  className="w-full bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-action"
                 >
                   <option value="">
                     {t('sourcing.wizard.sourceRequisition.placeholder')}
@@ -2328,39 +2309,25 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                       {pr.prNumber} · {pr.material}
                     </option>
                   ))}
-                </select>
-                <p className="text-xs text-text-tertiary mt-1">
-                  {t('sourcing.wizard.sourceRequisition.help')}
-                </p>
-              </>
+                </Select>
             )}
-          </div>
-          <div>
-            <label className="text-label text-text-tertiary uppercase block mb-1.5">
-              {t('sourcing.wizard.field.title')}{' '}
-              <span className="text-critical">*</span>
-            </label>
-            <input
+          </FormField>
+          <FormField label={t('sourcing.wizard.field.title')} required>
+            <TextInput
               type="text"
               value={draft.title}
               onChange={(e) => updateDraft('title', e.target.value)}
               placeholder={t('sourcing.wizard.placeholder.title')}
-              className="w-full bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-action"
             />
-          </div>
+          </FormField>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="text-label text-text-tertiary uppercase block mb-1.5">
-                {t('sourcing.wizard.field.category')}{' '}
-                <span className="text-critical">*</span>
-              </label>
-              <select
+            <FormField label={t('sourcing.wizard.field.category')} required>
+              <Select
                 value={draft.category}
                 onChange={(e) => {
                   updateDraft('category', e.target.value as RFQCategory);
                   updateDraft('materials', []);
                 }}
-                className="w-full bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-action"
               >
                 <option value="">{t('sourcing.wizard.select.category')}</option>
                 {CATEGORY_OPTIONS.map((c) => (
@@ -2368,19 +2335,35 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                     {categoryLabel(t, c)}
                   </option>
                 ))}
-              </select>
-            </div>
-            <div>
-              <label className="text-label text-text-tertiary uppercase block mb-1.5">
-                {t('sourcing.wizard.field.budget')}
-              </label>
+              </Select>
+            </FormField>
+            <FormField
+              label={t('sourcing.wizard.field.budget')}
+              htmlFor="rfq-wizard-budget"
+              error={
+                /* An untouched blank does not nag — it is this field's answer,
+                   so `readRfqBudget` never refuses one. */
+                !budgetRead.ok && (
+                <div
+                  role="alert"
+                  data-testid="rfq-budget-refusal"
+                >
+                  {t(RFQ_BUDGET_REFUSAL_KEY[budgetRead.reason])}{' '}
+                  <GlossaryTermChip
+                    refTo={{ sourceType: 'QtyRefusalReason', term: budgetRead.reason }}
+                  />
+                </div>
+                )
+              }
+            >
               {/* Ruling 6.2 — and load-bearing here in the worst way, because a
                   blank is LEGAL on this field. `type="number"` erases a token it
                   cannot parse to "" before React sees it, so the browser would
                   quietly convert a budget the buyer typed into the "not
                   specified" default with nobody told — the same silent
                   downgrade the MOQ field was rescued from in 2e-b-2. */}
-              <input
+              <TextInput
+                id="rfq-wizard-budget"
                 type="text"
                 inputMode="decimal"
                 value={draft.budget}
@@ -2388,29 +2371,15 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                 placeholder={t('sourcing.wizard.placeholder.budget')}
                 aria-label={t('sourcing.wizard.field.budget')}
                 aria-invalid={!budgetRead.ok}
-                className="w-full bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-action"
+                mono
               />
-              {/* An untouched blank does not nag — it is this field's answer,
-                  so `readRfqBudget` never refuses one. */}
-              {!budgetRead.ok && (
-                <div
-                  role="alert"
-                  data-testid="rfq-budget-refusal"
-                  className="mt-1 text-[11px] text-critical"
-                >
-                  {t(RFQ_BUDGET_REFUSAL_KEY[budgetRead.reason])}{' '}
-                  <GlossaryTermChip
-                    refTo={{ sourceType: 'QtyRefusalReason', term: budgetRead.reason }}
-                  />
-                </div>
-              )}
-            </div>
+            </FormField>
           </div>
           <div>
-            <label className="text-label text-text-tertiary uppercase block mb-1.5">
+            <SectionHeading level="group" as="h4" className="mb-1.5">
               {t('sourcing.wizard.field.materials')}{' '}
               <span className="text-critical">*</span>
-            </label>
+            </SectionHeading>
             {draft.category ? (
               <div className="flex flex-wrap gap-2">
                 {MATERIAL_CATALOG[draft.category as RFQCategory].map((e) => {
@@ -2491,21 +2460,17 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                           materials: draftCodeLess.map((e) => e.label).join(', '),
                         })}
                       </p>
-                      <label className="block">
-                        <span className="text-label text-text-tertiary uppercase block mb-1.5">
-                          {t('sourcing.wizard.materials.requestNeed')}
-                        </span>
-                        <textarea
+                      <FormField
+                        label={t('sourcing.wizard.materials.requestNeed')}
+                        hint={t('sourcing.wizard.materials.requestNeed.hint')}
+                      >
+                        <TextArea
                           value={requestNeed}
                           onChange={(e) => setRequestNeed(e.target.value)}
                           rows={2}
-                          className="w-full border border-border-input rounded px-3 py-2 text-sm"
                           data-testid="material-request-need-wizard"
                         />
-                        <span className="text-xs text-text-tertiary mt-1 block">
-                          {t('sourcing.wizard.materials.requestNeed.hint')}
-                        </span>
-                      </label>
+                      </FormField>
                       <Button
                         variant="secondary"
                         onClick={() => {
@@ -2526,11 +2491,28 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
             )}
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="md:col-span-2">
-              <label className="text-label text-text-tertiary uppercase block mb-1.5">
-                {t('sourcing.wizard.field.totalQty')}{' '}
-                <span className="text-critical">*</span>
-              </label>
+            <FormField
+              label={t('sourcing.wizard.field.totalQty')}
+              htmlFor="rfq-wizard-total-qty"
+              required
+              className="md:col-span-2"
+              error={
+                /* An untouched blank does not nag on sight — it refuses at the
+                   gate (Next stays disabled) and says so on the field once the
+                   buyer has typed something (the 2e-a price precedent). */
+                draft.totalQty.trim() !== '' && !qtyRead.ok && (
+                <div
+                  role="alert"
+                  data-testid="rfq-qty-refusal"
+                >
+                  {t(RFQ_QTY_REFUSAL_KEY[qtyRead.reason])}{' '}
+                  <GlossaryTermChip
+                    refTo={{ sourceType: 'QtyRefusalReason', term: qtyRead.reason }}
+                  />
+                </div>
+                )
+              }
+            >
               {/* Ruling 6.2 — the parse CANNOT fire behind `type="number"`,
                   which is what 2e-b-4a's smoke proved on a live id-ID browser:
                   "2.400" reached Review as 2,4 because the number input had
@@ -2540,7 +2522,8 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                   the positivity rule now lives in `isStepValid`, where it is
                   actually enforced. `type="text"` returns `.value` VERBATIM in
                   every locale, which is what makes the parser load-bearing. */}
-              <input
+              <TextInput
+                id="rfq-wizard-total-qty"
                 type="text"
                 inputMode="decimal"
                 value={draft.totalQty}
@@ -2548,29 +2531,11 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                 placeholder={t('sourcing.wizard.placeholder.qty')}
                 aria-label={t('sourcing.wizard.field.totalQty')}
                 aria-invalid={draft.totalQty.trim() !== '' && !qtyRead.ok}
-                className="w-full bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-action"
+                mono
               />
-              {/* An untouched blank does not nag on sight — it refuses at the
-                  gate (Next stays disabled) and says so on the field once the
-                  buyer has typed something (the 2e-a price precedent). */}
-              {draft.totalQty.trim() !== '' && !qtyRead.ok && (
-                <div
-                  role="alert"
-                  data-testid="rfq-qty-refusal"
-                  className="mt-1 text-[11px] text-critical"
-                >
-                  {t(RFQ_QTY_REFUSAL_KEY[qtyRead.reason])}{' '}
-                  <GlossaryTermChip
-                    refTo={{ sourceType: 'QtyRefusalReason', term: qtyRead.reason }}
-                  />
-                </div>
-              )}
-            </div>
-            <div>
-              <label className="text-label text-text-tertiary uppercase block mb-1.5">
-                {t('sourcing.wizard.field.uom')}
-              </label>
-              <select
+            </FormField>
+            <FormField label={t('sourcing.wizard.field.uom')}>
+              <Select
                 value={draft.uom}
                 onChange={(e) =>
                   updateDraft(
@@ -2578,15 +2543,14 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                     e.target.value as (typeof UOM_OPTIONS)[number],
                   )
                 }
-                className="w-full bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-action"
               >
                 {UOM_OPTIONS.map((u) => (
                   <option key={u} value={u}>
                     {u}
                   </option>
                 ))}
-              </select>
-            </div>
+              </Select>
+            </FormField>
           </div>
         </div>
       ),
@@ -2613,20 +2577,12 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                 {aiRecommendedSuppliers.map((s) => {
                   const selected = draft.invitedSupplierIds.includes(s.id);
                   return (
-                    <label
+                    <ChoiceCard
                       key={s.id}
-                      className={`flex items-start gap-3 p-3 rounded-md border cursor-pointer transition-colors ${
-                        selected
-                          ? 'bg-bg-surface border-action'
-                          : 'bg-bg-surface border-border-subtle hover:border-action'
-                      }`}
-                    >
-                      <input
-                        type="checkbox"
+                      type="checkbox"
                         checked={selected}
                         onChange={() => toggleSupplier(s.id)}
-                        className="mt-0.5 accent-teal"
-                      />
+                    >
                       <div className="min-w-0 flex-1">
                         <div className="text-sm font-semibold text-text-primary truncate">
                           {s.name}
@@ -2639,7 +2595,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                           })}
                         </div>
                       </div>
-                    </label>
+                    </ChoiceCard>
                   );
                 })}
               </div>
@@ -2674,12 +2630,11 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                   className: 'w-10',
                   headerClassName: 'w-10',
                   cell: (s) => (
-                    <input
-                      type="checkbox"
+                    <Checkbox
                       checked={draft.invitedSupplierIds.includes(s.id)}
                       onChange={() => toggleSupplier(s.id)}
                       onClick={(e) => e.stopPropagation()}
-                      className="accent-teal"
+                      aria-label={s.name}
                     />
                   ),
                 },
@@ -2756,118 +2711,101 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
       content: (
         <div className="space-y-5">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="text-label text-text-tertiary uppercase block mb-1.5">
-                {t('sourcing.wizard.field.responseDeadline')}{' '}
-                <span className="text-critical">*</span>
-              </label>
-              <input
+            <FormField
+              label={t('sourcing.wizard.field.responseDeadline')}
+              required
+              error={
+                draft.responseDeadline && responseDeadlinePassed(draft.responseDeadline, TODAY) && (
+                <span data-testid="rfq-deadline-past">
+                  {t('sourcing.wizard.deadlinePast')}
+                </span>
+                )
+              }
+            >
+              <TextInput
                 type="date"
                 value={draft.responseDeadline}
                 onChange={(e) =>
                   updateDraft('responseDeadline', e.target.value)
                 }
-                className="w-full bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-action"
               />
-              {draft.responseDeadline && responseDeadlinePassed(draft.responseDeadline, TODAY) && (
-                <p className="text-xs text-critical mt-1" data-testid="rfq-deadline-past">
-                  {t('sourcing.wizard.deadlinePast')}
-                </p>
-              )}
-            </div>
-            <div>
-              <label className="text-label text-text-tertiary uppercase block mb-1.5">
-                {t('sourcing.wizard.field.awardDeadline')}{' '}
-                <span className="text-critical">*</span>
-              </label>
-              <input
+            </FormField>
+            <FormField
+              label={t('sourcing.wizard.field.awardDeadline')}
+              required
+              error={
+                draft.responseDeadline &&
+                draft.awardDeadline &&
+                new Date(draft.awardDeadline) <=
+                  new Date(draft.responseDeadline) &&
+                    t('sourcing.wizard.awardAfterResponse')
+              }
+            >
+              <TextInput
                 type="date"
                 value={draft.awardDeadline}
                 onChange={(e) => updateDraft('awardDeadline', e.target.value)}
-                className="w-full bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-action"
               />
-              {draft.responseDeadline &&
-                draft.awardDeadline &&
-                new Date(draft.awardDeadline) <=
-                  new Date(draft.responseDeadline) && (
-                  <p className="text-xs text-critical mt-1">
-                    {t('sourcing.wizard.awardAfterResponse')}
-                  </p>
-                )}
-            </div>
-            <div>
-              <label
-                htmlFor="rfq-wizard-delivery-date"
-                className="text-label text-text-tertiary uppercase block mb-1.5"
-              >
-                {t('sourcing.wizard.field.requestedDelivery')}
-              </label>
-              <input
+            </FormField>
+            <FormField
+              label={t('sourcing.wizard.field.requestedDelivery')}
+              htmlFor="rfq-wizard-delivery-date"
+              error={
+                deliveryDateTooEarly(draft) && (
+                <span data-testid="rfq-delivery-before-award">
+                  {t('sourcing.wizard.deliveryAfterAward')}
+                </span>
+                )
+              }
+            >
+              <TextInput
                 id="rfq-wizard-delivery-date"
                 type="date"
                 value={draft.requestedDeliveryDate}
                 onChange={(e) => updateDraft('requestedDeliveryDate', e.target.value)}
-                className="w-full bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-action"
               />
-              {deliveryDateTooEarly(draft) && (
-                <p className="text-xs text-critical mt-1" data-testid="rfq-delivery-before-award">
-                  {t('sourcing.wizard.deliveryAfterAward')}
-                </p>
-              )}
-            </div>
-            <div>
-              <label className="text-label text-text-tertiary uppercase block mb-1.5">
-                {t('sourcing.wizard.field.incoterms')}
-              </label>
-              <select
+            </FormField>
+            <FormField label={t('sourcing.wizard.field.incoterms')}>
+              <Select
                 value={draft.incoterms}
                 onChange={(e) => updateDraft('incoterms', e.target.value)}
-                className="w-full bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-action"
               >
                 {INCOTERMS_OPTIONS.map((i) => (
                   <option key={i} value={i}>
                     {i}
                   </option>
                 ))}
-              </select>
-            </div>
-            <div>
-              <label className="text-label text-text-tertiary uppercase block mb-1.5">
-                {t('sourcing.wizard.field.paymentTerms')}
-              </label>
-              <select
+              </Select>
+            </FormField>
+            <FormField label={t('sourcing.wizard.field.paymentTerms')}>
+              <Select
                 value={draft.paymentTerms}
                 onChange={(e) => updateDraft('paymentTerms', e.target.value)}
-                className="w-full bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-action"
               >
                 {PAYMENT_TERMS_OPTIONS.map((p) => (
                   <option key={p} value={p}>
                     {p}
                   </option>
                 ))}
-              </select>
-            </div>
+              </Select>
+            </FormField>
           </div>
           <div>
-            <label className="text-label text-text-tertiary uppercase block mb-1.5">
+            <SectionHeading level="group" as="h4" className="mb-1.5">
               {t('sourcing.wizard.field.currency')}
-            </label>
+            </SectionHeading>
             <div className="flex gap-4">
               {(['IDR', 'USD'] as const).map((cur) => (
-                <label
-                  key={cur}
-                  className="inline-flex items-center gap-2 cursor-pointer"
-                >
-                  <input
-                    type="radio"
+                  <Radio
+                    key={cur}
                     name="currency"
                     value={cur}
                     checked={draft.currency === cur}
                     onChange={() => updateDraft('currency', cur)}
-                    className="accent-teal"
-                  />
-                  <span className="text-sm text-text-secondary">{cur}</span>
-                </label>
+                    className="cursor-pointer"
+                  >
+                  {cur}
+                  </Radio>
               ))}
             </div>
           </div>
@@ -4000,20 +3938,18 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                       >
                         <p className="text-xs text-text-tertiary mb-2">{t('sourcing.advance.rank.note')}</p>
                         <div className="flex flex-wrap items-end gap-2">
-                          <div>
-                            <label className="text-label text-text-tertiary uppercase block mb-1" htmlFor="rfq-advance-rank-top">
-                              {t('sourcing.advance.rank.top')}
-                            </label>
-                            <input
+                          <FormField label={t('sourcing.advance.rank.top')} htmlFor="rfq-advance-rank-top">
+                            <TextInput
                               id="rfq-advance-rank-top"
                               type="text"
                               inputMode="numeric"
                               value={rankTop}
                               onChange={(e) => setRankTop(e.target.value)}
-                              className="w-20 bg-white border border-border-input rounded-md px-2 h-9 text-sm font-mono focus:outline-none focus:border-action"
+                              className="w-20"
+                              mono
                               data-testid="rfq-advance-rank-top"
                             />
-                          </div>
+                          </FormField>
                           <Button
                             variant="secondary"
                             disabled={!/^[1-9]\d*$/.test(rankTop.trim())}
@@ -4022,20 +3958,18 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                           >
                             {t('sourcing.advance.rank.topApply')}
                           </Button>
-                          <div className="ml-2">
-                            <label className="text-label text-text-tertiary uppercase block mb-1" htmlFor="rfq-advance-rank-min">
-                              {t('sourcing.advance.rank.min')}
-                            </label>
-                            <input
+                          <FormField label={t('sourcing.advance.rank.min')} htmlFor="rfq-advance-rank-min" className="ml-2">
+                            <TextInput
                               id="rfq-advance-rank-min"
                               type="text"
                               inputMode="decimal"
                               value={rankMin}
                               onChange={(e) => setRankMin(e.target.value)}
-                              className="w-20 bg-white border border-border-input rounded-md px-2 h-9 text-sm font-mono focus:outline-none focus:border-action"
+                              className="w-20"
+                              mono
                               data-testid="rfq-advance-rank-min"
                             />
-                          </div>
+                          </FormField>
                           <Button
                             variant="secondary"
                             disabled={!/^\d+([.,]\d+)?$/.test(rankMin.trim())}
@@ -4054,25 +3988,22 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                         const answered = selectedRfq.respondedSupplierIds.includes(id);
                         return (
                           <li key={id}>
-                            <label className="flex items-center gap-2 text-sm text-text-primary">
-                              <input
-                                type="checkbox"
-                                className="accent-teal"
+                            <Checkbox
                                 disabled={!answered}
                                 checked={advanceDraft.shortlist.includes(id)}
                                 onChange={() => toggleShortlisted(id)}
                                 data-testid={`rfq-advance-pick-${id}`}
-                              />
+                            >
                               <span>{supplierNameById.get(id) ?? id}</span>
                               {!answered && (
-                                <span className="text-xs text-text-tertiary">
+                                <span className="ml-2 text-xs text-text-tertiary">
                                   {t('sourcing.advance.didNotRespond', { stage: selectedStage })}
                                 </span>
                               )}
                               {/* RFx-3 — the rank and weighted total, beside the name. */}
                               {answered && advanceRanked && (
                                 <span
-                                  className="text-xs text-text-tertiary font-mono"
+                                  className="ml-2 text-xs text-text-tertiary font-mono"
                                   data-testid={`rfq-advance-rank-${id}`}
                                 >
                                   {(() => {
@@ -4092,7 +4023,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                                   rfiAnswersOf(selectedRfq).find((a) => a.supplierId === id),
                                 ) !== '' && (
                                   <span
-                                    className="text-xs text-critical font-semibold"
+                                    className="ml-2 text-xs text-critical font-semibold"
                                     data-testid={`rfq-advance-knockout-${id}`}
                                   >
                                     {t('sourcing.advance.failedKnockout', {
@@ -4103,22 +4034,20 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                                     })}
                                   </span>
                                 )}
-                            </label>
+                            </Checkbox>
                           </li>
                         );
                       })}
                     </ul>
-                    <label className="text-label text-text-tertiary uppercase block mb-1.5" htmlFor="rfq-advance-reason">
-                      {t('sourcing.advance.reason')}
-                    </label>
-                    <textarea
+                    <FormField label={t('sourcing.advance.reason')} htmlFor="rfq-advance-reason">
+                    <TextArea
                       id="rfq-advance-reason"
                       rows={2}
                       value={advanceDraft.reason}
                       onChange={(e) => setAdvanceDraft((d) => ({ ...d, reason: e.target.value }))}
-                      className="w-full bg-white border border-border-input rounded-md px-3 py-2 text-sm focus:outline-none focus:border-action"
                       data-testid="rfq-advance-reason"
                     />
+                    </FormField>
                     <p className="text-xs text-text-tertiary mt-1 mb-3" data-testid="rfq-advance-left-out">
                       {advanceLeftOut.length === 0
                         ? t('sourcing.advance.leftOut.none')
@@ -4127,32 +4056,24 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                           })}
                     </p>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
-                      <div>
-                        <label className="text-label text-text-tertiary uppercase block mb-1.5" htmlFor="rfq-advance-deadline">
-                          {t('sourcing.advance.responseDeadline', { stage: nextStage })}
-                        </label>
-                        <input
+                      <FormField label={t('sourcing.advance.responseDeadline', { stage: nextStage })} htmlFor="rfq-advance-deadline">
+                        <TextInput
                           id="rfq-advance-deadline"
                           type="date"
                           value={advanceDraft.responseDeadline}
                           onChange={(e) => setAdvanceDraft((d) => ({ ...d, responseDeadline: e.target.value }))}
-                          className="w-full bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-action"
                           data-testid="rfq-advance-deadline"
                         />
-                      </div>
-                      <div>
-                        <label className="text-label text-text-tertiary uppercase block mb-1.5" htmlFor="rfq-advance-award-deadline">
-                          {t('sourcing.advance.awardDeadline')}
-                        </label>
-                        <input
+                      </FormField>
+                      <FormField label={t('sourcing.advance.awardDeadline')} htmlFor="rfq-advance-award-deadline">
+                        <TextInput
                           id="rfq-advance-award-deadline"
                           type="date"
                           value={advanceDraft.awardDeadline}
                           onChange={(e) => setAdvanceDraft((d) => ({ ...d, awardDeadline: e.target.value }))}
-                          className="w-full bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-action"
                           data-testid="rfq-advance-award-deadline"
                         />
-                      </div>
+                      </FormField>
                     </div>
                     {advanceBlocked && (
                       <p className="text-xs text-warning-hover mb-3" data-testid="rfq-advance-blocked">
@@ -4195,18 +4116,20 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                         { rfqNumber: selectedRfq.rfqNumber, count: quotesForSelected.length },
                       )}
                     </p>
-                    <label className="text-label text-text-tertiary uppercase block mb-1.5" htmlFor="rfq-conclude-reason">
-                      {t('sourcing.conclude.reason')}
-                    </label>
-                    <textarea
+                    <FormField
+                      label={t('sourcing.conclude.reason')}
+                      htmlFor="rfq-conclude-reason"
+                      hint={t('sourcing.conclude.reasonNote')}
+                      className="mb-3"
+                    >
+                    <TextArea
                       id="rfq-conclude-reason"
                       rows={2}
                       value={concludeReason}
                       onChange={(e) => setConcludeReason(e.target.value)}
-                      className="w-full bg-white border border-border-input rounded-md px-3 py-2 text-sm focus:outline-none focus:border-action"
                       data-testid="rfq-conclude-reason"
                     />
-                    <p className="text-xs text-text-tertiary mt-1 mb-3">{t('sourcing.conclude.reasonNote')}</p>
+                    </FormField>
                     <div className="flex flex-wrap gap-2">
                       <Button
                         variant="outline"
@@ -4731,19 +4654,15 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                         <ComparisonRow label={t('sourcing.cmp.row.select')}>
                           {quotesForSelected.map((q) => (
                             <ComparisonCell key={q.id} highlight={q.id === topRankedId}>
-                              <label className="inline-flex items-center gap-2 cursor-pointer">
-                                <input
-                                  type="radio"
+                                <Radio
                                   name="award-select"
                                   value={q.id}
                                   checked={selectedQuoteId === q.id}
                                   onChange={() => setSelectedQuoteId(q.id)}
-                                  className="accent-teal"
-                                />
-                                <span className="text-xs text-text-secondary">
+                                  className="cursor-pointer"
+                                >
                                   {t('sourcing.cmp.award')}
-                                </span>
-                              </label>
+                                </Radio>
                             </ComparisonCell>
                           ))}
                         </ComparisonRow>
@@ -4924,18 +4843,22 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
             )}
 
             <div className="flex flex-col gap-3">
-              <div>
-                <label className={labelClass} htmlFor="fx-rate">
-                  {t('sourcing.fx.dialog.rate', {
+              <FormField
+                label={t('sourcing.fx.dialog.rate', {
                     currency: pinDraft.currency,
                     base: BASE_CURRENCY,
                   })}
-                </label>
+                htmlFor="fx-rate"
+                hint={t('sourcing.fx.dialog.rateHint')}
+                /* An untouched blank does not nag; a TYPED rate that cannot be
+                   read says so, and says what to do about it. */
+                error={fieldRefusal(fxRateRefusalKey(pinDraft.rate), 'fx-rate-refusal', t)}
+              >
                 {/* type="text", NOT number (Ruling 6.2): a number input lets the
                     BROWSER rewrite the value per its own locale before React
                     sees it, which is how a locale-ambiguous rate would bypass
                     the one parse entirely. */}
-                <input
+                <TextInput
                   id="fx-rate"
                   type="text"
                   inputMode="decimal"
@@ -4945,77 +4868,53 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                   aria-invalid={pinDraft.rate.trim() !== '' && !readFxRate(pinDraft.rate).ok}
                   value={pinDraft.rate}
                   onChange={(e) => setPinDraft({ ...pinDraft, rate: e.target.value })}
-                  className={inputClass}
+                  mono
                 />
-                <div className="mt-1 text-[11px] text-text-tertiary">
-                  {t('sourcing.fx.dialog.rateHint')}
-                </div>
-                {/* An untouched blank does not nag; a TYPED rate that cannot be
-                    read says so, and says what to do about it. */}
-                <FieldRefusal
-                  messageKey={fxRateRefusalKey(pinDraft.rate)}
-                  testId="fx-rate-refusal"
-                  t={t}
-                />
-              </div>
+              </FormField>
 
-              <div>
-                <label className={labelClass} htmlFor="fx-asof">
-                  {t('sourcing.fx.dialog.asOf')}
-                </label>
-                <input
+              <FormField
+                label={t('sourcing.fx.dialog.asOf')}
+                htmlFor="fx-asof"
+                hint={t('sourcing.fx.dialog.asOfHint', { days: FX_PIN_MAX_AGE_DAYS })}
+                error={fieldRefusal(fxVintageRefusalKey(pinDraft.asOf), 'fx-asof-refusal', t)}
+              >
+                <TextInput
                   id="fx-asof"
                   type="date"
                   value={pinDraft.asOf}
                   onChange={(e) => setPinDraft({ ...pinDraft, asOf: e.target.value })}
-                  className={inputClass}
                 />
-                <div className="mt-1 text-[11px] text-text-tertiary">
-                  {t('sourcing.fx.dialog.asOfHint', { days: FX_PIN_MAX_AGE_DAYS })}
-                </div>
-                <FieldRefusal
-                  messageKey={fxVintageRefusalKey(pinDraft.asOf)}
-                  testId="fx-asof-refusal"
-                  t={t}
-                />
-              </div>
+              </FormField>
 
-              <div>
-                <label className={labelClass} htmlFor="fx-source">
-                  {t('sourcing.fx.dialog.source')}
-                </label>
-                <select
+              <FormField label={t('sourcing.fx.dialog.source')} htmlFor="fx-source">
+                <Select
                   id="fx-source"
                   value={pinDraft.source}
                   onChange={(e) =>
                     setPinDraft({ ...pinDraft, source: e.target.value as FxPinSource })
                   }
-                  className={inputClass}
                 >
                   <option value="MANUAL">{t('sourcing.cmp.fx.basis.source.MANUAL')}</option>
                   <option value="SAP_EXHGRATE">
                     {t('sourcing.cmp.fx.basis.source.SAP_EXHGRATE')}
                   </option>
-                </select>
-              </div>
+                </Select>
+              </FormField>
 
               {/* Only meaningful for an SAP-sourced rate: a MANUAL pin has no
                   rate type, and offering the field would invite a buyer to
                   dress a typed number as an SAP-governed one. */}
               {pinDraft.source === 'SAP_EXHGRATE' && (
-                <div>
-                  <label className={labelClass} htmlFor="fx-ratetype">
-                    {t('sourcing.fx.dialog.rateType')}
-                  </label>
-                  <input
+                <FormField label={t('sourcing.fx.dialog.rateType')} htmlFor="fx-ratetype">
+                  <TextInput
                     id="fx-ratetype"
                     type="text"
                     placeholder="M"
                     value={pinDraft.rateType}
                     onChange={(e) => setPinDraft({ ...pinDraft, rateType: e.target.value })}
-                    className={inputClass}
+                    mono
                   />
-                </div>
+                </FormField>
               )}
             </div>
 

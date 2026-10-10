@@ -38,6 +38,7 @@ import ActorPreActNotice from '../components/ui-v2/ActorPreActNotice';
 import { namedSeatRefusalKey } from '../lib/namedSeatRefusal';
 import { POLICY_HOOKS } from '../services/transitions/policyHooks';
 import SectionHeading from '../components/ui-v2/SectionHeading';
+import { FormField, Select, TextArea, TextInput } from '../components/ui-v2/Form';
 
 // ────────────────────────────────────────────────────────────────────────────
 // Comm Hub C4d — the buyer IN-PLACE TRIAGE CONFIRM (DEC-COMMS-PRIMARY).
@@ -86,10 +87,6 @@ const QTY_REASON_KEY: Record<QtyRefusalReason, string> = {
   NOT_NUMERIC: 'commHub.qtyReason.NOT_NUMERIC',
   AMBIGUOUS_QTY: 'commHub.qtyReason.AMBIGUOUS_QTY',
 };
-
-const inputClass =
-  'w-full px-3 py-2 text-sm text-text-primary bg-white border border-border-input rounded-md focus:outline-none focus:border-action placeholder:text-text-tertiary';
-const labelClass = 'block text-label text-text-tertiary uppercase mb-1';
 
 interface EditRow {
   readonly rawMaterial: string;
@@ -363,13 +360,13 @@ const BuyerChannelTriage: React.FC<BuyerChannelTriageProps> = ({ onRecorded }) =
 
       <div className="border border-border-subtle rounded-lg bg-white p-5 flex flex-col gap-5">
         {/* ── The binding, FIRST — whose conversation is this? ─────────────── */}
-        <div>
-          <label className={labelClass} htmlFor="triage-supplier">
-            {t('buyerCommHub.triage.supplierLabel')}
-          </label>
-          <select
+        <FormField
+          label={t('buyerCommHub.triage.supplierLabel')}
+          htmlFor="triage-supplier"
+          hint={t('buyerCommHub.triage.supplierHint')}
+        >
+          <Select
             id="triage-supplier"
-            className={inputClass}
             value={subjectSupplierId}
             onChange={(e) => pickSupplier(e.target.value)}
             data-testid="triage-supplier"
@@ -380,9 +377,8 @@ const BuyerChannelTriage: React.FC<BuyerChannelTriageProps> = ({ onRecorded }) =
                 {s.name}
               </option>
             ))}
-          </select>
-          <p className="mt-1 text-[11px] text-text-tertiary">{t('buyerCommHub.triage.supplierHint')}</p>
-        </div>
+          </Select>
+        </FormField>
 
         {subjectSupplierId === '' ? (
           <div className="rounded-md border border-border-subtle bg-bg-subtle px-4 py-6 text-center text-sm text-text-tertiary">
@@ -401,13 +397,9 @@ const BuyerChannelTriage: React.FC<BuyerChannelTriageProps> = ({ onRecorded }) =
 
             {/* ── Gate 1 — the message source ──────────────────────────────── */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div>
-                <label className={labelClass} htmlFor="triage-channel">
-                  {t('buyerCommHub.triage.channelLabel')}
-                </label>
-                <select
+              <FormField label={t('buyerCommHub.triage.channelLabel')} htmlFor="triage-channel">
+                <Select
                   id="triage-channel"
-                  className={inputClass}
                   value={channel}
                   onChange={(e) => setChannel(e.target.value as Channel)}
                 >
@@ -416,22 +408,20 @@ const BuyerChannelTriage: React.FC<BuyerChannelTriageProps> = ({ onRecorded }) =
                       {t(`buyerCommHub.channel.${c}`)}
                     </option>
                   ))}
-                </select>
-              </div>
-              <div className="sm:col-span-2">
-                <label className={labelClass} htmlFor="triage-message">
-                  {t('buyerCommHub.triage.messageLabel')}
-                </label>
-                <textarea
+                </Select>
+              </FormField>
+              <FormField label={t('buyerCommHub.triage.messageLabel')} htmlFor="triage-message" className="sm:col-span-2">
+                <TextArea
                   id="triage-message"
                   rows={2}
-                  className={`${inputClass} resize-y font-mono`}
+                  mono
+                  className="resize-y"
                   placeholder={t('buyerCommHub.triage.placeholder')}
                   value={rawText}
                   onChange={(e) => setRawText(e.target.value)}
                   data-testid="triage-message"
                 />
-              </div>
+              </FormField>
             </div>
 
             <div className="flex items-center justify-between gap-2 -mt-1">
@@ -557,13 +547,13 @@ const BuyerChannelTriage: React.FC<BuyerChannelTriageProps> = ({ onRecorded }) =
                             </button>
                           </div>
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                            <div>
-                              <label className={labelClass} htmlFor={`triage-mat-${i}`}>
-                                {t('commHub.row.materialLabel')}
-                              </label>
-                              <select
+                            <FormField
+                              label={t('commHub.row.materialLabel')}
+                              htmlFor={`triage-mat-${i}`}
+                              hint={t('commHub.row.materialHint')}
+                            >
+                              <Select
                                 id={`triage-mat-${i}`}
-                                className={inputClass}
                                 value={row.materialCode}
                                 onChange={(e) => setRow(i, { materialCode: e.target.value })}
                                 data-testid={`triage-mat-${i}`}
@@ -574,23 +564,22 @@ const BuyerChannelTriage: React.FC<BuyerChannelTriageProps> = ({ onRecorded }) =
                                     {m.materialCode} — {m.label} ({m.uom ?? '—'})
                                   </option>
                                 ))}
-                              </select>
-                              <p className="mt-1 text-[11px] text-text-tertiary">{t('commHub.row.materialHint')}</p>
-                            </div>
-                            <div>
-                              <label className={labelClass} htmlFor={`triage-qty-${i}`}>
-                                {t('commHub.row.totalLabel', { uom: masterUom || '—' })}
-                              </label>
-                              <input
+                              </Select>
+                            </FormField>
+                            <FormField
+                              label={t('commHub.row.totalLabel', { uom: masterUom || '—' })}
+                              htmlFor={`triage-qty-${i}`}
+                            >
+                              <TextInput
                                 id={`triage-qty-${i}`}
                                 type="text"
                                 inputMode="decimal"
-                                className={`${inputClass} font-mono`}
+                                mono
                                 value={row.totalQty}
                                 onChange={(e) => setRow(i, { totalQty: e.target.value })}
                                 data-testid={`triage-qty-${i}`}
                               />
-                            </div>
+                            </FormField>
                           </div>
                           {mismatch && (
                             <div className="text-[11px] text-warning-hover">

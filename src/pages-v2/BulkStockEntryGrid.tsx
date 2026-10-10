@@ -13,6 +13,7 @@ import './plan-grid/planGrid.css';
 import './bulkStockGrid.css';
 import { useTranslation } from 'react-i18next';
 import Button from '../components/ui-v2/Button';
+import { FormField, Select, TextInput } from '../components/ui-v2/Form';
 import FullScreenSection from './plan-grid/FullScreenSection';
 import { useToast } from '../hooks/useToast';
 import { useInventoryDeclare, type CollaboratedMaterialView } from '../services/query/sdcSupplierHooks';
@@ -139,10 +140,6 @@ const REASON_KEY: Record<ParseReason, string> = {
   BATCH_TOTAL_MISMATCH: 'sdcSup.bulk.reason.batchMismatch',
   NO_ROWS: 'sdcSup.bulk.reason.noRows',
 };
-
-const labelClass = 'block text-label text-text-tertiary uppercase mb-1';
-const inputClass =
-  'w-full px-3 py-2 text-sm text-text-primary bg-white border border-border-input rounded-md focus:outline-none focus:border-action placeholder:text-text-tertiary';
 
 /**
  * DSG rows → the adapter's source-agnostic string rows.
@@ -407,15 +404,11 @@ const BulkStockEntryGrid: React.FC<BulkStockEntryGridProps> = ({
       {/* Material + total header (total-first — the total is an independent
           floor, NOT derived from Σ). uom is read-only, from the master. */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 rounded-lg border border-border-subtle bg-bg-surface p-4">
-        <div>
-          <label className={labelClass} htmlFor="sdcsup-bulk-material">
-            {t('sdcSup.stock.panel.materialLabel')}
-          </label>
-          <select
+        <FormField label={t('sdcSup.stock.panel.materialLabel')} htmlFor="sdcsup-bulk-material">
+          <Select
             id="sdcsup-bulk-material"
             value={materialCode}
             onChange={(e) => applyMaterial(e.target.value)}
-            className={inputClass}
           >
             <option value="">{t('sdcSup.stock.panel.materialSelect')}</option>
             {materials.map((m) => (
@@ -423,15 +416,13 @@ const BulkStockEntryGrid: React.FC<BulkStockEntryGridProps> = ({
                 {m.materialCode} — {m.label} ({m.uom})
               </option>
             ))}
-          </select>
-        </div>
-        <div>
-          <label className={labelClass} htmlFor="sdcsup-bulk-total">
-            {t('sdcSup.stock.panel.totalLabel', { uom: uom || '—' })}
-          </label>
+          </Select>
+        </FormField>
+        <FormField label={t('sdcSup.stock.panel.totalLabel', { uom: uom || '—' })} htmlFor="sdcsup-bulk-total">
           {/* CP-0 · 6.2 — text + inputmode. Safe only because the parse landed
               in this same commit (the banner + the adapter both read it). */}
-          <input
+          <TextInput
+            mono
             id="sdcsup-bulk-total"
             type="text"
             inputMode="decimal"
@@ -439,9 +430,8 @@ const BulkStockEntryGrid: React.FC<BulkStockEntryGridProps> = ({
             aria-invalid={totalQty.trim() !== '' && !total.ok}
             value={totalQty}
             onChange={(e) => setTotalQty(e.target.value)}
-            className={inputClass}
           />
-        </div>
+        </FormField>
       </div>
 
       {/* Import from Excel — a pre-fill SOURCE for the grid (SDC-3c-c-b). Gated

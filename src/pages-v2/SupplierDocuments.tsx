@@ -26,6 +26,7 @@ import SidePanel from '../components/ui-v2/SidePanel';
 import GuidedLesson from '../components/ui-v2/GuidedLesson';
 import Data from '../components/ui-v2/Data';
 import SectionHeading from '../components/ui-v2/SectionHeading';
+import { FormField, Select, TextArea, TextInput } from '../components/ui-v2/Form';
 import {
   HALAL_RENEWAL_STEPS,
   HALAL_RENEWAL_SOURCE,
@@ -96,9 +97,6 @@ const CERT_TYPES = [
   'OTHER',
 ] as const satisfies readonly CertType[];
 
-const FIELD_LABEL = 'block text-label text-text-tertiary uppercase mb-1';
-const FIELD_INPUT =
-  'w-full px-3 py-2 text-sm text-text-primary bg-white border border-border-input rounded-md focus:outline-none focus:border-action placeholder:text-text-tertiary';
 const FIELD_HINT = 'block text-xs text-text-tertiary mt-1';
 
 /** What the panel is collecting. `expiresOn` is the ONLY optional one — a BPJPH
@@ -923,12 +921,11 @@ const SupplierDocuments: React.FC = () => {
                   {t('supplierDocuments.panel.certDetails')}
                 </SectionHeading>
 
-                <label className="block">
-                  <span className={FIELD_LABEL}>
-                    {t('supplierDocuments.field.certType')}
-                  </span>
-                  <select
-                    className={FIELD_INPUT}
+                <FormField
+                  label={t('supplierDocuments.field.certType')}
+                  hint={t('supplierDocuments.field.certType.hint')}
+                >
+                  <Select
                     data-testid="declare-certType"
                     value={form.certType}
                     onChange={(e) =>
@@ -940,82 +937,60 @@ const SupplierDocuments: React.FC = () => {
                         {t(certTypeLabelKey(ct))}
                       </option>
                     ))}
-                  </select>
-                  <span className={FIELD_HINT}>
-                    {t('supplierDocuments.field.certType.hint')}
-                  </span>
-                </label>
+                  </Select>
+                </FormField>
 
-                <label className="block">
-                  <span className={FIELD_LABEL}>
-                    {t('supplierDocuments.field.certNumber')}
-                  </span>
-                  <input
-                    className={FIELD_INPUT}
+                <FormField label={t('supplierDocuments.field.certNumber')}>
+                  <TextInput
+                    mono
                     data-testid="declare-certNumber"
                     value={form.certNumber}
                     onChange={(e) => setForm((f) => ({ ...f, certNumber: e.target.value }))}
                   />
-                </label>
+                </FormField>
 
-                <label className="block">
-                  <span className={FIELD_LABEL}>
-                    {t('supplierDocuments.field.issuer')}
-                  </span>
-                  <input
-                    className={FIELD_INPUT}
+                <FormField label={t('supplierDocuments.field.issuer')}>
+                  <TextInput
                     data-testid="declare-issuer"
                     value={form.issuer}
                     onChange={(e) => setForm((f) => ({ ...f, issuer: e.target.value }))}
                   />
-                </label>
+                </FormField>
 
                 <div className="grid grid-cols-2 gap-3">
-                  <label className="block">
-                    <span className={FIELD_LABEL}>
-                      {t('supplierDocuments.field.issuedOn')}
-                    </span>
-                    <input
+                  <FormField label={t('supplierDocuments.field.issuedOn')}>
+                    <TextInput
                       type="date"
-                      className={FIELD_INPUT}
                       data-testid="declare-issuedOn"
                       value={form.issuedOn}
                       onChange={(e) => setForm((f) => ({ ...f, issuedOn: e.target.value }))}
                     />
-                  </label>
-                  <label className="block">
-                    <span className={FIELD_LABEL}>
-                      {t('supplierDocuments.field.expiresOn')}
-                    </span>
-                    <input
+                  </FormField>
+                  <FormField label={t('supplierDocuments.field.expiresOn')}>
+                    <TextInput
                       type="date"
-                      className={FIELD_INPUT}
                       data-testid="declare-expiresOn"
                       value={form.expiresOn}
                       onChange={(e) => setForm((f) => ({ ...f, expiresOn: e.target.value }))}
                     />
-                  </label>
+                  </FormField>
                 </div>
                 <span className={FIELD_HINT}>
                   {t('supplierDocuments.field.expiresOn.hint')}
                 </span>
 
-                <label className="block">
-                  <span className={FIELD_LABEL}>
-                    {t('supplierDocuments.field.scopeText')}
-                  </span>
-                  <textarea
+                <FormField
+                  label={t('supplierDocuments.field.scopeText')}
+                  hint={t('supplierDocuments.field.scopeText.hint')}
+                >
+                  <TextArea
                     rows={3}
-                    className={FIELD_INPUT}
                     data-testid="declare-scopeText"
                     placeholder={t('supplierDocuments.field.scopeText.placeholder')}
                     value={form.scopeText}
                     onChange={(e) => setForm((f) => ({ ...f, scopeText: e.target.value }))}
                   />
-                  <span className={FIELD_HINT}>
-                    {t('supplierDocuments.field.scopeText.hint')}
-                  </span>
-                </label>
+                </FormField>
 
                 {/* C10 5.2 / D-ID-3 - the surface says WHOSE act this is recorded
                     as, BEFORE the act, because it cannot name a person. */}

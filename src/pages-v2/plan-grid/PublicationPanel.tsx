@@ -34,6 +34,7 @@ import Button from '../../components/ui-v2/Button';
 import Data from '../../components/ui-v2/Data';
 import SectionHeading from '../../components/ui-v2/SectionHeading';
 import { Field, FieldList } from '../../components/ui-v2/Field';
+import { Checkbox, FormField, Select } from '../../components/ui-v2/Form';
 import { HandoffNotice } from '../../components/ui-v2/HandoffNotice';
 import { useCurrentIdentity } from '../../context/CurrentIdentityContext';
 import { namedSeatRefusalKey } from '../../lib/namedSeatRefusal';
@@ -246,11 +247,9 @@ const PublicationPanel: React.FC<{
               <p className="text-xs text-text-tertiary">{t('planGrid.publication.noOffer')}</p>
             ) : (
               <div className="flex flex-wrap items-end gap-3">
-                <label className="flex flex-col gap-1">
-                  <span className="text-label uppercase text-text-tertiary">{t('planGrid.publication.planVersion')}</span>
-                  <select
+                <FormField label={t('planGrid.publication.planVersion')}>
+                  <Select
                     data-testid="publication-plan-version"
-                    className="rounded-md border border-border-input bg-bg-surface px-2 py-1.5"
                     value={offer?.planVersion ?? ''}
                     onChange={(e) => setChosen(e.target.value)}
                   >
@@ -259,13 +258,12 @@ const PublicationPanel: React.FC<{
                         {o.planVersion} · {o.horizon[0]}–{o.horizon[o.horizon.length - 1]}
                       </option>
                     ))}
-                  </select>
-                </label>
+                  </Select>
+                </FormField>
                 {current && (
-                  <label className="flex items-center gap-2 pb-1.5 text-xs">
-                    <input type="checkbox" data-testid="publication-carry" checked={carry} onChange={(e) => setCarry(e.target.checked)} />
+                  <Checkbox className="pb-1.5" data-testid="publication-carry" checked={carry} onChange={(e) => setCarry(e.target.checked)}>
                     {t('planGrid.publication.carry', { id: current.publicationId })}
-                  </label>
+                  </Checkbox>
                 )}
                 <Button variant="outline" disabled={busy || !offer} onClick={() => void openDraft()} data-testid="publication-open">
                   {t('planGrid.publication.open')}

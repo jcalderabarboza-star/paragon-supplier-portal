@@ -21,6 +21,7 @@ import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Save, Send } from 'lucide-react';
 import Button from '../../components/ui-v2/Button';
+import { Checkbox, FormField, Radio, TextArea, TextInput } from '../../components/ui-v2/Form';
 import { useToast } from '../../hooks/useToast';
 import { useRefusalText } from '../../hooks/useRefusalText';
 import {
@@ -44,10 +45,6 @@ import {
   namedQuestions,
   refusedForRequired,
 } from './rfiAnswerModel';
-
-const inputClass =
-  'w-full px-3 py-2 text-sm text-text-primary bg-white border border-border-input rounded-md focus:outline-none focus:border-action placeholder:text-text-tertiary';
-const labelClass = 'block text-label text-text-tertiary uppercase mb-1';
 
 interface Props {
   /** The event, as this supplier reads it: its questions and its own draft. */
@@ -148,17 +145,15 @@ const RfiAnswerForm: React.FC<Props> = ({ rfq, supplierId, onClose }) => {
         return (
           <div className="flex flex-wrap gap-x-4 gap-y-1" role="radiogroup" aria-labelledby={`${name}-label`}>
             {choices.map((c) => (
-              <label key={c} className="flex items-center gap-1.5 text-sm text-text-primary">
-                <input
-                  type="radio"
-                  name={name}
-                  className="accent-teal"
-                  checked={v === c}
-                  onChange={() => set(q.id, c)}
-                  data-testid={`${testId}-${c}`}
-                />
+              <Radio
+                key={c}
+                name={name}
+                checked={v === c}
+                onChange={() => set(q.id, c)}
+                data-testid={`${testId}-${c}`}
+              >
                 {q.type === 'yes_no' ? t(`rfqs.rfi.${c}`) : c}
-              </label>
+              </Radio>
             ))}
           </div>
         );
@@ -168,18 +163,16 @@ const RfiAnswerForm: React.FC<Props> = ({ rfq, supplierId, onClose }) => {
         return (
           <div className="flex flex-wrap gap-x-4 gap-y-1" role="group" aria-labelledby={`${name}-label`}>
             {(q.options ?? []).map((c) => (
-              <label key={c} className="flex items-center gap-1.5 text-sm text-text-primary">
-                <input
-                  type="checkbox"
-                  className="accent-teal"
-                  checked={ticked.includes(c)}
-                  onChange={() =>
-                    set(q.id, ticked.includes(c) ? ticked.filter((x) => x !== c) : [...ticked, c])
-                  }
-                  data-testid={`${testId}-${c}`}
-                />
+              <Checkbox
+                key={c}
+                checked={ticked.includes(c)}
+                onChange={() =>
+                  set(q.id, ticked.includes(c) ? ticked.filter((x) => x !== c) : [...ticked, c])
+                }
+                data-testid={`${testId}-${c}`}
+              >
                 {c}
-              </label>
+              </Checkbox>
             ))}
           </div>
         );
@@ -187,13 +180,14 @@ const RfiAnswerForm: React.FC<Props> = ({ rfq, supplierId, onClose }) => {
       case 'number':
         return (
           <div className="flex items-center gap-2">
-            <input
+            <TextInput
               type="text"
               inputMode="decimal"
               aria-labelledby={`${name}-label`}
               value={typeof v === 'string' ? v : ''}
               onChange={(e) => set(q.id, e.target.value)}
-              className={`${inputClass} max-w-[12rem] font-mono`}
+              className="max-w-[12rem]"
+              mono
               data-testid={testId}
             />
             <span className="text-sm text-text-secondary">{q.unit}</span>
@@ -201,12 +195,11 @@ const RfiAnswerForm: React.FC<Props> = ({ rfq, supplierId, onClose }) => {
         );
       case 'text':
         return (
-          <textarea
+          <TextArea
             rows={2}
             aria-labelledby={`${name}-label`}
             value={typeof v === 'string' ? v : ''}
             onChange={(e) => set(q.id, e.target.value)}
-            className={`${inputClass} h-auto`}
             data-testid={testId}
           />
         );
@@ -267,17 +260,15 @@ const RfiAnswerForm: React.FC<Props> = ({ rfq, supplierId, onClose }) => {
           );
         })}
       </ol>
-      <label className={labelClass} htmlFor={`rfi-note-${rfq.id}`}>
-        {t('rfqs.interest.note')}
-      </label>
-      <textarea
-        id={`rfi-note-${rfq.id}`}
-        rows={2}
-        value={note}
-        onChange={(e) => setNote(e.target.value)}
-        className={`${inputClass} h-auto py-2`}
-        data-testid={`rfi-note-${rfq.id}`}
-      />
+      <FormField label={t('rfqs.interest.note')} htmlFor={`rfi-note-${rfq.id}`}>
+        <TextArea
+          id={`rfi-note-${rfq.id}`}
+          rows={2}
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+          data-testid={`rfi-note-${rfq.id}`}
+        />
+      </FormField>
       <div className="flex flex-wrap gap-2 mt-3">
         <Button
           variant="outline"

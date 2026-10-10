@@ -30,6 +30,7 @@ import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import Data from '../../components/ui-v2/Data';
 import Button from '../../components/ui-v2/Button';
+import { FormField, Select, TextInput } from '../../components/ui-v2/Form';
 import { HandoffNotice } from '../../components/ui-v2/HandoffNotice';
 import PlanCellMarker from './PlanCellMarker';
 import IntakeAdjustDrawer from './IntakeAdjustDrawer';
@@ -345,30 +346,28 @@ const IntakeReviewBody: React.FC = () => {
       </div>
 
       <div className="mb-3 flex flex-wrap items-center gap-3">
-        <input
+        <TextInput
           type="search"
           data-testid="intake-search"
           aria-label={t('intakeReview.search.label')}
           placeholder={t('intakeReview.search.placeholder')}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          className="w-72 rounded-md border border-border-subtle px-3 py-1.5 text-sm"
+          className="w-72"
         />
-        <label className="flex items-center gap-2 text-sm text-text-secondary">
-          {t('intakeReview.filter.state')}
-          <select
+        <FormField label={t('intakeReview.filter.state')}>
+          <Select
             data-testid="intake-filter-state"
             value={state}
             onChange={(e) => setState(e.target.value as IntakeStateFilter)}
-            className="rounded-md border border-border-subtle px-2 py-1.5 text-sm"
           >
             {STATE_FILTERS.map((s) => (
               <option key={s} value={s}>
                 {t(`intakeReview.filter.${s}`)}
               </option>
             ))}
-          </select>
-        </label>
+          </Select>
+        </FormField>
         <span className="text-xs text-text-tertiary" data-testid="intake-showing">
           {t('intakeReview.showing', { shown: formatNumber(visible.length), total: formatNumber(counts.total) })}
         </span>

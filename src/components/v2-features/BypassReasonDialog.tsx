@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import Dialog from '../ui-v2/Dialog';
 import Button from '../ui-v2/Button';
+import { FormField, TextInput } from '../ui-v2/Form';
 import { registerBypassReasonPrompt } from '../../services/identity/bypassReasonPrompt';
 import { BYPASS_REASON_MAX, readBypassReason } from '../../services/identity/superAdmin';
 
@@ -82,21 +83,19 @@ const BypassReasonDialog: React.FC = () => {
             ))}
           </ul>
         </div>
-        <label className="block text-xs text-text-secondary">
-          {t('superAdmin.reason.label')}
-          <input
+        <FormField
+          label={t('superAdmin.reason.label')}
+          hint={t('superAdmin.reason.limit', { max: BYPASS_REASON_MAX })}
+        >
+          <TextInput
             type="text"
             value={reason}
             maxLength={BYPASS_REASON_MAX}
             onChange={(e) => setReason(e.target.value)}
             placeholder={t('superAdmin.reason.placeholder')}
             data-testid="bypass-reason-input"
-            className="w-full mt-1 px-3 py-2 text-sm border border-border-input rounded-md bg-white"
           />
-          <span className="block text-[11px] text-text-tertiary mt-1">
-            {t('superAdmin.reason.limit', { max: BYPASS_REASON_MAX })}
-          </span>
-        </label>
+        </FormField>
         <div className="flex justify-end gap-2">
           <Button type="button" variant="secondary" onClick={() => finish(null)} data-testid="bypass-reason-cancel">
             {t('superAdmin.reason.cancel')}

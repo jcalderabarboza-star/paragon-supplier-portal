@@ -20,6 +20,7 @@ import SidePanel from '../components/ui-v2/SidePanel';
 import Data from '../components/ui-v2/Data';
 import { FieldList, Field } from '../components/ui-v2/Field';
 import SectionHeading from '../components/ui-v2/SectionHeading';
+import { TextInput, TextArea, FormField } from '../components/ui-v2/Form';
 import { useTranslation } from 'react-i18next';
 import { useToast } from '../hooks/useToast';
 import { useCurrentIdentity } from '../context/CurrentIdentityContext';
@@ -86,10 +87,6 @@ const filterByTab = (tab: TabKey, pos: PurchaseOrder[]): PurchaseOrder[] => {
     return pos.filter((p) => COMPLETED_STATUSES.includes(p.status));
   return pos;
 };
-
-const inputClass =
-  'w-full px-3 py-2 text-sm text-text-primary bg-white border border-border-input rounded-md focus:outline-none focus:border-action placeholder:text-text-tertiary';
-const labelClass = 'block text-label text-text-tertiary uppercase mb-1';
 
 // CP-0 · W1 · 2f-c — each refusal names what to type instead (the arc-wide
 // copy discipline: "invalid input" teaches nothing to a buyer whose number
@@ -905,8 +902,9 @@ const SupplierOrders: React.FC = () => {
                                     were number-input affordances that never bound
                                     anything; the bound is enforced by the policy and
                                     mirrored below. */}
-                                <input
+                                <TextInput
                                   type="text"
+                                  mono
                                   inputMode="decimal"
                                   value={confirmedQtyRaws[idx] ?? ''}
                                   onChange={(e) => {
@@ -921,7 +919,7 @@ const SupplierOrders: React.FC = () => {
                                   aria-invalid={
                                     !(lineReads[idx]?.ok ?? true) || !lineBounds[idx]
                                   }
-                                  className={`${inputClass} font-sans text-right`}
+                                  className="text-right"
                                   style={{ width: 100, display: 'inline-block' }}
                                 />
                                 {/* Seeded cells: every blank is operator-cleared, so
@@ -985,27 +983,21 @@ const SupplierOrders: React.FC = () => {
                   {t('supplierOrders.panel.deliveryNotes')}
                 </SectionHeading>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
-                  <div>
-                    <label className={labelClass}>
-                      {t('supplierOrders.panel.confirmedDeliveryDate')}
-                    </label>
-                    <input
+                  <FormField label={t('supplierOrders.panel.confirmedDeliveryDate')}>
+                    <TextInput
                       type="date"
                       value={deliveryDate}
                       onChange={(e) => setDeliveryDate(e.target.value)}
-                      className={inputClass}
                     />
-                  </div>
-                  <div>
-                    <label className={labelClass}>{t('supplierOrders.panel.notesLabel')}</label>
-                    <input
+                  </FormField>
+                  <FormField label={t('supplierOrders.panel.notesLabel')}>
+                    <TextInput
                       type="text"
                       value={notes}
                       onChange={(e) => setNotes(e.target.value)}
                       placeholder={t('supplierOrders.panel.notesPlaceholder')}
-                      className={inputClass}
                     />
-                  </div>
+                  </FormField>
                 </div>
                 {(hasQtyChange || hasDateChange) && (
                   <div className="bg-warning-soft border-l-2 border-warning rounded px-3 py-2 text-xs text-warning-hover">
@@ -1023,8 +1015,8 @@ const SupplierOrders: React.FC = () => {
                 <p className="text-xs text-text-secondary mb-2">
                   {t('supplierOrders.panel.changeRequestHint')}
                 </p>
-                <textarea
-                  className={`${inputClass} min-h-[96px] resize-y`}
+                <TextArea
+                  className="resize-y"
                   value={changeText}
                   onChange={(e) => setChangeText(e.target.value)}
                   placeholder={t('supplierOrders.panel.changeRequestPlaceholder')}

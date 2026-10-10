@@ -76,6 +76,7 @@ import StatusPill from '../components/ui-v2/StatusPill';
 import Button from '../components/ui-v2/Button';
 import SidePanel from '../components/ui-v2/SidePanel';
 import FormSection from '../components/ui-v2/FormSection';
+import { FieldLabel, FormField, Select, TextArea, TextInput } from '../components/ui-v2/Form';
 import LoadingState from '../components/ui-v2/LoadingState';
 import ErrorState from '../components/ui-v2/ErrorState';
 import EmptyState from '../components/ui-v2/EmptyState';
@@ -725,13 +726,9 @@ const BuyerSupplierApplications: React.FC = () => {
               {t('applications.raise.panel.lead')}
             </p>
 
-            <label className="block">
-              <span className="block text-label text-text-tertiary uppercase mb-1">
-                {t('applications.raise.field.type')}
-              </span>
-              <select
+            <FormField label={t('applications.raise.field.type')}>
+              <Select
                 data-testid="application-raise-type"
-                className="w-full px-3 py-2 text-sm text-text-primary bg-white border border-border-input rounded-md focus:outline-none focus:border-action"
                 value={raiseType}
                 onChange={(e) => {
                   setRaiseType(e.target.value as ApplicationRequestType | '');
@@ -750,17 +747,16 @@ const BuyerSupplierApplications: React.FC = () => {
                     {t(`applications.raise.type.${rt}`)}
                   </option>
                 ))}
-              </select>
-            </label>
+              </Select>
+            </FormField>
 
             {vendorBearing ? (
-              <label className="block">
-                <span className="block text-label text-text-tertiary uppercase mb-1">
-                  {t('applications.raise.field.vendor')}
-                </span>
-                <select
+              <FormField
+                label={t('applications.raise.field.vendor')}
+                hint={t('applications.raise.field.vendorHint')}
+              >
+                <Select
                   data-testid="application-raise-vendor"
-                  className="w-full px-3 py-2 text-sm text-text-primary bg-white border border-border-input rounded-md focus:outline-none focus:border-action"
                   value={raiseVendor}
                   onChange={(e) => setRaiseVendor(e.target.value)}
                 >
@@ -776,24 +772,17 @@ const BuyerSupplierApplications: React.FC = () => {
                       {sup.name} — {sup.sapBpNumber}
                     </option>
                   ))}
-                </select>
-                <span className="block text-xs text-text-tertiary mt-1">
-                  {t('applications.raise.field.vendorHint')}
-                </span>
-              </label>
+                </Select>
+              </FormField>
             ) : (
-              <label className="block">
-                <span className="block text-label text-text-tertiary uppercase mb-1">
-                  {t('applications.raise.field.company')}
-                </span>
-                <input
+              <FormField label={t('applications.raise.field.company')}>
+                <TextInput
                   data-testid="application-raise-company"
-                  className="w-full px-3 py-2 text-sm text-text-primary bg-white border border-border-input rounded-md focus:outline-none focus:border-action"
                   value={raiseCompany}
                   onChange={(e) => setRaiseCompany(e.target.value)}
                   placeholder={t('applications.raise.field.companyPlaceholder')}
                 />
-              </label>
+              </FormField>
             )}
 
             <div>
@@ -805,20 +794,24 @@ const BuyerSupplierApplications: React.FC = () => {
               </span>
               <div className="space-y-2">
                 {APPLICATION_DECLARATION_KINDS.map((kind) => (
-                  <label key={kind} className="flex items-center gap-3">
-                    <span className="uppercase text-xs text-text-tertiary w-14 shrink-0">
-                      {kind}
-                    </span>
-                    <input
+                  <div key={kind} className="flex items-center gap-3">
+                    <FieldLabel
+                      htmlFor={`application-raise-declaration-${kind}`}
+                      className="w-14 shrink-0"
+                    >
+                      {kind.toUpperCase()}
+                    </FieldLabel>
+                    <TextInput
+                      id={`application-raise-declaration-${kind}`}
                       data-testid={`application-raise-declaration-${kind}`}
-                      className="flex-1 px-3 py-2 text-sm text-text-primary bg-white border border-border-input rounded-md focus:outline-none focus:border-action"
+                      className="flex-1"
                       value={raiseDeclarations[kind]}
                       onChange={(e) =>
                         setRaiseDeclarations((d) => ({ ...d, [kind]: e.target.value }))
                       }
                       placeholder={t('applications.raise.declaration.placeholder')}
                     />
-                  </label>
+                  </div>
                 ))}
               </div>
               <p className="text-xs text-text-tertiary mt-2">
@@ -1021,19 +1014,15 @@ const BuyerSupplierApplications: React.FC = () => {
                 <p className="text-sm text-text-secondary">
                   {t('applications.confirm.reject.body', { company: selected.companyName })}
                 </p>
-                <label className="block text-sm">
-                  <span className="text-text-secondary">
-                    {t('applications.confirm.reject.reasonLabel')}
-                  </span>
-                  <textarea
-                    className="mt-1 w-full rounded-md border border-border-subtle bg-white p-2 text-sm"
+                <FormField label={t('applications.confirm.reject.reasonLabel')}>
+                  <TextArea
                     rows={3}
                     value={reason}
                     onChange={(e) => setReason(e.target.value)}
                     placeholder={t('applications.confirm.reject.reasonPlaceholder')}
                     data-testid="application-reject-reason"
                   />
-                </label>
+                </FormField>
                 <p className="text-xs text-text-tertiary">
                   {t('applications.confirm.reject.reasonHint')}
                 </p>

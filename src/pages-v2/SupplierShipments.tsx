@@ -29,6 +29,7 @@ import FormSection from '../components/ui-v2/FormSection';
 import Data from '../components/ui-v2/Data';
 import { FieldList, Field } from '../components/ui-v2/Field';
 import SectionHeading from '../components/ui-v2/SectionHeading';
+import { TextInput, Select, TextArea, ChoiceCard, FormField } from '../components/ui-v2/Form';
 import { useVerbAvailabilities } from '../hooks/useVerbAvailability';
 import { HandoffNotice } from '../components/ui-v2/HandoffNotice';
 import { useTranslation } from 'react-i18next';
@@ -79,10 +80,6 @@ const fmtDate = (s: string): string => {
     year: 'numeric',
   });
 };
-
-const inputClass =
-  'w-full px-3 py-2 text-sm text-text-primary bg-white border border-border-input rounded-md focus:outline-none focus:border-action placeholder:text-text-tertiary';
-const labelClass = 'block text-label text-text-tertiary uppercase mb-1';
 
 type AsnLine = ASN['lineItems'][number];
 type PoLine = PurchaseOrder['lineItems'][number];
@@ -412,17 +409,19 @@ const ShipmentsList: React.FC<ShipmentsListProps> = ({
 
       <div className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm overflow-hidden">
         <div className="px-5 py-3 border-b border-border-subtle flex items-center justify-between flex-wrap gap-2">
-          <SectionHeading as="h3">
-            {t('supplierShipments.list.heading')}
+          <div className="flex items-baseline gap-2">
+            <SectionHeading as="h3">
+              {t('supplierShipments.list.heading')}
+            </SectionHeading>
             {statusFilter !== 'All' && (
-              <span className="ml-2">
+              <span className="text-xs text-text-tertiary">
                 ·{' '}
                 {t('supplierShipments.list.filteredBy', {
                   status: t(statusLabelKey(statusFilter) ?? statusFilter),
                 })}
               </span>
             )}
-          </SectionHeading>
+          </div>
         </div>
         <DataTable<ASN>
           card={false}
@@ -1019,58 +1018,43 @@ const SupplierShipments: React.FC = () => {
             description={t('supplierShipments.wizard.details.logistics.desc')}
           >
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className={labelClass}>
-                  {t('supplierShipments.wizard.details.field.carrier')}
-                </label>
-                <select
+              <FormField label={t('supplierShipments.wizard.details.field.carrier')}>
+                <Select
                   value={form.carrier}
                   onChange={(e) => updateForm({ carrier: e.target.value })}
-                  className={inputClass}
                 >
                   {CARRIER_OPTIONS.map((c) => (
                     <option key={c} value={c}>
                       {c === 'Other' ? t('supplierShipments.option.other') : c}
                     </option>
                   ))}
-                </select>
-              </div>
-              <div>
-                <label className={labelClass}>
-                  {t('supplierShipments.wizard.details.field.tracking')}
-                </label>
-                <input
+                </Select>
+              </FormField>
+              <FormField label={t('supplierShipments.wizard.details.field.tracking')}>
+                <TextInput
                   type="text"
+                  mono
                   placeholder={t('supplierShipments.placeholder.tracking')}
                   value={form.trackingNumber}
                   onChange={(e) =>
                     updateForm({ trackingNumber: e.target.value })
                   }
-                  className={inputClass}
                 />
-              </div>
-              <div>
-                <label className={labelClass}>
-                  {t('supplierShipments.wizard.details.field.shipDate')}
-                </label>
-                <input
+              </FormField>
+              <FormField label={t('supplierShipments.wizard.details.field.shipDate')}>
+                <TextInput
                   type="date"
                   value={form.shipDate}
                   onChange={(e) => updateForm({ shipDate: e.target.value })}
-                  className={inputClass}
                 />
-              </div>
-              <div>
-                <label className={labelClass}>
-                  {t('supplierShipments.wizard.details.field.eta')}
-                </label>
-                <input
+              </FormField>
+              <FormField label={t('supplierShipments.wizard.details.field.eta')}>
+                <TextInput
                   type="date"
                   value={form.eta}
                   onChange={(e) => updateForm({ eta: e.target.value })}
-                  className={inputClass}
                 />
-              </div>
+              </FormField>
             </div>
           </FormSection>
 
@@ -1080,44 +1064,35 @@ const SupplierShipments: React.FC = () => {
             description={t('supplierShipments.wizard.details.packaging.desc')}
           >
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className={labelClass}>
-                  {t('supplierShipments.wizard.details.field.packages')}
-                </label>
-                <input
+              <FormField label={t('supplierShipments.wizard.details.field.packages')}>
+                <TextInput
                   type="number"
+                  mono
                   min={1}
                   placeholder="0"
                   value={form.packages}
                   onChange={(e) => updateForm({ packages: e.target.value })}
-                  className={inputClass}
                 />
-              </div>
-              <div>
-                <label className={labelClass}>
-                  {t('supplierShipments.wizard.details.field.weight')}
-                </label>
-                <input
+              </FormField>
+              <FormField label={t('supplierShipments.wizard.details.field.weight')}>
+                <TextInput
                   type="number"
+                  mono
                   min={0}
                   placeholder="0.00"
                   value={form.weightKg}
                   onChange={(e) => updateForm({ weightKg: e.target.value })}
-                  className={inputClass}
                 />
-              </div>
-              <div>
-                <label className={labelClass}>
-                  {t('supplierShipments.wizard.details.field.batch')}
-                </label>
-                <input
+              </FormField>
+              <FormField label={t('supplierShipments.wizard.details.field.batch')}>
+                <TextInput
                   type="text"
+                  mono
                   placeholder={t('supplierShipments.placeholder.batch')}
                   value={form.batchNumber}
                   onChange={(e) => updateForm({ batchNumber: e.target.value })}
-                  className={inputClass}
                 />
-              </div>
+              </FormField>
             </div>
             {(packagesRead.kind === 'refused' || weightRead.kind === 'refused') && (
               <div role="alert" data-testid="asn-number-refusal" className="text-xs text-critical">
@@ -1158,8 +1133,9 @@ const SupplierShipments: React.FC = () => {
                     header: t('supplierShipments.wizard.details.field.lot'),
                     kind: 'text',
                     cell: (li, idx) => (
-                      <input
+                      <TextInput
                         type="text"
+                        mono
                         aria-label={`${t('supplierShipments.wizard.details.field.lot')} ${li.materialCode}`}
                         placeholder={t('supplierShipments.placeholder.lot')}
                         value={form.lots[idx] ?? ''}
@@ -1171,7 +1147,6 @@ const SupplierShipments: React.FC = () => {
                             return { ...f, lots };
                           });
                         }}
-                        className={inputClass}
                       />
                     ),
                   },
@@ -1186,10 +1161,8 @@ const SupplierShipments: React.FC = () => {
             description={t('supplierShipments.wizard.details.docs.desc')}
           >
             <div>
-              <label className={labelClass}>
-                {t('supplierShipments.wizard.details.field.packingList')}
-              </label>
-              <label className="inline-flex items-center gap-2 cursor-pointer">
+              <FormField label={t('supplierShipments.wizard.details.field.packingList')}>
+              <span className="inline-flex items-center gap-2 cursor-pointer">
                 <input
                   type="file"
                   className="hidden"
@@ -1208,23 +1181,21 @@ const SupplierShipments: React.FC = () => {
                 >
                   {form.packingList || t('supplierShipments.wizard.details.noFile')}
                 </span>
-              </label>
+              </span>
+              </FormField>
               <p className="mt-1 text-xs text-text-tertiary">
                 {t('supplierShipments.wizard.details.packingListNote')}
               </p>
             </div>
-            <div>
-              <label className={labelClass}>
-                {t('supplierShipments.wizard.details.field.notes')}
-              </label>
-              <textarea
+            <FormField label={t('supplierShipments.wizard.details.field.notes')}>
+              <TextArea
                 value={form.notes}
                 onChange={(e) => updateForm({ notes: e.target.value })}
                 rows={3}
                 placeholder={t('supplierShipments.placeholder.notes')}
-                className={`${inputClass} resize-y`}
+                className="resize-y"
               />
-            </div>
+            </FormField>
           </FormSection>
         </div>
       ),
@@ -1319,15 +1290,13 @@ const SupplierShipments: React.FC = () => {
             </div>
           </FormSection>
 
-          <label className="flex items-start gap-3 px-4 py-3 bg-teal-soft border border-teal/30 rounded-md cursor-pointer text-sm text-text-primary">
-            <input
-              type="checkbox"
-              checked={form.confirmed}
-              onChange={(e) => updateForm({ confirmed: e.target.checked })}
-              className="mt-0.5 accent-teal"
-            />
+          <ChoiceCard
+            type="checkbox"
+            checked={form.confirmed}
+            onChange={(e) => updateForm({ confirmed: e.target.checked })}
+          >
             {t('supplierShipments.wizard.review.confirm')}
-          </label>
+          </ChoiceCard>
         </div>
       ),
     },
@@ -1505,39 +1474,34 @@ const SupplierShipments: React.FC = () => {
             <p className="text-sm text-text-secondary">
               {t('asn.submit.form.intro', { poNumber: submitTarget.poReference })}
             </p>
-            <label className="block">
-              <span className={labelClass}>{t('asn.submit.form.carrier')}</span>
-              <select
+            <FormField label={t('asn.submit.form.carrier')}>
+              <Select
                 value={submitForm.carrier}
                 onChange={(e) => setSubmitForm((f) => ({ ...f, carrier: e.target.value }))}
-                className={inputClass}
               >
                 {CARRIER_OPTIONS.map((c) => (
                   <option key={c} value={c}>
                     {c === 'Other' ? t('supplierShipments.option.other') : c}
                   </option>
                 ))}
-              </select>
-            </label>
-            <label className="block">
-              <span className={labelClass}>{t('asn.submit.form.tracking')}</span>
-              <input
+              </Select>
+            </FormField>
+            <FormField label={t('asn.submit.form.tracking')}>
+              <TextInput
                 type="text"
+                mono
                 value={submitForm.trackingNumber}
                 onChange={(e) => setSubmitForm((f) => ({ ...f, trackingNumber: e.target.value }))}
-                className={inputClass}
                 placeholder={t('supplierShipments.placeholder.tracking')}
               />
-            </label>
-            <label className="block">
-              <span className={labelClass}>{t('asn.submit.form.eta')}</span>
-              <input
+            </FormField>
+            <FormField label={t('asn.submit.form.eta')}>
+              <TextInput
                 type="date"
                 value={submitForm.eta}
                 onChange={(e) => setSubmitForm((f) => ({ ...f, eta: e.target.value }))}
-                className={inputClass}
               />
-            </label>
+            </FormField>
           </div>
         )}
       </SidePanel>

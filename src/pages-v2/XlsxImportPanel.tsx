@@ -2,6 +2,7 @@ import React, { useRef, useState } from 'react';
 import { Upload, X, AlertTriangle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import Button from '../components/ui-v2/Button';
+import { FormField, Select } from '../components/ui-v2/Form';
 import { parseWorkbook, type FileParseReason, type ParsedWorkbook } from '../services/sdc';
 import type { QtyRefusalReason } from '../lib/localeNumber';
 import {
@@ -58,10 +59,6 @@ const FIELD_LABEL: Record<MapField, string> = {
   qty: 'sdcSup.bulk.import.field.qty',
   expiryDate: 'sdcSup.bulk.import.field.expiry',
 };
-
-const selectClass =
-  'w-full px-3 py-2 text-sm text-text-primary bg-white border border-border-input rounded-md focus:outline-none focus:border-action';
-const labelClass = 'block text-label text-text-tertiary uppercase mb-1';
 
 interface XlsxImportPanelProps {
   /** The confirmed, coerced batch rows — the grid replaces its rows with these. */
@@ -192,13 +189,9 @@ const XlsxImportPanel: React.FC<XlsxImportPanelProps> = ({ onImport, onCancel })
       {book && (
         <div className="flex flex-col gap-3">
           {book.sheets.length > 1 && (
-            <div>
-              <label className={labelClass} htmlFor="sdcsup-import-sheet">
-                {t('sdcSup.bulk.import.sheetLabel')}
-              </label>
-              <select
+            <FormField label={t('sdcSup.bulk.import.sheetLabel')} htmlFor="sdcsup-import-sheet">
+              <Select
                 id="sdcsup-import-sheet"
-                className={selectClass}
                 value={book.activeSheet}
                 onChange={(e) => file && void runParse(file, e.target.value)}
                 data-testid="sdcsup-import-sheet"
@@ -208,8 +201,8 @@ const XlsxImportPanel: React.FC<XlsxImportPanelProps> = ({ onImport, onCancel })
                     {s}
                   </option>
                 ))}
-              </select>
-            </div>
+              </Select>
+            </FormField>
           )}
 
           <div>
@@ -223,13 +216,9 @@ const XlsxImportPanel: React.FC<XlsxImportPanelProps> = ({ onImport, onCancel })
               and editable. Nothing populates until this is confirmed. */}
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             {MAP_FIELDS.map((field) => (
-              <div key={field}>
-                <label className={labelClass} htmlFor={`sdcsup-map-${field}`}>
-                  {t(FIELD_LABEL[field])}
-                </label>
-                <select
+              <FormField key={field} label={t(FIELD_LABEL[field])} htmlFor={`sdcsup-map-${field}`}>
+                <Select
                   id={`sdcsup-map-${field}`}
-                  className={selectClass}
                   value={mapping[field]}
                   onChange={(e) => setField(field, e.target.value)}
                   data-testid={`sdcsup-map-${field}`}
@@ -244,8 +233,8 @@ const XlsxImportPanel: React.FC<XlsxImportPanelProps> = ({ onImport, onCancel })
                       {h}
                     </option>
                   ))}
-                </select>
-              </div>
+                </Select>
+              </FormField>
             ))}
           </div>
 

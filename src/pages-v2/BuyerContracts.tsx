@@ -29,6 +29,7 @@ import ScoreBadge from '../components/ui-v2/ScoreBadge';
 import Data from '../components/ui-v2/Data';
 import { Field, FieldList, type FieldKind } from '../components/ui-v2/Field';
 import SectionHeading from '../components/ui-v2/SectionHeading';
+import { Checkbox, ChoiceCard, FormField, Radio, Select, TextInput } from '../components/ui-v2/Form';
 import Button from '../components/ui-v2/Button';
 import Wizard, { WizardStep } from '../components/ui-v2/Wizard';
 import { useToast } from '../hooks/useToast';
@@ -727,29 +728,21 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
       description: t('contracts.wizard.step.basics.desc'),
       content: (
         <div className="space-y-5">
-          <div>
-            <label className="text-label text-text-tertiary uppercase block mb-1.5">
-              {t('contracts.wizard.field.title')} <span className="text-critical">*</span>
-            </label>
-            <input
+          <FormField label={t('contracts.wizard.field.title')} required>
+            <TextInput
               type="text"
               value={draft.title}
               onChange={(e) => updateDraft('title', e.target.value)}
               placeholder={t('contracts.wizard.placeholder.title')}
-              className="w-full bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-action"
             />
-          </div>
+          </FormField>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="text-label text-text-tertiary uppercase block mb-1.5">
-                {t('contracts.wizard.field.type')} <span className="text-critical">*</span>
-              </label>
-              <select
+            <FormField label={t('contracts.wizard.field.type')} required>
+              <Select
                 value={draft.type}
                 onChange={(e) =>
                   updateDraft('type', e.target.value as ContractType)
                 }
-                className="w-full bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-action"
               >
                 <option value="">{t('contracts.wizard.select.type')}</option>
                 {TYPE_OPTIONS.map((opt) => (
@@ -757,16 +750,12 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
                     {typeLabel(t, opt)}
                   </option>
                 ))}
-              </select>
-            </div>
-            <div>
-              <label className="text-label text-text-tertiary uppercase block mb-1.5">
-                {t('contracts.wizard.field.category')} <span className="text-critical">*</span>
-              </label>
-              <select
+              </Select>
+            </FormField>
+            <FormField label={t('contracts.wizard.field.category')} required>
+              <Select
                 value={draft.category}
                 onChange={(e) => updateDraft('category', e.target.value)}
-                className="w-full bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-action"
               >
                 <option value="">{t('contracts.wizard.select.category')}</option>
                 {CATEGORY_OPTIONS.map((c) => (
@@ -774,13 +763,13 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
                     {catLabel(t, c)}
                   </option>
                 ))}
-              </select>
-            </div>
+              </Select>
+            </FormField>
           </div>
           <div>
-            <label className="text-label text-text-tertiary uppercase block mb-1.5">
+            <SectionHeading level="group" as="h4" className="mb-1.5">
               {t('contracts.wizard.field.supplier')} <span className="text-critical">*</span>
-            </label>
+            </SectionHeading>
             <div className="mb-2">
               <SearchBar
                 value={supplierSearch}
@@ -800,13 +789,12 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
                       }`}
                     >
                       <td className="px-3 py-2">
-                        <input
-                          type="radio"
+                        <Radio
                           name="supplier"
+                          aria-label={s.name}
                           checked={draft.supplierId === s.id}
                           onChange={() => updateDraft('supplierId', s.id)}
                           onClick={(e) => e.stopPropagation()}
-                          className="accent-teal"
                         />
                       </td>
                       <td className="px-3 py-2 text-text-primary">{s.name}</td>
@@ -830,9 +818,9 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
             </div>
           </div>
           <div>
-            <label className="text-label text-text-tertiary uppercase block mb-1.5">
+            <SectionHeading level="group" as="h4" className="mb-1.5">
               {t('contracts.wizard.field.brands')}
-            </label>
+            </SectionHeading>
             <div className="flex flex-wrap gap-2">
               {BRAND_OPTIONS.map((b) => {
                 const selected = draft.brands.includes(b);
@@ -864,54 +852,43 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
       content: (
         <div className="space-y-5">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="text-label text-text-tertiary uppercase block mb-1.5">
-                {t('contracts.wizard.field.startDate')} <span className="text-critical">*</span>
-              </label>
-              <input
+            <FormField label={t('contracts.wizard.field.startDate')} required>
+              <TextInput
                 type="date"
                 value={draft.startDate}
                 onChange={(e) => updateDraft('startDate', e.target.value)}
                 aria-label={t('contracts.wizard.field.startDate')}
-                className="w-full bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-action"
               />
-            </div>
-            <div>
-              <label className="text-label text-text-tertiary uppercase block mb-1.5">
-                {t('contracts.wizard.field.endDate')} <span className="text-critical">*</span>
-              </label>
-              <input
+            </FormField>
+            <FormField
+              label={t('contracts.wizard.field.endDate')}
+              required
+              error={
+                draft.startDate &&
+                draft.endDate &&
+                new Date(draft.endDate) <= new Date(draft.startDate) &&
+                t('contracts.wizard.endBeforeStart')
+              }
+            >
+              <TextInput
                 type="date"
                 value={draft.endDate}
                 onChange={(e) => updateDraft('endDate', e.target.value)}
                 aria-label={t('contracts.wizard.field.endDate')}
-                className="w-full bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-action"
               />
-              {draft.startDate &&
-                draft.endDate &&
-                new Date(draft.endDate) <= new Date(draft.startDate) && (
-                  <p className="text-xs text-critical mt-1">
-                    {t('contracts.wizard.endBeforeStart')}
-                  </p>
-                )}
-            </div>
+            </FormField>
           </div>
           <div>
-            <label className="inline-flex items-center gap-3 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={draft.autoRenewal}
-                onChange={(e) => updateDraft('autoRenewal', e.target.checked)}
-                aria-label={t('contracts.wizard.field.autoRenewal')}
-                className="accent-teal w-4 h-4"
-              />
-              <span className="text-sm text-text-primary font-medium">
-                {t('contracts.wizard.field.autoRenewal')}
-              </span>
+            <Checkbox
+              checked={draft.autoRenewal}
+              onChange={(e) => updateDraft('autoRenewal', e.target.checked)}
+              aria-label={t('contracts.wizard.field.autoRenewal')}
+            >
+              {t('contracts.wizard.field.autoRenewal')}{' '}
               <span className="text-xs text-text-tertiary">
                 {t('contracts.wizard.autoRenewalHint')}
               </span>
-            </label>
+            </Checkbox>
             {/* A REFUSAL MUST NEVER BE INVISIBLE. The input belongs to
                 auto-renewal, but the draft keeps its value when the box is
                 unchecked — so an operator who clears the field and then unchecks
@@ -919,12 +896,23 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
                 cannot see. Rendering it while it refuses keeps the gate
                 actionable without weakening it. */}
             {(draft.autoRenewal || !noticeRead.ok) && (
-              <div className="mt-3 max-w-xs">
-                <label className="text-label text-text-tertiary uppercase block mb-1.5">
-                  {t('contracts.wizard.field.noticeDays')}{' '}
-                  <span className="text-critical">*</span>
-                </label>
-                <input
+              <FormField
+                className="mt-3 max-w-xs"
+                label={t('contracts.wizard.field.noticeDays')}
+                required
+                error={
+                  !noticeRead.ok && (
+                    <div role="alert" data-testid="contract-notice-refusal">
+                      {t(CONTRACT_NOTICE_REFUSAL_KEY[noticeRead.reason])}{' '}
+                      <GlossaryTermChip
+                        refTo={{ sourceType: 'QtyRefusalReason', term: noticeRead.reason }}
+                      />
+                    </div>
+                  )
+                }
+              >
+                <TextInput
+                  mono
                   type="text"
                   inputMode="decimal"
                   value={draft.noticeRequiredDays}
@@ -934,28 +922,36 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
                   placeholder={t('contracts.wizard.placeholder.noticeDays')}
                   aria-label={t('contracts.wizard.field.noticeDays')}
                   aria-invalid={!noticeRead.ok}
-                  className="w-full bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-action"
                 />
-                {!noticeRead.ok && (
-                  <div
-                    role="alert"
-                    data-testid="contract-notice-refusal"
-                    className="mt-1 text-[11px] text-critical"
-                  >
-                    {t(CONTRACT_NOTICE_REFUSAL_KEY[noticeRead.reason])}{' '}
-                    <GlossaryTermChip
-                      refTo={{ sourceType: 'QtyRefusalReason', term: noticeRead.reason }}
-                    />
-                  </div>
-                )}
-              </div>
+              </FormField>
             )}
           </div>
-          <div>
-            <label className="text-label text-text-tertiary uppercase block mb-1.5">
-              {t('contracts.wizard.field.value')} <span className="text-critical">*</span>
-            </label>
-            <input
+          {/* An untouched blank does not nag on sight — it refuses at the gate
+              (Next stays disabled) and says so on the field once the buyer has
+              typed something (the 2e-a price precedent).
+              The pre-existing `> 0` gate, finally SAYING SO. It has always
+              disabled Next on a typed zero; it did it in silence, which is the
+              same family of defect as a misread number. No rule changes. */}
+          <FormField
+            label={t('contracts.wizard.field.value')}
+            required
+            error={
+              draft.value.trim() !== '' && !valueRead.ok ? (
+                <div role="alert" data-testid="contract-value-refusal">
+                  {t(CONTRACT_VALUE_REFUSAL_KEY[valueRead.reason])}{' '}
+                  <GlossaryTermChip
+                    refTo={{ sourceType: 'QtyRefusalReason', term: valueRead.reason }}
+                  />
+                </div>
+              ) : valueRead.ok && valueRead.value === 0 ? (
+                <div role="alert" data-testid="contract-value-zero">
+                  {t('contracts.wizard.value.mustExceedZero')}
+                </div>
+              ) : undefined
+            }
+          >
+            <TextInput
+              mono
               type="text"
               inputMode="decimal"
               value={draft.value}
@@ -963,69 +959,33 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
               placeholder={t('contracts.wizard.placeholder.value')}
               aria-label={t('contracts.wizard.field.value')}
               aria-invalid={draft.value.trim() !== '' && !valueRead.ok}
-              className="w-full bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-action"
             />
-            {/* An untouched blank does not nag on sight — it refuses at the gate
-                (Next stays disabled) and says so on the field once the buyer has
-                typed something (the 2e-a price precedent). */}
-            {draft.value.trim() !== '' && !valueRead.ok && (
-              <div
-                role="alert"
-                data-testid="contract-value-refusal"
-                className="mt-1 text-[11px] text-critical"
-              >
-                {t(CONTRACT_VALUE_REFUSAL_KEY[valueRead.reason])}{' '}
-                <GlossaryTermChip
-                  refTo={{ sourceType: 'QtyRefusalReason', term: valueRead.reason }}
-                />
-              </div>
-            )}
-            {/* The pre-existing `> 0` gate, finally SAYING SO. It has always
-                disabled Next on a typed zero; it did it in silence, which is the
-                same family of defect as a misread number. No rule changes. */}
-            {valueRead.ok && valueRead.value === 0 && (
-              <div
-                role="alert"
-                data-testid="contract-value-zero"
-                className="mt-1 text-[11px] text-critical"
-              >
-                {t('contracts.wizard.value.mustExceedZero')}
-              </div>
-            )}
-          </div>
+          </FormField>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="text-label text-text-tertiary uppercase block mb-1.5">
-                {t('contracts.wizard.field.paymentTerms')}
-              </label>
-              <select
+            <FormField label={t('contracts.wizard.field.paymentTerms')}>
+              <Select
                 value={draft.paymentTerms}
                 onChange={(e) => updateDraft('paymentTerms', e.target.value)}
-                className="w-full bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-action"
               >
                 {PAYMENT_TERMS_OPTIONS.map((p) => (
                   <option key={p} value={p}>
                     {p}
                   </option>
                 ))}
-              </select>
-            </div>
-            <div>
-              <label className="text-label text-text-tertiary uppercase block mb-1.5">
-                {t('contracts.wizard.field.incoterms')}
-              </label>
-              <select
+              </Select>
+            </FormField>
+            <FormField label={t('contracts.wizard.field.incoterms')}>
+              <Select
                 value={draft.incoterms}
                 onChange={(e) => updateDraft('incoterms', e.target.value)}
-                className="w-full bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-action"
               >
                 {INCOTERMS_OPTIONS.map((i) => (
                   <option key={i} value={i}>
                     {i}
                   </option>
                 ))}
-              </select>
-            </div>
+              </Select>
+            </FormField>
           </div>
         </div>
       ),
@@ -1051,33 +1011,21 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
                       (o) => o.title === s.title,
                     );
                     return (
-                      <label
+                      <ChoiceCard
                         key={s.title}
-                        className={`flex items-start gap-3 p-3 rounded-md border cursor-pointer transition-colors ${
-                          selected
-                            ? 'bg-bg-surface border-action'
-                            : 'bg-bg-surface border-border-subtle hover:border-action'
-                        }`}
+                        type="checkbox"
+                        checked={selected}
+                        onChange={() =>
+                          toggleSuggestedObligation(s.title, s.owner)
+                        }
                       >
-                        <input
-                          type="checkbox"
-                          checked={selected}
-                          onChange={() =>
-                            toggleSuggestedObligation(s.title, s.owner)
-                          }
-                          className="mt-0.5 accent-teal"
-                        />
-                        <div className="flex-1 min-w-0">
-                          <div className="text-sm font-medium text-text-primary">
-                            {s.title}
-                          </div>
-                          <div className="text-xs text-text-tertiary">
-                            {t('contracts.wizard.obl.ownerLabel', {
-                              owner: ownerLabel(t, s.owner),
-                            })}
-                          </div>
-                        </div>
-                      </label>
+                        {s.title}
+                        <span className="block text-xs text-text-tertiary">
+                          {t('contracts.wizard.obl.ownerLabel', {
+                            owner: ownerLabel(t, s.owner),
+                          })}
+                        </span>
+                      </ChoiceCard>
                     );
                   },
                 )}
@@ -1090,12 +1038,12 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
               {t('contracts.wizard.obl.addCustom')}
             </SectionHeading>
             <div className="flex gap-2">
-              <input
+              <TextInput
                 type="text"
                 value={customObligationTitle}
                 onChange={(e) => setCustomObligationTitle(e.target.value)}
                 placeholder={t('contracts.wizard.obl.customPlaceholder')}
-                className="flex-1 bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-action"
+                className="flex-1"
               />
               <Button
                 variant="secondary"
@@ -1131,7 +1079,7 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
                     header: t('contracts.wizard.obl.col.owner'),
                     kind: 'text',
                     cell: (o, i) => (
-                      <select
+                      <Select
                         value={o.owner}
                         onChange={(e) =>
                           updateObligation(
@@ -1140,12 +1088,11 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
                             e.target.value as DraftObligation['owner'],
                           )
                         }
-                        className="bg-white border border-border-input rounded-md px-2 h-8 text-xs focus:outline-none focus:border-action"
                       >
                         <option value="Buyer">{t('contracts.owner.buyer')}</option>
                         <option value="Supplier">{t('contracts.owner.supplier')}</option>
                         <option value="Both">{t('contracts.owner.both')}</option>
-                      </select>
+                      </Select>
                     ),
                   },
                   {
@@ -1154,13 +1101,12 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
                     kind: 'date',
                     headerClassName: 'whitespace-nowrap',
                     cell: (o, i) => (
-                      <input
+                      <TextInput
                         type="date"
                         value={o.dueDate}
                         onChange={(e) =>
                           updateObligation(i, 'dueDate', e.target.value)
                         }
-                        className="bg-white border border-border-input rounded-md px-2 h-8 text-xs focus:outline-none focus:border-action"
                       />
                     ),
                   },

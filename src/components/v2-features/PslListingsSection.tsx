@@ -24,6 +24,7 @@ import {
 } from '../../services/data/pslListing';
 import type { ActorAttribution } from '../../lib/enforcement';
 import Button from '../ui-v2/Button';
+import { Select, TextArea, TextInput } from '../ui-v2/Form';
 import { HandoffNotice } from '../ui-v2/HandoffNotice';
 import { useVerbAvailabilities } from '../../hooks/useVerbAvailability';
 import { useToast } from '../../hooks/useToast';
@@ -92,10 +93,6 @@ const Actor: React.FC<{ actor: ActorAttribution | null }> = ({ actor }) => {
     return <span>{personLabel(actor.person.personId, t)}</span>;
   return <span className="text-text-tertiary italic">{t('psl.actor.unattributed')}</span>;
 };
-
-/** The one input style, named once so five forms cannot drift apart. */
-const INPUT =
-  'border border-border-subtle rounded px-2 py-1.5 text-sm text-text-primary bg-white';
 
 /** Which inline form is open on this card. `null` is the resting state. */
 type CardMode = 'changeStatus' | 'renew' | 'withdraw' | 'cap' | null;
@@ -434,8 +431,7 @@ const PslListingCard: React.FC<{ listing: PslListing; nowIso: string; highlighte
 
               {mode === 'changeStatus' ? (
                 <div className="flex flex-col gap-2" data-testid={`psl-change-${listing.id}`}>
-                  <select
-                    className={INPUT}
+                  <Select
                     value={nextStatus}
                     onChange={(e) => setNextStatus(e.target.value as PslStatus)}
                     data-testid={`psl-change-status-${listing.id}`}
@@ -445,7 +441,7 @@ const PslListingCard: React.FC<{ listing: PslListing; nowIso: string; highlighte
                         {t(statusLabelKey(s) ?? '', { defaultValue: s })}
                       </option>
                     ))}
-                  </select>
+                  </Select>
                   {/* ⚠️ THE SEAT-SEGREGATION MIRROR, on the DESIGNATION BEING
                       MOVED TO — the same pure function the policy hook asks, so
                       the panel cannot promise what the dispatcher will refuse. */}
@@ -463,8 +459,7 @@ const PslListingCard: React.FC<{ listing: PslListing; nowIso: string; highlighte
                     </p>
                   ) : (
                     <>
-                      <textarea
-                        className={INPUT}
+                      <TextArea
                         rows={2}
                         placeholder={t('psl.form.reason')}
                         value={reason}
@@ -486,9 +481,8 @@ const PslListingCard: React.FC<{ listing: PslListing; nowIso: string; highlighte
 
               {mode === 'renew' ? (
                 <div className="flex flex-col gap-2" data-testid={`psl-renew-${listing.id}`}>
-                  <input
+                  <TextInput
                     type="date"
-                    className={INPUT}
                     value={newUntil}
                     onChange={(e) => setNewUntil(e.target.value)}
                     data-testid={`psl-renew-until-${listing.id}`}
@@ -510,8 +504,7 @@ const PslListingCard: React.FC<{ listing: PslListing; nowIso: string; highlighte
                     </p>
                   ) : (
                     <>
-                      <textarea
-                        className={INPUT}
+                      <TextArea
                         rows={2}
                         placeholder={t('psl.form.reason')}
                         value={reason}
@@ -536,8 +529,7 @@ const PslListingCard: React.FC<{ listing: PslListing; nowIso: string; highlighte
                   className="flex flex-col gap-2"
                   data-testid={`psl-withdraw-${listing.id}`}
                 >
-                  <textarea
-                    className={INPUT}
+                  <TextArea
                     rows={2}
                     placeholder={t('psl.form.reason')}
                     value={reason}
@@ -571,16 +563,15 @@ const PslListingCard: React.FC<{ listing: PslListing; nowIso: string; highlighte
               </Button>
               {mode === 'cap' ? (
                 <div className="flex flex-col gap-2" data-testid={`psl-cap-${listing.id}`}>
-                  <input
+                  <TextInput
+                    mono
                     type="number"
-                    className={INPUT}
                     placeholder={t('psl.form.capDays')}
                     value={capDays}
                     onChange={(e) => setCapDays(e.target.value)}
                     data-testid={`psl-cap-days-${listing.id}`}
                   />
-                  <textarea
-                    className={INPUT}
+                  <TextArea
                     rows={2}
                     placeholder={t('psl.form.capJustification')}
                     value={capWhy}

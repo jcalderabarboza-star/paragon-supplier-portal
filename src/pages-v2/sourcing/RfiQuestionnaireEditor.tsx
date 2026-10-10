@@ -22,6 +22,8 @@ import { useTranslation } from 'react-i18next';
 import { ArrowDown, ArrowUp, ListChecks, Plus, Save, Trash2 } from 'lucide-react';
 import Button from '../../components/ui-v2/Button';
 import { HandoffNotice } from '../../components/ui-v2/HandoffNotice';
+import { Checkbox, FormField, Select, TextArea, TextInput } from '../../components/ui-v2/Form';
+import SectionHeading from '../../components/ui-v2/SectionHeading';
 import { useToast } from '../../hooks/useToast';
 import { useRefusalText } from '../../hooks/useRefusalText';
 import { useVerbAvailability } from '../../hooks/useVerbAvailability';
@@ -39,10 +41,6 @@ import {
   type RfiQuestionType,
 } from '../../data/rfiQuestionnaire';
 import { readRfiTemplates, removeRfiTemplate, saveRfiTemplate } from './rfiTemplates';
-
-const inputClass =
-  'w-full bg-white border border-border-input rounded-md px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-action';
-const labelClass = 'text-label text-text-tertiary uppercase block mb-1';
 
 /** One question while it is being written. Options are typed one per line. */
 interface Row {
@@ -243,7 +241,7 @@ const RfiQuestionnaireEditor: React.FC<{ rfq: RFQ }> = ({ rfq }) => {
     <div className="border border-border-subtle bg-bg-surface rounded-md p-3" data-testid="rfi-questionnaire-editor">
       {/* Templates — local, and said to be. */}
       <div className="border border-border-subtle bg-bg-hover rounded-md p-3 mb-4" data-testid="rfi-template-bar">
-        <div className={labelClass}>{t('sourcing.rfi.template.title')}</div>
+        <SectionHeading level="group" as="h4" className="mb-1">{t('sourcing.rfi.template.title')}</SectionHeading>
         <p className="text-xs text-text-tertiary mb-2" data-testid="rfi-template-local">
           {t('sourcing.rfi.template.local')}
         </p>
@@ -258,15 +256,11 @@ const RfiQuestionnaireEditor: React.FC<{ rfq: RFQ }> = ({ rfq }) => {
           </p>
         )}
         <div className="flex flex-wrap items-end gap-2 mb-2">
-          <div className="flex-1 min-w-[12rem]">
-            <label className={labelClass} htmlFor="rfi-template-pick">
-              {t('sourcing.rfi.template.pick')}
-            </label>
-            <select
+          <FormField label={t('sourcing.rfi.template.pick')} htmlFor="rfi-template-pick" className="flex-1 min-w-[12rem]">
+            <Select
               id="rfi-template-pick"
               value={picked}
               onChange={(e) => setPicked(e.target.value)}
-              className={inputClass}
               data-testid="rfi-template-pick"
             >
               <option value="">
@@ -279,8 +273,8 @@ const RfiQuestionnaireEditor: React.FC<{ rfq: RFQ }> = ({ rfq }) => {
                   {x.name} ({x.questions.length})
                 </option>
               ))}
-            </select>
-          </div>
+            </Select>
+          </FormField>
           <Button
             variant="secondary"
             disabled={!pickedTemplate}
@@ -304,19 +298,15 @@ const RfiQuestionnaireEditor: React.FC<{ rfq: RFQ }> = ({ rfq }) => {
           </Button>
         </div>
         <div className="flex flex-wrap items-end gap-2">
-          <div className="flex-1 min-w-[12rem]">
-            <label className={labelClass} htmlFor="rfi-template-name">
-              {t('sourcing.rfi.template.name')}
-            </label>
-            <input
+          <FormField label={t('sourcing.rfi.template.name')} htmlFor="rfi-template-name" className="flex-1 min-w-[12rem]">
+            <TextInput
               id="rfi-template-name"
               type="text"
               value={templateName}
               onChange={(e) => setTemplateName(e.target.value)}
-              className={inputClass}
               data-testid="rfi-template-name"
             />
-          </div>
+          </FormField>
           <Button
             variant="secondary"
             icon={Save}
@@ -376,29 +366,23 @@ const RfiQuestionnaireEditor: React.FC<{ rfq: RFQ }> = ({ rfq }) => {
                   </button>
                 </span>
               </div>
-              <label className={labelClass} htmlFor={`rfi-editor-prompt-${r.id}`}>
-                {t('sourcing.rfi.editor.prompt')}
-              </label>
-              <input
+              <FormField label={t('sourcing.rfi.editor.prompt')} htmlFor={`rfi-editor-prompt-${r.id}`} className="mb-2">
+              <TextInput
                 id={`rfi-editor-prompt-${r.id}`}
                 type="text"
                 value={r.prompt}
                 onChange={(e) => patch(i, { prompt: e.target.value })}
-                className={`${inputClass} mb-2`}
                 data-testid={`rfi-editor-prompt-${i + 1}`}
               />
+              </FormField>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                <div>
-                  <label className={labelClass} htmlFor={`rfi-editor-type-${r.id}`}>
-                    {t('sourcing.rfi.editor.type')}
-                  </label>
-                  <select
+                <FormField label={t('sourcing.rfi.editor.type')} htmlFor={`rfi-editor-type-${r.id}`}>
+                  <Select
                     id={`rfi-editor-type-${r.id}`}
                     value={r.type}
                     // A knock-out names an answer of the OLD type; it does not
                     // survive a change of type.
                     onChange={(e) => patch(i, { type: e.target.value as RfiQuestionType, knockout: '' })}
-                    className={inputClass}
                     data-testid={`rfi-editor-type-${i + 1}`}
                   >
                     {RFI_QUESTION_TYPES.map((type) => (
@@ -406,29 +390,22 @@ const RfiQuestionnaireEditor: React.FC<{ rfq: RFQ }> = ({ rfq }) => {
                         {t(`sourcing.rfi.type.${type}`)}
                       </option>
                     ))}
-                  </select>
-                </div>
+                  </Select>
+                </FormField>
                 {r.type === 'number' && (
-                  <div>
-                    <label className={labelClass} htmlFor={`rfi-editor-unit-${r.id}`}>
-                      {t('sourcing.rfi.editor.unit')}
-                    </label>
-                    <input
+                  <FormField label={t('sourcing.rfi.editor.unit')} htmlFor={`rfi-editor-unit-${r.id}`}>
+                    <TextInput
                       id={`rfi-editor-unit-${r.id}`}
                       type="text"
                       value={r.unit}
                       onChange={(e) => patch(i, { unit: e.target.value })}
-                      className={inputClass}
                       data-testid={`rfi-editor-unit-${i + 1}`}
                     />
-                  </div>
+                  </FormField>
                 )}
                 {takesKnockout(r.type) && (
-                  <div>
-                    <label className={labelClass} htmlFor={`rfi-editor-knockout-${r.id}`}>
-                      {t('sourcing.rfi.editor.knockout')}
-                    </label>
-                    <select
+                  <FormField label={t('sourcing.rfi.editor.knockout')} htmlFor={`rfi-editor-knockout-${r.id}`}>
+                    <Select
                       id={`rfi-editor-knockout-${r.id}`}
                       value={choices.includes(r.knockout) ? r.knockout : ''}
                       // A knock-out makes the question required: optional, it
@@ -436,7 +413,6 @@ const RfiQuestionnaireEditor: React.FC<{ rfq: RFQ }> = ({ rfq }) => {
                       onChange={(e) =>
                         patch(i, { knockout: e.target.value, ...(e.target.value ? { required: true } : {}) })
                       }
-                      className={inputClass}
                       data-testid={`rfi-editor-knockout-${i + 1}`}
                     >
                       <option value="">{t('sourcing.rfi.editor.knockoutNone')}</option>
@@ -445,39 +421,33 @@ const RfiQuestionnaireEditor: React.FC<{ rfq: RFQ }> = ({ rfq }) => {
                           {r.type === 'yes_no' ? t(`sourcing.rfi.${c}`) : c}
                         </option>
                       ))}
-                    </select>
-                  </div>
+                    </Select>
+                  </FormField>
                 )}
               </div>
               {isChoice && (
-                <div className="mt-2">
-                  <label className={labelClass} htmlFor={`rfi-editor-options-${r.id}`}>
-                    {t('sourcing.rfi.editor.options')}
-                  </label>
-                  <textarea
+                <FormField label={t('sourcing.rfi.editor.options')} htmlFor={`rfi-editor-options-${r.id}`} className="mt-2">
+                  <TextArea
                     id={`rfi-editor-options-${r.id}`}
                     rows={3}
                     value={r.optionsText}
                     onChange={(e) => patch(i, { optionsText: e.target.value })}
-                    className={inputClass}
                     data-testid={`rfi-editor-options-${i + 1}`}
                   />
-                </div>
+                </FormField>
               )}
-              <label className="flex items-center gap-2 text-sm text-text-primary mt-2">
-                <input
-                  type="checkbox"
-                  className="accent-teal"
+              <Checkbox
+                  className="mt-2"
                   checked={r.required}
                   disabled={r.knockout !== ''}
                   onChange={(e) => patch(i, { required: e.target.checked })}
                   data-testid={`rfi-editor-required-${i + 1}`}
-                />
+              >
                 {t('sourcing.rfi.editor.required')}
                 {r.knockout !== '' && (
-                  <span className="text-xs text-text-tertiary">{t('sourcing.rfi.editor.requiredByKnockout')}</span>
+                  <span className="ml-2 text-xs text-text-tertiary">{t('sourcing.rfi.editor.requiredByKnockout')}</span>
                 )}
-              </label>
+              </Checkbox>
             </li>
           );
         })}

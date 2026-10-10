@@ -49,6 +49,7 @@ import { formatNumber, formatDate } from '../lib/format';
 import GlossaryTermChip from '../components/ui-v2/GlossaryTermChip';
 import { useRefusalText } from '../hooks/useRefusalText';
 import SectionHeading from '../components/ui-v2/SectionHeading';
+import { FormField, Select, TextArea, TextInput } from '../components/ui-v2/Form';
 
 // ────────────────────────────────────────────────────────────────────────────
 // Comm Hub C2 — the INBOUND CONFIRM-BEFORE-COMMIT surface (DEC-COMMS-PRIMARY).
@@ -96,10 +97,6 @@ const QTY_REASON_KEY: Record<QtyRefusalReason, string> = {
   NOT_NUMERIC: 'commHub.qtyReason.NOT_NUMERIC',
   AMBIGUOUS_QTY: 'commHub.qtyReason.AMBIGUOUS_QTY',
 };
-
-const inputClass =
-  'w-full px-3 py-2 text-sm text-text-primary bg-white border border-border-input rounded-md focus:outline-none focus:border-action placeholder:text-text-tertiary';
-const labelClass = 'block text-label text-text-tertiary uppercase mb-1';
 
 /** One editable, confirmable row derived from a parsed proposedRow. */
 interface EditRow {
@@ -440,13 +437,9 @@ const CommHubInbound: React.FC = () => {
             <SectionHeading as="h3">{t('commHub.source.title')}</SectionHeading>
           </div>
 
-          <div className="mb-3">
-            <label className={labelClass} htmlFor="commhub-channel">
-              {t('commHub.source.channelLabel')}
-            </label>
-            <select
+          <FormField label={t('commHub.source.channelLabel')} htmlFor="commhub-channel" className="mb-3">
+            <Select
               id="commhub-channel"
-              className={inputClass}
               value={channel}
               onChange={(e) => setChannel(e.target.value as Channel)}
             >
@@ -455,23 +448,21 @@ const CommHubInbound: React.FC = () => {
                   {t(`commHub.channel.${c}`)}
                 </option>
               ))}
-            </select>
-          </div>
+            </Select>
+          </FormField>
 
-          <div className="mb-1">
-            <label className={labelClass} htmlFor="commhub-message">
-              {t('commHub.source.messageLabel')}
-            </label>
-            <textarea
+          <FormField label={t('commHub.source.messageLabel')} htmlFor="commhub-message" className="mb-1">
+            <TextArea
               id="commhub-message"
               rows={4}
-              className={`${inputClass} resize-y font-mono`}
+              mono
+              className="resize-y"
               placeholder={t('commHub.source.placeholder')}
               value={rawText}
               onChange={(e) => setRawText(e.target.value)}
               data-testid="commhub-message-input"
             />
-          </div>
+          </FormField>
           <p className="text-xs text-text-tertiary mb-4">{t('commHub.source.hint')}</p>
 
           <div className="flex items-center justify-between gap-2">
@@ -603,13 +594,13 @@ const CommHubInbound: React.FC = () => {
                           </button>
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                          <div>
-                            <label className={labelClass} htmlFor={`commhub-mat-${i}`}>
-                              {t('commHub.row.materialLabel')}
-                            </label>
-                            <select
+                          <FormField
+                            label={t('commHub.row.materialLabel')}
+                            htmlFor={`commhub-mat-${i}`}
+                            hint={t('commHub.row.materialHint')}
+                          >
+                            <Select
                               id={`commhub-mat-${i}`}
-                              className={inputClass}
                               value={row.materialCode}
                               onChange={(e) => setRow(i, { materialCode: e.target.value })}
                               data-testid={`commhub-mat-${i}`}
@@ -620,23 +611,22 @@ const CommHubInbound: React.FC = () => {
                                   {m.materialCode} — {m.label} ({m.uom})
                                 </option>
                               ))}
-                            </select>
-                            <p className="mt-1 text-[11px] text-text-tertiary">{t('commHub.row.materialHint')}</p>
-                          </div>
-                          <div>
-                            <label className={labelClass} htmlFor={`commhub-qty-${i}`}>
-                              {t('commHub.row.totalLabel', { uom: masterUom || '—' })}
-                            </label>
-                            <input
+                            </Select>
+                          </FormField>
+                          <FormField
+                            label={t('commHub.row.totalLabel', { uom: masterUom || '—' })}
+                            htmlFor={`commhub-qty-${i}`}
+                          >
+                            <TextInput
                               id={`commhub-qty-${i}`}
                               type="text"
                               inputMode="decimal"
-                              className={`${inputClass} font-mono`}
+                              mono
                               value={row.totalQty}
                               onChange={(e) => setRow(i, { totalQty: e.target.value })}
                               data-testid={`commhub-qty-${i}`}
                             />
-                          </div>
+                          </FormField>
                         </div>
                         {mismatch && (
                           <div className="text-[11px] text-warning-hover">
