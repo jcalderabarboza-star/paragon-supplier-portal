@@ -21,6 +21,7 @@ import ErrorState from '../components/ui-v2/ErrorState';
 import LivenessPill from '../components/ui-v2/LivenessPill';
 import PageMetaLine from '../components/ui-v2/PageMetaLine';
 import ProvenanceMarker from '../components/ui-v2/ProvenanceMarker';
+import Notice from '../components/ui-v2/Notice';
 import NotFound from './NotFound';
 import { useContracts, useObligations, useSuppliers } from '../services/query/hooks';
 import {
@@ -276,25 +277,22 @@ const ContractDetailView: React.FC<{
               release) the truth changes: a release DOES write, but only to the
               SIMULATED portal store — never posted to SAP. The LivenessPill stays
               amber SIMULATED either way (no CommandTarget backs this capability). */}
-          <div className="bg-info-soft border-l-2 border-info rounded px-4 py-3 mb-6 text-sm text-text-primary flex items-start gap-2">
-            <Info size={14} className="text-info shrink-0 mt-0.5" />
-            <span>
-              <strong className="text-info">
-                {t(canRelease ? 'delivery.honesty.writeTitle' : 'delivery.honesty.title')}
-              </strong>{' '}
-              {t(canRelease ? 'delivery.honesty.writeBody' : 'delivery.honesty.body')}
-            </span>
-            <span className="ml-auto shrink-0">
-              <LivenessPill capability="deliveryAgreements" />
-            </span>
-          </div>
+          <Notice
+            tone="info"
+            icon={Info}
+            title={t(canRelease ? 'delivery.honesty.writeTitle' : 'delivery.honesty.title')}
+            action={<LivenessPill capability="deliveryAgreements" />}
+            className="mb-6"
+          >
+            {t(canRelease ? 'delivery.honesty.writeBody' : 'delivery.honesty.body')}
+          </Notice>
 
           {daQuery.isPending ? (
             <LoadingState />
           ) : agreements.length === 0 ? (
-            <p className="text-sm text-text-tertiary p-6 border border-border-subtle rounded-lg text-center">
+            <Notice tone="neutral">
               {t('contracts.detail.deliveryEmpty')}
-            </p>
+            </Notice>
           ) : (
             <div className="space-y-8">
               {agreements.map((view) => (

@@ -6,6 +6,7 @@ import { bypassesOn } from '../../services/audit/superAdminActivity';
 import { personLabel } from '../../services/identity/personLabel';
 import { formatSetAt } from '../../pages-v2/modules/moduleLedger';
 import { bypassRuleLabel } from './BypassReasonDialog';
+import Notice from '../ui-v2/Notice';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ADM-1 · WHAT A DOCUMENT CARRIES WHEN A CHECK STOOD ASIDE FOR A SUPER ADMIN.
@@ -24,17 +25,16 @@ const SuperAdminBypassNote: React.FC<{ entity: string; entityId: string; classNa
   const rows = bypassesOn(readAuditEvents(), entity, entityId);
   if (rows.length === 0) return null;
   return (
-    <section
-      className={`rounded-md border border-warning bg-warning-soft px-3 py-2 ${className}`}
+    <Notice
+      tone="warning"
+      icon={ShieldAlert}
+      title={t('superAdmin.stamp')}
+      className={className}
       data-testid={`super-admin-bypass-${entity}-${entityId}`}
     >
-      <div className="flex items-center gap-1.5 text-xs font-semibold text-warning-hover">
-        <ShieldAlert size={14} />
-        {t('superAdmin.stamp')}
-      </div>
-      <ul className="mt-1 flex flex-col gap-1">
+      <ul className="flex flex-col gap-1">
         {rows.map((row) => (
-          <li key={row.id} className="text-xs text-text-secondary">
+          <li key={row.id}>
             <div>
               {t('superAdmin.note.line', {
                 person: personLabel(row.personId, t),
@@ -42,11 +42,11 @@ const SuperAdminBypassNote: React.FC<{ entity: string; entityId: string; classNa
                 rule: row.bypassedRules.map((r) => bypassRuleLabel(r, t, (k) => i18n.exists(k))).join(' · '),
               })}
             </div>
-            <div className="text-text-primary">{t('superAdmin.note.reason', { reason: row.reason ?? '' })}</div>
+            <div>{t('superAdmin.note.reason', { reason: row.reason ?? '' })}</div>
           </li>
         ))}
       </ul>
-    </section>
+    </Notice>
   );
 };
 

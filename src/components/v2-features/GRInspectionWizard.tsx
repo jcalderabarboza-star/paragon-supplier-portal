@@ -4,6 +4,10 @@ import FormSection from '../ui-v2/FormSection';
 import Data from '../ui-v2/Data';
 import { Field, FieldList } from '../ui-v2/Field';
 import SectionHeading from '../ui-v2/SectionHeading';
+import { Card } from '../ui-v2/Card';
+import Notice from '../ui-v2/Notice';
+import { ToggleChip, RowButton } from '../ui-v2/Actions';
+import StatusPill from '../ui-v2/StatusPill';
 import {
   TextInput,
   Select,
@@ -529,15 +533,16 @@ const CertificateNotice: React.FC<{
         };
 
   return (
-    <div
+    <Notice
+      tone="warning"
+      title={t('goodsReceipt.wizard.cert.notice.title')}
       data-testid={`gr-cert-notice-${index}`}
       // OPS-2 — `alert` when it stops the step, `status` when it only tells:
       // the politeness level is still the enforcement semantics, spoken.
       role={stops ? 'alert' : 'status'}
-      className="col-span-2 rounded-md border border-warning bg-warning-soft px-3 py-2 text-xs text-warning-hover flex flex-col gap-1"
+      className="col-span-2"
     >
       <div>
-        <span className="font-semibold">{t('goodsReceipt.wizard.cert.notice.title')}</span>{' '}
         {t(CERT_REASON_KEY[verdict.reason], {
           material: materialCode,
           supplier: detail?.supplier ?? supplierName,
@@ -572,7 +577,7 @@ const CertificateNotice: React.FC<{
           ? t('goodsReceipt.wizard.cert.notice.stops', { owner })
           : t('goodsReceipt.wizard.cert.notice.proceeds')}
       </div>
-    </div>
+    </Notice>
   );
 };
 
@@ -1163,48 +1168,37 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
   const stepOneContent = (
     <div className="flex flex-col gap-4">
       <div className="flex gap-2">
-        <button
-          type="button"
+        <ToggleChip
+          selected={sourceMode === 'shipment'}
           onClick={() => setSourceMode('shipment')}
-          className={`flex-1 rounded-md border px-4 py-3 text-sm font-medium transition-colors ${
-            sourceMode === 'shipment'
-              ? 'border-action bg-action-soft text-action-hover'
-              : 'border-border-input text-text-secondary hover:bg-bg-hover'
-          }`}
+          className="flex-1 justify-center"
         >
           {t('goodsReceipt.wizard.source.selectDock')}
-        </button>
-        <button
-          type="button"
+        </ToggleChip>
+        <ToggleChip
+          selected={sourceMode === 'manual'}
           onClick={() => setSourceMode('manual')}
-          className={`flex-1 rounded-md border px-4 py-3 text-sm font-medium transition-colors ${
-            sourceMode === 'manual'
-              ? 'border-action bg-action-soft text-action-hover'
-              : 'border-border-input text-text-secondary hover:bg-bg-hover'
-          }`}
+          className="flex-1 justify-center"
         >
           {t('goodsReceipt.wizard.source.enterAsn')}
-        </button>
+        </ToggleChip>
       </div>
 
       {sourceMode === 'shipment' ? (
-        <div className="border border-border-subtle rounded-lg divide-y divide-border-subtle">
+        <Card padding="none" className="divide-y divide-border-subtle">
           {sources.length === 0 && (
             <div className="p-4 text-sm text-text-tertiary">
               {t('goodsReceipt.wizard.source.empty')}
             </div>
           )}
           {sources.map((s) => (
-            <button
+            <RowButton
               key={s.id}
-              type="button"
+              selected={selectedSourceId === s.id}
               onClick={() => {
                 setSelectedSourceId(s.id);
                 setLines(s.lines);
               }}
-              className={`w-full flex items-center justify-between gap-4 px-4 py-3 text-left transition-colors ${
-                selectedSourceId === s.id ? 'bg-action-soft' : 'hover:bg-bg-hover'
-              }`}
             >
               <div>
                 <div className="font-semibold text-text-primary">
@@ -1218,9 +1212,9 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
                 <div>{s.dockLabel}</div>
                 <div className="text-text-tertiary">{s.dockTime}</div>
               </div>
-            </button>
+            </RowButton>
           ))}
-        </div>
+        </Card>
       ) : (
         <div className="flex flex-col gap-2">
           <FormField label={t('goodsReceipt.wizard.field.asnNumber')}>
@@ -1250,19 +1244,19 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
   const stepTwoContent = (
     <div className="flex flex-col gap-5">
       {resume && (
-        <div
+        <Notice
+          tone="neutral"
           data-testid="gr-resume-banner"
           role="status"
-          className="rounded-md border border-border-subtle bg-bg-hover px-4 py-3 text-sm text-text-secondary"
         >
-          <span className="font-semibold text-text-primary">
+          <strong>
             {t('goodsReceipt.wizard.resume.title')}{' '}
             <Data as="span">{resume.grNumber}</Data>
-          </span>{' '}
+          </strong>{' '}
           · <Data as="span">{resume.asnNumber}</Data> · <Data as="span">{resume.poNumber}</Data> ·{' '}
           {resume.supplierName}
-          <div className="mt-1 text-xs">{t('goodsReceipt.wizard.resume.body')}</div>
-        </div>
+          <p className="mt-1">{t('goodsReceipt.wizard.resume.body')}</p>
+        </Notice>
       )}
       <FormSection title={t('goodsReceipt.wizard.section.receiptInfo')}>
         <div className="grid grid-cols-2 gap-4">
@@ -1328,9 +1322,8 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
               // rejected figure rather than a product of a guessed value.
               const rejected = qty.ok ? Math.max(0, qty.received - qty.accepted) : null;
               return (
-                <div
+                <Card
                   key={i}
-                  className="border border-border-subtle rounded-md p-4"
                 >
                   <div className="flex items-start justify-between gap-3 mb-3">
                     <div>
@@ -1441,7 +1434,7 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
                       )}
                     </div>
                   </div>
-                </div>
+                </Card>
               );
             })}
           </div>
@@ -1454,9 +1447,9 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
     <FormSection eyebrow={t('goodsReceipt.wizard.section.qualityEyebrow')} title={t('goodsReceipt.wizard.section.perLineInspection')}>
       <div className="flex flex-col gap-4">
         {lines.map((l, i) => (
-          <div
+          <Card
             key={i}
-            className="border border-border-subtle rounded-md p-4 flex flex-col gap-3"
+            className="flex flex-col gap-3"
           >
             <div className="flex justify-between items-start">
               <div>
@@ -1554,16 +1547,15 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
                 if (!outcome.ok || outcome.ruling === null) return null;
                 const r = outcome.ruling;
                 return (
-                  <div
+                  <Notice
                     key={regime}
+                    tone="neutral"
                     data-testid={`gr-${regime}-ruling-${i}`}
-                    className="col-span-2 rounded-md border border-border-subtle bg-bg-hover px-3 py-2 text-xs text-text-secondary"
-                  >
-                    <span className="font-semibold text-text-primary">
-                      {t(
+                    className="col-span-2"
+                    title={t(
                         `goodsReceipt.wizard.ruling.${regime}.${r.applicable ? 'applies' : 'notApplicable'}`,
-                      )}
-                    </span>{' '}
+                    )}
+                  >
                     {t('goodsReceipt.wizard.ruling.by', {
                       person:
                         r.setBy.kind === 'RESOLVED'
@@ -1572,7 +1564,7 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
                       date: formatDate(r.setAt.slice(0, 10)),
                     })}{' '}
                     {t('goodsReceipt.wizard.ruling.reason', { reason: r.reason })}
-                  </div>
+                  </Notice>
                 );
               })}
               {judged[i].bpom.ok && judged[i].bpom.applicable && (
@@ -1604,16 +1596,17 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
                 if (halal.ok) return null;
                 const pending = halal.reason === 'UNDETERMINED_APPLICABILITY';
                 return (
-                  <div
+                  <Notice
+                    tone="warning"
                     data-testid={`gr-halal-refusal-${i}`}
                     role="alert"
-                    className="col-span-2 rounded-md border border-warning bg-warning-soft px-3 py-2 text-xs text-warning-hover"
-                  >
-                    <span className="font-semibold">
-                      {pending
+                    className="col-span-2"
+                    title={
+                      pending
                         ? t('goodsReceipt.wizard.halal.pending.title', { owner: rulingOwner })
-                        : t('goodsReceipt.wizard.halal.refused.title')}
-                    </span>{' '}
+                        : t('goodsReceipt.wizard.halal.refused.title')
+                    }
+                  >
                     {t(GR_HALAL_REFUSAL_KEY[halal.reason], {
                       code: halal.materialCode,
                       owner: rulingOwner,
@@ -1621,7 +1614,7 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
                     <GlossaryTermChip
                       refTo={{ sourceType: 'HalalRefusalReason', term: halal.reason }}
                     />
-                  </div>
+                  </Notice>
                 );
               })()}
               {(() => {
@@ -1629,16 +1622,17 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
                 if (bpom.ok) return null;
                 const pending = bpom.reason === 'UNDETERMINED_APPLICABILITY';
                 return (
-                  <div
+                  <Notice
+                    tone="warning"
                     data-testid={`gr-bpom-refusal-${i}`}
                     role="alert"
-                    className="col-span-2 rounded-md border border-warning bg-warning-soft px-3 py-2 text-xs text-warning-hover"
-                  >
-                    <span className="font-semibold">
-                      {pending
+                    className="col-span-2"
+                    title={
+                      pending
                         ? t('goodsReceipt.wizard.bpom.pending.title', { owner: rulingOwner })
-                        : t('goodsReceipt.wizard.bpom.refused.title')}
-                    </span>{' '}
+                        : t('goodsReceipt.wizard.bpom.refused.title')
+                    }
+                  >
                     {t(GR_BPOM_REFUSAL_KEY[bpom.reason], {
                       code: bpom.materialCode,
                       owner: rulingOwner,
@@ -1646,7 +1640,7 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
                     <GlossaryTermChip
                       refTo={{ sourceType: 'BpomRefusalReason', term: bpom.reason }}
                     />
-                  </div>
+                  </Notice>
                 );
               })()}
             </div>
@@ -1667,7 +1661,7 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
                 </div>
               )}
             </div>
-          </div>
+          </Card>
         ))}
       </div>
     </FormSection>
@@ -1691,19 +1685,19 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
       <FormSection title={t('goodsReceipt.wizard.section.finalDisposition')}>
         <div>
           {readoutCaption(t('goodsReceipt.wizard.field.headerDisposition'))}
-          <div
-            className={`inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm font-semibold ${
+          <StatusPill
+            variant={
               derivedDisposition === 'Approved'
-                ? 'border-success/40 bg-success-soft text-success'
+                ? 'success'
                 : derivedDisposition === 'Partially Approved'
-                  ? 'border-warning/40 bg-warning-soft text-warning-hover'
+                  ? 'warning'
                   : derivedDisposition === 'Rejected'
-                    ? 'border-critical/40 bg-critical-soft text-critical'
-                    : 'border-border-input bg-bg-hover text-text-secondary'
-            }`}
+                    ? 'danger'
+                    : 'neutral'
+            }
           >
             {dispositionLabel(derivedDisposition)}
-          </div>
+          </StatusPill>
           <p className="mt-1.5 text-xs text-text-tertiary">
             {totals.items === 1
               ? t('goodsReceipt.wizard.rollup.prefix.one', { count: totals.items })

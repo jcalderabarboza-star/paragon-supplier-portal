@@ -16,6 +16,8 @@ import StatusPill from '../components/ui-v2/StatusPill';
 import NextActLine from '../components/ui-v2/NextActLine';
 import { statusTone } from '../lib/statusTone';
 import Button from '../components/ui-v2/Button';
+import { Card } from '../components/ui-v2/Card';
+import Notice from '../components/ui-v2/Notice';
 import SidePanel from '../components/ui-v2/SidePanel';
 import Data from '../components/ui-v2/Data';
 import { FieldList, Field } from '../components/ui-v2/Field';
@@ -612,9 +614,7 @@ const SupplierOrders: React.FC = () => {
       }
     >
       {counts.action > 0 && activeTab !== 'completed' && (
-        <div className="bg-warning-soft border-l-2 border-warning rounded px-4 py-3 mb-4 flex items-start gap-2 text-sm text-warning-hover">
-          <AlertCircle size={14} className="shrink-0 mt-0.5" />
-          <div>
+        <Notice tone="warning" icon={AlertCircle} className="mb-4">
             <strong>
               {counts.action === 1
                 ? t('supplierOrders.banner.needConfirmation.one', {
@@ -625,8 +625,7 @@ const SupplierOrders: React.FC = () => {
                   })}{' '}
             </strong>
             {t('supplierOrders.banner.instruction')}
-          </div>
-        </div>
+        </Notice>
       )}
 
       <DataTable<PurchaseOrder>
@@ -838,7 +837,7 @@ const SupplierOrders: React.FC = () => {
                   ? t('supplierOrders.panel.lineItemsConfirm')
                   : t('supplierOrders.panel.lineItems')}
               </SectionHeading>
-              <div className="border border-border-subtle rounded-md overflow-hidden">
+              <Card padding="none" className="overflow-hidden">
                 <DataTable<PoLine>
                   density="compact"
                   card={false}
@@ -965,7 +964,7 @@ const SupplierOrders: React.FC = () => {
                       : []),
                   ]}
                 />
-              </div>
+              </Card>
             </section>
 
             {/* E2E-2 — what Paragon has received on this order, from the
@@ -1000,9 +999,9 @@ const SupplierOrders: React.FC = () => {
                   </FormField>
                 </div>
                 {(hasQtyChange || hasDateChange) && (
-                  <div className="bg-warning-soft border-l-2 border-warning rounded px-3 py-2 text-xs text-warning-hover">
+                  <Notice tone="warning">
                     {t('supplierOrders.panel.diffWarning')}
-                  </div>
+                  </Notice>
                 )}
               </section>
             )}
@@ -1025,20 +1024,12 @@ const SupplierOrders: React.FC = () => {
             )}
 
             {effectivePanelMode === 'confirmed' && (
-              <section className="bg-success-soft border-l-2 border-success rounded px-4 py-3">
-                <div className="flex items-center gap-2 mb-2">
-                  <CheckCircle2 size={16} className="text-success" />
-                  <div>
-                    <div className="text-sm font-bold text-success">
-                      {t('supplierOrders.panel.orderConfirmed')}
-                    </div>
-                    <div className="text-xs text-text-secondary">
+              <Notice tone="success" icon={CheckCircle2} title={t('supplierOrders.panel.orderConfirmed')}>
+                    <div>
                       <Data>{selected.poNumber}</Data> ·{' '}
                       {t('supplierOrders.panel.confirmedAt')}{' '}
                       <Data>{formatDateTime((selectedLive ?? selected).confirmedAt)}</Data>
                     </div>
-                  </div>
-                </div>
                 <FieldList columns={3} className="mt-3">
                   <Field
                     label={t('supplierOrders.panel.deliveryShort')}
@@ -1076,15 +1067,15 @@ const SupplierOrders: React.FC = () => {
                   </Field>
                 </FieldList>
                 {(selectedLive ?? selected).confirmationNote && (
-                  <div
-                    className="mt-3 text-xs text-text-secondary bg-white rounded px-3 py-2 border border-border-subtle"
+                  <Card
+                    className="mt-3"
                     data-testid="po-confirmed-note"
                   >
                     {t('supplierOrders.panel.notesPrefix')}{' '}
                     {(selectedLive ?? selected).confirmationNote}
-                  </div>
+                  </Card>
                 )}
-              </section>
+              </Notice>
             )}
           </div>
         )}

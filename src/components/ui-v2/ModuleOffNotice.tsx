@@ -1,5 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
+import Notice from './Notice';
 import { useModuleActivation } from '../../context/ModuleActivationContext';
 import { offDetail, type OffReason } from '../../services/modules/activation';
 import { getModule, isModuleCode, type ModuleCode } from '../../services/modules/registry';
@@ -61,20 +62,14 @@ export const ModuleOffNotice: React.FC<{
       : t('modules.off.moduleTitle', { module: moduleName, code });
 
   return (
-    <div
-      role="status"
-      className="mb-6 rounded-lg border border-border-subtle bg-bg-surface px-4 py-3"
-      data-testid={testId}
-      data-module-off={offDetail(off)}
-    >
-      <div className="text-sm font-semibold text-text-primary">{title}</div>
+    <Notice tone="neutral" role="status" title={title} className="mb-6" data-testid={testId} data-module-off={offDetail(off)}>
       {code && (
-        <div className="text-xs text-text-secondary mt-0.5" data-testid={`${testId}-phase`}>
+        <div data-testid={`${testId}-phase`}>
           {t('modules.off.phase', { phase: t(`modules.phase.${view.modules[code].phase}`) })}
         </div>
       )}
-      <div className="text-xs text-text-secondary mt-1">{t('modules.off.body', { owner })}</div>
-    </div>
+      <div>{t('modules.off.body', { owner })}</div>
+    </Notice>
   );
 };
 

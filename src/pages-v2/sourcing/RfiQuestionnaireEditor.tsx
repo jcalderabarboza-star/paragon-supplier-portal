@@ -21,6 +21,8 @@ import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ArrowDown, ArrowUp, ListChecks, Plus, Save, Trash2 } from 'lucide-react';
 import Button from '../../components/ui-v2/Button';
+import { Card } from '../../components/ui-v2/Card';
+import { IconButton } from '../../components/ui-v2/Actions';
 import { HandoffNotice } from '../../components/ui-v2/HandoffNotice';
 import { Checkbox, FormField, Select, TextArea, TextInput } from '../../components/ui-v2/Form';
 import SectionHeading from '../../components/ui-v2/SectionHeading';
@@ -84,7 +86,8 @@ function nextId(rows: readonly Row[]): string {
 export const RfiQuestionList: React.FC<{ questions: readonly RfiQuestion[] }> = ({ questions }) => {
   const { t } = useTranslation();
   return (
-    <ol className="divide-y divide-border-subtle border border-border-subtle rounded-md" data-testid="rfi-question-list">
+    <Card padding="none">
+    <ol className="divide-y divide-border-subtle" data-testid="rfi-question-list">
       {questions.map((q, i) => (
         <li key={q.id} className="px-3 py-2 text-sm" data-testid={`rfi-question-read-${q.id}`}>
           <div className="text-text-primary">
@@ -109,6 +112,7 @@ export const RfiQuestionList: React.FC<{ questions: readonly RfiQuestion[] }> = 
         </li>
       ))}
     </ol>
+    </Card>
   );
 };
 
@@ -238,9 +242,9 @@ const RfiQuestionnaireEditor: React.FC<{ rfq: RFQ }> = ({ rfq }) => {
 
   // ── Edit mode ─────────────────────────────────────────────────────────────
   return (
-    <div className="border border-border-subtle bg-bg-surface rounded-md p-3" data-testid="rfi-questionnaire-editor">
+    <Card data-testid="rfi-questionnaire-editor">
       {/* Templates — local, and said to be. */}
-      <div className="border border-border-subtle bg-bg-hover rounded-md p-3 mb-4" data-testid="rfi-template-bar">
+      <Card tone="inset" className="mb-4" data-testid="rfi-template-bar">
         <SectionHeading level="group" as="h4" className="mb-1">{t('sourcing.rfi.template.title')}</SectionHeading>
         <p className="text-xs text-text-tertiary mb-2" data-testid="rfi-template-local">
           {t('sourcing.rfi.template.local')}
@@ -317,7 +321,7 @@ const RfiQuestionnaireEditor: React.FC<{ rfq: RFQ }> = ({ rfq }) => {
             {t('sourcing.rfi.template.save')}
           </Button>
         </div>
-      </div>
+      </Card>
 
       {rows.length === 0 && (
         <p className="text-sm text-text-secondary mb-3" data-testid="rfi-editor-empty">
@@ -329,41 +333,34 @@ const RfiQuestionnaireEditor: React.FC<{ rfq: RFQ }> = ({ rfq }) => {
           const choices = knockoutChoicesOf({ type: r.type, options: r.optionsText.split('\n') });
           const isChoice = r.type === 'single_choice' || r.type === 'multi_choice';
           return (
-            <li
+            <Card
+              as="li"
+              tone="inset"
               key={r.id}
-              className="border border-border-subtle rounded-md p-3"
               data-testid={`rfi-editor-row-${i + 1}`}
             >
               <div className="flex items-center gap-2 mb-2">
                 <span className="font-mono text-sm font-semibold text-text-secondary">{questionLabel(i + 1)}</span>
                 <span className="ml-auto flex gap-1">
-                  <button
-                    type="button"
-                    className="p-1 text-text-tertiary hover:text-text-primary disabled:opacity-40"
+                  <IconButton
+                    icon={ArrowUp}
                     disabled={i === 0}
                     onClick={() => move(i, -1)}
                     aria-label={t('sourcing.rfi.editor.moveUp', { question: questionLabel(i + 1) })}
-                  >
-                    <ArrowUp size={14} />
-                  </button>
-                  <button
-                    type="button"
-                    className="p-1 text-text-tertiary hover:text-text-primary disabled:opacity-40"
+                  />
+                  <IconButton
+                    icon={ArrowDown}
                     disabled={i === rows.length - 1}
                     onClick={() => move(i, 1)}
                     aria-label={t('sourcing.rfi.editor.moveDown', { question: questionLabel(i + 1) })}
-                  >
-                    <ArrowDown size={14} />
-                  </button>
-                  <button
-                    type="button"
-                    className="p-1 text-text-tertiary hover:text-critical"
+                  />
+                  <IconButton
+                    icon={Trash2}
+                    tone="critical"
                     onClick={() => setRows((rs) => rs.filter((_, x) => x !== i))}
                     aria-label={t('sourcing.rfi.editor.remove', { question: questionLabel(i + 1) })}
                     data-testid={`rfi-editor-remove-${i + 1}`}
-                  >
-                    <Trash2 size={14} />
-                  </button>
+                  />
                 </span>
               </div>
               <FormField label={t('sourcing.rfi.editor.prompt')} htmlFor={`rfi-editor-prompt-${r.id}`} className="mb-2">
@@ -448,7 +445,7 @@ const RfiQuestionnaireEditor: React.FC<{ rfq: RFQ }> = ({ rfq }) => {
                   <span className="ml-2 text-xs text-text-tertiary">{t('sourcing.rfi.editor.requiredByKnockout')}</span>
                 )}
               </Checkbox>
-            </li>
+            </Card>
           );
         })}
       </ol>
@@ -485,7 +482,7 @@ const RfiQuestionnaireEditor: React.FC<{ rfq: RFQ }> = ({ rfq }) => {
           {t('sourcing.rfi.editor.cancel')}
         </Button>
       </div>
-    </div>
+    </Card>
   );
 };
 

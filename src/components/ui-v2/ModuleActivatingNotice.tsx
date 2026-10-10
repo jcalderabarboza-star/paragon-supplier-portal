@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import Notice from './Notice';
 import { useCurrentIdentity } from '../../context/CurrentIdentityContext';
 import { getModule, type ModuleCode } from '../../services/modules/registry';
 
@@ -23,26 +24,25 @@ export const ModuleActivatingNotice: React.FC<{ code: ModuleCode }> = ({ code })
   const { identity } = useCurrentIdentity();
   const name = t(getModule(code).nameKey);
   return (
-    <div
+    <Notice
+      tone="neutral"
       role="status"
-      className="mb-6 rounded-lg border border-border-subtle bg-bg-surface px-4 py-3"
+      title={t('modules.activating.title', { module: name, code })}
+      className="mb-6"
       data-testid="module-activating-banner"
       data-module-activating={code}
     >
-      <div className="text-sm font-semibold text-text-primary">
-        {t('modules.activating.title', { module: name, code })}
-      </div>
-      <div className="text-xs text-text-secondary mt-1">{t('modules.activating.body')}</div>
+      <div>{t('modules.activating.body')}</div>
       {identity.personaType === 'buyer' && (
         <Link
           to="/buyer/process-flows"
-          className="inline-block text-xs text-action-text hover:underline mt-1"
+          className="inline-block font-medium text-action-text hover:underline"
           data-testid="module-activating-guide"
         >
           {t('modules.activating.guide')}
         </Link>
       )}
-    </div>
+    </Notice>
   );
 };
 

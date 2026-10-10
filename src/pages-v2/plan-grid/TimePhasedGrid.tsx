@@ -57,6 +57,7 @@ import { DataSheetGrid, type CellProps, type Column, type DataSheetGridRef } fro
 import 'react-datasheet-grid/dist/style.css';
 import './planGrid.css';
 import { useTranslation } from 'react-i18next';
+import Button from '../../components/ui-v2/Button';
 import Data from '../../components/ui-v2/Data';
 import { Checkbox, FormField, Select, TextInput } from '../../components/ui-v2/Form';
 import LivenessPill from '../../components/ui-v2/LivenessPill';
@@ -801,7 +802,7 @@ const TimePhasedGrid: React.FC<{
       {/* SIMULATED while the SOMO fixture feeds it — said before any number, in
           one line (PLN-5); the whole statement is one click away and in the DOM. */}
       <CompactNotice
-        tone="warning"
+        tone="sample"
         title={t('planGrid.tp.banner.title')}
         body={t('planGrid.tp.banner.body')}
         aside={<LivenessPill capability="forecastPublications" />}
@@ -860,15 +861,14 @@ const TimePhasedGrid: React.FC<{
                 </option>
               ))}
             </Select>
-            <button
-              type="button"
+            <Button
+              variant="secondary"
               data-testid="tp-sort-dir"
               disabled={filter.exceptionsOnly}
-              className="rounded-md border border-border-input bg-bg-surface px-2 py-1.5 disabled:opacity-50"
               onClick={() => setSort({ ...sort, dir: sort.dir === 'asc' ? 'desc' : 'asc' })}
             >
               {t(sort.dir === 'asc' ? 'planGrid.tp.asc' : 'planGrid.tp.desc')}
-            </button>
+            </Button>
           </div>
         </FormField>
         <Checkbox

@@ -24,6 +24,8 @@ import KpiCard from '../ui-v2/KpiCard';
 import TargetBar from '../ui-v2/TargetBar';
 import Data from '../ui-v2/Data';
 import Button from '../ui-v2/Button';
+import { Card } from '../ui-v2/Card';
+import Notice from '../ui-v2/Notice';
 import { FieldLabel, FormField, Select, TextInput } from '../ui-v2/Form';
 import ReleaseCalendar from './ReleaseCalendar';
 import PolicyEditor from './PolicyEditor';
@@ -176,7 +178,7 @@ const AgreementCard: React.FC<{
   const allDraft = view.items.every((iv) => iv.fulfillment.length === 0);
 
   return (
-    <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm overflow-hidden">
+    <Card as="section" padding="none" className="overflow-hidden">
       <div className="px-5 py-4 border-b border-border-subtle flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
@@ -230,7 +232,7 @@ const AgreementCard: React.FC<{
           />
         ))}
       </div>
-    </section>
+    </Card>
   );
 };
 
@@ -438,7 +440,6 @@ const ItemBlock: React.FC<{
             <Button
               variant="outline"
               icon={SlidersHorizontal}
-              className="px-3 py-1 text-xs"
               onClick={() => setEditing((v) => !v)}
             >
               {t('delivery.policy.edit.action')}
@@ -500,12 +501,13 @@ const ItemBlock: React.FC<{
           the governance detail. It reports; it does not stop a release (the
           envelope is not a block — Decision D). */}
       {showPolicyHistory && overTolerance && (
-        <div
+        <Notice
+          tone="warning"
           role="alert"
           data-testid="delivery-over-tolerance"
-          className="mb-5 bg-warning-soft border-l-2 border-warning rounded px-3 py-2 text-xs text-warning-hover flex items-start gap-2"
+          icon={AlertTriangle}
+          className="mb-5"
         >
-          <AlertTriangle size={14} className="shrink-0 mt-0.5" />
           <span>
             {t('delivery.flag.overTolerance', {
               over: formatNumber(overTolerance.overageQty),
@@ -515,7 +517,7 @@ const ItemBlock: React.FC<{
               pct: formatPct(ledger.activePolicy.tolerancePct ?? 0),
             })}
           </span>
-        </div>
+        </Notice>
       )}
 
       {/* Release toolbar (buyer-only, draft lines remaining) — the FRC/JIT
@@ -528,7 +530,7 @@ const ItemBlock: React.FC<{
         </div>
       )}
       {canRelease && (
-        <div className="flex flex-wrap items-center gap-2 mb-5 rounded-lg border border-border-subtle bg-bg-hover px-4 py-3">
+        <Card tone="inset" className="flex flex-wrap items-center gap-2 mb-5">
           <span className="text-label text-text-tertiary uppercase">
             {t('delivery.release.section')}
           </span>
@@ -557,7 +559,7 @@ const ItemBlock: React.FC<{
               ? t('delivery.release.releasing')
               : t('delivery.release.through', { date: formatDate(effectiveHorizon) })}
           </Button>
-        </div>
+        </Card>
       )}
 
       {/* The calendar is the shared read-only ReleaseCalendar; the per-line action
@@ -582,8 +584,9 @@ const ItemBlock: React.FC<{
           seat; `SupplierShipments` says so in its own words and is the
           precedent copied here. */}
       {effectiveAdjustSeq !== null && (
-        <div
-          className="border border-border-subtle rounded-lg bg-bg-subtle px-4 py-3 mb-3"
+        <Card
+          tone="inset"
+          className="mb-3"
           data-testid="delivery-adjust-editor"
         >
           <div className="text-label text-text-tertiary uppercase mb-1">
@@ -624,7 +627,7 @@ const ItemBlock: React.FC<{
               {t('delivery.adjust.cancel')}
             </Button>
           </div>
-        </div>
+        </Card>
       )}
 
       <ReleaseCalendar
@@ -649,7 +652,6 @@ const ItemBlock: React.FC<{
                       ) : canRelease ? (
                         <Button
                           variant="outline"
-                          className="px-3 py-1.5 text-xs"
                           disabled={pending !== null}
                           onClick={() =>
                             doRelease({ releaseSeqs: [line.releaseSeq] }, `rel-${line.releaseSeq}`)
@@ -675,7 +677,6 @@ const ItemBlock: React.FC<{
                         <Button
                           variant="secondary"
                           icon={Pencil}
-                          className="px-3 py-1.5 text-xs"
                           disabled={pending !== null}
                           onClick={() => openAdjust(line)}
                         >
@@ -692,7 +693,6 @@ const ItemBlock: React.FC<{
                   return canConfirm ? (
                     <Button
                       variant="outline"
-                      className="px-3 py-1.5 text-xs"
                       disabled={pending !== null}
                       onClick={() => doConfirm(line.releaseSeq)}
                     >

@@ -25,6 +25,9 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import Button from '../../components/ui-v2/Button';
+import { Card } from '../../components/ui-v2/Card';
+import Notice from '../../components/ui-v2/Notice';
+import { LinkButton } from '../../components/ui-v2/Actions';
 import Data from '../../components/ui-v2/Data';
 import DataTable, { CellSub, type Column } from '../../components/ui-v2/DataTable';
 import { Checkbox, FormField, TextInput } from '../../components/ui-v2/Form';
@@ -157,31 +160,31 @@ export const PlannedChangesBar: React.FC<{
   return (
     <div className="sticky bottom-0 z-20 mt-3 space-y-2 pb-2" data-testid="plan-draft-bar">
       {last && !progress && (
-        <div
-          className="flex items-start justify-between gap-3 rounded-lg border border-border-subtle bg-bg-surface px-4 py-2 text-xs shadow-sm"
+        <Notice
+          tone="neutral"
           data-testid="plan-push-result"
           role="status"
-        >
-          <div>
-            <span className="font-semibold text-text-primary">
-              {t('planGrid.edit.push.result', {
+          title={
+              t('planGrid.edit.push.result', {
                 committed: formatNumber(last.committed),
                 refused: formatNumber(last.refused),
                 total: formatNumber(last.total),
-              })}
-            </span>
+              })
+          }
+          action={
+            <LinkButton tone="muted" onClick={status?.dismissLast}>
+              {t('planGrid.edit.dismiss')}
+            </LinkButton>
+          }
+        >
             {last.reasons.length > 0 && (
-              <ul className="mt-0.5 text-critical" data-testid="plan-push-result-reasons">
+              <ul data-testid="plan-push-result-reasons">
                 {last.reasons.map(([reason, n]) => (
                   <li key={reason}>{t('planGrid.edit.push.resultReason', { n: formatNumber(n), reason: pushReason(reason) })}</li>
                 ))}
               </ul>
             )}
-          </div>
-          <button type="button" className="text-text-secondary hover:underline" onClick={status?.dismissLast}>
-            {t('planGrid.edit.dismiss')}
-          </button>
-        </div>
+        </Notice>
       )}
 
       {(entries.length > 0 || refusals > 0) && (
@@ -215,9 +218,7 @@ export const PlannedChangesBar: React.FC<{
                   testId={v === 'intake' ? 'handoff-plangrid-grid-push' : 'handoff-plangrid-allocate-push'}
                 />
               ))}
-              <button
-                type="button"
-                className="text-sm text-action-text hover:underline"
+              <LinkButton
                 aria-expanded={open}
                 onClick={onToggle}
                 data-testid="plan-changes-toggle"
@@ -225,7 +226,7 @@ export const PlannedChangesBar: React.FC<{
                 {open
                   ? t('planGrid.edit.toggle.hide')
                   : t('planGrid.edit.toggle.show', { n: formatNumber(entries.length + refusals) })}
-              </button>
+              </LinkButton>
               {entries.some(canPush) && (
                 <div className="flex gap-2">
                   <Button
@@ -430,32 +431,29 @@ export const PlannedChangesDetails: React.FC<{ open: boolean }> = ({ open }) => 
       cell: (e) => (
         <>
           {canPush(e) && (
-            <button
-              type="button"
-              className="mr-3 text-action-text hover:underline disabled:opacity-50 disabled:no-underline"
+            <LinkButton
+              className="mr-3"
               disabled={pushing || e.planState !== 'PLANNED'}
               onClick={() => void api.push([e.seamRef])}
               data-testid={`plan-push-row-${e.seamRef}`}
             >
               {t('planGrid.edit.push.row')}
-            </button>
+            </LinkButton>
           )}
-          <button
-            type="button"
-            className="text-action-text hover:underline disabled:opacity-50 disabled:no-underline"
+          <LinkButton
             disabled={e.planState === 'PUSHING'}
             onClick={() => api.remove(e.seamRef)}
             data-testid={`plan-remove-${e.seamRef}`}
           >
             {t('planGrid.edit.remove')}
-          </button>
+          </LinkButton>
         </>
       ),
     },
   ];
 
   return (
-    <div className="mt-3 rounded-lg border border-info/30 bg-info-soft" data-testid="plan-draft-details">
+    <Card padding="none" className="mt-3" data-testid="plan-draft-details">
       {owedRefs.length > 0 && (
         <div className="flex flex-wrap items-end gap-3 border-b border-info/20 px-4 py-2.5 text-xs" data-testid="plan-bulk-reason-bar">
           <Checkbox
@@ -516,13 +514,13 @@ export const PlannedChangesDetails: React.FC<{ open: boolean }> = ({ open }) => 
                 <Data>{r.rowId.split('|')[0]}</Data> · <Data>{r.bucket}</Data> · “{r.raw}” —{' '}
                 {cellRefusalText(t, r)}
               </span>
-              <button type="button" className="text-text-secondary hover:underline" onClick={() => api.dismissRefusal(key)}>
+              <LinkButton tone="muted" onClick={() => api.dismissRefusal(key)}>
                 {t('planGrid.edit.dismiss')}
-              </button>
+              </LinkButton>
             </li>
           ))}
         </ul>
       )}
-    </div>
+    </Card>
   );
 };

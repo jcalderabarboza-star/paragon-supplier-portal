@@ -23,6 +23,8 @@ import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import StatusPill from '../../components/ui-v2/StatusPill';
+import { Card } from '../../components/ui-v2/Card';
+import { IconButton } from '../../components/ui-v2/Actions';
 import Data from '../../components/ui-v2/Data';
 import { FieldList, Field } from '../../components/ui-v2/Field';
 import DataTable, { CellSub, type Column } from '../../components/ui-v2/DataTable';
@@ -94,15 +96,12 @@ const SupplierShipNotices: React.FC<Props> = ({ search, supplierName }) => {
       cell: (a) => {
         const isOpen = open.has(a.asnNumber);
         return (
-          <button
-            type="button"
+          <IconButton
+            icon={isOpen ? ChevronDown : ChevronRight}
             onClick={() => toggle(a.asnNumber)}
             aria-expanded={isOpen}
             aria-label={t('shipments.notices.toggle', { asn: a.asnNumber })}
-            className="p-1"
-          >
-            {isOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-          </button>
+          />
         );
       },
     },
@@ -213,8 +212,10 @@ const SupplierShipNotices: React.FC<Props> = ({ search, supplierName }) => {
   ];
 
   return (
-    <section
-      className="border border-border-subtle rounded-lg bg-white overflow-hidden mb-6"
+    <Card
+      as="section"
+      padding="none"
+      className="overflow-hidden mb-6"
       data-testid="supplier-ship-notices"
     >
       <div className="px-4 py-3 border-b border-border-subtle bg-bg-subtle">
@@ -285,7 +286,7 @@ const SupplierShipNotices: React.FC<Props> = ({ search, supplierName }) => {
           }
         />
       )}
-    </section>
+    </Card>
   );
 };
 

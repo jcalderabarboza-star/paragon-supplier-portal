@@ -21,17 +21,17 @@ const DerivedFlags: React.FC<{ tv: TransitionView }> = ({ tv }) => {
   return (
     <span className="flex flex-wrap gap-1">
       {tv.recordsFact && (
-        <StatusPill variant="neutral" className="text-[10px]">
+        <StatusPill variant="neutral" size="sm">
           {t('processFlows.flag.recordsFact')}
         </StatusPill>
       )}
       {tv.sapBoundary && (
-        <StatusPill variant="info" className="text-[10px]">
+        <StatusPill variant="info" size="sm">
           {t('processFlows.flag.sapBoundary', { state: tv.settlesTo })}
         </StatusPill>
       )}
       {tv.fansOutTo.map((link) => (
-        <StatusPill key={link.targetTransitionId} variant="info" className="text-[10px]">
+        <StatusPill key={link.targetTransitionId} variant="info" size="sm">
           {t('processFlows.flag.fansOut', {
             entity: link.targetEntity,
             verb: verbOf(link.targetTransitionId),
@@ -41,7 +41,7 @@ const DerivedFlags: React.FC<{ tv: TransitionView }> = ({ tv }) => {
       {def.trigger === 'cascade' && (
         <StatusPill
           variant={tv.firedBy.length > 0 ? 'info' : 'warning'}
-          className="text-[10px]"
+          size="sm"
         >
           {tv.firedBy.length > 0
             ? // ⚠️ ENTITY-QUALIFIED (C.2). A cascade source lives on ANOTHER

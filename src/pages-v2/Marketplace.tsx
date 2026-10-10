@@ -8,6 +8,8 @@ import KpiCard from '../components/ui-v2/KpiCard';
 import SearchBar from '../components/ui-v2/SearchBar';
 import SupplierCard from '../components/ui-v2/SupplierCard';
 import StatusPill from '../components/ui-v2/StatusPill';
+import { Card } from '../components/ui-v2/Card';
+import { ToggleChip } from '../components/ui-v2/Actions';
 import SectionHeading from '../components/ui-v2/SectionHeading';
 import DataTable from '../components/ui-v2/DataTable';
 import ListPage from '../components/ui-v2/ListPage';
@@ -161,23 +163,17 @@ const Marketplace: React.FC = () => {
           <div className="text-label text-text-tertiary uppercase mb-2">
             {t('marketplace.filter.byCategory')}
           </div>
-          <div className="inline-flex flex-wrap items-center gap-1 bg-bg-hover border border-border-subtle rounded-md p-1">
+          <div className="flex flex-wrap items-center gap-2">
             {CATEGORIES.map((cat) => {
               const active = selectedCats.includes(cat);
               return (
-                <button
+                <ToggleChip
                   key={cat}
-                  type="button"
                   onClick={() => toggleCat(cat)}
-                  aria-pressed={active}
-                  className={`flex items-center px-3 py-1.5 text-sm font-medium rounded-[6px] transition-all duration-150 cursor-pointer ${
-                    active
-                      ? 'bg-white text-text-primary shadow-sm'
-                      : 'bg-transparent text-text-tertiary hover:text-text-secondary'
-                  }`}
+                  selected={active}
                 >
                   {cl(cat)}
-                </button>
+                </ToggleChip>
               );
             })}
           </div>
@@ -219,7 +215,7 @@ const Marketplace: React.FC = () => {
         )}
       </div>
 
-      <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm overflow-hidden">
+      <Card as="section" padding="none" className="overflow-hidden">
         <div className="px-6 py-4 border-b border-border-subtle flex items-center justify-between">
           <div>
             <SectionHeading as="h2" className="flex items-center gap-2">
@@ -277,7 +273,7 @@ const Marketplace: React.FC = () => {
             },
           ]}
         />
-      </section>
+      </Card>
     </ListPage>
   );
 };

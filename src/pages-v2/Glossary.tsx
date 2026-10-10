@@ -7,6 +7,9 @@ import PageHeader from '../components/ui-v2/PageHeader';
 import PageMetaLine from '../components/ui-v2/PageMetaLine';
 import SearchBar from '../components/ui-v2/SearchBar';
 import StatusPill from '../components/ui-v2/StatusPill';
+import { Card } from '../components/ui-v2/Card';
+import Notice from '../components/ui-v2/Notice';
+import { LinkButton, RowButton } from '../components/ui-v2/Actions';
 import Data from '../components/ui-v2/Data';
 import SectionHeading from '../components/ui-v2/SectionHeading';
 import { GLOSSARY_REGISTRIES } from '../lib/glossary';
@@ -88,7 +91,7 @@ const Appearances: React.FC<{ appearances: readonly FlowAppearance[] }> = ({ app
           <li key={a.entity} className="flex flex-wrap items-center gap-1.5 text-[11px]">
             <Data className="text-[11px]">{a.entity}</Data>
             {a.kinds.map((k) => (
-              <StatusPill key={k} variant="neutral" className="text-[10px]">
+              <StatusPill key={k} variant="neutral" size="sm">
                 {t(APPEARANCE_KIND_KEY[k])}
               </StatusPill>
             ))}
@@ -135,15 +138,13 @@ const Related: React.FC<{
       <ul className="mt-1.5 space-y-1">
         {related.map((r) => (
           <li key={`${r.relation}#${r.sourceType}.${r.term}`} className="text-[11px] leading-relaxed">
-            <button
-              type="button"
+            <LinkButton
               onClick={() => onJump(`${r.sourceType}.${r.term}`)}
-              className="text-teal-text hover:underline"
             >
               <Data className="text-[11px] text-teal-text">
                 {r.sourceType}.{r.term}
               </Data>
-            </button>
+            </LinkButton>
             <span className="text-text-tertiary"> — {t(RELATION_KEY[r.relation])}</span>
           </li>
         ))}
@@ -267,7 +268,7 @@ const Glossary: React.FC = () => {
       {/* The honest marker for the route (D-CENSUS-8). Four claims, each about a
           different axis — what is read, what is written, how settled it is, and
           how the appearance lists are matched. */}
-      <section className="mb-4 rounded-md border border-border-subtle bg-bg-surface p-4">
+      <Card as="section" className="mb-4">
         <SectionHeading as="h2">{t('glossary.honesty.title')}</SectionHeading>
         <p className="mt-1 max-w-4xl text-meta text-text-secondary">
           {t('glossary.honesty.derived')}
@@ -282,19 +283,18 @@ const Glossary: React.FC = () => {
         <p className="mt-1 max-w-4xl text-meta text-text-tertiary">
           {t('glossary.honesty.matching')}
         </p>
-      </section>
+      </Card>
 
       {/* The OPEN half, stated as loudly as the closed one. */}
-      <section
+      <Notice
+        tone="warning"
+        icon={HelpCircle}
+        title={t('glossary.remedy.title')}
         data-testid="glossary-remedy-gap"
-        className="mb-6 rounded-md border border-warning/40 bg-warning-soft/40 p-4"
+        className="mb-6"
       >
-        <SectionHeading as="h2" className="flex items-center gap-2">
-          <HelpCircle size={15} className="text-warning-hover" aria-hidden="true" />
-          {t('glossary.remedy.title')}
-        </SectionHeading>
-        <p className="mt-1 max-w-4xl text-meta text-text-secondary">{t('glossary.remedy.body')}</p>
-      </section>
+        <p className="max-w-4xl">{t('glossary.remedy.body')}</p>
+      </Notice>
 
       <div className="flex flex-col gap-6 lg:flex-row">
         <nav aria-label={t('glossary.filter.aria')} className="w-full shrink-0 lg:w-72">
@@ -303,40 +303,32 @@ const Glossary: React.FC = () => {
           </SectionHeading>
           <ul className="space-y-1">
             <li>
-              <button
-                type="button"
+              <RowButton
                 data-testid="glossary-filter-all"
                 onClick={() => setVocabulary(null)}
                 aria-current={vocabulary === null ? 'true' : undefined}
-                className={`flex w-full items-center justify-between gap-2 rounded-md border px-3 py-1.5 text-left text-[12px] transition-colors ${
-                  vocabulary === null
-                    ? 'border-action bg-action-soft'
-                    : 'border-border-subtle bg-bg-surface hover:bg-bg-hover'
-                }`}
+                selected={vocabulary === null}
+                padding="sm"
               >
                 <span className="text-text-primary">{t('glossary.filter.all')}</span>
                 <span className="text-[11px] text-text-tertiary">{all.length}</span>
-              </button>
+              </RowButton>
             </li>
             {GLOSSARY_REGISTRIES.map((r) => {
               const count = all.filter((v) => v.sourceType === r.sourceType).length;
               const active = vocabulary === r.sourceType;
               return (
                 <li key={r.sourceType}>
-                  <button
-                    type="button"
+                  <RowButton
                     data-testid={`glossary-filter-${r.sourceType}`}
                     onClick={() => setVocabulary(active ? null : r.sourceType)}
                     aria-current={active ? 'true' : undefined}
-                    className={`flex w-full items-center justify-between gap-2 rounded-md border px-3 py-1.5 text-left transition-colors ${
-                      active
-                        ? 'border-action bg-action-soft'
-                        : 'border-border-subtle bg-bg-surface hover:bg-bg-hover'
-                    }`}
+                    selected={active}
+                    padding="sm"
                   >
                     <Data className="truncate text-[11px]">{r.sourceType}</Data>
                     <span className="text-[11px] text-text-tertiary">{count}</span>
-                  </button>
+                  </RowButton>
                 </li>
               );
             })}
@@ -355,9 +347,9 @@ const Glossary: React.FC = () => {
           </p>
 
           {shown.length === 0 ? (
-            <p className="mt-4 rounded-md border border-border-subtle bg-bg-surface p-4 text-meta text-text-secondary">
+            <Notice tone="neutral" className="mt-4">
               {t('glossary.empty.noMatch', { query: query.trim() })}
-            </p>
+            </Notice>
           ) : (
             <div className="mt-4 space-y-6">
               {groups.map((g) => (

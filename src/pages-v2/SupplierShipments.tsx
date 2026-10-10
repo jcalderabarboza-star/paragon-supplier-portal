@@ -23,6 +23,9 @@ import BulkActionsBar from '../components/ui-v2/BulkActionsBar';
 import SubTabs from '../components/ui-v2/SubTabs';
 import StatusPill from '../components/ui-v2/StatusPill';
 import Button from '../components/ui-v2/Button';
+import { Card, CardButton } from '../components/ui-v2/Card';
+import Notice from '../components/ui-v2/Notice';
+import { IconButton } from '../components/ui-v2/Actions';
 import SidePanel from '../components/ui-v2/SidePanel';
 import Wizard, { WizardStep } from '../components/ui-v2/Wizard';
 import FormSection from '../components/ui-v2/FormSection';
@@ -186,19 +189,18 @@ const DockAppointments: React.FC<{
         </div>
       )}
       {state === 'ready' && appointments.length === 0 && (
-        <div
-          className="bg-bg-surface border border-border-subtle rounded-lg px-5 py-6 text-sm text-text-secondary"
+        <Card
+          padding="lg"
           data-testid="dock-empty"
         >
-          {t('supplierShipments.dock.empty')}
-        </div>
+          <span className="text-sm text-text-secondary">{t('supplierShipments.dock.empty')}</span>
+        </Card>
       )}
 
       {state === 'ready' &&
         appointments.map((s) => (
-          <div
+          <Card
             key={s.id}
-            className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-5"
             data-testid={`dock-appointment-${s.asnNumber}`}
           >
             <div className="flex items-start justify-between mb-4 gap-3 flex-wrap">
@@ -238,26 +240,24 @@ const DockAppointments: React.FC<{
                 </Field>
               ))}
             </FieldList>
-          </div>
+          </Card>
         ))}
 
       {state === 'ready' && appointments.length > 0 && (
-        <div className="bg-warning-soft border-l-2 border-warning rounded px-4 py-3 text-sm text-text-secondary flex items-start gap-2">
-          <Clock size={14} className="text-warning-hover shrink-0 mt-0.5" />
+        <Notice tone="warning" icon={Clock}>
           <span>
             {t('supplierShipments.dock.notice.arrivePre')}{' '}
-            <strong className="text-warning-hover">
+            <strong>
               {t('supplierShipments.dock.notice.arriveEmphasis')}
             </strong>
             . {t('supplierShipments.dock.notice.arrivePost')}
           </span>
-        </div>
+        </Notice>
       )}
 
-      <div className="bg-info-soft border-l-2 border-info rounded px-4 py-3 text-sm text-text-secondary flex items-start gap-2">
-        <CheckCircle2 size={14} className="text-info shrink-0 mt-0.5" />
+      <Notice tone="info" icon={CheckCircle2}>
         <span>{t('supplierShipments.dock.info')}</span>
-      </div>
+      </Notice>
     </div>
   );
 };
@@ -354,22 +354,24 @@ const ShipmentsList: React.FC<ShipmentsListProps> = ({
   return (
     <div className="flex flex-col gap-5">
       {pendingPOs.length > 0 && (
-        <section className="bg-warning-soft border-l-2 border-warning rounded-md px-4 py-3">
-          <div className="text-sm font-semibold text-text-primary mb-3">
-            {t(
+        <Notice
+          tone="warning"
+          title={
+            t(
               pendingPOs.length === 1
                 ? 'supplierShipments.pending.awaiting.one'
                 : 'supplierShipments.pending.awaiting.other',
               { count: pendingPOs.length },
-            )}
-          </div>
-          <div className="flex flex-col gap-2">
+            )
+          }
+        >
+          <div className="flex flex-col gap-2 mt-2">
             {pendingPOs.map((po) => {
               const first = po.lineItems[0];
               return (
-                <div
+                <Card
                   key={po.id}
-                  className="bg-bg-surface border border-border-subtle rounded-md px-3 py-2 grid grid-cols-1 sm:grid-cols-[140px_1fr_180px_140px] gap-3 items-center text-sm"
+                  className="grid grid-cols-1 sm:grid-cols-[140px_1fr_180px_140px] gap-3 items-center"
                 >
                   <Data className="font-bold text-text-primary">
                     {po.poNumber}
@@ -400,14 +402,14 @@ const ShipmentsList: React.FC<ShipmentsListProps> = ({
                       />
                     )}
                   </div>
-                </div>
+                </Card>
               );
             })}
           </div>
-        </section>
+        </Notice>
       )}
 
-      <div className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm overflow-hidden">
+      <Card padding="none" className="overflow-hidden">
         <div className="px-5 py-3 border-b border-border-subtle flex items-center justify-between flex-wrap gap-2">
           <div className="flex items-baseline gap-2">
             <SectionHeading as="h3">
@@ -438,17 +440,15 @@ const ShipmentsList: React.FC<ShipmentsListProps> = ({
               cell: (asn) => {
                 const isOpen = expanded.has(asn.asnNumber);
                 return (
-                  <button
-                    type="button"
+                  <IconButton
+                    icon={isOpen ? ChevronDown : ChevronRight}
                     onClick={() => onToggleExpand(asn.asnNumber)}
                     aria-label={
                       isOpen
                         ? t('supplierShipments.aria.collapse')
                         : t('supplierShipments.aria.expand')
                     }
-                  >
-                    {isOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-                  </button>
+                  />
                 );
               },
             },
@@ -542,15 +542,15 @@ const ShipmentsList: React.FC<ShipmentsListProps> = ({
               <div className="bg-bg-page -mx-4 -my-4 px-6 py-4">
                 {/* E2E-2 — the receipt recorded against this notice. */}
                 {asn.status !== 'Draft' && (
-                  <div className="bg-bg-surface border border-border-subtle rounded-md p-4 mb-5">
+                  <Card className="mb-5">
                     <ReceivedOnNotice
                       receipts={receiptsOfNotice(asn.asnNumber, receipts)}
                       testId={`asn-received-${asn.asnNumber}`}
                     />
-                  </div>
+                  </Card>
                 )}
                 <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.4fr] gap-5">
-                  <div className="bg-bg-surface border border-border-subtle rounded-md p-4">
+                  <Card>
                     <SectionHeading level="group" as="h4" className="mb-3">
                       {t('supplierShipments.detail.heading')}
                     </SectionHeading>
@@ -609,8 +609,8 @@ const ShipmentsList: React.FC<ShipmentsListProps> = ({
                         {asn.details.notes ?? '—'}
                       </Field>
                     </FieldList>
-                  </div>
-                  <div className="bg-bg-surface border border-border-subtle rounded-md p-4">
+                  </Card>
+                  <Card>
                     <SectionHeading level="group" as="h4" className="mb-3">
                       {t('supplierShipments.detail.lineItems', {
                         count: asn.lineItems.length,
@@ -629,13 +629,13 @@ const ShipmentsList: React.FC<ShipmentsListProps> = ({
                         rowKey={(li) => li.materialCode}
                       />
                     )}
-                  </div>
+                  </Card>
                 </div>
               </div>
             ) : null
           }
         />
-      </div>
+      </Card>
     </div>
   );
 };
@@ -922,25 +922,19 @@ const SupplierShipments: React.FC = () => {
       content: (
         <div className="flex flex-col gap-3">
           {CONFIRMED_POS.length === 0 ? (
-            <div className="bg-bg-hover border border-border-subtle rounded-md py-8 px-4 text-center text-sm text-text-tertiary">
+            <Notice tone="neutral">
               {t('supplierShipments.wizard.select.empty')}
-            </div>
+            </Notice>
           ) : (
             CONFIRMED_POS.map((po) => {
               const selected = form.poId === po.id;
               return (
-                <button
+                <CardButton
                   key={po.id}
-                  type="button"
                   onClick={() =>
                     updateForm({ poId: po.id, lots: po.lineItems.map(() => '') })
                   }
-                  aria-pressed={selected}
-                  className={`text-left rounded-md p-4 border transition-colors ${
-                    selected
-                      ? 'border-action bg-action-soft'
-                      : 'border-border-subtle bg-bg-surface hover:bg-bg-hover'
-                  }`}
+                  selected={selected}
                 >
                   <div className="flex items-start justify-between gap-3 flex-wrap">
                     <div className="min-w-0">
@@ -998,7 +992,7 @@ const SupplierShipments: React.FC = () => {
                       </div>
                     </div>
                   )}
-                </button>
+                </CardButton>
               );
             })
           )}
@@ -1102,7 +1096,7 @@ const SupplierShipments: React.FC = () => {
             {/* One lot per order line. The receiving dock reads the lot off the
                 line it is counting, so a single lot for a two-material
                 shipment named the wrong goods on one of them. */}
-            <div className="border border-border-subtle rounded-md overflow-hidden">
+            <Card padding="none" className="overflow-hidden">
               <DataTable<PoLine>
                 density="compact"
                 card={false}
@@ -1152,7 +1146,7 @@ const SupplierShipments: React.FC = () => {
                   },
                 ]}
               />
-            </div>
+            </Card>
           </FormSection>
 
           <FormSection
@@ -1246,7 +1240,7 @@ const SupplierShipments: React.FC = () => {
             </FieldList>
             {/* Every order line, at the quantity that ships — the confirmed
                 one — with the lot typed for it. */}
-            <div className="border border-border-subtle rounded-md overflow-hidden">
+            <Card padding="none" className="overflow-hidden">
               <DataTable<PoLine>
                 density="compact"
                 card={false}
@@ -1287,7 +1281,7 @@ const SupplierShipments: React.FC = () => {
                   },
                 ]}
               />
-            </div>
+            </Card>
           </FormSection>
 
           <ChoiceCard

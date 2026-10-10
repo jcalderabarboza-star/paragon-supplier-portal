@@ -19,6 +19,9 @@ import PageMetaLine from '../components/ui-v2/PageMetaLine';
 import Button from '../components/ui-v2/Button';
 import Data from '../components/ui-v2/Data';
 import StatusPill from '../components/ui-v2/StatusPill';
+import { Card } from '../components/ui-v2/Card';
+import Notice from '../components/ui-v2/Notice';
+import { LinkButton } from '../components/ui-v2/Actions';
 import LivenessPill from '../components/ui-v2/LivenessPill';
 import NoSupplierIdentity from '../components/ui-v2/NoSupplierIdentity';
 import { useToast } from '../hooks/useToast';
@@ -316,21 +319,19 @@ const CommHubInbound: React.FC = () => {
       </PageMetaLine>
 
       {/* Honesty banner — operator-fed, no live channel. */}
-      <div className="mb-6 flex items-start gap-2 rounded-lg border border-dashed border-sample-border bg-sample-soft px-4 py-3 text-sm text-text-primary">
-        <Info size={16} className="mt-0.5 shrink-0 text-sample" />
-        <div>
-          <div className="font-semibold text-sample">{t('commHub.honesty.title')}</div>
-          <p className="mt-0.5 text-text-secondary">{t('commHub.honesty.body')}</p>
-        </div>
-      </div>
+      <Notice tone="sample" icon={Info} title={t('commHub.honesty.title')} className="mb-6">
+        <p>{t('commHub.honesty.body')}</p>
+      </Notice>
 
       {/* ── Comm Hub C5 — "what Paragon needs from you" (own obligations) ──────
           The supplier's OWN upcoming + overdue deliveries, chase-derived and
           own-scoped — TRUE without any send. Own-facing tone (no chase vocabulary);
           the OUTBOUND ASK STORE is deliberately never read here (every record is
           "composed — not sent" — surfacing it would fabricate a receipt). */}
-      <section
-        className="border border-border-subtle rounded-lg bg-white overflow-hidden mb-6"
+      <Card
+        as="section"
+        padding="none"
+        className="overflow-hidden mb-6"
         data-testid="commhub-needs"
       >
         <div className="px-4 py-3 border-b border-border-subtle bg-bg-subtle flex items-center gap-3">
@@ -415,23 +416,22 @@ const CommHubInbound: React.FC = () => {
             </div>
           </>
         )}
-      </section>
+      </Card>
 
       {/* ── The honest note — recorded here, never sent from here (C5) ──────── */}
-      <div
-        className="mb-6 flex items-start gap-2 rounded-lg border border-info/30 bg-info-soft px-4 py-3 text-sm text-text-primary"
+      <Notice
+        tone="info"
+        icon={Info}
+        title={t('commHub.note.title')}
+        className="mb-6"
         data-testid="commhub-note"
       >
-        <Info size={16} className="mt-0.5 shrink-0 text-info" aria-hidden="true" />
-        <div>
-          <div className="font-semibold text-info">{t('commHub.note.title')}</div>
-          <p className="mt-0.5 text-text-secondary">{t('commHub.note.body')}</p>
-        </div>
-      </div>
+        <p>{t('commHub.note.body')}</p>
+      </Notice>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* ── Gate 1 — the message source ─────────────────────────────────── */}
-        <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-5" data-testid="commhub-source">
+        <Card as="section" data-testid="commhub-source">
           <div className="flex items-center gap-2 mb-4">
             <MessageSquare size={16} className="text-teal" />
             <SectionHeading as="h3">{t('commHub.source.title')}</SectionHeading>
@@ -481,10 +481,10 @@ const CommHubInbound: React.FC = () => {
               </Button>
             )}
           </div>
-        </section>
+        </Card>
 
         {/* ── Gate 2 — the inference review (the confirm gate) ─────────────── */}
-        <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-5" data-testid="commhub-inference">
+        <Card as="section" data-testid="commhub-inference">
           <div className="flex items-center gap-2 mb-4">
             <CheckCircle2 size={16} className="text-teal" />
             <SectionHeading as="h3">{t('commHub.infer.title')}</SectionHeading>
@@ -495,12 +495,12 @@ const CommHubInbound: React.FC = () => {
           ) : (
             <div className="flex flex-col gap-4">
               {/* Raw message echo + diagnostics (honest render of the inference). */}
-              <div className="rounded-md border border-border-subtle bg-bg-hover px-3 py-2">
+              <Card tone="inset">
                 <SectionHeading level="group" as="h4" className="mb-1">
                   {t('commHub.infer.rawTitle')}
                 </SectionHeading>
                 <Data className="text-sm text-text-primary break-words">{message?.rawText}</Data>
-              </div>
+              </Card>
 
               <div className="flex flex-wrap items-center gap-2 text-xs">
                 <StatusPill variant="neutral">
@@ -545,25 +545,21 @@ const CommHubInbound: React.FC = () => {
               )}
 
               {parsed.diagnostics.qtyReason && (
-                <div className="flex items-start gap-2 rounded-md border border-warning/30 bg-warning-soft px-3 py-2 text-xs text-warning-hover">
-                  <AlertTriangle size={14} className="mt-0.5 shrink-0" />
+                <Notice tone="warning" icon={AlertTriangle}>
                   <span>
                     {t('commHub.infer.qtyRefused', { reason: t(QTY_REASON_KEY[parsed.diagnostics.qtyReason]) })}{' '}
                     <GlossaryTermChip
                       refTo={{ sourceType: 'QtyRefusalReason', term: parsed.diagnostics.qtyReason }}
                     />
                   </span>
-                </div>
+                </Notice>
               )}
 
               {/* No recognized intent OR no confirmable row: honest, nothing to record. */}
               {!hasRows && (
-                <div className="rounded-md border border-border-subtle bg-bg-hover px-3 py-3">
-                  <div className="text-sm font-semibold text-text-primary">
-                    {t('commHub.infer.noParse.title')}
-                  </div>
-                  <p className="mt-0.5 text-xs text-text-secondary">{t('commHub.infer.noParse.body')}</p>
-                </div>
+                <Notice tone="neutral" title={t('commHub.infer.noParse.title')}>
+                  <p>{t('commHub.infer.noParse.body')}</p>
+                </Notice>
               )}
 
               {/* The editable, confirmable rows — the material is a SUGGESTION the
@@ -578,20 +574,19 @@ const CommHubInbound: React.FC = () => {
                       row.materialCode !== '' &&
                       parsed.diagnostics.uom.toUpperCase() !== masterUom.toUpperCase();
                     return (
-                      <div key={i} className="rounded-md border border-border-subtle bg-bg-hover p-3 flex flex-col gap-2">
+                      <Card key={i} tone="inset" className="flex flex-col gap-2">
                         <div className="flex items-start justify-between gap-2 text-xs text-text-tertiary">
                           <span>
                             {t('commHub.row.supplierWrote')}:{' '}
                             <Data className="text-text-secondary">{row.rawMaterial || '—'}</Data>
                           </span>
-                          <button
-                            type="button"
-                            className="shrink-0 font-medium text-action-text hover:underline"
+                          <LinkButton
+                            className="shrink-0"
                             onClick={() => removeRow(i)}
                             data-testid={`commhub-row-remove-${i}`}
                           >
                             {t('commHub.row.remove')}
-                          </button>
+                          </LinkButton>
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                           <FormField
@@ -633,7 +628,7 @@ const CommHubInbound: React.FC = () => {
                             {t('commHub.row.uomMismatch', { msg: parsed.diagnostics.uom, master: masterUom })}
                           </div>
                         )}
-                      </div>
+                      </Card>
                     );
                   })}
 
@@ -694,7 +689,7 @@ const CommHubInbound: React.FC = () => {
               )}
             </div>
           )}
-        </section>
+        </Card>
       </div>
     </AppShellV2>
   );

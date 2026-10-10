@@ -15,6 +15,8 @@ import PageHeader from '../components/ui-v2/PageHeader';
 import PageMetaLine from '../components/ui-v2/PageMetaLine';
 import Data from '../components/ui-v2/Data';
 import LivenessPill from '../components/ui-v2/LivenessPill';
+import { Card } from '../components/ui-v2/Card';
+import StatusPill from '../components/ui-v2/StatusPill';
 import { dataCell, nameCell } from './plan-grid/cells';
 import IntakeReviewView from './plan-grid/IntakeReviewView';
 import CompactNotice from './plan-grid/CompactNotice';
@@ -190,9 +192,9 @@ const PlanGrid: React.FC = () => {
         minWidth: 120,
         component: ({ rowData }: CellProps<AwardDisplayRow>) => (
           <div className="w-full px-2 text-right">
-            <span className="inline-flex items-center rounded-sm border border-info/30 bg-info-soft px-1.5 py-0.5 font-mono text-xs font-semibold text-info">
+            <StatusPill variant="info" size="sm">
               {rowData.whatIf}
-            </span>
+            </StatusPill>
           </div>
         ),
       },
@@ -261,9 +263,9 @@ const PlanGrid: React.FC = () => {
               </p>
 
               {/* Editable what-if weights (the ONE editable engine surface) */}
-              <div
+              <Card
                 data-testid="whatif-weights"
-                className="mb-4 rounded-lg border border-border-subtle bg-bg-surface p-4"
+                className="mb-4"
               >
                 <div className="mb-2 text-label uppercase text-text-tertiary">
                   {t('planGrid.whatif.label')}
@@ -288,7 +290,7 @@ const PlanGrid: React.FC = () => {
                     height={DSG_H.weights}
                   />
                 </div>
-              </div>
+              </Card>
 
               <div
                 className="plan-dsg overflow-hidden rounded-lg border border-border-subtle bg-bg-surface"

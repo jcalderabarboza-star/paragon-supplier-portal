@@ -18,7 +18,14 @@ import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import {
   COLOUR_EXEMPT,
+  RAW_BUTTON_EXEMPT,
   RAW_CONTROL_EXEMPT,
+  boxDressFindings,
+  derivedBoxDress,
+  derivedRawBoxes,
+  derivedRawButtons,
+  rawBoxFindings,
+  rawButtonCount,
   TABLE_PRIMITIVES,
   cellTypeFindings,
   colourFindings,
@@ -48,6 +55,7 @@ import {
 import {
   COLOUR_GRANDFATHERED,
   LIST_LAYOUT_GRANDFATHERED,
+  RAW_BOX_GRANDFATHERED,
   RAW_TABLE_GRANDFATHERED,
   TYPE_GRANDFATHERED,
 } from './grandfathered';
@@ -426,6 +434,94 @@ describe('UI gate 7 · forms', () => {
   });
 });
 
+describe('UI gate 8 · cards, notices, buttons, chips', () => {
+  it('reads a hand-written button, and not the shared ones', () => {
+    expect(rawButtonCount('<button type="button" onClick={go}>Go</button><button\n  className="p-1"\n/>')).toBe(2);
+    expect(rawButtonCount('<Button>Go</Button><LinkButton>Edit</LinkButton><IconButton icon={X} aria-label="Close" /><CardButton>x</CardButton>')).toBe(0);
+  });
+
+  it('reads a card and a notice drawn by hand', () => {
+    // what the dashboards carried
+    expect(rawBoxFindings('<div className="bg-white border border-border-subtle rounded-lg p-5 shadow-sm">x</div>')).toEqual({ box: 1 });
+    // a notice with a full border, and one with a left rule
+    expect(rawBoxFindings('<div className="rounded-md border border-warning bg-warning-soft px-3 py-2 text-xs">x</div>')).toEqual({ box: 1 });
+    expect(rawBoxFindings('<p className="border-l-4 border-critical bg-critical-soft px-4 py-3">x</p>')).toEqual({ box: 1 });
+    // a border that arrives only when selected is still a border the page drew
+    expect(rawBoxFindings('<li className={`rounded-md p-4 ${on ? "border border-action" : "border border-border-subtle"}`}>x</li>')).toEqual({ box: 1 });
+  });
+
+  it('reads a chip drawn by hand', () => {
+    expect(rawBoxFindings('<span className="rounded-full border px-2 py-0.5 text-[10px]">RFQ</span>')).toEqual({ chip: 1 });
+    expect(rawBoxFindings('<span className="rounded bg-action-soft px-1.5 text-xs">3</span>')).toEqual({ chip: 1 });
+  });
+
+  it('reads a box or a chip spelled as a class constant', () => {
+    // the dashboard's cards, as they stood
+    expect(rawBoxFindings("const CARD = 'bg-bg-surface rounded-lg shadow-sm border border-border-subtle p-6';\nconst x = <div className={CARD} />;")).toEqual({ 'class-const': 1 });
+    // the collaboration page's chips: a base and a tone built on it
+    expect(
+      rawBoxFindings("const CHIP = 'inline-flex rounded-sm border px-1.5 py-0.5';\nconst CHIP_OK = `${CHIP} border-success/30 bg-success-soft`;"),
+    ).toEqual({ 'class-const': 1 });
+    // a string that is not a box
+    expect(rawBoxFindings("const ROW = 'flex items-center gap-2 border-b border-border-subtle';")).toEqual({});
+  });
+
+  it('does not read a rule, a divider, a dot or a control as a box', () => {
+    expect(rawBoxFindings('<div className="border-b border-border-subtle py-2">x</div>')).toEqual({});
+    expect(rawBoxFindings('<div className="rounded-lg bg-bg-hover p-4">x</div>')).toEqual({});
+    expect(rawBoxFindings('<span className="h-2 w-2 rounded-full bg-success" />')).toEqual({});
+    expect(rawBoxFindings('<div className="border-l-2 border-border-subtle pl-3">x</div>')).toEqual({});
+    expect(rawBoxFindings('<img className="rounded-md border" src={s} /><input className="rounded border" />')).toEqual({});
+    expect(rawBoxFindings('<Card className="mt-4"><Notice tone="warning">x</Notice></Card>')).toEqual({});
+  });
+
+  const withImport = (jsx: string): string => `import { Card } from '../components/ui-v2/Card';\nconst x = ${jsx};`;
+
+  it('accepts a shared box that is given layout only', () => {
+    expect(boxDressFindings(withImport('<Card padding="lg" className="col-span-2 mt-6 flex flex-col gap-3">x</Card>'))).toEqual([]);
+    expect(boxDressFindings(withImport('<Notice tone="info" className="mb-4 max-w-xl">x</Notice>'))).toEqual([]);
+    expect(boxDressFindings(withImport('<Button className="w-full shrink-0 ml-auto">x</Button>'))).toEqual([]);
+  });
+
+  it('rejects what the pages really passed', () => {
+    // the compact button
+    expect(boxDressFindings(withImport('<Button className="px-3 py-1.5 text-xs">Remind</Button>'))).toEqual([
+      'Button · text-xs',
+      'Button · px-3',
+      'Button · py-1.5',
+    ]);
+    // a pill shrunk by hand
+    expect(boxDressFindings(withImport('<StatusPill className="text-[10px]">RFQ</StatusPill>'))).toEqual(['StatusPill · text-[10px]']);
+    // a card re-boxed
+    expect(boxDressFindings(withImport('<Card className="rounded-md border-2 border-action bg-action-soft shadow-md p-3">x</Card>'))).toEqual([
+      'Card · rounded-md',
+      'Card · border-2',
+      'Card · border-action',
+      'Card · bg-action-soft',
+      'Card · shadow-md',
+      'Card · p-3',
+    ]);
+  });
+
+  it('judges only the shared components, not a page-local helper of the same name', () => {
+    expect(boxDressFindings('const Card = (p) => <div />;\nconst x = <Card className="p-3 border" />;')).toEqual([]);
+  });
+
+  it('no button in the tree is written by hand — but for the shell and the messenger, by name', () => {
+    expect(derivedRawButtons()).toEqual(RAW_BUTTON_EXEMPT);
+    const files = shippedFiles().map((f) => f.file);
+    for (const file of Object.keys(RAW_BUTTON_EXEMPT)) expect(files).toContain(file);
+  });
+
+  it('holds every hand-drawn box and chip to its listed count, both ways', () => {
+    expect(mismatches(derivedRawBoxes(), RAW_BOX_GRANDFATHERED)).toEqual([]);
+  });
+
+  it('no page dresses a shared box, button or chip', () => {
+    expect(derivedBoxDress()).toEqual({});
+  });
+});
+
 describe('UI gate · the lists name live files', () => {
   it('no row outlives its file', () => {
     const files = new Set(shippedFiles().map((f) => f.file));
@@ -433,6 +529,8 @@ describe('UI gate · the lists name live files', () => {
       ...Object.keys(TYPE_GRANDFATHERED),
       ...Object.keys(COLOUR_GRANDFATHERED),
       ...Object.keys(RAW_TABLE_GRANDFATHERED),
+      ...Object.keys(RAW_BOX_GRANDFATHERED),
+      ...Object.keys(RAW_BUTTON_EXEMPT),
       ...LIST_LAYOUT_GRANDFATHERED,
     ];
     expect(listed.filter((f) => !files.has(f))).toEqual([]);

@@ -21,6 +21,9 @@ import Wizard, { WizardStep } from '../components/ui-v2/Wizard';
 import FormSection from '../components/ui-v2/FormSection';
 import StatusPill from '../components/ui-v2/StatusPill';
 import Button from '../components/ui-v2/Button';
+import { Card, CardButton } from '../components/ui-v2/Card';
+import Notice from '../components/ui-v2/Notice';
+import { LinkButton } from '../components/ui-v2/Actions';
 import ProvenanceMarker from '../components/ui-v2/ProvenanceMarker';
 import SectionHeading from '../components/ui-v2/SectionHeading';
 import { Checkbox, ChoiceCard, FormField, Select, TextArea, TextInput } from '../components/ui-v2/Form';
@@ -267,7 +270,7 @@ const RequestTypeSelector: React.FC<{
   const { t } = useTranslation();
   const selectedMeta = REQUEST_TYPES.find((r) => r.id === value);
   return (
-    <div className="bg-bg-surface border border-border-subtle rounded-lg shadow-md p-6 sm:p-8">
+    <Card padding="lg">
       <h1 className="text-title text-text-primary mb-1">
         {t('registration.selector.title')}
       </h1>
@@ -279,16 +282,11 @@ const RequestTypeSelector: React.FC<{
           const Icon = rt.Icon;
           const selected = value === rt.id;
           return (
-            <button
+            <CardButton
               key={rt.id}
-              type="button"
               onClick={() => onChange(rt.id)}
-              aria-pressed={selected}
-              className={`text-left rounded-lg p-4 sm:p-5 border-2 transition-colors flex items-start gap-4 ${
-                selected
-                  ? 'border-action bg-action-soft'
-                  : 'border-border-subtle bg-bg-surface hover:bg-bg-hover'
-              }`}
+              selected={selected}
+              className="flex items-start gap-4"
             >
               <div
                 className={`w-11 h-11 rounded-md flex items-center justify-center shrink-0 ${
@@ -319,15 +317,15 @@ const RequestTypeSelector: React.FC<{
                   aria-hidden="true"
                 />
               )}
-            </button>
+            </CardButton>
           );
         })}
       </div>
       {selectedMeta && (
-        <div className="bg-info-soft border-l-2 border-info rounded px-3 py-2 mb-6 text-xs text-text-secondary">
-          <strong className="text-info">{t(selectedMeta.shortKey)}</strong>{' '}
+        <Notice tone="info" className="mb-6">
+          <strong>{t(selectedMeta.shortKey)}</strong>{' '}
           — {t(selectedMeta.detailKey)}
-        </div>
+        </Notice>
       )}
       <div className="flex justify-end">
         <Button
@@ -338,7 +336,7 @@ const RequestTypeSelector: React.FC<{
           {t('registration.selector.continue')}
         </Button>
       </div>
-    </div>
+    </Card>
   );
 };
 
@@ -548,23 +546,22 @@ const ContactsStep: React.FC<StepProps> = ({ form, setForm, errors }) => {
     >
       <div className="flex flex-col gap-4">
         {form.contacts.map((c, i) => (
-          <div
+          <Card
             key={i}
-            className="bg-bg-hover border border-border-subtle rounded-md p-4"
+            tone="inset"
           >
             <div className="flex items-center justify-between mb-3">
               <span className="text-sm font-bold text-text-primary">
                 {t('registration.contacts.label', { index: i + 1 })}
               </span>
               {form.contacts.length > 1 && (
-                <button
-                  type="button"
+                <LinkButton
+                  tone="critical"
+                  icon={X}
                   onClick={() => removeContact(i)}
-                  className="inline-flex items-center gap-1 text-xs font-semibold text-critical hover:underline"
                 >
-                  <X size={12} />
                   {t('registration.contacts.remove')}
-                </button>
+                </LinkButton>
               )}
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -627,18 +624,18 @@ const ContactsStep: React.FC<StepProps> = ({ form, setForm, errors }) => {
                 </FormField>
               </div>
             </div>
-          </div>
+          </Card>
         ))}
       </div>
       {form.contacts.length < 3 && (
-        <button
-          type="button"
+        <Button
+          variant="secondary"
+          icon={Plus}
           onClick={addContact}
-          className="mt-3 w-full border-2 border-dashed border-teal/40 text-teal-text font-semibold py-2 rounded-md hover:bg-teal-soft text-sm inline-flex items-center justify-center gap-2"
+          className="mt-3 w-full"
         >
-          <Plus size={14} />
           {t('registration.contacts.add')}
-        </button>
+        </Button>
       )}
     </FormSection>
   );
@@ -742,9 +739,10 @@ const DocumentsAndBankStep: React.FC<StepProps> = ({ form, setForm, errors }) =>
           {DOCUMENTS.map((doc) => {
             const d = form.docs[doc.key];
             return (
-              <div
+              <Card
                 key={doc.key}
-                className="flex flex-col md:flex-row md:items-center gap-3 px-4 py-3 bg-bg-hover border border-border-subtle rounded-md"
+                tone="inset"
+                className="flex flex-col md:flex-row md:items-center gap-3"
               >
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-semibold text-text-primary">
@@ -798,7 +796,7 @@ const DocumentsAndBankStep: React.FC<StepProps> = ({ form, setForm, errors }) =>
                     })
                   }
                 />
-              </div>
+              </Card>
             );
           })}
         </div>
@@ -910,10 +908,10 @@ const KOLBankStep: React.FC<StepProps> = ({ form, setForm, errors }) => {
           </FormField>
         </div>
       </div>
-      <div className="bg-warning-soft border-l-2 border-warning rounded px-3 py-2 mt-3 text-xs text-warning-hover">
+      <Notice tone="warning" className="mt-3">
         <strong>{t('registration.kolBank.noticeLabel')}</strong>{' '}
         {t('registration.kolBank.noticeText')}
-      </div>
+      </Notice>
     </FormSection>
   );
 };
@@ -992,9 +990,9 @@ const ReviewStep: React.FC<ReviewStepProps> = ({ form, setForm, errors, requestT
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="bg-warning-soft border-l-2 border-warning rounded px-4 py-3 text-sm text-warning-hover">
+      <Notice tone="warning">
         {t('registration.review.notice')}
-      </div>
+      </Notice>
 
       {isExternal && (
         <>
@@ -1183,7 +1181,7 @@ interface SuccessScreenProps {
 const SuccessScreen: React.FC<SuccessScreenProps> = ({ onRestart }) => {
   const { t } = useTranslation();
   return (
-    <div className="bg-bg-surface border border-border-subtle rounded-lg shadow-md p-6 sm:p-10 text-center">
+    <Card padding="lg" className="text-center">
       {/* Neutral, not a success tick. A green check IS a claim — it says the
           thing you did worked — and nothing here was submitted. */}
       <div className="inline-flex w-14 h-14 rounded-full bg-bg-hover border border-border-subtle items-center justify-center mb-4">
@@ -1198,7 +1196,7 @@ const SuccessScreen: React.FC<SuccessScreenProps> = ({ onRestart }) => {
       <Button variant="secondary" onClick={onRestart}>
         {t('registration.success.restart')}
       </Button>
-    </div>
+    </Card>
   );
 };
 
@@ -1493,18 +1491,17 @@ const SupplierRegistrationV2: React.FC = () => {
           ) : (
             <div>
               <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
-                <button
-                  type="button"
+                <LinkButton
+                  tone="muted"
+                  icon={ChevronLeft}
                   onClick={changeRequestType}
-                  className="inline-flex items-center gap-1 text-xs text-text-tertiary hover:text-text-primary"
                 >
-                  <ChevronLeft size={14} />
                   {t('registration.changeType')}
-                </button>
-                <div className="bg-info-soft border-l-2 border-info rounded px-3 py-1.5 text-xs text-info">
+                </LinkButton>
+                <Notice tone="info">
                   <strong>{activeMeta ? t(activeMeta.shortKey) : ''}</strong> ·{' '}
                   {activeMeta ? t(activeMeta.subKey) : ''}
-                </div>
+                </Notice>
               </div>
               <Wizard
                 key={requestType}

@@ -4,7 +4,9 @@ import { useTranslation } from 'react-i18next';
 import { ArrowLeft, RotateCcw, Save } from 'lucide-react';
 import AppShellV2 from '../components/layout-v2/AppShellV2';
 import PageHeader from '../components/ui-v2/PageHeader';
-import Button from '../components/ui-v2/Button';
+import Button, { buttonClass } from '../components/ui-v2/Button';
+import { Card } from '../components/ui-v2/Card';
+import Notice from '../components/ui-v2/Notice';
 import Switch from '../components/ui-v2/Switch';
 import { FormField, Select, TextArea, TextInput } from '../components/ui-v2/Form';
 import DataTable, { CellSub, type Column } from '../components/ui-v2/DataTable';
@@ -303,7 +305,7 @@ const ModulesAdmin: React.FC = () => {
           actions={
             <Link
               to="/buyer/platform/modules"
-              className="inline-flex items-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium bg-bg-surface text-text-primary border border-border-input hover:bg-bg-hover"
+              className={buttonClass('secondary')}
             >
               <ArrowLeft size={16} />
               {t('modules.admin.back')}
@@ -312,25 +314,25 @@ const ModulesAdmin: React.FC = () => {
         />
 
         {/* WHO IS ABOUT TO BE RECORDED, or why nobody can be. */}
-        <section className="mb-5 rounded-lg border border-border-subtle bg-bg-hover px-4 py-3" data-testid="modules-admin-gate">
+        <Notice tone="neutral" className="mb-5" data-testid="modules-admin-gate">
           {readOnly === 'not-held' ? (
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-sm text-text-primary">{t('modules.admin.notHeld')}</span>
+              <span>{t('modules.admin.notHeld')}</span>
               <HandoffNotice availability={canSet} testId="modules-admin-handoff" />
             </div>
           ) : readOnly === 'production-sample' ? (
-            <p className="text-sm text-text-primary" data-testid="modules-admin-production">
+            <p data-testid="modules-admin-production">
               {t('modules.admin.productionSample')}
             </p>
           ) : (
             <ActorPreActNotice
               unattributedKey="modules.admin.unattributed"
-              className="text-sm text-text-primary"
+              className=""
               testId="modules-admin-actor"
             />
           )}
-          <p className="text-xs text-text-tertiary mt-1">{t('modules.admin.fourEyes')}</p>
-        </section>
+          <p className="mt-1">{t('modules.admin.fourEyes')}</p>
+        </Notice>
 
         {/* THE SIDES (§A.1.4). The buyer side is never switchable while PLT is on. */}
         <section className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-3" data-testid="modules-admin-sides">
@@ -338,7 +340,7 @@ const ModulesAdmin: React.FC = () => {
             const key = side === 'side:buyer' ? 'buyer' : 'supplier';
             const locked = side === 'side:buyer';
             return (
-              <div key={side} className="bg-white border border-border-subtle rounded-lg p-4" data-testid={`modules-side-${key}`}>
+              <Card key={side} data-testid={`modules-side-${key}`}>
                 <div className="flex items-center justify-between gap-3">
                   <span className="text-sm font-medium text-text-primary">{t(`modules.side.${key}`)}</span>
                   <Switch
@@ -351,7 +353,7 @@ const ModulesAdmin: React.FC = () => {
                 <p className="text-xs text-text-secondary mt-1">{t(`modules.sideDescription.${key}`)}</p>
                 {locked && <p className="text-xs text-text-tertiary mt-1">{t('modules.admin.buyerSideLocked')}</p>}
                 {outcomes[side] && <RowResult outcome={outcomes[side]} />}
-              </div>
+              </Card>
             );
           })}
         </section>
@@ -363,7 +365,7 @@ const ModulesAdmin: React.FC = () => {
           rowProps={(spec) => ({ 'data-testid': `module-row-${spec.code}` })}
         />
 
-        <section className="mt-5 bg-white border border-border-subtle rounded-lg p-4" data-testid="modules-admin-save">
+        <Card as="section" className="mt-5" data-testid="modules-admin-save">
           <FormField label={t('modules.admin.reason')} htmlFor="modules-batch-reason">
             <TextArea
               id="modules-batch-reason"
@@ -393,7 +395,7 @@ const ModulesAdmin: React.FC = () => {
               </Button>
             </div>
           </div>
-        </section>
+        </Card>
       </div>
     </AppShellV2>
   );

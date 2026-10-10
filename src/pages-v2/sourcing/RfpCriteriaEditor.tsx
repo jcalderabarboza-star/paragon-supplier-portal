@@ -21,6 +21,8 @@ import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ArrowDown, ArrowUp, ListChecks, Plus, Save, Trash2 } from 'lucide-react';
 import Button from '../../components/ui-v2/Button';
+import { Card } from '../../components/ui-v2/Card';
+import { IconButton } from '../../components/ui-v2/Actions';
 import { HandoffNotice } from '../../components/ui-v2/HandoffNotice';
 import { Checkbox, FormField, Select, TextInput } from '../../components/ui-v2/Form';
 import { useToast } from '../../hooks/useToast';
@@ -83,7 +85,8 @@ function nextId(rows: readonly Row[]): string {
 export const RfpCriteriaList: React.FC<{ criteria: readonly RfpCriterion[] }> = ({ criteria }) => {
   const { t } = useTranslation();
   return (
-    <ol className="divide-y divide-border-subtle border border-border-subtle rounded-md" data-testid="rfp-criteria-list">
+    <Card padding="none">
+    <ol className="divide-y divide-border-subtle" data-testid="rfp-criteria-list">
       {criteria.map((c, i) => (
         <li key={c.id} className="px-3 py-2 text-sm flex items-baseline gap-2" data-testid={`rfp-criterion-read-${c.id}`}>
           <span className="font-mono text-text-secondary">{criterionLabel(i + 1)}</span>
@@ -98,6 +101,7 @@ export const RfpCriteriaList: React.FC<{ criteria: readonly RfpCriterion[] }> = 
         </li>
       ))}
     </ol>
+    </Card>
   );
 };
 
@@ -201,7 +205,7 @@ const RfpCriteriaEditor: React.FC<{ rfq: RFQ }> = ({ rfq }) => {
 
   // ── Edit mode ─────────────────────────────────────────────────────────────
   return (
-    <div className="border border-border-subtle bg-bg-surface rounded-md p-3" data-testid="rfp-criteria-editor">
+    <Card data-testid="rfp-criteria-editor">
       {rows.length === 0 && (
         <p className="text-sm text-text-secondary mb-3" data-testid="rfp-editor-empty">
           {t('sourcing.rfp.editor.empty')}
@@ -209,41 +213,34 @@ const RfpCriteriaEditor: React.FC<{ rfq: RFQ }> = ({ rfq }) => {
       )}
       <ol className="space-y-3 mb-3">
         {rows.map((r, i) => (
-          <li
+          <Card
+            as="li"
+            tone="inset"
             key={r.id}
-            className="border border-border-subtle rounded-md p-3"
             data-testid={`rfp-editor-row-${i + 1}`}
           >
             <div className="flex items-center gap-2 mb-2">
               <span className="font-mono text-sm font-semibold text-text-secondary">{criterionLabel(i + 1)}</span>
               <span className="ml-auto flex gap-1">
-                <button
-                  type="button"
-                  className="p-1 text-text-tertiary hover:text-text-primary disabled:opacity-40"
+                <IconButton
+                  icon={ArrowUp}
                   disabled={i === 0}
                   onClick={() => move(i, -1)}
                   aria-label={t('sourcing.rfp.editor.moveUp', { criterion: criterionLabel(i + 1) })}
-                >
-                  <ArrowUp size={14} />
-                </button>
-                <button
-                  type="button"
-                  className="p-1 text-text-tertiary hover:text-text-primary disabled:opacity-40"
+                />
+                <IconButton
+                  icon={ArrowDown}
                   disabled={i === rows.length - 1}
                   onClick={() => move(i, 1)}
                   aria-label={t('sourcing.rfp.editor.moveDown', { criterion: criterionLabel(i + 1) })}
-                >
-                  <ArrowDown size={14} />
-                </button>
-                <button
-                  type="button"
-                  className="p-1 text-text-tertiary hover:text-critical"
+                />
+                <IconButton
+                  icon={Trash2}
+                  tone="critical"
                   onClick={() => setRows((rs) => rs.filter((_, x) => x !== i))}
                   aria-label={t('sourcing.rfp.editor.remove', { criterion: criterionLabel(i + 1) })}
                   data-testid={`rfp-editor-remove-${i + 1}`}
-                >
-                  <Trash2 size={14} />
-                </button>
+                />
               </span>
             </div>
             <FormField label={t('sourcing.rfp.editor.name')} htmlFor={`rfp-editor-name-${r.id}`} className="mb-2">
@@ -291,7 +288,7 @@ const RfpCriteriaEditor: React.FC<{ rfq: RFQ }> = ({ rfq }) => {
             >
               {t('sourcing.rfp.editor.required')}
             </Checkbox>
-          </li>
+          </Card>
         ))}
       </ol>
       <Button
@@ -335,7 +332,7 @@ const RfpCriteriaEditor: React.FC<{ rfq: RFQ }> = ({ rfq }) => {
           {t('sourcing.rfp.editor.cancel')}
         </Button>
       </div>
-    </div>
+    </Card>
   );
 };
 

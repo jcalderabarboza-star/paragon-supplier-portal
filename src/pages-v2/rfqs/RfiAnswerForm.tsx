@@ -21,6 +21,7 @@ import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Save, Send } from 'lucide-react';
 import Button from '../../components/ui-v2/Button';
+import { Card } from '../../components/ui-v2/Card';
 import { Checkbox, FormField, Radio, TextArea, TextInput } from '../../components/ui-v2/Form';
 import { useToast } from '../../hooks/useToast';
 import { useRefusalText } from '../../hooks/useRefusalText';
@@ -227,8 +228,9 @@ const RfiAnswerForm: React.FC<Props> = ({ rfq, supplierId, onClose }) => {
   };
 
   return (
-    <div
-      className="border border-border-subtle bg-bg-hover rounded-md p-3 mb-3"
+    <Card
+      tone="inset"
+      className="mb-3"
       data-testid={`rfi-answer-form-${rfq.id}`}
     >
       <p className="text-xs text-text-tertiary mb-3">{t('rfqs.rfi.form.intro')}</p>
@@ -292,7 +294,7 @@ const RfiAnswerForm: React.FC<Props> = ({ rfq, supplierId, onClose }) => {
           {t('rfqs.panel.cancel')}
         </Button>
       </div>
-    </div>
+    </Card>
   );
 };
 

@@ -532,3 +532,179 @@ export const RAW_CONTROL_EXEMPT: Record<string, number> = {
   'src/pages-v2/SupplierWhatsApp.tsx': 1,
   'src/pages-v2/plan-grid/TimePhasedGrid.tsx': 1,
 };
+
+// ── cards, notices, buttons, chips (UI-1c-3) ─────────────────────────────────
+//
+// A box is `Card` / `CardButton` or `Notice`; a thing the reader presses is
+// `Button`, `LinkButton`, `IconButton`, `ToggleChip`, `RowButton` or
+// `CardButton`; a chip is `StatusPill`. They own the border, the radius, the
+// shadow, the tint and the type. So outside `components/ui-v2/`:
+//
+//   · no `<button>` is written by hand
+//   · no element draws its own box: a full border with a radius (a card), or a
+//     left rule with a tint (a notice)
+//   · no `<span>` draws its own chip: a radius, a horizontal padding and a
+//     border or a fill
+//   · what a page passes as `className` to one of the shared components sets
+//     no border, radius, shadow, fill, padding, size, weight, family or colour
+//
+// The box is read off the element's WHOLE `className` — a template literal and
+// both arms of a conditional included — so a border that arrives only when the
+// card is selected is still a border the page drew.
+
+const RAW_BUTTON = /<button[\s>]/g;
+export const rawButtonCount = (text: string): number => (text.match(RAW_BUTTON) ?? []).length;
+export const derivedRawButtons = (): Record<string, number> => derivedRaw(rawButtonCount);
+
+const one = (body: string): RegExp => new RegExp(B + body + E);
+const FULL_BORDER = one(String.raw`border(?:-2)?`);
+const ROUNDED = one(String.raw`rounded(?:-(?:sm|md|lg|xl|2xl|3xl|full|\[[^\]]+\]))?`);
+const LEFT_RULE = one(String.raw`border-l-(?:2|4|8|\[[^\]]+\])`);
+const FILL = one(String.raw`bg-[a-z][a-z0-9/-]*`);
+const CHIP_PAD = one(String.raw`px-(?:0\.5|1|1\.5|2|2\.5|3)`);
+/** Elements that are never a box of their own: a control, a table part, an image. */
+const NOT_A_BOX = new Set(['input', 'select', 'textarea', 'button', 'img', 'svg', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'canvas', 'video', 'iframe', 'kbd', 'code', 'pre']);
+const INLINE = new Set(['span', 'em', 'strong', 'b', 'i', 'small', 'mark']);
+
+export type BoxKind = 'box' | 'chip' | 'class-const';
+
+function intrinsicClassNames(text: string, fileName: string): { tag: string; cls: string }[] {
+  if (!/className=/.test(text)) return [];
+  const sf = ts.createSourceFile(fileName, text, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+  const out: { tag: string; cls: string }[] = [];
+  const walk = (n: ts.Node): void => {
+    if (ts.isJsxOpeningElement(n) || ts.isJsxSelfClosingElement(n)) {
+      const tag = n.tagName.getText(sf);
+      if (/^[a-z]/.test(tag)) {
+        for (const attr of n.attributes.properties) {
+          if (ts.isJsxAttribute(attr) && attr.name.getText(sf) === 'className' && attr.initializer) {
+            out.push({ tag, cls: attr.initializer.getText(sf) });
+          }
+        }
+      }
+    }
+    ts.forEachChild(n, walk);
+  };
+  walk(sf);
+  return out;
+}
+
+/**
+ * A box or a chip spelled as a CLASS CONSTANT — `const CARD = 'rounded-lg border …'`.
+ * The element that wears it carries only `className={CARD}`, so the element
+ * matcher sees no border at all: the first build of this gate read the dashboard
+ * and the collaboration page as clean while every card on one and every chip on
+ * the other was drawn by hand. Read off string literals that sit OUTSIDE a JSX
+ * attribute.
+ */
+function classConstCount(text: string, fileName: string): number {
+  if (!/rounded/.test(text)) return 0;
+  const sf = ts.createSourceFile(fileName, text, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+  let n = 0;
+  const inJsxAttr = (node: ts.Node): boolean => {
+    for (let p: ts.Node | undefined = node.parent; p; p = p.parent) if (ts.isJsxAttribute(p)) return true;
+    return false;
+  };
+  const walk = (node: ts.Node): void => {
+    if ((ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node) || ts.isTemplateExpression(node)) && !inJsxAttr(node)) {
+      const cls = node.getText(sf);
+      const rounded = ROUNDED.test(cls);
+      const bordered = FULL_BORDER.test(cls);
+      if ((bordered && rounded) || (rounded && CHIP_PAD.test(cls) && FILL.test(cls)) || (LEFT_RULE.test(cls) && FILL.test(cls))) n += 1;
+      return;
+    }
+    ts.forEachChild(node, walk);
+  };
+  walk(sf);
+  return n;
+}
+
+/** How many elements in this source draw their own box, and how many their own chip. */
+export function rawBoxFindings(text: string, fileName = 'x.tsx'): Counts<BoxKind> {
+  const out: Counts<BoxKind> = {};
+  for (const { tag, cls } of intrinsicClassNames(text, fileName)) {
+    if (NOT_A_BOX.has(tag)) continue;
+    const rounded = ROUNDED.test(cls);
+    const bordered = FULL_BORDER.test(cls);
+    if (INLINE.has(tag)) {
+      if (rounded && CHIP_PAD.test(cls) && (bordered || FILL.test(cls))) out.chip = (out.chip ?? 0) + 1;
+      continue;
+    }
+    if ((bordered && rounded) || (LEFT_RULE.test(cls) && FILL.test(cls))) out.box = (out.box ?? 0) + 1;
+  }
+  const consts = classConstCount(text, fileName);
+  if (consts > 0) out['class-const'] = consts;
+  return out;
+}
+
+export const derivedRawBoxes = (): Record<string, Counts<BoxKind>> => {
+  const out: Record<string, Counts<BoxKind>> = {};
+  for (const f of shippedFiles()) {
+    if (!f.file.endsWith('.tsx') || f.file.startsWith(SHARED_UI)) continue;
+    const found = rawBoxFindings(f.text, f.file);
+    if (Object.keys(found).length > 0) out[f.file] = found;
+  }
+  return out;
+};
+
+const BOX_COMPONENTS = new Set(['Card', 'CardButton', 'Notice', 'Button', 'LinkButton', 'IconButton', 'ToggleChip', 'RowButton', 'StatusPill']);
+const BOX_IMPORT = /from\s+['"][^'"]*ui-v2\/(?:Card|Notice|Actions|Button|StatusPill)['"]/;
+/** What a shared box owns besides its type. */
+const BOX_TOKEN = new RegExp(
+  B +
+    String.raw`(?:rounded(?:-(?:[a-z0-9]+|\[[^\]]+\]))?|border(?:-[a-z0-9/[\]-]+)?|shadow(?:-[a-z0-9]+)?|bg-[a-z0-9/-]+` +
+    String.raw`|p[xytblr]?-(?:\d[\d.]*|\[[^\]]+\])|h-(?:\d+|\[[^\]]+\]))` +
+    E,
+  'g',
+);
+
+/** `"<Component> · <token>"` for every dressing class a page passed to a shared box, button or chip. */
+export function boxDressFindings(text: string, fileName = 'x.tsx'): string[] {
+  if (!/<(?:Card|CardButton|Notice|Button|LinkButton|IconButton|ToggleChip|RowButton|StatusPill)[\s/>]/.test(text)) return [];
+  if (!BOX_IMPORT.test(text)) return [];
+  const sf = ts.createSourceFile(fileName, text, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+  const out: string[] = [];
+  const walk = (n: ts.Node): void => {
+    if (ts.isJsxOpeningElement(n) || ts.isJsxSelfClosingElement(n)) {
+      const tag = n.tagName.getText(sf);
+      if (BOX_COMPONENTS.has(tag)) {
+        for (const attr of n.attributes.properties) {
+          if (ts.isJsxAttribute(attr) && attr.name.getText(sf) === 'className' && attr.initializer) {
+            const cls = attr.initializer.getText(sf);
+            for (const m of cls.match(CELL_TYPE_TOKEN) ?? []) out.push(`${tag} · ${m}`);
+            for (const m of cls.match(BOX_TOKEN) ?? []) out.push(`${tag} · ${m}`);
+          }
+        }
+      }
+    }
+    ts.forEachChild(n, walk);
+  };
+  walk(sf);
+  return out;
+}
+
+export function derivedBoxDress(): Record<string, string[]> {
+  const out: Record<string, string[]> = {};
+  for (const f of shippedFiles()) {
+    if (!f.file.endsWith('.tsx') || f.file.startsWith(SHARED_UI)) continue;
+    const found = boxDressFindings(f.text, f.file);
+    if (found.length > 0) out[f.file] = found;
+  }
+  return out;
+}
+
+/**
+ * Hand-written buttons that stay, BY NAME, each with its reason. Held equal to
+ * the derivation both ways.
+ *
+ *   · the shell — the sidebar's navigation, the identity panel and the language
+ *     menu — is drawn with the shell, as the top bar's search is
+ *   · the channel demo imitates an external messenger; its buttons are that
+ *     product's chrome (operator ruling, 9 October 2026)
+ */
+export const RAW_BUTTON_EXEMPT: Record<string, number> = {
+  'src/components/layout-v2/IdentityPanel.tsx': 5,
+  'src/components/layout-v2/LanguageMenu.tsx': 2,
+  'src/components/layout-v2/SidebarV2.tsx': 3,
+  'src/pages-v2/SupplierWhatsApp.tsx': 3,
+};

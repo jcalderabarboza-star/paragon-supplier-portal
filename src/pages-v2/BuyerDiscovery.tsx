@@ -25,6 +25,9 @@ import SectionHeading from '../components/ui-v2/SectionHeading';
 import LivenessPill from '../components/ui-v2/LivenessPill';
 import DataTable from '../components/ui-v2/DataTable';
 import Button from '../components/ui-v2/Button';
+import { Card } from '../components/ui-v2/Card';
+import Notice from '../components/ui-v2/Notice';
+import { LinkButton } from '../components/ui-v2/Actions';
 import { useToast } from '../hooks/useToast';
 import type {
   SingleSourceItem,
@@ -92,7 +95,7 @@ const QualificationCard: React.FC<{ item: QualificationItem; onUpdate: () => voi
 }) => {
   const { t } = useTranslation();
   return (
-    <div className="bg-bg-surface border border-border-subtle rounded-lg p-5 shadow-sm">
+    <Card>
       <div className="flex items-center justify-between gap-3 mb-4">
         <div className="text-sm font-semibold text-text-primary">
           <span className="mr-2 text-base">{item.flag}</span>
@@ -147,15 +150,14 @@ const QualificationCard: React.FC<{ item: QualificationItem; onUpdate: () => voi
         <span className="text-xs text-text-tertiary">
           {t('discovery.qual.due', { date: item.dueDate, owner: item.owner })}
         </span>
-        <button
-          type="button"
+        <LinkButton
           onClick={onUpdate}
-          className="inline-flex items-center gap-1 text-xs font-medium text-teal-text hover:text-teal-hover"
+          iconAfter={ArrowRight}
         >
-          {t('discovery.qual.updateStatus')} <ArrowRight size={12} />
-        </button>
+          {t('discovery.qual.updateStatus')}
+        </LinkButton>
       </div>
-    </div>
+    </Card>
   );
 };
 
@@ -167,7 +169,7 @@ const RecommendationCard: React.FC<{
 }> = ({ supplier, onViewStorefront, onQualify, onInviteRfq }) => {
   const { t } = useTranslation();
   return (
-    <div className="bg-bg-surface border border-border-subtle rounded-lg p-5 shadow-sm">
+    <Card>
       <div className="flex items-start justify-between gap-3 mb-3">
         <div className="min-w-0">
           <div className="text-base font-semibold text-text-primary">
@@ -195,9 +197,9 @@ const RecommendationCard: React.FC<{
         </Field>
       </FieldList>
       {supplier.riskNote && (
-        <div className="bg-warning-soft border-l-2 border-warning rounded px-3 py-2 mb-3 text-xs text-warning-hover">
+        <Notice tone="warning" className="mb-3">
           {supplier.riskNote}
-        </div>
+        </Notice>
       )}
       <div className="flex flex-wrap gap-2">
         <Button variant="outline" icon={ChevronRight} onClick={onViewStorefront}>
@@ -210,7 +212,7 @@ const RecommendationCard: React.FC<{
           {t('discovery.rec.inviteRfq')}
         </Button>
       </div>
-    </div>
+    </Card>
   );
 };
 
@@ -405,7 +407,7 @@ const BuyerDiscovery: React.FC = () => {
           literal here, so the day a discovery feed lands this text changes in one
           place. */}
       {tab === 'search' && (
-        <div className="bg-bg-surface border border-border-subtle rounded-lg py-12 px-6 text-center">
+        <Card padding="lg" className="text-center">
           <div className="mx-auto w-12 h-12 rounded-full bg-bg-hover flex items-center justify-center mb-4">
             <Globe2 size={24} className="text-text-tertiary" />
           </div>
@@ -425,16 +427,16 @@ const BuyerDiscovery: React.FC = () => {
               {t('discovery.search.noFeed.toGaps')}
             </Button>
           </div>
-        </div>
+        </Card>
       )}
 
       {tab === 'gaps' && (
         <div className="flex flex-col gap-6">
-          <div className="bg-critical-soft border-l-2 border-critical rounded px-4 py-3 text-sm text-critical font-medium">
+          <Notice tone="critical">
             {t('discovery.rec.dualSourceBanner')}
-          </div>
+          </Notice>
 
-          <div className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm overflow-hidden">
+          <Card padding="none" className="overflow-hidden">
             <div className="px-5 py-4 border-b border-border-subtle">
               <SectionHeading as="h3">
                 {t('discovery.rec.secondSourceTitle')}
@@ -515,7 +517,7 @@ const BuyerDiscovery: React.FC = () => {
                 },
               ]}
             />
-          </div>
+          </Card>
 
           <div>
             <div className="flex items-center gap-2 mb-1">
@@ -591,9 +593,8 @@ const BuyerDiscovery: React.FC = () => {
           </p>
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
             {MARKET_INTEL.map((card) => (
-              <div
+              <Card
                 key={card.category}
-                className="bg-bg-surface border border-border-subtle rounded-lg p-5 shadow-sm"
               >
                 <div className="flex items-start justify-between gap-3 mb-4">
                   <div className="min-w-0">
@@ -625,10 +626,10 @@ const BuyerDiscovery: React.FC = () => {
                     <div className="text-[11px] text-text-tertiary">{t('discovery.intel.inNetwork')}</div>
                   </div>
                 </div>
-                <div className="bg-teal-soft border-l-2 border-teal rounded px-3 py-2 text-xs text-text-primary">
+                <Notice tone="info">
                   {card.recommendation}
-                </div>
-              </div>
+                </Notice>
+              </Card>
             ))}
           </div>
         </div>

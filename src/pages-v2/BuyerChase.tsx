@@ -4,12 +4,15 @@ import { Link } from 'react-router-dom';
 import { Info, MessageCircle } from 'lucide-react';
 import AppShellV2 from '../components/layout-v2/AppShellV2';
 import PageHeader from '../components/ui-v2/PageHeader';
+import { buttonClass } from '../components/ui-v2/Button';
 import PageMetaLine from '../components/ui-v2/PageMetaLine';
 import LivenessPill from '../components/ui-v2/LivenessPill';
 import LoadingState from '../components/ui-v2/LoadingState';
 import EmptyState from '../components/ui-v2/EmptyState';
 import ErrorState from '../components/ui-v2/ErrorState';
 import StatusPill from '../components/ui-v2/StatusPill';
+import { Card } from '../components/ui-v2/Card';
+import Notice from '../components/ui-v2/Notice';
 import Data from '../components/ui-v2/Data';
 import { useUnifiedChase } from '../services/query/chaseHooks';
 import { useSuppliers } from '../services/query/hooks';
@@ -89,18 +92,16 @@ const BuyerChase: React.FC = () => {
 
       {/* Honest framing — a derived chase list; push happens through the existing
           WhatsApp/email chrome, nothing is sent from here. */}
-      <div className="bg-info-soft border-l-2 border-info rounded px-4 py-3 mb-6 text-sm text-text-primary flex items-start gap-2">
-        <Info size={14} className="text-info shrink-0 mt-0.5" />
-        <span>
-          <strong className="text-info">{t('chase.honestyTitle')}</strong> {t('chase.honestyBody')}
-        </span>
-      </div>
+      <Notice tone="info" icon={Info} title={t('chase.honestyTitle')} className="mb-6">
+        {t('chase.honestyBody')}
+      </Notice>
 
       <div className="space-y-4">
         {views.map((view) => (
-          <div
+          <Card
             key={view.supplierId}
-            className="border border-border-subtle rounded-lg bg-white overflow-hidden"
+            padding="none"
+            className="overflow-hidden"
             data-testid="chase-card"
           >
             {/* Card header — supplier + overall severity + count. */}
@@ -164,14 +165,14 @@ const BuyerChase: React.FC = () => {
               <div>
                 <Link
                   to="/buyer/comm-hub"
-                  className="inline-flex items-center gap-1.5 rounded-md border border-action px-3 py-1.5 text-sm font-medium text-action-text hover:bg-action-soft transition-colors"
+                  className={buttonClass('outline')}
                 >
                   <MessageCircle size={14} />
                   {t('chase.pushWhatsApp')}
                 </Link>
               </div>
             </div>
-          </div>
+          </Card>
         ))}
       </div>
     </AppShellV2>

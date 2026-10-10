@@ -1,5 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
+import StatusPill from '../../components/ui-v2/StatusPill';
 import { isLive, type Capability } from '../../services/liveness';
 import type { IntakePlanState } from './planGridModel';
 
@@ -45,15 +46,9 @@ const PlanCellMarker: React.FC<{
       </span>
       <span aria-hidden="true" className="text-text-tertiary">·</span>
       {/* Plan state — the C6 overlay axis (per row) */}
-      <span
-        className={`inline-flex items-center rounded-sm border px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${
-          committed
-            ? 'border-border-subtle bg-bg-hover text-text-secondary'
-            : 'border-info/30 bg-info-soft text-info'
-        }`}
-      >
+      <StatusPill variant={committed ? 'neutral' : 'info'} size="sm">
         {t(committed ? 'planGrid.plan.committed' : 'planGrid.plan.planned')}
-      </span>
+      </StatusPill>
     </span>
   );
 };

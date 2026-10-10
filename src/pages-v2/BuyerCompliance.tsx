@@ -35,6 +35,8 @@ import SessionStampMarker from '../components/ui-v2/SessionStampMarker';
 import { isLive, readinessNote } from '../services/liveness';
 import { formatDate } from '../lib/format';
 import Button from '../components/ui-v2/Button';
+import { Card } from '../components/ui-v2/Card';
+import Notice from '../components/ui-v2/Notice';
 import { useToast } from '../hooks/useToast';
 import { useComplianceRegistry, useDocuments, useSuppliers } from '../services/query/hooks';
 import {
@@ -605,15 +607,9 @@ const BuyerCompliance: React.FC = () => {
              lands (LIVENESS-DATASOURCE-01). Distinct from the legal-deadline banner
              below (that is about the mandate; this is about data liveness). */
           !isLive('compliance') && readinessNote('compliance') ? (
-            <div className="bg-bg-hover border-l-2 border-warning rounded px-4 py-3 flex items-start gap-3">
-              <Database size={16} className="text-warning-hover shrink-0 mt-0.5" />
-              <div className="text-sm text-text-secondary">
-                <strong className="text-text-primary">
-                  {t('compliance.readiness.title')}
-                </strong>{' '}
-                {t('compliance.readiness.body')}
-              </div>
-            </div>
+            <Notice tone="sample" icon={Database} title={t('compliance.readiness.title')}>
+              {t('compliance.readiness.body')}
+            </Notice>
           ) : undefined
         }
       >
@@ -641,8 +637,9 @@ const BuyerCompliance: React.FC = () => {
       <MaterialApplicabilityPanel />
 
       {reviewQueue.length > 0 && (
-        <div
-          className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm mb-6 overflow-hidden"
+        <Card
+          padding="none"
+          className="mb-6 overflow-hidden"
           data-testid="doc-review-queue"
         >
           <div className="px-5 py-4 border-b border-border-subtle flex items-center gap-2">
@@ -845,7 +842,7 @@ const BuyerCompliance: React.FC = () => {
               </div>
             ))}
           </div>
-        </div>
+        </Card>
       )}
 
       {/* SUP-1 - WHO CONFIRMED, AND WHEN. A confirmed document leaves the queue
@@ -853,8 +850,9 @@ const BuyerCompliance: React.FC = () => {
           documents confirmed through the verb carry the pair, so a seeded
           `Valid` row is not listed and nothing is invented for it. */}
       {confirmedDocs.length > 0 && (
-        <div
-          className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm mb-6 overflow-hidden"
+        <Card
+          padding="none"
+          className="mb-6 overflow-hidden"
           data-testid="doc-confirmed-list"
         >
           <div className="px-5 py-3 border-b border-border-subtle text-sm font-bold text-text-primary">
@@ -888,25 +886,19 @@ const BuyerCompliance: React.FC = () => {
               </li>
             ))}
           </ul>
-        </div>
+        </Card>
       )}
 
-      <div className="bg-warning-soft border-l-2 border-warning rounded px-4 py-3 mb-4 flex items-start gap-3">
-        <Shield size={16} className="text-warning-hover shrink-0 mt-0.5" />
-        <div className="text-sm text-text-secondary">
-          <strong className="text-warning-hover">
-            {t('compliance.bpjph.banner.title')}
-          </strong>{' '}
+      <Notice tone="warning" icon={Shield} title={t('compliance.bpjph.banner.title')} className="mb-4">
           {t('compliance.bpjph.banner.body')}{' '}
-          <strong className="text-text-primary">
+          <strong>
             {t('compliance.bpjph.banner.certs', {
               compliant: bpjph.compliant,
               total: bpjph.total,
             })}
           </strong>{' '}
           {t('compliance.bpjph.banner.compliantSuffix')}
-        </div>
-      </div>
+      </Notice>
 
       {/* D-CENSUS-8 — the FACT stays, the URGENCY is retracted.
           The 17 Oct 2026 BPJPH date is real Indonesian regulation. What was false
@@ -917,7 +909,7 @@ const BuyerCompliance: React.FC = () => {
           Now: neutral border, neutral figure, no colour escalation, no depleting
           bar. A date the reader may need to know, stated without manufacturing
           alarm about it. */}
-      <div className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm px-5 py-4 mb-6">
+      <Card className="mb-6">
         <div className="flex items-center justify-between gap-3 flex-wrap">
           <div>
             <SectionHeading as="h2">{t('compliance.deadline.title')}</SectionHeading>
@@ -934,7 +926,7 @@ const BuyerCompliance: React.FC = () => {
             </div>
           </div>
         </div>
-      </div>
+      </Card>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-5 mb-6">
         <KpiCard
@@ -1028,13 +1020,9 @@ const BuyerCompliance: React.FC = () => {
         empty={t('compliance.table.empty')}
       />
 
-      <div className="bg-info-soft border-l-2 border-info rounded px-4 py-3 text-sm text-text-primary flex items-start gap-2">
-        <Shield size={14} className="text-info shrink-0 mt-0.5" />
-        <span>
-          <strong className="text-info">{t('compliance.phase2.title')}</strong>{' '}
+      <Notice tone="info" icon={Shield} title={t('compliance.phase2.title')}>
           {t('compliance.phase2.body')}
-        </span>
-      </div>
+      </Notice>
       {/* ── §WAVE E · THE REQUEST PANEL ────────────────────────────────────
           ⚠️ **THE PANEL IS MOUNTED ONLY WHEN THE SEAT HOLDS THE ATOM, AND THAT
           IS THE MODE BEING GATED RATHER THAN THE DOOR (ENTRANCE-IS-THE-UNIT-01).** `SupplierOrders`

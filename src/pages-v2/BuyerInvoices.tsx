@@ -33,6 +33,8 @@ import StatusPill from '../components/ui-v2/StatusPill';
 import DataTable, { CellSub, type Column } from '../components/ui-v2/DataTable';
 import ListPage from '../components/ui-v2/ListPage';
 import Button from '../components/ui-v2/Button';
+import { Card } from '../components/ui-v2/Card';
+import Notice from '../components/ui-v2/Notice';
 import SidePanel from '../components/ui-v2/SidePanel';
 import SuperAdminBypassNote from '../components/v2-features/SuperAdminBypassNote';
 import { useToast } from '../hooks/useToast';
@@ -903,8 +905,7 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
         overdueInvoices.length > 0 || disputedInvoices.length > 0 ? (
           <>
             {overdueInvoices.length > 0 && (
-              <div className="bg-critical-soft border-l-2 border-critical rounded px-4 py-3 text-sm text-critical flex items-start gap-2">
-                <AlertOctagon size={14} className="shrink-0 mt-0.5" />
+              <Notice tone="critical" icon={AlertOctagon}>
                 <div>
                   <strong>
                     {t(
@@ -923,18 +924,17 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
                     )
                     .join(' · ')}
                 </div>
-              </div>
+              </Notice>
             )}
 
             {disputedInvoices.length > 0 && (
-              <div className="bg-warning-soft border-l-2 border-warning rounded px-4 py-3 text-sm text-warning-hover flex items-start gap-2">
-                <AlertTriangle size={14} className="shrink-0 mt-0.5" />
+              <Notice tone="warning" icon={AlertTriangle}>
                 <div>
                   <strong>{t('buyerInvoices.banner.dispute.label')}</strong>
                   {disputedInvoices.map((i) => i.invoiceNumber).join(', ')}
                   {t('buyerInvoices.banner.dispute.body')}
                 </div>
-              </div>
+              </Notice>
             )}
           </>
         ) : undefined
@@ -1007,7 +1007,7 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
 
       {tab === 'analytics' && (
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
-          <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6">
+          <Card as="section" padding="lg">
             <SectionHeading as="h3" className="mb-4 pb-3 border-b border-border-subtle">
               {t('buyerInvoices.analytics.monthlyFlow')}
             </SectionHeading>
@@ -1036,9 +1036,9 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
                 />
               </BarChart>
             </ResponsiveContainer>
-          </section>
+          </Card>
 
-          <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6">
+          <Card as="section" padding="lg">
             <SectionHeading as="h3" className="mb-4 pb-3 border-b border-border-subtle">
               {t('buyerInvoices.analytics.matchSummary')}
             </SectionHeading>
@@ -1064,13 +1064,13 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
                 variant="danger"
               />
             </div>
-          </section>
+          </Card>
         </div>
       )}
 
       {tab === 'aging' && (
         <div className="flex flex-col gap-5">
-          <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6">
+          <Card as="section" padding="lg">
             <SectionHeading as="h3" className="mb-4 pb-3 border-b border-border-subtle">
               {t('buyerInvoices.aging.reportTitle')}
             </SectionHeading>
@@ -1095,17 +1095,16 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
                 />
               </BarChart>
             </ResponsiveContainer>
-          </section>
+          </Card>
 
           <DataTable columns={agingColumns} rows={AGING_DATA} rowKey={(row) => row.bucket} />
 
-          <div className="bg-info-soft border-l-2 border-info rounded px-4 py-3 text-sm text-text-primary flex items-start gap-2">
-            <Database size={14} className="text-info shrink-0 mt-0.5" />
+          <Notice tone="info" icon={Database}>
             <span>
-              <strong className="text-info">{t('buyerInvoices.aging.phase2.label')}</strong>{' '}
+              <strong>{t('buyerInvoices.aging.phase2.label')}</strong>{' '}
               {t('buyerInvoices.aging.phase2.body')}
             </span>
-          </div>
+          </Notice>
         </div>
       )}
 
@@ -1307,22 +1306,20 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
               <SectionHeading level="group" as="h3" className="mb-3">
                 {t('buyerInvoices.section.match')}
               </SectionHeading>
-              <div
-                className={`border-l-2 rounded px-3 py-3 text-sm ${
+              <Notice
+                tone={
                   MATCH_VARIANT[selected.matchStatus] === 'success'
-                    ? 'bg-success-soft border-success text-success'
+                    ? 'success'
                     : MATCH_VARIANT[selected.matchStatus] === 'danger'
-                      ? 'bg-critical-soft border-critical text-critical'
-                      : 'bg-bg-hover border-border-subtle text-text-secondary'
-                }`}
+                      ? 'critical'
+                      : 'neutral'
+                }
+                title={(() => {
+                  const k = statusLabelKey(selected.matchStatus);
+                  return k ? t(k) : selected.matchStatus;
+                })()}
               >
-                <div className="font-semibold">
-                  {(() => {
-                    const k = statusLabelKey(selected.matchStatus);
-                    return k ? t(k) : selected.matchStatus;
-                  })()}
-                </div>
-                <div className="text-text-secondary mt-1" data-testid="invoice-match-desc">
+                <div data-testid="invoice-match-desc">
                   {selected.matchBasis
                     ? t(MATCH_CAUSE_KEY[selected.matchBasis.cause], {
                         invoiced: formatIDR(selected.matchBasis.invoiced),
@@ -1334,7 +1331,7 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
                       })
                     : t(MATCH_DESC_KEY[selected.matchStatus])}
                 </div>
-              </div>
+              </Notice>
               {/* OPS-1 — the figures the verdict rests on, beside the verdict. */}
               {selected.matchBasis && (
                 <FieldList columns={2} className="mt-3" data-testid="invoice-match-figures">
@@ -1353,15 +1350,16 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
                 </FieldList>
               )}
               {selected.matchBasis && poTotalDisagrees(selected.matchBasis) && (
-                <div
-                  className="mt-3 bg-warning-soft border-l-2 border-warning rounded px-3 py-2 text-xs text-warning-hover"
+                <Notice
+                  tone="warning"
+                  className="mt-3"
                   data-testid="invoice-po-total-disagrees"
                 >
                   {t('buyerInvoices.match.poTotalDisagrees', {
                     stated: formatIDR(selected.matchBasis.poStatedTotal),
                     lines: formatIDR(selected.matchBasis.poLineTotal),
                   })}
-                </div>
+                </Notice>
               )}
             </section>
 
@@ -1420,11 +1418,10 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
             </section>
 
             {panelMode === 'confirming' && (
-              <section className="bg-warning-soft border-l-2 border-warning rounded px-4 py-3 text-sm text-warning-hover">
-                <div className="font-semibold mb-1">{t('buyerInvoices.confirm.title')}</div>
-                <div className="text-text-secondary">
+              <Notice tone="warning" title={t('buyerInvoices.confirm.title')}>
+                <div>
                   {t('buyerInvoices.confirm.body.pre')}
-                  <Data as="strong" className="text-text-primary">
+                  <Data as="strong">
                     {formatIDR(selected.amount)}
                   </Data>
                   {/* OPS-1 — an invoice raised in the portal carries no bank
@@ -1432,7 +1429,7 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
                   {selected.bankAccount ? (
                     <>
                       {t('buyerInvoices.confirm.body.mid')}
-                      <Data as="strong" className="text-text-primary">
+                      <Data as="strong">
                         {selected.bankAccount}
                       </Data>
                       {t('buyerInvoices.confirm.body.post')}
@@ -1441,10 +1438,10 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
                     t('buyerInvoices.confirm.body.midUnknown')
                   )}
                 </div>
-                <div className="mt-2 pt-2 border-t border-warning/30 text-xs text-text-secondary">
+                <div className="mt-2">
                   {t('buyerInvoices.confirm.simulatedSettle')}
                 </div>
-              </section>
+              </Notice>
             )}
 
             {panelMode === 'disputing' && (
@@ -1473,7 +1470,7 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
                 <SectionHeading level="group" as="h3" className="mb-3">
                   {t('buyerInvoices.section.remittance')}
                 </SectionHeading>
-                <div className="border border-border-subtle rounded-md px-3 py-2">
+                <Card>
                   <FieldList layout="row">
                     <Field label={t('buyerInvoices.remit.invoiceNo')} kind="id">
                       {selected.invoiceNumber}
@@ -1491,7 +1488,7 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
                       {selected.bankAccount}
                     </Field>
                   </FieldList>
-                </div>
+                </Card>
                 <div className="mt-3 flex justify-end gap-2">
                   <Button
                     variant="secondary"
@@ -1501,9 +1498,9 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
                     {t('buyerInvoices.remit.downloadPdf')}
                   </Button>
                 </div>
-                <div className="mt-3 bg-success-soft border-l-2 border-success rounded px-3 py-2 text-xs text-text-secondary">
+                <Notice tone="success" className="mt-3">
                   {t('buyerInvoices.remit.note')}
-                </div>
+                </Notice>
               </section>
             )}
           </div>

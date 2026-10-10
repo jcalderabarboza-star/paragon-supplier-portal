@@ -13,6 +13,8 @@ import './plan-grid/planGrid.css';
 import './bulkStockGrid.css';
 import { useTranslation } from 'react-i18next';
 import Button from '../components/ui-v2/Button';
+import { Card } from '../components/ui-v2/Card';
+import Notice from '../components/ui-v2/Notice';
 import { FormField, Select, TextInput } from '../components/ui-v2/Form';
 import FullScreenSection from './plan-grid/FullScreenSection';
 import { useToast } from '../hooks/useToast';
@@ -393,17 +395,13 @@ const BulkStockEntryGrid: React.FC<BulkStockEntryGridProps> = ({
       </div>
 
       {/* Header note (R-4 flow-note grammar): fixture-first magic-link surface. */}
-      <div className="flex items-start gap-2 rounded-lg border border-info/30 bg-info-soft px-4 py-3 text-sm text-text-primary">
-        <Info size={16} className="mt-0.5 shrink-0 text-info" />
-        <div>
-          <div className="font-semibold text-info">{t('sdcSup.bulk.note.title')}</div>
-          <p className="mt-0.5 text-text-secondary">{t('sdcSup.bulk.note.body')}</p>
-        </div>
-      </div>
+      <Notice tone="info" icon={Info} title={t('sdcSup.bulk.note.title')}>
+        <p>{t('sdcSup.bulk.note.body')}</p>
+      </Notice>
 
       {/* Material + total header (total-first — the total is an independent
           floor, NOT derived from Σ). uom is read-only, from the master. */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 rounded-lg border border-border-subtle bg-bg-surface p-4">
+      <Card className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <FormField label={t('sdcSup.stock.panel.materialLabel')} htmlFor="sdcsup-bulk-material">
           <Select
             id="sdcsup-bulk-material"
@@ -432,7 +430,7 @@ const BulkStockEntryGrid: React.FC<BulkStockEntryGridProps> = ({
             onChange={(e) => setTotalQty(e.target.value)}
           />
         </FormField>
-      </div>
+      </Card>
 
       {/* Import from Excel — a pre-fill SOURCE for the grid (SDC-3c-c-b). Gated
           on an already-picked material + total; the file only fills batch rows

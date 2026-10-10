@@ -47,6 +47,7 @@ import ListPage from '../components/ui-v2/ListPage';
 import DataTable, { type Column } from '../components/ui-v2/DataTable';
 import ProvenanceMarker from '../components/ui-v2/ProvenanceMarker';
 import Button from '../components/ui-v2/Button';
+import { ToggleChip } from '../components/ui-v2/Actions';
 import { FormField, Select, TextArea, TextInput } from '../components/ui-v2/Form';
 import SidePanel from '../components/ui-v2/SidePanel';
 import SuperAdminBypassNote from '../components/v2-features/SuperAdminBypassNote';
@@ -443,20 +444,15 @@ const BuyerPreferredSuppliers: React.FC = () => {
         tabs={
           <div className="flex gap-2">
             {TABS.map((k) => (
-              <button
+              <ToggleChip
                 key={k}
-                type="button"
                 onClick={() => setTab(k)}
                 data-testid={`psl-queue-tab-${k}`}
-                className={`text-sm px-3 py-1.5 rounded border ${
-                  tab === k
-                    ? 'border-action text-action-text'
-                    : 'border-border-subtle text-text-secondary'
-                }`}
+                selected={tab === k}
               >
                 {t(`psl.queue.tab.${k}`)}
                 {` (${ROWS_OF[k].length})`}
-              </button>
+              </ToggleChip>
             ))}
           </div>
         }

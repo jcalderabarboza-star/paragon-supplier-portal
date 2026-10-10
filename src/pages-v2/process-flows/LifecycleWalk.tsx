@@ -2,6 +2,8 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { RotateCcw, ChevronRight } from 'lucide-react';
 import Button from '../../components/ui-v2/Button';
+import { Card, CardButton } from '../../components/ui-v2/Card';
+import Notice from '../../components/ui-v2/Notice';
 import Data from '../../components/ui-v2/Data';
 import SectionHeading from '../../components/ui-v2/SectionHeading';
 import type { FlowEdge, FlowView } from '../../services/transitions/catalogView';
@@ -67,7 +69,7 @@ const LifecycleWalk: React.FC<LifecycleWalkProps> = ({
   const facts = current?.facts ?? [];
 
   return (
-    <section className="rounded-md border border-border-subtle bg-bg-surface p-4">
+    <Card as="section">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <SectionHeading as="h3">{t('processFlows.walk.title')}</SectionHeading>
@@ -118,9 +120,8 @@ const LifecycleWalk: React.FC<LifecycleWalkProps> = ({
         {!started &&
           steps.length === 0 &&
           seeds.map((seed) => (
-            <button
+            <CardButton
               key={`seed-${seed}`}
-              type="button"
               onClick={() =>
                 onStep({
                   id: `seed#${seed}`,
@@ -132,13 +133,13 @@ const LifecycleWalk: React.FC<LifecycleWalkProps> = ({
                   cascade: false,
                 })
               }
-              className="flex w-full items-center justify-between gap-3 rounded-md border border-border-subtle px-3 py-2 text-left hover:bg-bg-hover"
+              className="flex w-full items-center justify-between gap-3"
             >
               <span className="text-meta text-text-secondary">
                 {t('processFlows.walk.seedAt')}
               </span>
               <Data className="text-[11px]">{seed}</Data>
-            </button>
+            </CardButton>
           ))}
 
         {steps.map((edge) => {
@@ -158,9 +159,9 @@ const LifecycleWalk: React.FC<LifecycleWalkProps> = ({
           // mean authoring a purpose for something nobody performs.
           const purpose = edge.settlement ? null : transitionPurposeKey(edge.transitionId);
           return (
-            <div
+            <Card
               key={edge.id}
-              className="flex flex-wrap items-start justify-between gap-3 rounded-md border border-border-subtle px-3 py-2"
+              className="flex flex-wrap items-start justify-between gap-3"
             >
               <span className="min-w-0 flex-1">
                 <span className="flex min-w-0 flex-wrap items-center gap-2">
@@ -182,11 +183,11 @@ const LifecycleWalk: React.FC<LifecycleWalkProps> = ({
               <Button
                 variant={operator ? 'outline' : 'secondary'}
                 onClick={() => onStep(edge)}
-                className="shrink-0 !px-3 !py-1.5 text-xs"
+                className="shrink-0"
               >
                 {operator ? t('processFlows.walk.advance') : t('processFlows.walk.observe')}
               </Button>
-            </div>
+            </Card>
           );
         })}
 
@@ -199,19 +200,19 @@ const LifecycleWalk: React.FC<LifecycleWalkProps> = ({
         )}
 
         {facts.length > 0 && (
-          <div className="rounded-md border border-dashed border-border-subtle px-3 py-2">
-            <p className="text-[11px] text-text-tertiary">{t('processFlows.walk.factsHere')}</p>
+          <Notice tone="neutral">
+            <p>{t('processFlows.walk.factsHere')}</p>
             <span className="mt-1 flex flex-wrap gap-1.5">
               {facts.map((id) => (
-                <Data key={id} className="text-[11px] text-text-secondary">
+                <Data key={id}>
                   {verbOf(id)}
                 </Data>
               ))}
             </span>
-          </div>
+          </Notice>
         )}
       </div>
-    </section>
+    </Card>
   );
 };
 

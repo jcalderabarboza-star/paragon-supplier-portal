@@ -5,6 +5,8 @@ import { useCurrentIdentity } from '../../context/CurrentIdentityContext';
 import { mockSuppliers } from '../../data/mockSuppliers';
 import { SEEDED_SEAT_ROLES } from '../../services/transitions/businessRoles';
 import { NO_PERSON } from '../../context/noPerson';
+import Button from '../../components/ui-v2/Button';
+import { LinkButton, ToggleChip } from '../../components/ui-v2/Actions';
 
 const SEED_SUPPLIER_ID = 'sup-007';
 const SEED_SUPPLIER_NAME =
@@ -79,9 +81,6 @@ const Login: React.FC = () => {
 
   // UI-1a · THIS PAGE IS ON THE TOKENS (operator ruling). It carried fourteen
   // hex literals in inline styles, two of them unreadable (2.30:1 and 2.56:1).
-  // The supplier arm's solid button is `teal-hover`, not `teal`: white on the
-  // palette teal is 3.51:1.
-  const buyer = activeTab === 'buyer';
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-navy px-4 py-8">
       {/* Card */}
@@ -97,32 +96,31 @@ const Login: React.FC = () => {
         </div>
 
         {/* Tabs */}
-        <div className="mb-6 flex border-b border-border-subtle">
+        <div className="mb-6 flex gap-2">
           {([['buyer', 'login.tab.buyer'], ['supplier', 'login.tab.supplier']] as const).map(([tab, labelKey]) => {
             const active = activeTab === tab;
-            const tone = tab === 'buyer' ? 'border-navy text-text-primary' : 'border-teal text-teal-text';
             return (
-              <button
+              <ToggleChip
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`-mb-px flex-1 border-b-2 bg-transparent py-2.5 text-sm transition-colors ${
-                  active ? `font-semibold ${tone}` : 'border-transparent font-medium text-text-tertiary'
-                }`}
+                selected={active}
+                className="flex-1 justify-center"
               >
                 {t(labelKey)}
-              </button>
+              </ToggleChip>
             );
           })}
         </div>
 
         {/* Sign-in */}
         <div className="mb-5 flex flex-col gap-3.5">
-          <button
+          <Button
+            variant="outline"
             onClick={handleSignIn}
-            className={`mt-0.5 w-full rounded-sm p-3 text-sm font-semibold text-white ${buyer ? 'bg-navy' : 'bg-teal-hover'}`}
+            className="mt-0.5 w-full"
           >
             {t('login.demo.signIn')}
-          </button>
+          </Button>
 
           {/* ⚠️ THE DISCLOSURE SITS UNDER THE CONTROL IT IS ABOUT — H3. This is the
               one string on the page that has to be here: the button above does not
@@ -137,12 +135,11 @@ const Login: React.FC = () => {
               same reason — so there was nothing to send anyone to. */}
           {activeTab === 'supplier' && (
             <div className="flex items-center justify-start">
-              <button
+              <LinkButton
                 onClick={() => navigate('/register')}
-                className="bg-transparent p-0 text-xs font-medium text-teal-text hover:underline"
               >
                 {t('login.register')}
-              </button>
+              </LinkButton>
             </div>
           )}
         </div>
@@ -156,18 +153,20 @@ const Login: React.FC = () => {
 
         {/* Demo buttons */}
         <div className="flex gap-2">
-          <button
+          <Button
+            variant="secondary"
             onClick={handleViewAsBuyer}
-            className="flex-1 rounded-sm border border-border-input bg-bg-surface p-2 text-xs font-semibold text-text-primary transition-colors hover:border-navy"
+            className="flex-1"
           >
             {t('login.viewAsBuyer')}
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="secondary"
             onClick={handleViewAsSupplier}
-            className="flex-1 rounded-sm border border-border-input bg-bg-surface p-2 text-xs font-semibold text-text-primary transition-colors hover:border-teal"
+            className="flex-1"
           >
             {t('login.viewAsSupplier')}
-          </button>
+          </Button>
         </div>
       </div>
 

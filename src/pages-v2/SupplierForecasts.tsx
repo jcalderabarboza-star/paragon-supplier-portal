@@ -20,6 +20,8 @@ import PageMetaLine from '../components/ui-v2/PageMetaLine';
 import SubTabs from '../components/ui-v2/SubTabs';
 import StatusPill from '../components/ui-v2/StatusPill';
 import Button from '../components/ui-v2/Button';
+import { Card } from '../components/ui-v2/Card';
+import Notice from '../components/ui-v2/Notice';
 import SidePanel from '../components/ui-v2/SidePanel';
 import FormSection from '../components/ui-v2/FormSection';
 import Data from '../components/ui-v2/Data';
@@ -146,10 +148,6 @@ const CLASS_LABEL_KEY: Record<CommitmentClass, string> = {
 // Root-cause level-1 vocabulary offered by the form (the child object's
 // category axis; free-text note carries the specifics).
 const ROOT_CAUSE_LEVELS = ['capacity', 'material', 'logistics', 'quality', 'other'] as const;
-
-// Quiet-outlined chip (DP-3 status-chip grammar — soft tint, thin border).
-const CHIP =
-  'inline-flex items-center gap-1 rounded-sm border px-1.5 py-0.5 text-[11px] font-medium border-border-subtle bg-bg-hover text-text-secondary';
 
 interface ConfirmForm {
   confirmedQty: string;
@@ -365,17 +363,17 @@ const LineCard: React.FC<{
   const overdue = awaiting && isResponseOverdue(publication, sdcClock.now());
   const dueAt = responseDueAtOf(publication);
   return (
-    <div className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm border-l-2 border-l-teal p-5">
+    <Card>
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div className="min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <Data className="text-sm font-bold text-text-primary">{line.materialCode}</Data>
-            <span className={CHIP}>
+            <StatusPill variant="neutral" size="sm" className="gap-1">
               {line.commitmentClass === 'firm' && <Lock size={11} aria-hidden="true" />}
               {t(CLASS_LABEL_KEY[line.commitmentClass])}
-            </span>
+            </StatusPill>
             {previous && (
-              <span className={CHIP} data-testid="sdcsup-line-net" data-net={net} data-awaiting={awaiting ? 'true' : 'false'}>
+              <StatusPill variant="neutral" size="sm" data-testid="sdcsup-line-net" data-net={net} data-awaiting={awaiting ? 'true' : 'false'}>
                 {/* ⚠️ SDC-2 · R-SDC P0 #2 — "no re-confirmation needed" ONLY WHEN AN ANSWER
                     STILL COUNTS. Unchanged is a fact about the line; whether anything is
                     needed is a fact about the answer, and on a line nobody answered the
@@ -387,7 +385,7 @@ const LineCard: React.FC<{
                   : prior
                     ? t('sdcSup.net.changedFrom', { qty: formatNumber(prior.forecastQty), uom: prior.uom })
                     : t('sdcSup.net.new')}
-              </span>
+              </StatusPill>
             )}
           </div>
           <div className="text-base font-semibold text-text-primary mt-1 flex items-center gap-2 flex-wrap">
@@ -497,7 +495,7 @@ const LineCard: React.FC<{
               })}
         </div>
       )}
-    </div>
+    </Card>
   );
 };
 
@@ -654,7 +652,7 @@ const ResponsesTab: React.FC<{
     responses.find((d) => d.status === 'Draft' && d.supersedes === r.id);
   if (responses.length === 0) {
     return (
-      <div className="bg-bg-surface border border-border-subtle rounded-lg py-12 px-6 text-center">
+      <Card padding="lg" className="text-center">
         <div className="inline-flex w-12 h-12 rounded-full bg-bg-hover items-center justify-center mb-3">
           <Send size={20} className="text-text-tertiary" />
         </div>
@@ -662,22 +660,21 @@ const ResponsesTab: React.FC<{
           {t('sdcSup.responses.emptyTitle')}
         </div>
         <div className="text-sm text-text-tertiary">{t('sdcSup.responses.emptyBody')}</div>
-      </div>
+      </Card>
     );
   }
   return (
     <div className="flex flex-col gap-4" data-testid="sdcsup-responses">
       {responses.map((r) => (
-        <div
+        <Card
           key={r.id}
-          className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm border-l-2 border-l-teal p-5"
         >
           <div className="flex items-start justify-between gap-3 mb-3 flex-wrap">
             <div className="flex items-center gap-2 flex-wrap">
               <Data className="text-sm font-bold text-text-primary">{r.id}</Data>
-              <Data className="text-xs bg-bg-hover text-text-secondary rounded-full px-2 py-0.5 font-semibold">
-                {r.materialCode}
-              </Data>
+              <StatusPill variant="neutral">
+                <Data>{r.materialCode}</Data>
+              </StatusPill>
             </div>
             <div className="flex items-center gap-2">
               {/* Own facts + STATUS only (FORK-3b-C) — never a rank or score. */}
@@ -816,7 +813,7 @@ const ResponsesTab: React.FC<{
           )}
           {/* R1b — the buyer's dispute text and its resolution, in order. */}
           <DisputeLedger entries={r.disputeResponse ?? []} />
-        </div>
+        </Card>
       ))}
     </div>
   );
@@ -860,7 +857,7 @@ const DeclarationsTab: React.FC<{
         </div>
       </div>
       {declarations.length === 0 ? (
-        <div className="bg-bg-surface border border-border-subtle rounded-lg py-12 px-6 text-center">
+        <Card padding="lg" className="text-center">
           <div className="inline-flex w-12 h-12 rounded-full bg-bg-hover items-center justify-center mb-3">
             <Boxes size={20} className="text-text-tertiary" />
           </div>
@@ -868,24 +865,23 @@ const DeclarationsTab: React.FC<{
             {t('sdcSup.stock.emptyTitle')}
           </div>
           <div className="text-sm text-text-tertiary">{t('sdcSup.stock.emptyBody')}</div>
-        </div>
+        </Card>
       ) : (
         declarations.map((d) => {
           const grain = declarationGranularity(d);
           return (
-            <div
+            <Card
               key={d.id}
-              className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm border-l-2 border-l-teal p-5"
             >
               <div className="flex items-start justify-between gap-3 flex-wrap">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <Data className="text-sm font-bold text-text-primary">{d.materialCode}</Data>
-                    <span className={CHIP}>
+                    <StatusPill variant="neutral" size="sm">
                       {grain === 'batch-grain'
                         ? t('sdcSup.stock.grain.batch')
                         : t('sdcSup.stock.grain.total')}
-                    </span>
+                    </StatusPill>
                   </div>
                   <div className="text-base font-semibold text-text-primary mt-1">
                     {materialLabel(d.materialCode)}
@@ -902,7 +898,8 @@ const DeclarationsTab: React.FC<{
               </div>
 
               {grain === 'batch-grain' && d.batches ? (
-                <ul className="mt-4 divide-y divide-border-subtle rounded-md border border-border-subtle overflow-hidden">
+                <Card tone="inset" padding="none" className="mt-4 overflow-hidden">
+                <ul className="divide-y divide-border-subtle">
                   {d.batches.map((b) => (
                     <li
                       key={b.batchNumber}
@@ -920,6 +917,7 @@ const DeclarationsTab: React.FC<{
                     </li>
                   ))}
                 </ul>
+                </Card>
               ) : (
                 // Total-only: honest about the missing detail — never presented
                 // as "no expiry risk" (the EXPIRY-BLIND rule, supplier-side).
@@ -927,7 +925,7 @@ const DeclarationsTab: React.FC<{
                   {t('sdcSup.stock.totalOnlyHint')}
                 </p>
               )}
-            </div>
+            </Card>
           );
         })
       )}
@@ -1135,7 +1133,7 @@ const ShipmentsTab: React.FC<{
         )}
       </div>
       {shipments.length === 0 ? (
-        <div className="bg-bg-surface border border-border-subtle rounded-lg py-12 px-6 text-center">
+        <Card padding="lg" className="text-center">
           <div className="inline-flex w-12 h-12 rounded-full bg-bg-hover items-center justify-center mb-3">
             <Truck size={20} className="text-text-tertiary" />
           </div>
@@ -1143,18 +1141,17 @@ const ShipmentsTab: React.FC<{
             {t('sdcSup.ship.emptyTitle')}
           </div>
           <div className="text-sm text-text-tertiary">{t('sdcSup.ship.emptyBody')}</div>
-        </div>
+        </Card>
       ) : (
         shipments.map(({ shipment: s, asnTracking }) => (
-          <div
+          <Card
             key={s.id}
-            className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm border-l-2 border-l-teal p-5"
           >
             <div className="flex items-start justify-between gap-3 flex-wrap">
               <div className="min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <Data className="text-sm font-bold text-text-primary">{s.materialCode}</Data>
-                  <span className={CHIP}>{t(DIRECTION_LABEL_KEY[s.direction])}</span>
+                  <StatusPill variant="neutral" size="sm">{t(DIRECTION_LABEL_KEY[s.direction])}</StatusPill>
                 </div>
                 <div className="text-base font-semibold text-text-primary mt-1">
                   {materialLabel(s.materialCode)}
@@ -1264,7 +1261,7 @@ const ShipmentsTab: React.FC<{
                 </span>
               )}
             </div>
-          </div>
+          </Card>
         ))
       )}
     </div>
@@ -1888,13 +1885,9 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
       {/* FLAG-2: the governed LIVE lane is empty — the sample renders ONLY under
           this explicit banner (the honest empty state of the live lane, stated). */}
       {!liveFeed && (
-        <div className="mb-6 flex items-start gap-2 rounded-lg border border-dashed border-sample-border bg-sample-soft px-4 py-3 text-sm text-text-primary">
-          <Info size={16} className="mt-0.5 shrink-0 text-sample" />
-          <div>
-            <div className="font-semibold text-sample">{t('sdcSup.honesty.title')}</div>
-            <p className="mt-0.5 text-text-secondary">{t('sdcSup.honesty.body')}</p>
-          </div>
-        </div>
+        <Notice tone="sample" icon={Info} title={t('sdcSup.honesty.title')} className="mb-6">
+          <p>{t('sdcSup.honesty.body')}</p>
+        </Notice>
       )}
 
       {/* B4b-2 · THE VERSION BANNER: which plan, when, and how much of it moved.
@@ -1903,12 +1896,13 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
         const changeSummary = netChangeSummary(planLines, previous);
         const grain = publicationGrain(publication);
         return (
-          <div
+          <Card
             key={publication.publicationId}
-            className="mb-4 rounded-lg border border-border-subtle bg-bg-surface px-4 py-3 text-sm text-text-primary"
+            className="mb-4"
             data-testid="sdcsup-version-banner"
             data-grain={grain}
           >
+            <p className="text-sm text-text-primary">
             {plans.length > 1 && (
               <span className="font-semibold">{t(`sdcSup.version.grain.${grain}`)} · </span>
             )}
@@ -1926,7 +1920,8 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
                   n: formatNumber(planLines.length),
                   count: planLines.length,
                 })}
-          </div>
+            </p>
+          </Card>
         );
       })}
 
@@ -1944,7 +1939,7 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
 
       {activeTab === 'lines' &&
         (lines.length === 0 ? (
-          <div className="bg-bg-surface border border-border-subtle rounded-lg py-12 px-6 text-center">
+          <Card padding="lg" className="text-center">
             <div className="inline-flex w-12 h-12 rounded-full bg-bg-hover items-center justify-center mb-3">
               <CalendarRange size={20} className="text-text-tertiary" />
             </div>
@@ -1952,7 +1947,7 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
               {t('sdcSup.lines.emptyTitle')}
             </div>
             <div className="text-sm text-text-tertiary">{t('sdcSup.lines.emptyBody')}</div>
-          </div>
+          </Card>
         ) : (
           <div className="flex flex-col gap-4" data-testid="sdcsup-lines">
             {lines.map((line) => (
@@ -2051,15 +2046,15 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
       >
         {panelLine && (
           <div className="space-y-5">
-            <section className="bg-bg-hover border border-border-subtle rounded-md px-4 py-3">
+            <Card as="section" tone="inset">
               <div className="flex items-center gap-2 flex-wrap">
                 <Data className="text-sm font-bold text-text-primary">
                   {panelLine.materialCode}
                 </Data>
-                <span className={CHIP}>
+                <StatusPill variant="neutral" size="sm" className="gap-1">
                   {panelLine.commitmentClass === 'firm' && <Lock size={11} aria-hidden="true" />}
                   {t(CLASS_LABEL_KEY[panelLine.commitmentClass])}
-                </span>
+                </StatusPill>
               </div>
               <FieldList columns={2} className="mt-2">
                 <Field label={t('sdcSup.panel.requested')} kind="number">
@@ -2080,7 +2075,7 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
                     : t('sdcSup.panel.reviseDisputed', { id: revising.id })}
                 </p>
               )}
-            </section>
+            </Card>
 
             <FormSection
               eyebrow={t('sdcSup.panel.qty.eyebrow')}
@@ -2209,12 +2204,12 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
       >
         {ackPanelLine && (
           <div className="space-y-5">
-            <section className="bg-bg-hover border border-border-subtle rounded-md px-4 py-3">
+            <Card as="section" tone="inset">
               <div className="flex items-center gap-2 flex-wrap">
                 <Data className="text-sm font-bold text-text-primary">
                   {ackPanelLine.materialCode}
                 </Data>
-                <span className={CHIP}>{t(CLASS_LABEL_KEY[ackPanelLine.commitmentClass])}</span>
+                <StatusPill variant="neutral" size="sm">{t(CLASS_LABEL_KEY[ackPanelLine.commitmentClass])}</StatusPill>
               </div>
               <FieldList columns={2} className="mt-2">
                 <Field label={t('sdcSup.panel.requested')} kind="number">
@@ -2225,7 +2220,7 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
                 </Field>
               </FieldList>
               <p className="mt-2 text-xs text-text-secondary">{t('sdcSup.ackPanel.desc')}</p>
-            </section>
+            </Card>
 
             <FormField label={t('sdcSup.ackPanel.note')} htmlFor="sdcsup-ack-note">
               <TextArea
@@ -2317,9 +2312,10 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
           >
             <div className="space-y-3">
               {sohForm.batches.map((b, i) => (
-                <div
+                <Card
+                  tone="inset"
                   key={i}
-                  className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_1fr_auto] gap-2 items-end rounded-md border border-border-subtle bg-bg-hover p-3"
+                  className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_1fr_auto] gap-2 items-end"
                 >
                   <FormField label={t('sdcSup.stock.panel.batchNumber')}>
                     <TextInput
@@ -2371,7 +2367,7 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
                       })
                     }
                   />
-                </div>
+                </Card>
               ))}
               <Button
                 variant="secondary"

@@ -14,6 +14,7 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import Button from '../ui-v2/Button';
+import { Card } from '../ui-v2/Card';
 import type { DrawdownEnforcement, TolerancePolicy } from '../../services/delivery';
 import type { EditPolicyPatch } from '../../services/delivery';
 import type { QtyRefusalReason } from '../../lib/localeNumber';
@@ -82,7 +83,7 @@ const PolicyEditor: React.FC<{
     )}`;
 
   return (
-    <div className="mt-3 rounded-lg border border-border-subtle bg-bg-hover px-4 py-4 space-y-4">
+    <Card tone="inset" className="mt-3 space-y-4">
       <div className="flex items-center justify-between gap-2">
         <span className="text-label uppercase text-text-tertiary">
           {t('delivery.policy.edit.title')}
@@ -96,7 +97,6 @@ const PolicyEditor: React.FC<{
       <div className="flex flex-wrap gap-2">
         <Button
           variant="secondary"
-          className="px-3 py-1.5 text-xs"
           disabled={pending}
           onClick={() => applyPreset({ tolerancePct: 0.1, enforcement: 'flag' })}
         >
@@ -104,7 +104,6 @@ const PolicyEditor: React.FC<{
         </Button>
         <Button
           variant="secondary"
-          className="px-3 py-1.5 text-xs"
           disabled={pending}
           onClick={() => applyPreset({ tolerancePct: null, enforcement: 'ignore' })}
         >
@@ -188,7 +187,6 @@ const PolicyEditor: React.FC<{
       <div className="flex flex-wrap items-center gap-2">
         <Button
           variant="outline"
-          className="px-3 py-1.5 text-xs"
           disabled={!canSave}
           onClick={() => onSave({ tolerancePct, enforcement, reason: reason.trim() })}
         >
@@ -196,7 +194,6 @@ const PolicyEditor: React.FC<{
         </Button>
         <Button
           variant="secondary"
-          className="px-3 py-1.5 text-xs"
           disabled={pending}
           onClick={onCancel}
         >
@@ -206,7 +203,7 @@ const PolicyEditor: React.FC<{
         {deviation && (
           <Button
             variant="secondary"
-            className="ml-auto px-3 py-1.5 text-xs"
+            className="ml-auto"
             disabled={pending}
             onClick={onReset}
           >
@@ -214,7 +211,7 @@ const PolicyEditor: React.FC<{
           </Button>
         )}
       </div>
-    </div>
+    </Card>
   );
 };
 

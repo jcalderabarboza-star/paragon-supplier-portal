@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Maximize2, Minimize2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import SectionHeading from '../../components/ui-v2/SectionHeading';
+import Button from '../../components/ui-v2/Button';
 
 // ────────────────────────────────────────────────────────────────────────────
 // FullScreenSection (Stage G · G1.3.2) — the shared per-section full-screen
@@ -63,15 +64,14 @@ const FullScreenSection: React.FC<FullScreenSectionProps> = ({
   const dsgHeight = expanded ? expandedHeight : normalHeight;
 
   const ToggleButton = (
-    <button
-      type="button"
+    <Button
+      variant="secondary"
+      icon={expanded ? Minimize2 : Maximize2}
       onClick={toggle}
       aria-label={t(expanded ? 'planGrid.fullscreen.collapse' : 'planGrid.fullscreen.expand')}
-      className="inline-flex items-center gap-1.5 rounded-md border border-border-subtle bg-bg-surface px-2 py-1 text-xs text-text-secondary hover:bg-bg-hover focus:border-action focus:outline-none"
     >
-      {expanded ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
       {t(expanded ? 'planGrid.fullscreen.collapse' : 'planGrid.fullscreen.expand')}
-    </button>
+    </Button>
   );
 
   if (expanded) {

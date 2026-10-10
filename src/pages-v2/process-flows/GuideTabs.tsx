@@ -5,6 +5,10 @@ import { BookOpenText, RefreshCw } from 'lucide-react';
 import Data from '../../components/ui-v2/Data';
 import DataTable, { CellSub, type Column } from '../../components/ui-v2/DataTable';
 import StatusPill from '../../components/ui-v2/StatusPill';
+import Button from '../../components/ui-v2/Button';
+import { Card } from '../../components/ui-v2/Card';
+import Notice from '../../components/ui-v2/Notice';
+import { ToggleChip } from '../../components/ui-v2/Actions';
 import SectionHeading from '../../components/ui-v2/SectionHeading';
 import { FieldLabel, Select } from '../../components/ui-v2/Form';
 import { Field, FieldList } from '../../components/ui-v2/Field';
@@ -89,10 +93,10 @@ function glossaryRefFor(term: string): GlossaryRef | null {
 const TOP = '!align-top';
 
 const Box: React.FC<{ title: string; children: React.ReactNode; testId?: string }> = ({ title, children, testId }) => (
-  <section className="rounded-md border border-border-subtle bg-bg-surface p-4" data-testid={testId}>
+  <Card as="section" data-testid={testId}>
     <SectionHeading level="group" as="h4" className="mb-2">{title}</SectionHeading>
     {children}
-  </section>
+  </Card>
 );
 
 /**
@@ -129,16 +133,16 @@ const StepCard: React.FC<{ guide: ProcessGuide; step: GuideStep; tv: TransitionV
   const { t } = useTranslation();
   const key = guideCitationKey(guide.entity, guide.locale, step.transitionId);
   return (
-    <article
+    <Card
+      as="article"
       id={`guide-${guide.entity}-${step.transitionId}`}
       data-testid={`pf-guide-step-${step.transitionId}`}
       data-citation={key}
-      className="rounded-md border border-border-subtle bg-bg-surface p-4"
     >
       <header className="flex flex-wrap items-center gap-2">
         <Data className="text-[12px]">{step.transitionId}</Data>
         <SectionHeading as="h4">{step.label}</SectionHeading>
-        <StatusPill variant="neutral" className="text-[10px]">
+        <StatusPill variant="neutral" size="sm">
           {t(`processGuides.stepKind.${step.stepKind}`)}
         </StatusPill>
         <Data className="ml-auto text-[10px] text-text-tertiary">{key}</Data>
@@ -148,15 +152,15 @@ const StepCard: React.FC<{ guide: ProcessGuide; step: GuideStep; tv: TransitionV
         <GuideField label={t('processGuides.step.fromTo')} text={step.fromTo} />
       </FieldList>
       <div className="mt-3 grid gap-3 md:grid-cols-2">
-        <div className="space-y-1.5 rounded-md border border-border-subtle p-3" data-testid={`pf-guide-operator-${step.transitionId}`}>
+        <Card tone="inset" className="space-y-1.5" data-testid={`pf-guide-operator-${step.transitionId}`}>
           <SectionHeading level="group" as="h5">{t('processGuides.step.operator')}</SectionHeading>
           <FieldList columns={1}>
             <GuideField label={t('processGuides.step.where')} text={step.operator.where} />
             <GuideField label={t('processGuides.step.do')} text={step.operator.do} />
             <GuideField label={t('processGuides.step.fill')} text={step.operator.fill} />
           </FieldList>
-        </div>
-        <div className="space-y-1.5 rounded-md border border-border-subtle p-3" data-testid={`pf-guide-tester-${step.transitionId}`}>
+        </Card>
+        <Card tone="inset" className="space-y-1.5" data-testid={`pf-guide-tester-${step.transitionId}`}>
           <SectionHeading level="group" as="h5">{t('processGuides.step.tester')}</SectionHeading>
           <FieldList columns={1}>
             <GuideField label={t('processGuides.step.expected')} text={step.tester.expectedState} />
@@ -165,7 +169,7 @@ const StepCard: React.FC<{ guide: ProcessGuide; step: GuideStep; tv: TransitionV
               {step.tester.triggerEvent}
             </Field>
           </FieldList>
-        </div>
+        </Card>
       </div>
       <FieldList columns={1} className="mt-3">
         <GuideField label={t('processGuides.step.checks')} text={step.checks} />
@@ -190,7 +194,7 @@ const StepCard: React.FC<{ guide: ProcessGuide; step: GuideStep; tv: TransitionV
           </Field>
         )}
       </FieldList>
-    </article>
+    </Card>
   );
 };
 
@@ -304,15 +308,14 @@ const HistoryTab: React.FC<{ view: FlowView; guide: ProcessGuide | undefined }> 
                   </option>
                 ))}
               </Select>
-              <button
-                type="button"
+              <Button
+                variant="secondary"
+                icon={RefreshCw}
                 data-testid="pf-guide-history-refresh"
                 onClick={() => setEvents(readAuditEvents())}
-                className="inline-flex items-center gap-1 rounded-md border border-border-subtle px-2 py-1 text-[12px] text-text-secondary hover:bg-bg-hover"
               >
-                <RefreshCw size={12} aria-hidden="true" />
                 {t('processGuides.history.refresh')}
-              </button>
+              </Button>
             </div>
             {groups.length === 0 ? (
               <p data-testid="pf-guide-history-seeded" className="text-meta text-text-tertiary">
@@ -443,11 +446,13 @@ const GuideTabs: React.FC<{ view: FlowView; overview: React.ReactNode }> = ({ vi
             <Box title={t('processGuides.lifecycle.kinds')}>
               <ul className="flex flex-wrap gap-1.5" data-testid="pf-guide-lifecycle-kinds">
                 {guide.transitions.map((id) => (
-                  <li key={id} className="inline-flex items-center gap-1 rounded border border-border-subtle px-1.5 py-0.5">
-                    <Data className="text-[10px]">{id}</Data>
-                    <span className="text-[10px] text-text-tertiary">
+                  <li key={id}>
+                    <StatusPill variant="neutral" size="sm" className="gap-1">
+                    <Data>{id}</Data>
+                    <span>
                       {t(`processGuides.stepKind.${guide.steps[id]?.stepKind ?? 'not-active'}`)}
                     </span>
+                    </StatusPill>
                   </li>
                 ))}
               </ul>
@@ -519,7 +524,7 @@ const GuideTabs: React.FC<{ view: FlowView; overview: React.ReactNode }> = ({ vi
 
   return (
     <section className="space-y-4" data-testid="pf-guide">
-      <div className="rounded-md border border-border-subtle bg-bg-surface p-4">
+      <Card>
         <SectionHeading as="h3" className="flex items-center gap-2">
           <BookOpenText size={16} className="text-teal" aria-hidden="true" />
           {t('processGuides.title')}
@@ -530,32 +535,28 @@ const GuideTabs: React.FC<{ view: FlowView; overview: React.ReactNode }> = ({ vi
           </p>
         )}
         {guide && GUIDE_DRAFT_LOCALES.includes(guide.locale) && (
-          <p
-            className="mt-2 max-w-4xl rounded-md border border-warning/40 bg-warning-soft px-2 py-1 text-[11px] text-warning-hover"
+          <Notice
+            tone="warning"
+            className="mt-2 max-w-4xl"
             data-testid="pf-guide-draft"
           >
             {t('processGuides.draft')}
-          </p>
+          </Notice>
         )}
         <div role="tablist" aria-label={t('processGuides.tablist')} className="mt-3 flex flex-wrap gap-1 border-b border-border-subtle">
           {TABS.map((k) => (
-            <button
+            <ToggleChip
               key={k}
-              type="button"
               role="tab"
               id={`pf-guide-tab-${k}`}
               data-testid={`pf-guide-tab-${k}`}
               aria-selected={tab === k}
               aria-controls="pf-guide-panel"
               onClick={() => setTab(k)}
-              className={`-mb-px rounded-t-md border px-3 py-1.5 text-[12px] transition-colors ${
-                tab === k
-                  ? 'border-border-subtle border-b-bg-surface bg-bg-surface font-semibold text-action-text'
-                  : 'border-transparent text-text-secondary hover:bg-bg-hover'
-              }`}
+              selected={tab === k}
             >
               {t(`processGuides.tab.${k}`)}
-            </button>
+            </ToggleChip>
           ))}
         </div>
         {citation && (
@@ -566,7 +567,7 @@ const GuideTabs: React.FC<{ view: FlowView; overview: React.ReactNode }> = ({ vi
             </Data>
           </p>
         )}
-      </div>
+      </Card>
       <div
         role="tabpanel"
         id="pf-guide-panel"

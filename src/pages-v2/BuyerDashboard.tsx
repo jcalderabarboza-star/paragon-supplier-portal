@@ -31,6 +31,8 @@ import ErrorState from '../components/ui-v2/ErrorState';
 import EmptyState from '../components/ui-v2/EmptyState';
 import Data from '../components/ui-v2/Data';
 import StatusPill from '../components/ui-v2/StatusPill';
+import { Card, cardClass } from '../components/ui-v2/Card';
+import { ToggleChip } from '../components/ui-v2/Actions';
 import IllustrativeRegion from '../components/ui-v2/IllustrativeRegion';
 import { formatDate, formatIDR, formatMonth } from '../lib/format';
 import {
@@ -153,12 +155,6 @@ const RISK_VARIANT: Record<ProductionLineRow['risk'], 'success' | 'warning' | 'd
 const AT_RISK_LEVELS = (
   Object.keys(RISK_VARIANT) as ProductionLineRow['risk'][]
 ).filter((level) => RISK_VARIANT[level] !== 'success');
-
-const CARD = 'bg-bg-surface rounded-lg shadow-sm border border-border-subtle p-6';
-const PLACEHOLDER =
-  'rounded-lg border border-dashed border-border-subtle p-6 bg-bg-surface/40';
-const BADGE =
-  'inline-block text-[10px] font-semibold uppercase tracking-wider text-text-tertiary border border-border-subtle rounded px-1.5 py-0.5';
 
 const BuyerDashboard: React.FC = () => {
   const { t } = useTranslation();
@@ -341,34 +337,22 @@ const BuyerDashboard: React.FC = () => {
 
       {/* ── B · LANE VIEW ──────────────────────────────────────────────────── */}
       <div className="flex flex-wrap items-center gap-2 mb-6">
-        <button
-          type="button"
+        <ToggleChip
           onClick={() => setLane('all')}
-          aria-pressed={activeLane === null}
+          selected={activeLane === null}
           data-testid="lane-chip-all"
-          className={`text-meta rounded-full border px-3 py-1 ${
-            activeLane === null
-              ? 'border-action text-action-text bg-action-soft'
-              : 'border-border-subtle text-text-secondary'
-          }`}
         >
           {t('buyerDashboard.lane.all')}
-        </button>
+        </ToggleChip>
         {lanes.map((id) => (
-          <button
+          <ToggleChip
             key={id}
-            type="button"
             onClick={() => setLane(id)}
-            aria-pressed={activeLane === id}
+            selected={activeLane === id}
             data-testid={`lane-chip-${id}`}
-            className={`text-meta rounded-full border px-3 py-1 ${
-              activeLane === id
-                ? 'border-action text-action-text bg-action-soft'
-                : 'border-border-subtle text-text-secondary'
-            }`}
           >
             {t(`roles.owner.${id}`)}
-          </button>
+          </ToggleChip>
         ))}
         <span className="text-meta text-text-tertiary">{t('buyerDashboard.lane.legend')}</span>
       </div>
@@ -389,7 +373,7 @@ const BuyerDashboard: React.FC = () => {
             to={g.route}
             data-testid={`alert-${g.id}`}
             data-lane={g.lane}
-            className={`${CARD} ${SEVERITY_EDGE[g.severity]} block hover:bg-bg-hover`}
+            className={`${cardClass({ padding: 'lg' })} ${SEVERITY_EDGE[g.severity]} block hover:bg-bg-hover`}
           >
             <div className="flex items-center justify-between gap-2">
               <span
@@ -398,9 +382,9 @@ const BuyerDashboard: React.FC = () => {
                 {t(`buyerDashboard.alerts.severity.${g.severity}`)}
               </span>
               {/* ADM-1 — the owning lane, on the card. */}
-              <span className={BADGE} data-testid={`alert-lane-${g.id}`}>
+              <StatusPill variant="neutral" size="sm" data-testid={`alert-lane-${g.id}`}>
                 {t(`roles.owner.${g.lane}`)}
-              </span>
+              </StatusPill>
             </div>
             <div className="flex items-baseline gap-2 mt-1">
               <Data className="text-hero">{g.count}</Data>
@@ -419,7 +403,7 @@ const BuyerDashboard: React.FC = () => {
           would be a different number wearing the same label. */}
       <div className="flex flex-wrap items-baseline gap-x-3 mb-3" data-testid="kpi-scope">
         <SectionHeading>{t('buyerDashboard.kpi.title')}</SectionHeading>
-        <span className={BADGE}>{t('buyerDashboard.kpi.wholePlatform')}</span>
+        <StatusPill variant="neutral" size="sm">{t('buyerDashboard.kpi.wholePlatform')}</StatusPill>
         <span className="text-meta text-text-tertiary">{t('buyerDashboard.kpi.notFiltered')}</span>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5 mb-8">
@@ -566,7 +550,7 @@ const BuyerDashboard: React.FC = () => {
 
       {/* ── E · CHART CARDS ────────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-8">
-        <section className={CARD}>
+        <Card as="section" padding="lg">
           <div className="flex items-start justify-between gap-3">
             <SectionHeading>
               {t('buyerDashboard.chart.ap.title')}
@@ -596,9 +580,9 @@ const BuyerDashboard: React.FC = () => {
           <p className="text-meta text-text-tertiary mt-4">
             {t('buyerDashboard.chart.ap.footer')}
           </p>
-        </section>
+        </Card>
 
-        <section className={CARD}>
+        <Card as="section" padding="lg">
           <div className="flex items-start justify-between gap-3">
             <SectionHeading>
               {t('buyerDashboard.chart.halal.title')}
@@ -629,9 +613,9 @@ const BuyerDashboard: React.FC = () => {
             <span>{t('buyerDashboard.chart.halal.footer', { total: halal.total })}</span>
             <ProvenanceMarker capability="compliance" />
           </p>
-        </section>
+        </Card>
 
-        <section className={CARD}>
+        <Card as="section" padding="lg">
           <div className="flex items-start justify-between gap-3">
             <SectionHeading>
               {t('buyerDashboard.chart.obligations.title')}
@@ -679,22 +663,22 @@ const BuyerDashboard: React.FC = () => {
               months: months.length,
             })}
           </p>
-        </section>
+        </Card>
       </div>
 
       {/* ── F · PHASE B PLACEHOLDERS ───────────────────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-8">
-        <section className={PLACEHOLDER} data-testid="phase-b-spend">
-          <span className={BADGE}>{t('buyerDashboard.phaseB.badge')}</span>
+        <Card as="section" tone="inset" padding="lg" data-testid="phase-b-spend">
+          <StatusPill variant="neutral" size="sm">{t('buyerDashboard.phaseB.badge')}</StatusPill>
           <SectionHeading className="mt-2">
             {t('buyerDashboard.phaseB.spend.title')}
           </SectionHeading>
           <p className="text-meta text-text-tertiary mt-1">
             {t('buyerDashboard.phaseB.spend.body', { months: poSpan.months })}
           </p>
-        </section>
-        <section className={PLACEHOLDER} data-testid="phase-b-trend">
-          <span className={BADGE}>{t('buyerDashboard.phaseB.badge')}</span>
+        </Card>
+        <Card as="section" tone="inset" padding="lg" data-testid="phase-b-trend">
+          <StatusPill variant="neutral" size="sm">{t('buyerDashboard.phaseB.badge')}</StatusPill>
           <SectionHeading className="mt-2">
             {t('buyerDashboard.phaseB.trend.title')}
           </SectionHeading>
@@ -705,11 +689,11 @@ const BuyerDashboard: React.FC = () => {
               max: invoiceSpan.maxPerMonth,
             })}
           </p>
-        </section>
+        </Card>
       </div>
 
       {/* ── G · ACTION QUEUE BY LANE ───────────────────────────────────────── */}
-      <section className={`${CARD} mb-8`}>
+      <Card as="section" padding="lg" className="mb-8">
         <SectionHeading className="mb-4">
           {t('buyerDashboard.queue.title')}
         </SectionHeading>
@@ -776,7 +760,7 @@ const BuyerDashboard: React.FC = () => {
             },
           ]}
         />
-      </section>
+      </Card>
 
       {/* ── PRODUCTION LINE RISK + SUPPLIER HEALTH (SAMPLE) ────────────────────
           Kept by operator direction. Both are authored fixtures with no live
@@ -786,7 +770,7 @@ const BuyerDashboard: React.FC = () => {
           supplier master record). A row that looked clickable and went nowhere
           would be the dead affordance the ratchet exists to stop. */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-8">
-        <section className={CARD}>
+        <Card as="section" padding="lg">
           <div className="flex items-center justify-between mb-4">
             <div>
               <div className="text-eyebrow text-text-tertiary uppercase">
@@ -855,9 +839,9 @@ const BuyerDashboard: React.FC = () => {
               ]}
             />
           </IllustrativeRegion>
-        </section>
+        </Card>
 
-        <section className={CARD}>
+        <Card as="section" padding="lg">
           <div className="text-eyebrow text-text-tertiary uppercase">
             {t('buyerDashboard.health.eyebrow')}
           </div>
@@ -912,14 +896,14 @@ const BuyerDashboard: React.FC = () => {
               </ResponsiveContainer>
             </div>
           </IllustrativeRegion>
-        </section>
+        </Card>
       </div>
 
       {/* ── H · PHASE C STRIP ──────────────────────────────────────────────── */}
-      <section className={PLACEHOLDER} data-testid="phase-c">
-        <span className={BADGE}>{t('buyerDashboard.phaseC.badge')}</span>
+      <Card as="section" tone="inset" padding="lg" data-testid="phase-c">
+        <StatusPill variant="neutral" size="sm">{t('buyerDashboard.phaseC.badge')}</StatusPill>
         <p className="text-meta text-text-tertiary mt-2">{t('buyerDashboard.phaseC.body')}</p>
-      </section>
+      </Card>
     </AppShellV2>
   );
 };

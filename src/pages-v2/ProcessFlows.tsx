@@ -7,6 +7,8 @@ import PageHeader from '../components/ui-v2/PageHeader';
 import PageMetaLine from '../components/ui-v2/PageMetaLine';
 import Data from '../components/ui-v2/Data';
 import StatusPill from '../components/ui-v2/StatusPill';
+import { Card, CardButton } from '../components/ui-v2/Card';
+import Notice from '../components/ui-v2/Notice';
 import SectionHeading from '../components/ui-v2/SectionHeading';
 import { Field, FieldList } from '../components/ui-v2/Field';
 import DataTable, { CellSub, type Column } from '../components/ui-v2/DataTable';
@@ -105,29 +107,30 @@ const FlowProvenance: React.FC<{ view: FlowView }> = ({ view }) => {
 const LooseEndRow: React.FC<{ end: AnnotatedLooseEnd }> = ({ end }) => {
   const { t } = useTranslation();
   return (
-    <li className="rounded-md border border-warning/40 bg-warning-soft/40 px-3 py-2.5">
+    <li>
+      <Notice tone="warning" icon={AlertTriangle}>
       <span className="flex flex-wrap items-center gap-2">
-        <AlertTriangle size={13} className="text-warning-hover" aria-hidden="true" />
-        <Data className="text-[11px]">{end.subject}</Data>
-        <span className="text-[11px] text-text-secondary">{t(looseEndKindKey(end.kind))}</span>
+        <Data>{end.subject}</Data>
+        <span>{t(looseEndKindKey(end.kind))}</span>
         {/* The reason TOKEN, verbatim — it is the census's own closed-vocabulary
             word, and it is what a reader traces back to `looseEndCensus.ts`.
             The gloss for each token is in the reading key on the rail. */}
-        <StatusPill variant="warning" className="text-[10px]">
-          <Data className="text-[10px] text-warning-hover">
+        <StatusPill variant="warning" size="sm">
+          <Data className="text-warning-hover">
             {end.reason ?? t('processFlows.reason.uncensused')}
           </Data>
         </StatusPill>
       </span>
-      <p className="mt-1.5 font-mono text-[11px] leading-relaxed text-text-secondary">
+      <p className="mt-1.5">
         {end.detail}
       </p>
       {end.note ? (
-        <p className="mt-1.5 text-[11px] leading-relaxed text-text-tertiary">
-          <span className="text-label uppercase">{t('processFlows.looseEnd.censusNote')}</span>{' '}
+        <p className="mt-1.5">
+          <strong>{t('processFlows.looseEnd.censusNote')}</strong>{' '}
           {end.note}
         </p>
       ) : null}
+      </Notice>
     </li>
   );
 };
@@ -345,7 +348,7 @@ const ProcessFlows: React.FC = () => {
       </PageMetaLine>
 
       {/* The honest marker for the route (D-CENSUS-8). Both halves stated. */}
-      <section className="mb-6 rounded-md border border-border-subtle bg-bg-surface p-4">
+      <Card as="section" className="mb-6">
         <SectionHeading as="h2">{t('processFlows.honesty.title')}</SectionHeading>
         <p className="mt-1 max-w-4xl text-meta text-text-secondary">
           {t('processFlows.honesty.derived')}
@@ -363,7 +366,7 @@ const ProcessFlows: React.FC = () => {
         <p className="mt-1 max-w-4xl text-meta text-text-tertiary">
           {t('processFlows.honesty.identifiers')}
         </p>
-      </section>
+      </Card>
 
       <div className="flex flex-col gap-6 lg:flex-row">
         {/* The catalog rail — every registered flow, derived from the registry. */}
@@ -379,16 +382,12 @@ const ProcessFlows: React.FC = () => {
               const active = flow.entity === view.entity;
               return (
                 <li key={flow.entity}>
-                  <button
-                    type="button"
+                  <CardButton
                     data-testid={`pf-flow-${flow.entity}`}
                     onClick={() => selectFlow(flow.entity)}
                     aria-current={active ? 'true' : undefined}
-                    className={`w-full rounded-md border px-3 py-2 text-left transition-colors ${
-                      active
-                        ? 'border-action bg-action-soft'
-                        : 'border-border-subtle bg-bg-surface hover:bg-bg-hover'
-                    }`}
+                    selected={active}
+                    className="w-full"
                   >
                     <span className="flex items-center justify-between gap-2">
                       <Data className="text-[12px]">{flow.entity}</Data>
@@ -409,7 +408,7 @@ const ProcessFlows: React.FC = () => {
                         the guide is pending. AFTER the counts, so the entity
                         name still leads the card. */}
                     <GuideCardLine entity={flow.entity} />
-                  </button>
+                  </CardButton>
                 </li>
               );
             })}
@@ -432,7 +431,7 @@ const ProcessFlows: React.FC = () => {
         </nav>
 
         <div className="min-w-0 flex-1 space-y-6">
-          <section className="rounded-md border border-border-subtle bg-bg-surface p-4">
+          <Card as="section">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="min-w-0">
                 <SectionHeading as="h2" className="flex items-center gap-2">
@@ -475,7 +474,7 @@ const ProcessFlows: React.FC = () => {
             <div className="mt-4">
               <FlowDiagram view={view} cursor={cursor} idPrefix={`pf-${view.entity}`} />
             </div>
-          </section>
+          </Card>
 
           <LifecycleWalk
             view={view}
@@ -493,7 +492,7 @@ const ProcessFlows: React.FC = () => {
             overview={
               <>
               {view.looseEnds.length > 0 && (
-                <section className="rounded-md border border-border-subtle bg-bg-surface p-4">
+                <Card as="section">
                   <SectionHeading as="h3">
                     {t('processFlows.looseEnd.title', { total: view.looseEnds.length })}
                   </SectionHeading>
@@ -505,10 +504,10 @@ const ProcessFlows: React.FC = () => {
                       <LooseEndRow key={`${end.kind}#${end.subject}`} end={end} />
                     ))}
                   </ul>
-                </section>
+                </Card>
               )}
 
-              <section className="rounded-md border border-border-subtle bg-bg-surface">
+              <Card as="section" padding="none">
                 <div className="border-b border-border-subtle p-4">
                   <SectionHeading as="h3">
                     {t('processFlows.transitions.title')}
@@ -520,7 +519,7 @@ const ProcessFlows: React.FC = () => {
                 <div className="overflow-x-auto">
                   <TransitionsTable transitions={view.transitions} />
                 </div>
-              </section>
+              </Card>
               </>
             }
           />

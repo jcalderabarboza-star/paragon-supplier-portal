@@ -42,6 +42,10 @@ import PublicationLedger from './plan-grid/PublicationLedger';
 import { userVerbsFrom } from '../services/transitions';
 import SidePanel from '../components/ui-v2/SidePanel';
 import Button from '../components/ui-v2/Button';
+import { Card } from '../components/ui-v2/Card';
+import StatusPill from '../components/ui-v2/StatusPill';
+import Notice from '../components/ui-v2/Notice';
+import { ToggleChip } from '../components/ui-v2/Actions';
 import { HandoffNotice } from '../components/ui-v2/HandoffNotice';
 import { useVerbAvailability } from '../hooks/useVerbAvailability';
 import type { VerbAvailability } from '../services/transitions/handoff';
@@ -173,14 +177,6 @@ function periodClass(currents: readonly ForecastPublication[], bucket: string): 
   );
   return classes.size === 1 ? [...classes][0] : 'mixed';
 }
-
-// Quiet-outlined chip base (DP-3 status-chip grammar: soft tint, thin border).
-const CHIP = 'inline-flex items-center gap-1 rounded-sm border px-1.5 py-0.5 text-[11px] font-medium';
-const CHIP_NEUTRAL = `${CHIP} border-border-subtle bg-bg-hover text-text-secondary`;
-const CHIP_SUCCESS = `${CHIP} border-success/30 bg-success-soft text-success`;
-const CHIP_WARNING = `${CHIP} border-warning/30 bg-warning-soft text-warning-hover`;
-const CHIP_DANGER = `${CHIP} border-critical/30 bg-critical-soft text-critical`;
-const CHIP_INFO = `${CHIP} border-info/30 bg-info-soft text-info`;
 
 // SDC-4d — the coverage entry is JOINED INTO the row (not read from a column
 // closure). The coverage reads resolve ASYNC now, and DSG re-renders cells on
@@ -563,9 +559,9 @@ const BuyerCollaboration: React.FC = () => {
   // deliberately NOT a warning (the line did not move; nothing was voided).
   const carriedToken = useMemo(
     () => (
-      <span className={`${CHIP_NEUTRAL} text-[10px]`} title={t('sdc.state.carriedTitle')}>
+      <StatusPill variant="neutral" size="sm" title={t('sdc.state.carriedTitle')}>
         {t('sdc.state.carried')}
-      </span>
+      </StatusPill>
     ),
     [t],
   );
@@ -608,9 +604,9 @@ const BuyerCollaboration: React.FC = () => {
         minWidth: 110,
         component: ({ rowData }: CellProps<CoverageRow>) => (
           <div className="w-full px-2">
-            <span className={CHIP_NEUTRAL}>
+            <StatusPill variant="neutral" size="sm">
               {t(CLASS_LABEL_KEY[rowData.line.commitmentClass])}
-            </span>
+            </StatusPill>
           </div>
         ),
       },
@@ -675,25 +671,25 @@ const BuyerCollaboration: React.FC = () => {
                   The field is deleted from the projection too, so there is
                   nothing left here to render. */}
               {s.kind === 'awaiting' && (
-                <span className={CHIP_NEUTRAL}>{t('sdc.state.awaiting')}</span>
+                <StatusPill variant="neutral" size="sm">{t('sdc.state.awaiting')}</StatusPill>
               )}
               {s.kind === 'acknowledged' && (
                 <>
                   {/* SDC-2b-EXT: a visibility response — honestly DISTINCT from
                       the commitment states (neutral, never the success chip). */}
-                  <span className={CHIP_NEUTRAL}>{t('sdc.state.acknowledged')}</span>
+                  <StatusPill variant="neutral" size="sm">{t('sdc.state.acknowledged')}</StatusPill>
                   {s.carriedForward && carriedToken}
                 </>
               )}
               {s.kind === 'confirmed-full' && (
                 <>
-                  <span className={CHIP_SUCCESS}>{t('sdc.state.confirmedFull')}</span>
+                  <StatusPill variant="success" size="sm">{t('sdc.state.confirmedFull')}</StatusPill>
                   {s.carriedForward && carriedToken}
                 </>
               )}
               {s.kind === 'short' && (
                 <>
-                  <span className={CHIP_DANGER}>{t('sdc.state.short')}</span>
+                  <StatusPill variant="danger" size="sm">{t('sdc.state.short')}</StatusPill>
                   {s.carriedForward && carriedToken}
                 </>
               )}
@@ -707,27 +703,26 @@ const BuyerCollaboration: React.FC = () => {
               {responseOf(s) &&
                 statusLabelKey(responseOf(s)!.status) &&
                 responseOf(s)!.status !== 'Submitted' && (
-                  <span
-                    className={
-                      responseOf(s)!.status === 'Disputed' ? CHIP_WARNING : CHIP_NEUTRAL
-                    }
+                  <StatusPill
+                    variant={responseOf(s)!.status === 'Disputed' ? 'warning' : 'neutral'}
+                    size="sm"
                     data-testid="sdc-lifecycle-chip"
                   >
                     {t(statusLabelKey(responseOf(s)!.status)!)}
-                  </span>
+                  </StatusPill>
                 )}
               {s.kind === 'revised-after-accept' && (
                 // ⚠️ A3 · SDC-R5 — the cut Probe B measured as plain `short`.
                 // Danger, not warning: an accepted number has been withdrawn.
-                <span className={CHIP_DANGER} data-testid="sdc-revised-after-accept">
+                <StatusPill variant="danger" size="sm" data-testid="sdc-revised-after-accept">
                   {t('sdc.state.revisedAfterAccept', {
                     accepted: formatNumber(s.acceptedQty),
                     now: formatNumber(s.acceptedQty - s.cutQty),
                   })}
-                </span>
+                </StatusPill>
               )}
               {s.kind === 'stale-against-current' && (
-                <span className={CHIP_WARNING}>
+                <StatusPill variant="warning" size="sm">
                   {s.answeredQty === null
                     ? t('sdc.state.staleUnverified', {
                         current: formatNumber(s.currentQty),
@@ -736,7 +731,7 @@ const BuyerCollaboration: React.FC = () => {
                         answered: formatNumber(s.answeredQty),
                         current: formatNumber(s.currentQty),
                       })}
-                </span>
+                </StatusPill>
               )}
             </div>
           );
@@ -766,12 +761,12 @@ const BuyerCollaboration: React.FC = () => {
               </div>
             );
           }
-          const chipCls =
+          const chipVariant =
             st.kind === 'covered'
-              ? CHIP_SUCCESS
+              ? 'success'
               : st.kind === 'at-risk'
-                ? CHIP_WARNING
-                : CHIP_DANGER;
+                ? 'warning'
+                : 'danger';
           const label =
             st.kind === 'covered'
               ? t('sdc.coverage.covered')
@@ -782,11 +777,11 @@ const BuyerCollaboration: React.FC = () => {
           const unbridgeable = st.kind !== 'covered' && st.unbridgeable;
           return (
             <div className="flex w-full flex-wrap items-center gap-1.5 px-2">
-              <span className={chipCls}>
+              <StatusPill variant={chipVariant} size="sm">
                 {label}
                 {ratio}
                 {unbridgeable ? ` — ${t('sdc.coverage.unbridgeable')}` : ''}
-              </span>
+              </StatusPill>
               <ModelMarker
                 label={t('sdc.coverage.model')}
                 title={t('sdc.coverage.modelTitle')}
@@ -845,42 +840,28 @@ const BuyerCollaboration: React.FC = () => {
       </PageMetaLine>
 
       {/* Honest framing: read-only consolidation, SIMULATED feed, nothing dispatches */}
-      <div className="mb-6 flex items-start gap-2 rounded-lg border border-info/30 bg-info-soft px-4 py-3 text-sm text-text-primary">
-        <Info size={16} className="mt-0.5 shrink-0 text-info" />
-        <div>
-          <div className="font-semibold text-info">{t('sdc.honesty.title')}</div>
-          <p className="mt-0.5 text-text-secondary">{t('sdc.honesty.body')}</p>
-        </div>
-      </div>
+      <Notice tone="info" icon={Info} title={t('sdc.honesty.title')} className="mb-6">
+        <p>{t('sdc.honesty.body')}</p>
+      </Notice>
 
       {/* ── Period filter bar — the PERIOD owns the commitment class ───────── */}
       <div data-testid="sdc-period-bar" className="mb-6">
         <div className="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
+          <ToggleChip
+            selected={period === 'all'}
             onClick={() => setPeriod('all')}
-            className={`rounded-md border px-3 py-1.5 text-sm ${
-              period === 'all'
-                ? 'border-action bg-action-soft text-action-text'
-                : 'border-border-subtle bg-bg-surface text-text-secondary hover:bg-bg-hover'
-            }`}
           >
             {t('sdc.period.all')}
-          </button>
+          </ToggleChip>
           {horizon.map((bucket) => (
-            <button
+            <ToggleChip
               key={bucket}
-              type="button"
+              selected={period === bucket}
               onClick={() => setPeriod(bucket)}
-              className={`inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm ${
-                period === bucket
-                  ? 'border-action bg-action-soft text-action-text'
-                  : 'border-border-subtle bg-bg-surface text-text-secondary hover:bg-bg-hover'
-              }`}
             >
               <Data className="text-xs">{bucket}</Data>
               {periodClass(CURRENTS, bucket) === 'firm' && <Lock size={12} aria-hidden="true" />}
-            </button>
+            </ToggleChip>
           ))}
         </div>
         {/* The period-level commitmentClass badges — per-line chips only ECHO these */}
@@ -888,7 +869,7 @@ const BuyerCollaboration: React.FC = () => {
           {horizon.map((bucket) => {
             const cls = periodClass(CURRENTS, bucket);
             return (
-              <span key={bucket} className={CHIP_NEUTRAL}>
+              <StatusPill key={bucket} variant="neutral" size="sm" className="gap-1">
                 {cls === 'firm' ? (
                   <>
                     <Lock size={11} aria-hidden="true" />
@@ -899,7 +880,7 @@ const BuyerCollaboration: React.FC = () => {
                     {bucket} · {t(cls === 'mixed' ? 'sdc.class.mixed' : CLASS_LABEL_KEY[cls])}
                   </>
                 )}
-              </span>
+              </StatusPill>
             );
           })}
         </div>
@@ -931,9 +912,9 @@ const BuyerCollaboration: React.FC = () => {
       </section>
 
       {/* ── B4b · the publications' ledger (Design 2 §2.3) ──────────────────── */}
-      <section className="mb-8 rounded-lg border border-border-subtle bg-bg-surface px-4 py-3" data-testid="sdc-publication-ledger">
+      <Card as="section" className="mb-8" data-testid="sdc-publication-ledger">
         <PublicationLedger records={workspace?.records ?? []} testId="publication-ledger" />
-      </section>
+      </Card>
 
       {/* ── Chase list — the pre-scheduler manual WhatsApp interim ─────────── */}
       <section className="mb-8" data-testid="sdc-chase">
@@ -944,24 +925,25 @@ const BuyerCollaboration: React.FC = () => {
 
         {/* Supplier response rollup — context for the chase */}
         <div className="mb-3 flex flex-wrap gap-2">
-          <span className={CHIP_SUCCESS}>
+          <StatusPill variant="success" size="sm">
             {t('sdc.rollup.responded')}:{' '}
             {rollups.filter((r) => r.rollup === 'responded').length}
-          </span>
-          <span className={CHIP_INFO}>
+          </StatusPill>
+          <StatusPill variant="info" size="sm">
             {t('sdc.rollup.partial')}: {rollups.filter((r) => r.rollup === 'partial').length}
-          </span>
-          <span className={CHIP_NEUTRAL}>
+          </StatusPill>
+          <StatusPill variant="neutral" size="sm">
             {t('sdc.rollup.silent')}: {rollups.filter((r) => r.rollup === 'silent').length}
-          </span>
+          </StatusPill>
         </div>
 
         {chase.length === 0 ? (
-          <p className="rounded-lg border border-border-subtle bg-bg-surface px-4 py-3 text-sm text-text-secondary">
-            {t('sdc.chase.empty')}
-          </p>
+          <Card>
+            <p className="text-sm text-text-secondary">{t('sdc.chase.empty')}</p>
+          </Card>
         ) : (
-          <ul className="divide-y divide-border-subtle overflow-hidden rounded-lg border border-border-subtle bg-bg-surface">
+          <Card padding="none" className="overflow-hidden">
+          <ul className="divide-y divide-border-subtle">
             {chase.map((entry) => (
               <li
                 key={entry.supplierId}
@@ -971,17 +953,18 @@ const BuyerCollaboration: React.FC = () => {
                 <span className="min-w-[10rem] font-semibold text-text-primary">
                   {supplierName(entry.supplierId)}
                 </span>
-                <span
-                  className={
+                <StatusPill
+                  variant={
                     entry.reason === 'revised-after-accept'
-                      ? CHIP_DANGER
+                      ? 'danger'
                       : entry.reason === 'overdue'
-                        ? CHIP_WARNING
-                        : CHIP_INFO
+                        ? 'warning'
+                        : 'info'
                   }
+                  size="sm"
                 >
                   {t(CHASE_REASON_KEY[entry.reason])}
-                </span>
+                </StatusPill>
                 <span className="text-text-secondary">
                   {t('sdc.chase.awaitingLines', { n: entry.awaitingLines })}
                 </span>
@@ -991,6 +974,7 @@ const BuyerCollaboration: React.FC = () => {
               </li>
             ))}
           </ul>
+          </Card>
         )}
       </section>
 
@@ -1015,25 +999,26 @@ const BuyerCollaboration: React.FC = () => {
             {awaitingReviewRows.map((row) => {
               const response = responseOf(row.state)!;
               return (
-                <li
+                <Card
+                  as="li"
                   key={row.id}
-                  className="flex flex-wrap items-center gap-3 rounded-lg border border-border-subtle bg-bg-surface px-4 py-3 text-sm"
+                  className="flex flex-wrap items-center gap-3"
                 >
-                  <span className={CHIP_INFO} data-testid="sdc-review-chip">
+                  <StatusPill variant="info" size="sm" data-testid="sdc-review-chip">
                     {(() => {
                       const chip = reviewChip(row, response.submissionVersion);
                       return t(chip.key, chip.opts);
                     })()}
-                  </span>
-                  <span className="font-semibold text-text-primary">
+                  </StatusPill>
+                  <span className="text-sm font-semibold text-text-primary">
                     {supplierName(row.line.supplierId)}
                   </span>
                   <Data className="text-xs">{row.line.materialCode}</Data>
                   <Data className="text-xs">{row.line.periodBucket}</Data>
                   <Data className="text-xs text-text-tertiary">{response.id}</Data>
                   {reviewAvailability.kind === 'held' && (
-                    <button
-                      type="button"
+                    <Button
+                      variant="outline"
                       data-testid="sdc-review-cta"
                       disabled={reviewMutation.isPending}
                       title={t('sdc.review.ctaTitle', {
@@ -1046,12 +1031,12 @@ const BuyerCollaboration: React.FC = () => {
                           outcomeOf(row, response, 'review'),
                         )
                       }
-                      className="ml-auto rounded-md border border-action bg-transparent px-3 py-1.5 text-xs font-medium text-action-text transition-colors hover:bg-action-soft disabled:opacity-50"
+                      className="ml-auto"
                     >
                       {t('sdc.review.cta')}
-                    </button>
+                    </Button>
                   )}
-                </li>
+                </Card>
               );
             })}
           </ul>
@@ -1085,12 +1070,13 @@ const BuyerCollaboration: React.FC = () => {
             {underReviewRows.map((row) => {
               const response = responseOf(row.state)!;
               return (
-                <li
+                <Card
+                  as="li"
                   key={row.id}
-                  className="flex flex-wrap items-center gap-3 rounded-lg border border-border-subtle bg-bg-surface px-4 py-3 text-sm"
+                  className="flex flex-wrap items-center gap-3"
                 >
-                  <span className={CHIP_INFO}>{t('sdc.underReview.chip')}</span>
-                  <span className="font-semibold text-text-primary">
+                  <StatusPill variant="info" size="sm">{t('sdc.underReview.chip')}</StatusPill>
+                  <span className="text-sm font-semibold text-text-primary">
                     {supplierName(row.line.supplierId)}
                   </span>
                   <Data className="text-xs">{row.line.materialCode}</Data>
@@ -1098,8 +1084,8 @@ const BuyerCollaboration: React.FC = () => {
                   <Data className="text-xs text-text-tertiary">{response.id}</Data>
                   <span className="ml-auto flex items-center gap-2">
                     {acceptAvailability.kind === 'held' && (
-                      <button
-                        type="button"
+                      <Button
+                        variant="outline"
                         data-testid="sdc-accept-cta"
                         disabled={acceptMutation.isPending || !named}
                         title={t('sdc.accept.ctaTitle', {
@@ -1112,15 +1098,14 @@ const BuyerCollaboration: React.FC = () => {
                             outcomeOf(row, response, 'accept'),
                           )
                         }
-                        className="rounded-md border border-action bg-transparent px-3 py-1.5 text-xs font-medium text-action-text transition-colors hover:bg-action-soft disabled:opacity-50"
                       >
                         {t('sdc.accept.cta')}
-                      </button>
+                      </Button>
                     )}
                     {disputeAvailability.kind === 'held' &&
                       offers(DISPUTE_VERB, response.status) && (
-                        <button
-                          type="button"
+                        <Button
+                          variant="secondary"
                           data-testid="sdc-dispute-cta"
                           disabled={!named}
                           title={t('sdc.dispute.ctaTitle', {
@@ -1131,13 +1116,12 @@ const BuyerCollaboration: React.FC = () => {
                             setDisputing(row);
                             setObjection('');
                           }}
-                          className="rounded-md border border-border-subtle bg-transparent px-3 py-1.5 text-xs font-medium text-text-secondary transition-colors hover:bg-bg-hover disabled:opacity-50"
                         >
                           {t('sdc.dispute.cta')}
-                        </button>
+                        </Button>
                       )}
                   </span>
-                </li>
+                </Card>
               );
             })}
           </ul>
@@ -1171,20 +1155,21 @@ const BuyerCollaboration: React.FC = () => {
             {disputedRows.map((row) => {
               const response = responseOf(row.state)!;
               return (
-                <li
+                <Card
+                  as="li"
                   key={row.id}
-                  className="flex flex-wrap items-center gap-3 rounded-lg border border-border-subtle bg-bg-surface px-4 py-3 text-sm"
+                  className="flex flex-wrap items-center gap-3"
                 >
-                  <span className={CHIP_WARNING}>{t('sdc.resolve.raised')}</span>
-                  <span className="font-semibold text-text-primary">
+                  <StatusPill variant="warning" size="sm">{t('sdc.resolve.raised')}</StatusPill>
+                  <span className="text-sm font-semibold text-text-primary">
                     {supplierName(row.line.supplierId)}
                   </span>
                   <Data className="text-xs">{row.line.materialCode}</Data>
                   <Data className="text-xs">{row.line.periodBucket}</Data>
                   <Data className="text-xs text-text-tertiary">{response.id}</Data>
                   {resolveAvailability.kind === 'held' && (
-                  <button
-                    type="button"
+                  <Button
+                    variant="outline"
                     data-testid="sdc-resolve-cta"
                     title={t('sdc.resolve.ctaTitle', {
                       material: row.line.materialCode,
@@ -1194,12 +1179,12 @@ const BuyerCollaboration: React.FC = () => {
                       setResolving(row);
                       setAnswer('');
                     }}
-                    className="ml-auto rounded-md border border-action bg-transparent px-3 py-1.5 text-xs font-medium text-action-text transition-colors hover:bg-action-soft"
+                    className="ml-auto"
                   >
                     {t('sdc.resolve.cta')}
-                  </button>
+                  </Button>
                   )}
-                </li>
+                </Card>
               );
             })}
           </ul>

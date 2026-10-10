@@ -5,6 +5,8 @@ import ListPage from '../components/ui-v2/ListPage';
 import DataTable, { CellSub, type Column } from '../components/ui-v2/DataTable';
 import SearchBar from '../components/ui-v2/SearchBar';
 import Data from '../components/ui-v2/Data';
+import Notice from '../components/ui-v2/Notice';
+import { ToggleChip } from '../components/ui-v2/Actions';
 import { useCurrentIdentity } from '../context/CurrentIdentityContext';
 import { readAuditEvents } from '../services/audit/auditTrail';
 import {
@@ -135,35 +137,30 @@ const SuperAdminActivity: React.FC = () => {
       }
       notices={
         allowed ? (
-          <div
-            className="border border-border-subtle rounded-lg bg-bg-hover p-4 flex gap-3"
+          <Notice
+            tone="neutral"
+            icon={Info}
             data-testid="super-admin-activity-session"
           >
-            <Info size={16} className="text-teal shrink-0 mt-0.5" />
-            <p className="text-xs text-text-secondary leading-relaxed">
+            <p>
               {t('superAdmin.activity.session')}
             </p>
-          </div>
+          </Notice>
         ) : undefined
       }
       filters={
         allowed ? (
           <div className="flex flex-wrap items-center gap-2">
             {FILTERS.map((f) => (
-              <button
+              <ToggleChip
                 key={f}
-                type="button"
+                selected={filter === f}
                 onClick={() => setFilter(f)}
                 aria-pressed={filter === f}
                 data-testid={`super-admin-filter-${f}`}
-                className={`text-meta rounded-full border px-3 py-1 ${
-                  filter === f
-                    ? 'border-action text-action-text bg-action-soft'
-                    : 'border-border-subtle text-text-secondary'
-                }`}
               >
                 {t(`superAdmin.activity.filter.${f}`)}
-              </button>
+              </ToggleChip>
             ))}
           </div>
         ) : undefined
@@ -183,19 +180,19 @@ const SuperAdminActivity: React.FC = () => {
       }
     >
       {!allowed ? (
-        <section
-          className="rounded-lg border border-border-subtle bg-bg-hover px-4 py-3 text-sm text-text-primary"
+        <Notice
+          tone="neutral"
           data-testid="super-admin-activity-not-for-seat"
         >
           {t('superAdmin.activity.notForSeat')}
-        </section>
+        </Notice>
       ) : rows.length === 0 ? (
-        <p
-          className="rounded-lg border border-dashed border-border-subtle p-6 text-sm text-text-secondary"
+        <Notice
+          tone="neutral"
           data-testid="super-admin-activity-empty"
         >
           {t(acts.length === 0 ? 'superAdmin.activity.empty' : 'superAdmin.activity.emptyFiltered')}
-        </p>
+        </Notice>
       ) : (
         <DataTable
           testId="super-admin-activity-table"
