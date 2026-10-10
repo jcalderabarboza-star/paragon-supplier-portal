@@ -21,13 +21,13 @@
 //   vocabulary that goes stale the day a union gains a member, which is exactly
 //   `ENF-SEED-LIST-IS-NOT-THE-VOCABULARY-01`.
 // ─────────────────────────────────────────────────────────────────────────────
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 import { MockCommandService } from './MockCommandService';
 import { seedPslListings, PSL_SEEDS_RAW, pslSeedRawRows } from './pslSeed';
 import { pslStore } from './stores/pslStore';
 import { pslCapSettingStore } from './stores/pslCapSettingStore';
-import { DECLARED_PRESENT } from '../fixturePresent';
+import { DECLARED_PRESENT, DECLARED_PRESENT_INSTANT } from '../fixturePresent';
 import { effectiveCap, pslDisplayStatus } from '../pslProjection';
 import { isPublished, PSL_LIFECYCLES, PSL_STATUSES } from '../pslListing';
 import { SYSTEM_ROLES } from '../../transitions/businessRoles';
@@ -92,31 +92,41 @@ describe('⚠️ EVERY ROW WAS PRODUCED BY AN ACT — not written into the store
     }
   });
 
-  it('⚠️ every ledger instant is STORE-ASSIGNED — a full timestamp, not an authored day', () => {
-    // The authored literals were `YYYY-MM-DDTHH:MM:SS+07:00`; a store-assigned
-    // one is an ISO instant minted at the act. What separates them here is that
-    // the instant does NOT fall on the row's own authored validity day, which
-    // is how the retired fixture authored them to agree.
-    for (const r of pslStore.all()) {
-      for (const h of r.statusHistory) {
-        expect(h.at, r.id).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/);
+  describe('at the declared present — one clock', () => {
+    beforeEach(async () => {
+      vi.useFakeTimers({ toFake: ['Date'], now: new Date(DECLARED_PRESENT_INSTANT) });
+      pslStore.reset();
+      pslCapSettingStore.reset();
+      await seedPslListings();
+    });
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('⚠️ every ledger instant is STORE-ASSIGNED — a full timestamp, not an authored day', () => {
+      // The authored literals were `YYYY-MM-DDTHH:MM:SS+07:00`; a store-assigned
+      // one is an ISO instant minted at the act. What separates them here is that
+      // the instant does NOT fall on the row's own authored validity day, which
+      // is how the retired fixture authored them to agree.
+      // ⚠️ ONE CLOCK. The validity days are anchored on the declared present; the
+      // ledger instants are minted by the store when the act lands. Seeded under
+      // the wall clock, the two were compared across clocks, and on the day the
+      // wall clock reached a row's validity day (10 October 2026, psl-009) the
+      // comparison could not tell them apart. This block re-seeds AT THE DECLARED
+      // PRESENT, so both sides are read at one instant and the answer is the same
+      // on any day the suite runs.
+      expect(pslStore.all().map((r) => r.id)).toContain('psl-009');
+      for (const r of pslStore.all()) {
+        // minted at the act: every row's first instant is the seeding instant
+        expect(r.statusHistory[0].at.slice(0, 10), r.id).toBe(P);
       }
-    }
-    // ⚠️ "NOT ON ITS OWN VALIDITY DAY" SEPARATES A STORE-ASSIGNED INSTANT FROM AN
-    // AUTHORED ONE ON EVERY DAY BUT ONE: the day the suite runs ON a row's
-    // validity day, when a store-assigned instant falls there too. That is what
-    // happened to psl-009 on 10 October 2026. A row whose validity day is today
-    // cannot be told apart by day, so it is set aside BY THAT TEST — and the
-    // rest must still be discriminated, and must be most of the store, or the
-    // assertion has stopped looking at anything.
-    const today = new Date().toISOString().slice(0, 10);
-    const rows = pslStore.all();
-    const tellable = rows.filter((r) => r.validFrom.slice(0, 10) !== today);
-    expect(tellable.length).toBeGreaterThanOrEqual(rows.length - 2);
-    expect(tellable.length).toBeGreaterThan(5);
-    for (const r of tellable) {
-      expect(r.statusHistory[0].at.slice(0, 10), r.id).not.toBe(r.validFrom.slice(0, 10));
-    }
+      for (const r of pslStore.all()) {
+        for (const h of r.statusHistory) {
+          expect(h.at, r.id).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/);
+        }
+        expect(r.statusHistory[0].at.slice(0, 10), r.id).not.toBe(r.validFrom.slice(0, 10));
+      }
+    });
   });
 
   it('a Proposed row has no decider; every decided row has one', () => {
