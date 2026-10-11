@@ -281,7 +281,7 @@ const BuyerSupplierProfile: React.FC = () => {
               {t('buyerSupplierProfile.actions.message')}
             </Button>
             <Button
-              variant="outline"
+              variant="primary"
               icon={ShoppingCart}
               onClick={() =>
                 toast({

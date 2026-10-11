@@ -99,7 +99,7 @@ const ChangeHistory: React.FC<{ agreement: SchedulingAgreement }> = ({ agreement
       className="overflow-hidden mt-6"
       data-testid="delivery-change-history"
     >
-      <div className="px-4 py-3 border-b border-border-subtle bg-bg-subtle">
+      <div className="px-4 py-3 border-b border-border-subtle bg-bg-hover">
         <span className="text-sm font-semibold text-text-primary">
           {t('delivery.history.title')}
         </span>

@@ -829,7 +829,7 @@ const TimePhasedGrid: React.FC<{
             <span
               data-testid="tp-view-type"
               data-material-type={materialType}
-              className="rounded-md border border-border-subtle bg-bg-subtle px-2 py-1.5 text-text-secondary"
+              className="rounded-md border border-border-subtle bg-bg-hover px-2 py-1.5 text-text-secondary"
             >
               {t(materialType === 'ROH' ? 'planGrid.tp.filter.rm' : 'planGrid.tp.filter.pm')}
               {' · '}

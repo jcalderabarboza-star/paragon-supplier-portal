@@ -8,7 +8,7 @@ import StatusPill from '../../components/ui-v2/StatusPill';
 import Button from '../../components/ui-v2/Button';
 import { Card } from '../../components/ui-v2/Card';
 import Notice from '../../components/ui-v2/Notice';
-import { ToggleChip } from '../../components/ui-v2/Actions';
+import Tabs from '../../components/ui-v2/Tabs';
 import SectionHeading from '../../components/ui-v2/SectionHeading';
 import { FieldLabel, Select } from '../../components/ui-v2/Form';
 import { Field, FieldList } from '../../components/ui-v2/Field';
@@ -543,22 +543,19 @@ const GuideTabs: React.FC<{ view: FlowView; overview: React.ReactNode }> = ({ vi
             {t('processGuides.draft')}
           </Notice>
         )}
-        <div role="tablist" aria-label={t('processGuides.tablist')} className="mt-3 flex flex-wrap gap-1 border-b border-border-subtle">
-          {TABS.map((k) => (
-            <ToggleChip
-              key={k}
-              role="tab"
-              id={`pf-guide-tab-${k}`}
-              data-testid={`pf-guide-tab-${k}`}
-              aria-selected={tab === k}
-              aria-controls="pf-guide-panel"
-              onClick={() => setTab(k)}
-              selected={tab === k}
-            >
-              {t(`processGuides.tab.${k}`)}
-            </ToggleChip>
-          ))}
-        </div>
+        <Tabs
+          ariaLabel={t('processGuides.tablist')}
+          className="mt-3 flex-wrap gap-y-0"
+          active={tab}
+          onChange={(id) => setTab(id as TabKey)}
+          tabs={TABS.map((k) => ({
+            id: k,
+            label: t(`processGuides.tab.${k}`),
+            domId: `pf-guide-tab-${k}`,
+            testId: `pf-guide-tab-${k}`,
+            controls: 'pf-guide-panel',
+          }))}
+        />
         {citation && (
           <p className="mt-2 text-xs text-text-tertiary">
             {t('processGuides.citation')}{' '}

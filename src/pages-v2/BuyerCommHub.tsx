@@ -160,7 +160,7 @@ const BuyerCommHub: React.FC = () => {
                 className="overflow-hidden"
                 data-testid="commhub-outbound-row"
               >
-                <div className="flex flex-wrap items-center gap-3 px-4 py-3 border-b border-border-subtle bg-bg-subtle">
+                <div className="flex flex-wrap items-center gap-3 px-4 py-3 border-b border-border-subtle bg-bg-hover">
                   <span className="text-sm font-semibold text-text-primary">{nameOf(entry.supplierId)}</span>
                   <StatusPill variant={SEVERITY_VARIANT[entry.severity]}>
                     {t(`buyerCommHub.severity.${entry.severity}`)}

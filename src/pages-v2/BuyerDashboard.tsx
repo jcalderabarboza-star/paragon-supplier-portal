@@ -31,6 +31,7 @@ import ErrorState from '../components/ui-v2/ErrorState';
 import EmptyState from '../components/ui-v2/EmptyState';
 import Data from '../components/ui-v2/Data';
 import StatusPill from '../components/ui-v2/StatusPill';
+import Notice from '../components/ui-v2/Notice';
 import { Card, cardClass } from '../components/ui-v2/Card';
 import { ToggleChip } from '../components/ui-v2/Actions';
 import IllustrativeRegion from '../components/ui-v2/IllustrativeRegion';
@@ -669,28 +670,36 @@ const BuyerDashboard: React.FC = () => {
 
       {/* ── F · PHASE B PLACEHOLDERS ───────────────────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-8">
-        <Card as="section" tone="inset" padding="lg" data-testid="phase-b-spend">
-          <StatusPill variant="neutral" size="sm">{t('buyerDashboard.phaseB.badge')}</StatusPill>
-          <SectionHeading className="mt-2">
-            {t('buyerDashboard.phaseB.spend.title')}
-          </SectionHeading>
-          <p className="text-meta text-text-tertiary mt-1">
-            {t('buyerDashboard.phaseB.spend.body', { months: poSpan.months })}
-          </p>
-        </Card>
-        <Card as="section" tone="inset" padding="lg" data-testid="phase-b-trend">
-          <StatusPill variant="neutral" size="sm">{t('buyerDashboard.phaseB.badge')}</StatusPill>
-          <SectionHeading className="mt-2">
-            {t('buyerDashboard.phaseB.trend.title')}
-          </SectionHeading>
-          <p className="text-meta text-text-tertiary mt-1">
-            {t('buyerDashboard.phaseB.trend.body', {
-              months: invoiceSpan.months,
-              min: invoiceSpan.minPerMonth,
-              max: invoiceSpan.maxPerMonth,
-            })}
-          </p>
-        </Card>
+        {/* UI-1d (operator ruling): a module that is not built is a dashed
+            neutral notice that says so — never a card shaped like a chart. */}
+        <Notice
+          tone="sample"
+          data-testid="phase-b-spend"
+          title={
+            <span className="flex flex-wrap items-center gap-2">
+              {t('buyerDashboard.phaseB.spend.title')}
+              <StatusPill variant="neutral" size="sm">{t('buyerDashboard.phaseB.badge')}</StatusPill>
+            </span>
+          }
+        >
+          {t('buyerDashboard.phaseB.spend.body', { months: poSpan.months })}
+        </Notice>
+        <Notice
+          tone="sample"
+          data-testid="phase-b-trend"
+          title={
+            <span className="flex flex-wrap items-center gap-2">
+              {t('buyerDashboard.phaseB.trend.title')}
+              <StatusPill variant="neutral" size="sm">{t('buyerDashboard.phaseB.badge')}</StatusPill>
+            </span>
+          }
+        >
+          {t('buyerDashboard.phaseB.trend.body', {
+            months: invoiceSpan.months,
+            min: invoiceSpan.minPerMonth,
+            max: invoiceSpan.maxPerMonth,
+          })}
+        </Notice>
       </div>
 
       {/* ── G · ACTION QUEUE BY LANE ───────────────────────────────────────── */}
@@ -897,10 +906,13 @@ const BuyerDashboard: React.FC = () => {
       </div>
 
       {/* ── H · PHASE C STRIP ──────────────────────────────────────────────── */}
-      <Card as="section" tone="inset" padding="lg" data-testid="phase-c">
-        <StatusPill variant="neutral" size="sm">{t('buyerDashboard.phaseC.badge')}</StatusPill>
-        <p className="text-meta text-text-tertiary mt-2">{t('buyerDashboard.phaseC.body')}</p>
-      </Card>
+      <Notice
+        tone="sample"
+        data-testid="phase-c"
+        title={<StatusPill variant="neutral" size="sm">{t('buyerDashboard.phaseC.badge')}</StatusPill>}
+      >
+        {t('buyerDashboard.phaseC.body')}
+      </Notice>
     </AppShellV2>
   );
 };

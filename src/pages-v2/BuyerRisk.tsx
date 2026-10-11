@@ -544,7 +544,7 @@ const ScenarioTab: React.FC<{ scenarios: Scenario[] }> = ({ scenarios }) => {
         onChange={setActiveScenario}
       />
 
-      <section className="bg-critical-soft border-l-2 border-critical rounded-lg px-5 py-4">
+      <Card as="section" accent="critical" fill padding="lg">
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div className="flex-1 min-w-0">
             {/* i18n-defer: mock/sample data — scenario title/description/impact seeded from fixtures */}
@@ -574,7 +574,7 @@ const ScenarioTab: React.FC<{ scenarios: Scenario[] }> = ({ scenarios }) => {
             {t('risk.scenario.sendWarRoom')}
           </Button>
         </div>
-      </section>
+      </Card>
 
       <div>
         <div className="text-label text-text-tertiary uppercase mb-2">

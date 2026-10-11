@@ -706,7 +706,8 @@ export function derivedBoxDress(): Record<string, string[]> {
  * the derivation both ways.
  *
  *   · the shell — the sidebar's navigation, the identity panel and the language
- *     menu — is drawn with the shell, as the top bar's search is
+ *     menu — is drawn with the shell, as the top bar's search is (operator
+ *     ruling, 10 October 2026: exempt by name)
  *   · the channel demo imitates an external messenger; its buttons are that
  *     product's chrome (operator ruling, 9 October 2026)
  */
@@ -716,3 +717,85 @@ export const RAW_BUTTON_EXEMPT: Record<string, number> = {
   'src/components/layout-v2/SidebarV2.tsx': 3,
   'src/pages-v2/SupplierWhatsApp.tsx': 3,
 };
+
+// ── UI-1d · a field is not tinted or boxed by its page ───────────────────────
+/** What makes a tinted tile: a ground, a border, a radius or a shadow. Padding and dividers are layout. */
+const FIELD_DRESS_TOKEN = new RegExp(
+  B + String.raw`(?:rounded(?:-(?:[a-z0-9]+|\[[^\]]+\]))?|border(?:-[a-z0-9/[\]-]+)?|shadow(?:-[a-z0-9]+)?|bg-[a-z0-9/-]+)` + E,
+  'g',
+);
+const FIELD_TAGS = new Set(['Field', 'FieldList']);
+const GROUND = new RegExp(B + String.raw`bg-(?!transparent)[a-z0-9/-]+` + E);
+
+/**
+ * `"<Field> · <token>"` for a `Field` or `FieldList` dressed through
+ * `className`, and `"<div> wraps <FieldList> · <ground>"` for an intrinsic
+ * element that lays a rounded ground directly under one. Fields that stand on a
+ * grey block stand in `<Card tone="inset">`.
+ */
+export function fieldTintFindings(text: string, fileName = 'x.tsx'): string[] {
+  if (!/<Field(?:List)?[\s/>]/.test(text)) return [];
+  const sf = ts.createSourceFile(fileName, text, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+  const out: string[] = [];
+  const classOf = (el: ts.JsxOpeningLikeElement): string => {
+    for (const attr of el.attributes.properties) {
+      if (ts.isJsxAttribute(attr) && attr.name.getText(sf) === 'className' && attr.initializer) return attr.initializer.getText(sf);
+    }
+    return '';
+  };
+  const walk = (n: ts.Node): void => {
+    if (ts.isJsxOpeningElement(n) || ts.isJsxSelfClosingElement(n)) {
+      const tag = n.tagName.getText(sf);
+      if (FIELD_TAGS.has(tag)) for (const m of classOf(n).match(FIELD_DRESS_TOKEN) ?? []) out.push(`${tag} · ${m}`);
+    }
+    if (ts.isJsxElement(n)) {
+      const tag = n.openingElement.tagName.getText(sf);
+      const cls = classOf(n.openingElement);
+      const ground = /^[a-z]/.test(tag) && ROUNDED.test(cls) ? GROUND.exec(cls) : null;
+      if (ground) {
+        for (const child of n.children) {
+          const el = ts.isJsxElement(child) ? child.openingElement : ts.isJsxSelfClosingElement(child) ? child : null;
+          if (el && FIELD_TAGS.has(el.tagName.getText(sf))) out.push(`${tag} wraps ${el.tagName.getText(sf)} · ${ground[0]}`);
+        }
+      }
+    }
+    ts.forEachChild(n, walk);
+  };
+  walk(sf);
+  return out;
+}
+
+export function derivedFieldTint(): Record<string, string[]> {
+  const out: Record<string, string[]> = {};
+  for (const f of shippedFiles()) {
+    if (!f.file.endsWith('.tsx') || f.file.startsWith(SHARED_UI)) continue;
+    const found = fieldTintFindings(f.text, f.file);
+    if (found.length > 0) out[f.file] = found;
+  }
+  return out;
+}
+
+// ── UI-1d · a class that names a token names one that exists ─────────────────
+/**
+ * `bg-bg-…`, `text-text-…` and `border-border-…` say "the … surface / text /
+ * border token". Tailwind emits nothing for a name it does not know, and
+ * nothing fails: `bg-bg-subtle` stood on eight header bands and drew no ground.
+ */
+const TOKEN_CLASS = new RegExp(B + String.raw`(?:bg-(bg-[a-z-]+)|text-(text-[a-z-]+)|(?:border|divide|ring)-(border-[a-z-]+))(?:/\d+)?` + E, 'g');
+
+/** The token names such classes ask for, per file. */
+export function tokenClassNames(text: string): string[] {
+  const out = new Set<string>();
+  for (const m of text.matchAll(TOKEN_CLASS)) out.add(m[1] ?? m[2] ?? m[3]);
+  return [...out];
+}
+
+export function derivedTokenClassNames(): Record<string, string[]> {
+  const out: Record<string, string[]> = {};
+  for (const f of shippedFiles()) {
+    if (!f.file.endsWith('.tsx') && !f.file.endsWith('.ts')) continue;
+    const found = tokenClassNames(f.text);
+    if (found.length > 0) out[f.file] = found;
+  }
+  return out;
+}

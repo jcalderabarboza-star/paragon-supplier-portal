@@ -93,7 +93,7 @@ const ModulesBoard: React.FC = () => {
             canSet.kind === 'held' ? (
               <Link
                 to="/buyer/platform/modules/admin"
-                className={buttonClass('outline')}
+                className={buttonClass('primary')}
                 data-testid="modules-board-admin-link"
               >
                 <Settings2 size={16} />

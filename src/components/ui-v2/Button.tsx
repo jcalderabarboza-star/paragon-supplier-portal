@@ -19,22 +19,35 @@ import { LucideIcon } from 'lucide-react';
 // It was unreachable only by luck: all 181 `<Button>` sites in the tree pass an
 // explicit variant, so nothing rendered through it — a latent trap, not a live
 // defect, and it closes here with the rest.
+//
+// UI-1d (operator ruling, 10 October 2026) · SOLID IS BACK, FOR ONE THING. The
+// paragraphs above are the record of §68 and are kept as written; what they
+// retired was solid as the mark of an IRREVERSIBLE COMMIT, wherever one stood.
+// `'primary'` now means something else and narrower: THE PAGE'S MAIN ACTION,
+// one per page, in the page header (and "Sign in" on the login page). Outline
+// is every other action. The default is still `'outline'`, so solid is never
+// the shape of forgetting to choose, and `solidButtonRetired.guard.test.ts`
+// holds where a solid button may stand and that a page has at most one.
 // UI-1c-3: ONE HEIGHT, 40px — the height of a form control, so a button and an
 // input sit on one line in a filter row. `className` is layout only.
-type Variant = 'secondary' | 'outline';
+type Variant = 'primary' | 'secondary' | 'outline';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: Variant;
   /**
    * UI-1c-3: the act destroys something — cancel an event, conclude without an
    * award. The outline and its label take the critical colour. It is a colour on
-   * the one outline, not a second weight: there is still no solid button.
+   * the one outline, not a second weight: a destructive act is never solid.
    */
   tone?: 'critical';
   icon?: LucideIcon;
 }
 
 const VARIANT_CLASS: Record<Variant, string> = {
+  // UI-1d: the page's main action. White on `action` clears 4.5:1, and on
+  // `action-hover`; the border is the fill's, so the box is the outline's box.
+  primary:
+    'bg-action text-white border border-action hover:bg-action-hover hover:border-action-hover',
   secondary:
     'bg-bg-surface text-text-primary border border-border-input hover:bg-bg-hover',
   // DP2-BUTTON-01 (as amended, §68): action-blue OUTLINE — transparent fill,

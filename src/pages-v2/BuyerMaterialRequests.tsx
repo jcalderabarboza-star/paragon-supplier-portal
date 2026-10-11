@@ -493,7 +493,7 @@ const BuyerMaterialRequests: React.FC = () => {
              its own notice, never the review gate. */
           submitAvailability.kind === 'held' ? (
             <Button
-              variant="outline"
+              variant="primary"
               onClick={() => setRaiseOpen(true)}
               data-testid="material-request-raise-open"
             >

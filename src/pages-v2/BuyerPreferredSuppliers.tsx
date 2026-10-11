@@ -426,7 +426,7 @@ const BuyerPreferredSuppliers: React.FC = () => {
              Its own atom, its own notice, never the decide gate. */
           proposeAvailability.kind === 'held' ? (
             <Button
-              variant="outline"
+              variant="primary"
               onClick={() => setProposeOpen(true)}
               data-testid="psl-propose-open"
             >

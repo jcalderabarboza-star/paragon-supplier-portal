@@ -105,7 +105,7 @@ const BuyerChase: React.FC = () => {
             data-testid="chase-card"
           >
             {/* Card header — supplier + overall severity + count. */}
-            <div className="flex items-center gap-3 px-4 py-3 border-b border-border-subtle bg-bg-subtle">
+            <div className="flex items-center gap-3 px-4 py-3 border-b border-border-subtle bg-bg-hover">
               <span className="text-sm font-semibold text-text-primary">{nameOf(view.supplierId)}</span>
               <StatusPill variant={SEVERITY_VARIANT[view.overallSeverity]}>
                 {t(`chase.severity.${view.overallSeverity}`)}

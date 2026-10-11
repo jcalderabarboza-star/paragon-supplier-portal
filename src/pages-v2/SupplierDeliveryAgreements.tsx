@@ -106,7 +106,7 @@ const SupplierDeliveryAgreements: React.FC = () => {
         className="overflow-hidden mb-6"
         data-testid="supplier-obligations"
       >
-        <div className="px-4 py-3 border-b border-border-subtle bg-bg-subtle flex items-center gap-3">
+        <div className="px-4 py-3 border-b border-border-subtle bg-bg-hover flex items-center gap-3">
           <span className="text-sm font-semibold text-text-primary">
             {t('delivery.supplier.obligations.title')}
           </span>

@@ -137,51 +137,135 @@ describe('⚠️ §68 · THE MATCHER ITSELF, BEFORE ANY CLAIM ABOUT THE TREE', (
   });
 });
 
-describe('§68 · nothing in the portal renders a solid action-blue button', () => {
-  // ⚠️ **THE TYPE IS THE REAL GUARD; THIS IS THE SECOND ONE.** `Button`'s
-  // `Variant` union no longer HAS a `'primary'` member, so every route back is
-  // a `tsc` failure. That is strictly stronger than a scan — and it is what
-  // found the last two producers, both typed `'primary' | 'outline'` helpers
-  // that no literal search could see. This test earns its place by covering
-  // what a type cannot: a raw string reaching a `className`, and the prop and
-  // model flags below.
-  it('⚠️ NO shipped .tsx uses variant="primary" — outline is the only register', () => {
-    const offenders = shippedTsx(SRC)
-      .filter((f) => rendersSolid(readFileSync(f, 'utf-8')))
-      .map((f) => relative(SRC, f).replace(/\\/g, '/'));
+// ────────────────────────────────────────────────────────────────────────────
+// UI-1d (operator ruling, 10 October 2026) · SOLID IS BACK FOR ONE THING: THE
+// PAGE'S MAIN ACTION, ONE PER PAGE.
+//
+// The describe that stood here was named
+//   '§68 · nothing in the portal renders a solid action-blue button'
+// and its first spec asserted
+//   expect(offenders).toEqual([])        // no shipped .tsx uses variant="primary"
+// with, beside it, on `Button.tsx`:
+//   expect(btn).not.toMatch(/'primary'/);
+// Both are retired by the ruling and quoted rather than deleted in silence. What
+// §68 retired — solid as the mark of an irreversible commit, anywhere one stood,
+// by a prop or a model flag — stays retired, and the specs below still hold it.
+//
+// What a solid button may now be, and all it may be:
+//   · the primary slot of a page header (`BulkActionsBar`), or
+//   · ONE button written in a ROUTED PAGE's own file (the router's imports are
+//     the population — a drawer, a wizard, a dialog and a widget are not pages).
+// A page has at most one: its own, or the header slot's, never both.
+// ────────────────────────────────────────────────────────────────────────────
 
+const SOLID_SITE = /variant\s*=\s*(["']primary["']|\{[^}]*['"]primary['"][^}]*\})|buttonClass\(\s*['"]primary['"]/g;
+
+/** How many solid buttons this source writes. */
+const solidCount = (source: string): number =>
+  QUOTED_PRIMARY.test(source) ? (withoutProse(source).match(SOLID_SITE) ?? []).length : 0;
+
+/** Does this source fill a page header's primary slot? */
+const fillsHeaderSlot = (source: string): boolean => {
+  const code = withoutProse(source);
+  return /<BulkActionsBar\b/.test(code) && /\bprimary\s*[=:]/.test(code);
+};
+
+/** The files the router mounts — derived from its imports, static and lazy. */
+function routedPages(): string[] {
+  const router = readFileSync(join(SRC, 'router/AppRouter.tsx'), 'utf-8');
+  const out = new Set<string>();
+  for (const m of router.matchAll(/from\s+'\.\.\/(pages(?:-v2)?\/[\w/.-]+)'|import\(\s*'\.\.\/(pages(?:-v2)?\/[\w/.-]+)'\s*\)/g)) {
+    out.add(`${m[1] ?? m[2]}.tsx`);
+  }
+  return [...out];
+}
+
+const HEADER_SLOT = 'components/ui-v2/BulkActionsBar.tsx';
+
+describe('UI-1d · the counting matcher, before any claim about the tree', () => {
+  it('counts every way a solid button is written', () => {
+    expect(solidCount('<Button variant="primary">A</Button>')).toBe(1);
+    expect(solidCount('<Button variant="primary">A</Button><Button variant="primary">B</Button>')).toBe(2);
+    expect(solidCount("<Link className={buttonClass('primary')} />")).toBe(1);
+    expect(solidCount("<Button variant={ok ? 'primary' : 'outline'} />")).toBe(1);
+    expect(solidCount('<Button variant="outline">A</Button>')).toBe(0);
+    expect(solidCount('// variant="primary" was here')).toBe(0);
+  });
+
+  it('knows a header slot when it sees one', () => {
+    expect(fillsHeaderSlot('<BulkActionsBar actions={a} primary={{ label }} />')).toBe(true);
+    expect(fillsHeaderSlot('<BulkActionsBar {...{ actions: a, primary: { label } }} />')).toBe(true);
+    expect(fillsHeaderSlot('<BulkActionsBar actions={a} />')).toBe(false);
+    expect(fillsHeaderSlot('const primary = 1;')).toBe(false);
+  });
+
+  it('derives the routed pages from the router, and they exist', () => {
+    const pages = routedPages();
+    expect(pages).toContain('pages-v2/BuyerOrders.tsx');
+    expect(pages).toContain('pages/auth/Login.tsx');
+    expect(pages).not.toContain('components/ui-v2/BulkActionsBar.tsx');
+    for (const p of pages) expect(statSync(join(SRC, p)).isFile(), p).toBe(true);
+  });
+});
+
+describe('UI-1d · a solid button is a page\'s main action, and a page has one', () => {
+  const sites = (): Record<string, number> => {
+    const out: Record<string, number> = {};
+    for (const f of shippedTsx(SRC)) {
+      const n = solidCount(readFileSync(f, 'utf-8'));
+      if (n > 0) out[relative(SRC, f).replace(/\\/g, '/')] = n;
+    }
+    return out;
+  };
+
+  it('⚠️ the population is real — the header slot and the login page are both in it', () => {
+    const found = sites();
+    expect(Object.keys(found)).toContain(HEADER_SLOT);
+    expect(Object.keys(found)).toContain('pages/auth/Login.tsx');
+  });
+
+  it('⚠️ a solid button stands only in the header slot or in a routed page\'s own file', () => {
+    const pages = routedPages();
+    const elsewhere = Object.keys(sites()).filter((f) => f !== HEADER_SLOT && !pages.includes(f));
     expect(
-      offenders,
-      'DP2-BUTTON-01 was amended at §68: the reserved-solid register is retired ' +
-        'portal-wide, messenger chrome included. Use variant="outline". If solid is ' +
-        'genuinely wanted again, that is a doctrine change — amend CLAUDE.md and this ' +
-        'test together, not one of them.',
+      elsewhere,
+      'A solid button is the PAGE\'s main action (UI-1d). A drawer, a wizard, a dialog or a ' +
+        'widget takes variant="outline" — or tone="critical" for a destructive act.',
     ).toEqual([]);
   });
 
-  it('and the producers a literal scan could not see are gone with it', async () => {
-    // The prop: `BulkActionsBar`'s primary slot took a `solid` opt-in and could
-    // render solid without the literal appearing at the call site.
-    //
-    // ⚠️ `withoutProse` AGAIN, AND FOR THE SECOND TIME ON THIS FILE'S FIRST
-    // RUNS: the comment that RECORDS the removal names the declaration it
-    // removed. Two self-trips in one gate is not a coincidence — a rule stated
-    // in the file it governs will always be readable as a violation of itself.
-    const bar = withoutProse(readFileSync(join(SRC, 'components/ui-v2/BulkActionsBar.tsx'), 'utf-8'));
+  it('⚠️ no page has two — its own, or the header slot\'s, never both', () => {
+    const found = sites();
+    const two: string[] = [];
+    for (const [file, n] of Object.entries(found)) {
+      if (file === HEADER_SLOT) {
+        if (n !== 1) two.push(`${file} writes ${n}`);
+        continue;
+      }
+      if (n > 1) two.push(`${file} writes ${n}`);
+      if (fillsHeaderSlot(readFileSync(join(SRC, file), 'utf-8'))) two.push(`${file} writes one AND fills the header slot`);
+    }
+    expect(two).toEqual([]);
+  });
+
+  it('a destructive act is never solid, and solid is never the default', () => {
+    const btn = withoutProse(readFileSync(join(SRC, 'components/ui-v2/Button.tsx'), 'utf-8'));
+    expect(btn).toMatch(/variant = 'outline'/);
+    expect(btn).toMatch(/Variant = 'outline', tone\?: 'critical'/);
+    // the critical tone wins over the variant, so `variant="primary" tone="critical"` is an outline
+    expect(btn).toMatch(/tone === 'critical' \? CRITICAL_CLASS : VARIANT_CLASS\[variant\]/);
+  });
+
+  it('and the producers a literal scan could not see are still gone', async () => {
+    // The prop: `BulkActionsBar`'s primary slot took a `solid` OPT-IN. The slot
+    // is solid now by rule, not by a flag a caller may forget or abuse.
+    const bar = withoutProse(readFileSync(join(SRC, HEADER_SLOT), 'utf-8'));
     expect(bar).not.toMatch(/solid\?:\s*boolean/);
     expect(bar).not.toMatch(/primary\.solid/);
 
     // The model flag: `invoiceActionModel` marked one verb `solid`, and that
     // flag also drove a confirmation step. It kept the meaning and lost the
-    // style name (`reservedCommit`), so the behaviour is intact and no field
-    // named for a rendering survives it.
-    // The DEFAULT, and the union member behind it: `Variant` no longer has a
-    // `'primary'` arm at all, so `tsc` — not this test — is what refuses the
-    // next one. Asserted on the source because a removed type has no runtime.
-    const btn = withoutProse(readFileSync(join(SRC, 'components/ui-v2/Button.tsx'), 'utf-8'));
-    expect(btn).not.toMatch(/'primary'/);
-    expect(btn).toMatch(/variant = 'outline'/);
-
+    // style name (`reservedCommit`); a commit in a drawer is an outline.
     const model = await import('./invoices/invoiceActionModel');
     const commit = model.invoiceCommitAction('Approved');
     expect(commit).not.toBeNull();
