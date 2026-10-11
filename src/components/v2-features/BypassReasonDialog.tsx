@@ -100,7 +100,7 @@ const BypassReasonDialog: React.FC = () => {
           <Button type="button" variant="secondary" onClick={() => finish(null)} data-testid="bypass-reason-cancel">
             {t('superAdmin.reason.cancel')}
           </Button>
-          <Button type="submit" variant="outline" disabled={read === null} data-testid="bypass-reason-confirm">
+          <Button type="submit" variant="primary" disabled={read === null} data-testid="bypass-reason-confirm">
             {t('superAdmin.reason.confirm')}
           </Button>
         </div>

@@ -514,7 +514,7 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
         // the create chain's (§75's entrance rule is unchanged: the mode is
         // gated, and both doors into it are).
         return grResumeAvailability.kind === 'held' ? (
-          <Button variant="outline" onClick={() => openResume(g)}>
+          <Button variant="primary" onClick={() => openResume(g)}>
             {t('goodsReceipt.footer.startInspection')}
           </Button>
         ) : (
@@ -527,7 +527,7 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
         // the same receipt; the commit records the results and then decides or
         // holds.
         return grResumeAvailability.kind === 'held' ? (
-          <Button variant="outline" onClick={() => openResume(g)}>
+          <Button variant="primary" onClick={() => openResume(g)}>
             {t('goodsReceipt.footer.submitResults')}
           </Button>
         ) : (
@@ -582,7 +582,7 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
       case 'Partially Approved':
         return grChain.post.kind === 'held' ? (
           <Button
-            variant="outline"
+            variant="primary"
             disabled={postMutation.isPending}
             onClick={() => handlePostToSap(g)}
           >
@@ -604,7 +604,7 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
         // when the classified fault says a second ask can answer differently.
         return settleWatch[g.id]?.fault ? (
           SETTLE_FAULT_RETRYABLE[settleWatch[g.id].fault!] ? (
-            <Button variant="outline" onClick={() => retrySettle(g.id)}>
+            <Button variant="primary" onClick={() => retrySettle(g.id)}>
               {t('goodsReceipt.action.retrySettle')}
             </Button>
           ) : (

@@ -235,7 +235,7 @@ const SupplierStorefront: React.FC = () => {
               {t('supplierStorefront.header.connect')}
             </Button>
             <Button
-              variant="primary"
+              variant="outline"
               icon={Send}
               onClick={() =>
                 toast({

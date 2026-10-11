@@ -469,7 +469,7 @@ const BuyerShipments: React.FC = () => {
       case 'Unloading':
         return (
           <Button
-            variant="outline"
+            variant="primary"
             onClick={() => navigate('/buyer/goods-receipt')}
           >
             {t('shipments.footer.beginGr')}

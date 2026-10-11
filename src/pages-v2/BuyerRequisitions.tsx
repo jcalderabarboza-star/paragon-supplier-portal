@@ -1090,7 +1090,7 @@ const BuyerRequisitions: React.FC = () => {
                 <>
                   {submitAvailability.kind === 'held' ? (
                     <Button
-                      variant="outline"
+                      variant="primary"
                       onClick={submitSelected}
                       disabled={submitPr.isPending}
                       data-testid="pr-submit"
@@ -1113,7 +1113,7 @@ const BuyerRequisitions: React.FC = () => {
                 <>
                   {reviseAvailability.kind === 'held' ? (
                     <Button
-                      variant="outline"
+                      variant="primary"
                       onClick={() => setPanelMode('revising')}
                       data-testid="pr-revise-open"
                     >
@@ -1174,7 +1174,7 @@ const BuyerRequisitions: React.FC = () => {
                   )}
                   {approveAvailability.kind === 'held' ? (
                     <Button
-                      variant="outline"
+                      variant="primary"
                       onClick={approveSelected}
                       disabled={approvePr.isPending}
                       data-testid="pr-approve"
@@ -1206,7 +1206,7 @@ const BuyerRequisitions: React.FC = () => {
                       it is the only solid on the surface (the approve button is
                       not rendered in `rejecting` mode). */}
                   <Button
-                    variant="outline"
+                    variant="outline" tone="critical"
                     onClick={rejectSelected}
                     disabled={!canReject || rejectPr.isPending}
                     data-testid="pr-reject-confirm"
@@ -1359,7 +1359,7 @@ const BuyerRequisitions: React.FC = () => {
                 </p>
                 {sourcingAvailability.kind === 'held' ? (
                   <Button
-                    variant="outline"
+                    variant="primary"
                     data-testid="pr-raise-sourcing"
                     onClick={() => raiseSourcingEvent(selectedPR)}
                   >
@@ -1610,7 +1610,7 @@ const BuyerRequisitions: React.FC = () => {
               {t('requisitions.new.cancel')}
             </Button>
             <Button
-              variant="outline"
+              variant="primary"
               disabled={!canSubmit}
               onClick={submitNewPR}
             >

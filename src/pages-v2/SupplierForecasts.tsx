@@ -2037,7 +2037,7 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
                 solid did not become merely unnecessary; it became a false
                 signal, promising weight the click no longer carries. */}
             <Button
-              variant="outline"
+              variant="primary"
               icon={Send}
               disabled={submitMutation.isPending || reviseMutation.isPending}
               onClick={submitConfirmation}
@@ -2196,7 +2196,7 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
               {t('sdcSup.panel.cancel')}
             </Button>
             <Button
-              variant="outline"
+              variant="primary"
               disabled={acknowledgeMutation.isPending}
               onClick={submitAcknowledgment}
             >
@@ -2252,7 +2252,7 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
               {t('sdcSup.panel.cancel')}
             </Button>
             <Button
-              variant="outline"
+              variant="primary"
               icon={Send}
               disabled={declareMutation.isPending}
               onClick={submitSoh}
@@ -2442,7 +2442,7 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
                 quantity is not a submittable form, so the commit is withdrawn
                 rather than left to fail at the toast. */}
             <Button
-              variant="outline"
+              variant="primary"
               icon={Ship}
               data-testid="sdcsup-ship-submit"
               disabled={reportMutation.isPending || !shipQty.ok}

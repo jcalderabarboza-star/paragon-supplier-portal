@@ -593,7 +593,7 @@ const BuyerPreferredSuppliers: React.FC = () => {
                     </FormField>
                     <div className="flex gap-2">
                       <Button
-                        variant="outline"
+                        variant="primary"
                         disabled={reason.trim() === '' || grant.isPending}
                         onClick={() => {
                           setPending('grant');
@@ -714,7 +714,7 @@ const BuyerPreferredSuppliers: React.FC = () => {
           </FormField>
           <div className="flex gap-2 pt-2">
             <Button
-              variant="outline"
+              variant="primary"
               disabled={propose.isPending}
               onClick={() => void onPropose()}
               data-testid="psl-propose-submit"

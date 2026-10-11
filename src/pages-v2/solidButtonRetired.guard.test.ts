@@ -31,6 +31,7 @@
 // ────────────────────────────────────────────────────────────────────────────
 
 import { describe, it, expect } from 'vitest';
+import ts from 'typescript';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { stripSourceComments } from '../lib/sourceScan/stripComments';
@@ -158,11 +159,61 @@ describe('⚠️ §68 · THE MATCHER ITSELF, BEFORE ANY CLAIM ABOUT THE TREE', (
 // A page has at most one: its own, or the header slot's, never both.
 // ────────────────────────────────────────────────────────────────────────────
 
-const SOLID_SITE = /variant\s*=\s*(["']primary["']|\{[^}]*['"]primary['"][^}]*\})|buttonClass\(\s*['"]primary['"]/g;
+// ────────────────────────────────────────────────────────────────────────────
+// UI-1e (operator ruling, 11 October 2026) · AND THE FINAL COMMIT INSIDE A
+// DRAWER, A WIZARD OR A DIALOG IS SOLID TOO — ONE PER CONTAINER.
+//
+// The UI-1d specs that stood here held "a solid button stands only in the
+// header slot or in a routed page's own file" and "no page has two — its own,
+// or the header slot's, never both", counting every solid in a FILE. Both are
+// kept in meaning and re-cut by POSITION, because a drawer lives in its page's
+// file: a solid button now stands in one of three places, and each has its rule.
+//
+//   page        outside every container. A routed page's own file only, at most
+//               one, and never beside a header slot. (UI-1d, unchanged.)
+//   container   inside a `SidePanel`, a `Dialog` or a `Wizard`, a drawer's
+//               `footerActions`, or a `footerFor…` builder. HOW MANY is not a
+//               question the source can answer — a footer is a ternary over the
+//               document's state — so the container counts what it RENDERED and
+//               refuses a second (`components/ui-v2/oneSolid.ts`). That half is
+//               probed in `oneSolid.test.tsx`, and every spec that opens a
+//               drawer runs it.
+//   named       a component that is only ever rendered inside a container but
+//               is written in its own file. Named below, each with the container
+//               that mounts it; the list is held equal to the tree both ways.
+// ────────────────────────────────────────────────────────────────────────────
 
-/** How many solid buttons this source writes. */
-const solidCount = (source: string): number =>
-  QUOTED_PRIMARY.test(source) ? (withoutProse(source).match(SOLID_SITE) ?? []).length : 0;
+const CONTAINER_TAGS = new Set(['SidePanel', 'Dialog', 'Wizard']);
+const HEADER_SLOT = 'components/ui-v2/BulkActionsBar.tsx';
+const WIZARD = 'components/ui-v2/Wizard.tsx';
+
+/** Components written in their own file and mounted only inside a container. */
+const RENDERED_IN_A_CONTAINER: Readonly<Record<string, string>> = {
+  'pages-v2/roles/CreateRolePanel.tsx': 'the body of the New role dialog on the Roles page',
+};
+
+type SolidPlace = 'page' | 'container';
+
+/** Every solid button a source writes, with where it stands. */
+function solidSites(source: string, fileName = 'x.tsx'): SolidPlace[] {
+  if (!QUOTED_PRIMARY.test(source)) return [];
+  const sf = ts.createSourceFile(fileName, source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+  const out: SolidPlace[] = [];
+  const isSolid = (n: ts.Node): boolean => {
+    if (ts.isJsxAttribute(n) && n.name.getText(sf) === 'variant' && n.initializer) return /['"]primary['"]/.test(n.initializer.getText(sf));
+    return ts.isCallExpression(n) && n.expression.getText(sf) === 'buttonClass' && n.arguments.length > 0 && /^['"]primary['"]$/.test(n.arguments[0].getText(sf));
+  };
+  const walk = (n: ts.Node, place: SolidPlace): void => {
+    let here = place;
+    if (ts.isJsxElement(n) && CONTAINER_TAGS.has(n.openingElement.tagName.getText(sf))) here = 'container';
+    if (ts.isJsxAttribute(n) && n.name.getText(sf) === 'footerActions') here = 'container';
+    if ((ts.isFunctionDeclaration(n) || ts.isVariableDeclaration(n)) && n.name && /^footerFor/.test(n.name.getText(sf))) here = 'container';
+    if (isSolid(n)) out.push(here);
+    ts.forEachChild(n, (c) => walk(c, here));
+  };
+  walk(sf, 'page');
+  return out;
+}
 
 /** Does this source fill a page header's primary slot? */
 const fillsHeaderSlot = (source: string): boolean => {
@@ -180,16 +231,24 @@ function routedPages(): string[] {
   return [...out];
 }
 
-const HEADER_SLOT = 'components/ui-v2/BulkActionsBar.tsx';
+describe('UI-1d · UI-1e · the placing matcher, before any claim about the tree', () => {
+  it('reads every way a solid button is written, and where it stands', () => {
+    expect(solidSites('const A = () => <Button variant="primary">A</Button>;')).toEqual(['page']);
+    expect(solidSites("const A = () => <Link className={buttonClass('primary')} />;")).toEqual(['page']);
+    expect(solidSites("const A = () => <Button variant={ok ? 'primary' : 'outline'} />;")).toEqual(['page']);
+    expect(solidSites('const A = () => <Button variant="outline">A</Button>;')).toEqual([]);
+    expect(solidSites('// variant="primary" was here')).toEqual([]);
+  });
 
-describe('UI-1d · the counting matcher, before any claim about the tree', () => {
-  it('counts every way a solid button is written', () => {
-    expect(solidCount('<Button variant="primary">A</Button>')).toBe(1);
-    expect(solidCount('<Button variant="primary">A</Button><Button variant="primary">B</Button>')).toBe(2);
-    expect(solidCount("<Link className={buttonClass('primary')} />")).toBe(1);
-    expect(solidCount("<Button variant={ok ? 'primary' : 'outline'} />")).toBe(1);
-    expect(solidCount('<Button variant="outline">A</Button>')).toBe(0);
-    expect(solidCount('// variant="primary" was here')).toBe(0);
+  it('knows a container: a drawer, its footer, a dialog, a wizard, a footer builder', () => {
+    expect(solidSites('const A = () => <SidePanel open title="t"><Button variant="primary">Save</Button></SidePanel>;')).toEqual(['container']);
+    expect(solidSites('const A = () => <SidePanel open title="t" footerActions={<Button variant="primary">Save</Button>} />;')).toEqual(['container']);
+    expect(solidSites('const A = () => <Dialog open title="t"><Button variant="primary">Save</Button></Dialog>;')).toEqual(['container']);
+    expect(solidSites('function footerForStatus() { return <Button variant="primary">Post</Button>; }')).toEqual(['container']);
+    // …and the page's own button beside the drawer is still the page's
+    expect(
+      solidSites('const A = () => <><Button variant="primary">New</Button><SidePanel open title="t"><Button variant="primary">Save</Button></SidePanel></>;'),
+    ).toEqual(['page', 'container']);
   });
 
   it('knows a header slot when it sees one', () => {
@@ -203,49 +262,102 @@ describe('UI-1d · the counting matcher, before any claim about the tree', () =>
     const pages = routedPages();
     expect(pages).toContain('pages-v2/BuyerOrders.tsx');
     expect(pages).toContain('pages/auth/Login.tsx');
-    expect(pages).not.toContain('components/ui-v2/BulkActionsBar.tsx');
+    expect(pages).not.toContain(HEADER_SLOT);
     for (const p of pages) expect(statSync(join(SRC, p)).isFile(), p).toBe(true);
   });
 });
 
-describe('UI-1d · a solid button is a page\'s main action, and a page has one', () => {
-  const sites = (): Record<string, number> => {
-    const out: Record<string, number> = {};
+describe('UI-1d · UI-1e · a solid button is a main action or a final commit, and nothing else', () => {
+  const sites = (): Record<string, SolidPlace[]> => {
+    const out: Record<string, SolidPlace[]> = {};
     for (const f of shippedTsx(SRC)) {
-      const n = solidCount(readFileSync(f, 'utf-8'));
-      if (n > 0) out[relative(SRC, f).replace(/\\/g, '/')] = n;
+      const rel = relative(SRC, f).replace(/\\/g, '/');
+      const found = solidSites(readFileSync(f, 'utf-8'), rel);
+      if (found.length > 0) out[rel] = found;
     }
     return out;
   };
+  const pageCount = (places: SolidPlace[]): number => places.filter((p) => p === 'page').length;
 
-  it('⚠️ the population is real — the header slot and the login page are both in it', () => {
+  it('⚠️ the population is real — the slot, the login page, a drawer and the wizard are all in it', () => {
     const found = sites();
-    expect(Object.keys(found)).toContain(HEADER_SLOT);
-    expect(Object.keys(found)).toContain('pages/auth/Login.tsx');
+    expect(found[HEADER_SLOT]).toEqual(['page']);
+    expect(found[WIZARD]).toEqual(['page']);
+    expect(found['pages/auth/Login.tsx']).toEqual(['page']);
+    expect(found['pages-v2/SupplierOrders.tsx']).toContain('container');
+    expect(found['components/v2-features/BypassReasonDialog.tsx']).toEqual(['container']);
   });
 
-  it('⚠️ a solid button stands only in the header slot or in a routed page\'s own file', () => {
+  it('⚠️ outside a container, a solid button stands only in the header slot or in a routed page\'s own file', () => {
     const pages = routedPages();
-    const elsewhere = Object.keys(sites()).filter((f) => f !== HEADER_SLOT && !pages.includes(f));
+    const allowed = new Set([HEADER_SLOT, WIZARD, ...pages, ...Object.keys(RENDERED_IN_A_CONTAINER)]);
+    const elsewhere = Object.entries(sites())
+      .filter(([file, places]) => pageCount(places) > 0 && !allowed.has(file))
+      .map(([file]) => file);
     expect(
       elsewhere,
-      'A solid button is the PAGE\'s main action (UI-1d). A drawer, a wizard, a dialog or a ' +
-        'widget takes variant="outline" — or tone="critical" for a destructive act.',
+      'A solid button is a PAGE\'s main action (UI-1d) or a CONTAINER\'s final commit (UI-1e). A card, a ' +
+        'tab body, a row or a widget takes variant="outline" — or tone="critical" for a destructive act.',
     ).toEqual([]);
   });
 
-  it('⚠️ no page has two — its own, or the header slot\'s, never both', () => {
-    const found = sites();
+  it('⚠️ no page has two main actions — its own, or the header slot\'s, never both', () => {
+    const pages = new Set(routedPages());
     const two: string[] = [];
-    for (const [file, n] of Object.entries(found)) {
-      if (file === HEADER_SLOT) {
+    for (const [file, places] of Object.entries(sites())) {
+      const n = pageCount(places);
+      if (file === HEADER_SLOT || file === WIZARD || file in RENDERED_IN_A_CONTAINER) {
         if (n !== 1) two.push(`${file} writes ${n}`);
         continue;
       }
-      if (n > 1) two.push(`${file} writes ${n}`);
-      if (fillsHeaderSlot(readFileSync(join(SRC, file), 'utf-8'))) two.push(`${file} writes one AND fills the header slot`);
+      if (!pages.has(file)) continue;
+      if (n > 1) two.push(`${file} writes ${n} outside a container`);
+      if (n > 0 && fillsHeaderSlot(readFileSync(join(SRC, file), 'utf-8'))) two.push(`${file} writes one AND fills the header slot`);
     }
     expect(two).toEqual([]);
+  });
+
+  it('⚠️ a header action that only says "not available yet" is an outline until it is built', () => {
+    // UI-1e ruling 1. Both raise a toast and nothing else; solid would make the
+    // loudest button on the page the one that does nothing.
+    const found = sites();
+    for (const file of ['pages-v2/BuyerSupplierProfile.tsx', 'pages-v2/SupplierStorefront.tsx']) {
+      const source = readFileSync(join(SRC, file), 'utf-8');
+      expect(source, file).toMatch(/toast\.(createRfq|requestRfq)Unavailable\.title/);
+      expect(found[file] ?? [], file).toEqual([]);
+    }
+  });
+
+  it('⚠️ every named component is mounted inside a container, by the file that says so', () => {
+    for (const file of Object.keys(RENDERED_IN_A_CONTAINER)) {
+      expect(statSync(join(SRC, file)).isFile(), file).toBe(true);
+      const name = file.split('/').pop()!.replace('.tsx', '');
+      const mounts = shippedTsx(SRC)
+        .map((f) => readFileSync(f, 'utf-8'))
+        .filter((s) => new RegExp(`<${name}[\\s/>]`).test(s));
+      expect(mounts.length, `${name} is mounted somewhere`).toBeGreaterThan(0);
+      for (const s of mounts) {
+        const sf = ts.createSourceFile('m.tsx', s, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+        const loose: string[] = [];
+        const walk = (n: ts.Node, inside: boolean): void => {
+          const here = inside || (ts.isJsxElement(n) && CONTAINER_TAGS.has(n.openingElement.tagName.getText(sf)));
+          if ((ts.isJsxOpeningElement(n) || ts.isJsxSelfClosingElement(n)) && n.tagName.getText(sf) === name && !here) loose.push(name);
+          ts.forEachChild(n, (c) => walk(c, here));
+        };
+        walk(sf, false);
+        expect(loose, `${name} is mounted outside a container`).toEqual([]);
+      }
+    }
+  });
+
+  it('⚠️ the wizard\'s solid button is its LAST step\'s, and the three containers count their own', () => {
+    const wizard = withoutProse(readFileSync(join(SRC, WIZARD), 'utf-8'));
+    expect(wizard).toMatch(/variant=\{isLast \? 'primary' : 'outline'\}/);
+    for (const file of ['components/ui-v2/SidePanel.tsx', 'components/ui-v2/Dialog.tsx', WIZARD]) {
+      const code = withoutProse(readFileSync(join(SRC, file), 'utf-8'));
+      expect(code, file).toMatch(/useOneSolid\(/);
+      expect(code, file).toMatch(/data-solid-scope=""/);
+    }
   });
 
   it('a destructive act is never solid, and solid is never the default', () => {
@@ -265,7 +377,7 @@ describe('UI-1d · a solid button is a page\'s main action, and a page has one',
 
     // The model flag: `invoiceActionModel` marked one verb `solid`, and that
     // flag also drove a confirmation step. It kept the meaning and lost the
-    // style name (`reservedCommit`); a commit in a drawer is an outline.
+    // style name (`reservedCommit`).
     const model = await import('./invoices/invoiceActionModel');
     const commit = model.invoiceCommitAction('Approved');
     expect(commit).not.toBeNull();
