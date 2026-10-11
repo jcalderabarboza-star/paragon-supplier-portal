@@ -12,6 +12,12 @@ import React from 'react';
 //     tone        surface (white, shadowed)  ·  inset (grey, flat — a block
 //                                               INSIDE a card, never a second
 //                                               shadowed box)
+//     accent      critical · warning · info — a left edge in the state's colour:
+//                 an event near its deadline, a high-priority action. `fill`
+//                 tints the whole card with it, for the one panel a page leads
+//                 with. An accent is a STATE; a card with none has no edge.
+//     highlighted the reader was sent to THIS card by a link — the info border
+//                 and a ring. It is not a selection (that is `CardButton`).
 //   CardButton    a card the reader presses     the same box; `selected` takes
 //                                               the action border and tint
 //
@@ -29,9 +35,42 @@ export const CARD_TONE: Record<CardTone, string> = {
   inset: 'rounded-lg border border-border-subtle bg-bg-hover',
 };
 
+export type CardAccent = 'critical' | 'warning' | 'info';
+
+/** UI-1d: the edge an accent draws, and the tint `fill` lays under it. */
+export const CARD_ACCENT: Record<CardAccent, { edge: string; fill: string }> = {
+  critical: { edge: 'border-l-4 border-l-critical', fill: 'bg-critical-soft' },
+  warning: { edge: 'border-l-4 border-l-warning', fill: 'bg-warning-soft' },
+  info: { edge: 'border-l-4 border-l-info', fill: 'bg-info-soft' },
+};
+
+/** UI-1d: the card a link sent the reader to. */
+export const CARD_HIGHLIGHT = 'border-info ring-1 ring-info/40';
+
+const CARD_GROUND: Record<CardTone, string> = { surface: 'bg-bg-surface shadow-sm', inset: 'bg-bg-hover' };
+
+interface CardClassOptions {
+  padding?: CardPadding;
+  tone?: CardTone;
+  accent?: CardAccent;
+  fill?: boolean;
+  highlighted?: boolean;
+}
+
 /** The card's box. The ONLY place a card is dressed. */
-export function cardClass(opts: { padding?: CardPadding; tone?: CardTone } = {}): string {
-  return `${CARD_TONE[opts.tone ?? 'surface']} ${CARD_PADDING[opts.padding ?? 'md']}`.trim();
+export function cardClass(opts: CardClassOptions = {}): string {
+  const { padding = 'md', tone = 'surface', accent, fill = false, highlighted = false } = opts;
+  if (!accent && !highlighted) return `${CARD_TONE[tone]} ${CARD_PADDING[padding]}`.trim();
+  // Built from parts, never by adding to `CARD_TONE`: two border colours or two
+  // grounds on one element is decided by stylesheet order, not by the reader.
+  const parts = [
+    'rounded-lg border',
+    highlighted ? CARD_HIGHLIGHT : 'border-border-subtle',
+    accent && fill ? CARD_ACCENT[accent].fill : CARD_GROUND[tone],
+    accent ? CARD_ACCENT[accent].edge : '',
+    CARD_PADDING[padding],
+  ];
+  return parts.filter(Boolean).join(' ');
 }
 
 type CardElement = 'div' | 'section' | 'article' | 'aside' | 'li' | 'form' | 'details' | 'fieldset';
@@ -39,6 +78,12 @@ type CardElement = 'div' | 'section' | 'article' | 'aside' | 'li' | 'form' | 'de
 type CardProps = Omit<React.HTMLAttributes<HTMLElement>, 'className'> & {
   padding?: CardPadding;
   tone?: CardTone;
+  /** A state's left edge: an urgency, a priority. Left out, the card has no edge. */
+  accent?: CardAccent;
+  /** With `accent`: tint the whole card. For the one panel a page leads with. */
+  fill?: boolean;
+  /** A link sent the reader to this card. */
+  highlighted?: boolean;
   /** The element. A card is a `div` unless the page says what it is. */
   as?: CardElement;
   /** Layout only. */
@@ -48,10 +93,17 @@ type CardProps = Omit<React.HTMLAttributes<HTMLElement>, 'className'> & {
 };
 
 export const Card = React.forwardRef<HTMLElement, CardProps>(
-  ({ padding = 'md', tone = 'surface', as = 'div', className = '', children, ...rest }, ref) =>
+  ({ padding = 'md', tone = 'surface', accent, fill, highlighted, as = 'div', className = '', children, ...rest }, ref) =>
     React.createElement(
       as,
-      { ref, 'data-card': tone, className: `${cardClass({ padding, tone })} ${className}`.trim(), ...rest },
+      {
+        ref,
+        'data-card': tone,
+        'data-accent': accent,
+        'data-highlighted': highlighted ? 'true' : undefined,
+        className: `${cardClass({ padding, tone, accent, fill, highlighted })} ${className}`.trim(),
+        ...rest,
+      },
       children,
     ),
 );

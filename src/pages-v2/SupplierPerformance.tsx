@@ -709,11 +709,7 @@ const SupplierPerformance: React.FC = () => {
           {improvementActions.map((item) => {
             const isHigh = item.priority === 'High';
             return (
-              <section
-                key={item.kpi}
-                className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-5"
-                style={{ borderLeft: `4px solid ${isHigh ? TOKEN_DANGER : TOKEN_WARNING}` }}
-              >
+              <Card as="section" key={item.kpi} accent={isHigh ? 'critical' : 'warning'} padding="lg">
                 <div className="flex items-start justify-between gap-3 mb-3 flex-wrap">
                   <div className="min-w-0">
                     <div className="text-section text-text-primary mb-2">
@@ -760,7 +756,7 @@ const SupplierPerformance: React.FC = () => {
                 >
                   {t('supplierPerformance.actions.acknowledge')}
                 </Button>
-              </section>
+              </Card>
             );
           })}
           <Notice tone="neutral" icon={Info}>

@@ -218,7 +218,7 @@ const SupplierShipNotices: React.FC<Props> = ({ search, supplierName }) => {
       className="overflow-hidden mb-6"
       data-testid="supplier-ship-notices"
     >
-      <div className="px-4 py-3 border-b border-border-subtle bg-bg-subtle">
+      <div className="px-4 py-3 border-b border-border-subtle bg-bg-hover">
         <div className="flex items-center gap-3">
           <span className="text-sm font-semibold text-text-primary">
             {t('shipments.notices.title')}
@@ -249,10 +249,7 @@ const SupplierShipNotices: React.FC<Props> = ({ search, supplierName }) => {
           rowProps={(a) => ({ 'data-testid': `ship-notice-${a.asnNumber}` })}
           rowDetail={(a) =>
             open.has(a.asnNumber) ? (
-              <div
-                className="bg-bg-subtle rounded-md px-3 py-3"
-                data-testid={`ship-notice-detail-${a.asnNumber}`}
-              >
+              <Card tone="inset" data-testid={`ship-notice-detail-${a.asnNumber}`}>
                 <div className="mb-3">
                   <ReceivedOnNotice
                     receipts={receiptsOfNotice(a.asnNumber, receiptsQuery.data?.items ?? [])}
@@ -281,7 +278,7 @@ const SupplierShipNotices: React.FC<Props> = ({ search, supplierName }) => {
                   rows={a.lineItems}
                   rowKey={(li) => li.materialCode}
                 />
-              </div>
+              </Card>
             ) : null
           }
         />

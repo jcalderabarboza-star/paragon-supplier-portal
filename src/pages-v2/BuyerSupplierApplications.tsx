@@ -545,7 +545,7 @@ const BuyerSupplierApplications: React.FC = () => {
              its own notice, never the review gate. */
           submitAvailability.kind === 'held' ? (
             <Button
-              variant="outline"
+              variant="primary"
               onClick={() => setRaiseOpen(true)}
               data-testid="application-raise-open"
             >
@@ -674,36 +674,38 @@ const BuyerSupplierApplications: React.FC = () => {
             <p className="text-sm text-text-secondary">
               {t('applications.raise.confirm.lead')}
             </p>
-            <FieldList columns={1} className="bg-bg-hover rounded px-4 py-3">
-              <Field label={t('applications.raise.field.type')}>{raiseType}</Field>
-              <Field label={t('applications.raise.field.company')}>
-                {/* i18n-defer: the applicant's own legal name. */}
-                {raiseCompanyName}
-              </Field>
-              {vendorBearing && pickedVendor && (
-                /* THE RESOLVED VENDOR, shown as a NAME beside the id it
-                   resolved from — #284's rule, and the reason is that a
-                   picker cannot refuse the WRONG vendor, only an absent
-                   one. Only a reader catches that, so the reader is shown
-                   what it resolved to before anything commits. */
-                <Field label={t('applications.raise.field.vendor')} sub={pickedVendor.sapBpNumber}>
-                  {pickedVendor.name}
+            <Card tone="inset">
+              <FieldList columns={1}>
+                <Field label={t('applications.raise.field.type')}>{raiseType}</Field>
+                <Field label={t('applications.raise.field.company')}>
+                  {/* i18n-defer: the applicant's own legal name. */}
+                  {raiseCompanyName}
                 </Field>
-              )}
-              <Field label={t('applications.raise.field.declarations')}>
-                {raiseDeclarationList.length === 0 ? (
-                  t('applications.raise.confirm.declaredNone')
-                ) : (
-                  <FieldList layout="row" data-testid="application-raise-declared">
-                    {raiseDeclarationList.map((d) => (
-                      <Field key={d.kind} label={d.kind.toUpperCase()} kind="id">
-                        {d.reference}
-                      </Field>
-                    ))}
-                  </FieldList>
+                {vendorBearing && pickedVendor && (
+                  /* THE RESOLVED VENDOR, shown as a NAME beside the id it
+                     resolved from — #284's rule, and the reason is that a
+                     picker cannot refuse the WRONG vendor, only an absent
+                     one. Only a reader catches that, so the reader is shown
+                     what it resolved to before anything commits. */
+                  <Field label={t('applications.raise.field.vendor')} sub={pickedVendor.sapBpNumber}>
+                    {pickedVendor.name}
+                  </Field>
                 )}
-              </Field>
-            </FieldList>
+                <Field label={t('applications.raise.field.declarations')}>
+                  {raiseDeclarationList.length === 0 ? (
+                    t('applications.raise.confirm.declaredNone')
+                  ) : (
+                    <FieldList layout="row" data-testid="application-raise-declared">
+                      {raiseDeclarationList.map((d) => (
+                        <Field key={d.kind} label={d.kind.toUpperCase()} kind="id">
+                          {d.reference}
+                        </Field>
+                      ))}
+                    </FieldList>
+                  )}
+                </Field>
+              </FieldList>
+            </Card>
             <p className="text-xs text-text-tertiary">
               <ActorPreActNotice unattributedKey="applications.raise.confirm.unattributed" testId="app-pre-act" />
             </p>

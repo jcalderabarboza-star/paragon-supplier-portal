@@ -789,11 +789,12 @@ const buildTimeline = (r: RFQ, t: TFunction): TimelineEvent[] => {
 // reason a reader would care about.
 //
 // The §68 CLAIM those specs defended — that no solid action-blue survives on
-// this surface — is unaffected and is still enforced, by `Button`'s `Variant`
-// union (no `'primary'` member, so every route back is a `tsc` failure) and by
+// this surface — is unaffected and is still enforced by
 // `solidButtonRetired.guard.test.ts`, which derives its population from the
 // FILESYSTEM and never imported either helper. Nothing about §68 rests on the
-// two functions deleted here.
+// two functions deleted here. (UI-1d: `Button` has a `'primary'` variant again,
+// for a page's one main action; a commit in this drawer is still an outline,
+// and that guard is what holds it.)
 
 const ReviewSection: React.FC<{
   label: string;

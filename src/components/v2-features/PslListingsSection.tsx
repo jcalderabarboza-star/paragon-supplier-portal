@@ -250,12 +250,10 @@ const PslListingCard: React.FC<{ listing: PslListing; nowIso: string; highlighte
   };
 
   return (
-    <div
+    <Card
       id={recordAnchorId(listing.id)}
       data-testid={`psl-listing-${listing.id}`}
-      className={`border rounded-lg p-4 bg-bg-surface ${
-        highlighted ? 'border-action shadow-sm' : 'border-border-subtle'
-      }`}
+      highlighted={highlighted}
     >
       <div className="flex flex-wrap items-center gap-2 mb-3">
         <StatusPill variant={statusTone(listing.status)}>{listing.status}</StatusPill>
@@ -595,7 +593,7 @@ const PslListingCard: React.FC<{ listing: PslListing; nowIso: string; highlighte
           )}
         </div>
       ) : null}
-    </div>
+    </Card>
   );
 };
 

@@ -404,13 +404,10 @@ const RFQCard: React.FC<RFQCardProps> = ({
   const [expanded, setExpanded] = useState(false);
   const urgent = rfq.daysRemaining <= 7;
   const Icon = CHANNEL_ICON[rfq.receivedVia] ?? Inbox;
-  const accentClass = urgent ? 'border-l-warning' : 'border-l-teal';
   const showLongReqs = rfq.specialRequirements.length > 80;
 
   return (
-    <div
-      className={`bg-bg-surface border border-border-subtle rounded-lg shadow-sm mb-4 border-l-2 ${accentClass} overflow-hidden`}
-    >
+    <Card padding="none" accent={urgent ? 'warning' : undefined} className="mb-4 overflow-hidden">
       <div className="flex items-center gap-3 px-4 py-3 border-b border-border-subtle flex-wrap">
         <Data className="text-sm font-semibold text-text-primary">
           {rfq.rfqNumber}
@@ -461,7 +458,7 @@ const RFQCard: React.FC<RFQCardProps> = ({
           </Field>
         </FieldList>
 
-        <div className="bg-bg-hover rounded-md px-3 py-2 mb-3">
+        <Card tone="inset" className="mb-3">
           <FieldList columns={1}>
             <Field label={t('rfqs.card.specialReqs')} kind="text">
               {expanded || !showLongReqs
@@ -478,7 +475,7 @@ const RFQCard: React.FC<RFQCardProps> = ({
               {expanded ? t('rfqs.card.showLess') : t('rfqs.card.showMore')}
             </LinkButton>
           )}
-        </div>
+        </Card>
 
         <div className="mb-4">
           <SectionHeading level="group" as="h4" className="mb-2">
@@ -731,7 +728,7 @@ const RFQCard: React.FC<RFQCardProps> = ({
           </LinkButton>
         </div>
       </div>
-    </div>
+    </Card>
   );
 };
 
@@ -858,27 +855,29 @@ const MyQuotesTab: React.FC<{ quotes: SubmittedQuote[] }> = ({ quotes }) => {
             <StatusPill variant="neutral">{q.status}</StatusPill>
           </div>
 
-          <FieldList columns={2} className="sm:grid-cols-3 lg:grid-cols-7">
-            {(
-              [
-                { kind: 'id', label: t('rfqs.quotes.col.quoteNo'), value: q.quoteNumber },
-                { kind: 'date', label: t('rfqs.quotes.col.submitted'), value: q.submittedDate },
-                { kind: 'money', label: t('rfqs.quotes.col.unitPrice'), value: q.unitPrice },
-                { kind: 'money', label: t('rfqs.quotes.col.totalPrice'), value: q.totalPrice },
-                { kind: 'number', label: t('rfqs.quotes.col.leadTime'), value: q.leadTime },
-                // 2e-b-2 — the minimum order quantity appears here for the first
-                // time. It was collected on the form and dropped before this card
-                // existed, so the supplier's own record of their quote silently
-                // omitted a term they had stated.
-                { kind: 'number', label: t('rfqs.quotes.col.moq'), value: q.moq },
-                { kind: 'date', label: t('rfqs.quotes.col.validUntil'), value: q.validUntil },
-              ] as const
-            ).map((d) => (
-              <Field key={d.label} label={d.label} kind={d.kind} className="bg-bg-hover rounded-md px-3 py-2">
-                {d.value}
-              </Field>
-            ))}
-          </FieldList>
+          <Card tone="inset">
+            <FieldList columns={2} className="sm:grid-cols-3 lg:grid-cols-7">
+              {(
+                [
+                  { kind: 'id', label: t('rfqs.quotes.col.quoteNo'), value: q.quoteNumber },
+                  { kind: 'date', label: t('rfqs.quotes.col.submitted'), value: q.submittedDate },
+                  { kind: 'money', label: t('rfqs.quotes.col.unitPrice'), value: q.unitPrice },
+                  { kind: 'money', label: t('rfqs.quotes.col.totalPrice'), value: q.totalPrice },
+                  { kind: 'number', label: t('rfqs.quotes.col.leadTime'), value: q.leadTime },
+                  // 2e-b-2 — the minimum order quantity appears here for the first
+                  // time. It was collected on the form and dropped before this card
+                  // existed, so the supplier's own record of their quote silently
+                  // omitted a term they had stated.
+                  { kind: 'number', label: t('rfqs.quotes.col.moq'), value: q.moq },
+                  { kind: 'date', label: t('rfqs.quotes.col.validUntil'), value: q.validUntil },
+                ] as const
+              ).map((d) => (
+                <Field key={d.label} label={d.label} kind={d.kind}>
+                  {d.value}
+                </Field>
+              ))}
+            </FieldList>
+          </Card>
         </Card>
       ))}
     </div>

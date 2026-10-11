@@ -334,7 +334,7 @@ const CommHubInbound: React.FC = () => {
         className="overflow-hidden mb-6"
         data-testid="commhub-needs"
       >
-        <div className="px-4 py-3 border-b border-border-subtle bg-bg-subtle flex items-center gap-3">
+        <div className="px-4 py-3 border-b border-border-subtle bg-bg-hover flex items-center gap-3">
           <CalendarClock size={16} className="text-teal shrink-0" aria-hidden="true" />
           <div className="min-w-0">
             <SectionHeading as="h3">{t('commHub.needs.title')}</SectionHeading>
@@ -404,7 +404,7 @@ const CommHubInbound: React.FC = () => {
             </ul>
             {/* The full list lives on the delivery mirror — cross-link, never a
                 duplicate render of it. */}
-            <div className="px-4 py-2.5 border-t border-border-subtle bg-bg-subtle">
+            <div className="px-4 py-2.5 border-t border-border-subtle bg-bg-hover">
               <Link
                 to="/supplier/delivery-agreements"
                 className="inline-flex items-center gap-1.5 text-xs font-semibold text-action-text hover:text-action-hover"

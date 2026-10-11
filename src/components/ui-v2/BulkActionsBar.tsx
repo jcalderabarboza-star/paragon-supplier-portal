@@ -47,6 +47,9 @@ export interface PrimaryAction {
    * this slot could render solid from a PROP, and a matcher keyed on the
    * literal could never have seen it. It was the model layer
    * (`invoiceActionModel`) that still carried the flag, one seam further in.
+   *
+   * UI-1d (operator ruling, 10 October 2026): the primary slot IS solid now —
+   * always, not by opt-in. It is the page's main action, and a header has one.
    */
 }
 
@@ -85,7 +88,7 @@ const BulkActionsBar: React.FC<BulkActionsBarProps> = ({
       )}
       {primary && !routeOff && (
         <Button
-          variant="outline"
+          variant="primary"
           icon={primary.icon}
           onClick={primary.onClick}
         >

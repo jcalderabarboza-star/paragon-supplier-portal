@@ -161,13 +161,13 @@ const TermCard: React.FC<{
 }> = ({ view, indonesian, highlighted, onJump }) => {
   const { t } = useTranslation();
   return (
-    <article
+    <Card
+      as="article"
       id={view.anchor}
       data-testid={`glossary-term-${view.anchor}`}
       aria-label={t('glossary.term.aria', { term: view.term })}
-      className={`scroll-mt-8 rounded-md border bg-bg-surface p-4 ${
-        highlighted ? 'border-teal ring-1 ring-teal/40' : 'border-border-subtle'
-      }`}
+      highlighted={highlighted}
+      className="scroll-mt-8"
     >
       {/* The term is the heading; the union that defines it sits beside it, outside
           the heading, so the outline names the word and nothing else. */}
@@ -187,7 +187,7 @@ const TermCard: React.FC<{
       <Data className="mt-1.5 block text-xs text-text-tertiary">{view.sourceFile}</Data>
       <Appearances appearances={view.appearances} />
       <Related related={view.related} onJump={onJump} />
-    </article>
+    </Card>
   );
 };
 

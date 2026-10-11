@@ -180,7 +180,9 @@ describe('Glossary — a chip lands on its term', () => {
     const card = await screen.findByTestId(
       'glossary-term-HalalRefusalReason.UNDETERMINED_APPLICABILITY',
     );
-    expect(card.className).toContain('ring-teal');
+    // UI-1d: the highlight is the shared card's state (it was a teal ring drawn here)
+    expect(card).toHaveAttribute('data-highlighted', 'true');
+    expect(card.className).toContain('ring-info');
   });
 
   it('does not narrow the list to something that hides the linked term', async () => {

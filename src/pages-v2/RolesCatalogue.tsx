@@ -170,7 +170,7 @@ const RolesCatalogue: React.FC = () => {
       subtitle={t('roles.page.subtitle')}
       actions={
         <Button
-          variant="outline"
+          variant="primary"
           icon={Plus}
           onClick={() => setCreating(true)}
           data-testid="roles-new"

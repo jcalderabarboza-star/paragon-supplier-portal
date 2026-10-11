@@ -336,7 +336,7 @@ const BuyerDiscovery: React.FC = () => {
         subtitle={t('discovery.header.subtitle')}
         actions={
           <Button
-            variant="outline"
+            variant="primary"
             icon={Globe2}
             onClick={() => navigate('/marketplace')}
           >

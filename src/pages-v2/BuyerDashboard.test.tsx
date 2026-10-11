@@ -253,6 +253,9 @@ describe('⚠️ EVERY FIGURE EQUALS ITS DERIVATION', () => {
       const card = screen.getByTestId(id);
       expect(within(card).queryByRole('button'), id).not.toBeInTheDocument();
       expect(within(card).queryByRole('link'), id).not.toBeInTheDocument();
+      // UI-1d: a module that is not built is the dashed neutral notice, and says so
+      expect(card, id).toHaveAttribute('data-notice', 'sample');
+      expect(within(card).getByText(/^Not built yet · Phase [BC]$/), id).toBeInTheDocument();
     }
     expect(screen.getByText(/Today they span \d+ months\./)).toBeInTheDocument();
   });

@@ -1779,22 +1779,24 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
         </FormField>
       </FormSection>
 
-      <FieldList columns={4} className="border border-border-subtle rounded-lg p-4 bg-bg-hover">
-        <Field label={t('goodsReceipt.wizard.summary.totalItems')} kind="number">
-          {totals.items}
-        </Field>
-        <Field label={t('goodsReceipt.wizard.summary.totalAccepted')} kind="number">
-          <span className="text-success">{formatNumber(totals.accepted)}</span>
-        </Field>
-        <Field label={t('goodsReceipt.wizard.summary.totalRejected')} kind="number">
-          <span className="text-critical">{formatNumber(totals.rejected)}</span>
-        </Field>
-        <Field label={t('goodsReceipt.wizard.summary.sapDoc')}>
-          {autoPostSap && !holdInstead
-            ? t('goodsReceipt.wizard.summary.assignedBySap')
-            : t('goodsReceipt.wizard.summary.notPosted')}
-        </Field>
-      </FieldList>
+      <Card tone="inset">
+        <FieldList columns={4}>
+          <Field label={t('goodsReceipt.wizard.summary.totalItems')} kind="number">
+            {totals.items}
+          </Field>
+          <Field label={t('goodsReceipt.wizard.summary.totalAccepted')} kind="number">
+            <span className="text-success">{formatNumber(totals.accepted)}</span>
+          </Field>
+          <Field label={t('goodsReceipt.wizard.summary.totalRejected')} kind="number">
+            <span className="text-critical">{formatNumber(totals.rejected)}</span>
+          </Field>
+          <Field label={t('goodsReceipt.wizard.summary.sapDoc')}>
+            {autoPostSap && !holdInstead
+              ? t('goodsReceipt.wizard.summary.assignedBySap')
+              : t('goodsReceipt.wizard.summary.notPosted')}
+          </Field>
+        </FieldList>
+      </Card>
     </div>
   );
 

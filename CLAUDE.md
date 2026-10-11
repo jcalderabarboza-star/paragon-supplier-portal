@@ -828,6 +828,19 @@ nav groups under one neutral key, `nav.glossary`.
   were found by the type after the union member was removed, not by any scan.
   If solid is ever wanted again, amend this paragraph AND the type AND the gate
   together — changing one of the three is how the register comes back.
+
+  ⚠️ **AMENDED 2026-10-10 (UI-1d, operator ruling) — ALL THREE, TOGETHER, AND THE
+  TEXT ABOVE IS KEPT AS THE RECORD.** *"SOLID action-blue no longer exists in this
+  portal"* and *"it is now the ONLY primary register"* are overtaken: **each
+  page's MAIN action is a solid primary button, one per page** (the login page's
+  "Sign in" included); outline is every other action. What §68 retired stays
+  retired — solid as the mark of an irreversible commit in a drawer, by a prop or
+  by a model flag. `Button`'s `Variant` has `'primary'` again, its default is
+  still `'outline'`, and a `tone="critical"` button is an outline whatever variant
+  it is given. `solidButtonRetired.guard.test.ts` holds where a solid button may
+  stand — the header's primary slot, or a routed page's own file — and that a
+  page has at most one. **Derive which pages have one from that guard's
+  population, never from a sentence here.**
 - Semantic color (green/amber/red) is ONLY for true state, in soft/muted
   variants — never saturated decoration. If a chip's color doesn't inform a
   decision, it goes neutral.
@@ -900,6 +913,19 @@ nav groups under one neutral key, `nav.glossary`.
   `<strong>` is 600, set once in the base layer. **Derive what the colour list still holds from
   `COLOUR_GRANDFATHERED`; it is the legacy stylesheet's own variables, and folding those onto
   the tokens is not done.**
+- ⚠️ **UI-1d (2026-10-10, operator rulings) — THE LAST SENTENCE ABOVE IS OVERTAKEN, AND FOUR
+  THINGS ARE ADDED.** (1) `COLOUR_GRANDFATHERED` is EMPTY: `index.css` defines no variable and
+  spells no colour — it reads the tokens through `theme()` — and its unused utility classes are
+  gone. (2) **A card has STATES:** `accent` (`critical` · `warning` · `info`) is a left edge for
+  an urgency or a priority, `fill` tints the one panel a page leads with, and `highlighted` marks
+  the card a link sent the reader to. A card with no state has no edge. (3) **A tab that owns a
+  panel** states its id, its test id and the panel it controls through `components/ui-v2/Tabs`;
+  the guide tabs are on it. (4) **A field is never tinted or boxed by its page** — fields on a
+  grey block stand in `<Card tone="inset">` — and **a class that names a surface, text or
+  border token must name one that exists** (`bg-bg-subtle` drew nothing on eight header bands
+  and nothing failed). A module that is not built is a `Notice tone="sample"` that says so.
+  `uiGate` gate 9 holds all of it. The solid primary button is the amendment under
+  DP2-BUTTON-01 above.
 - WARNING token is a FILL/TEXT split (DP2-WARN-01), same shape as `action`:
   `warning.DEFAULT` = bright amber `#D97706` for every GRAPHICAL warning use
   (accent-edges, dots, bar fills, dials, chip fills, borders — 3.19:1 on white,

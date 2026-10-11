@@ -250,7 +250,7 @@ const StorefrontEditor: React.FC<StorefrontEditorProps> = ({
         subtitle={t('supplierMyStorefront.header.subtitle', { supplier: supp.name })}
         actions={
           <Button
-            variant="outline"
+            variant="primary"
             icon={ExternalLink}
             onClick={() => navigate(`/marketplace/supplier/${supplierId}`)}
           >

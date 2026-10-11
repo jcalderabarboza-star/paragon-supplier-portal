@@ -22,6 +22,10 @@ import {
   RAW_CONTROL_EXEMPT,
   boxDressFindings,
   derivedBoxDress,
+  derivedFieldTint,
+  derivedTokenClassNames,
+  fieldTintFindings,
+  tokenClassNames,
   derivedRawBoxes,
   derivedRawButtons,
   rawBoxFindings,
@@ -199,7 +203,7 @@ describe('UI gate 3 · contrast', () => {
   /** `success` is 4.26:1 on the critical tint, so it is held to its own. */
   const TEXT_ON_OWN_TINT: [string, string][] = [['success', 'success.soft']];
   /** Solid fills that carry white text. */
-  const WHITE_ON = ['action', 'action.muted', 'teal.hover', 'navy', 'success', 'critical', 'info'];
+  const WHITE_ON = ['action', 'action.hover', 'action.muted', 'teal.hover', 'navy', 'success', 'critical', 'info'];
   /** Fills that are NOT text colours — each must fail, or the split is not needed. */
   const NOT_TEXT = ['teal', 'warning'];
 
@@ -540,5 +544,73 @@ describe('UI gate · the lists name live files', () => {
     expect(listed.filter((f) => !files.has(f))).toEqual([]);
     // the lists are read from disk, not from a cache of this module
     expect(readFileSync(join(process.cwd(), 'src', 'lib', 'uiGate', 'grandfathered.ts'), 'utf-8')).toContain('TYPE_GRANDFATHERED');
+  });
+});
+
+describe('UI gate 9 · UI-1d — the card states, the field ground, the token names', () => {
+  it('reads a field tinted through its own className, and a rounded ground laid under one', () => {
+    // what the forecast, quote and application pages carried
+    expect(fieldTintFindings('<Field label="Qty" kind="number" className="bg-bg-hover rounded-md px-3 py-2">4</Field>')).toEqual([
+      'Field · bg-bg-hover',
+      'Field · rounded-md',
+    ]);
+    expect(fieldTintFindings('<FieldList columns={4} className="border border-border-subtle rounded-lg p-4 bg-bg-hover"><Field label="a">b</Field></FieldList>')).toEqual([
+      'FieldList · border',
+      'FieldList · border-border-subtle',
+      'FieldList · rounded-lg',
+      'FieldList · bg-bg-hover',
+    ]);
+    expect(fieldTintFindings('<div className="bg-bg-hover rounded-md px-3 py-2 mb-3"><FieldList columns={1}><Field label="a">b</Field></FieldList></div>')).toEqual([
+      'div wraps FieldList · bg-bg-hover',
+    ]);
+  });
+
+  it('passes the standard: fields in an inset card, and layout on the list', () => {
+    expect(fieldTintFindings('<Card tone="inset" className="mt-4"><FieldList columns={2} className="sm:grid-cols-3"><Field label="a" className="py-2">b</Field></FieldList></Card>')).toEqual([]);
+    expect(fieldTintFindings('<FieldList layout="row" className="px-4 py-3 divide-y divide-border-subtle"><Field label="a">b</Field></FieldList>')).toEqual([]);
+    // a ground with no field under it is not this gate's business
+    expect(fieldTintFindings('<div className="bg-bg-hover rounded-md p-2"><p>x</p></div><Field label="a">b</Field>')).toEqual([]);
+  });
+
+  it('⚠️ no page tints or boxes a field — and the pages that did are in the population', () => {
+    const files = shippedFiles().map((f) => f.file);
+    for (const f of ['src/pages-v2/SupplierForecasts.tsx', 'src/pages-v2/SupplierRFQs.tsx', 'src/components/v2-features/GRInspectionWizard.tsx']) {
+      expect(files).toContain(f);
+      expect(shippedFiles().find((x) => x.file === f)!.text).toMatch(/<FieldList[\s>]/);
+    }
+    expect(derivedFieldTint()).toEqual({});
+  });
+
+  it('reads the token a class names', () => {
+    expect(tokenClassNames('className="bg-bg-hover text-text-tertiary border-border-subtle hover:bg-bg-hover/40 divide-border-input"').sort()).toEqual([
+      'bg-hover',
+      'border-input',
+      'border-subtle',
+      'text-tertiary',
+    ]);
+    // the class eight header bands carried: it names a token that never existed
+    expect(tokenClassNames('<div className="px-4 py-3 border-b border-border-subtle bg-bg-subtle">')).toContain('bg-subtle');
+    expect(tokenClassNames('className="bg-success-soft text-sm border-l-2"')).toEqual([]);
+  });
+
+  it('⚠️ every surface, text and border class names a token that exists', async () => {
+    const url = pathToFileURL(join(process.cwd(), 'tailwind.config.js')).href;
+    const mod = (await import(/* @vite-ignore */ url)) as { default: { theme: { extend: { colors: Record<string, unknown> } } } };
+    const tokens = new Set(Object.keys(mod.default.theme.extend.colors));
+    expect(tokens.has('bg-hover')).toBe(true);
+    expect(tokens.has('bg-subtle')).toBe(false);
+    const asked = derivedTokenClassNames();
+    expect(Object.keys(asked)).toContain('src/components/ui-v2/Card.tsx');
+    const unknown: string[] = [];
+    for (const [file, names] of Object.entries(asked)) for (const n of names) if (!tokens.has(n)) unknown.push(`${file} · ${n}`);
+    expect(unknown).toEqual([]);
+  });
+
+  it('the legacy stylesheet spells no colour and defines no variable of its own', () => {
+    const css = shippedFiles().find((f) => f.file === 'src/index.css')!.text;
+    expect(colourFindings(css)).toEqual({});
+    expect(css).not.toMatch(/--[a-z][a-z-]*\s*:/);
+    expect(css).toMatch(/theme\('colors\.bg-page'\)/);
+    expect(COLOUR_GRANDFATHERED).toEqual({});
   });
 });

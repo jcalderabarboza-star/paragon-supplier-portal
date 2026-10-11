@@ -102,7 +102,7 @@ export const buyerDashboardEn: Record<string, string> = {
   'buyerDashboard.chart.obligations.footer': '{{total}} obligations across {{months}} months',
   'buyerDashboard.chart.viewAll': 'View all',
   // — Phase B placeholders —
-  'buyerDashboard.phaseB.badge': 'PHASE B',
+  'buyerDashboard.phaseB.badge': 'Not built yet · Phase B',
   'buyerDashboard.phaseB.spend.title': 'Monthly spend and PO volume',
   'buyerDashboard.phaseB.spend.body':
     'Appears once purchase orders are anchored to the declared present and carry at least six months of linked history. Today they span {{months}} months.',
@@ -130,7 +130,7 @@ export const buyerDashboardEn: Record<string, string> = {
   'buyerDashboard.queue.procurement.work':
     'RFQs awaiting award · unacknowledged POs — held until RFQ and PO dates are anchored',
   // — Phase C strip —
-  'buyerDashboard.phaseC.badge': 'PHASE C',
+  'buyerDashboard.phaseC.badge': 'Not built yet · Phase C',
   'buyerDashboard.phaseC.body':
     'Not shown until the data can prove them: OTIF · award lead time · PR → PO cycle time · acknowledgement time · supplier risk distribution · spend by material category.',
   // -- Windows grid --
@@ -232,7 +232,7 @@ export const buyerDashboardId: Record<string, string> = {
     '{{total}} kewajiban sepanjang {{months}} bulan',
   'buyerDashboard.chart.viewAll': 'Lihat semua',
   // — Phase B placeholders —
-  'buyerDashboard.phaseB.badge': 'FASE B',
+  'buyerDashboard.phaseB.badge': 'Belum dibangun · Fase B',
   'buyerDashboard.phaseB.spend.title': 'Belanja bulanan dan volume PO',
   'buyerDashboard.phaseB.spend.body':
     'Muncul setelah pesanan pembelian ditambatkan ke masa kini yang dinyatakan dan memuat riwayat tertaut minimal enam bulan. Saat ini rentangnya {{months}} bulan.',
@@ -256,7 +256,7 @@ export const buyerDashboardId: Record<string, string> = {
   'buyerDashboard.queue.procurement.work':
     'RFQ menunggu penetapan · PO belum diakui — ditahan sampai tanggal RFQ dan PO ditambatkan',
   // — Phase C strip —
-  'buyerDashboard.phaseC.badge': 'FASE C',
+  'buyerDashboard.phaseC.badge': 'Belum dibangun · Fase C',
   'buyerDashboard.phaseC.body':
     'Belum ditampilkan sampai datanya dapat membuktikan: OTIF · waktu tempuh penetapan · waktu siklus PR → PO · waktu pengakuan · sebaran risiko pemasok · belanja per kategori material.',
   // -- Windows grid --

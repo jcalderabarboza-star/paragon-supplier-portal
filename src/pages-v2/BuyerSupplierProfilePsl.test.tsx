@@ -257,7 +257,9 @@ describe('BuyerSupplierProfile — the deep link', () => {
     // No click: the tab must open on arrival, or the link is broken.
     const card = await screen.findByTestId('psl-listing-psl-003');
     expect(card).toBeInTheDocument();
-    expect(card.className).toContain('border-action'); // highlighted
+    // UI-1d: highlighted — the shared card's state (it was an action border drawn here)
+    expect(card).toHaveAttribute('data-highlighted', 'true');
+    expect(card.className).toContain('border-info');
   });
 
   it('⚠️ an UNKNOWN id renders safely — no panel, no toast, no error', async () => {
@@ -266,9 +268,9 @@ describe('BuyerSupplierProfile — the deep link', () => {
     // or can fix, so the page renders normally.
     const section = await screen.findByTestId('psl-section');
     expect(section).toBeInTheDocument();
-    expect(within(section).getByTestId('psl-listing-psl-001').className).not.toContain(
-      'border-action',
-    );
+    const plain = within(section).getByTestId('psl-listing-psl-001');
+    expect(plain).not.toHaveAttribute('data-highlighted');
+    expect(plain.className).not.toContain('border-info');
     expect(screen.queryByRole('alert')).toBeNull();
   });
 });

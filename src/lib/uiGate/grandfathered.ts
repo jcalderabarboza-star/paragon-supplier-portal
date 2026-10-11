@@ -12,9 +12,7 @@ import type { BoxKind, ColourKind, Counts, TypeKind } from './derive';
 
 export const TYPE_GRANDFATHERED: Record<string, Counts<TypeKind>> = {};
 
-export const COLOUR_GRANDFATHERED: Record<string, Counts<ColourKind>> = {
-  'src/index.css': { 'hex': 29, 'rgb': 5 },
-};
+export const COLOUR_GRANDFATHERED: Record<string, Counts<ColourKind>> = {};
 
 /** Files other than `DataTable` that write table markup by hand. */
 export const RAW_TABLE_GRANDFATHERED: Record<string, number> = {
@@ -44,6 +42,8 @@ export const RAW_BOX_GRANDFATHERED: Record<string, Counts<BoxKind>> = {
   'src/pages-v2/BuyerAnalytics.tsx': { 'box': 2 },
   'src/pages-v2/BuyerInvoices.tsx': { 'box': 1 },
   'src/pages-v2/BuyerScorecard.tsx': { 'box': 1 },
+  'src/pages-v2/BuyerRisk.tsx': { 'box': 1 },
+  'src/pages-v2/SupplierPerformance.tsx': { 'box': 1 },
   // the frame of a grid or a table — it clips and scrolls what is inside it and is not a card around it
   'src/pages-v2/BulkStockEntryGrid.tsx': { 'box': 1 },
   'src/pages-v2/BuyerCollaboration.tsx': { 'box': 1 },
@@ -72,12 +72,6 @@ export const RAW_BOX_GRANDFATHERED: Record<string, Counts<BoxKind>> = {
   'src/pages-v2/SupplierMyStorefront.tsx': { 'box': 1 },
   // an icon tile
   'src/pages-v2/SupplierRegistration.tsx': { 'box': 1 },
-  // STILL TO MIGRATE — each needs a state `Card` does not have yet: a deep-link highlight, an urgency or priority edge, a scenario summary with headline figures
-  'src/components/v2-features/PslListingsSection.tsx': { 'box': 1 },
-  'src/pages-v2/Glossary.tsx': { 'box': 1 },
-  // a chart tooltip, and one STILL TO MIGRATE (the featured-scenario panel on Risk; the priority-edged action card on Performance)
-  'src/pages-v2/BuyerRisk.tsx': { 'box': 2 },
-  'src/pages-v2/SupplierPerformance.tsx': { 'box': 2 },
-  // a drop zone, a read-only total drawn as a control, and one STILL TO MIGRATE (the open-event card, whose left rule turns amber near its deadline)
-  'src/pages-v2/SupplierRFQs.tsx': { 'box': 3 },
+  // a drop zone, and a read-only total drawn as a control
+  'src/pages-v2/SupplierRFQs.tsx': { 'box': 2 },
 };
