@@ -127,6 +127,8 @@ const mountGrid = (cells: typeof FIFTY, queryClient?: QueryClient) => {
     { route: '/buyer/plan-grid', identity: PLANNING_1, ...(queryClient ? { queryClient } : {}) },
   );
   fireEvent.click(screen.getByText('seed'));
+  // PG-1: the planned changes open in a drawer, from the bar.
+  fireEvent.click(screen.getByTestId('plan-changes-toggle'));
 };
 
 beforeEach(() => {
@@ -224,6 +226,8 @@ describe('PLN-4 · a push of 50 rows — one anchor, one refresh, a page that ke
         { route: '/buyer/plan-grid', identity: PLANNING_1 },
       );
       fireEvent.click(screen.getByText('seed'));
+      // PG-1: the planned changes open in a drawer, from the bar.
+      fireEvent.click(screen.getByTestId('plan-changes-toggle'));
       // Two of the four get a reason; the other two are held before dispatch.
       const refs = cells.map((c) => c.row.seamRefs![c.bucket]);
       fireEvent.click(screen.getByTestId(`plan-select-${refs[0]}`));
@@ -296,22 +300,38 @@ describe('PLN-4 · "apply this reason to selected" — one reason per committed 
 
 // ─── 3 · the panel stops burying the grid ───────────────────────────────────
 
-describe('PLN-4 · the planned changes sit below the grid and in a sticky bar, never above it', () => {
-  it('the list follows the grid in the page and the bar comes last, stuck to the foot of the view', async () => {
+describe('PLN-4 · PG-1 · the planned changes are a sticky bar under the grid and a drawer beside it, never above it', () => {
+  it('the bar follows the grid, stuck to the foot of the view, and the list is in a drawer — not in the page', async () => {
     mountGrid(FIFTY.slice(0, 6));
     const grid = await screen.findByTestId('tp-grid');
     const details = screen.getByTestId('plan-draft-details');
     const bar = screen.getByTestId('plan-draft-bar');
-    expect(grid.compareDocumentPosition(details) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(grid.compareDocumentPosition(bar) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(grid.compareDocumentPosition(screen.getByTestId('plan-draft-panel')) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(details.compareDocumentPosition(bar) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(bar.className).toMatch(/\bsticky\b/);
     expect(bar.className).toMatch(/\bbottom-0\b/);
+    // PG-1 · the list is the drawer's body: a wide drawer, named, with the push in its footer
+    const drawer = details.closest('[role="dialog"]')!;
+    expect(drawer).not.toBeNull();
+    expect(drawer).toHaveAttribute('data-wide');
+    expect(within(drawer as HTMLElement).getByRole('heading', { name: 'Planned changes' })).toBeInTheDocument();
+    expect(within(drawer as HTMLElement).getByTestId('plan-push-all')).toHaveAttribute('data-solid');
+    // …and ONE set of push buttons at a time: with the drawer open the bar offers none
+    expect(within(bar).queryByTestId('plan-push-all')).toBeNull();
+    expect(screen.getAllByTestId('plan-push-all')).toHaveLength(1);
+  });
+
+  it('closed, the bar carries the push — an outline, the page has no solid button here', async () => {
+    mountGrid(FIFTY.slice(0, 6));
+    fireEvent.click(screen.getByRole('button', { name: 'Close panel' }));
+    const bar = screen.getByTestId('plan-draft-bar');
+    expect(within(bar).getByTestId('plan-push-all')).not.toHaveAttribute('data-solid');
+    expect(screen.queryByRole('dialog')).toBeNull();
   });
 
   it('collapses to the one-line bar and opens again, keeping every change', async () => {
     mountGrid(FIFTY.slice(0, 6));
-    fireEvent.click(screen.getByTestId('plan-changes-toggle'));
+    fireEvent.click(screen.getByRole('button', { name: 'Close panel' }));
     expect(screen.queryByTestId('plan-draft-details')).toBeNull();
     expect(screen.getByTestId('plan-draft-banner')).toHaveTextContent('6 planned changes — not committed until pushed');
     expect(screen.getByTestId('plan-changes-toggle')).toHaveTextContent('Show changes (6)');

@@ -140,7 +140,8 @@ describe('ExpandableWidget — expanded (fullscreen) state', () => {
     expect(dialog).toBeInTheDocument();
     expect(screen.getByText('the real overdue rows')).toBeInTheDocument();
 
-    fireEvent.keyDown(window, { key: 'Escape' });
+    // PG-1: the shared dialog listens on the document.
+    fireEvent.keyDown(document, { key: 'Escape' });
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 });

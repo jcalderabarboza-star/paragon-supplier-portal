@@ -1206,7 +1206,7 @@ const BuyerRequisitions: React.FC = () => {
                       it is the only solid on the surface (the approve button is
                       not rendered in `rejecting` mode). */}
                   <Button
-                    variant="outline" tone="critical"
+                    variant="primary" tone="critical"
                     onClick={rejectSelected}
                     disabled={!canReject || rejectPr.isPending}
                     data-testid="pr-reject-confirm"

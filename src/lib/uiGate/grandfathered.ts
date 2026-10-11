@@ -33,7 +33,7 @@ export const LIST_LAYOUT_GRANDFATHERED: readonly string[] = [];
  */
 export const RAW_BOX_GRANDFATHERED: Record<string, Counts<BoxKind>> = {
   // the shell — the identity panel, the language menu and the top bar are drawn with the shell
-  'src/components/layout-v2/IdentityPanel.tsx': { 'box': 3, 'chip': 1 },
+  'src/components/layout-v2/IdentityPanel.tsx': { 'box': 2, 'chip': 1 },
   'src/components/layout-v2/LanguageMenu.tsx': { 'box': 1 },
   'src/components/layout-v2/TopBarV2.tsx': { 'chip': 1 },
   // the channel demo imitates an external messenger; its bubbles and cards are that product's chrome (operator ruling, 9 October 2026)
@@ -56,9 +56,9 @@ export const RAW_BOX_GRANDFATHERED: Record<string, Counts<BoxKind>> = {
   'src/pages-v2/sourcing/RfiAnswerMatrix.tsx': { 'box': 1 },
   'src/pages-v2/sourcing/RfpEvaluation.tsx': { 'box': 1 },
   // the planning grid: its frame, and a read-only filter value drawn at control height in the filter row
-  'src/pages-v2/plan-grid/TimePhasedGrid.tsx': { 'box': 1, 'chip': 1 },
-  // a table frame, and the FX-pin panel, which is a dialog that floats above the page
-  'src/pages-v2/BuyerSourcing.tsx': { 'box': 2 },
+  'src/pages-v2/plan-grid/TimePhasedGrid.tsx': { 'box': 1 },
+  // a table frame (PG-1 put the FX-pin panel on the shared dialog)
+  'src/pages-v2/BuyerSourcing.tsx': { 'box': 1 },
   // a drop zone or an upload target
   'src/pages-v2/SupplierShipments.tsx': { 'chip': 1 },
   'src/pages-v2/XlsxImportPanel.tsx': { 'box': 1 },

@@ -55,6 +55,8 @@ const mount = (row: PlanRow, edits: readonly [string, string, EditOrigin][], opt
     { route: '/buyer/plan-grid', ...opts },
   );
   fireEvent.click(screen.getByText('seed'));
+  // PG-1: the planned changes open in a drawer, from the bar.
+  fireEvent.click(screen.getByTestId('plan-changes-toggle'));
 };
 
 beforeEach(() => {

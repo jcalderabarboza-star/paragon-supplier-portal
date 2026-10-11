@@ -16,6 +16,7 @@ import {
 import { ROLE_LABEL_KEY } from '../../services/transitions/handoff';
 import { mockSuppliers } from '../../data/mockSuppliers';
 import { NO_PERSON } from '../../context/noPerson';
+import Dialog from '../ui-v2/Dialog';
 import { atomsForSeat } from '../../services/transitions/customRoles';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -260,13 +261,16 @@ const IdentityPanel: React.FC = () => {
         {initials}
       </button>
 
-      {open && (
-        <div
-          role="dialog"
-          aria-label={t('identity.panel.title')}
-          data-testid="identity-panel"
-          className="absolute right-0 mt-2 w-80 bg-white border border-border-subtle rounded-lg shadow-lg z-50 p-4 text-left"
-        >
+      {/* PG-1: the shared pop-up. It was a hand-drawn panel under the avatar with
+          its own `role="dialog"`, no focus trap and no scrim. */}
+      <Dialog
+        open={open}
+        onClose={() => setOpen(false)}
+        title={t('identity.panel.title')}
+        testId="identity-panel"
+        widthClass="max-w-sm"
+      >
+        <div className="text-left">
           {/* — WHO — */}
           <div className="pb-3 border-b border-border-subtle">
             <div className="text-label text-text-tertiary uppercase">
@@ -477,7 +481,7 @@ const IdentityPanel: React.FC = () => {
             </p>
           </div>
         </div>
-      )}
+      </Dialog>
     </div>
   );
 };

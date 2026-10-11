@@ -856,6 +856,18 @@ nav groups under one neutral key, `nav.glossary`.
   never stand on screen together. ⚠️ **A STATE NO SPEC OPENS IS A STATE THAT
   COUNT HAS NEVER RUN ON** — the visible walk reads the console for it. The two
   header actions that only say "not available yet" are outlines until built.
+
+  ⚠️ **AMENDED 2026-10-11 (PG-1, operator ruling), QUOTED RATHER THAN EDITED.**
+  *"A commit that REFUSES a document is a destructive act and takes
+  `tone="critical"`, which is an outline"* is overtaken: **a destructive FINAL
+  commit — confirm a rejection, cancel an event, conclude without an award,
+  discard a draft — is a SOLID CRITICAL button** (`variant="primary"
+  tone="critical"`), still the container's one solid button and counted as one.
+  `tone="critical"` on any other variant is the critical outline it was: the
+  first press, which only asks. While a destructive ask stands open, every other
+  commit in that container is an outline. `Button`, `oneSolid.test.tsx` and
+  `solidButtonRetired.guard.test.ts` moved together; the guard also holds that a
+  solid critical button stands only inside a container.
 - Semantic color (green/amber/red) is ONLY for true state, in soft/muted
   variants — never saturated decoration. If a chip's color doesn't inform a
   decision, it goes neutral.
@@ -941,6 +953,20 @@ nav groups under one neutral key, `nav.glossary`.
   and nothing failed). A module that is not built is a `Notice tone="sample"` that says so.
   `uiGate` gate 9 holds all of it. The solid primary button is the amendment under
   DP2-BUTTON-01 above.
+- ⚠️ **PG-1 (2026-10-11, operator rulings on R-PG) — ONE POP-UP, AND A CALM PLAN GRID.**
+  (1) **Every pop-up is `components/ui-v2/Dialog`** (`fill` is its full-screen form) or the
+  drawer, `SidePanel` (`wide` holds a table). `role="dialog"` is written in those two files and
+  nowhere else — `popupsOnTheSharedDialog.guard` derives that from source — so every pop-up has
+  the same scrim, Escape and focus trap and is counted by `useOneSolid`. The identity panel is a
+  pop-up now, not a panel hanging from the avatar. (2) **The plan grid opens on "Shortages this
+  month"** — the materials short in the horizon's FIRST bucket (`isShortIn`); the views are chips
+  (`SubTabs variant="chips"`, still a tablist). (3) **Above the grid stand the views, ONE summary
+  strip and one filter row.** The sandbox and sample statements and the edit hint are "About this
+  data": in the DOM always, shown on request; the page's liveness marker stays in sight. (4) The
+  forecast publication and the planned changes open in **drawers**; rows come in two heights
+  (`ROW_H`) and band BY MATERIAL. **Derive what a view lists from `applyPlanView`, never from a
+  sentence here.** One row per material, the measures menu and twelve months without sideways
+  scroll are PG-2 and are not built.
 - WARNING token is a FILL/TEXT split (DP2-WARN-01), same shape as `action`:
   `warning.DEFAULT` = bright amber `#D97706` for every GRAPHICAL warning use
   (accent-edges, dots, bar fills, dials, chip fills, borders — 3.19:1 on white,

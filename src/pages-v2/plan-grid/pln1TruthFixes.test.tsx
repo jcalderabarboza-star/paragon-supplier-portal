@@ -204,7 +204,8 @@ const CHROME_CLAIMS: readonly { readonly label: string; readonly re: RegExp }[] 
   { label: 'count interpolation', re: /\{\{\s*(quotations|lines|count|n|materials|rows)\s*\}\}/ },
 ];
 const claimsIn = (text: string) => CHROME_CLAIMS.filter((c) => c.re.test(text)).map((c) => c.label);
-const CHROME_KEYS = ['planGrid.header.subtitle', 'planGrid.meta.views', 'planGrid.honesty.title', 'planGrid.honesty.body', 'planGrid.edit.hint'];
+// PG-1 · `planGrid.meta.views` named the tabs in a sentence and is retired with the tab row it described.
+const CHROME_KEYS = ['planGrid.header.subtitle', 'planGrid.about.show', 'planGrid.about.hide', 'planGrid.honesty.title', 'planGrid.honesty.body', 'planGrid.edit.hint'];
 
 describe('PLN-1 #7 · the page chrome counts nothing and claims no "one figure"', () => {
   it('⚠ POPULATION CONTROL — every chrome key exists in both locales', () => {
@@ -225,7 +226,7 @@ describe('PLN-1 #7 · the page chrome counts nothing and claims no "one figure"'
 
   it.each(['en', 'id'] as const)('%s — the edit hint names EVERY editable measure the view shows, from the registry', async (lng) => {
     await i18n.changeLanguage(lng);
-    renderWithProviders(<PlanGrid />, { route: '/buyer/plan-grid' });
+    renderWithProviders(<PlanGrid />, { route: '/buyer/plan-grid?view=rm-plan' });
     const hint = (await screen.findByTestId('tp-edit-hint')).textContent ?? '';
     const editable = RM_MEASURES.filter((m) => measureOf(m).editable !== false);
     // population control: the registry has more than one editable measure here
@@ -328,6 +329,8 @@ describe('R2 · on the page — the reading, the flag and the confirm', () => {
       { route: '/buyer/plan-grid' },
     );
     fireEvent.click(screen.getByText('seed'));
+    // PG-1: the planned changes open in a drawer, from the bar.
+    fireEvent.click(screen.getByTestId('plan-changes-toggle'));
     expect(screen.getByTestId(`plan-draft-reading-${ref}`).textContent).toBe(reading);
     expect(screen.queryByTestId(`plan-draft-magnitude-${ref}`) !== null).toBe(flagged);
     if (flagged) {

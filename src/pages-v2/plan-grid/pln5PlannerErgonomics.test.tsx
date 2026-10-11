@@ -315,28 +315,41 @@ describe('PLN-5 · a shortfall figure is coloured as the variance; the exception
 // ─── the chrome ─────────────────────────────────────────────────────────────
 
 describe('PLN-5 · the chrome is summarised, never removed', () => {
-  it('both honesty notices keep their WHOLE statement in the page, one line until "Details"', async () => {
+  it('PG-1 · both honesty statements are WHOLE in the page whether or not they are shown; "About this data" shows them', async () => {
     renderWithProviders(<PlanGrid />, { route: '/buyer/plan-grid' });
     const sandbox = screen.getByTestId('plan-honesty');
     expect(sandbox.textContent).toContain(planGridEn['planGrid.honesty.title']);
     expect(sandbox.textContent).toContain(planGridEn['planGrid.honesty.body']);
-    const toggle = screen.getByTestId('plan-honesty-toggle');
+    const somo = await screen.findByTestId('tp-banner');
+    expect(somo.textContent).toContain(planGridEn['planGrid.tp.banner.title']);
+    expect(somo.textContent).toContain(planGridEn['planGrid.tp.banner.body']);
+    const toggle = screen.getByTestId('plan-about-toggle');
+    expect(toggle).toHaveTextContent('About this data');
     expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.getByTestId('plan-about')).toHaveAttribute('hidden');
+    expect(screen.getByTestId('tp-about')).toHaveAttribute('hidden');
     fireEvent.click(toggle);
     expect(toggle).toHaveAttribute('aria-expanded', 'true');
-    const somo = await screen.findByTestId('tp-banner');
-    expect(somo.textContent).toContain(planGridEn['planGrid.tp.banner.body']);
+    expect(screen.getByTestId('plan-about')).not.toHaveAttribute('hidden');
+    expect(screen.getByTestId('tp-about')).not.toHaveAttribute('hidden');
+    // the page's sample marker is in sight throughout — it is not part of what folds
+    const marker = screen.getByText(/awaiting live PR producer/i);
+    expect(screen.getByTestId('plan-about').contains(marker)).toBe(false);
+    expect(screen.getByTestId('tp-about').contains(marker)).toBe(false);
   });
 
-  it('on the grid the publication panel folds to one line that states the draft; "Show panel" opens all of it', async () => {
-    renderWithProviders(<PlanGrid />, { route: '/buyer/plan-grid' });
-    const panel = await screen.findByTestId('publication-panel');
-    expect(panel).toHaveAttribute('data-open', 'false');
-    expect(screen.getByTestId('publication-summary').textContent).toMatch(/^No draft open for this grain · Published now: PUB-2026-08-RM-R2/);
+  it('PG-1 · the publication is one line in the strip; its panel opens in a drawer, not above the grid', async () => {
+    renderWithProviders(<PlanGrid />, { route: '/buyer/plan-grid?view=rm-plan' });
+    const summary = await screen.findByTestId('publication-summary');
+    expect(summary.textContent).toMatch(/^No draft open for this grain · Published now: PUB-2026-08-RM-R2/);
+    expect(screen.getByTestId('tp-strip').contains(summary)).toBe(true);
+    expect(screen.queryByTestId('publication-panel')).toBeNull();
     expect(screen.queryByTestId('publication-open')).toBeNull();
     fireEvent.click(screen.getByTestId('publication-toggle'));
     expect(await screen.findByTestId('publication-open')).toBeInTheDocument();
-    expect(screen.getByTestId('publication-panel')).toHaveAttribute('data-open', 'true');
+    const drawer = screen.getByTestId('publication-panel').closest('[role="dialog"]')!;
+    expect(drawer).not.toBeNull();
+    expect(within(drawer as HTMLElement).getByRole('heading', { name: 'Forecast publication' })).toBeInTheDocument();
   });
 
   it('KNOWN-GOOD: mounted on its own, the panel is the full panel it always was', async () => {
@@ -345,7 +358,7 @@ describe('PLN-5 · the chrome is summarised, never removed', () => {
     expect(screen.queryByTestId('publication-toggle')).toBeNull();
   });
 
-  it('the summary, the filters and the hint share the space the grid used to start below', async () => {
+  it('PG-1 · ONE strip states the view, what is short now, the counts and the forecast — above the filters', async () => {
     renderWithProviders(
       <PlanDraftProvider>
         <TimePhasedGrid viewId="rm-plan" />
@@ -353,8 +366,16 @@ describe('PLN-5 · the chrome is summarised, never removed', () => {
       { route: '/buyer/plan-grid' },
     );
     const summary = await screen.findByTestId('tp-summary');
-    // the summary sits in the filter row, not on a line of its own
-    expect(summary.parentElement).toBe(screen.getByTestId('tp-search').closest('label')!.parentElement);
+    const strip = screen.getByTestId('tp-strip');
+    await screen.findByTestId('publication-summary');
+    for (const id of ['tp-view-type', 'tp-short-now', 'publication-summary', 'publication-toggle']) {
+      expect(strip.contains(screen.getByTestId(id)), id).toBe(true);
+    }
+    expect(strip.contains(summary)).toBe(true);
+    expect(screen.getByTestId('tp-short-now').textContent).toMatch(/^[\d,]+ materials? short in \d{4}-\d{2}$/);
+    expect(strip.compareDocumentPosition(screen.getByTestId('tp-search')) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    // nothing else stands between the strip and the grid but the filter row
+    expect(screen.queryByTestId('tp-banner-toggle')).toBeNull();
   });
 });
 
@@ -435,8 +456,10 @@ describe('PLN-5 · the ID wording a planner reads (ruling)', () => {
     await i18n.changeLanguage('id');
     renderWithProviders(<PlanGrid />, { route: '/buyer/plan-grid' });
     expect(screen.getByTestId('plan-honesty').textContent).toContain('Ruang uji perencanaan');
-    expect(screen.getByTestId('plan-honesty-toggle').textContent).toBe('Rincian');
+    expect(screen.getByTestId('plan-about-toggle').textContent).toBe('Tentang data ini');
+    expect(screen.getByRole('tab', { name: 'Kekurangan bulan ini' })).toHaveAttribute('aria-selected', 'true');
     expect((await screen.findByTestId('publication-summary')).textContent).toMatch(/^Belum ada draf terbuka untuk satuan waktu ini/);
-    expect(screen.getByTestId('publication-toggle').textContent).toBe('Tampilkan panel');
+    expect(screen.getByTestId('publication-toggle').textContent).toBe('Publikasi prakiraan');
+    expect(screen.getByTestId('tp-short-now').textContent).toMatch(/material kurang di \d{4}-\d{2}$/);
   });
 });

@@ -32,7 +32,6 @@ import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import Button from '../../components/ui-v2/Button';
 import { Card } from '../../components/ui-v2/Card';
-import { LinkButton } from '../../components/ui-v2/Actions';
 import Data from '../../components/ui-v2/Data';
 import SectionHeading from '../../components/ui-v2/SectionHeading';
 import { Field, FieldList } from '../../components/ui-v2/Field';
@@ -82,13 +81,41 @@ export type CountedUnit = 'materialPeriod' | 'supplierLine' | 'firmAwaits';
 export const countedUnit = (t: TFunction, kind: CountedUnit, count: number): string =>
   t(`planGrid.publication.unit.${kind}`, { count, n: formatNumber(count) });
 
+/**
+ * PG-1 · the publication in ONE LINE, for the grid's summary strip: the open
+ * draft and how much of it is split, or that none is open, and what is
+ * published now. The panel itself opens in a drawer beside the grid — folded
+ * above it (PLN-5) it still took a row of the planner's screen, and unfolded it
+ * pushed the grid off the page.
+ */
+export const PublicationSummary: React.FC<{ grain: BucketGrain }> = ({ grain }) => {
+  const { t } = useTranslation();
+  const ws = usePublicationWorkspace();
+  const records = ws.data?.records ?? [];
+  const draft = draftOfGrain(records, grain);
+  const current = records.find((r) => r.state === 'Published' && r.grain === grain) ?? null;
+  const cover = draft ? allocationCoverage(draft) : null;
+  if (ws.isLoading) return null;
+  return (
+    <span className="min-w-0 truncate" data-testid="publication-summary">
+      {draft && cover
+        ? t('planGrid.publication.summaryDraft', {
+            id: draft.publicationId,
+            allocated: formatNumber(cover.allocated),
+            total: countedUnit(t, 'materialPeriod', cover.total),
+            firm: countedUnit(t, 'firmAwaits', unsignedFirmLines(draft.lines).length),
+          })
+        : t('planGrid.publication.summaryNoDraft')}
+      {current && <> · {t('planGrid.publication.current', { id: current.publicationId, version: current.planVersion })}</>}
+    </span>
+  );
+};
+
 const PublicationPanel: React.FC<{
   grain: BucketGrain;
-  /** PLN-5 · fold to a one-line summary, unfolded by `onToggle`. */
-  collapsible?: boolean;
-  open?: boolean;
-  onToggle?: () => void;
-}> = ({ grain, collapsible = false, open = true, onToggle }) => {
+  /** PG-1 · inside the drawer: no card and no heading — the drawer supplies both. */
+  bare?: boolean;
+}> = ({ grain, bare = false }) => {
   const { t } = useTranslation();
   const refusalText = useRefusalText();
   const ws = usePublicationWorkspace();
@@ -170,7 +197,6 @@ const PublicationPanel: React.FC<{
       return r.status === 'failed' ? (r.reason ?? 'failed') : null;
     });
 
-  const unit = (kind: CountedUnit, count: number): string => countedUnit(t, kind, count);
 
   const blockerText = (b: PublishBlocker): string => {
     if (b.kind === 'NO_LINES') return t('planGrid.publication.blocker.NO_LINES');
@@ -189,48 +215,10 @@ const PublicationPanel: React.FC<{
 
   if (ws.isLoading) return null;
 
-  const toggle = collapsible ? (
-    <LinkButton
-      className="shrink-0"
-      aria-expanded={open}
-      onClick={onToggle}
-      data-testid="publication-toggle"
-    >
-      {open ? t('planGrid.publication.fold') : t('planGrid.publication.unfold')}
-    </LinkButton>
-  ) : null;
-
-  if (collapsible && !open) {
-    const cover = draft ? allocationCoverage(draft) : null;
-    return (
-      <Card
-        as="section"
-        className="mb-2 flex items-center gap-3"
-        data-testid="publication-panel"
-        data-open="false"
-      >
-        <SectionHeading as="h3" className="shrink-0">{t('planGrid.publication.title')}</SectionHeading>
-        <span className="min-w-0 flex-1 truncate text-xs text-text-secondary" data-testid="publication-summary">
-          {draft && cover
-            ? t('planGrid.publication.summaryDraft', {
-                id: draft.publicationId,
-                allocated: formatNumber(cover.allocated),
-                total: unit('materialPeriod', cover.total),
-                firm: unit('firmAwaits', unsignedFirmLines(draft.lines).length),
-              })
-            : t('planGrid.publication.summaryNoDraft')}
-          {current && <> · {t('planGrid.publication.current', { id: current.publicationId, version: current.planVersion })}</>}
-        </span>
-        {toggle}
-      </Card>
-    );
-  }
-
-  return (
-    <Card as="section" className="mb-3" data-testid="publication-panel" data-open="true">
+  const body = (
+    <>
       <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
-        <SectionHeading as="h3">{t('planGrid.publication.title')}</SectionHeading>
-        {toggle}
+        {!bare && <SectionHeading as="h3">{t('planGrid.publication.title')}</SectionHeading>}
         {current && (
           <span className="text-xs text-text-secondary" data-testid="publication-current">
             {t('planGrid.publication.current', { id: current.publicationId, version: current.planVersion })}
@@ -301,6 +289,13 @@ const PublicationPanel: React.FC<{
       <div className="mt-3 border-t border-border-subtle pt-2 text-sm">
         <PublicationLedger records={records.filter((r) => r.grain === grain)} testId="publication-ledger-grid" />
       </div>
+    </>
+  );
+  return bare ? (
+    <section data-testid="publication-panel">{body}</section>
+  ) : (
+    <Card as="section" className="mb-3" data-testid="publication-panel">
+      {body}
     </Card>
   );
 };
@@ -385,7 +380,9 @@ const DraftBody: React.FC<{
       <div className="mt-2 flex flex-wrap items-center gap-3">
         {avail.publish.kind === 'held' ? (
           <>
-            <Button variant="outline" disabled={busy || blockers.length > 0} onClick={onPublish} data-testid="publication-publish">
+            {/* PG-1: Publish is the drawer's final commit — solid, unless the
+                destructive second ask stands open, whose confirmation then is. */}
+            <Button variant={asking ? 'outline' : 'primary'} disabled={busy || blockers.length > 0} onClick={onPublish} data-testid="publication-publish">
               {t('planGrid.publication.publish')}
             </Button>
             {blockers.length > 0 && (
@@ -411,7 +408,7 @@ const DraftBody: React.FC<{
             <span className="text-xs text-text-primary" data-testid="publication-discard-ask">
               {t('planGrid.publication.discardAsk', { id: draft.publicationId })}
             </span>
-            <Button variant="outline" disabled={busy} onClick={onDiscard} data-testid="publication-discard-yes">
+            <Button variant="primary" tone="critical" disabled={busy} onClick={onDiscard} data-testid="publication-discard-yes">
               {t('planGrid.publication.discardYes')}
             </Button>
             <Button variant="secondary" disabled={busy} onClick={() => setAsking(false)} data-testid="publication-discard-no">

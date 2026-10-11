@@ -598,7 +598,20 @@ export interface PlanFilter {
   /** Case-insensitive, on material code or description. */
   readonly search: string;
   readonly exceptionsOnly: boolean;
+  /**
+   * PG-1 · only the materials SHORT IN THIS BUCKET — "Shortages this month" is
+   * this with the horizon's first bucket. Absent or null lists every bucket.
+   */
+  readonly shortIn?: BucketId | null;
 }
+
+/**
+ * PG-1 · is the block short in `bucket`? Read off the block's own shortfall
+ * rows — the rows the grid prints in red — never off an aggregate, so the list
+ * and the cells cannot disagree about which month a material is short in.
+ */
+export const isShortIn = (b: PlanBlock, bucket: BucketId): boolean =>
+  b.rows.some((r) => r.measureId === 'confirmedDeficit' && (r.cells[bucket] ?? 0) > 0);
 
 export const DEFAULT_PLAN_FILTER: PlanFilter = { materialType: 'all', search: '', exceptionsOnly: false };
 export const DEFAULT_PLAN_SORT: PlanSort = { colId: 'materialCode', dir: 'asc' };
@@ -641,7 +654,8 @@ export function applyPlanView(
     (b) =>
       (filter.materialType === 'all' || b.materialType === filter.materialType) &&
       (q === '' || b.materialCode.toLowerCase().includes(q) || b.materialLabel.toLowerCase().includes(q)) &&
-      (!filter.exceptionsOnly || isPlanException(b.exceptions)),
+      (!filter.exceptionsOnly || isPlanException(b.exceptions)) &&
+      (!filter.shortIn || isShortIn(b, filter.shortIn)),
   );
   const byCode = (a: PlanBlock, b: PlanBlock) => a.materialCode.localeCompare(b.materialCode);
   if (filter.exceptionsOnly) {

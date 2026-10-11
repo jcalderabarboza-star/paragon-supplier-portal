@@ -63,7 +63,8 @@ export default {
         // DEFAULT as text would fail. soft (chip/banner tint) is unchanged.
         'warning': { DEFAULT: '#D97706', hover: '#8A5606', soft: '#FEF3D6' },
         // UI-1a: renamed from `danger` (operator ruling).
-        'critical': { DEFAULT: '#BB0000', soft: '#FCE4E4' },
+        // PG-1: `hover` is the solid critical button's pressed fill.
+        'critical': { DEFAULT: '#BB0000', hover: '#930000', soft: '#FCE4E4' },
         'info': { DEFAULT: '#1E5BAE', soft: '#E5F0FF' },
         // UI-1a: SAMPLE / ILLUSTRATIVE markers. Neutral and dashed, no hue of its
         // own — amber is for real warnings only (operator ruling).

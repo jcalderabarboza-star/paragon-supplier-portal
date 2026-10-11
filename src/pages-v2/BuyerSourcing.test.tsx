@@ -867,6 +867,11 @@ describe('BuyerSourcing — a supersede reads as a NEW RECORDED ACT (2e-c-4)', (
 
   it('says the existing rate is KEPT, not replaced', async () => {
     await withExistingPin();
+    // PG-1: the FX-rate confirmation is the shared pop-up — modal, counted, its commit solid.
+    expect(screen.getByTestId('fx-pin-dialog')).toHaveAttribute('role', 'dialog');
+    expect(screen.getByTestId('fx-pin-dialog')).toHaveAttribute('aria-modal', 'true');
+    expect(screen.getByTestId('fx-pin-dialog')).toHaveAttribute('data-solid-scope');
+    expect(screen.getByTestId('fx-pin-dialog').querySelectorAll('[data-solid]')).toHaveLength(1);
     expect(screen.getByTestId('fx-pin-dialog')).toHaveTextContent(
       /is not changed or deleted — it stays on the event/i,
     );

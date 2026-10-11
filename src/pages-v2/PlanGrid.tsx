@@ -12,14 +12,14 @@ import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
 import AppShellV2 from '../components/layout-v2/AppShellV2';
 import PageHeader from '../components/ui-v2/PageHeader';
-import PageMetaLine from '../components/ui-v2/PageMetaLine';
 import Data from '../components/ui-v2/Data';
 import LivenessPill from '../components/ui-v2/LivenessPill';
 import { Card } from '../components/ui-v2/Card';
 import StatusPill from '../components/ui-v2/StatusPill';
 import { dataCell, nameCell } from './plan-grid/cells';
 import IntakeReviewView from './plan-grid/IntakeReviewView';
-import CompactNotice from './plan-grid/CompactNotice';
+import Notice from '../components/ui-v2/Notice';
+import { LinkButton } from '../components/ui-v2/Actions';
 import FullScreenSection from './plan-grid/FullScreenSection';
 import SubTabs from '../components/ui-v2/SubTabs';
 import TimePhasedGrid from './plan-grid/TimePhasedGrid';
@@ -81,7 +81,7 @@ interface AwardDisplayRow extends AwardScenarioRow {
  * named for); the two sections that were the whole page until B2 keep their own
  * tabs and are otherwise untouched — nothing is removed, nothing re-derived.
  */
-type PlanTab = 'rm' | 'pm' | 'exceptions' | 'award' | 'intake';
+type PlanTab = 'short-now' | 'exceptions' | 'rm' | 'pm' | 'award' | 'intake';
 
 /**
  * PLN-3 · the view a link opens on — `?view=<ViewId>`. The retired Intake Review
@@ -98,7 +98,10 @@ const TAB_OF_VIEW: Readonly<Record<string, PlanTab>> = {
 const PlanGrid: React.FC = () => {
   const { t } = useTranslation();
   const [params] = useSearchParams();
-  const [tab, setTabState] = useState<PlanTab>(() => TAB_OF_VIEW[params.get('view') ?? ''] ?? 'rm');
+  // PG-1 · the page opens on the planner's first question of the day — what is
+  // short NOW — unless a link names another view.
+  const [tab, setTabState] = useState<PlanTab>(() => TAB_OF_VIEW[params.get('view') ?? ''] ?? 'short-now');
+  const [aboutOpen, setAboutOpen] = useState(false);
   // PLN-1 · the grain of the plan tab the planner was last in. The Exceptions
   // tab follows it — it was fixed at the monthly grain, so weekly exceptions
   // had no list of their own.
@@ -206,49 +209,54 @@ const PlanGrid: React.FC = () => {
 
   return (
     <AppShellV2>
-      {/* PLN-5 summarised the chrome so the grid starts higher: the sandbox
-          notice in one line, tight tabs. UI-1b took back the compact header —
-          one page-title size everywhere (operator ruling, 9 October 2026). */}
+      {/* PG-1 · the frame is the title, the views and — inside each view — one
+          summary strip. The sample marker stays in the header, always in sight;
+          the statements it stands for are "About this data", in the DOM whether
+          or not they are shown. UI-1b: one page-title size everywhere. */}
       <PageHeader
         breadcrumb={PLAN_CRUMB}
         title={t('planGrid.header.title')}
-        subtitle={t('planGrid.header.subtitle')}
         actions={<LivenessPill capability="purchaseRequisitions" />}
       />
 
-      <PageMetaLine className="mb-2">
-        {/* PLN-1 · it read "3 quotations, 4 intake lines" — two counts from the
-            two SECONDARY tabs, standing over a 1,200-material plan. It names
-            the tabs by their own labels now, and counts nothing: each view's
-            summary line is where a count is derived. */}
-        {t('planGrid.meta.views', {
-          award: t('planGrid.tab.award'),
-          intake: t('planGrid.tab.intake'),
-        })}
-      </PageMetaLine>
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+        <SubTabs<PlanTab>
+          variant="chips"
+          value={tab}
+          onChange={setTab}
+          options={[
+            { id: 'short-now', label: t(`planGrid.tab.shortNow.${planGrain}`) },
+            { id: 'exceptions', label: t('planGrid.tab.exceptions') },
+            { id: 'rm', label: t('planGrid.tab.rm') },
+            { id: 'pm', label: t('planGrid.tab.pm') },
+            { id: 'award', label: t('planGrid.tab.award') },
+            { id: 'intake', label: t('planGrid.tab.intake') },
+          ]}
+        />
+        <LinkButton aria-expanded={aboutOpen} aria-controls="plan-about" onClick={() => setAboutOpen((o) => !o)} data-testid="plan-about-toggle">
+          {t(aboutOpen ? 'planGrid.about.hide' : 'planGrid.about.show')}
+        </LinkButton>
+      </div>
 
-      {/* Honest framing: read-only sandbox, SIMULATED, nothing pushed */}
-      <CompactNotice tone="info" title={t('planGrid.honesty.title')} body={t('planGrid.honesty.body')} testId="plan-honesty" />
+      {/* Honest framing: a sandbox, SIMULATED, nothing pushed until pushed. */}
+      <div id="plan-about" hidden={!aboutOpen} data-testid="plan-about">
+        <p className="mb-2 text-sm text-text-secondary">{t('planGrid.header.subtitle')}</p>
+        <Notice tone="info" className="mb-2" title={t('planGrid.honesty.title')} data-testid="plan-honesty">
+          {t('planGrid.honesty.body')}
+        </Notice>
+      </div>
 
-      <SubTabs<PlanTab>
-        className="mb-3"
-        value={tab}
-        onChange={setTab}
-        options={[
-          { id: 'rm', label: t('planGrid.tab.rm') },
-          { id: 'pm', label: t('planGrid.tab.pm') },
-          { id: 'exceptions', label: t('planGrid.tab.exceptions') },
-          { id: 'award', label: t('planGrid.tab.award') },
-          { id: 'intake', label: t('planGrid.tab.intake') },
-        ]}
-      />
-
-      {/* B3 · ONE overlay for the three planning views, held for the page's
-          life: switching tabs keeps a planned change, a reload drops it. */}
+      {/* B3 · ONE overlay for the planning views, held for the page's life:
+          switching views keeps a planned change, a reload drops it. */}
       <PlanDraftProvider>
-        {tab === 'rm' && <TimePhasedGrid viewId="rm-plan" />}
-        {tab === 'pm' && <TimePhasedGrid viewId="pm-plan" />}
-        {tab === 'exceptions' && <TimePhasedGrid key={`exceptions-${planGrain}`} viewId="exceptions" currentGrain={planGrain} />}
+        {tab === 'short-now' && (
+          <TimePhasedGrid key={`short-now-${planGrain}`} viewId="exceptions" currentGrain={planGrain} shortNow aboutOpen={aboutOpen} />
+        )}
+        {tab === 'rm' && <TimePhasedGrid viewId="rm-plan" aboutOpen={aboutOpen} />}
+        {tab === 'pm' && <TimePhasedGrid viewId="pm-plan" aboutOpen={aboutOpen} />}
+        {tab === 'exceptions' && (
+          <TimePhasedGrid key={`exceptions-${planGrain}`} viewId="exceptions" currentGrain={planGrain} aboutOpen={aboutOpen} />
+        )}
       </PlanDraftProvider>
 
       {/* ── Award scenario — what-if overlay (full-screen-capable) ───────── */}

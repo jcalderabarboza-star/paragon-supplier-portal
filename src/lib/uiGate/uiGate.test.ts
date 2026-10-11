@@ -203,7 +203,7 @@ describe('UI gate 3 · contrast', () => {
   /** `success` is 4.26:1 on the critical tint, so it is held to its own. */
   const TEXT_ON_OWN_TINT: [string, string][] = [['success', 'success.soft']];
   /** Solid fills that carry white text. */
-  const WHITE_ON = ['action', 'action.hover', 'action.muted', 'teal.hover', 'navy', 'success', 'critical', 'info'];
+  const WHITE_ON = ['action', 'action.hover', 'action.muted', 'teal.hover', 'navy', 'success', 'critical', 'critical.hover', 'info'];
   /** Fills that are NOT text colours — each must fail, or the split is not needed. */
   const NOT_TEXT = ['teal', 'warning'];
 

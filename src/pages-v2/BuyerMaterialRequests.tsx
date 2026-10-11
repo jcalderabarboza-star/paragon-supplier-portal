@@ -922,7 +922,7 @@ const BuyerMaterialRequests: React.FC = () => {
                   </p>
                   <div className="flex items-center gap-3">
                     <Button
-                      variant="outline" tone="critical"
+                      variant="primary" tone="critical"
                       onClick={rejectSelected}
                       /* A COURTESY MIRROR of MATERIALREQUEST_REFUSAL_AUTHORED,
                          never the policy: the hook stands behind any caller

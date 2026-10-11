@@ -25,13 +25,33 @@ describe('Button marks what a container counts', () => {
         <Button variant="primary">Save</Button>
         <Button variant="outline">Edit</Button>
         <Button variant="secondary">Close</Button>
-        <Button variant="primary" tone="critical">Cancel event</Button>
+        <Button variant="outline" tone="critical">Cancel event</Button>
         <Button>Default</Button>
       </>,
     );
     expect(screen.getByRole('button', { name: 'Save' })).toHaveAttribute('data-solid');
     for (const name of ['Edit', 'Close', 'Cancel event', 'Default']) {
       expect(screen.getByRole('button', { name })).not.toHaveAttribute('data-solid');
+    }
+  });
+
+  it('PG-1 · a destructive FINAL commit is solid in the critical colour, and is counted', () => {
+    render(
+      <>
+        <Button variant="primary" tone="critical">Yes, cancel the event</Button>
+        <Button variant="outline" tone="critical">Cancel event</Button>
+        <Button tone="critical">Remove</Button>
+      </>,
+    );
+    const commit = screen.getByRole('button', { name: 'Yes, cancel the event' });
+    expect(commit).toHaveAttribute('data-solid');
+    expect(commit).toHaveClass('bg-critical', 'text-white', 'border-critical');
+    expect(commit).not.toHaveClass('bg-action');
+    // the first press, which only asks, is the critical OUTLINE it always was
+    for (const name of ['Cancel event', 'Remove']) {
+      const ask = screen.getByRole('button', { name });
+      expect(ask).not.toHaveAttribute('data-solid');
+      expect(ask).toHaveClass('bg-transparent', 'text-critical');
     }
   });
 });
@@ -68,15 +88,37 @@ describe('a drawer', () => {
     ).toThrow(oneSolidRefusal('a drawer', ['Save draft', 'Approve']));
   });
 
-  it('a destructive act beside the commit is not a second solid', () => {
+  it('a destructive act that only ASKS, beside the commit, is not a second solid', () => {
     render(
       wrap(
-        <SidePanel open onClose={() => {}} title="Event" footerActions={<><Button variant="primary" tone="critical">Cancel event</Button><Button variant="primary">Award</Button></>}>
+        <SidePanel open onClose={() => {}} title="Event" footerActions={<><Button variant="outline" tone="critical">Cancel event</Button><Button variant="primary">Award</Button></>}>
           x
         </SidePanel>,
       ),
     );
     expect(solidButtonsOf(screen.getByRole('dialog')).map((b) => b.textContent)).toEqual(['Award']);
+  });
+
+  it('⚠️ PG-1 · a destructive final commit IS the one solid — and a second beside it is REFUSED', () => {
+    const { unmount } = render(
+      wrap(
+        <SidePanel open onClose={() => {}} title="Event" footerActions={<><Button variant="secondary">Keep it</Button><Button variant="primary" tone="critical">Yes, cancel</Button></>}>
+          x
+        </SidePanel>,
+      ),
+    );
+    expect(solidButtonsOf(screen.getByRole('dialog')).map((b) => b.textContent)).toEqual(['Yes, cancel']);
+    unmount();
+    quiet();
+    expect(() =>
+      render(
+        wrap(
+          <SidePanel open onClose={() => {}} title="Event" footerActions={<><Button variant="primary" tone="critical">Yes, cancel</Button><Button variant="primary">Award</Button></>}>
+            x
+          </SidePanel>,
+        ),
+      ),
+    ).toThrow(oneSolidRefusal('a drawer', ['Yes, cancel', 'Award']));
   });
 });
 

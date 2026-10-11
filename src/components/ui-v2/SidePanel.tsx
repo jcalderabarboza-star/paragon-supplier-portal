@@ -64,6 +64,8 @@ interface SidePanelProps {
   title: string;
   children: React.ReactNode;
   footerActions?: React.ReactNode;
+  /** PG-1: a drawer that holds a table — the planned changes, the publication ledger. */
+  wide?: boolean;
 }
 
 const SidePanel: React.FC<SidePanelProps> = ({
@@ -72,6 +74,7 @@ const SidePanel: React.FC<SidePanelProps> = ({
   title,
   children,
   footerActions,
+  wide = false,
 }) => {
   const { t } = useTranslation();
   // UI-1e: the drawer's final commit is its one solid button.
@@ -103,7 +106,8 @@ const SidePanel: React.FC<SidePanelProps> = ({
         data-solid-scope=""
         role="dialog"
         aria-modal="true"
-        className="fixed top-0 right-0 z-50 h-screen w-full sm:w-[480px] bg-bg-surface shadow-md border-l border-border-subtle flex flex-col animate-panel-in"
+        data-wide={wide ? '' : undefined}
+        className={`fixed top-0 right-0 z-50 h-screen w-full ${wide ? 'sm:w-[760px]' : 'sm:w-[480px]'} max-w-full bg-bg-surface shadow-md border-l border-border-subtle flex flex-col animate-panel-in`}
       >
         <header className="flex items-center justify-between gap-4 px-6 py-5 border-b border-border-subtle">
           <SectionHeading as="h2" className="truncate">
