@@ -1142,7 +1142,7 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
                     // classified fault says a second ask can answer differently.
                     settleWatch[selected.id]?.fault ? (
                       SETTLE_FAULT_RETRYABLE[settleWatch[selected.id].fault!] ? (
-                        <Button variant="outline" onClick={() => retrySettle(selected.id)}>
+                        <Button variant="primary" onClick={() => retrySettle(selected.id)}>
                           {t('buyerInvoices.action.retrySettle')}
                         </Button>
                       ) : (
@@ -1160,7 +1160,7 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
                     // answers for; the slot carries the way back instead.
                     availabilityOfVerb('t_invoice_reapprove').kind === 'held' ? (
                       <Button
-                        variant="outline"
+                        variant="primary"
                         disabled={approveMutation.isPending}
                         onClick={() => handleApprove(true)}
                       >
@@ -1182,7 +1182,7 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
                     <HandoffNotice availability={commitAvailability} testId="handoff-commit" />
                   ) : (
                     <Button
-                      variant="outline"
+                      variant="primary"
                       // Both commits gate this slot now. Leaving it on the
                       // release alone would leave the approve button live while
                       // its own dispatch was in flight.
@@ -1239,7 +1239,7 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
                   >
                     {t('buyerInvoices.action.back')}
                   </Button>
-                  <Button variant="outline" icon={Send} onClick={sendRemittance}>
+                  <Button variant="primary" icon={Send} onClick={sendRemittance}>
                     {t('buyerInvoices.action.sendToSupplier')}
                   </Button>
                 </>

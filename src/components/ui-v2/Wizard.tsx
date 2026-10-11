@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useRef } from 'react';
+import { useOneSolid } from './oneSolid';
 import SectionHeading from './SectionHeading';
 import { useTranslation } from 'react-i18next';
 import { Check } from 'lucide-react';
@@ -40,6 +41,10 @@ const Wizard: React.FC<WizardProps> = ({
   const current = steps[currentStep];
   const isLast = currentStep === steps.length - 1;
   const nextValid = isStepValid ? isStepValid(currentStep) : true;
+  // UI-1e: the wizard's final commit — the last step's button — is its one
+  // solid button. "Next" goes somewhere and commits nothing, so it is an outline.
+  const rootRef = useRef<HTMLDivElement>(null);
+  useOneSolid(rootRef, 'a wizard');
 
   const goNext = () => {
     if (!nextValid) return;
@@ -53,6 +58,8 @@ const Wizard: React.FC<WizardProps> = ({
 
   return (
     <div
+      ref={rootRef}
+      data-solid-scope=""
       className={`bg-bg-surface rounded-lg shadow-md border border-border-subtle flex flex-col w-full max-w-4xl max-h-[90vh] ${className}`}
     >
       {/* Stepper */}
@@ -138,7 +145,7 @@ const Wizard: React.FC<WizardProps> = ({
           >
             {t('wizard.back')}
           </Button>
-          <Button variant="outline" onClick={goNext} disabled={!nextValid}>
+          <Button variant={isLast ? 'primary' : 'outline'} onClick={goNext} disabled={!nextValid}>
             {isLast ? completeLabel : t('wizard.next')}
           </Button>
         </div>

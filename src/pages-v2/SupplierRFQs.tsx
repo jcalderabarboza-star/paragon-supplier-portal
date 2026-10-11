@@ -1507,7 +1507,7 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
                 {t('rfqs.panel.cancel')}
               </Button>
               <Button
-                variant="outline"
+                variant="primary"
                 icon={Send}
                 // 2e-b-1 — disabled while an unreadable lead time stands, and
                 // while a same-day acknowledgement is owed. `submitQuote` re-checks

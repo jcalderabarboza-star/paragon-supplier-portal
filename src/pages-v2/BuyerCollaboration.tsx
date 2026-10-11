@@ -311,7 +311,7 @@ const ReasonPanel: React.FC<{
             {copy.cancel}
           </Button>
           <Button
-            variant="outline"
+            variant="primary"
             data-testid={testIds.commit}
             disabled={pending || blank || withheld}
             onClick={onCommit}

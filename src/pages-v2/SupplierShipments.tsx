@@ -1455,7 +1455,7 @@ const SupplierShipments: React.FC = () => {
                 {t('supplierShipments.action.cancel')}
               </Button>
               <Button
-                variant="outline"
+                variant="primary"
                 icon={Send}
                 onClick={doSubmitAsn}
                 disabled={submitAsnMutation.isPending}

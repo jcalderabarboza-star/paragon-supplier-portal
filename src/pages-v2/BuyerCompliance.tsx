@@ -1051,7 +1051,7 @@ const BuyerCompliance: React.FC = () => {
                   {t('compliance.request.action.back')}
                 </Button>
                 <Button
-                  variant="outline"
+                  variant="primary"
                   data-testid="doc-request-commit"
                   disabled={!reqComplete || reqBusy}
                   onClick={() => {
@@ -1063,7 +1063,7 @@ const BuyerCompliance: React.FC = () => {
               </>
             ) : (
               <Button
-                variant="outline"
+                variant="primary"
                 data-testid="doc-request-review"
                 disabled={!reqComplete}
                 onClick={() => setReqConfirming(true)}

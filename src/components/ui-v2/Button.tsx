@@ -28,6 +28,10 @@ import { LucideIcon } from 'lucide-react';
 // is every other action. The default is still `'outline'`, so solid is never
 // the shape of forgetting to choose, and `solidButtonRetired.guard.test.ts`
 // holds where a solid button may stand and that a page has at most one.
+//
+// UI-1e (operator ruling, 11 October 2026): and the FINAL COMMIT inside a
+// drawer, a wizard or a dialog — one per container. The container counts what
+// it rendered and refuses a second (`oneSolid.ts`).
 // UI-1c-3: ONE HEIGHT, 40px — the height of a form control, so a button and an
 // input sit on one line in a filter row. `className` is layout only.
 type Variant = 'primary' | 'secondary' | 'outline';
@@ -79,6 +83,8 @@ const Button: React.FC<ButtonProps> = ({
   return (
     <button
       type="button"
+      // UI-1e: a container counts its solid buttons by this mark (`oneSolid.ts`).
+      data-solid={variant === 'primary' && tone !== 'critical' ? '' : undefined}
       className={`${buttonClass(variant, tone)} ${className}`}
       {...rest}
     >

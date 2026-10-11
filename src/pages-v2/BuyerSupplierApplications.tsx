@@ -711,7 +711,7 @@ const BuyerSupplierApplications: React.FC = () => {
             </p>
             <div className="flex items-center gap-3">
               <Button
-                variant="outline"
+                variant="primary"
                 onClick={raiseApplication}
                 disabled={!raiseComplete || submit.isPending}
                 data-testid="application-raise-commit"
@@ -928,7 +928,7 @@ const BuyerSupplierApplications: React.FC = () => {
               <div className="flex items-center gap-3">
                 {reviewAvailability.kind === 'held' ? (
                   <Button
-                    variant="outline"
+                    variant="primary"
                     onClick={startReviewSelected}
                     disabled={startReview.isPending}
                     data-testid="application-start-review"
@@ -954,7 +954,7 @@ const BuyerSupplierApplications: React.FC = () => {
                 {decideAvailability.kind === 'held' ? (
                   <>
                     <Button
-                      variant="outline"
+                      variant="primary"
                       onClick={() => setPending('approve')}
                       data-testid="application-approve"
                     >
@@ -1033,7 +1033,7 @@ const BuyerSupplierApplications: React.FC = () => {
                 </p>
                 <div className="flex items-center gap-3">
                   <Button
-                    variant="outline"
+                    variant="outline" tone="critical"
                     onClick={rejectSelected}
                     disabled={!canCommitReject || reject.isPending}
                     data-testid="application-reject-commit"

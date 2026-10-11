@@ -52,7 +52,8 @@
 // exists to catch a REGRESSION of this line, not to hold the property up.
 // ────────────────────────────────────────────────────────────────────────────
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
+import { useOneSolid } from './oneSolid';
 import SectionHeading from './SectionHeading';
 import { X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -73,6 +74,9 @@ const SidePanel: React.FC<SidePanelProps> = ({
   footerActions,
 }) => {
   const { t } = useTranslation();
+  // UI-1e: the drawer's final commit is its one solid button.
+  const panelRef = useRef<HTMLElement>(null);
+  useOneSolid(panelRef, 'a drawer');
   // Hooks run unconditionally and the early return sits BELOW them — the
   // ordering is load-bearing, not stylistic.
   useEffect(() => {
@@ -95,6 +99,8 @@ const SidePanel: React.FC<SidePanelProps> = ({
         className="fixed inset-0 z-40 bg-navy/40 animate-overlay-in"
       />
       <aside
+        ref={panelRef}
+        data-solid-scope=""
         role="dialog"
         aria-modal="true"
         className="fixed top-0 right-0 z-50 h-screen w-full sm:w-[480px] bg-bg-surface shadow-md border-l border-border-subtle flex flex-col animate-panel-in"

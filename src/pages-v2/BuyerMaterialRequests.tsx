@@ -715,7 +715,7 @@ const BuyerMaterialRequests: React.FC = () => {
 
             <div className="flex items-center gap-3">
               <Button
-                variant="outline"
+                variant="primary"
                 onClick={raiseRequest}
                 disabled={!raiseComplete || submit.isPending}
                 data-testid="material-request-raise-commit"
@@ -842,7 +842,7 @@ const BuyerMaterialRequests: React.FC = () => {
             {selected.status === 'Submitted' &&
               (reviewAvailability.kind === 'held' ? (
                 <Button
-                  variant="outline"
+                  variant="primary"
                   onClick={startReviewSelected}
                   disabled={startReview.isPending}
                   data-testid="material-request-start-review"
@@ -868,7 +868,7 @@ const BuyerMaterialRequests: React.FC = () => {
               ) : pending === null ? (
                 <div className="flex items-center gap-3">
                   <Button
-                    variant="outline"
+                    variant="primary"
                     onClick={() => setPending('approve')}
                     data-testid="material-request-approve"
                   >
@@ -892,7 +892,7 @@ const BuyerMaterialRequests: React.FC = () => {
                   </p>
                   <div className="flex items-center gap-3">
                     <Button
-                      variant="outline"
+                      variant="primary"
                       onClick={approveSelected}
                       disabled={approve.isPending}
                       data-testid="material-request-approve-commit"
@@ -922,7 +922,7 @@ const BuyerMaterialRequests: React.FC = () => {
                   </p>
                   <div className="flex items-center gap-3">
                     <Button
-                      variant="outline"
+                      variant="outline" tone="critical"
                       onClick={rejectSelected}
                       /* A COURTESY MIRROR of MATERIALREQUEST_REFUSAL_AUTHORED,
                          never the policy: the hook stands behind any caller

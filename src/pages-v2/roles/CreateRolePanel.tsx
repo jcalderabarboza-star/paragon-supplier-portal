@@ -245,7 +245,7 @@ const CreateRolePanel: React.FC<{ onGranted: () => void }> = ({ onGranted }) => 
         <div>
           {/* DP2-BUTTON-01: OUTLINE. Creating a session-scoped role is reversible
               by reloading; solid stays reserved for irreversible commits. */}
-          <Button type="submit" variant="outline" data-testid="role-create-submit">
+          <Button type="submit" variant="primary" data-testid="role-create-submit">
             {t('roles.page.createSubmit')}
           </Button>
         </div>

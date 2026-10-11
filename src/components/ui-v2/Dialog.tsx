@@ -2,6 +2,7 @@ import React, { useEffect, useId, useRef } from 'react';
 import SectionHeading from './SectionHeading';
 import { X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { useOneSolid } from './oneSolid';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ADM-1 · THE POP-UP DIALOG. A centred modal for a short form: the role
@@ -42,6 +43,8 @@ const Dialog: React.FC<DialogProps> = ({
   const { t } = useTranslation();
   const titleId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
+  // UI-1e: the dialog's final commit is its one solid button.
+  useOneSolid(panelRef, 'a dialog');
   // Held in a ref so the effect below does not re-run (and re-steal focus)
   // every time a parent re-renders with a fresh `onClose` closure.
   const closeRef = useRef(onClose);
@@ -104,6 +107,7 @@ const Dialog: React.FC<DialogProps> = ({
       />
       <div
         ref={panelRef}
+        data-solid-scope=""
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}

@@ -841,6 +841,21 @@ nav groups under one neutral key, `nav.glossary`.
   stand — the header's primary slot, or a routed page's own file — and that a
   page has at most one. **Derive which pages have one from that guard's
   population, never from a sentence here.**
+
+  ⚠️ **AND SINCE UI-1e (2026-10-11, operator ruling) THE FINAL COMMIT INSIDE A
+  DRAWER, A WIZARD OR A DIALOG IS SOLID TOO — ONE PER CONTAINER.** A wizard's is
+  its last step's button ("Next" is an outline); a drawer's and a dialog's is the
+  affirmative act that ends the work in it. A commit that REFUSES a document is a
+  destructive act and takes `tone="critical"`, which is an outline; a button that
+  only steps forward, raises a toast or goes to another page is not a commit.
+  **HOW MANY is held by the container, not by a scan:** `SidePanel`, `Dialog` and
+  `Wizard` count the solid buttons they RENDERED and refuse a second
+  (`components/ui-v2/oneSolid.ts` — thrown in development and in every spec,
+  logged in a production build). A source scan cannot hold it, because a footer
+  is a ternary over the document's state and two solid buttons in one file may
+  never stand on screen together. ⚠️ **A STATE NO SPEC OPENS IS A STATE THAT
+  COUNT HAS NEVER RUN ON** — the visible walk reads the console for it. The two
+  header actions that only say "not available yet" are outlines until built.
 - Semantic color (green/amber/red) is ONLY for true state, in soft/muted
   variants — never saturated decoration. If a chip's color doesn't inform a
   decision, it goes neutral.

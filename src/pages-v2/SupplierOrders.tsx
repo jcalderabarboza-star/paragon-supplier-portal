@@ -694,7 +694,7 @@ const SupplierOrders: React.FC = () => {
                     // claim TRUE now is `effectivePanelMode` (see its note): the
                     // mode itself is gated, so this stays the single notice.
                     confirmAvailability.kind === 'held' ? (
-                      <Button variant="outline" onClick={startEditing}>
+                      <Button variant="primary" onClick={startEditing}>
                         {t('po.confirm.action')}
                       </Button>
                     ) : (
@@ -704,7 +704,7 @@ const SupplierOrders: React.FC = () => {
                       />
                     )
                   ) : mayShip(selectedLive ?? selected) ? (
-                    <Button variant="outline" onClick={goToASN} data-testid="po-create-asn">
+                    <Button variant="primary" onClick={goToASN} data-testid="po-create-asn">
                       {t('supplierOrders.action.createAsn')}
                     </Button>
                   ) : null}
@@ -752,7 +752,7 @@ const SupplierOrders: React.FC = () => {
                     {t('supplierOrders.action.close')}
                   </Button>
                   {selected && mayShip(selectedLive ?? selected) && (
-                    <Button variant="outline" icon={Truck} onClick={goToASN}>
+                    <Button variant="primary" icon={Truck} onClick={goToASN}>
                       {t('supplierOrders.action.createAsnNow')}
                     </Button>
                   )}

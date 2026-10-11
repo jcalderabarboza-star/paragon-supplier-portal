@@ -838,7 +838,7 @@ const SupplierDocuments: React.FC = () => {
             {!uploaded &&
               (supplyAvailability.kind === 'held' ? (
                 <Button
-                  variant="outline"
+                  variant="primary"
                   icon={Upload}
                   disabled={!declarationComplete(form) || pending}
                   onClick={() => {

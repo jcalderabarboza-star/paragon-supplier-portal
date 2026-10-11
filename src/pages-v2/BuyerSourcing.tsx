@@ -3750,7 +3750,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                       </span>
                     ) : rfqVerbs.publish.kind === 'held' ? (
                       <Button
-                        variant="outline"
+                        variant="primary"
                         icon={Send}
                         disabled={publishMutation.isPending}
                         onClick={handlePublish}
@@ -3816,7 +3816,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                     nextStage !== null &&
                     (rfqVerbs.advance.kind === 'held' ? (
                       <Button
-                        variant="outline"
+                        variant="primary"
                         icon={FastForward}
                         disabled={advanceMutation.isPending || asking === 'advance'}
                         onClick={openAdvance}
@@ -4710,7 +4710,9 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                         itself in the comparison cells above. */}
                     {rfqVerbs.award.kind === 'held' ? (
                       <Button
-                        variant="outline"
+                        // UI-1e: the final commit is the answer to the second question;
+                        // while it is asked, this button is no longer the last word.
+                        variant={asking === 'award' ? 'outline' : 'primary'}
                         icon={Trophy}
                         disabled={
                           !selectedQuoteId ||
@@ -4751,7 +4753,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                       </p>
                       <div className="flex flex-wrap gap-2">
                         <Button
-                          variant="outline"
+                          variant="primary"
                           icon={Trophy}
                           disabled={awardMutation.isPending}
                           onClick={handleAward}

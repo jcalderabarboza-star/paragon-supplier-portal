@@ -667,7 +667,7 @@ const SupplierInvoices: React.FC = () => {
               )}
               {panelMode === 'remittance' && (
                 <Button
-                  variant="outline"
+                  variant="primary"
                   icon={Download}
                   onClick={() =>
                     toast({
@@ -829,7 +829,7 @@ const SupplierInvoices: React.FC = () => {
             {/* Disabled-under-refusal is UX; the gate in `submitNewInvoice` is
                 what guarantees no misread amount is dispatched. */}
             <Button
-              variant="outline"
+              variant="primary"
               disabled={createMutation.isPending || !newPoRef || !draftRead.ok}
               onClick={submitNewInvoice}
             >
