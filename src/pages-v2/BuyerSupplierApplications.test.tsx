@@ -312,6 +312,10 @@ describe('the walk — pick it up, then decide it', () => {
 
     fireEvent.click(await screen.findByTestId('application-reject'));
     const commit = await screen.findByTestId('application-reject-commit');
+    // PG-1: the destructive final commit is the drawer's ONE solid button, in the critical colour.
+    expect(commit).toHaveAttribute('data-solid');
+    expect(commit).toHaveClass('bg-critical', 'text-white');
+    expect(commit.closest('[data-solid-scope]')!.querySelectorAll('[data-solid]')).toHaveLength(1);
 
     // ⚠️ THE COMMIT IS SHUT UNTIL SOMEBODY WRITES SOMETHING — the courtesy
     // mirror of `APPLICATION_REFUSAL_AUTHORED`, which stands behind any caller

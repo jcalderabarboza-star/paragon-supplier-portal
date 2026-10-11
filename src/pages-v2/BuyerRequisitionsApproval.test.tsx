@@ -104,6 +104,10 @@ describe('⚠️ §67 · REJECT CARRIES ITS REASON, AND THE COMMIT IS DISABLED U
 
     fireEvent.click(screen.getByTestId('pr-reject-open'));
     const confirm = await screen.findByTestId('pr-reject-confirm');
+    // PG-1: the destructive final commit is the drawer's ONE solid button, in the critical colour.
+    expect(confirm).toHaveAttribute('data-solid');
+    expect(confirm).toHaveClass('bg-critical', 'text-white');
+    expect(confirm.closest('[data-solid-scope]')!.querySelectorAll('[data-solid]')).toHaveLength(1);
     // A dismissible capture beside a required field is how a required thing
     // becomes a suggestion. It is not dismissible and it is not pressable.
     expect(confirm).toBeDisabled();

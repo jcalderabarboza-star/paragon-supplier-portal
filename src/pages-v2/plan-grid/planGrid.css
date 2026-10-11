@@ -52,3 +52,20 @@
 .plan-dsg .dsg-cell-header {
   font-size: 0.75rem;
 }
+
+/* PG-1 · the plan reads in bands of MATERIALS, not of rows: every other
+ * material's rows stand on the neutral grey, and a material's first row carries a
+ * rule above it, so a block of supplier rows stays one thing to the eye however
+ * far the grid is scrolled. The row under the pointer takes the action tint. The
+ * sticky cells take the same fills, or the bucket figures would show through. */
+.tp-grid .dsg-row.tp-band .dsg-cell {
+  background: theme('colors.bg-hover');
+}
+
+.tp-grid .dsg-row.tp-head .dsg-cell {
+  box-shadow: inset 0 1px 0 theme('colors.border-input');
+}
+
+.tp-grid .dsg-row:not(.dsg-row-header):hover .dsg-cell {
+  background: theme('colors.action.soft');
+}

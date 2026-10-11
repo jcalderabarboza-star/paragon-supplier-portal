@@ -198,6 +198,11 @@ describe('3 · award and cancel ask a second time', () => {
     expect(rfqStore.get('rfq-002')!.status).toBe('Open');
 
     fireEvent.click(screen.getByTestId('rfq-cancel'));
+    const cancelYes = await screen.findByTestId('rfq-cancel-yes');
+    // PG-1: the destructive final commit is the drawer's ONE solid button, in the critical colour.
+    expect(cancelYes).toHaveAttribute('data-solid');
+    expect(cancelYes).toHaveClass('bg-critical', 'text-white');
+    expect(cancelYes.closest('[data-solid-scope]')!.querySelectorAll('[data-solid]')).toHaveLength(1);
     fireEvent.click(await screen.findByTestId('rfq-cancel-yes'));
     await waitFor(() => expect(rfqStore.get('rfq-002')!.status).toBe('Cancelled'));
     expect(statuses('rfq-002')).toEqual(['Withdrawn', 'Withdrawn']);

@@ -126,6 +126,26 @@ const usePushAuthority = () => {
 };
 
 /**
+ * PG-1 · what a push would send — the planned rows this seat may push, and the
+ * ones of them in the grid's selection. The bar and the drawer's footer both
+ * read it, so "Push all (n)" cannot count differently in the two places.
+ */
+export const usePushTargets = (selectedRefs: readonly string[]) => {
+  const api = usePlanDraft();
+  const { canPush } = usePushAuthority();
+  const entries = api ? [...api.draft.entries.values()] : [];
+  const pushable = (e: PlanDraftEntry | undefined): e is PlanDraftEntry => e?.planState === 'PLANNED' && canPush(e);
+  return {
+    api,
+    pushing: api?.pushing ?? false,
+    any: entries.some(canPush),
+    plannedRefs: entries.filter(pushable).map((e) => e.seamRef),
+    selected: selectedRefs.filter((r) => pushable(api?.draft.entries.get(r))),
+    count: entries.length + (api?.draft.refusals.size ?? 0),
+  };
+};
+
+/**
  * PLN-4 · THE BAR — one line at the foot of the view, sticky, so it is in sight
  * wherever the planner is in the grid and takes none of the grid's height.
  */
@@ -227,7 +247,8 @@ export const PlannedChangesBar: React.FC<{
                   ? t('planGrid.edit.toggle.hide')
                   : t('planGrid.edit.toggle.show', { n: formatNumber(entries.length + refusals) })}
               </LinkButton>
-              {entries.some(canPush) && (
+              {/* PG-1: with the drawer open, the push buttons are its footer's. */}
+              {entries.some(canPush) && !open && (
                 <div className="flex gap-2">
                   <Button
                     variant="secondary"
@@ -277,7 +298,9 @@ export const PlannedChangesBar: React.FC<{
 
 /**
  * PLN-4 · THE DETAILS — every planned change with its reading, its reason and
- * its own push and remove, plus the cell refusals; below the grid, collapsible.
+ * its own push and remove, plus the cell refusals.
+ * PG-1 · in a DRAWER beside the grid, opened from the bar. Below the grid it
+ * made the page scroll, and the grid lost its height to it.
  *
  * Plain DOM on purpose, the G1.2b fork ruling: the reason gate and both failure
  * channels must be provable headless, and the virtualised grid lays out no
@@ -453,7 +476,7 @@ export const PlannedChangesDetails: React.FC<{ open: boolean }> = ({ open }) => 
   ];
 
   return (
-    <Card padding="none" className="mt-3" data-testid="plan-draft-details">
+    <Card padding="none" data-testid="plan-draft-details">
       {owedRefs.length > 0 && (
         <div className="flex flex-wrap items-end gap-3 border-b border-info/20 px-4 py-2.5 text-xs" data-testid="plan-bulk-reason-bar">
           <Checkbox

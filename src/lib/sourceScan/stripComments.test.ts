@@ -392,6 +392,9 @@ describe('⚠️ THE TWO-REGEX COMMENT STRIP IS EXTINCT — derived, not listed'
         // the extinct pattern this very spec exists to catch — which is how it
         // got here.
         'context/simUsrNamespace.test.ts',
+        // PG-1: "does this file DRAW a dialog?" — a comment that names
+        // `role="dialog"` (the collaboration page has one) is not a pop-up.
+        'components/ui-v2/popupsOnTheSharedDialog.guard.test.tsx',
         // The sample-identity batch's two derivations: the attribution-key
         // population (parsed, comments stripped) and the person-render census.
         'services/identity/attributionKeys.test.ts',

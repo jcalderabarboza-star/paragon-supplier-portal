@@ -32,6 +32,13 @@ import { LucideIcon } from 'lucide-react';
 // UI-1e (operator ruling, 11 October 2026): and the FINAL COMMIT inside a
 // drawer, a wizard or a dialog — one per container. The container counts what
 // it rendered and refuses a second (`oneSolid.ts`).
+//
+// PG-1 (operator ruling, 11 October 2026): and a DESTRUCTIVE final commit —
+// confirm a rejection, cancel an event, conclude without an award, discard a
+// draft — is solid too, in the critical colour: `variant="primary"
+// tone="critical"`. It is still the container's ONE solid button and carries the
+// same mark, so the container counts it. `tone="critical"` on any other variant
+// is the critical outline it was: the first press that only asks.
 // UI-1c-3: ONE HEIGHT, 40px — the height of a form control, so a button and an
 // input sit on one line in a filter row. `className` is layout only.
 type Variant = 'primary' | 'secondary' | 'outline';
@@ -40,8 +47,8 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: Variant;
   /**
    * UI-1c-3: the act destroys something — cancel an event, conclude without an
-   * award. The outline and its label take the critical colour. It is a colour on
-   * the one outline, not a second weight: a destructive act is never solid.
+   * award. The outline and its label take the critical colour.
+   * PG-1: with `variant="primary"` it is the destructive FINAL commit, solid.
    */
   tone?: 'critical';
   icon?: LucideIcon;
@@ -62,6 +69,12 @@ const VARIANT_CLASS: Record<Variant, string> = {
 };
 
 const CRITICAL_CLASS = 'bg-transparent text-critical border border-critical hover:bg-critical-soft';
+// PG-1: white on `critical` and on `critical-hover` both clear 4.5:1 (`uiGate`).
+const CRITICAL_SOLID_CLASS =
+  'bg-critical text-white border border-critical hover:bg-critical-hover hover:border-critical-hover';
+
+const toneClass = (variant: Variant, tone?: 'critical'): string =>
+  tone !== 'critical' ? VARIANT_CLASS[variant] : variant === 'primary' ? CRITICAL_SOLID_CLASS : CRITICAL_CLASS;
 
 /**
  * The button's box and type, for the one thing that must LOOK like a button and
@@ -69,7 +82,7 @@ const CRITICAL_CLASS = 'bg-transparent text-critical border border-critical hove
  * component wears, so a link dressed with it follows every change made here.
  */
 export function buttonClass(variant: Variant = 'outline', tone?: 'critical'): string {
-  return `inline-flex items-center justify-center gap-2 min-h-10 rounded-md px-4 py-2 font-sans text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${tone === 'critical' ? CRITICAL_CLASS : VARIANT_CLASS[variant]}`;
+  return `inline-flex items-center justify-center gap-2 min-h-10 rounded-md px-4 py-2 font-sans text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${toneClass(variant, tone)}`;
 }
 
 const Button: React.FC<ButtonProps> = ({
@@ -84,7 +97,7 @@ const Button: React.FC<ButtonProps> = ({
     <button
       type="button"
       // UI-1e: a container counts its solid buttons by this mark (`oneSolid.ts`).
-      data-solid={variant === 'primary' && tone !== 'critical' ? '' : undefined}
+      data-solid={variant === 'primary' ? '' : undefined}
       className={`${buttonClass(variant, tone)} ${className}`}
       {...rest}
     >

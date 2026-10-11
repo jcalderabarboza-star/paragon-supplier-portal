@@ -9,6 +9,12 @@ interface SubTabsProps<T extends string> {
   value: T;
   onChange: (id: T) => void;
   className?: string;
+  /**
+   * PG-1: `chips` draws the same tabs as a row of chips — a set of VIEWS of one
+   * list, chosen by the task, where the underline form is a set of sections. The
+   * roles are the same either way: a `tablist` of `tab`s, one selected.
+   */
+  variant?: 'underline' | 'chips';
 }
 
 function SubTabs<T extends string>({
@@ -16,11 +22,14 @@ function SubTabs<T extends string>({
   value,
   onChange,
   className = '',
+  variant = 'underline',
 }: SubTabsProps<T>) {
+  const chips = variant === 'chips';
   return (
     <div
       role="tablist"
-      className={`flex items-center gap-6 border-b border-border-subtle ${className}`}
+      data-variant={variant}
+      className={`flex items-center ${chips ? 'flex-wrap gap-2' : 'gap-6 border-b border-border-subtle'} ${className}`}
     >
       {options.map((opt) => {
         const active = opt.id === value;
@@ -31,11 +40,19 @@ function SubTabs<T extends string>({
             aria-selected={active}
             type="button"
             onClick={() => onChange(opt.id)}
-            className={`-mb-px flex items-center gap-2 py-3 text-sm transition-colors ${
-              active
-                ? 'text-action-hover font-semibold border-b-2 border-action'
-                : 'text-text-tertiary border-b-2 border-transparent hover:text-text-secondary'
-            }`}
+            className={
+              chips
+                ? `flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm transition-colors ${
+                    active
+                      ? 'border-action bg-action-soft font-semibold text-action-text'
+                      : 'border-border-subtle bg-bg-surface text-text-secondary hover:bg-bg-hover'
+                  }`
+                : `-mb-px flex items-center gap-2 py-3 text-sm transition-colors ${
+                    active
+                      ? 'text-action-hover font-semibold border-b-2 border-action'
+                      : 'text-text-tertiary border-b-2 border-transparent hover:text-text-secondary'
+                  }`
+            }
           >
             <span>{opt.label}</span>
             {typeof opt.count === 'number' && (

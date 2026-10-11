@@ -124,9 +124,15 @@ describe('Button · the one solid', () => {
     expect(buttonClass()).toBe(buttonClass('outline'));
   });
 
-  it('a destructive act is an outline even when asked to be solid', () => {
-    expect(buttonClass('primary', 'critical')).toBe(buttonClass('outline', 'critical'));
-    expect(buttonClass('primary', 'critical')).not.toMatch(/bg-action|text-white/);
+  it('PG-1 · a destructive act is solid only as a final commit, and then in the critical colour', () => {
+    // the first press that only asks: the critical outline, whatever else it is given
+    expect(buttonClass('outline', 'critical')).toMatch(/bg-transparent text-critical border border-critical/);
+    expect(buttonClass('secondary', 'critical')).toBe(buttonClass('outline', 'critical'));
+    expect(buttonClass('outline', 'critical')).not.toMatch(/text-white/);
+    // the final commit: solid, and never in the action colour
+    expect(buttonClass('primary', 'critical')).toMatch(/bg-critical text-white border border-critical/);
+    expect(buttonClass('primary', 'critical')).not.toMatch(/bg-action|text-action/);
+    expect(buttonClass('primary', 'critical')).not.toBe(buttonClass('primary'));
   });
 
   it('a page header\'s primary slot is the solid one, and its other actions are not', () => {

@@ -311,6 +311,10 @@ describe('the review and decision acts, per verb', () => {
     await openFirstRow();
     fireEvent.click(await screen.findByTestId('material-request-reject'));
     const commit = await screen.findByTestId('material-request-reject-commit');
+    // PG-1: the destructive final commit is the drawer's ONE solid button, in the critical colour.
+    expect(commit).toHaveAttribute('data-solid');
+    expect(commit).toHaveClass('bg-critical', 'text-white');
+    expect(commit.closest('[data-solid-scope]')!.querySelectorAll('[data-solid]')).toHaveLength(1);
     expect(commit).toBeDisabled();
     fireEvent.change(screen.getByTestId('material-request-justification'), {
       target: { value: '   ' },

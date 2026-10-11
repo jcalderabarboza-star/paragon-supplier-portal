@@ -32,6 +32,14 @@
 // total at the cell and pushes as `t_publication_allocate`. The publication
 // panel (plain DOM) sits above the grid on the plan views.
 //
+// ── PG-1 · THE FRAME IS CALM (R-PG, operator ruling 11 October 2026) ────────
+// Measured on built main at 1600×900: 64% of the screen stood above the first
+// number, and 81% at 1366×768. Three notices, a folded panel, a filter row and a
+// hint are now ONE summary strip and one filter row; the sample statement and
+// the edit hint are in the page's "About this data"; the publication and the
+// planned changes open in drawers. Rows come in two heights and alternate BY
+// MATERIAL. PLN-5's `CompactNotice` and the folded panel it names below are gone.
+//
 // ── PLN-5 · ERGONOMICS (R-PLN P1, the last Planning batch) ─────────────────
 //  · THE GRID IS ABOVE THE FOLD AND IS THE ONE SCROLLER. The chrome above it is
 //    summarised (`CompactNotice`, the publication panel folds to one line), and
@@ -59,9 +67,12 @@ import './planGrid.css';
 import { useTranslation } from 'react-i18next';
 import Button from '../../components/ui-v2/Button';
 import Data from '../../components/ui-v2/Data';
-import { Checkbox, FormField, Select, TextInput } from '../../components/ui-v2/Form';
+import { FormField, Select, TextInput } from '../../components/ui-v2/Form';
 import LivenessPill from '../../components/ui-v2/LivenessPill';
-import CompactNotice from './CompactNotice';
+import { Card } from '../../components/ui-v2/Card';
+import Notice from '../../components/ui-v2/Notice';
+import SidePanel from '../../components/ui-v2/SidePanel';
+import { LinkButton, ToggleChip } from '../../components/ui-v2/Actions';
 import { formatNumber } from '../../lib/format';
 import { usePlanningFacts } from '../../services/query/planningHooks';
 import { useConsolidationRows, usePublicationWorkspace } from '../../services/query/sdcBuyerHooks';
@@ -74,8 +85,8 @@ import { somoHorizon } from '../../services/planning/facts';
 import { planningSupplierName } from '../../services/planning/somoFixture';
 import { visibleMeasures } from './visibleMeasures';
 import { usePlanDraft } from './PlanDraftProvider';
-import { PlannedChangesBar, PlannedChangesDetails, cellRefusalText } from './PlannedChangesPanel';
-import PublicationPanel, { draftOfGrain } from './PublicationPanel';
+import { PlannedChangesBar, PlannedChangesDetails, cellRefusalText, usePushTargets } from './PlannedChangesPanel';
+import PublicationPanel, { PublicationSummary, draftOfGrain } from './PublicationPanel';
 import { EMPTY_DRAFT, applyEdit, cellKey, magnitudeFlag, routePaste, type CellRefusal, type EditContext, type PlanDraftEntry } from './planDraft';
 import { useFitHeight } from './useFitHeight';
 import { useGridRoles } from './useGridRoles';
@@ -97,9 +108,23 @@ import {
   type PlanSort,
   type PlanSortColumn,
   PLAN_SORT_COLUMNS,
+  isShortIn,
 } from './planGridModel';
 
-const ROW_H = 30;
+/**
+ * PG-1 · two row heights, the planner's choice, remembered per browser. Compact
+ * is the two 13px lines a supplier row's label needs and nothing more.
+ */
+export type PlanDensity = 'compact' | 'comfortable';
+export const ROW_H: Readonly<Record<PlanDensity, number>> = { compact: 26, comfortable: 32 };
+const DENSITY_KEY = 'paragon.planGrid.density';
+const readDensity = (): PlanDensity => {
+  try {
+    return window.localStorage.getItem(DENSITY_KEY) === 'compact' ? 'compact' : 'comfortable';
+  } catch {
+    return 'comfortable';
+  }
+};
 // PLN-2 · fits the longest planning-master supplier name on one line (measured in the browser).
 // PLN-5 · and the longest material label, now that the label has the gutter's width to itself.
 const GUTTER_W = 420;
@@ -407,7 +432,11 @@ const TimePhasedGrid: React.FC<{
   viewId: Extract<ViewId, 'rm-plan' | 'pm-plan' | 'exceptions'>;
   /** PLN-1 · the grain of the plan tab the planner was last in — a `current`-grain view follows it. */
   currentGrain?: BucketGrain;
-}> = ({ viewId, currentGrain = 'month' }) => {
+  /** PG-1 · list only the materials short in the horizon's FIRST bucket — this month, or this week. */
+  shortNow?: boolean;
+  /** PG-1 · the page's "About this data" is open: the sample statement and the edit hint show. */
+  aboutOpen?: boolean;
+}> = ({ viewId, currentGrain = 'month', shortNow = false, aboutOpen = false }) => {
   const { t } = useTranslation();
   const view = VIEWS.find((v) => v.viewId === viewId)!;
   const { grain, horizonLength, materialType } = viewGrainAndHorizon(view, currentGrain);
@@ -443,9 +472,17 @@ const TimePhasedGrid: React.FC<{
     [],
   );
   const [filter, setFilter] = useState<PlanFilter>({ ...DEFAULT_PLAN_FILTER, exceptionsOnly: lockedExceptions });
-  // PLN-4 · the planned-changes list, below the grid — open until the planner folds it.
-  const [changesOpen, setChangesOpen] = useState(true);
-  const changesRef = useRef<HTMLDivElement>(null);
+  // PG-1 · the planned-changes list, in a drawer — closed until the planner opens it.
+  const [changesOpen, setChangesOpen] = useState(false);
+  const [density, setDensityState] = useState<PlanDensity>(readDensity);
+  const setDensity = (next: PlanDensity) => {
+    setDensityState(next);
+    try {
+      window.localStorage.setItem(DENSITY_KEY, next);
+    } catch {
+      // a private window: the choice lasts for the page
+    }
+  };
   const [sort, setSort] = useState<PlanSort>(DEFAULT_PLAN_SORT);
   // PLN-1 · a paste note describes the rows it was made against; a new filter
   // or order is a different set of rows, so the note goes — and so does a key note.
@@ -453,7 +490,7 @@ const TimePhasedGrid: React.FC<{
     setPasteNote(null);
     setKeyNote(null);
   }, [filter, sort]);
-  // PLN-5 · the publication panel folds to one line; open, it is the panel it always was.
+  // PG-1 · the publication is one line in the strip; its panel opens in a drawer.
   const [publicationOpen, setPublicationOpen] = useState(false);
 
   // PLN-1 · THE HINT NAMES WHAT IS EDITABLE BY ASKING THE REGISTRY. It said
@@ -490,7 +527,16 @@ const TimePhasedGrid: React.FC<{
       blocksOfViewType(buildPlanBlocks(factsQuery.data?.items ?? [], horizon, measures, staleKeys), materialType),
     [factsQuery.data, horizon, measures, staleKeys, materialType],
   );
-  const visible = useMemo(() => applyPlanView(blocks, filter, sort), [blocks, filter, sort]);
+  // PG-1 · "this month" is the horizon's first bucket: the horizon starts at the present.
+  const nowBucket = horizon[0];
+  const viewFilter = useMemo<PlanFilter>(
+    () => ({ ...filter, shortIn: shortNow ? nowBucket : null }),
+    [filter, shortNow, nowBucket],
+  );
+  const visible = useMemo(() => applyPlanView(blocks, viewFilter, sort), [blocks, viewFilter, sort]);
+  const shortNowCount = useMemo(() => blocks.filter((b) => isShortIn(b, nowBucket)).length, [blocks, nowBucket]);
+  // PG-1 · alternate MATERIALS, not rows: the band is what keeps a material's rows together to the eye.
+  const bandOf = useMemo(() => new Map(visible.map((b, i) => [b.materialCode, i % 2 === 1])), [visible]);
   const rows = useMemo(() => flattenPlanRows(visible) as PlanRow[], [visible]);
   const blockOf = useMemo(() => new Map(visible.map((b) => [b.materialCode, b])), [visible]);
   const exceptionCount = useMemo(() => blocks.filter((b) => isPlanException(b.exceptions)).length, [blocks]);
@@ -535,6 +581,7 @@ const TimePhasedGrid: React.FC<{
   const selectedRefs = useMemo(() => refsIn(selection), [selection, rows, horizon]);
   const selectionRef = useRef(selection);
   selectionRef.current = selection;
+  const push = usePushTargets(selectedRefs);
 
   // B3 · the paste, judged cell by cell. Intercepted in the CAPTURE phase so
   // the engine's own handler (which would skip a read-only cell in silence and
@@ -798,45 +845,63 @@ const TimePhasedGrid: React.FC<{
   };
 
   return (
-    <div ref={viewRef} data-testid={`tp-view-${viewId}`} data-grain={grain}>
-      {/* SIMULATED while the SOMO fixture feeds it — said before any number, in
-          one line (PLN-5); the whole statement is one click away and in the DOM. */}
-      <CompactNotice
-        tone="sample"
-        title={t('planGrid.tp.banner.title')}
-        body={t('planGrid.tp.banner.body')}
-        aside={<LivenessPill capability="forecastPublications" />}
-        testId="tp-banner"
-      />
-
-      {viewId !== 'exceptions' && (
-        <PublicationPanel grain={grain} collapsible open={publicationOpen} onToggle={() => setPublicationOpen((o) => !o)} />
-      )}
-      {pasteNote && (
-        <p className="mb-1.5 text-xs text-text-secondary" data-testid="tp-paste-note">
-          {t('planGrid.edit.pasteNote', {
-            planned: formatNumber(pasteNote.planned),
-            refused: formatNumber(pasteNote.refused),
-            outside: formatNumber(pasteNote.outside),
-          })}
+    <div ref={viewRef} data-testid={`tp-view-${viewId}`} data-grain={grain} data-short-now={shortNow ? nowBucket : undefined}>
+      {/* SIMULATED while the SOMO fixture feeds it, and what is editable here.
+          PG-1: both are part of "About this data" — always in the DOM, shown
+          when the planner asks. The page's sample marker is always in sight. */}
+      <div hidden={!aboutOpen} data-testid="tp-about">
+        <Notice
+          tone="sample"
+          className="mb-2"
+          title={t('planGrid.tp.banner.title')}
+          action={<LivenessPill capability="forecastPublications" />}
+          data-testid="tp-banner"
+        >
+          {t('planGrid.tp.banner.body')}
+        </Notice>
+        <p className="mb-2 text-xs text-text-secondary" data-testid="tp-edit-hint">
+          {t('planGrid.edit.hint', { measures: editableLabels })}
         </p>
-      )}
+      </div>
 
-      <div className="mb-1.5 flex flex-wrap items-end gap-3 text-sm">
+      {/* PG-1 · THE SUMMARY STRIP — one line where three notices, a panel and a
+          hint stood: what this view lists, how much of it is short now, where
+          the forecast stands, and what the last key or paste did. */}
+      <Card padding="none" className="mb-2" data-testid="tp-strip">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 px-3 py-2 text-xs text-text-secondary">
         {materialType && (
-          <div className="flex flex-col gap-1">
-            <span className="text-label uppercase text-text-tertiary">{t('planGrid.tp.filter.type')}</span>
-            <span
-              data-testid="tp-view-type"
-              data-material-type={materialType}
-              className="rounded-md border border-border-subtle bg-bg-hover px-2 py-1.5 text-text-secondary"
-            >
-              {t(materialType === 'ROH' ? 'planGrid.tp.filter.rm' : 'planGrid.tp.filter.pm')}
-              {' · '}
-              {t(grain === 'month' ? 'planGrid.tp.typeMonthly' : 'planGrid.tp.typeWeekly')}
-            </span>
-          </div>
+          <span data-testid="tp-view-type" data-material-type={materialType} className="font-semibold text-text-primary">
+            {t(materialType === 'ROH' ? 'planGrid.tp.filter.rm' : 'planGrid.tp.filter.pm')}
+            {' · '}
+            {t(grain === 'month' ? 'planGrid.tp.typeMonthly' : 'planGrid.tp.typeWeekly')}
+          </span>
         )}
+        <span data-testid="tp-short-now" className={shortNowCount > 0 ? 'font-semibold text-critical' : ''}>
+          {t('planGrid.strip.shortNow', { count: shortNowCount, n: formatNumber(shortNowCount), bucket: nowBucket })}
+        </span>
+        <span data-testid="tp-summary">
+          {t('planGrid.tp.summary', {
+            materials: formatNumber(visible.length),
+            rows: formatNumber(rows.length),
+            exceptions: formatNumber(exceptionCount),
+          })}
+          {viewFilter.exceptionsOnly ? ` · ${t('planGrid.tp.exceptionsOrder')}` : ''}
+        </span>
+        <span className="ml-auto flex min-w-0 items-center gap-2">
+          <PublicationSummary grain={grain} />
+          <LinkButton
+            className="shrink-0"
+            aria-expanded={publicationOpen}
+            onClick={() => setPublicationOpen(true)}
+            data-testid="publication-toggle"
+          >
+            {t('planGrid.publication.title')}
+          </LinkButton>
+        </span>
+        </div>
+      </Card>
+
+      <div className="mb-2 flex flex-wrap items-end gap-3 text-sm">
         <FormField label={t('planGrid.tp.search')} className="min-w-[16rem]">
           <TextInput
             type="text"
@@ -871,43 +936,39 @@ const TimePhasedGrid: React.FC<{
             </Button>
           </div>
         </FormField>
-        <Checkbox
-          className="pb-1.5"
-          data-testid="tp-exceptions"
-          checked={filter.exceptionsOnly}
-          disabled={lockedExceptions}
-          onChange={(e) => setFilter({ ...filter, exceptionsOnly: e.target.checked })}
-        >
-          {t('planGrid.tp.exceptions')}
-        </Checkbox>
-        <p className="ml-auto pb-1.5 text-xs text-text-tertiary" data-testid="tp-summary">
-          {t('planGrid.tp.summary', {
-            materials: formatNumber(visible.length),
-            rows: formatNumber(rows.length),
-            exceptions: formatNumber(exceptionCount),
-          })}
-          {filter.exceptionsOnly ? ` · ${t('planGrid.tp.exceptionsOrder')}` : ''}
-        </p>
-      </div>
-
-      {/* PLN-5 · ONE line under the filters: what is editable and how, or what
-          the last key did — a refusal, a delete, an undo, a copy — with its reason. */}
-      <div className="mb-1.5 flex min-h-[18px] flex-wrap items-baseline gap-x-3 text-xs">
-        {viewId !== 'exceptions' && !keyNote && (
-          <p className="text-text-tertiary" data-testid="tp-edit-hint">
-            {t('planGrid.edit.hint', { measures: editableLabels })}
-          </p>
-        )}
-        {keyNote && (
-          <p
-            className={keyNote.kind === 'refused' ? 'font-medium text-critical' : 'text-text-secondary'}
-            data-testid="tp-key-note"
-            data-kind={keyNote.kind}
-            role="status"
-          >
-            {keyNoteText(keyNote)}
-          </p>
-        )}
+        <div className="flex flex-col gap-1" role="group" aria-label={t('planGrid.tp.density')} data-testid="tp-density" data-density={density}>
+          <span className="text-label uppercase text-text-tertiary">{t('planGrid.tp.density')}</span>
+          <div className="flex gap-1">
+            {(['compact', 'comfortable'] as const).map((d) => (
+              <ToggleChip key={d} selected={density === d} onClick={() => setDensity(d)} data-testid={`tp-density-${d}`}>
+                {t(`planGrid.tp.density.${d}`)}
+              </ToggleChip>
+            ))}
+          </div>
+        </div>
+        {/* ONE line beside the filters for what the last key or paste did — a
+            refusal, a delete, an undo, a copy — with its reason. */}
+        <div className="ml-auto min-w-0 pb-2 text-right text-xs">
+          {pasteNote && (
+            <p className="text-text-secondary" data-testid="tp-paste-note">
+              {t('planGrid.edit.pasteNote', {
+                planned: formatNumber(pasteNote.planned),
+                refused: formatNumber(pasteNote.refused),
+                outside: formatNumber(pasteNote.outside),
+              })}
+            </p>
+          )}
+          {keyNote && (
+            <p
+              className={keyNote.kind === 'refused' ? 'font-medium text-critical' : 'text-text-secondary'}
+              data-testid="tp-key-note"
+              data-kind={keyNote.kind}
+              role="status"
+            >
+              {keyNoteText(keyNote)}
+            </p>
+          )}
+        </div>
       </div>
 
       {factsQuery.data?.horizonRefusal || !generated.ok ? (
@@ -930,6 +991,7 @@ const TimePhasedGrid: React.FC<{
           className="plan-dsg tp-grid overflow-hidden rounded-lg border border-border-subtle bg-bg-surface"
           data-testid="tp-grid"
           data-fit-height={gridH}
+          data-density={density}
           style={{ '--plan-dsg-h': `${gridH}px` } as React.CSSProperties}
         >
           <DataSheetGrid<PlanRow>
@@ -960,29 +1022,55 @@ const TimePhasedGrid: React.FC<{
             rowKey="id"
             lockRows
             disableContextMenu
-            rowHeight={ROW_H}
+            rowHeight={ROW_H[density]}
+            rowClassName={({ rowData }) =>
+              `${bandOf.get(rowData.materialCode) ? 'tp-band' : ''} ${rowData.blockHead ? 'tp-head' : ''}`.trim() || undefined
+            }
             headerRowHeight={36}
             height={gridH}
           />
         </div>
       )}
 
-      {/* ⚠️ PLN-4 · THE PLANNED CHANGES SIT BELOW THE GRID AND IN A STICKY BAR,
-          NEVER ABOVE IT. Above, fifty rows pushed the grid 2,743 px down the
-          page (measured on built main); here the grid keeps its place whatever
-          is planned, the bar stays in sight, and the list folds away. */}
-      <div ref={changesRef}>
-        <PlannedChangesDetails open={changesOpen} />
-      </div>
-      <PlannedChangesBar
-        selectedRefs={selectedRefs}
-        open={changesOpen}
-        onToggle={() => {
-          const opening = !changesOpen;
-          setChangesOpen(opening);
-          if (opening) requestAnimationFrame(() => changesRef.current?.scrollIntoView?.({ block: 'start', behavior: 'smooth' }));
-        }}
-      />
+      {/* ⚠️ PLN-4 · THE PLANNED CHANGES NEVER SIT ABOVE THE GRID. Above, fifty
+          rows pushed it 2,743 px down the page (measured on built main). The
+          sticky bar stays in sight and takes none of the grid's height.
+          PG-1 · and the list is a DRAWER now, with the publication's: below the
+          grid it made the page scroll. */}
+      <PlannedChangesBar selectedRefs={selectedRefs} open={changesOpen && push.count > 0} onToggle={() => setChangesOpen((o) => !o)} />
+      <SidePanel
+        wide
+        open={changesOpen && push.count > 0}
+        onClose={() => setChangesOpen(false)}
+        title={t('planGrid.edit.changesTitle')}
+        footerActions={
+          push.any && push.api ? (
+            <>
+              <Button
+                variant="secondary"
+                disabled={push.pushing || push.selected.length === 0}
+                onClick={() => void push.api?.push(push.selected)}
+                data-testid="plan-push-selection"
+              >
+                {t('planGrid.edit.push.selection', { n: formatNumber(push.selected.length) })}
+              </Button>
+              <Button
+                variant="primary"
+                disabled={push.pushing || push.plannedRefs.length === 0}
+                onClick={() => void push.api?.push(push.plannedRefs)}
+                data-testid="plan-push-all"
+              >
+                {push.pushing ? t('planGrid.push.pushing') : t('planGrid.edit.push.all', { n: formatNumber(push.plannedRefs.length) })}
+              </Button>
+            </>
+          ) : undefined
+        }
+      >
+        <PlannedChangesDetails open />
+      </SidePanel>
+      <SidePanel wide open={publicationOpen} onClose={() => setPublicationOpen(false)} title={t('planGrid.publication.title')}>
+        <PublicationPanel grain={grain} bare />
+      </SidePanel>
     </div>
   );
 };

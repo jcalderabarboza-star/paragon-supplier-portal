@@ -24,7 +24,8 @@ describe('B2 · the tab set', () => {
   it('EN — the three planning views lead, the two existing sections keep their own tabs', () => {
     renderWithProviders(<PlanGrid />, { route: '/buyer/plan-grid' });
     // PLN-3 · the Intake tab IS the retired Intake Review page now, and says so.
-    expect(tabs()).toEqual(['Raw materials', 'Packaging', 'Exceptions', 'Award what-if', 'Intake review']);
+    // PG-1 · the question of the day leads: what is short now, then every exception, then the plans.
+    expect(tabs()).toEqual(['Shortages this month', 'Exceptions', 'Raw materials', 'Packaging', 'Award what-if', 'Intake review']);
   });
 
   it('ID — every tab label is Indonesian', async () => {
@@ -32,24 +33,45 @@ describe('B2 · the tab set', () => {
     renderWithProviders(<PlanGrid />, { route: '/buyer/plan-grid' });
     // ⚠️ PLN-5 · RE-PINNED BY RULING: "penghargaan" (an honour, not an award
     // decision) → "Simulasi penetapan pemenang"; "asupan" → "usulan".
-    expect(tabs()).toEqual(['Bahan baku', 'Kemasan', 'Pengecualian', 'Simulasi penetapan pemenang', 'Tinjauan usulan']);
+    expect(tabs()).toEqual(['Kekurangan bulan ini', 'Pengecualian', 'Bahan baku', 'Kemasan', 'Simulasi penetapan pemenang', 'Tinjauan usulan']);
   });
 
-  it('Raw materials is the landing view, behind the SIMULATED banner', async () => {
+  it('PG-1 · "Shortages this month" is the landing view, and it lists the horizon’s FIRST bucket', async () => {
     renderWithProviders(<PlanGrid />, { route: '/buyer/plan-grid' });
+    expect(screen.getByRole('tab', { name: 'Shortages this month' })).toHaveAttribute('aria-selected', 'true');
+    const view = await screen.findByTestId('tp-view-exceptions');
+    // the bucket it filters on is stated on the view, and it is a month
+    expect(view.getAttribute('data-short-now')).toMatch(/^\d{4}-\d{2}$/);
+    expect(screen.queryByTestId('tp-view-rm-plan')).toBeNull();
+    // …and the Exceptions view beside it filters on no bucket
+    fireEvent.click(screen.getByRole('tab', { name: 'Exceptions' }));
+    expect(screen.getByTestId('tp-view-exceptions')).not.toHaveAttribute('data-short-now');
+  });
+
+  it('the SIMULATED statement is in the page whatever is shown, and "About this data" shows it', async () => {
+    renderWithProviders(<PlanGrid />, { route: '/buyer/plan-grid?view=rm-plan' });
     const view = await screen.findByTestId('tp-view-rm-plan');
     expect(within(view).getByText(/Sample SOMO plan — simulated/)).toBeInTheDocument();
     expect(within(view).getByText(/never a zero/)).toBeInTheDocument();
+    expect(within(view).getByTestId('tp-about')).toHaveAttribute('hidden');
+    fireEvent.click(screen.getByTestId('plan-about-toggle'));
+    expect(within(view).getByTestId('tp-about')).not.toHaveAttribute('hidden');
+    expect(screen.getByTestId('plan-about')).not.toHaveAttribute('hidden');
   });
 
-  it('Packaging opens the weekly view; Exceptions opens with the toggle locked ON', () => {
+  it('Packaging opens the weekly view; Exceptions lists exceptions only, in the exception order', () => {
     renderWithProviders(<PlanGrid />, { route: '/buyer/plan-grid' });
     fireEvent.click(screen.getByRole('tab', { name: 'Packaging' }));
     expect(screen.getByTestId('tp-view-pm-plan')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('tab', { name: 'Exceptions' }));
-    const toggle = within(screen.getByTestId('tp-view-exceptions')).getByTestId('tp-exceptions') as HTMLInputElement;
-    expect(toggle.checked).toBe(true);
-    expect(toggle.disabled).toBe(true);
+    // PG-1 · the "Exceptions only" tick is folded into the views: there is none to
+    // untick, and the order is the exception order — the sort is not offered.
+    const view = screen.getByTestId('tp-view-exceptions');
+    expect(within(view).queryByTestId('tp-exceptions')).toBeNull();
+    expect(within(view).getByTestId('tp-sort-col')).toBeDisabled();
+    expect(within(view).getByTestId('tp-summary').textContent).toMatch(/ordered by first short bucket, then shortfall$/);
+    fireEvent.click(screen.getByRole('tab', { name: 'Packaging' }));
+    expect(within(screen.getByTestId('tp-view-pm-plan')).getByTestId('tp-sort-col')).not.toBeDisabled();
   });
 
   it('the existing sections still render under their tabs', () => {

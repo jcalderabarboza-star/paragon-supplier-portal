@@ -1,4 +1,5 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useState } from 'react';
+import Dialog from './Dialog';
 import SectionHeading from './SectionHeading';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
@@ -6,7 +7,6 @@ import {
   Maximize2,
   ChevronDown,
   ChevronUp,
-  X,
   LucideIcon,
 } from 'lucide-react';
 import Data from './Data';
@@ -33,9 +33,9 @@ import { isLive, type Capability } from '../../services/liveness';
 // critical); the CTA is an action-blue TEXT LINK; honesty is a micro dot-label.
 // No count badge, no chip, no bordered button — color only where it earns meaning.
 //
-// EXPANDED state: a fullscreen scrim (adapts SidePanel's overlay / Esc-close /
-// role="dialog" / focus-trap mechanics, fullscreen geometry not the 480px drawer)
-// showing the real rows behind the flag; every other widget is hidden.
+// EXPANDED state: the shared `Dialog` in its full-screen form (PG-1 — it adapted
+// SidePanel's scrim, Esc-close and focus trap by hand until then), showing the
+// real rows behind the flag; every other widget is hidden.
 //
 // DP-1/DP-2/DP-3 canon: white surface + thin border, action-blue link, teal
 // decorative only, semantic color for STATE only, JetBrains-Mono <Data> for data.
@@ -110,44 +110,6 @@ const ExpandableWidget: React.FC<ExpandableWidgetProps> = ({
   const live = isLive(capability);
   const [collapsed, setCollapsed] = useState(false);
   const [expanded, setExpanded] = useState(false);
-  const dialogRef = useRef<HTMLDivElement>(null);
-  const closeBtnRef = useRef<HTMLButtonElement>(null);
-  const prevFocusRef = useRef<HTMLElement | null>(null);
-
-  // Scrim mechanics (adapted from SidePanel): Esc-close, a Tab focus-trap inside
-  // the dialog, and focus restoration to the trigger on close.
-  useEffect(() => {
-    if (!expanded) return;
-    prevFocusRef.current = document.activeElement as HTMLElement | null;
-    closeBtnRef.current?.focus();
-
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        setExpanded(false);
-        return;
-      }
-      if (e.key === 'Tab' && dialogRef.current) {
-        const focusables = dialogRef.current.querySelectorAll<HTMLElement>(
-          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
-        );
-        if (focusables.length === 0) return;
-        const first = focusables[0];
-        const last = focusables[focusables.length - 1];
-        if (e.shiftKey && document.activeElement === first) {
-          e.preventDefault();
-          last.focus();
-        } else if (!e.shiftKey && document.activeElement === last) {
-          e.preventDefault();
-          first.focus();
-        }
-      }
-    };
-    window.addEventListener('keydown', handler);
-    return () => {
-      window.removeEventListener('keydown', handler);
-      prevFocusRef.current?.focus?.();
-    };
-  }, [expanded]);
 
   // The flag's information moves to a quiet detail line under the number —
   // colored only when critical; "All clear" when there is nothing to flag.
@@ -221,44 +183,24 @@ const ExpandableWidget: React.FC<ExpandableWidgetProps> = ({
         )}
       </section>
 
-      {expanded && (
-        <>
-          <div
-            aria-hidden
-            onClick={() => setExpanded(false)}
-            className="fixed inset-0 z-40 bg-navy/40"
-          />
-          <div
-            ref={dialogRef}
-            role="dialog"
-            aria-modal="true"
-            aria-label={title}
-            className="fixed inset-2 sm:inset-6 z-50 flex flex-col bg-bg-surface rounded-lg shadow-md border border-border-subtle"
-          >
-            <header className="flex items-center justify-between gap-4 px-6 py-5 border-b border-border-subtle">
-              <div className="flex items-center gap-2 min-w-0">
-                <SectionHeading as="h2" className="truncate">
-                  {title}
-                </SectionHeading>
-                <span className="inline-flex items-center justify-center min-w-[1.5rem] h-6 px-1.5 rounded-md bg-bg-hover text-text-secondary text-xs font-semibold shrink-0">
-                  <Data>{count}</Data>
-                </span>
-                <HonestyDot live={live} t={t} />
-              </div>
-              <button
-                ref={closeBtnRef}
-                type="button"
-                aria-label={t('widget.aria.closeFullscreen')}
-                onClick={() => setExpanded(false)}
-                className="shrink-0 text-text-tertiary hover:text-text-secondary transition-colors"
-              >
-                <X size={20} />
-              </button>
-            </header>
-            <div className="flex-1 overflow-y-auto p-6">{expandedRows}</div>
-          </div>
-        </>
-      )}
+      {/* PG-1: the shared dialog, full-screen — its scrim, its Escape, its focus trap. */}
+      <Dialog
+        open={expanded}
+        fill
+        title={title}
+        onClose={() => setExpanded(false)}
+        closeLabel={t('widget.aria.closeFullscreen')}
+        titleAside={
+          <>
+            <span className="inline-flex items-center justify-center min-w-[1.5rem] h-6 px-1.5 rounded-md bg-bg-hover text-text-secondary text-xs font-semibold shrink-0">
+              <Data>{count}</Data>
+            </span>
+            <HonestyDot live={live} t={t} />
+          </>
+        }
+      >
+        {expandedRows}
+      </Dialog>
     </>
   );
 };

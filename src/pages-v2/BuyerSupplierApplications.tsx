@@ -1033,7 +1033,7 @@ const BuyerSupplierApplications: React.FC = () => {
                 </p>
                 <div className="flex items-center gap-3">
                   <Button
-                    variant="outline" tone="critical"
+                    variant="primary" tone="critical"
                     onClick={rejectSelected}
                     disabled={!canCommitReject || reject.isPending}
                     data-testid="application-reject-commit"

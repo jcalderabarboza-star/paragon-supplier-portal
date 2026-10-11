@@ -177,6 +177,8 @@ describe('PLN-3 · R1 — the planning lane holds the intake commit (P0 #5)', ()
       { route: '/buyer/plan-grid', identity },
     );
     fireEvent.click(screen.getByText('seed'));
+    // PG-1: the planned changes open in a drawer, from the bar.
+    fireEvent.click(screen.getByTestId('plan-changes-toggle'));
   };
 
   it('on the page: Planning 1 pushes its planned change from the grid, and the requisition is raised', async () => {
@@ -318,13 +320,14 @@ describe('PLN-3 · Intake Review is retired into the grid’s intake-review view
     expect(router).not.toMatch(/import IntakeReview\b/);
   });
 
-  it('the grid opens on the view the link names, and on Raw materials without one', async () => {
+  it('the grid opens on the view the link names, and on the shortages view without one', async () => {
     const { unmount } = renderWithProviders(<PlanGrid />, { route: '/buyer/plan-grid?view=intake-review' });
     expect(screen.getByRole('tab', { name: 'Intake review' })).toHaveAttribute('aria-selected', 'true');
     expect(await screen.findByTestId('tp-view-intake-review')).toBeInTheDocument();
     unmount();
     renderWithProviders(<PlanGrid />, { route: '/buyer/plan-grid' });
-    expect(screen.getByRole('tab', { name: 'Raw materials' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('tab', { name: 'Shortages this month' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('tab', { name: 'Raw materials' })).toHaveAttribute('aria-selected', 'false');
     expect(screen.queryByTestId('tp-view-intake-review')).not.toBeInTheDocument();
   });
 

@@ -44,6 +44,7 @@ import { Checkbox, ChoiceCard, FormField, Radio, Select, TextArea, TextInput } f
 import LivenessPill from '../components/ui-v2/LivenessPill';
 import ModelMarker from '../components/ui-v2/ModelMarker';
 import Button from '../components/ui-v2/Button';
+import Dialog from '../components/ui-v2/Dialog';
 import { Card } from '../components/ui-v2/Card';
 import Notice from '../components/ui-v2/Notice';
 import { LinkButton, ToggleChip, RowButton } from '../components/ui-v2/Actions';
@@ -1202,6 +1203,9 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
   // supplier who answered. The question names that consequence, and the first
   // press commits nothing.
   const [asking, setAsking] = useState<'award' | 'cancel' | 'advance' | 'conclude' | null>(null);
+  // PG-1: while a destructive second ask stands open, ITS confirmation is the
+  // drawer's one solid button and every other commit beside it is an outline.
+  const destructiveAsk = asking === 'cancel' || asking === 'conclude';
   // RFx-1 — the two stage verbs carry what the buyer decides: who goes
   // forward, why the others do not, and when the next stage is due; or why
   // nobody was chosen. Both are held here until the second press commits them.
@@ -3750,7 +3754,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                       </span>
                     ) : rfqVerbs.publish.kind === 'held' ? (
                       <Button
-                        variant="primary"
+                        variant={destructiveAsk ? 'outline' : 'primary'}
                         icon={Send}
                         disabled={publishMutation.isPending}
                         onClick={handlePublish}
@@ -3816,7 +3820,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                     nextStage !== null &&
                     (rfqVerbs.advance.kind === 'held' ? (
                       <Button
-                        variant="primary"
+                        variant={destructiveAsk ? 'outline' : 'primary'}
                         icon={FastForward}
                         disabled={advanceMutation.isPending || asking === 'advance'}
                         onClick={openAdvance}
@@ -3887,7 +3891,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                     </p>
                     <div className="flex flex-wrap gap-2">
                       <Button
-                        variant="outline"
+                        variant="primary"
                         tone="critical"
                         disabled={cancelMutation.isPending}
                         onClick={handleCancel}
@@ -4125,7 +4129,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                     </FormField>
                     <div className="flex flex-wrap gap-2">
                       <Button
-                        variant="outline"
+                        variant="primary"
                         tone="critical"
                         disabled={concludeReason.trim() === '' || concludeMutation.isPending}
                         onClick={handleConclude}
@@ -4712,7 +4716,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                       <Button
                         // UI-1e: the final commit is the answer to the second question;
                         // while it is asked, this button is no longer the last word.
-                        variant={asking === 'award' ? 'outline' : 'primary'}
+                        variant={asking === 'award' || destructiveAsk ? 'outline' : 'primary'}
                         icon={Trophy}
                         disabled={
                           !selectedQuoteId ||
@@ -4784,25 +4788,16 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
           prior basis is kept — because "edit" would describe a mutation that
           cannot happen and would misrepresent what the trail will show. */}
       {pinDraft && selectedRfq && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-navy/40">
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-label={t(
-              pinDraft.superseding ? 'sourcing.fx.dialog.title.supersede' : 'sourcing.fx.dialog.title.record',
-              { currency: pinDraft.currency },
-            )}
-            data-testid="fx-pin-dialog"
-            className="w-full max-w-md bg-white rounded-lg border border-border-subtle p-5"
-          >
-            <SectionHeading as="h3" className="mb-1">
-              {t(
-                pinDraft.superseding
-                  ? 'sourcing.fx.dialog.title.supersede'
-                  : 'sourcing.fx.dialog.title.record',
-                { currency: pinDraft.currency },
-              )}
-            </SectionHeading>
+        <Dialog
+          open
+          onClose={() => setPinDraft(null)}
+          title={t(
+            pinDraft.superseding ? 'sourcing.fx.dialog.title.supersede' : 'sourcing.fx.dialog.title.record',
+            { currency: pinDraft.currency },
+          )}
+          testId="fx-pin-dialog"
+          widthClass="max-w-md"
+        >
             <p className="text-xs text-text-secondary mb-4">
               {t(
                 pinDraft.superseding
@@ -4922,7 +4917,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
               <HandoffNotice availability={rfqVerbs.fxPin} testId="handoff-rfq-fxpin" />
               {rfqVerbs.fxPin.kind === 'held' && (
               <Button
-                variant="outline"
+                variant="primary"
                 onClick={handlePinConfirm}
                 disabled={
                   !readFxRate(pinDraft.rate).ok ||
@@ -4940,8 +4935,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
               </Button>
               )}
             </div>
-          </div>
-        </div>
+        </Dialog>
       )}
 
       {wizardOpen && (

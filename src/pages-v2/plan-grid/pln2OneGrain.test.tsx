@@ -132,7 +132,7 @@ describe('PLN-2 · a plan view lists ONE material type — the type planned at i
   });
 
   it('on the page: the type is the VIEW’s statement — there is no material-type select to change it', () => {
-    renderWithProviders(<PlanGrid />, { route: '/buyer/plan-grid' });
+    renderWithProviders(<PlanGrid />, { route: '/buyer/plan-grid?view=rm-plan' });
     const rm = screen.getByTestId('tp-view-rm-plan');
     expect(within(rm).queryByTestId('tp-filter-type')).toBeNull();
     expect(within(rm).getByTestId('tp-view-type')).toHaveAttribute('data-material-type', 'ROH');
@@ -145,7 +145,7 @@ describe('PLN-2 · a plan view lists ONE material type — the type planned at i
 
   it('ID — the view’s type reads in Indonesian', async () => {
     await i18n.changeLanguage('id');
-    renderWithProviders(<PlanGrid />, { route: '/buyer/plan-grid' });
+    renderWithProviders(<PlanGrid />, { route: '/buyer/plan-grid?view=rm-plan' });
     expect(within(screen.getByTestId('tp-view-rm-plan')).getByTestId('tp-view-type').textContent).toBe(
       'Bahan baku (RM) · direncanakan bulanan',
     );
@@ -308,6 +308,8 @@ describe('PLN-2 · INTAKE_ONE_GRAIN — one material × period commits at most o
       { route: '/buyer/plan-grid' },
     );
     fireEvent.click(screen.getByText('seed'));
+    // PG-1: the planned changes open in a drawer, from the bar.
+    fireEvent.click(screen.getByTestId('plan-changes-toggle'));
     fireEvent.click(screen.getByTestId(`plan-push-row-${ref}`));
     const failure = await screen.findByTestId(`plan-draft-failure-${ref}`);
     expect(failure).toHaveTextContent('SIM-PM-0068 is already committed for 2026-11, which overlaps 2026-W45');

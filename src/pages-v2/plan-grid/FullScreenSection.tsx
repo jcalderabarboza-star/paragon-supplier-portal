@@ -1,15 +1,17 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import { Maximize2, Minimize2 } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Maximize2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import SectionHeading from '../../components/ui-v2/SectionHeading';
 import Button from '../../components/ui-v2/Button';
+import Dialog from '../../components/ui-v2/Dialog';
 
 // ────────────────────────────────────────────────────────────────────────────
 // FullScreenSection (Stage G · G1.3.2) — the shared per-section full-screen
 // wrapper for the plan grid (award / intake / drawer).
 //
 // Collapsed, it renders its child inline at `normalHeight`. Expanded, it lifts
-// the child into an `inset-0 z-50` overlay and hands it a viewport-tall height
+// the child into the shared `Dialog` in its full-screen form (PG-1 — it drew its
+// own overlay until then) and hands it a viewport-tall height
 // (`innerHeight − chrome`) that reuses the SAME DSG height-pin the trembling fix
 // introduced (`--plan-dsg-h`, planGrid.css) — so a virtualized grid fills the
 // screen without structural rework. The child is a render-prop receiving
@@ -18,8 +20,9 @@ import Button from '../../components/ui-v2/Button';
 // No data path changes on expand — this is pure presentation.
 // ────────────────────────────────────────────────────────────────────────────
 
-// Overlay chrome (header + padding) reserved above the child when expanded.
-const OVERLAY_CHROME_PX = 128;
+// The dialog's own chrome (its inset, header and body padding) reserved around
+// the child when expanded.
+const OVERLAY_CHROME_PX = 176;
 
 interface FullScreenSectionProps {
   title: string;
@@ -48,58 +51,39 @@ const FullScreenSection: React.FC<FullScreenSectionProps> = ({
     return () => window.removeEventListener('resize', onResize);
   }, [expanded]);
 
-  // Esc collapses an expanded section.
-  useEffect(() => {
-    if (!expanded) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setExpanded(false);
-    };
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-  }, [expanded]);
-
-  const toggle = useCallback(() => setExpanded((v) => !v), []);
 
   const expandedHeight = Math.max(240, viewportH - OVERLAY_CHROME_PX);
   const dsgHeight = expanded ? expandedHeight : normalHeight;
-
-  const ToggleButton = (
-    <Button
-      variant="secondary"
-      icon={expanded ? Minimize2 : Maximize2}
-      onClick={toggle}
-      aria-label={t(expanded ? 'planGrid.fullscreen.collapse' : 'planGrid.fullscreen.expand')}
-    >
-      {t(expanded ? 'planGrid.fullscreen.collapse' : 'planGrid.fullscreen.expand')}
-    </Button>
-  );
-
-  if (expanded) {
-    return (
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-label={title}
-        className="fixed inset-0 z-50 flex flex-col bg-bg-page p-4"
-      >
-        <div className="mb-3 flex items-center justify-between gap-3">
-          <SectionHeading as="h2">{title}</SectionHeading>
-          {ToggleButton}
-        </div>
-        <div className="min-h-0 flex-1 overflow-auto">
-          {children({ expanded: true, dsgHeight })}
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div>
       <div className="mb-2 flex items-center justify-between gap-3">
         <SectionHeading as="h2">{title}</SectionHeading>
-        {ToggleButton}
+        {!expanded && (
+          <Button
+            variant="secondary"
+            icon={Maximize2}
+            onClick={() => setExpanded(true)}
+            aria-label={t('planGrid.fullscreen.expand')}
+          >
+            {t('planGrid.fullscreen.expand')}
+          </Button>
+        )}
       </div>
-      {children({ expanded: false, dsgHeight })}
+      {/* ONE place at a time: the child is in the page or in the dialog, never both. */}
+      {expanded ? (
+        <Dialog
+          open
+          fill
+          title={title}
+          onClose={() => setExpanded(false)}
+          closeLabel={t('planGrid.fullscreen.collapse')}
+        >
+          {children({ expanded: true, dsgHeight })}
+        </Dialog>
+      ) : (
+        children({ expanded: false, dsgHeight })
+      )}
     </div>
   );
 };

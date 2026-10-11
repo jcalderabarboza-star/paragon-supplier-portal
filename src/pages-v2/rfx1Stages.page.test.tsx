@@ -358,6 +358,10 @@ describe('3 · conclude without an award', () => {
     const ask = screen.getByTestId('rfq-conclude-ask');
     expect(ask).toHaveTextContent('Conclude RFQ-2026-018 without an award? This cannot be undone.');
     expect(ask).toHaveTextContent('Suppliers are told it ended without an award; they do not read this reason.');
+    // PG-1: the destructive final commit is the drawer's ONE solid button, in the critical colour.
+    expect(within(ask).getByTestId('rfq-conclude-yes')).toHaveAttribute('data-solid');
+    expect(within(ask).getByTestId('rfq-conclude-yes')).toHaveClass('bg-critical', 'text-white');
+    expect(within(ask).getByTestId('rfq-conclude-yes').closest('[data-solid-scope]')!.querySelectorAll('[data-solid]')).toHaveLength(1);
     expect(within(ask).getByTestId('rfq-conclude-yes')).toBeDisabled();
     type('rfq-conclude-reason', '   ');
     expect(within(ask).getByTestId('rfq-conclude-yes')).toBeDisabled();

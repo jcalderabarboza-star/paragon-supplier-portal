@@ -190,6 +190,8 @@ const WIZARD = 'components/ui-v2/Wizard.tsx';
 /** Components written in their own file and mounted only inside a container. */
 const RENDERED_IN_A_CONTAINER: Readonly<Record<string, string>> = {
   'pages-v2/roles/CreateRolePanel.tsx': 'the body of the New role dialog on the Roles page',
+  // PG-1: Publish, and "Discard it" while it is asked.
+  'pages-v2/plan-grid/PublicationPanel.tsx': 'the body of the Forecast publication drawer on the plan grid',
 };
 
 type SolidPlace = 'page' | 'container';
@@ -306,8 +308,16 @@ describe('UI-1d · UI-1e · a solid button is a main action or a final commit, a
     const two: string[] = [];
     for (const [file, places] of Object.entries(sites())) {
       const n = pageCount(places);
-      if (file === HEADER_SLOT || file === WIZARD || file in RENDERED_IN_A_CONTAINER) {
+      if (file === HEADER_SLOT || file === WIZARD) {
         if (n !== 1) two.push(`${file} writes ${n}`);
+        continue;
+      }
+      if (file in RENDERED_IN_A_CONTAINER) {
+        // A container's body may WRITE more than one — a commit and the
+        // destructive confirmation that takes its place (PG-1). How many stand
+        // on screen is the container's count at render (`oneSolid.ts`), which
+        // a spec opens for each named body.
+        if (n < 1) two.push(`${file} writes none`);
         continue;
       }
       if (!pages.has(file)) continue;
@@ -360,12 +370,45 @@ describe('UI-1d · UI-1e · a solid button is a main action or a final commit, a
     }
   });
 
-  it('a destructive act is never solid, and solid is never the default', () => {
+  it('solid is never the default, and a destructive act is solid only as a FINAL commit', () => {
     const btn = withoutProse(readFileSync(join(SRC, 'components/ui-v2/Button.tsx'), 'utf-8'));
     expect(btn).toMatch(/variant = 'outline'/);
     expect(btn).toMatch(/Variant = 'outline', tone\?: 'critical'/);
-    // the critical tone wins over the variant, so `variant="primary" tone="critical"` is an outline
-    expect(btn).toMatch(/tone === 'critical' \? CRITICAL_CLASS : VARIANT_CLASS\[variant\]/);
+    // PG-1: critical is solid ONLY with `variant="primary"`; on any other variant it is the outline.
+    expect(btn).toMatch(/tone !== 'critical' \? VARIANT_CLASS\[variant\] : variant === 'primary' \? CRITICAL_SOLID_CLASS : CRITICAL_CLASS/);
+    // …and it carries the same mark, so the container counts it as its one solid button.
+    expect(btn).toMatch(/data-solid=\{variant === 'primary' \? '' : undefined\}/);
+  });
+
+  it('⚠️ PG-1 · a solid critical button stands only inside a container — never on a page', () => {
+    // A destructive final commit ends the work in a drawer, a dialog or a wizard.
+    // On a page it would be the loudest thing there, and the page already has its main action.
+    const offenders: string[] = [];
+    let seen = 0;
+    for (const full of shippedTsx(SRC)) {
+      const file = relative(SRC, full).replace(/\\/g, '/');
+      const source = readFileSync(full, 'utf-8');
+      if (!/tone="critical"/.test(source)) continue;
+      const sf = ts.createSourceFile(file, source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+      const walk = (n: ts.Node, inside: boolean): void => {
+        let here = inside;
+        if (ts.isJsxElement(n) && CONTAINER_TAGS.has(n.openingElement.tagName.getText(sf))) here = true;
+        if (ts.isJsxAttribute(n) && n.name.getText(sf) === 'footerActions') here = true;
+        if ((ts.isFunctionDeclaration(n) || ts.isVariableDeclaration(n)) && n.name && /^footerFor/.test(n.name.getText(sf))) here = true;
+        if (ts.isJsxOpeningElement(n) || ts.isJsxSelfClosingElement(n)) {
+          const attrs = n.attributes.properties.map((a) => a.getText(sf));
+          if (attrs.some((a) => /^tone="critical"$/.test(a)) && attrs.some((a) => /^variant=["{]/.test(a) && /primary/.test(a))) {
+            seen++;
+            if (!here && !(file in RENDERED_IN_A_CONTAINER)) offenders.push(file);
+          }
+        }
+        ts.forEachChild(n, (c) => walk(c, here));
+      };
+      walk(sf, false);
+    }
+    // the matcher found the sites the ruling names, so the empty list is a reading and not a blank
+    expect(seen).toBeGreaterThan(3);
+    expect(offenders).toEqual([]);
   });
 
   it('and the producers a literal scan could not see are still gone', async () => {
