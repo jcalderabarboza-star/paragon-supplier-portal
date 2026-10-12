@@ -11,6 +11,8 @@ import { isContentShaped, type FlowVersionContent } from '../../flowBuilder/flow
 import { flowVersionStore } from '../../flowBuilder/flowVersionStore';
 
 const no = (reason: string): PolicyDecision => ({ ok: false, reason });
+/** `<rule code>:<element>` — what `findingKey` writes. */
+const ACKNOWLEDGED_KEY = /^R\d\d:.+$/;
 
 export function makeFlowVersionTarget(wiredEntities: () => readonly string[]): CommandTarget {
   bindPolicyHook(POLICY_HOOKS.FLOWVERSION_PROCESS_WRITABLE, ({ payload }) => {
@@ -32,6 +34,21 @@ export function makeFlowVersionTarget(wiredEntities: () => readonly string[]): C
     if (typeof payload.title !== 'string' || payload.title.trim() === '') {
       return no('FLOWVERSION_TITLE_BLANK: a change is named, so it can be found again');
     }
+    // FB-2 · "Start a draft from this version". The source must be a version
+    // this browser holds, and a change to the SAME process: its elements name
+    // that process's acts, and would mean nothing in front of another's.
+    if (payload.fromVersion !== undefined) {
+      const source = flowVersionStore.byId(String(payload.fromVersion));
+      if (!source) {
+        return no(`FLOWVERSION_SOURCE_UNKNOWN: '${String(payload.fromVersion)}' is not a version this browser holds`);
+      }
+      if (source.content.entity !== process) {
+        return no(
+          `FLOWVERSION_SOURCE_OTHER_PROCESS: version ${source.label} is a change to ` +
+            `${source.content.entity}, and a draft of ${process} cannot start from it`,
+        );
+      }
+    }
     return { ok: true };
   });
 
@@ -49,6 +66,15 @@ export function makeFlowVersionTarget(wiredEntities: () => readonly string[]): C
           `${version.content.entity} version ${version.content.baseVersion}, and a save cannot make it another`,
       );
     }
+    // FB-2 · the acknowledged warnings ride the save. Each names a rule and
+    // what it is about; anything else is not an acknowledgement.
+    const acknowledged = payload.acknowledged;
+    if (
+      acknowledged !== undefined &&
+      !(Array.isArray(acknowledged) && acknowledged.every((k) => typeof k === 'string' && ACKNOWLEDGED_KEY.test(k)))
+    ) {
+      return no('FLOWVERSION_ACKNOWLEDGED_MALFORMED: an acknowledgement names a rule and what it is about');
+    }
     return { ok: true };
   });
 
@@ -62,13 +88,23 @@ export function makeFlowVersionTarget(wiredEntities: () => readonly string[]): C
       const process = String(payload.flow);
       const created = flowVersionStore.create(
         // The shipped version is READ here, never taken from the payload.
-        { entity: process, baseVersion: getFlow(process)!.version, title: String(payload.title) },
+        {
+          entity: process,
+          baseVersion: getFlow(process)!.version,
+          title: String(payload.title),
+          from: payload.fromVersion === undefined ? undefined : flowVersionStore.byId(String(payload.fromVersion))?.content,
+        },
         asActorAttribution(scope.actor) ?? NO_PERSON,
       );
       return { entityId: created.id };
     },
     applyTransition: (id, _toState, payload, scope) => {
-      flowVersionStore.save(id, payload.content as FlowVersionContent, asActorAttribution(scope.actor) ?? NO_PERSON);
+      flowVersionStore.save(
+        id,
+        payload.content as FlowVersionContent,
+        (payload.acknowledged as readonly string[] | undefined) ?? [],
+        asActorAttribution(scope.actor) ?? NO_PERSON,
+      );
     },
   };
 }

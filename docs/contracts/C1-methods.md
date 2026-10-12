@@ -661,6 +661,24 @@ targets). They measure different things; this file keeps them separate.
 > tables, another supplier's key answers `null` exactly as an absent key does, and materials,
 > where-used and the sync log are refused `SCOPE_DENIED` for the whole object. The record, the stamp
 > and the sync run are specified in `C13-master-data.md`. Moved by the pin going red.
+>
+> **RE-HARVEST (2026-10-12, FB-2).** A draft is composed. No figure moved: no transition, state,
+> target or service method was added, and the pin did not go red.
+> **`t_flowversion_save` takes an OPTIONAL payload field, `acknowledged`**: a list of
+> `<rule code>:<element>` naming the warnings the author acknowledges. The store keeps each once and
+> the record gained `acknowledged` (a row stored before the field exists reads back with none). A
+> save replaces both the content and the acknowledgements. Hook `flowversion_content_well_formed`
+> gained a third refusal, after the two it had: `FLOWVERSION_ACKNOWLEDGED_MALFORMED` (present and not
+> a list of such names).
+> **`t_flowversion_create` takes an OPTIONAL payload field, `fromVersion`** (a version id): the new
+> draft starts with that version's elements, against the registered flow's `version` as it is now,
+> with its own id and label and no acknowledgement. Hook `flowversion_process_writable` gained two
+> refusals, after `FLOWVERSION_TITLE_BLANK`: `FLOWVERSION_SOURCE_UNKNOWN` (not a version the store
+> holds) and `FLOWVERSION_SOURCE_OTHER_PROCESS` (the source's `entity` is not `flow`).
+> **A SAVE IS NOT REFUSED BY THE VALIDATION LIBRARY.** A draft that breaks a rule is saved and kept,
+> and is reported with the rule on read. The library gates nothing until a version can be proposed.
+> **The composer's one write is `t_flowversion_save`.** It composes three kinds of step (approval,
+> confirmation, data capture); scans, checks and forks are not composable yet.
 
 Source of truth: `src/services/data/types.ts` (service + command types),
 `src/services/transitions/` (schema, dispatcher, flows).
