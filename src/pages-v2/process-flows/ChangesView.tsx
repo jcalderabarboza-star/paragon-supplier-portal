@@ -34,6 +34,9 @@ import {
 } from '../../services/flowBuilder/validateVersion';
 import { flowVersionRefusalKey } from './flowVersionRefusal';
 import ChangeComposer from './ChangeComposer';
+import ChangeReview, { stateTone } from './ChangeReview';
+import { inForce } from '../../services/flowBuilder/stepsDue';
+import type { FlowVersionActName } from '../../services/query/commandHooks';
 
 // ────────────────────────────────────────────────────────────────────────────
 // FB-1 · THE CHANGES VIEW — every version of every process, and the rules a
@@ -215,6 +218,9 @@ const ChangesView: React.FC<{
   // FB-2 · the draft being composed. Held by id, and read from the store each
   // time, so the composer always opens on what was last saved.
   const [composing, setComposing] = useState<string | null>(null);
+  // FB-3 — the review of one change, optionally opened on an act the composer
+  // asked for ("Propose for review").
+  const [reviewing, setReviewing] = useState<{ id: string; asking: FlowVersionActName | null } | null>(null);
   const startFrom = async (source: FlowVersion): Promise<void> => {
     const result = await create.mutateAsync({
       process: source.content.entity,
@@ -253,7 +259,7 @@ const ChangesView: React.FC<{
       id: 'state',
       header: t('flowBuilder.changes.col.state'),
       kind: 'status',
-      cell: (v) => <StatusPill variant="neutral">{t(`flowBuilder.state.${v.state}`)}</StatusPill>,
+      cell: (v) => <StatusPill variant={stateTone(v.state)}>{t(`flowBuilder.state.${v.state}`)}</StatusPill>,
     },
     {
       id: 'elements',
@@ -276,27 +282,37 @@ const ChangesView: React.FC<{
       kind: 'date',
       cell: (v) => formatDate(v.createdAt),
     },
-    ...(canDraft
-      ? [
-          {
-            id: 'actions',
-            header: t('flowBuilder.changes.col.actions'),
-            kind: 'actions',
-            cell: (v) => (
-              <span className="inline-flex items-center gap-3">
-                <LinkButton data-testid={`fb-compose-${v.id}`} onClick={() => setComposing(v.id)}>
-                  {t('flowBuilder.changes.compose')}
-                </LinkButton>
-                <LinkButton data-testid={`fb-copy-${v.id}`} onClick={() => void startFrom(v)}>
-                  {t('flowBuilder.changes.startFrom')}
-                </LinkButton>
-              </span>
-            ),
-          } satisfies Column<FlowVersion>,
-        ]
-      : []),
+    {
+      id: 'actions',
+      header: t('flowBuilder.changes.col.actions'),
+      kind: 'actions',
+      cell: (v) => (
+        <span className="inline-flex items-center gap-3">
+          {/* Reading a change is for every seat; the acts inside ask their own permission. */}
+          <LinkButton data-testid={`fb-review-${v.id}`} onClick={() => setReviewing({ id: v.id, asking: null })}>
+            {t('flowBuilder.changes.review')}
+          </LinkButton>
+          {/* A draft only: a change that was handed over is never edited. */}
+          {canDraft && v.state === 'Draft' ? (
+            <LinkButton data-testid={`fb-compose-${v.id}`} onClick={() => setComposing(v.id)}>
+              {t('flowBuilder.changes.compose')}
+            </LinkButton>
+          ) : null}
+          {canDraft ? (
+            <LinkButton data-testid={`fb-copy-${v.id}`} onClick={() => void startFrom(v)}>
+              {t('flowBuilder.changes.startFrom')}
+            </LinkButton>
+          ) : null}
+        </span>
+      ),
+    },
   ];
   const composed = composing ? read.versions.find((v) => v.id === composing) : undefined;
+  const reviewed = reviewing ? read.versions.find((v) => v.id === reviewing.id) : undefined;
+  // An active version the process does NOT obey: named, never silently kept.
+  const setAside = [...new Set(read.versions.filter((v) => v.state === 'Active').map((v) => v.content.entity))]
+    .map((entity) => inForce(entity).setAside)
+    .filter((s): s is NonNullable<typeof s> => s !== null);
 
   return (
     <div className="space-y-6" data-testid="fb-changes">
@@ -309,6 +325,19 @@ const ChangesView: React.FC<{
           <Notice tone="sample" icon={Info} title={t('flowBuilder.kept.title')} data-testid="fb-kept">
             <p>{t('flowBuilder.kept.body')}</p>
           </Notice>
+          {setAside.map(({ version, findings }) => (
+            <Notice
+              key={version.id}
+              tone="warning"
+              icon={AlertTriangle}
+              title={t('flowBuilder.setAside.title', { label: version.label, process: processName(version.content.entity) })}
+              data-testid={`fb-set-aside-${version.id}`}
+            >
+              <p>
+                {t('flowBuilder.setAside.body', { codes: [...new Set(findings.map((f) => f.code))].join(', ') })}
+              </p>
+            </Notice>
+          ))}
           {read.unreadable ? (
             <Notice
               tone="warning"
@@ -391,6 +420,20 @@ const ChangesView: React.FC<{
           world={world}
           onClose={() => setComposing(null)}
           onSaved={onChanged}
+          onPropose={() => {
+            setComposing(null);
+            setReviewing({ id: composed.id, asking: 'propose' });
+          }}
+        />
+      ) : null}
+      {reviewed ? (
+        <ChangeReview
+          key={`${reviewed.id}#${reviewing?.asking ?? ''}`}
+          version={reviewed}
+          world={world}
+          asking={reviewing?.asking ?? null}
+          onClose={() => setReviewing(null)}
+          onChanged={onChanged}
         />
       ) : null}
     </div>

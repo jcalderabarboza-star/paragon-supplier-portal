@@ -19,8 +19,11 @@
 // 5. AN UNSEEDED REGISTRY IS NOT A CORRUPT STORE. With no flow registered the
 //    read is suspended, not failed.
 //
-// THE ONLY WRITERS ARE `create` AND `save`, AND BOTH ARE CALLED BY THE COMMAND
-// TARGET — an act on a version goes through the dispatcher and leaves an event.
+// THE ONLY WRITERS ARE `create`, `save` AND `move`, AND ALL THREE ARE CALLED BY
+// THE COMMAND TARGET — an act on a version goes through the dispatcher and
+// leaves an event. THERE IS NO DELETE, AND `save` WRITES A DRAFT ONLY: a version
+// that left Draft is never edited (`fb3Lifecycle.test.ts` holds that this
+// object has no other door).
 // ────────────────────────────────────────────────────────────────────────────
 
 import type { ActorAttribution } from '../../lib/enforcement';
@@ -32,9 +35,11 @@ import {
   emptyContent,
   isContentShaped,
   parseVersionLabel,
+  VERSION_ACTS,
   versionLabel,
   type FlowVersion,
   type FlowVersionContent,
+  type VersionAct,
 } from './flowVersion';
 
 /** The one key, beside `paragon.customRoles`. */
@@ -68,6 +73,13 @@ let counters: Record<string, number> = {};
 let nextId = 1;
 let readState: FlowVersionReadState = EMPTY_READ;
 let hydrated = false;
+/** Bumped on every write and every re-read, so a surface can read again. */
+let revision = 0;
+const listeners = new Set<() => void>();
+const notify = (): void => {
+  revision += 1;
+  for (const l of listeners) l();
+};
 
 const isRecord = (v: unknown): v is Record<string, unknown> =>
   typeof v === 'object' && v !== null && !Array.isArray(v);
@@ -91,8 +103,36 @@ function isVersionShaped(v: unknown): v is FlowVersion {
     // A row written before warnings could be acknowledged carries none.
     (v.acknowledged === undefined ||
       (Array.isArray(v.acknowledged) && v.acknowledged.every((k) => typeof k === 'string'))) &&
+    (v.history === undefined || (Array.isArray(v.history) && v.history.every(isActShaped))) &&
     isContentShaped(v.content)
   );
+}
+
+function isActShaped(v: unknown): boolean {
+  return (
+    isRecord(v) &&
+    (VERSION_ACTS as readonly unknown[]).includes(v.act) &&
+    typeof v.from === 'string' &&
+    typeof v.to === 'string' &&
+    typeof v.at === 'string' &&
+    typeof v.reason === 'string' &&
+    (v.bypass === undefined ||
+      (isRecord(v.bypass) &&
+        typeof v.bypass.reason === 'string' &&
+        Array.isArray(v.bypass.rules) &&
+        v.bypass.rules.every((r) => typeof r === 'string')))
+  );
+}
+
+/** A stored history, with every stamp read back as a recorded attribution — or `null`. */
+function readHistory(raw: unknown): VersionAct[] | null {
+  const out: VersionAct[] = [];
+  for (const h of (raw ?? []) as (VersionAct & { by: unknown })[]) {
+    const by = h.by === null ? null : asActorAttribution(h.by);
+    if (by === undefined) return null;
+    out.push({ ...h, by });
+  }
+  return out;
 }
 
 /** Why a well-shaped row is not a version this store minted, or `null`. */
@@ -187,7 +227,8 @@ function hydrate(): void {
     const createdBy = asActorAttribution((row as { createdBy: unknown }).createdBy);
     const savedRaw = (row as { savedBy: unknown }).savedBy;
     const savedBy = savedRaw === null ? null : asActorAttribution(savedRaw);
-    if (!createdBy || savedBy === undefined) {
+    const history = readHistory((row as { history?: unknown }).history);
+    if (!createdBy || savedBy === undefined || history === null) {
       refuse(row, row.id, 'a stamp is not a recorded attribution');
       continue;
     }
@@ -196,9 +237,15 @@ function hydrate(): void {
       refuse(row, row.id, refusal);
       continue;
     }
+    // The state a version rests in is the state its last act left it in.
+    const rests = history.length > 0 ? history[history.length - 1].to : FLOW_VERSION_STATES[0];
+    if (rests !== row.state) {
+      refuse(row, row.id, `the state '${row.state}' is not where its history leaves it ('${rests}')`);
+      continue;
+    }
     seenIds.add(row.id);
     seenLabels.add(`${row.content.entity}#${row.label}`);
-    rows.push({ ...row, acknowledged: row.acknowledged ?? [], createdBy, savedBy });
+    rows.push({ ...row, acknowledged: row.acknowledged ?? [], createdBy, savedBy, history });
   }
   readState = { versions: rows, rejected, unreadable: false, suspended: false };
   hydrated = true;
@@ -221,6 +268,7 @@ function publish(next: FlowVersion[]): void {
   rows = next;
   readState = { ...readState, versions: rows };
   persist();
+  notify();
 }
 
 export const flowVersionStore = {
@@ -270,6 +318,7 @@ export const flowVersionStore = {
       createdAt: DECLARED_PRESENT_INSTANT,
       savedBy: null,
       savedAt: null,
+      history: [],
     };
     publish([...rows, version]);
     return version;
@@ -282,8 +331,25 @@ export const flowVersionStore = {
     hydrate();
     publish(
       rows.map((r) =>
-        r.id === id
+        // A DRAFT ONLY. The dispatcher refuses the act elsewhere; this is the
+        // second lock, on the door itself.
+        r.id === id && r.state === FLOW_VERSION_STATES[0]
           ? { ...r, content, acknowledged: [...new Set(acknowledged)], savedBy: actor, savedAt: DECLARED_PRESENT_INSTANT }
+          : r,
+      ),
+    );
+  },
+  /**
+   * AN ACT MOVED THE CHANGE. The state it rests in and the line of history are
+   * written together, so neither can say something the other does not. The
+   * instant is the store's.
+   */
+  move(id: string, act: Omit<VersionAct, 'at' | 'from'>): void {
+    hydrate();
+    publish(
+      rows.map((r) =>
+        r.id === id
+          ? { ...r, state: act.to, history: [...r.history, { ...act, from: r.state, at: DECLARED_PRESENT_INSTANT }] }
           : r,
       ),
     );
@@ -303,10 +369,20 @@ export const flowVersionStore = {
     } catch {
       // nothing to do; the in-memory state is already clear
     }
+    notify();
+  },
+  subscribe(listener: () => void): () => void {
+    listeners.add(listener);
+    return () => listeners.delete(listener);
+  },
+  /** Changes whenever the store was written or read again. */
+  revision(): number {
+    return revision;
   },
   /** Drop the in-memory copy WITHOUT touching storage — what a reload does. */
   rehydrate(): void {
     hydrated = false;
     hydrate();
+    notify();
   },
 };

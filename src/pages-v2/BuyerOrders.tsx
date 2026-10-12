@@ -746,7 +746,7 @@ const BuyerOrders: React.FC = () => {
                       and no indication that the wait is SAP's, not the
                       supplier's. Derived from the canonical state. */}
                   <span className="mt-1 block">
-                    <NextActLine act={nextAct} testId="next-act-buyer-po" />
+                    <NextActLine act={nextAct} testId="next-act-buyer-po" doc={selectedPO ? { entity: 'purchaseOrder', id: selectedPO.id, state: selectedPO.status } : null} />
                   </span>
                 </Field>
                 <Field label={t('buyerOrders.panel.field.currency')}>

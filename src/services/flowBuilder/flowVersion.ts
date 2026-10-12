@@ -99,6 +99,13 @@ export interface FlowVersionContent {
   readonly checks: readonly AddedCheck[];
 }
 
+/**
+ * THE BUILDER'S OWN PROCESSES. A change cannot be drafted against either: a
+ * step in front of an act on a change, or in front of completing a step, would
+ * let the builder gate itself.
+ */
+export const BUILDER_PROCESSES: readonly string[] = Object.freeze(['flowVersion', 'processStep']);
+
 export const emptyContent = (entity: string, baseVersion: number): FlowVersionContent => ({
   entity,
   baseVersion,
@@ -134,7 +141,53 @@ export interface FlowVersion {
   /** The last save, or `null` while the draft is as it was created. */
   readonly savedBy: ActorAttribution | null;
   readonly savedAt: string | null;
+  /**
+   * FB-3 · every act taken on the change after it was drafted, oldest first:
+   * who, when, why, and from which state to which. Minted by the store. It is
+   * kept on the record because the record is what survives a reload.
+   */
+  readonly history: readonly VersionAct[];
 }
+
+/** The acts that move a change. `supersede` is the platform's own. */
+export const VERSION_ACTS = [
+  'propose',
+  'withdraw',
+  'return',
+  'approve',
+  'reject',
+  'activate',
+  'supersede',
+  'retire',
+  'restore',
+] as const;
+export type VersionActKind = (typeof VERSION_ACTS)[number];
+
+/** One act on a change. */
+export interface VersionAct {
+  readonly act: VersionActKind;
+  readonly from: string;
+  readonly to: string;
+  /** The person, or `null` for the platform's own act (a supersede). */
+  readonly by: ActorAttribution | null;
+  readonly at: string;
+  readonly reason: string;
+  /** A check that stood aside for a Super Admin, with the reason they gave. */
+  readonly bypass?: { readonly rules: readonly string[]; readonly reason: string };
+}
+
+/** The last act of one kind, or `undefined`. */
+export const lastAct = (version: FlowVersion, act: VersionActKind): VersionAct | undefined =>
+  [...version.history].reverse().find((h) => h.act === act);
+
+/** Who proposed the change as it stands in review: the latest proposal. */
+export const proposerOf = (version: FlowVersion): ActorAttribution | null => lastAct(version, 'propose')?.by ?? null;
+
+/** When the change last came into force, or `null` if it is not in force. */
+export const inForceSince = (version: FlowVersion): string | null =>
+  version.state === 'Active'
+    ? ([...version.history].reverse().find((h) => h.to === 'Active')?.at ?? null)
+    : null;
 
 // ── THE LABEL RULE (Design 6 v2 §6.1) ───────────────────────────────────────
 

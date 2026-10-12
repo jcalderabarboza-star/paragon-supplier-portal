@@ -134,7 +134,7 @@ function buildModules(): readonly ModuleSpec[] {
         // MD-1 — the master-data replica. In PLT, because every module reads
         // master data: switching the read off would switch them all off.
         '/buyer/master-data'],
-      flows: ['role', 'moduleActivation', 'flowVersion'],
+      flows: ['role', 'moduleActivation', 'flowVersion', 'processStep'],
       capabilities: ['identity', 'dashboard', 'masterData'], dependsOn: [], parts: [],
     },
     {

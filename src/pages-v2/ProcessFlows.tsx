@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useSyncExternalStore } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
 import { GitBranch, AlertTriangle, Plus } from 'lucide-react';
@@ -21,10 +21,12 @@ import DerivedFlags from './process-flows/DerivedFlags';
 import GuideTabs from './process-flows/GuideTabs';
 import ChangesView, { ChangeGate, NewChangeDialog } from './process-flows/ChangesView';
 import { useVerbAvailability } from '../hooks/useVerbAvailability';
-import { shippedLabel } from '../services/flowBuilder/flowVersion';
+import { inForceSince, shippedLabel } from '../services/flowBuilder/flowVersion';
+import { inForce } from '../services/flowBuilder/stepsDue';
+import { inLanguage, laneLabel } from '../lib/stepRefusal';
+import { formatDate } from '../lib/format';
 import { flowVersionStore } from '../services/flowBuilder/flowVersionStore';
 import { liveWorld } from '../services/flowBuilder/liveWorld';
-import { rosterLabels } from './process-flows/rosterLabels';
 import { getGuide, guideLocaleFor } from '../guides';
 import { firstParagraphText } from '../guides/markdown';
 import { STEP_KIND_KEY } from '../lib/i18n/stepKind';
@@ -306,6 +308,28 @@ const GuideCardLine: React.FC<{ entity: string }> = ({ entity }) => {
   );
 };
 
+/** FB-4 — what the version in force adds to this process, in sentences. Nothing when it runs as shipped. */
+const InForceSteps: React.FC<{ entity: string }> = ({ entity }) => {
+  const { t, i18n } = useTranslation();
+  const version = inForce(entity).version;
+  if (!version) return null;
+  const guide = getGuide(entity, guideLocaleFor(i18n.language));
+  const steps = [...version.content.steps].sort((a, b) => a.before.localeCompare(b.before) || a.order - b.order);
+  return (
+    <ul className="mt-1 list-disc pl-5 text-meta text-text-secondary" data-testid="pf-inforce-steps">
+      {steps.map((s) => (
+        <li key={s.id}>
+          {t(`flowBuilder.review.sentence.${s.kind}`, {
+            act: guide?.steps[s.before]?.label ?? s.before,
+            lane: laneLabel(s, t),
+            step: inLanguage(s.label, i18n.language) || s.id,
+          })}
+        </li>
+      ))}
+    </ul>
+  );
+};
+
 const ProcessFlows: React.FC = () => {
   const { t } = useTranslation();
   // The registry is seeded once at import (`services/transitions` barrel), so
@@ -321,10 +345,24 @@ const ProcessFlows: React.FC = () => {
   // browser does not hold, opens the catalogue: a link never lands on a blank
   // body.
   const [revision, setRevision] = useState(0);
+  // FB-4 — the version of each process in force is read again whenever a
+  // change is switched on or off.
+  useSyncExternalStore(flowVersionStore.subscribe, flowVersionStore.revision);
+  const inForceLine = (entity: string, shipped: number): string => {
+    const now = inForce(entity);
+    if (now.version) {
+      return t('flowBuilder.inForce.version', {
+        label: now.version.label,
+        since: formatDate(inForceSince(now.version) ?? now.version.createdAt),
+      });
+    }
+    const line = t('flowBuilder.inForce.shipped', { version: shippedLabel(shipped) });
+    return now.setAside ? `${line} ${t('flowBuilder.inForce.setAside', { label: now.setAside.version.label })}` : line;
+  };
   const [creating, setCreating] = useState(false);
   // ONE world for the list and the composer, with the names a reader sees for
   // the sample persons: what the composer reports, the list reports.
-  const world = useMemo(() => liveWorld({ personNames: rosterLabels() }), []);
+  const world = useMemo(() => liveWorld(), []);
   const draftAvailability = useVerbAvailability('flow:draft');
   const askedVersion = searchParams.get('version');
   const currentVersion = askedVersion !== null && flowVersionStore.byId(askedVersion) ? askedVersion : null;
@@ -479,7 +517,7 @@ const ProcessFlows: React.FC = () => {
                     </span>
                     {/* FB-1 — which version of the process is running. */}
                     <span data-testid={`pf-flow-inforce-${flow.entity}`} className="mt-0.5 block text-xs text-text-secondary">
-                      {t('flowBuilder.inForce.shipped', { version: shippedLabel(flow.version) })}
+                      {inForceLine(flow.entity, flow.version)}
                     </span>
                     {/* G1 — the card gains its guide's first paragraph, or says
                         the guide is pending. AFTER the counts, so the entity
@@ -529,8 +567,9 @@ const ProcessFlows: React.FC = () => {
                   </p>
                 )}
                 <p data-testid="pf-inforce" className="mt-2 text-meta text-text-secondary">
-                  {t('flowBuilder.inForce.shipped', { version: shippedLabel(view.version) })}
+                  {inForceLine(view.entity, view.version)}
                 </p>
+                <InForceSteps entity={view.entity} />
                 <p className="mt-1 text-meta text-text-tertiary">
                   {t('processFlows.flow.counts', {
                     states: view.stateCount,

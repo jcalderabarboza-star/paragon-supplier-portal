@@ -108,7 +108,27 @@ const RULED: ReadonlyArray<{ hook: PolicyHookId; head: string; verbs: readonly s
   {
     hook: POLICY_HOOKS.FLOWVERSION_AUTHOR_NAMED,
     head: 'FLOWVERSION_AUTHOR_UNATTRIBUTED',
-    verbs: ['t_flowversion_create', 't_flowversion_save'],
+    verbs: ['t_flowversion_create', 't_flowversion_save', 't_flowversion_propose', 't_flowversion_withdraw'],
+  },
+  // FB-3 / FB-4 — a decision on a change, and putting one in force or rolling
+  // it back, is taken by somebody.
+  {
+    hook: POLICY_HOOKS.FLOWVERSION_DECIDER_NAMED,
+    head: 'FLOWVERSION_DECIDER_UNATTRIBUTED',
+    verbs: [
+      't_flowversion_return',
+      't_flowversion_approve',
+      't_flowversion_reject',
+      't_flowversion_activate',
+      't_flowversion_retire',
+      't_flowversion_restore',
+    ],
+  },
+  // FB-4 — a step an active version added is completed, or declined, by somebody.
+  {
+    hook: POLICY_HOOKS.STEP_ACTOR_NAMED,
+    head: 'STEP_ACTOR_UNATTRIBUTED',
+    verbs: ['t_step_complete', 't_step_decline'],
   },
 ];
 

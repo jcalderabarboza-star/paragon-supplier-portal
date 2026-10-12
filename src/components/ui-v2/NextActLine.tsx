@@ -4,6 +4,7 @@ import type { NextAct } from '../../services/transitions/nextAct';
 import { ROLE_LABEL_KEY } from '../../services/transitions/handoff';
 import { EXTERNAL_FACT_OWNER_KEY } from '../../lib/i18n/externalFactOwner';
 import { NEXT_ACT_KEY } from '../../lib/i18n/nextAct';
+import DueStepLine, { type StepDocument } from '../v2-features/DueStepLine';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // WHO ACTS NEXT, RENDERED. One line, on a document, derived end to end.
@@ -31,7 +32,7 @@ import { NEXT_ACT_KEY } from '../../lib/i18n/nextAct';
 // Nothing here informs a decision the reader can act on, so nothing is coloured.
 // ─────────────────────────────────────────────────────────────────────────────
 
-export const NextActLine: React.FC<{
+const ActLine: React.FC<{
   /**
    * `null` when no document is selected — the hook answers `null` rather than
    * guessing a state, and this renders nothing. Accepting the nullable type here
@@ -85,5 +86,24 @@ export const NextActLine: React.FC<{
     </span>
   );
 };
+
+/**
+ * FB-4 — WHO ACTS NEXT, AND FIRST THE STEP THAT IS DUE. A surface that names
+ * the document it is showing (`doc`) reads, ahead of the line above, any step
+ * the version of the process in force added in front of an act that can be
+ * taken from here — and a seat in the step's lane opens it from the line.
+ * Without `doc` this is the line as it always was.
+ */
+export const NextActLine: React.FC<{
+  act: NextAct | null;
+  testId?: string;
+  /** The document on screen: its process, its id and the CANONICAL state it rests in. */
+  doc?: StepDocument | null;
+}> = ({ act, testId, doc }) => (
+  <>
+    {doc ? <DueStepLine doc={doc} testId={testId ? `${testId}-step` : undefined} /> : null}
+    <ActLine act={act} testId={testId} />
+  </>
+);
 
 export default NextActLine;

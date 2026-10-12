@@ -75,6 +75,12 @@ export const COMMAND_REFUSAL_GLOSSARY = {
     en: 'One or more values the action requires were blank. Nothing was changed. The refusal names each missing field.',
     id: 'Satu atau beberapa nilai yang diperlukan tindakan ini kosong. Tidak ada yang diubah. Penolakan menyebut setiap kolom yang kurang.',
   },
+  // FB-4 — the copy says what the dispatcher knows: a step is due, and the
+  // document did not move. Which step and which lane is the surface's sentence.
+  STEP_PENDING: {
+    en: 'A step that a change to this process added must be completed before this action can be taken. Nothing was changed, and the document is where it was. The refusal names the step; the line on the document says which lane completes it.',
+    id: 'Sebuah langkah yang ditambahkan oleh perubahan pada proses ini harus diselesaikan sebelum tindakan ini dapat dilakukan. Tidak ada yang diubah, dan dokumen tetap di tempatnya. Penolakan menyebut langkahnya; baris pada dokumen menyebut lajur yang menyelesaikannya.',
+  },
   // ⚠️ THE COPY NAMES THE REMEDY, NOT THE MECHANISM. A caller reading this has
   // written an attribution key into a payload; what they need to know is that
   // the platform decides who acted, not that a set lookup matched.

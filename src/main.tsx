@@ -12,6 +12,7 @@ import { seedSourceableRequisition } from './services/data/mock/requisitionSeed'
 import { seedSupplierApplications } from './services/data/mock/applicationSeed';
 import { seedMaterialRequests } from './services/data/mock/materialRequestSeed';
 import { seedPslListings } from './services/data/mock/pslSeed';
+import { fixtureSeeding } from './services/flowBuilder/stepsDue';
 import { withChaos, chaosConfigFromEnv } from './services/data/mock/withChaos';
 import { queryClient } from './services/query/queryClient';
 import type { IDataService } from './services/data/types';
@@ -52,6 +53,7 @@ const renderApp = () =>
 // empty, which is the SAFE state and an honest one; refusing to boot over lost
 // provenance would trade a real capability for a cosmetic one. The failure is
 // reported rather than swallowed — that is the part that must not be silent.
+fixtureSeeding(true);
 seedEnforcementLedger()
   .then((outcomes) => {
     const refused = outcomes.filter((o) => o.status === 'refused');
@@ -126,4 +128,6 @@ seedEnforcementLedger()
   .catch((err) => {
     console.error('[PSL P3] the preferred-supplier seed threw:', err);
   })
+  // FB-4 — the fixture is grown; from here a change in force is obeyed.
+  .then(() => fixtureSeeding(false))
   .then(renderApp);

@@ -2954,6 +2954,109 @@ bindPolicyHook(
     'a change to a process is recorded against the person who wrote it',
   ),
 );
+// FB-3 — and a decision on one is taken by somebody.
+bindPolicyHook(
+  POLICY_HOOKS.FLOWVERSION_DECIDER_NAMED,
+  namedSeatHook(
+    'FLOWVERSION_DECIDER_UNATTRIBUTED',
+    'a decision on a change to a process is recorded against the person who took it',
+  ),
+);
+// FB-4 — a step an active version added is completed by somebody.
+bindPolicyHook(
+  POLICY_HOOKS.STEP_ACTOR_NAMED,
+  namedSeatHook(
+    'STEP_ACTOR_UNATTRIBUTED',
+    'completing or declining a step is recorded against the person who did it',
+  ),
+);
+
+// ── FB-3 · FOUR EYES ON A CHANGE TO A PROCESS (Design 6 v2 §5.2) ────────────
+//
+// THE APPROVER MAY NOT BE THE PROPOSER. Both are named — proposing already
+// refuses a seat that names nobody — so the comparison is never vacuous. The
+// proposer is read from the change's own history through `readEntity`: the
+// latest proposal, because a change returned and proposed again is proposed by
+// whoever proposed it last.
+//
+// Rejecting, returning and retiring carry no such rule: they are the safe
+// direction and stay reachable by any one named holder.
+//
+// A Super Admin passes it with a recorded reason (operator ruling, decision
+// 8); `admin` holds the same permissions and is refused.
+bindPolicyHook(POLICY_HOOKS.FLOWVERSION_APPROVER_NOT_PROPOSER, ({ entityId, target, scope, exempt }) => {
+  const version = target.readEntity?.(entityId) as
+    | { label: string; history: readonly { act: string; by: unknown }[] }
+    | null
+    | undefined;
+  const proposal = version ? [...version.history].reverse().find((h) => h.act === 'propose') : undefined;
+  const proposer = asActorAttribution(proposal?.by);
+  const approver = asActorAttribution(scope.actor);
+  if (
+    proposer &&
+    approver &&
+    isAttributed(proposer) &&
+    isAttributed(approver) &&
+    proposer.person.personId === approver.person.personId &&
+    !exempt?.('FLOWVERSION_APPROVER_IS_PROPOSER')
+  ) {
+    return {
+      ok: false,
+      reason:
+        `FLOWVERSION_APPROVER_IS_PROPOSER: ${personRefusalToken(proposer.person.personId)} proposed ` +
+        `version ${version!.label} and may not also approve it — proposing a change to a process and ` +
+        'approving it are two people. Route it to somebody else.',
+    };
+  }
+  return { ok: true };
+});
+
+// ── FB-4 · THE TWO SEPARATIONS A VERSION MAY ADD ────────────────────────────
+//
+// WRITTEN HERE, and called by the step target and the dispatcher's overlay once
+// each has found the same person on both sides. Two derived guards read THIS
+// file: `personNamingRefusal.test.ts` holds every head that names a person to a
+// key map, and `adm1SuperAdmin.test.ts` holds the checks that ask the Super
+// Admin exemption equal to the labelled ones. A separation written anywhere
+// else would be outside both.
+//
+// Each asks the exemption at the point it would refuse, as every four-eyes
+// check does: a Super Admin passes with a recorded reason, nobody else does. A
+// surface never prints the id below; it fills `{{person}}` from the resolver.
+type Exempt = ((head: string) => boolean) | undefined;
+
+/** The same person completed an earlier step this one must differ from. */
+export function stepCompleterIsEarlier(
+  exempt: Exempt,
+  personId: string,
+  at: { earlierStep: string; step: string; label: string },
+): { ok: boolean; reason?: string } {
+  if (exempt?.('STEP_COMPLETER_IS_EARLIER_COMPLETER')) return { ok: true };
+  return {
+    ok: false,
+    reason:
+      `STEP_COMPLETER_IS_EARLIER_COMPLETER: ${personRefusalToken(personId)} completed the step ` +
+      `'${at.earlierStep}' on this document, and version ${at.label} rules that the step '${at.step}' is ` +
+      'completed by a different person. Route it to somebody else.',
+  };
+}
+
+/** The person taking the act completed a step whose completer may not take it. */
+export function stepCompleterMayNotAct(
+  exempt: Exempt,
+  personId: string,
+  at: { step: string; label: string },
+): { ok: boolean; reason?: string } {
+  if (exempt?.('STEP_COMPLETER_MAY_NOT_ACT')) return { ok: true };
+  return {
+    ok: false,
+    reason:
+      `STEP_COMPLETER_MAY_NOT_ACT: ${personRefusalToken(personId)} completed the step '${at.step}' on ` +
+      `this document, and version ${at.label} rules that whoever completes it may not then take the act. ` +
+      'Route the act to somebody else.',
+  };
+}
+
 bindPolicyHook(
   POLICY_HOOKS.GR_DISPOSER_NAMED,
   namedSeatHook(

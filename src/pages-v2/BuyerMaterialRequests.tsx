@@ -750,7 +750,7 @@ const BuyerMaterialRequests: React.FC = () => {
                 pass one, so `testId = 'next-act'` had never been reachable;
                 this page omitting it made the default render for the first
                 time and the gate fired with nobody editing it. */}
-            <NextActLine act={nextAct} testId="next-act-buyer-material-request" />
+            <NextActLine act={nextAct} testId="next-act-buyer-material-request" doc={selected ? { entity: 'materialRequest', id: selected.id, state: selected.status } : null} />
             {/* ADM-1 — what a Super Admin passed on this request, if anything. */}
             <SuperAdminBypassNote entity="materialRequest" entityId={selected.id} />
 

@@ -150,6 +150,9 @@ const LANE_BUNDLES = Object.freeze({
     // carried it would put the threshold back inside the role, where it cannot
     // vary by value, plant, category or date without minting a role per band.
     procurement: Object.freeze([
+      // FB-4 - every buyer-side lane may complete a step an active version
+      // added. WHICH step is the step's own lane (`stepOpenFor`), not this atom.
+      'step:complete',
       'rfq:create', 'rfq:publish', 'rfq:close', 'rfq:award', 'rfq:fx-pin', 'rfq:cancel', 'rfq:reopen',
       // RFx-1 — narrowing the field and ending an event with no award are the
       // same authority as awarding it (operator ruling: the stage verbs are
@@ -275,12 +278,18 @@ const LANE_BUNDLES = Object.freeze({
     // automation grant: `t_asn_resolve_discrepancy` is the clerk's act and
     // `t_asn_discrepancy` is the GR cascade's, on the SAME atom.
     receiving: Object.freeze([
+      // FB-4 - every buyer-side lane may complete a step an active version
+      // added. WHICH step is the step's own lane (`stepOpenFor`), not this atom.
+      'step:complete',
       'gr:receive', 'gr:inspect', 'gr:disposition', 'gr:post',
       'asn:flag',
     ]),
     // Operator ruling, explicit: procurement does NOT hold
     // `t_invoice_release_payment`; finance does.
     finance: Object.freeze([
+      // FB-4 - every buyer-side lane may complete a step an active version
+      // added. WHICH step is the step's own lane (`stepOpenFor`), not this atom.
+      'step:complete',
       'invoice:pay', 'invoice:approve', 'invoice:dispute',
     ]),
     // ⚠️ **IT NOW HOLDS EXACTLY ONE VERB A HUMAN CAN FIRE ON A SCREEN, AND IT IS
@@ -297,6 +306,9 @@ const LANE_BUNDLES = Object.freeze({
     // `enforcement:set` below — executed here rather than deferred, because
     // `role:grant` has no pre-existing caller whose lane would go dark.
     compliance: Object.freeze([
+      // FB-4 - every buyer-side lane may complete a step an active version
+      // added. WHICH step is the step's own lane (`stepOpenFor`), not this atom.
+      'step:complete',
       'supplierdoc:request', 'supplierdoc:verify', 'supplierdoc:reject',
       'compliance:verify', 'compliance:reject',
       'role:grant',
@@ -364,11 +376,19 @@ const LANE_BUNDLES = Object.freeze({
       // The sixth governance atom here, for the same sentence: a lane cannot
       // be the one that changes the process it is held to.
       'flow:draft',
+      // ── FB-3 / FB-4 · DECIDING A CHANGE AND PUTTING IT IN FORCE (decision 3) ─
+      // The same lane holds all three, and the separation is between PERSONS:
+      // whoever proposed a change may not approve it (`flowversion_approver_not_proposer`).
+      'flow:decide',
+      'flow:activate',
     ]),
     // The SDC / P2 planning lane. `inventorydeclaration:record` is the C4c
     // buyer RECORDING verb — a distinct authority from the supplier's
     // `:declare`, which is why widening `:declare` onto the buyer was refused.
     planning: Object.freeze([
+      // FB-4 - every buyer-side lane may complete a step an active version
+      // added. WHICH step is the step's own lane (`stepOpenFor`), not this atom.
+      'step:complete',
       'requirementresponse:review', 'requirementresponse:accept',
       'requirementresponse:dispute',
       'inventorydeclaration:record',
@@ -414,6 +434,9 @@ const LANE_BUNDLES = Object.freeze({
     // Raising and revising a requisition — split from approving one, which is
     // the segregation `pr:approve` living in `procurement` expresses.
     requisitioner: Object.freeze([
+      // FB-4 - every buyer-side lane may complete a step an active version
+      // added. WHICH step is the step's own lane (`stepOpenFor`), not this atom.
+      'step:complete',
       'pr:create', 'pr:submit', 'pr:revise',
     ]),
     // ── ⚠️ THE TENANCY ANCHOR, AND IT DELIBERATELY HOLDS NOTHING ────────────
@@ -691,6 +714,8 @@ export const AUTOMATION_ATOMS: readonly TransitionRole[] = Object.freeze([
   // grain. The source verb is `publication:publish`; this atom decides nothing,
   // it records that a later publication replaced an earlier one.
   'publication:supersede',
+  // FB-4 — fired by the activate and restore cascades; nobody declares it.
+  'flow:supersede',
 ]);
 
 /** Is this id one of the seeded system roles, or something someone invented? */

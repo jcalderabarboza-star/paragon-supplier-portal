@@ -44,7 +44,7 @@ import {
   SUPER_ADMIN_REASON_REQUIRED,
   type SuperAdminBypass,
 } from '../identity/superAdmin';
-import { getTransition } from './registry';
+import { getKnownFlows, getTransition } from './registry';
 import { refusal } from './refusals';
 import { classifySettleFault, settleFault, settleFaultDetail } from './settleFaults';
 
@@ -104,6 +104,13 @@ export interface CommandTarget {
      * of the verb that guards it. Every earlier target ignores the parameter.
      */
     transitionId?: string,
+    /**
+     * FB-3 — the checks that stood aside for a Super Admin on THIS act, with
+     * the reason given. Handed to the target so a record that keeps its own
+     * history can say so beside the act, not only on the event. Absent on every
+     * act that passed no exemption. Every earlier target ignores the parameter.
+     */
+    bypass?: SuperAdminBypass,
   ): void;
   /**
    * Creation scope: the intended owner derived from the payload's parent
@@ -281,7 +288,35 @@ export interface DispatcherDeps {
    * Absent ⇒ nothing is ever off (every pre-M1 dispatcher built in a test).
    */
   moduleGate?: (transitionId: string, scope: QueryScope) => string | null;
+  /**
+   * FB-4 · WHAT THE ACTIVE VERSION OF A PROCESS ADDS (Design 6 v2 §7.1).
+   * Injected like the module gate, so this file never reads a store. **Absent ⇒
+   * nothing changes**: no step is ever pending, no check is added and no event
+   * carries a version — which is every dispatcher built in a spec before FB-4.
+   *
+   * ⚠️ IT CAN ONLY ADD A REFUSAL. Every answer below either refuses or lets the
+   * act continue to the checks the process already has; none can skip one.
+   */
+  flowOverlay?: {
+    /** The step due in front of this act on this document — the refusal's detail — or `null`. */
+    pendingStep(transitionId: string, entity: string, entityId: string): string | null;
+    /** A separation the version adds, asked AFTER the shipped checks passed. */
+    check(ctx: {
+      transitionId: string;
+      entity: string;
+      entityId: string;
+      scope: QueryScope;
+      exempt: (head: string) => boolean;
+    }): PolicyDecision;
+    /** The act succeeded: the completed steps in front of it are spent. */
+    consume(transitionId: string, entity: string, entityId: string): void;
+    /** The stamp an event carries: `<entity>@<version in force>`. */
+    versionLabel(entity: string): string;
+  };
 }
+
+/** The name an added check refuses under, in the place a hook's name stands. */
+export const ADDED_CHECK = 'added_check';
 
 export interface Dispatcher {
   /**
@@ -443,6 +478,11 @@ export function createDispatcher(deps: DispatcherDeps): Dispatcher {
     subject?: TransitionSubject,
     bypass?: SuperAdminBypass,
   ): void {
+    // FB-4 — WHICH VERSION OF THE PROCESS the act was taken under. Read from
+    // the transition's own flow, so an event about an unknown act carries none.
+    const process = deps.flowOverlay
+      ? getKnownFlows().find((f) => f.transitions.some((x) => x.id === transitionId))?.entity
+      : undefined;
     deps.sink.emit({
       event: transitionId,
       actor: actorKey(scope),
@@ -468,6 +508,7 @@ export function createDispatcher(deps: DispatcherDeps): Dispatcher {
       // ADM-1 — WHICH RULE STOOD ASIDE, AND WHY. Present only on a Super Admin
       // act that passed a four-eyes, segregation or sample-identity check.
       ...(bypass ? { bypass } : {}),
+      ...(process ? { flowVersion: deps.flowOverlay!.versionLabel(process) } : {}),
     });
   }
 
@@ -837,6 +878,16 @@ export function createDispatcher(deps: DispatcherDeps): Dispatcher {
       return fin(scope, transition.id, 'failed', refusal('MISSING_FIELDS', missing.join(',')));
     }
 
+    // (6b) FB-4 · A STEP THE ACTIVE VERSION ADDED IS DUE. The document does not
+    // move. POSITION IS MEANING: after the lane gate, so a seat without the
+    // right learns nothing about the document; after legality, so a caller is
+    // told the act is illegal before being told it is waiting; and before the
+    // shipped checks, which are not asked about an act that cannot be taken yet.
+    if (!isCreation && deps.flowOverlay) {
+      const due = deps.flowOverlay.pendingStep(transition.id, input.entity, input.entityId!);
+      if (due !== null) return fin(scope, transition.id, 'failed', refusal('STEP_PENDING', due));
+    }
+
     // (7) policy hooks (by registered name).
     //
     // ADM-1 — THE SUPER ADMIN EXEMPTION, AND IT IS ASKED BY THE CHECK, NOT
@@ -867,6 +918,21 @@ export function createDispatcher(deps: DispatcherDeps): Dispatcher {
         exempt,
       });
       if (!decision.ok) return rejectedBy(name, decision);
+    }
+
+    // (7a) FB-4 · WHAT THE ACTIVE VERSION ADDS TO THE CHECKS — after every
+    // shipped check, never before: a document that fails a shipped check is
+    // told the shipped reason. Refused under `added_check`, in the place a
+    // hook's name stands, so every refusal reader matches it as it matches a hook.
+    if (!isCreation && deps.flowOverlay) {
+      const added = deps.flowOverlay.check({
+        transitionId: transition.id,
+        entity: input.entity,
+        entityId: input.entityId!,
+        scope,
+        exempt,
+      });
+      if (!added.ok) return rejectedBy(ADDED_CHECK, added);
     }
 
     // A preview ends here, having applied nothing: it reports what stood aside.
@@ -920,7 +986,11 @@ export function createDispatcher(deps: DispatcherDeps): Dispatcher {
         payload,
         scope,
         transition.id,
+        bypass,
       );
+      // FB-4 — the steps in front of this act are spent BEFORE the event is
+      // written, so the next time round they are due again.
+      deps.flowOverlay?.consume(transition.id, input.entity, input.entityId!);
       result = fin(scope, transition.id, outcome, undefined, input.entityId);
     }
 
