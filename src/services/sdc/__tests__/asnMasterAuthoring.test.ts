@@ -35,6 +35,8 @@ import { MOCK_ASNS } from '../../data/mock/fixtures/supplierShipments';
 import { INITIAL_CATALOG } from '../../data/mock/fixtures/supplierStorefront';
 import { DOCUMENTS as SUPPLIER_DOCUMENTS } from '../../data/mock/fixtures/supplierDocuments';
 import { mockPurchaseOrders } from '../../../data/mockPurchaseOrders';
+import { mockRfqs } from '../../../data/mockRfqs';
+import { shiftDays } from '../../data/fixturePresent';
 
 /** The seven, with what they were before the retirement. Written out because
  *  the pre-retirement strings are otherwise only in git history, and half the
@@ -229,7 +231,20 @@ describe('2B-5b-ii — the rulings, asserted so they cannot be tidied away', () 
       a.lineItems.some((l) => l.materialCode === 'PK-ALCP-2450'),
     )!;
     expect(source.status).toBe('Delivered');
-    expect(source.eta < '2026-04-22', 'the delivery precedes the RFQ').toBe(true);
+    // ⚠️ PG-3 · THIS GROUND HOLDS ON THE AUTHORED DATES AND NO LONGER ON THE
+    // RENDERED ONES, AND BOTH ARE ASSERTED SO NEITHER IS REDISCOVERED AS A
+    // SURPRISE. The ship notices are anchored with their orders now, which
+    // closes the year that stood between this delivery and that RFQ: as
+    // authored the delivery precedes the RFQ by more than a year; as a reader
+    // sees them it follows it. The ruling stands on grounds 2 and 3 below.
+    const authoredEta = new Date(Date.parse(`${source.eta}T00:00:00Z`) - shiftDays('purchaseOrder') * 86_400_000)
+      .toISOString()
+      .slice(0, 10);
+    expect(authoredEta).toBe('2025-03-22');
+    expect(authoredEta < '2026-04-22', 'as authored, the delivery precedes the RFQ').toBe(true);
+    const rfq = mockRfqs.find((r) => r.rfqNumber === 'RFQ-2026-011')!;
+    expect(rfq.status).toBe('Open');
+    expect(source.eta < rfq.createdAt, 'as rendered, it no longer does').toBe(false);
     // 2. Both are MG-21 by R-1's FUNCTIONAL axis — so "same group" is not an
     //    argument for sameness, and MG-22 stays member-less with TWO aluminium
     //    closures in the tree.

@@ -88,6 +88,9 @@ const EXPECTED: Readonly<Record<FixtureFamily, FamilyInstant>> = {
   // "no wall-read projection call site" claim below would name it otherwise.
   rfq: 'NO-CALL-SITES',
   quotation: 'NO-CALL-SITES',
+  // PG-3. The dashboard's queue reads the orders at `PRESENT_ISO` through
+  // `unacknowledgedOver48hAt`; the open-PO window asks no clock question of them.
+  purchaseOrder: 'P',
 };
 
 describe('POPULATION GUARD — the instrument is looking at the shipped tree', () => {

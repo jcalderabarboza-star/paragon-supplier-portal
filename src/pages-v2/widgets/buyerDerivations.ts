@@ -32,15 +32,20 @@ export const openPurchaseOrders = (rows: PurchaseOrder[]): PurchaseOrder[] =>
   );
 
 /** Still 'Sent' (never acknowledged) more than 48h after the order was placed. */
+const sentOver48h = (p: PurchaseOrder, nowMs: number): boolean =>
+  p.status === POStatus.SENT && (nowMs - new Date(p.orderDate).getTime()) / HOUR_MS > 48;
+
 export const unacknowledgedOver48h = (
   rows: PurchaseOrder[],
   now: Date,
-): PurchaseOrder[] =>
-  rows.filter(
-    (p) =>
-      p.status === POStatus.SENT &&
-      (now.getTime() - new Date(p.orderDate).getTime()) / HOUR_MS > 48,
-  );
+): PurchaseOrder[] => rows.filter((p) => sentOver48h(p, now.getTime()));
+
+/**
+ * PG-3 · the same count at an instant given as an ISO string — for a caller
+ * that constructs no clock of its own (the dashboard's derivations).
+ */
+export const unacknowledgedOver48hAt = (rows: PurchaseOrder[], nowIso: string): PurchaseOrder[] =>
+  rows.filter((p) => sentOver48h(p, Date.parse(nowIso)));
 
 // ── RFQs awaiting award ──────────────────────────────────────────────────────
 export const pendingAwardRfqs = (

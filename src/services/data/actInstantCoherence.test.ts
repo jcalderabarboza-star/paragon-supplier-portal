@@ -109,6 +109,7 @@ import { mockContracts } from '../../data/mockContracts';
 import { PSL_ANCHORED_VALIDITY, PSL_SEEDS_RAW } from './mock/pslSeed';
 import { mockRfqs } from '../../data/mockRfqs';
 import { mockQuotations } from '../../data/mockQuotations';
+import { mockPurchaseOrders } from '../../data/mockPurchaseOrders';
 
 const BACKSLASH = String.fromCharCode(92);
 const norm = (p: string): string => p.split(BACKSLASH).join('/');
@@ -267,6 +268,8 @@ const CORPORA: Readonly<Record<string, readonly Record<string, unknown>[]>> = {
   // on one anchor. Both are exported fixture arrays.
   rfq: mockRfqs as unknown as Record<string, unknown>[],
   quotation: mockQuotations as unknown as Record<string, unknown>[],
+  // PG-3 — the purchase orders, anchored so the dashboard's Procurement row counts.
+  purchaseOrder: mockPurchaseOrders as unknown as Record<string, unknown>[],
 };
 
 /**

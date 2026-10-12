@@ -27,6 +27,11 @@ import BuyerOrders from './BuyerOrders';
 import SupplierShipments from './SupplierShipments';
 import BuyerShipments from './BuyerShipments';
 import { sentShipNotices } from './shipments/SupplierShipNotices';
+import { shiftIso } from '../services/data/fixturePresent';
+
+// PG-3 · the purchase orders are anchored: a date written here is the RAW literal the
+// order was authored beside, moved by the same days as the order itself.
+const d = (raw: string): string => shiftIso(raw, 'purchaseOrder');
 
 const svc = new MockCommandService();
 const supplierScope = (supplierId: string): QueryScope => ({
@@ -58,8 +63,8 @@ describe('OPS-3 · the supplier confirms — the date, the note and the quantity
       target: { value: '140000' },
     });
     const dateInput = document.querySelector('input[type="date"]') as HTMLInputElement;
-    expect(dateInput.value).toBe('2025-04-25');
-    fireEvent.change(dateInput, { target: { value: '2025-05-02' } });
+    expect(dateInput.value).toBe(d('2025-04-25'));
+    fireEvent.change(dateInput, { target: { value: d('2025-05-02') } });
     fireEvent.change(screen.getByPlaceholderText('Optional message…'), {
       target: { value: 'Mould change — one week late, 10,000 short.' },
     });
@@ -68,7 +73,7 @@ describe('OPS-3 · the supplier confirms — the date, the note and the quantity
 
     // THE STORE holds what was typed.
     const po = purchaseOrderStore.get('po-008')!;
-    expect(po.confirmedDeliveryDate).toBe('2025-05-02');
+    expect(po.confirmedDeliveryDate).toBe(d('2025-05-02'));
     expect(po.confirmationNote).toBe('Mould change — one week late, 10,000 short.');
     expect(po.lineItems[0].confirmedQty).toBe(140000);
     expect(po.confirmedAt).toBeDefined();
@@ -78,7 +83,7 @@ describe('OPS-3 · the supplier confirms — the date, the note and the quantity
       'Mould change — one week late, 10,000 short.',
     );
     expect(screen.getAllByText(formatDateTime(po.confirmedAt)).length).toBeGreaterThan(0);
-    expect(screen.getByTestId('po-confirmed-delivery')).toHaveTextContent('02 May 2025');
+    expect(screen.getByTestId('po-confirmed-delivery')).toHaveTextContent(formatDate(d('2025-05-02')));
     expect(screen.getByTestId('po-line-confirmed-0')).toHaveTextContent('140,000 PCS');
   });
 
@@ -89,13 +94,13 @@ describe('OPS-3 · the supplier confirms — the date, the note and the quantity
       entityId: 'po-008',
       payload: {
         confirmedQuantities: [140000],
-        confirmedDeliveryDate: '2025-05-02',
+        confirmedDeliveryDate: d('2025-05-02'),
         confirmationNote: 'Mould change.',
       },
     });
     renderWithProviders(<SupplierOrders />, { identity: SUPPLIER });
     fireEvent.click(await screen.findByText('PO-2025-00108'));
-    expect(await screen.findByTestId('po-confirmed-delivery')).toHaveTextContent('02 May 2025');
+    expect(await screen.findByTestId('po-confirmed-delivery')).toHaveTextContent(formatDate(d('2025-05-02')));
     expect(screen.getByTestId('po-confirmation-note')).toHaveTextContent('Mould change.');
     expect(screen.getByTestId('po-line-confirmed-0')).toHaveTextContent('140,000 PCS');
     expect(screen.getByTestId('po-confirmed-at')).toHaveTextContent(
@@ -120,7 +125,7 @@ describe('OPS-3 · the buyer sees what the supplier confirmed, and when', () => 
       entityId: 'po-008',
       payload: {
         confirmedQuantities: [140000],
-        confirmedDeliveryDate: '2025-05-02',
+        confirmedDeliveryDate: d('2025-05-02'),
         confirmationNote: 'Mould change.',
       },
     });
@@ -129,7 +134,7 @@ describe('OPS-3 · the buyer sees what the supplier confirmed, and when', () => 
     expect((await confirm108()).status).toBe('done');
     renderWithProviders(<BuyerOrders />, { identity: BUYER });
     fireEvent.click(await screen.findByText('PO-2025-00108'));
-    expect(await screen.findByTestId('buyer-po-confirmed-delivery')).toHaveTextContent('02 May 2025');
+    expect(await screen.findByTestId('buyer-po-confirmed-delivery')).toHaveTextContent(formatDate(d('2025-05-02')));
     expect(screen.getByTestId('buyer-po-confirmation-note')).toHaveTextContent('Mould change.');
     expect(screen.getByTestId('buyer-po-line-confirmed-li-008a')).toHaveTextContent('140,000 PCS');
   });
@@ -152,7 +157,7 @@ describe('OPS-3 · the buyer sees what the supplier confirmed, and when', () => 
     expect(screen.getByText('48h after send')).toBeInTheDocument();
     expect(screen.queryByTestId('buyer-po-confirmed-at')).not.toBeInTheDocument();
     // The seeded confirmed date and quantity are still read back.
-    expect(screen.getByTestId('buyer-po-confirmed-delivery')).toHaveTextContent('08 Apr 2025');
+    expect(screen.getByTestId('buyer-po-confirmed-delivery')).toHaveTextContent(formatDate(d('2025-04-08')));
   });
 
   it('an order not yet confirmed shows no confirmation block — known-absent', async () => {
@@ -172,7 +177,7 @@ describe('OPS-3 · the ship-notice form — every line, the confirmed quantity, 
       transitionId: 't_po_confirm',
       entity: 'purchaseOrder',
       entityId: 'po-005',
-      payload: { confirmedQuantities: [4500, 300], confirmedDeliveryDate: '2025-05-20' },
+      payload: { confirmedQuantities: [4500, 300], confirmedDeliveryDate: d('2025-05-20') },
     });
 
   it('walks the form for a two-line order and stores what the review step showed', async () => {

@@ -1,6 +1,10 @@
 import { PurchaseOrder, POLineItem, POStatus, ChannelType } from '../services/data/types';
+import { shiftFields } from '../services/data/fixturePresent';
 
-export const mockPurchaseOrders: PurchaseOrder[] = [
+// PG-3 · the dates below are the RAW literals, authored for the family's anchor
+// (`FAMILY_ANCHORS.purchaseOrder`); the export shifts them to the declared
+// present. A `poNumber` is an identifier and keeps the year it was written with.
+const PURCHASE_ORDERS_RAW: PurchaseOrder[] = [
   {
     id: 'po-001',
     poNumber: 'PO-2025-00101',
@@ -640,3 +644,9 @@ export const mockPurchaseOrders: PurchaseOrder[] = [
     lineItems: [],
   },
 ];
+
+export const mockPurchaseOrders: PurchaseOrder[] = shiftFields(PURCHASE_ORDERS_RAW, 'purchaseOrder', [
+  'orderDate',
+  'requestedDeliveryDate',
+  'confirmedDeliveryDate',
+]);

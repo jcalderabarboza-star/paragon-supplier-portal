@@ -74,7 +74,7 @@
 // ────────────────────────────────────────────────────────────────────────────
 
 import React, { createContext, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { ChevronDown, ChevronRight, Sigma } from 'lucide-react';
+import { Ban, Check, ChevronDown, ChevronRight, ClipboardPaste, Sigma } from 'lucide-react';
 import { DataSheetGrid, type CellProps, type Column, type DataSheetGridRef } from 'react-datasheet-grid';
 import 'react-datasheet-grid/dist/style.css';
 import './planGrid.css';
@@ -105,6 +105,7 @@ import PlanPushControls from './PlanPushControls';
 import PublicationPanel, { PublicationSummary, draftOfGrain } from './PublicationPanel';
 import { EMPTY_DRAFT, applyEdit, cellKey, magnitudeFlag, routePaste, type CellRefusal, type EditContext, type PlanDraftEntry } from './planDraft';
 import { useFitHeight } from './useFitHeight';
+import { useKeepPlace } from './useKeepPlace';
 import { useGridRoles } from './useGridRoles';
 import { copyText, decideKey, type EditMode } from './gridKeys';
 import {
@@ -164,8 +165,35 @@ const NARROW_BELOW = 88;
 const LABEL_CH = 6.5;
 const LABEL_PAD = 44;
 const SCROLLBAR_W = 10;
+/** PG-3 · the TIGHT step: an 11px mono character (the smallest type the portal renders) and 2px of padding a side. */
+const FIGURE_CH_TIGHT = 6.6;
+const CELL_PAD_TIGHT = 5;
+const BUCKET_MIN_TIGHT = 40;
 /** The bucket column where nothing can be measured (jsdom) — the width it had before PG-2. */
 const BUCKET_FALLBACK = 112;
+
+export interface PlanColumnWidths {
+  readonly gutter: number;
+  readonly bucketMin: number;
+  readonly narrow: boolean;
+  readonly fits: boolean;
+  /** PG-3 · the figures stand at the smallest type and the least padding. */
+  readonly tight: boolean;
+  /** PG-3 · the horizon-totals pane stands beside the buckets; false where it had to give its width up. */
+  readonly totals: boolean;
+}
+
+/**
+ * PG-3 · the steps a view takes to stand without sideways scroll, in order:
+ * as it is; then with its figures TIGHT; then tight with the totals pane given
+ * up. The first that fits is taken. Where none does, the view stands as it is
+ * and scrolls — a figure is never clipped to make the claim true.
+ */
+const WIDTH_STEPS = [
+  { tight: false, totals: true },
+  { tight: true, totals: true },
+  { tight: true, totals: false },
+] as const;
 
 /**
  * PG-2 · THE COLUMN WIDTHS, as a pure rule. A bucket column is as wide as the
@@ -179,14 +207,30 @@ export function planColumnWidths(m: {
   buckets: number;
   figureChars: number;
   labelChars: number;
-}): { gutter: number; bucketMin: number; narrow: boolean; fits: boolean } {
-  if (m.containerW <= 0) return { gutter: GUTTER_W, bucketMin: BUCKET_FALLBACK, narrow: false, fits: false };
-  const bucketMin = Math.max(BUCKET_MIN, Math.ceil(m.figureChars * FIGURE_CH) + CELL_PAD);
+}): PlanColumnWidths {
+  if (m.containerW <= 0)
+    return { gutter: GUTTER_W, bucketMin: BUCKET_FALLBACK, narrow: false, fits: false, tight: false, totals: true };
   const needed = Math.min(GUTTER_W, Math.max(GUTTER_MIN, Math.ceil(m.labelChars * LABEL_CH) + LABEL_PAD));
-  const free = m.containerW - AGG_W - SCROLLBAR_W;
-  const left = free - m.buckets * bucketMin;
-  const gutter = Math.min(needed, Math.max(GUTTER_MIN, left));
-  return { gutter, bucketMin, narrow: (free - gutter) / Math.max(1, m.buckets) < NARROW_BELOW, fits: left >= GUTTER_MIN };
+  const at = (step: (typeof WIDTH_STEPS)[number]): PlanColumnWidths => {
+    const bucketMin = step.tight
+      ? Math.max(BUCKET_MIN_TIGHT, Math.ceil(m.figureChars * FIGURE_CH_TIGHT) + CELL_PAD_TIGHT)
+      : Math.max(BUCKET_MIN, Math.ceil(m.figureChars * FIGURE_CH) + CELL_PAD);
+    const free = m.containerW - (step.totals ? AGG_W : 0) - SCROLLBAR_W;
+    const left = free - m.buckets * bucketMin;
+    const gutter = Math.min(needed, Math.max(GUTTER_MIN, left));
+    return {
+      gutter,
+      bucketMin,
+      narrow: (free - gutter) / Math.max(1, m.buckets) < NARROW_BELOW,
+      fits: left >= GUTTER_MIN,
+      ...step,
+    };
+  };
+  for (const step of WIDTH_STEPS) {
+    const w = at(step);
+    if (w.fits) return w;
+  }
+  return at(WIDTH_STEPS[0]);
 }
 
 /**
@@ -218,8 +262,24 @@ export interface PlanRowsApi {
   isOpen(materialCode: string): boolean;
   toggle(materialCode: string): void;
   readonly narrow: boolean;
+  /** PG-3 · the figures stand tight: 11px and 2px of padding a side. */
+  readonly tight?: boolean;
+  /** PG-3 · the totals pane stands; where it does not, a material's label states its total in its title. */
+  readonly totals?: boolean;
 }
 export const PlanRowsContext = createContext<PlanRowsApi>({ isOpen: () => false, toggle: () => {}, narrow: false });
+
+/**
+ * PG-3 · in a narrow column a state is never colour alone (operator ruling): a
+ * small mark stands in the cell's corner beside the colour — a tick where
+ * committed, a paste mark where pasted, a bar where dismissed. It hangs in the
+ * corner and takes none of the figure's width.
+ */
+const CELL_MARK = {
+  committed: { Icon: Check, tone: 'text-success' },
+  pasted: { Icon: ClipboardPaste, tone: 'text-warning-hover' },
+  dismissed: { Icon: Ban, tone: 'text-text-tertiary' },
+} as const;
 
 // PLN-2 · the supplier's NAME, from the planning supplier master — never its id.
 const supplierLabel = planningSupplierName;
@@ -280,7 +340,7 @@ export const PlanBucketCell: React.FC<{
   // word stays for a screen reader and in the cell's title, and the state is
   // shown by the cell — tinted where planned (amber where pasted), green where
   // committed, grey where dismissed.
-  const { narrow } = useContext(PlanRowsContext);
+  const { narrow, tight = false } = useContext(PlanRowsContext);
   // ⚠️ THE OVERLAY IS SHOWN, NEVER MERGED: the seam value stays in the row and
   // the planned one is read from the draft by seamRef, marked as PLANNED.
   const text = planCellText(planned ? planned.value : value, formatNumber);
@@ -305,9 +365,19 @@ export const PlanBucketCell: React.FC<{
       : narrow && committed && !planned
         ? '!text-success'
         : '';
+  const mark: keyof typeof CELL_MARK | null = !narrow
+    ? null
+    : pasted
+      ? 'pasted'
+      : committed && !planned
+        ? 'committed'
+        : dismissed && !planned
+          ? 'dismissed'
+          : null;
+  const Mark = mark ? CELL_MARK[mark].Icon : null;
   return (
     <div
-      className={`flex h-full w-full items-center justify-end gap-1 overflow-hidden ${narrow ? 'px-1' : 'px-2'} ${tint} ${refusal ? 'ring-1 ring-inset ring-critical/60' : flagged ? 'ring-1 ring-inset ring-warning' : ''}`}
+      className={`relative flex h-full w-full items-center justify-end gap-1 overflow-hidden ${tight ? 'px-0.5' : narrow ? 'px-1' : 'px-2'} ${tint} ${refusal ? 'ring-1 ring-inset ring-critical/60' : flagged ? 'ring-1 ring-inset ring-warning' : ''}`}
       data-testid="tp-cell"
       data-narrow={narrow ? '' : undefined}
       data-reading={reading || undefined}
@@ -321,6 +391,16 @@ export const PlanBucketCell: React.FC<{
               : reading || undefined
       }
     >
+      {mark && Mark && (
+        <span
+          className={`pointer-events-none absolute left-px top-px ${CELL_MARK[mark].tone}`}
+          data-testid="tp-cell-mark"
+          data-mark={mark}
+          aria-hidden="true"
+        >
+          <Mark size={9} strokeWidth={3} />
+        </span>
+      )}
       {flagged && (
         <span className="text-label text-warning-hover" data-testid="tp-cell-magnitude" aria-label={t('planGrid.edit.push.magnitudeUnconfirmed')}>
           ×?
@@ -358,7 +438,7 @@ export const PlanBucketCell: React.FC<{
       {text === '—' ? (
         <span className="text-xs text-text-tertiary">{text}</span>
       ) : (
-        <Data className={`shrink-0 text-xs ${figure}`} data-testid={short ? 'tp-cell-short' : undefined}>
+        <Data className={`tp-figure shrink-0 text-xs ${figure}`} data-testid={short ? 'tp-cell-short' : undefined}>
           {text}
         </Data>
       )}
@@ -496,13 +576,16 @@ export const PlanRowLabel: React.FC<{ row: PlanRow }> = ({ row }) => {
     // "Short" is the row's own figures, in red; the label adds what they cannot say.
     const reasons = row.summary.reasons.filter((r) => r !== 'short');
     const Chevron = open ? ChevronDown : ChevronRight;
+    // PG-3 · where the totals pane gave its width up, the material's total is in its title.
+    const shortTotal = Object.values(row.cells).reduce<number>((sum, v) => sum + (typeof v === 'number' ? v : 0), 0);
+    const totalNote = rowsApi.totals === false ? ` · ${t('planGrid.tp.agg.shortTotal')}: ${formatNumber(shortTotal)}` : '';
     return (
       <RowButton
         padding="none"
         className="h-full"
         aria-expanded={open}
         onClick={() => rowsApi.toggle(row.materialCode)}
-        title={`${row.materialLabel} · ${row.materialCode} · ${row.uom}`}
+        title={`${row.materialLabel} · ${row.materialCode} · ${row.uom}${totalNote}`}
         data-testid="tp-row-label"
         data-head="true"
         data-material={row.materialCode}
@@ -932,7 +1015,10 @@ const TimePhasedGrid: React.FC<{
     () => planColumnWidths({ containerW, buckets: horizon.length, figureChars, labelChars }),
     [containerW, horizon.length, figureChars, labelChars],
   );
-  const rowsContext = useMemo<PlanRowsApi>(() => ({ ...rowsApi, narrow: widths.narrow }), [rowsApi, widths.narrow]);
+  const rowsContext = useMemo<PlanRowsApi>(
+    () => ({ ...rowsApi, narrow: widths.narrow, tight: widths.tight, totals: widths.totals }),
+    [rowsApi, widths.narrow, widths.tight, widths.totals],
+  );
   // ⚠️ THE ENGINE KEEPS THE COLUMN SIZES IT WAS MOUNTED WITH (found in the
   // browser: a view opened on cached facts mounted at the unmeasured widths and
   // stayed 1,877px wide in a 1,054px box, with the sideways scroll switched off
@@ -940,7 +1026,10 @@ const TimePhasedGrid: React.FC<{
   // it is mounted afresh when the widths change — a window resized, not a
   // material opened. The measurement is taken before the first paint, so the
   // wait is never seen.
-  const widthsKey = `${widths.gutter}:${widths.bucketMin}`;
+  const widthsKey = `${widths.gutter}:${widths.bucketMin}:${widths.totals ? 't' : ''}`;
+  // PG-3 · a fresh mount starts at the top with nothing selected: where the
+  // planner was — the scroll position and the selection — is put back on it.
+  const place = useKeepPlace(widthsKey, wrapRef, gridRef);
   const language = i18n.language;
 
   const columns: Column<PlanRow>[] = useMemo(
@@ -1248,6 +1337,12 @@ const TimePhasedGrid: React.FC<{
           data-density={density}
           data-fits={widths.fits ? '' : undefined}
           data-narrow={widths.narrow ? '' : undefined}
+          data-tight={widths.tight ? '' : undefined}
+          data-totals={widths.totals ? undefined : 'folded'}
+          onScrollCapture={(ev) => {
+            const el = ev.target as HTMLElement;
+            if (el.classList?.contains('dsg-container')) place.onScroll(el);
+          }}
           style={{ '--plan-dsg-h': `${gridH}px` } as React.CSSProperties}
         >
           <PlanRowsContext.Provider value={rowsContext}>
@@ -1255,12 +1350,14 @@ const TimePhasedGrid: React.FC<{
             key={widthsKey}
             ref={gridRef}
             onActiveCellChange={({ cell }) => {
+              place.onActive(cell);
               // PLN-5 · a key note speaks of the cell it was made in; moving on retires it.
               setKeyNote((n) => (n?.kind === 'copied' ? n : null));
               const i = cell ? horizon.indexOf((cell.colId ?? '').replace(/^bucket:/, '')) : -1;
               setSelection(cell && i >= 0 ? { r0: cell.row, r1: cell.row, c0: i, c1: i } : null);
             }}
             onSelectionChange={({ selection: s }) => {
+              place.onSelection(s);
               if (!s) return setSelection(null);
               const col = (id: string | undefined, fallback: number) => {
                 const i = horizon.indexOf((id ?? '').replace(/^bucket:/, ''));
@@ -1276,7 +1373,7 @@ const TimePhasedGrid: React.FC<{
             value={rows}
             columns={columns}
             gutterColumn={gutter}
-            stickyRightColumn={aggregates}
+            stickyRightColumn={widths.totals ? aggregates : undefined}
             rowKey="id"
             lockRows
             disableContextMenu

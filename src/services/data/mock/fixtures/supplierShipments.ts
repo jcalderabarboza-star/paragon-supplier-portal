@@ -80,8 +80,14 @@
 // ────────────────────────────────────────────────────────────────────────────
 
 import type { ASN } from '../../types';
+import { shiftFields } from '../../fixturePresent';
 
-export const MOCK_ASNS: ASN[] = [
+// PG-3 · A SHIP NOTICE MOVES WITH THE ORDER IT NAMES. `poReference` makes an
+// `eta` and its order's `orderDate` a cross-family comparison ("a shipment does
+// not precede its own order", axis 3 below), so the two corpora share ONE
+// anchor — membership follows the coupling, not the file. The dates below are
+// the raw literals; the export shifts them by the purchase-order family's days.
+const ASNS_RAW: ASN[] = [
   {
     asnNumber: 'ASN-2025-00211',
     supplierId: 'sup-007',
@@ -226,3 +232,5 @@ export const MOCK_ASNS: ASN[] = [
     ],
   },
 ];
+
+export const MOCK_ASNS: ASN[] = shiftFields(ASNS_RAW, 'purchaseOrder', ['eta']);

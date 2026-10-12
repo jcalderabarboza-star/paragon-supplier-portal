@@ -194,9 +194,8 @@ describe('PLN-4 · a push of 50 rows — one anchor, one refresh, a page that ke
     const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     const invalidate = vi.spyOn(qc, 'invalidateQueries');
     mountGrid(FIFTY, qc);
-    fireEvent.click(screen.getByTestId('plan-select-owed'));
-    fireEvent.change(screen.getByTestId('plan-bulk-reason'), { target: { value: 'Q4 launch buffer' } });
-    fireEvent.click(screen.getByTestId('plan-bulk-apply'));
+    // PG-3: the drawer has ONE reason field, the push's own, in its footer.
+    fireEvent.change(screen.getByTestId('plan-push-reason'), { target: { value: 'Q4 launch buffer' } });
     invalidate.mockClear();
 
     fireEvent.click(screen.getByTestId('plan-push-all'));
@@ -275,12 +274,15 @@ describe('PLN-4 · "apply this reason to selected" — one reason per committed 
     expect(FIFTY_B).toHaveLength(50);
     mountGrid(FIFTY_B);
     expect(screen.getByTestId('plan-draft-owed')).toHaveTextContent('50 still need a reason');
-    fireEvent.click(screen.getByTestId('plan-select-owed'));
-    expect(screen.getByTestId('plan-bulk-apply')).toHaveTextContent('Apply to selected (50)');
-    fireEvent.change(screen.getByTestId('plan-bulk-reason'), { target: { value: 'Q4 launch buffer' } });
-    fireEvent.click(screen.getByTestId('plan-bulk-apply'));
-    expect(screen.getByTestId('plan-bulk-note')).toHaveTextContent('Reason applied to 50 changes');
-    expect(screen.queryByTestId('plan-draft-owed')).toBeNull();
+    // PG-3 (operator ruling): ONE reason field, the footer's, and it speaks for all fifty.
+    expect(screen.getByText('Reason for the 50 changes that need one')).toBeInTheDocument();
+    expect(screen.getAllByTestId('plan-push-reason')).toHaveLength(1);
+    // …and each row still has its own, editable in the table
+    expect(screen.getAllByLabelText(/^Reason — /)).toHaveLength(50);
+    for (const gone of ['plan-bulk-reason-bar', 'plan-bulk-reason', 'plan-bulk-apply', 'plan-select-owed']) {
+      expect(screen.queryByTestId(gone), gone).toBeNull();
+    }
+    fireEvent.change(screen.getByTestId('plan-push-reason'), { target: { value: 'Q4 launch buffer' } });
 
     fireEvent.click(screen.getByTestId('plan-push-all'));
     await waitFor(() => expect(purchaseRequisitionStore.all().filter((r) => r.intakeLineId)).toHaveLength(50), { timeout: 20000 });
@@ -291,10 +293,10 @@ describe('PLN-4 · "apply this reason to selected" — one reason per committed 
     expect(intakeLineStore.all().every((r) => r.state !== 'Committed' || r.overrideReason === 'Q4 launch buffer')).toBe(true);
   }, 30000);
 
-  it('ID — the bulk reason is Indonesian', async () => {
+  it('ID — the one reason field is Indonesian', async () => {
     await i18n.changeLanguage('id');
     mountGrid(FIFTY.slice(0, 3));
-    expect(screen.getByText('Pilih setiap perubahan yang perlu alasan (3)')).toBeInTheDocument();
+    expect(screen.getByText('Alasan untuk 3 perubahan yang memerlukannya')).toBeInTheDocument();
     expect(screen.getByTestId('plan-draft-owed')).toHaveTextContent('3 masih perlu alasan');
   });
 });
