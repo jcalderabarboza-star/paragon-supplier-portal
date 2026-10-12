@@ -5,6 +5,7 @@ import type { FlowView, StepKind } from '../../services/transitions/catalogView'
 import { layoutFlow, verbOf, NODE_W, NODE_H, type LaidOutEdge } from './flowLayout';
 import { EDGE_INK } from '../../lib/chartPalette';
 import StatusPill from '../../components/ui-v2/StatusPill';
+import { ToggleChip } from '../../components/ui-v2/Actions';
 
 // ────────────────────────────────────────────────────────────────────────────
 // PF-1 · THE FLOW DIAGRAM. Every mark on it is a fact the schema declares.
@@ -20,6 +21,12 @@ import StatusPill from '../../components/ui-v2/StatusPill';
 // no edge exists that `edgesOf` did not produce; the verb on an edge is a slice
 // of the transition's own id. There is deliberately no prop by which a caller
 // could add, hide or rename any of it.
+//
+// FB-2 · ONE THING MAY BE LAID OVER IT, AND ONLY BY THE COMPOSER: which acts a
+// draft puts something in front of, and which act the author has picked
+// (`draft`). It marks edges the schema declares; it cannot add a node or an
+// edge. The live page passes no `draft`, so a draft's elements are never drawn
+// there (`fb2Composer.page.test.tsx` holds that).
 // ────────────────────────────────────────────────────────────────────────────
 
 /**
@@ -79,9 +86,24 @@ interface FlowDiagramProps {
   cursor: string | null;
   /** Unique per mounted diagram, so two on one page cannot share arrowheads. */
   idPrefix: string;
+  /** FB-2 · the composer's overlay. Absent on the live page. */
+  draft?: DraftOverlay;
 }
 
-const FlowDiagram: React.FC<FlowDiagramProps> = ({ view, cursor, idPrefix }) => {
+/** What a draft lays over the diagram, inside the composer. */
+export interface DraftOverlay {
+  /** How many elements the draft puts in front of each act. */
+  readonly elements: ReadonlyMap<string, number>;
+  /** The act the author is working in front of. */
+  readonly selected: string | null;
+  /** May a step stand in front of this act? */
+  readonly selectable: (transitionId: string) => boolean;
+  readonly onSelect: (transitionId: string) => void;
+  /** The words for "N added", in the reader's language. */
+  readonly countLabel: (count: number) => string;
+}
+
+const FlowDiagram: React.FC<FlowDiagramProps> = ({ view, cursor, idPrefix, draft }) => {
   const { t } = useTranslation();
   const layout = useMemo(() => layoutFlow(view), [view]);
   const stateByName = useMemo(
@@ -214,13 +236,30 @@ const FlowDiagram: React.FC<FlowDiagramProps> = ({ view, cursor, idPrefix }) => 
               className="absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center gap-px"
               style={{ left: laid.labelX, top: laid.labelY }}
             >
-              <span
-                className="whitespace-nowrap rounded-sm bg-bg-page/95 px-1 font-mono text-xs text-text-secondary"
-                title={laid.edge.transitionId}
-              >
-                {verbOf(laid.edge.transitionId)}
-                {laid.edge.settlement ? ` ${t('processFlows.badge.settles')}` : ''}
-              </span>
+              {draft && draft.selectable(laid.edge.transitionId) && !laid.edge.settlement ? (
+                <ToggleChip
+                  mono
+                  selected={draft.selected === laid.edge.transitionId}
+                  onClick={() => draft.onSelect(laid.edge.transitionId)}
+                  title={laid.edge.transitionId}
+                  data-testid={`fb-edge-${laid.edge.id}`}
+                >
+                  {verbOf(laid.edge.transitionId)}
+                </ToggleChip>
+              ) : (
+                <span
+                  className="whitespace-nowrap rounded-sm bg-bg-page/95 px-1 font-mono text-xs text-text-secondary"
+                  title={laid.edge.transitionId}
+                >
+                  {verbOf(laid.edge.transitionId)}
+                  {laid.edge.settlement ? ` ${t('processFlows.badge.settles')}` : ''}
+                </span>
+              )}
+              {draft && (draft.elements.get(laid.edge.transitionId) ?? 0) > 0 && !laid.edge.settlement ? (
+                <span data-testid={`fb-edge-added-${laid.edge.id}`}>
+                  <Badge tone="teal">{draft.countLabel(draft.elements.get(laid.edge.transitionId) ?? 0)}</Badge>
+                </span>
+              ) : null}
               {end ? (
                 <Badge tone="warning">
                   {end.reason ?? t('processFlows.reason.uncensused')}

@@ -8,6 +8,7 @@ import DataTable, { type Column } from '../../components/ui-v2/DataTable';
 import Dialog from '../../components/ui-v2/Dialog';
 import { FormField, Select, TextInput } from '../../components/ui-v2/Form';
 import HandoffNotice from '../../components/ui-v2/HandoffNotice';
+import { LinkButton } from '../../components/ui-v2/Actions';
 import Notice from '../../components/ui-v2/Notice';
 import SectionHeading from '../../components/ui-v2/SectionHeading';
 import StatusPill from '../../components/ui-v2/StatusPill';
@@ -32,6 +33,7 @@ import {
   type ValidationWorld,
 } from '../../services/flowBuilder/validateVersion';
 import { flowVersionRefusalKey } from './flowVersionRefusal';
+import ChangeComposer from './ChangeComposer';
 
 // ────────────────────────────────────────────────────────────────────────────
 // FB-1 · THE CHANGES VIEW — every version of every process, and the rules a
@@ -200,9 +202,40 @@ const ChangesView: React.FC<{
   world: ValidationWorld;
   /** The version a link named, when it exists. */
   current: string | null;
-}> = ({ revision, world, current }) => {
+  /** May this seat draft? A seat that may not reads the list and is offered no act on it. */
+  canDraft: boolean;
+  /** A draft was created or saved: the page reads the store again. */
+  onChanged: () => void;
+}> = ({ revision, world, current, canDraft, onChanged }) => {
   const { t } = useTranslation();
+  const { toast } = useToast();
+  const refusalText = useRefusalText();
   const processName = useProcessName();
+  const create = useFlowVersionCreate();
+  // FB-2 · the draft being composed. Held by id, and read from the store each
+  // time, so the composer always opens on what was last saved.
+  const [composing, setComposing] = useState<string | null>(null);
+  const startFrom = async (source: FlowVersion): Promise<void> => {
+    const result = await create.mutateAsync({
+      process: source.content.entity,
+      title: t('flowBuilder.changes.copyTitle', { title: source.title }),
+      fromVersion: source.id,
+    });
+    if (result.status === 'failed') {
+      const key = namedSeatRefusalKey(result.reason) ?? flowVersionRefusalKey(result.reason);
+      toast({
+        variant: 'error',
+        title: (key ? t(key) : null) ?? refusalText(result.reason) ?? t('flowBuilder.create.refused', { reason: result.reason ?? '' }),
+      });
+      return;
+    }
+    const made = result.entityId ? flowVersionStore.byId(result.entityId) : undefined;
+    toast({
+      variant: 'success',
+      title: t('flowBuilder.changes.copied', { label: made?.label ?? '', from: source.label }),
+    });
+    onChanged();
+  };
   // ⚠️ WHAT THE STORE REFUSED AND WHAT NO LONGER OBEYS ITS RULES, READ FROM THE
   // READ ITSELF. A failed parse that returned an empty list would be believed.
   const read = useMemo(() => readFlowVersions(world), [revision, world]);
@@ -243,7 +276,27 @@ const ChangesView: React.FC<{
       kind: 'date',
       cell: (v) => formatDate(v.createdAt),
     },
+    ...(canDraft
+      ? [
+          {
+            id: 'actions',
+            header: t('flowBuilder.changes.col.actions'),
+            kind: 'actions',
+            cell: (v) => (
+              <span className="inline-flex items-center gap-3">
+                <LinkButton data-testid={`fb-compose-${v.id}`} onClick={() => setComposing(v.id)}>
+                  {t('flowBuilder.changes.compose')}
+                </LinkButton>
+                <LinkButton data-testid={`fb-copy-${v.id}`} onClick={() => void startFrom(v)}>
+                  {t('flowBuilder.changes.startFrom')}
+                </LinkButton>
+              </span>
+            ),
+          } satisfies Column<FlowVersion>,
+        ]
+      : []),
   ];
+  const composed = composing ? read.versions.find((v) => v.id === composing) : undefined;
 
   return (
     <div className="space-y-6" data-testid="fb-changes">
@@ -330,6 +383,16 @@ const ChangesView: React.FC<{
       </Card>
 
       <RulesReference />
+
+      {composed ? (
+        <ChangeComposer
+          key={composed.id}
+          version={composed}
+          world={world}
+          onClose={() => setComposing(null)}
+          onSaved={onChanged}
+        />
+      ) : null}
     </div>
   );
 };

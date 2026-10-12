@@ -88,6 +88,9 @@ function isVersionShaped(v: unknown): v is FlowVersion {
     typeof v.state === 'string' &&
     typeof v.createdAt === 'string' &&
     (v.savedAt === null || typeof v.savedAt === 'string') &&
+    // A row written before warnings could be acknowledged carries none.
+    (v.acknowledged === undefined ||
+      (Array.isArray(v.acknowledged) && v.acknowledged.every((k) => typeof k === 'string'))) &&
     isContentShaped(v.content)
   );
 }
@@ -195,7 +198,7 @@ function hydrate(): void {
     }
     seenIds.add(row.id);
     seenLabels.add(`${row.content.entity}#${row.label}`);
-    rows.push({ ...row, createdBy, savedBy });
+    rows.push({ ...row, acknowledged: row.acknowledged ?? [], createdBy, savedBy });
   }
   readState = { versions: rows, rejected, unreadable: false, suspended: false };
   hydrated = true;
@@ -243,7 +246,10 @@ export const flowVersionStore = {
    * A NEW DRAFT. The caller says which process, against which shipped version,
    * and what it is called; the store mints everything else.
    */
-  create(input: { entity: string; baseVersion: number; title: string }, actor: ActorAttribution): FlowVersion {
+  create(
+    input: { entity: string; baseVersion: number; title: string; from?: FlowVersionContent },
+    actor: ActorAttribution,
+  ): FlowVersion {
     hydrate();
     const seq = (counters[input.entity] ?? 0) + 1;
     counters = { ...counters, [input.entity]: seq };
@@ -253,7 +259,13 @@ export const flowVersionStore = {
       seq,
       title: input.title.trim(),
       state: FLOW_VERSION_STATES[0],
-      content: emptyContent(input.entity, input.baseVersion),
+      // "Start a draft from this version": the same elements, against the
+      // process as it ships now. Nothing else of the source travels — a new
+      // label, no acknowledgement, a new author.
+      content: input.from
+        ? { ...input.from, entity: input.entity, baseVersion: input.baseVersion }
+        : emptyContent(input.entity, input.baseVersion),
+      acknowledged: [],
       createdBy: actor,
       createdAt: DECLARED_PRESENT_INSTANT,
       savedBy: null,
@@ -262,12 +274,17 @@ export const flowVersionStore = {
     publish([...rows, version]);
     return version;
   },
-  /** REPLACE A DRAFT'S CONTENT. The record around it is not the caller's to write. */
-  save(id: string, content: FlowVersionContent, actor: ActorAttribution): void {
+  /**
+   * REPLACE A DRAFT'S CONTENT, and which of its warnings are acknowledged. The
+   * record around them is not the caller's to write.
+   */
+  save(id: string, content: FlowVersionContent, acknowledged: readonly string[], actor: ActorAttribution): void {
     hydrate();
     publish(
       rows.map((r) =>
-        r.id === id ? { ...r, content, savedBy: actor, savedAt: DECLARED_PRESENT_INSTANT } : r,
+        r.id === id
+          ? { ...r, content, acknowledged: [...new Set(acknowledged)], savedBy: actor, savedAt: DECLARED_PRESENT_INSTANT }
+          : r,
       ),
     );
   },

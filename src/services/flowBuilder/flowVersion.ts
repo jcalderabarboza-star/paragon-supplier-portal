@@ -123,6 +123,12 @@ export interface FlowVersion {
   readonly title: string;
   readonly state: string;
   readonly content: FlowVersionContent;
+  /**
+   * FB-2 · the warnings the author has acknowledged, each as `<code>:<element>`
+   * (`findingKey`). Recorded with the draft, because a warning blocks a
+   * proposal until somebody has said, on the record, that it is meant.
+   */
+  readonly acknowledged: readonly string[];
   readonly createdBy: ActorAttribution;
   readonly createdAt: string;
   /** The last save, or `null` while the draft is as it was created. */
@@ -137,6 +143,10 @@ export const shippedLabel = (shippedVersion: number): string => String(shippedVe
 
 /** The n-th change made to a shipped version: `2.1`. */
 export const versionLabel = (baseVersion: number, seq: number): string => `${baseVersion}.${seq}`;
+
+/** How an acknowledged warning is named: the rule and what it is about. */
+export const findingKey = (finding: { code: string; element: string }): string =>
+  `${finding.code}:${finding.element}`;
 
 /** The stamp an event will carry once versions are in force: `<entity>@<label>`. */
 export const versionStamp = (entity: string, label: string): string => `${entity}@${label}`;

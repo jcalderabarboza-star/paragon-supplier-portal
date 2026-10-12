@@ -24,6 +24,7 @@ import { useVerbAvailability } from '../hooks/useVerbAvailability';
 import { shippedLabel } from '../services/flowBuilder/flowVersion';
 import { flowVersionStore } from '../services/flowBuilder/flowVersionStore';
 import { liveWorld } from '../services/flowBuilder/liveWorld';
+import { rosterLabels } from './process-flows/rosterLabels';
 import { getGuide, guideLocaleFor } from '../guides';
 import { firstParagraphText } from '../guides/markdown';
 import { STEP_KIND_KEY } from '../lib/i18n/stepKind';
@@ -321,7 +322,9 @@ const ProcessFlows: React.FC = () => {
   // body.
   const [revision, setRevision] = useState(0);
   const [creating, setCreating] = useState(false);
-  const world = useMemo(() => liveWorld(), []);
+  // ONE world for the list and the composer, with the names a reader sees for
+  // the sample persons: what the composer reports, the list reports.
+  const world = useMemo(() => liveWorld({ personNames: rosterLabels() }), []);
   const draftAvailability = useVerbAvailability('flow:draft');
   const askedVersion = searchParams.get('version');
   const currentVersion = askedVersion !== null && flowVersionStore.byId(askedVersion) ? askedVersion : null;
@@ -408,7 +411,13 @@ const ProcessFlows: React.FC = () => {
         data-testid={`pf-view-panel-${pageView}`}
       >
       {pageView === 'changes' ? (
-        <ChangesView revision={revision} world={world} current={currentVersion} />
+        <ChangesView
+          revision={revision}
+          world={world}
+          current={currentVersion}
+          canDraft={draftAvailability.kind === 'held'}
+          onChanged={() => setRevision((r) => r + 1)}
+        />
       ) : (
       <>
       {/* The honest marker for the route (D-CENSUS-8). Both halves stated. */}
