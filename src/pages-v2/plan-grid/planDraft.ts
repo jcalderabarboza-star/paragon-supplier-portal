@@ -520,6 +520,27 @@ export function applyReasonToRows(
   return applied === 0 ? { draft, applied } : { draft: { entries, refusals: draft.refusals }, applied };
 }
 
+/**
+ * PG-2 · THE REASON IS ASKED BEFORE THE PUSH, ONCE. Measured at R-PG: every
+ * edited line pushed was refused "a reason is required" and none committed —
+ * the reason was asked only after the push had failed. One reason, written
+ * before the push, goes onto each row of the push that owes one AND HAS NONE;
+ * a row whose reason the planner already wrote keeps its own.
+ */
+export const reasonMissing = (e: PlanDraftEntry): boolean => e.planState === 'PLANNED' && blockedBy(e) === 'REASON_REQUIRED';
+
+export function fillMissingReasons(
+  draft: PlanDraft,
+  seamRefs: readonly string[],
+  reason: string,
+): { draft: PlanDraft; applied: number } {
+  const missing = seamRefs.filter((ref) => {
+    const e = draft.entries.get(ref);
+    return e !== undefined && reasonMissing(e);
+  });
+  return applyReasonToRows(draft, missing, reason);
+}
+
 /** Fold push outcomes into the draft: dispatched → PUSHING, else PLANNED + reason. */
 export function applyPushOutcomes(draft: PlanDraft, outcomes: readonly PushOutcome[]): PlanDraft {
   const entries = new Map(draft.entries);

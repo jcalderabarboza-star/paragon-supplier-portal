@@ -112,9 +112,18 @@ describe('B3 · push from the page', () => {
     mount(row, [['2026-08', '1', 'TYPED']]);
     const ref = row.seamRefs!['2026-08'];
     expect(screen.getByLabelText(/Reason — SIM-RM-0033 2026-08/)).toBeInTheDocument();
-    fireEvent.click(screen.getByTestId(`plan-push-row-${ref}`));
-    expect(await screen.findByTestId(`plan-draft-failure-${ref}`)).toHaveTextContent(/a reason is required/);
+    // PG-2: the reason is asked BEFORE the push. The row's push is not offered
+    // while its reason is blank — it said so and was then pushed into a refusal.
+    const rowPush = screen.getByTestId(`plan-push-row-${ref}`);
+    expect(rowPush).toBeDisabled();
+    expect(rowPush).toHaveAttribute('title', 'Reason required to push an override');
+    expect(screen.getByText('Reason required to push an override')).toBeInTheDocument();
+    fireEvent.click(rowPush);
+    expect(screen.queryByTestId(`plan-draft-failure-${ref}`)).toBeNull();
     expect(dispatch.mock.calls.filter((c) => c[1].entityId === ref)).toEqual([]);
+    // KNOWN-GOOD: with its reason written the same row's push is offered.
+    fireEvent.change(screen.getByLabelText(/Reason — SIM-RM-0033 2026-08/), { target: { value: 'Q4 build' } });
+    expect(screen.getByTestId(`plan-push-row-${ref}`)).toBeEnabled();
     dispatch.mockRestore();
   });
 

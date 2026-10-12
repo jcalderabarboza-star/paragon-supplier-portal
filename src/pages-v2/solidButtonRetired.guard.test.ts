@@ -192,6 +192,8 @@ const RENDERED_IN_A_CONTAINER: Readonly<Record<string, string>> = {
   'pages-v2/roles/CreateRolePanel.tsx': 'the body of the New role dialog on the Roles page',
   // PG-1: Publish, and "Discard it" while it is asked.
   'pages-v2/plan-grid/PublicationPanel.tsx': 'the body of the Forecast publication drawer on the plan grid',
+  // PG-2: "Push all", with the reason it asks for first (`PlanPushControls`).
+  'pages-v2/plan-grid/PlanPushControls.tsx': 'the footer of the Planned changes drawer on the plan grid',
 };
 
 type SolidPlace = 'page' | 'container';

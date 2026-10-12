@@ -217,7 +217,12 @@ describe('PLN-4 · a push of 50 rows — one anchor, one refresh, a page that ke
       intakeLineStore.reset();
       purchaseRequisitionStore.reset();
       await i18n.changeLanguage(lang);
-      const cells = lang === 'en' ? FEW_C : FEW_D;
+      // PG-2: a missing reason is asked BEFORE the push now, so it is no longer
+      // what a push is refused for. The refusal this summary states is the
+      // magnitude hold: two of the four are 20× SOMO's figure and unconfirmed.
+      const cells = (lang === 'en' ? FEW_C : FEW_D).map((c, i) =>
+        i < 2 ? c : { ...c, raw: String((c.row.cells[c.bucket] as number) * 20) },
+      );
       const { unmount } = renderWithProviders(
         <PlanDraftProvider>
           <Seed cells={cells} />
@@ -228,19 +233,15 @@ describe('PLN-4 · a push of 50 rows — one anchor, one refresh, a page that ke
       fireEvent.click(screen.getByText('seed'));
       // PG-1: the planned changes open in a drawer, from the bar.
       fireEvent.click(screen.getByTestId('plan-changes-toggle'));
-      // Two of the four get a reason; the other two are held before dispatch.
-      const refs = cells.map((c) => c.row.seamRefs![c.bucket]);
-      fireEvent.click(screen.getByTestId(`plan-select-${refs[0]}`));
-      fireEvent.click(screen.getByTestId(`plan-select-${refs[1]}`));
-      fireEvent.change(screen.getByTestId('plan-bulk-reason'), { target: { value: 'Q4' } });
-      fireEvent.click(screen.getByTestId('plan-bulk-apply'));
+      // All four owe a reason; it is written once, in the push's own field.
+      fireEvent.change(screen.getByTestId('plan-push-reason'), { target: { value: 'Q4' } });
       fireEvent.click(screen.getByTestId('plan-push-all'));
       const result = await screen.findByTestId('plan-push-result', {}, { timeout: 10000 });
       expect(result).toHaveTextContent(
         lang === 'en' ? 'Last push: 2 committed · 2 refused, of 4' : 'Kiriman terakhir: 2 dikomit · 2 ditolak, dari 4',
       );
       expect(within(result).getByTestId('plan-push-result-reasons')).toHaveTextContent(
-        lang === 'en' ? /^2 × Not pushed — a reason is required/ : /^2 × Tidak dikirim — alasan wajib/,
+        lang === 'en' ? /^2 × Not pushed — this quantity is more than 10×/ : /^2 × Tidak terkirim — jumlah ini lebih dari 10×/,
       );
       unmount();
     }
@@ -313,7 +314,7 @@ describe('PLN-4 · PG-1 · the planned changes are a sticky bar under the grid a
     // PG-1 · the list is the drawer's body: a wide drawer, named, with the push in its footer
     const drawer = details.closest('[role="dialog"]')!;
     expect(drawer).not.toBeNull();
-    expect(drawer).toHaveAttribute('data-wide');
+    expect(drawer).toHaveAttribute('data-wide', 'table');
     expect(within(drawer as HTMLElement).getByRole('heading', { name: 'Planned changes' })).toBeInTheDocument();
     expect(within(drawer as HTMLElement).getByTestId('plan-push-all')).toHaveAttribute('data-solid');
     // …and ONE set of push buttons at a time: with the drawer open the bar offers none

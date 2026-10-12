@@ -362,12 +362,16 @@ describe('PLN-2 · a planning surface names a supplier from the supplier master 
     blockHead: false,
   });
 
-  it('the row label states the supplier’s NAME in full, on a line of its own that never truncates', () => {
+  it('the row label states the supplier’s NAME in full — it wraps in a narrow column, and is never cut', () => {
     renderWithProviders(<PlanRowLabel row={allocationRow('sup-sim-015')} />);
     const name = screen.getByTestId('tp-supplier-name');
     expect(name.textContent).toBe('Sample supplier 015');
-    expect(name.className).not.toMatch(/truncate|ellipsis/);
-    expect(name.className).toMatch(/whitespace-nowrap/);
+    // PG-2: the key column gives way to the horizon, so the name may take a
+    // second line; nothing on it or around it may cut it.
+    const label = screen.getByTestId('tp-supplier-row-label');
+    for (const el of [name, label]) expect(el.className).not.toMatch(/truncate|ellipsis|line-clamp|overflow-hidden|whitespace-nowrap/);
+    // the name comes FIRST — it is what tells two rows of one measure apart
+    expect(label.textContent).toBe('Sample supplier 015 · Allocation');
     expect(screen.getByTestId('tp-supplier-row-label')).toHaveAttribute('title', 'Allocation · Sample supplier 015');
     expect(document.body.textContent).not.toContain('sup-sim-');
   });

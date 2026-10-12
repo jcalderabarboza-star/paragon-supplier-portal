@@ -163,6 +163,28 @@ export function formatDateTime(value?: string | number | Date | null): string {
 }
 
 /**
+ * PG-2 · a planning bucket's SHORT label, for a column header twelve of which
+ * must fit a laptop: "Oct" (EN) / "Okt" (ID) for a month, "W41" for a week, with
+ * the two-digit year where the caller asks for it (the first column, and each
+ * January or week 1). The full bucket id is the header's title. Anything that is
+ * neither `YYYY-MM` nor `YYYY-Www` is returned as it came — never a dash, which
+ * would un-name a column.
+ */
+export function formatBucketShort(bucket: string, withYear = false): string {
+  const week = /^(\d{4})-W(\d{2})$/.exec(bucket);
+  if (week) return withYear ? `W${week[2]} ${week[1].slice(2)}` : `W${week[2]}`;
+  if (!/^\d{4}-\d{2}$/.test(bucket)) return bucket;
+  // Midday UTC so the Jakarta (UTC+7) rendering cannot slip to the prior month.
+  const d = new Date(`${bucket}-01T12:00:00.000Z`);
+  if (Number.isNaN(d.getTime())) return bucket;
+  return new Intl.DateTimeFormat(isID() ? 'id-ID' : 'en-GB', {
+    timeZone: JAKARTA,
+    month: 'short',
+    ...(withYear ? { year: '2-digit' as const } : {}),
+  }).format(d);
+}
+
+/**
  * A MONTH BUCKET's label — "Aug 2026" (EN) / "Agu 2026" (ID), Asia/Jakarta.
  *
  * Takes a `YYYY-MM` bucket key rather than a date, because that is what a

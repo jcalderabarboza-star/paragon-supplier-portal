@@ -321,7 +321,7 @@ const PlanGrid: React.FC = () => {
 
       {/* ── PLN-3 · the intake-review view (Design 1 D8) — the retired Intake
           Review page lives here now, over the ONE intake population. ── */}
-      {tab === 'intake' && <IntakeReviewView />}
+      {tab === 'intake' && <IntakeReviewView aboutOpen={aboutOpen} />}
     </AppShellV2>
   );
 };

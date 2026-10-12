@@ -335,6 +335,19 @@ export interface PlanRow {
   readonly committedCells?: Readonly<Record<BucketId, boolean>>;
   /** PLN-3 · per bucket, whether the cell's intake line has been DISMISSED. */
   readonly dismissedCells?: Readonly<Record<BucketId, boolean>>;
+  /**
+   * PG-2 · the material's ONE row: its shortfall per bucket, summed over its
+   * suppliers. Present only on a row `summaryRowOf` built; never editable.
+   */
+  readonly summary?: PlanSummary;
+}
+
+/** PG-2 · what the material's one row carries beside its figures. */
+export interface PlanSummary {
+  /** Why the material is an exception — said on the row, where the totals pane said it. */
+  readonly reasons: readonly PlanExceptionReason[];
+  /** Every seam row an editable cell of this material is anchored to: its planned changes are counted from these. */
+  readonly detailRefs: readonly string[];
 }
 
 /** The horizon aggregates (Design 1 §4.2 `agg:*`), all DERIVED. */
@@ -682,6 +695,84 @@ export const blocksOfViewType = (
   materialType: MaterialType | null,
 ): readonly PlanBlock[] => (materialType === null ? blocks : blocks.filter((b) => b.materialType === materialType));
 
-/** The rows the grid renders, in block order. */
-export const flattenPlanRows = (blocks: readonly PlanBlock[]): readonly PlanRow[] =>
-  blocks.flatMap((b) => b.rows);
+// ── PG-2 · ONE ROW PER MATERIAL (R-PG proposals 3 and 4) ─────────────────────
+//
+// Measured on built main: 582 materials were 4,084 rows, every measure of every
+// material at once, and the landing screen printed 72 dashes against 15 numbers.
+// A material is now ONE row — its shortfall per bucket, so only an exception
+// carries ink — and it OPENS to the measures the planner chose in the measures
+// menu. Still pure: the engine renders what `flattenPlanRows` returns.
+
+/** PG-2 · the measures a material opens to when the planner has chosen none. */
+export const DEFAULT_OPEN_MEASURES: readonly MeasureId[] = ['demand', 'acceptedQty', 'allocation', 'confirmed'];
+
+/** PG-2 · which materials are open and which measures an open one shows. */
+export interface PlanLayout {
+  readonly open: ReadonlySet<string> | 'all';
+  readonly measures: ReadonlySet<MeasureId>;
+}
+
+/**
+ * PG-2 · the material's one row. Its cells are the shortfall rows of the block
+ * summed per bucket — the same rows `isShortIn` and `agg.deficit` read, so the
+ * row, the view and the total cannot disagree. A bucket where no supplier has a
+ * shortfall figure stays null ("—" is not a zero).
+ */
+export function summaryRowOf(b: PlanBlock, horizon: readonly BucketId[]): PlanRow {
+  const short = b.rows.filter((r) => r.measureId === 'confirmedDeficit');
+  return {
+    id: `${b.materialCode}|summary`,
+    materialCode: b.materialCode,
+    materialLabel: b.materialLabel,
+    materialType: b.materialType,
+    uom: b.uom,
+    measureId: 'confirmedDeficit',
+    supplierId: null,
+    cells: Object.fromEntries(horizon.map((bk) => [bk, sumOrNull(short.map((r) => r.cells[bk] ?? null))])),
+    derived: true,
+    blockHead: true,
+    summary: {
+      reasons: exceptionReasons(b.exceptions),
+      detailRefs: b.rows.flatMap((r) => Object.values(r.seamRefs ?? {})),
+    },
+  };
+}
+
+/**
+ * The rows the grid renders, in block order.
+ *
+ * Without a layout it is every row of every block, as built — what an edit is
+ * measured against (a sibling supplier's allocation counts whether or not its
+ * material is open). With one (PG-2) each material is its summary row, followed
+ * — where it is open — by its rows of the chosen measures.
+ */
+export function flattenPlanRows(
+  blocks: readonly PlanBlock[],
+  layout?: PlanLayout,
+  horizon: readonly BucketId[] = [],
+): readonly PlanRow[] {
+  if (!layout) return blocks.flatMap((b) => b.rows);
+  return blocks.flatMap((b) => {
+    const head = summaryRowOf(b, horizon);
+    if (layout.open !== 'all' && !layout.open.has(b.materialCode)) return [head];
+    return [head, ...b.rows.filter((r) => layout.measures.has(r.measureId)).map((r) => (r.blockHead ? { ...r, blockHead: false } : r))];
+  });
+}
+
+/**
+ * PG-2 · the widest figure the grid can show, in characters as formatted — what
+ * a bucket column must be wide enough for. Counted over EVERY row, open or not:
+ * a column that fitted only the rows in sight would clip a figure the moment a
+ * material was opened.
+ */
+export function widestFigure(blocks: readonly PlanBlock[], format: (n: number) => string): number {
+  let widest = 1;
+  for (const b of blocks) {
+    for (const r of b.rows) {
+      for (const v of Object.values(r.cells)) {
+        if (typeof v === 'number') widest = Math.max(widest, format(v).length);
+      }
+    }
+  }
+  return widest;
+}

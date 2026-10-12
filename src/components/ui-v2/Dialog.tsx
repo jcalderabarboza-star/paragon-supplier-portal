@@ -1,4 +1,4 @@
-import React, { useEffect, useId, useRef } from 'react';
+import React, { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import SectionHeading from './SectionHeading';
 import { X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -24,6 +24,13 @@ import { useOneSolid } from './oneSolid';
 // counted by `useOneSolid`. `fill` is the full-screen form of the same pop-up;
 // `titleAside` stands beside the title; `closeLabel` names the close button
 // where "Close panel" would be the wrong word (a full-screen section is LEFT).
+//
+// PG-2 (operator ruling, 11 October 2026) · `anchor` IS THE SAME POP-UP, HUNG
+// FROM A CONTROL. The identity panel hangs from the avatar again and a menu
+// hangs from its button; neither dims the page. Everything else is unchanged and
+// is the point: `role="dialog"`, the focus trap, Escape, the click outside, focus
+// back to the opener, and the one-solid count. It is placed under the control,
+// right edges aligned, and is never taller than the screen below it.
 // ─────────────────────────────────────────────────────────────────────────────
 
 const FOCUSABLE =
@@ -43,6 +50,28 @@ interface DialogProps {
   titleAside?: React.ReactNode;
   /** PG-1: the close button's accessible name, where it is not "Close panel". */
   closeLabel?: string;
+  /** PG-2: hang the pop-up under this control, with no dimmed page. `fill` is ignored. */
+  anchor?: React.RefObject<HTMLElement | null>;
+}
+
+/** PG-2 · the gap between the control and the pop-up hung from it, and the margin kept to the screen. */
+const ANCHOR_GAP = 8;
+const SCREEN_MARGIN = 8;
+
+/**
+ * PG-2 · where an anchored pop-up stands: under the control, right edges
+ * aligned, kept on the screen. Pure, so the placement is tested without layout.
+ */
+export function anchoredPlace(
+  a: { bottom: number; right: number },
+  view: { width: number; height: number },
+): { top: number; right: number; maxHeight: number } {
+  const top = Math.max(SCREEN_MARGIN, Math.round(a.bottom + ANCHOR_GAP));
+  return {
+    top,
+    right: Math.max(SCREEN_MARGIN, Math.round(view.width - a.right)),
+    maxHeight: Math.max(120, view.height - top - SCREEN_MARGIN),
+  };
 }
 
 const Dialog: React.FC<DialogProps> = ({
@@ -56,6 +85,7 @@ const Dialog: React.FC<DialogProps> = ({
   fill = false,
   titleAside,
   closeLabel,
+  anchor,
 }) => {
   const { t } = useTranslation();
   const titleId = useId();
@@ -123,22 +153,43 @@ const Dialog: React.FC<DialogProps> = ({
     };
   }, [open]);
 
+  // PG-2 · an anchored pop-up follows its control: placed before paint, and
+  // again when the window changes size.
+  const anchored = anchor !== undefined;
+  const [place, setPlace] = useState<{ top: number; right: number; maxHeight: number } | null>(null);
+  useLayoutEffect(() => {
+    if (!open || !anchor) return;
+    const measure = (): void => {
+      const el = anchor.current;
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      setPlace(anchoredPlace({ bottom: r.bottom, right: r.right }, { width: window.innerWidth, height: window.innerHeight }));
+    };
+    measure();
+    window.addEventListener('resize', measure);
+    return () => window.removeEventListener('resize', measure);
+  }, [open, anchor]);
+
   if (!open) return null;
+  const filled = fill && !anchored;
 
   return (
     <div
-      data-fill={fill ? '' : undefined}
+      data-fill={filled ? '' : undefined}
+      data-anchored={anchored ? '' : undefined}
       className={
-        fill
-          ? 'fixed inset-0 z-50 flex p-2 sm:p-6'
-          : 'fixed inset-0 z-50 flex items-start justify-center overflow-y-auto p-4 sm:p-8'
+        anchored
+          ? 'fixed inset-0 z-50'
+          : filled
+            ? 'fixed inset-0 z-50 flex p-2 sm:p-6'
+            : 'fixed inset-0 z-50 flex items-start justify-center overflow-y-auto p-4 sm:p-8'
       }
     >
       <div
         aria-hidden="true"
         onClick={onClose}
         data-testid={testId ? `${testId}-scrim` : undefined}
-        className="fixed inset-0 bg-navy/40 animate-overlay-in"
+        className={anchored ? 'fixed inset-0' : 'fixed inset-0 bg-navy/40 animate-overlay-in'}
       />
       <div
         ref={panelRef}
@@ -148,11 +199,12 @@ const Dialog: React.FC<DialogProps> = ({
         aria-labelledby={titleId}
         tabIndex={-1}
         data-testid={testId}
-        className={`relative w-full bg-bg-surface rounded-lg shadow-md border border-border-subtle ${
-          fill ? 'flex h-full flex-col' : widthClass
+        style={anchored ? { top: place?.top ?? SCREEN_MARGIN, right: place?.right ?? SCREEN_MARGIN, maxHeight: place?.maxHeight } : undefined}
+        className={`w-full bg-bg-surface rounded-lg shadow-md border border-border-subtle ${
+          anchored ? `fixed flex flex-col ${widthClass}` : `relative ${filled ? 'flex h-full flex-col' : widthClass}`
         }`}
       >
-        <header className="flex items-center justify-between gap-4 px-6 py-4 border-b border-border-subtle">
+        <header className={`flex items-center justify-between gap-4 border-b border-border-subtle ${anchored ? 'px-4 py-3' : 'px-6 py-4'}`}>
           <div className="flex min-w-0 items-center gap-2">
             <SectionHeading as="h2" id={titleId} className="truncate">
               {title}
@@ -168,7 +220,7 @@ const Dialog: React.FC<DialogProps> = ({
             <X size={20} />
           </button>
         </header>
-        <div data-dialog-body className={fill ? 'min-h-0 flex-1 overflow-auto p-6' : 'p-6'}>
+        <div data-dialog-body className={anchored ? 'min-h-0 flex-1 overflow-y-auto p-4' : filled ? 'min-h-0 flex-1 overflow-auto p-6' : 'p-6'}>
           {children}
         </div>
       </div>

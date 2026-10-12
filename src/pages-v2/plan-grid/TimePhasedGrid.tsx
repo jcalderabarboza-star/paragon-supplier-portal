@@ -40,6 +40,20 @@
 // planned changes open in drawers. Rows come in two heights and alternate BY
 // MATERIAL. PLN-5's `CompactNotice` and the folded panel it names below are gone.
 //
+// ── PG-2 · THE GRID IS CALM (R-PG proposals 3, 4, 5 and 8) ──────────────────
+//  · ONE ROW PER MATERIAL — its shortfall per bucket, so only an exception
+//    carries ink. It opens, on its own label, to the measures chosen in the
+//    measures menu (`flattenPlanRows` with a layout; the model decides, the
+//    engine renders).
+//  · THE HORIZON FITS THE SCREEN. A bucket column is as wide as the widest
+//    figure the grid holds (`widestFigure`) and no wider; the key column takes
+//    what is left, between a floor and what its longest label needs
+//    (`planColumnWidths`). Twelve months stand without sideways scroll wherever
+//    the figures allow it; where they do not, the grid scrolls — a figure is
+//    never clipped to make the claim true.
+//  · The totals pane is two figures: the shortfall over the horizon and the
+//    first short bucket. Why a material is an exception is said on its row.
+//
 // ── PLN-5 · ERGONOMICS (R-PLN P1, the last Planning batch) ─────────────────
 //  · THE GRID IS ABOVE THE FOLD AND IS THE ONE SCROLLER. The chrome above it is
 //    summarised (`CompactNotice`, the publication panel folds to one line), and
@@ -59,21 +73,22 @@
 //    block's first row, and the measure is a sub-label (`PlanRowLabel`).
 // ────────────────────────────────────────────────────────────────────────────
 
-import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { Sigma } from 'lucide-react';
+import React, { createContext, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { ChevronDown, ChevronRight, Sigma } from 'lucide-react';
 import { DataSheetGrid, type CellProps, type Column, type DataSheetGridRef } from 'react-datasheet-grid';
 import 'react-datasheet-grid/dist/style.css';
 import './planGrid.css';
 import { useTranslation } from 'react-i18next';
 import Button from '../../components/ui-v2/Button';
 import Data from '../../components/ui-v2/Data';
-import { FormField, Select, TextInput } from '../../components/ui-v2/Form';
+import Dialog from '../../components/ui-v2/Dialog';
+import { Checkbox, FormField, Select, TextInput } from '../../components/ui-v2/Form';
 import LivenessPill from '../../components/ui-v2/LivenessPill';
 import { Card } from '../../components/ui-v2/Card';
 import Notice from '../../components/ui-v2/Notice';
 import SidePanel from '../../components/ui-v2/SidePanel';
-import { LinkButton, ToggleChip } from '../../components/ui-v2/Actions';
-import { formatNumber } from '../../lib/format';
+import { LinkButton, RowButton, ToggleChip } from '../../components/ui-v2/Actions';
+import { formatBucketShort, formatNumber } from '../../lib/format';
 import { usePlanningFacts } from '../../services/query/planningHooks';
 import { useConsolidationRows, usePublicationWorkspace } from '../../services/query/sdcBuyerHooks';
 import { totalKey } from '../../services/sdc';
@@ -86,6 +101,7 @@ import { planningSupplierName } from '../../services/planning/somoFixture';
 import { visibleMeasures } from './visibleMeasures';
 import { usePlanDraft } from './PlanDraftProvider';
 import { PlannedChangesBar, PlannedChangesDetails, cellRefusalText, usePushTargets } from './PlannedChangesPanel';
+import PlanPushControls from './PlanPushControls';
 import PublicationPanel, { PublicationSummary, draftOfGrain } from './PublicationPanel';
 import { EMPTY_DRAFT, applyEdit, cellKey, magnitudeFlag, routePaste, type CellRefusal, type EditContext, type PlanDraftEntry } from './planDraft';
 import { useFitHeight } from './useFitHeight';
@@ -99,7 +115,6 @@ import {
   buildPlanBlocks,
   flattenPlanRows,
   isEditableCell,
-  exceptionReasons,
   isPlanException,
   planCellText,
   staleKey,
@@ -109,6 +124,9 @@ import {
   type PlanSortColumn,
   PLAN_SORT_COLUMNS,
   isShortIn,
+  DEFAULT_OPEN_MEASURES,
+  widestFigure,
+  type PlanLayout,
 } from './planGridModel';
 
 /**
@@ -127,12 +145,81 @@ const readDensity = (): PlanDensity => {
 };
 // PLN-2 · fits the longest planning-master supplier name on one line (measured in the browser).
 // PLN-5 · and the longest material label, now that the label has the gutter's width to itself.
+// PG-2 · this is the key column's CEILING now; `planColumnWidths` gives it what the horizon leaves.
 const GUTTER_W = 420;
+/** PG-2 · the key column's floor: a label wraps to its second line before the column goes under this. */
+const GUTTER_MIN = 208;
 /** PLN-5 · the grid's height when nothing can be measured (jsdom), and its floor in a short window. */
 const GRID_H = 560;
 const GRID_MIN_H = 300;
-/** PLN-5 · the horizon totals: four figures and the exception reason, each labelled. */
-const AGG_W = 400;
+/** PG-2 · the horizon totals: the shortfall over the horizon and the first short bucket. */
+const AGG_W = 112;
+/** PG-2 · a bucket column: a 12px mono character, the cell's padding, and the least it is ever given. */
+const FIGURE_CH = 7.2;
+const CELL_PAD = 9;
+const BUCKET_MIN = 48;
+/** PG-2 · under this a cell has no room for a marker's WORD beside its figure. */
+const NARROW_BELOW = 88;
+/** PG-2 · a 12px label character, the chevron and padding beside it, the grid's own scrollbar. */
+const LABEL_CH = 6.5;
+const LABEL_PAD = 44;
+const SCROLLBAR_W = 10;
+/** The bucket column where nothing can be measured (jsdom) — the width it had before PG-2. */
+const BUCKET_FALLBACK = 112;
+
+/**
+ * PG-2 · THE COLUMN WIDTHS, as a pure rule. A bucket column is as wide as the
+ * widest figure and no wider; the key column takes what the horizon leaves,
+ * never under its floor and never over what its longest label needs. `fits` says
+ * whether the whole horizon stands without sideways scroll — it is false when
+ * the figures are too wide for the window, and the grid then scrolls.
+ */
+export function planColumnWidths(m: {
+  containerW: number;
+  buckets: number;
+  figureChars: number;
+  labelChars: number;
+}): { gutter: number; bucketMin: number; narrow: boolean; fits: boolean } {
+  if (m.containerW <= 0) return { gutter: GUTTER_W, bucketMin: BUCKET_FALLBACK, narrow: false, fits: false };
+  const bucketMin = Math.max(BUCKET_MIN, Math.ceil(m.figureChars * FIGURE_CH) + CELL_PAD);
+  const needed = Math.min(GUTTER_W, Math.max(GUTTER_MIN, Math.ceil(m.labelChars * LABEL_CH) + LABEL_PAD));
+  const free = m.containerW - AGG_W - SCROLLBAR_W;
+  const left = free - m.buckets * bucketMin;
+  const gutter = Math.min(needed, Math.max(GUTTER_MIN, left));
+  return { gutter, bucketMin, narrow: (free - gutter) / Math.max(1, m.buckets) < NARROW_BELOW, fits: left >= GUTTER_MIN };
+}
+
+/**
+ * PG-2 · which measures an open material shows, remembered per browser. Only
+ * ids the view offers are taken; anything else stored — or nothing — is the
+ * default four.
+ */
+const MEASURES_KEY = 'paragon.planGrid.measures';
+export const readOpenMeasures = (offered: readonly MeasureId[]): ReadonlySet<MeasureId> => {
+  const fallback = new Set(DEFAULT_OPEN_MEASURES.filter((m) => offered.includes(m)));
+  try {
+    const raw = window.localStorage.getItem(MEASURES_KEY);
+    if (raw === null) return fallback;
+    const stored: unknown = JSON.parse(raw);
+    if (!Array.isArray(stored)) return fallback;
+    return new Set(offered.filter((m) => stored.includes(m)));
+  } catch {
+    return fallback;
+  }
+};
+
+/**
+ * PG-2 · what a row label and a cell ask of the grid they stand in: is this
+ * material open, open or close it, and is a bucket column too narrow for a
+ * marker's word. A context, not a prop — the engine's column objects must not
+ * change when a material opens, or every cell would re-mount.
+ */
+export interface PlanRowsApi {
+  isOpen(materialCode: string): boolean;
+  toggle(materialCode: string): void;
+  readonly narrow: boolean;
+}
+export const PlanRowsContext = createContext<PlanRowsApi>({ isOpen: () => false, toggle: () => {}, narrow: false });
 
 // PLN-2 · the supplier's NAME, from the planning supplier master — never its id.
 const supplierLabel = planningSupplierName;
@@ -143,8 +230,17 @@ const supplierLabel = planningSupplierName;
  * glyph's accessible name and its title explains it. Exported for the row
  * label, which marks a modeled MEASURE even where every cell is a dash.
  */
-export const ModeledMark: React.FC = () => {
+export const ModeledMark: React.FC<{ quiet?: boolean }> = ({ quiet = false }) => {
   const { t } = useTranslation();
+  // PG-2 · on a material's own row EVERY figure is the modeled shortfall, and the
+  // column header says so once; the cell keeps the word for a screen reader only.
+  if (quiet) {
+    return (
+      <span className="sr-only" data-testid="tp-modeled">
+        {t('planGrid.tp.modeled')}
+      </span>
+    );
+  }
   return (
     <span className="inline-flex w-3 shrink-0 justify-center text-text-tertiary" title={t('planGrid.tp.modeledTitle')} data-testid="tp-modeled">
       <Sigma size={10} aria-hidden="true" />
@@ -176,8 +272,15 @@ export const PlanBucketCell: React.FC<{
   dismissed?: boolean;
   /** PLN-5 · a SHORTFALL figure: above zero it is the variance, coloured as such. */
   shortfall?: boolean;
-}> = ({ value, derived, planned, refusal, committed, dismissed, shortfall }) => {
+  /** PG-2 · the material's own row: a short cell is tinted, and nothing else on the row carries ink. */
+  summary?: boolean;
+}> = ({ value, derived, planned, refusal, committed, dismissed, shortfall, summary = false }) => {
   const { t } = useTranslation();
+  // PG-2 · in a narrow column a marker's WORD has no room beside the figure: the
+  // word stays for a screen reader and in the cell's title, and the state is
+  // shown by the cell — tinted where planned (amber where pasted), green where
+  // committed, grey where dismissed.
+  const { narrow } = useContext(PlanRowsContext);
   // ⚠️ THE OVERLAY IS SHOWN, NEVER MERGED: the seam value stays in the row and
   // the planned one is read from the draft by seamRef, marked as PLANNED.
   const text = planCellText(planned ? planned.value : value, formatNumber);
@@ -191,10 +294,22 @@ export const PlanBucketCell: React.FC<{
   const shown = planned ? planned.value : value;
   const modeled = derived && typeof shown === 'number' && shown !== 0;
   const short = shortfall === true && typeof shown === 'number' && shown > 0;
+  const pasted = planned?.origin === 'PASTE';
+  const tint = planned ? (narrow && pasted ? 'bg-warning-soft' : 'bg-info-soft') : summary && short ? 'bg-critical-soft' : '';
+  const word = narrow ? 'sr-only' : 'text-label uppercase';
+  const quiet = !planned && !short && (summary || (narrow && dismissed === true));
+  const figure = short
+    ? 'font-semibold !text-critical'
+    : quiet
+      ? '!text-text-tertiary'
+      : narrow && committed && !planned
+        ? '!text-success'
+        : '';
   return (
     <div
-      className={`flex w-full items-center justify-end gap-1 px-2 ${planned ? 'bg-info-soft' : ''} ${refusal ? 'ring-1 ring-inset ring-critical/60' : flagged ? 'ring-1 ring-inset ring-warning' : ''}`}
+      className={`flex h-full w-full items-center justify-end gap-1 overflow-hidden ${narrow ? 'px-1' : 'px-2'} ${tint} ${refusal ? 'ring-1 ring-inset ring-critical/60' : flagged ? 'ring-1 ring-inset ring-warning' : ''}`}
       data-testid="tp-cell"
+      data-narrow={narrow ? '' : undefined}
       data-reading={reading || undefined}
       title={
         refusal
@@ -211,7 +326,7 @@ export const PlanBucketCell: React.FC<{
           ×?
         </span>
       )}
-      {modeled && <ModeledMark />}
+      {modeled && <ModeledMark quiet={summary || narrow} />}
       {refusal && (
         <span className="text-label text-critical" data-testid="tp-cell-refusal" aria-label={refusalText}>
           !
@@ -219,7 +334,7 @@ export const PlanBucketCell: React.FC<{
       )}
       {planned && (
         <span
-          className="text-label uppercase text-info"
+          className={`${word} text-info`}
           data-testid="tp-cell-planned"
           title={t('planGrid.edit.plannedTitle')}
         >
@@ -227,13 +342,13 @@ export const PlanBucketCell: React.FC<{
         </span>
       )}
       {committed && !planned && (
-        <span className="text-label uppercase text-text-tertiary" title={t('planGrid.plan.committed')}>
-          ✓
+        <span className={`${word} text-text-tertiary`} title={t('planGrid.plan.committed')} data-testid="tp-cell-committed">
+          {narrow ? t('planGrid.plan.committed') : '✓'}
         </span>
       )}
       {dismissed && !planned && (
         <span
-          className="text-label uppercase text-text-tertiary"
+          className={`${word} text-text-tertiary`}
           data-testid="tp-cell-dismissed"
           title={t('planGrid.edit.dismissedTitle')}
         >
@@ -243,7 +358,7 @@ export const PlanBucketCell: React.FC<{
       {text === '—' ? (
         <span className="text-xs text-text-tertiary">{text}</span>
       ) : (
-        <Data className={`text-xs ${short ? 'font-semibold !text-critical' : ''}`} data-testid={short ? 'tp-cell-short' : undefined}>
+        <Data className={`shrink-0 text-xs ${figure}`} data-testid={short ? 'tp-cell-short' : undefined}>
           {text}
         </Data>
       )}
@@ -265,6 +380,7 @@ const ReadOnlyBucketCell: React.FC<{ row: PlanRow; bucket: string; derived: bool
       dismissed={row.dismissedCells?.[bucket]}
       // PLN-5 · the shortfall row's figures are the variance.
       shortfall={row.measureId === 'confirmedDeficit'}
+      summary={row.summary !== undefined}
     />
   );
 };
@@ -340,7 +456,7 @@ export const EditableBucketCell: React.FC<{
           : t('planGrid.edit.cellLabel', { material: row.materialCode, bucket })
       }
       inputMode="decimal"
-      className="h-full w-full bg-white px-2 text-right font-mono text-xs text-data-navy outline-none"
+      className="h-full w-full bg-white px-1 text-right font-mono text-xs text-data-navy outline-none"
       value={text}
       onChange={(e) => {
         textRef.current = e.target.value;
@@ -357,55 +473,85 @@ export const EditableBucketCell: React.FC<{
  * The row's key-column label — exported so it is tested directly (the
  * virtualised body lays out no rows under jsdom; `PlanBucketCell`'s precedent).
  *
- * ⚠️ PLN-5 · THE LABEL IS NEVER TRUNCATED, AND THE CODE IS SAID ONCE. Every row
- * carried the code, the unit and "measure — label" on one `truncate`d line, so a
- * long label ("Mono-Carton Box 70x40x180mm — Wardah Moisturizing Lotion") lost
- * its end on every row of its block. The block's FIRST row now states the label
- * on a line of its own with the code, unit and measure under it; every other
- * row states only what tells it apart — its measure (and its supplier).
+ * ⚠️ PLN-5 · THE LABEL IS NEVER TRUNCATED, AND THE CODE IS SAID ONCE.
+ *
+ * PG-2 · A MATERIAL IS ONE ROW, AND ITS LABEL OPENS IT. The material's own row
+ * states the label, the code and the unit once, with why it is an exception and
+ * how many changes are planned inside it; pressing it opens the material to its
+ * measures. A row inside states only what tells it apart — its supplier and its
+ * measure. In a narrow key column a label WRAPS to its second line; it is still
+ * never cut, and its title holds it whole.
  */
 export const PlanRowLabel: React.FC<{ row: PlanRow }> = ({ row }) => {
   const { t } = useTranslation();
+  const rowsApi = useContext(PlanRowsContext);
+  const draftApi = usePlanDraft();
   const spec = measureOf(row.measureId);
   const measure = t(spec.labelKey);
   const modeled = spec.derivation === 'derived' ? <ModeledMark /> : null;
   const supplier = row.supplierId ? supplierLabel(row.supplierId) : null;
-  if (row.blockHead) {
+  if (row.summary) {
+    const open = rowsApi.isOpen(row.materialCode);
+    const planned = draftApi ? row.summary.detailRefs.filter((ref) => draftApi.draft.entries.has(ref)).length : 0;
+    // "Short" is the row's own figures, in red; the label adds what they cannot say.
+    const reasons = row.summary.reasons.filter((r) => r !== 'short');
+    const Chevron = open ? ChevronDown : ChevronRight;
     return (
-      <div className="flex w-full min-w-0 flex-col justify-center px-2 leading-[13px]" data-testid="tp-row-label" data-head="true">
-        <span className="whitespace-nowrap text-xs font-medium text-text-primary" data-testid="tp-material-label">
-          {row.materialLabel}
+      <RowButton
+        padding="none"
+        className="h-full"
+        aria-expanded={open}
+        onClick={() => rowsApi.toggle(row.materialCode)}
+        title={`${row.materialLabel} · ${row.materialCode} · ${row.uom}`}
+        data-testid="tp-row-label"
+        data-head="true"
+        data-material={row.materialCode}
+      >
+        <span className="flex min-w-0 items-center gap-1 px-1">
+          <Chevron size={14} className="shrink-0 text-text-tertiary" aria-hidden="true" />
+          <span className="min-w-0 text-xs leading-[13px]">
+            <span className="font-semibold text-text-primary" data-testid="tp-material-label">
+              {row.materialLabel}
+            </span>{' '}
+            <Data className="text-text-tertiary">{row.materialCode}</Data>
+            <span className="text-text-tertiary"> · {row.uom}</span>
+            {reasons.map((r) => (
+              <span key={r} className="text-warning-hover" data-testid="tp-exception-reason" title={t(`planGrid.tp.exc.${r}Title`)}>
+                {' · '}
+                {t(`planGrid.tp.exc.${r}`)}
+              </span>
+            ))}
+            {planned > 0 && (
+              <span className="text-info" data-testid="tp-summary-planned">
+                {' · '}
+                {t('planGrid.tp.plannedInside', { count: planned, n: formatNumber(planned) })}
+              </span>
+            )}
+          </span>
         </span>
-        <span className="flex items-center gap-1 whitespace-nowrap text-xs leading-[13px] text-text-tertiary">
-          <Data className="font-semibold">{row.materialCode}</Data>
-          <span>· {row.uom} ·</span>
-          <span data-testid="tp-measure">{measure}</span>
-          {modeled}
-          {supplier && <span data-testid="tp-supplier-name">· {supplier}</span>}
-        </span>
-      </div>
+      </RowButton>
     );
   }
   if (supplier) {
     return (
       <span
-        className="flex w-full min-w-0 flex-col justify-center pl-5 pr-2 leading-[13px] text-text-secondary"
+        className="block w-full min-w-0 pl-6 pr-1 text-xs leading-[13px]"
         data-testid="tp-supplier-row-label"
         title={t('planGrid.tp.supplierRow', { measure, supplier })}
       >
-        <span className="flex items-center gap-1 text-xs leading-[13px] text-text-tertiary">
-          <span data-testid="tp-measure">{measure}</span>
-          {modeled}
-        </span>
-        <span className="whitespace-nowrap text-xs" data-testid="tp-supplier-name">
+        <span className="text-text-secondary" data-testid="tp-supplier-name">
           {supplier}
+        </span>{' '}
+        <span className="text-text-tertiary">
+          · <span data-testid="tp-measure">{measure}</span>
         </span>
+        {modeled}
       </span>
     );
   }
   return (
-    <div className="flex w-full min-w-0 items-center gap-1 pl-5 pr-2 text-xs text-text-secondary" data-testid="tp-row-label">
-      <span className="whitespace-nowrap" data-testid="tp-measure">{measure}</span>
+    <div className="flex w-full min-w-0 items-center gap-1 pl-6 pr-1 text-xs text-text-secondary" data-testid="tp-row-label">
+      <span data-testid="tp-measure">{measure}</span>
       {modeled}
     </div>
   );
@@ -437,7 +583,7 @@ const TimePhasedGrid: React.FC<{
   /** PG-1 · the page's "About this data" is open: the sample statement and the edit hint show. */
   aboutOpen?: boolean;
 }> = ({ viewId, currentGrain = 'month', shortNow = false, aboutOpen = false }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const view = VIEWS.find((v) => v.viewId === viewId)!;
   const { grain, horizonLength, materialType } = viewGrainAndHorizon(view, currentGrain);
   const horizon = useMemo(() => somoHorizon(grain).slice(0, horizonLength), [grain, horizonLength]);
@@ -474,6 +620,21 @@ const TimePhasedGrid: React.FC<{
   const [filter, setFilter] = useState<PlanFilter>({ ...DEFAULT_PLAN_FILTER, exceptionsOnly: lockedExceptions });
   // PG-1 · the planned-changes list, in a drawer — closed until the planner opens it.
   const [changesOpen, setChangesOpen] = useState(false);
+  // PG-2 · a push from the bar that still owes a reason opens the drawer ON the question.
+  const [reasonAsked, setReasonAsked] = useState(0);
+  // PG-2 · which materials are open (none, on arrival) and which measures an open one shows.
+  const [openMaterials, setOpenMaterials] = useState<ReadonlySet<string> | 'all'>(() => new Set());
+  const [openMeasures, setOpenMeasuresState] = useState<ReadonlySet<MeasureId>>(() => readOpenMeasures(measures));
+  const setOpenMeasures = (next: ReadonlySet<MeasureId>) => {
+    setOpenMeasuresState(next);
+    try {
+      window.localStorage.setItem(MEASURES_KEY, JSON.stringify([...next]));
+    } catch {
+      // a private window: the choice lasts for the page
+    }
+  };
+  const [measuresMenu, setMeasuresMenu] = useState(false);
+  const measuresButtonRef = useRef<HTMLSpanElement>(null);
   const [density, setDensityState] = useState<PlanDensity>(readDensity);
   const setDensity = (next: PlanDensity) => {
     setDensityState(next);
@@ -537,8 +698,29 @@ const TimePhasedGrid: React.FC<{
   const shortNowCount = useMemo(() => blocks.filter((b) => isShortIn(b, nowBucket)).length, [blocks, nowBucket]);
   // PG-1 · alternate MATERIALS, not rows: the band is what keeps a material's rows together to the eye.
   const bandOf = useMemo(() => new Map(visible.map((b, i) => [b.materialCode, i % 2 === 1])), [visible]);
-  const rows = useMemo(() => flattenPlanRows(visible) as PlanRow[], [visible]);
+  // PG-2 · what the grid RENDERS: one row per material, and an open material's chosen measures.
+  const layout = useMemo<PlanLayout>(() => ({ open: openMaterials, measures: openMeasures }), [openMaterials, openMeasures]);
+  const rows = useMemo(() => flattenPlanRows(visible, layout, horizon) as PlanRow[], [visible, layout, horizon]);
+  // …and what an EDIT is measured against: every row, open or not (a sibling
+  // supplier's allocation counts whether or not it is in sight).
+  const allRows = useMemo(() => flattenPlanRows(visible), [visible]);
   const blockOf = useMemo(() => new Map(visible.map((b) => [b.materialCode, b])), [visible]);
+  const openCount = openMaterials === 'all' ? visible.length : visible.filter((b) => openMaterials.has(b.materialCode)).length;
+  const rowsApi = useMemo<PlanRowsApi>(
+    () => ({
+      isOpen: (code) => openMaterials === 'all' || openMaterials.has(code),
+      toggle: (code) =>
+        setOpenMaterials((cur) => {
+          // "All open" is every material of the list as it stands; closing one names the rest.
+          const next = new Set(cur === 'all' ? visible.map((b) => b.materialCode) : cur);
+          if (next.has(code)) next.delete(code);
+          else next.add(code);
+          return next;
+        }),
+      narrow: false,
+    }),
+    [openMaterials, visible],
+  );
   const exceptionCount = useMemo(() => blocks.filter((b) => isPlanException(b.exceptions)).length, [blocks]);
 
   // B3 · what the SEAM holds per editable cell, for C6 §3's clear-when-agreed.
@@ -559,7 +741,7 @@ const TimePhasedGrid: React.FC<{
     [openDraft],
   );
   const editContextRef = useRef<EditContext>({ rows: [], totalOf });
-  editContextRef.current = { rows, totalOf };
+  editContextRef.current = { rows: allRows, totalOf };
   const reconcileRef = useRef(draftApi?.reconcile);
   reconcileRef.current = draftApi?.reconcile;
   useEffect(() => {
@@ -714,15 +896,75 @@ const TimePhasedGrid: React.FC<{
     return { ok: true as const, byId };
   }, [horizon, measures]);
 
+  // PG-2 · the widths: what the view is wide, what its widest figure and its
+  // longest label need. Measured on the VIEW (never on the grid, whose own width
+  // these decide), and re-measured when the window changes.
+  const [containerW, setContainerW] = useState(0);
+  // Set once the first measurement has been TAKEN, whatever it returned: where
+  // nothing is laid out (jsdom) the width stays 0 and the grid still mounts.
+  const [measured, setMeasured] = useState(false);
+  useLayoutEffect(() => {
+    const el = viewRef.current;
+    if (!el) return;
+    const measure = () => setContainerW((cur) => (cur === el.clientWidth ? cur : el.clientWidth));
+    measure();
+    setMeasured(true);
+    if (typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  const plannedValues = draftApi?.draft.entries;
+  const figureChars = useMemo(() => {
+    let widest = widestFigure(blocks, formatNumber);
+    for (const e of plannedValues?.values() ?? []) widest = Math.max(widest, formatNumber(e.value).length);
+    return widest;
+  }, [blocks, plannedValues]);
+  const labelChars = useMemo(() => {
+    let widest = 0;
+    for (const b of blocks) {
+      widest = Math.max(widest, `${b.materialLabel} ${b.materialCode} · ${b.uom}`.length);
+      for (const r of b.rows) if (r.supplierId) widest = Math.max(widest, supplierLabel(r.supplierId).length + 4);
+    }
+    return widest;
+  }, [blocks]);
+  const widths = useMemo(
+    () => planColumnWidths({ containerW, buckets: horizon.length, figureChars, labelChars }),
+    [containerW, horizon.length, figureChars, labelChars],
+  );
+  const rowsContext = useMemo<PlanRowsApi>(() => ({ ...rowsApi, narrow: widths.narrow }), [rowsApi, widths.narrow]);
+  // ⚠️ THE ENGINE KEEPS THE COLUMN SIZES IT WAS MOUNTED WITH (found in the
+  // browser: a view opened on cached facts mounted at the unmeasured widths and
+  // stayed 1,877px wide in a 1,054px box, with the sideways scroll switched off
+  // over it). So the grid is not mounted until the view has been measured, and
+  // it is mounted afresh when the widths change — a window resized, not a
+  // material opened. The measurement is taken before the first paint, so the
+  // wait is never seen.
+  const widthsKey = `${widths.gutter}:${widths.bucketMin}`;
+  const language = i18n.language;
+
   const columns: Column<PlanRow>[] = useMemo(
     () =>
-      horizon.map((bucket) => ({
+      horizon.map((bucket, i) => ({
         id: `bucket:${bucket}`,
-        title: <Data className="text-xs">{bucket}</Data>,
+        // PG-2 · "Oct", not "2026-10": twelve of them fit. The year is said on the
+        // first column and where it turns; the bucket's id is the title. The
+        // present bucket — the one "Shortages this month" reads — is marked.
+        title: (
+          <span
+            className={`block w-full text-center ${bucket === nowBucket ? 'font-semibold text-navy underline' : ''}`}
+            title={bucket}
+            data-testid="tp-bucket-head"
+            data-bucket={bucket}
+            data-now={bucket === nowBucket ? '' : undefined}
+          >
+            <Data className="text-xs">{formatBucketShort(bucket, i === 0 || /-(01|W01)$/.test(bucket))}</Data>
+          </span>
+        ),
         // THE REGISTRY DECIDES: only a cell `isEditableCell` admits can enter
         // edit mode, and only while a draft exists to receive the edit.
         disabled: ({ rowData }: { rowData: PlanRow }) => !hasDraft || !isEditableCell(rowData, bucket),
-        minWidth: 112,
+        minWidth: widths.bucketMin,
         // PLN-5 · Ctrl+C copies what the cell DISPLAYS: the planned value where
         // one is planned, else the seam's, formatted as shown; a dash is no
         // value, so it copies as an empty cell rather than as "—".
@@ -745,12 +987,17 @@ const TimePhasedGrid: React.FC<{
     // ⚠️ PLN-5 · NOT `draftApi`: it is a new object on every overlay change, and a
     // new column set re-mounts every cell — an editor open at that moment lost
     // what was typed into it. The cells read the overlay from its context.
-    [horizon, generated, hasDraft],
+    [horizon, generated, hasDraft, widths.bucketMin, nowBucket, language],
   );
 
   const gutter = useMemo(
     () => ({
-      title: <span className="px-2 text-xs">{t('planGrid.tp.keyColumn')}</span>,
+      title: (
+        <span className="flex items-center gap-1 px-2 text-xs" data-testid="tp-key-header">
+          {t('planGrid.tp.keyColumn')}
+          <ModeledMark />
+        </span>
+      ),
       // ⚠️ `basis`, NOT `minWidth`: the engine sizes its sticky columns from
       // `basis` and defaults it to 40 px (useColumns.js), so a `minWidth` alone
       // rendered a 40-px gutter whose text ran over the buckets — found in
@@ -762,30 +1009,25 @@ const TimePhasedGrid: React.FC<{
       // allocation rows apart — was the part cut off. The measure and the name
       // now sit on two lines of their own, and the gutter is wide enough for the
       // longest name the planning supplier master holds on one line.
-      basis: GUTTER_W,
-      minWidth: GUTTER_W,
+      basis: widths.gutter,
+      minWidth: widths.gutter,
       grow: 0,
       shrink: 0,
       component: ({ rowData }: { rowData: PlanRow }) => <PlanRowLabel row={rowData} />,
     }),
-    [t],
+    [t, widths.gutter],
   );
 
-  // PLN-5 · the horizon totals, each sub-column LABELLED in the header (they were
-  // four bare figures under one run-on title), and the exception's REASON beside
-  // them — short, awaiting or stale — so an exception row says why it is one.
+  // PLN-5 · the horizon totals, each sub-column LABELLED in the header.
+  // PG-2 · two of them — the shortfall over the horizon and the first short
+  // bucket — on the material's own row. Demand and confirmed are per bucket
+  // inside the material; why it is an exception is said on its label.
   const aggregates = useMemo(
     () => ({
       title: (
-        <div className="grid w-full grid-cols-[1fr_1fr_1fr_1fr_76px] gap-1 px-2 text-right text-label leading-[12px]" data-testid="tp-agg-header" title={t('planGrid.tp.aggregates')}>
-          <span>{t('planGrid.tp.agg.demand')}</span>
-          <span>{t('planGrid.tp.agg.confirmed')}</span>
-          <span className="inline-flex items-center justify-end gap-0.5">
-            <ModeledMark />
-            {t('planGrid.tp.agg.shortfall')}
-          </span>
+        <div className="grid w-full grid-cols-[minmax(0,1fr)_34px] gap-1 px-1 text-right text-label leading-[12px]" data-testid="tp-agg-header" title={t('planGrid.tp.aggregates')}>
+          <span>{t('planGrid.tp.agg.shortTotal')}</span>
           <span>{t('planGrid.tp.agg.firstShort')}</span>
-          <span className="text-left">{t('planGrid.tp.agg.exception')}</span>
         </div>
       ),
       basis: AGG_W,
@@ -793,33 +1035,21 @@ const TimePhasedGrid: React.FC<{
       grow: 0,
       shrink: 0,
       component: ({ rowData }: { rowData: PlanRow }) => {
-        const b = rowData.blockHead ? blockOf.get(rowData.materialCode) : undefined;
+        const b = rowData.summary ? blockOf.get(rowData.materialCode) : undefined;
         if (!b) return <span />;
-        const reasons = exceptionReasons(b.exceptions);
         return (
-          <div className="grid w-full grid-cols-[1fr_1fr_1fr_1fr_76px] items-center gap-1 px-2 text-right text-xs" data-testid="tp-aggregates">
-            <Data>{planCellText(b.agg.demand, formatNumber)}</Data>
-            <Data>{planCellText(b.agg.confirmed, formatNumber)}</Data>
-            <Data className={(b.agg.deficit ?? 0) > 0 ? 'font-semibold !text-critical' : ''}>
+          <div className="grid w-full grid-cols-[minmax(0,1fr)_34px] items-center gap-1 px-1 text-right text-xs" data-testid="tp-aggregates">
+            <Data className={(b.agg.deficit ?? 0) > 0 ? 'font-semibold !text-critical' : '!text-text-tertiary'}>
               {planCellText(b.agg.deficit, formatNumber)}
             </Data>
-            <Data>{b.agg.firstShortBucket ?? '—'}</Data>
-            <span className="truncate text-left text-xs" data-testid="tp-exception-reason" title={reasons.map((r) => t(`planGrid.tp.exc.${r}Title`)).join(' · ') || undefined}>
-              {reasons.length === 0 ? (
-                <span className="text-text-tertiary">—</span>
-              ) : (
-                reasons.map((r) => (
-                  <span key={r} className={`mr-1 ${r === 'short' ? 'font-semibold text-critical' : 'text-warning-hover'}`}>
-                    {t(`planGrid.tp.exc.${r}`)}
-                  </span>
-                ))
-              )}
-            </span>
+            <Data title={b.agg.firstShortBucket ?? undefined} className={b.agg.firstShortBucket ? '' : '!text-text-tertiary'}>
+              {b.agg.firstShortBucket ? formatBucketShort(b.agg.firstShortBucket) : '—'}
+            </Data>
           </div>
         );
       },
     }),
-    [t, blockOf],
+    [t, blockOf, language],
   );
 
   // PLN-5 · the grid fills what the viewport has left below the chrome, so the
@@ -936,6 +1166,30 @@ const TimePhasedGrid: React.FC<{
             </Button>
           </div>
         </FormField>
+        {/* PG-2 · what an open material shows, and every material open or closed at once. */}
+        <div className="flex flex-col gap-1" data-testid="tp-measures">
+          <span className="text-label uppercase text-text-tertiary">{t('planGrid.tp.measures.label')}</span>
+          <div className="flex items-center gap-2">
+            <span ref={measuresButtonRef} className="inline-flex">
+              <Button
+                variant="secondary"
+                aria-haspopup="dialog"
+                aria-expanded={measuresMenu}
+                onClick={() => setMeasuresMenu(true)}
+                data-testid="tp-measures-button"
+              >
+                {t('planGrid.tp.measures.button', { shown: formatNumber(openMeasures.size), total: formatNumber(measures.length) })}
+              </Button>
+            </span>
+            <LinkButton
+              onClick={() => setOpenMaterials(openCount > 0 ? new Set() : 'all')}
+              data-testid="tp-open-all"
+              data-open={openCount}
+            >
+              {t(openCount > 0 ? 'planGrid.tp.closeAll' : 'planGrid.tp.openAll')}
+            </LinkButton>
+          </div>
+        </div>
         <div className="flex flex-col gap-1" role="group" aria-label={t('planGrid.tp.density')} data-testid="tp-density" data-density={density}>
           <span className="text-label uppercase text-text-tertiary">{t('planGrid.tp.density')}</span>
           <div className="flex gap-1">
@@ -977,7 +1231,7 @@ const TimePhasedGrid: React.FC<{
             reason: factsQuery.data?.horizonRefusal?.reason ?? (generated.ok ? '' : generated.reason),
           })}
         </p>
-      ) : factsQuery.isLoading ? (
+      ) : factsQuery.isLoading || !measured ? (
         <p className="text-sm text-text-tertiary">{t('planGrid.tp.loading')}</p>
       ) : rows.length === 0 ? (
         <p className="text-sm text-text-tertiary" data-testid="tp-empty">
@@ -992,9 +1246,13 @@ const TimePhasedGrid: React.FC<{
           data-testid="tp-grid"
           data-fit-height={gridH}
           data-density={density}
+          data-fits={widths.fits ? '' : undefined}
+          data-narrow={widths.narrow ? '' : undefined}
           style={{ '--plan-dsg-h': `${gridH}px` } as React.CSSProperties}
         >
+          <PlanRowsContext.Provider value={rowsContext}>
           <DataSheetGrid<PlanRow>
+            key={widthsKey}
             ref={gridRef}
             onActiveCellChange={({ cell }) => {
               // PLN-5 · a key note speaks of the cell it was made in; moving on retires it.
@@ -1024,11 +1282,12 @@ const TimePhasedGrid: React.FC<{
             disableContextMenu
             rowHeight={ROW_H[density]}
             rowClassName={({ rowData }) =>
-              `${bandOf.get(rowData.materialCode) ? 'tp-band' : ''} ${rowData.blockHead ? 'tp-head' : ''}`.trim() || undefined
+              `${bandOf.get(rowData.materialCode) ? 'tp-band' : ''} ${rowData.blockHead ? 'tp-head' : 'tp-detail'}`.trim() || undefined
             }
             headerRowHeight={36}
             height={gridH}
           />
+          </PlanRowsContext.Provider>
         </div>
       )}
 
@@ -1037,40 +1296,58 @@ const TimePhasedGrid: React.FC<{
           sticky bar stays in sight and takes none of the grid's height.
           PG-1 · and the list is a DRAWER now, with the publication's: below the
           grid it made the page scroll. */}
-      <PlannedChangesBar selectedRefs={selectedRefs} open={changesOpen && push.count > 0} onToggle={() => setChangesOpen((o) => !o)} />
+      <PlannedChangesBar
+        selectedRefs={selectedRefs}
+        open={changesOpen && push.count > 0}
+        onToggle={() => setChangesOpen((o) => !o)}
+        onAskReason={() => {
+          setChangesOpen(true);
+          setReasonAsked((n) => n + 1);
+        }}
+      />
       <SidePanel
-        wide
+        wide="table"
         open={changesOpen && push.count > 0}
         onClose={() => setChangesOpen(false)}
         title={t('planGrid.edit.changesTitle')}
-        footerActions={
-          push.any && push.api ? (
-            <>
-              <Button
-                variant="secondary"
-                disabled={push.pushing || push.selected.length === 0}
-                onClick={() => void push.api?.push(push.selected)}
-                data-testid="plan-push-selection"
-              >
-                {t('planGrid.edit.push.selection', { n: formatNumber(push.selected.length) })}
-              </Button>
-              <Button
-                variant="primary"
-                disabled={push.pushing || push.plannedRefs.length === 0}
-                onClick={() => void push.api?.push(push.plannedRefs)}
-                data-testid="plan-push-all"
-              >
-                {push.pushing ? t('planGrid.push.pushing') : t('planGrid.edit.push.all', { n: formatNumber(push.plannedRefs.length) })}
-              </Button>
-            </>
-          ) : undefined
-        }
+        footerActions={push.any && push.api ? <PlanPushControls selectedRefs={selectedRefs} asked={reasonAsked} /> : undefined}
       >
         <PlannedChangesDetails open />
       </SidePanel>
       <SidePanel wide open={publicationOpen} onClose={() => setPublicationOpen(false)} title={t('planGrid.publication.title')}>
         <PublicationPanel grain={grain} bare />
       </SidePanel>
+      {/* PG-2 · the measures menu — the shared pop-up, hung from its button. */}
+      <Dialog
+        anchor={measuresButtonRef}
+        open={measuresMenu}
+        onClose={() => setMeasuresMenu(false)}
+        title={t('planGrid.tp.measures.title')}
+        testId="tp-measures-menu"
+        widthClass="max-w-xs"
+      >
+        <div className="flex flex-col gap-2">
+          {measures.map((m) => (
+            <Checkbox
+              key={m}
+              data-testid={`tp-measure-${m}`}
+              checked={openMeasures.has(m)}
+              onChange={(e) => {
+                const next = new Set(openMeasures);
+                if (e.target.checked) next.add(m);
+                else next.delete(m);
+                // kept in the view's own order, whatever order they were ticked in
+                setOpenMeasures(new Set(measures.filter((x) => next.has(x))));
+              }}
+            >
+              {t(m === 'confirmedDeficit' ? 'planGrid.tp.measures.shortBySupplier' : measureOf(m).labelKey)}
+            </Checkbox>
+          ))}
+          <p className="text-xs text-text-tertiary" data-testid="tp-measures-note">
+            {t('planGrid.tp.measures.note')}
+          </p>
+        </div>
+      </Dialog>
     </div>
   );
 };
