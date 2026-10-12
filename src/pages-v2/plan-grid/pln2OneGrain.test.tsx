@@ -393,7 +393,10 @@ describe('PLN-2 · a planning surface names a supplier from the supplier master 
       const src = readFileSync(resolve(process.cwd(), f), 'utf-8');
       expect(src, f).not.toMatch(/mockSuppliers\.find\(/);
       // the surface's own name for the resolver IS the resolver — not a function that might fall back
-      expect(src, f).toMatch(/const (supplierName|supplierLabel) = planningSupplierName;/);
+      // MD-2b — the one resolver is the replica's (`masterData/lookup.ts`); the
+      // planning fixture's own name table is no longer asked by any surface.
+      expect(src, f).toMatch(/const (supplierName|supplierLabel) = supplierNameOf;/);
+      expect(src, f).not.toMatch(/planningSupplierName/);
       expect(src.match(/const (supplierName|supplierLabel) =/g), f).toHaveLength(1);
     }
   });

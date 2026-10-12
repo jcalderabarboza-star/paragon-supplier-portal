@@ -55,8 +55,13 @@ describe('B1 · the generated SOMO fixture — named members, named values', () 
     expect(unresolved).toEqual([]);
   });
 
-  it('⚠️ the ONE master is untouched — no synthetic code leaks into MATERIAL_MASTER', () => {
-    expect(isKnownMaterial('SIM-RM-0001')).toBe(false);
+  // ⚠️ RETRACTED AT MD-2b (operator ruling, decision 16), QUOTED. This read "the
+  // ONE master is untouched" and asserted `isKnownMaterial('SIM-RM-0001')` FALSE.
+  // The generated materials are replica records now, so the one lookup knows
+  // them; the authored FIXTURE still names none, which is the half kept below.
+  it('⚠️ the generated materials are in the one master, and none is written into the authored fixture', () => {
+    expect(isKnownMaterial('SIM-RM-0001')).toBe(true);
+    expect(isKnownMaterial('SIM-RM-9999')).toBe(false);
     expect(Object.keys(MATERIAL_MASTER).filter((c) => c.startsWith('SIM-'))).toEqual([]);
   });
 

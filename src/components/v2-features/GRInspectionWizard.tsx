@@ -1,3 +1,4 @@
+import { receivingLocationOptions } from '../../pages-v2/master-data/referencePickers';
 import React, { useMemo, useState } from 'react';
 import Wizard, { WizardStep } from '../ui-v2/Wizard';
 import FormSection from '../ui-v2/FormSection';
@@ -274,7 +275,8 @@ const ROLES = [
 
 // i18n-defer: warehouse facility names / codes (proper nouns) — out of scope
 // like material/brand data.
-const LOCATIONS = ['NDC J6 Jakarta', 'RM Warehouse', 'PM Warehouse'];
+// MD-2 — the receiving locations are read from the plant and storage-location
+// reference tables (`master-data/referencePickers.ts`).
 
 const ELIGIBLE_STATUSES = ['At Dock', 'Unloading'] as const;
 
@@ -738,7 +740,7 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
   // A resumed receipt shows the date and receiver it was created with.
   const [receivedDate, setReceivedDate] = useState(resume?.receivedDate || DECLARED_PRESENT);
   const [receivedBy, setReceivedBy] = useState(resume?.receivedBy || ROLES[0]);
-  const [warehouse, setWarehouse] = useState(LOCATIONS[0]);
+  const [warehouse, setWarehouse] = useState(() => receivingLocationOptions()[0]?.text ?? '');
   const [notes, setNotes] = useState('');
   const [lines, setLines] = useState<LineDraft[]>(() =>
     resume ? buildDraftFromReceipt(resume) : [],
@@ -1285,9 +1287,9 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
               value={warehouse}
               onChange={(e) => setWarehouse(e.target.value)}
             >
-              {LOCATIONS.map((l) => (
-                <option key={l} value={l}>
-                  {l}
+              {receivingLocationOptions().map((o) => (
+                <option key={o.key} value={o.text}>
+                  {o.label}
                 </option>
               ))}
             </Select>

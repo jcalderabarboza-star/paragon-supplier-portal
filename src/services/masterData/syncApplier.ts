@@ -18,7 +18,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { replicaRead, replicaWrite } from './replicaStore';
-import { buildSeedRun } from './seed';
+import { buildPlanningSampleRun, buildSeedRun } from './seed';
 import {
   KNOWN_MATERIAL_TYPES,
   KNOWN_UNITS,
@@ -212,22 +212,29 @@ export function applySyncRun(run: InboundRun): SyncRun {
     replaced: Object.freeze(replaced),
   });
   replicaWrite.appendRun(row);
+  version += 1;
   return row;
 }
 
 // ── The seed ─────────────────────────────────────────────────────────────────
 
 let seeded = false;
+let version = 0;
 
-/** Apply the seed run once. Every read of the replica goes through here first. */
+/** Moves each time a run is applied or the replica is reset. What a view built from the replica is keyed on. */
+export const replicaVersion = (): number => version;
+
+/** Apply the two seed runs once: the authored set, then the planning sample set. Every read of the replica goes through here first. */
 export function ensureSeeded(): void {
   if (seeded) return;
   seeded = true;
   applySyncRun(buildSeedRun());
+  applySyncRun(buildPlanningSampleRun());
 }
 
 /** Empty the replica and its log, so the next read seeds it again. For specs. */
 export function resetReplica(): void {
   replicaWrite.reset();
   seeded = false;
+  version += 1;
 }

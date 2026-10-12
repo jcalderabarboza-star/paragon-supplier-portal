@@ -84,7 +84,7 @@
 //        turns out to be at the wrong grain is not salvageable by adding a key.
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { MATERIAL_MASTER } from './fixtures';
+import { materialMasterView } from '../masterData/materialMasterView';
 import { MATERIAL_GROUPS } from './materialGroups';
 import type { HalalApplicability, MaterialMaster } from './types';
 
@@ -202,7 +202,7 @@ export type HalalOutcome =
  */
 export function halalOf(
   materialCode: string,
-  master: MaterialMaster = MATERIAL_MASTER,
+  master: MaterialMaster = materialMasterView(),
 ): HalalOutcome {
   const entry = Object.prototype.hasOwnProperty.call(master, materialCode)
     ? master[materialCode]

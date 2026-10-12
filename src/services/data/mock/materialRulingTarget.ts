@@ -6,12 +6,12 @@ import { bindPolicyHook, POLICY_HOOKS, type CommandTarget, type PolicyDecision }
 import { asActorAttribution, isAttributed } from '../../../lib/enforcement';
 import { NO_PERSON } from '../../../context/noPerson';
 import { DECLARED_PRESENT_INSTANT } from '../fixturePresent';
-import { MATERIAL_MASTER } from '../../sdc/fixtures';
+import { materialMasterView } from '../../masterData/materialMasterView';
 import { isRulingRegime, rulingInForce } from '../../sdc/materialRuling';
 import { materialRulingStore } from './stores/materialRulingStore';
 
 const known = (materialCode: string): boolean =>
-  Object.prototype.hasOwnProperty.call(MATERIAL_MASTER, materialCode);
+  Object.prototype.hasOwnProperty.call(materialMasterView(), materialCode);
 
 const no = (reason: string): PolicyDecision => ({ ok: false, reason });
 

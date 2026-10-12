@@ -662,6 +662,15 @@ targets). They measure different things; this file keeps them separate.
 > where-used and the sync log are refused `SCOPE_DENIED` for the whole object. The record, the stamp
 > and the sync run are specified in `C13-master-data.md`. Moved by the pin going red.
 >
+> **NOTE (2026-10-12, MD-2 and MD-2b).** No figure on any axis moved. Two statements above are
+> overtaken and are left as the record of what they described: the material lookups no longer read
+> the frozen fixture, and there is no longer a second master a plan line is published from. By
+> operator ruling there is ONE master: the lookups default to a view of the replica
+> (`services/masterData/materialMasterView.ts`), and the planning fixture's generated sample
+> materials and suppliers are replica records delivered by a second seed run. `sdc_material_known`
+> and the publication checks ask that one master; the `publishedMaterialMaster` accessor named in
+> the SDC-5 note above is deleted. `MT` and `BOX` joined the unit union and the unit reference table.
+>
 > **RE-HARVEST (2026-10-12, FB-2).** A draft is composed. No figure moved: no transition, state,
 > target or service method was added, and the pin did not go red.
 > **`t_flowversion_save` takes an OPTIONAL payload field, `acknowledged`**: a list of

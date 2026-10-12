@@ -22,12 +22,13 @@ Three consequences bind every implementation:
 |---|---|---|
 | `material` | material number | `description`, `materialType`, `materialGroup`, `baseUnit` |
 | `supplier` | business-partner number | `portalSupplierId`, `name`, `legalName`, `country`, `city`, `taxId`, `businessRegNo`, `paymentTerm`, `incoterm`, `incotermPlace` |
-| reference tables: `unit`, `materialType`, `materialGroup`, `incoterm`, `paymentTerm`, `currency`, `country`, `plant`, `storageLocation`, `costCentre` | the code | `text`, and `attributes` from the closed set `dimension`, `days`, `city`, `plant` |
+| reference tables: `unit`, `materialType`, `materialGroup`, `incoterm`, `paymentTerm`, `currency`, `country`, `plant`, `storageLocation`, `costCentre`, `brand` | the code | `text`, and `attributes` from the closed set `dimension`, `days`, `city`, `plant` |
 
 - **The key is opaque.** Nothing parses a material number or a business-partner number (C9 §3).
 - **`portalSupplierId`** is the id the portal's documents and seats name. It is a pointer held on the record; SAP's key is the business-partner number.
 - **The incoterm and its place are two fields**, as SAP holds them.
 - **Not replicated:** performance figures, bank details, halal and BPOM rulings, certificates, preferred-supplier standing. The last four are portal-owned annotations with their own writers.
+- **`brand`** is the Paragon brand list exactly as ruled (`src/data/paragonBrands.ts`), under its own codes.
 - **Units and material types are closed unions in code** (`Uom`, `MaterialType`), because arithmetic and refusals depend on them. The `unit` and `materialType` tables must stay inside those unions (§5).
 
 ## 3 · The record and its stamp
@@ -107,11 +108,25 @@ A unit is refused rather than defaulted because a unit has arithmetic consequenc
 - A supplier reads its **own** supplier record and the reference tables. Another supplier's key answers `null`, exactly as an absent key does: the answer is not an existence oracle (C11 V2).
 - Materials, where-used and the sync log are refused `SCOPE_DENIED` to a supplier **for the whole object**, never per key.
 
-## 7 · What the fixture does, and what the SE Team builds
+## 7 · One truth: how the rest of the tree reads (MD-2)
+
+- **A material resolves through one lookup, and the lookup reads the replica.** `labelOf`, `uomOf`, `requireUom`, `isKnownMaterial`, `bpomOf` and `halalOf` default their master to `materialMasterView()`: SAP's fields from the replica, with the two portal annotations (halal and BPOM applicability) beside them. A material a run delivers is known to every lookup when the run is applied. One the fixture has no annotation for reads `UNDETERMINED` on both until Compliance rules it.
+- **The three outcomes are unchanged:** refuse on the write path (`UNKNOWN_MATERIAL`), a dash on display, a throw at author time.
+- **Reference values have a synchronous lookup** (`services/masterData/lookup.ts`): `referenceText`, `isKnownReference`, `referenceOptions`, `supplierOf`. A key the table does not hold answers `null`; no text is invented.
+- **A form's picker reads its reference table** (`pages-v2/master-data/referencePickers.ts`): incoterms, payment terms, receiving locations, cost centres. A value flagged for deletion in SAP is not offered for new work and stays on the documents that carry it. Incoterm and cost centre store the key; payment term and receiving location store the text, as the documents they write do today.
+- **A gate holds it** (`src/lib/masterDataGate/`): the files that import the material or supplier fixture directly, and the option lists that still stand for a value with a reference table, are each a named list held equal to the tree. Each can only shrink.
+
+- **One resolver (MD-2b).** The planning fixture's generated sample materials and suppliers are replica records, delivered by a second seed run (`SAMPLE-RUN-0002`). The planning lane's second resolver module (`publishedMaterial`) is deleted; no product file asks the planning fixture what a material or a supplier is, and the gate holds that. A record is a generated sample **by the run that delivered it** (`isSampleMaterial`), never by a prefix on its code. A supplier's name is `supplierNameOf(portalSupplierId)`.
+- **Units (MD-2b).** `MT` and `BOX` are in the unit table and in the unit union. The requisition form offers every unit in the table. A sourcing event accepts a closed set of units, so its wizard offers the table's units that set accepts.
+- **The Compliance applicability panel lists authored materials.** The generated samples are every one undetermined and are not Compliance's worklist; the panel says how many it left out.
+
+Not yet turned round, and named in the gate: the readers of the supplier fixture, and the category vocabularies.
+
+## 8 · What the fixture does, and what the SE Team builds
 
 | Part | Fixture | SE work |
 |---|---|---|
-| Records | one seed run, built from the material and supplier fixtures and the values the forms already use; stamped `SAMPLE` | records from S/4HANA, stamped `SAP_S4` (SE-6) |
+| Records | two seed runs: the authored set, built from the material and supplier fixtures and the values the forms already use, then the planning fixture's generated sample set; all stamped `SAMPLE` | records from S/4HANA, stamped `SAP_S4` (SE-6) |
 | Reference codes | sample codes for payment terms, plants, storage locations and cost centres | SAP's own keys |
 | Sync | the seed, applied on first read | initial load, change events, a periodic full reconciliation |
 | Store and log | in memory | durable (SE-4) |

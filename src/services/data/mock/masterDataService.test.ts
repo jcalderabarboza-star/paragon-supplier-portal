@@ -13,7 +13,8 @@ import { mockDataService } from './mockDataService';
 import { mockSuppliers } from '../../../data/mockSuppliers';
 import { MATERIAL_MASTER } from '../../sdc/fixtures';
 import { resetReplica } from '../../masterData/syncApplier';
-import { SEED_RUN_ID } from '../../masterData/seed';
+import { PLANNING_SAMPLE_RUN_ID, SEED_RUN_ID } from '../../masterData/seed';
+import { materialRecords, supplierRecords } from '../../masterData/replica';
 import { REFERENCE_TABLES } from '../../masterData/types';
 
 const svc = mockDataService.masterData;
@@ -40,8 +41,12 @@ describe('MD-1 · a buyer reads the whole replica', () => {
   it('every material and every supplier, each under its own key', async () => {
     const materials = await svc.list(BUYER, 'material');
     const suppliers = await svc.list(BUYER, 'supplier');
-    expect(materials.items.map((r) => r.key).sort()).toEqual(Object.keys(MATERIAL_MASTER).sort());
-    expect(suppliers.items.map((r) => r.key).sort()).toEqual(mockSuppliers.map((s) => s.sapBpNumber).sort());
+    expect(materials.items.map((r) => r.key)).toEqual(materialRecords().map((r) => r.key));
+    expect(suppliers.items.map((r) => r.key)).toEqual(supplierRecords().map((r) => r.key));
+    // Named members, authored and generated: a count is satisfied by the wrong ones.
+    for (const code of Object.keys(MATERIAL_MASTER)) expect(materials.items.map((r) => r.key), code).toContain(code);
+    expect(materials.items.map((r) => r.key)).toContain('SIM-RM-0001');
+    for (const s of mockSuppliers) expect(suppliers.items.map((r) => r.key), s.id).toContain(s.sapBpNumber);
   });
 
   it('a record by key, null for a key the replica does not hold, where-used and the sync log', async () => {
@@ -53,13 +58,13 @@ describe('MD-1 · a buyer reads the whole replica', () => {
       'certificate',
     ]);
     expect(await svc.whereUsed(BUYER, 'material', 'RM-SAMPLE-TST-01')).toBeNull();
-    expect((await svc.syncLog(BUYER)).items.map((r) => r.id)).toEqual([SEED_RUN_ID]);
+    expect((await svc.syncLog(BUYER)).items.map((r) => r.id)).toEqual([PLANNING_SAMPLE_RUN_ID, SEED_RUN_ID]);
   });
 
   it('a caller cannot change the replica by mutating what a list returned', async () => {
     const page = await svc.list(BUYER, 'material');
     page.items.length = 0;
-    expect((await svc.list(BUYER, 'material')).items).toHaveLength(Object.keys(MATERIAL_MASTER).length);
+    expect((await svc.list(BUYER, 'material')).items).toHaveLength(materialRecords().length);
   });
 });
 

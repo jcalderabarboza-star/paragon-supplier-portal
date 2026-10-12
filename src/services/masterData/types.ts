@@ -30,6 +30,7 @@ export const REFERENCE_TABLES = [
   'plant',
   'storageLocation',
   'costCentre',
+  'brand',
 ] as const;
 export type ReferenceTable = (typeof REFERENCE_TABLES)[number];
 
@@ -50,7 +51,7 @@ export const isReferenceTable = (value: string): value is ReferenceTable =>
  * The two `satisfies` lines and the two `Exhaustive` types hold each list equal
  * to its union: a member added to one and not the other is a `tsc` failure.
  */
-export const KNOWN_UNITS = ['KG', 'PCS', 'L', 'ROLL'] as const satisfies readonly Uom[];
+export const KNOWN_UNITS = ['KG', 'PCS', 'L', 'ROLL', 'MT', 'BOX'] as const satisfies readonly Uom[];
 export const KNOWN_MATERIAL_TYPES = ['ROH', 'VERP'] as const satisfies readonly MaterialType[];
 type Exhaustive<Union, Listed> = Exclude<Union, Listed> extends never ? true : never;
 export const UNITS_COVER_THE_UNION: Exhaustive<Uom, (typeof KNOWN_UNITS)[number]> = true;

@@ -4,6 +4,8 @@
 // "the master does not resolve this code". Three legal outcomes now, and the
 // asymmetry between a UNIT and a LABEL is the load-bearing rule.
 
+import { isSampleMaterial } from '../../masterData/lookup';
+import { materialMasterView } from '../../masterData/materialMasterView';
 import { describe, it, expect } from 'vitest';
 import { MATERIAL_MASTER } from '../fixtures';
 import type { MaterialMaster } from '../types';
@@ -110,7 +112,12 @@ describe('labelOf — a unit is NOT a label', () => {
 
 describe('knownMaterialCodes — the membership set the parser consults', () => {
   it('is every master key, sorted', () => {
-    expect(knownMaterialCodes()).toEqual([...Object.keys(MATERIAL_MASTER)].sort());
+    // MD-2b — the default master is the replica, which also holds the planning
+    // fixture's generated sample materials. The authored codes are exactly the
+    // fixture's, and the whole set is the replica's.
+    expect(knownMaterialCodes().filter((c) => !isSampleMaterial(c))).toEqual([...Object.keys(MATERIAL_MASTER)].sort());
+    expect(knownMaterialCodes()).toEqual(Object.keys(materialMasterView()).sort());
+    expect(knownMaterialCodes()).toContain('SIM-RM-0001');
     expect(knownMaterialCodes(TINY)).toEqual(['RM-TEST-0001']);
   });
 

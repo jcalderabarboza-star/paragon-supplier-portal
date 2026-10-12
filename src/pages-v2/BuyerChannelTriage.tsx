@@ -30,7 +30,7 @@ import {
   type SubmissionSessionRecorder,
   type Uom,
 } from '../services/sdc';
-import { publishedLabelOf, publishedUomOf } from '../services/planning/publishedMaterial';
+import { labelOf, uomOf } from '../services/sdc/materialMaster';
 import type { CommandResult } from '../services/data/types';
 import { formatNumber } from '../lib/format';
 // GL-1 - the glossary destination for this surface's refusals.
@@ -166,10 +166,10 @@ const BuyerChannelTriage: React.FC<BuyerChannelTriageProps> = ({ onRecorded }) =
       // CP-2 · B1 — a LABEL miss echoes the code (honest); a UNIT miss is null,
       // never the old fabricated 'KG'. The collaborated set is relationships ∪
       // publications, which the master does not gate, so this join CAN miss.
-      const unit = publishedUomOf(m.materialCode);
+      const unit = uomOf(m.materialCode);
       return {
         materialCode: m.materialCode,
-        label: publishedLabelOf(m.materialCode),
+        label: labelOf(m.materialCode),
         uom: unit.ok ? unit.uom : null,
       };
     });

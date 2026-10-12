@@ -98,7 +98,7 @@ import { SYSTEM_ROLES, type SystemRoleId } from './businessRoles';
 import { catalogRoles } from './roles';
 import { atomsForSeat } from './customRoles';
 import { mockSuppliers } from '../../data/mockSuppliers';
-import { MATERIAL_MASTER } from '../sdc/fixtures';
+import { materialMasterView } from '../masterData/materialMasterView';
 import {
   isPslStatus,
   isPublished,
@@ -1933,7 +1933,7 @@ bindPolicyHook(POLICY_HOOKS.PSL_SCOPE_WELL_FORMED, ({ payload }) => {
         'Add the materials this designation covers.',
     };
   }
-  const unknown = codes.filter((c) => !(c in MATERIAL_MASTER));
+  const unknown = codes.filter((c) => !Object.prototype.hasOwnProperty.call(materialMasterView(), c));
   if (unknown.length === 0) return { ok: true };
   return {
     ok: false,

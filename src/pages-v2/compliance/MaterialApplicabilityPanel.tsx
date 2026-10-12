@@ -13,6 +13,7 @@
 // it is in the slot the control would occupy.
 // ─────────────────────────────────────────────────────────────────────────────
 
+import { isSampleMaterial } from '../../services/masterData/lookup';
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import DataTable, { CellSub, type Column } from '../../components/ui-v2/DataTable';
@@ -99,7 +100,13 @@ const MaterialApplicabilityPanel: React.FC = () => {
     () => rulingsQuery.data?.items ?? [],
     [rulingsQuery.data],
   );
-  const rows = useMemo(() => materialApplicabilityRows(rulings), [rulings]);
+  // MD-2b — the planning fixture's generated sample materials are in the master
+  // now, every one undetermined. They exist to show the plan grid at volume and
+  // are not Compliance's worklist, so they are not listed here, and the panel
+  // says how many it left out.
+  const everyRow = useMemo(() => materialApplicabilityRows(rulings), [rulings]);
+  const rows = useMemo(() => everyRow.filter((r) => !isSampleMaterial(r.materialCode)), [everyRow]);
+  const samplesNotListed = everyRow.length - rows.length;
   const counts = useMemo(
     () => ({
       pending: rows.filter(rowIsPending).length,
@@ -267,6 +274,11 @@ const MaterialApplicabilityPanel: React.FC = () => {
           <p className="text-xs text-text-tertiary mt-0.5 max-w-3xl">
             {t('compliance.applicability.subtitle')}
           </p>
+          {samplesNotListed > 0 ? (
+            <p className="text-xs text-text-tertiary mt-0.5 max-w-3xl" data-testid="applicability-samples-not-listed">
+              {t('compliance.applicability.samplesNotListed', { count: samplesNotListed })}
+            </p>
+          ) : null}
         </div>
         {/* Withheld renders as the wait with its owner, in the control's slot. */}
         {canRule.kind !== 'held' && (

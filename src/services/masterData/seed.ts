@@ -12,14 +12,16 @@
 // The reference values are the ones the tree already uses: the unit and
 // material-type unions, the material-group register, the incoterms and payment
 // terms the sourcing and contract forms offer, the bid currencies, the country
-// profiles, the receiving wizard's locations and the cost centres the
-// requisition fixture names. Their codes and texts are SAMPLE: SAP's own keys
+// profiles, the receiving wizard's locations, the cost centres the
+// requisition fixture names and the Paragon brand list. Their codes and texts are SAMPLE: SAP's own keys
 // replace them when the feed is real (SE-6).
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { COUNTRY_PROFILES } from '../../data/communicationProfiles';
 import { mockSuppliers } from '../../data/mockSuppliers';
+import { PARAGON_BRANDS } from '../../data/paragonBrands';
 import { DECLARED_PRESENT_INSTANT } from '../data/fixturePresent';
+import { generatedMaterialEntries, generatedSuppliers } from '../planning/somoFixture';
 import { MATERIAL_MASTER } from '../sdc/fixtures';
 import { MATERIAL_GROUPS } from '../sdc/materialGroups';
 import {
@@ -34,6 +36,8 @@ import {
 } from './types';
 
 export const SEED_RUN_ID = 'SAMPLE-RUN-0001';
+/** The run that delivers the planning fixture's generated materials and suppliers. */
+export const PLANNING_SAMPLE_RUN_ID = 'SAMPLE-RUN-0002';
 
 type Row = readonly [key: string, text: string, attributes?: Partial<Record<ReferenceAttribute, string>>];
 
@@ -48,6 +52,10 @@ const UNIT_ROWS: readonly Row[] = [
   ['PCS', 'Piece', { dimension: 'Count' }],
   ['L', 'Litre', { dimension: 'Volume' }],
   ['ROLL', 'Roll', { dimension: 'Count' }],
+  // MD-2b (operator ruling): the two units the requisition and sourcing forms
+  // offered from lists of their own. No seeded material is held in either.
+  ['MT', 'Metric ton', { dimension: 'Mass' }],
+  ['BOX', 'Box', { dimension: 'Count' }],
 ];
 
 const MATERIAL_TYPE_ROWS: readonly Row[] = [
@@ -170,8 +178,68 @@ export function buildSeedRun(): InboundRun {
       ...reference('plant', PLANT_ROWS),
       ...reference('storageLocation', STORAGE_LOCATION_ROWS),
       ...reference('costCentre', COST_CENTRE_ROWS),
+      // The Paragon brand list, exactly as ruled (`data/paragonBrands.ts`), under its own codes.
+      ...reference(
+        'brand',
+        PARAGON_BRANDS.map((b): Row => [b.code, b.name]),
+      ),
       ...materialRecords(),
       ...supplierRecords(),
     ],
+  };
+}
+
+// ── MD-2b · the planning sample set ──────────────────────────────────────────
+//
+// The planning grid is shown at volume on generated materials and suppliers
+// (`planning/somoFixture.ts`). Until MD-2b they lived outside the master and
+// were resolved by a second path; a line published on one could be read by one
+// lane and not by the next. They are replica records now, delivered by their
+// own run, so there is one answer to "what is this material".
+//
+// A record is a generated sample BY THE RUN THAT DELIVERED IT, never by a
+// prefix on its code: a prefix test says yes to a code a caller invented.
+//
+// The generator gives a supplier an id and a name and nothing else, so the
+// country and city here are placeholders on a record that is sample throughout.
+
+/** The two groups the generated materials are filed under. */
+const SAMPLE_GROUP_ROWS: readonly Row[] = [
+  ['SIM-RAW', 'Sample raw materials (generated)'],
+  ['SIM-PACK', 'Sample packaging (generated)'],
+];
+
+export function buildPlanningSampleRun(): InboundRun {
+  const materials = generatedMaterialEntries().map((m): InboundRecord => {
+    const data: MaterialData = {
+      description: m.label,
+      materialType: m.materialType,
+      materialGroup: m.materialGroup,
+      baseUnit: m.canonicalUom,
+    };
+    return { object: 'material', key: m.materialCode, data };
+  });
+  const suppliers = generatedSuppliers().map((s): InboundRecord => {
+    const data: SupplierData = {
+      portalSupplierId: s.id,
+      name: s.name,
+      legalName: null,
+      country: 'ID',
+      city: 'Sample city',
+      taxId: null,
+      businessRegNo: null,
+      paymentTerm: null,
+      incoterm: null,
+      incotermPlace: null,
+    };
+    return { object: 'supplier', key: `BP-${s.id.toUpperCase()}`, data };
+  });
+  return {
+    id: PLANNING_SAMPLE_RUN_ID,
+    source: 'SAMPLE',
+    at: DECLARED_PRESENT_INSTANT,
+    mode: 'DELTA',
+    objects: [],
+    records: [...reference('materialGroup', SAMPLE_GROUP_ROWS), ...materials, ...suppliers],
   };
 }

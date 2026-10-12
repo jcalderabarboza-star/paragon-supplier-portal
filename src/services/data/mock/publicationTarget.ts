@@ -33,7 +33,6 @@ import {
 } from '../../sdc';
 import type { QueryScope } from '../types';
 import { parseHorizon, type BucketGrain } from '../../planning/bucket';
-import { planningMaster } from '../../planning/somoFixture';
 import { forecastPublicationStore, type PublicationRecord } from './stores/forecastPublicationStore';
 import { collaboratingSuppliers, somoPlanFeed } from './publicationFeed';
 
@@ -176,7 +175,7 @@ export const forecastPublicationTarget: CommandTarget = {
                 supplierId,
                 periodBucket: bucket,
                 forecastQty: qty,
-                uom: requireUom(code, planningMaster()),
+                uom: requireUom(code),
                 commitmentClass: commitmentClassFor(r.horizon, bucket),
                 allocation: Object.freeze({
                   materialPeriodTotal: r.totals[totalKey(code, bucket)],
@@ -244,7 +243,7 @@ bindPolicyHook(POLICY_HOOKS.PUB_PLANVERSION_KNOWN, ({ payload }) => {
 });
 
 bindPolicyHook(POLICY_HOOKS.PUB_MATERIAL_KNOWN, ({ payload }) =>
-  isKnownMaterial(str(payload.materialCode), planningMaster())
+  isKnownMaterial(str(payload.materialCode))
     ? { ok: true }
     : { ok: false, reason: `PUB_MATERIAL_KNOWN: ${JSON.stringify(payload.materialCode)} is not in the planning master` },
 );

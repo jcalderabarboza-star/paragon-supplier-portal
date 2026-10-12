@@ -41,7 +41,7 @@ import {
 // SDC-4c — the P1 own-shipments view type is the shared SDC one (promoted in
 // SDC-4b); re-exported so callers keep importing it from this hooks module.
 export type { IncomingShipmentView } from '../sdc';
-import { publishedLabelOf, publishedUomOf } from '../planning/publishedMaterial';
+import { labelOf, uomOf } from '../../services/sdc/materialMaster';
 import type {
   ForecastLine,
   ForecastPublication,
@@ -342,10 +342,10 @@ export function useOwnCollaboratedMaterials() {
         page.items,
         scope.supplierId,
       ).map((m) => {
-        const unit = publishedUomOf(m.materialCode);
+        const unit = uomOf(m.materialCode);
         return {
           ...m,
-          label: publishedLabelOf(m.materialCode),
+          label: labelOf(m.materialCode),
           uom: unit.ok ? unit.uom : null,
         };
       });

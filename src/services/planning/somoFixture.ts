@@ -26,7 +26,8 @@
 // no material is ever answered by two producers.
 // ────────────────────────────────────────────────────────────────────────────
 
-import { MATERIAL_MASTER, type MaterialMaster, type MaterialMasterEntry, type MaterialType, type Uom } from '../sdc';
+import { MATERIAL_MASTER } from '../sdc/fixtures';
+import type { MaterialMaster, MaterialMasterEntry, MaterialType, Uom } from '../sdc/types';
 import { mockSuppliers } from '../../data/mockSuppliers';
 import type { BucketGrain } from './bucket';
 
@@ -108,6 +109,13 @@ export const planningMaster = (): MaterialMaster => PLANNING_MASTER_RECORD;
 /** Every planning material, real first. */
 export const PLANNING_MATERIALS: readonly string[] = Object.freeze(Object.keys(PLANNING_MASTER_RECORD));
 
+/**
+ * MD-2b — the generated entries, for the master-data seed: they are replica
+ * records now, stamped SAMPLE. An accessor, not an exported object, for the
+ * reason `planningMaster` is one.
+ */
+export const generatedMaterialEntries = (): readonly MaterialMasterEntry[] => Object.values(SYNTHETIC);
+
 /** Is this code one the generator answers for (a synthetic code)? */
 export const isGeneratedMaterial = (code: string): boolean => code in SYNTHETIC;
 
@@ -172,6 +180,13 @@ const PLANNING_SUPPLIER_NAMES: ReadonlyMap<string, string> = new Map([
     (id) => [id, `Sample supplier ${id.slice('sup-sim-'.length)}`] as const,
   ),
 ]);
+
+/** MD-2b — the generated suppliers, id and sample name, for the master-data seed. */
+export const generatedSuppliers = (): readonly { readonly id: string; readonly name: string }[] =>
+  PLANNING_SUPPLIERS.filter((id) => !mockSuppliers.some((s) => s.id === id)).map((id) => ({
+    id,
+    name: PLANNING_SUPPLIER_NAMES.get(id) ?? id,
+  }));
 
 /** A supplier's name from the planning supplier master; the id only for a supplier no master knows. */
 export const planningSupplierName = (supplierId: string): string =>
