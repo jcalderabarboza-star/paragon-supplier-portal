@@ -1,3 +1,4 @@
+import { incotermOptions, paymentTermOptions } from './master-data/referencePickers';
 import React, { useMemo, useState } from 'react';
 import { PARAGON_BRAND_NAMES } from '../data/paragonBrands';
 import { useNavigate } from 'react-router-dom';
@@ -225,15 +226,8 @@ const CATEGORY_OPTIONS = [
   'Other',
 ];
 
-const PAYMENT_TERMS_OPTIONS = [
-  'Net 30',
-  'Net 45',
-  'Net 60',
-  'Letter of Credit',
-  'Advance Payment',
-];
-
-const INCOTERMS_OPTIONS = ['FOB', 'CIF', 'EXW', 'DDP', 'FCA'];
+// MD-2 — incoterms and payment terms are read from the reference tables
+// (`master-data/referencePickers.ts`); this page keeps no list of its own.
 
 // i18n-defer: obligation-template seed titles. These strings are not just
 // displayed — the selected title is stored verbatim as the obligation's
@@ -972,9 +966,9 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
                 value={draft.paymentTerms}
                 onChange={(e) => updateDraft('paymentTerms', e.target.value)}
               >
-                {PAYMENT_TERMS_OPTIONS.map((p) => (
-                  <option key={p} value={p}>
-                    {p}
+                {paymentTermOptions().map((o) => (
+                  <option key={o.key} value={o.text}>
+                    {o.label}
                   </option>
                 ))}
               </Select>
@@ -984,9 +978,9 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
                 value={draft.incoterms}
                 onChange={(e) => updateDraft('incoterms', e.target.value)}
               >
-                {INCOTERMS_OPTIONS.map((i) => (
-                  <option key={i} value={i}>
-                    {i}
+                {incotermOptions().map((o) => (
+                  <option key={o.key} value={o.key}>
+                    {o.label}
                   </option>
                 ))}
               </Select>

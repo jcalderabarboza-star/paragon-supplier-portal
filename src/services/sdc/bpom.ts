@@ -56,7 +56,7 @@
 //   ratification is recorded; it does not silently loosen.
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { MATERIAL_MASTER } from './fixtures';
+import { materialMasterView } from '../masterData/materialMasterView';
 import { MATERIAL_GROUPS } from './materialGroups';
 import type { BpomApplicability, MaterialMaster } from './types';
 
@@ -157,7 +157,7 @@ export type BpomOutcome =
  */
 export function bpomOf(
   materialCode: string,
-  master: MaterialMaster = MATERIAL_MASTER,
+  master: MaterialMaster = materialMasterView(),
 ): BpomOutcome {
   const entry = Object.prototype.hasOwnProperty.call(master, materialCode)
     ? master[materialCode]

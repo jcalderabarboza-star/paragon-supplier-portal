@@ -30,6 +30,7 @@ export const REFERENCE_TABLES = [
   'plant',
   'storageLocation',
   'costCentre',
+  'brand',
 ] as const;
 export type ReferenceTable = (typeof REFERENCE_TABLES)[number];
 

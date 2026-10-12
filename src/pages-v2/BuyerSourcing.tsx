@@ -1,3 +1,4 @@
+import { incotermOptions, paymentTermOptions } from './master-data/referencePickers';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   FileText,
@@ -393,15 +394,9 @@ const isAwardable = (r: RFQ, quoteCount: number): boolean =>
   (r.status === 'Open' || r.status === 'Closed') && quoteCount > 0;
 
 const UOM_OPTIONS = RFQ_UOM_OPTIONS; // C.2 — shared with the prefill membership check
-export const INCOTERMS_OPTIONS = ['FOB', 'CIF', 'EXW', 'DDP', 'FCA'];
+// MD-2 — incoterms and payment terms are read from the reference tables
+// (`master-data/referencePickers.ts`); this page keeps no list of its own.
 const DEFAULT_INCOTERM = 'CIF';
-export const PAYMENT_TERMS_OPTIONS = [
-  'Net 30',
-  'Net 45',
-  'Net 60',
-  'Letter of Credit',
-  'Advance Payment',
-];
 
 const STATUS_VARIANT: Record<
   RFQStatus,
@@ -2765,9 +2760,9 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                 value={draft.incoterms}
                 onChange={(e) => updateDraft('incoterms', e.target.value)}
               >
-                {INCOTERMS_OPTIONS.map((i) => (
-                  <option key={i} value={i}>
-                    {i}
+                {incotermOptions().map((o) => (
+                  <option key={o.key} value={o.key}>
+                    {o.label}
                   </option>
                 ))}
               </Select>
@@ -2777,9 +2772,9 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                 value={draft.paymentTerms}
                 onChange={(e) => updateDraft('paymentTerms', e.target.value)}
               >
-                {PAYMENT_TERMS_OPTIONS.map((p) => (
-                  <option key={p} value={p}>
-                    {p}
+                {paymentTermOptions().map((o) => (
+                  <option key={o.key} value={o.text}>
+                    {o.label}
                   </option>
                 ))}
               </Select>

@@ -31,7 +31,7 @@
 //   fixture. The SDC selector convention (inputs as arguments) is preserved.
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { MATERIAL_MASTER } from './fixtures';
+import { materialMasterView } from '../masterData/materialMasterView';
 import type { MaterialMaster, MaterialMasterEntry, Uom } from './types';
 
 /** Why a material lookup cannot be answered. Never a fallback value — a unit the
@@ -55,7 +55,7 @@ export type UomOutcome =
  *  write-path policy hooks and the reply parser's precedence rule both key off. */
 export function isKnownMaterial(
   materialCode: string,
-  master: MaterialMaster = MATERIAL_MASTER,
+  master: MaterialMaster = materialMasterView(),
 ): boolean {
   return Object.prototype.hasOwnProperty.call(master, materialCode);
 }
@@ -64,7 +64,7 @@ export function isKnownMaterial(
  *  its two projections. */
 export function materialEntry(
   materialCode: string,
-  master: MaterialMaster = MATERIAL_MASTER,
+  master: MaterialMaster = materialMasterView(),
 ): MaterialMasterEntry | null {
   return isKnownMaterial(materialCode, master) ? master[materialCode] : null;
 }
@@ -76,7 +76,7 @@ export function materialEntry(
  */
 export function uomOf(
   materialCode: string,
-  master: MaterialMaster = MATERIAL_MASTER,
+  master: MaterialMaster = materialMasterView(),
 ): UomOutcome {
   const entry = materialEntry(materialCode, master);
   return entry
@@ -98,7 +98,7 @@ export function uomOf(
  *      unreachable-by-construction assertion — and, crucially, NOT a `?? 'KG'`
  *      that would quietly fabricate a unit if the hook were ever unwired.
  */
-export function requireUom(materialCode: string, master: MaterialMaster = MATERIAL_MASTER): Uom {
+export function requireUom(materialCode: string, master: MaterialMaster = materialMasterView()): Uom {
   const outcome = uomOf(materialCode, master);
   if (!outcome.ok) {
     throw new Error(
@@ -115,7 +115,7 @@ export function requireUom(materialCode: string, master: MaterialMaster = MATERI
  * header's "a unit is not a label". `SupplierForecasts.tsx` already did this
  * correctly for labels — the defect was always its unit sibling.
  */
-export function labelOf(materialCode: string, master: MaterialMaster = MATERIAL_MASTER): string {
+export function labelOf(materialCode: string, master: MaterialMaster = materialMasterView()): string {
   return materialEntry(materialCode, master)?.label ?? materialCode;
 }
 
@@ -123,7 +123,7 @@ export function labelOf(materialCode: string, master: MaterialMaster = MATERIAL_
  *  for its precedence rule (a token that IS a material can never be read as a
  *  quantity). Sorted, so callers get a stable order. */
 export function knownMaterialCodes(
-  master: MaterialMaster = MATERIAL_MASTER,
+  master: MaterialMaster = materialMasterView(),
 ): readonly string[] {
   return Object.keys(master).sort();
 }

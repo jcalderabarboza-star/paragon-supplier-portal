@@ -212,12 +212,17 @@ export function applySyncRun(run: InboundRun): SyncRun {
     replaced: Object.freeze(replaced),
   });
   replicaWrite.appendRun(row);
+  version += 1;
   return row;
 }
 
 // ── The seed ─────────────────────────────────────────────────────────────────
 
 let seeded = false;
+let version = 0;
+
+/** Moves each time a run is applied or the replica is reset. What a view built from the replica is keyed on. */
+export const replicaVersion = (): number => version;
 
 /** Apply the seed run once. Every read of the replica goes through here first. */
 export function ensureSeeded(): void {
@@ -230,4 +235,5 @@ export function ensureSeeded(): void {
 export function resetReplica(): void {
   replicaWrite.reset();
   seeded = false;
+  version += 1;
 }

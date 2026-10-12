@@ -468,6 +468,9 @@ describe('⚠️ THE TWO-REGEX COMMENT STRIP IS EXTINCT — derived, not listed'
         // MD-1 — the one-writer gate asks "which files name the replica's write
         // door?", and the store's own header explains the door in a comment.
         'services/masterData/replicaOneWriter.test.ts',
+        // MD-2 — the master-data gate reads imports and declared lists, and the
+        // pages it guards explain in comments the lists they no longer keep.
+        'lib/masterDataGate/masterDataGate.test.ts',
         // PSL P1 — both walk source to make a claim about REACHABILITY, so both
         // must be blind to a module named in prose. This file names every PSL
         // module in its own header.
