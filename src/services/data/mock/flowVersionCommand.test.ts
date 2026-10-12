@@ -166,6 +166,92 @@ describe('FB-1 · what create and save refuse, by head', () => {
   });
 });
 
+describe('FB-2 · a save carries the acknowledged warnings, and a draft may start from a version', () => {
+  it('acknowledgements ride the save, are kept once each, and are replaced by the next save', async () => {
+    const { entityId } = await create(compliance, { flow: PR, title: 'Finance approval' });
+    const content = { ...emptyContent(PR, prVersion()), steps: [aStep] };
+    expect(flowVersionStore.byId(entityId!)!.acknowledged).toEqual([]);
+    expect((await save(compliance, entityId!, { content, acknowledged: ['R15:Draft', 'R16:s_finance', 'R15:Draft'] })).status).toBe('done');
+    expect(flowVersionStore.byId(entityId!)!.acknowledged).toEqual(['R15:Draft', 'R16:s_finance']);
+    flowVersionStore.rehydrate();
+    expect(flowVersionStore.byId(entityId!)!.acknowledged).toEqual(['R15:Draft', 'R16:s_finance']);
+    // A save that says nothing about them leaves none: the save is the whole draft.
+    await save(compliance, entityId!, { content });
+    expect(flowVersionStore.byId(entityId!)!.acknowledged).toEqual([]);
+  });
+
+  it('an acknowledgement that names no rule is refused, by head, and nothing is written', async () => {
+    const { entityId } = await create(compliance, { flow: PR, title: 'Finance approval' });
+    const content = { ...emptyContent(PR, prVersion()), steps: [aStep] };
+    for (const acknowledged of ['R15:Draft', ['yes'], [15], ['R15'], [{ code: 'R15' }]]) {
+      const res = await save(compliance, entityId!, { content, acknowledged });
+      expect(res.reason, JSON.stringify(acknowledged)).toContain(':FLOWVERSION_ACKNOWLEDGED_MALFORMED:');
+      expect(flowVersionRefusalKey(res.reason)).toBe('flowBuilder.refusal.FLOWVERSION_ACKNOWLEDGED_MALFORMED');
+    }
+    expect(flowVersionStore.byId(entityId!)).toMatchObject({ content: emptyContent(PR, prVersion()), savedAt: null });
+  });
+
+  it('a draft started from a version has its elements, the shipped version of today, its own label and no acknowledgement', async () => {
+    const source = await create(compliance, { flow: PR, title: 'Finance approval' });
+    const content = { ...emptyContent(PR, prVersion()), steps: [aStep] };
+    await save(compliance, source.entityId!, { content, acknowledged: ['R15:Draft'] });
+    const admin = seat('admin');
+    const copy = await create(admin, { flow: PR, title: 'Second try', fromVersion: source.entityId });
+    expect(copy.status).toBe('done');
+    expect(flowVersionStore.byId(copy.entityId!)).toMatchObject({
+      label: versionLabel(prVersion(), 2),
+      title: 'Second try',
+      state: 'Draft',
+      content,
+      acknowledged: [],
+      createdBy: admin.actor,
+      savedBy: null,
+    });
+    // The source is untouched, and the two are separate drafts from here on.
+    await save(admin, copy.entityId!, { content: emptyContent(PR, prVersion()) });
+    expect(flowVersionStore.byId(source.entityId!)).toMatchObject({ content, acknowledged: ['R15:Draft'], label: versionLabel(prVersion(), 1) });
+  });
+
+  it('a copy is written against the process and the version it is given, never the ones its source named', () => {
+    const made = flowVersionStore.create(
+      { entity: PR, baseVersion: 7, title: 'x', from: { ...emptyContent('invoice', 3), steps: [aStep] } },
+      compliance.actor!,
+    );
+    expect(made.content).toEqual({ entity: PR, baseVersion: 7, steps: [aStep], forks: [], checks: [] });
+    expect(made.label).toBe(versionLabel(7, 1));
+  });
+
+  it('a source this browser does not hold, or of another process, is refused by head', async () => {
+    const source = await create(compliance, { flow: 'invoice', title: 'On invoices' });
+    const cases: [Record<string, unknown>, string][] = [
+      [{ flow: PR, title: 'x', fromVersion: 'fv-404' }, 'FLOWVERSION_SOURCE_UNKNOWN'],
+      [{ flow: PR, title: 'x', fromVersion: source.entityId }, 'FLOWVERSION_SOURCE_OTHER_PROCESS'],
+    ];
+    for (const [payload, head] of cases) {
+      const res = await create(compliance, payload);
+      expect(refusedByPolicy(res.reason, POLICY_HOOKS.FLOWVERSION_PROCESS_WRITABLE), head).toBe(true);
+      expect(res.reason, head).toContain(`:${head}:`);
+      expect(flowVersionRefusalKey(res.reason), head).toBe(`flowBuilder.refusal.${head}`);
+    }
+    expect(flowVersionStore.all().map((v) => v.id)).toEqual([source.entityId]);
+  });
+
+  it('a row stored before warnings could be acknowledged reads back with none', async () => {
+    await create(compliance, { flow: PR, title: 'older' });
+    const env = JSON.parse(window.localStorage.getItem(FLOW_VERSIONS_KEY)!);
+    delete env.versions[0].acknowledged;
+    window.localStorage.setItem(FLOW_VERSIONS_KEY, JSON.stringify(env));
+    flowVersionStore.rehydrate();
+    expect(flowVersionStore.readState().rejected).toEqual([]);
+    expect(flowVersionStore.all()[0].acknowledged).toEqual([]);
+    // …and one whose acknowledgements are not a list of names is refused, by name.
+    env.versions[0].acknowledged = 'all of them';
+    window.localStorage.setItem(FLOW_VERSIONS_KEY, JSON.stringify(env));
+    flowVersionStore.rehydrate();
+    expect(flowVersionStore.readState().rejected).toEqual([{ id: 'row 0', reason: 'not a version' }]);
+  });
+});
+
 describe('FB-1 · the store mints', () => {
   it('id, label and stamps are store-minted — a payload value is ignored', async () => {
     const res = await create(compliance, {
@@ -190,6 +276,7 @@ describe('FB-1 · the store mints', () => {
       createdBy: compliance.actor,
       savedBy: null,
       savedAt: null,
+      acknowledged: [],
       content: emptyContent(PR, prVersion()),
     });
     // The person who acted may not arrive in the payload at all.

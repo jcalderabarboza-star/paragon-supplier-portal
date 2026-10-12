@@ -22,6 +22,7 @@ import { isModuleCode } from '../modules/registry';
 import { refusedByPolicy } from '../transitions/refusalMessage';
 import { POLICY_HOOKS } from '../transitions/policyHooks';
 import type { BidCurrency } from '../../lib/currencyPolicy';
+import type { FlowVersionContent } from '../flowBuilder/flowVersion';
 import type { NumberConvention } from '../../lib/localeNumber';
 import type { FxPinSource } from '../../lib/fxPin';
 import type { RFQCategory } from '../../data/mockRfqs';
@@ -1388,12 +1389,35 @@ export function useFlowVersionCreate() {
   const svc = useDataService();
   const scope = useScope();
 
-  return useMutation<CommandResult, Error, { process: string; title: string }>({
-    mutationFn: ({ process, title }) =>
+  return useMutation<CommandResult, Error, { process: string; title: string; fromVersion?: string }>({
+    mutationFn: ({ process, title, fromVersion }) =>
       svc.commands.dispatch(scope, {
         transitionId: 't_flowversion_create',
         entity: 'flowVersion',
-        payload: { flow: process, title },
+        payload: { flow: process, title, ...(fromVersion ? { fromVersion } : {}) },
+      }),
+  });
+}
+
+/**
+ * FB-2 — keep what a draft says, and which of its warnings are acknowledged
+ * (`t_flowversion_save`). The composer's one write.
+ */
+export function useFlowVersionSave() {
+  const svc = useDataService();
+  const scope = useScope();
+
+  return useMutation<
+    CommandResult,
+    Error,
+    { versionId: string; content: FlowVersionContent; acknowledged: readonly string[] }
+  >({
+    mutationFn: ({ versionId, content, acknowledged }) =>
+      svc.commands.dispatch(scope, {
+        transitionId: 't_flowversion_save',
+        entity: 'flowVersion',
+        entityId: versionId,
+        payload: { content, acknowledged: [...acknowledged] },
       }),
   });
 }

@@ -446,6 +446,15 @@ mechanisms whose success signals said nothing about the damage they did.
 > from `STEP_SURFACES` — never from a sentence here.** The handover set still says "no runtime
 > override"; by ruling it is corrected at handover-v3.
 >
+> ⚠️ **FB-2 (2026-10-12) — A DRAFT IS COMPOSED, AND THE COMPOSER WRITES ONE THING.** The composer
+> (`process-flows/ChangeComposer.tsx`, edits in `composerModel.ts`) saves its own draft through
+> `t_flowversion_save` and nothing else; a scan holds that. Its act picker is `actOptions`, which
+> decides by `isGateable` — the predicate rule R04 judges by — so the picker cannot offer an act the
+> library refuses. **A save is not refused by the rules**: an unfinished draft is kept and reported.
+> A warning is acknowledged in place and the acknowledgement rides the save. `FlowDiagram` takes ONE
+> overlay, `draft`, which only the composer passes: the live page never draws a draft's elements.
+> **Derive which kinds of step can be composed from `COMPOSABLE_KINDS`, never from a sentence here.**
+>
 > ⚠️ **THE PARAGON BRAND LIST IS ONE FILE** (`data/paragonBrands.ts`, operator ruling 2026-10-12):
 > the brands and their codes. A page that offers or columns a brand reads it;
 > `paragonBrands.test.ts` holds the list to the ruling and refuses a second list.
