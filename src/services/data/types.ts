@@ -162,6 +162,8 @@ export type {
 // ─── Identity scope — derived from CurrentIdentity at the page boundary ─────
 
 import type { PslListing } from './pslListing';
+import type { MasterObject, MasterRecord, SyncRun } from '../masterData/types';
+import type { WhereUsed } from '../masterData/whereUsed';
 import type { SupplierPslView } from './pslSupplierView';
 
 export interface QueryScope {
@@ -2384,6 +2386,32 @@ export interface IModuleService {
   getModuleLedger(scope: QueryScope): Promise<Page<ModuleActivationSetting>>;
 }
 
+// ────────────────────────────────────────────────────────────────────────────
+// MD-1 · MASTER DATA — the read seam over the replica of SAP's master data.
+//
+// SAP S/4HANA is the system of record; the portal holds a replica and never
+// writes one (operator ruling, 12 October 2026). So this seam is READ ONLY: a
+// record changes when a sync run delivers it, and by nothing a caller does.
+//
+// Tenancy:
+//   · a buyer reads every object, where-used and the sync log
+//   · a supplier reads its OWN supplier record and the reference tables. Asking
+//     for another supplier's record answers `null`, exactly as a key that does
+//     not exist does, so the answer is not an existence oracle. Materials,
+//     where-used and the sync log are refused for the whole object
+//     (`SCOPE_DENIED`), never per key.
+//
+// The contract is `docs/contracts/C13-master-data.md`.
+// ────────────────────────────────────────────────────────────────────────────
+export interface IMasterDataService {
+  list(scope: QueryScope, object: MasterObject): Promise<Page<MasterRecord>>;
+  get(scope: QueryScope, object: MasterObject, key: string): Promise<MasterRecord | null>;
+  /** The documents that name this key, counted by kind. `null` when the key is not in the replica. */
+  whereUsed(scope: QueryScope, object: MasterObject, key: string): Promise<WhereUsed | null>;
+  /** The sync log, newest run first. */
+  syncLog(scope: QueryScope): Promise<Page<SyncRun>>;
+}
+
 export interface IDataService {
   suppliers: ISupplierService;
   procurement: IProcurementService;
@@ -2404,6 +2432,8 @@ export interface IDataService {
   /** Module activation read seam (M1) — what is on (every seat) and the
    *  append-only ledger of who switched it (buyer only). */
   modules: IModuleService;
+  /** Master-data read seam (MD-1) — the replica of SAP's master data. Read only. */
+  masterData: IMasterDataService;
   /** Write seam — the single dispatcher (Step 3.4). */
   commands: ICommandService;
   /** What the current scope may do (Step 3.9 DNA seed; mock-backed today). */

@@ -42,6 +42,7 @@ import {
   ListChecks,
   Blocks,
   History,
+  Database,
 } from 'lucide-react';
 import { matchPath } from 'react-router-dom';
 import { routeOffReason, type ModuleActivationView } from '../../services/modules/activation';
@@ -157,6 +158,9 @@ export const BUYER_NAV: readonly NavGroup[] = [
         visibleTo: maySeeSuperAdminActivity,
       },
       { labelKey: 'nav.buyer.processFlows', icon: Workflow, path: '/buyer/process-flows' },
+      // MD-1 — the replica of SAP's master data: materials, suppliers and the
+      // reference tables, in one place. Read by every buyer seat.
+      { labelKey: 'nav.buyer.masterData', icon: Database, path: '/buyer/master-data' },
       // GL-1 — the glossary. LISTED IN BOTH PERSONAS' NAV, under one
       // persona-neutral key and one persona-neutral path, because the term chips
       // that lead here sit on both sides' refusal sites.

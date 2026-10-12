@@ -465,6 +465,9 @@ describe('⚠️ THE TWO-REGEX COMMENT STRIP IS EXTINCT — derived, not listed'
         // retired direct write verbatim. Unstripped, the census accuses the one
         // file that stopped doing it.
         'services/delivery/__tests__/deliveryBypass.test.ts',
+        // MD-1 — the one-writer gate asks "which files name the replica's write
+        // door?", and the store's own header explains the door in a comment.
+        'services/masterData/replicaOneWriter.test.ts',
         // PSL P1 — both walk source to make a claim about REACHABILITY, so both
         // must be blind to a module named in prose. This file names every PSL
         // module in its own header.

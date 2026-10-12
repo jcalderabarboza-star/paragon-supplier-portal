@@ -28,7 +28,7 @@ flowchart LR
   subgraph Portal["Supplier portal (this repo)"]
     UI["pages-v2 (52 routes)\nModuleGate on every route"]
     Q["query hooks (TanStack)"]
-    DS["IDataService (C1, 72 methods)\nmockDataService today"]
+    DS["IDataService (C1, 76 methods)\nmockDataService today"]
     CMD["Command dispatcher\n30 flows · 141 verbs · 24 targets\nMODULE_INACTIVE · role · scope · policy"]
     ST["in-memory stores + fixtures"]
     EV["AuditSink: TransitionEvent (C3)"]

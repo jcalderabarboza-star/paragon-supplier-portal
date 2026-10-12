@@ -113,7 +113,8 @@ export type Capability =
   | 'identity'
   // B1 — SOMO's planning parameters (reorder point, safety stock, projected
   // stock). NO PRODUCER EXISTS: SOMO does not emit them yet. See `NO_PRODUCER`.
-  | 'somoPlanParameters';
+  | 'somoPlanParameters'
+  | 'masterData';
 
 // The ONLY hand-authored fact here: which command entity/flow each capability
 // reads from (`null` = pure fixture, no lifecycle entity). The TIER is never
@@ -232,6 +233,9 @@ const CAPABILITY_BACKING: Record<Capability, string | null> = {
   // unreachable and the pill reads "Sample" — which is exactly true.
   identity: null,
   somoPlanParameters: null,
+  // MD-1 — the replica of SAP's master data. A fixture stands in until the
+  // S/4HANA feed is real (SE-6); no command target writes a replica record.
+  masterData: null,
 };
 
 /**
@@ -322,6 +326,12 @@ const HARVEST_GATED: Partial<Record<Capability, HarvestGate>> = {
   materialRequests: {
     readinessNoteKey: 'widget.honesty.awaitingMasterData',
     source: 'S/4 material master',
+  },
+  // MD-1 — the replica is seeded from the fixtures and stamped SAMPLE. What it
+  // waits for is the S/4HANA feed (SE-6), and the marker names that.
+  masterData: {
+    readinessNoteKey: 'widget.honesty.awaitingMasterDataFeed',
+    source: 'S/4HANA master-data feed',
   },
   // PSL P4 — wired, and SEEDED. `pslSeed.ts` grows every row through the real
   // verbs, which is honest about the MACHINE and says nothing about the LIST:

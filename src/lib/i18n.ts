@@ -89,6 +89,7 @@ import { glossaryEn, glossaryId } from './i18n/glossary';
 // — Surface residuals: the seat-identity guard (was hardcoded English) —
 import { identityEn, identityId } from './i18n/identity';
 import { superAdminEn, superAdminId } from './i18n/superAdmin';
+import { masterDataEn, masterDataId } from './i18n/masterData';
 // — The read path's failure surface, shared by 31 pages —
 import { errorStateEn, errorStateId } from './i18n/errorState';
 import { loadingStateEn, loadingStateId } from './i18n/loadingState';
@@ -173,6 +174,7 @@ export const resources = {
       ...glossaryEn,
       ...identityEn,
       ...superAdminEn,
+      ...masterDataEn,
       ...errorStateEn,
       ...loadingStateEn,
       ...emptyStateEn,
@@ -209,6 +211,7 @@ export const resources = {
       // Managing who anyone is is a page; who I am is in the avatar.
       'nav.section.platform': 'Platform',
       'nav.buyer.roles': 'Roles',
+      'nav.buyer.masterData': 'Master data',
       'nav.buyer.modules': 'Modules',
       'nav.persona.buyer': 'Buyer',
       'nav.persona.supplier': 'Supplier',
@@ -716,6 +719,7 @@ export const resources = {
       ...glossaryId,
       ...identityId,
       ...superAdminId,
+      ...masterDataId,
       ...errorStateId,
       ...loadingStateId,
       ...emptyStateId,
@@ -744,6 +748,7 @@ export const resources = {
       'nav.section.talk': 'Komunikasi',
       'nav.section.platform': 'Platform',
       'nav.buyer.roles': 'Peran',
+      'nav.buyer.masterData': 'Data master',
       'nav.buyer.modules': 'Modul',
       'nav.persona.buyer': 'Pembeli',
       'nav.persona.supplier': 'Pemasok',

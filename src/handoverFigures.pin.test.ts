@@ -55,14 +55,16 @@ describe('H1 · the populations are real before any figure is believed', () => {
 });
 
 describe('H1 · the figures D1 §1 states', () => {
-  it('routes: 52 declared in AppRouter', () => {
+  it('routes: 53 declared in AppRouter', () => {
     // D1 first stated 47, from `grep -c "<Route "` — which misses the four
     // declarations written across lines (`<Route` then a newline). The regex
     // here takes `\s+`, so it reads both shapes; a known multi-line member is
     // asserted in the population control above.
     // ADM-1 added `/buyer/platform/super-admin-activity` (51 at the handover-v2 tag).
     expect(ROUTES).toContain('/buyer/platform/super-admin-activity');
-    expect(ROUTES.length).toBe(52);
+    // MD-1 added `/buyer/master-data` (52 before it).
+    expect(ROUTES).toContain('/buyer/master-data');
+    expect(ROUTES.length).toBe(53);
   });
 
   it('modules: 16 in the registry, PLT the only always-on one, every default Active', () => {
@@ -88,8 +90,10 @@ describe('H1 · the figures D1 §1 states', () => {
     expect(new Set(SAMPLE_PEOPLE.map((p) => p.personId)).size).toBe(SAMPLE_PEOPLE.length);
   });
 
-  it('liveness: 27 capabilities; the green subset and the SPEC subset BY NAME', () => {
-    expect(ALL_CAPABILITIES.length).toBe(27);
+  it('liveness: 28 capabilities; the green subset and the SPEC subset BY NAME', () => {
+    // MD-1 added `masterData` (27 before it). It is not green: no verb writes a replica record.
+    expect(ALL_CAPABILITIES).toContain('masterData');
+    expect(ALL_CAPABILITIES.length).toBe(28);
     expect(ALL_CAPABILITIES.filter((c) => isLive(c)).sort()).toEqual(
       ['advanceShipNotices', 'goodsReceipts', 'invoices', 'purchaseOrders', 'rfqs'].sort(),
     );

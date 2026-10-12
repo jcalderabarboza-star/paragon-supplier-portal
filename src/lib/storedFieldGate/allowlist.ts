@@ -163,16 +163,10 @@ export const STORED_FIELD_ALLOWLIST: readonly Exemption[] = Object.freeze([
       'certBasis carry four incompatible readings before anyone noticed.',
     since: D_F,
   },
-  {
-    key: 'MaterialMasterEntry.materialCode',
-    reason: 'unadjudicated',
-    why:
-      'The master\'s own SAP code: 17 reads, every one in a spec. The tree reads materialCode ' +
-      'constantly, but at OTHER declarations (line drafts, drawdown items, collaboration rows) — this ' +
-      'DTO is joined to by code and never read for it. C9 §3 forbids deriving semantics from the code, ' +
-      'which may be the whole reason, and that is a ruling, not a derivation.',
-    since: D_F,
-  },
+  // MD-1 · `MaterialMasterEntry.materialCode` WAS HERE. The row read "joined to
+  // by code and never read for it". The master-data seed now reads it: the code
+  // is the key the replica holds the material under (`masterData/seed.ts`).
+  // Still opaque (C9 §3) — it is copied, never parsed.
   // ⚠️ PLN-4 · `MaterialMasterEntry.materialGroup` WAS HERE, AND ITS EXEMPTION
   // OUTLIVED ITS SUBJECT. The row read "34 reads and not one outside a spec";
   // R3 gave it a product reader — `intakeCategory` names a requisition's

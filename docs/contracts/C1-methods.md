@@ -1,6 +1,6 @@
 # C1 — Method Surface
 
-Three distinct axes. **72** (service surface) · **143** (transition catalog) · **25** (wired
+Three distinct axes. **76** (service surface) · **143** (transition catalog) · **25** (wired
 targets). They measure different things; this file keeps them separate.
 
 > ⚠️ **THIS DOCUMENT IS PINNED TO THE TREE, AND THE PIN IS WHY THE NUMBERS ABOVE ARE ALLOWED TO
@@ -651,20 +651,30 @@ targets). They measure different things; this file keeps them separate.
 > version is judged by it on read and reported, never dropped.
 > **Versions are kept in the browser** (`localStorage`, key `paragon.flowVersions`), not behind
 > `IDataService`: there is no read method for them on the service surface.
+>
+> **RE-HARVEST (2026-10-12, MD-1).** The replica of SAP's master data. Service surface 72 → **76**: a
+> twelfth read sub-service, `IMasterDataService`, with FOUR methods, all read-only: `list(scope,
+> object)`, `get(scope, object, key)`, `whereUsed(scope, object, key)` and `syncLog(scope)`. The
+> catalog and the wired targets are unchanged: no verb writes a replica record, and the only writer
+> is the sync applier (`services/masterData/syncApplier.ts`), which is not on the service surface.
+> Tenancy: a buyer reads everything; a supplier reads its own supplier record and the reference
+> tables, another supplier's key answers `null` exactly as an absent key does, and materials,
+> where-used and the sync log are refused `SCOPE_DENIED` for the whole object. The record, the stamp
+> and the sync run are specified in `C13-master-data.md`. Moved by the pin going red.
 
 Source of truth: `src/services/data/types.ts` (service + command types),
 `src/services/transitions/` (schema, dispatcher, flows).
 
 ---
 
-## Axis 1 — the 72-method service surface (`IDataService`)
+## Axis 1 — the 76-method service surface (`IDataService`)
 
 The single interface the Phase-F1 real adapter implements; pages call it through
 `useDataService()` and do not change when the mock is swapped for `httpDataService`. Every method
 takes `QueryScope` as its first argument (the scoping contract — a supplier only ever sees its
 own data; the buyer sees the superset).
 
-`IDataService` is eleven read sub-services + one command sub-service + one top-level method:
+`IDataService` is twelve read sub-services + one command sub-service + one top-level method:
 
 ```ts
 interface IDataService {
@@ -679,6 +689,7 @@ interface IDataService {
   enforcement: IEnforcementService;
   planning: IPlanningService;
   modules: IModuleService;
+  masterData: IMasterDataService;
   commands: ICommandService;
   getCapabilities(scope: QueryScope): Promise<CapabilitySet>;
 }
@@ -697,10 +708,11 @@ interface IDataService {
 | `IEnforcementService` | 1 | `getEnforcementSettings` |
 | `IPlanningService` | 1 | `getPlanningFacts` |
 | `IModuleService` | 2 | `getModuleActivation`, `getModuleLedger` |
-| **read subtotal** | **68** | |
+| `IMasterDataService` | 4 | `list`, `get`, `whereUsed`, `syncLog` |
+| **read subtotal** | **72** | |
 | `ICommandService` | 3 | `dispatch`, `getCommandStatus`, `settle` |
 | top-level | 1 | `getCapabilities` |
-| **TOTAL** | **72** | |
+| **TOTAL** | **76** | |
 
 **Return contract:** list reads return `Page<T>` (DR-5 — see C2); single reads return `T | null`;
 `getSummary` returns a summary object or `null` (buyer-populated, supplier-null). Failure is
