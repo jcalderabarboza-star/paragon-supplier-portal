@@ -1220,7 +1220,7 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
                     {selected.status}
                   </StatusPill>
                   <span className="mt-1 block">
-                    <NextActLine act={nextAct} testId="next-act-buyer-gr" />
+                    <NextActLine act={nextAct} testId="next-act-buyer-gr" doc={selected ? { entity: 'goodsReceipt', id: selected.id, state: selected.status } : null} />
                   </span>
                 </Field>
                 <Field label={t('goodsReceipt.panel.field.disposition')}>

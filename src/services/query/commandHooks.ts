@@ -1422,6 +1422,59 @@ export function useFlowVersionSave() {
   });
 }
 
+/** FB-3 / FB-4 — the acts a person takes on a change after it is drafted. */
+export type FlowVersionActName =
+  | 'propose'
+  | 'withdraw'
+  | 'return'
+  | 'approve'
+  | 'reject'
+  | 'activate'
+  | 'retire'
+  | 'restore';
+
+/**
+ * FB-3 / FB-4 — move a change: propose it, decide it, put it in force, roll it
+ * back. Every one states a reason; who took it is the seat's person.
+ */
+export function useFlowVersionAct() {
+  const svc = useDataService();
+  const scope = useScope();
+
+  return useMutation<CommandResult, Error, { versionId: string; act: FlowVersionActName; reason: string }>({
+    mutationFn: ({ versionId, act, reason }) =>
+      svc.commands.dispatch(scope, {
+        transitionId: `t_flowversion_${act}`,
+        entity: 'flowVersion',
+        entityId: versionId,
+        payload: { reason },
+      }),
+  });
+}
+
+/**
+ * FB-4 — complete a step an active version added, or decline it (an approval
+ * step, with the reason). `stepKey` names the step on its document.
+ */
+export function useStepAct() {
+  const svc = useDataService();
+  const scope = useScope();
+
+  return useMutation<
+    CommandResult,
+    Error,
+    { stepKey: string; values?: Record<string, unknown>; decline?: { reason: string } }
+  >({
+    mutationFn: ({ stepKey, values, decline }) =>
+      svc.commands.dispatch(scope, {
+        transitionId: decline ? 't_step_decline' : 't_step_complete',
+        entity: 'processStep',
+        entityId: stepKey,
+        payload: decline ? { reason: decline.reason } : { values: values ?? {} },
+      }),
+  });
+}
+
 // ── §67 · THE APPROVAL LANE — approve / reject, the two verbs procurement holds ─
 //
 // ⚠️ **THE GAP THIS CLOSES WAS NEVER A SURFACE.** `BuyerRequisitions` already

@@ -1550,7 +1550,7 @@ const BuyerRequisitions: React.FC = () => {
                     {selectedPR.status}
                   </StatusPill>
                   <span className="mt-1 block">
-                    <NextActLine act={nextAct} testId="next-act-buyer-pr" />
+                    <NextActLine act={nextAct} testId="next-act-buyer-pr" doc={selectedPR ? { entity: 'purchaseRequisition', id: selectedPR.id, state: selectedPR.status } : null} />
                   </span>
                 </Field>
               </FieldList>

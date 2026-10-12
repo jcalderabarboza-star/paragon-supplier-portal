@@ -391,9 +391,10 @@ describe('guides · every fixture id resolves in its store at seed, in the state
     else expect(named.length).toBeGreaterThan(0);
   });
 
-  it('exactly one wired process opens with no document at seed — a change to a process — and every other holds some', () => {
+  it('the wired processes that open with no document at seed are pinned by name — a change to a process, and the steps one adds — and every other holds some', () => {
     const emptyAtSeed = WIRED_COMMAND_TARGETS.filter((entity) => FIXTURE_READERS[entity]?.().length === 0);
-    expect(emptyAtSeed).toEqual(['flowVersion']);
+    // FB-4 — no version is in force at seed, so no step exists and its ledger is empty.
+    expect(emptyAtSeed).toEqual(['flowVersion', 'processStep']);
     expect(FIXTURE_READERS.purchaseOrder().length).toBeGreaterThan(0);
   });
 });

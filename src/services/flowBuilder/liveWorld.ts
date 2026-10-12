@@ -22,6 +22,7 @@ import { SAMPLE_PEOPLE } from '../identity/sampleRoster';
 import type { QueryScope } from '../data/types';
 import type { FlowVersion } from './flowVersion';
 import { flowVersionStore, type FlowVersionReadState } from './flowVersionStore';
+import { rosterLabels } from './rosterLabels';
 import { STEP_SURFACES } from './stepSurfaces';
 import { errorsOf, validateVersion, type Finding, type ValidationWorld } from './validateVersion';
 
@@ -44,8 +45,9 @@ export function liveWorld(extra: { personNames?: readonly string[] } = {}): Vali
     wiredEntities: WIRED_COMMAND_TARGETS,
     stepSurfaces: STEP_SURFACES,
     stepLanes: stepLanes(),
-    // The roster's ids here; a surface adds the labels a reader sees, in its language.
-    personNames: [...SAMPLE_PEOPLE.map((p) => p.personId), ...(extra.personNames ?? [])],
+    // The roster's ids, and every sample person as a reader sees them in
+    // either language — one list for every caller.
+    personNames: [...SAMPLE_PEOPLE.map((p) => p.personId), ...rosterLabels(), ...(extra.personNames ?? [])],
     actorKeys: ATTRIBUTION_KEYS,
     switchedOff: (transitionId) => moduleGate(transitionId, BUYER_SCOPE),
     resting: (entity, state) => {

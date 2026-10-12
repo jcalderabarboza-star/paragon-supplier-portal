@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next';
+import { stepRefusalText } from '../lib/stepRefusal';
 import {
   describeRefusal,
   describeDataError,
@@ -16,8 +17,12 @@ import {
  * default.
  */
 export function useRefusalText(): (reason: string | undefined) => string | null {
-  const { i18n } = useTranslation();
-  return (reason: string | undefined) => describeRefusal(reason, i18n.language);
+  const { t, i18n } = useTranslation();
+  // FB-4 — a step an active version added, or the separation it asks for, has
+  // its own sentence: which step, which lane, who. Asked first; `null` for
+  // every other refusal, which then reads exactly as it did.
+  return (reason: string | undefined) =>
+    stepRefusalText(reason, t, i18n.language) ?? describeRefusal(reason, i18n.language);
 }
 
 

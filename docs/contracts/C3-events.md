@@ -24,6 +24,7 @@ interface TransitionEvent {
   readonly attribution?: ActorAttribution;  // WHICH HUMAN (C10 §6.4) — orthogonal to `actor`
   readonly subject?: TransitionSubject;     // WHICH DOCUMENT (G1) — { entity, entityId, from, to }
   readonly bypass?: SuperAdminBypass;       // WHICH RULE STOOD ASIDE, AND WHY (ADM-1) — { rules, reason }
+  readonly flowVersion?: string;            // WHICH VERSION OF THE PROCESS (FB-4) — `<entity>@<version>`
 }
 ```
 
@@ -52,6 +53,14 @@ drift into two different stories:
   refusal `to` is where the act would have landed; on a settlement the edge is the boundary
   verb's interim state → its `settlesTo`. Additive and optional, for C10 §6.4's reason: the
   sink is still in-memory, which is the only window in which a field can be added.
+- **`flowVersion`** — **WHICH VERSION OF THE PROCESS THE ACT WAS TAKEN UNDER** (added at FB-4):
+  `<entity>@<version>`, where the entity is the flow the transition belongs to.
+  `purchaseRequisition@2` is the shipped process; `purchaseRequisition@2.1` is the first change to
+  shipped version 2, while that change is in force. Present on every event a dispatcher with a
+  `flowOverlay` emits about a registered transition — refusals included, since a refusal was also
+  decided under a version. Absent where no overlay is injected and on an event about a transition
+  the registry does not know. An active version that was set aside is not in force, so the stamp
+  then names the shipped version.
 - **`bypass`** — **WHICH RULE STOOD ASIDE, AND WHY** (added at ADM-1): `{ rules, reason }`. Present
   ONLY on an act a Super Admin seat took past a four-eyes, segregation or sample-identity check:
   `rules` are the refusal heads that stood aside, in the order the checks ran, and `reason` is the

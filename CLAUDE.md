@@ -455,6 +455,27 @@ mechanisms whose success signals said nothing about the damage they did.
 > overlay, `draft`, which only the composer passes: the live page never draws a draft's elements.
 > **Derive which kinds of step can be composed from `COMPOSABLE_KINDS`, never from a sentence here.**
 >
+> ⚠️ **FB-3 + FB-4 (2026-10-12, operator rulings) — A CHANGE IS DECIDED, PUT IN FORCE AND ROLLED
+> BACK, AND TWO SENTENCES ABOVE ARE OVERTAKEN, QUOTED RATHER THAN EDITED.** FB-1's *"The
+> `flowVersion` flow has TWO acts so far, create and save"* and *"**Nothing a version says is in
+> force**: no dispatcher dependency reads one yet"*. The machine is whole (Draft → In Review →
+> Approved → Active → Retired, or Rejected), every act after the draft names a person and states a
+> reason, and **approving and activating are two acts**. The approver may not be the proposer; a
+> Super Admin passes that check, and the two step separations, with a recorded reason — `admin` does
+> not. **An ACTIVE version is obeyed**: the dispatcher asks ONE injected dependency
+> (`flowOverlay`) what the version in force adds in front of an act, refuses `STEP_PENDING` while a
+> step is due, and stamps every event with the version (`flowVersion`). A step is completed on the
+> `processStep` ledger by the lane it names, and ONE function (`stepOpenFor`) answers for both the
+> check and the surface. **Rollback is the same switch thrown back**: retire returns the process to
+> the shipped default, restore brings an earlier change back and validates it again; a version
+> whose process moved is SET ASIDE by name and the process runs as shipped. Still true from FB-1:
+> a version adds a refusal and never removes one, and no flow-builder module calls
+> `flowRegistry.register`. **Derive the acts a state offers from `REVIEW_ACTS`, what blocks a
+> proposal from `flowversion_obeys_rules`, which checks stand aside from the `exempt?.(` calls in
+> `policies.ts`, and what is due on a document from `dueStepsFor` — never from a sentence here.**
+> Forks, checks and scans cannot be put in force (a version holding one is refused at proposal);
+> history export and supplier-side steps are the SE Team's.
+>
 > ⚠️ **THE PARAGON BRAND LIST IS ONE FILE** (`data/paragonBrands.ts`, operator ruling 2026-10-12):
 > the brands and their codes. A page that offers or columns a brand reads it;
 > `paragonBrands.test.ts` holds the list to the ruling and refuses a second list.

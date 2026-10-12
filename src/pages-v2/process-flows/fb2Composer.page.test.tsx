@@ -289,13 +289,15 @@ describe('FB-2 · what the composer is allowed to touch', () => {
     open();
     const dlg = await compose(id);
     const states: string[] = [];
-    const check = (state: string): void => {
+    // FB-3 — the one solid button is the save while there is something to
+    // save, and the hand-over for review once there is not.
+    const check = (state: string, one = 'fb-save'): void => {
       states.push(state);
-      expect(solid(dlg), state).toEqual(['fb-save']);
+      expect(solid(dlg), state).toEqual([one]);
       // …and the page behind it keeps its own one.
-      expect(solid(document).filter((t) => t !== 'fb-save'), state).toEqual(['fb-new-change']);
+      expect(solid(document).filter((t) => t !== one), state).toEqual(['fb-new-change']);
     };
-    check('empty');
+    check('empty', 'fb-propose');
     for (const kind of ['approval', 'confirmation', 'capture'] as const) {
       fireEvent.click(within(dlg).getByTestId(`fb-kind-${kind}`));
       fireEvent.click(within(dlg).getByTestId('fb-step-add'));
@@ -305,7 +307,7 @@ describe('FB-2 · what the composer is allowed to touch', () => {
     check('a capture field added');
     fireEvent.click(within(dlg).getByTestId('fb-save'));
     await waitFor(() => expect(flowVersionStore.byId(id)!.savedAt).not.toBeNull());
-    check('after a save');
+    check('after a save', 'fb-propose');
     expect(states).toHaveLength(6);
   });
 

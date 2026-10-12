@@ -28,6 +28,12 @@ export const superAdminEn: Record<string, string> = {
     'The person who approved an invoice may not release its payment',
   'superAdmin.rule.SAMPLE_ACTOR_CANNOT_LOOSEN':
     'A sample identity may not loosen a governed setting',
+  'superAdmin.rule.FLOWVERSION_APPROVER_IS_PROPOSER':
+    'The person who proposed a change to a process may not approve it',
+  'superAdmin.rule.STEP_COMPLETER_IS_EARLIER_COMPLETER':
+    'An added step asks for a different person from whoever completed an earlier one',
+  'superAdmin.rule.STEP_COMPLETER_MAY_NOT_ACT':
+    'Whoever completed an added step may not then take the act behind it',
   'superAdmin.rule.unknown': 'A check ({{rule}})',
 
   'superAdmin.note.line': '{{person}} · {{when}} · {{rule}}',
@@ -85,6 +91,12 @@ export const superAdminId: Record<string, string> = {
     'Orang yang menyetujui faktur tidak boleh merilis pembayarannya',
   'superAdmin.rule.SAMPLE_ACTOR_CANNOT_LOOSEN':
     'Identitas contoh tidak boleh melonggarkan pengaturan yang diatur',
+  'superAdmin.rule.FLOWVERSION_APPROVER_IS_PROPOSER':
+    'Orang yang mengusulkan perubahan pada sebuah proses tidak boleh menyetujuinya',
+  'superAdmin.rule.STEP_COMPLETER_IS_EARLIER_COMPLETER':
+    'Langkah tambahan meminta orang yang berbeda dari penyelesai langkah sebelumnya',
+  'superAdmin.rule.STEP_COMPLETER_MAY_NOT_ACT':
+    'Penyelesai langkah tambahan tidak boleh kemudian melakukan tindakan di belakangnya',
   'superAdmin.rule.unknown': 'Sebuah pemeriksaan ({{rule}})',
 
   'superAdmin.note.line': '{{person}} · {{when}} · {{rule}}',

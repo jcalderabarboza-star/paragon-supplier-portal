@@ -105,6 +105,19 @@ export const COMMAND_REFUSALS = [
   'ACTOR_IN_PAYLOAD',
   /** One or more `requiredFields` were absent or empty in the payload. */
   'MISSING_FIELDS',
+  /**
+   * FB-4 · a step the ACTIVE VERSION of the process added is due in front of
+   * this act (Design 6 v2 §7.1). The detail names the step on the document
+   * (`<process>:<document>:<step>`), with `:declined` after it when the latest
+   * decision on the step was a decline.
+   *
+   * ⚠️ **POSITION IS SEMANTIC.** After `ROLE_NOT_PERMITTED`, so a seat without
+   * the right learns nothing about the document; after `ILLEGAL_TRANSITION`,
+   * so a caller is told the act is illegal before being told it is waiting;
+   * and before the shipped checks, which are not asked about an act that
+   * cannot be taken yet.
+   */
+  'STEP_PENDING',
   /** The transition names a policy hook that no registration resolves. */
   'UNBOUND_HOOK',
   /** A resolved policy hook returned `ok: false`. */

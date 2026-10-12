@@ -34,6 +34,8 @@ import { MODULE_CODES } from '../../modules/registry';
 import { MATERIAL_MASTER } from '../../sdc/fixtures';
 import { SYSTEM_ROLES } from '../../transitions/businessRoles';
 import { flowVersionStore } from '../../flowBuilder/flowVersionStore';
+import { stepLedger } from '../../flowBuilder/stepLedger';
+import { stepKey } from '../../flowBuilder/stepsDue';
 
 /**
  * The ids each wired guide's test data may name — the population a store (or,
@@ -78,4 +80,7 @@ export const DOCUMENT_IDS: Readonly<Record<string, () => readonly string[]>> = {
   materialRuling: () => Object.keys(MATERIAL_MASTER),
   // FB-1 — a change to a process. The store opens empty: nothing is seeded.
   flowVersion: () => ids(flowVersionStore.all()),
+  // FB-4 — the steps an active version added: one key per step taken on a
+  // document. The ledger opens empty, because no version is in force at seed.
+  processStep: () => [...new Set(stepLedger.all().map((r) => stepKey(r.entity, r.docId, r.stepId)))],
 };

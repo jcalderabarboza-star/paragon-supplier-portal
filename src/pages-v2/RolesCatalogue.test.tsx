@@ -95,9 +95,16 @@ describe('⚠️ THE LIST IS DERIVED — one row per system role, no more, no fe
     // closely. i18next selects the arm on `count`; the explicit interpolations
     // keep BOTH numbers rendering on either arm.
     renderWithProviders(<RolesCatalogue />, { identity: BUYER });
-    const row = await screen.findByTestId('role-row-finance');
-    expect(within(row).getByText(/1 module(?![s])/)).toBeInTheDocument();
-    expect(within(row).queryByText(/1 modules/)).not.toBeInTheDocument();
+    // ⚠️ NO ROW READS "1 module" ANY MORE (FB-4). `finance` was the specimen;
+    // every buyer lane now also holds `step:complete`, whose flow is the
+    // platform's, so the narrowest lane reaches two modules. The singular arm
+    // is therefore asked of the string itself, and the population is pinned so
+    // the day a one-module role exists again this says so.
+    const table = await screen.findByTestId('roles-table');
+    expect((table.textContent ?? '').match(/(?<!\d)1 modules?/g)).toBeNull();
+    expect(within(screen.getByTestId('role-row-finance')).getByText(/^2 modules · /)).toBeInTheDocument();
+    const one = i18n.t('roles.page.reach', { count: 1, modules: 1, permissions: 4 });
+    expect(one).toBe('1 module · 4 permissions');
     // Known-GOOD control: a multi-module role still pluralises.
     const admin = screen.getByTestId('role-row-admin');
     expect(within(admin).getByText(/\d+ modules/)).toBeInTheDocument();

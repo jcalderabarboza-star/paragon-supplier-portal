@@ -851,7 +851,7 @@ const BuyerSupplierApplications: React.FC = () => {
       >
         {selected && (
           <div className="space-y-6">
-            <NextActLine act={nextAct} testId="next-act-buyer-application" />
+            <NextActLine act={nextAct} testId="next-act-buyer-application" doc={selected ? { entity: 'supplierApplication', id: selected.id, state: selected.status } : null} />
             <FormSection title={t('applications.panel.section.applicant')}>
               <FieldList layout="row">
                 <Field label={t('applications.panel.field.company')}>

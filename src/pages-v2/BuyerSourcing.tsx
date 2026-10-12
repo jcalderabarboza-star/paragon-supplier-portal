@@ -3582,7 +3582,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                     {selectedRfq.status}
                   </StatusPill>
                   <span className="mt-1 block">
-                    <NextActLine act={nextAct} testId="next-act-buyer-rfq" />
+                    <NextActLine act={nextAct} testId="next-act-buyer-rfq" doc={selectedRfq ? { entity: 'rfq', id: selectedRfq.id, state: selectedRfq.status } : null} />
                   </span>
                 </Field>
                 <Field label={t('sourcing.panel.field.created')} kind="date">

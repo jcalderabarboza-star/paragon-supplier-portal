@@ -1,6 +1,6 @@
 # C1 — Method Surface
 
-Three distinct axes. **76** (service surface) · **143** (transition catalog) · **25** (wired
+Three distinct axes. **76** (service surface) · **154** (transition catalog) · **26** (wired
 targets). They measure different things; this file keeps them separate.
 
 > ⚠️ **THIS DOCUMENT IS PINNED TO THE TREE, AND THE PIN IS WHY THE NUMBERS ABOVE ARE ALLOWED TO
@@ -679,6 +679,58 @@ targets). They measure different things; this file keeps them separate.
 > and is reported with the rule on read. The library gates nothing until a version can be proposed.
 > **The composer's one write is `t_flowversion_save`.** It composes three kinds of step (approval,
 > confirmation, data capture); scans, checks and forks are not composable yet.
+>
+> **RE-HARVEST (2026-10-12, FB-3 + FB-4).** A change to a process is proposed, decided, put in force
+> and rolled back; an added step is completed on a ledger. Catalog 143 → **154** across 31 → **32**
+> flows; wired targets 25 → **26**. Service surface unchanged (76). Moved by the pin going red.
+> **`flowVersion.flow.ts` IS NOW THE WHOLE MACHINE**: states `Draft`, `In Review`, `Approved`,
+> `Active`, `Retired`, `Rejected` (the one ending). Nine acts joined create and save. Every one a
+> person takes requires `reason` and runs `flowversion_reason_authored`
+> (`FLOWVERSION_REASON_BLANK`) LAST:
+> `t_flowversion_propose` (`Draft` → `In Review`, `flow:draft`): `flowversion_author_named`, then
+> `flowversion_obeys_rules`, five refusals in this order — `FLOWVERSION_EMPTY` (nothing added),
+> `FLOWVERSION_ELEMENT_NOT_BUILT` (a fork, a check, a scan step or a step on a fork: the overlay
+> cannot apply one yet), `FLOWVERSION_BASE_MOVED` (rule R02), `FLOWVERSION_BREAKS_RULE` (any other
+> error finding), `FLOWVERSION_WARNING_UNACKNOWLEDGED` (propose only).
+> `t_flowversion_withdraw` (`In Review` | `Approved` → `Draft`, `flow:draft`): `flowversion_author_named`.
+> `t_flowversion_return` (`In Review` → `Draft`) and `t_flowversion_reject` (`In Review` →
+> `Rejected`), both `flow:decide`: `flowversion_decider_named` (`FLOWVERSION_DECIDER_UNATTRIBUTED`).
+> `t_flowversion_approve` (`In Review` → `Approved`, `flow:decide`): `flowversion_decider_named`,
+> `flowversion_obeys_rules`, `flowversion_approver_not_proposer`
+> (`FLOWVERSION_APPROVER_IS_PROPOSER`; asks the Super Admin exemption), `flowversion_not_sample_in_prod`
+> (`FLOWVERSION_SAMPLE_IN_PRODUCTION`).
+> `t_flowversion_activate` (`Approved` → `Active`) and `t_flowversion_restore` (`Retired` →
+> `Active`), both `flow:activate`: `flowversion_decider_named`, `flowversion_obeys_rules`,
+> `flowversion_not_sample_in_prod`. Each cascades `t_flowversion_supersede` onto every OTHER `Active`
+> version of the same process, so at most one is in force.
+> `t_flowversion_supersede` (`Active` → `Retired`, trigger `cascade`, `flow:supersede` — an
+> automation atom; no field, no hook; payload `supersededBy` = the replacing version's label).
+> `t_flowversion_retire` (`Active` → `Retired`, `flow:activate`): `flowversion_decider_named` only.
+> `flow:decide` and `flow:activate` are `compliance` atoms, beside `flow:draft`.
+> **THE RECORD KEEPS ITS OWN HISTORY**: one row per act — act, from, to, who (from the session;
+> `null` for a supersede), when (the store's instant), why, and the Super Admin `bypass` when a check
+> stood aside. A stored row whose `state` is not where its history leaves it is refused on read.
+> **A NEW LEDGER MACHINE, `processStep.flow.ts`** (one state, `Recorded`, declared an ending; no
+> creation verb — censused). The entity id is `<process>:<document>:<step>`; `readState` answers only
+> for a registered process, a document that process holds and a step the version in force defines.
+> `step:complete` is held by every buyer-side lane; WHICH lane takes a step is the step's own `lane`,
+> decided by `stepOpenFor`. `t_step_complete` (optional `values`): `step_actor_named`
+> (`STEP_ACTOR_UNATTRIBUTED`), `step_may_be_taken` (`STEP_UNKNOWN`, `STEP_NOT_DUE`,
+> `STEP_LANE_NOT_HELD`, `STEP_COMPLETER_IS_EARLIER_COMPLETER` — asks the exemption),
+> `step_fields_given` (`STEP_FIELD_MISSING`). `t_step_decline` (required `reason`): the first two,
+> then `step_decline_reasoned` (`STEP_NOT_AN_APPROVAL`, `STEP_DECLINE_REASON_BLANK`). The ledger is in
+> memory.
+> **THE DISPATCHER GAINED ONE OPTIONAL DEPENDENCY, `flowOverlay`** (absent ⇒ nothing changes), and
+> the closed refusal list ONE member, **`STEP_PENDING`**, after `MISSING_FIELDS` and before
+> `UNBOUND_HOOK`: a step the version in force added is due in front of the act. Detail:
+> `<process>:<document>:<step>`, with `:declined` after it when the latest decision was a decline.
+> After the shipped hooks the overlay may refuse once more, as
+> `POLICY_REJECTED:added_check:STEP_COMPLETER_MAY_NOT_ACT: …` (asks the exemption). On success the
+> completions in front of the act are spent. Every event carries `flowVersion` (C3).
+> **`CommandTarget.applyTransition` takes a sixth, optional argument, `bypass`** — the checks that
+> stood aside for a Super Admin on this act, with the reason. The interface's member count is unchanged.
+> **NOT BUILT:** forks, checks and scans (rules R09–R11, the field catalogue); a supplier-side step;
+> an export of a version; a side-by-side of two versions.
 
 Source of truth: `src/services/data/types.ts` (service + command types),
 `src/services/transitions/` (schema, dispatcher, flows).
@@ -746,7 +798,7 @@ the string, because those are different claims and only the first is the contrac
 
 ---
 
-## Axis 2 — the 143-transition catalog (31 flows)
+## Axis 2 — the 154-transition catalog (32 flows)
 
 Every authored state-machine edge across the registered flows (`id: 't_<entity>_<verb>'`). Derived
 from `getKnownFlows()` — the seeded registry — never from a grep over the flow files, because a
@@ -785,8 +837,9 @@ transition id can be assembled at a call site rather than written as a literal (
 | `forecastPublication.flow.ts` | `forecastPublication` | 7 | `t_publication_open`, `t_publication_allocate`, `t_publication_approve_firm`, `t_publication_publish`, `t_publication_discard`, `t_publication_supersede`, `t_publication_withdraw` | **wired** |
 | `moduleActivation.flow.ts` | `moduleActivation` | 1 | `t_module_set` | **wired** |
 | `materialRuling.flow.ts` | `materialRuling` | 1 | `t_material_ruling_set` | **wired** |
-| `flowVersion.flow.ts` | `flowVersion` | 2 | `t_flowversion_create`, `t_flowversion_save` | **wired** |
-| **TOTAL** | | **143** | | |
+| `flowVersion.flow.ts` | `flowVersion` | 11 | `t_flowversion_create`, `t_flowversion_save`, `t_flowversion_propose`, `t_flowversion_withdraw`, `t_flowversion_return`, `t_flowversion_approve`, `t_flowversion_reject`, `t_flowversion_activate`, `t_flowversion_supersede`, `t_flowversion_retire`, `t_flowversion_restore` | **wired** |
+| `processStep.flow.ts` | `processStep` | 2 | `t_step_complete`, `t_step_decline` | **wired** |
+| **TOTAL** | | **154** | | |
 
 **Flow shape** (`schema.ts`, `FlowDefinition` / `TransitionDef`): each transition declares
 `from[]` / `to` / `trigger` / `requiredRole` / `requiredFields[]` / `policyHooks[]` /
@@ -802,12 +855,12 @@ system reference is minted only on `settle` (see C5, SAP boundary).
 
 ---
 
-## Axis 3 — the 25 wired CommandTargets
+## Axis 3 — the 26 wired CommandTargets
 
-A `CommandTarget` is the per-entity adapter the dispatcher reads/writes through. **25 exist**, the
+A `CommandTarget` is the per-entity adapter the dispatcher reads/writes through. **26 exist**, the
 runtime export `WIRED_COMMAND_TARGETS` (`MockCommandService.ts` `TARGETS`):
 
-- **wired:** `purchaseOrder`, `advanceShipNotice`, `goodsReceipt`, `invoice`, `rfq`, `quotation`, `stageResponse`, `purchaseRequisition`, `intakeLine`, `supplierDocument`, `requirementResponse`, `inventoryDeclaration`, `incomingShipment`, `enforcement`, `role`, `supplierApplication`, `materialRequest`, `psl`, `pslCapSetting`, `deliveryRelease`, `deliveryPolicy`, `forecastPublication`, `moduleActivation`, `materialRuling`, `flowVersion`
+- **wired:** `purchaseOrder`, `advanceShipNotice`, `goodsReceipt`, `invoice`, `rfq`, `quotation`, `stageResponse`, `purchaseRequisition`, `intakeLine`, `supplierDocument`, `requirementResponse`, `inventoryDeclaration`, `incomingShipment`, `enforcement`, `role`, `supplierApplication`, `materialRequest`, `psl`, `pslCapSetting`, `deliveryRelease`, `deliveryPolicy`, `forecastPublication`, `moduleActivation`, `materialRuling`, `flowVersion`, `processStep`
 
 The interface is **7 members** (`dispatcher.ts`, `CommandTarget`):
 
@@ -840,9 +893,9 @@ pre-A2 target ignores the parameter.
 compare"** (§86). The dispatcher's supplier arm compares `owner !== scope.supplierId`
 unconditionally; a target that wants a supplier to reach a verb must NAME that supplier.
 
-### Wiring census (31 flows → 3 states)
+### Wiring census (32 flows → 3 states)
 
-- **25 behavior-wired** — have a `CommandTarget`, dispatch runs against in-memory stores. Named
+- **26 behavior-wired** — have a `CommandTarget`, dispatch runs against in-memory stores. Named
   above.
 - **2 rolled-up sub-flows** — authored, participate via terminal rollup (`grRollup.ts` /
   `invoiceRollup.ts`), **no standalone target**: `goodsReceiptLine`, `invoiceMatch`.
