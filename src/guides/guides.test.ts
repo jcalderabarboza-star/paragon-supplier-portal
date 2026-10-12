@@ -26,31 +26,8 @@ import { tmpdir } from 'node:os';
 import { REPO_ROOT } from '../lib/treeMutationGate/derive';
 import { getKnownFlows } from '../services/transitions';
 import { ALL_GLOSSARY_TERMS } from '../lib/glossary';
-import { purchaseOrderStore } from '../services/data/mock/stores/purchaseOrderStore';
-import { asnStore } from '../services/data/mock/stores/asnStore';
-import { goodsReceiptStore } from '../services/data/mock/stores/goodsReceiptStore';
-import { invoiceStore } from '../services/data/mock/stores/invoiceStore';
-import { rfqStore } from '../services/data/mock/stores/rfqStore';
-import { quotationStore } from '../services/data/mock/stores/quotationStore';
-import { stageResponseStore } from '../services/data/mock/stores/stageResponseStore';
-import { purchaseRequisitionStore } from '../services/data/mock/stores/purchaseRequisitionStore';
-import { requirementResponseStore } from '../services/data/mock/stores/requirementResponseStore';
-import { inventoryDeclarationStore } from '../services/data/mock/stores/inventoryDeclarationStore';
-import { incomingShipmentStore } from '../services/data/mock/stores/incomingShipmentStore';
-import { supplierDocumentStore } from '../services/data/mock/stores/supplierDocumentStore';
-import { supplierApplicationStore } from '../services/data/mock/stores/supplierApplicationStore';
-import { materialRequestStore } from '../services/data/mock/stores/materialRequestStore';
-import { pslStore } from '../services/data/mock/stores/pslStore';
-import { enforcementSettingStore } from '../services/data/mock/stores/enforcementSettingStore';
-import { PSL_SETTING_IDS } from '../services/data/mock/stores/pslCapSettingStore';
-import { forecastPublicationStore } from '../services/data/mock/stores/forecastPublicationStore';
-import { schedulingAgreementStore } from '../services/delivery/stores/schedulingAgreementStore';
-import { PR_INTAKE_LINES } from '../services/data/mock/fixtures/prIntake';
-import { itemKey } from '../services/delivery/addressing';
-import { MODULE_CODES } from '../services/modules/registry';
-import { MATERIAL_MASTER } from '../services/sdc/fixtures';
-import { SYSTEM_ROLES } from '../services/transitions/businessRoles';
 import { WIRED_COMMAND_TARGETS, commandTargetFor } from '../services/data/mock/MockCommandService';
+import { DOCUMENT_IDS } from '../services/data/mock/documentIds';
 import { seedEnforcementLedger } from '../services/data/mock/enforcementSeed';
 import { seedSourceableRequisition } from '../services/data/mock/requisitionSeed';
 import { seedSupplierApplications } from '../services/data/mock/applicationSeed';
@@ -90,48 +67,8 @@ const GUIDES_DIR = join(REPO_ROOT, 'docs', 'guides');
 const rawOf = (g: ProcessGuide): string => readFileSync(join(REPO_ROOT, g.sourceFile), 'utf8');
 const landed = (entity: string) => LOCALES.some((l) => getGuide(entity, l));
 
-/**
- * The ids each wired guide's test data may name — the population a store (or,
- * for a ledger whose entities are vocabulary, the vocabulary) holds at seed.
- * A landed WIRED guide with no entry here is red, so no guide lands with test
- * data nothing checks.
- */
-const ids = (rows: readonly { id: string }[]) => rows.map((r) => r.id);
-const FIXTURE_IDS: Readonly<Record<string, () => readonly string[]>> = {
-  purchaseOrder: () => ids(purchaseOrderStore.all()),
-  // An ASN has no separate id: it is keyed by its number (`asnStore`).
-  advanceShipNotice: () => asnStore.all().map((a) => a.asnNumber),
-  goodsReceipt: () => ids(goodsReceiptStore.all()),
-  invoice: () => ids(invoiceStore.all()),
-  rfq: () => ids(rfqStore.all()),
-  quotation: () => ids(quotationStore.all()),
-  stageResponse: () => ids(stageResponseStore.all()),
-  purchaseRequisition: () => ids(purchaseRequisitionStore.all()),
-  requirementResponse: () => ids(requirementResponseStore.all()),
-  inventoryDeclaration: () => ids(inventoryDeclarationStore.all()),
-  incomingShipment: () => ids(incomingShipmentStore.all()),
-  supplierDocument: () => ids(supplierDocumentStore.all()),
-  supplierApplication: () => ids(supplierApplicationStore.all()),
-  materialRequest: () => ids(materialRequestStore.all()),
-  psl: () => ids(pslStore.all()),
-  forecastPublication: () => forecastPublicationStore.all().map((p) => p.publicationId),
-  intakeLine: () => ids(PR_INTAKE_LINES),
-  deliveryRelease: () =>
-    schedulingAgreementStore
-      .all()
-      .flatMap((a) => a.items.flatMap((it) => (it.scheduleLines ?? []).map((l) => l.releaseRef))),
-  deliveryPolicy: () => schedulingAgreementStore.all().flatMap((a) => a.items.map((it) => itemKey(a.id, it.lineSeq))),
-  enforcement: () => enforcementSettingStore.all().map((e) => e.checkId),
-  // ⚠️ THE THREE LEDGERS BELOW OPEN EMPTY, AND THEIR ENTITIES ARE VOCABULARY —
-  // a setting key, a system role, a module code. Each is addressable, and its
-  // target's `readState` answers the machine's one state for it, which is what
-  // a tester acts on, so it is what the test data may name.
-  pslCapSetting: () => [...PSL_SETTING_IDS],
-  role: () => Object.keys(SYSTEM_ROLES),
-  moduleActivation: () => [...MODULE_CODES],
-  // OPS-2 — the material ruling ledger: its entity IS a material-master code.
-  materialRuling: () => Object.keys(MATERIAL_MASTER),
-};
+/** Each wired flow's documents at seed: `documentIds.ts`, which the Flow Builder's count reads too. */
+const FIXTURE_IDS = DOCUMENT_IDS;
 
 /**
  * Each id's state as the MACHINE reads it — the wired target's own `readState`,
@@ -445,7 +382,19 @@ describe('guides · every fixture id resolves in its store at seed, in the state
         .map((id) => `${id}: guide says ${r.state}, store says ${rows.find((x) => x.id === id)?.state ?? 'NOT FOUND'}`),
     );
     expect(wrong).toEqual([]);
-    expect(g.testData.flatMap((r) => r.fixtureIds).length).toBeGreaterThan(0);
+    // A guide names test data wherever its process HOLDS any at seed. A store
+    // that opens empty holds nothing a guide could name — any id it named is
+    // already red above as NOT FOUND — and which stores those are is pinned by
+    // name in the next test, so "empty" cannot quietly excuse a second guide.
+    const named = g.testData.flatMap((r) => r.fixtureIds);
+    if (rows.length === 0) expect(named).toEqual([]);
+    else expect(named.length).toBeGreaterThan(0);
+  });
+
+  it('exactly one wired process opens with no document at seed — a change to a process — and every other holds some', () => {
+    const emptyAtSeed = WIRED_COMMAND_TARGETS.filter((entity) => FIXTURE_READERS[entity]?.().length === 0);
+    expect(emptyAtSeed).toEqual(['flowVersion']);
+    expect(FIXTURE_READERS.purchaseOrder().length).toBeGreaterThan(0);
   });
 });
 

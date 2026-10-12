@@ -156,6 +156,7 @@ import { forecastPublicationTarget, previouslyPublished } from './publicationTar
 import { publishedMaterialMaster } from '../../planning/publishedMaterial';
 import { moduleActivationTarget, moduleGate } from './moduleActivationTarget';
 import { materialRulingTarget } from './materialRulingTarget';
+import { makeFlowVersionTarget } from './flowVersionTarget';
 import type {
   Acknowledgment,
   IncomingShipment,
@@ -3293,6 +3294,9 @@ const TARGETS: Record<string, CommandTarget> = {
   moduleActivation: moduleActivationTarget,
   // OPS-2 — the material applicability ruling ledger; the same shape again.
   materialRuling: materialRulingTarget,
+  // FB-1 — a change to a process. The factory is handed this table's own keys:
+  // a change may be drafted only against a process a command can write through.
+  flowVersion: makeFlowVersionTarget(() => Object.keys(TARGETS)),
 };
 
 // The behavior-wiring census (was the contract package's "6"; 7 with the G1.1

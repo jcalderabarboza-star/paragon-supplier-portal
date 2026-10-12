@@ -60,6 +60,7 @@ import { buyerInvoicesEn, buyerInvoicesId } from './i18n/buyerInvoices';
 // — Stage G · G1.2a plan grid —
 import { planGridEn, planGridId } from './i18n/planGrid';
 import { modulesEn, modulesId } from './i18n/modules';
+import { flowBuilderEn, flowBuilderId } from './i18n/flowBuilder';
 // — Phase A/1 intake review (sourcing spine) —
 import { intakeReviewEn, intakeReviewId } from './i18n/intakeReview';
 // — SDC-1b planner consolidation (Supplier Data Collaboration) —
@@ -154,6 +155,7 @@ export const resources = {
       // — Stage G · G1.2a plan grid —
       ...planGridEn,
       ...modulesEn,
+      ...flowBuilderEn,
       // — Phase A/1 intake review (sourcing spine) —
       ...intakeReviewEn,
       // — SDC-1b planner consolidation —
@@ -696,6 +698,7 @@ export const resources = {
       // — Stage G · G1.2a plan grid —
       ...planGridId,
       ...modulesId,
+      ...flowBuilderId,
       // — Phase A/1 intake review (sourcing spine) —
       ...intakeReviewId,
       // — SDC-1b planner consolidation —

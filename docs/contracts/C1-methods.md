@@ -1,6 +1,6 @@
 # C1 — Method Surface
 
-Three distinct axes. **72** (service surface) · **141** (transition catalog) · **24** (wired
+Three distinct axes. **72** (service surface) · **143** (transition catalog) · **25** (wired
 targets). They measure different things; this file keeps them separate.
 
 > ⚠️ **THIS DOCUMENT IS PINNED TO THE TREE, AND THE PIN IS WHY THE NUMBERS ABOVE ARE ALLOWED TO
@@ -618,6 +618,39 @@ targets). They measure different things; this file keeps them separate.
 > criterion, `rfqSupplierView.toSupplierCriterion`: weights are shown) and **never `proposalScores`** —
 > the field is not on the supplier allowlist, so no score, total, rank or evaluator crosses, the
 > reader's own included. No service method was added.
+>
+> **RE-HARVEST (2026-10-12, FB-1).** A change to a process became a document. Catalog 141 → **143**
+> across 30 → **31** flows; wired targets 24 → **25**. Service surface unchanged (72). Moved by the pin
+> going red.
+> **A NEW MACHINE, `flowVersion.flow.ts`** (one state, `Draft`; no ending declared; its missing exit is
+> a `deferred-edge` row in the loose-end census). Two verbs, both atom `flow:draft`, held by
+> `compliance` (and so by `admin` and `super_admin`):
+> `t_flowversion_create` — a creation; required `flow` (the entity key of the process the change is
+> to) and `title`. Hooks, in this order: `flowversion_author_named` (`FLOWVERSION_AUTHOR_UNATTRIBUTED`:
+> the seat names nobody), then `flowversion_process_writable`, four refusals in this order:
+> `FLOWVERSION_PROCESS_UNKNOWN` (not a registered flow), `FLOWVERSION_PROCESS_SELF` (`flow` is
+> `flowVersion` itself), `FLOWVERSION_PROCESS_NOT_WRITABLE` (the flow has no `CommandTarget`),
+> `FLOWVERSION_TITLE_BLANK`.
+> `t_flowversion_save` — state-preserving, from `Draft`; required `content`. Hooks:
+> `flowversion_author_named`, then `flowversion_content_well_formed`: `FLOWVERSION_CONTENT_MALFORMED`
+> (not `{ entity, baseVersion, steps[], forks[], checks[] }` with well-shaped members), then
+> `FLOWVERSION_CONTENT_MOVED` (`entity` or `baseVersion` differs from the version's own).
+> **THE TARGET MINTS.** The store assigns `id` (`fv-<n>`), `seq` (per process, never reused), `label`
+> (`<shipped version>.<seq>`), `state`, `createdAt` / `savedAt` (the declared present) and takes
+> `createdBy` / `savedBy` from `scope.actor`; `baseVersion` is the registered flow's `version`, read at
+> creation. A payload value for any of them is ignored, and `createdBy` / `savedBy` joined
+> `ATTRIBUTION_KEYS`, so a payload carrying either is refused `ACTOR_IN_PAYLOAD`. `readScopeOwner` is
+> null: a supplier scope is refused at scope.
+> **A VERSION'S CONTENT IS ADDITIONS ONLY** (`services/flowBuilder/flowVersion.ts`): steps in front of
+> an existing transition, checks on one, forks. No field names a state, a required role, a required
+> field or a shipped policy hook. **Nothing in this batch reads a version at dispatch**: no dispatcher
+> dependency, no refusal kind and no event field was added, and no flow-builder module calls
+> `flowRegistry.register`.
+> **THE VALIDATION LIBRARY IS NOT A REFUSAL.** `validateVersion(content, world)` returns findings by
+> rule code (`R01`–`R08`, `R12`–`R19`; `R09`–`R11` are not built). No verb consults it yet; a stored
+> version is judged by it on read and reported, never dropped.
+> **Versions are kept in the browser** (`localStorage`, key `paragon.flowVersions`), not behind
+> `IDataService`: there is no read method for them on the service surface.
 
 Source of truth: `src/services/data/types.ts` (service + command types),
 `src/services/transitions/` (schema, dispatcher, flows).
@@ -683,7 +716,7 @@ the string, because those are different claims and only the first is the contrac
 
 ---
 
-## Axis 2 — the 141-transition catalog (30 flows)
+## Axis 2 — the 143-transition catalog (31 flows)
 
 Every authored state-machine edge across the registered flows (`id: 't_<entity>_<verb>'`). Derived
 from `getKnownFlows()` — the seeded registry — never from a grep over the flow files, because a
@@ -722,7 +755,8 @@ transition id can be assembled at a call site rather than written as a literal (
 | `forecastPublication.flow.ts` | `forecastPublication` | 7 | `t_publication_open`, `t_publication_allocate`, `t_publication_approve_firm`, `t_publication_publish`, `t_publication_discard`, `t_publication_supersede`, `t_publication_withdraw` | **wired** |
 | `moduleActivation.flow.ts` | `moduleActivation` | 1 | `t_module_set` | **wired** |
 | `materialRuling.flow.ts` | `materialRuling` | 1 | `t_material_ruling_set` | **wired** |
-| **TOTAL** | | **141** | | |
+| `flowVersion.flow.ts` | `flowVersion` | 2 | `t_flowversion_create`, `t_flowversion_save` | **wired** |
+| **TOTAL** | | **143** | | |
 
 **Flow shape** (`schema.ts`, `FlowDefinition` / `TransitionDef`): each transition declares
 `from[]` / `to` / `trigger` / `requiredRole` / `requiredFields[]` / `policyHooks[]` /
@@ -738,12 +772,12 @@ system reference is minted only on `settle` (see C5, SAP boundary).
 
 ---
 
-## Axis 3 — the 24 wired CommandTargets
+## Axis 3 — the 25 wired CommandTargets
 
-A `CommandTarget` is the per-entity adapter the dispatcher reads/writes through. **24 exist**, the
+A `CommandTarget` is the per-entity adapter the dispatcher reads/writes through. **25 exist**, the
 runtime export `WIRED_COMMAND_TARGETS` (`MockCommandService.ts` `TARGETS`):
 
-- **wired:** `purchaseOrder`, `advanceShipNotice`, `goodsReceipt`, `invoice`, `rfq`, `quotation`, `stageResponse`, `purchaseRequisition`, `intakeLine`, `supplierDocument`, `requirementResponse`, `inventoryDeclaration`, `incomingShipment`, `enforcement`, `role`, `supplierApplication`, `materialRequest`, `psl`, `pslCapSetting`, `deliveryRelease`, `deliveryPolicy`, `forecastPublication`, `moduleActivation`, `materialRuling`
+- **wired:** `purchaseOrder`, `advanceShipNotice`, `goodsReceipt`, `invoice`, `rfq`, `quotation`, `stageResponse`, `purchaseRequisition`, `intakeLine`, `supplierDocument`, `requirementResponse`, `inventoryDeclaration`, `incomingShipment`, `enforcement`, `role`, `supplierApplication`, `materialRequest`, `psl`, `pslCapSetting`, `deliveryRelease`, `deliveryPolicy`, `forecastPublication`, `moduleActivation`, `materialRuling`, `flowVersion`
 
 The interface is **7 members** (`dispatcher.ts`, `CommandTarget`):
 
@@ -776,9 +810,9 @@ pre-A2 target ignores the parameter.
 compare"** (§86). The dispatcher's supplier arm compares `owner !== scope.supplierId`
 unconditionally; a target that wants a supplier to reach a verb must NAME that supplier.
 
-### Wiring census (30 flows → 3 states)
+### Wiring census (31 flows → 3 states)
 
-- **24 behavior-wired** — have a `CommandTarget`, dispatch runs against in-memory stores. Named
+- **25 behavior-wired** — have a `CommandTarget`, dispatch runs against in-memory stores. Named
   above.
 - **2 rolled-up sub-flows** — authored, participate via terminal rollup (`grRollup.ts` /
   `invoiceRollup.ts`), **no standalone target**: `goodsReceiptLine`, `invoiceMatch`.

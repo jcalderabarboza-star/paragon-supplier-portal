@@ -1035,6 +1035,15 @@ export const POLICY_HOOKS = {
   GR_DISPOSER_NAMED: 'gr_disposer_named',
   /** ADM-1 — raising a goods receipt: the receipt records the NAMED receiver. */
   GR_RECEIVER_NAMED: 'gr_receiver_named',
+  // ── FB-1 · A CHANGE TO A PROCESS ───────────────────────────────────────────
+  /** Creating or saving a change: it is recorded against the person who wrote it. */
+  FLOWVERSION_AUTHOR_NAMED: 'flowversion_author_named',
+  /** Create: the process is registered, a command can write through it, and the
+   *  change has a title. */
+  FLOWVERSION_PROCESS_WRITABLE: 'flowversion_process_writable',
+  /** Save: the content is a list of steps, forks and checks, about the process
+   *  and the shipped version the change was created against. */
+  FLOWVERSION_CONTENT_WELL_FORMED: 'flowversion_content_well_formed',
 } as const;
 
 for (const name of Object.values(POLICY_HOOKS)) registerPolicyHook(name);

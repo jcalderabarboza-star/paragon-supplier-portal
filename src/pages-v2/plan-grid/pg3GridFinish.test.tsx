@@ -134,10 +134,12 @@ describe('PG-3 · in a narrow column a state carries a small mark beside its col
   const markOf = (c: HTMLElement) => c.querySelector('[data-testid=tp-cell-mark]');
 
   it('committed, pasted and dismissed each have their own mark — an icon, in the cell’s corner', async () => {
-    const { pasted } = await entries();
+    const { pasted, typed } = await entries();
     const cases = [
       ['committed', <PlanBucketCell key="c" value={100} derived={false} committed />],
       ['pasted', <PlanBucketCell key="p" value={100} derived={false} planned={pasted} />],
+      // FB-1 (operator ruling) — a typed change is not told by its tint alone.
+      ['planned', <PlanBucketCell key="t" value={100} derived={false} planned={typed} />],
       ['dismissed', <PlanBucketCell key="d" value={100} derived={false} dismissed />],
     ] as const;
     const drawn = new Set<string>();
@@ -154,7 +156,7 @@ describe('PG-3 · in a narrow column a state carries a small mark beside its col
       expect(mark.getAttribute('aria-hidden'), name).toBe('true');
       drawn.add(mark.querySelector('svg')!.innerHTML);
     }
-    expect(drawn.size).toBe(3); // three different drawings, not one icon in three colours
+    expect(drawn.size).toBe(cases.length); // a different drawing each, not one icon in four colours
   });
 
   it('a pasted figure that is committed underneath reads as PASTED — the overlay is what is shown', async () => {
@@ -163,13 +165,19 @@ describe('PG-3 · in a narrow column a state carries a small mark beside its col
     expect(markOf(c)!.getAttribute('data-mark')).toBe('pasted');
   });
 
-  it('KNOWN-GOOD — a typed change and a plain figure carry no mark; in a WIDE column nothing does, the word is printed', async () => {
+  it('a typed change over a committed figure reads as TYPED, and a pasted one is never drawn as typed', async () => {
     const { typed, pasted } = await entries();
-    expect(markOf(draw(api(), <PlanBucketCell value={100} derived={false} planned={typed} />))).toBeNull();
+    expect(markOf(draw(api(), <PlanBucketCell value={100} derived={false} planned={typed} committed />))!.getAttribute('data-mark')).toBe('planned');
+    expect(markOf(draw(api(), <PlanBucketCell value={100} derived={false} planned={pasted} />))!.getAttribute('data-mark')).toBe('pasted');
+  });
+
+  it('KNOWN-GOOD — a plain figure carries no mark; in a WIDE column nothing does, the word is printed', async () => {
+    const { typed, pasted } = await entries();
     expect(markOf(draw(api(), <PlanBucketCell value={100} derived={false} />))).toBeNull();
     for (const node of [
       <PlanBucketCell key="c" value={100} derived={false} committed />,
       <PlanBucketCell key="p" value={100} derived={false} planned={pasted} />,
+      <PlanBucketCell key="t" value={100} derived={false} planned={typed} />,
       <PlanBucketCell key="d" value={100} derived={false} dismissed />,
     ]) {
       expect(markOf(draw(api({ narrow: false }), node))).toBeNull();

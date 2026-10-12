@@ -291,6 +291,14 @@ export const processFlowPurposeEn: Record<string, string> = {
   'processFlows.purpose.t_material_ruling_set':
     'Compliance rules that halal or BPOM applies, or does not apply, to one material and says why. Receiving checks what the ruling says; a later ruling replaces it without erasing it.',
 
+  // ── flowVersion (FB-1) ────────────────────────────────────────
+  'processFlows.purpose.entity.flowVersion':
+    'A change to one of the processes on this page: steps, checks and forks added in front of acts the process already has. It can add a refusal and can never take one away, and it is kept with who wrote it and when.',
+  'processFlows.purpose.t_flowversion_create':
+    'Starts a change to one process and gives it a name and a number, so that what is being proposed can be found, read and argued with before anything runs differently.',
+  'processFlows.purpose.t_flowversion_save':
+    'Keeps what the change says so far. Nothing a saved change says is in force: a process runs as it shipped until a change has been approved and switched on.',
+
   // ── supplierDocument ───────────────────────────────────────────────────────
   'processFlows.purpose.entity.supplierDocument':
     'The paperwork Paragon must hold on a supplier — certificates, licences, bank details — and where each one stands.',
@@ -701,6 +709,14 @@ export const processFlowPurposeId: Record<string, string> = {
     'Apakah halal, atau BPOM, berlaku untuk suatu material — diputuskan oleh Kepatuhan, dengan penjelasannya, dan disimpan sebagai catatan siapa yang memutuskan dan kapan.',
   'processFlows.purpose.t_material_ruling_set':
     'Kepatuhan memutuskan bahwa halal atau BPOM berlaku, atau tidak berlaku, untuk satu material dan menyebutkan alasannya. Penerimaan memeriksa apa yang dikatakan keputusan itu; keputusan berikutnya menggantikannya tanpa menghapusnya.',
+
+  // ── flowVersion (FB-1) ────────────────────────────────────────
+  'processFlows.purpose.entity.flowVersion':
+    'Perubahan pada salah satu proses di halaman ini: langkah, pemeriksaan, dan percabangan yang ditambahkan di depan tindakan yang sudah dimiliki proses itu. Perubahan dapat menambah penolakan dan tidak pernah dapat menghilangkannya, dan disimpan bersama siapa yang menulisnya dan kapan.',
+  'processFlows.purpose.t_flowversion_create':
+    'Memulai perubahan pada satu proses serta memberinya nama dan nomor, sehingga apa yang diusulkan dapat ditemukan, dibaca, dan diperdebatkan sebelum ada yang berjalan berbeda.',
+  'processFlows.purpose.t_flowversion_save':
+    'Menyimpan isi perubahan sejauh ini. Tidak ada isi perubahan tersimpan yang berlaku: proses berjalan seperti saat dikirim sampai sebuah perubahan disetujui dan diaktifkan.',
 
   // ── supplierDocument ───────────────────────────────────────────────────────
   'processFlows.purpose.entity.supplierDocument':

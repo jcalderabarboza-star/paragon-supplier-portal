@@ -2946,6 +2946,14 @@ bindPolicyHook(
     'a goods receipt is recorded against the person who received the goods',
   ),
 );
+// FB-1 — a change to a process is written by somebody.
+bindPolicyHook(
+  POLICY_HOOKS.FLOWVERSION_AUTHOR_NAMED,
+  namedSeatHook(
+    'FLOWVERSION_AUTHOR_UNATTRIBUTED',
+    'a change to a process is recorded against the person who wrote it',
+  ),
+);
 bindPolicyHook(
   POLICY_HOOKS.GR_DISPOSER_NAMED,
   namedSeatHook(

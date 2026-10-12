@@ -70,6 +70,7 @@ export const GUIDE_LIST_ROUTE: Readonly<Record<string, string>> = Object.freeze(
   deliveryPolicy: '/buyer/delivery-agreements',
   deliveryRelease: '/buyer/delivery-agreements',
   enforcement: '/buyer/goods-receipt',
+  flowVersion: '/buyer/process-flows',
   forecastPublication: '/buyer/collaboration',
   goodsReceipt: '/buyer/goods-receipt',
   goodsReceiptLine: '/buyer/goods-receipt',

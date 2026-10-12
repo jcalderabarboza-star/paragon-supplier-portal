@@ -131,7 +131,7 @@ function buildModules(): readonly ModuleSpec[] {
         // ADM-1 — the Super Admin activity view. In PLT, so the record of what
         // a Super Admin did cannot be switched off.
         '/buyer/platform/super-admin-activity'],
-      flows: ['role', 'moduleActivation'],
+      flows: ['role', 'moduleActivation', 'flowVersion'],
       capabilities: ['identity', 'dashboard'], dependsOn: [], parts: [],
     },
     {

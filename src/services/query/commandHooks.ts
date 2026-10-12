@@ -1380,6 +1380,24 @@ export function useRoleGrant() {
   });
 }
 
+/**
+ * FB-1 — start a change to a process (`t_flowversion_create`). The store mints
+ * the id, the label and the stamps; who drafted it rides the scope.
+ */
+export function useFlowVersionCreate() {
+  const svc = useDataService();
+  const scope = useScope();
+
+  return useMutation<CommandResult, Error, { process: string; title: string }>({
+    mutationFn: ({ process, title }) =>
+      svc.commands.dispatch(scope, {
+        transitionId: 't_flowversion_create',
+        entity: 'flowVersion',
+        payload: { flow: process, title },
+      }),
+  });
+}
+
 // ── §67 · THE APPROVAL LANE — approve / reject, the two verbs procurement holds ─
 //
 // ⚠️ **THE GAP THIS CLOSES WAS NEVER A SURFACE.** `BuyerRequisitions` already

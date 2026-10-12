@@ -108,6 +108,8 @@ import { supplierDocumentStore } from '../data/mock/stores/supplierDocumentStore
 import { supplierApplicationStore } from '../data/mock/stores/supplierApplicationStore';
 import { materialRequestStore } from '../data/mock/stores/materialRequestStore';
 import { customRoleStore } from './customRoles';
+import { flowVersionStore } from '../flowBuilder/flowVersionStore';
+import { emptyContent } from '../flowBuilder/flowVersion';
 
 const svc = new MockCommandService();
 const ABSENT = 'zzz-no-such-entity-0000';
@@ -118,6 +120,20 @@ const buyerSeat = (...businessRoles: string[]): QueryScope => ({
   businessRoles,
   actor: NO_PERSON,
 });
+/** FB-1 — a change to a process is drafted by a NAMED Compliance person. */
+const namedCompliance: QueryScope = {
+  ...buyerSeat('compliance'),
+  actor: {
+    kind: 'RESOLVED',
+    person: { personId: SAMPLE_PEOPLE.find((x) => x.role === 'compliance')!.personId },
+  },
+};
+const draftAChange = () =>
+  svc.dispatch(namedCompliance, {
+    transitionId: 't_flowversion_create',
+    entity: 'flowVersion',
+    payload: { flow: 'purchaseRequisition', title: 'an ownerless-scope probe' },
+  });
 const supplierSeatOf = (supplierId: string, ...businessRoles: string[]): QueryScope => ({
   personaType: 'supplier',
   supplierId,
@@ -195,7 +211,12 @@ async function realIds(): Promise<Record<string, string | null>> {
     },
   });
 
+  // FB-1 — a change to a process is a WIRED owner-less target; drafted through
+  // the real verb, for the reason every other id here is real.
+  const drafted = await draftAChange();
+
   return {
+    flowVersion: drafted.entityId ?? null,
     purchaseOrder: purchaseOrderStore.all()[0]?.id ?? null,
     advanceShipNotice: asnStore.all()[0]?.asnNumber ?? null,
     goodsReceipt: goodsReceiptStore.all()[0]?.id ?? null,
@@ -321,6 +342,10 @@ async function walk(entity: string, t: TransitionDef): Promise<Walk | null> {
   if (entity === 'moduleActivation') return at('SHP', 'Governed');
   if (entity === 'materialRuling') return at('PK-CART-9901', 'Governed');
   if (entity === 'role') return at('receiving', 'Defined');
+  if (entity === 'flowVersion') {
+    const drafted = await draftAChange();
+    return drafted.entityId ? at(drafted.entityId, 'Draft') : null;
+  }
   if (entity === 'supplierApplication') {
     const raised = await svc.dispatch(buyerSeat('procurement'), {
       transitionId: 't_application_submit', entity,
@@ -363,6 +388,7 @@ const resetAll = () => {
   supplierApplicationStore.reset();
   materialRequestStore.reset();
   customRoleStore.reset();
+  flowVersionStore.reset();
 };
 
 beforeEach(resetAll);
@@ -427,6 +453,8 @@ describe('POPULATION — nothing below means anything without this', () => {
     expect(ownerless).toContain('moduleActivation');
     // OPS-2 — and so is the material applicability ruling ledger.
     expect(ownerless).toContain('materialRuling');
+    // FB-1 — a change to a process is Paragon's own governance record.
+    expect(ownerless).toContain('flowVersion');
     expect(ownerless).not.toContain('purchaseOrder');
     expect(ownerless).not.toContain('invoice');
     expect(ownerful).toContain('purchaseOrder');
@@ -537,6 +565,9 @@ describe('THE LEGITIMATE PATHS — the half a "refuse everyone" fix would break'
         'deliveryPolicy',
         'deliveryRelease',
         'enforcement',
+        // FB-1 — a change to a process: drafted, saved and (later) decided by
+        // Paragon. No supplier reads one or acts on one.
+        'flowVersion',
         // B4a — a forecast publication is Paragon's plan; a supplier READS it
         // through `getPublications` and never acts on one, so
         // `readScopeOwner: () => null` DENIES every supplier (§86).
@@ -760,5 +791,16 @@ describe('THE LEGITIMATE PATHS — the half a "refuse everyone" fix would break'
     });
     expect(switched.status, switched.reason).toBe('done');
     expect(moduleActivationStore.ledger()).toHaveLength(1);
+
+    // FB-1 — a change to a process LANDS: drafted, then saved by the holder.
+    const drafted = await draftAChange();
+    expect(drafted.status, drafted.reason).toBe('done');
+    const base = flowVersionStore.byId(drafted.entityId!)!.content.baseVersion;
+    const saved = await svc.dispatch(namedCompliance, {
+      transitionId: 't_flowversion_save', entity: 'flowVersion', entityId: drafted.entityId!,
+      payload: { content: emptyContent('purchaseRequisition', base) },
+    });
+    expect(saved.status, saved.reason).toBe('done');
+    expect(flowVersionStore.byId(drafted.entityId!)!.savedBy).toEqual(namedCompliance.actor);
   });
 });

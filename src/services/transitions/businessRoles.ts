@@ -360,6 +360,10 @@ const LANE_BUNDLES = Object.freeze({
       // The fifth governance atom here, for the same sentence: receiving is the
       // lane a ruling binds, so receiving cannot be the lane that makes it.
       'material:rule',
+      // ── FB-1 · DRAFTING A CHANGE TO A PROCESS (operator ruling, decision 3) ─
+      // The sixth governance atom here, for the same sentence: a lane cannot
+      // be the one that changes the process it is held to.
+      'flow:draft',
     ]),
     // The SDC / P2 planning lane. `inventorydeclaration:record` is the C4c
     // buyer RECORDING verb — a distinct authority from the supplier's
