@@ -33,6 +33,7 @@ import Button from '../../components/ui-v2/Button';
 import { FormField, Select, TextInput } from '../../components/ui-v2/Form';
 import { HandoffNotice } from '../../components/ui-v2/HandoffNotice';
 import Notice from '../../components/ui-v2/Notice';
+import { Card } from '../../components/ui-v2/Card';
 import StatusPill from '../../components/ui-v2/StatusPill';
 import PlanCellMarker from './PlanCellMarker';
 import IntakeAdjustDrawer from './IntakeAdjustDrawer';
@@ -308,7 +309,7 @@ export function intakeReviewColumns(
   ];
 }
 
-const IntakeReviewBody: React.FC = () => {
+const IntakeReviewBody: React.FC<{ aboutOpen: boolean }> = ({ aboutOpen }) => {
   const { t } = useTranslation();
   const intakeQuery = useIntakeReview();
   const lines = intakeQuery.data?.items ?? [];
@@ -325,23 +326,32 @@ const IntakeReviewBody: React.FC = () => {
 
   return (
     <div data-testid="tp-view-intake-review">
-      {/* The queue summary — a partition of the WHOLE population, by the machine's state. */}
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-        <div className="text-sm text-text-secondary" data-testid="intake-summary">
-          {t('intakeReview.meta.summary', {
-            total: formatNumber(counts.total),
-            pending: formatNumber(counts.pending),
-            committed: formatNumber(counts.committed),
-            dismissed: formatNumber(counts.dismissed),
-          })}
-        </div>
-        <HandoffNotice availability={api.availability} testId="handoff-intake-triage" />
+      {/* PG-2 · how the queue works is part of the page's "About this data" — in
+          the DOM always, shown when the planner asks — as the plan views' own
+          statements are since PG-1. It stood above the grid as a notice, and the
+          intake grid started 58% of the way down the screen. */}
+      <div hidden={!aboutOpen} data-testid="intake-about">
+        <Notice tone="info" icon={Info} title={t('intakeReview.honesty.title')} className="mb-2">
+          <p>{t('intakeReview.honesty.body')}</p>
+          <p className="mt-1">{t('intakeReview.adjustHint')}</p>
+        </Notice>
       </div>
 
-      <Notice tone="info" icon={Info} title={t('intakeReview.honesty.title')} className="mb-4">
-        <p>{t('intakeReview.honesty.body')}</p>
-        <p className="mt-1">{t('intakeReview.adjustHint')}</p>
-      </Notice>
+      {/* The queue summary — a partition of the WHOLE population, by the machine's
+          state — in ONE strip, as the plan views have. */}
+      <Card padding="none" className="mb-2" data-testid="intake-strip">
+        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 px-3 py-2 text-xs text-text-secondary">
+          <span data-testid="intake-summary">
+            {t('intakeReview.meta.summary', {
+              total: formatNumber(counts.total),
+              pending: formatNumber(counts.pending),
+              committed: formatNumber(counts.committed),
+              dismissed: formatNumber(counts.dismissed),
+            })}
+          </span>
+          <HandoffNotice availability={api.availability} testId="handoff-intake-triage" />
+        </div>
+      </Card>
 
       <div className="mb-3 flex flex-wrap items-center gap-3">
         <TextInput
@@ -416,9 +426,9 @@ const IntakeReviewBody: React.FC = () => {
   );
 };
 
-const IntakeReviewView: React.FC = () => (
+const IntakeReviewView: React.FC<{ aboutOpen?: boolean }> = ({ aboutOpen = false }) => (
   <IntakeTriageProvider>
-    <IntakeReviewBody />
+    <IntakeReviewBody aboutOpen={aboutOpen} />
   </IntakeTriageProvider>
 );
 

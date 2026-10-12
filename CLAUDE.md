@@ -967,6 +967,22 @@ nav groups under one neutral key, `nav.glossary`.
   (`ROW_H`) and band BY MATERIAL. **Derive what a view lists from `applyPlanView`, never from a
   sentence here.** One row per material, the measures menu and twelve months without sideways
   scroll are PG-2 and are not built.
+- ⚠️ **PG-2 (2026-10-11, operator rulings) — A CALM GRID, AND TWO SENTENCES ABOVE ARE OVERTAKEN,
+  QUOTED RATHER THAN EDITED.** *"The identity panel is a pop-up now, not a panel hanging from the
+  avatar"* and *"…are PG-2 and are not built"*. (1) **`Dialog` has an anchored form** (`anchor`):
+  the same pop-up hung from a control, with no dimmed page — same `role="dialog"`, focus trap,
+  Escape, click-outside and one-solid count. The identity panel hangs from the avatar again and
+  the measures menu from its button. (2) **A material is ONE row** — its shortfall per bucket
+  (`summaryRowOf`) — and opens on its own label to the measures chosen in the measures menu
+  (`flattenPlanRows` with a layout). An edit is still measured against EVERY row, open or not.
+  (3) **The horizon fits where the figures allow it** (`planColumnWidths`): a bucket column is as
+  wide as the widest figure, the key column takes what is left, and where that is not enough the
+  grid scrolls — a figure is never clipped. In a narrow column a marker's word is for a screen
+  reader and the cell shows the state. (4) **The reason is asked BEFORE the push**
+  (`plan-grid/PlanPushControls`, `fillMissingReasons`): one reason for every row of the push that owes one
+  and has none; a push that owes one dispatches nothing. (5) A drawer whose table is worked in it
+  is `SidePanel wide="table"`. **Derive what an open material shows from `readOpenMeasures` and
+  the view's `measuresShown`, never from a sentence here.**
 - WARNING token is a FILL/TEXT split (DP2-WARN-01), same shape as `action`:
   `warning.DEFAULT` = bright amber `#D97706` for every GRAPHICAL warning use
   (accent-edges, dots, bar fills, dials, chip fills, borders — 3.19:1 on white,

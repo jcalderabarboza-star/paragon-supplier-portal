@@ -208,7 +208,8 @@ describe('PG-1 · the plan reads in bands of materials', () => {
   it('the band alternates by MATERIAL — keyed on the material, never on the row index', () => {
     expect(grid).toMatch(/bandOf = useMemo\(\(\) => new Map\(visible\.map\(\(b, i\) => \[b\.materialCode, i % 2 === 1\]\)\)/);
     expect(grid).toMatch(/bandOf\.get\(rowData\.materialCode\) \? 'tp-band' : ''/);
-    expect(grid).toMatch(/rowData\.blockHead \? 'tp-head' : ''/);
+    // PG-2: a material's own row is its head; a row inside it is a detail row.
+    expect(grid).toMatch(/rowData\.blockHead \? 'tp-head' : 'tp-detail'/);
     expect(grid).not.toMatch(/rowIndex % 2/);
   });
 });

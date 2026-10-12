@@ -39,7 +39,7 @@ import { formatNumber } from '../../lib/format';
 import { planningSupplierName } from '../../services/planning/somoFixture';
 import { usePlanDraft, usePushStatus } from './PlanDraftProvider';
 import { INTAKE_TRIAGE_ATOM } from '../../services/transitions/flows/intakeLine.flow';
-import { blockedBy, magnitudeFlag, reasonOwed, type CellRefusal, type CellRefusalReason, type PlanDraftEntry } from './planDraft';
+import { blockedBy, magnitudeFlag, reasonMissing, reasonOwed, type CellRefusal, type CellRefusalReason, type PlanDraftEntry } from './planDraft';
 
 /** EXHAUSTIVE: every reason a cell edit can be refused has its own words. */
 export const CELL_REFUSAL_KEY: Record<CellRefusalReason, string> = {
@@ -142,6 +142,12 @@ export const usePushTargets = (selectedRefs: readonly string[]) => {
     plannedRefs: entries.filter(pushable).map((e) => e.seamRef),
     selected: selectedRefs.filter((r) => pushable(api?.draft.entries.get(r))),
     count: entries.length + (api?.draft.refusals.size ?? 0),
+    /** PG-2 · how many of these rows owe a reason and have none — asked BEFORE the push. */
+    missing: (refs: readonly string[]) =>
+      refs.filter((r) => {
+        const e = api?.draft.entries.get(r);
+        return e !== undefined && reasonMissing(e);
+      }).length,
   };
 };
 
@@ -153,7 +159,9 @@ export const PlannedChangesBar: React.FC<{
   selectedRefs: readonly string[];
   open: boolean;
   onToggle: () => void;
-}> = ({ selectedRefs, open, onToggle }) => {
+  /** PG-2 · a push that still owes a reason: open the drawer on the question instead of pushing. */
+  onAskReason?: () => void;
+}> = ({ selectedRefs, open, onToggle, onAskReason }) => {
   const { t } = useTranslation();
   const pushReason = usePushReasonText();
   const api = usePlanDraft();
@@ -176,6 +184,16 @@ export const PlannedChangesBar: React.FC<{
     return e?.planState === 'PLANNED' && canPush(e);
   });
   const owed = entries.filter((e) => e.planState === 'PLANNED' && blockedBy(e) === 'REASON_REQUIRED').length;
+  // PG-2 · the reason is asked BEFORE the push: a push that owes one goes to the
+  // drawer's question, and nothing is dispatched into a refusal.
+  const send = (refs: readonly string[]) => {
+    const missing = refs.some((r) => {
+      const e = draft.entries.get(r);
+      return e !== undefined && reasonMissing(e);
+    });
+    if (missing && onAskReason) onAskReason();
+    else void api.push(refs);
+  };
 
   return (
     <div className="sticky bottom-0 z-20 mt-3 space-y-2 pb-2" data-testid="plan-draft-bar">
@@ -253,7 +271,7 @@ export const PlannedChangesBar: React.FC<{
                   <Button
                     variant="secondary"
                     disabled={pushing || selected.length === 0}
-                    onClick={() => void api.push(selected)}
+                    onClick={() => send(selected)}
                     data-testid="plan-push-selection"
                   >
                     {t('planGrid.edit.push.selection', { n: formatNumber(selected.length) })}
@@ -261,7 +279,7 @@ export const PlannedChangesBar: React.FC<{
                   <Button
                     variant="outline"
                     disabled={pushing || plannedRefs.length === 0}
-                    onClick={() => void api.push(plannedRefs)}
+                    onClick={() => send(plannedRefs)}
                     data-testid="plan-push-all"
                   >
                     {pushing ? t('planGrid.push.pushing') : t('planGrid.edit.push.all', { n: formatNumber(plannedRefs.length) })}
@@ -427,7 +445,7 @@ export const PlannedChangesDetails: React.FC<{ open: boolean }> = ({ open }) => 
                 type="text"
                 aria-label={t('planGrid.edit.reasonFor', { cell: `${e.materialCode} ${e.bucket}` })}
                 placeholder={t('planGrid.push.reasonPlaceholder')}
-                className="w-56"
+                className="w-full min-w-[14rem]"
                 value={e.reason}
                 disabled={e.planState === 'PUSHING'}
                 onChange={(ev) => api.setReason(e.seamRef, ev.target.value)}
@@ -456,7 +474,9 @@ export const PlannedChangesDetails: React.FC<{ open: boolean }> = ({ open }) => 
           {canPush(e) && (
             <LinkButton
               className="mr-3"
-              disabled={pushing || e.planState !== 'PLANNED'}
+              // PG-2 · a row that owes a reason and has none is not pushed into a refusal.
+              disabled={pushing || e.planState !== 'PLANNED' || reasonMissing(e)}
+              title={reasonMissing(e) ? t('planGrid.push.reasonRequired') : undefined}
               onClick={() => void api.push([e.seamRef])}
               data-testid={`plan-push-row-${e.seamRef}`}
             >

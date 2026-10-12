@@ -262,8 +262,11 @@ const IdentityPanel: React.FC = () => {
       </button>
 
       {/* PG-1: the shared pop-up. It was a hand-drawn panel under the avatar with
-          its own `role="dialog"`, no focus trap and no scrim. */}
+          its own `role="dialog"`, no focus trap and no scrim.
+          PG-2 (operator ruling): it hangs from the avatar again — the shared
+          pop-up's anchored form, with the same focus trap, Escape and click-outside. */}
       <Dialog
+        anchor={buttonRef}
         open={open}
         onClose={() => setOpen(false)}
         title={t('identity.panel.title')}

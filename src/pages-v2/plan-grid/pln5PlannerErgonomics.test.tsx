@@ -25,7 +25,7 @@ import PlanGrid from '../PlanGrid';
 import TimePhasedGrid, { EditableBucketCell, PlanBucketCell, PlanRowLabel } from './TimePhasedGrid';
 import { PlanDraftProvider, usePlanDraft, type PlanDraftApi } from './PlanDraftProvider';
 import PublicationPanel from './PublicationPanel';
-import { buildPlanBlocks, exceptionReasons, isPlanException, type PlanExceptions, type PlanRow } from './planGridModel';
+import { buildPlanBlocks, exceptionReasons, isPlanException, summaryRowOf, type PlanExceptions, type PlanRow } from './planGridModel';
 import { visibleMeasures } from './visibleMeasures';
 import { EMPTY_DRAFT, applyEdit, applyPushOutcomes, applyUndo, diffEntries, removeEntries, setReason } from './planDraft';
 import { copyText, decideKey, type KeyContext, type KeyInput } from './gridKeys';
@@ -251,18 +251,28 @@ describe('PLN-5 · Ctrl+C copies the DISPLAYED values', () => {
 
 describe('PLN-5 · material labels are never truncated; the code is said once, the measure is a sub-label', () => {
   const LONG = 'Mono-Carton Box 70x40x180mm — Wardah Moisturizing Lotion';
-  const head = (): PlanRow => ({ ...demand('SIM-PM-0022'), materialLabel: LONG, blockHead: true });
+  // PG-2: the material's own row is built by the model (`summaryRowOf`), not by flagging a measure row.
+  const head = (): PlanRow => {
+    const out = derivePlanningFacts({ horizon: HORIZON, measures: MEASURES, materialCodes: ['SIM-PM-0022'] });
+    if (!out.ok) throw new Error('refused');
+    const block = buildPlanBlocks(out.facts, HORIZON, MEASURES)[0];
+    return summaryRowOf({ ...block, materialLabel: LONG }, HORIZON);
+  };
 
-  it('the block’s first row states the label WHOLE on its own line, with code · unit · measure under it', () => {
+  it('the material’s own row states the label WHOLE, with its code and unit — once, and never cut', () => {
     renderWithProviders(<PlanRowLabel row={head()} />);
     const label = screen.getByTestId('tp-material-label');
     expect(label.textContent).toBe(LONG);
-    expect(label.className).not.toMatch(/truncate|ellipsis/);
-    expect(label.className).toMatch(/whitespace-nowrap/);
     const row = screen.getByTestId('tp-row-label');
+    // nothing on the label or around it cuts it: in a narrow key column it wraps
+    for (const el of [label, row, ...row.querySelectorAll('span')]) {
+      expect(el.getAttribute('class') ?? '').not.toMatch(/truncate|ellipsis|line-clamp|overflow-hidden|whitespace-nowrap/);
+    }
     expect(row.textContent).toContain('SIM-PM-0022');
-    expect(within(row).getByTestId('tp-measure').textContent).toBe('Demand');
-    expect(row.className).not.toMatch(/truncate/);
+    expect(row.textContent!.split('SIM-PM-0022')).toHaveLength(2); // the code is said ONCE
+    expect(row).toHaveAttribute('title', expect.stringContaining(LONG));
+    // PG-2: the row is the material, not one of its measures — it names none
+    expect(within(row).queryByTestId('tp-measure')).toBeNull();
   });
 
   it('every other row states only its measure — no code, no label', () => {
@@ -439,7 +449,9 @@ describe('PLN-5 · the ID wording a planner reads (ruling)', () => {
     expect(planGridId['planGrid.tab.award']).toBe('Simulasi penetapan pemenang');
     expect(planGridId['planGrid.tab.intake']).toBe('Tinjauan usulan');
     expect(planGridId['planGrid.honesty.title']).toBe('Ruang uji perencanaan');
-    expect(planGridId['planGrid.tp.keyColumn']).toBe('Material · satuan · besaran');
+    // PG-2: the key column heads ONE row per material — the material and its shortfall.
+    expect(planGridId['planGrid.tp.keyColumn']).toBe('Material · kekurangannya');
+    expect(planGridId['planGrid.tp.measures.button']).toBe('Besaran · {{shown}} dari {{total}}');
     expect(planGridId['planGrid.push.reasonRequired']).toBe('Alasan diperlukan untuk mengirim penyesuaian');
   });
 

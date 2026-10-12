@@ -39,6 +39,7 @@ import {
   applyUndo,
   diffEntries,
   dismissRefusal,
+  fillMissingReasons,
   pushEntries,
   reconcile,
   removeEntries,
@@ -80,6 +81,11 @@ export interface PlanDraftApi {
   undo(): number;
   dismissRefusal(key: string): void;
   push(seamRefs: readonly string[]): Promise<void>;
+  /**
+   * PG-2 · the reason asked BEFORE the push: it goes onto each of these rows
+   * that owes one and has none, and then they are pushed — one act.
+   */
+  pushWithReason(seamRefs: readonly string[], reason: string): Promise<void>;
   reconcile(seam: (seamRef: string) => SeamCell | undefined): void;
 }
 
@@ -145,7 +151,10 @@ export const PlanDraftProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   const push = useCallback<PlanDraftApi['push']>(
     async (seamRefs) => {
-      const rows = seamRefs.map((ref) => draft.entries.get(ref)).filter((e) => e !== undefined);
+      // PG-2 · the LATEST overlay, not this render's: a reason written in the
+      // same tick as the push (`pushWithReason`) must be on the rows it sends.
+      const sent = draftRef.current;
+      const rows = seamRefs.map((ref) => sent.entries.get(ref)).filter((e) => e !== undefined);
       if (rows.length === 0) return;
       setPushing(true);
       setLast(null);
@@ -160,14 +169,14 @@ export const PlanDraftProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         setLast(summarizePush(outcomes));
         // ⚠️ ONE refresh, after the last row — never one per row (PLN-4).
         const went = (alloc: boolean) =>
-          outcomes.some((o) => o.kind === 'dispatched' && (draft.entries.get(o.seamRef)?.measureId === 'allocation') === alloc);
+          outcomes.some((o) => o.kind === 'dispatched' && (sent.entries.get(o.seamRef)?.measureId === 'allocation') === alloc);
         b.refresh({ intake: went(false), allocate: went(true) });
       } finally {
         setProgress(null);
         setPushing(false);
       }
     },
-    [draft, convention],
+    [convention],
   );
 
   const api = useMemo<PlanDraftApi>(
@@ -204,6 +213,10 @@ export const PlanDraftProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       },
       dismissRefusal: (key) => setDraft((d) => dismissRefusal(d, key)),
       push,
+      pushWithReason: (refs, reason) => {
+        update((d) => fillMissingReasons(d, refs, reason).draft);
+        return push(refs);
+      },
       reconcile: (seam) => setDraft((d) => reconcile(d, seam)),
     }),
     [draft, convention, pushing, edit, paste, push, update],

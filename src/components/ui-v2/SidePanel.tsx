@@ -64,9 +64,16 @@ interface SidePanelProps {
   title: string;
   children: React.ReactNode;
   footerActions?: React.ReactNode;
-  /** PG-1: a drawer that holds a table — the planned changes, the publication ledger. */
-  wide?: boolean;
+  /**
+   * PG-1: a drawer that holds a table — the publication ledger.
+   * PG-2: `"table"` is wider still, for a table whose rows are worked in the
+   * drawer (the planned changes: a reading, a reason field and two actions a row).
+   */
+  wide?: boolean | 'table';
 }
+
+// i18n-defer: Tailwind class names, not copy — they reach `className`, never a reader.
+const WIDTH = { narrow: 'sm:w-[480px]', wide: 'sm:w-[760px]', table: 'sm:w-[1040px]' } as const;
 
 const SidePanel: React.FC<SidePanelProps> = ({
   open,
@@ -106,8 +113,8 @@ const SidePanel: React.FC<SidePanelProps> = ({
         data-solid-scope=""
         role="dialog"
         aria-modal="true"
-        data-wide={wide ? '' : undefined}
-        className={`fixed top-0 right-0 z-50 h-screen w-full ${wide ? 'sm:w-[760px]' : 'sm:w-[480px]'} max-w-full bg-bg-surface shadow-md border-l border-border-subtle flex flex-col animate-panel-in`}
+        data-wide={wide === 'table' ? 'table' : wide ? '' : undefined}
+        className={`fixed top-0 right-0 z-50 h-screen w-full ${WIDTH[wide === 'table' ? 'table' : wide ? 'wide' : 'narrow']} max-w-full bg-bg-surface shadow-md border-l border-border-subtle flex flex-col animate-panel-in`}
       >
         <header className="flex items-center justify-between gap-4 px-6 py-5 border-b border-border-subtle">
           <SectionHeading as="h2" className="truncate">
