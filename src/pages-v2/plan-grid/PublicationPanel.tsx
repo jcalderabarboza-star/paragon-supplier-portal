@@ -43,7 +43,7 @@ import { useVerbAvailabilities } from '../../hooks/useVerbAvailability';
 import { useRefusalText } from '../../hooks/useRefusalText';
 import { formatDate, formatNumber } from '../../lib/format';
 import type { TFunction } from 'i18next';
-import { planningSupplierName } from '../../services/planning/somoFixture';
+import { supplierNameOf } from '../../services/masterData/lookup';
 import { usePublicationAct } from '../../services/query/commandHooks';
 import { usePublicationWorkspace } from '../../services/query/sdcBuyerHooks';
 import {
@@ -61,7 +61,7 @@ import type { VerbAvailability } from '../../services/transitions/handoff';
 import PublicationLedger from './PublicationLedger';
 
 // PLN-2 · names from the planning supplier master, one resolver for every planning surface.
-const supplierName = planningSupplierName;
+const supplierName = supplierNameOf;
 
 /** The working draft of a grain: the LATEST opened (the store's own rule). */
 export function draftOfGrain(records: readonly PublicationDocument[], grain: BucketGrain): PublicationDocument | null {

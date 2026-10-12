@@ -69,7 +69,7 @@ export interface Provenance {
  * (addendum §3). SIMULATED starter set; the real material master extends it. A
  * qty field never picks a unit — it inherits its material's `canonicalUom`.
  */
-export type Uom = 'KG' | 'PCS' | 'L' | 'ROLL';
+export type Uom = 'KG' | 'PCS' | 'L' | 'ROLL' | 'MT' | 'BOX';
 
 // ─── Material master (addendum §3/§10 — ruling (b)-minimal) ───────────────────
 // The small SIMULATED master C7's GG-4 anticipated but never built: the ONE home

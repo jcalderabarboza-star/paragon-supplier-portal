@@ -26,7 +26,7 @@ import TimePhasedGrid from './plan-grid/TimePhasedGrid';
 import type { BucketGrain } from '../services/planning/bucket';
 import { PlanDraftProvider } from './plan-grid/PlanDraftProvider';
 import { useQuotations } from '../services/query/hooks';
-import { planningSupplierName } from '../services/planning/somoFixture';
+import { supplierNameOf } from '../services/masterData/lookup';
 import {
   AWARD_CRITERIA,
   DEFAULT_WEIGHTS,
@@ -65,7 +65,7 @@ const DSG_H = { weights: 88, award: 176 } as const;
 const dsgVar = (h: number) => ({ '--plan-dsg-h': `${h}px` }) as React.CSSProperties;
 
 // PLN-2 · names from the planning supplier master, one resolver for every planning surface.
-const supplierName = planningSupplierName;
+const supplierName = supplierNameOf;
 
 // dataCell/textCell (the read-only mono/sans cell helpers) moved to the shared
 // ./plan-grid/cells module when the SDC consolidation grid became the second

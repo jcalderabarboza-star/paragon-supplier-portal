@@ -33,7 +33,7 @@ import ErrorState from '../components/ui-v2/ErrorState';
 import EmptyState from '../components/ui-v2/EmptyState';
 import { useInventory } from '../services/query/hooks';
 import { useOwnInventoryDeclarations } from '../services/query/sdcSupplierHooks';
-import { publishedLabelOf } from '../services/planning/publishedMaterial';
+import { labelOf } from '../services/sdc/materialMaster';
 import { formatDate, formatNumber } from '../lib/format';
 import { CHART_MID, CHART_SEMANTIC } from '../lib/chartPalette';
 
@@ -353,7 +353,7 @@ const SupplierInventory: React.FC = () => {
                 cell: (d) => (
                   <>
                     <Data>{d.materialCode}</Data>
-                    <CellSub>{publishedLabelOf(d.materialCode)}</CellSub>
+                    <CellSub>{labelOf(d.materialCode)}</CellSub>
                   </>
                 ),
               },

@@ -1,4 +1,4 @@
-import { incotermOptions, paymentTermOptions } from './master-data/referencePickers';
+import { incotermOptions, paymentTermOptions, unitOptions } from './master-data/referencePickers';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   FileText,
@@ -2534,9 +2534,9 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                   )
                 }
               >
-                {UOM_OPTIONS.map((u) => (
-                  <option key={u} value={u}>
-                    {u}
+                {unitOptions(UOM_OPTIONS).map((o) => (
+                  <option key={o.key} value={o.key}>
+                    {o.label}
                   </option>
                 ))}
               </Select>

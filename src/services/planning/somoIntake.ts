@@ -30,6 +30,7 @@
 // enumerates them for the one read; a line is still ANSWERED on demand by id.
 // ────────────────────────────────────────────────────────────────────────────
 
+import { materialMasterView } from '../masterData/materialMasterView';
 import type { PrIntakeLine } from '../data/types';
 import { parseBucket, type BucketGrain, type BucketId } from './bucket';
 import { somoHorizon } from './facts';
@@ -40,7 +41,6 @@ import {
   generatedUnitPrice,
   isGeneratedMaterial,
   planningGrainOf,
-  planningMaster,
 } from './somoFixture';
 
 const PREFIX = 'pil-somo-';
@@ -87,7 +87,7 @@ function lineOf(materialCode: string, bucket: BucketId): PrIntakeLine | null {
   const parts = { materialCode, bucket };
   const suggested = generatedSuggested(parts.materialCode, parts.bucket);
   if (suggested === null) return null;
-  const entry = planningMaster()[parts.materialCode];
+  const entry = materialMasterView()[parts.materialCode];
   return Object.freeze({
     id,
     material: entry.label,

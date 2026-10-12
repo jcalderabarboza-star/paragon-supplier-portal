@@ -4,7 +4,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 import { beforeEach, describe, expect, it } from 'vitest';
 import { materialRecords, recordOf, recordsOf, syncRuns } from './replica';
-import { SEED_RUN_ID } from './seed';
+import { PLANNING_SAMPLE_RUN_ID, SEED_RUN_ID } from './seed';
 import { applySyncRun, ensureSeeded, resetReplica } from './syncApplier';
 import { SYNC_REFUSAL_REASONS, type InboundRecord, type InboundRun, type MaterialData, type SyncRefusalReason } from './types';
 
@@ -89,7 +89,7 @@ describe('MD-1 · an inbound record replaces the whole record and the sync log k
     const second = applySyncRun({ ...inbound, records: [material(CODE, { ...SEEDED, description: 'Something else' })] });
     expect(second).toBe(first);
     expect(JSON.stringify(materialRecords())).toBe(snapshot);
-    expect(syncRuns().map((r) => r.id)).toEqual(['RUN-2', SEED_RUN_ID]);
+    expect(syncRuns().map((r) => r.id)).toEqual(['RUN-2', PLANNING_SAMPLE_RUN_ID, SEED_RUN_ID]);
   });
 });
 
@@ -103,8 +103,8 @@ describe('MD-1 · an inbound value the replica cannot hold is refused by name an
   });
 
   it('an inbound unit outside the union is refused by name, logged, and the replica keeps its version', () => {
-    const row = applySyncRun(run('RUN-2', [material(CODE, { ...SEEDED, baseUnit: 'MT' })]));
-    expect(row.refused).toEqual([{ object: 'material', key: CODE, reason: 'UNKNOWN_UNIT', value: 'MT' }]);
+    const row = applySyncRun(run('RUN-2', [material(CODE, { ...SEEDED, baseUnit: 'DRUM' })]));
+    expect(row.refused).toEqual([{ object: 'material', key: CODE, reason: 'UNKNOWN_UNIT', value: 'DRUM' }]);
     expect(row).toMatchObject({ created: 0, changed: 0, unchanged: 0 });
     expect(recordOf('material', CODE)?.data).toEqual(SEEDED);
     expect(recordOf('material', CODE)?.stamp.syncRun).toBe(SEED_RUN_ID);
@@ -112,9 +112,9 @@ describe('MD-1 · an inbound value the replica cannot hold is refused by name an
   });
 
   it('a unit the unit table would gain is refused too: the table stays inside the union', () => {
-    const row = applySyncRun(run('RUN-2', [{ object: 'unit', key: 'MT', data: { text: 'Metric ton' } }]));
-    expect(row.refused).toEqual([{ object: 'unit', key: 'MT', reason: 'UNKNOWN_UNIT', value: 'MT' }]);
-    expect(recordOf('unit', 'MT')).toBeNull();
+    const row = applySyncRun(run('RUN-2', [{ object: 'unit', key: 'DRUM', data: { text: 'Drum' } }]));
+    expect(row.refused).toEqual([{ object: 'unit', key: 'DRUM', reason: 'UNKNOWN_UNIT', value: 'DRUM' }]);
+    expect(recordOf('unit', 'DRUM')).toBeNull();
   });
 
   it('a material type outside the union is refused by name, on the record and on the table', () => {
@@ -145,7 +145,7 @@ describe('MD-1 · an inbound value the replica cannot hold is refused by name an
         run('RUN-2', [
           { object: 'bank', key: 'B-1', data: {} },
           material('', SEEDED),
-          material(CODE, { ...SEEDED, baseUnit: 'MT' }),
+          material(CODE, { ...SEEDED, baseUnit: 'DRUM' }),
           material(CODE, { ...SEEDED, materialType: 'HALB' }),
           material(CODE, { description: '' }),
         ]),
@@ -160,6 +160,7 @@ describe('MD-1 · a record missing from a full run is marked not read, never del
 
   it('a full run that carries one material marks every other one, and deletes none', () => {
     const before = materialRecords().length;
+    const deliveredBy = new Map(materialRecords().map((m) => [m.key, m.stamp.syncRun]));
     const row = applySyncRun(run('RUN-FULL', [material(CODE, SEEDED)], { mode: 'FULL', objects: ['material'], source: 'SAMPLE' }));
     expect(materialRecords()).toHaveLength(before);
     expect(row.missing).toBe(before - 1);
@@ -168,7 +169,7 @@ describe('MD-1 · a record missing from a full run is marked not read, never del
       const record = recordOf('material', key);
       expect(record?.stamp.missingFromRun, key).toBe('RUN-FULL');
       // Still the version it had: the mark changes nothing else.
-      expect(record?.stamp.syncRun, key).toBe(SEED_RUN_ID);
+      expect(record?.stamp.syncRun, key).toBe(deliveredBy.get(key));
     }
   });
 
@@ -185,7 +186,7 @@ describe('MD-1 · a record missing from a full run is marked not read, never del
   });
 
   it('a record the full run carried and refused is not marked missing', () => {
-    const row = applySyncRun(run('RUN-FULL', [material(CODE, { ...SEEDED, baseUnit: 'MT' })], { mode: 'FULL', objects: ['material'] }));
+    const row = applySyncRun(run('RUN-FULL', [material(CODE, { ...SEEDED, baseUnit: 'DRUM' })], { mode: 'FULL', objects: ['material'] }));
     expect(row.refused).toHaveLength(1);
     expect(recordOf('material', CODE)?.stamp.missingFromRun).toBeNull();
   });

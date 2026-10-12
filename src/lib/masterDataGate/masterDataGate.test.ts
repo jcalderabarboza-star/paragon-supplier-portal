@@ -163,3 +163,36 @@ describe('MD-2 · every option list for a value with a reference table is read f
     expect(named.join()).not.toContain('WORDS');
   });
 });
+
+describe('MD-2b · one resolver — nothing in the product asks the planning fixture what a material or a supplier is', () => {
+  const SECOND_RESOLVER = /\b(planningMaster|planningSupplierName|publishedLabelOf|publishedUomOf|publishedMaterialMaster)\s*\(/;
+  const callers = (files: SourceFiles): string[] =>
+    Object.keys(files).filter((f) => f !== 'services/planning/somoFixture.ts' && SECOND_RESOLVER.test(files[f])).sort();
+
+  it('⚠ CONTROL — the planning fixture still declares its own record, and the scan sees it there', () => {
+    expect(SECOND_RESOLVER.test(PRODUCT['services/planning/somoFixture.ts'].replace('export const planningMaster = ()', 'planningMaster()'))).toBe(true);
+    expect(PRODUCT['services/planning/somoFixture.ts']).toMatch(/export const planningMaster\b/);
+  });
+
+  it('the second resolver is gone: its module is deleted and no product file calls its functions', () => {
+    expect(Object.keys(PRODUCT)).not.toContain('services/planning/publishedMaterial.ts');
+    expect(callers(PRODUCT)).toEqual([]);
+  });
+
+  it('⚠ PROBE — the calls the tree really carried, put back, are named', () => {
+    const restored: SourceFiles = {
+      ...PRODUCT,
+      'pages-v2/Restored.tsx': 'const label = publishedLabelOf(code);',
+      'services/data/mock/Restored.ts': 'requireUom(code, planningMaster());',
+      'pages-v2/plan-grid/Restored.tsx': 'const supplierName = planningSupplierName(id);',
+      'pages-v2/Innocent.tsx': 'const note = "planningMaster is retired";',
+    };
+    expect(callers(restored)).toEqual(['pages-v2/Restored.tsx', 'pages-v2/plan-grid/Restored.tsx', 'services/data/mock/Restored.ts']);
+  });
+
+  it('the unit pickers read the unit table: the requisition form keeps no unit list', () => {
+    expect(declaredLists(PRODUCT).map((l) => `${l.file}::${l.name}`)).not.toContain('pages-v2/BuyerRequisitions.tsx::UOM_OPTIONS');
+    expect(PRODUCT['pages-v2/BuyerRequisitions.tsx']).toMatch(/unitOptions\(\)/);
+    expect(PRODUCT['pages-v2/BuyerSourcing.tsx']).toMatch(/unitOptions\(UOM_OPTIONS\)/);
+  });
+});

@@ -10,11 +10,12 @@ import { halalOf } from '../sdc/halal';
 import { isKnownMaterial, knownMaterialCodes, labelOf, materialEntry, requireUom, uomOf } from '../sdc/materialMaster';
 import {
   costCentreOptions,
+  unitOptions,
   incotermOptions,
   paymentTermOptions,
   receivingLocationOptions,
 } from '../../pages-v2/master-data/referencePickers';
-import { isKnownReference, referenceOptions, referenceText, supplierOf } from './lookup';
+import { isKnownReference, isSampleMaterial, referenceOptions, referenceText, supplierNameOf, supplierOf } from './lookup';
 import { materialMasterView } from './materialMasterView';
 import { recordsOf } from './replica';
 import { applySyncRun, ensureSeeded, resetReplica } from './syncApplier';
@@ -37,8 +38,8 @@ beforeEach(() => {
 });
 
 describe('MD-2 · a material resolves through one lookup, and the lookup reads the replica', () => {
-  it('⚠ CONTROL — seeded, the view equals the fixture row for row, annotations included', () => {
-    expect(Object.keys(materialMasterView())).toEqual(Object.keys(MATERIAL_MASTER));
+  it('⚠ CONTROL — seeded, the view equals the fixture row for row on the authored materials, annotations included', () => {
+    expect(Object.keys(materialMasterView()).filter((c) => !isSampleMaterial(c))).toEqual(Object.keys(MATERIAL_MASTER));
     for (const code of Object.keys(MATERIAL_MASTER)) {
       expect(materialMasterView()[code], code).toEqual(MATERIAL_MASTER[code]);
     }
@@ -91,7 +92,7 @@ describe('MD-2 · a material resolves through one lookup, and the lookup reads t
   });
 
   it('a refused inbound record changes nothing a lookup returns', () => {
-    applySyncRun(run('RUN-2', [{ object: 'material', key: CODE, data: { ...SEEDED, baseUnit: 'MT', description: 'Never taken' } }]));
+    applySyncRun(run('RUN-2', [{ object: 'material', key: CODE, data: { ...SEEDED, baseUnit: 'DRUM', description: 'Never taken' } }]));
     expect(requireUom(CODE)).toBe('KG');
     expect(labelOf(CODE)).toBe('Coconut Fatty Acid Distillate (CFAD)');
   });
@@ -157,5 +158,70 @@ describe('MD-2 · the pickers offer what the reference tables hold', () => {
     expect(incotermOptions().map((o) => o.key)).toEqual(['FOB', 'CIF', 'DDP', 'FCA']);
     expect(isKnownReference('incoterm', 'EXW')).toBe(true);
     expect(referenceText('incoterm', 'EXW')).toBe('Ex Works');
+  });
+});
+
+describe('MD-2b · one resolver — the planning sample set is in the replica, and nothing answers for it but the one lookup', () => {
+  it('a generated sample material resolves through the same lookup as an authored one', () => {
+    expect(isKnownMaterial('SIM-PM-0002')).toBe(true);
+    expect(labelOf('SIM-PM-0002')).toBe('Sample packaging 0002');
+    expect(uomOf('SIM-PM-0002')).toEqual({ ok: true, uom: 'PCS' });
+    expect(requireUom('SIM-RM-0001')).toBe('KG');
+    expect(labelOf(CODE)).toBe('Coconut Fatty Acid Distillate (CFAD)');
+  });
+
+  it('sample is the run that delivered the record, never the prefix on its code', () => {
+    expect(isSampleMaterial('SIM-PM-0002')).toBe(true);
+    expect(isSampleMaterial(CODE)).toBe(false);
+    for (const invented of ['SIM-PM-9999', 'SIM-XX-0002', 'SIM-']) {
+      expect(isSampleMaterial(invented), invented).toBe(false);
+      expect(isKnownMaterial(invented), invented).toBe(false);
+    }
+    // A material SAP delivers under a SIM-looking code is not a generated sample.
+    applySyncRun(run('RUN-2', [{ object: 'material', key: 'SIM-FROM-SAP', data: SEEDED }]));
+    expect(isKnownMaterial('SIM-FROM-SAP')).toBe(true);
+    expect(isSampleMaterial('SIM-FROM-SAP')).toBe(false);
+  });
+
+  it('a generated sample material is undetermined for halal and BPOM, as any unruled material is', () => {
+    expect(materialMasterView()['SIM-RM-0001']).toMatchObject({ bpomApplicable: 'UNDETERMINED', halalApplicable: 'UNDETERMINED' });
+    expect(bpomOf('SIM-RM-0001').ok).toBe(false);
+  });
+
+  it('a supplier name comes from the replica for an authored supplier and a generated one; an unknown id is echoed', () => {
+    expect(supplierNameOf('sup-002')).toBe('PT Sample Specialty Fats');
+    expect(supplierNameOf('sup-sim-013')).toBe('Sample supplier 013');
+    expect(supplierNameOf('sup-sim-041')).toBe('sup-sim-041');
+    applySyncRun(run('RUN-2', [{ object: 'supplier', key: 'BP-10001235', data: { portalSupplierId: 'sup-002', name: 'Renamed in SAP', country: 'ID', city: 'Medan' } }]));
+    expect(supplierNameOf('sup-002')).toBe('Renamed in SAP');
+  });
+});
+
+describe('MD-2b · MT and BOX are in the unit table, and the unit pickers read it', () => {
+  it('the unit table holds the two units the forms used to list for themselves', () => {
+    expect(referenceText('unit', 'MT')).toBe('Metric ton');
+    expect(referenceText('unit', 'BOX')).toBe('Box');
+    expect(isKnownReference('unit', 'DRUM')).toBe(false);
+  });
+
+  it('the requisition form offers every unit in the table, the five it offered before among them', () => {
+    const offered = unitOptions().map((o) => o.key);
+    for (const unit of ['KG', 'L', 'PCS', 'MT', 'BOX']) expect(offered, unit).toContain(unit);
+    expect(offered).toEqual(recordsOf('unit').map((u) => u.key));
+    expect(unitOptions().find((o) => o.key === 'MT')?.label).toBe('MT · Metric ton');
+  });
+
+  it('the sourcing wizard offers the table’s units that a sourcing event accepts, and no other', () => {
+    expect(unitOptions(['KG', 'PCS', 'L', 'MT']).map((o) => o.key).sort()).toEqual(['KG', 'L', 'MT', 'PCS']);
+    // A unit the form accepts and the table does not hold is never offered.
+    expect(unitOptions(['KG', 'DRUM']).map((o) => o.key)).toEqual(['KG']);
+  });
+
+  it('a material may now be held in MT, and a unit outside the table is still refused', () => {
+    applySyncRun(run('RUN-2', [{ object: 'material', key: CODE, data: { ...SEEDED, baseUnit: 'MT' } }]));
+    expect(requireUom(CODE)).toBe('MT');
+    const row = applySyncRun(run('RUN-3', [{ object: 'material', key: CODE, data: { ...SEEDED, baseUnit: 'DRUM' } }]));
+    expect(row.refused.map((r) => r.reason)).toEqual(['UNKNOWN_UNIT']);
+    expect(requireUom(CODE)).toBe('MT');
   });
 });

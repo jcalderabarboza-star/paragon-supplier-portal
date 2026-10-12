@@ -102,6 +102,10 @@ export const complianceEn: Record<string, string> = {
   'compliance.queue.title': 'Declared certificates awaiting review',
   'compliance.applicability.title':
     'Material applicability — halal and BPOM',
+  'compliance.applicability.samplesNotListed_one':
+    '{{count}} generated sample material is not listed: it exists to show the plan grid at volume.',
+  'compliance.applicability.samplesNotListed_other':
+    '{{count}} generated sample materials are not listed: they exist to show the plan grid at volume.',
   'compliance.applicability.subtitle':
     'Whether halal, and whether BPOM, applies to each material. Receiving checks what is recorded here: where a regime applies it asks for the check, and for halal a valid certificate on file; where it does not apply the line passes and shows the ruling. A material with no answer cannot be received until Compliance rules. Every ruling carries a reason and the person who made it, and a later ruling replaces it without erasing it.',
   'compliance.applicability.filter.pending':
@@ -368,6 +372,8 @@ export const complianceId: Record<string, string> = {
   'compliance.queue.title': 'Sertifikat yang dinyatakan, menunggu tinjauan',
   'compliance.applicability.title':
     'Penerapan material — halal dan BPOM',
+  'compliance.applicability.samplesNotListed_other':
+    '{{count}} material sampel hasil pembangkitan tidak ditampilkan: material itu ada untuk menunjukkan kisi rencana dalam volume besar.',
   'compliance.applicability.subtitle':
     'Apakah halal, dan apakah BPOM, berlaku untuk tiap material. Penerimaan memeriksa apa yang tercatat di sini: bila suatu rezim berlaku, pemeriksaannya diminta, dan untuk halal sertifikat yang berlaku harus tercatat; bila tidak berlaku, baris lolos dan menampilkan keputusannya. Material tanpa jawaban tidak dapat diterima sampai Kepatuhan memutuskan. Setiap keputusan memuat alasan dan orang yang membuatnya, dan keputusan berikutnya menggantikannya tanpa menghapusnya.',
   'compliance.applicability.filter.pending':

@@ -75,7 +75,7 @@ import type { PrIntakeLine, PRPriority } from '../../services/data/types';
 import type { BucketId } from '../../services/planning/bucket';
 import type { MaterialType } from '../../services/sdc/types';
 import type { SystemRoleId } from '../../services/transitions/businessRoles';
-import { planningMaster } from '../../services/planning/somoFixture';
+import { materialMasterView } from '../../services/masterData/materialMasterView';
 import { parseSomoIntakeLineId } from '../../services/planning/somoIntake';
 import { isQtyAdjusted } from '../plan-grid/planGridModel';
 
@@ -167,7 +167,7 @@ export const CATEGORY_OF_TYPE: Readonly<Record<MaterialType, string>> = Object.f
  */
 export function intakeCategory(line: Pick<PrIntakeLine, 'id'>): string | undefined {
   const parts = parseSomoIntakeLineId(line.id);
-  const entry = parts ? planningMaster()[parts.materialCode] : undefined;
+  const entry = parts ? materialMasterView()[parts.materialCode] : undefined;
   return entry ? `${CATEGORY_OF_TYPE[entry.materialType]} · ${entry.materialGroup}` : undefined;
 }
 

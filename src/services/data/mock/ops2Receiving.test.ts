@@ -6,6 +6,8 @@
 // stores. Populations are derived from the stores, the flows and the material
 // master; where a claim is about a value, a named member is pinned.
 // ────────────────────────────────────────────────────────────────────────────
+import { isSampleMaterial } from '../../masterData/lookup';
+import { materialMasterView } from '../../masterData/materialMasterView';
 import { describe, it, expect, beforeEach } from 'vitest';
 import { MockCommandService } from './MockCommandService';
 import { mockDataService } from './mockDataService';
@@ -399,7 +401,15 @@ describe('OPS-2 · material applicability — the default, the ruling and the le
   });
 
   it('the Compliance rows cover the whole master, and say pending exactly where BPOM is pending', () => {
-    const rows = materialApplicabilityRows([]);
+    // MD-2b — the master also holds the planning fixture's generated sample
+    // materials, every one undetermined. The rows cover the WHOLE master; the
+    // three claims this spec has always made are about the authored materials.
+    const everyRow = materialApplicabilityRows([]);
+    expect(everyRow.map((r) => r.materialCode)).toEqual(Object.keys(materialMasterView()));
+    const samples = everyRow.filter((r) => isSampleMaterial(r.materialCode));
+    expect(samples.length).toBeGreaterThan(0);
+    expect(samples.every((r) => !r.bpom.ok && !r.halal.ok)).toBe(true);
+    const rows = everyRow.filter((r) => !isSampleMaterial(r.materialCode));
     expect(rows.map((r) => r.materialCode)).toEqual(Object.keys(MATERIAL_MASTER));
     expect(rows.filter((r) => !r.bpom.ok).map((r) => r.materialCode).sort()).toEqual([...bpomPending].sort());
     expect(rows.every((r) => r.halal.ok)).toBe(true);

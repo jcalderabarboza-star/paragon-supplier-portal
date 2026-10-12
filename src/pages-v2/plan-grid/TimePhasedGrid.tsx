@@ -97,7 +97,7 @@ import type { BucketGrain } from '../../services/planning/bucket';
 import { COLUMNS, bucketColumns, bucketColumnId } from '../../services/planning/columns';
 import { measureOf, type MeasureId } from '../../services/planning/measures';
 import { somoHorizon } from '../../services/planning/facts';
-import { planningSupplierName } from '../../services/planning/somoFixture';
+import { supplierNameOf } from '../../services/masterData/lookup';
 import { visibleMeasures } from './visibleMeasures';
 import { usePlanDraft } from './PlanDraftProvider';
 import { PlannedChangesBar, PlannedChangesDetails, cellRefusalText, usePushTargets } from './PlannedChangesPanel';
@@ -284,7 +284,7 @@ const CELL_MARK = {
 } as const;
 
 // PLN-2 · the supplier's NAME, from the planning supplier master — never its id.
-const supplierLabel = planningSupplierName;
+const supplierLabel = supplierNameOf;
 
 /**
  * PLN-5 · THE Σ ON A MODELED FIGURE — a small glyph BEFORE the figure in a slot

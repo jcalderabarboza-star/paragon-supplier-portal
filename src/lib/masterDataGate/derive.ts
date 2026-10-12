@@ -21,10 +21,12 @@ export interface FixtureSpec {
   readonly name: string;
   /** The end of the import path, without extension. */
   readonly module: string;
+  /** A barrel that re-exports the fixture: an import of the name from it is a direct read too. */
+  readonly barrel?: string;
 }
 
 export const MASTER_FIXTURES: readonly FixtureSpec[] = [
-  { name: 'MATERIAL_MASTER', module: 'sdc/fixtures' },
+  { name: 'MATERIAL_MASTER', module: 'sdc/fixtures', barrel: 'sdc' },
   { name: 'mockSuppliers', module: 'data/mockSuppliers' },
 ];
 
@@ -32,13 +34,13 @@ const IMPORT = /import\s+(?:type\s+)?\{([^}]*)\}\s+from\s+'([^']+)'/g;
 
 /** The files that import `fixture` by name from its module, sorted. The fixture's own module is not an importer of it. */
 export function fixtureImporters(files: SourceFiles, fixture: FixtureSpec): string[] {
-  const tail = fixture.module.split('/').slice(-1)[0];
+  const tails = [fixture.module.split('/').slice(-1)[0], ...(fixture.barrel ? [fixture.barrel] : [])];
   return Object.keys(files)
     .filter((file) => {
       if (file.endsWith(`${fixture.module}.ts`)) return false;
       for (const m of files[file].matchAll(IMPORT)) {
         const names = m[1].split(',').map((n) => n.trim().split(/\s+as\s+/)[0]);
-        if (names.includes(fixture.name) && m[2].split('/').slice(-1)[0] === tail) return true;
+        if (names.includes(fixture.name) && tails.includes(m[2].split('/').slice(-1)[0])) return true;
       }
       return false;
     })
