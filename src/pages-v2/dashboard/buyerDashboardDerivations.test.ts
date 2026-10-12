@@ -80,7 +80,6 @@ import {
   contractGroup,
   receiptGroup,
   obligationsByMonth,
-  monthSpan,
 } from './buyerDashboardDerivations';
 
 const BUYER_SCOPE: QueryScope = { personaType: 'buyer', supplierId: null };
@@ -92,6 +91,7 @@ const proc = mockDataService.procurement;
 const invoices: BuyerInvoice[] = (await proc.getBuyerInvoices(BUYER_SCOPE)).items;
 const pos: PurchaseOrder[] = (await proc.getPurchaseOrders(BUYER_SCOPE)).items;
 const rfqs: RFQ[] = (await proc.getRFQs(BUYER_SCOPE)).items;
+const quotations = (await proc.getQuotations(BUYER_SCOPE)).items;
 const receipts: GoodsReceipt[] = (await proc.getGoodsReceipts(BUYER_SCOPE)).items;
 const contracts: Contract[] = (await proc.getContracts(BUYER_SCOPE)).items;
 const obligations: ContractObligation[] = (await proc.getObligations(BUYER_SCOPE)).items;
@@ -394,20 +394,6 @@ describe('obligationsByMonth — buckets over the months present in the data', (
   });
 });
 
-describe('monthSpan — what the Phase B placeholders interpolate', () => {
-  it('reports the month count and the per-month row range of the dates given', () => {
-    const s = monthSpan(invoices.map((i) => i.receivedDate));
-    const months = new Set(invoices.map((i) => i.receivedDate.slice(0, 7)));
-    expect(s.months).toBe(months.size);
-    expect(s.minPerMonth).toBeGreaterThan(0);
-    expect(s.maxPerMonth).toBeGreaterThanOrEqual(s.minPerMonth);
-  });
-
-  it('an empty input is zero months, not a crash', () => {
-    expect(monthSpan([])).toEqual({ months: 0, minPerMonth: 0, maxPerMonth: 0 });
-  });
-});
-
 // ─────────────────────────────────────────────────────────────────────────────
 // THE LANE MODEL — the queue's rows, and which seat may act on each.
 // ─────────────────────────────────────────────────────────────────────────────
@@ -451,7 +437,7 @@ describe('QUEUE_ROW_ATOMS — each row is assigned to a lane by the atom its pag
   });
 });
 
-describe('queueRows — one row per lane, counts derived, procurement held', () => {
+describe('queueRows — one row per lane, every count derived', () => {
   const rows = queueRows({
     invoices,
     receipts,
@@ -459,6 +445,9 @@ describe('queueRows — one row per lane, counts derived, procurement held', () 
     registry: COMPLIANCE_REGISTRY,
     documents,
     responses,
+    rfqs,
+    quotations,
+    purchaseOrders: pos,
     nowIso: P,
   });
 
@@ -500,10 +489,25 @@ describe('queueRows — one row per lane, counts derived, procurement held', () 
     ]);
   });
 
-  it('⚠️ PROCUREMENT CARRIES NO COUNT — rule 3, and it is the only held row', () => {
-    const held = rows.filter((r) => r.held);
-    expect(held.map((r) => r.lane)).toEqual(['procurement']);
-    expect(held[0].counts).toBeNull();
+  it('⚠️ PG-3 · PROCUREMENT COUNTS FOR REAL — events awaiting an award, then orders still Sent past 48 hours', () => {
+    const r = rows.find((x) => x.lane === 'procurement');
+    const withQuotes = new Set(quotations.map((q) => q.rfqId));
+    const awaiting = rfqs.filter((x) => (x.status === 'Open' || x.status === 'Closed') && withQuotes.has(x.id));
+    const late = pos.filter((p) => p.status === POStatus.SENT && Date.parse(P) - Date.parse(p.orderDate) > 48 * 3_600_000);
+    expect(r?.counts).toEqual([awaiting.length, late.length]);
+    // population controls: both counts are of something, and neither is every row
+    expect(awaiting.length).toBeGreaterThan(0);
+    expect(awaiting.length).toBeLessThan(rfqs.length);
+    expect(late.length).toBeGreaterThan(0);
+    expect(late.length).toBeLessThan(pos.filter((p) => p.status === POStatus.SENT).length);
+  });
+
+  it('⚠️ PG-3 · no row is held: every lane states its counts', () => {
+    for (const r of rows) {
+      expect(Array.isArray(r.counts), r.lane).toBe(true);
+      expect(r.counts.length, r.lane).toBeGreaterThan(0);
+      expect('held' in r, r.lane).toBe(false);
+    }
   });
 
   it('every row names a route, and no two rows share one by accident', () => {

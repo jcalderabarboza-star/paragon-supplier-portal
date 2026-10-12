@@ -223,7 +223,8 @@ export type FixtureFamily =
   | 'invoice'
   | 'psl'
   | 'rfq'
-  | 'quotation';
+  | 'quotation'
+  | 'purchaseOrder';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ⚠️ `contract` AND `obligation` ARE NOW ANCHORED, AND THEY SHARE ONE ANCHOR.
@@ -517,6 +518,24 @@ export const FAMILY_ANCHORS: Readonly<Record<FixtureFamily, FamilyAnchor>> = {
     window: null,
     toleranceDays: null,
     why: 'the rfq anchor by reference: a quotation’s submittedAt and validUntil are read against its own event’s dates, so the two corpora move together',
+  },
+
+  // PG-3 · THE PURCHASE ORDERS ARE ANCHORED (operator ruling: the dashboard's
+  // Procurement row counts for real). They were authored a year behind every
+  // family but inventory, so "still Sent 48 hours after the order" was true of
+  // every Sent order at any instant and the row stated no count at all. No
+  // stored clock state to solve for — a PO's status is a lifecycle fact — so
+  // the anchor is evidenced, the `rfq` treatment: the corpus's latest act is
+  // `po-012`'s order on 2025-04-04, the one still-Sent order that states hours
+  // waited (`po-008`, 96 h from 2025-04-03) reads 2025-04-07, and inventory —
+  // the other corpus authored that spring — declares 2025-04-06 as its own
+  // as-of date, inside those two. At the anchor three of the four Sent orders
+  // are past 48 hours and `po-012` is not; `pg3Dashboard.test.ts` pins it by name.
+  purchaseOrder: {
+    anchor: '2025-04-06',
+    window: null,
+    toleranceDays: null,
+    why: 'between max(orderDate) of the corpus (po-012, 2025-04-04) and the instant po-008’s stated 96 unacknowledged hours imply (2025-04-07); inventory’s own as-of date',
   },
 };
 

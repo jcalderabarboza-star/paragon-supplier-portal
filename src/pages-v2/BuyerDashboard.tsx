@@ -31,7 +31,6 @@ import ErrorState from '../components/ui-v2/ErrorState';
 import EmptyState from '../components/ui-v2/EmptyState';
 import Data from '../components/ui-v2/Data';
 import StatusPill from '../components/ui-v2/StatusPill';
-import Notice from '../components/ui-v2/Notice';
 import { Card, cardClass } from '../components/ui-v2/Card';
 import { ToggleChip } from '../components/ui-v2/Actions';
 import IllustrativeRegion from '../components/ui-v2/IllustrativeRegion';
@@ -61,6 +60,7 @@ import {
   useObligations,
   usePurchaseOrders,
   useProductionLines,
+  useQuotations,
   useRFQs,
   useSupplierHealth,
   usePslListings,
@@ -75,7 +75,6 @@ import {
   halalCertificateStatus,
   heldLanes,
   matchRate,
-  monthSpan,
   obligationsByMonth,
   onTimePaymentRate,
   poAcknowledgedRate,
@@ -104,6 +103,11 @@ import SectionHeading from '../components/ui-v2/SectionHeading';
 // PO, RFQ, quotation and ASN are NOT anchored families, so no clock-relative
 // figure over them is rendered at all — the procurement queue row states that
 // it is held rather than showing a saturated count.
+//
+// ⚠️ PG-3 · OVERTAKEN FOR RFQ, QUOTATION AND PO, QUOTED RATHER THAN EDITED:
+// those three are anchored (`FAMILY_ANCHORS`), the Procurement row counts at
+// the declared present, and no row is held. What is not built is ONE quiet
+// line at the foot of the page (operator ruling), not cards among the figures.
 // ─────────────────────────────────────────────────────────────────────────────
 
 /** Severity → the card's left edge, the same 3px accent grammar the widget
@@ -173,6 +177,7 @@ const BuyerDashboard: React.FC = () => {
   const invoicesQ = useBuyerInvoices();
   const posQ = usePurchaseOrders();
   const rfqsQ = useRFQs();
+  const quotationsQ = useQuotations();
   const receiptsQ = useGoodsReceipts();
   const asnsQ = useASNs();
   const contractsQ = useContracts();
@@ -191,6 +196,7 @@ const BuyerDashboard: React.FC = () => {
     invoicesQ,
     posQ,
     rfqsQ,
+    quotationsQ,
     receiptsQ,
     asnsQ,
     contractsQ,
@@ -223,6 +229,7 @@ const BuyerDashboard: React.FC = () => {
     !invoicesQ.data ||
     !posQ.data ||
     !rfqsQ.data ||
+    !quotationsQ.data ||
     !receiptsQ.data ||
     !asnsQ.data ||
     !contractsQ.data ||
@@ -239,6 +246,7 @@ const BuyerDashboard: React.FC = () => {
   const invoices = invoicesQ.data.items;
   const pos = posQ.data.items;
   const rfqs = rfqsQ.data.items;
+  const quotations = quotationsQ.data.items;
   const receipts = receiptsQ.data.items;
   const asns = asnsQ.data.items;
   const contracts = contractsQ.data.items;
@@ -278,8 +286,6 @@ const BuyerDashboard: React.FC = () => {
   const ap = accountsPayableOpen(invoices);
   const halal = halalCertificateStatus(registry, PRESENT_ISO);
   const months = obligationsByMonth(obligations, PRESENT_ISO);
-  const poSpan = monthSpan(pos.map((p) => p.orderDate));
-  const invoiceSpan = monthSpan(invoices.map((i) => i.receivedDate));
   const rows = queueRows({
     invoices,
     receipts,
@@ -287,6 +293,9 @@ const BuyerDashboard: React.FC = () => {
     registry,
     documents,
     responses,
+    rfqs,
+    quotations,
+    purchaseOrders: pos,
     nowIso: PRESENT_ISO,
   });
 
@@ -668,40 +677,6 @@ const BuyerDashboard: React.FC = () => {
         </Card>
       </div>
 
-      {/* ── F · PHASE B PLACEHOLDERS ───────────────────────────────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-8">
-        {/* UI-1d (operator ruling): a module that is not built is a dashed
-            neutral notice that says so — never a card shaped like a chart. */}
-        <Notice
-          tone="sample"
-          data-testid="phase-b-spend"
-          title={
-            <span className="flex flex-wrap items-center gap-2">
-              {t('buyerDashboard.phaseB.spend.title')}
-              <StatusPill variant="neutral" size="sm">{t('buyerDashboard.phaseB.badge')}</StatusPill>
-            </span>
-          }
-        >
-          {t('buyerDashboard.phaseB.spend.body', { months: poSpan.months })}
-        </Notice>
-        <Notice
-          tone="sample"
-          data-testid="phase-b-trend"
-          title={
-            <span className="flex flex-wrap items-center gap-2">
-              {t('buyerDashboard.phaseB.trend.title')}
-              <StatusPill variant="neutral" size="sm">{t('buyerDashboard.phaseB.badge')}</StatusPill>
-            </span>
-          }
-        >
-          {t('buyerDashboard.phaseB.trend.body', {
-            months: invoiceSpan.months,
-            min: invoiceSpan.minPerMonth,
-            max: invoiceSpan.maxPerMonth,
-          })}
-        </Notice>
-      </div>
-
       {/* ── G · ACTION QUEUE BY LANE ───────────────────────────────────────── */}
       <Card as="section" padding="lg" className="mb-8">
         <SectionHeading className="mb-4">
@@ -732,27 +707,13 @@ const BuyerDashboard: React.FC = () => {
               id: 'work',
               header: t('buyerDashboard.queue.col.work'),
               kind: 'text',
-              cell: (row) => (
-                <>
-                  <span>{t(`buyerDashboard.queue.${row.lane}.work`)}</span>
-                  {row.held ? (
-                    <span className="ml-2">
-                      <StatusPill variant="neutral">{t('buyerDashboard.phaseB.badge')}</StatusPill>
-                    </span>
-                  ) : null}
-                </>
-              ),
+              cell: (row) => t(`buyerDashboard.queue.${row.lane}.work`),
             },
             {
               id: 'count',
               header: t('buyerDashboard.queue.col.count'),
               kind: 'number',
-              cell: (row) =>
-                row.counts === null ? (
-                  '—'
-                ) : (
-                  <Data>{row.counts.join(' · ')}</Data>
-                ),
+              cell: (row) => <Data data-testid={`queue-count-${row.lane}`}>{row.counts.join(' · ')}</Data>,
             },
             {
               id: 'open',
@@ -905,14 +866,13 @@ const BuyerDashboard: React.FC = () => {
         </Card>
       </div>
 
-      {/* ── H · PHASE C STRIP ──────────────────────────────────────────────── */}
-      <Notice
-        tone="sample"
-        data-testid="phase-c"
-        title={<StatusPill variant="neutral" size="sm">{t('buyerDashboard.phaseC.badge')}</StatusPill>}
-      >
-        {t('buyerDashboard.phaseC.body')}
-      </Notice>
+      {/* ── H · WHAT IS NOT BUILT — ONE QUIET LINE (PG-3, operator ruling) ────
+          The two "not built yet" cards among the figures, the badge on the
+          queue and the strip that stood here said the same thing in four
+          places. It is said once, last, and it is not a control. */}
+      <p className="text-meta text-text-tertiary" data-testid="coming-live">
+        {t('buyerDashboard.comingLive')}
+      </p>
     </AppShellV2>
   );
 };

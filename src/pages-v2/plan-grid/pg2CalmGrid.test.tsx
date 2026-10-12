@@ -323,8 +323,10 @@ describe('PG-2 · twelve months stand without sideways scroll wherever the figur
   it('a figure is never clipped to make it fit: a column is as wide as the widest figure, and the grid scrolls when that is too wide', () => {
     for (const figureChars of [3, 7, 9, 13]) {
       const w = planColumnWidths({ containerW: 1061, buckets: 12, figureChars, labelChars: 30 });
-      // 7.2px is a 12px mono character, measured; the column holds the figure with room to spare
-      expect(w.bucketMin, String(figureChars)).toBeGreaterThanOrEqual(Math.ceil(figureChars * 7.2) + 8);
+      // 7.2px is a 12px mono character, measured; the column holds the figure with room to spare.
+      // PG-3: in the TIGHT step the character is 11px — 6.6px — and the column still holds it.
+      const ch = w.tight ? 6.6 : 7.2;
+      expect(w.bucketMin, String(figureChars)).toBeGreaterThanOrEqual(Math.ceil(figureChars * ch) + (w.tight ? 5 : 8));
     }
     const tooWide = planColumnWidths({ containerW: 1061, buckets: 12, figureChars: 13, labelChars: 30 });
     expect(tooWide.fits).toBe(false);
@@ -347,7 +349,14 @@ describe('PG-2 · twelve months stand without sideways scroll wherever the figur
   });
 
   it('where nothing can be measured the grid keeps the widths it had — and claims no fit', () => {
-    expect(planColumnWidths({ containerW: 0, buckets: 12, figureChars: 7, labelChars: 30 })).toEqual({ gutter: 420, bucketMin: 112, narrow: false, fits: false });
+    expect(planColumnWidths({ containerW: 0, buckets: 12, figureChars: 7, labelChars: 30 })).toEqual({
+      gutter: 420,
+      bucketMin: 112,
+      narrow: false,
+      fits: false,
+      tight: false,
+      totals: true,
+    });
   });
 
   it('a bucket’s header is short — "Oct", "W41" — with the year where the caller asks, in both languages', async () => {
@@ -372,7 +381,8 @@ describe('PG-2 · twelve months stand without sideways scroll wherever the figur
     const css = readFileSync(resolve(__dirname, 'planGrid.css'), 'utf8');
     expect(grid).toMatch(/measure\(\);\s+setMeasured\(true\);/);
     expect(grid).toMatch(/factsQuery\.isLoading \|\| !measured \?/);
-    expect(grid).toMatch(/const widthsKey = `\$\{widths\.gutter\}:\$\{widths\.bucketMin\}`;/);
+    // PG-3: the totals pane standing or not is part of what the engine is mounted with
+    expect(grid).toMatch(/const widthsKey = `\$\{widths\.gutter\}:\$\{widths\.bucketMin\}:\$\{widths\.totals \? 't' : ''\}`;/);
     expect(grid).toMatch(/<DataSheetGrid<PlanRow>\s+key=\{widthsKey\}/);
     // the sideways scroll is switched off ONLY where the rule says the horizon fits
     expect(grid).toMatch(/data-fits=\{widths\.fits \? '' : undefined\}/);

@@ -983,6 +983,22 @@ nav groups under one neutral key, `nav.glossary`.
   and has none; a push that owes one dispatches nothing. (5) A drawer whose table is worked in it
   is `SidePanel wide="table"`. **Derive what an open material shows from `readOpenMeasures` and
   the view's `measuresShown`, never from a sentence here.**
+- ⚠️ **PG-3 (2026-10-12, operator rulings) — THE GRID'S OPEN CALLS, AND TWO SENTENCES ABOVE ARE
+  OVERTAKEN, QUOTED RATHER THAN EDITED.** *"In a narrow column a marker's word is for a screen
+  reader and the cell shows the state"* — by colour alone, which is overtaken: **a narrow cell's
+  state carries a small mark in its corner beside the colour** (`CELL_MARK`). And UI-1d's *"A
+  module that is not built is a `Notice tone="sample"` that says so"* is overtaken ON THE
+  DASHBOARD: what is not built there is **one quiet line at the foot of the page**
+  (`buyerDashboard.comingLive`), not cards among the figures. (1) **A view that does not fit
+  takes steps, in order** (`planColumnWidths`, `WIDTH_STEPS`): as it is; then TIGHT — figures at
+  11px; then tight with the horizon-totals pane given up, the total in the material label's
+  title. Where no step fits it stands as it is and scrolls. (2) **A re-mounted grid is put back
+  where the planner was** (`plan-grid/useKeepPlace`): scroll position and selection. (3) **The
+  planned-changes drawer has ONE reason field, in its footer**; a row's own reason is written in
+  its row. (4) **Purchase orders are an anchored family** (`FAMILY_ANCHORS.purchaseOrder`), so the
+  dashboard's Procurement queue row counts at the declared present and no row is held. **Derive
+  which step a view takes from `planColumnWidths` and what the row counts from `queueRows`, never
+  from a sentence here.**
 - WARNING token is a FILL/TEXT split (DP2-WARN-01), same shape as `action`:
   `warning.DEFAULT` = bright amber `#D97706` for every GRAPHICAL warning use
   (accent-edges, dots, bar fills, dials, chip fills, borders — 3.19:1 on white,

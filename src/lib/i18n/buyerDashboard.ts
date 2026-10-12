@@ -101,14 +101,6 @@ export const buyerDashboardEn: Record<string, string> = {
   'buyerDashboard.chart.obligations.title': 'Contract obligations due, by month',
   'buyerDashboard.chart.obligations.footer': '{{total}} obligations across {{months}} months',
   'buyerDashboard.chart.viewAll': 'View all',
-  // — Phase B placeholders —
-  'buyerDashboard.phaseB.badge': 'Not built yet · Phase B',
-  'buyerDashboard.phaseB.spend.title': 'Monthly spend and PO volume',
-  'buyerDashboard.phaseB.spend.body':
-    'Appears once purchase orders are anchored to the declared present and carry at least six months of linked history. Today they span {{months}} months.',
-  'buyerDashboard.phaseB.trend.title': 'Match rate and payment timing over time',
-  'buyerDashboard.phaseB.trend.body':
-    'Invoice history is too thin for a trend: {{months}} months, {{min}}–{{max}} invoices each.',
   // — Action queue —
   'buyerDashboard.queue.title': 'Action queue by lane',
   'buyerDashboard.queue.col.lane': 'Lane',
@@ -127,12 +119,10 @@ export const buyerDashboardEn: Record<string, string> = {
   'buyerDashboard.queue.compliance.work':
     'Halal certificates expired or expiring · documents under review',
   'buyerDashboard.queue.planning.work': 'Forecast responses submitted · disputed · draft',
-  'buyerDashboard.queue.procurement.work':
-    'RFQs awaiting award · unacknowledged POs — held until RFQ and PO dates are anchored',
-  // — Phase C strip —
-  'buyerDashboard.phaseC.badge': 'Not built yet · Phase C',
-  'buyerDashboard.phaseC.body':
-    'Not shown until the data can prove them: OTIF · award lead time · PR → PO cycle time · acknowledgement time · supplier risk distribution · spend by material category.',
+  'buyerDashboard.queue.procurement.work': 'RFQs awaiting award · POs unacknowledged over 48 hours',
+  // — What is not built: one line at the foot of the page (PG-3) —
+  'buyerDashboard.comingLive':
+    'Coming with live data: monthly spend and PO volume · match rate and payment timing over time · OTIF · award lead time · PR → PO cycle time · acknowledgement time · supplier risk distribution · spend by material category.',
   // -- Windows grid --
   'buyerDashboard.windows.title': 'Modules',
   // -- Production Line Risk panel (RESTORED, operator direction) --
@@ -231,14 +221,6 @@ export const buyerDashboardId: Record<string, string> = {
   'buyerDashboard.chart.obligations.footer':
     '{{total}} kewajiban sepanjang {{months}} bulan',
   'buyerDashboard.chart.viewAll': 'Lihat semua',
-  // — Phase B placeholders —
-  'buyerDashboard.phaseB.badge': 'Belum dibangun · Fase B',
-  'buyerDashboard.phaseB.spend.title': 'Belanja bulanan dan volume PO',
-  'buyerDashboard.phaseB.spend.body':
-    'Muncul setelah pesanan pembelian ditambatkan ke masa kini yang dinyatakan dan memuat riwayat tertaut minimal enam bulan. Saat ini rentangnya {{months}} bulan.',
-  'buyerDashboard.phaseB.trend.title': 'Tingkat pencocokan dan waktu pembayaran dari waktu ke waktu',
-  'buyerDashboard.phaseB.trend.body':
-    'Riwayat faktur terlalu tipis untuk sebuah tren: {{months}} bulan, {{min}}–{{max}} faktur per bulan.',
   // — Action queue —
   'buyerDashboard.queue.title': 'Antrean tindakan per jalur',
   'buyerDashboard.queue.col.lane': 'Jalur',
@@ -253,12 +235,10 @@ export const buyerDashboardId: Record<string, string> = {
   'buyerDashboard.queue.compliance.work':
     'Sertifikat halal kedaluwarsa atau akan berakhir · dokumen dalam peninjauan',
   'buyerDashboard.queue.planning.work': 'Tanggapan perkiraan diajukan · disengketakan · draf',
-  'buyerDashboard.queue.procurement.work':
-    'RFQ menunggu penetapan · PO belum diakui — ditahan sampai tanggal RFQ dan PO ditambatkan',
-  // — Phase C strip —
-  'buyerDashboard.phaseC.badge': 'Belum dibangun · Fase C',
-  'buyerDashboard.phaseC.body':
-    'Belum ditampilkan sampai datanya dapat membuktikan: OTIF · waktu tempuh penetapan · waktu siklus PR → PO · waktu pengakuan · sebaran risiko pemasok · belanja per kategori material.',
+  'buyerDashboard.queue.procurement.work': 'RFQ menunggu penetapan · PO belum diakui lebih dari 48 jam',
+  // — What is not built: one line at the foot of the page (PG-3) —
+  'buyerDashboard.comingLive':
+    'Menyusul bersama data langsung: belanja bulanan dan volume PO · tingkat pencocokan dan waktu pembayaran dari waktu ke waktu · OTIF · waktu tempuh penetapan · waktu siklus PR → PO · waktu pengakuan · sebaran risiko pemasok · belanja per kategori material.',
   // -- Windows grid --
   'buyerDashboard.windows.title': 'Modul',
   // -- Production Line Risk panel (RESTORED, operator direction) --

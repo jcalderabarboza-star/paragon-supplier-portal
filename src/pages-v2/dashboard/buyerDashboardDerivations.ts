@@ -14,6 +14,12 @@
 // with no wall-clock read left, the surface renders identically at any instant,
 // and it joins that guard in this batch.
 //
+// ── ⚠️ PG-3 · THE BLOCK BELOW IS OVERTAKEN FOR RFQ AND PO, QUOTED NOT EDITED ─
+// RFQs and quotations were anchored at SRC-2 and purchase orders at PG-3
+// (`FAMILY_ANCHORS`), so the Procurement queue row now states its counts at
+// the declared present. ASN is still unanchored and still carries no
+// clock-relative figure here.
+//
 // ── ⚠️ WHAT IS DELIBERATELY ABSENT, AND WHY ITS ABSENCE IS THE POINT ────────
 // **There is no clock-relative PO, RFQ, quotation or ASN figure in this file.**
 // Those four families are NOT anchored (`clockDrift`'s table names the anchored
@@ -49,7 +55,10 @@ import {
 import {
   grNeedingAction,
   grVariance,
+  pendingAwardRfqs,
+  unacknowledgedOver48hAt,
 } from '../widgets/buyerDerivations';
+import type { Quotation } from '../../services/data/types';
 
 /** The reading instant every figure on this page is derived at. */
 export const PRESENT_ISO = `${DECLARED_PRESENT}T00:00:00.000Z`;
@@ -362,36 +371,6 @@ export function obligationsByMonth(
   }));
 }
 
-// ── What the Phase B placeholders say about the data they are waiting for ────
-
-export interface MonthSpan {
-  readonly months: number;
-  readonly minPerMonth: number;
-  readonly maxPerMonth: number;
-}
-
-/**
- * How much history a set of dates actually carries.
- *
- * The Phase B cards interpolate these rather than asserting "too thin" in prose:
- * the day the corpus is deep enough, the placeholder's own text says so, and
- * nobody has to remember to come back and edit a sentence.
- */
-export function monthSpan(dates: readonly string[]): MonthSpan {
-  if (dates.length === 0) return { months: 0, minPerMonth: 0, maxPerMonth: 0 };
-  const counts = new Map<string, number>();
-  for (const d of dates) {
-    const m = d.slice(0, 7);
-    counts.set(m, (counts.get(m) ?? 0) + 1);
-  }
-  const per = [...counts.values()];
-  return {
-    months: counts.size,
-    minPerMonth: Math.min(...per),
-    maxPerMonth: Math.max(...per),
-  };
-}
-
 // ─────────────────────────────────────────────────────────────────────────────
 // THE LANE MODEL — who the queue's rows belong to.
 //
@@ -481,16 +460,10 @@ export interface QueueRow {
   readonly lane: SystemRoleId;
   /**
    * The counts behind the row's work description, in the order the description
-   * names them — or `null` when the row is HELD.
+   * names them. PG-3 · every row states its counts: the Procurement row was
+   * held while purchase orders were unanchored, and no row is held now.
    */
-  readonly counts: readonly number[] | null;
-  /**
-   * ⚠️ **HELD = the figures this row would want are clock-relative over an
-   * UNANCHORED family**, so they are not shown at all rather than shown wrong.
-   * The row still renders and its link still navigates: the work exists, the
-   * COUNT is what cannot be stated honestly yet.
-   */
-  readonly held: boolean;
+  readonly counts: readonly number[];
   readonly route: string;
 }
 
@@ -501,6 +474,9 @@ export interface QueueInput {
   readonly registry: readonly ComplianceRegistryEntry[];
   readonly documents: readonly SupplierDocument[];
   readonly responses: readonly RequirementResponse[];
+  readonly rfqs: readonly RFQ[];
+  readonly quotations: readonly Quotation[];
+  readonly purchaseOrders: readonly PurchaseOrder[];
   readonly nowIso: string;
 }
 
@@ -511,7 +487,7 @@ export function queueRows(input: QueueInput): readonly QueueRow[] {
   const byStatus = <T extends { status: string }>(rows: readonly T[], s: string) =>
     rows.filter((r) => r.status === s).length;
 
-  const counts: Record<string, readonly number[] | null> = {
+  const counts: Record<string, readonly number[]> = {
     finance: [
       overdueInvoiceGroup(input.invoices).count,
       openDisputeGroup(input.invoices, input.responses).invoices,
@@ -523,17 +499,19 @@ export function queueRows(input: QueueInput): readonly QueueRow[] {
       byStatus(input.responses, 'Disputed'),
       byStatus(input.responses, 'Draft'),
     ],
-    // Rule 3. `pendingAwardRfqs` × `awardOverdue` and `unacknowledgedOver48h`
-    // are the figures this row wants, and both are day-counts over families
-    // that are not anchored — saturated at any instant, so they say something
-    // about the calendar rather than about the sourcing desk.
-    procurement: null,
+    // PG-3 · counted for real. The events awaiting an award are the ones the
+    // flow can award (the sourcing window's own list), and the orders are the
+    // ones still Sent more than 48 hours after they were placed — read at the
+    // declared present, which the purchase orders are anchored to now.
+    procurement: [
+      pendingAwardRfqs([...input.rfqs], [...input.quotations]).length,
+      unacknowledgedOver48hAt([...input.purchaseOrders], input.nowIso).length,
+    ],
   };
 
   return Object.entries(QUEUE_ROW_ATOMS).map(([key, atom]) => ({
     lane: laneOf(atom),
     counts: counts[key],
-    held: counts[key] === null,
     route: QUEUE_ROW_ROUTES[key],
   }));
 }

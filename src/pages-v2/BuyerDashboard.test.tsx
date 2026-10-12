@@ -77,6 +77,7 @@ const derived = async () => {
   const invoices = (await proc.getBuyerInvoices(SCOPE)).items;
   const pos = (await proc.getPurchaseOrders(SCOPE)).items;
   const rfqs = (await proc.getRFQs(SCOPE)).items;
+  const quotations = (await proc.getQuotations(SCOPE)).items;
   const receipts = (await proc.getGoodsReceipts(SCOPE)).items;
   const asns = (await proc.getASNs(SCOPE)).items;
   const contracts = (await proc.getContracts(SCOPE)).items;
@@ -92,6 +93,8 @@ const derived = async () => {
     invoices,
     pos,
     rfqs,
+    quotations,
+    purchaseOrders: pos,
     receipts,
     asns,
     contracts,
@@ -246,18 +249,30 @@ describe('⚠️ EVERY FIGURE EQUALS ITS DERIVATION', () => {
     ).toBeInTheDocument();
   });
 
-  it('the Phase B placeholders interpolate a derived month count and carry NO control', async () => {
+  it('⚠️ PG-3 · what is not built is ONE quiet line at the foot of the page, and it is not a control', async () => {
     renderWithProviders(<BuyerDashboard />);
     await screen.findByText('Good morning — here is what needs you today');
-    for (const id of ['phase-b-spend', 'phase-b-trend', 'phase-c']) {
-      const card = screen.getByTestId(id);
-      expect(within(card).queryByRole('button'), id).not.toBeInTheDocument();
-      expect(within(card).queryByRole('link'), id).not.toBeInTheDocument();
-      // UI-1d: a module that is not built is the dashed neutral notice, and says so
-      expect(card, id).toHaveAttribute('data-notice', 'sample');
-      expect(within(card).getByText(/^Not built yet · Phase [BC]$/), id).toBeInTheDocument();
-    }
-    expect(screen.getByText(/Today they span \d+ months\./)).toBeInTheDocument();
+    const line = screen.getByTestId('coming-live');
+    expect(line.textContent).toMatch(/^Coming with live data: monthly spend and PO volume · /);
+    expect(line.textContent).toContain('OTIF');
+    expect(within(line).queryByRole('button')).not.toBeInTheDocument();
+    expect(within(line).queryByRole('link')).not.toBeInTheDocument();
+    // the LAST thing on the page — nothing of the dashboard follows it
+    const main = line.parentElement!;
+    expect(main.lastElementChild).toBe(line);
+    // …and the four places that said it are gone
+    for (const id of ['phase-b-spend', 'phase-b-trend', 'phase-c']) expect(screen.queryByTestId(id), id).toBeNull();
+    expect(screen.queryByText(/Not built yet/)).toBeNull();
+    expect(document.querySelectorAll('[data-notice="sample"]')).toHaveLength(0);
+  });
+
+  it('PG-3 · ID — the line is Indonesian', async () => {
+    await i18n.changeLanguage('id');
+    renderWithProviders(<BuyerDashboard />);
+    const line = await screen.findByTestId('coming-live');
+    expect(line.textContent).toMatch(/^Menyusul bersama data langsung: belanja bulanan dan volume PO · /);
+    expect(screen.queryByText(/Belum dibangun/)).toBeNull();
+    await i18n.changeLanguage('en');
   });
 });
 
@@ -377,20 +392,22 @@ describe('⚠️ THE ACTION QUEUE — lanes, filtering and handoff', () => {
     for (const row of rows) {
       const link = screen.getByTestId(`queue-open-${row.lane}`);
       expect(link.getAttribute('href'), row.lane).toBe(row.route);
-      if (row.counts === null) continue;
-      expect(screen.getByText(row.counts.join(' · ')), row.lane).toBeInTheDocument();
+      expect(screen.getByTestId(`queue-count-${row.lane}`).textContent, row.lane).toBe(row.counts.join(' · '));
     }
   });
 
-  it('⚠️ PROCUREMENT SHOWS NO COUNT — rule 3, on the rendered page', async () => {
+  it('⚠️ PG-3 · PROCUREMENT COUNTS FOR REAL, on the rendered page', async () => {
+    const d = await derived();
     renderWithProviders(<BuyerDashboard />);
     await screen.findByText('Good morning — here is what needs you today');
-    expect(
-      screen.getByText(
-        'RFQs awaiting award · unacknowledged POs — held until RFQ and PO dates are anchored',
-      ),
-    ).toBeInTheDocument();
-    // The link still navigates; only the FIGURE is withheld.
+    expect(screen.getByText('RFQs awaiting award · POs unacknowledged over 48 hours')).toBeInTheDocument();
+    const row = queueRows({ ...d, nowIso: PRESENT_ISO }).find((r) => r.lane === 'procurement')!;
+    const cell = screen.getByTestId('queue-count-procurement');
+    expect(cell.textContent).toBe(row.counts.join(' · '));
+    expect(cell.textContent).toMatch(/^\d+ · \d+$/);
+    expect(cell.textContent).not.toBe('0 · 0');
+    // the ROW says nothing is held (the sourcing window's own note is not this row's)
+    expect(cell.closest('tr')!.textContent).not.toMatch(/held|Not built/);
     expect(screen.getByTestId('queue-open-procurement').getAttribute('href')).toBe(
       '/buyer/sourcing',
     );

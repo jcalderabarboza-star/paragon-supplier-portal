@@ -32,7 +32,6 @@ import type { PlanRow } from './planGridModel';
 import {
   EMPTY_DRAFT,
   applyEdit,
-  applyReasonToRows,
   applyPaste,
   applyPushOutcomes,
   conventionOf,
@@ -71,7 +70,6 @@ export interface PlanDraftApi {
   ): { planned: number; refused: number; outside: number };
   setReason(seamRef: string, reason: string): void;
   /** PLN-4 · one reason onto each selected row that owes one; returns how many took it. */
-  applyReason(seamRefs: readonly string[], reason: string): number;
   /** R2 · confirm (or withdraw) a value the magnitude gate holds. */
   confirmMagnitude(seamRef: string, confirmed: boolean): void;
   remove(seamRef: string): void;
@@ -187,11 +185,6 @@ export const PlanDraftProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       edit,
       paste,
       setReason: (ref, reason) => setDraft((d) => setReason(d, ref, reason)),
-      applyReason: (refs, reason) => {
-        const r = applyReasonToRows(draftRef.current, refs, reason);
-        update(() => r.draft);
-        return r.applied;
-      },
       confirmMagnitude: (ref, confirmed) => setDraft((d) => setMagnitudeConfirmed(d, ref, confirmed)),
       remove: (ref) => void update((d) => removeEntry(d, ref), true),
       removeMany: (refs) => {

@@ -29,6 +29,11 @@ import {
   readAsnTypedDetails,
 } from '../../transitions/policies';
 import { NO_PERSON } from '../../../context/noPerson';
+import { shiftIso } from '../fixturePresent';
+
+// PG-3 · the purchase orders are anchored: a date written here is the RAW literal the
+// order was authored beside, moved by the same days as the order itself.
+const d = (raw: string): string => shiftIso(raw, 'purchaseOrder');
 
 const svc = new MockCommandService();
 
@@ -98,14 +103,14 @@ describe('OPS-3 · order confirmation — the date, the note and the quantity ar
     vi.setSystemTime(new Date('2026-10-08T05:37:00.000Z'));
     const res = await confirm({
       confirmedQuantities: [4500, 300],
-      confirmedDeliveryDate: '2025-05-20',
+      confirmedDeliveryDate: d('2025-05-20'),
       confirmationNote: '  500 KG short on niacinamide; balance in June.  ',
     });
     expect(res.status, res.reason).toBe('done');
     const po = purchaseOrderStore.get(PO)!;
     expect(po.status).toBe(POStatus.CONFIRMED);
     expect(po.lineItems.map((l) => l.confirmedQty)).toEqual([4500, 300]);
-    expect(po.confirmedDeliveryDate).toBe('2025-05-20');
+    expect(po.confirmedDeliveryDate).toBe(d('2025-05-20'));
     expect(po.confirmationNote).toBe('500 KG short on niacinamide; balance in June.');
     expect(po.confirmedAt).toBe('2026-10-08T05:37:00.000Z');
   });
@@ -201,7 +206,7 @@ describe('OPS-3 · order confirmation — the date, the note and the quantity ar
     });
     it('PO_CONFIRM_DATE_BEFORE_ORDER — a delivery before the order was placed', async () => {
       // The order date is 2025-04-02.
-      await refused({ confirmedDeliveryDate: '2025-04-01' }, 'PO_CONFIRM_DATE_BEFORE_ORDER');
+      await refused({ confirmedDeliveryDate: d('2025-04-01') }, 'PO_CONFIRM_DATE_BEFORE_ORDER');
     });
     it('PO_CONFIRM_NOTE_INVALID — a note longer than the form carries', async () => {
       await refused({ confirmationNote: 'x'.repeat(PO_CONFIRM_NOTE_MAX + 1) }, 'PO_CONFIRM_NOTE_INVALID');
@@ -214,11 +219,11 @@ describe('OPS-3 · order confirmation — the date, the note and the quantity ar
   it('the bounds are exact: the order date itself and a note of the maximum length pass', async () => {
     const res = await confirm({
       confirmedQuantities: [5000, 300],
-      confirmedDeliveryDate: '2025-04-02',
+      confirmedDeliveryDate: d('2025-04-02'),
       confirmationNote: 'x'.repeat(PO_CONFIRM_NOTE_MAX),
     });
     expect(res.status, res.reason).toBe('done');
-    expect(purchaseOrderStore.get(PO)!.confirmedDeliveryDate).toBe('2025-04-02');
+    expect(purchaseOrderStore.get(PO)!.confirmedDeliveryDate).toBe(d('2025-04-02'));
   });
 
   it('the quantity rule is still read first, and still refuses in its own voice', async () => {
@@ -244,7 +249,7 @@ describe('OPS-3 · isCalendarDay — the one reader of a typed day', () => {
 
 describe('OPS-3 · ship notice — every line, the confirmed quantity, and what was typed', () => {
   const confirmShort = () =>
-    confirm({ confirmedQuantities: [4500, 300], confirmedDeliveryDate: '2025-05-20' });
+    confirm({ confirmedQuantities: [4500, 300], confirmedDeliveryDate: d('2025-05-20') });
 
   it('⚠️ it ships the CONFIRMED quantity on EVERY order line', async () => {
     expect((await confirmShort()).status).toBe('done');

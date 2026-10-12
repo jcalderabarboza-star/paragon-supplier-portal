@@ -70,6 +70,15 @@
   background: theme('colors.action.soft');
 }
 
+/* PG-3 · the TIGHT step (`data-tight`, decided by `planColumnWidths`): a view
+ * whose horizon does not fit at 12px reads its figures and its bucket headers
+ * at 11px, the smallest type the portal renders, before it gives anything else
+ * up. Sixteen weeks stand at 1366x768 this way. */
+.tp-grid[data-tight] .dsg-cell .tp-figure,
+.tp-grid[data-tight] .dsg-cell-header [data-testid='tp-bucket-head'] > * {
+  font-size: 0.6875rem;
+}
+
 /* PG-2 · where the whole horizon fits the view (`data-fits`, decided by
  * `planColumnWidths`), the grid has no sideways scroll. The engine's content is
  * one pixel wider than its box (measured: 1055 in 1054), which alone drew a

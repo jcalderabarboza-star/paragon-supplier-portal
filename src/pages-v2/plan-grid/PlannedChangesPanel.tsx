@@ -8,7 +8,7 @@
 //  · `PlannedChangesBar` — one compact line, STICKY at the foot of the view:
 //    what is planned, how many still owe a reason, the push controls, the
 //    progress of a push ("Pushing 23 of 50…") and its summary afterwards.
-//  · `PlannedChangesDetails` — the rows, the bulk reason and the cell
+//  · `PlannedChangesDetails` — the rows, each with its own reason, and the cell
 //    refusals, BELOW the grid, collapsible from the bar.
 //
 // The banner says how many changes are PLANNED and that none of them is
@@ -22,7 +22,7 @@
 // rows under jsdom.
 // ────────────────────────────────────────────────────────────────────────────
 
-import React, { useState } from 'react';
+import React from 'react';
 import { useTranslation } from 'react-i18next';
 import Button from '../../components/ui-v2/Button';
 import { Card } from '../../components/ui-v2/Card';
@@ -30,7 +30,7 @@ import Notice from '../../components/ui-v2/Notice';
 import { LinkButton } from '../../components/ui-v2/Actions';
 import Data from '../../components/ui-v2/Data';
 import DataTable, { CellSub, type Column } from '../../components/ui-v2/DataTable';
-import { Checkbox, FormField, TextInput } from '../../components/ui-v2/Form';
+import { Checkbox, TextInput } from '../../components/ui-v2/Form';
 import StatusPill from '../../components/ui-v2/StatusPill';
 import { HandoffNotice } from '../../components/ui-v2/HandoffNotice';
 import { useVerbAvailabilities } from '../../hooks/useVerbAvailability';
@@ -329,47 +329,18 @@ export const PlannedChangesDetails: React.FC<{ open: boolean }> = ({ open }) => 
   const pushReason = usePushReasonText();
   const api = usePlanDraft();
   const { canPush } = usePushAuthority();
-  const [picked, setPicked] = useState<ReadonlySet<string>>(new Set());
-  const [bulkReason, setBulkReason] = useState('');
-  const [bulkNote, setBulkNote] = useState<number | null>(null);
   if (!api || !open) return null;
   const { draft, pushing } = api;
   const entries = [...draft.entries.values()];
   const refusals = [...draft.refusals.entries()];
   if (entries.length === 0 && refusals.length === 0) return null;
 
-  // Only a PLANNED row that owes a reason can take one — the rest never enter the selection.
-  const owedRefs = entries.filter((e) => e.planState === 'PLANNED' && reasonOwed(e)).map((e) => e.seamRef);
-  const chosen = owedRefs.filter((r) => picked.has(r));
-  const allOwedPicked = owedRefs.length > 0 && chosen.length === owedRefs.length;
-  const toggle = (ref: string, on: boolean) => {
-    setBulkNote(null);
-    setPicked((p) => {
-      const next = new Set(p);
-      if (on) next.add(ref);
-      else next.delete(ref);
-      return next;
-    });
-  };
+  // PG-3 (operator ruling) · ONE reason field for the drawer, in its footer
+  // (`PlanPushControls`): it goes onto every row of the push that owes a reason
+  // and has none. A row's own reason is written in its row, below. The field
+  // that stood above the table — pick rows, write, apply — is gone.
 
   const columns: Column<PlanDraftEntry>[] = [
-    {
-      id: 'select',
-      header: <span className="sr-only">{t('planGrid.edit.col.select')}</span>,
-      kind: 'text',
-      className: 'w-8',
-      headerClassName: 'w-8',
-      cell: (e) =>
-        reasonOwed(e) && e.planState === 'PLANNED' ? (
-          <Checkbox
-            data-testid={`plan-select-${e.seamRef}`}
-            aria-label={t('planGrid.edit.bulk.selectRow', { cell: `${e.materialCode} ${e.bucket}` })}
-            checked={picked.has(e.seamRef)}
-            disabled={pushing}
-            onChange={(ev) => toggle(e.seamRef, ev.target.checked)}
-          />
-        ) : null,
-    },
     {
       id: 'cell',
       header: t('planGrid.edit.col.cell'),
@@ -497,46 +468,6 @@ export const PlannedChangesDetails: React.FC<{ open: boolean }> = ({ open }) => 
 
   return (
     <Card padding="none" data-testid="plan-draft-details">
-      {owedRefs.length > 0 && (
-        <div className="flex flex-wrap items-end gap-3 border-b border-info/20 px-4 py-2.5 text-xs" data-testid="plan-bulk-reason-bar">
-          <Checkbox
-            className="pb-1"
-            data-testid="plan-select-owed"
-            checked={allOwedPicked}
-            disabled={pushing}
-            onChange={(ev) => {
-              setBulkNote(null);
-              setPicked(ev.target.checked ? new Set(owedRefs) : new Set());
-            }}
-          >
-            {t('planGrid.edit.bulk.selectOwed', { n: formatNumber(owedRefs.length) })}
-          </Checkbox>
-          <FormField label={t('planGrid.edit.bulk.label')} className="min-w-[18rem]">
-            <TextInput
-              type="text"
-              data-testid="plan-bulk-reason"
-              placeholder={t('planGrid.push.reasonPlaceholder')}
-              value={bulkReason}
-              disabled={pushing}
-              onChange={(ev) => setBulkReason(ev.target.value)}
-            />
-          </FormField>
-          <Button
-            variant="outline"
-            disabled={pushing || chosen.length === 0 || bulkReason.trim() === ''}
-            onClick={() => setBulkNote(api.applyReason(chosen, bulkReason))}
-            data-testid="plan-bulk-apply"
-          >
-            {t('planGrid.edit.bulk.apply', { n: formatNumber(chosen.length) })}
-          </Button>
-          {bulkNote !== null && (
-            <span className="pb-1 text-text-secondary" role="status" data-testid="plan-bulk-note">
-              {t('planGrid.edit.bulk.applied', { count: bulkNote, n: formatNumber(bulkNote) })}
-            </span>
-          )}
-        </div>
-      )}
-
       {entries.length > 0 && (
         <DataTable
           columns={columns}
