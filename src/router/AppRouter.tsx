@@ -36,6 +36,7 @@ import ProcessFlows from '../pages-v2/ProcessFlows';
 import RolesCatalogue from '../pages-v2/RolesCatalogue';
 import RoleDetail from '../pages-v2/RoleDetail';
 import SuperAdminActivity from '../pages-v2/SuperAdminActivity';
+import BuyerMasterData from '../pages-v2/BuyerMasterData';
 import BypassReasonDialog from '../components/v2-features/BypassReasonDialog';
 // M2 · Design 5 §A.5 — the module roadmap board and the admin page (PLT).
 import ModulesBoard from '../pages-v2/ModulesBoard';
@@ -168,6 +169,7 @@ const AppRouter: React.FC = () => {
           <Route path="/buyer/roles" element={<ModuleGate path="/buyer/roles"><RolesCatalogue /></ModuleGate>} />
           <Route path="/buyer/roles/:roleId" element={<ModuleGate path="/buyer/roles/:roleId"><RoleDetail /></ModuleGate>} />
           <Route path="/buyer/platform/super-admin-activity" element={<ModuleGate path="/buyer/platform/super-admin-activity"><SuperAdminActivity /></ModuleGate>} />
+          <Route path="/buyer/master-data" element={<ModuleGate path="/buyer/master-data"><BuyerMasterData /></ModuleGate>} />
           <Route path="/buyer/platform/modules" element={<ModuleGate path="/buyer/platform/modules"><ModulesBoard /></ModuleGate>} />
           <Route path="/buyer/platform/modules/admin" element={<ModuleGate path="/buyer/platform/modules/admin"><ModulesAdmin /></ModuleGate>} />
           <Route path="/glossary" element={<ModuleGate path="/glossary"><Glossary /></ModuleGate>} />

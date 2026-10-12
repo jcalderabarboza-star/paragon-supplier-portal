@@ -46,6 +46,7 @@ export const widgetEn: Record<string, string> = {
   // nothing here observes that. Naming the specific waiting state is what stops
   // wiring alone from ever reading as green.
   'widget.honesty.awaitingMasterData': 'Sample — awaiting S/4 material master',
+  'widget.honesty.awaitingMasterDataFeed': 'Sample — awaiting the S/4HANA master-data feed',
   // Harvest-gated (SDC-3b): the InventoryDeclaration target is wired, but the SOH
   // shown is SIMULATED until real supplier identities submit over a live portal (F1).
   'widget.honesty.awaitingSupplierFeed': 'Sample — awaiting live supplier feed',
@@ -215,6 +216,7 @@ export const widgetId: Record<string, string> = {
   'widget.honesty.awaitingC8Feed': 'Sampel — menunggu feed data C8 SOMO',
   'widget.honesty.awaitingSupplierIdentities': 'Sampel — menunggu identitas pemasok sungguhan',
   'widget.honesty.awaitingMasterData': 'Sampel — menunggu master material S/4',
+  'widget.honesty.awaitingMasterDataFeed': 'Sampel — menunggu feed data master S/4HANA',
   'widget.honesty.awaitingSupplierFeed': 'Sampel — menunggu feed pemasok live',
   'widget.honesty.awaitingDiscoveryFeed': 'Sampel — menunggu feed penemuan pemasok',
   'widget.honesty.commandsDispatch': 'Perintah dijalankan — buku besar in-memory',

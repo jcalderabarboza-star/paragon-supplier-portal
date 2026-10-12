@@ -93,7 +93,7 @@
 | Vision capability | Vision marker | State on `main` | Status |
 |---|---|---|---|
 | Identity layer | REAL | extended with seat roles, custom roles, sample persons | BUILT (session); IdP SE-3 |
-| Data-layer foundation | FOUNDATION | 72 methods pinned (C1), incl. planning and module reads | BUILT |
+| Data-layer foundation | FOUNDATION | 76 methods pinned (C1), incl. planning, module and master-data reads | BUILT |
 | Action layer ("`IActionService`") | TARGET | the command dispatcher + `CommandTarget`s: 141 verbs, 24 targets; dead-control residue 0 | BUILT-E2E, different shape |
 | Flow Builder + flow-override engine | TARGET | ABSENT; specified in full as Design 6 | SE-16 (and SE-11) |
 | Learn / Co-pilot | TARGET | process guides for all 30 flows, EN + ID (ID draft), machine-readable; no co-pilot | guides BUILT **(moved)**; co-pilot SE-20 |

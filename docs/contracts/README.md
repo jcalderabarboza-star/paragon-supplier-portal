@@ -38,6 +38,7 @@ zero code yet — so the backend work is additive against a frozen contract, nev
 | [C8 — Forecast publication](./C8-forecast-publication.md) | The forecast-publication sibling to C7 (Supplier Data Collaboration lane): SOMO emits material×period totals, **the portal owns the supplier fan-out** · `commitmentClass` projected by us (**mapping UNRATIFIED**) · bucket-native grain · supplier-response feedback → Snowflake commons. **First issue 2026-08-03**; supersedes the unratified proposal |
 | [C11 — Invariant pointer](./C11-invariants.md) | The properties every implementation must hold, each naming the instrument that fails the build when it stops being true. **Pinned bilaterally**: a retired enforcer reddens the document, and an invariant with no enforcer must say so in its own row. Read it with C5 — it says which invariants a conformance factory carries across the seam and which are enforced HERE and merely asserted THERE. |
 | [C12 — Backend spec](./C12-backend-spec.md) | **A map of what is ABSENT.** The five seams in three columns — what the tree specifies, what it assumes, and what nothing answers — plus what an SE team must never build, the invariants they inherit as work, the idempotency contract including its ordering, and the seam-code gap. **Partly pinned**: the never-originate table, the seam-code table and the inherited-invariant list are all derived, and every artefact it names is asserted to exist. The rest is prose and says so. |
+| [C13 — Master data](./C13-master-data.md) | **The replica of SAP S/4HANA master data.** SAP is the system of record; the portal holds a replica it never writes. The record and its stamp, the sync run and its rules (whole-record replace, missing marked never deleted, idempotent), the refusals by name, and the read seam with its tenancy. **Pinned by specs** in `src/services/masterData/` and by C1 Axis 1 for the four read methods; the document itself is prose and says so. |
 
 ---
 
@@ -75,7 +76,7 @@ number seen three ways.
 
 | Count | Axis | What it measures | Where |
 |---|---|---|---|
-| **72** | C1 Axis 1 | The `IDataService` **service surface** — every method of the composed service contract, per sub-service. | `src/services/data/types.ts`; C1 Axis 1 |
+| **76** | C1 Axis 1 | The `IDataService` **service surface** — every method of the composed service contract, per sub-service. | `src/services/data/types.ts`; C1 Axis 1 |
 | **143** | C1 Axis 2 | The **transition catalog** — every authored state-machine edge across the registered flows (`getKnownFlows()`). This is the *verb* surface, distinct from the service surface. | `src/services/transitions/flows/*.ts`; C1 Axis 2 |
 | **25** | C1 Axis 3 | The **wired CommandTargets** — entities with a live per-entity adapter the dispatcher writes through. The list is `WIRED_COMMAND_TARGETS`, not a sentence. | `src/services/data/mock/MockCommandService.ts`; C1 Axis 3 |
 
