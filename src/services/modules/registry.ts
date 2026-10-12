@@ -130,9 +130,12 @@ function buildModules(): readonly ModuleSpec[] {
         '/buyer/platform/modules', '/buyer/platform/modules/admin',
         // ADM-1 — the Super Admin activity view. In PLT, so the record of what
         // a Super Admin did cannot be switched off.
-        '/buyer/platform/super-admin-activity'],
+        '/buyer/platform/super-admin-activity',
+        // MD-1 — the master-data replica. In PLT, because every module reads
+        // master data: switching the read off would switch them all off.
+        '/buyer/master-data'],
       flows: ['role', 'moduleActivation', 'flowVersion'],
-      capabilities: ['identity', 'dashboard'], dependsOn: [], parts: [],
+      capabilities: ['identity', 'dashboard', 'masterData'], dependsOn: [], parts: [],
     },
     {
       code: 'SUP', nameKey: name('SUP'), descriptionKey: desc('SUP'), scope: 'cross-cutting',

@@ -91,7 +91,7 @@ describe('N1 — the order is pinned, stage by stage', () => {
       ['nav.section.suppliers', ['/buyer/suppliers', '/buyer/supplier-applications', '/buyer/compliance']],
       ['nav.section.insights', ['/buyer/analytics', '/buyer/scorecard', '/buyer/risk']],
       // ADM-1 — the Super Admin activity view sits after Roles.
-      ['nav.section.platform', ['/buyer/platform/modules', '/buyer/roles', '/buyer/platform/super-admin-activity', '/buyer/process-flows', '/glossary']],
+      ['nav.section.platform', ['/buyer/platform/modules', '/buyer/roles', '/buyer/platform/super-admin-activity', '/buyer/process-flows', '/buyer/master-data', '/glossary']],
     ]);
   });
 

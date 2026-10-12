@@ -11,6 +11,7 @@ import { MockCommandService } from './MockCommandService';
 import { MockEnforcementService } from './MockEnforcementService';
 import { MockPlanningService } from './MockPlanningService';
 import { MockModuleService } from './MockModuleService';
+import { MockMasterDataService } from './MockMasterDataService';
 import { capabilitiesFor } from '../../transitions';
 
 // Shared instances so the chase service composes the SAME collaboration + delivery
@@ -35,6 +36,7 @@ export const mockDataService: IDataService = {
   enforcement: new MockEnforcementService(),
   planning: new MockPlanningService(),
   modules: new MockModuleService(),
+  masterData: new MockMasterDataService(),
   commands,
   getCapabilities: async (scope) => capabilitiesFor(scope),
 };

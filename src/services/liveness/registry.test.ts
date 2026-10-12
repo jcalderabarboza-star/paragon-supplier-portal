@@ -202,6 +202,10 @@ describe('LivenessRegistry — harvest gate (LIVENESS-DATASOURCE-01, gate-2)', (
       'forecastPublications',
       'inventory',
       'supplierDiscovery',
+      // MD-1 — the replica of SAP's master data. Not wired and never will be: no
+      // verb writes a replica record. The entry is here so the pill names what
+      // the page waits for (the S/4HANA feed) rather than a bare "Sample".
+      'masterData',
       // S82 - the supplierDocument target is wired, so ONLY this entry keeps the
       // pill honest. Added in the same commit as the wiring, which is the point
       // of this census test existing.
