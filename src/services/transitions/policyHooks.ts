@@ -1062,6 +1062,32 @@ export const POLICY_HOOKS = {
   MDR_NOTE_AUTHORED: 'mdr_note_authored',
   /** SAP's answer: it carries SAP's request number, and a sample answer is not recorded on production. */
   MDR_SAP_ANSWER_ADMISSIBLE: 'mdr_sap_answer_admissible',
+  // ── FB-3 · PROPOSE, REVIEW, APPROVE — and FB-4 · ACTIVATE, ROLL BACK ───────
+  /** Returning, approving, rejecting, activating, retiring or restoring a
+   *  change: a decision on it is recorded against the person who took it. */
+  FLOWVERSION_DECIDER_NAMED: 'flowversion_decider_named',
+  /** Every act that moves a change states why, in words. */
+  FLOWVERSION_REASON_AUTHORED: 'flowversion_reason_authored',
+  /** Propose, approve, activate, restore: the change obeys the rules of its
+   *  process as they are NOW (the validation library), its process has not
+   *  moved, and — at proposal — every warning is acknowledged. */
+  FLOWVERSION_OBEYS_RULES: 'flowversion_obeys_rules',
+  /** Approve: the approver is not the person who proposed it. A Super Admin
+   *  passes with a recorded reason. */
+  FLOWVERSION_APPROVER_NOT_PROPOSER: 'flowversion_approver_not_proposer',
+  /** Approve, activate, restore: a sample person may decide on a demo or
+   *  preview deployment and not on production. */
+  FLOWVERSION_NOT_SAMPLE_IN_PROD: 'flowversion_not_sample_in_prod',
+  // ── FB-4 · A STEP AN ACTIVE VERSION ADDED ──────────────────────────────────
+  /** Completing or declining a step is recorded against the person who did it. */
+  STEP_ACTOR_NAMED: 'step_actor_named',
+  /** The step is the one due on this document, the seat holds its lane, and an
+   *  earlier completer the step must differ from is not this person. */
+  STEP_MAY_BE_TAKEN: 'step_may_be_taken',
+  /** Complete: what a data-capture step asks for was given. */
+  STEP_FIELDS_GIVEN: 'step_fields_given',
+  /** Decline: the step is an approval, and the decline says why. */
+  STEP_DECLINE_REASONED: 'step_decline_reasoned',
 } as const;
 
 for (const name of Object.values(POLICY_HOOKS)) registerPolicyHook(name);

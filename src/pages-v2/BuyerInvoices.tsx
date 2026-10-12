@@ -1294,7 +1294,7 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
                     {selected.status}
                   </StatusPill>
                   <span className="mt-1 block">
-                    <NextActLine act={nextAct} testId="next-act-buyer-invoice" />
+                    <NextActLine act={nextAct} testId="next-act-buyer-invoice" doc={selected ? { entity: 'invoice', id: selected.id, state: selected.lifecycleState } : null} />
                   </span>
                 </Field>
                 <Field label={t('buyerInvoices.field.channel')}>{selected.channel}</Field>

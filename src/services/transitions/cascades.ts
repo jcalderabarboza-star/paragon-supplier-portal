@@ -104,6 +104,13 @@ export const CASCADES: Record<string, readonly CascadeLink[]> = {
   t_publication_publish: [
     { targetEntity: 'forecastPublication', targetTransitionId: 't_publication_supersede' },
   ],
+  // FB-4 — a version of a process coming into force retires the one that was.
+  t_flowversion_activate: [
+    { targetEntity: 'flowVersion', targetTransitionId: 't_flowversion_supersede' },
+  ],
+  t_flowversion_restore: [
+    { targetEntity: 'flowVersion', targetTransitionId: 't_flowversion_supersede' },
+  ],
 };
 
 /** The cascade links declared for a source transition (empty if none). */

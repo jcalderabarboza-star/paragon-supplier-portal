@@ -319,7 +319,33 @@ export const processFlowPurposeEn: Record<string, string> = {
   'processFlows.purpose.t_flowversion_create':
     'Starts a change to one process and gives it a name and a number, so that what is being proposed can be found, read and argued with before anything runs differently.',
   'processFlows.purpose.t_flowversion_save':
-    'Keeps what the change says so far. Nothing a saved change says is in force: a process runs as it shipped until a change has been approved and switched on.',
+    'Keeps what the change says so far. A change that is still being written is not in force: the process runs as it shipped until a change has been agreed by a second person and switched on.',
+  'processFlows.purpose.t_flowversion_propose':
+    'Hands the change over to be judged. It is taken only once the change obeys every rule of its process and each warning has been acknowledged, so a reviewer never reads something the platform would refuse.',
+  'processFlows.purpose.t_flowversion_withdraw':
+    'The author takes the change back to work on it again. What it said while it was being judged is not edited in place: it returns to being written, and must be handed over again.',
+  'processFlows.purpose.t_flowversion_return':
+    'A reviewer sends the change back to its author, saying what must be different. Any one named holder may do it, because sending a change back never puts anything in force.',
+  'processFlows.purpose.t_flowversion_approve':
+    'A second person agrees that the change is right. It is checked against the rules again, and the person who handed it over may not be the one who agrees to it.',
+  'processFlows.purpose.t_flowversion_reject':
+    'A reviewer turns the change down for good, saying why. It stays on the list as it was; if it is wanted after all, a new change is started from it.',
+  'processFlows.purpose.t_flowversion_activate':
+    'Puts an agreed change in force: from this moment the process asks for the steps the change adds. It is checked against the rules a third time, and the change that was in force for the same process is switched off.',
+  'processFlows.purpose.t_flowversion_supersede':
+    'Switches a change off because another change to the same process came into force. Nobody declares it; the switch that put the other one in force does.',
+  'processFlows.purpose.t_flowversion_retire':
+    'Switches a change off and returns the process to the way it shipped, at once. This is the way back: a document that was waiting on an added step can move again.',
+  'processFlows.purpose.t_flowversion_restore':
+    'Puts an earlier change back in force. It is checked against the rules again first, because the process may have moved since the change last ran.',
+
+  // ── processStep (FB-4) ────────────────────────────────────────
+  'processFlows.purpose.entity.processStep':
+    'The record of the steps that a change in force added to a process: who completed each one on which document, when, and what they wrote. A step is asked for again each time a document comes round to the act behind it.',
+  'processFlows.purpose.t_step_complete':
+    'A person in the lane the step belongs to does what the step asks and says so. Until then the act behind the step is refused and the document stays where it is.',
+  'processFlows.purpose.t_step_decline':
+    'A person asked to approve says no, and why. The act behind the step stays refused, and the refusal says who declined; the step can be decided again.',
 
   // ── supplierDocument ───────────────────────────────────────────────────────
   'processFlows.purpose.entity.supplierDocument':
@@ -760,7 +786,33 @@ export const processFlowPurposeId: Record<string, string> = {
   'processFlows.purpose.t_flowversion_create':
     'Memulai perubahan pada satu proses serta memberinya nama dan nomor, sehingga apa yang diusulkan dapat ditemukan, dibaca, dan diperdebatkan sebelum ada yang berjalan berbeda.',
   'processFlows.purpose.t_flowversion_save':
-    'Menyimpan isi perubahan sejauh ini. Tidak ada isi perubahan tersimpan yang berlaku: proses berjalan seperti saat dikirim sampai sebuah perubahan disetujui dan diaktifkan.',
+    'Menyimpan isi perubahan sejauh ini. Perubahan yang masih ditulis belum berlaku: proses berjalan seperti saat dikirim sampai sebuah perubahan disetujui orang kedua dan diberlakukan.',
+  'processFlows.purpose.t_flowversion_propose':
+    'Menyerahkan perubahan untuk dinilai. Hanya dapat dilakukan setelah perubahan mematuhi setiap aturan prosesnya dan setiap peringatan telah diakui, sehingga peninjau tidak pernah membaca sesuatu yang akan ditolak platform.',
+  'processFlows.purpose.t_flowversion_withdraw':
+    'Penulis menarik kembali perubahan untuk dikerjakan lagi. Isinya saat dinilai tidak diubah di tempat: perubahan kembali ke tahap penulisan dan harus diserahkan lagi.',
+  'processFlows.purpose.t_flowversion_return':
+    'Peninjau mengembalikan perubahan kepada penulisnya, dengan menyebutkan apa yang harus berbeda. Siapa pun pemegang hak yang bernama dapat melakukannya, karena mengembalikan perubahan tidak pernah memberlakukan apa pun.',
+  'processFlows.purpose.t_flowversion_approve':
+    'Orang kedua menyetujui bahwa perubahan itu benar. Perubahan diperiksa lagi terhadap aturan, dan orang yang menyerahkannya tidak boleh menjadi orang yang menyetujuinya.',
+  'processFlows.purpose.t_flowversion_reject':
+    'Peninjau menolak perubahan untuk seterusnya, dengan menyebutkan sebabnya. Perubahan tetap ada di daftar apa adanya; jika ternyata diinginkan, perubahan baru dimulai darinya.',
+  'processFlows.purpose.t_flowversion_activate':
+    'Memberlakukan perubahan yang telah disetujui: sejak saat ini proses meminta langkah-langkah yang ditambahkan perubahan itu. Perubahan diperiksa terhadap aturan untuk ketiga kalinya, dan perubahan yang sebelumnya berlaku untuk proses yang sama dihentikan.',
+  'processFlows.purpose.t_flowversion_supersede':
+    'Menghentikan sebuah perubahan karena perubahan lain pada proses yang sama mulai berlaku. Tidak ada yang menyatakannya; tindakan yang memberlakukan perubahan lain itulah yang melakukannya.',
+  'processFlows.purpose.t_flowversion_retire':
+    'Menghentikan sebuah perubahan dan mengembalikan proses ke keadaan saat dikirim, seketika. Inilah jalan kembali: dokumen yang menunggu langkah tambahan dapat bergerak lagi.',
+  'processFlows.purpose.t_flowversion_restore':
+    'Memberlakukan kembali perubahan yang lebih lama. Perubahan diperiksa lagi terhadap aturan lebih dahulu, karena prosesnya mungkin telah berubah sejak perubahan itu terakhir berjalan.',
+
+  // ── processStep (FB-4) ────────────────────────────────────────
+  'processFlows.purpose.entity.processStep':
+    'Catatan langkah-langkah yang ditambahkan ke sebuah proses oleh perubahan yang berlaku: siapa yang menyelesaikan tiap langkah pada dokumen mana, kapan, dan apa yang ditulisnya. Sebuah langkah diminta lagi setiap kali dokumen kembali ke tindakan di belakangnya.',
+  'processFlows.purpose.t_step_complete':
+    'Seseorang di lajur pemilik langkah melakukan apa yang diminta langkah itu dan menyatakannya. Sampai saat itu tindakan di belakang langkah ditolak dan dokumen tetap di tempatnya.',
+  'processFlows.purpose.t_step_decline':
+    'Orang yang diminta menyetujui berkata tidak, dan menyebutkan sebabnya. Tindakan di belakang langkah tetap ditolak, dan penolakan menyebut siapa yang menolak; langkah dapat diputuskan lagi.',
 
   // ── supplierDocument ───────────────────────────────────────────────────────
   'processFlows.purpose.entity.supplierDocument':

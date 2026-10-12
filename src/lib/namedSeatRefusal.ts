@@ -25,6 +25,8 @@ export const NAMED_SEAT_HOOKS: readonly PolicyHookId[] = [
   POLICY_HOOKS.FLOWVERSION_AUTHOR_NAMED,
   // MD-4 — every act on a master-data change request names a person.
   POLICY_HOOKS.MDR_ACTOR_NAMED,
+  POLICY_HOOKS.FLOWVERSION_DECIDER_NAMED,
+  POLICY_HOOKS.STEP_ACTOR_NAMED,
 ];
 
 /** The i18n key for a refusal one of these hooks produced, else `null`. */

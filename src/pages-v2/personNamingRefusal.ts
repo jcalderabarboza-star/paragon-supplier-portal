@@ -85,6 +85,10 @@ export const PERSON_NAMING_REFUSAL_KEYS: Readonly<Record<string, string>> = Obje
   // OPS-1 — a named person who approved an invoice tries to release its payment.
   INVOICE_RELEASER_IS_APPROVER: 'identity.refusal.releaserIsApprover',
   MDR_APPROVER_IS_PROPOSER: 'identity.refusal.approverIsProposer',
+  // FB-3 / FB-4 — a change to a process, and the steps one adds.
+  FLOWVERSION_APPROVER_IS_PROPOSER: 'identity.refusal.flowApproverIsProposer',
+  STEP_COMPLETER_IS_EARLIER_COMPLETER: 'identity.refusal.stepCompleterIsEarlier',
+  STEP_COMPLETER_MAY_NOT_ACT: 'identity.refusal.stepCompleterMayNotAct',
 });
 
 /**

@@ -84,6 +84,7 @@ export const GUIDE_LIST_ROUTE: Readonly<Record<string, string>> = Object.freeze(
   materialRuling: '/buyer/compliance',
   moduleActivation: '/buyer/platform/modules/admin',
   obligation: '/buyer/contracts',
+  processStep: '/buyer/process-flows',
   psl: '/buyer/preferred-suppliers',
   pslCapSetting: '/buyer/preferred-suppliers',
   purchaseOrder: '/buyer/orders',

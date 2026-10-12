@@ -3,10 +3,11 @@
 // world already (`liveWorld`); the labels need a language, so a surface adds
 // them.
 //
-// ⚠️ ONE WORLD FOR THE PAGE. The composer and the Changes list are handed the
-// SAME world, built once with these labels — so a draft the composer reports
-// as naming a person is reported by the list too. Two worlds disagreed here
-// before the batch that wrote this file shipped: found on review, not by a spec.
+// ⚠️ ONE WORLD, EVERYWHERE. `liveWorld()` carries these labels itself, so the
+// composer, the Changes list, the checks that guard proposing and activating,
+// and the dispatcher's overlay all judge a version by the same names. Two
+// worlds disagreed here once (the composer knew the labels, the list only the
+// ids): found on review, not by a spec.
 import i18n from '../../lib/i18n';
 import { ROLE_LABEL_KEY } from '../../services/transitions/handoff';
 import { SAMPLE_PEOPLE } from '../../services/identity/sampleRoster';

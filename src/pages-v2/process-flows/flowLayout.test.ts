@@ -283,7 +283,10 @@ describe('C.2 — entityVerbOf qualifies a cascade source with its entity', () =
     // a transition in the very flow it fires into.
     // OPS-1 added a third same-entity member: the header match is now also
     // fired by `invoice:submit` and `invoice:resolve`, verbs of its own flow.
+    // FB-4 added a fourth: a version is superseded by `flowVersion:activate`
+    // and `flowVersion:restore`, verbs of its own flow.
     expect(rows.filter((r) => r.ambiguous).map((r) => r.key).sort()).toEqual([
+      'flowVersion.t_flowversion_supersede',
       'forecastPublication.t_publication_supersede',
       'invoice.t_invoice_match',
       'purchaseRequisition.t_pr_source',

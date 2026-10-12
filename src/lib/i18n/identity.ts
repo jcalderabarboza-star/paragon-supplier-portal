@@ -106,6 +106,12 @@ export const identityEn: Record<string, string> = {
     '{{person}} approved this invoice and may not also release its payment. Approving an invoice and releasing its money are two authorities — somebody else releases it.',
   'identity.refusal.approverIsProposer':
     '{{person}} proposed this change to master data and may not also decide it. Proposing a change and ruling on it are two authorities — a second person decides.',
+  'identity.refusal.flowApproverIsProposer':
+    '{{person}} proposed this change and may not also approve it. Proposing a change to a process and approving it are two people — somebody else approves it.',
+  'identity.refusal.stepCompleterIsEarlier':
+    '{{person}} completed an earlier step on this document, and the change in force asks for a different person on this one. Somebody else completes it.',
+  'identity.refusal.stepCompleterMayNotAct':
+    '{{person}} completed the added step on this document, and the change in force rules that whoever completes it may not then take the act. Somebody else takes it.',
 };
 
 export const identityId: Record<string, string> = {
@@ -158,4 +164,10 @@ export const identityId: Record<string, string> = {
     '{{person}} menyetujui faktur ini dan tidak boleh juga merilis pembayarannya. Menyetujui faktur dan merilis dananya adalah dua kewenangan — orang lain yang merilisnya.',
   'identity.refusal.approverIsProposer':
     '{{person}} mengusulkan perubahan data master ini dan tidak boleh sekaligus memutuskannya. Mengusulkan perubahan dan memutuskannya adalah dua kewenangan — orang kedua yang memutuskan.',
+  'identity.refusal.flowApproverIsProposer':
+    '{{person}} mengusulkan perubahan ini dan tidak boleh juga menyetujuinya. Mengusulkan perubahan pada sebuah proses dan menyetujuinya dilakukan dua orang — orang lain yang menyetujuinya.',
+  'identity.refusal.stepCompleterIsEarlier':
+    '{{person}} menyelesaikan langkah sebelumnya pada dokumen ini, dan perubahan yang berlaku meminta orang yang berbeda untuk langkah ini. Orang lain yang menyelesaikannya.',
+  'identity.refusal.stepCompleterMayNotAct':
+    '{{person}} menyelesaikan langkah tambahan pada dokumen ini, dan perubahan yang berlaku menetapkan bahwa penyelesainya tidak boleh kemudian melakukan tindakan itu. Orang lain yang melakukannya.',
 };

@@ -74,7 +74,11 @@ describe('FB-1 · who may draft a change', () => {
   it('⚠ POPULATION CONTROL — the flow is registered and wired, and the right sits with Compliance alone', () => {
     expect(getKnownFlows().map((f) => f.entity)).toContain('flowVersion');
     expect(WIRED_COMMAND_TARGETS).toContain('flowVersion');
-    expect(getFlow('flowVersion')!.transitions.map((t) => t.id)).toEqual(['t_flowversion_create', 't_flowversion_save']);
+    // The two acts a draft is written with; the rest of the machine is `fb3Lifecycle.test.ts`'s.
+    expect(getFlow('flowVersion')!.transitions.filter((t) => t.to === 'Draft' && t.requiredFields.every((f) => f !== 'reason')).map((t) => t.id)).toEqual([
+      't_flowversion_create',
+      't_flowversion_save',
+    ]);
     expect(rolesHolding('flow:draft')).toEqual(['compliance']);
   });
 

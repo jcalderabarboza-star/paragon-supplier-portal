@@ -157,6 +157,10 @@ import { moduleActivationTarget, moduleGate } from './moduleActivationTarget';
 import { materialRulingTarget } from './materialRulingTarget';
 import { makeFlowVersionTarget } from './flowVersionTarget';
 import { makeMasterDataRequestTarget } from './masterDataRequestTarget';
+import { makeProcessStepTarget } from './processStepTarget';
+import { liveWorld } from '../../flowBuilder/liveWorld';
+import { flowOverlay } from '../../flowBuilder/flowOverlay';
+import { flowVersionStore } from '../../flowBuilder/flowVersionStore';
 import type {
   Acknowledgment,
   IncomingShipment,
@@ -3296,7 +3300,9 @@ const TARGETS: Record<string, CommandTarget> = {
   materialRuling: materialRulingTarget,
   // FB-1 — a change to a process. The factory is handed this table's own keys:
   // a change may be drafted only against a process a command can write through.
-  flowVersion: makeFlowVersionTarget(() => Object.keys(TARGETS)),
+  flowVersion: makeFlowVersionTarget(() => Object.keys(TARGETS), () => liveWorld()),
+  // FB-4 — the ledger of steps an active version added.
+  processStep: makeProcessStepTarget((entity, docId) => TARGETS[entity]?.readState(docId) ?? null),
   // MD-4 / MD-5 — a master-data change request. No act of it writes a master
   // record; a sample SAP answer delivers one through the sync applier.
   masterDataRequest: makeMasterDataRequestTarget(),
@@ -3410,6 +3416,29 @@ const resolveCascades = (ctx: CascadeContext): CascadeCommand[] => {
           }
         : {}),
     }));
+  }
+  // — FB-4 · a version coming into force retires the one that was ————————————
+  //
+  // At most one version of a process is in force. The resolver hands back only
+  // what it has confirmed: an Active version of the SAME process that is not
+  // the one just activated or restored. None is the ordinary case.
+  if (
+    ctx.entity === 'flowVersion' &&
+    (ctx.transitionId === 't_flowversion_activate' || ctx.transitionId === 't_flowversion_restore')
+  ) {
+    const now = flowVersionStore.byId(ctx.entityId);
+    if (!now || now.state !== 'Active') return [];
+    return flowVersionStore
+      .forEntity(now.content.entity)
+      .filter((v) => v.state === 'Active' && v.id !== now.id)
+      .flatMap((prior) =>
+        cascadesFor(ctx.transitionId).map((link) => ({
+          entity: link.targetEntity,
+          entityId: prior.id,
+          transitionId: link.targetTransitionId,
+          payload: { supersededBy: now.label },
+        })),
+      );
   }
   // — B4a · publishing retires the previous publication of the same grain ———
   //
@@ -3654,6 +3683,8 @@ const dispatcher = createDispatcher({
   // M1 — a verb whose module, part or side is OFF is refused by name
   // (`MODULE_INACTIVE:<switch>`), read from the activation ledger's derived view.
   moduleGate,
+  // FB-4 — what the version of a process in force adds in front of its acts.
+  flowOverlay,
 });
 
 /**

@@ -111,6 +111,8 @@ import { customRoleStore } from './customRoles';
 import { flowVersionStore } from '../flowBuilder/flowVersionStore';
 import { masterDataRequestStore } from '../data/mock/stores/masterDataRequestStore';
 import { emptyContent } from '../flowBuilder/flowVersion';
+import { stepLedger } from '../flowBuilder/stepLedger';
+import { activeStepKey, seatOf, versionAt, VERSION_STATES_REACHED } from '../../test/flowVersions';
 
 const svc = new MockCommandService();
 const ABSENT = 'zzz-no-such-entity-0000';
@@ -241,6 +243,10 @@ async function realIds(): Promise<Record<string, string | null>> {
   return {
     flowVersion: drafted.entityId ?? null,
     masterDataRequest: proposed.entityId ?? null,
+    // FB-4 — a step exists only while a change that defines it is in force, so
+    // one is put in force through the real acts and the step named on a real
+    // requisition resting where the gated act can be taken.
+    processStep: await activeStepKey(),
     purchaseOrder: purchaseOrderStore.all()[0]?.id ?? null,
     advanceShipNotice: asnStore.all()[0]?.asnNumber ?? null,
     goodsReceipt: goodsReceiptStore.all()[0]?.id ?? null,
@@ -367,9 +373,12 @@ async function walk(entity: string, t: TransitionDef): Promise<Walk | null> {
   if (entity === 'materialRuling') return at('PK-CART-9901', 'Governed');
   if (entity === 'role') return at('receiving', 'Defined');
   if (entity === 'flowVersion') {
-    const drafted = await draftAChange();
-    return drafted.entityId ? at(drafted.entityId, 'Draft') : null;
+    // FB-3 — walked, through the real acts, to a state the verb can fire from.
+    const from = t.from[0] as (typeof VERSION_STATES_REACHED)[number];
+    const version = await versionAt(from);
+    return at(version.id, version.state);
   }
+  if (entity === 'processStep') return at(await activeStepKey(), 'Recorded');
   if (entity === 'masterDataRequest') {
     // Only the birth state is reachable without a second named person.
     if (!t.from.includes('Proposed')) return null;
@@ -420,6 +429,7 @@ const resetAll = () => {
   customRoleStore.reset();
   flowVersionStore.reset();
   masterDataRequestStore.reset();
+  stepLedger.reset();
 };
 
 beforeEach(resetAll);
@@ -618,6 +628,9 @@ describe('THE LEGITIMATE PATHS — the half a "refuse everyone" fix would break'
         'materialRuling',
         // M1 — the activation ledger; `enforcement`'s shape, verb for verb.
         'moduleActivation',
+        // FB-4 — the ledger of steps an active version added. Buyer-side only
+        // in this build: no supplier completes a step.
+        'processStep',
         'psl',
         'pslCapSetting',
         'purchaseRequisition',
@@ -838,5 +851,14 @@ describe('THE LEGITIMATE PATHS — the half a "refuse everyone" fix would break'
     });
     expect(saved.status, saved.reason).toBe('done');
     expect(flowVersionStore.byId(drafted.entityId!)!.savedBy).toEqual(namedCompliance.actor);
+
+    // FB-4 — a step LANDS: with a change in force, the lane it names completes it.
+    purchaseRequisitionStore.reset();
+    const stepKeyNow = await activeStepKey();
+    const completed = await svc.dispatch(seatOf('finance'), {
+      transitionId: 't_step_complete', entity: 'processStep', entityId: stepKeyNow, payload: {},
+    });
+    expect(completed.status, completed.reason).toBe('done');
+    expect(stepLedger.all()).toHaveLength(1);
   });
 });

@@ -231,9 +231,15 @@ const ChangeComposer: React.FC<{
   /** The page's one world: the list judges a saved draft by the same rules. */
   world: ValidationWorld;
   onClose: () => void;
+  /** The saved draft is handed over for review: the page closes this and opens the review. */
+  onPropose: () => void;
   /** Called after a save the dispatcher accepted, so the list reads the store again. */
   onSaved: () => void;
-}> = ({ version, world, onClose, onSaved }) => {
+}> = ({ version, world, onClose, onSaved, onPropose }) => {
+  // FB-3 — closing with unsaved work ASKS FIRST (operator ruling). Every way
+  // out of the pop-up — the button, the cross, Escape, the dimmed page — comes
+  // through `leave`, so none of them can drop the work unasked.
+  const [discarding, setDiscarding] = useState(false);
   const { t, i18n: lang } = useTranslation();
   const { toast } = useToast();
   const refusalText = useRefusalText();
@@ -291,11 +297,16 @@ const ChangeComposer: React.FC<{
     onSaved();
   };
 
+  const leave = (): void => {
+    if (dirty) setDiscarding(true);
+    else onClose();
+  };
+
   return (
     <Dialog
       open
       fill
-      onClose={onClose}
+      onClose={leave}
       title={t('flowBuilder.compose.title', { label: version.label, process: guide?.title ?? entity })}
       titleAside={<StatusPill variant="neutral">{t(`flowBuilder.state.${version.state}`)}</StatusPill>}
       testId="fb-composer"
@@ -482,22 +493,52 @@ const ChangeComposer: React.FC<{
         })}
       </section>
 
-      <div className="mt-6 flex flex-wrap items-center gap-3 border-t border-border-subtle pt-4">
-        <Button variant="primary" data-testid="fb-save" onClick={() => void submit()}>
-          {t('flowBuilder.compose.save')}
-        </Button>
-        <Button variant="secondary" data-testid="fb-compose-close" onClick={onClose}>
-          {t('flowBuilder.compose.close')}
-        </Button>
-        <span className="text-xs text-text-tertiary" data-testid="fb-compose-dirty">
-          {t(dirty ? 'flowBuilder.compose.unsaved' : 'flowBuilder.compose.allSaved')}
-        </span>
-        <ActorPreActNotice
-          unattributedKey="identity.preAct.namedRequired"
-          className="text-xs text-text-tertiary leading-relaxed"
-          testId="fb-compose-actor"
-        />
-      </div>
+      {discarding ? (
+        // The destructive ask stands alone: its confirm is the one solid
+        // button, and no other commit is offered while it is open.
+        <div
+          className="mt-6 flex flex-wrap items-center gap-3 border-t border-border-subtle pt-4"
+          role="alertdialog"
+          aria-label={t('flowBuilder.compose.discardTitle')}
+          data-testid="fb-discard-ask"
+        >
+          <span className="text-sm text-text-primary">{t('flowBuilder.compose.discardBody', { label: version.label })}</span>
+          <Button variant="secondary" data-testid="fb-discard-keep" onClick={() => setDiscarding(false)}>
+            {t('flowBuilder.compose.discardKeep')}
+          </Button>
+          <Button variant="primary" tone="critical" data-testid="fb-discard-confirm" onClick={onClose}>
+            {t('flowBuilder.compose.discardConfirm')}
+          </Button>
+        </div>
+      ) : (
+        <div className="mt-6 flex flex-wrap items-center gap-3 border-t border-border-subtle pt-4">
+          {/* ONE solid button: saving while there is something to save, handing
+              the saved draft over once there is not. */}
+          <Button variant={dirty ? 'primary' : 'outline'} disabled={!dirty} data-testid="fb-save" onClick={() => void submit()}>
+            {t('flowBuilder.compose.save')}
+          </Button>
+          <Button
+            variant={dirty ? 'outline' : 'primary'}
+            disabled={dirty}
+            title={dirty ? t('flowBuilder.compose.proposeAfterSave') : undefined}
+            data-testid="fb-propose"
+            onClick={onPropose}
+          >
+            {t('flowBuilder.compose.propose')}
+          </Button>
+          <Button variant="secondary" data-testid="fb-compose-close" onClick={leave}>
+            {t('flowBuilder.compose.close')}
+          </Button>
+          <span className="text-xs text-text-tertiary" data-testid="fb-compose-dirty">
+            {t(dirty ? 'flowBuilder.compose.unsaved' : 'flowBuilder.compose.allSaved')}
+          </span>
+          <ActorPreActNotice
+            unattributedKey="identity.preAct.namedRequired"
+            className="text-xs text-text-tertiary leading-relaxed"
+            testId="fb-compose-actor"
+          />
+        </div>
+      )}
       <p className="mt-2 text-xs text-text-tertiary">{t('flowBuilder.compose.notInForce')}</p>
     </Dialog>
   );

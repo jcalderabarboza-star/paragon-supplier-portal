@@ -66,6 +66,7 @@ export { moduleActivationFlow } from './flows/moduleActivation.flow';
 export { materialRulingFlow } from './flows/materialRuling.flow';
 export { flowVersionFlow, FLOW_VERSION_STATES } from './flows/flowVersion.flow';
 export { masterDataRequestFlow, MDR_BIRTH_FIELDS } from './flows/masterDataRequest.flow';
+export { processStepFlow } from './flows/processStep.flow';
 export * from './customRoles';
 
 import { flowRegistry } from './registry';
@@ -101,6 +102,7 @@ import { moduleActivationFlow } from './flows/moduleActivation.flow';
 import { materialRulingFlow } from './flows/materialRuling.flow';
 import { flowVersionFlow } from './flows/flowVersion.flow';
 import { masterDataRequestFlow } from './flows/masterDataRequest.flow';
+import { processStepFlow } from './flows/processStep.flow';
 
 // Seed the shipped flows onto the singleton.
 flowRegistry.register(purchaseOrderFlow); // Step 3.1 — PO
@@ -193,3 +195,5 @@ flowRegistry.register(materialRulingFlow); // OPS-2 — Material applicability r
 flowRegistry.register(flowVersionFlow); // FB-1 — A change to a process
 // MD-4 / MD-5 — WIRED in the same commit as its target (`masterDataRequest`).
 flowRegistry.register(masterDataRequestFlow); // MD-4 — A master-data change request
+// FB-4 — WIRED in the same commit as its target (`processStep`).
+flowRegistry.register(processStepFlow); // FB-4 — A step an active version added

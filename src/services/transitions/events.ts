@@ -121,6 +121,14 @@ export interface TransitionEvent {
    * are found by `scope.businessRoles`, which every event already carries.
    */
   readonly bypass?: import('../identity/superAdmin').SuperAdminBypass;
+  /**
+   * FB-4 — WHICH VERSION OF THE PROCESS THE ACT WAS TAKEN UNDER:
+   * `purchaseRequisition@2` for the shipped process, `purchaseRequisition@2.1`
+   * while a change to it is in force. Present on every event a dispatcher with
+   * a flow overlay emits about a registered act; absent where no overlay is
+   * injected and on an event about an act the registry does not know.
+   */
+  readonly flowVersion?: string;
 }
 
 /** The document an event is about (`TransitionEvent.subject`). */

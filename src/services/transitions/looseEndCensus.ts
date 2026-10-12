@@ -308,6 +308,21 @@ export const LOOSE_END_CENSUS: readonly CensusEntry[] = Object.freeze([
       'ledger; whether halal or BPOM applies is derived from that ledger and the master at read.',
   },
 
+  // ── processStep (FB-4) ─────────────────────────────────────────────────
+  {
+    entity: 'processStep',
+    kind: 'initial-integrity',
+    subject: 'Recorded',
+    reason: 'substrate-only',
+    note:
+      'THE SAME SINGLE-STATE LEDGER SHAPE AS THE ENFORCEMENT AND MODULE-ACTIVATION MACHINES. The ' +
+      'entity is one step on one document, and a step is not created by anybody: it exists because ' +
+      'a version of the process that defines it is in force and the document rests where the act ' +
+      'behind it can be taken. Both acts are statePreserving, so neither is an entry nor an exit. ' +
+      'What they write is a row on the step ledger; whether a step is due is derived from that ' +
+      'ledger at read. A creation verb here would store the answer instead of the acts behind it.',
+  },
+
   // ── moduleActivation (M1) ──────────────────────────────────────────────
   {
     entity: 'moduleActivation',
@@ -325,17 +340,4 @@ export const LOOSE_END_CENSUS: readonly CensusEntry[] = Object.freeze([
       'as a born entity would store the answer instead of the acts that justify it.',
   },
 
-  // ── flowVersion (FB-1) ─────────────────────────────────────────────────
-  {
-    entity: 'flowVersion',
-    kind: 'exit-less-state',
-    subject: 'Draft',
-    reason: 'deferred-edge',
-    note:
-      'A change to a process can be created and saved, and cannot yet be proposed. The edge out of ' +
-      '`Draft` is the propose act, which arrives with review and approval (FB-3), followed by ' +
-      'activation (FB-4) and rollback (FB-6). Declared with one state and no ending rather than ' +
-      'with the whole machine, because a state no act can reach is a second loose end and says ' +
-      'nothing true. This row is deleted by the batch that authors the edge.',
-  },
 ]);
