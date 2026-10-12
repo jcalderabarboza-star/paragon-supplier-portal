@@ -14,12 +14,11 @@
 //    category map and the governed roster: every sourcing category offers at
 //    least the competition floor of eligible suppliers that a tester can sit as.
 // ────────────────────────────────────────────────────────────────────────────
+import { incotermOptions, paymentTermOptions } from './master-data/referencePickers';
 import { describe, it, expect, beforeEach, afterAll } from 'vitest';
 import {
   CATEGORY_TO_SUPPLIER_CATEGORY,
   EMPTY_DRAFT,
-  INCOTERMS_OPTIONS,
-  PAYMENT_TERMS_OPTIONS,
 } from './BuyerSourcing';
 import PAGE_SOURCE from './BuyerSourcing.tsx?raw';
 import { deliveryDateTooEarly } from './sourcing/rfqCreateModel';
@@ -43,6 +42,11 @@ afterAll(async () => {
   rfqStore.reset();
   await i18n.changeLanguage('en');
 });
+
+// MD-2 — the two lists left the page for the reference tables; these are the
+// values the pickers offer, read the way the page reads them.
+const INCOTERMS_OPTIONS = incotermOptions().map((o) => o.key);
+const PAYMENT_TERMS_OPTIONS = paymentTermOptions().map((o) => o.text);
 
 describe('E2E-1 · the wizard opens every select on one of its own options', () => {
   it('the option lists are the ones the page renders, and are not empty', () => {

@@ -12,13 +12,14 @@
 // The reference values are the ones the tree already uses: the unit and
 // material-type unions, the material-group register, the incoterms and payment
 // terms the sourcing and contract forms offer, the bid currencies, the country
-// profiles, the receiving wizard's locations and the cost centres the
-// requisition fixture names. Their codes and texts are SAMPLE: SAP's own keys
+// profiles, the receiving wizard's locations, the cost centres the
+// requisition fixture names and the Paragon brand list. Their codes and texts are SAMPLE: SAP's own keys
 // replace them when the feed is real (SE-6).
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { COUNTRY_PROFILES } from '../../data/communicationProfiles';
 import { mockSuppliers } from '../../data/mockSuppliers';
+import { PARAGON_BRANDS } from '../../data/paragonBrands';
 import { DECLARED_PRESENT_INSTANT } from '../data/fixturePresent';
 import { MATERIAL_MASTER } from '../sdc/fixtures';
 import { MATERIAL_GROUPS } from '../sdc/materialGroups';
@@ -170,6 +171,11 @@ export function buildSeedRun(): InboundRun {
       ...reference('plant', PLANT_ROWS),
       ...reference('storageLocation', STORAGE_LOCATION_ROWS),
       ...reference('costCentre', COST_CENTRE_ROWS),
+      // The Paragon brand list, exactly as ruled (`data/paragonBrands.ts`), under its own codes.
+      ...reference(
+        'brand',
+        PARAGON_BRANDS.map((b): Row => [b.code, b.name]),
+      ),
       ...materialRecords(),
       ...supplierRecords(),
     ],

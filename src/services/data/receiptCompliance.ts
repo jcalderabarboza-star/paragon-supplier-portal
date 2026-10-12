@@ -28,7 +28,7 @@ import { bpomAtReceipt, halalAtReceipt, type MaterialRuling } from '../sdc/mater
 import type { BpomRefusalReason } from '../sdc/bpom';
 import type { HalalRefusalReason } from '../sdc/halal';
 import type { MaterialMaster } from '../sdc/types';
-import { MATERIAL_MASTER } from '../sdc/fixtures';
+import { materialMasterView } from '../masterData/materialMasterView';
 import {
   verifyHalalAtReceipt,
   type HalalNotSatisfiedReason,
@@ -87,7 +87,7 @@ export const checkAnswered = (v: unknown): boolean => v === 'Pass' || v === 'Fai
  */
 export function receiptComplianceBlocks(input: ReceiptComplianceInput): readonly ReceiptBlock[] {
   const { supplierId, lines, rulings, registry, at, stops } = input;
-  const master = input.master ?? MATERIAL_MASTER;
+  const master = input.master ?? materialMasterView();
   const found: ReceiptBlock[] = [];
   for (const line of lines) {
     const materialCode = line.materialCode;

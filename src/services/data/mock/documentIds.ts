@@ -31,7 +31,7 @@ import { schedulingAgreementStore } from '../../delivery/stores/schedulingAgreem
 import { PR_INTAKE_LINES } from './fixtures/prIntake';
 import { itemKey } from '../../delivery/addressing';
 import { MODULE_CODES } from '../../modules/registry';
-import { MATERIAL_MASTER } from '../../sdc/fixtures';
+import { materialMasterView } from '../../masterData/materialMasterView';
 import { SYSTEM_ROLES } from '../../transitions/businessRoles';
 import { flowVersionStore } from '../../flowBuilder/flowVersionStore';
 
@@ -75,7 +75,7 @@ export const DOCUMENT_IDS: Readonly<Record<string, () => readonly string[]>> = {
   role: () => Object.keys(SYSTEM_ROLES),
   moduleActivation: () => [...MODULE_CODES],
   // OPS-2 — the material ruling ledger: its entity IS a material-master code.
-  materialRuling: () => Object.keys(MATERIAL_MASTER),
+  materialRuling: () => Object.keys(materialMasterView()),
   // FB-1 — a change to a process. The store opens empty: nothing is seeded.
   flowVersion: () => ids(flowVersionStore.all()),
 };

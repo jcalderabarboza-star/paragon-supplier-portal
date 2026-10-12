@@ -53,6 +53,7 @@ export const masterDataEn: Record<string, string> = {
   'masterData.object.plant': 'Plants',
   'masterData.object.storageLocation': 'Storage locations',
   'masterData.object.costCentre': 'Cost centres',
+  'masterData.object.brand': 'Brands',
 
   'masterData.col.materialNumber': 'Material number',
   'masterData.col.description': 'Description',
@@ -200,6 +201,7 @@ export const masterDataId: Record<string, string> = {
   'masterData.object.plant': 'Pabrik',
   'masterData.object.storageLocation': 'Lokasi penyimpanan',
   'masterData.object.costCentre': 'Pusat biaya',
+  'masterData.object.brand': 'Merek',
 
   'masterData.col.materialNumber': 'Nomor material',
   'masterData.col.description': 'Deskripsi',

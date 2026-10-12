@@ -1,3 +1,4 @@
+import { costCentreOptions } from './master-data/referencePickers';
 import React, { useMemo, useRef, useState } from 'react';
 import {
   ClipboardList,
@@ -120,13 +121,8 @@ const UNATTRIBUTED_KEY: Record<UnattributedReason, string> = {
   IDENTITY_PROVIDER_UNAVAILABLE: 'requisitions.panel.unattributed.idpDown',
 };
 
-const COST_CENTERS = [
-  'CC-RD-001 — R&D',
-  'CC-PKG-002 — Packaging',
-  'CC-MFG-001 — Manufacturing',
-  'CC-SC-001 — Supply Chain',
-  'CC-RD-003 — Perfumer',
-];
+// MD-2 — cost centres are read from the reference table; the form stores the
+// code alone, where it used to store the code with a name glued to it.
 
 const UOM_OPTIONS = ['KG', 'L', 'PCS', 'MT', 'BOX'];
 const PRIORITY_OPTIONS = ['High', 'Medium', 'Low'];
@@ -1698,9 +1694,9 @@ const BuyerRequisitions: React.FC = () => {
                   }
                 >
                   <option value="">{t('requisitions.new.select.placeholder')}</option>
-                  {COST_CENTERS.map((c) => (
-                    <option key={c} value={c}>
-                      {c}
+                  {costCentreOptions().map((o) => (
+                    <option key={o.key} value={o.key}>
+                      {o.label}
                     </option>
                   ))}
                 </Select>

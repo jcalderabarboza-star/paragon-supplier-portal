@@ -28,7 +28,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import type { ActorAttribution } from '../../lib/enforcement';
-import { MATERIAL_MASTER } from './fixtures';
+import { materialMasterView } from '../masterData/materialMasterView';
 import { bpomOf, type BpomOutcome } from './bpom';
 import { halalOf, type HalalOutcome } from './halal';
 import type { MaterialMaster } from './types';
@@ -122,14 +122,14 @@ export function bpomUnderRuling(
 export const halalAtReceipt = (
   materialCode: string,
   rulings: readonly MaterialRuling[],
-  master: MaterialMaster = MATERIAL_MASTER,
+  master: MaterialMaster = materialMasterView(),
 ): RuledHalal => halalUnderRuling(halalOf(materialCode, master), rulings, materialCode);
 
 /** BPOM at receipt for a material code — the same shape. */
 export const bpomAtReceipt = (
   materialCode: string,
   rulings: readonly MaterialRuling[],
-  master: MaterialMaster = MATERIAL_MASTER,
+  master: MaterialMaster = materialMasterView(),
 ): RuledBpom => bpomUnderRuling(bpomOf(materialCode, master), rulings, materialCode);
 
 /** One row of the Compliance surface: a material and where each regime stands. */
@@ -143,7 +143,7 @@ export interface MaterialApplicabilityRow {
 /** Every material in the master with both answers, in master order. */
 export function materialApplicabilityRows(
   rulings: readonly MaterialRuling[],
-  master: MaterialMaster = MATERIAL_MASTER,
+  master: MaterialMaster = materialMasterView(),
 ): readonly MaterialApplicabilityRow[] {
   return Object.keys(master).map((materialCode) => ({
     materialCode,
