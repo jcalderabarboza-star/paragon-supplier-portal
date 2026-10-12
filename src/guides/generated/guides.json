@@ -2202,6 +2202,354 @@
       ]
     },
     {
+      "entity": "flowVersion",
+      "locale": "en",
+      "title": "Change to a process (flow version)",
+      "wired": true,
+      "owner": "portal",
+      "sourceSha": "0531e094d401b8c51e320fd3151da6b72963ba47",
+      "sourceFile": "docs/guides/flowVersion.en.md",
+      "transitions": [
+        "t_flowversion_create",
+        "t_flowversion_save"
+      ],
+      "stepOrder": [
+        "t_flowversion_create",
+        "t_flowversion_save"
+      ],
+      "sections": {
+        "summary": "A change to a process is a document of its own. It names one process and lists what it would add in front of acts that process already has: steps a person completes, checks the platform evaluates, and forks that decide which steps apply. A change can add a refusal. It can never take one away, and it cannot add a state, re-route an act or move a lane.\n\nEach change is a **version**. Its label is `<shipped version>.<n>`: the first change drafted against a process that ships as version 2 is `2.1`, the next is `2.2`. The number counts per process and is never reused. The id is `fv-<n>`. The store assigns the id, the label and every stamp; the person drafting says only which process and what the change is called.\n\nWho touches it: the **buyer's Compliance lane** drafts a change (permission `flow:draft`). A lane cannot be the one that changes the process it is held to, so procurement, receiving, finance, planning and the requisitioner do not hold it. Admin and Super Admin hold it as they hold every buyer-side permission. Every seat can read the **Changes** tab; only the drafting is one lane's act.\n\nHonest markers, stated plainly:\n\n- **Nothing a version says is in force.** No version can be proposed, approved or switched on yet. Every process runs as it shipped, and the page says so.\n- **Only creating a draft has a screen.** Saving a draft's content (`t_flowversion_save`) is built and has no screen yet; the composer that saves a draft arrives in the next batch (FB-2).\n- **`Draft` has no way out yet.** The act that proposes a change arrives with review and approval (FB-3). Until then a draft stays a draft. This is recorded as an open edge in the loose-end census, not hidden.\n- **Versions live in this browser only** (`localStorage`, key `paragon.flowVersions`). They survive a reload. They are not shared with anyone, are not on a server, and go when site data is cleared.\n- **Nothing is seeded.** The list opens empty; every version in it was drafted in this browser.\n- A change is recorded against the person who drafted it. There is no user directory yet, so that person is a sample identity adopted on the identity panel, and a change drafted by a sample person is a demonstration. A seat that names nobody is refused.",
+        "lifecycle": "| Step | From → to | Kind | Role | Transition |\n|---|---|---|---|---|\n| 1 | ∅ → Draft | creation (operator action) | buyer · compliance | `t_flowversion_create` |\n| 2 | Draft → Draft | records a fact (state-preserving) · not active (no screen yet) | buyer · compliance | `t_flowversion_save` |\n\n**Forks**\n\n- **At Draft:** `t_flowversion_save` — compliance — replaces what the draft says; the draft stays a draft. There is no other act. `Draft` has no exit and the machine has no ending: proposing a change arrives with FB-3.\n\nBoth acts are refused for a seat that names no person (`flowversion_author_named`).",
+        "forks": "- **Seat holds `flow:draft` or not (before the act).** Branch A — the seat holds it: **New change** stands in the header of the **Changes** tab. Branch B — it does not: the header reads **Changing a process is a Compliance action** with *Awaiting Compliance*, and no pop-up exists for that seat. The tab itself, the list and the rules are readable by every seat.\n- **Seat names no person (exception).** `POLICY_REJECTED:flowversion_author_named` (`FLOWVERSION_AUTHOR_UNATTRIBUTED`) — **Create draft** pressed from the seat as it opens, with no sample user adopted on the identity panel. Nothing is created and nothing is stamped. Adopt a sample user, then create the draft again.\n- **Blank or missing title (exception).** A title of spaces only is refused by `flowversion_process_writable` (`FLOWVERSION_TITLE_BLANK`). A title left empty is refused by the dispatcher as `MISSING_FIELDS:title`, before any check runs.\n- **Process that cannot be changed (exception).** A process the platform does not have (`FLOWVERSION_PROCESS_UNKNOWN`) or one no command can write through (`FLOWVERSION_PROCESS_NOT_WRITABLE`). The form offers neither; a hand-crafted payload naming one is refused.\n- **A change to the process that changes processes (exception).** A payload naming `flowVersion` itself is refused (`FLOWVERSION_PROCESS_SELF`): a change cannot be drafted against the process by which processes are changed. The **Process** list does not offer it; the act refuses it anyway.\n- **Payload that names who acted, or an id or label (exception).** A payload carrying a key the platform keeps for the person acting is refused by the dispatcher (`ACTOR_IN_PAYLOAD`). An id or a label in a payload is ignored: the store assigns both.\n- **Save that moves the change (exception, no screen today).** Content naming another process, or another shipped version, is refused (`FLOWVERSION_CONTENT_MOVED`); content that is not a list of steps, forks and checks is refused (`FLOWVERSION_CONTENT_MALFORMED`).\n- **A version that no longer obeys its rules (derived, not an act).** Each time the list is read, every stored version is checked against the rules as they are now. One that breaks a rule of kind *Error* is kept, listed, and named with the rule it breaks. Nothing is refused and nothing is removed.\n- **A stored row that is not a version (derived, not an act).** A row whose id, label, state, title or stamps do not hold together is refused when it is read, named with its reason, and still kept in storage. Its id and its label are not given out again.\n- **Proposing, approving, switching on, rolling back.** Not built. There is no act and no screen for any of them.",
+        "flags": "| Flag | Kind | Applies at | When it appears | Where shown |\n|---|---|---|---|---|\n| **Kept in this browser** — *\"Changes are saved in this browser and survive a reload. They are not shared with anyone and are not on a server. A change drafted by a sample person is a demonstration.\"* | standing notice | — | always | top of the **Changes** tab |\n| *\"Nothing here is in force: every process runs as it shipped.\"* | standing statement | — | always | under **Changes to processes** on the **Changes** tab |\n| *\"Shipped · version {version} — in force\"* | derived at read | — | always, on every process | each flow card and the flow header on the **Catalogue** tab |\n| **Saved changes could not be read** | derived at read | — | `localStorage` holds data under `paragon.flowVersions` that could not be parsed; no version is listed (not the same as having none) | notice on the **Changes** tab |\n| **Some saved changes were not loaded** | derived at read | — | a stored row was refused when it was read; each is listed with its reason and is still kept | notice on the **Changes** tab |\n| **Some changes no longer obey the rules of their process** | derived at read | Draft | a stored version breaks a rule of kind *Error* today; each is named as *\"Version {label} of {process} — {code}: {element}\"* with the rule's sentence | notice on the **Changes** tab |\n| Awaiting Compliance (hand-off) | derived at read | — | the seat does not hold `flow:draft` | page header, in place of **New change** |\n| *\"This will be recorded against {person}.\"* | derived at read (seat) | ∅ | the seat holds `flow:draft` and is acting as a sample user | the pop-up, above **Create draft** |\n| *\"This seat names nobody, so this act will be refused. Adopt a sample user on the identity panel first.\"* | derived at read (seat); refusal (`flowversion_author_named`) | ∅ | the seat holds `flow:draft` and names no person | the pop-up, above **Create draft**; on pressing it, the failure toast |\n| Read suspended | derived at read | — | storage was read before any process was registered, so rows are neither accepted nor refused | no surface (store read state `suspended`) |",
+        "linked": "**Representative entity:** none is seeded. The first version drafted in a browser is `fv-1`; its label depends on the process chosen (`<shipped version>.1`).\n\n| Joins to | By | Note |\n|---|---|---|\n| The process it changes (flow registry) | `content.entity` | read from the registry; a change never writes to it, so the shipped catalogue stays what the code declares |\n| The shipped version it was drafted against | `content.baseVersion` | read from the process when the draft is created, never taken from the payload; it is the first number of the label |\n| Process name on screen | the process guide's title | the **Process** list and the **Process** column show the guide title in the reader's language |\n| Who drafted it, who last saved it | `createdBy`, `savedBy` | the seat's person at the time of the act; shown through the one person-label resolver, so a sample person carries the sample marker |\n| Browser storage | `paragon.flowVersions` | `{ v, versions, counters }`; the counters keep the per-process number from ever running backwards |\n| The rules a change must obey | rule codes R01–R08, R12–R19 | listed on the **Changes** tab under **Rules a change must obey**; they produce findings, not refusals |\n| A link to one version | `?view=changes&version=<id>` | opens the **Changes** tab with that row marked current; a version this browser does not hold opens the **Catalogue** tab instead |\n| Audit trail | `TransitionEvent` for each act | one event per create and per save, refusals included |\n| Loose-end census | `flowVersion` · `Draft` | the missing way out of `Draft` is recorded there as an edge not yet authored |\n\nDisplay-only: **Adds** is counted at read from the steps, forks and checks the version holds. **State** shows *Draft*. The id, the label, the sequence and the stamps are store-assigned, never fields.",
+        "history": "Every dispatch writes one `TransitionEvent`: `event` = the transition id, `actor` = `buyer:all` (the seat, not a person), `ts`, `outcome`, one `correlationId` per command. A separate `attribution` field records who could be named. Refusals are written too, with their reason. The version itself carries `createdBy` and `createdAt`, and `savedBy` and `savedAt` once it has been saved. There is no per-version history view; the **Changes** tab shows each version as it is now.\n\nWorked sequence, as a tester holding Compliance would produce it in a browser with no versions yet:\n\n| Time | From → to | Actor (role) | Trigger | Event |\n|---|---|---|---|---|\n| T+0 | ∅ (refused) | buyer · compliance, seat names nobody | **New change** → choose a process, write a title → **Create draft** | `t_flowversion_create`, `outcome: failed`, `POLICY_REJECTED:flowversion_author_named` |\n| T+1 | ∅ → Draft | buyer · compliance, acting as a sample user | the same, after adopting a sample user on the identity panel | `t_flowversion_create` — version `fv-1`, label `<shipped version>.1` |\n| T+2 | Draft (no change) | — | reload the page and open the **Changes** tab: the row is still listed, read back from `paragon.flowVersions` and checked again | — (no event) |\n| T+3 | ∅ → Draft | buyer · compliance, acting as a sample user | a second draft against the same process | `t_flowversion_create` — version `fv-2`, label `<shipped version>.2` |\n\nNo step of this sequence saves a draft: `t_flowversion_save` has no screen today.",
+        "troubleshooting": "| Symptom | How to tell | Likely cause | Resolve |\n|---|---|---|---|\n| No **New change** button | the page header shows nothing on the right | the **Catalogue** tab is open | open the **Changes** tab; the button belongs to that tab |\n| **Changing a process is a Compliance action** with *Awaiting Compliance* instead of the button | page header on the **Changes** tab | the seat does not hold `flow:draft` | open the avatar and select Compliance (a demo control) |\n| Toast *\"Refused: this seat names nobody, and this act is recorded against the person who takes it. Adopt a sample user on the identity panel, then take it again.\"* | `POLICY_REJECTED:flowversion_author_named` (`FLOWVERSION_AUTHOR_UNATTRIBUTED`); the line above **Create draft** already said so | the seat names no person | adopt a sample user on the identity panel, then press **Create draft** again; nothing was created |\n| Toast *\"Refused: a change needs a title, so it can be found again.\"* | `POLICY_REJECTED:flowversion_process_writable` (`FLOWVERSION_TITLE_BLANK`) | the title holds only spaces | write a title |\n| A failure toast naming the title as missing | `MISSING_FIELDS:title` | the title was left empty | write a title |\n| Toast *\"Refused: a change cannot be drafted against the process by which processes are changed.\"* | `POLICY_REJECTED:flowversion_process_writable` (`FLOWVERSION_PROCESS_SELF`) | a hand-crafted payload named `flowVersion` as the process; the **Process** list does not offer it | choose another process; this one cannot be changed through a change |\n| The process wanted is not in the **Process** list | the list is shorter than the **Catalogue** tab | no command can write through that process, it has no act a person takes on a screen, or it is the process that changes processes | expected; a step there could never be met |\n| The draft cannot be opened, edited or given steps | the row on the **Changes** tab is not a link and **Adds** reads *0 elements* | saving a draft has no screen yet (FB-2) | expected today |\n| No way to propose, approve or switch on a change | no such button anywhere | not built (FB-3 and later); `Draft` has no way out | expected today; every process runs as it shipped |\n| A process still behaves as before after a draft was created | the **Catalogue** tab reads *\"Shipped · version {version} — in force\"* | nothing a version says is in force | expected today |\n| The list is empty in another browser or on another machine | *\"No change has been drafted yet.\"* | versions live in the browser that drafted them; nothing is seeded and nothing is shared | draft it again in that browser |\n| The list is empty after clearing site data | *\"No change has been drafted yet.\"* | clearing site data removes `paragon.flowVersions` | expected; the versions are gone |\n| A draft is gone after a reload, with no notice | it was listed until the reload | the browser did not allow the write to storage (storage disabled or full), so the draft lived for that page only | allow site storage for the portal, then draft it again |\n| Notice **Saved changes could not be read** | **Changes** tab | the data under `paragon.flowVersions` could not be parsed | drafting a change replaces what could not be read |\n| Notice **Some saved changes were not loaded** | **Changes** tab, rows listed with reasons | hand-edited storage: a row is not a version, or its id, label, state, title or stamps do not hold together | fix the row in storage or leave it; it is kept, and its id and label are not reused |\n| Notice **Some changes no longer obey the rules of their process** | **Changes** tab, each named with a rule code | the process moved underneath the change, or saved content breaks a rule of kind *Error* | read the rule under **Rules a change must obey**; the version is kept and nothing is in force either way |\n| A link to a version opens the **Catalogue** tab | the address carries `?view=changes&version=<id>` | this browser does not hold that version | open the link in the browser that drafted it |",
+        "testdata": "| State | Fixture id(s) | Number | Note |\n|---|---|---|---|\n| Draft | — | — | no fixture — nothing is seeded and the store opens empty. Create one: take Compliance, adopt a sample user, then **Changes** → **New change** → **Create draft**. The first version in a browser is `fv-1` with label `<shipped version>.1`; it lives in that browser's `localStorage` under `paragon.flowVersions` |",
+        "steps": ""
+      },
+      "sectionSources": {
+        "summary": [
+          "src/services/transitions/flows/flowVersion.flow.ts:1-65",
+          "src/services/flowBuilder/flowVersion.ts:1-15,92-150",
+          "src/services/flowBuilder/flowVersionStore.ts:1-24,41",
+          "src/services/transitions/businessRoles.ts:363-366",
+          "src/services/transitions/looseEndCensus.ts:328-340",
+          "src/lib/i18n/flowBuilder.ts:17-37",
+          "src/lib/i18n/processFlowPurpose.ts:294-295"
+        ],
+        "lifecycle": [
+          "src/services/transitions/flows/flowVersion.flow.ts:28-64",
+          "src/services/transitions/looseEndCensus.ts:328-340"
+        ],
+        "forks": [
+          "src/pages-v2/ProcessFlows.tsx:364-378",
+          "src/services/data/mock/flowVersionTarget.ts:16-53",
+          "src/services/transitions/dispatcher.ts:824-837",
+          "src/services/flowBuilder/flowVersionStore.ts:96-110,163-202",
+          "src/services/flowBuilder/liveWorld.ts:59-83",
+          "src/services/transitions/looseEndCensus.ts:328-340"
+        ],
+        "flags": [
+          "src/pages-v2/process-flows/ChangesView.tsx:171-175,187-195,248-311",
+          "src/services/flowBuilder/flowVersionStore.ts:45-54,117-161",
+          "src/services/flowBuilder/liveWorld.ts:63-83",
+          "src/lib/i18n/flowBuilder.ts:15-46",
+          "src/lib/i18n/identity.ts:80-86",
+          "src/lib/i18n/roles.ts:49-50"
+        ],
+        "linked": [
+          "src/services/flowBuilder/flowVersion.ts:92-150",
+          "src/services/flowBuilder/flowVersionStore.ts:41,204-215,246-264",
+          "src/services/data/mock/flowVersionTarget.ts:61-69",
+          "src/services/flowBuilder/validateVersion.ts:33-50",
+          "src/pages-v2/process-flows/ChangesView.tsx:52-56,210-246",
+          "src/pages-v2/ProcessFlows.tsx:316-337",
+          "src/services/data/mock/documentIds.ts:79-80",
+          "src/guides/index.ts:73"
+        ],
+        "history": [
+          "src/services/transitions/events.ts:26-61,98",
+          "src/services/flowBuilder/flowVersion.ts:116-131",
+          "src/services/flowBuilder/flowVersionStore.ts:246-273"
+        ],
+        "troubleshooting": [
+          "src/pages-v2/ProcessFlows.tsx:316-337,364-378",
+          "src/pages-v2/process-flows/ChangesView.tsx:119-150,256-329",
+          "src/services/data/mock/flowVersionTarget.ts:16-53",
+          "src/services/flowBuilder/flowVersionStore.ts:117-142,204-215",
+          "src/services/modules/registry.ts:125-136",
+          "src/lib/i18n/flowBuilder.ts:20-22,39-46,60-73"
+        ],
+        "testdata": [
+          "src/services/data/mock/documentIds.ts:79-80",
+          "src/services/flowBuilder/flowVersionStore.ts:41,246-264"
+        ],
+        "steps": []
+      },
+      "steps": {
+        "t_flowversion_create": {
+          "transitionId": "t_flowversion_create",
+          "label": "Create draft",
+          "stepKind": "operator-action",
+          "role": "buyer · compliance (atom `flow:draft`; Admin and Super Admin hold it too)",
+          "fromTo": "∅ → Draft",
+          "operator": {
+            "where": "`/buyer/process-flows` → tab **Changes** → **New change** (top right of the page header) → the pop-up **New change** → **Create draft**. The pop-up is a dialog: it takes the focus, and Escape, the close button or a click outside closes it. The button stands in the header only while the **Changes** tab is open. A seat that does not hold `flow:draft` sees, in the same place, **Changing a process is a Compliance action** with an *Awaiting Compliance* hand-off notice, and no pop-up.",
+            "do": "choose the process and name the change, then press **Create draft**. The change is created as an empty draft against the process as it ships today. Nothing runs differently.",
+            "fill": "**Process** (`flow`) — the list offers only a process a command can write through, with an act a person takes on a screen, each shown by its guide title. **Title** (`title`) — what the change is for, in a few words; it cannot be blank. Nothing else is asked: the id, the label, the shipped version the change is drafted against and who drafted it are not fields."
+          },
+          "tester": {
+            "expectedState": "Draft",
+            "confirm": "toast *\"Version {label} of {process} created as a draft.\"*; the pop-up closes; a new row in the table on the **Changes** tab with **Version** (`<shipped version>.<n>`), **Process**, **Title**, **State** *Draft*, **Adds** *0 elements*, **Drafted by** (the sample person the seat is acting as) and **Drafted**. The line *\"No change has been drafted yet.\"* is gone. The version is in `localStorage` under `paragon.flowVersions` and is still listed after a reload. Opening a flow on the **Catalogue** tab still reads *\"Shipped · version {version} — in force\"* — the draft changed nothing.",
+            "triggerEvent": "t_flowversion_create"
+          },
+          "checks": "`flowversion_author_named` — the seat must name a person (`FLOWVERSION_AUTHOR_UNATTRIBUTED`). Above **Create draft** the pop-up says which seat this is: *\"This seat names nobody, so this act will be refused. Adopt a sample user on the identity panel first.\"*, or *\"This will be recorded against {person}.\"* once a sample user is adopted. The button stays live; pressed from a seat that names nobody, the toast reads *\"Refused: this seat names nobody, and this act is recorded against the person who takes it. Adopt a sample user on the identity panel, then take it again.\"* `flowversion_process_writable` — checked in this order: the process must be registered (`FLOWVERSION_PROCESS_UNKNOWN`); it must not be `flowVersion` itself (`FLOWVERSION_PROCESS_SELF`, toast *\"Refused: a change cannot be drafted against the process by which processes are changed.\"*); a command must be able to write through it (`FLOWVERSION_PROCESS_NOT_WRITABLE`); and the title must not be blank (`FLOWVERSION_TITLE_BLANK`, toast *\"Refused: a change needs a title, so it can be found again.\"*). A title left empty is refused earlier, by the dispatcher, as `MISSING_FIELDS:title`. On any refusal the pop-up stays open and nothing is created.",
+          "glossary": [
+            "ROLE_NOT_PERMITTED",
+            "MISSING_FIELDS",
+            "ACTOR_IN_PAYLOAD",
+            "POLICY_REJECTED",
+            "SCOPE_DENIED",
+            "NO_PERSON_IN_SESSION"
+          ],
+          "honesty": "the pop-up says before the act where the draft lives — *\"The draft is saved in this browser and survives a reload — local to this browser, not shared, not on a server.\"* — and what it does: *\"It is created as an empty draft against the process as it ships today; nothing runs differently.\"* The created draft is empty and stays empty, because no screen saves content into it yet. The **Drafted** date is the portal's declared present, not the wall clock. The form cannot name an unregistered or unwritable process, or the process that changes processes; the act refuses each anyway.",
+          "sources": [
+            "src/services/transitions/flows/flowVersion.flow.ts:38-50",
+            "src/services/data/mock/flowVersionTarget.ts:16-36,55-69",
+            "src/services/transitions/policies.ts:2864-2873,2949-2956",
+            "src/services/transitions/dispatcher.ts:824-837",
+            "src/services/flowBuilder/flowVersionStore.ts:246-264",
+            "src/services/query/commandHooks.ts:1383-1399",
+            "src/pages-v2/ProcessFlows.tsx:316-337,364-378,603-613",
+            "src/pages-v2/process-flows/ChangesView.tsx:105-195",
+            "src/pages-v2/process-flows/flowVersionRefusal.ts:10-28",
+            "src/lib/i18n/flowBuilder.ts:48-73",
+            "src/lib/i18n/identity.ts:80-86"
+          ]
+        },
+        "t_flowversion_save": {
+          "transitionId": "t_flowversion_save",
+          "label": "Save draft",
+          "stepKind": "records-fact",
+          "role": "buyer · compliance (atom `flow:draft`; Admin and Super Admin hold it too)",
+          "fromTo": "Draft → same state",
+          "operator": {
+            "where": "no screen today. On `/buyer/process-flows` → tab **Changes** a draft can be created and listed; it cannot be opened or edited. The composer that saves a draft arrives in the next batch (FB-2).",
+            "do": "nothing yet. When the composer lands, saving replaces everything the draft says — its steps, forks and checks — with what was composed. Saving is not deciding: the draft stays a draft and nothing comes into force.",
+            "fill": "`content` — the whole list of steps, forks and checks, together with the process and the shipped version the change is about. Those two were fixed when the draft was created and a save cannot change them. No screen fills this today."
+          },
+          "tester": {
+            "expectedState": "Draft",
+            "confirm": "not confirmable on a screen today. Once a save has run, the row's **Adds** count reads the number of steps, forks and checks saved, and the record carries who saved it and when (`savedBy`, `savedAt`); the label, the id and who drafted it do not change.",
+            "triggerEvent": "t_flowversion_save"
+          },
+          "checks": "`flowversion_author_named` — the seat must name a person (`FLOWVERSION_AUTHOR_UNATTRIBUTED`). `flowversion_content_well_formed` — the content must be a list of steps, forks and checks (`FLOWVERSION_CONTENT_MALFORMED`), and must stay about the process and the shipped version the change was created against (`FLOWVERSION_CONTENT_MOVED`). An id that is not a version in this browser is `NOT_FOUND`. The rules R01–R19 on the **Changes** tab do **not** refuse a save: a draft is allowed to be unfinished.",
+          "glossary": [
+            "ROLE_NOT_PERMITTED",
+            "NOT_FOUND",
+            "MISSING_FIELDS",
+            "ACTOR_IN_PAYLOAD",
+            "POLICY_REJECTED",
+            "SCOPE_DENIED",
+            "NO_PERSON_IN_SESSION"
+          ],
+          "honesty": "the act is built and has **no screen**; nothing on the portal fires it today. A saved draft that breaks a rule of its process is kept and named under **Some changes no longer obey the rules of their process** — it is reported, not refused and not dropped. Whatever a draft says, none of it is in force.",
+          "sources": [
+            "src/services/transitions/flows/flowVersion.flow.ts:51-63",
+            "src/services/data/mock/flowVersionTarget.ts:38-53,70-72",
+            "src/services/transitions/policies.ts:2864-2873,2949-2956",
+            "src/services/flowBuilder/flowVersion.ts:92-131,217-230",
+            "src/services/flowBuilder/flowVersionStore.ts:265-273",
+            "src/services/flowBuilder/liveWorld.ts:59-83",
+            "src/pages-v2/process-flows/ChangesView.tsx:225-233,286-310",
+            "src/lib/i18n/flowBuilder.ts:70-73"
+          ]
+        }
+      },
+      "testData": [
+        {
+          "state": "Draft",
+          "fixtureIds": [],
+          "note": "no fixture — nothing is seeded and the store opens empty. Create one: take Compliance, adopt a sample user, then **Changes** → **New change** → **Create draft**. The first version in a browser is `fv-1` with label `<shipped version>.1`; it lives in that browser's `localStorage` under `paragon.flowVersions`"
+        }
+      ]
+    },
+    {
+      "entity": "flowVersion",
+      "locale": "id",
+      "title": "Perubahan pada proses (versi alur)",
+      "wired": true,
+      "owner": "portal",
+      "sourceSha": "0531e094d401b8c51e320fd3151da6b72963ba47",
+      "sourceFile": "docs/guides/flowVersion.id.md",
+      "transitions": [
+        "t_flowversion_create",
+        "t_flowversion_save"
+      ],
+      "stepOrder": [
+        "t_flowversion_create",
+        "t_flowversion_save"
+      ],
+      "sections": {
+        "summary": "Perubahan pada sebuah proses adalah dokumen tersendiri. Perubahan menyebut satu proses dan mendaftar apa yang akan ditambahkannya di depan tindakan yang sudah dimiliki proses itu: langkah yang diselesaikan orang, pemeriksaan yang dinilai platform, dan percabangan yang menentukan langkah mana yang berlaku. Perubahan dapat menambah penolakan. Perubahan tidak pernah dapat menghilangkannya, dan tidak dapat menambah status, mengalihkan tindakan, atau memindahkan lajur.\n\nSetiap perubahan adalah sebuah **versi**. Labelnya `<versi bawaan>.<n>`: perubahan pertama yang dirancang terhadap proses dengan versi bawaan 2 adalah `2.1`, berikutnya `2.2`. Angkanya dihitung per proses dan tidak pernah dipakai ulang. Id-nya `fv-<n>`. Store menetapkan id, label, dan setiap cap; orang yang merancang hanya menyebut proses mana dan apa nama perubahannya.\n\nSiapa yang menyentuhnya: **lajur Kepatuhan pembeli** merancang perubahan (izin `flow:draft`). Sebuah lajur tidak boleh menjadi pihak yang mengubah proses yang mengikatnya, sehingga pengadaan, penerimaan, keuangan, perencanaan, dan pemohon tidak memegangnya. Admin dan Super Admin memegangnya sebagaimana mereka memegang setiap izin sisi pembeli. Setiap kursi dapat membaca tab **Perubahan**; hanya merancang yang merupakan tindakan satu lajur.\n\nPenanda kejujuran, dinyatakan apa adanya:\n\n- **Tidak ada isi versi yang berlaku.** Belum ada versi yang dapat diusulkan, disetujui, atau diaktifkan. Setiap proses berjalan seperti bawaannya, dan halaman menyatakannya.\n- **Hanya membuat rancangan yang memiliki layar.** Menyimpan isi rancangan (`t_flowversion_save`) sudah dibangun dan belum memiliki layar; penyusun yang menyimpan rancangan hadir pada batch berikutnya (FB-2).\n- **`Draft` belum memiliki jalan keluar.** Tindakan yang mengusulkan perubahan hadir bersama peninjauan dan persetujuan (FB-3). Sampai saat itu rancangan tetap rancangan. Hal ini dicatat sebagai sisi yang masih terbuka di sensus ujung-lepas, tidak disembunyikan.\n- **Versi hanya berada di peramban ini** (`localStorage`, kunci `paragon.flowVersions`). Versi tetap ada setelah dimuat ulang. Versi tidak dibagikan kepada siapa pun, tidak berada di server, dan hilang bila data situs dihapus.\n- **Tidak ada yang di-seed.** Daftar dibuka kosong; setiap versi di dalamnya dirancang di peramban ini.\n- Perubahan dicatat atas nama orang yang merancangnya. Belum ada direktori pengguna, sehingga orang itu adalah identitas contoh yang dipilih di panel identitas, dan perubahan yang dirancang oleh orang contoh adalah peragaan. Kursi yang tidak menyebut siapa pun ditolak.",
+        "lifecycle": "| Langkah | Dari → ke | Jenis | Peran | Transisi |\n|---|---|---|---|---|\n| 1 | ∅ → Draft | pembuatan (tindakan operator) | buyer · compliance | `t_flowversion_create` |\n| 2 | Draft → Draft | mencatat fakta (mempertahankan status) · tidak aktif (belum ada layar) | buyer · compliance | `t_flowversion_save` |\n\n**Percabangan**\n\n- **Di Draft:** `t_flowversion_save` — kepatuhan — menggantikan isi rancangan; rancangan tetap rancangan. Tidak ada tindakan lain. `Draft` tidak memiliki jalan keluar dan mesin ini tidak memiliki akhir: mengusulkan perubahan hadir bersama FB-3.\n\nKedua tindakan ditolak bagi kursi yang tidak menyebut siapa pun (`flowversion_author_named`).",
+        "forks": "- **Kursi memegang `flow:draft` atau tidak (sebelum tindakan).** Cabang A — kursi memegangnya: **Perubahan baru** berdiri di kepala halaman pada tab **Perubahan**. Cabang B — tidak memegangnya: kepala halaman berbunyi **Mengubah proses adalah tindakan Kepatuhan** dengan *Menunggu Kepatuhan*, dan tidak ada pop-up bagi kursi itu. Tab itu sendiri, daftarnya, dan aturannya dapat dibaca setiap kursi.\n- **Kursi tidak menyebut siapa pun (pengecualian).** `POLICY_REJECTED:flowversion_author_named` (`FLOWVERSION_AUTHOR_UNATTRIBUTED`) — **Buat rancangan** ditekan dari kursi sebagaimana dibuka, tanpa pengguna contoh yang dipilih di panel identitas. Tidak ada yang dibuat dan tidak ada yang dicap. Pilih pengguna contoh, lalu buat rancangannya lagi.\n- **Judul kosong atau tidak ada (pengecualian).** Judul yang hanya berisi spasi ditolak oleh `flowversion_process_writable` (`FLOWVERSION_TITLE_BLANK`). Judul yang dibiarkan tanpa isi ditolak oleh dispatcher sebagai `MISSING_FIELDS:title`, sebelum pemeriksaan mana pun berjalan.\n- **Proses yang tidak dapat diubah (pengecualian).** Proses yang tidak dimiliki platform (`FLOWVERSION_PROCESS_UNKNOWN`) atau yang tidak dapat ditulis oleh perintah mana pun (`FLOWVERSION_PROCESS_NOT_WRITABLE`). Formulir tidak menawarkan keduanya; payload buatan tangan yang menyebutnya ditolak.\n- **Perubahan terhadap proses yang mengubah proses (pengecualian).** Payload yang menyebut `flowVersion` itu sendiri ditolak (`FLOWVERSION_PROCESS_SELF`): perubahan tidak dapat dirancang terhadap proses yang digunakan untuk mengubah proses. Daftar **Proses** tidak menawarkannya; tindakan tetap menolaknya.\n- **Payload yang menyebut siapa yang bertindak, atau id atau label (pengecualian).** Payload yang membawa kunci yang disimpan platform untuk orang yang bertindak ditolak oleh dispatcher (`ACTOR_IN_PAYLOAD`). Id atau label di dalam payload diabaikan: store yang menetapkan keduanya.\n- **Penyimpanan yang memindahkan perubahan (pengecualian, belum ada layar hari ini).** Isi yang menyebut proses lain, atau versi bawaan lain, ditolak (`FLOWVERSION_CONTENT_MOVED`); isi yang bukan daftar langkah, percabangan, dan pemeriksaan ditolak (`FLOWVERSION_CONTENT_MALFORMED`).\n- **Versi yang tidak lagi mematuhi aturannya (diturunkan, bukan tindakan).** Setiap kali daftar dibaca, setiap versi tersimpan diperiksa terhadap aturan sebagaimana adanya sekarang. Versi yang melanggar aturan berjenis *Kesalahan* tetap disimpan, didaftar, dan disebut beserta aturan yang dilanggarnya. Tidak ada yang ditolak dan tidak ada yang dihapus.\n- **Baris tersimpan yang bukan versi (diturunkan, bukan tindakan).** Baris yang id, label, status, judul, atau capnya tidak saling cocok ditolak saat dibaca, disebut beserta alasannya, dan tetap disimpan di penyimpanan. Id dan labelnya tidak diberikan lagi.\n- **Mengusulkan, menyetujui, mengaktifkan, mengembalikan.** Belum dibangun. Tidak ada tindakan dan tidak ada layar untuk satu pun di antaranya.",
+        "flags": "| Penanda | Jenis | Berlaku di | Kapan muncul | Di mana ditampilkan |\n|---|---|---|---|---|\n| **Disimpan di peramban ini** — *\"Perubahan disimpan di peramban ini dan tetap ada setelah dimuat ulang. Perubahan tidak dibagikan kepada siapa pun dan tidak berada di server. Perubahan yang dirancang oleh orang contoh adalah peragaan.\"* | notis tetap | — | selalu | puncak tab **Perubahan** |\n| *\"Tidak ada yang berlaku di sini: setiap proses berjalan seperti bawaannya.\"* | pernyataan tetap | — | selalu | di bawah **Perubahan pada proses** pada tab **Perubahan** |\n| *\"Bawaan · versi {version} — berlaku\"* | diturunkan saat dibaca | — | selalu, pada setiap proses | setiap kartu alur dan kepala alur pada tab **Katalog** |\n| **Perubahan tersimpan tidak dapat dibaca** | diturunkan saat dibaca | — | `localStorage` memuat data di bawah `paragon.flowVersions` yang tidak dapat diurai; tidak ada versi yang didaftar (tidak sama dengan tidak memiliki satu pun) | notis pada tab **Perubahan** |\n| **Sebagian perubahan tersimpan tidak dimuat** | diturunkan saat dibaca | — | baris tersimpan ditolak saat dibaca; masing-masing didaftar beserta alasannya dan tetap disimpan | notis pada tab **Perubahan** |\n| **Sebagian perubahan tidak lagi mematuhi aturan prosesnya** | diturunkan saat dibaca | Draft | versi tersimpan melanggar aturan berjenis *Kesalahan* hari ini; masing-masing disebut sebagai *\"Versi {label} dari {process} — {code}: {element}\"* beserta kalimat aturannya | notis pada tab **Perubahan** |\n| Menunggu Kepatuhan (serah-terima) | diturunkan saat dibaca | — | kursi tidak memegang `flow:draft` | kepala halaman, di tempat **Perubahan baru** |\n| *\"Ini akan dicatat atas nama {person}.\"* | diturunkan saat dibaca (kursi) | ∅ | kursi memegang `flow:draft` dan bertindak sebagai pengguna contoh | pop-up, di atas **Buat rancangan** |\n| *\"Kursi ini tidak menyebut siapa pun, sehingga tindakan ini akan ditolak. Pilih pengguna contoh di panel identitas terlebih dahulu.\"* | diturunkan saat dibaca (kursi); penolakan (`flowversion_author_named`) | ∅ | kursi memegang `flow:draft` dan tidak menyebut siapa pun | pop-up, di atas **Buat rancangan**; saat ditekan, toast kegagalan |\n| Pembacaan ditangguhkan | diturunkan saat dibaca | — | penyimpanan dibaca sebelum ada proses yang terdaftar, sehingga baris tidak diterima maupun ditolak | tanpa permukaan (status baca store `suspended`) |",
+        "linked": "**Entitas perwakilan:** tidak ada yang di-seed. Versi pertama yang dirancang di sebuah peramban adalah `fv-1`; labelnya bergantung pada proses yang dipilih (`<versi bawaan>.1`).\n\n| Tertaut ke | Melalui | Catatan |\n|---|---|---|\n| Proses yang diubahnya (registri alur) | `content.entity` | dibaca dari registri; perubahan tidak pernah menulis ke sana, sehingga katalog bawaan tetap seperti yang dinyatakan kode |\n| Versi bawaan yang menjadi dasar rancangan | `content.baseVersion` | dibaca dari proses saat rancangan dibuat, tidak pernah diambil dari payload; ia adalah angka pertama pada label |\n| Nama proses di layar | judul panduan proses | daftar **Proses** dan kolom **Proses** menampilkan judul panduan dalam bahasa pembaca |\n| Siapa yang merancang, siapa yang terakhir menyimpan | `createdBy`, `savedBy` | orang pada kursi saat tindakan dilakukan; ditampilkan melalui satu penyelesai label orang, sehingga orang contoh membawa penanda contoh |\n| Penyimpanan peramban | `paragon.flowVersions` | `{ v, versions, counters }`; penghitungnya menjaga agar angka per proses tidak pernah berjalan mundur |\n| Aturan yang harus dipatuhi perubahan | kode aturan R01–R08, R12–R19 | didaftar pada tab **Perubahan** di bawah **Aturan yang harus dipatuhi perubahan**; aturan menghasilkan temuan, bukan penolakan |\n| Tautan ke satu versi | `?view=changes&version=<id>` | membuka tab **Perubahan** dengan baris itu ditandai sebagai yang sedang dituju; versi yang tidak dimiliki peramban ini membuka tab **Katalog** |\n| Jejak audit | `TransitionEvent` untuk setiap tindakan | satu peristiwa per pembuatan dan per penyimpanan, termasuk penolakan |\n| Sensus ujung-lepas | `flowVersion` · `Draft` | jalan keluar dari `Draft` yang belum ada dicatat di sana sebagai sisi yang belum ditulis |\n\nHanya tampilan: **Menambahkan** dihitung saat dibaca dari langkah, percabangan, dan pemeriksaan yang dimuat versi. **Status** menampilkan *Rancangan*. Id, label, urutan, dan cap ditetapkan store, tidak pernah menjadi isian.",
+        "history": "Setiap dispatch menulis satu `TransitionEvent`: `event` = id transisi, `actor` = `buyer:all` (kursi, bukan orang), `ts`, `outcome`, satu `correlationId` per perintah. Kolom terpisah `attribution` mencatat siapa yang dapat disebut. Penolakan juga ditulis, beserta alasannya. Versinya sendiri membawa `createdBy` dan `createdAt`, serta `savedBy` dan `savedAt` setelah pernah disimpan. Tidak ada tampilan riwayat per versi; tab **Perubahan** menampilkan setiap versi sebagaimana adanya sekarang.\n\nUrutan kerja, sebagaimana akan dihasilkan penguji yang memegang Kepatuhan di peramban yang belum memiliki versi:\n\n| Waktu | Dari → ke | Aktor (peran) | Pemicu | Peristiwa |\n|---|---|---|---|---|\n| T+0 | ∅ (ditolak) | buyer · compliance, kursi tidak menyebut siapa pun | **Perubahan baru** → pilih proses, tulis judul → **Buat rancangan** | `t_flowversion_create`, `outcome: failed`, `POLICY_REJECTED:flowversion_author_named` |\n| T+1 | ∅ → Draft | buyer · compliance, bertindak sebagai pengguna contoh | sama, setelah memilih pengguna contoh di panel identitas | `t_flowversion_create` — versi `fv-1`, label `<versi bawaan>.1` |\n| T+2 | Draft (tidak berubah) | — | muat ulang halaman dan buka tab **Perubahan**: baris masih terdaftar, dibaca kembali dari `paragon.flowVersions` dan diperiksa lagi | — (tanpa peristiwa) |\n| T+3 | ∅ → Draft | buyer · compliance, bertindak sebagai pengguna contoh | rancangan kedua terhadap proses yang sama | `t_flowversion_create` — versi `fv-2`, label `<versi bawaan>.2` |\n\nTidak ada langkah dalam urutan ini yang menyimpan rancangan: `t_flowversion_save` belum memiliki layar hari ini.",
+        "troubleshooting": "| Gejala | Cara mengenali | Kemungkinan penyebab | Penyelesaian |\n|---|---|---|---|\n| Tidak ada tombol **Perubahan baru** | kepala halaman tidak menampilkan apa pun di kanan | tab **Katalog** sedang terbuka | buka tab **Perubahan**; tombol itu milik tab tersebut |\n| **Mengubah proses adalah tindakan Kepatuhan** dengan *Menunggu Kepatuhan* di tempat tombol | kepala halaman pada tab **Perubahan** | kursi tidak memegang `flow:draft` | buka avatar dan pilih Kepatuhan (kontrol demo) |\n| Toast *\"Ditolak: kursi ini tidak menyebut siapa pun, dan tindakan ini dicatat atas nama orang yang melakukannya. Pilih pengguna contoh di panel identitas, lalu ulangi.\"* | `POLICY_REJECTED:flowversion_author_named` (`FLOWVERSION_AUTHOR_UNATTRIBUTED`); baris di atas **Buat rancangan** sudah menyatakannya | kursi tidak menyebut siapa pun | pilih pengguna contoh di panel identitas, lalu tekan **Buat rancangan** lagi; tidak ada yang dibuat |\n| Toast *\"Ditolak: perubahan memerlukan judul agar dapat ditemukan kembali.\"* | `POLICY_REJECTED:flowversion_process_writable` (`FLOWVERSION_TITLE_BLANK`) | judul hanya berisi spasi | tulis judul |\n| Toast kegagalan yang menyebut judul belum diisi | `MISSING_FIELDS:title` | judul dibiarkan tanpa isi | tulis judul |\n| Toast *\"Ditolak: perubahan tidak dapat dirancang terhadap proses yang digunakan untuk mengubah proses.\"* | `POLICY_REJECTED:flowversion_process_writable` (`FLOWVERSION_PROCESS_SELF`) | payload buatan tangan menyebut `flowVersion` sebagai prosesnya; daftar **Proses** tidak menawarkannya | pilih proses lain; proses ini tidak dapat diubah melalui sebuah perubahan |\n| Proses yang diinginkan tidak ada di daftar **Proses** | daftarnya lebih pendek daripada tab **Katalog** | tidak ada perintah yang dapat menulis melalui proses itu, proses itu tidak memiliki tindakan yang dilakukan orang di layar, atau proses itu adalah proses yang mengubah proses | wajar; langkah di sana tidak akan pernah dapat dipenuhi |\n| Rancangan tidak dapat dibuka, disunting, atau diberi langkah | baris pada tab **Perubahan** bukan tautan dan **Menambahkan** berbunyi *0 elemen* | menyimpan rancangan belum memiliki layar (FB-2) | wajar hari ini |\n| Tidak ada cara mengusulkan, menyetujui, atau mengaktifkan perubahan | tidak ada tombol seperti itu di mana pun | belum dibangun (FB-3 dan seterusnya); `Draft` tidak memiliki jalan keluar | wajar hari ini; setiap proses berjalan seperti bawaannya |\n| Sebuah proses tetap berperilaku seperti sebelumnya setelah rancangan dibuat | tab **Katalog** berbunyi *\"Bawaan · versi {version} — berlaku\"* | tidak ada isi versi yang berlaku | wajar hari ini |\n| Daftar kosong di peramban lain atau di komputer lain | *\"Belum ada perubahan yang dirancang.\"* | versi berada di peramban yang merancangnya; tidak ada yang di-seed dan tidak ada yang dibagikan | rancang lagi di peramban itu |\n| Daftar kosong setelah data situs dihapus | *\"Belum ada perubahan yang dirancang.\"* | menghapus data situs menghapus `paragon.flowVersions` | wajar; versinya sudah hilang |\n| Rancangan hilang setelah dimuat ulang, tanpa notis | rancangan terdaftar sampai halaman dimuat ulang | peramban tidak mengizinkan penulisan ke penyimpanan (penyimpanan dinonaktifkan atau penuh), sehingga rancangan hanya hidup selama halaman itu terbuka | izinkan penyimpanan situs untuk portal, lalu rancang lagi |\n| Notis **Perubahan tersimpan tidak dapat dibaca** | tab **Perubahan** | data di bawah `paragon.flowVersions` tidak dapat diurai | merancang perubahan akan menggantikan yang tidak dapat dibaca |\n| Notis **Sebagian perubahan tersimpan tidak dimuat** | tab **Perubahan**, baris didaftar beserta alasan | penyimpanan yang disunting tangan: sebuah baris bukan versi, atau id, label, status, judul, atau capnya tidak saling cocok | perbaiki baris itu di penyimpanan atau biarkan; baris tetap disimpan, dan id serta labelnya tidak dipakai ulang |\n| Notis **Sebagian perubahan tidak lagi mematuhi aturan prosesnya** | tab **Perubahan**, masing-masing disebut dengan kode aturan | prosesnya bergeser di bawah perubahan itu, atau isi tersimpan melanggar aturan berjenis *Kesalahan* | baca aturannya di bawah **Aturan yang harus dipatuhi perubahan**; versi tetap disimpan dan tidak ada yang berlaku dalam keadaan mana pun |\n| Tautan ke sebuah versi membuka tab **Katalog** | alamatnya membawa `?view=changes&version=<id>` | peramban ini tidak memiliki versi itu | buka tautan di peramban yang merancangnya |",
+        "testdata": "| Status | Id fixture | Nomor | Catatan |\n|---|---|---|---|\n| Draft | — | — | tidak ada fixture — tidak ada yang di-seed dan store dibuka kosong. Buat satu: ambil Kepatuhan, pilih pengguna contoh, lalu **Perubahan** → **Perubahan baru** → **Buat rancangan**. Versi pertama di sebuah peramban adalah `fv-1` dengan label `<versi bawaan>.1`; ia berada di `localStorage` peramban itu di bawah `paragon.flowVersions` |",
+        "steps": ""
+      },
+      "sectionSources": {
+        "summary": [
+          "src/services/transitions/flows/flowVersion.flow.ts:1-65",
+          "src/services/flowBuilder/flowVersion.ts:1-15,92-150",
+          "src/services/flowBuilder/flowVersionStore.ts:1-24,41",
+          "src/services/transitions/businessRoles.ts:363-366",
+          "src/services/transitions/looseEndCensus.ts:328-340",
+          "src/lib/i18n/flowBuilder.ts:134-154",
+          "src/lib/i18n/processFlowPurpose.ts:713-714"
+        ],
+        "lifecycle": [
+          "src/services/transitions/flows/flowVersion.flow.ts:28-64",
+          "src/services/transitions/looseEndCensus.ts:328-340"
+        ],
+        "forks": [
+          "src/pages-v2/ProcessFlows.tsx:364-378",
+          "src/services/data/mock/flowVersionTarget.ts:16-53",
+          "src/services/transitions/dispatcher.ts:824-837",
+          "src/services/flowBuilder/flowVersionStore.ts:96-110,163-202",
+          "src/services/flowBuilder/liveWorld.ts:59-83",
+          "src/services/transitions/looseEndCensus.ts:328-340"
+        ],
+        "flags": [
+          "src/pages-v2/process-flows/ChangesView.tsx:171-175,187-195,248-311",
+          "src/services/flowBuilder/flowVersionStore.ts:45-54,117-161",
+          "src/services/flowBuilder/liveWorld.ts:63-83",
+          "src/lib/i18n/flowBuilder.ts:133-163",
+          "src/lib/i18n/identity.ts:143-147",
+          "src/lib/i18n/roles.ts:283-284"
+        ],
+        "linked": [
+          "src/services/flowBuilder/flowVersion.ts:92-150",
+          "src/services/flowBuilder/flowVersionStore.ts:41,204-215,246-264",
+          "src/services/data/mock/flowVersionTarget.ts:61-69",
+          "src/services/flowBuilder/validateVersion.ts:33-50",
+          "src/pages-v2/process-flows/ChangesView.tsx:52-56,210-246",
+          "src/pages-v2/ProcessFlows.tsx:316-337",
+          "src/services/data/mock/documentIds.ts:79-80",
+          "src/guides/index.ts:73"
+        ],
+        "history": [
+          "src/services/transitions/events.ts:26-61,98",
+          "src/services/flowBuilder/flowVersion.ts:116-131",
+          "src/services/flowBuilder/flowVersionStore.ts:246-273"
+        ],
+        "troubleshooting": [
+          "src/pages-v2/ProcessFlows.tsx:316-337,364-378",
+          "src/pages-v2/process-flows/ChangesView.tsx:119-150,256-329",
+          "src/services/data/mock/flowVersionTarget.ts:16-53",
+          "src/services/flowBuilder/flowVersionStore.ts:117-142,204-215",
+          "src/services/modules/registry.ts:125-136",
+          "src/lib/i18n/flowBuilder.ts:138-140,156-163,177-190"
+        ],
+        "testdata": [
+          "src/services/data/mock/documentIds.ts:79-80",
+          "src/services/flowBuilder/flowVersionStore.ts:41,246-264"
+        ],
+        "steps": []
+      },
+      "steps": {
+        "t_flowversion_create": {
+          "transitionId": "t_flowversion_create",
+          "label": "Buat rancangan",
+          "stepKind": "operator-action",
+          "role": "buyer · compliance (atom `flow:draft`; Admin dan Super Admin juga memegangnya)",
+          "fromTo": "∅ → Draft",
+          "operator": {
+            "where": "`/buyer/process-flows` → tab **Perubahan** → **Perubahan baru** (kanan atas kepala halaman) → pop-up **Perubahan baru** → **Buat rancangan**. Pop-up itu adalah dialog: ia mengambil fokus, dan Escape, tombol tutup, atau klik di luar menutupnya. Tombol itu berdiri di kepala halaman hanya selama tab **Perubahan** terbuka. Kursi yang tidak memegang `flow:draft` melihat, di tempat yang sama, **Mengubah proses adalah tindakan Kepatuhan** dengan notis serah-terima *Menunggu Kepatuhan*, dan tidak ada pop-up.",
+            "do": "pilih proses dan beri nama perubahan, lalu tekan **Buat rancangan**. Perubahan dibuat sebagai rancangan kosong terhadap proses seperti bawaannya hari ini. Tidak ada yang berjalan berbeda.",
+            "fill": "**Proses** (`flow`) — daftarnya hanya menawarkan proses yang dapat ditulis oleh perintah, dengan tindakan yang dilakukan orang di layar, masing-masing ditampilkan dengan judul panduannya. **Judul** (`title`) — untuk apa perubahan ini, dalam beberapa kata; tidak boleh kosong. Tidak ada lagi yang ditanyakan: id, label, versi bawaan yang menjadi dasar rancangan, dan siapa yang merancang bukanlah isian."
+          },
+          "tester": {
+            "expectedState": "Draft",
+            "confirm": "toast *\"Versi {label} dari {process} dibuat sebagai rancangan.\"*; pop-up tertutup; baris baru di tabel pada tab **Perubahan** dengan **Versi** (`<versi bawaan>.<n>`), **Proses**, **Judul**, **Status** *Rancangan*, **Menambahkan** *0 elemen*, **Dirancang oleh** (orang contoh yang sedang diperankan kursi) dan **Dirancang**. Baris *\"Belum ada perubahan yang dirancang.\"* hilang. Versinya ada di `localStorage` di bawah `paragon.flowVersions` dan masih terdaftar setelah dimuat ulang. Membuka sebuah alur di tab **Katalog** tetap berbunyi *\"Bawaan · versi {version} — berlaku\"* — rancangan itu tidak mengubah apa pun.",
+            "triggerEvent": "t_flowversion_create"
+          },
+          "checks": "`flowversion_author_named` — kursinya harus menyebut seseorang (`FLOWVERSION_AUTHOR_UNATTRIBUTED`). Di atas **Buat rancangan**, pop-up menyatakan kursi mana ini: *\"Kursi ini tidak menyebut siapa pun, sehingga tindakan ini akan ditolak. Pilih pengguna contoh di panel identitas terlebih dahulu.\"*, atau *\"Ini akan dicatat atas nama {person}.\"* setelah pengguna contoh dipilih. Tombol tetap aktif; bila ditekan dari kursi yang tidak menyebut siapa pun, toast berbunyi *\"Ditolak: kursi ini tidak menyebut siapa pun, dan tindakan ini dicatat atas nama orang yang melakukannya. Pilih pengguna contoh di panel identitas, lalu ulangi.\"* `flowversion_process_writable` — diperiksa dalam urutan ini: prosesnya harus terdaftar (`FLOWVERSION_PROCESS_UNKNOWN`); prosesnya tidak boleh `flowVersion` itu sendiri (`FLOWVERSION_PROCESS_SELF`, toast *\"Ditolak: perubahan tidak dapat dirancang terhadap proses yang digunakan untuk mengubah proses.\"*); harus ada perintah yang dapat menulis melaluinya (`FLOWVERSION_PROCESS_NOT_WRITABLE`); dan judul tidak boleh kosong (`FLOWVERSION_TITLE_BLANK`, toast *\"Ditolak: perubahan memerlukan judul agar dapat ditemukan kembali.\"*). Judul yang dibiarkan tanpa isi ditolak lebih awal, oleh dispatcher, sebagai `MISSING_FIELDS:title`. Pada setiap penolakan, pop-up tetap terbuka dan tidak ada yang dibuat.",
+          "glossary": [
+            "ROLE_NOT_PERMITTED",
+            "MISSING_FIELDS",
+            "ACTOR_IN_PAYLOAD",
+            "POLICY_REJECTED",
+            "SCOPE_DENIED",
+            "NO_PERSON_IN_SESSION"
+          ],
+          "honesty": "pop-up menyatakan sebelum tindakan di mana rancangan berada — *\"Rancangan disimpan di peramban ini dan tetap ada setelah dimuat ulang — hanya di peramban ini, tidak dibagikan, tidak di server.\"* — dan apa yang dilakukannya: *\"Perubahan dibuat sebagai rancangan kosong terhadap proses seperti bawaannya hari ini; tidak ada yang berjalan berbeda.\"* Rancangan yang dibuat kosong dan tetap kosong, karena belum ada layar yang menyimpan isi ke dalamnya. Tanggal **Dirancang** adalah waktu kini yang dinyatakan portal, bukan jam dinding. Formulir tidak dapat menyebut proses yang tidak terdaftar atau tidak dapat ditulis, maupun proses yang digunakan untuk mengubah proses; tindakan tetap menolak masing-masing.",
+          "sources": [
+            "src/services/transitions/flows/flowVersion.flow.ts:38-50",
+            "src/services/data/mock/flowVersionTarget.ts:16-36,55-69",
+            "src/services/transitions/policies.ts:2864-2873,2949-2956",
+            "src/services/transitions/dispatcher.ts:824-837",
+            "src/services/flowBuilder/flowVersionStore.ts:246-264",
+            "src/services/query/commandHooks.ts:1383-1399",
+            "src/pages-v2/ProcessFlows.tsx:316-337,364-378,603-613",
+            "src/pages-v2/process-flows/ChangesView.tsx:105-195",
+            "src/pages-v2/process-flows/flowVersionRefusal.ts:10-28",
+            "src/lib/i18n/flowBuilder.ts:165-190",
+            "src/lib/i18n/identity.ts:143-147"
+          ]
+        },
+        "t_flowversion_save": {
+          "transitionId": "t_flowversion_save",
+          "label": "Simpan rancangan",
+          "stepKind": "records-fact",
+          "role": "buyer · compliance (atom `flow:draft`; Admin dan Super Admin juga memegangnya)",
+          "fromTo": "Draft → status yang sama",
+          "operator": {
+            "where": "belum ada layar hari ini. Di `/buyer/process-flows` → tab **Perubahan**, rancangan dapat dibuat dan didaftar; rancangan tidak dapat dibuka atau disunting. Penyusun yang menyimpan rancangan hadir pada batch berikutnya (FB-2).",
+            "do": "belum ada. Ketika penyusun hadir, menyimpan menggantikan seluruh isi rancangan — langkah, percabangan, dan pemeriksaannya — dengan yang disusun. Menyimpan bukan memutuskan: rancangan tetap rancangan dan tidak ada yang mulai berlaku.",
+            "fill": "`content` — seluruh daftar langkah, percabangan, dan pemeriksaan, beserta proses dan versi bawaan yang menjadi pokok perubahan. Keduanya ditetapkan saat rancangan dibuat dan penyimpanan tidak dapat mengubahnya. Belum ada layar yang mengisinya hari ini."
+          },
+          "tester": {
+            "expectedState": "Draft",
+            "confirm": "belum dapat dikonfirmasi di layar hari ini. Setelah penyimpanan berjalan, hitungan **Menambahkan** pada baris menunjukkan jumlah langkah, percabangan, dan pemeriksaan yang disimpan, dan catatannya membawa siapa yang menyimpan dan kapan (`savedBy`, `savedAt`); label, id, dan siapa yang merancang tidak berubah.",
+            "triggerEvent": "t_flowversion_save"
+          },
+          "checks": "`flowversion_author_named` — kursinya harus menyebut seseorang (`FLOWVERSION_AUTHOR_UNATTRIBUTED`). `flowversion_content_well_formed` — isinya harus berupa daftar langkah, percabangan, dan pemeriksaan (`FLOWVERSION_CONTENT_MALFORMED`), dan harus tetap mengenai proses dan versi bawaan tempat perubahan itu dibuat (`FLOWVERSION_CONTENT_MOVED`). Id yang bukan versi di peramban ini adalah `NOT_FOUND`. Aturan R01–R19 pada tab **Perubahan** **tidak** menolak penyimpanan: rancangan boleh belum selesai.",
+          "glossary": [
+            "ROLE_NOT_PERMITTED",
+            "NOT_FOUND",
+            "MISSING_FIELDS",
+            "ACTOR_IN_PAYLOAD",
+            "POLICY_REJECTED",
+            "SCOPE_DENIED",
+            "NO_PERSON_IN_SESSION"
+          ],
+          "honesty": "tindakan ini sudah dibangun dan **belum memiliki layar**; tidak ada apa pun di portal yang menjalankannya hari ini. Rancangan tersimpan yang melanggar aturan prosesnya tetap disimpan dan disebut di bawah **Sebagian perubahan tidak lagi mematuhi aturan prosesnya** — dilaporkan, tidak ditolak dan tidak dibuang. Apa pun isi sebuah rancangan, tidak satu pun berlaku.",
+          "sources": [
+            "src/services/transitions/flows/flowVersion.flow.ts:51-63",
+            "src/services/data/mock/flowVersionTarget.ts:38-53,70-72",
+            "src/services/transitions/policies.ts:2864-2873,2949-2956",
+            "src/services/flowBuilder/flowVersion.ts:92-131,217-230",
+            "src/services/flowBuilder/flowVersionStore.ts:265-273",
+            "src/services/flowBuilder/liveWorld.ts:59-83",
+            "src/pages-v2/process-flows/ChangesView.tsx:225-233,286-310",
+            "src/lib/i18n/flowBuilder.ts:187-190"
+          ]
+        }
+      },
+      "testData": [
+        {
+          "state": "Draft",
+          "fixtureIds": [],
+          "note": "tidak ada fixture — tidak ada yang di-seed dan store dibuka kosong. Buat satu: ambil Kepatuhan, pilih pengguna contoh, lalu **Perubahan** → **Perubahan baru** → **Buat rancangan**. Versi pertama di sebuah peramban adalah `fv-1` dengan label `<versi bawaan>.1`; ia berada di `localStorage` peramban itu di bawah `paragon.flowVersions`"
+        }
+      ]
+    },
+    {
       "entity": "forecastPublication",
       "locale": "en",
       "title": "Forecast publication",

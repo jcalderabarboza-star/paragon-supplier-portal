@@ -46,8 +46,8 @@ export const buyerInventoryEn: Record<string, string> = {
     'Search by material code, name, or supplier...',
   // — DOS heatmap —
   'buyerInventory.heatmap.eyebrow': 'Coverage Overview',
-  'buyerInventory.heatmap.title': 'DOS heatmap by category × brand',
-  'buyerInventory.heatmap.col.category': 'Category',
+  'buyerInventory.heatmap.title': 'DOS heatmap by brand × category',
+  'buyerInventory.heatmap.col.brand': 'Brand',
   // — Main table —
   'buyerInventory.table.col.material': 'Material',
   'buyerInventory.table.col.supplier': 'Supplier',
@@ -142,8 +142,8 @@ export const buyerInventoryId: Record<string, string> = {
     'Cari berdasarkan kode material, nama, atau pemasok...',
   // — DOS heatmap —
   'buyerInventory.heatmap.eyebrow': 'Ikhtisar Cakupan',
-  'buyerInventory.heatmap.title': 'Peta panas DOS menurut kategori × merek',
-  'buyerInventory.heatmap.col.category': 'Kategori',
+  'buyerInventory.heatmap.title': 'Peta panas DOS menurut merek × kategori',
+  'buyerInventory.heatmap.col.brand': 'Merek',
   // — Main table —
   'buyerInventory.table.col.material': 'Material',
   'buyerInventory.table.col.supplier': 'Pemasok',

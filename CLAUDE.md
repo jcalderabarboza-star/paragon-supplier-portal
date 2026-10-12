@@ -430,6 +430,26 @@ mechanisms whose success signals said nothing about the damage they did.
 > left. A role-gated VALUE policy (value from `readEntity` × lane from
 > `scope.businessRoles`) is buildable today and is **not** the ladder: it
 > discriminates lanes, and the rungs are altitudes.
+>
+> ⚠️ **A CHANGE TO A PROCESS IS A DOCUMENT, AND IT IS ADDITIONS ONLY (FB-1, 2026-10-12, operator
+> rulings on the Flow Builder — it was SE-16 and is built here).** A version
+> (`services/flowBuilder/flowVersion.ts`) lists steps, checks and forks IN FRONT OF acts a process
+> already has, and has no field that could name a state, move a lane or drop a check: **an active
+> version can add a refusal and can never remove one**, held over the real catalogue by
+> `validateVersion.test.ts`. The `flowVersion` flow has TWO acts so far, create and save, both
+> `flow:draft` — a `compliance` atom. **Nothing a version says is in force**: no dispatcher
+> dependency reads one yet, and no flow-builder module calls `flowRegistry.register`. The rules a
+> change must obey are ONE pure library (`validateVersion`) handed its world
+> (`liveWorld`); a stored version that breaks one is reported on read, never dropped. Versions are
+> kept in the browser (`paragon.flowVersions`). **Derive which rules exist from `VERSION_RULES`,
+> which acts a step may stand in front of from `isGateable`, and which processes can show a step
+> from `STEP_SURFACES` — never from a sentence here.** The handover set still says "no runtime
+> override"; by ruling it is corrected at handover-v3.
+>
+> ⚠️ **THE PARAGON BRAND LIST IS ONE FILE** (`data/paragonBrands.ts`, operator ruling 2026-10-12):
+> the brands and their codes. A page that offers or columns a brand reads it;
+> `paragonBrands.test.ts` holds the list to the ruling and refuses a second list.
+
 Re-baselined by the **Canon True-Up** (2026-07-14). The prior "main @ #53" pointer
 was stale by ~12 commits; F0 (contract-freeze) and the I3 compliance phase are DONE,
 and the Stage G planning canon + World-Class Build Plan are now on main.

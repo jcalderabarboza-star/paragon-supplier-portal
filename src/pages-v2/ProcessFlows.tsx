@@ -1,10 +1,12 @@
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
-import { GitBranch, AlertTriangle } from 'lucide-react';
+import { GitBranch, AlertTriangle, Plus } from 'lucide-react';
 import AppShellV2 from '../components/layout-v2/AppShellV2';
 import PageHeader from '../components/ui-v2/PageHeader';
 import PageMetaLine from '../components/ui-v2/PageMetaLine';
+import Button from '../components/ui-v2/Button';
+import Tabs from '../components/ui-v2/Tabs';
 import Data from '../components/ui-v2/Data';
 import StatusPill from '../components/ui-v2/StatusPill';
 import { Card, CardButton } from '../components/ui-v2/Card';
@@ -17,6 +19,11 @@ import LifecycleWalk from './process-flows/LifecycleWalk';
 import { looseEndKindKey, reasonKey, ALL_REASONS } from './process-flows/labels';
 import DerivedFlags from './process-flows/DerivedFlags';
 import GuideTabs from './process-flows/GuideTabs';
+import ChangesView, { ChangeGate, NewChangeDialog } from './process-flows/ChangesView';
+import { useVerbAvailability } from '../hooks/useVerbAvailability';
+import { shippedLabel } from '../services/flowBuilder/flowVersion';
+import { flowVersionStore } from '../services/flowBuilder/flowVersionStore';
+import { liveWorld } from '../services/flowBuilder/liveWorld';
 import { getGuide, guideLocaleFor } from '../guides';
 import { firstParagraphText } from '../guides/markdown';
 import { STEP_KIND_KEY } from '../lib/i18n/stepKind';
@@ -306,7 +313,29 @@ const ProcessFlows: React.FC = () => {
   const catalog = useMemo(() => buildCatalogView(getKnownFlows()), []);
   // OPS-3 — `?flow=<entity>` opens the page on that flow, so a surface can link
   // to the guide it names. An unknown value opens the first flow, as before.
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
+  // FB-1 — TWO VIEWS OF ONE PAGE: the catalogue as it always was, and the
+  // changes drafted against it. `?view=changes` opens the second, and
+  // `&version=<id>` names one change in it. An unknown view, or a version this
+  // browser does not hold, opens the catalogue: a link never lands on a blank
+  // body.
+  const [revision, setRevision] = useState(0);
+  const [creating, setCreating] = useState(false);
+  const world = useMemo(() => liveWorld(), []);
+  const draftAvailability = useVerbAvailability('flow:draft');
+  const askedVersion = searchParams.get('version');
+  const currentVersion = askedVersion !== null && flowVersionStore.byId(askedVersion) ? askedVersion : null;
+  const pageView: 'catalogue' | 'changes' =
+    searchParams.get('view') === 'changes' && (askedVersion === null || currentVersion !== null)
+      ? 'changes'
+      : 'catalogue';
+  const showView = (next: string): void => {
+    const params = new URLSearchParams(searchParams);
+    params.delete('version');
+    if (next === 'changes') params.set('view', 'changes');
+    else params.delete('view');
+    setSearchParams(params, { replace: true });
+  };
   const [selected, setSelected] = useState<string>(() => {
     const asked = searchParams.get('flow');
     return (
@@ -336,6 +365,17 @@ const ProcessFlows: React.FC = () => {
         breadcrumb={[t('processFlows.crumb.processFlows')]}
         title={t('processFlows.header.title')}
         subtitle={t('processFlows.header.subtitle')}
+        actions={
+          // The page's one solid button, on the view it belongs to. A seat that
+          // does not hold the right reads whose act it is, in the same slot.
+          pageView !== 'changes' ? undefined : draftAvailability.kind === 'held' ? (
+            <Button variant="primary" icon={Plus} onClick={() => setCreating(true)} data-testid="fb-new-change">
+              {t('flowBuilder.changes.new')}
+            </Button>
+          ) : (
+            <ChangeGate availability={draftAvailability} />
+          )
+        }
       />
       <PageMetaLine className="-mt-4 mb-4">
         {t('processFlows.meta.summary', {
@@ -347,6 +387,30 @@ const ProcessFlows: React.FC = () => {
         })}
       </PageMetaLine>
 
+      <Tabs
+        ariaLabel={t('flowBuilder.view.aria')}
+        className="mb-6"
+        active={pageView}
+        onChange={showView}
+        tabs={(['catalogue', 'changes'] as const).map((k) => ({
+          id: k,
+          label: t(`flowBuilder.view.${k}`),
+          domId: `pf-view-tab-${k}`,
+          testId: `pf-view-tab-${k}`,
+          controls: 'pf-view-panel',
+        }))}
+      />
+
+      <div
+        role="tabpanel"
+        id="pf-view-panel"
+        aria-labelledby={`pf-view-tab-${pageView}`}
+        data-testid={`pf-view-panel-${pageView}`}
+      >
+      {pageView === 'changes' ? (
+        <ChangesView revision={revision} world={world} current={currentVersion} />
+      ) : (
+      <>
       {/* The honest marker for the route (D-CENSUS-8). Both halves stated. */}
       <Card as="section" className="mb-6">
         <SectionHeading as="h2">{t('processFlows.honesty.title')}</SectionHeading>
@@ -404,6 +468,10 @@ const ProcessFlows: React.FC = () => {
                         transitions: flow.transitionCount,
                       })}
                     </span>
+                    {/* FB-1 — which version of the process is running. */}
+                    <span data-testid={`pf-flow-inforce-${flow.entity}`} className="mt-0.5 block text-xs text-text-secondary">
+                      {t('flowBuilder.inForce.shipped', { version: shippedLabel(flow.version) })}
+                    </span>
                     {/* G1 — the card gains its guide's first paragraph, or says
                         the guide is pending. AFTER the counts, so the entity
                         name still leads the card. */}
@@ -451,7 +519,10 @@ const ProcessFlows: React.FC = () => {
                     {t(flowPurpose)}
                   </p>
                 )}
-                <p className="mt-2 text-meta text-text-tertiary">
+                <p data-testid="pf-inforce" className="mt-2 text-meta text-text-secondary">
+                  {t('flowBuilder.inForce.shipped', { version: shippedLabel(view.version) })}
+                </p>
+                <p className="mt-1 text-meta text-text-tertiary">
                   {t('processFlows.flow.counts', {
                     states: view.stateCount,
                     transitions: view.transitionCount,
@@ -525,6 +596,21 @@ const ProcessFlows: React.FC = () => {
           />
         </div>
       </div>
+      </>
+      )}
+      </div>
+
+      {draftAvailability.kind === 'held' ? (
+        <NewChangeDialog
+          open={creating}
+          onClose={() => setCreating(false)}
+          world={world}
+          onCreated={() => {
+            setRevision((r) => r + 1);
+            setCreating(false);
+          }}
+        />
+      ) : null}
     </AppShellV2>
   );
 };

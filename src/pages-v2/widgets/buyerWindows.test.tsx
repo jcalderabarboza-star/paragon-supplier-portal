@@ -10,11 +10,11 @@
 //     here from the service, never pinned, so a corpus that grows does not
 //     redden a spec (`FLOOR-IN-PROSE-01`).
 //  2. **No window states a clock-relative figure over an UNANCHORED family.**
-//     PO, RFQ, quotation and ASN are not anchored, so a day-count over them is
-//     saturated — measured: `awardOverdue` called ALL NINE pending RFQs "past
-//     deadline", which is a sentence with no information in it. Asserted in
-//     BOTH directions: the retired phrasings must be absent AND the clock-free
-//     replacements must be present.
+//     A day-count over fixtures that are not anchored is saturated — measured:
+//     `awardOverdue` once called ALL NINE pending RFQs "past deadline", which
+//     is a sentence with no information in it. The sourcing events have been
+//     anchored since SRC-2, so the RFQ window counts again (FB-1), and the
+//     spec holds that the count DISCRIMINATES: it names some events, not all.
 //  3. **An expanded row is a LINK to its own record**, keyboard-reachable,
 //     never an onClick on a div.
 // ─────────────────────────────────────────────────────────────────────────────
@@ -32,6 +32,7 @@ import {
   overdueInvoices,
   openPurchaseOrders,
   pendingAwardRfqs,
+  awardPastDeadlineAt,
   grNeedingAction,
   pendingAsns,
 } from './buyerDerivations';
@@ -178,14 +179,35 @@ describe('each window states its derived count', () => {
 });
 
 describe('⚠️ NO CLOCK-RELATIVE FIGURE OVER AN UNANCHORED FAMILY — both directions', () => {
-  it('the RFQ window states no deadline judgement, and says the judgement is held', async () => {
+  it('the RFQ window counts what is past its award date at the declared present — some events, not all, by name', async () => {
+    const rfqs = (await proc.getRFQs(SCOPE)).items;
+    const quotes = (await proc.getQuotations(SCOPE)).items;
+    const pending = pendingAwardRfqs(rfqs, quotes);
+    const late = awardPastDeadlineAt(pending, PRESENT_ISO);
+    // ⚠️ THE COUNT DISCRIMINATES. Saturated (every row) or empty, it would say nothing.
+    expect(late.length).toBeGreaterThan(0);
+    expect(late.length).toBeLessThan(pending.length);
+    // The award day itself is not late; the day after is.
+    const due = (iso: string) => [{ ...pending[0], awardDeadline: iso }];
+    expect(awardPastDeadlineAt(due(PRESENT_ISO.slice(0, 10)), PRESENT_ISO)).toHaveLength(0);
+    expect(awardPastDeadlineAt(due('2000-01-01'), PRESENT_ISO)).toHaveLength(1);
+    // Read a year on, as the unanchored fixtures once were, every row is late.
+    expect(awardPastDeadlineAt(pending, '2099-01-01')).toHaveLength(pending.length);
+
     renderWithProviders(<BuyerRfqAwaitingAwardWidget />);
     // `findByText` on the FLAG, not on the title: the shell renders before its
     // query resolves, and the title is present either way.
-    expect(
-      await screen.findByText(/held until RFQ dates are anchored/i),
-    ).toBeInTheDocument();
-    expect(screen.queryByText(/past deadline/i)).not.toBeInTheDocument();
+    expect(await screen.findByText(`${pending.length} to award · ${late.length} past deadline`)).toBeInTheDocument();
+    // The stale note is gone, in both languages.
+    expect(screen.queryByText(/held until RFQ dates are anchored/i)).not.toBeInTheDocument();
+    await act(async () => {
+      await i18n.changeLanguage('id');
+    });
+    expect(screen.getByText(`${pending.length} untuk dimenangkan · ${late.length} lewat tenggat`)).toBeInTheDocument();
+    expect(screen.queryByText(/ditahan sampai/i)).not.toBeInTheDocument();
+    await act(async () => {
+      await i18n.changeLanguage('en');
+    });
   });
 
   it('the PO window counts NOT-YET-ACKNOWLEDGED, never a 48-hour judgement', async () => {

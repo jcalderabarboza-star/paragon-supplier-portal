@@ -61,6 +61,14 @@ export const pendingAwardRfqs = (
 export const awardOverdue = (rfqs: RFQ[], now: Date): RFQ[] =>
   rfqs.filter((r) => new Date(r.awardDeadline).getTime() < now.getTime());
 
+/**
+ * FB-1 · the events whose award date has gone, at a day given as an ISO string.
+ * The award day itself is not late: an award due on the 2nd is late on the 3rd,
+ * which is the rule a response deadline is read by.
+ */
+export const awardPastDeadlineAt = (rfqs: RFQ[], todayIso: string): RFQ[] =>
+  rfqs.filter((r) => todayIso.slice(0, 10) > r.awardDeadline.slice(0, 10));
+
 export const quoteCountByRfq = (quotations: Quotation[]): Map<string, number> => {
   const m = new Map<string, number>();
   for (const q of quotations) m.set(q.rfqId, (m.get(q.rfqId) ?? 0) + 1);

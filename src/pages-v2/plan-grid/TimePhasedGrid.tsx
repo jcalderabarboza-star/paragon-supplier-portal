@@ -74,7 +74,7 @@
 // ────────────────────────────────────────────────────────────────────────────
 
 import React, { createContext, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { Ban, Check, ChevronDown, ChevronRight, ClipboardPaste, Sigma } from 'lucide-react';
+import { Ban, Check, ChevronDown, ChevronRight, ClipboardPaste, Pencil, Sigma } from 'lucide-react';
 import { DataSheetGrid, type CellProps, type Column, type DataSheetGridRef } from 'react-datasheet-grid';
 import 'react-datasheet-grid/dist/style.css';
 import './planGrid.css';
@@ -278,6 +278,8 @@ export const PlanRowsContext = createContext<PlanRowsApi>({ isOpen: () => false,
 const CELL_MARK = {
   committed: { Icon: Check, tone: 'text-success' },
   pasted: { Icon: ClipboardPaste, tone: 'text-warning-hover' },
+  // FB-1 (operator ruling): a typed change is not told by its tint alone.
+  planned: { Icon: Pencil, tone: 'text-info' },
   dismissed: { Icon: Ban, tone: 'text-text-tertiary' },
 } as const;
 
@@ -369,11 +371,13 @@ export const PlanBucketCell: React.FC<{
     ? null
     : pasted
       ? 'pasted'
-      : committed && !planned
-        ? 'committed'
-        : dismissed && !planned
-          ? 'dismissed'
-          : null;
+      : planned
+        ? 'planned'
+        : committed && !planned
+          ? 'committed'
+          : dismissed && !planned
+            ? 'dismissed'
+            : null;
   const Mark = mark ? CELL_MARK[mark].Icon : null;
   return (
     <div

@@ -103,6 +103,13 @@ const RULED: ReadonlyArray<{ hook: PolicyHookId; head: string; verbs: readonly s
     head: 'GR_RECEIVER_UNATTRIBUTED',
     verbs: ['t_gr_create'],
   },
+  // FB-1 (operator ruling, 12 October 2026) — a change to a process is written
+  // by somebody: creating a draft and saving one both name a person.
+  {
+    hook: POLICY_HOOKS.FLOWVERSION_AUTHOR_NAMED,
+    head: 'FLOWVERSION_AUTHOR_UNATTRIBUTED',
+    verbs: ['t_flowversion_create', 't_flowversion_save'],
+  },
 ];
 
 /** Proposing, raising, picking up and the supplier's own acts stay open. */

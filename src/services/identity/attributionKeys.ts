@@ -84,6 +84,7 @@ export const ATTRIBUTION_KEYS: readonly string[] = Object.freeze([
   // `approvedBy`. A hand list reproduces the gap it was written to close.
   'changedBy',
   'confirmedBy',
+  'createdBy',
   'decidedBy',
   'declaredBy',
   'grantedBy',
@@ -91,6 +92,7 @@ export const ATTRIBUTION_KEYS: readonly string[] = Object.freeze([
   'proposedBy',
   'publishedBy',
   'rejectedBy',
+  'savedBy',
   'releasedBy',
   // SUP-1 - `SupplierDocument.verifiedBy`, who confirmed a certificate. The
   // supplier-document target writes it from `scope.actor`.

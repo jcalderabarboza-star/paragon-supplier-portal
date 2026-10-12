@@ -324,4 +324,18 @@ export const LOOSE_END_CENSUS: readonly CensusEntry[] = Object.freeze([
       'ledger, and what is switched on is derived from that ledger at read. Modelling each switch ' +
       'as a born entity would store the answer instead of the acts that justify it.',
   },
+
+  // ── flowVersion (FB-1) ─────────────────────────────────────────────────
+  {
+    entity: 'flowVersion',
+    kind: 'exit-less-state',
+    subject: 'Draft',
+    reason: 'deferred-edge',
+    note:
+      'A change to a process can be created and saved, and cannot yet be proposed. The edge out of ' +
+      '`Draft` is the propose act, which arrives with review and approval (FB-3), followed by ' +
+      'activation (FB-4) and rollback (FB-6). Declared with one state and no ending rather than ' +
+      'with the whole machine, because a state no act can reach is a second loose end and says ' +
+      'nothing true. This row is deleted by the batch that authors the edge.',
+  },
 ]);

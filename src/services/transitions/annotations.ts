@@ -221,6 +221,9 @@ export const TRANSITION_PURPOSE: FlowAnnotations = Object.freeze({
   // M1 · module activation.
   t_module_set: { purposeKey: 'processFlows.purpose.t_module_set' },
   t_material_ruling_set: { purposeKey: 'processFlows.purpose.t_material_ruling_set' },
+  // FB-1 · a change to a process.
+  t_flowversion_create: { purposeKey: 'processFlows.purpose.t_flowversion_create' },
+  t_flowversion_save: { purposeKey: 'processFlows.purpose.t_flowversion_save' },
   t_pr_submit: { purposeKey: 'processFlows.purpose.t_pr_submit' },
   t_pr_approve: { purposeKey: 'processFlows.purpose.t_pr_approve' },
   t_pr_reject: { purposeKey: 'processFlows.purpose.t_pr_reject' },
@@ -364,6 +367,7 @@ export const ENTITY_PURPOSE: FlowAnnotations = Object.freeze({
   forecastPublication: { purposeKey: 'processFlows.purpose.entity.forecastPublication' },
   moduleActivation: { purposeKey: 'processFlows.purpose.entity.moduleActivation' },
   materialRuling: { purposeKey: 'processFlows.purpose.entity.materialRuling' },
+  flowVersion: { purposeKey: 'processFlows.purpose.entity.flowVersion' },
   supplierDocument: { purposeKey: 'processFlows.purpose.entity.supplierDocument' },
   compliance: { purposeKey: 'processFlows.purpose.entity.compliance' },
   requirementResponse: { purposeKey: 'processFlows.purpose.entity.requirementResponse' },

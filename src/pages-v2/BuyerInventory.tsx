@@ -1,4 +1,5 @@
 import React, { useCallback, useMemo, useState } from 'react';
+import { PARAGON_BRAND_NAMES, type ParagonBrandName } from '../data/paragonBrands';
 import { useTranslation } from 'react-i18next';
 import {
   Package,
@@ -51,8 +52,9 @@ import { Field, FieldList } from '../components/ui-v2/Field';
 
 type GroupTab = 'all' | 'critical' | 'warning' | 'healthy' | 'excess';
 
-type BrandKey = 'Wardah' | 'Emina' | 'Make Over' | 'Instaperfect' | 'Kahf';
-const BRANDS: BrandKey[] = ['Wardah', 'Emina', 'Make Over', 'Instaperfect', 'Kahf'];
+// The Paragon brand list, read from its one home (operator ruling, 12 October 2026).
+type BrandKey = ParagonBrandName;
+const BRANDS: readonly BrandKey[] = PARAGON_BRAND_NAMES;
 
 const COUNTRY_FLAG: Record<string, string> = {
   ID: 'ID',
@@ -373,18 +375,21 @@ const BuyerInventory: React.FC = () => {
 
   const lastSync = '11:42';
 
-  const heatColumns: Column<string>[] = [
+  const heatColumns: Column<BrandKey>[] = [
+    // FB-1 — ONE ROW PER BRAND, one column per category. The brand list is
+    // fourteen long (operator ruling), and fourteen brand columns ran off the
+    // side of the card at 1366; the categories are few, so they take the columns.
     {
-      id: 'category',
-      header: t('buyerInventory.heatmap.col.category'),
+      id: 'brand',
+      header: t('buyerInventory.heatmap.col.brand'),
       kind: 'text',
-      cell: (cat) => cl(cat),
+      cell: (b) => b,
     },
-    ...BRANDS.map((b): Column<string> => ({
-      id: b,
-      header: b,
+    ...categories.map((cat): Column<BrandKey> => ({
+      id: cat,
+      header: cl(cat),
       kind: 'status',
-      cell: (cat) => {
+      cell: (b) => {
         const cell = heatmap[cat]?.[b];
         const avg = cell && cell.count > 0 ? Math.round(cell.dos / cell.count) : 0;
         return (
@@ -670,8 +675,8 @@ const BuyerInventory: React.FC = () => {
         <div className="overflow-x-auto">
           <DataTable
             columns={heatColumns}
-            rows={categories}
-            rowKey={(cat) => cat}
+            rows={BRANDS}
+            rowKey={(b) => b}
             density="compact"
             card={false}
           />

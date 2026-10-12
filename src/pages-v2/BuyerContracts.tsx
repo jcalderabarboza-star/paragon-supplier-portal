@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { PARAGON_BRAND_NAMES } from '../data/paragonBrands';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
@@ -213,7 +214,8 @@ const ReviewSection: React.FC<{
   );
 };
 
-const BRAND_OPTIONS = ['Wardah', 'Emina', 'Make Over', 'Instaperfect', 'Kahf'];
+// The Paragon brand list, read from its one home (operator ruling, 12 October 2026).
+const BRAND_OPTIONS: readonly string[] = PARAGON_BRAND_NAMES;
 
 const CATEGORY_OPTIONS = [
   'Raw Material',

@@ -113,8 +113,8 @@ export const widgetEn: Record<string, string> = {
   // — RFQs awaiting award (Buyer) —
   'widget.rfqAward.title': 'RFQs awaiting award',
   'widget.rfqAward.action': 'Go to sourcing',
-  'widget.rfqAward.held': 'Deadline status held until RFQ dates are anchored',
   'widget.rfqAward.flag.toAward': '{{count}} to award',
+  'widget.rfqAward.flag.withLate': '{{count}} to award · {{late}} past deadline',
   // — Risk alerts (Buyer) —
   'widget.risk.title': 'Risk alerts',
   'widget.risk.action': 'View risk',
@@ -264,8 +264,8 @@ export const widgetId: Record<string, string> = {
   // — RFQs awaiting award (Buyer) —
   'widget.rfqAward.title': 'RFQ menunggu pemenangan',
   'widget.rfqAward.action': 'Ke sourcing',
-  'widget.rfqAward.held': 'Status tenggat ditahan sampai tanggal RFQ ditambatkan',
   'widget.rfqAward.flag.toAward': '{{count}} untuk dimenangkan',
+  'widget.rfqAward.flag.withLate': '{{count}} untuk dimenangkan · {{late}} lewat tenggat',
   // — Risk alerts (Buyer) —
   'widget.risk.title': 'Peringatan risiko',
   'widget.risk.action': 'Lihat risiko',
