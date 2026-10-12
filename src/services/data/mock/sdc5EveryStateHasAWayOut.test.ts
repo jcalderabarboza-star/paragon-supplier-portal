@@ -37,12 +37,8 @@ import {
   type IncomingShipment,
   type IncomingShipmentView,
 } from '../../sdc';
-import {
-  isSampleMaterial,
-  publishedLabelOf,
-  publishedMaterialMaster,
-  publishedUomOf,
-} from '../../planning/publishedMaterial';
+import { isSampleMaterial } from '../../masterData/lookup';
+import { labelOf as masterLabelOf, uomOf as masterUomOf } from '../../sdc/materialMaster';
 import { DataError, type QueryScope } from '../types';
 
 const commands = new MockCommandService();
@@ -111,18 +107,22 @@ beforeEach(() => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-describe('SDC-5 · a published sample material resolves in the master it was published from', () => {
-  it('⚠️ the real master is UNTOUCHED — it names no generated material, and the published master names both kinds', () => {
-    // The real entries still do not hold the code: every other consumer of the
-    // master (receipt gate, halal registry, document lane) sees what it saw.
-    expect(isKnownMaterial(SIM)).toBe(false);
+describe('SDC-5 · a published sample material resolves in the one master', () => {
+  // ⚠️ RETRACTED AT MD-2b (operator ruling, decision 16), QUOTED RATHER THAN EDITED.
+  // This spec read: "the real master is UNTOUCHED — it names no generated
+  // material, and the published master names both kinds", and asserted
+  // `isKnownMaterial(SIM)` FALSE against a second, published master that said
+  // true. By ruling there is one master: the generated sample materials are
+  // replica records stamped SAMPLE, and the one lookup answers for both kinds.
+  it('⚠️ ONE MASTER — the one lookup names a generated sample material and an authored one alike', () => {
+    expect(isKnownMaterial(SIM)).toBe(true);
+    expect(isKnownMaterial('PK-PETB-8810')).toBe(true);
+    // The authored fixture itself still names no generated material: the sample
+    // set reaches the replica by its own run, not by being written into it.
     expect(Object.keys(MATERIAL_MASTER).filter(isSampleMaterial)).toEqual([]);
-    // …and the master a line is published from names it, beside a real one.
-    expect(isKnownMaterial(SIM, publishedMaterialMaster())).toBe(true);
-    expect(isKnownMaterial('PK-PETB-8810', publishedMaterialMaster())).toBe(true);
-    expect(publishedLabelOf(SIM)).toBe('Sample packaging 0002');
-    expect(publishedUomOf(SIM)).toEqual({ ok: true, uom: 'PCS' });
-    expect(publishedLabelOf('PK-PETB-8810')).toBe(MATERIAL_MASTER['PK-PETB-8810'].label);
+    expect(masterLabelOf(SIM)).toBe('Sample packaging 0002');
+    expect(masterUomOf(SIM)).toEqual({ ok: true, uom: 'PCS' });
+    expect(masterLabelOf('PK-PETB-8810')).toBe(MATERIAL_MASTER['PK-PETB-8810'].label);
   });
 
   it('⚠️ SAMPLE IS MEMBERSHIP, NOT THE PREFIX — an invented `SIM-` code is neither sample nor known', () => {
@@ -131,8 +131,8 @@ describe('SDC-5 · a published sample material resolves in the master it was pub
     // A prefix test would say yes to all three of these.
     for (const invented of ['SIM-PM-9999', 'SIM-XX-0002', 'SIM-']) {
       expect(isSampleMaterial(invented), invented).toBe(false);
-      expect(isKnownMaterial(invented, publishedMaterialMaster()), invented).toBe(false);
-      expect(publishedUomOf(invented)).toEqual({ ok: false, reason: 'UNKNOWN_MATERIAL', materialCode: invented });
+      expect(isKnownMaterial(invented), invented).toBe(false);
+      expect(masterUomOf(invented)).toEqual({ ok: false, reason: 'UNKNOWN_MATERIAL', materialCode: invented });
     }
   });
 });

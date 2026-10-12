@@ -22,15 +22,18 @@
 import { MATERIAL_MASTER } from '../sdc/fixtures';
 import type { MaterialMaster, MaterialMasterEntry } from '../sdc/types';
 import { materialRecords } from './replica';
-import { replicaVersion } from './syncApplier';
+import { ensureSeeded, replicaVersion } from './syncApplier';
 
 let built: { readonly version: number; readonly master: MaterialMaster } | null = null;
 
 export function materialMasterView(): MaterialMaster {
-  // Reading the records seeds the replica, so the version is read after them.
-  const records = materialRecords();
+  // Seed first, so the version read below is the seeded one. The records are
+  // read only when the view has to be rebuilt: a lookup is called per cell of
+  // a grid, and copying every material on each call is what made it slow.
+  ensureSeeded();
   const version = replicaVersion();
   if (built && built.version === version) return built.master;
+  const records = materialRecords();
   const master: Record<string, MaterialMasterEntry> = {};
   for (const record of records) {
     const annotated = Object.prototype.hasOwnProperty.call(MATERIAL_MASTER, record.key) ? MATERIAL_MASTER[record.key] : null;

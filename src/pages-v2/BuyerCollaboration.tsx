@@ -51,7 +51,7 @@ import { useVerbAvailability } from '../hooks/useVerbAvailability';
 import type { VerbAvailability } from '../services/transitions/handoff';
 import { useToast } from '../hooks/useToast';
 import type { RequirementResponse, DisputeEntry } from '../services/sdc';
-import { publishedLabelOf } from '../services/planning/publishedMaterial';
+import { labelOf } from '../services/sdc/materialMaster';
 import SampleMaterialTag from '../components/ui-v2/SampleMaterialTag';
 import { useRefusalText } from '../hooks/useRefusalText';
 import { useCurrentIdentity } from '../context/CurrentIdentityContext';
@@ -584,7 +584,7 @@ const BuyerCollaboration: React.FC = () => {
           <div className="w-full truncate px-2 text-sm">
             <Data className="text-xs">{rowData.line.materialCode}</Data>{' '}
             <span className="text-xs text-text-secondary">
-              {publishedLabelOf(rowData.line.materialCode)}
+              {labelOf(rowData.line.materialCode)}
             </span>{' '}
             <SampleMaterialTag materialCode={rowData.line.materialCode} />
           </div>

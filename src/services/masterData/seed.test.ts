@@ -12,7 +12,8 @@ import { REQUISITIONS } from '../data/mock/fixtures/buyerRequisitions';
 import { MATERIAL_MASTER } from '../sdc/fixtures';
 import { freshnessOf, masterDataNow, maxAgeHours } from './freshness';
 import { materialRecords, recordOf, recordsOf, supplierRecordOfPortalId, supplierRecords, syncRuns } from './replica';
-import { SEED_RUN_ID } from './seed';
+import { PLANNING_SAMPLE_RUN_ID, SEED_RUN_ID } from './seed';
+import { generatedMaterialEntries, generatedSuppliers } from '../planning/somoFixture';
 import { resetReplica } from './syncApplier';
 import {
   KNOWN_MATERIAL_TYPES,
@@ -25,6 +26,10 @@ import {
 
 const keys = (records: readonly MasterRecord[]): string[] => records.map((r) => r.key).sort();
 const everyRecord = (): MasterRecord[] => MASTER_OBJECTS.flatMap((o) => [...recordsOf(o)]);
+/** Delivered by the first seed run: built from the authored fixtures. */
+const authored = (r: MasterRecord): boolean => r.stamp.syncRun === SEED_RUN_ID;
+/** Delivered by the second: the planning fixture's generated sample set. */
+const planningSample = (r: MasterRecord): boolean => r.stamp.syncRun === PLANNING_SAMPLE_RUN_ID;
 
 beforeEach(() => resetReplica());
 
@@ -36,8 +41,23 @@ describe('MD-1 · every seeded material and supplier is in the replica under its
     expect(recordOf('supplier', 'BP-00000000')).toBeNull();
   });
 
-  it('materials: the replica keys equal the material master codes, both ways', () => {
-    expect(keys(materialRecords())).toEqual(Object.keys(MATERIAL_MASTER).sort());
+  it('materials: the authored records equal the material master codes, both ways', () => {
+    expect(keys(materialRecords().filter(authored))).toEqual(Object.keys(MATERIAL_MASTER).sort());
+  });
+
+  it('materials: the planning sample set is in the replica too, delivered by its own run (MD-2b)', () => {
+    const generated = generatedMaterialEntries();
+    expect(generated.map((m) => m.materialCode)).toContain('SIM-RM-0001');
+    expect(keys(materialRecords().filter(planningSample))).toEqual(generated.map((m) => m.materialCode).sort());
+    expect(recordOf('material', 'SIM-RM-0001')?.data).toEqual({
+      description: 'Sample raw material 0001',
+      materialType: 'ROH',
+      materialGroup: 'SIM-RAW',
+      baseUnit: 'KG',
+    });
+    expect(recordOf('material', 'SIM-RM-9999')).toBeNull();
+    // Every record is one or the other: nothing else is in the replica.
+    expect(materialRecords().filter((r) => !authored(r) && !planningSample(r))).toEqual([]);
   });
 
   it('materials: each record carries the master row’s description, type, group and unit', () => {
@@ -51,8 +71,16 @@ describe('MD-1 · every seeded material and supplier is in the replica under its
     }
   });
 
-  it('suppliers: the replica keys equal the fixture’s SAP business-partner numbers, both ways', () => {
-    expect(keys(supplierRecords())).toEqual(mockSuppliers.map((s) => s.sapBpNumber).sort());
+  it('suppliers: the authored records equal the fixture’s SAP business-partner numbers, both ways', () => {
+    expect(keys(supplierRecords().filter(authored))).toEqual(mockSuppliers.map((s) => s.sapBpNumber).sort());
+  });
+
+  it('suppliers: the generated sample suppliers are replica records, each under its portal id (MD-2b)', () => {
+    const generated = generatedSuppliers();
+    expect(generated.map((s) => s.id)).toContain('sup-sim-013');
+    expect(supplierRecords().filter(planningSample).map((s) => s.data.portalSupplierId).sort()).toEqual(generated.map((s) => s.id).sort());
+    expect(supplierRecordOfPortalId('sup-sim-013')?.data.name).toBe('Sample supplier 013');
+    expect(supplierRecordOfPortalId('sup-sim-041')).toBeNull();
   });
 
   it('suppliers: every portal supplier id resolves to one record, and a made-up id to none', () => {
@@ -129,7 +157,7 @@ describe('MD-1 · the reference tables', () => {
 });
 
 describe('MD-1 · every replica record carries a stamp, and a sample record never reads as SAP', () => {
-  it('every record of every object is stamped SAMPLE, read at the declared present, by the seed run', () => {
+  it('every record of every object is stamped SAMPLE, read at the declared present, by one of the two seed runs', () => {
     const all = everyRecord();
     expect(all.length).toBeGreaterThan(Object.keys(MATERIAL_MASTER).length);
     for (const r of all) {
@@ -137,7 +165,7 @@ describe('MD-1 · every replica record carries a stamp, and a sample record neve
         source: 'SAMPLE',
         readAt: DECLARED_PRESENT_INSTANT,
         sourceChangedAt: null,
-        syncRun: SEED_RUN_ID,
+        syncRun: planningSample(r) ? PLANNING_SAMPLE_RUN_ID : SEED_RUN_ID,
         sapStatus: 'ACTIVE',
         missingFromRun: null,
       });
@@ -151,11 +179,14 @@ describe('MD-1 · every replica record carries a stamp, and a sample record neve
     expect(livenessOfStamp({ ...stamp, source: 'SAMPLE' })).toBe('SIMULATED');
   });
 
-  it('the seed is one run in the log, and it took every record and refused none', () => {
-    const [run, ...rest] = syncRuns();
+  it('the seed is two runs in the log, and between them they took every record and refused none', () => {
+    const [sample, seed, ...rest] = syncRuns();
     expect(rest).toEqual([]);
-    expect(run).toMatchObject({ id: SEED_RUN_ID, source: 'SAMPLE', mode: 'FULL', changed: 0, unchanged: 0, missing: 0, refused: [], replaced: [] });
-    expect(run.created).toBe(everyRecord().length);
+    expect(seed).toMatchObject({ id: SEED_RUN_ID, source: 'SAMPLE', mode: 'FULL', changed: 0, unchanged: 0, missing: 0, refused: [], replaced: [] });
+    expect(sample).toMatchObject({ id: PLANNING_SAMPLE_RUN_ID, source: 'SAMPLE', mode: 'DELTA', changed: 0, unchanged: 0, missing: 0, refused: [], replaced: [] });
+    expect(seed.created).toBe(everyRecord().filter(authored).length);
+    expect(sample.created).toBe(everyRecord().filter(planningSample).length);
+    expect(seed.created + sample.created).toBe(everyRecord().length);
   });
 });
 

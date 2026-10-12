@@ -36,7 +36,7 @@ import { HandoffNotice } from '../../components/ui-v2/HandoffNotice';
 import { useVerbAvailabilities } from '../../hooks/useVerbAvailability';
 import { useRefusalText } from '../../hooks/useRefusalText';
 import { formatNumber } from '../../lib/format';
-import { planningSupplierName } from '../../services/planning/somoFixture';
+import { supplierNameOf } from '../../services/masterData/lookup';
 import { usePlanDraft, usePushStatus } from './PlanDraftProvider';
 import { INTAKE_TRIAGE_ATOM } from '../../services/transitions/flows/intakeLine.flow';
 import { blockedBy, magnitudeFlag, reasonMissing, reasonOwed, type CellRefusal, type CellRefusalReason, type PlanDraftEntry } from './planDraft';
@@ -63,7 +63,7 @@ export function cellRefusalText(t: (key: string, opts?: Record<string, unknown>)
 }
 
 // PLN-2 · names from the planning supplier master, one resolver for every planning surface.
-const supplierName = planningSupplierName;
+const supplierName = supplierNameOf;
 
 /** The push-side reasons this surface owns (the spine's own are `useRefusalText`'s). */
 const PUSH_REASON_KEY: Readonly<Record<string, string>> = {

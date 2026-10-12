@@ -116,13 +116,17 @@ A unit is refused rather than defaulted because a unit has arithmetic consequenc
 - **A form's picker reads its reference table** (`pages-v2/master-data/referencePickers.ts`): incoterms, payment terms, receiving locations, cost centres. A value flagged for deletion in SAP is not offered for new work and stays on the documents that carry it. Incoterm and cost centre store the key; payment term and receiving location store the text, as the documents they write do today.
 - **A gate holds it** (`src/lib/masterDataGate/`): the files that import the material or supplier fixture directly, and the option lists that still stand for a value with a reference table, are each a named list held equal to the tree. Each can only shrink.
 
-Not yet turned round, and named in the gate: the readers of the supplier fixture, the planning fixture's generated sample materials and suppliers (still resolved by `planning/publishedMaterial.ts`), the unit lists on the requisition and sourcing forms, and the category vocabularies.
+- **One resolver (MD-2b).** The planning fixture's generated sample materials and suppliers are replica records, delivered by a second seed run (`SAMPLE-RUN-0002`). The planning lane's second resolver module (`publishedMaterial`) is deleted; no product file asks the planning fixture what a material or a supplier is, and the gate holds that. A record is a generated sample **by the run that delivered it** (`isSampleMaterial`), never by a prefix on its code. A supplier's name is `supplierNameOf(portalSupplierId)`.
+- **Units (MD-2b).** `MT` and `BOX` are in the unit table and in the unit union. The requisition form offers every unit in the table. A sourcing event accepts a closed set of units, so its wizard offers the table's units that set accepts.
+- **The Compliance applicability panel lists authored materials.** The generated samples are every one undetermined and are not Compliance's worklist; the panel says how many it left out.
+
+Not yet turned round, and named in the gate: the readers of the supplier fixture, and the category vocabularies.
 
 ## 8 · What the fixture does, and what the SE Team builds
 
 | Part | Fixture | SE work |
 |---|---|---|
-| Records | one seed run, built from the material and supplier fixtures and the values the forms already use; stamped `SAMPLE` | records from S/4HANA, stamped `SAP_S4` (SE-6) |
+| Records | two seed runs: the authored set, built from the material and supplier fixtures and the values the forms already use, then the planning fixture's generated sample set; all stamped `SAMPLE` | records from S/4HANA, stamped `SAP_S4` (SE-6) |
 | Reference codes | sample codes for payment terms, plants, storage locations and cost centres | SAP's own keys |
 | Sync | the seed, applied on first read | initial load, change events, a periodic full reconciliation |
 | Store and log | in memory | durable (SE-4) |

@@ -97,7 +97,7 @@ import { formatDate, formatNumber } from '../lib/format';
 import { statusLabelKey } from '../lib/statusLabel';
 import { statusTone } from '../lib/statusTone';
 import BulkStockEntryGrid from './BulkStockEntryGrid';
-import { publishedLabelOf, publishedUomOf } from '../services/planning/publishedMaterial';
+import { labelOf, uomOf } from '../services/sdc/materialMaster';
 import SampleMaterialTag from '../components/ui-v2/SampleMaterialTag';
 // GL-1 - the glossary destination for this surface's refusals.
 import GlossaryTermChip from '../components/ui-v2/GlossaryTermChip';
@@ -207,10 +207,10 @@ const emptyShipmentForm: ShipmentForm = {
 // returns null, and every render site's existing `|| '—'` becomes honest absence.
 // SDC-5 · resolved in the master the line was PUBLISHED from, so a generated
 // sample material carries its label and unit here as it does on the planner's
-// grid (`planning/publishedMaterial.ts`).
-const materialLabel = (code: string): string => publishedLabelOf(code);
+// grid (`sdc/materialMaster.ts`).
+const materialLabel = (code: string): string => labelOf(code);
 const materialUom = (code: string): Uom | null => {
-  const unit = publishedUomOf(code);
+  const unit = uomOf(code);
   return unit.ok ? unit.uom : null;
 };
 

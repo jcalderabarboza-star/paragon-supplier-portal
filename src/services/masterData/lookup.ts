@@ -10,6 +10,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { recordOf, recordsOf, supplierRecordOfPortalId } from './replica';
+import { PLANNING_SAMPLE_RUN_ID } from './seed';
 import type { ReferenceRecord, ReferenceTable, SupplierRecord } from './types';
 
 /** The text of a reference value, or null when the table does not hold the key. */
@@ -48,4 +49,17 @@ export function referenceOptions(table: ReferenceTable): readonly ReferenceOptio
 /** The supplier record a portal supplier id points at, or null. */
 export function supplierOf(portalSupplierId: string): SupplierRecord | null {
   return supplierRecordOfPortalId(portalSupplierId);
+}
+
+/**
+ * Is this material one of the planning fixture's generated samples? Answered by
+ * the run that delivered the record, never by its code's prefix.
+ */
+export function isSampleMaterial(materialCode: string): boolean {
+  return recordOf('material', materialCode)?.stamp.syncRun === PLANNING_SAMPLE_RUN_ID;
+}
+
+/** A supplier's name by the id the portal's documents name; the id itself for a supplier the replica does not hold. */
+export function supplierNameOf(portalSupplierId: string): string {
+  return supplierRecordOfPortalId(portalSupplierId)?.data.name ?? portalSupplierId;
 }

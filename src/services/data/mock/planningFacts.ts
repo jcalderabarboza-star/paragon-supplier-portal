@@ -63,7 +63,6 @@ import {
   type PlanningFactsQuery,
 } from '../../planning/facts';
 import {
-  planningMaster,
   PLANNING_MATERIALS,
   generatedAllocation,
   generatedConfirmed,
@@ -123,7 +122,7 @@ export function derivePlanningFacts(q: PlanningFactsQuery): PlanningFactsOutcome
   ) => {
     if (!wanted.has(measureId) || !inHorizon.has(periodBucket) || !want(materialCode)) return;
     // D-OPS-MASTERMISS inside the lane: no unit, no fact.
-    if (!isKnownMaterial(materialCode, planningMaster())) return;
+    if (!isKnownMaterial(materialCode)) return;
     const spec = measureOf(measureId);
     out.push({
       materialCode,
@@ -131,7 +130,7 @@ export function derivePlanningFacts(q: PlanningFactsQuery): PlanningFactsOutcome
       periodBucket,
       measureId,
       value,
-      uom: requireUom(materialCode, planningMaster()),
+      uom: requireUom(materialCode),
       provenance: provenanceOf(spec.source, tier ?? tierOf(spec.capability), planState),
       sourceRef,
       ...(editAnchor ? { editAnchor } : {}),

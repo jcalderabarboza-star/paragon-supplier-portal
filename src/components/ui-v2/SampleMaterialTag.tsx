@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { isSampleMaterial } from '../../services/planning/publishedMaterial';
+import { isSampleMaterial } from '../../services/masterData/lookup';
 import StatusPill from './StatusPill';
 
 // SDC-5 · the marker a generated sample material carries wherever it is named

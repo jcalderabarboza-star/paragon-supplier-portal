@@ -12,7 +12,7 @@ import { masterDataEn, masterDataId } from '../lib/i18n/masterData';
 import { MATERIAL_MASTER } from '../services/sdc/fixtures';
 import { mockSuppliers } from '../data/mockSuppliers';
 import { DECLARED_PRESENT_INSTANT } from '../services/data/fixturePresent';
-import { recordOf } from '../services/masterData/replica';
+import { materialRecords, recordOf, supplierRecords } from '../services/masterData/replica';
 import { resetReplica } from '../services/masterData/syncApplier';
 import { MASTER_OBJECTS, SYNC_REFUSAL_REASONS, type MasterRecord, type SyncRun } from '../services/masterData/types';
 import type { Freshness } from '../services/masterData/freshness';
@@ -32,12 +32,14 @@ afterEach(async () => {
 });
 
 describe('MD-1 · the page lists the replica in three views', () => {
-  it('opens on Materials: every material in the master, one row each', async () => {
+  it('opens on Materials: every material in the replica, one row each', async () => {
     open();
     await table();
-    expect(rows()).toHaveLength(Object.keys(MATERIAL_MASTER).length);
+    expect(rows()).toHaveLength(materialRecords().length);
+    expect(materialRecords().length).toBeGreaterThan(Object.keys(MATERIAL_MASTER).length);
+    expect(screen.getByTestId('master-data-row-SIM-RM-0001')).toHaveTextContent('Sample raw material 0001');
     expect(screen.getByTestId('master-data-row-RM-COCO-8200')).toHaveTextContent('Coconut Fatty Acid Distillate (CFAD)');
-    expect(screen.getByTestId('master-data-count')).toHaveTextContent(`${Object.keys(MATERIAL_MASTER).length} materials`);
+    expect(screen.getByTestId('master-data-count')).toHaveTextContent(`${materialRecords().length} materials`);
     expect(screen.getByRole('tab', { name: 'Materials' })).toHaveAttribute('aria-selected', 'true');
   });
 
@@ -45,9 +47,10 @@ describe('MD-1 · the page lists the replica in three views', () => {
     open();
     await table();
     fireEvent.click(screen.getByRole('tab', { name: 'Suppliers' }));
-    await waitFor(() => expect(rows()).toHaveLength(mockSuppliers.length));
+    await waitFor(() => expect(rows()).toHaveLength(supplierRecords().length));
+    expect(supplierRecords().length).toBeGreaterThan(mockSuppliers.length);
     expect(screen.getByTestId('master-data-row-BP-10001235')).toHaveTextContent('PT Sample Specialty Fats');
-    expect(screen.getByTestId('master-data-count')).toHaveTextContent(`${mockSuppliers.length} suppliers`);
+    expect(screen.getByTestId('master-data-count')).toHaveTextContent(`${supplierRecords().length} suppliers`);
   });
 
   it('Reference tables: the units first, then whichever table is chosen', async () => {
@@ -55,9 +58,9 @@ describe('MD-1 · the page lists the replica in three views', () => {
     await table();
     fireEvent.click(screen.getByRole('tab', { name: 'Reference tables' }));
     await waitFor(() => expect(rows().map((r) => r.getAttribute('data-testid'))).toEqual(
-      ['KG', 'PCS', 'L', 'ROLL'].map((k) => `master-data-row-${k}`),
+      ['KG', 'PCS', 'L', 'ROLL', 'MT', 'BOX'].map((k) => `master-data-row-${k}`),
     ));
-    expect(screen.getByTestId('master-data-count')).toHaveTextContent('4 values in Units of measure');
+    expect(screen.getByTestId('master-data-count')).toHaveTextContent('6 values in Units of measure');
     fireEvent.click(within(screen.getByTestId('master-data-tables')).getByRole('tab', { name: 'Incoterms' }));
     await waitFor(() => expect(screen.getByTestId('master-data-row-CIF')).toHaveTextContent('Cost, Insurance and Freight'));
     fireEvent.click(within(screen.getByTestId('master-data-tables')).getByRole('tab', { name: 'Payment terms' }));
@@ -78,7 +81,7 @@ describe('MD-1 · search and filters narrow the list', () => {
     open();
     await table();
     fireEvent.change(screen.getByLabelText('Search by material number or description'), { target: { value: 'glycerin' } });
-    await waitFor(() => expect(rows().length).toBeLessThan(Object.keys(MATERIAL_MASTER).length));
+    await waitFor(() => expect(rows().length).toBeLessThan(materialRecords().length));
     expect(rows().length).toBeGreaterThan(0);
     for (const row of rows()) expect(row.textContent?.toLowerCase()).toContain('glycerin');
     expect(screen.getByTestId('master-data-row-RM-EMUL-3310')).toBeInTheDocument();
@@ -99,7 +102,7 @@ describe('MD-1 · search and filters narrow the list', () => {
     open();
     await table();
     fireEvent.change(screen.getByTestId('master-data-filter-type'), { target: { value: 'VERP' } });
-    const packaging = Object.values(MATERIAL_MASTER).filter((m) => m.materialType === 'VERP');
+    const packaging = materialRecords().filter((m) => m.data.materialType === 'VERP');
     await waitFor(() => expect(rows()).toHaveLength(packaging.length));
     expect(screen.queryByTestId('master-data-row-RM-COCO-8200')).toBeNull();
   });
@@ -125,7 +128,7 @@ describe('MD-1 · every record says where it came from', () => {
       expect(cell).toHaveTextContent('Sample');
     }
     expect(screen.getByTestId('master-data-sample-notice')).toHaveTextContent('Sample data — not read from SAP');
-    expect(screen.getByTestId('master-data-last-run')).toHaveTextContent('Last sync run SAMPLE-RUN-0001');
+    expect(screen.getByTestId('master-data-last-run')).toHaveTextContent('Last sync run SAMPLE-RUN-0002');
     expect(screen.queryByTestId('master-data-refused')).toBeNull();
   });
 
@@ -273,6 +276,6 @@ describe('MD-1 · the copy covers every object, reason, status and kind, in both
     expect(screen.getByRole('heading', { name: 'Data master' })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: 'Tabel referensi' })).toBeInTheDocument();
     expect(screen.getByTestId('master-data-sample-notice')).toHaveTextContent('Data sampel — tidak dibaca dari SAP');
-    expect(screen.getByTestId('master-data-count')).toHaveTextContent(`${Object.keys(MATERIAL_MASTER).length} material`);
+    expect(screen.getByTestId('master-data-count')).toHaveTextContent(`${materialRecords().length} material`);
   });
 });

@@ -9,16 +9,22 @@
 /**
  * The files that import a master-data fixture directly.
  *
- * `MATERIAL_MASTER` is down to its two legitimate readers: the seed, which
- * turns the fixture into replica records, and the view, which takes the two
- * portal annotations (halal and BPOM applicability) from it.
+ * `MATERIAL_MASTER` has three readers, each for a stated reason: the seed, which
+ * turns the fixture into replica records; the view, which takes the two portal
+ * annotations (halal and BPOM applicability) from it; and the planning
+ * fixture, which generates its sample materials beside the authored ones and
+ * hands them to the seed.
  *
  * `mockSuppliers` still has direct readers. Each is a place where a supplier's
  * NAME or the roster is read from the fixture instead of the replica; moving
  * them is the supplier half of "one truth" and is not done in this batch.
  */
 export const FIXTURE_IMPORTERS: Readonly<Record<string, readonly string[]>> = {
-  MATERIAL_MASTER: ['services/masterData/materialMasterView.ts', 'services/masterData/seed.ts'],
+  MATERIAL_MASTER: [
+    'services/masterData/materialMasterView.ts',
+    'services/masterData/seed.ts',
+    'services/planning/somoFixture.ts',
+  ],
   mockSuppliers: [
     'components/layout-v2/IdentityPanel.tsx',
     'components/layout-v2/SidebarV2.tsx',
@@ -49,11 +55,6 @@ export const OPTION_LISTS: Readonly<Record<string, StandingOptionList>> = {
     reason:
       'The currencies a bid may be placed in: a portal POLICY over the currency table, and a closed union the money formatter is typed on. It equals the table today; the day SAP sends a fourth currency the table grows and this list does not, by design.',
   },
-  'pages-v2/BuyerRequisitions.tsx::UOM_OPTIONS': {
-    table: 'unit',
-    reason:
-      'The requisition form offers MT and BOX, which are outside the unit union the replica holds. Which units a requisition may be raised in is a ruling the operator has not made; the list is left as it is until then.',
-  },
   'pages-v2/SupplierMyStorefront.tsx::CURRENCY_OPTIONS': {
     table: 'currency',
     reason:
@@ -72,7 +73,7 @@ export const OPTION_LISTS: Readonly<Record<string, StandingOptionList>> = {
   'pages-v2/sourcing/requisitionPrefill.ts::RFQ_UOM_OPTIONS': {
     table: 'unit',
     reason:
-      'The units a sourcing event may be raised in, a typed union on the RFQ that includes MT. Same open ruling as the requisition form.',
+      'The units a sourcing event ACCEPTS: a closed union on the RFQ, and so a policy over the unit table. The wizard reads its options from the table and offers the ones this list accepts (`unitOptions`).',
   },
   'services/data/mock/MockCommandService.ts::RFQ_UOMS': {
     table: 'unit',

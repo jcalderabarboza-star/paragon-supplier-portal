@@ -24,7 +24,7 @@ import { PR_INTAKE_LINES } from '../../services/data/mock/fixtures/prIntake';
 import type { BucketId } from '../../services/planning/bucket';
 import type { PlanningFact } from '../../services/planning/facts';
 import { measureOf, type MeasureId } from '../../services/planning/measures';
-import { planningMaster } from '../../services/planning/somoFixture';
+import { materialMasterView } from '../../services/masterData/materialMasterView';
 import { materialEntry, type MaterialType } from '../../services/sdc';
 
 // C7 §2 — the intake line + plan-state axis are PROMOTED to the service seam
@@ -466,7 +466,7 @@ export function buildPlanBlocks(
   const shown = measuresShown;
   const shownSet = new Set<MeasureId>(shown);
   const inHorizon = new Set(horizon);
-  const master = planningMaster();
+  const master = materialMasterView();
 
   // material → measure → supplier('' = material grain) → bucket → value
   const byMaterial = new Map<string, Map<MeasureId, Map<string, Map<BucketId, number | null>>>>();
