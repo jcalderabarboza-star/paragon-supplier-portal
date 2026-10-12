@@ -84,6 +84,7 @@ export const PERSON_NAMING_REFUSAL_KEYS: Readonly<Record<string, string>> = Obje
   SAMPLE_ACTOR_CANNOT_LOOSEN: 'identity.refusal.sampleCannotLoosen',
   // OPS-1 — a named person who approved an invoice tries to release its payment.
   INVOICE_RELEASER_IS_APPROVER: 'identity.refusal.releaserIsApprover',
+  MDR_APPROVER_IS_PROPOSER: 'identity.refusal.approverIsProposer',
 });
 
 /**

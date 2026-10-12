@@ -34,6 +34,7 @@ import { MODULE_CODES } from '../../modules/registry';
 import { materialMasterView } from '../../masterData/materialMasterView';
 import { SYSTEM_ROLES } from '../../transitions/businessRoles';
 import { flowVersionStore } from '../../flowBuilder/flowVersionStore';
+import { masterDataRequestStore } from './stores/masterDataRequestStore';
 
 /**
  * The ids each wired guide's test data may name — the population a store (or,
@@ -78,4 +79,6 @@ export const DOCUMENT_IDS: Readonly<Record<string, () => readonly string[]>> = {
   materialRuling: () => Object.keys(materialMasterView()),
   // FB-1 — a change to a process. The store opens empty: nothing is seeded.
   flowVersion: () => ids(flowVersionStore.all()),
+  // MD-4 — a master-data change request. The store opens empty: nothing is seeded.
+  masterDataRequest: () => ids(masterDataRequestStore.all()),
 };

@@ -291,6 +291,28 @@ export const processFlowPurposeEn: Record<string, string> = {
   'processFlows.purpose.t_material_ruling_set':
     'Compliance rules that halal or BPOM applies, or does not apply, to one material and says why. Receiving checks what the ruling says; a later ruling replaces it without erasing it.',
 
+  // ── masterDataRequest (MD-4 / MD-5) ───────────────────────────
+  'processFlows.purpose.entity.masterDataRequest':
+    'A proposal to change master data that SAP owns: a new material, or a change to a material or a supplier. It is reviewed by a second person, handed to SAP, and closed by what SAP answers.',
+  'processFlows.purpose.t_mdr_propose':
+    'Someone asks for a new material, or for a change to a material or a supplier, and says why. Nothing in master data changes: the request waits for review.',
+  'processFlows.purpose.t_mdr_start_review':
+    'The lane that owns this sort of record takes the request up, so the person who asked can see it is being looked at.',
+  'processFlows.purpose.t_mdr_return':
+    'The reviewer sends the request back to the person who asked, saying what is missing or unclear.',
+  'processFlows.purpose.t_mdr_approve':
+    'A second person agrees that Paragon should ask SAP for this. It is agreement to ask, not the change itself.',
+  'processFlows.purpose.t_mdr_reject':
+    'The reviewer declines the request and says why. Nothing goes to SAP.',
+  'processFlows.purpose.t_mdr_withdraw':
+    'The person who asked takes the request back, saying why, before it goes to SAP.',
+  'processFlows.purpose.t_mdr_hand_off':
+    'Procurement sends the agreed request to SAP as a package: what is asked for, why, who asked and who agreed.',
+  'processFlows.purpose.t_mdr_sap_complete':
+    'SAP has made the change. The record itself reaches the portal with the next read from SAP, never from this request.',
+  'processFlows.purpose.t_mdr_sap_decline':
+    'SAP has declined the request and said why. A new request may be raised.',
+
   // ── flowVersion (FB-1) ────────────────────────────────────────
   'processFlows.purpose.entity.flowVersion':
     'A change to one of the processes on this page: steps, checks and forks added in front of acts the process already has. It can add a refusal and can never take one away, and it is kept with who wrote it and when.',
@@ -709,6 +731,28 @@ export const processFlowPurposeId: Record<string, string> = {
     'Apakah halal, atau BPOM, berlaku untuk suatu material — diputuskan oleh Kepatuhan, dengan penjelasannya, dan disimpan sebagai catatan siapa yang memutuskan dan kapan.',
   'processFlows.purpose.t_material_ruling_set':
     'Kepatuhan memutuskan bahwa halal atau BPOM berlaku, atau tidak berlaku, untuk satu material dan menyebutkan alasannya. Penerimaan memeriksa apa yang dikatakan keputusan itu; keputusan berikutnya menggantikannya tanpa menghapusnya.',
+
+  // ── masterDataRequest (MD-4 / MD-5) ───────────────────────────
+  'processFlows.purpose.entity.masterDataRequest':
+    'Usulan untuk mengubah data master yang dimiliki SAP: material baru, atau perubahan pada material atau pemasok. Usulan ditinjau oleh orang kedua, diserahkan ke SAP, dan ditutup oleh jawaban SAP.',
+  'processFlows.purpose.t_mdr_propose':
+    'Seseorang meminta material baru, atau perubahan pada material atau pemasok, dan menyebutkan alasannya. Tidak ada data master yang berubah: permintaan menunggu peninjauan.',
+  'processFlows.purpose.t_mdr_start_review':
+    'Lini yang memiliki jenis catatan ini mulai menangani permintaan, sehingga pengusul dapat melihat bahwa permintaannya sedang ditinjau.',
+  'processFlows.purpose.t_mdr_return':
+    'Peninjau mengembalikan permintaan kepada pengusul dengan catatan tentang apa yang kurang atau belum jelas.',
+  'processFlows.purpose.t_mdr_approve':
+    'Orang kedua setuju bahwa Paragon perlu meminta hal ini kepada SAP. Ini persetujuan untuk meminta, bukan perubahan itu sendiri.',
+  'processFlows.purpose.t_mdr_reject':
+    'Peninjau menolak permintaan dan menyebutkan alasannya. Tidak ada yang dikirim ke SAP.',
+  'processFlows.purpose.t_mdr_withdraw':
+    'Pengusul menarik kembali permintaan, dengan alasannya, sebelum dikirim ke SAP.',
+  'processFlows.purpose.t_mdr_hand_off':
+    'Pengadaan mengirim permintaan yang telah disetujui ke SAP sebagai satu paket: apa yang diminta, alasannya, siapa pengusulnya, dan siapa yang menyetujui.',
+  'processFlows.purpose.t_mdr_sap_complete':
+    'SAP telah melakukan perubahan. Catatannya sendiri sampai ke portal pada pembacaan berikutnya dari SAP, bukan dari permintaan ini.',
+  'processFlows.purpose.t_mdr_sap_decline':
+    'SAP menolak permintaan, dengan alasannya. Permintaan baru dapat diajukan.',
 
   // ── flowVersion (FB-1) ────────────────────────────────────────
   'processFlows.purpose.entity.flowVersion':

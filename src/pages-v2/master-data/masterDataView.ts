@@ -13,7 +13,7 @@ import {
   type ReferenceTable,
 } from '../../services/masterData/types';
 
-export const MASTER_DATA_VIEWS = ['materials', 'suppliers', 'reference'] as const;
+export const MASTER_DATA_VIEWS = ['materials', 'suppliers', 'reference', 'requests', 'sync'] as const;
 export type MasterDataView = (typeof MASTER_DATA_VIEWS)[number];
 
 export const isMasterDataView = (value: string | null): value is MasterDataView =>

@@ -122,7 +122,35 @@ A unit is refused rather than defaulted because a unit has arithmetic consequenc
 
 Not yet turned round, and named in the gate: the readers of the supplier fixture, and the category vocabularies.
 
-## 8 · What the fixture does, and what the SE Team builds
+## 8 · Change requests (MD-4, MD-5)
+
+The portal never changes a master record; it **proposes**. One flow, `masterDataRequest` (C1 Axis 2), in memory for the session.
+
+```
+propose ─► Proposed ─► In Review ─► Approved ─► Sent to SAP ─► Completed in SAP
+              │  ▲         │           │             └──────► Declined by SAP
+              │  └ return ─┤           └─► Withdrawn
+              └─► Withdrawn └─► Rejected
+```
+
+| Rule | Behaviour |
+|---|---|
+| **Kinds** | `material.create`, `material.change`, `supplier.change`. A create carries every field and **no key**: SAP gives the key |
+| **Who** | propose: procurement, planning. Review: planning for materials, compliance for suppliers. Hand-off and SAP's answer: procurement |
+| **Four eyes** | the person who decides is not the person who proposed. A Super Admin may pass this one check with a one-line reason, recorded on the event. An Admin may not |
+| **Named** | every act names a person; a seat that names nobody is refused |
+| **SAP changes the record first** | a request whose proposed field a sync run has moved cannot be agreed or sent; it is withdrawn and proposed again. The request never had a claim on the value |
+| **Approved is not exists** | no act writes a master record. The record changes only when a sync run delivers it |
+| **Hand-off** | a package: the request number (SAP's external reference and the feed's idempotency key), the kind, the proposed fields, the reason, who proposed and who agreed, and the base it was written against |
+| **SAP's answer** | `t_mdr_sap_complete` carries SAP's request number and the record's key; `t_mdr_sap_decline` carries SAP's reason |
+
+Refusals, each by name with EN and ID copy (`masterData.request.refusal.*`): `MDR_ACTOR_UNATTRIBUTED`, `MDR_KIND_UNKNOWN`, `MDR_REASON_BLANK`, `MDR_CREATE_CARRIES_KEY`, `MDR_SUBJECT_UNKNOWN`, `MDR_FIELD_NOT_PROPOSABLE`, `MDR_FIELD_MISSING`, `MDR_VALUE_NOT_IN_TABLE`, `MDR_NOTHING_CHANGES`, `MDR_DUPLICATE_OPEN`, `MDR_WRONG_LANE`, `MDR_APPROVER_IS_PROPOSER`, `MDR_SAP_CHANGED_FIRST`, `MDR_NOTE_BLANK`, `MDR_SAP_NUMBER_BLANK`, `MDR_SAMPLE_ANSWER_IN_PRODUCTION`, `MDR_SAP_NOT_CONNECTED`.
+
+**In the fixture.** SAP is not connected. On a demo or preview deployment a person may record a **sample** answer; a completion delivers its record through the sync applier as a run of its own (`SAMPLE-ANSWER-<request number>`), stamped `SAMPLE`, and a new material arrives under a sample key. A **sample sync** (`SAMPLE-SYNC-0001`) may be run once to show SAP winning: a changed description, a new reference value, a blocked supplier and one refused record. Both are refused on production. The applier's callers are a named set held by `replicaOneWriter.test.ts`.
+
+**For the SE Team (SE-6).** The call to SAP MDG at hand-off, and the feed that fires the two answer verbs under the automation grant with the request number as the idempotency key. Not built, by ruling: the earlier material-request lane is not folded into this flow, an approved supplier application does not raise a request, a blocked or deletion-flagged record does not yet refuse new documents, and requests are not persisted.
+
+## 9 · What the fixture does, and what the SE Team builds
 
 | Part | Fixture | SE work |
 |---|---|---|

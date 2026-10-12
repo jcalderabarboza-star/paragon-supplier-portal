@@ -26,6 +26,8 @@ export const superAdminEn: Record<string, string> = {
     'The person who raised a material request may not decide it',
   'superAdmin.rule.INVOICE_RELEASER_IS_APPROVER':
     'The person who approved an invoice may not release its payment',
+  'superAdmin.rule.MDR_APPROVER_IS_PROPOSER':
+    'The person who proposed a master-data request may not decide it',
   'superAdmin.rule.SAMPLE_ACTOR_CANNOT_LOOSEN':
     'A sample identity may not loosen a governed setting',
   'superAdmin.rule.unknown': 'A check ({{rule}})',
@@ -83,6 +85,8 @@ export const superAdminId: Record<string, string> = {
     'Orang yang mengajukan permintaan material tidak boleh memutuskannya',
   'superAdmin.rule.INVOICE_RELEASER_IS_APPROVER':
     'Orang yang menyetujui faktur tidak boleh merilis pembayarannya',
+  'superAdmin.rule.MDR_APPROVER_IS_PROPOSER':
+    'Orang yang mengusulkan permintaan data master tidak boleh memutuskannya',
   'superAdmin.rule.SAMPLE_ACTOR_CANNOT_LOOSEN':
     'Identitas contoh tidak boleh melonggarkan pengaturan yang diatur',
   'superAdmin.rule.unknown': 'Sebuah pemeriksaan ({{rule}})',

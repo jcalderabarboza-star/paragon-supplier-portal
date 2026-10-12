@@ -138,6 +138,8 @@ const ROUTES: RouteCase[] = [
   { name: 'buyer/platform/super-admin-activity', pattern: '/buyer/platform/super-admin-activity', at: '/buyer/platform/super-admin-activity', element: <SuperAdminActivity />, identity: BUYER },
   // MD-1 — the master-data replica.
   { name: 'buyer/master-data', pattern: '/buyer/master-data', at: '/buyer/master-data', element: <BuyerMasterData />, identity: BUYER },
+  // MD-4 — the change-requests view of the same page.
+  { name: 'buyer/master-data/requests', pattern: '/buyer/master-data/requests', at: '/buyer/master-data/requests', element: <BuyerMasterData />, identity: BUYER },
   // M2 · Design 5 §A.5 — the module roadmap board and the admin page.
   { name: 'buyer/platform/modules', pattern: '/buyer/platform/modules', at: '/buyer/platform/modules', element: <ModulesBoard />, identity: BUYER },
   { name: 'buyer/platform/modules/admin', pattern: '/buyer/platform/modules/admin', at: '/buyer/platform/modules/admin', element: <ModulesAdmin />, identity: BUYER },

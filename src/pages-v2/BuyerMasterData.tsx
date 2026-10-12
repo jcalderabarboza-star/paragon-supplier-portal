@@ -1,5 +1,5 @@
-import React, { useMemo } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import React, { useMemo, useState } from 'react';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import ListPage from '../components/ui-v2/ListPage';
@@ -17,6 +17,12 @@ import ReplicaStampLine from '../components/ui-v2/ReplicaStampLine';
 import { Field, FieldList } from '../components/ui-v2/Field';
 import { Select } from '../components/ui-v2/Form';
 import { LinkButton } from '../components/ui-v2/Actions';
+import Button from '../components/ui-v2/Button';
+import HandoffNotice from '../components/ui-v2/HandoffNotice';
+import { useVerbAvailability } from '../hooks/useVerbAvailability';
+import { isSampleMaterial } from '../services/masterData/lookup';
+import type { MdrKind } from '../services/masterData/changeRequest';
+import { ChangeRequestsView, ProposeDialog, SyncLogView } from './master-data/ChangeRequests';
 import { formatDateTime } from '../lib/format';
 import { RECORD_PARAM } from '../lib/recordDeepLink';
 import { useServiceQuery } from '../services/query/useServiceQuery';
@@ -67,6 +73,7 @@ const SEARCH_PARAM = 'q';
 const TYPE_PARAM = 'type';
 const GROUP_PARAM = 'group';
 const COUNTRY_PARAM = 'country';
+const REQUEST_PARAM = 'request';
 
 const PANEL_ID = 'master-data-panel';
 
@@ -142,7 +149,9 @@ const RecordDrawer: React.FC<{
   now: string;
   onClose: () => void;
   onOpenKind: (kind: WhereUsedKind, record: MasterRecord) => void;
-}> = ({ record, texts, now, onClose, onOpenKind }) => {
+  /** Raise a change request about this record. Absent for a record no request can be about. */
+  onPropose?: () => void;
+}> = ({ record, texts, now, onClose, onOpenKind, onPropose }) => {
   const { t } = useTranslation();
   const { stamp } = record;
   const whereUsed = useServiceQuery([...MASTER_DATA_KEY, 'where-used', record.object, record.key], (svc, scope) =>
@@ -150,9 +159,25 @@ const RecordDrawer: React.FC<{
   );
   const notHeld = t('masterData.field.notHeld');
   const freshness = freshnessOf(stamp, record.object, now);
+  const canPropose = useVerbAvailability('masterdata:propose');
 
   return (
-    <SidePanel open onClose={onClose} title={record.key}>
+    <SidePanel
+      open
+      onClose={onClose}
+      title={record.key}
+      footerActions={
+        onPropose ? (
+          canPropose.kind === 'held' ? (
+            <Button data-testid="master-data-propose-change" onClick={onPropose}>
+              {t('masterData.request.act.proposeChange')}
+            </Button>
+          ) : (
+            <HandoffNotice availability={canPropose} testId="handoff-mdr-propose" />
+          )
+        ) : undefined
+      }
+    >
       <div data-testid="master-data-drawer" data-object={record.object} data-key={record.key} className="flex flex-col gap-6">
         <ReplicaStampLine record={record} now={now} />
 
@@ -267,7 +292,9 @@ const BuyerMasterData: React.FC = () => {
   const now = masterDataNow();
 
   const viewParam = params.get(VIEW_PARAM);
-  const view: MasterDataView = isMasterDataView(viewParam) ? viewParam : 'materials';
+  // `/buyer/master-data/requests` is the same page, opened on its requests view.
+  const onRequestsRoute = useLocation().pathname.endsWith('/requests');
+  const view: MasterDataView = isMasterDataView(viewParam) ? viewParam : onRequestsRoute ? 'requests' : 'materials';
   const tableParam = params.get(TABLE_PARAM) ?? '';
   const table: ReferenceTable = isReferenceTable(tableParam) ? tableParam : DEFAULT_REFERENCE_TABLE;
   const object = objectOfView(view, table);
@@ -311,6 +338,12 @@ const BuyerMasterData: React.FC = () => {
   // The open record is looked up in the UNFILTERED list: a link to a record
   // must open it whatever the reader last filtered by.
   const open = openKey ? all.find((r) => r.key === openKey) ?? null : null;
+  const [proposing, setProposing] = useState<{ kind: MdrKind; subject: MasterRecord | null } | null>(null);
+  const canPropose = useVerbAvailability('masterdata:propose');
+  /** A request can be about an authored material or a supplier; a generated sample has no SAP record to change. */
+  const proposable = (r: MasterRecord): MdrKind | null =>
+    isMaterialRecord(r) ? (isSampleMaterial(r.key) ? null : 'material.change') : isSupplierRecord(r) ? 'supplier.change' : null;
+  const isList = view === 'materials' || view === 'suppliers' || view === 'reference';
 
   const options = (pick: (r: MasterRecord) => string | null): string[] =>
     [...new Set(all.map(pick).filter((v): v is string => v !== null))].sort();
@@ -395,9 +428,18 @@ const BuyerMasterData: React.FC = () => {
       breadcrumb={[t('masterData.crumb')]}
       title={t('masterData.title')}
       subtitle={t('masterData.subtitle')}
+      actions={
+        canPropose.kind === 'held' ? (
+          <Button variant="primary" data-testid="master-data-new-material" onClick={() => setProposing({ kind: 'material.create', subject: null })}>
+            {t('masterData.request.act.newMaterial')}
+          </Button>
+        ) : (
+          <HandoffNotice availability={canPropose} testId="handoff-mdr-propose-header" />
+        )
+      }
       meta={
         <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
-          <span data-testid="master-data-count">{count}</span>
+          {isList ? <span data-testid="master-data-count">{count}</span> : null}
           <LivenessPill capability="masterData" />
           {lastRun ? <SyncRunSummary run={lastRun} /> : null}
         </span>
@@ -425,7 +467,7 @@ const BuyerMasterData: React.FC = () => {
         />
       }
       filters={
-        view === 'materials' ? (
+        !isList ? undefined : view === 'materials' ? (
           <>
             <Select
               className="w-56"
@@ -477,6 +519,7 @@ const BuyerMasterData: React.FC = () => {
         )
       }
       search={
+        !isList ? undefined : (
         // The test id sits on the wrapper: `SearchBar` owns its input.
         <div data-testid="master-data-search">
           <SearchBar
@@ -486,10 +529,15 @@ const BuyerMasterData: React.FC = () => {
             ariaLabel={t(`masterData.search.${view}`)}
           />
         </div>
+        )
       }
     >
       <div id={PANEL_ID} role="tabpanel" aria-labelledby={`master-data-tab-${view}`} data-view={view} data-object={object}>
-        {records.isError ? (
+        {view === 'requests' ? (
+          <ChangeRequestsView openId={params.get(REQUEST_PARAM)} onOpen={(id) => patch({ [REQUEST_PARAM]: id }, false)} />
+        ) : view === 'sync' ? (
+          <SyncLogView />
+        ) : records.isError ? (
           <Notice tone="critical" role="alert" data-testid="master-data-error">
             {t('masterData.error')}
           </Notice>
@@ -523,6 +571,21 @@ const BuyerMasterData: React.FC = () => {
           now={now}
           onClose={() => patch({ [RECORD_PARAM]: null }, false)}
           onOpenKind={openKind}
+          onPropose={proposable(open) ? () => setProposing({ kind: proposable(open) as MdrKind, subject: open }) : undefined}
+        />
+      ) : null}
+      {proposing ? (
+        <ProposeDialog
+          kind={proposing.kind}
+          subject={proposing.subject}
+          onClose={() => setProposing(null)}
+          onProposed={(id) => {
+            setProposing(null);
+            const next = new URLSearchParams();
+            next.set(VIEW_PARAM, 'requests');
+            if (id) next.set(REQUEST_PARAM, id);
+            setParams(next);
+          }}
         />
       ) : null}
     </ListPage>

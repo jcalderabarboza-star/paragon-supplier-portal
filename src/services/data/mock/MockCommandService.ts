@@ -156,6 +156,7 @@ import { forecastPublicationTarget, previouslyPublished } from './publicationTar
 import { moduleActivationTarget, moduleGate } from './moduleActivationTarget';
 import { materialRulingTarget } from './materialRulingTarget';
 import { makeFlowVersionTarget } from './flowVersionTarget';
+import { makeMasterDataRequestTarget } from './masterDataRequestTarget';
 import type {
   Acknowledgment,
   IncomingShipment,
@@ -3296,6 +3297,9 @@ const TARGETS: Record<string, CommandTarget> = {
   // FB-1 — a change to a process. The factory is handed this table's own keys:
   // a change may be drafted only against a process a command can write through.
   flowVersion: makeFlowVersionTarget(() => Object.keys(TARGETS)),
+  // MD-4 / MD-5 — a master-data change request. No act of it writes a master
+  // record; a sample SAP answer delivers one through the sync applier.
+  masterDataRequest: makeMasterDataRequestTarget(),
 };
 
 // The behavior-wiring census (was the contract package's "6"; 7 with the G1.1

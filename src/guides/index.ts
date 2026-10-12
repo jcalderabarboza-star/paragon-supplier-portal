@@ -71,6 +71,7 @@ export const GUIDE_LIST_ROUTE: Readonly<Record<string, string>> = Object.freeze(
   deliveryRelease: '/buyer/delivery-agreements',
   enforcement: '/buyer/goods-receipt',
   flowVersion: '/buyer/process-flows',
+  masterDataRequest: '/buyer/master-data/requests',
   forecastPublication: '/buyer/collaboration',
   goodsReceipt: '/buyer/goods-receipt',
   goodsReceiptLine: '/buyer/goods-receipt',

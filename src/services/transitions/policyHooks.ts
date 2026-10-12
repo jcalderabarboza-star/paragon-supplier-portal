@@ -1044,6 +1044,24 @@ export const POLICY_HOOKS = {
   /** Save: the content is a list of steps, forks and checks, about the process
    *  and the shipped version the change was created against. */
   FLOWVERSION_CONTENT_WELL_FORMED: 'flowversion_content_well_formed',
+
+  // ── MD-4 / MD-5 · A MASTER-DATA CHANGE REQUEST ─────────────────────────────
+  /** Every act on a request is recorded against the person who took it. */
+  MDR_ACTOR_NAMED: 'mdr_actor_named',
+  /** Propose: the kind is known, a create carries no key, a change names a
+   *  record the replica holds and moves a field, every value is in its
+   *  reference table, and no open request already asks for the same thing. */
+  MDR_PROPOSAL_VALID: 'mdr_proposal_valid',
+  /** Review acts: a material request is planning's, a supplier request compliance's. */
+  MDR_REVIEWER_LANE: 'mdr_reviewer_lane',
+  /** Approve, reject: the person deciding is not the person who proposed. */
+  MDR_APPROVER_NOT_PROPOSER: 'mdr_approver_not_proposer',
+  /** Approve, hand off: SAP has not changed a proposed field since the request was written. */
+  MDR_BASE_UNCHANGED: 'mdr_base_unchanged',
+  /** Return, reject, withdraw, decline: the act carries its reason. */
+  MDR_NOTE_AUTHORED: 'mdr_note_authored',
+  /** SAP's answer: it carries SAP's request number, and a sample answer is not recorded on production. */
+  MDR_SAP_ANSWER_ADMISSIBLE: 'mdr_sap_answer_admissible',
 } as const;
 
 for (const name of Object.values(POLICY_HOOKS)) registerPolicyHook(name);
