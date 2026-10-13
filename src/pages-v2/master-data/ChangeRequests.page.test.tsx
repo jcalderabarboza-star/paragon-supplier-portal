@@ -13,6 +13,7 @@ import BuyerMasterData from '../BuyerMasterData';
 import Toaster from '../../components/ui-v2/Toaster';
 import { masterDataRequestStore } from '../../services/data/mock/stores/masterDataRequestStore';
 import { moduleDeployment } from '../../services/modules/deployment';
+import { SAMPLE_PERSON_PREFIX } from '../../services/identity/sampleRoster';
 import { recordOf, syncRuns } from '../../services/masterData/replica';
 import { SAMPLE_SYNC_MATERIAL, SAMPLE_SYNC_RUN_ID, SAMPLE_SYNC_SUPPLIER, runSampleSync, sampleSyncRefusal } from '../../services/masterData/sampleSync';
 import { resetReplica } from '../../services/masterData/syncApplier';
@@ -84,7 +85,7 @@ describe('MD-4 · proposing a change from a record', () => {
     fireEvent.click(within(dialog).getByTestId('mdr-propose-submit'));
     expect(await screen.findByText(i18n.t('identity.refused.namedRequired'))).toBeInTheDocument();
     expect(masterDataRequestStore.all()).toEqual([]);
-    expect(document.body.textContent).not.toContain('sim-usr-');
+    expect(document.body.textContent).not.toContain(SAMPLE_PERSON_PREFIX);
   });
 
   it('a seat without the propose atom reads who it waits for, and has no button', async () => {
@@ -129,7 +130,7 @@ describe('MD-4 / MD-5 · a second person decides, procurement sends, and a sampl
     fireEvent.click(screen.getByTestId('mdr-act-approve'));
     expect(await screen.findByText('The person who proposed a request may not also decide it. A second person decides.')).toBeInTheDocument();
     expect(masterDataRequestStore.all()[0].state).toBe('In Review');
-    expect(document.body.textContent).not.toContain('sim-usr-');
+    expect(document.body.textContent).not.toContain(SAMPLE_PERSON_PREFIX);
     first.unmount();
 
     // A second person, on the same store.
