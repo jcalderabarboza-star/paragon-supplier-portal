@@ -444,7 +444,9 @@ mechanisms whose success signals said nothing about the damage they did.
 > kept in the browser (`paragon.flowVersions`). **Derive which rules exist from `VERSION_RULES`,
 > which acts a step may stand in front of from `isGateable`, and which processes can show a step
 > from `STEP_SURFACES` — never from a sentence here.** The handover set still says "no runtime
-> override"; by ruling it is corrected at handover-v3.
+> override"; by ruling it is corrected at handover-v3. ⚠️ **OVERTAKEN 2026-10-13 (H3), QUOTED
+> RATHER THAN EDITED:** handover v3 is committed and its D1, D3 and D6 say what is built; the
+> sentence before this one is the record of what v2 said.
 >
 > ⚠️ **FB-2 (2026-10-12) — A DRAFT IS COMPOSED, AND THE COMPOSER WRITES ONE THING.** The composer
 > (`process-flows/ChangeComposer.tsx`, edits in `composerModel.ts`) saves its own draft through
@@ -475,6 +477,35 @@ mechanisms whose success signals said nothing about the damage they did.
 > `policies.ts`, and what is due on a document from `dueStepsFor` — never from a sentence here.**
 > Forks, checks and scans cannot be put in force (a version holding one is refused at proposal);
 > history export and supplier-side steps are the SE Team's.
+>
+> ⚠️ **THE FLOW BUILDER, IN ONE PARAGRAPH (H3, 2026-10-13) — WHERE IT IS SPECIFIED AND WHAT IS
+> LEFT.** The three paragraphs above are the as-built record, batch by batch. The design that was
+> built, its build plan and the operator's thirteen rulings are committed with handover v3:
+> `docs/designs/DESIGN_6_v2.md`, `FB_BUILD_PLAN.md`, `FB_OPEN_DECISIONS.md`. The older
+> `DESIGN_6_FLOW_BUILDER.md` is kept for one thing: a change to the SHAPE of a machine (a state, an
+> act, a lane or a required field on an existing act, a document type), which is still code.
+> **Not built, and the SE Team's:** forks, checks and scans (FB-5); export and import of a version
+> and a side-by-side of two (the rest of FB-6); supplier-side steps and an open-steps queue (FB-7);
+> durable storage — versions are in the browser, step completions in memory. **Derive what is left
+> from `docs/handover/D1_SE_HANDOVER.md` (SE-16) and `SE_BACKLOG_v3.md`, never from this sentence.**
+>
+> ⚠️ **MASTER DATA IS A REPLICA OF SAP, AND THE PORTAL PROPOSES — IT NEVER WRITES A RECORD (MD-1 to
+> MD-5, 2026-10-12/13, operator rulings; contract C13).** `services/masterData/` holds a replica of
+> S/4HANA's materials, suppliers and reference tables; every record says where it came from. **ONE
+> WRITER:** the sync applier (`syncApplier.ts`), which is not on the service surface —
+> `replicaOneWriter.test.ts` holds that nothing else writes the store. Pages read it through
+> `IMasterDataService` and the lookups in `lookup.ts`; `src/lib/masterDataGate/` names every file
+> that still reads a fixture directly, and that list can only shrink. A change to master data is a
+> REQUEST (`masterDataRequest`): proposed, reviewed under four eyes, handed to SAP as a package and
+> closed by SAP's answer. **No act of that flow writes a master record**, and SAP wins: a request
+> whose field a sync run has changed cannot be agreed or sent. The proposer may not decide their own
+> request; a Super Admin may with a recorded reason, `admin` may not. On a demo deployment a sample
+> answer delivers its record through the sync applier as a run of its own, marked sample; it is
+> refused on production. Requests are kept in memory. **Derive who may propose, review and send from
+> the flow's `requiredRole`s, which lookups are replica-backed from `masterDataGate`, and what is
+> left for the SE Team from `SE_BACKLOG_v3.md` — never from a sentence here.** The design, the plan
+> and the open decisions are `docs/designs/MASTER_DATA_DESIGN.md`, `MD_BUILD_PLAN.md`,
+> `MD_OPEN_DECISIONS.md`.
 >
 > ⚠️ **THE PARAGON BRAND LIST IS ONE FILE** (`data/paragonBrands.ts`, operator ruling 2026-10-12):
 > the brands and their codes. A page that offers or columns a brand reads it;
