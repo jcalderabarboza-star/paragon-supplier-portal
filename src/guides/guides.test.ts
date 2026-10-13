@@ -394,7 +394,9 @@ describe('guides · every fixture id resolves in its store at seed, in the state
   it('the wired processes that open with no document at seed are pinned by name — a change to a process, and the steps one adds — and every other holds some', () => {
     const emptyAtSeed = WIRED_COMMAND_TARGETS.filter((entity) => FIXTURE_READERS[entity]?.().length === 0);
     // FB-4 — no version is in force at seed, so no step exists and its ledger is empty.
-    expect(emptyAtSeed).toEqual(['flowVersion', 'processStep']);
+    // MD-4 — nor is a master-data change request seeded: that would claim somebody
+    // proposed something nobody proposed.
+    expect([...emptyAtSeed].sort()).toEqual(['flowVersion', 'masterDataRequest', 'processStep']);
     expect(FIXTURE_READERS.purchaseOrder().length).toBeGreaterThan(0);
   });
 });

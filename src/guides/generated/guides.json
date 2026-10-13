@@ -8696,6 +8696,774 @@
       ]
     },
     {
+      "entity": "masterDataRequest",
+      "locale": "en",
+      "title": "Master-data change request",
+      "wired": true,
+      "owner": "portal",
+      "sourceSha": "b9b092eecc359fadde205154ea3d46352d6ff87f",
+      "sourceFile": "docs/guides/masterDataRequest.en.md",
+      "transitions": [
+        "t_mdr_propose",
+        "t_mdr_start_review",
+        "t_mdr_return",
+        "t_mdr_approve",
+        "t_mdr_reject",
+        "t_mdr_withdraw",
+        "t_mdr_hand_off",
+        "t_mdr_sap_complete",
+        "t_mdr_sap_decline"
+      ],
+      "stepOrder": [
+        "t_mdr_propose",
+        "t_mdr_start_review",
+        "t_mdr_return",
+        "t_mdr_approve",
+        "t_mdr_reject",
+        "t_mdr_withdraw",
+        "t_mdr_hand_off",
+        "t_mdr_sap_complete",
+        "t_mdr_sap_decline"
+      ],
+      "sections": {
+        "summary": "A proposal to change master data that SAP S/4HANA owns: a new material, a change to a material, or a change to a supplier. The portal holds a replica of SAP's master data and never changes a record. It proposes, a second person reviews, procurement hands the agreed request to SAP, and the request ends on SAP's answer.\n\n**Agreed is not the same as existing.** *Agreed — not yet sent* means Paragon agreed to ask SAP. No step of this process writes a master record: a record changes only when a sync run delivers it, and the page says so in each state.\n\nThree buyer lanes touch it. **Procurement** and **Planning** hold `masterdata:propose`. **Planning** and **Compliance** hold `masterdata:review`, and a check holds each to its own kind: materials are Planning's, suppliers Compliance's. **Procurement** holds `masterdata:handoff` and `masterdata:record-sap-answer`. The person who decides a request is never the person who proposed it; a Super Admin may pass that one check with a stated reason, which is recorded.\n\nHonesty markers. SAP is not connected: **Send to SAP** produces the hand-off package and stops. On a demo or preview deployment a person may record a **sample** answer, which delivers its record through a sync run marked as sample; on production that is refused. Requests are kept in memory for the session and are gone on reload.",
+        "lifecycle": "| Step | From → to | Kind | Role | Transition |\n|---|---|---|---|---|\n| 1 | ∅ → Proposed | creation (operator action) | buyer · procurement, planning | `t_mdr_propose` |\n| 2 | Proposed → In Review | changes state (operator action) | buyer · planning, compliance | `t_mdr_start_review` |\n| 3 | In Review → Proposed | changes state (operator action) | buyer · planning, compliance | `t_mdr_return` |\n| 4 | In Review → Approved | changes state (operator action) | buyer · planning, compliance | `t_mdr_approve` |\n| 5 | In Review → Rejected | changes state (operator action) | buyer · planning, compliance | `t_mdr_reject` |\n| 6 | Proposed, Approved → Withdrawn | changes state (operator action) | buyer · procurement, planning | `t_mdr_withdraw` |\n| 7 | Approved → Sent to SAP | changes state (operator action) | buyer · procurement | `t_mdr_hand_off` |\n| 8 | Sent to SAP → Completed in SAP | external fact (operator action) | buyer · procurement | `t_mdr_sap_complete` |\n| 9 | Sent to SAP → Declined by SAP | external fact (operator action) | buyer · procurement | `t_mdr_sap_decline` |\n\nA request that is returned goes back to Proposed and can be reviewed again. Rejected, Withdrawn, Completed in SAP and Declined by SAP are endings.\n\n**Forks**\n\n- **At Proposed:** `t_mdr_start_review` (the reviewing lane takes it up) or `t_mdr_withdraw` (the proposer takes it back).\n- **At In Review:** `t_mdr_approve`, `t_mdr_return` or `t_mdr_reject`.\n- **At Approved:** `t_mdr_hand_off` or `t_mdr_withdraw`.\n- **At Sent to SAP:** `t_mdr_sap_complete` or `t_mdr_sap_decline`.",
+        "forks": "- **Which lane reviews (at Proposed).** A material request is Planning's; a supplier request is Compliance's. The other lane is refused `MDR_WRONG_LANE`.\n- **Agree, return or reject (at In Review).** Agree when Paragon should ask SAP; return when something is missing; reject when it should not be asked.\n- **Proposer and decider are one person (exception).** Refused `MDR_APPROVER_IS_PROPOSER`. A Super Admin may pass it with a one-line reason; the event records the check and the reason. An Admin may not.\n- **SAP changed the record first (exception).** A sync run moved a field the request proposes. Agreeing and sending are refused `MDR_SAP_CHANGED_FIRST`; withdraw and propose again.\n- **The same ask is already open (exception).** Refused `MDR_DUPLICATE_OPEN`, naming the open request.\n- **SAP completes or declines (at Sent to SAP).** Completed: the record is read back by sync. Declined: SAP's reason is shown and a new request may be raised.",
+        "flags": "| Flag | Kind | Applies at | When it appears | Where shown |\n|---|---|---|---|---|\n| *\"Requests are kept for this session only…\"* | standing statement | — | always | top of **Change requests**; the propose form |\n| *\"SAP changed this record after the request was written\"* | derived at read | Proposed, In Review, Approved | a sync run changed a proposed field | the request drawer |\n| *\"Sample answer — SAP was not asked.\"* | derived at read | Completed in SAP, Declined by SAP | the answer was recorded as a sample | the answer notice in the drawer |\n| *SAP holds: {value}* | derived at read | every state | the request is about an existing record | under each proposed value |\n| *Awaiting {lane}* | derived at read (seat vs. atom) | — | the seat lacks the atom for the next act | where the button would be |\n| *(SAMPLE)* after a person | derived at read | every state | the act was taken by a sample person | proposer, history, agreed by |",
+        "linked": "**Representative entity:** none is seeded. The first request raised in a session is `mdr-0001`, number `MDR-2026-0001`.\n\n| Joins to | By | Note |\n|---|---|---|\n| Master record | `subjectKey` | SAP's key of the material or supplier; null for a new material. The request never writes the record. |\n| Reference tables | a proposed value | a unit, type, group, country, payment term or incoterm must be in its table. |\n| Sync run | `base.syncRun` | what the request was written against; compared again before agreeing and sending. |\n| SAP change request | `sap.sapRequestNumber` | SAP's own number, with the key of the record SAP changed or its reason for declining. |\n| Tenant / owner | none (`readScopeOwner` is null) | a buyer document: a supplier scope is refused at scope. |",
+        "history": "Every dispatch writes one `TransitionEvent`: `event` = the transition id, `actor` = `buyer:all`, `ts`, `outcome`, its own `correlationId`, the session's person as `attribution`, and `subject` = `{ entity: 'masterDataRequest', entityId }`. The request also keeps its own history, shown in the drawer.\n\n| Time | From → to | Actor (role) | Trigger | Event |\n|---|---|---|---|---|\n| T+0 | ∅ (refused) | buyer · procurement, seat names nobody | **Propose a change** → **Raise the request** | `t_mdr_propose` |\n| T+1 | ∅ → Proposed | buyer · procurement, a sample person | the same, after adopting a sample user | `t_mdr_propose` |\n| T+2 | Proposed → In Review | buyer · planning, a second sample person | **Start review** | `t_mdr_start_review` |\n| T+3 | In Review → Approved | buyer · planning | **Agree to ask SAP** | `t_mdr_approve` |\n| T+4 | Approved → Sent to SAP | buyer · procurement | **Send to SAP** | `t_mdr_hand_off` |\n| T+5 | Sent to SAP → Completed in SAP | buyer · procurement | **Record SAP's answer (sample): completed** | `t_mdr_sap_complete` |",
+        "troubleshooting": "| Symptom | How to tell | Likely cause | Resolve |\n|---|---|---|---|\n| No **Propose a change** or **Ask for a new material**; a wait notice instead | handoff text where the control would be | the seat does not hold `masterdata:propose` | act from a seat holding procurement or planning |\n| \"This seat names no person…\" | warning toast; the form said so first | `MDR_ACTOR_UNATTRIBUTED` | choose a sample user on the identity panel |\n| \"This kind of request is reviewed by another lane…\" | error toast | `MDR_WRONG_LANE` | review materials from Planning, suppliers from Compliance |\n| \"The person who proposed a request may not also decide it…\" | error toast | `MDR_APPROVER_IS_PROPOSER` | have a second person decide |\n| \"SAP changed this record after the request was written…\" | error toast and a notice in the drawer | `MDR_SAP_CHANGED_FIRST` | withdraw the request and propose again |\n| \"An open request already asks for this…\" | error toast | `MDR_DUPLICATE_OPEN` | open the existing request |\n| No button to record SAP's answer | the drawer reads *Sent to SAP. The answer is recorded when SAP gives it…* | a production deployment: a sample answer is not recorded there | none; SAP answers through the feed when it is connected |\n| An action on this flow is refused for every seat, whatever the role | the refusal names `MODULE_INACTIVE:MAT` | the Material requests module is switched off; its pages stay readable | have it switched back on at `/buyer/platform/modules/admin` |\n| Every request is gone | the list is empty | the page was reloaded; requests are kept in memory | expected in the demo |",
+        "testdata": "| State | Fixture id(s) | Number | Note |\n|---|---|---|---|\n| Proposed | — | — | no fixture — nothing is seeded and the store opens empty. Raise one: adopt a sample user holding procurement, open a material on `/buyer/master-data`, press **Propose a change**, change the description, give a reason, **Raise the request**. |",
+        "steps": ""
+      },
+      "sectionSources": {
+        "summary": [
+          "src/services/transitions/flows/masterDataRequest.flow.ts:1-150",
+          "src/services/masterData/changeRequest.ts:1-290",
+          "src/services/data/mock/masterDataRequestTarget.ts:1-190"
+        ],
+        "lifecycle": [
+          "src/services/transitions/flows/masterDataRequest.flow.ts:1-150"
+        ],
+        "forks": [
+          "src/services/masterData/changeRequest.ts:1-290",
+          "src/services/data/mock/masterDataRequestTarget.ts:1-190"
+        ],
+        "flags": [
+          "src/pages-v2/master-data/ChangeRequests.tsx:1-420",
+          "src/lib/i18n/masterData.ts:150-290"
+        ],
+        "linked": [
+          "src/services/masterData/changeRequest.ts:1-290",
+          "src/services/data/mock/masterDataRequestTarget.ts:1-190"
+        ],
+        "history": [
+          "src/services/data/mock/masterDataRequestTarget.ts:1-190",
+          "src/services/transitions/flows/masterDataRequest.flow.ts:1-150"
+        ],
+        "troubleshooting": [
+          "src/services/data/mock/masterDataRequestTarget.ts:1-190",
+          "src/pages-v2/master-data/ChangeRequests.tsx:1-420",
+          "src/pages-v2/BuyerMasterData.tsx:1-470"
+        ],
+        "testdata": [
+          "src/services/data/mock/stores/masterDataRequestStore.ts:1-35",
+          "src/services/data/mock/documentIds.ts:79-84"
+        ],
+        "steps": []
+      },
+      "steps": {
+        "t_mdr_propose": {
+          "transitionId": "t_mdr_propose",
+          "label": "Propose a change, or ask for a new material",
+          "stepKind": "operator-action",
+          "role": "buyer · procurement, planning (atom `masterdata:propose`)",
+          "fromTo": "∅ → Proposed",
+          "operator": {
+            "where": "`/buyer/master-data` → header **Ask for a new material**; or open a material or a supplier → **Propose a change**. The request then opens on `/buyer/master-data/requests`.",
+            "do": "say what is asked for and why. For a change, alter only the fields that should move; the form sends only those.",
+            "fill": "`kind` (set by where the form was opened), `subjectKey` (the record, for a change; never for a new material), `proposed` (the fields), `reason` (required)."
+          },
+          "tester": {
+            "expectedState": "Proposed",
+            "confirm": "toast **\"Request raised. It waits for review; nothing in master data has changed.\"**; the request opens with its number, the proposed values beside what SAP holds, and one history row.",
+            "triggerEvent": "t_mdr_propose"
+          },
+          "checks": "`mdr_actor_named` (`MDR_ACTOR_UNATTRIBUTED`); `mdr_proposal_valid`, nine refusals — `MDR_KIND_UNKNOWN`, `MDR_REASON_BLANK`, `MDR_CREATE_CARRIES_KEY`, `MDR_SUBJECT_UNKNOWN`, `MDR_FIELD_NOT_PROPOSABLE`, `MDR_FIELD_MISSING`, `MDR_VALUE_NOT_IN_TABLE`, `MDR_NOTHING_CHANGES`, `MDR_DUPLICATE_OPEN`.",
+          "glossary": [
+            "ROLE_NOT_PERMITTED",
+            "POLICY_REJECTED",
+            "MISSING_FIELDS",
+            "NOT_FOUND",
+            "SCOPE_DENIED",
+            "NO_PERSON_IN_SESSION"
+          ],
+          "honesty": "a request for a new material carries no key: SAP gives the key. A generated sample material has no SAP record, so no change can be proposed for it.",
+          "sources": [
+            "src/services/transitions/flows/masterDataRequest.flow.ts:1-150",
+            "src/services/data/mock/masterDataRequestTarget.ts:1-190",
+            "src/pages-v2/master-data/ChangeRequests.tsx:1-420",
+            "src/services/transitions/policies.ts:2880-2930"
+          ]
+        },
+        "t_mdr_start_review": {
+          "transitionId": "t_mdr_start_review",
+          "label": "Start the review",
+          "stepKind": "operator-action",
+          "role": "buyer · planning, compliance (atom `masterdata:review`)",
+          "fromTo": "Proposed → In Review",
+          "operator": {
+            "where": "`/buyer/master-data/requests` → open the request → **Start review**.",
+            "do": "take the request up, so the proposer can see it is being looked at.",
+            "fill": "nothing."
+          },
+          "tester": {
+            "expectedState": "In Review",
+            "confirm": "toast **\"Review started.\"**; the state reads *In review*.",
+            "triggerEvent": "t_mdr_start_review"
+          },
+          "checks": "`mdr_actor_named`; `mdr_reviewer_lane` (`MDR_WRONG_LANE`: a material request is reviewed by Planning, a supplier request by Compliance).",
+          "glossary": [
+            "ROLE_NOT_PERMITTED",
+            "POLICY_REJECTED",
+            "MISSING_FIELDS",
+            "NOT_FOUND",
+            "SCOPE_DENIED",
+            "NO_PERSON_IN_SESSION"
+          ],
+          "honesty": "a seat without the review atom reads who it waits for where the button would be.",
+          "sources": [
+            "src/services/transitions/flows/masterDataRequest.flow.ts:1-150",
+            "src/services/data/mock/masterDataRequestTarget.ts:1-190",
+            "src/pages-v2/master-data/ChangeRequests.tsx:1-420",
+            "src/services/transitions/policies.ts:2880-2930"
+          ]
+        },
+        "t_mdr_return": {
+          "transitionId": "t_mdr_return",
+          "label": "Return to the proposer",
+          "stepKind": "operator-action",
+          "role": "buyer · planning, compliance (atom `masterdata:review`)",
+          "fromTo": "In Review → Proposed",
+          "operator": {
+            "where": "`/buyer/master-data/requests` → open the request → write the note → **Return to proposer**.",
+            "do": "say what is missing or unclear.",
+            "fill": "`note` (required)."
+          },
+          "tester": {
+            "expectedState": "Proposed",
+            "confirm": "toast **\"Returned to the person who asked.\"**; the note is in the history.",
+            "triggerEvent": "t_mdr_return"
+          },
+          "checks": "`mdr_actor_named`; `mdr_reviewer_lane`; `mdr_note_authored` (`MDR_NOTE_BLANK`).",
+          "glossary": [
+            "ROLE_NOT_PERMITTED",
+            "POLICY_REJECTED",
+            "MISSING_FIELDS",
+            "NOT_FOUND",
+            "SCOPE_DENIED",
+            "NO_PERSON_IN_SESSION"
+          ],
+          "honesty": "the button stays disabled until a note is written.",
+          "sources": [
+            "src/services/transitions/flows/masterDataRequest.flow.ts:1-150",
+            "src/services/data/mock/masterDataRequestTarget.ts:1-190",
+            "src/pages-v2/master-data/ChangeRequests.tsx:1-420",
+            "src/services/transitions/policies.ts:2880-2930"
+          ]
+        },
+        "t_mdr_approve": {
+          "transitionId": "t_mdr_approve",
+          "label": "Agree to ask SAP",
+          "stepKind": "operator-action",
+          "role": "buyer · planning, compliance (atom `masterdata:review`)",
+          "fromTo": "In Review → Approved",
+          "operator": {
+            "where": "`/buyer/master-data/requests` → open the request → **Agree to ask SAP**.",
+            "do": "decide that Paragon should ask SAP for this. The person who proposed the request cannot.",
+            "fill": "nothing; a Super Admin approving their own request states a one-line reason."
+          },
+          "tester": {
+            "expectedState": "Approved",
+            "confirm": "toast **\"Agreed. The request waits to be sent to SAP; the record has not changed.\"**; the state reads *Agreed — not yet sent* and the hand-off section appears.",
+            "triggerEvent": "t_mdr_approve"
+          },
+          "checks": "`mdr_actor_named`; `mdr_reviewer_lane`; `mdr_approver_not_proposer` (`MDR_APPROVER_IS_PROPOSER`); `mdr_base_unchanged` (`MDR_SAP_CHANGED_FIRST`).",
+          "glossary": [
+            "ROLE_NOT_PERMITTED",
+            "POLICY_REJECTED",
+            "MISSING_FIELDS",
+            "NOT_FOUND",
+            "SCOPE_DENIED",
+            "NO_PERSON_IN_SESSION"
+          ],
+          "honesty": "agreement is agreement to ask. The record is exactly what it was.",
+          "sources": [
+            "src/services/transitions/flows/masterDataRequest.flow.ts:1-150",
+            "src/services/data/mock/masterDataRequestTarget.ts:1-190",
+            "src/pages-v2/master-data/ChangeRequests.tsx:1-420",
+            "src/services/transitions/policies.ts:2880-2930"
+          ]
+        },
+        "t_mdr_reject": {
+          "transitionId": "t_mdr_reject",
+          "label": "Reject the request",
+          "stepKind": "operator-action",
+          "role": "buyer · planning, compliance (atom `masterdata:review`)",
+          "fromTo": "In Review → Rejected",
+          "operator": {
+            "where": "`/buyer/master-data/requests` → open the request → write the note → **Reject**.",
+            "do": "decline the request and say why.",
+            "fill": "`note` (required)."
+          },
+          "tester": {
+            "expectedState": "Rejected",
+            "confirm": "toast **\"Request rejected. Nothing goes to SAP.\"**",
+            "triggerEvent": "t_mdr_reject"
+          },
+          "checks": "`mdr_actor_named`; `mdr_reviewer_lane`; `mdr_note_authored`; `mdr_approver_not_proposer`.",
+          "glossary": [
+            "ROLE_NOT_PERMITTED",
+            "POLICY_REJECTED",
+            "MISSING_FIELDS",
+            "NOT_FOUND",
+            "SCOPE_DENIED",
+            "NO_PERSON_IN_SESSION"
+          ],
+          "honesty": "an ending. A new request may be raised.",
+          "sources": [
+            "src/services/transitions/flows/masterDataRequest.flow.ts:1-150",
+            "src/services/data/mock/masterDataRequestTarget.ts:1-190",
+            "src/pages-v2/master-data/ChangeRequests.tsx:1-420",
+            "src/services/transitions/policies.ts:2880-2930"
+          ]
+        },
+        "t_mdr_withdraw": {
+          "transitionId": "t_mdr_withdraw",
+          "label": "Withdraw the request",
+          "stepKind": "operator-action",
+          "role": "buyer · procurement, planning (atom `masterdata:propose`)",
+          "fromTo": "Proposed, Approved → Withdrawn",
+          "operator": {
+            "where": "`/buyer/master-data/requests` → open the request → write the note → **Withdraw**.",
+            "do": "take the request back before it goes to SAP, saying why.",
+            "fill": "`note` (required)."
+          },
+          "tester": {
+            "expectedState": "Withdrawn",
+            "confirm": "toast **\"Request withdrawn.\"**",
+            "triggerEvent": "t_mdr_withdraw"
+          },
+          "checks": "`mdr_actor_named`; `mdr_note_authored`.",
+          "glossary": [
+            "ROLE_NOT_PERMITTED",
+            "POLICY_REJECTED",
+            "MISSING_FIELDS",
+            "NOT_FOUND",
+            "SCOPE_DENIED",
+            "NO_PERSON_IN_SESSION"
+          ],
+          "honesty": "this is how a request held because SAP changed the record first is cleared.",
+          "sources": [
+            "src/services/transitions/flows/masterDataRequest.flow.ts:1-150",
+            "src/services/data/mock/masterDataRequestTarget.ts:1-190",
+            "src/pages-v2/master-data/ChangeRequests.tsx:1-420",
+            "src/services/transitions/policies.ts:2880-2930"
+          ]
+        },
+        "t_mdr_hand_off": {
+          "transitionId": "t_mdr_hand_off",
+          "label": "Send to SAP",
+          "stepKind": "operator-action",
+          "role": "buyer · procurement (atom `masterdata:handoff`)",
+          "fromTo": "Approved → Sent to SAP",
+          "operator": {
+            "where": "`/buyer/master-data/requests` → open the request → read **Hand-off to SAP** → **Send to SAP**.",
+            "do": "send the agreed request. The request is checked again against the record as it stands now.",
+            "fill": "nothing."
+          },
+          "tester": {
+            "expectedState": "Sent to SAP",
+            "confirm": "toast **\"Sent to SAP (sample: SAP is not connected).\"**; the package shows the external reference, who agreed and the sync run it was written against.",
+            "triggerEvent": "t_mdr_hand_off"
+          },
+          "checks": "`mdr_actor_named`; `mdr_base_unchanged`.",
+          "glossary": [
+            "ROLE_NOT_PERMITTED",
+            "POLICY_REJECTED",
+            "MISSING_FIELDS",
+            "NOT_FOUND",
+            "SCOPE_DENIED",
+            "NO_PERSON_IN_SESSION"
+          ],
+          "honesty": "nothing is transmitted: SAP is not connected. The package is what would be sent.",
+          "sources": [
+            "src/services/transitions/flows/masterDataRequest.flow.ts:1-150",
+            "src/services/data/mock/masterDataRequestTarget.ts:1-190",
+            "src/pages-v2/master-data/ChangeRequests.tsx:1-420",
+            "src/services/transitions/policies.ts:2880-2930"
+          ]
+        },
+        "t_mdr_sap_complete": {
+          "transitionId": "t_mdr_sap_complete",
+          "label": "Record SAP's answer: completed",
+          "stepKind": "external-fact",
+          "role": "buyer · procurement (atom `masterdata:record-sap-answer`)",
+          "fromTo": "Sent to SAP → Completed in SAP",
+          "operator": {
+            "where": "`/buyer/master-data/requests` → open the request → **Record SAP's answer (sample): completed**. Shown on demo and preview deployments only.",
+            "do": "record that SAP made the change.",
+            "fill": "`sapRequestNumber` and `sample` (both set by the button)."
+          },
+          "tester": {
+            "expectedState": "Completed in SAP",
+            "confirm": "toast **\"Sample answer recorded: completed…\"**; a notice names the record and says *Sample answer — SAP was not asked.*; the record on **Materials** or **Suppliers** shows the new value, stamped sample, and the **Sync log** has a new run.",
+            "triggerEvent": "t_mdr_sap_complete"
+          },
+          "checks": "`mdr_actor_named`; `mdr_sap_answer_admissible` (`MDR_SAP_NUMBER_BLANK`, `MDR_SAMPLE_ANSWER_IN_PRODUCTION`, `MDR_SAP_NOT_CONNECTED`).",
+          "glossary": [
+            "ROLE_NOT_PERMITTED",
+            "POLICY_REJECTED",
+            "MISSING_FIELDS",
+            "NOT_FOUND",
+            "SCOPE_DENIED",
+            "NO_PERSON_IN_SESSION"
+          ],
+          "honesty": "the record arrives through a sync run of its own, never from the request. A new material arrives under a sample key.",
+          "sources": [
+            "src/services/transitions/flows/masterDataRequest.flow.ts:1-150",
+            "src/services/data/mock/masterDataRequestTarget.ts:1-190",
+            "src/pages-v2/master-data/ChangeRequests.tsx:1-420",
+            "src/services/transitions/policies.ts:2880-2930"
+          ]
+        },
+        "t_mdr_sap_decline": {
+          "transitionId": "t_mdr_sap_decline",
+          "label": "Record SAP's answer: declined",
+          "stepKind": "external-fact",
+          "role": "buyer · procurement (atom `masterdata:record-sap-answer`)",
+          "fromTo": "Sent to SAP → Declined by SAP",
+          "operator": {
+            "where": "`/buyer/master-data/requests` → open the request → write SAP's reason in the note → **Record SAP's answer (sample): declined**.",
+            "do": "record that SAP declined, with SAP's reason.",
+            "fill": "`sapRequestNumber`, `sample`, `note` (required)."
+          },
+          "tester": {
+            "expectedState": "Declined by SAP",
+            "confirm": "toast **\"Sample answer recorded: declined by SAP.\"**; the notice shows the reason.",
+            "triggerEvent": "t_mdr_sap_decline"
+          },
+          "checks": "`mdr_actor_named`; `mdr_sap_answer_admissible`; `mdr_note_authored`.",
+          "glossary": [
+            "ROLE_NOT_PERMITTED",
+            "POLICY_REJECTED",
+            "MISSING_FIELDS",
+            "NOT_FOUND",
+            "SCOPE_DENIED",
+            "NO_PERSON_IN_SESSION"
+          ],
+          "honesty": "nothing changes in master data. A new request may be raised.",
+          "sources": [
+            "src/services/transitions/flows/masterDataRequest.flow.ts:1-150",
+            "src/services/data/mock/masterDataRequestTarget.ts:1-190",
+            "src/pages-v2/master-data/ChangeRequests.tsx:1-420",
+            "src/services/transitions/policies.ts:2880-2930"
+          ]
+        }
+      },
+      "testData": [
+        {
+          "state": "Proposed",
+          "fixtureIds": [],
+          "note": "no fixture — nothing is seeded and the store opens empty. Raise one: adopt a sample user holding procurement, open a material on `/buyer/master-data`, press **Propose a change**, change the description, give a reason, **Raise the request**."
+        }
+      ]
+    },
+    {
+      "entity": "masterDataRequest",
+      "locale": "id",
+      "title": "Permintaan perubahan data master",
+      "wired": true,
+      "owner": "portal",
+      "sourceSha": "b9b092eecc359fadde205154ea3d46352d6ff87f",
+      "sourceFile": "docs/guides/masterDataRequest.id.md",
+      "transitions": [
+        "t_mdr_propose",
+        "t_mdr_start_review",
+        "t_mdr_return",
+        "t_mdr_approve",
+        "t_mdr_reject",
+        "t_mdr_withdraw",
+        "t_mdr_hand_off",
+        "t_mdr_sap_complete",
+        "t_mdr_sap_decline"
+      ],
+      "stepOrder": [
+        "t_mdr_propose",
+        "t_mdr_start_review",
+        "t_mdr_return",
+        "t_mdr_approve",
+        "t_mdr_reject",
+        "t_mdr_withdraw",
+        "t_mdr_hand_off",
+        "t_mdr_sap_complete",
+        "t_mdr_sap_decline"
+      ],
+      "sections": {
+        "summary": "Usulan untuk mengubah data master yang dimiliki SAP S/4HANA: material baru, perubahan pada material, atau perubahan pada pemasok. Portal menyimpan replika data master SAP dan tidak pernah mengubah catatan. Portal mengusulkan, orang kedua meninjau, pengadaan menyerahkan permintaan yang disetujui ke SAP, dan permintaan berakhir pada jawaban SAP.\n\n**Disetujui tidak sama dengan sudah ada.** *Disetujui — belum dikirim* berarti Paragon setuju untuk meminta ke SAP. Tidak ada langkah dalam proses ini yang menulis catatan master: catatan baru berubah setelah proses sinkronisasi membawanya, dan halaman menyatakannya pada setiap status.\n\nTiga lini pembeli menyentuhnya. **Pengadaan** dan **Perencanaan** memegang `masterdata:propose`. **Perencanaan** dan **Kepatuhan** memegang `masterdata:review`, dan satu pemeriksaan menahan masing-masing pada jenisnya: material milik Perencanaan, pemasok milik Kepatuhan. **Pengadaan** memegang `masterdata:handoff` dan `masterdata:record-sap-answer`. Orang yang memutuskan permintaan tidak pernah orang yang mengusulkannya; Super Admin dapat melewati satu pemeriksaan itu dengan alasan yang dinyatakan, dan alasan itu dicatat.\n\nPenanda kejujuran. SAP tidak terhubung: **Kirim ke SAP** menghasilkan paket penyerahan lalu berhenti. Pada deployment demo atau pratinjau seseorang dapat mencatat jawaban **sampel**, yang membawa catatannya melalui proses sinkronisasi bertanda sampel; di produksi hal itu ditolak. Permintaan disimpan di memori selama sesi dan hilang saat dimuat ulang.",
+        "lifecycle": "| Langkah | Dari → ke | Jenis | Peran | Transisi |\n|---|---|---|---|---|\n| 1 | ∅ → Proposed | pembuatan (tindakan operator) | pembeli · pengadaan, perencanaan | `t_mdr_propose` |\n| 2 | Proposed → In Review | mengubah status (tindakan operator) | pembeli · perencanaan, kepatuhan | `t_mdr_start_review` |\n| 3 | In Review → Proposed | mengubah status (tindakan operator) | pembeli · perencanaan, kepatuhan | `t_mdr_return` |\n| 4 | In Review → Approved | mengubah status (tindakan operator) | pembeli · perencanaan, kepatuhan | `t_mdr_approve` |\n| 5 | In Review → Rejected | mengubah status (tindakan operator) | pembeli · perencanaan, kepatuhan | `t_mdr_reject` |\n| 6 | Proposed, Approved → Withdrawn | mengubah status (tindakan operator) | pembeli · pengadaan, perencanaan | `t_mdr_withdraw` |\n| 7 | Approved → Sent to SAP | mengubah status (tindakan operator) | pembeli · pengadaan | `t_mdr_hand_off` |\n| 8 | Sent to SAP → Completed in SAP | fakta eksternal (tindakan operator) | pembeli · pengadaan | `t_mdr_sap_complete` |\n| 9 | Sent to SAP → Declined by SAP | fakta eksternal (tindakan operator) | pembeli · pengadaan | `t_mdr_sap_decline` |\n\nPermintaan yang dikembalikan kembali ke Proposed dan dapat ditinjau lagi. Rejected, Withdrawn, Completed in SAP, dan Declined by SAP adalah akhir.\n\n**Percabangan**\n\n- **Di Proposed:** `t_mdr_start_review` (lini peninjau menanganinya) atau `t_mdr_withdraw` (pengusul menariknya).\n- **Di In Review:** `t_mdr_approve`, `t_mdr_return`, atau `t_mdr_reject`.\n- **Di Approved:** `t_mdr_hand_off` atau `t_mdr_withdraw`.\n- **Di Sent to SAP:** `t_mdr_sap_complete` atau `t_mdr_sap_decline`.",
+        "forks": "- **Lini mana yang meninjau (di Proposed).** Permintaan material milik Perencanaan; permintaan pemasok milik Kepatuhan. Lini lainnya ditolak `MDR_WRONG_LANE`.\n- **Setujui, kembalikan, atau tolak (di In Review).** Setujui bila Paragon perlu meminta ke SAP; kembalikan bila ada yang kurang; tolak bila tidak perlu diminta.\n- **Pengusul dan pemutus adalah satu orang (pengecualian).** Ditolak `MDR_APPROVER_IS_PROPOSER`. Super Admin dapat melewatinya dengan alasan satu baris; peristiwa mencatat pemeriksaan dan alasannya. Admin tidak dapat.\n- **SAP mengubah catatan lebih dulu (pengecualian).** Proses sinkronisasi mengubah kolom yang diusulkan permintaan. Menyetujui dan mengirim ditolak `MDR_SAP_CHANGED_FIRST`; tarik lalu usulkan lagi.\n- **Permintaan yang sama masih terbuka (pengecualian).** Ditolak `MDR_DUPLICATE_OPEN`, dengan menyebut permintaan yang terbuka.\n- **SAP menyelesaikan atau menolak (di Sent to SAP).** Selesai: catatan dibaca kembali oleh sinkronisasi. Ditolak: alasan SAP ditampilkan dan permintaan baru dapat diajukan.",
+        "flags": "| Penanda | Jenis | Berlaku pada | Kapan muncul | Tempat ditampilkan |\n|---|---|---|---|---|\n| *\"Permintaan hanya disimpan untuk sesi ini…\"* | pernyataan tetap | — | selalu | bagian atas **Permintaan perubahan**; formulir usulan |\n| *\"SAP mengubah catatan ini setelah permintaan ditulis\"* | diturunkan saat dibaca | Proposed, In Review, Approved | proses sinkronisasi mengubah kolom yang diusulkan | laci permintaan |\n| *\"Jawaban sampel — SAP tidak ditanya.\"* | diturunkan saat dibaca | Completed in SAP, Declined by SAP | jawaban dicatat sebagai sampel | pemberitahuan jawaban di laci |\n| *Di SAP: {value}* | diturunkan saat dibaca | setiap status | permintaan mengenai catatan yang sudah ada | di bawah setiap nilai usulan |\n| *Menunggu {lane}* | diturunkan saat dibaca (kursi vs. atom) | — | kursi tidak memegang atom untuk tindakan berikutnya | di tempat tombol seharusnya berada |\n| *(SAMPEL)* setelah nama orang | diturunkan saat dibaca | setiap status | tindakan dilakukan oleh orang sampel | pengusul, riwayat, disetujui oleh |",
+        "linked": "**Entitas perwakilan:** tidak ada yang di-seed. Permintaan pertama dalam satu sesi adalah `mdr-0001`, nomor `MDR-2026-0001`.\n\n| Terhubung ke | Melalui | Catatan |\n|---|---|---|\n| Catatan master | `subjectKey` | kunci SAP untuk material atau pemasok; null untuk material baru. Permintaan tidak pernah menulis catatan. |\n| Tabel referensi | nilai yang diusulkan | satuan, jenis, grup, negara, syarat pembayaran, atau incoterm harus ada di tabelnya. |\n| Proses sinkronisasi | `base.syncRun` | dasar penulisan permintaan; dibandingkan lagi sebelum disetujui dan dikirim. |\n| Permintaan perubahan SAP | `sap.sapRequestNumber` | nomor SAP sendiri, beserta kunci catatan yang diubah SAP atau alasan penolakannya. |\n| Penyewa / pemilik | tidak ada (`readScopeOwner` bernilai null) | dokumen pembeli: cakupan pemasok ditolak pada cakupan. |",
+        "history": "Setiap dispatch menulis satu `TransitionEvent`: `event` = id transisi, `actor` = `buyer:all`, `ts`, `outcome`, `correlationId` tersendiri, orang pada sesi sebagai `attribution`, dan `subject` = `{ entity: 'masterDataRequest', entityId }`. Permintaan juga menyimpan riwayatnya sendiri, yang ditampilkan di laci.\n\n| Waktu | Dari → ke | Aktor (peran) | Pemicu | Peristiwa |\n|---|---|---|---|---|\n| T+0 | ∅ (ditolak) | pembeli · pengadaan, kursi tidak menyebut siapa pun | **Usulkan perubahan** → **Ajukan permintaan** | `t_mdr_propose` |\n| T+1 | ∅ → Proposed | pembeli · pengadaan, orang sampel | hal yang sama, setelah memilih pengguna sampel | `t_mdr_propose` |\n| T+2 | Proposed → In Review | pembeli · perencanaan, orang sampel kedua | **Mulai peninjauan** | `t_mdr_start_review` |\n| T+3 | In Review → Approved | pembeli · perencanaan | **Setujui untuk diminta ke SAP** | `t_mdr_approve` |\n| T+4 | Approved → Sent to SAP | pembeli · pengadaan | **Kirim ke SAP** | `t_mdr_hand_off` |\n| T+5 | Sent to SAP → Completed in SAP | pembeli · pengadaan | **Catat jawaban SAP (sampel): selesai** | `t_mdr_sap_complete` |",
+        "troubleshooting": "| Gejala | Cara mengenali | Kemungkinan penyebab | Penyelesaian |\n|---|---|---|---|\n| Tidak ada **Usulkan perubahan** atau **Minta material baru**; yang ada pemberitahuan menunggu | teks serah-terima di tempat kontrol seharusnya berada | kursi tidak memegang `masterdata:propose` | bertindak dari kursi yang memegang pengadaan atau perencanaan |\n| \"Kursi ini tidak menyebut siapa pun…\" | toast peringatan; formulir sudah menyatakannya lebih dulu | `MDR_ACTOR_UNATTRIBUTED` | pilih pengguna sampel pada panel identitas |\n| \"Jenis permintaan ini ditinjau oleh lini lain…\" | toast galat | `MDR_WRONG_LANE` | tinjau material dari Perencanaan, pemasok dari Kepatuhan |\n| \"Orang yang mengusulkan permintaan tidak boleh memutuskannya…\" | toast galat | `MDR_APPROVER_IS_PROPOSER` | minta orang kedua memutuskan |\n| \"SAP mengubah catatan ini setelah permintaan ditulis…\" | toast galat dan pemberitahuan di laci | `MDR_SAP_CHANGED_FIRST` | tarik permintaan lalu usulkan lagi |\n| \"Sudah ada permintaan terbuka untuk hal ini…\" | toast galat | `MDR_DUPLICATE_OPEN` | buka permintaan yang sudah ada |\n| Tidak ada tombol untuk mencatat jawaban SAP | laci terbaca *Dikirim ke SAP. Jawaban dicatat saat SAP memberikannya…* | deployment produksi: jawaban sampel tidak dicatat di sana | tidak ada; SAP menjawab melalui feed setelah terhubung |\n| Tindakan pada alur ini ditolak untuk setiap kursi, apa pun perannya | penolakan menyebut `MODULE_INACTIVE:MAT` | modul Permintaan material dinonaktifkan; halamannya tetap dapat dibaca | minta modul diaktifkan kembali di `/buyer/platform/modules/admin` |\n| Semua permintaan hilang | daftar kosong | halaman dimuat ulang; permintaan disimpan di memori | wajar pada demo |",
+        "testdata": "| Status | Id fixture | Nomor | Catatan |\n|---|---|---|---|\n| Proposed | — | — | tidak ada fixture — tidak ada yang di-seed dan store dibuka kosong. Ajukan satu: pilih pengguna sampel yang memegang pengadaan, buka material di `/buyer/master-data`, tekan **Usulkan perubahan**, ubah deskripsinya, beri alasan, **Ajukan permintaan**. |",
+        "steps": ""
+      },
+      "sectionSources": {
+        "summary": [
+          "src/services/transitions/flows/masterDataRequest.flow.ts:1-150",
+          "src/services/masterData/changeRequest.ts:1-290",
+          "src/services/data/mock/masterDataRequestTarget.ts:1-190"
+        ],
+        "lifecycle": [
+          "src/services/transitions/flows/masterDataRequest.flow.ts:1-150"
+        ],
+        "forks": [
+          "src/services/masterData/changeRequest.ts:1-290",
+          "src/services/data/mock/masterDataRequestTarget.ts:1-190"
+        ],
+        "flags": [
+          "src/pages-v2/master-data/ChangeRequests.tsx:1-420",
+          "src/lib/i18n/masterData.ts:150-290"
+        ],
+        "linked": [
+          "src/services/masterData/changeRequest.ts:1-290",
+          "src/services/data/mock/masterDataRequestTarget.ts:1-190"
+        ],
+        "history": [
+          "src/services/data/mock/masterDataRequestTarget.ts:1-190",
+          "src/services/transitions/flows/masterDataRequest.flow.ts:1-150"
+        ],
+        "troubleshooting": [
+          "src/services/data/mock/masterDataRequestTarget.ts:1-190",
+          "src/pages-v2/master-data/ChangeRequests.tsx:1-420",
+          "src/pages-v2/BuyerMasterData.tsx:1-470"
+        ],
+        "testdata": [
+          "src/services/data/mock/stores/masterDataRequestStore.ts:1-35",
+          "src/services/data/mock/documentIds.ts:79-84"
+        ],
+        "steps": []
+      },
+      "steps": {
+        "t_mdr_propose": {
+          "transitionId": "t_mdr_propose",
+          "label": "Usulkan perubahan, atau minta material baru",
+          "stepKind": "operator-action",
+          "role": "pembeli · pengadaan, perencanaan (atom `masterdata:propose`)",
+          "fromTo": "∅ → Proposed",
+          "operator": {
+            "where": "`/buyer/master-data` → header **Minta material baru**; atau buka material atau pemasok → **Usulkan perubahan**. Permintaan lalu terbuka di `/buyer/master-data/requests`.",
+            "do": "nyatakan apa yang diminta dan mengapa. Untuk perubahan, ubah hanya kolom yang perlu berubah; formulir hanya mengirim kolom itu.",
+            "fill": "`kind` (ditentukan oleh tempat formulir dibuka), `subjectKey` (catatannya, untuk perubahan; tidak pernah untuk material baru), `proposed` (kolom-kolomnya), `reason` (wajib)."
+          },
+          "tester": {
+            "expectedState": "Proposed",
+            "confirm": "toast **\"Permintaan diajukan. Menunggu peninjauan; tidak ada data master yang berubah.\"**; permintaan terbuka dengan nomornya, nilai usulan di samping nilai di SAP, dan satu baris riwayat.",
+            "triggerEvent": "t_mdr_propose"
+          },
+          "checks": "`mdr_actor_named` (`MDR_ACTOR_UNATTRIBUTED`); `mdr_proposal_valid`, sembilan penolakan — `MDR_KIND_UNKNOWN`, `MDR_REASON_BLANK`, `MDR_CREATE_CARRIES_KEY`, `MDR_SUBJECT_UNKNOWN`, `MDR_FIELD_NOT_PROPOSABLE`, `MDR_FIELD_MISSING`, `MDR_VALUE_NOT_IN_TABLE`, `MDR_NOTHING_CHANGES`, `MDR_DUPLICATE_OPEN`.",
+          "glossary": [
+            "ROLE_NOT_PERMITTED",
+            "POLICY_REJECTED",
+            "MISSING_FIELDS",
+            "NOT_FOUND",
+            "SCOPE_DENIED",
+            "NO_PERSON_IN_SESSION"
+          ],
+          "honesty": "permintaan material baru tidak membawa kunci: SAP yang memberi kunci. Material sampel hasil pembangkitan tidak memiliki catatan SAP, sehingga tidak ada perubahan yang dapat diusulkan untuknya.",
+          "sources": [
+            "src/services/transitions/flows/masterDataRequest.flow.ts:1-150",
+            "src/services/data/mock/masterDataRequestTarget.ts:1-190",
+            "src/pages-v2/master-data/ChangeRequests.tsx:1-420",
+            "src/services/transitions/policies.ts:2880-2930"
+          ]
+        },
+        "t_mdr_start_review": {
+          "transitionId": "t_mdr_start_review",
+          "label": "Mulai peninjauan",
+          "stepKind": "operator-action",
+          "role": "pembeli · perencanaan, kepatuhan (atom `masterdata:review`)",
+          "fromTo": "Proposed → In Review",
+          "operator": {
+            "where": "`/buyer/master-data/requests` → buka permintaan → **Mulai peninjauan**.",
+            "do": "tangani permintaan, agar pengusul melihat permintaannya sedang ditinjau.",
+            "fill": "tidak ada."
+          },
+          "tester": {
+            "expectedState": "In Review",
+            "confirm": "toast **\"Peninjauan dimulai.\"**; status terbaca *Sedang ditinjau*.",
+            "triggerEvent": "t_mdr_start_review"
+          },
+          "checks": "`mdr_actor_named`; `mdr_reviewer_lane` (`MDR_WRONG_LANE`: permintaan material ditinjau Perencanaan, permintaan pemasok ditinjau Kepatuhan).",
+          "glossary": [
+            "ROLE_NOT_PERMITTED",
+            "POLICY_REJECTED",
+            "MISSING_FIELDS",
+            "NOT_FOUND",
+            "SCOPE_DENIED",
+            "NO_PERSON_IN_SESSION"
+          ],
+          "honesty": "kursi tanpa atom peninjauan membaca siapa yang ditunggu di tempat tombol seharusnya berada.",
+          "sources": [
+            "src/services/transitions/flows/masterDataRequest.flow.ts:1-150",
+            "src/services/data/mock/masterDataRequestTarget.ts:1-190",
+            "src/pages-v2/master-data/ChangeRequests.tsx:1-420",
+            "src/services/transitions/policies.ts:2880-2930"
+          ]
+        },
+        "t_mdr_return": {
+          "transitionId": "t_mdr_return",
+          "label": "Kembalikan ke pengusul",
+          "stepKind": "operator-action",
+          "role": "pembeli · perencanaan, kepatuhan (atom `masterdata:review`)",
+          "fromTo": "In Review → Proposed",
+          "operator": {
+            "where": "`/buyer/master-data/requests` → buka permintaan → tulis catatan → **Kembalikan ke pengusul**.",
+            "do": "nyatakan apa yang kurang atau belum jelas.",
+            "fill": "`note` (wajib)."
+          },
+          "tester": {
+            "expectedState": "Proposed",
+            "confirm": "toast **\"Dikembalikan kepada pengusul.\"**; catatan ada di riwayat.",
+            "triggerEvent": "t_mdr_return"
+          },
+          "checks": "`mdr_actor_named`; `mdr_reviewer_lane`; `mdr_note_authored` (`MDR_NOTE_BLANK`).",
+          "glossary": [
+            "ROLE_NOT_PERMITTED",
+            "POLICY_REJECTED",
+            "MISSING_FIELDS",
+            "NOT_FOUND",
+            "SCOPE_DENIED",
+            "NO_PERSON_IN_SESSION"
+          ],
+          "honesty": "tombol tetap nonaktif sampai catatan ditulis.",
+          "sources": [
+            "src/services/transitions/flows/masterDataRequest.flow.ts:1-150",
+            "src/services/data/mock/masterDataRequestTarget.ts:1-190",
+            "src/pages-v2/master-data/ChangeRequests.tsx:1-420",
+            "src/services/transitions/policies.ts:2880-2930"
+          ]
+        },
+        "t_mdr_approve": {
+          "transitionId": "t_mdr_approve",
+          "label": "Setujui untuk diminta ke SAP",
+          "stepKind": "operator-action",
+          "role": "pembeli · perencanaan, kepatuhan (atom `masterdata:review`)",
+          "fromTo": "In Review → Approved",
+          "operator": {
+            "where": "`/buyer/master-data/requests` → buka permintaan → **Setujui untuk diminta ke SAP**.",
+            "do": "putuskan bahwa Paragon perlu meminta hal ini ke SAP. Orang yang mengusulkan permintaan tidak dapat.",
+            "fill": "tidak ada; Super Admin yang menyetujui permintaannya sendiri menyatakan alasan satu baris."
+          },
+          "tester": {
+            "expectedState": "Approved",
+            "confirm": "toast **\"Disetujui. Permintaan menunggu dikirim ke SAP; catatan belum berubah.\"**; status terbaca *Disetujui — belum dikirim* dan bagian penyerahan muncul.",
+            "triggerEvent": "t_mdr_approve"
+          },
+          "checks": "`mdr_actor_named`; `mdr_reviewer_lane`; `mdr_approver_not_proposer` (`MDR_APPROVER_IS_PROPOSER`); `mdr_base_unchanged` (`MDR_SAP_CHANGED_FIRST`).",
+          "glossary": [
+            "ROLE_NOT_PERMITTED",
+            "POLICY_REJECTED",
+            "MISSING_FIELDS",
+            "NOT_FOUND",
+            "SCOPE_DENIED",
+            "NO_PERSON_IN_SESSION"
+          ],
+          "honesty": "persetujuan adalah persetujuan untuk meminta. Catatan tetap persis seperti sebelumnya.",
+          "sources": [
+            "src/services/transitions/flows/masterDataRequest.flow.ts:1-150",
+            "src/services/data/mock/masterDataRequestTarget.ts:1-190",
+            "src/pages-v2/master-data/ChangeRequests.tsx:1-420",
+            "src/services/transitions/policies.ts:2880-2930"
+          ]
+        },
+        "t_mdr_reject": {
+          "transitionId": "t_mdr_reject",
+          "label": "Tolak permintaan",
+          "stepKind": "operator-action",
+          "role": "pembeli · perencanaan, kepatuhan (atom `masterdata:review`)",
+          "fromTo": "In Review → Rejected",
+          "operator": {
+            "where": "`/buyer/master-data/requests` → buka permintaan → tulis catatan → **Tolak**.",
+            "do": "tolak permintaan dan nyatakan alasannya.",
+            "fill": "`note` (wajib)."
+          },
+          "tester": {
+            "expectedState": "Rejected",
+            "confirm": "toast **\"Permintaan ditolak. Tidak ada yang dikirim ke SAP.\"**",
+            "triggerEvent": "t_mdr_reject"
+          },
+          "checks": "`mdr_actor_named`; `mdr_reviewer_lane`; `mdr_note_authored`; `mdr_approver_not_proposer`.",
+          "glossary": [
+            "ROLE_NOT_PERMITTED",
+            "POLICY_REJECTED",
+            "MISSING_FIELDS",
+            "NOT_FOUND",
+            "SCOPE_DENIED",
+            "NO_PERSON_IN_SESSION"
+          ],
+          "honesty": "sebuah akhir. Permintaan baru dapat diajukan.",
+          "sources": [
+            "src/services/transitions/flows/masterDataRequest.flow.ts:1-150",
+            "src/services/data/mock/masterDataRequestTarget.ts:1-190",
+            "src/pages-v2/master-data/ChangeRequests.tsx:1-420",
+            "src/services/transitions/policies.ts:2880-2930"
+          ]
+        },
+        "t_mdr_withdraw": {
+          "transitionId": "t_mdr_withdraw",
+          "label": "Tarik permintaan",
+          "stepKind": "operator-action",
+          "role": "pembeli · pengadaan, perencanaan (atom `masterdata:propose`)",
+          "fromTo": "Proposed, Approved → Withdrawn",
+          "operator": {
+            "where": "`/buyer/master-data/requests` → buka permintaan → tulis catatan → **Tarik**.",
+            "do": "tarik kembali permintaan sebelum dikirim ke SAP, dengan alasannya.",
+            "fill": "`note` (wajib)."
+          },
+          "tester": {
+            "expectedState": "Withdrawn",
+            "confirm": "toast **\"Permintaan ditarik.\"**",
+            "triggerEvent": "t_mdr_withdraw"
+          },
+          "checks": "`mdr_actor_named`; `mdr_note_authored`.",
+          "glossary": [
+            "ROLE_NOT_PERMITTED",
+            "POLICY_REJECTED",
+            "MISSING_FIELDS",
+            "NOT_FOUND",
+            "SCOPE_DENIED",
+            "NO_PERSON_IN_SESSION"
+          ],
+          "honesty": "beginilah permintaan yang tertahan karena SAP mengubah catatan lebih dulu dibersihkan.",
+          "sources": [
+            "src/services/transitions/flows/masterDataRequest.flow.ts:1-150",
+            "src/services/data/mock/masterDataRequestTarget.ts:1-190",
+            "src/pages-v2/master-data/ChangeRequests.tsx:1-420",
+            "src/services/transitions/policies.ts:2880-2930"
+          ]
+        },
+        "t_mdr_hand_off": {
+          "transitionId": "t_mdr_hand_off",
+          "label": "Kirim ke SAP",
+          "stepKind": "operator-action",
+          "role": "pembeli · pengadaan (atom `masterdata:handoff`)",
+          "fromTo": "Approved → Sent to SAP",
+          "operator": {
+            "where": "`/buyer/master-data/requests` → buka permintaan → baca **Penyerahan ke SAP** → **Kirim ke SAP**.",
+            "do": "kirim permintaan yang disetujui. Permintaan diperiksa lagi terhadap catatan sebagaimana adanya sekarang.",
+            "fill": "tidak ada."
+          },
+          "tester": {
+            "expectedState": "Sent to SAP",
+            "confirm": "toast **\"Dikirim ke SAP (sampel: SAP tidak terhubung).\"**; paket menampilkan referensi eksternal, siapa yang menyetujui, dan proses sinkronisasi yang menjadi dasarnya.",
+            "triggerEvent": "t_mdr_hand_off"
+          },
+          "checks": "`mdr_actor_named`; `mdr_base_unchanged`.",
+          "glossary": [
+            "ROLE_NOT_PERMITTED",
+            "POLICY_REJECTED",
+            "MISSING_FIELDS",
+            "NOT_FOUND",
+            "SCOPE_DENIED",
+            "NO_PERSON_IN_SESSION"
+          ],
+          "honesty": "tidak ada yang dikirimkan: SAP tidak terhubung. Paket itulah yang akan dikirim.",
+          "sources": [
+            "src/services/transitions/flows/masterDataRequest.flow.ts:1-150",
+            "src/services/data/mock/masterDataRequestTarget.ts:1-190",
+            "src/pages-v2/master-data/ChangeRequests.tsx:1-420",
+            "src/services/transitions/policies.ts:2880-2930"
+          ]
+        },
+        "t_mdr_sap_complete": {
+          "transitionId": "t_mdr_sap_complete",
+          "label": "Catat jawaban SAP: selesai",
+          "stepKind": "external-fact",
+          "role": "pembeli · pengadaan (atom `masterdata:record-sap-answer`)",
+          "fromTo": "Sent to SAP → Completed in SAP",
+          "operator": {
+            "where": "`/buyer/master-data/requests` → buka permintaan → **Catat jawaban SAP (sampel): selesai**. Hanya tampil pada deployment demo dan pratinjau.",
+            "do": "catat bahwa SAP melakukan perubahan.",
+            "fill": "`sapRequestNumber` dan `sample` (keduanya diisi oleh tombol)."
+          },
+          "tester": {
+            "expectedState": "Completed in SAP",
+            "confirm": "toast **\"Jawaban sampel dicatat: selesai…\"**; sebuah pemberitahuan menyebut catatannya dan menyatakan *Jawaban sampel — SAP tidak ditanya.*; catatan di **Material** atau **Pemasok** menampilkan nilai baru, bertanda sampel, dan **Log sinkronisasi** memiliki proses baru.",
+            "triggerEvent": "t_mdr_sap_complete"
+          },
+          "checks": "`mdr_actor_named`; `mdr_sap_answer_admissible` (`MDR_SAP_NUMBER_BLANK`, `MDR_SAMPLE_ANSWER_IN_PRODUCTION`, `MDR_SAP_NOT_CONNECTED`).",
+          "glossary": [
+            "ROLE_NOT_PERMITTED",
+            "POLICY_REJECTED",
+            "MISSING_FIELDS",
+            "NOT_FOUND",
+            "SCOPE_DENIED",
+            "NO_PERSON_IN_SESSION"
+          ],
+          "honesty": "catatan tiba melalui proses sinkronisasi tersendiri, tidak pernah dari permintaan. Material baru tiba dengan kunci sampel.",
+          "sources": [
+            "src/services/transitions/flows/masterDataRequest.flow.ts:1-150",
+            "src/services/data/mock/masterDataRequestTarget.ts:1-190",
+            "src/pages-v2/master-data/ChangeRequests.tsx:1-420",
+            "src/services/transitions/policies.ts:2880-2930"
+          ]
+        },
+        "t_mdr_sap_decline": {
+          "transitionId": "t_mdr_sap_decline",
+          "label": "Catat jawaban SAP: ditolak",
+          "stepKind": "external-fact",
+          "role": "pembeli · pengadaan (atom `masterdata:record-sap-answer`)",
+          "fromTo": "Sent to SAP → Declined by SAP",
+          "operator": {
+            "where": "`/buyer/master-data/requests` → buka permintaan → tulis alasan SAP pada catatan → **Catat jawaban SAP (sampel): ditolak**.",
+            "do": "catat bahwa SAP menolak, dengan alasan SAP.",
+            "fill": "`sapRequestNumber`, `sample`, `note` (wajib)."
+          },
+          "tester": {
+            "expectedState": "Declined by SAP",
+            "confirm": "toast **\"Jawaban sampel dicatat: ditolak oleh SAP.\"**; pemberitahuan menampilkan alasannya.",
+            "triggerEvent": "t_mdr_sap_decline"
+          },
+          "checks": "`mdr_actor_named`; `mdr_sap_answer_admissible`; `mdr_note_authored`.",
+          "glossary": [
+            "ROLE_NOT_PERMITTED",
+            "POLICY_REJECTED",
+            "MISSING_FIELDS",
+            "NOT_FOUND",
+            "SCOPE_DENIED",
+            "NO_PERSON_IN_SESSION"
+          ],
+          "honesty": "tidak ada yang berubah pada data master. Permintaan baru dapat diajukan.",
+          "sources": [
+            "src/services/transitions/flows/masterDataRequest.flow.ts:1-150",
+            "src/services/data/mock/masterDataRequestTarget.ts:1-190",
+            "src/pages-v2/master-data/ChangeRequests.tsx:1-420",
+            "src/services/transitions/policies.ts:2880-2930"
+          ]
+        }
+      },
+      "testData": [
+        {
+          "state": "Proposed",
+          "fixtureIds": [],
+          "note": "tidak ada fixture — tidak ada yang di-seed dan store dibuka kosong. Ajukan satu: pilih pengguna sampel yang memegang pengadaan, buka material di `/buyer/master-data`, tekan **Usulkan perubahan**, ubah deskripsinya, beri alasan, **Ajukan permintaan**."
+        }
+      ]
+    },
+    {
       "entity": "materialRequest",
       "locale": "en",
       "title": "Material request",

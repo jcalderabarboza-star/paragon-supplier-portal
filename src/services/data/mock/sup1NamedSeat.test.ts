@@ -130,6 +130,17 @@ const RULED: ReadonlyArray<{ hook: PolicyHookId; head: string; verbs: readonly s
     head: 'STEP_ACTOR_UNATTRIBUTED',
     verbs: ['t_step_complete', 't_step_decline'],
   },
+  // MD-4 / MD-5 (operator ruling, 12 October 2026) — a change to master data is
+  // proposed, reviewed, handed to SAP and closed by named people: every act of
+  // the request names one.
+  {
+    hook: POLICY_HOOKS.MDR_ACTOR_NAMED,
+    head: 'MDR_ACTOR_UNATTRIBUTED',
+    verbs: [
+      't_mdr_propose', 't_mdr_start_review', 't_mdr_return', 't_mdr_approve', 't_mdr_reject',
+      't_mdr_withdraw', 't_mdr_hand_off', 't_mdr_sap_complete', 't_mdr_sap_decline',
+    ],
+  },
 ];
 
 /** Proposing, raising, picking up and the supplier's own acts stay open. */

@@ -40,6 +40,8 @@ const callsApplier = (files: Readonly<Record<string, string>>): string[] =>
 
 const STORE = 'services/masterData/replicaStore.ts';
 const APPLIER = 'services/masterData/syncApplier.ts';
+const SAMPLE_ANSWER = 'services/data/mock/masterDataRequestTarget.ts';
+const SAMPLE_SYNC = 'services/masterData/sampleSync.ts';
 
 describe('MD-1 · the replica stores have one writer', () => {
   it('⚠ CONTROL — the scan read real source: the store, the applier and an unrelated page are in it', () => {
@@ -55,8 +57,13 @@ describe('MD-1 · the replica stores have one writer', () => {
     expect(namesWriteDoor(PRODUCT)).toEqual([STORE, APPLIER]);
   });
 
-  it('only the applier’s own module calls the applier: the seed is its one entrance today', () => {
-    expect(callsApplier(PRODUCT)).toEqual([APPLIER]);
+  // MD-5 — two more modules call the applier, each a RUN OF ITS OWN and each
+  // stamped SAMPLE: a sample answer from SAP delivers its record as a run (the
+  // request target), and the prepared sample sync is a run. Neither writes the
+  // store; both go through the one writer. The set is named, so a fourth caller
+  // is red.
+  it('the applier is called by its own module, the sample SAP answer and the sample sync, and by nothing else', () => {
+    expect(callsApplier(PRODUCT)).toEqual([SAMPLE_ANSWER, APPLIER, SAMPLE_SYNC].sort());
   });
 
   it('⚠ PROBE — a second writer added to the tree is named by the same derivation', () => {
@@ -66,7 +73,7 @@ describe('MD-1 · the replica stores have one writer', () => {
     };
     expect(namesWriteDoor(withIntruder)).toEqual(['pages-v2/Intruder.tsx', STORE, APPLIER]);
     const withCaller = { ...PRODUCT, 'services/data/mock/Feed.ts': 'applySyncRun (run);' };
-    expect(callsApplier(withCaller)).toEqual(['services/data/mock/Feed.ts', APPLIER]);
+    expect(callsApplier(withCaller)).toEqual(['services/data/mock/Feed.ts', SAMPLE_ANSWER, APPLIER, SAMPLE_SYNC].sort());
   });
 
   it('the store exports nothing else that writes: its only other export is the read door', () => {

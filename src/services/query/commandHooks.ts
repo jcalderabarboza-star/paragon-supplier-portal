@@ -1475,6 +1475,30 @@ export function useStepAct() {
   });
 }
 
+/**
+ * MD-4 / MD-5 — one act on a master-data change request. The verb is named by
+ * the caller; the store sets the number, the proposer, the base and the
+ * history, and who acted rides the scope.
+ */
+export function useMasterDataRequestAct() {
+  const svc = useDataService();
+  const scope = useScope();
+
+  return useMutation<
+    CommandResult,
+    Error,
+    { transitionId: string; entityId?: string; payload: Record<string, unknown> }
+  >({
+    mutationFn: ({ transitionId, entityId, payload }) =>
+      svc.commands.dispatch(scope, {
+        transitionId,
+        entity: 'masterDataRequest',
+        ...(entityId ? { entityId } : {}),
+        payload,
+      }),
+  });
+}
+
 // ── §67 · THE APPROVAL LANE — approve / reject, the two verbs procurement holds ─
 //
 // ⚠️ **THE GAP THIS CLOSES WAS NEVER A SURFACE.** `BuyerRequisitions` already

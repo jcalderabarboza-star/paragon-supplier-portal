@@ -104,6 +104,8 @@ export const identityEn: Record<string, string> = {
     '{{person}} is a sample identity and may not relax a governed setting. Accepting that risk needs a real signed-in person, and Paragon has no sign-in yet — tightening is still available.',
   'identity.refusal.releaserIsApprover':
     '{{person}} approved this invoice and may not also release its payment. Approving an invoice and releasing its money are two authorities — somebody else releases it.',
+  'identity.refusal.approverIsProposer':
+    '{{person}} proposed this change to master data and may not also decide it. Proposing a change and ruling on it are two authorities — a second person decides.',
   'identity.refusal.flowApproverIsProposer':
     '{{person}} proposed this change and may not also approve it. Proposing a change to a process and approving it are two people — somebody else approves it.',
   'identity.refusal.stepCompleterIsEarlier':
@@ -160,6 +162,8 @@ export const identityId: Record<string, string> = {
     '{{person}} adalah identitas contoh dan tidak boleh melonggarkan pengaturan yang diatur. Menerima risiko itu memerlukan orang sungguhan yang telah masuk, dan Paragon belum memiliki proses masuk — memperketat tetap tersedia.',
   'identity.refusal.releaserIsApprover':
     '{{person}} menyetujui faktur ini dan tidak boleh juga merilis pembayarannya. Menyetujui faktur dan merilis dananya adalah dua kewenangan — orang lain yang merilisnya.',
+  'identity.refusal.approverIsProposer':
+    '{{person}} mengusulkan perubahan data master ini dan tidak boleh sekaligus memutuskannya. Mengusulkan perubahan dan memutuskannya adalah dua kewenangan — orang kedua yang memutuskan.',
   'identity.refusal.flowApproverIsProposer':
     '{{person}} mengusulkan perubahan ini dan tidak boleh juga menyetujuinya. Mengusulkan perubahan pada sebuah proses dan menyetujuinya dilakukan dua orang — orang lain yang menyetujuinya.',
   'identity.refusal.stepCompleterIsEarlier':

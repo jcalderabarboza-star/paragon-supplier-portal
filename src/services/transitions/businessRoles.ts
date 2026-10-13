@@ -209,6 +209,11 @@ const LANE_BUNDLES = Object.freeze({
       // from approving one — and reusing it for a third document would blur the
       // only distinction it makes.
       'materialrequest:submit',
+      // MD-4 / MD-5 — a change to master data is PROPOSED here and, once another
+      // lane has approved it, handed to SAP here. Approving says the request is
+      // right; handing off says it goes now. Recording SAP's answer sits with
+      // the lane that handed off.
+      'masterdata:propose', 'masterdata:handoff', 'masterdata:record-sap-answer',
       // ⚠️ RULED TO MOVE TO `compliance`, AND DELIBERATELY NOT MOVED IN THIS
       // BATCH. The operator's ruling stands and is booked: if procurement can
       // set the halal enforcement mode, procurement can lower the bar it is
@@ -376,6 +381,8 @@ const LANE_BUNDLES = Object.freeze({
       // The sixth governance atom here, for the same sentence: a lane cannot
       // be the one that changes the process it is held to.
       'flow:draft',
+      // MD-4 — compliance reviews a change to a SUPPLIER record.
+      'masterdata:review',
       // ── FB-3 / FB-4 · DECIDING A CHANGE AND PUTTING IT IN FORCE (decision 3) ─
       // The same lane holds all three, and the separation is between PERSONS:
       // whoever proposed a change may not approve it (`flowversion_approver_not_proposer`).
@@ -415,6 +422,9 @@ const LANE_BUNDLES = Object.freeze({
       // `MATERIALREQUEST_DECIDER_NOT_REQUESTER` — is built, typed for, and
       // unable to fire until an actor is attributed (F1).
       'materialrequest:review', 'materialrequest:decide',
+      // MD-4 — planning proposes changes to materials and reviews them; a hook
+      // holds a reviewer to its own kind, and four eyes separates the persons.
+      'masterdata:propose', 'masterdata:review',
       // ── B4a · THE FORECAST PUBLICATION — OPEN, SPLIT, PUBLISH ─────────────
       // The planner's own acts on the plan a supplier confirms against. The
       // signature on a firm split is NOT here — `publication:approve` sits in

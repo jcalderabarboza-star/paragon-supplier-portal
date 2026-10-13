@@ -1,6 +1,6 @@
 # C1 — Method Surface
 
-Three distinct axes. **76** (service surface) · **154** (transition catalog) · **26** (wired
+Three distinct axes. **76** (service surface) · **163** (transition catalog) · **27** (wired
 targets). They measure different things; this file keeps them separate.
 
 > ⚠️ **THIS DOCUMENT IS PINNED TO THE TREE, AND THE PIN IS WHY THE NUMBERS ABOVE ARE ALLOWED TO
@@ -662,6 +662,25 @@ targets). They measure different things; this file keeps them separate.
 > where-used and the sync log are refused `SCOPE_DENIED` for the whole object. The record, the stamp
 > and the sync run are specified in `C13-master-data.md`. Moved by the pin going red.
 >
+> **RE-HARVEST (2026-10-12, MD-4 and MD-5).** A change to master data became a request. Catalog
+> 143 → **152** across 31 → **32** flows; wired targets 25 → **26**. Service surface unchanged (76).
+> **A NEW MACHINE, `masterDataRequest.flow.ts`** — eight states (`Proposed`, `In Review`, `Approved`,
+> `Sent to SAP`, `Completed in SAP`, `Declined by SAP`, `Rejected`, `Withdrawn`), the last four
+> endings. Nine verbs. Atoms: `masterdata:propose` (procurement, planning), `masterdata:review`
+> (planning, compliance), `masterdata:handoff` and `masterdata:record-sap-answer` (procurement).
+> **No verb writes a master record.** Refusals, by hook: `mdr_actor_named`
+> (`MDR_ACTOR_UNATTRIBUTED`, on every verb); `mdr_proposal_valid` on the birth (`MDR_KIND_UNKNOWN`,
+> `MDR_REASON_BLANK`, `MDR_CREATE_CARRIES_KEY`, `MDR_SUBJECT_UNKNOWN`, `MDR_FIELD_NOT_PROPOSABLE`,
+> `MDR_FIELD_MISSING`, `MDR_VALUE_NOT_IN_TABLE`, `MDR_NOTHING_CHANGES`, `MDR_DUPLICATE_OPEN`);
+> `mdr_reviewer_lane` (`MDR_WRONG_LANE`: a material request is planning's, a supplier request
+> compliance's); `mdr_approver_not_proposer` (`MDR_APPROVER_IS_PROPOSER`, which asks the dispatcher's
+> Super Admin exemption); `mdr_base_unchanged` on approve and hand-off (`MDR_SAP_CHANGED_FIRST`);
+> `mdr_note_authored` (`MDR_NOTE_BLANK`); `mdr_sap_answer_admissible` (`MDR_SAP_NUMBER_BLANK`,
+> `MDR_SAMPLE_ANSWER_IN_PRODUCTION`, `MDR_SAP_NOT_CONNECTED`). The store sets the number, the
+> proposer, the base and the history; `readScopeOwner` is null, so a supplier scope is refused at
+> scope. A SAMPLE answer recorded on a demo deployment delivers its record through the sync applier
+> as a run of its own. Specified in `C13-master-data.md` §9. Moved by the pin going red.
+>
 > **NOTE (2026-10-12, MD-2 and MD-2b).** No figure on any axis moved. Two statements above are
 > overtaken and are left as the record of what they described: the material lookups no longer read
 > the frozen fixture, and there is no longer a second master a plan line is published from. By
@@ -807,7 +826,7 @@ the string, because those are different claims and only the first is the contrac
 
 ---
 
-## Axis 2 — the 154-transition catalog (32 flows)
+## Axis 2 — the 163-transition catalog (33 flows)
 
 Every authored state-machine edge across the registered flows (`id: 't_<entity>_<verb>'`). Derived
 from `getKnownFlows()` — the seeded registry — never from a grep over the flow files, because a
@@ -848,7 +867,8 @@ transition id can be assembled at a call site rather than written as a literal (
 | `materialRuling.flow.ts` | `materialRuling` | 1 | `t_material_ruling_set` | **wired** |
 | `flowVersion.flow.ts` | `flowVersion` | 11 | `t_flowversion_create`, `t_flowversion_save`, `t_flowversion_propose`, `t_flowversion_withdraw`, `t_flowversion_return`, `t_flowversion_approve`, `t_flowversion_reject`, `t_flowversion_activate`, `t_flowversion_supersede`, `t_flowversion_retire`, `t_flowversion_restore` | **wired** |
 | `processStep.flow.ts` | `processStep` | 2 | `t_step_complete`, `t_step_decline` | **wired** |
-| **TOTAL** | | **154** | | |
+| `masterDataRequest.flow.ts` | `masterDataRequest` | 9 | `t_mdr_propose`, `t_mdr_start_review`, `t_mdr_return`, `t_mdr_approve`, `t_mdr_reject`, `t_mdr_withdraw`, `t_mdr_hand_off`, `t_mdr_sap_complete`, `t_mdr_sap_decline` | **wired** |
+| **TOTAL** | | **163** | | |
 
 **Flow shape** (`schema.ts`, `FlowDefinition` / `TransitionDef`): each transition declares
 `from[]` / `to` / `trigger` / `requiredRole` / `requiredFields[]` / `policyHooks[]` /
@@ -864,12 +884,12 @@ system reference is minted only on `settle` (see C5, SAP boundary).
 
 ---
 
-## Axis 3 — the 26 wired CommandTargets
+## Axis 3 — the 27 wired CommandTargets
 
-A `CommandTarget` is the per-entity adapter the dispatcher reads/writes through. **26 exist**, the
+A `CommandTarget` is the per-entity adapter the dispatcher reads/writes through. **27 exist**, the
 runtime export `WIRED_COMMAND_TARGETS` (`MockCommandService.ts` `TARGETS`):
 
-- **wired:** `purchaseOrder`, `advanceShipNotice`, `goodsReceipt`, `invoice`, `rfq`, `quotation`, `stageResponse`, `purchaseRequisition`, `intakeLine`, `supplierDocument`, `requirementResponse`, `inventoryDeclaration`, `incomingShipment`, `enforcement`, `role`, `supplierApplication`, `materialRequest`, `psl`, `pslCapSetting`, `deliveryRelease`, `deliveryPolicy`, `forecastPublication`, `moduleActivation`, `materialRuling`, `flowVersion`, `processStep`
+- **wired:** `purchaseOrder`, `advanceShipNotice`, `goodsReceipt`, `invoice`, `rfq`, `quotation`, `stageResponse`, `purchaseRequisition`, `intakeLine`, `supplierDocument`, `requirementResponse`, `inventoryDeclaration`, `incomingShipment`, `enforcement`, `role`, `supplierApplication`, `materialRequest`, `psl`, `pslCapSetting`, `deliveryRelease`, `deliveryPolicy`, `forecastPublication`, `moduleActivation`, `materialRuling`, `flowVersion`, `processStep`, `masterDataRequest`
 
 The interface is **7 members** (`dispatcher.ts`, `CommandTarget`):
 
@@ -902,9 +922,9 @@ pre-A2 target ignores the parameter.
 compare"** (§86). The dispatcher's supplier arm compares `owner !== scope.supplierId`
 unconditionally; a target that wants a supplier to reach a verb must NAME that supplier.
 
-### Wiring census (32 flows → 3 states)
+### Wiring census (33 flows → 3 states)
 
-- **26 behavior-wired** — have a `CommandTarget`, dispatch runs against in-memory stores. Named
+- **27 behavior-wired** — have a `CommandTarget`, dispatch runs against in-memory stores. Named
   above.
 - **2 rolled-up sub-flows** — authored, participate via terminal rollup (`grRollup.ts` /
   `invoiceRollup.ts`), **no standalone target**: `goodsReceiptLine`, `invoiceMatch`.

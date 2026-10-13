@@ -156,6 +156,7 @@ import { forecastPublicationTarget, previouslyPublished } from './publicationTar
 import { moduleActivationTarget, moduleGate } from './moduleActivationTarget';
 import { materialRulingTarget } from './materialRulingTarget';
 import { makeFlowVersionTarget } from './flowVersionTarget';
+import { makeMasterDataRequestTarget } from './masterDataRequestTarget';
 import { makeProcessStepTarget } from './processStepTarget';
 import { liveWorld } from '../../flowBuilder/liveWorld';
 import { flowOverlay } from '../../flowBuilder/flowOverlay';
@@ -3302,6 +3303,9 @@ const TARGETS: Record<string, CommandTarget> = {
   flowVersion: makeFlowVersionTarget(() => Object.keys(TARGETS), () => liveWorld()),
   // FB-4 — the ledger of steps an active version added.
   processStep: makeProcessStepTarget((entity, docId) => TARGETS[entity]?.readState(docId) ?? null),
+  // MD-4 / MD-5 — a master-data change request. No act of it writes a master
+  // record; a sample SAP answer delivers one through the sync applier.
+  masterDataRequest: makeMasterDataRequestTarget(),
 };
 
 // The behavior-wiring census (was the contract package's "6"; 7 with the G1.1

@@ -170,6 +170,7 @@ const AppRouter: React.FC = () => {
           <Route path="/buyer/roles/:roleId" element={<ModuleGate path="/buyer/roles/:roleId"><RoleDetail /></ModuleGate>} />
           <Route path="/buyer/platform/super-admin-activity" element={<ModuleGate path="/buyer/platform/super-admin-activity"><SuperAdminActivity /></ModuleGate>} />
           <Route path="/buyer/master-data" element={<ModuleGate path="/buyer/master-data"><BuyerMasterData /></ModuleGate>} />
+          <Route path="/buyer/master-data/requests" element={<ModuleGate path="/buyer/master-data/requests"><BuyerMasterData /></ModuleGate>} />
           <Route path="/buyer/platform/modules" element={<ModuleGate path="/buyer/platform/modules"><ModulesBoard /></ModuleGate>} />
           <Route path="/buyer/platform/modules/admin" element={<ModuleGate path="/buyer/platform/modules/admin"><ModulesAdmin /></ModuleGate>} />
           <Route path="/glossary" element={<ModuleGate path="/glossary"><Glossary /></ModuleGate>} />

@@ -237,6 +237,7 @@ export const NON_DESTINATION_ROUTES: Readonly<Record<string, string>> = {
   '/marketplace/supplier/:id': 'detail route, a storefront reached from a Marketplace card',
   '/buyer/contracts/:id': 'detail route, reached from a contract row in Contracts or Delivery agreements',
   '/buyer/roles/:roleId': 'detail route, reached from a role row in Roles',
+  '/buyer/master-data/requests': 'the change-requests view of Master data, reached from its tabs and from a record',
   '/buyer/platform/modules/admin': 'reached from the Modules board, which is its nav destination',
   '/': 'redirect to the buyer dashboard, not a page',
   '/buyer/intake-review': 'redirect to the Plan Grid intake-review view, where Intake Review lives since PLN-3 — not a page',
@@ -260,6 +261,7 @@ export const DETAIL_ROUTE_PARENT: Readonly<Record<string, string>> = {
   '/marketplace/supplier/:id': '/marketplace',
   '/buyer/contracts/:id': '/buyer/contracts',
   '/buyer/roles/:roleId': '/buyer/roles',
+  '/buyer/master-data/requests': '/buyer/master-data',
   '/buyer/platform/modules/admin': '/buyer/platform/modules',
 };
 

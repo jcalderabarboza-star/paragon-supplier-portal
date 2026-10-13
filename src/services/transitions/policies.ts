@@ -2893,6 +2893,42 @@ bindPolicyHook(
     'a decision on a preferred-supplier listing is recorded against the person who took it',
   ),
 );
+// MD-4 — FOUR EYES ON A MASTER-DATA REQUEST. The person who decides a request is
+// not the person who proposed it: `MATERIALREQUEST_DECIDER_NOT_REQUESTER`'s
+// shape, one document over. It asks the Super Admin exemption where it would
+// refuse, and reaches no further than this separation of persons.
+bindPolicyHook(
+  POLICY_HOOKS.MDR_APPROVER_NOT_PROPOSER,
+  ({ entityId, target, scope, exempt }) => {
+    const row = target.readEntity?.(entityId) as { proposedBy?: ActorAttribution } | null | undefined;
+    const proposer = row?.proposedBy;
+    const decider = scope.actor;
+    if (
+      proposer &&
+      decider &&
+      isAttributed(proposer) &&
+      isAttributed(decider) &&
+      proposer.person.personId === decider.person.personId &&
+      !exempt?.('MDR_APPROVER_IS_PROPOSER')
+    ) {
+      return {
+        ok: false,
+        reason:
+          `MDR_APPROVER_IS_PROPOSER: the proposer ` +
+          `(${personRefusalToken(proposer.person.personId)}) may not also ` +
+          'decide this request — proposing a change to master data and ruling on it are two authorities',
+      };
+    }
+    return { ok: true };
+  },
+);
+bindPolicyHook(
+  POLICY_HOOKS.MDR_ACTOR_NAMED,
+  namedSeatHook(
+    'MDR_ACTOR_UNATTRIBUTED',
+    'proposing, reviewing or handing off a change to master data is recorded against the person who did it',
+  ),
+);
 bindPolicyHook(
   POLICY_HOOKS.MATERIALREQUEST_DECIDER_NAMED,
   namedSeatHook(

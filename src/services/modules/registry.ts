@@ -170,8 +170,11 @@ function buildModules(): readonly ModuleSpec[] {
     },
     {
       code: 'MAT', nameKey: name('MAT'), descriptionKey: desc('MAT'), scope: 'buyer',
-      routes: ['/buyer/material-requests'],
-      flows: ['materialRequest'],
+      // MD-4 — the change-requests view of the master-data page has its own
+      // route HERE: reading master data is the platform's and cannot be switched
+      // off, while proposing a change rides this module.
+      routes: ['/buyer/material-requests', '/buyer/master-data/requests'],
+      flows: ['materialRequest', 'masterDataRequest'],
       capabilities: ['materialRequests'],
       dependsOn: [], parts: [],
     },

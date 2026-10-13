@@ -109,6 +109,7 @@ import { supplierApplicationStore } from '../data/mock/stores/supplierApplicatio
 import { materialRequestStore } from '../data/mock/stores/materialRequestStore';
 import { customRoleStore } from './customRoles';
 import { flowVersionStore } from '../flowBuilder/flowVersionStore';
+import { masterDataRequestStore } from '../data/mock/stores/masterDataRequestStore';
 import { emptyContent } from '../flowBuilder/flowVersion';
 import { stepLedger } from '../flowBuilder/stepLedger';
 import { activeStepKey, seatOf, versionAt, VERSION_STATES_REACHED } from '../../test/flowVersions';
@@ -135,6 +136,26 @@ const draftAChange = () =>
     transitionId: 't_flowversion_create',
     entity: 'flowVersion',
     payload: { flow: 'purchaseRequisition', title: 'an ownerless-scope probe' },
+  });
+/** MD-4 — a master-data change request is proposed by a NAMED procurement person. */
+const namedProcurement: QueryScope = {
+  ...buyerSeat('procurement'),
+  actor: {
+    kind: 'RESOLVED',
+    person: { personId: SAMPLE_PEOPLE.find((x) => x.role === 'procurement')!.personId },
+  },
+};
+let proposals = 0;
+const proposeAChange = () =>
+  svc.dispatch(namedProcurement, {
+    transitionId: 't_mdr_propose',
+    entity: 'masterDataRequest',
+    payload: {
+      kind: 'material.create',
+      // A fresh description each time: a second open request for the same ask is refused.
+      proposed: { description: `An ownerless-scope probe ${++proposals}`, materialType: 'ROH', materialGroup: 'MG-10', baseUnit: 'KG' },
+      reason: 'an ownerless-scope probe',
+    },
   });
 const supplierSeatOf = (supplierId: string, ...businessRoles: string[]): QueryScope => ({
   personaType: 'supplier',
@@ -216,9 +237,12 @@ async function realIds(): Promise<Record<string, string | null>> {
   // FB-1 — a change to a process is a WIRED owner-less target; drafted through
   // the real verb, for the reason every other id here is real.
   const drafted = await draftAChange();
+  // MD-4 — likewise a master-data change request, proposed through the real verb.
+  const proposed = await proposeAChange();
 
   return {
     flowVersion: drafted.entityId ?? null,
+    masterDataRequest: proposed.entityId ?? null,
     // FB-4 — a step exists only while a change that defines it is in force, so
     // one is put in force through the real acts and the step named on a real
     // requisition resting where the gated act can be taken.
@@ -355,6 +379,12 @@ async function walk(entity: string, t: TransitionDef): Promise<Walk | null> {
     return at(version.id, version.state);
   }
   if (entity === 'processStep') return at(await activeStepKey(), 'Recorded');
+  if (entity === 'masterDataRequest') {
+    // Only the birth state is reachable without a second named person.
+    if (!t.from.includes('Proposed')) return null;
+    const proposed = await proposeAChange();
+    return proposed.entityId ? at(proposed.entityId, 'Proposed') : null;
+  }
   if (entity === 'supplierApplication') {
     const raised = await svc.dispatch(buyerSeat('procurement'), {
       transitionId: 't_application_submit', entity,
@@ -398,6 +428,7 @@ const resetAll = () => {
   materialRequestStore.reset();
   customRoleStore.reset();
   flowVersionStore.reset();
+  masterDataRequestStore.reset();
   stepLedger.reset();
 };
 
@@ -465,6 +496,8 @@ describe('POPULATION — nothing below means anything without this', () => {
     expect(ownerless).toContain('materialRuling');
     // FB-1 — a change to a process is Paragon's own governance record.
     expect(ownerless).toContain('flowVersion');
+    // MD-4 — a master-data change request is Paragon's own proposal to SAP.
+    expect(ownerless).toContain('masterDataRequest');
     expect(ownerless).not.toContain('purchaseOrder');
     expect(ownerless).not.toContain('invoice');
     expect(ownerful).toContain('purchaseOrder');
@@ -586,6 +619,9 @@ describe('THE LEGITIMATE PATHS — the half a "refuse everyone" fix would break'
         // `readScopeOwner: () => null` DENIES every supplier rather than meaning
         // "nothing to compare" (§86).
         'intakeLine',
+        // MD-4 — a master-data change request: proposed, reviewed and handed to
+        // SAP by Paragon. No supplier reads one or acts on one in this build.
+        'masterDataRequest',
         'materialRequest',
         // OPS-2 — the material ruling ledger is a Paragon governance record:
         // who ruled and why. A supplier neither reads it nor rules.

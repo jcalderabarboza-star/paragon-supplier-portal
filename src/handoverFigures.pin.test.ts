@@ -55,7 +55,7 @@ describe('H1 · the populations are real before any figure is believed', () => {
 });
 
 describe('H1 · the figures D1 §1 states', () => {
-  it('routes: 53 declared in AppRouter', () => {
+  it('routes: 54 declared in AppRouter', () => {
     // D1 first stated 47, from `grep -c "<Route "` — which misses the four
     // declarations written across lines (`<Route` then a newline). The regex
     // here takes `\s+`, so it reads both shapes; a known multi-line member is
@@ -64,7 +64,9 @@ describe('H1 · the figures D1 §1 states', () => {
     expect(ROUTES).toContain('/buyer/platform/super-admin-activity');
     // MD-1 added `/buyer/master-data` (52 before it).
     expect(ROUTES).toContain('/buyer/master-data');
-    expect(ROUTES.length).toBe(53);
+    // MD-4 added `/buyer/master-data/requests` (53 before it).
+    expect(ROUTES).toContain('/buyer/master-data/requests');
+    expect(ROUTES.length).toBe(54);
   });
 
   it('modules: 16 in the registry, PLT the only always-on one, every default Active', () => {
